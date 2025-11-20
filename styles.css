@@ -82,7 +82,7 @@ body {
 }
 
 body.loaded {
-    animation: fadeIn 0.6s ease;
+    animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -162,9 +162,9 @@ ul {
    Utilidades
    =========================== */
 .container {
-    max-width: 1200px;
+    max-width: 1300px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 0;
 }
 
 .section-tag {
@@ -523,7 +523,7 @@ ul {
 }
 
 .hero-title {
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 900;
     line-height: 1.1;
     margin-bottom: 1.5rem;
