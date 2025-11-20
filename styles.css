@@ -399,7 +399,7 @@ ul {
 
 
 .logo-img {
-    height: 50px;
+    height: 60px;
     width: auto;
     object-fit: contain;
     transition: var(--transition);
