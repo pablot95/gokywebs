@@ -162,7 +162,7 @@ ul {
    Utilidades
    =========================== */
 .container {
-    max-width: 1300px;
+    max-width: 1200px;
     margin: 0 auto;
     padding: 0 0;
 }
@@ -221,10 +221,10 @@ ul {
 }
 
 .section-title {
-    font-size: 2.5rem;
+    font-size: 3.5rem;
     font-weight: 700;
     color: var(--color-black);
-    margin-bottom: 1rem;
+    margin-bottom: 4rem;
     line-height: 1.2;
 }
 
@@ -399,7 +399,7 @@ ul {
 
 
 .logo-img {
-    height: 60px;
+    height: 55px;
     width: auto;
     object-fit: contain;
     transition: var(--transition);
@@ -523,7 +523,7 @@ ul {
 }
 
 .hero-title {
-    font-size: 3.5rem;
+    font-size: 3.2rem;
     font-weight: 900;
     line-height: 1.1;
     margin-bottom: 1.5rem;
@@ -1800,8 +1800,8 @@ ul {
    Footer
    =========================== */
 .footer {
-    background-color: var(--color-black);
-    color: var(--color-white);
+    background-color: var(--color-white);
+    color: var(--color-black);
     padding: 4rem 0 2rem;
 }
 
@@ -1813,7 +1813,7 @@ ul {
 }
 
 .footer-brand p {
-    color: var(--color-gray);
+    color: var(--color-black);
     margin-top: 1rem;
     line-height: 1.6;
 }
@@ -1828,7 +1828,7 @@ ul {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    color: var(--color-white);
+    color: var(--color-black);
 }
 
 .footer-column ul {
@@ -1838,7 +1838,7 @@ ul {
 }
 
 .footer-column a {
-    color: var(--color-gray);
+    color: var(--color-black);
     font-size: 0.938rem;
     transition: var(--transition);
 }
