@@ -940,32 +940,48 @@ function addSwipeToCarousel(carouselElement, carouselId) {
     let startX = 0;
     let startY = 0;
     let isDragging = false;
+    let isHorizontalSwipe = false;
     
     const track = carouselElement.querySelector('.carousel-track');
     if (!track) return;
     
     const handleStart = (e) => {
-        isDragging = true;
         startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
         startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        isDragging = true;
+        isHorizontalSwipe = false;
     };
     
     const handleMove = (e) => {
         if (!isDragging) return;
-        e.preventDefault();
+        
+        const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+        const diffX = Math.abs(currentX - startX);
+        const diffY = Math.abs(currentY - startY);
+        
+        // Determinar dirección del swipe solo una vez
+        if (!isHorizontalSwipe && (diffX > 10 || diffY > 10)) {
+            isHorizontalSwipe = diffX > diffY;
+        }
+        
+        // Solo prevenir scroll si el movimiento es horizontal
+        if (isHorizontalSwipe && diffX > 10) {
+            e.preventDefault();
+        }
     };
     
     const handleEnd = (e) => {
         if (!isDragging) return;
         isDragging = false;
         
-        const endX = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
-        const endY = e.type.includes('mouse') ? e.clientY : e.changedTouches[0].clientY;
-        const diffX = startX - endX;
-        const diffY = startY - endY;
+        if (!isHorizontalSwipe) return;
         
-        // Solo considerar swipe si el movimiento horizontal es mayor que el vertical
-        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+        const endX = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
+        const diffX = startX - endX;
+        
+        // Solo cambiar slide si el movimiento horizontal es significativo
+        if (Math.abs(diffX) > 50) {
             if (diffX > 0) {
                 // Swipe izquierda - siguiente
                 nextSlide(carouselId);
@@ -987,6 +1003,7 @@ function addSwipeToCarousel(carouselElement, carouselId) {
     track.addEventListener('mouseup', handleEnd);
     track.addEventListener('mouseleave', () => {
         isDragging = false;
+        isHorizontalSwipe = false;
     });
 }
 
