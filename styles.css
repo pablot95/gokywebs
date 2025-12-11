@@ -1897,7 +1897,7 @@ ul {
     .hero {
         padding-top: 100px;
         min-height: auto;
-        padding-bottom: 4rem;
+        padding-bottom: 2rem;
     }
     
     .hero-title {
@@ -1988,6 +1988,9 @@ ul {
     
     .section-title {
         font-size: 1.5rem;
+    }
+    .browser-mockup{
+        height: 350px;
     }
     
     .service-card,
