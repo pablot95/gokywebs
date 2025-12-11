@@ -596,69 +596,6 @@ document.querySelectorAll('.portfolio-video').forEach(video => {
 });
 
 // ===========================
-// Filtro de portafolio (opcional)
-// ===========================
-const filterButtons = document.querySelectorAll('.filter-btn');
-
-filterButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const portfolioItems = document.querySelectorAll('.portfolio-item');
-        
-        // Remover clase active de todos los botones
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        // Añadir clase active al botón clickeado
-        button.classList.add('active');
-        
-        const filterValue = button.getAttribute('data-filter');
-        
-        // Filtrar items con GSAP si está disponible
-        if (typeof gsap !== 'undefined') {
-            portfolioItems.forEach((item, index) => {
-                const category = item.getAttribute('data-category');
-                
-                if (filterValue === 'all' || category === filterValue) {
-                    gsap.to(item, {
-                        scale: 1,
-                        opacity: 1,
-                        display: 'block',
-                        duration: 0.5,
-                        delay: index * 0.05
-                    });
-                } else {
-                    gsap.to(item, {
-                        scale: 0.8,
-                        opacity: 0,
-                        duration: 0.3,
-                        onComplete: () => {
-                            item.style.display = 'none';
-                        }
-                    });
-                }
-            });
-        } else {
-            // Fallback sin GSAP
-            portfolioItems.forEach(item => {
-                const category = item.getAttribute('data-category');
-                
-                if (filterValue === 'all' || category === filterValue) {
-                    item.style.display = 'block';
-                    setTimeout(() => {
-                        item.style.opacity = '1';
-                        item.style.transform = 'translateY(0)';
-                    }, 10);
-                } else {
-                    item.style.opacity = '0';
-                    item.style.transform = 'translateY(30px)';
-                    setTimeout(() => {
-                        item.style.display = 'none';
-                    }, 300);
-                }
-            });
-        }
-    });
-});
-
-// ===========================
 // Efecto magnético en elementos
 // ===========================
 const magneticElements = document.querySelectorAll('.magnetic');
@@ -772,18 +709,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Portfolio items
-    gsap.utils.toArray('.portfolio-item').forEach((item, i) => {
-        gsap.from(item, {
+    // Portfolio carousel sections
+    gsap.utils.toArray('.portfolio-category-section').forEach((section, i) => {
+        gsap.from(section.querySelector('.category-title'), {
             scrollTrigger: {
-                trigger: item,
+                trigger: section,
                 start: 'top 85%',
                 toggleActions: 'play none none none'
             },
             opacity: 0,
-            y: 60,
-            scale: 0.95,
+            y: 40,
             duration: 0.8,
+            ease: 'power3.out'
+        });
+        
+        gsap.from(section.querySelector('.carousel-container'), {
+            scrollTrigger: {
+                trigger: section,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 0.95,
+            duration: 1,
+            delay: 0.5,
             ease: 'power3.out'
         });
     });
@@ -869,3 +818,267 @@ document.querySelectorAll('a[href="#"]').forEach(link => {
         e.preventDefault();
     });
 });
+
+// ===================================
+// Protección contra inspección y copia
+// ===================================
+/*
+// Deshabilitar click derecho
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+// Deshabilitar selección de texto
+document.addEventListener('selectstart', (e) => {
+    e.preventDefault();
+    return false;
+});
+
+
+// Deshabilitar atajos de teclado para inspeccionar
+document.addEventListener('keydown', (e) => {
+    // F12
+    if (e.key === 'F12') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Ctrl+Shift+I (Inspeccionar)
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Ctrl+Shift+J (Consola)
+    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Ctrl+Shift+C (Selector de elementos)
+    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Ctrl+U (Ver código fuente)
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        return false;
+    }
+    
+    // Ctrl+S (Guardar página)
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        return false;
+    }
+});
+
+// Deshabilitar arrastrar imágenes
+document.addEventListener('dragstart', (e) => {
+    if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        return false;
+    }
+});   */  
+
+// ===========================
+// Carousel Calesita Portfolio
+// ===========================
+const carousels = {
+    landing: {
+        currentIndex: 0,
+        items: [],
+        activated: false
+    },
+    ecommerce: {
+        currentIndex: 0,
+        items: [],
+        activated: false
+    }
+};
+
+function initCarousel(carouselId) {
+    const carousel = document.getElementById(`carousel-${carouselId}`);
+    if (!carousel) return;
+    
+    const items = carousel.querySelectorAll('.carousel-item');
+    carousels[carouselId].items = Array.from(items);
+    
+    // Inicializar videos
+    items.forEach((item, index) => {
+        const video = item.querySelector('.carousel-video');
+        const wrapper = item.querySelector('.carousel-video-wrapper');
+        
+        if (video) {
+            loadCarouselVideo(video);
+        }
+        
+        // Click en el wrapper para traer video al frente
+        if (wrapper) {
+            wrapper.addEventListener('click', (e) => {
+                e.stopPropagation();
+                
+                if (!item.classList.contains('active')) {
+                    // Si clickean cualquier video no activo, traerlo al frente
+                    carousels[carouselId].currentIndex = index;
+                    updateCarousel(carouselId);
+                }
+            });
+        }
+    });
+    
+    // Agregar funcionalidad de swipe/deslizar
+    addSwipeToCarousel(carousel, carouselId);
+    
+    updateCarousel(carouselId, false);
+}
+
+// Función para agregar funcionalidad de swipe
+function addSwipeToCarousel(carouselElement, carouselId) {
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+    
+    const track = carouselElement.querySelector('.carousel-track');
+    if (!track) return;
+    
+    const handleStart = (e) => {
+        isDragging = true;
+        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+        startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+    };
+    
+    const handleMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+    };
+    
+    const handleEnd = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const endX = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
+        const endY = e.type.includes('mouse') ? e.clientY : e.changedTouches[0].clientY;
+        const diffX = startX - endX;
+        const diffY = startY - endY;
+        
+        // Solo considerar swipe si el movimiento horizontal es mayor que el vertical
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+            if (diffX > 0) {
+                // Swipe izquierda - siguiente
+                nextSlide(carouselId);
+            } else {
+                // Swipe derecha - anterior
+                prevSlide(carouselId);
+            }
+        }
+    };
+    
+    // Touch events
+    track.addEventListener('touchstart', handleStart, { passive: true });
+    track.addEventListener('touchmove', handleMove, { passive: false });
+    track.addEventListener('touchend', handleEnd, { passive: true });
+    
+    // Mouse events para desktop
+    track.addEventListener('mousedown', handleStart);
+    track.addEventListener('mousemove', handleMove);
+    track.addEventListener('mouseup', handleEnd);
+    track.addEventListener('mouseleave', () => {
+        isDragging = false;
+    });
+}
+
+function updateCarousel(carouselId, shouldPlay = true) {
+    const carousel = carousels[carouselId];
+    const items = carousel.items;
+    const currentIndex = carousel.currentIndex;
+    const totalItems = items.length;
+    
+    items.forEach((item, index) => {
+        item.classList.remove('active', 'prev', 'next', 'hidden');
+        
+        const video = item.querySelector('.carousel-video');
+        
+        if (index === currentIndex) {
+            item.classList.add('active');
+            if (video && shouldPlay && carousel.activated) {
+                const delay = carouselId === 'landing' ? 1000 : 1500;
+                setTimeout(() => {
+                    video.play();
+                }, delay);
+            }
+        } else if (index === (currentIndex - 1 + totalItems) % totalItems) {
+            item.classList.add('prev');
+            if (video) video.pause();
+        } else if (index === (currentIndex + 1) % totalItems) {
+            item.classList.add('next');
+            if (video) video.pause();
+        } else {
+            item.classList.add('hidden');
+            if (video) video.pause();
+        }
+    });
+}
+
+function nextSlide(carouselId) {
+    const carousel = carousels[carouselId];
+    carousel.currentIndex = (carousel.currentIndex + 1) % carousel.items.length;
+    updateCarousel(carouselId);
+}
+
+function prevSlide(carouselId) {
+    const carousel = carousels[carouselId];
+    carousel.currentIndex = (carousel.currentIndex - 1 + carousel.items.length) % carousel.items.length;
+    updateCarousel(carouselId);
+}
+
+function loadCarouselVideo(video) {
+    const sources = video.querySelectorAll('source');
+    
+    if (sources.length > 0) {
+        // Usar el primer source independientemente del tamaño de pantalla
+        video.src = sources[0].src;
+        video.load();
+    }
+}
+
+// Inicializar carruseles cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initCarousel('landing');
+        initCarousel('ecommerce');
+        setupCarouselTriggers();
+    });
+} else {
+    initCarousel('landing');
+    initCarousel('ecommerce');
+    setupCarouselTriggers();
+}
+
+// Configurar triggers de scroll para activar carousels
+function setupCarouselTriggers() {
+    // Activar carousel de Landing cuando entre en viewport
+    ScrollTrigger.create({
+        trigger: '#carousel-landing',
+        start: 'top 70%',
+        once: true,
+        onEnter: () => {
+            carousels.landing.activated = true;
+            updateCarousel('landing', true);
+        }
+    });
+    
+    // Activar carousel de Ecommerce cuando entre en viewport
+    ScrollTrigger.create({
+        trigger: '#carousel-ecommerce',
+        start: 'top 70%',
+        once: true,
+        onEnter: () => {
+            carousels.ecommerce.activated = true;
+            updateCarousel('ecommerce', true);
+        }
+    });
+}
+
