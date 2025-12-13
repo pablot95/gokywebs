@@ -47,7 +47,7 @@
 }
 
 html {
-    scroll-behavior: auto;
+    scroll-behavior: smooth;
     font-size: 16px;
 }
 
@@ -154,8 +154,9 @@ ul {
     height: 100%;
     top: 0;
     left: 0;
-    z-index: -1;
-    opacity: 0.3;
+    z-index: 1;
+    opacity: 0.5;
+    pointer-events: none;
 }
 
 /* ===========================
@@ -229,10 +230,11 @@ ul {
 }
 
 .section-description {
-    font-size: 1.125rem;
-    color: var(--color-gray);
-    max-width: 600px;
+    font-size: 1.5rem;
+    color: black;
+    max-width: 700px;
     margin: 0 auto;
+    margin-top: 20px;
 }
 
 /* ===========================
@@ -465,6 +467,7 @@ ul {
     background: linear-gradient(135deg, #FAFBFC 0%, #F5F7FA 50%, #E8EFF8 100%);
     position: relative;
     overflow: hidden;
+    z-index: 0;
 }
 
 .hero::before {
@@ -670,6 +673,7 @@ ul {
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 3;
 }
 
 /* Browser Mockup */
@@ -682,6 +686,7 @@ ul {
     box-shadow: var(--shadow-lg);
     overflow: hidden;
     animation: fadeInUp 0.8s ease;
+    z-index: 3;
 }
 
 @keyframes fadeInUp {
@@ -1082,6 +1087,7 @@ ul {
 .services {
     padding: 2rem 0;
     background-color: var(--color-white);
+    z-index: 2;
 }
 
 .services-grid {
@@ -1100,6 +1106,7 @@ ul {
     cursor: pointer;
     position: relative;
     overflow: hidden;
+    z-index: 3;
 }
 
 .service-card::before {
@@ -1520,108 +1527,113 @@ ul {
     color: white;
 }
 
-
-
 /* ===========================
-   Contacto
+   Sección de Propuesta
    =========================== */
-.contact {
-    padding: 8rem 0;
-    background-color: var(--color-white);
+.proposal-section {
+    padding: 4rem 0;
+    background-color: linear-gradient(0deg, var(--color-white) 0%, #F5F1E8 50%, #E8EFF8 100%);
+    position: relative;
+    overflow: hidden;
 }
 
-.contact-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
-}
-
-.contact-info {
-    position: sticky;
-    top: 120px;
-}
-
-.contact-text {
-    font-size: 1.125rem;
-    color: var(--color-gray-dark);
-    line-height: 1.8;
-    margin-bottom: 3rem;
-}
-
-.contact-details {
+.proposal-content {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 5rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
 }
 
-.contact-item {
-    display: flex;
-    gap: 1.5rem;
-    align-items: start;
-}
-
-.contact-icon {
-    width: 50px;
-    height: 50px;
-    background: var(--color-gradient-1);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: var(--transition);
-}
-
-.contact-item:hover .contact-icon {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: var(--shadow-purple);
-}
-
-.contact-icon svg {
-    width: 24px;
-    height: 24px;
-    color: var(--color-white);
-}
-
-.contact-item h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-black);
-    margin-bottom: 0.25rem;
-}
-
-.contact-item p {
-    font-size: 0.938rem;
-    color: var(--color-gray);
-}
-
-.contact-form {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(245, 241, 232, 0.7) 100%);
-    backdrop-filter: blur(20px);
+/* Formulario */
+.proposal-form-container {
+    background: var(--color-white);
     padding: 3rem;
     border-radius: 24px;
-    border: 1px solid rgba(43, 95, 165, 0.1);
     box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(43, 95, 165, 0.1);
 }
 
-.form-group {
-    margin-bottom: 1.5rem;
+.proposal-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
 }
 
-.form-group label {
-    display: block;
-    font-size: 0.938rem;
-    font-weight: 600;
-    color: var(--color-black);
-    margin-bottom: 0.5rem;
+.form-group.project-type-selector {
+    grid-column: 1 / -1;
 }
 
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 1rem 1.25rem;
+.form-group:has(textarea) {
+    grid-column: 1 / -1;
+}
+
+/* Fallback para navegadores que no soportan :has */
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.btn-primary.full-width {
+    grid-column: 1 / -1;
+    max-width: 300px;
+    max-height: 50px;
+    margin: 1.5rem auto 0 auto;
     font-size: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    justify-self: center;
+}
+
+.project-type-selector .type-label {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-blue);
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.type-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 0.3rem;
+}
+
+.type-options input[type="radio"] {
+    display: none;
+}
+
+.type-options .type-option {
+    flex: 1;
+    padding: 0.5rem;
+    text-align: center;
+    background: var(--color-gray-light);
+    border: 2px solid transparent;
+    border-radius: 24px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.3rem;
+    transition: var(--transition);
+    color: var(--color-gray-dark);
+    display: block; /* Asegurar que se comporte como bloque */
+}
+
+.type-options input:checked + .type-option {
+    background: var(--color-white);
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.proposal-form .form-group input,
+.proposal-form .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.95rem;
     font-family: var(--font-primary);
     color: var(--color-black);
     background-color: rgba(255, 255, 255, 0.8);
@@ -1631,18 +1643,158 @@ ul {
     outline: none;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.proposal-form .form-group input:focus,
+.proposal-form .form-group textarea:focus {
     border-color: var(--color-blue);
     box-shadow: 0 0 0 4px rgba(43, 95, 165, 0.08);
     background-color: rgba(255, 255, 255, 1);
     transform: translateY(-2px);
 }
 
-.form-group textarea {
+.proposal-form .form-group textarea {
     resize: vertical;
-    min-height: 120px;
+    min-height: 100px;
 }
+
+.proposal-form .form-group small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--color-gray);
+}
+
+.ecommerce-field.hidden {
+    display: none;
+}
+
+.form-note {
+    text-align: center;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--color-gray);
+}
+
+.btn-primary.full-width {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 1.25rem;
+    font-size: 1.1rem;
+    border-radius: 24px;
+}
+
+/* Pricing Cards */
+.pricing-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 3rem;
+    max-width: 1000px;
+    margin: 1rem auto 0 auto;
+    padding: 0 1rem;
+    z-index: 3;
+}
+
+.pricing-card {
+    background: var(--color-white);
+    padding: 1.5rem 2rem;
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+    border: 1px solid rgba(43, 95, 165, 0.1);
+    position: relative;
+    overflow: hidden;
+    z-index: 3;
+}
+
+.pricing-card:hover {
+    transform: translateY(-15px);
+    box-shadow: var(--shadow-xl);
+}
+
+.pricing-card.featured {
+    border: 2px solid var(--color-blue);
+    background: linear-gradient(to bottom, var(--color-white), #f8fbff);
+}
+
+.pricing-card.featured::before {
+    content: "Recomendado";
+    position: absolute;
+    top: 1.5rem;
+    right: -2rem;
+    background: var(--color-gradient-1);
+    color: white;
+    padding: 0.5rem 3rem;
+    transform: rotate(45deg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.card-header h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.7rem;
+    color: var(--color-black);
+    font-family: var(--font-display);
+}
+
+.price {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--color-blue);
+    letter-spacing: -1px;
+}
+
+.card-features {
+    list-style: none;
+    padding: 0;
+}
+
+.card-features li {
+    margin-bottom: 0.5rem;
+    padding-left: 2rem;
+    position: relative;
+    color: var(--color-gray-dark);
+    font-size: 1.05rem;
+}
+
+.card-features li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--color-blue);
+    font-weight: 800;
+    font-size: 1.2rem;
+}
+
+.btn-card-cta {
+    display: block;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    margin-top: 2rem;
+    background: var(--color-gradient-1);
+    color: var(--color-white);
+    text-align: center;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: var(--transition);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-card-cta:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    background: var(--color-gradient-2);
+}
+
+
 
 /* ===========================
    Footer
@@ -2085,5 +2237,27 @@ ul {
     .whatsapp-float svg {
         width: 26px;
         height: 26px;
+    }
+}
+
+
+
+@media (max-width: 768px) {
+    .proposal-form {
+        grid-template-columns: 1fr;
+    }
+
+    .type-options {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .pricing-cards {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .proposal-form-container {
+        padding: 1.5rem;
     }
 }

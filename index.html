@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/svg+xml" href="FaviconGoky.png">
+    <link rel="icon" type="image/svg+xml" href="Favicon.png">
     <!-- Particle.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <!-- GSAP para animaciones avanzadas -->
@@ -38,10 +38,9 @@
                     <a href=""><img src="logo.png" alt="Goky.net Logo" class="logo-img"></a>
                 </div>
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="#inicio" class="nav-link">Inicio</a></li>
-                    <li><a href="#servicios" class="nav-link">Servicios</a></li>
+                    <li><a href="#propuesta" class="nav-link">Contacto</a></li>
                     <li><a href="#portafolio" class="nav-link">Portafolio</a></li>
-                    <li><a href="#contacto" class="nav-link">Contacto</a></li>
+                    <li><a href="#servicios" class="nav-link">Servicios</a></li>
                 </ul>
                 <button class="menu-toggle" id="menuToggle">
                     <span></span>
@@ -69,7 +68,7 @@
                     </p>
 
                     <div class="hero-buttons" data-aos="fade-up" data-aos-delay="400">
-                        <a href="#contacto" class="btn btn-primary magnetic">
+                        <a href="#propuesta" class="btn btn-primary magnetic">
                             <span>Comenzar proyecto</span>
                             <div class="btn-particles"></div>
                         </a>
@@ -243,14 +242,124 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pricing Cards -->
+            <div class="pricing-cards">
+                <!-- Landing Card -->
+                <div class="pricing-card">
+                    <div class="card-header">
+                        <h3>Landing Page</h3>
+                        <div class="price">$150.000</div>
+                    </div>
+                    <ul class="card-features">
+                        <li>Diseño Personalizado</li>
+                        <li>Responsive (Móvil/PC)</li>
+                        <li>Formulario de Contacto</li>
+                        <li>Optimización SEO Básica</li>
+                        <li>Hasta 6 secciones</li>
+                    </ul>
+                    <a href="#propuesta" class="btn-card-cta">Lo quiero</a>
+                </div>
+
+                <!-- Ecommerce Card -->
+                <div class="pricing-card">
+                    <div class="card-header">
+                        <h3>Tienda Online</h3>
+                        <div class="price">$300.000</div>
+                    </div>
+                    <ul class="card-features">
+                        <li>Todo lo de Landing Page</li>
+                        <li>Catálogo de Productos</li>
+                        <li>Carrito de Compras</li>
+                        <li>Pasarela de Pagos</li>
+                        <li>Hasta 20 productos</li>
+                    </ul>
+                    <a href="#propuesta" class="btn-card-cta">Lo quiero</a>
+                </div>
+            </div>
         </div>
     </section>
+
+    <!-- Sección de Propuesta y Precios -->
+    <section class="proposal-section" id="propuesta">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Tu Proyecto</span>
+                <p class="section-description">
+                    Mandanos la información y de 24 a 48hs te presentamos un prototipo de tu página, 
+                    <strong>gratis y sin compromisos</strong>.
+                </p>
+            </div>
+
+            <div class="proposal-content">
+                <!-- Formulario -->
+                <div class="proposal-form-container">
+                    <form class="proposal-form" action="https://formspree.io/f/xrbnrkgy" method="POST" enctype="multipart/form-data">
+                        <!-- Project Type Toggle -->
+                        <div class="form-group project-type-selector">
+                            <label class="type-label">¿Qué necesitas?</label>
+                            <div class="type-options">
+                                <input type="radio" name="projectType" id="type-landing" value="landing" checked onchange="toggleProjectType()">
+                                <label for="type-landing" class="type-option">Landing Page</label>
+                                
+                                <input type="radio" name="projectType" id="type-ecommerce" value="ecommerce" onchange="toggleProjectType()">
+                                <label for="type-ecommerce" class="type-option">Tienda Online</label>
+                            </div>
+                        </div>
+
+                        <!-- Common Fields -->
+                        <div class="form-group">
+                            <label for="brandName">Nombre de tu marca *</label>
+                            <input type="text" id="brandName" name="brandName" required placeholder="Ej: Mi Empresa">
+                        </div>
+                        <div class="form-group">
+                            <label for="brandColors">Colores de identidad (Opcional)</label>
+                            <input type="text" id="brandColors" name="brandColors" placeholder="Ej: Azul marino y dorado, o códigos Hex">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brandLogo">Logo de tu marca (Opcional)</label>
+                            <input type="file" id="brandLogo" name="brandLogo" accept="image/*">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="brandAssets">Imágenes extra (Opcional)</label>
+                            <input type="file" id="brandAssets" name="brandAssets" multiple>
+                            <small>Puedes subir múltiples archivos</small>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="projectDesc" id="projectDescLabel">Descripción y Objetivos *</label>
+                            <textarea id="projectDesc" name="projectDesc" required placeholder="Cuéntanos sobre tu negocio y qué buscas lograr con la web..." id="projectDescTextarea"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Teléfono de contacto *</label>
+                            <input type="tel" id="phone" name="phone" required placeholder="+54 9 11...">
+                        </div>
+
+                        <!-- Ecommerce Specific -->
+                        <div class="form-group ecommerce-field hidden" id="productsField">
+                            <label for="productPhotos">Fotos de productos (Para Tienda Online)</label>
+                            <input type="file" id="productPhotos" name="productPhotos" multiple accept="image/*">
+                        </div>
+                        
+                        <!-- Hidden email field for Formspree subject -->
+                        <input type="hidden" name="_subject" value="Nueva solicitud de presupuesto web">
+                        <input type="hidden" name="_cc" value="pablo.travi95@gmail.com">
+
+                        <button type="submit" class="btn-primary full-width">Enviar Información</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Servicios -->
     <section id="servicios" class="services">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Lo que hacemos</span>
-                <h2 class="section-title">Servicios que ofrecemos</h2>
                 <p class="section-description">Soluciones web completas adaptadas a tus necesidades</p>
             </div>
             
@@ -338,126 +447,6 @@
                     <p>Soporte continuo y actualizaciones para mantener tu sitio siempre actualizado.</p>
                     <div class="service-hover-effect"></div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Sección intermedia: Proceso -->
-    <section class="process-section">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">Nuestro proceso</span>
-                <h2 class="section-title">Cómo trabajamos</h2>
-            </div>
-            
-            <div class="process-timeline">
-                <div class="timeline-item">
-                    <div class="timeline-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 20h9"></path>
-                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                        </svg>
-                    </div>
-                    <div class="timeline-content">
-                        <h3>1. Ideación</h3>
-                        <p>Escuchamos tu visión y diseñamos una estrategia personalizada para tu proyecto.</p>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="9" y1="9" x2="15" y2="15"></line>
-                            <line x1="15" y1="9" x2="9" y2="15"></line>
-                        </svg>
-                    </div>
-                    <div class="timeline-content">
-                        <h3>2. Diseño</h3>
-                        <p>Creamos prototipos interactivos que capturan la esencia de tu marca.</p>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="16 18 22 12 16 6"></polyline>
-                            <polyline points="8 6 2 12 8 18"></polyline>
-                        </svg>
-                    </div>
-                    <div class="timeline-content">
-                        <h3>3. Desarrollo</h3>
-                        <p>Construimos tu sitio con las mejores prácticas y tecnologías modernas.</p>
-                    </div>
-                </div>
-                
-                <div class="timeline-item">
-                    <div class="timeline-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                    </div>
-                    <div class="timeline-content">
-                        <h3>4. Lanzamiento</h3>
-                        <p>Desplegamos tu proyecto y te acompañamos en cada paso del camino.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-    <!-- Contacto -->
-    <section id="contacto" class="contact">
-        <div class="container">
-            <div class="contact-content">
-                <div class="contact-info">
-                    <span class="section-tag">Hablemos</span>
-                    <h2 class="section-title">¿Tienes un proyecto en mente?</h2>
-                    <p class="contact-text">
-                        Estamos aquí para convertir tu visión en realidad. Cuéntanos sobre tu proyecto y trabajemos juntos para crear algo increíble.
-                    </p>
-                    
-                    <div class="contact-details">
-
-                        <div class="contact-item">
-                            <div class="contact-icon">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4>WhatsApp</h4>
-                                <p>+54 9 11 4068-8675</p>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <form class="contact-form" id="contactForm">
-                    <div class="form-group">
-                        <label for="from_name">Nombre</label>
-                        <input type="text" id="from_name" name="from_name" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="from_email">Email</label>
-                        <input type="email" id="from_email" name="from_email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="subject">Asunto</label>
-                        <input type="text" id="subject" name="subject" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="message">Mensaje</label>
-                        <textarea id="message" name="message" rows="5" required></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary btn-full">Enviar mensaje</button>
-                </form>
             </div>
         </div>
     </section>

@@ -31,35 +31,35 @@ if (typeof particlesJS !== 'undefined') {
                 }
             },
             opacity: {
-                value: 0.5,
+                value: 0.8,
                 random: true,
                 anim: {
                     enable: true,
                     speed: 1,
-                    opacity_min: 0.1,
+                    opacity_min: 0.3,
                     sync: false
                 }
             },
             size: {
-                value: 3,
+                value: 4,
                 random: true,
                 anim: {
                     enable: true,
                     speed: 2,
-                    size_min: 0.1,
+                    size_min: 2,
                     sync: false
                 }
             },
             line_linked: {
                 enable: true,
-                distance: 150,
+                distance: 100,
                 color: '#2B5FA5',
-                opacity: 0.2,
-                width: 1
+                opacity: 0.5,
+                width: 2
             },
             move: {
                 enable: true,
-                speed: 2,
+                speed: 3,
                 direction: 'none',
                 random: true,
                 straight: false,
@@ -82,9 +82,9 @@ if (typeof particlesJS !== 'undefined') {
             },
             modes: {
                 grab: {
-                    distance: 140,
+                    distance: 100,
                     line_linked: {
-                        opacity: 0.5
+                        opacity: 0.8
                     }
                 },
                 push: {
@@ -135,24 +135,7 @@ navLinks.forEach(link => {
 // ===========================
 // Smooth Scroll para enlaces con Lenis
 // ===========================
-navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href');
-        
-        if (targetId && targetId.startsWith('#')) {
-            const targetSection = document.querySelector(targetId);
-            
-            if (targetSection) {
-                lenis.scrollTo(targetSection, {
-                    offset: -80,
-                    duration: 1.5,
-                    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-                });
-            }
-        }
-    });
-});
+// Se inicializa dentro de DOMContentLoaded después de crear lenis
 
 // ===========================
 // Animación de entrada para elementos (usando AOS y GSAP)
@@ -663,6 +646,26 @@ document.addEventListener('DOMContentLoaded', () => {
     window.lenis = lenis;
     console.log('✅ Lenis OK');
     
+    // Smooth scroll para todos los enlaces con hash
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href');
+            
+            if (targetId && targetId !== '#' && targetId.startsWith('#')) {
+                const targetSection = document.querySelector(targetId);
+                
+                if (targetSection) {
+                    lenis.scrollTo(targetSection, {
+                        offset: -80,
+                        duration: 1.5,
+                        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+                    });
+                }
+            }
+        });
+    });
+    
     // GSAP
     gsap.registerPlugin(ScrollTrigger);
     lenis.on('scroll', ScrollTrigger.update);
@@ -822,7 +825,7 @@ document.querySelectorAll('a[href="#"]').forEach(link => {
 // ===================================
 // Protección contra inspección y copia
 // ===================================
-/*
+
 // Deshabilitar click derecho
 document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -881,7 +884,7 @@ document.addEventListener('dragstart', (e) => {
         e.preventDefault();
         return false;
     }
-});   */  
+});  
 
 // ===========================
 // Carousel Calesita Portfolio
@@ -1099,3 +1102,21 @@ function setupCarouselTriggers() {
     });
 }
 
+
+// Toggle Project Type Fields
+function toggleProjectType() {
+    const isEcommerce = document.getElementById('type-ecommerce').checked;
+    const productsField = document.getElementById('productsField');
+    const projectDescLabel = document.getElementById('projectDescLabel');
+    const projectDescTextarea = document.getElementById('projectDescTextarea');
+    
+    if (isEcommerce) {
+        productsField.classList.remove('hidden');
+        projectDescLabel.textContent = 'Descripción y cantidad de productos *';
+        projectDescTextarea.placeholder = 'Ej: Aproximadamente 50 productos, o describe las categorías...';
+    } else {
+        productsField.classList.add('hidden');
+        projectDescLabel.textContent = 'Descripción y Objetivos *';
+        projectDescTextarea.placeholder = 'Cuéntanos sobre tu negocio y qué buscas lograr con la web...';
+    }
+}
