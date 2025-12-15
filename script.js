@@ -912,22 +912,23 @@ function initCarousel(carouselId) {
     // Inicializar videos
     items.forEach((item, index) => {
         const video = item.querySelector('.carousel-video');
-        const wrapper = item.querySelector('.carousel-video-wrapper');
+        const link = item.querySelector('a');
         
         if (video) {
             loadCarouselVideo(video);
         }
         
-        // Click en el wrapper para traer video al frente
-        if (wrapper) {
-            wrapper.addEventListener('click', (e) => {
-                e.stopPropagation();
-                
+        // Click en el enlace para traer video al frente o navegar
+        if (link) {
+            link.addEventListener('click', (e) => {
                 if (!item.classList.contains('active')) {
-                    // Si clickean cualquier video no activo, traerlo al frente
+                    // Si el video no está activo, prevenir navegación y traerlo al frente
+                    e.preventDefault();
+                    e.stopPropagation();
                     carousels[carouselId].currentIndex = index;
                     updateCarousel(carouselId);
                 }
+                // Si está activo, dejar que el enlace navegue normalmente
             });
         }
     });
