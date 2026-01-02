@@ -1104,20 +1104,42 @@ function setupCarouselTriggers() {
 }
 
 
-// Toggle Project Type Fields
-function toggleProjectType() {
-    const isEcommerce = document.getElementById('type-ecommerce').checked;
-    const productsField = document.getElementById('productsField');
-    const projectDescLabel = document.getElementById('projectDescLabel');
-    const projectDescTextarea = document.getElementById('projectDescTextarea');
-    
-    if (isEcommerce) {
-        productsField.classList.remove('hidden');
-        projectDescLabel.textContent = 'Descripción y cantidad de productos *';
-        projectDescTextarea.placeholder = 'Ej: Aproximadamente 50 productos, o describe las categorías...';
-    } else {
-        productsField.classList.add('hidden');
-        projectDescLabel.textContent = 'Descripción y Objetivos *';
-        projectDescTextarea.placeholder = 'Cuéntanos sobre tu negocio y qué buscas lograr con la web...';
-    }
+// ===========================
+// EmailJS Configuration
+// ===========================
+(function() {
+    // Inicializar EmailJS
+    emailjs.init("_WA82jXCJEH8sWNSq");
+})();
+
+const contactFormElement = document.getElementById('contact-form');
+if (contactFormElement) {
+    contactFormElement.addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.innerText = 'Enviando...';
+        btn.disabled = true;
+
+        // Credenciales de EmailJS
+        const serviceID = 'service_lc45de1';
+        const templateID = 'template_z91e8x9';
+
+        emailjs.sendForm(serviceID, templateID, this)
+            .then(() => {
+                btn.innerText = '¡Enviado!';
+                alert('¡Mensaje enviado con éxito!');
+                this.reset();
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }, 3000);
+            }, (err) => {
+                btn.innerText = originalText;
+                btn.disabled = false;
+                console.error('Error al enviar:', err);
+                alert('Hubo un error al enviar el mensaje. Por favor intenta nuevamente.');
+            });
+    });
 }

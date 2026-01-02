@@ -38,7 +38,7 @@
                     <a href=""><img src="logo.png" alt="Goky.net Logo" class="logo-img"></a>
                 </div>
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="#propuesta" class="nav-link">Contacto</a></li>
+                    <li><a href="#contacto" class="nav-link">Contacto</a></li>
                     <li><a href="#portafolio" class="nav-link">Portafolio</a></li>
                     <li><a href="#servicios" class="nav-link">Servicios</a></li>
                 </ul>
@@ -311,60 +311,22 @@
 
             <div class="proposal-content">
                 <!-- Formulario -->
-                <div class="proposal-form-container">
-                    <form class="proposal-form" action="https://formspree.io/f/xrbnrkgy" method="POST" enctype="multipart/form-data">
-                        <!-- Project Type Toggle -->
-                        <div class="form-group project-type-selector">
-                            <label class="type-label">¿Qué necesitas?</label>
-                            <div class="type-options">
-                                <input type="radio" name="projectType" id="type-landing" value="landing" checked onchange="toggleProjectType()">
-                                <label for="type-landing" class="type-option">Landing Page</label>
-                                
-                                <input type="radio" name="projectType" id="type-ecommerce" value="ecommerce" onchange="toggleProjectType()">
-                                <label for="type-ecommerce" class="type-option">Tienda Online</label>
-                            </div>
-                        </div>
-
-                        <!-- Common Fields -->
+                <div class="proposal-form-container" id="contacto">
+                    <form class="proposal-form" id="contact-form">
                         <div class="form-group">
-                            <label for="brandName">Nombre de tu marca *</label>
-                            <input type="text" id="brandName" name="brandName" required placeholder="Ej: Mi Empresa">
-                        </div>
-                        <div class="form-group">
-                            <label for="brandColors">Colores de identidad (Opcional)</label>
-                            <input type="text" id="brandColors" name="brandColors" placeholder="Ej: Azul marino y dorado, o códigos Hex">
+                            <label for="name">Nombre *</label>
+                            <input type="text" id="name" name="name" required placeholder="Tu nombre">
                         </div>
 
                         <div class="form-group">
-                            <label for="brandLogo">Logo de tu marca (Opcional)</label>
-                            <input type="file" id="brandLogo" name="brandLogo" accept="image/*">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="brandAssets">Imágenes extra (Opcional)</label>
-                            <input type="file" id="brandAssets" name="brandAssets" multiple>
-                            <small>Puedes subir múltiples archivos</small>
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label for="projectDesc" id="projectDescLabel">Descripción y Objetivos *</label>
-                            <textarea id="projectDesc" name="projectDesc" required placeholder="Cuéntanos sobre tu negocio y qué buscas lograr con la web..." id="projectDescTextarea"></textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="phone">Teléfono de contacto *</label>
+                            <label for="phone">Número de contacto *</label>
                             <input type="tel" id="phone" name="phone" required placeholder="+54 9 11...">
                         </div>
 
-                        <!-- Ecommerce Specific -->
-                        <div class="form-group ecommerce-field hidden" id="productsField">
-                            <label for="productPhotos">Fotos de productos (Para Tienda Online)</label>
-                            <input type="file" id="productPhotos" name="productPhotos" multiple accept="image/*">
+                        <div class="form-group full-width">
+                            <label for="message">Descripción *</label>
+                            <textarea id="message" name="message" required placeholder="Cuéntanos sobre tu proyecto..."></textarea>
                         </div>
-                        
-                        <!-- Hidden email field for Formspree subject -->
-                        <input type="hidden" name="_subject" value="Nueva solicitud de presupuesto web">
-                        <input type="hidden" name="_cc" value="pablo.travi95@gmail.com">
 
                         <button type="submit" class="btn-primary full-width">Enviar Información</button>
                     </form>
