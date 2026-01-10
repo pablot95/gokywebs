@@ -630,22 +630,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Añadir clase loaded
     document.body.classList.add('loaded');
     
-    // Inicializar Lenis Smooth Scroll
-    const lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smooth: true
-    });
-
-    function raf(time) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-    window.lenis = lenis;
-    console.log('✅ Lenis OK');
-    
     // Smooth scroll para todos los enlaces con hash
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', (e) => {
@@ -656,11 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const targetSection = document.querySelector(targetId);
                 
                 if (targetSection) {
-                    lenis.scrollTo(targetSection, {
-                        offset: -80,
-                        duration: 1.5,
-                        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-                    });
+                    targetSection.scrollIntoView({ behavior: 'smooth' });
                 }
             }
         });
@@ -668,9 +648,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // GSAP
     gsap.registerPlugin(ScrollTrigger);
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => lenis.raf(time * 1000));
-    gsap.ticker.lagSmoothing(0);
     console.log('✅ GSAP OK');
     
     // Animaciones hero
@@ -708,34 +685,6 @@ document.addEventListener('DOMContentLoaded', () => {
             opacity: 0,
             y: 80,
             duration: 0.8,
-            ease: 'power3.out'
-        });
-    });
-    
-    // Portfolio carousel sections
-    gsap.utils.toArray('.portfolio-category-section').forEach((section, i) => {
-        gsap.from(section.querySelector('.category-title'), {
-            scrollTrigger: {
-                trigger: section,
-                start: 'top 85%',
-                toggleActions: 'play none none none'
-            },
-            opacity: 0,
-            y: 40,
-            duration: 0.8,
-            ease: 'power3.out'
-        });
-        
-        gsap.from(section.querySelector('.carousel-container'), {
-            scrollTrigger: {
-                trigger: section,
-                start: 'top 85%',
-                toggleActions: 'play none none none'
-            },
-            opacity: 0,
-            scale: 0.95,
-            duration: 1,
-            delay: 0.5,
             ease: 'power3.out'
         });
     });
@@ -813,295 +762,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ===========================
-// Prevenir comportamiento por defecto en desarrollo
-// ===========================
-document.querySelectorAll('a[href="#"]').forEach(link => {
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-    });
-});
-
-// ===================================
-// Protección contra inspección y copia
-// ===================================
-
-// Deshabilitar click derecho
-document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    return false;
-});
-
-// Deshabilitar selección de texto
-document.addEventListener('selectstart', (e) => {
-    e.preventDefault();
-    return false;
-});
 
 
-// Deshabilitar atajos de teclado para inspeccionar
-document.addEventListener('keydown', (e) => {
-    // F12
-    if (e.key === 'F12') {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Ctrl+Shift+I (Inspeccionar)
-    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Ctrl+Shift+J (Consola)
-    if (e.ctrlKey && e.shiftKey && e.key === 'J') {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Ctrl+Shift+C (Selector de elementos)
-    if (e.ctrlKey && e.shiftKey && e.key === 'C') {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Ctrl+U (Ver código fuente)
-    if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        return false;
-    }
-    
-    // Ctrl+S (Guardar página)
-    if (e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        return false;
-    }
-});
-
-// Deshabilitar arrastrar imágenes
-document.addEventListener('dragstart', (e) => {
-    if (e.target.tagName === 'IMG') {
-        e.preventDefault();
-        return false;
-    }
-});  
-
-// ===========================
-// Carousel Calesita Portfolio
-// ===========================
-const carousels = {
-    landing: {
-        currentIndex: 0,
-        items: [],
-        activated: false
-    },
-    ecommerce: {
-        currentIndex: 0,
-        items: [],
-        activated: false
-    }
-};
-
-function initCarousel(carouselId) {
-    const carousel = document.getElementById(`carousel-${carouselId}`);
-    if (!carousel) return;
-    
-    const items = carousel.querySelectorAll('.carousel-item');
-    carousels[carouselId].items = Array.from(items);
-    
-    // Inicializar videos
-    items.forEach((item, index) => {
-        const video = item.querySelector('.carousel-video');
-        const link = item.querySelector('a');
-        
-        if (video) {
-            loadCarouselVideo(video);
-        }
-        
-        // Click en el enlace para traer video al frente o navegar
-        if (link) {
-            link.addEventListener('click', (e) => {
-                if (!item.classList.contains('active')) {
-                    // Si el video no está activo, prevenir navegación y traerlo al frente
-                    e.preventDefault();
-                    e.stopPropagation();
-                    carousels[carouselId].currentIndex = index;
-                    updateCarousel(carouselId);
-                }
-                // Si está activo, dejar que el enlace navegue normalmente
-            });
-        }
-    });
-    
-    // Agregar funcionalidad de swipe/deslizar
-    addSwipeToCarousel(carousel, carouselId);
-    
-    updateCarousel(carouselId, false);
-}
-
-// Función para agregar funcionalidad de swipe
-function addSwipeToCarousel(carouselElement, carouselId) {
-    let startX = 0;
-    let startY = 0;
-    let isDragging = false;
-    let isHorizontalSwipe = false;
-    
-    const track = carouselElement.querySelector('.carousel-track');
-    if (!track) return;
-    
-    const handleStart = (e) => {
-        startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        isDragging = true;
-        isHorizontalSwipe = false;
-    };
-    
-    const handleMove = (e) => {
-        if (!isDragging) return;
-        
-        const currentX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
-        const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
-        const diffX = Math.abs(currentX - startX);
-        const diffY = Math.abs(currentY - startY);
-        
-        // Determinar dirección del swipe solo una vez
-        if (!isHorizontalSwipe && (diffX > 10 || diffY > 10)) {
-            isHorizontalSwipe = diffX > diffY;
-        }
-        
-        // Solo prevenir scroll si el movimiento es horizontal
-        if (isHorizontalSwipe && diffX > 10) {
-            e.preventDefault();
-        }
-    };
-    
-    const handleEnd = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        if (!isHorizontalSwipe) return;
-        
-        const endX = e.type.includes('mouse') ? e.clientX : e.changedTouches[0].clientX;
-        const diffX = startX - endX;
-        
-        // Solo cambiar slide si el movimiento horizontal es significativo
-        if (Math.abs(diffX) > 50) {
-            if (diffX > 0) {
-                // Swipe izquierda - siguiente
-                nextSlide(carouselId);
-            } else {
-                // Swipe derecha - anterior
-                prevSlide(carouselId);
-            }
-        }
-    };
-    
-    // Touch events
-    track.addEventListener('touchstart', handleStart, { passive: true });
-    track.addEventListener('touchmove', handleMove, { passive: false });
-    track.addEventListener('touchend', handleEnd, { passive: true });
-    
-    // Mouse events para desktop
-    track.addEventListener('mousedown', handleStart);
-    track.addEventListener('mousemove', handleMove);
-    track.addEventListener('mouseup', handleEnd);
-    track.addEventListener('mouseleave', () => {
-        isDragging = false;
-        isHorizontalSwipe = false;
-    });
-}
-
-function updateCarousel(carouselId, shouldPlay = true) {
-    const carousel = carousels[carouselId];
-    const items = carousel.items;
-    const currentIndex = carousel.currentIndex;
-    const totalItems = items.length;
-    
-    items.forEach((item, index) => {
-        item.classList.remove('active', 'prev', 'next', 'hidden');
-        
-        const video = item.querySelector('.carousel-video');
-        
-        if (index === currentIndex) {
-            item.classList.add('active');
-            if (video && shouldPlay && carousel.activated) {
-                const delay = carouselId === 'landing' ? 1000 : 1500;
-                setTimeout(() => {
-                    video.play();
-                }, delay);
-            }
-        } else if (index === (currentIndex - 1 + totalItems) % totalItems) {
-            item.classList.add('prev');
-            if (video) video.pause();
-        } else if (index === (currentIndex + 1) % totalItems) {
-            item.classList.add('next');
-            if (video) video.pause();
-        } else {
-            item.classList.add('hidden');
-            if (video) video.pause();
-        }
-    });
-}
-
-function nextSlide(carouselId) {
-    const carousel = carousels[carouselId];
-    carousel.currentIndex = (carousel.currentIndex + 1) % carousel.items.length;
-    updateCarousel(carouselId);
-}
-
-function prevSlide(carouselId) {
-    const carousel = carousels[carouselId];
-    carousel.currentIndex = (carousel.currentIndex - 1 + carousel.items.length) % carousel.items.length;
-    updateCarousel(carouselId);
-}
-
-function loadCarouselVideo(video) {
-    const sources = video.querySelectorAll('source');
-    
-    if (sources.length > 0) {
-        // Usar el primer source independientemente del tamaño de pantalla
-        video.src = sources[0].src;
-        video.load();
-    }
-}
-
-// Inicializar carruseles cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initCarousel('landing');
-        initCarousel('ecommerce');
-        setupCarouselTriggers();
-    });
-} else {
-    initCarousel('landing');
-    initCarousel('ecommerce');
-    setupCarouselTriggers();
-}
-
-// Configurar triggers de scroll para activar carousels
-function setupCarouselTriggers() {
-    // Activar carousel de Landing cuando entre en viewport
-    ScrollTrigger.create({
-        trigger: '#carousel-landing',
-        start: 'top 70%',
-        once: true,
-        onEnter: () => {
-            carousels.landing.activated = true;
-            updateCarousel('landing', true);
-        }
-    });
-    
-    // Activar carousel de Ecommerce cuando entre en viewport
-    ScrollTrigger.create({
-        trigger: '#carousel-ecommerce',
-        start: 'top 70%',
-        once: true,
-        onEnter: () => {
-            carousels.ecommerce.activated = true;
-            updateCarousel('ecommerce', true);
-        }
-    });
-}
 
 
 // ===========================
@@ -1141,5 +803,29 @@ if (contactFormElement) {
                 console.error('Error al enviar:', err);
                 alert('Hubo un error al enviar el mensaje. Por favor intenta nuevamente.');
             });
+    });
+}
+
+// ===========================
+// GSAP Animation for Portfolio
+// ===========================
+if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
+    
+    const portfolioItems = document.querySelectorAll('.portfolio-item');
+    
+    portfolioItems.forEach((item, index) => {
+        gsap.from(item, {
+            scrollTrigger: {
+                trigger: item,
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            },
+            y: 50,
+            opacity: 0,
+            duration: 0.8,
+            delay: 0.1, // Stagger logic handled by viewport entry usually, but fixed delay helps if side by side
+            ease: 'power3.out'
+        });
     });
 }
