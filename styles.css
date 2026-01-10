@@ -1730,6 +1730,12 @@ ul {
     letter-spacing: -1px;
 }
 
+.price-note {
+    font-size: 0.8rem;
+    color: var(--color-gray);
+    font-weight: 500;
+}
+
 .card-features {
     list-style: none;
     padding: 0;
