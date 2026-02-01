@@ -815,17 +815,20 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     const portfolioItems = document.querySelectorAll('.portfolio-item');
     
     portfolioItems.forEach((item, index) => {
+        // Alternar dirección: Pares desde izquierda (-200), Impares desde derecha (200)
+        const startX = index % 2 === 0 ? 1500 : -1500;
+        
         gsap.from(item, {
             scrollTrigger: {
                 trigger: item,
                 start: 'top 85%',
                 toggleActions: 'play none none reverse'
             },
-            y: 50,
+            x: startX,
             opacity: 0,
-            duration: 0.8,
-            delay: 0.1, // Stagger logic handled by viewport entry usually, but fixed delay helps if side by side
-            ease: 'power3.out'
+            duration: 1.2,
+            delay: 0.1, 
+            ease: 'power4.out'
         });
     });
 }
