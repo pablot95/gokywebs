@@ -3,12 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Goky - Creación de Páginas Web Minimalistas</title>
+    
+    <!-- SEO Meta Tags -->
+    <title>GokyWebs - Diseño de Páginas Web, Landing Pages y Tiendas Online</title>
+    <meta name="description" content="GokyWebs: Agencia de diseño y desarrollo web. Creamos Landing Pages, Tiendas Online (E-commerce), Sistemas de Gestión y Páginas Web Corporativas. Diseño minimalista y funcional en Argentina.">
+    <meta name="keywords" content="Gokywebs, diseño web, desarrollo web, paginas web, crear pagina web, landing page, tienda online, e-commerce, sistema de gestion, programador web, argentina, diseño ux ui, pagina web precio">
+    <meta name="author" content="GokyWebs">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2B5FA5">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="GokyWebs - Diseño Web Profesional y Tiendas Online">
+    <meta property="og:description" content="Transformamos tus ideas en webs increíbles. Landing Pages, E-commerce y Sistemas de Gestión.">
+    <meta property="og:image" content="logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="GokyWebs - Diseño Web Profesional">
+    <meta property="twitter:description" content="Expertos en diseño web, landing pages y tiendas online. Potenciá tu negocio hoy.">
+    <meta property="twitter:image" content="logo.png">
+
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="Favicon.png">
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    [
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "GokyWebs",
+        "image": "logo.png",
+        "description": "Agencia de diseño y desarrollo web especializada en landing pages, sitios corporativos y tiendas online.",
+        "url": "https://gokywebs.com",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "AR"
+        },
+        "telephone": "+541140688675"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "SiteNavigationElement",
+        "name": "Portafolio",
+        "url": "https://gokywebs.com/#portafolio"
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "SiteNavigationElement",
+        "name": "Precios",
+        "url": "https://gokywebs.com/#precios"
+      },
+      {
+         "@context": "https://schema.org",
+         "@type": "SiteNavigationElement",
+         "name": "Servicios",
+         "url": "https://gokywebs.com/#servicios"
+      }
+    ]
+    </script>
+    
     <!-- Particle.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <!-- GSAP para animaciones avanzadas -->
@@ -19,6 +78,15 @@
     <!-- EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-10808865418"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'AW-10808865418');
+</script>
 <body>
     <!-- Cursor personalizado -->
     <div class="custom-cursor">
@@ -55,18 +123,18 @@
             <div class="hero-content">
                 <div class="hero-text" data-aos="fade-right" data-aos-duration="1000">
                     <div class="glitch-wrapper">
-                        <h1 class="hero-title glitch" data-text="Diseñamos experiencias digitales">
-                            Diseños<br>
-                            excepcionales<br>
+                        <h1 class="hero-title glitch" data-text="Desarrollo Web Profesional">
+                            Creamos<br>
+                            tu próxima<br>
                             <span class="accent typing-effect"></span>
                         </h1>
                     </div>
                     <p class="hero-description" data-aos="fade-up" data-aos-delay="200">
-                        Transformamos tus ideas en páginas web minimalistas, modernas y funcionales que cautivan a tus usuarios.
+                        <strong>Agencia de Diseño Web:</strong> Si buscas una Web Corporativa, Tienda Online o Landing Page para tu negocio, estás en el lugar indicado. Diseño profesional al mejor precio.
                     </p>
 
                     <div class="hero-buttons" data-aos="fade-up" data-aos-delay="400">
-                        <a href="#propuesta" class="btn btn-primary magnetic">
+                        <a href="#precios" class="btn btn-primary magnetic">
                             <span>Comenzar proyecto</span>
                             <div class="btn-particles"></div>
                         </a>
@@ -424,9 +492,9 @@
         </div>
     </section>
 
-    <!-- Sección de Propuesta y Precios -->
-    <section class="proposal-section" id="propuesta">
-        <div class="container" id="precios">
+    <!-- Sección de Precios -->
+    <section class="proposal-section" id="precios">
+        <div class="container">
             <div class="section-header">
                 <span class="section-tag">Tu Proyecto</span>
                 <p class="section-description">
@@ -637,7 +705,7 @@
                     <div class="logo">
                         <img src="logo.png" alt="Goky.net Logo" class="logo-img">
                     </div>
-                    <p>Creando experiencias digitales excepcionales</p>
+                    <p>Agencia especializada en Diseño Web, E-commerce y Landing Pages.</p>
                 </div>
                 
                 <div class="footer-links">
@@ -652,12 +720,12 @@
                     </div>
                     
                     <div class="footer-column">
-                        <h4>Servicios</h4>
+                        <h4>Servicios Web</h4>
                         <ul>
                             <li><a href="#servicios">Diseño Web</a></li>
-                            <li><a href="#servicios">Desarrollo</a></li>
-                            <li><a href="#servicios">SEO</a></li>
-                            <li><a href="#servicios">Mantenimiento</a></li>
+                            <li><a href="#servicios">Tiendas Online</a></li>
+                            <li><a href="#servicios">Posicionamiento SEO</a></li>
+                            <li><a href="#servicios">Desarrollo Web</a></li>
                         </ul>
                     </div>
                     

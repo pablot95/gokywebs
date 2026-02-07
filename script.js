@@ -726,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Efecto de escritura en el hero
-    const words = ['experiencias digitales', 'sitios web modernos', 'interfaces increíbles'];
+    const words = ['Páginas Web', 'Tiendas Online', 'Landing Pages', 'Sistemas Web'];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
