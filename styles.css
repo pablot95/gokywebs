@@ -1041,6 +1041,8 @@ ul {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 2rem;
+    max-width: 1200px;
+    margin: 2rem auto 0 auto;
 }
 
 .service-card {
@@ -1337,11 +1339,15 @@ ul {
     overflow: hidden;
 }
 
+.proposal-section .container {
+    max-width: 95%; /* Increased from standard 1400px to fit 5 cards */
+}
+
 .proposal-content {
     display: flex;
     flex-direction: column;
     gap: 5rem;
-    max-width: 900px;
+    max-width: 100%; /* Increased from 900px */
     margin: 0 auto;
     position: relative;
     z-index: 2;
@@ -1354,6 +1360,9 @@ ul {
     border-radius: 24px;
     box-shadow: var(--shadow-lg);
     border: 1px solid rgba(43, 95, 165, 0.1);
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .proposal-form {
@@ -1566,9 +1575,16 @@ ul {
 
 /* Addons Section */
 .addons-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     margin-top: 4rem;
+    margin-bottom: 4rem;
     text-align: center;
-    padding: 0 1rem;
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
 }
 
 .addons-section h4 {
@@ -1586,23 +1602,27 @@ ul {
 }
 
 .addons-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    max-width: 1000px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem; /* Reduced gap slightly */
+    max-width: 100%;
     margin: 0 auto;
 }
 
 .addon-item {
     background: var(--color-white);
-    padding: 1.75rem;
-    border-radius: 20px;
+    padding: 1rem; /* Reduced padding */
+    border-radius: 16px; /* Slightly smaller radius */
     box-shadow: var(--shadow-sm);
     border: 1px solid rgba(43, 95, 165, 0.1);
     display: flex;
     flex-direction: column;
     align-items: center;
     transition: var(--transition);
+    flex: 0 1 210px; /* Reduced width to fit 6 items */
+    min-width: 200px;
+    width: 210px;
 }
 
 .addon-item:hover {
@@ -1613,20 +1633,31 @@ ul {
 
 .addon-name {
     font-weight: 700;
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem; /* Slightly reduced font size */
+    margin-bottom: 0.3rem;
     color: var(--color-blue-dark);
+    text-align: center;
 }
 
 .addon-desc {
     color: var(--color-gray-dark);
-    font-size: 0.95rem;
-    margin-bottom: 1rem;
-    line-height: 1.5;
+    font-size: 0.85rem; /* Slightly reduced font size */
+    margin-bottom: 0.75rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.required-note {
+    font-size: 0.75rem;
+    color: var(--color-purple);
+    font-weight: 600;
+    font-style: italic;
+    margin-top: 0.2rem;
+    display: block;
 }
 
 .addon-price {
-    font-size: 1.4rem;
+    font-size: 1.2rem; /* Adjusted price size */
     font-weight: 700;
     color: var(--color-purple);
     margin-top: auto;
