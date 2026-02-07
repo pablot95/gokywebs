@@ -1484,12 +1484,10 @@ ul {
 
 /* Pricing Cards */
 .pricing-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 3rem;
-    max-width: 1000px;
-    margin: 1rem auto 0 auto;
-    padding: 0 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    max-width: 1600px;
     z-index: 3;
 }
 
@@ -1503,6 +1501,9 @@ ul {
     position: relative;
     overflow: hidden;
     z-index: 3;
+    display: flex;
+    flex-direction: column;
+    min-width: 400px;
 }
 
 .pricing-card:hover {
@@ -1513,6 +1514,11 @@ ul {
 .pricing-card.featured {
     border: 2px solid var(--color-blue);
     background: linear-gradient(to bottom, var(--color-white), #f8fbff);
+    transform: scale(1.02); /* Slight scale for featured */
+}
+
+.pricing-card.featured:hover {
+    transform: scale(1.02) translateY(-15px);
 }
 
 .pricing-card.featured::before {
@@ -1527,6 +1533,7 @@ ul {
     font-size: 0.8rem;
     font-weight: 700;
     box-shadow: var(--shadow-sm);
+    z-index: 10;
 }
 
 .card-header {
@@ -1538,9 +1545,16 @@ ul {
 
 .card-header h3 {
     font-size: 1.5rem;
-    margin-bottom: 0.7rem;
+    margin-bottom: 0.5rem;
     color: var(--color-black);
     font-family: var(--font-display);
+}
+
+.price-subtitle {
+    font-size: 0.95rem;
+    color: var(--color-gray);
+    margin-top: 0.2rem;
+    font-weight: 500;
 }
 
 .price {
@@ -1549,6 +1563,75 @@ ul {
     color: var(--color-blue);
     letter-spacing: -1px;
 }
+
+/* Addons Section */
+.addons-section {
+    margin-top: 4rem;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.addons-section h4 {
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    color: var(--color-black);
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+.addons-note {
+    color: var(--color-gray-dark);
+    margin-bottom: 2.5rem;
+    font-size: 1.05rem;
+}
+
+.addons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.addon-item {
+    background: var(--color-white);
+    padding: 1.75rem;
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid rgba(43, 95, 165, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.addon-item:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-blue-light);
+}
+
+.addon-name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-blue-dark);
+}
+
+.addon-desc {
+    color: var(--color-gray-dark);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+.addon-price {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--color-purple);
+    margin-top: auto;
+}
+
 
 .price-note {
     font-size: 0.8rem;
@@ -2061,6 +2144,7 @@ ul {
     }
     
     .pricing-cards {
+        display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
     }
