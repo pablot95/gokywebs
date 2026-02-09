@@ -1301,30 +1301,6 @@ ul {
     border-radius: 50%;
 }
 
-/* Category Section */
-.portfolio-category-section {
-    margin-bottom: 3rem;
-    position: relative;
-    z-index: 2;
-}
-
-.portfolio-category-section:last-child {
-    margin-bottom: 0;
-}
-
-.category-title {
-    font-family: var(--font-display);
-    font-size: 2.5rem;
-    font-weight: 900;
-    text-align: center;
-    background: var(--color-gradient-1);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-    letter-spacing: 2px;
-}
-
 
 
 
@@ -1573,95 +1549,132 @@ ul {
     letter-spacing: -1px;
 }
 
-/* Addons Section */
+/* Addons Section - Redesigned */
 .addons-section {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     margin-top: 4rem;
-    margin-bottom: 4rem;
+    margin-bottom: 6rem;
     text-align: center;
-    max-width: 100%;
     width: 100%;
-    padding: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .addons-section h4 {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
-    color: var(--color-black);
+    font-size: 2.2rem;
+    margin-bottom: 3rem;
+    color: var(--color-blue-dark);
     font-family: var(--font-display);
     font-weight: 700;
+    position: relative;
+    display: inline-block;
 }
 
-.addons-note {
-    color: var(--color-gray-dark);
-    margin-bottom: 2.5rem;
-    font-size: 1.05rem;
+.addons-section h4::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 4px;
+    background: var(--color-gradient-1);
+    border-radius: 2px;
 }
 
-.addons-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.75rem; /* Reduced gap slightly */
-    max-width: 100%;
+.addons-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* 2 items por fila */
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 1000px;
+    padding: 0 1rem;
     margin: 0 auto;
 }
 
-.addon-item {
-    background: var(--color-white);
-    padding: 1rem; /* Reduced padding */
-    border-radius: 16px; /* Slightly smaller radius */
-    box-shadow: var(--shadow-sm);
-    border: 1px solid rgba(43, 95, 165, 0.1);
+.addon-row {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid #f0f0f0; /* Borde muy sutil */
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Mantener horizontal para aprovechar el ancho */
     align-items: center;
+    justify-content: space-between;
     transition: var(--transition);
-    flex: 0 1 210px; /* Reduced width to fit 6 items */
-    min-width: 200px;
-    width: 210px;
+    height: 100%;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
 
-.addon-item:hover {
-    transform: translateY(-5px);
+.addon-row:hover {
+    border-color: var(--color-blue);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-md);
-    border-color: var(--color-blue-light);
+}
+
+.addon-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.4rem;
+    padding-right: 1rem;
 }
 
 .addon-name {
     font-weight: 700;
-    font-size: 1.1rem; /* Slightly reduced font size */
-    margin-bottom: 0.3rem;
-    color: var(--color-blue-dark);
-    text-align: center;
+    font-size: 1.1rem;
+    color: var(--color-black);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.addon-icon-box {
+    /* Opcional: Simplificar el icono si es necesario, 
+       pero mantenerlo ayuda a distinguir */
+    width: auto; 
+    height: auto;
+    background: transparent;
+    font-size: 1.4rem;
 }
 
 .addon-desc {
     color: var(--color-gray-dark);
-    font-size: 0.85rem; /* Slightly reduced font size */
-    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
     line-height: 1.4;
-    text-align: center;
+}
+
+.addon-price {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--color-blue);
+    white-space: nowrap;
+    background: transparent; /* Remove background pill */
+    padding: 0; 
 }
 
 .required-note {
     font-size: 0.75rem;
     color: var(--color-purple);
     font-weight: 600;
-    font-style: italic;
-    margin-top: 0.2rem;
     display: block;
+    margin-top: 0.2rem;
 }
 
-.addon-price {
-    font-size: 1.2rem; /* Adjusted price size */
-    font-weight: 700;
-    color: var(--color-purple);
-    margin-top: auto;
+@media (max-width: 768px) {
+    .addons-list {
+        grid-template-columns: 1fr; /* 1 columna en móvil */
+    }
+
+    .addon-row {
+        padding: 1.2rem;
+    }
 }
+
 
 
 .price-note {
@@ -1969,22 +1982,24 @@ ul {
     
     .hero {
         padding-top: 170px;
-        min-height: 120vh;
+        min-height: 130vh;
         padding-bottom: 2rem;
-
+        height: auto;
     }
     
     .hero-title {
-        font-size: 2rem;
+        font-size: 2.5rem;
+        margin-top: 6rem;
     }
     
     .hero-description {
-        font-size: 1rem;
+        font-size: 1.5rem;
     }
     
     .hero-buttons {
         flex-direction: column;
         align-items: center;
+        margin: 0;
     }
     
     .btn {
@@ -2056,9 +2071,6 @@ ul {
 }
 
 @media (max-width: 480px) {
-    .hero-title {
-        font-size: 1.75rem;
-    }
     
     .section-title {
         font-size: 1.5rem;
@@ -2178,10 +2190,23 @@ ul {
         display: grid;
         grid-template-columns: 1fr;
         gap: 2rem;
+        padding: 0 0.1rem;
+        margin: 0;
+    }
+    .pricing-card {
+        min-width: 100%;
     }
     
     .proposal-form-container {
         padding: 1.5rem;
+    }
+    .addons-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(1, 1fr);
+    }
+    .addon-item {
+        width: 100%;
     }
 }
 
@@ -2210,6 +2235,7 @@ ul {
     text-decoration: none;
     overflow: hidden;
     isolation: isolate;
+    z-index: 5;
 }
 
 .portfolio-item:hover {
