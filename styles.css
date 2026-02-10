@@ -1564,7 +1564,7 @@ ul {
 }
 
 .addons-section h4 {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
     margin-bottom: 3rem;
     color: var(--color-blue-dark);
     font-family: var(--font-display);
@@ -1590,9 +1590,6 @@ ul {
     grid-template-columns: repeat(2, 1fr); /* 2 items por fila */
     gap: 1.5rem;
     width: 100%;
-    max-width: 1000px;
-    padding: 0 1rem;
-    margin: 0 auto;
 }
 
 .addon-row {
