@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- SEO Meta Tags -->
-     <!-- Google tag (gtag.js) event -->
 <script>
   gtag('event', 'first_open', {
     // <event_parameters>
@@ -18,14 +16,10 @@
     <meta name="author" content="GokyWebs">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#2B5FA5">
-
-    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="GokyWebs - Diseño Web Profesional y Tiendas Online">
     <meta property="og:description" content="Transformamos tus ideas en webs increíbles. Landing Pages, E-commerce y Sistemas de Gestión.">
     <meta property="og:image" content="logo.png">
-
-    <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:title" content="GokyWebs - Diseño Web Profesional">
     <meta property="twitter:description" content="Expertos en diseño web, landing pages y tiendas online. Potenciá tu negocio hoy.">
@@ -37,10 +31,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="Favicon.png">
     
-    <!-- JSON-LD Structured Data -->
+    
     <script type="application/ld+json">
     [
-      {
+    {
         "@context": "https://schema.org",
         "@type": "ProfessionalService",
         "name": "GokyWebs",
@@ -75,17 +69,12 @@
     ]
     </script>
     
-    <!-- Particle.js -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <!-- GSAP para animaciones avanzadas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <!-- Three.js para efectos 3D -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- EmailJS -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
-<!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-10808865418"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -95,15 +84,12 @@
   gtag('config', 'AW-10808865418');
 </script>
 <body>
-    <!-- Cursor personalizado -->
     <div class="custom-cursor">
         <div class="cursor-dot"></div>
         <div class="cursor-outline"></div>
     </div>
     
-    <!-- Particles Background -->
     <div id="particles-js"></div>
-    <!-- Navegación -->
     <nav class="navbar">
         <div class="container">
             <div class="nav-content">
@@ -111,9 +97,10 @@
                     <a href=""><img src="logo.png" alt="Goky.net Logo" class="logo-img"></a>
                 </div>
                 <ul class="nav-menu" id="navMenu">
-                    <li><a href="#contacto" class="nav-link">Contacto</a></li>
+                    <li><a href="#servicios" class="nav-link">Servicios</a></li>
                     <li><a href="#portafolio" class="nav-link">Portafolio</a></li>
                     <li><a href="#precios" class="nav-link">Precios</a></li>
+                    <li><a href="#contacto" class="nav-link">Contacto</a></li>
                 </ul>
                 <button class="menu-toggle" id="menuToggle">
                     <span></span>
@@ -124,7 +111,6 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
     <section id="inicio" class="hero">
         <div class="container">
             <div class="hero-content">
@@ -209,14 +195,13 @@
                 <div class="wheel"></div>
             </div>
         </div>
-        <!-- Formas decorativas flotantes -->
         <div class="floating-shapes">
             <div class="shape-blob shape-1"></div>
             <div class="shape-blob shape-2"></div>
             <div class="shape-blob shape-3"></div>
         </div>
     </section>
-        <!-- Portafolio -->
+
     <section id="portafolio" class="portfolio section-padding">
         <div class="container">
             <div class="section-header" data-aos="fade-up">
@@ -225,10 +210,8 @@
                 <p class="section-description">Una selección de experiencias digitales diseñadas para impactar.</p>
             </div>
 
-            <div class="portfolio-grid">
-                
-                <!-- Coco Catering -->
-                <a href="https://cococatering.com.ar" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="100">
+            <div class="portfolio-grid" id="portfolioGrid">
+                <a href="https://cococatering.com.ar" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/cocoweb.png" alt="Coco Catering Web">
@@ -245,8 +228,7 @@
                     </div>
                 </a>
 
-                <!-- Grupo HV -->
-                <a href="https://grupohv.com.ar" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="200">
+                <a href="https://grupohv.com.ar" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/logisticaweb.png" alt="Grupo HV Web">
@@ -263,8 +245,7 @@
                     </div>
                 </a>
 
-                <!-- Petit App -->
-                <a href="https://www.petit-app.com" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="300">
+                <a href="https://www.petit-app.com" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="200">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/petitweb.png" alt="Petit App Web">
@@ -281,26 +262,7 @@
                     </div>
                 </a>
 
-                <!-- Hostels Rosario -->
-                <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="400">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="images/hostelweb.png" alt="Hostels Rosario Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="images/hostelcelu.jpeg" alt="Hostels Rosario Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Hostels Rosario</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <!-- Esbelt -->
-                <a href="https://esbelt.com.ar" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="500">
+                <a href="https://esbelt.com.ar" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/esbeltweb.png" alt="Esbelt Web">
@@ -317,8 +279,40 @@
                     </div>
                 </a>
 
-                <!-- Italianos del Mundo -->
-                <a href="https://italianosdelmundo.com.ar" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="600">
+                <a href="https://shirtsn-co.vercel.app" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="0">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="images/shirtsweb.png" alt="Shirts & Co Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="images/shirtscelu.jpeg" alt="Shirts & Co Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Shirts & Co</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="100">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="images/hostelweb.png" alt="Hostels Rosario Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="images/hostelcelu.jpeg" alt="Hostels Rosario Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Hostels Rosario</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+                <a href="https://italianosdelmundo.com.ar" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/ciudadaniaweb.png" alt="Italianos del Mundo Web">
@@ -335,24 +329,7 @@
                     </div>
                 </a>
 
-                <!-- Shirts & Co -->
-                <a href="https://shirtsn-co.vercel.app" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="700">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="images/shirtsweb.png" alt="Shirts & Co Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="images/shirtscelu.jpeg" alt="Shirts & Co Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Shirts & Co</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-                <a href="https://agrimensurasatelital.com" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="700">
+                <a href="https://agrimensurasatelital.com" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/agrimensuraweb.png" alt="Agrimensura Satelital Web">
@@ -369,8 +346,7 @@
                     </div>
                 </a>
 
-                <!-- CS gestion pymes -->
-                <a href="https://www.csgestionpymes.com.ar" class="portfolio-item" data-aos="fade-right" data-aos-delay="800">
+                <a href="https://www.csgestionpymes.com.ar" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/gestionpymesweb.png" alt="CS gestion pymes Web">
@@ -382,13 +358,12 @@
                         </div>
                     </div>
                     <div class="portfolio-info">
-                        <h3>CS gestion pymes</h3>
+                        <h3>CS Gestión Pymes</h3>
                         <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
                     </div>
                 </a>
 
-                <!-- Zech -->
-                <a href="https://www.zechtatuajes.com.ar" class="portfolio-item" data-aos="fade-left" data-aos-delay="900">
+                <a href="https://www.zechtatuajes.com.ar" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/tatuajesweb.png" alt="Zech Web">
@@ -405,8 +380,7 @@
                     </div>
                 </a>
 
-                <!-- Aisam Centro de Salud -->
-                <a href="https://www.aisamsalud.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="1000">
+                <a href="https://www.aisamsalud.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/aisamcentrosalud.png" alt="Aisam Centro de Salud Web">
@@ -423,8 +397,7 @@
                     </div>
                 </a>
 
-                <!-- Gomez & Asociados -->
-                <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="1100">
+                <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/gomezasociadosweb.png" alt="Gomez & Asociados Web">
@@ -436,13 +409,12 @@
                         </div>
                     </div>
                     <div class="portfolio-info">
-                        <h3>Gomez & Asociados</h3>
+                        <h3>Gómez & Asociados</h3>
                         <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
                     </div>
                 </a>
 
-                <!-- Abogado MG -->
-                <a href="https://www.mgabogado.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="1200">
+                <a href="https://www.mgabogado.com.ar/" target="_blank" class="portfolio-item" data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/abogadomgweb.png" alt="Abogado MG Web">
@@ -459,8 +431,7 @@
                     </div>
                 </a>
 
-                <!-- Espacio Vicenzo -->
-                <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="portfolio-item" data-aos="fade-left" data-aos-delay="1300">
+                <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="100">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/vicenzoweb.png" alt="Espacio Vicenzo Web">
@@ -477,8 +448,7 @@
                     </div>
                 </a>
 
-                <!-- Psicóloga Luana -->
-                <a href="https://licenciadaluena.com.ar" target="_blank" class="portfolio-item" data-aos="fade-right" data-aos-delay="1400">
+                <a href="https://licenciadaluena.com.ar" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="0">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="images/psicologaluana.png" alt="Psicóloga Luana Web">
@@ -495,24 +465,74 @@
                     </div>
                 </a>
 
+                <a href="https://experienciaki.com.ar/" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="100">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="images/experienciakiweb.png" alt="Experiencia Ki Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="images/experienciakicelu.jpeg" alt="Experiencia Ki Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Experiencia Ki</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="0">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="images/maritimosweb.png" alt="Galeón Consultora Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="images/maritimocelu.jpeg" alt="Galeón Consultora Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Galeón Consultora</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://bastonspaulete.com/" target="_blank" class="portfolio-item " data-aos="fade-up" data-aos-delay="100">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="images/bastonspauleteweb.png" alt="Bastons Paulete Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="images/bastonspauletecelu.jpeg" alt="Bastons Paulete Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Bastons Paulete</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
             </div>
         </div>
     </section>
 
-    <!-- Sección de Precios -->
     <section class="proposal-section" id="precios">
         <div class="container">
             <div class="section-header">
-                <span class="section-tag">Tu Proyecto</span>
+                <span class="section-tag">Planes y Precios</span>
+                <h2 class="section-title">Elegí el plan ideal para tu negocio</h2>
                 <p class="section-description">
-                    Mandanos la información de tu proyecto <br>y nos estaremos comunicando con usted
+                    Todos los planes incluyen diseño personalizado, dominio propio y soporte post-lanzamiento.
                 </p>
             </div>
 
             <div class="proposal-content">
-                <!-- Precios -->
-                <div class="pricing-cards" >
-                    <!-- Plan Landing Page -->
+                
+                <div class="pricing-cards">
                     <div class="pricing-card">
                         <div class="card-header">
                             <h3>Landing Page</h3>
@@ -528,8 +548,7 @@
                         <a href="https://wa.me/541140688675?text=Hola,%20me%20interesa%20el%20plan%20Landing%20Page" target="_blank" class="btn-card-cta">Elegir Plan</a>
                     </div>
 
-                    <!-- Plan Web Corporativa -->
-                    <div class="pricing-card">
+                    <div class="pricing-card featured">
                         <div class="card-header">
                             <h3>Web Corporativa</h3>
                             <div class="price">$200.000</div>
@@ -544,7 +563,6 @@
                         <a href="https://wa.me/541140688675?text=Hola,%20me%20interesa%20el%20plan%20Web%20Corporativa" target="_blank" class="btn-card-cta">Elegir Plan</a>
                     </div>
 
-                    <!-- Plan Tienda -->
                     <div class="pricing-card">
                         <div class="card-header">
                             <h3>Tienda Full</h3>
@@ -561,12 +579,9 @@
                     </div>
                 </div>
 
-                <!-- Add-ons Section -->
                 <div class="addons-section">
-                    <h4>Agregados y Funcionalidades para <br> Landing page o Web corporativa</h4>
+                    <h4>Agregados y Funcionalidades Extra</h4>
                     <div class="addons-list">
-
-                        <!-- Gestión de Inventario -->
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -578,7 +593,6 @@
                             <span class="addon-price">+$50.000</span>
                         </div>
 
-                        <!-- Integración de Pagos -->
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -590,7 +604,6 @@
                             <span class="addon-price">+$50.000</span>
                         </div>
 
-                        <!-- Calendario -->
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -601,7 +614,7 @@
                             </div>
                             <span class="addon-price">+$40.000</span>
                         </div>
-                                                <!-- Botón de Traducción (Nuevo) -->
+
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -612,7 +625,7 @@
                             </div>
                             <span class="addon-price">+$30.000</span>
                         </div>
-                                                <!-- Creación de Usuarios -->
+
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -624,7 +637,6 @@
                             <span class="addon-price">+$50.000</span>
                         </div>
 
-                        <!-- Hosting -->
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -636,7 +648,6 @@
                             <span class="addon-price">$46.000 anual</span>
                         </div>
 
-                        <!-- Dominios -->
                         <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
@@ -648,8 +659,7 @@
                             <span class="addon-price">$8.500 anual</span>
                         </div>
 
-                         <!-- Email -->
-                         <div class="addon-row">
+                        <div class="addon-row">
                             <div class="addon-content">
                                 <span class="addon-name">
                                     <div class="addon-icon-box">📧</div>
@@ -660,41 +670,16 @@
                             <span class="addon-price">$17.000 anual</span>
                         </div>
 
-
                     </div>
-                    </div>
-                </div>
-
-                <!-- Formulario -->
-                <div class="proposal-form-container" id="contacto">
-                    <form class="proposal-form" id="contact-form">
-                        <div class="form-group">
-                            <label for="name">Nombre *</label>
-                            <input type="text" id="name" name="name" required placeholder="Tu nombre">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="phone">Número de contacto *</label>
-                            <input type="tel" id="phone" name="phone" required placeholder="+54 9 11...">
-                        </div>
-
-                        <div class="form-group full-width">
-                            <label for="message">Descripción *</label>
-                            <textarea id="message" name="message" required placeholder="Cuéntanos sobre tu proyecto..."></textarea>
-                        </div>
-
-                        <button type="submit" class="btn-primary full-width">Enviar Información</button>
-                    </form>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- Servicios -->
     <section id="servicios" class="services">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Lo que hacemos</span>
+                <h2 class="section-title">Nuestros Servicios</h2>
                 <p class="section-description">Soluciones web completas adaptadas a tus necesidades</p>
             </div>
             
@@ -786,7 +771,38 @@
         </div>
     </section>
 
-    <!-- Footer -->
+    <section class="contact-section" id="contacto">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Contacto</span>
+                <h2 class="section-title">¿Tenés un proyecto en mente?</h2>
+                <p class="section-description">
+                    Contanos tu idea y te contactamos para darle vida.
+                </p>
+            </div>
+            <div class="proposal-form-container">
+                <form class="proposal-form" id="contact-form">
+                    <div class="form-group">
+                        <label for="name">Nombre *</label>
+                        <input type="text" id="name" name="name" required placeholder="Tu nombre">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Número de contacto *</label>
+                        <input type="tel" id="phone" name="phone" required placeholder="+54 9 11...">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="message">Descripción *</label>
+                        <textarea id="message" name="message" required placeholder="Contanos sobre tu proyecto..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary full-width">Enviar Información</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
@@ -804,6 +820,7 @@
                             <li><a href="#inicio">Inicio</a></li>
                             <li><a href="#servicios">Servicios</a></li>
                             <li><a href="#portafolio">Portafolio</a></li>
+                            <li><a href="#precios">Precios</a></li>
                             <li><a href="#contacto">Contacto</a></li>
                         </ul>
                     </div>
@@ -834,12 +851,11 @@
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2025 Goky. Todos los derechos reservados.</p>
+                <p>&copy; 2026 GokyWebs. Todos los derechos reservados.</p>
             </div>
         </div>
     </footer>
 
-    <!-- Botón flotante de WhatsApp -->
     <a href="https://wa.me/541140688675" class="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
         <svg viewBox="0 0 24 24" fill="currentColor">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
@@ -850,3 +866,4 @@
     <script src="routing.js"></script>
 </body>
 </html>
+

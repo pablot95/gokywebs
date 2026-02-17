@@ -1,15 +1,9 @@
-// ===========================
-// Variables y Estado
-// ===========================
 const navbar = document.querySelector('.navbar');
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
 const contactForm = document.getElementById('contactForm');
 
-// ===========================
-// Configuración de Particles.js
-// ===========================
 if (typeof particlesJS !== 'undefined') {
     particlesJS('particles-js', {
         particles: {
@@ -96,15 +90,11 @@ if (typeof particlesJS !== 'undefined') {
     });
 }
 
-// ===========================
-// Navegación con scroll
-// ===========================
 let lastScroll = 0;
 
 window.addEventListener('scroll', () => {
     const currentScroll = window.pageYOffset;
     
-    // Añadir sombra al navbar cuando se hace scroll
     if (currentScroll > 50) {
         navbar.classList.add('scrolled');
     } else {
@@ -114,16 +104,12 @@ window.addEventListener('scroll', () => {
     lastScroll = currentScroll;
 });
 
-// ===========================
-// Menú móvil
-// ===========================
 menuToggle.addEventListener('click', () => {
     menuToggle.classList.toggle('active');
     navMenu.classList.toggle('active');
     document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : '';
 });
 
-// Cerrar menú al hacer clic en un enlace
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
         menuToggle.classList.remove('active');
@@ -132,24 +118,10 @@ navLinks.forEach(link => {
     });
 });
 
-// ===========================
-// Smooth Scroll para enlaces con Lenis
-// ===========================
-// Se inicializa dentro de DOMContentLoaded después de crear lenis
-
-// ===========================
-// Animación de entrada para elementos (usando AOS y GSAP)
-// ===========================
-// Las animaciones de service cards, portfolio y timeline se manejan con GSAP en DOMContentLoaded
-
-// ===========================
-// Animación del Browser Mockup
-// ===========================
 const browserMockup = document.querySelector('.browser-mockup');
 const codeSnippets = document.querySelectorAll('.code-snippet');
 
 if (browserMockup) {
-    // Efecto de hover en el mockup
     browserMockup.addEventListener('mouseenter', () => {
         browserMockup.style.transform = 'scale(1.02) translateY(-5px)';
         browserMockup.style.transition = 'all 0.3s ease';
@@ -159,16 +131,13 @@ if (browserMockup) {
         browserMockup.style.transform = 'scale(1) translateY(0)';
     });
 
-    // Efecto parallax suave con scroll
     window.addEventListener('scroll', () => {
         const scrolled = window.pageYOffset;
         const heroBottom = document.querySelector('.hero').offsetHeight;
         
         if (scrolled < heroBottom) {
-            // Mover el mockup suavemente
             browserMockup.style.transform = `translateY(${scrolled * 0.15}px)`;
             
-            // Mover los code snippets en direcciones diferentes
             codeSnippets.forEach((snippet, index) => {
                 const speed = (index + 1) * 0.3;
                 const direction = index % 2 === 0 ? 1 : -1;
@@ -179,7 +148,6 @@ if (browserMockup) {
     });
 }
 
-// Animar la URL del navegador
 const browserUrl = document.querySelector('.browser-url span');
 if (browserUrl) {
     const urls = ['tuproyecto.com', 'tunegocio.com', 'tuidea.com', 'tuempresa.com'];
@@ -196,12 +164,10 @@ if (browserUrl) {
     }, 4000);
 }
 
-// Efecto de "typing" en las líneas de texto del mockup
 const textLines = document.querySelectorAll('.text-line');
 textLines.forEach((line, index) => {
     line.style.transformOrigin = 'left';
     
-    // Animación inicial de crecimiento
     setTimeout(() => {
         line.style.animation = 'none';
         line.style.transform = 'scaleX(0)';
@@ -210,7 +176,6 @@ textLines.forEach((line, index) => {
             line.style.transition = 'transform 0.8s ease';
             line.style.transform = 'scaleX(1)';
             
-            // Después de la animación inicial, volver a la animación de loop
             setTimeout(() => {
                 line.style.transition = '';
                 line.style.animation = '';
@@ -219,14 +184,8 @@ textLines.forEach((line, index) => {
     }, 1000 + (index * 200));
 });
 
-// ===========================
-// Efecto parallax en hero
-// ===========================
 const heroVisual = document.querySelector('.hero-visual');
 
-// ===========================
-// Animación de contadores (opcional)
-// ===========================
 function animateValue(element, start, end, duration) {
     let startTimestamp = null;
     const step = (timestamp) => {
@@ -241,15 +200,9 @@ function animateValue(element, start, end, duration) {
     window.requestAnimationFrame(step);
 }
 
-// ===========================
-// Inicializar EmailJS
-// ===========================
-    emailjs.init("_WA82jXCJEH8sWNSq");
-    console.log('EmailJS inicializado correctamente');
+emailjs.init("_WA82jXCJEH8sWNSq");
+console.log('EmailJS inicializado correctamente');
 
-// ===========================
-// Formulario de contacto con EmailJS
-// ===========================
 if (contactForm) {
     contactForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -257,19 +210,15 @@ if (contactForm) {
         const submitBtn = contactForm.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
         
-        // Deshabilitar botón y cambiar texto
         submitBtn.disabled = true;
         submitBtn.textContent = 'Enviando...';
         
         console.log('Enviando formulario...');
         
-        // Enviar email usando EmailJS
         emailjs.sendForm('service_w15l48a', 'template_u110bgf', '#contactForm')
             .then(function(response) {
                 console.log('SUCCESS!', response.status, response.text);
-                // Mostrar mensaje de éxito
                 showNotification('¡Mensaje enviado con éxito! Te responderemos pronto.', 'success');
-                // Resetear formulario
                 contactForm.reset();
             }, function(error) {
                 console.log('FAILED...', error);
@@ -277,23 +226,17 @@ if (contactForm) {
                 showNotification('Hubo un error al enviar el mensaje. Intenta nuevamente.', 'error');
             })
             .finally(function() {
-                // Restaurar botón
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
             });
     });
 }
 
-// ===========================
-// Sistema de notificaciones
-// ===========================
 function showNotification(message, type = 'success') {
-    // Crear elemento de notificación
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.textContent = message;
     
-    // Estilos inline para la notificación con colores del logo
     notification.style.cssText = `
         position: fixed;
         top: 100px;
@@ -310,10 +253,8 @@ function showNotification(message, type = 'success') {
         backdrop-filter: blur(10px);
     `;
     
-    // Añadir al DOM
     document.body.appendChild(notification);
     
-    // Eliminar después de 4 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
@@ -322,7 +263,6 @@ function showNotification(message, type = 'success') {
     }, 4000);
 }
 
-// Añadir animaciones CSS para notificaciones
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -347,7 +287,6 @@ style.textContent = `
         }
     }
     
-    /* Estilos del cursor personalizado */
     .custom-cursor {
         position: fixed;
         pointer-events: none;
@@ -387,7 +326,6 @@ style.textContent = `
         border-color: #6B4C9A;
     }
     
-    /* Efecto de brillo en los botones */
     .btn-primary::after {
         content: '';
         position: absolute;
@@ -403,7 +341,6 @@ style.textContent = `
         left: 100%;
     }
     
-    /* Animación de las formas flotantes mejorada */
     @keyframes float {
         0%, 100% {
             transform: translateY(0px);
@@ -427,7 +364,6 @@ style.textContent = `
         animation-duration: 7s;
     }
     
-    /* Efecto de resplandor en hover de tarjetas */
     .service-card::after {
         content: '';
         position: absolute;
@@ -447,12 +383,10 @@ style.textContent = `
         height: 300px;
     }
     
-    /* Mejora de la animación del mockup */
     .browser-mockup {
         animation: float 4s ease-in-out infinite;
     }
     
-    /* Efecto de partículas en botones */
     @keyframes particleFloat {
         0% {
             transform: translateY(0) scale(1);
@@ -466,9 +400,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// ===========================
-// Efecto de cursor personalizado (opcional)
-// ===========================
 const cursor = document.createElement('div');
 cursor.className = 'custom-cursor';
 cursor.innerHTML = '<div class="cursor-dot"></div><div class="cursor-outline"></div>';
@@ -490,11 +421,9 @@ document.addEventListener('mousemove', (e) => {
 });
 
 function animateCursor() {
-    // Dot sigue el cursor directamente
     cursorX += (mouseX - cursorX) * 0.3;
     cursorY += (mouseY - cursorY) * 0.3;
     
-    // Outline sigue más lento para crear efecto de retraso
     outlineX += (mouseX - outlineX) * 0.15;
     outlineY += (mouseY - outlineY) * 0.15;
     
@@ -506,13 +435,11 @@ function animateCursor() {
     requestAnimationFrame(animateCursor);
 }
 
-// Activar cursor personalizado solo en desktop
 if (window.innerWidth > 768) {
     cursor.style.display = 'block';
     animateCursor();
 }
 
-// Expandir cursor en hover sobre elementos interactivos
 const interactiveElements = document.querySelectorAll('a, button, .portfolio-item, .service-card, .timeline-item');
 interactiveElements.forEach(el => {
     el.addEventListener('mouseenter', () => {
@@ -524,15 +451,11 @@ interactiveElements.forEach(el => {
     });
 });
 
-// ===========================
-// Gestión de Videos del Portafolio
-// ===========================
 function loadPortfolioVideos() {
     const videos = document.querySelectorAll('.portfolio-video');
     const isMobile = window.innerWidth <= 768;
     
     videos.forEach(video => {
-        // Obtener el video correcto según el dispositivo
         const webSource = video.querySelector('source[media]');
         const mobileSource = video.querySelectorAll('source')[1];
         
@@ -547,10 +470,8 @@ function loadPortfolioVideos() {
     });
 }
 
-// Cargar videos al inicio
 window.addEventListener('load', loadPortfolioVideos);
 
-// Recargar videos al cambiar tamaño de ventana
 let resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
@@ -559,7 +480,6 @@ window.addEventListener('resize', () => {
     }, 250);
 });
 
-// Intersection Observer para reproducir videos solo cuando son visibles
 const videoObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         const video = entry.target;
@@ -573,14 +493,10 @@ const videoObserver = new IntersectionObserver((entries) => {
     threshold: 0.5
 });
 
-// Observar todos los videos
 document.querySelectorAll('.portfolio-video').forEach(video => {
     videoObserver.observe(video);
 });
 
-// ===========================
-// Efecto magnético en elementos
-// ===========================
 const magneticElements = document.querySelectorAll('.magnetic');
 
 magneticElements.forEach(element => {
@@ -600,9 +516,6 @@ magneticElements.forEach(element => {
     });
 });
 
-// ===========================
-// Performance: Lazy loading para imágenes
-// ===========================
 if ('IntersectionObserver' in window) {
     const imageObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
@@ -621,16 +534,11 @@ if ('IntersectionObserver' in window) {
     lazyImages.forEach(img => imageObserver.observe(img));
 }
 
-// ===========================
-// Inicialización con GSAP
-// ===========================
 document.addEventListener('DOMContentLoaded', () => {
     console.log('🎨 Goky.net - Iniciando...');
     
-    // Añadir clase loaded
     document.body.classList.add('loaded');
     
-    // Smooth scroll para todos los enlaces con hash
     document.querySelectorAll('a[href^="#"]').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
@@ -646,11 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // GSAP
     gsap.registerPlugin(ScrollTrigger);
     console.log('✅ GSAP OK');
     
-    // Animaciones hero
     gsap.from('.hero-title', {
         opacity: 0,
         y: 60,
@@ -674,7 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ease: 'power3.out'
     });
     
-    // Service cards
     gsap.utils.toArray('.service-card').forEach((card, i) => {
         gsap.from(card, {
             scrollTrigger: {
@@ -689,7 +594,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Timeline items
     gsap.utils.toArray('.timeline-item').forEach((item, i) => {
         const direction = i % 2 === 0 ? -80 : 80;
         gsap.from(item, {
@@ -705,7 +609,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Contact form
     gsap.from('.contact-form', {
         scrollTrigger: {
             trigger: '.contact-form',
@@ -725,7 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
         timeline: document.querySelectorAll('.timeline-item').length
     });
     
-    // Efecto de escritura en el hero
     const words = ['Página Web', 'Tienda Online', 'Landing Pages'];
     let wordIndex = 0;
     let charIndex = 0;
@@ -762,15 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
-
-
-
-// ===========================
-// EmailJS Configuration
-// ===========================
 (function() {
-    // Inicializar EmailJS
     emailjs.init("_WA82jXCJEH8sWNSq");
 })();
 
@@ -784,7 +678,6 @@ if (contactFormElement) {
         btn.innerText = 'Enviando...';
         btn.disabled = true;
 
-        // Credenciales de EmailJS
         const serviceID = 'service_lc45de1';
         const templateID = 'template_z91e8x9';
 
@@ -806,17 +699,22 @@ if (contactFormElement) {
     });
 }
 
-// ===========================
-// GSAP Animation for Portfolio
-// ===========================
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     gsap.registerPlugin(ScrollTrigger);
     
-    const portfolioItems = document.querySelectorAll('.portfolio-item');
+    const portfolioItems = document.querySelectorAll('.portfolio-item:not(.portfolio-hidden)');
     
     portfolioItems.forEach((item, index) => {
-        // Alternar dirección: Pares desde izquierda (-200), Impares desde derecha (200)
-        const startX = index % 2 === 0 ? 1500 : -1500;
+        const column = index % 3;
+        let animationProps = { opacity: 0, duration: 1.2, delay: 0.1, ease: 'power4.out' };
+        
+        if (column === 0) {
+            animationProps.x = -1500;
+        } else if (column === 1) {
+            animationProps.y = 100;
+        } else {
+            animationProps.x = 1500;
+        }
         
         gsap.from(item, {
             scrollTrigger: {
@@ -824,11 +722,35 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
                 start: 'top 85%',
                 toggleActions: 'play none none reverse'
             },
-            x: startX,
-            opacity: 0,
-            duration: 1.2,
-            delay: 0.1, 
-            ease: 'power4.out'
+            ...animationProps
         });
     });
+}
+
+function togglePortfolio() {
+    const grid = document.getElementById('portfolioGrid');
+    const btn = document.getElementById('portfolioToggle');
+    const isExpanded = grid.classList.contains('show-all');
+    
+    if (isExpanded) {
+        grid.classList.remove('show-all');
+        btn.querySelector('span').textContent = 'Ver más proyectos';
+        document.getElementById('portafolio').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        grid.classList.add('show-all');
+        btn.querySelector('span').textContent = 'Ver menos';
+        
+        if (typeof gsap !== 'undefined') {
+            const hiddenItems = document.querySelectorAll('.portfolio-hidden');
+            hiddenItems.forEach((item, index) => {
+                gsap.from(item, {
+                    y: 60,
+                    opacity: 0,
+                    duration: 0.6,
+                    delay: index * 0.1,
+                    ease: 'power3.out'
+                });
+            });
+        }
+    }
 }

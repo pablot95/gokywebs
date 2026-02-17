@@ -1,8 +1,4 @@
-/* ===========================
-   Variables y Reset
-   =========================== */
 :root {
-    /* Colores principales del logo */
     --color-blue: #2B5FA5;
     --color-blue-light: #3A7DD1;
     --color-blue-dark: #1E4478;
@@ -12,8 +8,6 @@
     --color-gray: #A8A8A8;
     --color-gray-light: #E5E5E5;
     --color-gray-dark: #4A4A4A;
-    
-    /* Colores complementarios */
     --color-white: #FFFFFF;
     --color-black: #1A1A1A;
     --color-beige: #F5F1E8;
@@ -22,10 +16,8 @@
     --color-gradient-2: linear-gradient(135deg, #3A7DD1 0%, #8B6FBC 100%);
     --color-gradient-3: linear-gradient(135deg, #1E4478 0%, #4A3368 100%);
     --color-gradient-mesh: linear-gradient(120deg, #2B5FA5 0%, #6B4C9A 50%, #8B6FBC 100%);
-    
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-display: 'Space Grotesk', var(--font-primary);
-    
     --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     --shadow-sm: 0 2px 12px rgba(43, 95, 165, 0.06);
@@ -33,8 +25,6 @@
     --shadow-lg: 0 16px 48px rgba(43, 95, 165, 0.15);
     --shadow-xl: 0 24px 64px rgba(43, 95, 165, 0.2);
     --shadow-purple: 0 12px 48px rgba(107, 76, 154, 0.25);
-    
-    /* Glassmorphism */
     --glass-bg: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
     --backdrop-blur: blur(20px) saturate(180%);
@@ -84,9 +74,6 @@ ul {
     list-style: none;
 }
 
-/* ===========================
-   Cursor Personalizado
-   =========================== */
 .custom-cursor {
     display: none;
     position: fixed;
@@ -125,9 +112,6 @@ ul {
     height: 50px;
 }
 
-/* ===========================
-   Particles Background
-   =========================== */
 #particles-js {
     position: fixed;
     width: 100%;
@@ -139,13 +123,10 @@ ul {
     pointer-events: none;
 }
 
-/* ===========================
-   Utilidades
-   =========================== */
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 0;
+    padding: 0 2rem;
 }
 
 .section-tag {
@@ -165,12 +146,8 @@ ul {
 }
 
 @keyframes gradient-shift {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
 }
 
 .section-tag::before {
@@ -186,14 +163,8 @@ ul {
 }
 
 @keyframes tag-line {
-    0%, 100% {
-        width: 80px;
-        opacity: 1;
-    }
-    50% {
-        width: 100px;
-        opacity: 0.7;
-    }
+    0%, 100% { width: 80px; opacity: 1; }
+    50% { width: 100px; opacity: 0.7; }
 }
 
 .section-header {
@@ -217,9 +188,6 @@ ul {
     margin-top: 20px;
 }
 
-/* ===========================
-   Botones
-   =========================== */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -329,14 +297,10 @@ ul {
     width: 100%;
 }
 
-/* Efecto magnético en elementos */
 .magnetic {
     transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* ===========================
-   Navegación
-   =========================== */
 .navbar {
     position: fixed;
     top: 0;
@@ -374,8 +338,6 @@ ul {
     padding: 0.7rem 0;
 }
 
-
-
 .logo-img {
     height: 24px;
     width: auto;
@@ -383,7 +345,6 @@ ul {
     transition: var(--transition);
     cursor: pointer;
 }
-
 
 .nav-menu {
     display: flex;
@@ -436,9 +397,6 @@ ul {
     transition: var(--transition);
 }
 
-/* ===========================
-   Hero Section
-   =========================== */
 .hero {
     max-height: 100vh;
     display: flex;
@@ -477,15 +435,9 @@ ul {
 }
 
 @keyframes float-hero {
-    0%, 100% {
-        transform: translate(0, 0) scale(1);
-    }
-    33% {
-        transform: translate(30px, -30px) scale(1.1);
-    }
-    66% {
-        transform: translate(-30px, 30px) scale(0.9);
-    }
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -30px) scale(1.1); }
+    66% { transform: translate(-30px, 30px) scale(0.9); }
 }
 
 .hero-content {
@@ -521,24 +473,17 @@ ul {
 }
 
 @keyframes gradientShift {
-    0%, 100% {
-        filter: hue-rotate(0deg);
-    }
-    50% {
-        filter: hue-rotate(10deg);
-    }
+    0%, 100% { filter: hue-rotate(0deg); }
+    50% { filter: hue-rotate(10deg); }
 }
 
-/* Efecto de typing en el hero */
 .typing-effect {
     border-right: 3px solid var(--color-blue);
     animation: blink 0.7s step-end infinite;
 }
 
 @keyframes blink {
-    50% {
-        border-color: transparent;
-    }
+    50% { border-color: transparent; }
 }
 
 .hero-description {
@@ -548,14 +493,12 @@ ul {
     line-height: 1.5;
 }
 
-
 .hero-buttons {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
 }
 
-/* Formas decorativas flotantes */
 .floating-shapes {
     position: absolute;
     width: 100%;
@@ -602,15 +545,9 @@ ul {
 }
 
 @keyframes blobFloat {
-    0%, 100% {
-        transform: translate(0, 0) scale(1);
-    }
-    33% {
-        transform: translate(50px, -50px) scale(1.1);
-    }
-    66% {
-        transform: translate(-50px, 50px) scale(0.9);
-    }
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(50px, -50px) scale(1.1); }
+    66% { transform: translate(-50px, 50px) scale(0.9); }
 }
 
 .hero-visual {
@@ -622,7 +559,6 @@ ul {
     z-index: 3;
 }
 
-/* Browser Mockup */
 .browser-mockup {
     position: relative;
     width: 100%;
@@ -637,14 +573,8 @@ ul {
 }
 
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .browser-header {
@@ -667,17 +597,9 @@ ul {
     border-radius: 50%;
 }
 
-.dot-red {
-    background-color: #FF5F56;
-}
-
-.dot-yellow {
-    background-color: #FFBD2E;
-}
-
-.dot-green {
-    background-color: #27C93F;
-}
+.dot-red { background-color: #FF5F56; }
+.dot-yellow { background-color: #FFBD2E; }
+.dot-green { background-color: #27C93F; }
 
 .browser-url {
     flex: 1;
@@ -703,7 +625,6 @@ ul {
     min-height: 350px;
 }
 
-/* Mockup Navigation */
 .mockup-nav {
     display: flex;
     justify-content: space-between;
@@ -713,14 +634,8 @@ ul {
 }
 
 @keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .mockup-logo {
@@ -761,15 +676,10 @@ ul {
 }
 
 @keyframes menuExpand {
-    0%, 100% {
-        transform: scaleX(1);
-    }
-    50% {
-        transform: scaleX(1.2);
-    }
+    0%, 100% { transform: scaleX(1); }
+    50% { transform: scaleX(1.2); }
 }
 
-/* Mockup Hero Section */
 .mockup-hero {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -779,14 +689,8 @@ ul {
 }
 
 @keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
 }
 
 .mockup-text {
@@ -818,14 +722,8 @@ ul {
 }
 
 @keyframes lineGrow {
-    0%, 100% {
-        transform: scaleX(1);
-        opacity: 0.6;
-    }
-    50% {
-        transform: scaleX(0.95);
-        opacity: 1;
-    }
+    0%, 100% { transform: scaleX(1); opacity: 0.6; }
+    50% { transform: scaleX(0.95); opacity: 1; }
 }
 
 .mockup-image {
@@ -840,12 +738,8 @@ ul {
 }
 
 @keyframes imagePulse {
-    0%, 100% {
-        opacity: 0.8;
-    }
-    50% {
-        opacity: 1;
-    }
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
 }
 
 .mockup-image::before {
@@ -855,25 +749,15 @@ ul {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.3) 50%,
-        transparent 70%
-    );
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
     animation: shimmer 3s ease infinite;
 }
 
 @keyframes shimmer {
-    0% {
-        transform: translateX(-100%) translateY(-100%);
-    }
-    100% {
-        transform: translateX(100%) translateY(100%);
-    }
+    0% { transform: translateX(-100%) translateY(-100%); }
+    100% { transform: translateX(100%) translateY(100%); }
 }
 
-/* Mockup Cards */
 .mockup-cards {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -882,14 +766,8 @@ ul {
 }
 
 @keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .mockup-card {
@@ -915,15 +793,10 @@ ul {
 }
 
 @keyframes cardFloat {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-8px);
-    }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
 }
 
-/* Code Snippets flotantes */
 .code-snippets {
     position: absolute;
     top: 0;
@@ -967,22 +840,10 @@ ul {
 }
 
 @keyframes codeFloat {
-    0%, 100% {
-        transform: translateY(0px) rotate(0deg);
-        opacity: 0.7;
-    }
-    25% {
-        transform: translateY(-20px) rotate(5deg);
-        opacity: 1;
-    }
-    50% {
-        transform: translateY(-10px) rotate(-3deg);
-        opacity: 0.8;
-    }
-    75% {
-        transform: translateY(-30px) rotate(3deg);
-        opacity: 0.9;
-    }
+    0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+    25% { transform: translateY(-20px) rotate(5deg); opacity: 1; }
+    50% { transform: translateY(-10px) rotate(-3deg); opacity: 0.8; }
+    75% { transform: translateY(-30px) rotate(3deg); opacity: 0.9; }
 }
 
 .code-tag {
@@ -1018,19 +879,10 @@ ul {
 }
 
 @keyframes scroll {
-    0%, 100% {
-        opacity: 0;
-        transform: translateX(-50%) translateY(0);
-    }
-    50% {
-        opacity: 1;
-        transform: translateX(-50%) translateY(10px);
-    }
+    0%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 1; transform: translateX(-50%) translateY(10px); }
 }
 
-/* ===========================
-   Servicios
-   =========================== */
 .services {
     padding: 2rem 0;
     background-color: var(--color-white);
@@ -1093,7 +945,6 @@ ul {
 .service-card:hover .service-number {
     background: var(--color-gradient-2);
     background-clip: text;
-    transform: scale(1.2);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     transform: scale(1.2);
@@ -1168,9 +1019,6 @@ ul {
     transform: scaleX(1);
 }
 
-/* ===========================
-   Sección de Proceso
-   =========================== */
 .process-section {
     padding: 8rem 0;
     background-color: var(--color-white);
@@ -1269,9 +1117,6 @@ ul {
     line-height: 1.7;
 }
 
-/* ===========================
-   Portafolio - Carousel Calesita
-   =========================== */
 .portfolio {
     padding: 3rem 0;
     background: linear-gradient(180deg, var(--color-white) 0%, #F5F1E8 50%, #E8EFF8 100%);
@@ -1301,35 +1146,27 @@ ul {
     border-radius: 50%;
 }
 
-
-
-
-
-/* ===========================
-   Sección de Propuesta
-   =========================== */
 .proposal-section {
     padding: 4rem 0;
-    background-color: linear-gradient(0deg, var(--color-white) 0%, #F5F1E8 50%, #E8EFF8 100%);
+    background: linear-gradient(0deg, var(--color-white) 0%, #F5F1E8 50%, #E8EFF8 100%);
     position: relative;
     overflow: hidden;
 }
 
 .proposal-section .container {
-    max-width: 95%; /* Increased from standard 1400px to fit 5 cards */
+    max-width: 95%;
 }
 
 .proposal-content {
     display: flex;
     flex-direction: column;
     gap: 5rem;
-    max-width: 100%; /* Increased from 900px */
+    max-width: 100%;
     margin: 0 auto;
     position: relative;
     z-index: 2;
 }
 
-/* Formulario */
 .proposal-form-container {
     background: var(--color-white);
     padding: 3rem;
@@ -1355,7 +1192,6 @@ ul {
     grid-column: 1 / -1;
 }
 
-/* Fallback para navegadores que no soportan :has */
 .form-group.full-width {
     grid-column: 1 / -1;
 }
@@ -1403,7 +1239,7 @@ ul {
     font-size: 1.3rem;
     transition: var(--transition);
     color: var(--color-gray-dark);
-    display: block; /* Asegurar que se comporte como bloque */
+    display: block;
 }
 
 .type-options input:checked + .type-option {
@@ -1459,15 +1295,6 @@ ul {
     color: var(--color-gray);
 }
 
-.btn-primary.full-width {
-    width: 100%;
-    margin-top: 1.5rem;
-    padding: 1.25rem;
-    font-size: 1.1rem;
-    border-radius: 24px;
-}
-
-/* Pricing Cards */
 .pricing-cards {
     display: flex;
     justify-content: center;
@@ -1478,7 +1305,7 @@ ul {
 
 .pricing-card {
     background: var(--color-white);
-    padding: 1.5rem 2rem;
+    padding: 2rem 2rem;
     border-radius: 24px;
     box-shadow: var(--shadow-lg);
     transition: var(--transition);
@@ -1488,7 +1315,8 @@ ul {
     z-index: 3;
     display: flex;
     flex-direction: column;
-    min-width: 400px;
+    flex: 1;
+    min-width: 0;
 }
 
 .pricing-card:hover {
@@ -1499,7 +1327,7 @@ ul {
 .pricing-card.featured {
     border: 2px solid var(--color-blue);
     background: linear-gradient(to bottom, var(--color-white), #f8fbff);
-    transform: scale(1.02); /* Slight scale for featured */
+    transform: scale(1.02);
 }
 
 .pricing-card.featured:hover {
@@ -1549,7 +1377,6 @@ ul {
     letter-spacing: -1px;
 }
 
-/* Addons Section - Redesigned */
 .addons-section {
     display: flex;
     flex-direction: column;
@@ -1587,7 +1414,7 @@ ul {
 
 .addons-list {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 items por fila */
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
     width: 100%;
 }
@@ -1596,9 +1423,9 @@ ul {
     background: #fff;
     padding: 1.5rem;
     border-radius: 12px;
-    border: 1px solid #f0f0f0; /* Borde muy sutil */
+    border: 1px solid #f0f0f0;
     display: flex;
-    flex-direction: row; /* Mantener horizontal para aprovechar el ancho */
+    flex-direction: row;
     align-items: center;
     justify-content: space-between;
     transition: var(--transition);
@@ -1631,8 +1458,6 @@ ul {
 }
 
 .addon-icon-box {
-    /* Opcional: Simplificar el icono si es necesario, 
-       pero mantenerlo ayuda a distinguir */
     width: auto; 
     height: auto;
     background: transparent;
@@ -1650,7 +1475,7 @@ ul {
     font-size: 1.1rem;
     color: var(--color-blue);
     white-space: nowrap;
-    background: transparent; /* Remove background pill */
+    background: transparent;
     padding: 0; 
 }
 
@@ -1661,18 +1486,6 @@ ul {
     display: block;
     margin-top: 0.2rem;
 }
-
-@media (max-width: 768px) {
-    .addons-list {
-        grid-template-columns: 1fr; /* 1 columna en móvil */
-    }
-
-    .addon-row {
-        padding: 1.2rem;
-    }
-}
-
-
 
 .price-note {
     font-size: 0.8rem;
@@ -1724,11 +1537,6 @@ ul {
     background: var(--color-gradient-2);
 }
 
-
-
-/* ===========================
-   Footer
-   =========================== */
 .footer {
     background-color: var(--color-white);
     color: var(--color-black);
@@ -1816,9 +1624,6 @@ ul {
     font-size: 0.875rem;
 }
 
-/* ===========================
-   Botón Flotante de WhatsApp
-   =========================== */
 .whatsapp-float {
     position: fixed;
     width: 64px;
@@ -1855,17 +1660,10 @@ ul {
 }
 
 @keyframes pulse-whatsapp {
-    0%, 100% {
-        box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
-    }
-    50% {
-        box-shadow: 0 8px 32px rgba(37, 211, 102, 0.5), 0 0 0 12px rgba(37, 211, 102, 0.1), 0 0 0 24px rgba(37, 211, 102, 0.05);
-    }
+    0%, 100% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35); }
+    50% { box-shadow: 0 8px 32px rgba(37, 211, 102, 0.5), 0 0 0 12px rgba(37, 211, 102, 0.1), 0 0 0 24px rgba(37, 211, 102, 0.05); }
 }
 
-/* ===========================
-   Responsive Design
-   =========================== */
 @media (max-width: 968px) {
     .hero-content,
     .contact-content,
@@ -1899,7 +1697,6 @@ ul {
         grid-template-columns: repeat(2, 1fr);
     }
     
-    /* Carousel responsive */
     .category-title {
         font-size: 2rem;
     }
@@ -2026,7 +1823,6 @@ ul {
         grid-template-columns: 1fr;
     }
     
-    /* Carousel mobile */
     .category-title {
         font-size: 1.5rem;
         margin-bottom: 0.1rem;
@@ -2065,14 +1861,57 @@ ul {
         width: 20px;
         height: 20px;
     }
+    
+    .proposal-form {
+        grid-template-columns: 1fr;
+    }
+
+    .type-options {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .pricing-cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        padding: 0 0.1rem;
+        margin: 0;
+    }
+    
+    .pricing-card {
+        min-width: 100%;
+    }
+    
+    .proposal-form-container {
+        padding: 1.5rem;
+    }
+    
+    .addons-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(1, 1fr);
+    }
+    
+    .addon-item {
+        width: 100%;
+    }
+    
+    .addons-list {
+        grid-template-columns: 1fr;
+    }
+
+    .addon-row {
+        padding: 1.2rem;
+    }
 }
 
 @media (max-width: 480px) {
-    
     .section-title {
         font-size: 1.5rem;
     }
-    .browser-mockup{
+    
+    .browser-mockup {
         height: 350px;
     }
     
@@ -2081,7 +1920,6 @@ ul {
         padding: 1.5rem;
     }
     
-    /* Carousel pequeño */
     .category-title {
         font-size: 1.25rem;
     }
@@ -2133,27 +1971,8 @@ ul {
     .carousel-btn-next {
         right: -10px;
     }
-    .uno{
-        position: sticky;
-        top: 20vh;
-    }
-    .dos{
-        position: sticky;
-        top: 20vh;
-    }
-    .tres{
-        position: sticky;
-        top: 20vh;
-    }
-    .cuatro{
-        position: sticky;
-        top: 20vh;
-    }
-    .cinco{
-        position: sticky;
-        top: 20vh;
-    }
-    .seis{
+    
+    .uno, .dos, .tres, .cuatro, .cinco, .seis {
         position: sticky;
         top: 20vh;
     }
@@ -2171,45 +1990,6 @@ ul {
     }
 }
 
-
-
-@media (max-width: 768px) {
-    .proposal-form {
-        grid-template-columns: 1fr;
-    }
-
-    .type-options {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .pricing-cards {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 2rem;
-        padding: 0 0.1rem;
-        margin: 0;
-    }
-    .pricing-card {
-        min-width: 100%;
-    }
-    
-    .proposal-form-container {
-        padding: 1.5rem;
-    }
-    .addons-grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(1, 1fr);
-    }
-    .addon-item {
-        width: 100%;
-    }
-}
-
-/* ===========================
-   New Portfolio Grid Styles
-   =========================== */
 .portfolio.section-padding {
     padding: 4rem 0;
     position: relative;
@@ -2217,9 +1997,9 @@ ul {
 
 .portfolio-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 3rem;
-    margin-top: 4rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
 .portfolio-item {
@@ -2243,7 +2023,7 @@ ul {
 .portfolio-visuals {
     position: relative;
     width: 100%;
-    padding-top: 55%; /* Aspect ratio más panorámico para mantener altura visual */
+    padding-top: 55%;
     overflow: hidden;
     background: #f0f0f0;
 }
@@ -2264,12 +2044,11 @@ ul {
     object-position: top center;
 }
 
-/* Mobile Showcase Effect */
 .visual-mobile {
     position: absolute;
     bottom: -100%; 
     right: 25px;
-    width: 25%; /* Responsive width relative to card */
+    width: 25%;
     max-width: 150px;
     z-index: 10;
     transition: bottom 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2315,7 +2094,7 @@ ul {
 }
 
 .portfolio-info {
-    padding: 1.5rem 2rem;
+    padding: 0.5rem 2rem;
     background: white;
     border-top: 1px solid rgba(0,0,0,0.05);
     display: flex;
@@ -2324,7 +2103,7 @@ ul {
 }
 
 .portfolio-info h3 {
-    font-size: 1.25rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--color-black, #000);
     margin: 0;
@@ -2357,13 +2136,15 @@ ul {
 
 @media (max-width: 768px) {
     .portfolio-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
         margin-top: 2rem;
+        width: 100%;
+        padding: 0;
     }
     
     .visual-mobile {
-        bottom: 15px; /* Visible on mobile */
+        bottom: 15px;
         width: 20%;
         max-width: 80px;
     }
@@ -2371,10 +2152,48 @@ ul {
     .portfolio-item:hover {
         transform: translateY(-5px);
     }
-    .portfolio-info{
-        padding: 1rem;
+    
+    .portfolio-info {
+        padding: 0.3rem 1rem;
     }
-    .portfolio-info h3{
-        font-size: 1rem;
+    
+    .portfolio-info h3 {
+        font-size: 0.5rem;
     }
+    
+    .view-project {
+        font-size: 0.5rem;
+    }
+}
+
+.portfolio-hidden {
+    display: none;
+}
+
+.portfolio-grid.show-all .portfolio-hidden {
+    display: block;
+}
+
+.portfolio-toggle-container {
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.portfolio-toggle-btn {
+    min-width: 220px;
+}
+
+.contact-section {
+    padding: 5rem 0;
+    background: linear-gradient(180deg, #E8EFF8 0%, var(--color-white) 100%);
+    position: relative;
+}
+
+.contact-section .proposal-form-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.contact-section .section-header {
+    margin-bottom: 3rem;
 }
