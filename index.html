@@ -94,7 +94,7 @@
         <div class="container">
             <div class="nav-content">
                 <div class="logo">
-                    <a href=""><img src="logo.png" alt="Goky.net Logo" class="logo-img"></a>
+                    <a href=""><img src="LogoGokySinFondo.png" alt="Goky.net Logo" class="logo-img"></a>
                 </div>
                 <ul class="nav-menu" id="navMenu">
                     <li><a href="#servicios" class="nav-link">Servicios</a></li>
@@ -202,10 +202,9 @@
         </div>
     </section>
 
-    <section id="portafolio" class="portfolio section-padding">
-        <div class="container">
+    <section id="portafolio" class="portfolio">
+        <div class="container portfolio-container">
             <div class="section-header" data-aos="fade-up">
-                <span class="section-tag">Nuestros trabajos</span>
                 <h2 class="section-title">Proyectos Destacados</h2>
                 <p class="section-description">Una selección de experiencias digitales diseñadas para impactar.</p>
             </div>
@@ -523,7 +522,6 @@
     <section class="proposal-section" id="precios">
         <div class="container">
             <div class="section-header">
-                <span class="section-tag">Planes y Precios</span>
                 <h2 class="section-title">Elegí el plan ideal para tu negocio</h2>
                 <p class="section-description">
                     Todos los planes incluyen diseño personalizado, dominio propio y soporte post-lanzamiento.
@@ -533,7 +531,7 @@
             <div class="proposal-content">
                 
                 <div class="pricing-cards">
-                    <div class="pricing-card">
+                    <div class="pricing-card" data-plan="landing" data-base-price="180000">
                         <div class="card-header">
                             <h3>Landing Page</h3>
                             <div class="price">$180.000</div>
@@ -545,10 +543,66 @@
                             <li>Botones a WhatsApp y redes</li>
                             <li>Optimización SEO</li>
                         </ul>
+                        <div class="card-addons">
+                            <div class="addons-label-row">
+                                <p class="addons-label">Agregados opcionales</p>
+                                <span class="addons-info-trigger">Más info
+                                    <div class="addons-tooltip">
+                                        <ul>
+                                            <li><strong>📦 Panel Administrativo</strong> – Gestión de productos e inventario</li>
+                                            <li><strong>💳 Integración de Pagos</strong> – Cobrá con tarjetas (Mercado Pago)</li>
+                                            <li><strong>📅 Calendario de Citas</strong> – Reservas con emails automáticos</li>
+                                            <li><strong>🌐 Multi-Idioma</strong> – Tu web traducida automáticamente</li>
+                                            <li><strong>👤 Creación de Usuarios</strong> – Registro y login para usuarios</li>
+                                        </ul>
+                                    </div>
+                                </span>
+                            </div>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Panel Administrativo">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">📦 Panel Administrativo</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Integración de Pagos">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">💳 Integración de Pagos</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="40000">
+                                <input type="checkbox" data-addon-name="Calendario de Citas">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">📅 Calendario de Citas</span>
+                                    <span class="addon-check-price">+$40.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="30000">
+                                <input type="checkbox" data-addon-name="Multi-Idioma">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">🌐 Multi-Idioma</span>
+                                    <span class="addon-check-price">+$30.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Creación de Usuarios">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">👤 Creación de Usuarios</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                        </div>
                         <a href="https://wa.me/541140688675?text=Hola,%20me%20interesa%20el%20plan%20Landing%20Page" target="_blank" class="btn-card-cta">Elegir Plan</a>
                     </div>
 
-                    <div class="pricing-card">
+                    <div class="pricing-card" data-plan="corporativa" data-base-price="200000">
                         <div class="card-header">
                             <h3>Web Corporativa</h3>
                             <div class="price">$200.000</div>
@@ -560,10 +614,66 @@
                             <li>Estructura profesional</li>
                             <li>Ideal para empresas</li>
                         </ul>
+                        <div class="card-addons">
+                            <div class="addons-label-row">
+                                <p class="addons-label">Agregados opcionales</p>
+                                <span class="addons-info-trigger">Más info
+                                    <div class="addons-tooltip">
+                                        <ul>
+                                            <li><strong>📦 Panel Administrativo</strong> – Gestión de productos e inventario</li>
+                                            <li><strong>💳 Integración de Pagos</strong> – Cobrá con tarjetas (Mercado Pago)</li>
+                                            <li><strong>📅 Calendario de Citas</strong> – Reservas con emails automáticos</li>
+                                            <li><strong>🌐 Multi-Idioma</strong> – Tu web traducida automáticamente</li>
+                                            <li><strong>👤 Creación de Usuarios</strong> – Registro y login para usuarios</li>
+                                        </ul>
+                                    </div>
+                                </span>
+                            </div>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Panel Administrativo">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">📦 Panel Administrativo</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Integración de Pagos">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">💳 Integración de Pagos</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="40000">
+                                <input type="checkbox" data-addon-name="Calendario de Citas">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">📅 Calendario de Citas</span>
+                                    <span class="addon-check-price">+$40.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="30000">
+                                <input type="checkbox" data-addon-name="Multi-Idioma">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">🌐 Multi-Idioma</span>
+                                    <span class="addon-check-price">+$30.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Creación de Usuarios">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">👤 Creación de Usuarios</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                        </div>
                         <a href="https://wa.me/541140688675?text=Hola,%20me%20interesa%20el%20plan%20Web%20Corporativa" target="_blank" class="btn-card-cta">Elegir Plan</a>
                     </div>
 
-                    <div class="pricing-card">
+                    <div class="pricing-card" data-plan="ecommerce" data-base-price="300000">
                         <div class="card-header">
                             <h3>Tienda Full</h3>
                             <div class="price">$300.000</div>
@@ -575,110 +685,54 @@
                             <li>Integración de Pagos</li>
                             <li>Carrito de compras</li>
                         </ul>
+                        <div class="card-addons">
+                            <div class="addons-label-row">
+                                <p class="addons-label">Agregados opcionales</p>
+                                <span class="addons-info-trigger">Más info
+                                    <div class="addons-tooltip">
+                                        <ul>
+                                            <li><strong>📅 Calendario de Citas</strong> – Reservas con emails automáticos</li>
+                                            <li><strong>🌐 Multi-Idioma</strong> – Tu web traducida automáticamente</li>
+                                            <li><strong>👤 Creación de Usuarios</strong> – Registro y login para usuarios</li>
+                                        </ul>
+                                    </div>
+                                </span>
+                            </div>
+                            <label class="addon-check" data-addon-price="40000">
+                                <input type="checkbox" data-addon-name="Calendario de Citas">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">📅 Calendario de Citas</span>
+                                    <span class="addon-check-price">+$40.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="30000">
+                                <input type="checkbox" data-addon-name="Multi-Idioma">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">🌐 Multi-Idioma</span>
+                                    <span class="addon-check-price">+$30.000</span>
+                                </span>
+                            </label>
+                            <label class="addon-check" data-addon-price="50000">
+                                <input type="checkbox" data-addon-name="Creación de Usuarios">
+                                <span class="checkmark"></span>
+                                <span class="addon-check-info">
+                                    <span class="addon-check-name">👤 Creación de Usuarios</span>
+                                    <span class="addon-check-price">+$50.000</span>
+                                </span>
+                            </label>
+                        </div>
                         <a href="https://wa.me/541140688675?text=Hola,%20me%20interesa%20el%20plan%20Tienda%20Full" target="_blank" class="btn-card-cta">Elegir Plan</a>
                     </div>
                 </div>
 
-                <div class="addons-section">
-                    <h4>Agregados y Funcionalidades Extra</h4>
-                    <div class="addons-list">
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">📦</div>
-                                    Panel administrativo de Inventario
-                                </span>
-                                <span class="addon-desc">Agregá, modificá y eliminá productos fácilmente<br><span class="required-note">* Requiere Hosting</span></span>
-                            </div>
-                            <span class="addon-price">+$50.000</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">💳</div>
-                                    Integración de Pagos
-                                </span>
-                                <span class="addon-desc">Cobrá con tarjetas y dinero en cuenta (Mercado Pago)</span>
-                            </div>
-                            <span class="addon-price">+$50.000</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">📅</div>
-                                    Calendario de Citas
-                                </span>
-                                <span class="addon-desc">Sistema de reservas con emails automáticos<br><span class="required-note">* Requiere Hosting</span></span>
-                            </div>
-                            <span class="addon-price">+$40.000</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">🌐</div>
-                                    Botón Multi-Idioma + Traducción
-                                </span>
-                                <span class="addon-desc">Web traducida automáticamente para alcance global</span>
-                            </div>
-                            <span class="addon-price">+$30.000</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">👤</div>
-                                    Creación de Usuarios
-                                </span>
-                                <span class="addon-desc">Sistema de registro y login de usuarios</span>
-                            </div>
-                            <span class="addon-price">+$50.000</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">☁️</div>
-                                    Hosting Alto Rendimiento
-                                </span>
-                                <span class="addon-desc">Recomendamos Hostinger<br><span class="required-note">* Incluye Email Corp.</span></span>
-                            </div>
-                            <span class="addon-price">$46.000 anual</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">🔗</div>
-                                    Registro de Dominios
-                                </span>
-                                <span class="addon-desc">Recomendamos dominios .com.ar</span>
-                            </div>
-                            <span class="addon-price">$8.500 anual</span>
-                        </div>
-
-                        <div class="addon-row">
-                            <div class="addon-content">
-                                <span class="addon-name">
-                                    <div class="addon-icon-box">📧</div>
-                                    Email Corporativo
-                                </span>
-                                <span class="addon-desc">Email profesional con tu dominio</span>
-                            </div>
-                            <span class="addon-price">$17.000 anual</span>
-                        </div>
-
-                    </div>
-                </div>
             </div>
         </div>
     </section>
     <section id="servicios" class="services">
         <div class="container">
             <div class="section-header">
-                <span class="section-tag">Lo que hacemos</span>
                 <h2 class="section-title">Nuestros Servicios</h2>
                 <p class="section-description">Soluciones web completas adaptadas a tus necesidades</p>
             </div>
@@ -774,7 +828,6 @@
     <section class="contact-section" id="contacto">
         <div class="container">
             <div class="section-header">
-                <span class="section-tag">Contacto</span>
                 <h2 class="section-title">¿Tenés un proyecto en mente?</h2>
                 <p class="section-description">
                     Contanos tu idea y te contactamos para darle vida.
@@ -808,7 +861,7 @@
             <div class="footer-content">
                 <div class="footer-brand">
                     <div class="logo">
-                        <img src="logo.png" alt="Goky.net Logo" class="logo-img">
+                        <img src="LogoGokySinFondo.png" alt="Goky.net Logo" class="logo-footer">
                     </div>
                     <p>Agencia especializada en Diseño Web, E-commerce y Landing Pages.</p>
                 </div>

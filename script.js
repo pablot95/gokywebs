@@ -150,7 +150,7 @@ if (browserMockup) {
 
 const browserUrl = document.querySelector('.browser-url span');
 if (browserUrl) {
-    const urls = ['tuproyecto.com', 'tunegocio.com', 'tuidea.com', 'tuempresa.com'];
+    const urls = ['youridea.com', 'yourbusiness.com', 'youridea.com', 'yourempire.com'];
     let currentIndex = 0;
     
     setInterval(() => {
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
         timeline: document.querySelectorAll('.timeline-item').length
     });
     
-    const words = ['Página Web', 'Tienda Online', 'Landing Pages'];
+    const words = ['Web Page', 'E-commerce', 'Landing Pages'];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -754,3 +754,62 @@ function togglePortfolio() {
         }
     }
 }
+
+/* ── Pricing Card Add-ons: dynamic price + WhatsApp message ── */
+(function() {
+    const isEnglish = window.location.pathname.includes('/en/');
+
+    function formatPrice(value) {
+        if (isEnglish) {
+            return '$' + value.toLocaleString('en-US');
+        }
+        return '$' + value.toLocaleString('es-AR');
+    }
+
+    document.querySelectorAll('.pricing-card').forEach(card => {
+        const basePrice = parseInt(card.dataset.basePrice, 10);
+        const priceEl = card.querySelector('.price');
+        const ctaLink = card.querySelector('.btn-card-cta');
+        const planName = card.querySelector('.card-header h3').textContent.trim();
+        const originalHref = ctaLink.getAttribute('href');
+
+        card.querySelectorAll('.addon-check input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const label = cb.closest('.addon-check');
+                label.classList.toggle('selected', cb.checked);
+                updateCard(card, basePrice, priceEl, ctaLink, planName);
+            });
+        });
+    });
+
+    function updateCard(card, basePrice, priceEl, ctaLink, planName) {
+        let total = basePrice;
+        const selectedAddons = [];
+
+        card.querySelectorAll('.addon-check input[type="checkbox"]:checked').forEach(cb => {
+            const addonPrice = parseInt(cb.closest('.addon-check').dataset.addonPrice, 10);
+            total += addonPrice;
+            selectedAddons.push(cb.dataset.addonName);
+        });
+
+        priceEl.textContent = formatPrice(total);
+
+        let msg;
+        if (isEnglish) {
+            msg = `Hi, I'm interested in the ${planName} plan`;
+            if (selectedAddons.length > 0) {
+                msg += ` with: ${selectedAddons.join(', ')}`;
+            }
+            msg += `. Total: ${formatPrice(total)}`;
+        } else {
+            msg = `Hola, me interesa el plan ${planName}`;
+            if (selectedAddons.length > 0) {
+                msg += ` con: ${selectedAddons.join(', ')}`;
+            }
+            msg += `. Total: ${formatPrice(total)}`;
+        }
+
+        ctaLink.href = `https://wa.me/541140688675?text=${encodeURIComponent(msg)}`;
+    }
+})();
+
