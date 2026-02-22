@@ -46,7 +46,7 @@ html {
 body {
     font-family: var(--font-primary);
     color: var(--color-black);
-    background: url(images/background4.jpg);
+    background: url(../imagenes/background4.jpg) no-repeat center center fixed;
     background-attachment: fixed;
     background-size: cover;
     line-height: 1.6;
