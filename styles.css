@@ -164,6 +164,10 @@ section {
     padding: 3rem 2rem;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 0rem;
+    text-align: center;
 }
 
 .section-header::before {
@@ -181,8 +185,32 @@ section {
     font-size: 3.5rem;
     font-weight: 700;
     color: var(--color-white);
-    margin-bottom: 4rem;
+    margin-bottom: 0.75rem;
     line-height: 1.2;
+}
+
+.section-header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.section-icon {
+    width: 100px;
+    height: 100px;
+    min-width: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-accent), var(--color-blue));
+    border-radius: 16px;
+    color: var(--color-white);
+    box-shadow: 0 8px 24px rgba(43, 95, 165, 0.35);
+    transform: translateX(50px);
+}
+
+.section-icon svg {
+    width: 70px;
+    height: 70px;
 }
 
 .section-description {
@@ -575,7 +603,7 @@ section {
     position: relative;
     width: 100%;
     max-width: 800px;
-    height: 450px;
+    height: 480px;
     background: var(--color-white);
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
@@ -1898,6 +1926,22 @@ section {
     
     .section-header {
         margin-bottom: 3rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 2rem 1.5rem;
+    }
+
+    .section-icon {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        border-radius: 14px;
+    }
+
+    .section-icon svg {
+        width: 26px;
+        height: 26px;
     }
     
     .section-title {
