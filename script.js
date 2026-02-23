@@ -557,30 +557,102 @@ document.addEventListener('DOMContentLoaded', () => {
     gsap.registerPlugin(ScrollTrigger);
     console.log('✅ GSAP OK');
     
-    gsap.from('.hero-title', {
-        opacity: 0,
-        y: 60,
-        duration: 1.2,
-        ease: 'power3.out'
+    /* ══════════════════════════════════════════════
+       ANIMACIONES DE ENTRADA CREATIVAS - GSAP
+       ══════════════════════════════════════════════ */
+
+    // --- Hero: entrada cinematica con stagger ---
+    const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+    
+    heroTl
+        .from('.hero-title', {
+            opacity: 0,
+            y: 80,
+            rotateX: 15,
+            skewX: -3,
+            duration: 1.4,
+            transformOrigin: 'left bottom'
+        })
+        .from('.hero-description', {
+            opacity: 0,
+            y: 50,
+            clipPath: 'polygon(0 100%, 100% 100%, 100% 100%, 0 100%)',
+            duration: 1,
+        }, '-=0.8')
+        .from('.hero-buttons .btn', {
+            opacity: 0,
+            scale: 0.3,
+            rotation: -10,
+            stagger: 0.15,
+            duration: 0.8,
+            ease: 'back.out(2.5)'
+        }, '-=0.5');
+    
+    // --- Section headers: flip 3D + glow al hacer scroll ---
+    gsap.utils.toArray('.section-header').forEach((header) => {
+        const icon = header.querySelector('.section-icon');
+        const title = header.querySelector('.section-title');
+        const desc = header.querySelector('.section-description');
+
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: header,
+                start: 'top 82%',
+                toggleActions: 'play none none none'
+            }
+        });
+
+        tl.from(header, {
+            opacity: 0,
+            y: 60,
+            scale: 0.92,
+            borderRadius: '60px',
+            duration: 0.9,
+            ease: 'power3.out'
+        });
+
+        if (icon) {
+            tl.from(icon, {
+                opacity: 0,
+                scale: 0,
+                rotation: -180,
+                duration: 0.8,
+                ease: 'back.out(2)'
+            }, '-=0.5');
+        }
+
+        if (title) {
+            tl.from(title, {
+                opacity: 0,
+                x: -40,
+                skewX: -5,
+                duration: 0.7,
+                ease: 'power3.out'
+            }, '-=0.4');
+        }
+
+        if (desc) {
+            tl.from(desc, {
+                opacity: 0,
+                y: 20,
+                duration: 0.6,
+                ease: 'power2.out'
+            }, '-=0.3');
+        }
     });
     
-    gsap.from('.hero-description', {
-        opacity: 0,
-        y: 40,
-        duration: 1,
-        delay: 0.3,
-        ease: 'power3.out'
-    });
-    
-    gsap.from('.hero-buttons', {
-        opacity: 0,
-        y: 40,
-        duration: 1,
-        delay: 0.5,
-        ease: 'power3.out'
-    });
-    
+    // --- Service cards: cascade con efectos 3D variados ---
     gsap.utils.toArray('.service-card').forEach((card, i) => {
+        const effects = [
+            { rotateY: -45, x: -100, scale: 0.7 },    // flip izquierda
+            { rotateX: 45, y: 100, scale: 0.7 },       // flip arriba
+            { rotateY: 45, x: 100, scale: 0.7 },       // flip derecha
+            { rotateX: -45, y: -60, scale: 0.7 },      // flip abajo
+            { rotation: -15, scale: 0.5, x: -80 },     // spin izquierda
+            { rotation: 15, scale: 0.5, x: 80 }        // spin derecha
+        ];
+        const effect = effects[i % effects.length];
+        
         gsap.from(card, {
             scrollTrigger: {
                 trigger: card,
@@ -588,14 +660,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleActions: 'play none none none'
             },
             opacity: 0,
-            y: 80,
+            ...effect,
+            duration: 1,
+            delay: i * 0.12,
+            ease: 'back.out(1.7)',
+            clearProps: 'all'
+        });
+
+        // Efecto de brillo en el borde al entrar
+        gsap.fromTo(card, 
+            { boxShadow: '0 0 0 rgba(91, 143, 216, 0)' },
+            {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 85%',
+                    toggleActions: 'play none none none'
+                },
+                boxShadow: '0 0 40px rgba(91, 143, 216, 0.25), 0 0 80px rgba(107, 76, 154, 0.1)',
+                duration: 0.5,
+                delay: i * 0.12 + 0.8,
+                ease: 'power2.out',
+                onComplete: function() {
+                    gsap.to(card, { boxShadow: 'none', duration: 1, delay: 0.5 });
+                }
+            }
+        );
+    });
+
+    // --- Service icons: bounce spin individual ---
+    gsap.utils.toArray('.service-icon').forEach((icon, i) => {
+        gsap.from(icon, {
+            scrollTrigger: {
+                trigger: icon,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 0,
+            rotation: -360,
             duration: 0.8,
-            ease: 'power3.out'
+            delay: i * 0.12 + 0.3,
+            ease: 'back.out(3)'
+        });
+    });
+
+    // --- Service numbers: count-up effect via stagger ---
+    gsap.utils.toArray('.service-number').forEach((num, i) => {
+        gsap.from(num, {
+            scrollTrigger: {
+                trigger: num,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 3,
+            y: -30,
+            duration: 0.6,
+            delay: i * 0.12 + 0.5,
+            ease: 'power4.out'
         });
     });
     
+    // --- Timeline items: wave alternada --- 
     gsap.utils.toArray('.timeline-item').forEach((item, i) => {
-        const direction = i % 2 === 0 ? -80 : 80;
+        const direction = i % 2 === 0 ? -120 : 120;
+        const rotation = i % 2 === 0 ? -8 : 8;
         gsap.from(item, {
             scrollTrigger: {
                 trigger: item,
@@ -604,21 +733,247 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             opacity: 0,
             x: direction,
-            duration: 0.8,
-            ease: 'power3.out'
+            rotation: rotation,
+            scale: 0.85,
+            duration: 1,
+            ease: 'elastic.out(1, 0.5)'
         });
     });
     
-    gsap.from('.contact-form', {
+    // --- Contact form: morph + stagger de campos ---
+    const contactFormContainer = document.querySelector('.proposal-form-container');
+    if (contactFormContainer) {
+        gsap.from(contactFormContainer, {
+            scrollTrigger: {
+                trigger: contactFormContainer,
+                start: 'top 80%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 0.8,
+            borderRadius: '80px',
+            y: 60,
+            duration: 1,
+            ease: 'power3.out'
+        });
+
+        gsap.from('.proposal-form .form-group', {
+            scrollTrigger: {
+                trigger: contactFormContainer,
+                start: 'top 80%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            y: 40,
+            x: -20,
+            stagger: 0.12,
+            duration: 0.7,
+            delay: 0.4,
+            ease: 'back.out(1.5)'
+        });
+
+        gsap.from('.proposal-form .btn-primary', {
+            scrollTrigger: {
+                trigger: contactFormContainer,
+                start: 'top 80%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 0,
+            rotation: -10,
+            duration: 0.8,
+            delay: 1,
+            ease: 'elastic.out(1, 0.4)'
+        });
+    }
+
+    // --- Pricing cards: 3D tilt cascade ---
+    gsap.utils.toArray('.pricing-card').forEach((card, i) => {
+        gsap.set(card, { opacity: 1, clearProps: 'transform' });
+
+        gsap.from(card, {
+            scrollTrigger: {
+                trigger: card,
+                start: 'top 90%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            y: 120,
+            rotateX: 25,
+            scale: 0.85,
+            transformOrigin: 'center bottom',
+            duration: 1,
+            delay: i * 0.2,
+            ease: 'back.out(1.5)',
+            immediateRender: false
+        });
+
+        // Header del card
+        const header = card.querySelector('.card-header');
+        if (header) {
+            gsap.from(header, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 90%',
+                    toggleActions: 'play none none none'
+                },
+                opacity: 0,
+                y: -20,
+                duration: 0.4,
+                delay: i * 0.2 + 0.7,
+                ease: 'power2.out',
+                immediateRender: false
+            });
+        }
+
+        // Features stagger
+        const features = card.querySelectorAll('.card-features li');
+        if (features.length) {
+            gsap.from(features, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 90%',
+                    toggleActions: 'play none none none'
+                },
+                opacity: 0,
+                x: -30,
+                stagger: 0.08,
+                duration: 0.4,
+                delay: i * 0.2 + 0.8,
+                ease: 'power2.out',
+                immediateRender: false
+            });
+        }
+
+        // Precio animación especial
+        const priceEl = card.querySelector('.price');
+        if (priceEl) {
+            gsap.from(priceEl, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 90%',
+                    toggleActions: 'play none none none'
+                },
+                opacity: 0,
+                scale: 0.5,
+                duration: 0.5,
+                delay: i * 0.2 + 0.5,
+                ease: 'back.out(3)',
+                immediateRender: false
+            });
+        }
+
+        // CTA button
+        const cta = card.querySelector('.btn-card-cta');
+        if (cta) {
+            gsap.from(cta, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: 'top 90%',
+                    toggleActions: 'play none none none'
+                },
+                opacity: 0,
+                y: 20,
+                scale: 0.8,
+                duration: 0.5,
+                delay: i * 0.2 + 0.9,
+                ease: 'back.out(2)',
+                immediateRender: false
+            });
+        }
+    });
+
+    // --- Footer: reveal cinematográfico ---
+    const footerTl = gsap.timeline({
         scrollTrigger: {
-            trigger: '.contact-form',
+            trigger: '.footer',
             start: 'top 85%',
             toggleActions: 'play none none none'
-        },
+        }
+    });
+    
+    footerTl
+        .from('.footer', {
+            opacity: 0,
+            y: 40,
+            duration: 0.8,
+            ease: 'power3.out'
+        })
+        .from('.footer-brand', {
+            opacity: 0,
+            x: -60,
+            rotation: -5,
+            duration: 0.7,
+            ease: 'power3.out'
+        }, '-=0.4')
+        .from('.logo-footer', {
+            opacity: 0,
+            scale: 0,
+            rotation: -180,
+            duration: 0.8,
+            ease: 'back.out(2)'
+        }, '-=0.5')
+        .from('.footer-column', {
+            opacity: 0,
+            y: 50,
+            stagger: 0.15,
+            duration: 0.6,
+            ease: 'back.out(1.5)'
+        }, '-=0.4')
+        .from('.footer-bottom', {
+            opacity: 0,
+            scaleX: 0,
+            transformOrigin: 'center',
+            duration: 0.6,
+            ease: 'power3.out'
+        }, '-=0.2');
+
+    // --- Parallax suave en secciones al hacer scroll ---
+    gsap.utils.toArray('section').forEach((section) => {
+        const bg = section.querySelector('.section-header');
+        if (bg) {
+            gsap.fromTo(bg, 
+                { y: 30 }, 
+                {
+                    y: -30,
+                    ease: 'none',
+                    scrollTrigger: {
+                        trigger: section,
+                        start: 'top bottom',
+                        end: 'bottom top',
+                        scrub: 1.5
+                    }
+                }
+            );
+        }
+    });
+
+    // --- Addon checks: micro-animación de aparición ---
+    gsap.utils.toArray('.addon-check').forEach((addon, i) => {
+        gsap.from(addon, {
+            scrollTrigger: {
+                trigger: addon,
+                start: 'top 90%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            x: 30,
+            scale: 0.9,
+            duration: 0.4,
+            delay: i * 0.05,
+            ease: 'power2.out'
+        });
+    });
+
+    // --- WhatsApp float: entrada dramática ---
+    gsap.from('.whatsapp-float', {
         opacity: 0,
-        y: 50,
-        duration: 0.8,
-        ease: 'power3.out'
+        scale: 0,
+        rotation: 720,
+        y: 100,
+        duration: 1.2,
+        delay: 2,
+        ease: 'elastic.out(1, 0.4)'
     });
     
     console.log('✅ Animaciones configuradas');
@@ -706,24 +1061,80 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     
     portfolioItems.forEach((item, index) => {
         const column = index % 3;
-        let animationProps = { opacity: 0, duration: 1.2, delay: 0.1, ease: 'power4.out' };
+        const row = Math.floor(index / 3);
+        let animationProps = { 
+            opacity: 0, 
+            duration: 1.2, 
+            ease: 'power4.out',
+            clearProps: 'all'
+        };
         
+        // Animaciones variadas por columna
         if (column === 0) {
-            animationProps.x = -1500;
+            animationProps.x = -200;
+            animationProps.rotateY = -25;
+            animationProps.scale = 0.8;
         } else if (column === 1) {
-            animationProps.y = 100;
+            animationProps.y = 150;
+            animationProps.rotateX = 20;
+            animationProps.scale = 0.7;
         } else {
-            animationProps.x = 1500;
+            animationProps.x = 200;
+            animationProps.rotateY = 25;
+            animationProps.scale = 0.8;
         }
+        
+        // Delay escalonado por fila
+        animationProps.delay = (index % 3) * 0.15;
         
         gsap.from(item, {
             scrollTrigger: {
                 trigger: item,
-                start: 'top 85%',
+                start: 'top 88%',
                 toggleActions: 'play none none reverse'
             },
             ...animationProps
         });
+
+        // Efecto de glow al entrar
+        gsap.fromTo(item, 
+            { boxShadow: '0 0 0 rgba(91, 143, 216, 0)' },
+            {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 88%',
+                    toggleActions: 'play none none reverse'
+                },
+                boxShadow: '0 0 30px rgba(91, 143, 216, 0.3), 0 15px 35px rgba(0,0,0,0.2)',
+                duration: 0.6,
+                delay: (index % 3) * 0.15 + 0.8,
+                ease: 'power2.out',
+                onComplete: function() {
+                    gsap.to(item, { 
+                        boxShadow: '0 15px 35px rgba(0,0,0,0.2)', 
+                        duration: 1, 
+                        delay: 0.3 
+                    });
+                }
+            }
+        );
+
+        // Animación de la info del portfolio
+        const info = item.querySelector('.portfolio-info');
+        if (info) {
+            gsap.from(info, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 88%',
+                    toggleActions: 'play none none reverse'
+                },
+                opacity: 0,
+                y: 30,
+                duration: 0.6,
+                delay: (index % 3) * 0.15 + 0.5,
+                ease: 'power3.out'
+            });
+        }
     });
 }
 
