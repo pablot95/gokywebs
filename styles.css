@@ -72,7 +72,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(69, 69, 69, 0.6);
+    background: rgba(32, 32, 32, 0.7);
     pointer-events: none;
     z-index: 0;
 }
@@ -938,6 +938,35 @@ section {
     grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     margin-top: 2rem;
+}
+
+/* Ocultar items extra por defecto */
+.portfolio-item.portfolio-hidden {
+    display: none;
+}
+
+.portfolio-grid.show-all .portfolio-item.portfolio-hidden {
+    display: block;
+}
+
+/* Contenedor del botón toggle */
+.portfolio-toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+.portfolio-toggle-btn {
+    padding: 0.8rem 2.5rem;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.4rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.portfolio-toggle-btn:hover {
+    transform: translateY(-4px) scale(1.05);
+    box-shadow: var(--shadow-purple);
 }
 
 .portfolio-item {

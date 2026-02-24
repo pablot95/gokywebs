@@ -1142,24 +1142,39 @@ function togglePortfolio() {
     const grid = document.getElementById('portfolioGrid');
     const btn = document.getElementById('portfolioToggle');
     const isExpanded = grid.classList.contains('show-all');
+    const isEnglish = window.location.pathname.includes('/en/');
+    const portfolioSection = document.getElementById('portafolio') || document.getElementById('portfolio');
     
     if (isExpanded) {
         grid.classList.remove('show-all');
-        btn.querySelector('span').textContent = 'Ver más proyectos';
-        document.getElementById('portafolio').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver más proyectos';
+        if (portfolioSection) {
+            portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     } else {
         grid.classList.add('show-all');
-        btn.querySelector('span').textContent = 'Ver menos';
+        btn.querySelector('span').textContent = isEnglish ? 'See less' : 'Ver menos';
         
         if (typeof gsap !== 'undefined') {
             const hiddenItems = document.querySelectorAll('.portfolio-hidden');
             hiddenItems.forEach((item, index) => {
+                const column = index % 3;
+                let animProps = { opacity: 0, duration: 0.8, ease: 'back.out(1.5)', clearProps: 'all' };
+                
+                if (column === 0) {
+                    animProps.x = -100;
+                    animProps.rotateY = -15;
+                } else if (column === 1) {
+                    animProps.y = 80;
+                    animProps.scale = 0.8;
+                } else {
+                    animProps.x = 100;
+                    animProps.rotateY = 15;
+                }
+                
                 gsap.from(item, {
-                    y: 60,
-                    opacity: 0,
-                    duration: 0.6,
-                    delay: index * 0.1,
-                    ease: 'power3.out'
+                    ...animProps,
+                    delay: index * 0.1
                 });
             });
         }
