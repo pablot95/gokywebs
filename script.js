@@ -1,4 +1,4 @@
-const navbar = document.querySelector('.navbar');
+﻿const navbar = document.querySelector('.navbar');
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -15,7 +15,7 @@ if (typeof particlesJS !== 'undefined') {
                 }
             },
             color: {
-                value: ['#2B5FA5', '#6B4C9A', '#A8A8A8']
+                value: ['#2563EB', '#3B82F6', '#9CA3AF']
             },
             shape: {
                 type: 'circle',
@@ -47,7 +47,7 @@ if (typeof particlesJS !== 'undefined') {
             line_linked: {
                 enable: true,
                 distance: 100,
-                color: '#2B5FA5',
+                color: '#2563EB',
                 opacity: 0.5,
                 width: 2
             },
@@ -218,7 +218,7 @@ if (contactForm) {
         emailjs.sendForm('service_w15l48a', 'template_u110bgf', '#contactForm')
             .then(function(response) {
                 console.log('SUCCESS!', response.status, response.text);
-                showNotification('¡Mensaje enviado con éxito! Te responderemos pronto.', 'success');
+                showNotification('Â¡Mensaje enviado con Ã©xito! Te responderemos pronto.', 'success');
                 contactForm.reset();
             }, function(error) {
                 console.log('FAILED...', error);
@@ -241,11 +241,11 @@ function showNotification(message, type = 'success') {
         position: fixed;
         top: 100px;
         right: 20px;
-        background: ${type === 'success' ? 'linear-gradient(135deg, #2B5FA5, #6B4C9A)' : 'linear-gradient(135deg, #f5576c, #8B6FBC)'};
+        background: ${type === 'success' ? 'linear-gradient(135deg, #2563EB, #3B82F6)' : 'linear-gradient(135deg, #f5576c, #60A5FA)'};
         color: #FFFFFF;
         padding: 1rem 1.5rem;
         border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(43, 95, 165, 0.3);
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.3);
         z-index: 10000;
         animation: slideIn 0.3s ease;
         font-weight: 500;
@@ -297,7 +297,7 @@ style.textContent = `
     .cursor-dot {
         width: 8px;
         height: 8px;
-        background: linear-gradient(135deg, #2B5FA5, #6B4C9A);
+        background: linear-gradient(135deg, #2563EB, #3B82F6);
         border-radius: 50%;
         position: fixed;
         transform: translate(-50%, -50%);
@@ -307,7 +307,7 @@ style.textContent = `
     .cursor-outline {
         width: 30px;
         height: 30px;
-        border: 2px solid #2B5FA5;
+        border: 2px solid #2563EB;
         border-radius: 50%;
         position: fixed;
         transform: translate(-50%, -50%);
@@ -317,13 +317,13 @@ style.textContent = `
     .custom-cursor.hover .cursor-dot {
         width: 50px;
         height: 50px;
-        background: rgba(43, 95, 165, 0.3);
+        background: rgba(37, 99, 235, 0.3);
     }
     
     .custom-cursor.hover .cursor-outline {
         width: 50px;
         height: 50px;
-        border-color: #6B4C9A;
+        border-color: #3B82F6;
     }
     
     .btn-primary::after {
@@ -372,7 +372,7 @@ style.textContent = `
         width: 0;
         height: 0;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(43, 95, 165, 0.1), transparent);
+        background: radial-gradient(circle, rgba(37, 99, 235, 0.1), transparent);
         transform: translate(-50%, -50%);
         transition: width 0.6s, height 0.6s;
         z-index: -1;
@@ -535,7 +535,7 @@ if ('IntersectionObserver' in window) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('🎨 Goky.net - Iniciando...');
+    console.log('ðŸŽ¨ Goky.net - Iniciando...');
     
     document.body.classList.add('loaded');
     
@@ -555,11 +555,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     gsap.registerPlugin(ScrollTrigger);
-    console.log('✅ GSAP OK');
+    console.log('âœ… GSAP OK');
     
-    /* ══════════════════════════════════════════════
+    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
        ANIMACIONES DE ENTRADA CREATIVAS - GSAP
-       ══════════════════════════════════════════════ */
+       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
     // --- Hero: entrada cinematica con stagger ---
     const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
@@ -669,14 +669,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Efecto de brillo en el borde al entrar
         gsap.fromTo(card, 
-            { boxShadow: '0 0 0 rgba(91, 143, 216, 0)' },
+            { boxShadow: '0 0 0 rgba(37, 99, 235, 0)' },
             {
                 scrollTrigger: {
                     trigger: card,
                     start: 'top 85%',
                     toggleActions: 'play none none none'
                 },
-                boxShadow: '0 0 40px rgba(91, 143, 216, 0.25), 0 0 80px rgba(107, 76, 154, 0.1)',
+                boxShadow: '0 0 40px rgba(37, 99, 235, 0.25), 0 0 80px rgba(59, 130, 246, 0.1)',
                 duration: 0.5,
                 delay: i * 0.12 + 0.8,
                 ease: 'power2.out',
@@ -845,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Precio animación especial
+        // Precio animaciÃ³n especial
         const priceEl = card.querySelector('.price');
         if (priceEl) {
             gsap.from(priceEl, {
@@ -883,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Footer: reveal cinematográfico ---
+    // --- Footer: reveal cinematogrÃ¡fico ---
     const footerTl = gsap.timeline({
         scrollTrigger: {
             trigger: '.footer',
@@ -948,7 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Addon checks: micro-animación de aparición ---
+    // --- Addon checks: micro-animaciÃ³n de apariciÃ³n ---
     gsap.utils.toArray('.addon-check').forEach((addon, i) => {
         gsap.from(addon, {
             scrollTrigger: {
@@ -965,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- WhatsApp float: entrada dramática ---
+    // --- WhatsApp float: entrada dramÃ¡tica ---
     gsap.from('.whatsapp-float', {
         opacity: 0,
         scale: 0,
@@ -976,14 +976,14 @@ document.addEventListener('DOMContentLoaded', () => {
         ease: 'elastic.out(1, 0.4)'
     });
     
-    console.log('✅ Animaciones configuradas');
-    console.log('📊 Elements:', {
+    console.log('âœ… Animaciones configuradas');
+    console.log('ðŸ“Š Elements:', {
         services: document.querySelectorAll('.service-card').length,
         portfolio: document.querySelectorAll('.portfolio-item').length,
         timeline: document.querySelectorAll('.timeline-item').length
     });
     
-    const words = ['Web Page', 'E-commerce', 'Landing Pages'];
+    const words = ['tu negocio.', 'tus ventas.', 'tu marca.'];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -1038,8 +1038,8 @@ if (contactFormElement) {
 
         emailjs.sendForm(serviceID, templateID, this)
             .then(() => {
-                btn.innerText = '¡Enviado!';
-                alert('¡Mensaje enviado con éxito!');
+                btn.innerText = 'Â¡Enviado!';
+                alert('Â¡Mensaje enviado con Ã©xito!');
                 this.reset();
                 setTimeout(() => {
                     btn.innerText = originalText;
@@ -1098,14 +1098,14 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 
         // Efecto de glow al entrar
         gsap.fromTo(item, 
-            { boxShadow: '0 0 0 rgba(91, 143, 216, 0)' },
+            { boxShadow: '0 0 0 rgba(37, 99, 235, 0)' },
             {
                 scrollTrigger: {
                     trigger: item,
                     start: 'top 88%',
                     toggleActions: 'play none none reverse'
                 },
-                boxShadow: '0 0 30px rgba(91, 143, 216, 0.3), 0 15px 35px rgba(0,0,0,0.2)',
+                boxShadow: '0 0 30px rgba(37, 99, 235, 0.3), 0 15px 35px rgba(0,0,0,0.2)',
                 duration: 0.6,
                 delay: (index % 3) * 0.15 + 0.8,
                 ease: 'power2.out',
@@ -1119,7 +1119,7 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
             }
         );
 
-        // Animación de la info del portfolio
+        // AnimaciÃ³n de la info del portfolio
         const info = item.querySelector('.portfolio-info');
         if (info) {
             gsap.from(info, {
@@ -1147,7 +1147,7 @@ function togglePortfolio() {
     
     if (isExpanded) {
         grid.classList.remove('show-all');
-        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver más proyectos';
+        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver mÃ¡s proyectos';
         if (portfolioSection) {
             portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1181,7 +1181,7 @@ function togglePortfolio() {
     }
 }
 
-/* ── Pricing Card Add-ons: dynamic price + WhatsApp message ── */
+/* â”€â”€ Pricing Card Add-ons: dynamic price + WhatsApp message â”€â”€ */
 (function() {
     const isEnglish = window.location.pathname.includes('/en/');
 
@@ -1235,7 +1235,100 @@ function togglePortfolio() {
             msg += `. Total: ${formatPrice(total)}`;
         }
 
-        ctaLink.href = `https://wa.me/541140688675?text=${encodeURIComponent(msg)}`;
+        ctaLink.href = `https://wa.me/5491125068578?text=${encodeURIComponent(msg)}`;
     }
 })();
 
+
+/* -- Boceto form: send via WhatsApp -- */
+(function() {
+    var bocetoForm = document.getElementById('boceto-form');
+    if (bocetoForm) {
+        bocetoForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var name = document.getElementById('boceto-name').value.trim();
+            var business = document.getElementById('boceto-business').value.trim();
+            var social = document.getElementById('boceto-social').value.trim();
+            var whatsapp = document.getElementById('boceto-whatsapp').value.trim();
+            
+            var msg = 'Hola! Quiero mi boceto gratis\n\n';
+            msg += 'Nombre: ' + name + '\n';
+            msg += 'Negocio: ' + business + '\n';
+            if (social) msg += 'Instagram/Web: ' + social + '\n';
+            msg += 'WhatsApp: ' + whatsapp;
+            
+            window.open('https://wa.me/5491125068578?text=' + encodeURIComponent(msg), '_blank');
+            bocetoForm.reset();
+        });
+    }
+})();
+
+/* -- GSAP animations for new sections -- */
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+
+    // Process steps
+    gsap.utils.toArray('.process-step').forEach(function(step, i) {
+        gsap.from(step, {
+            scrollTrigger: {
+                trigger: step,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            y: 60,
+            scale: 0.9,
+            duration: 0.8,
+            delay: i * 0.15,
+            ease: 'back.out(1.7)'
+        });
+    });
+
+    // Process connectors
+    gsap.utils.toArray('.process-connector').forEach(function(conn, i) {
+        gsap.from(conn, {
+            scrollTrigger: {
+                trigger: conn,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            scaleX: 0,
+            opacity: 0,
+            duration: 0.5,
+            delay: i * 0.15 + 0.3,
+            ease: 'power2.out'
+        });
+    });
+
+    // Boceto section
+    var bocetoText = document.querySelector('.boceto-text');
+    if (bocetoText) {
+        gsap.from(bocetoText, {
+            scrollTrigger: { trigger: '.boceto-section', start: 'top 80%', toggleActions: 'play none none none' },
+            opacity: 0, x: -60, duration: 0.9, ease: 'power3.out'
+        });
+    }
+
+    var bocetoFormEl = document.querySelector('.boceto-form-wrapper');
+    if (bocetoFormEl) {
+        gsap.from(bocetoFormEl, {
+            scrollTrigger: { trigger: '.boceto-section', start: 'top 80%', toggleActions: 'play none none none' },
+            opacity: 0, x: 60, scale: 0.95, duration: 0.9, delay: 0.2, ease: 'power3.out'
+        });
+    }
+
+    // Result cards
+    gsap.utils.toArray('.result-card').forEach(function(card, i) {
+        gsap.from(card, {
+            scrollTrigger: { trigger: card, start: 'top 85%', toggleActions: 'play none none none' },
+            opacity: 0, y: 50, scale: 0.85, rotation: i % 2 === 0 ? -5 : 5,
+            duration: 0.8, delay: i * 0.12, ease: 'back.out(1.7)'
+        });
+    });
+
+    // Boceto float entrance
+    gsap.from('.boceto-float', {
+        opacity: 0, scale: 0, x: -100,
+        duration: 1, delay: 2.5, ease: 'elastic.out(1, 0.4)'
+    });
+});
