@@ -160,13 +160,14 @@ section {
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 28px;
-    padding: 3rem 2rem;
+    padding: 2rem 1rem;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
-    gap: 0rem;
+    gap: 2rem;
     text-align: center;
+    max-width: 600px;
 }
 
 .section-header::before {
@@ -181,7 +182,7 @@ section {
 }
 
 .section-title {
-    font-size: 3.5rem;
+    font-size: 2rem;
     font-weight: 700;
     color: var(--color-white);
     margin-bottom: 0.75rem;
@@ -194,9 +195,9 @@ section {
 }
 
 .section-icon {
-    width: 100px;
-    height: 100px;
-    min-width: 64px;
+    width: 60px;
+    height: 60px;
+    min-width: 64px;     
     display: flex;
     align-items: center;
     justify-content: center;
@@ -208,8 +209,8 @@ section {
 }
 
 .section-icon svg {
-    width: 70px;
-    height: 70px;
+    width: 40px;
+    height: 40px;
 }
 
 .section-description {
@@ -442,7 +443,7 @@ section {
 }
 
 .hero {
-    max-height: 140vh;
+    max-height: 120vh;
     display: flex;
     align-items: center;
     padding-top: 0px;
@@ -477,7 +478,7 @@ section {
     -webkit-backdrop-filter: blur(16px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 28px;
-    padding: 2.5rem;
+    padding: 2rem;
     position: relative;
     overflow: hidden;
 }
@@ -493,7 +494,7 @@ section {
 }
 
 .hero-title {
-    font-size: 3.2rem;
+    font-size: 2.2rem;
     font-weight: 900;
     line-height: 1.1;
     margin-bottom: 1.5rem;
@@ -526,7 +527,7 @@ section {
 }
 
 .hero-description {
-    font-size: 1.5rem;
+    font-size: 1rem;
     color: rgba(255, 255, 255, 0.85);
     margin-bottom: 2.5rem;
     line-height: 1.5;
@@ -591,7 +592,7 @@ section {
 
 .hero-visual {
     position: relative;
-    height: 800px;
+    height: 600px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -602,7 +603,7 @@ section {
     position: relative;
     width: 100%;
     max-width: 800px;
-    height: 480px;
+    height: 380px;
     background: #1E1E22;
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
@@ -927,6 +928,15 @@ section {
     0%, 100% { opacity: 0; transform: translateX(-50%) translateY(0); }
     50% { opacity: 1; transform: translateX(-50%) translateY(10px); }
 }
+
+.portfolio-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 1600px;
+}
+
 .portfolio.section-padding {
     padding: 4rem 0;
     position: relative;
@@ -991,7 +1001,7 @@ section {
 .portfolio-visuals {
     position: relative;
     width: 100%;
-    min-height: 220px;
+    min-height: 160px;
     overflow: hidden;
     background: #f0f0f0;
 }
@@ -2160,7 +2170,8 @@ section {
     
     .hero {
         padding-top: 10px;
-        min-height: auto;
+        max-height: 90vh;
+        padding-top: 80px;
         padding-bottom: 2rem;
         height: auto;
     }
@@ -2174,12 +2185,12 @@ section {
     }
     
     .hero-title {
-        font-size: 2.5rem;
+        font-size: 2rem;
         margin-top: 6rem;
     }
     
     .hero-description {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
     }
     
     .hero-buttons {
@@ -2276,11 +2287,14 @@ section {
     }
 
     .portfolio-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
+        grid-template-columns: 1fr;
+        gap: 2rem;
         margin-top: 2rem;
         width: 100%;
         padding: 0.5rem;
+        max-width: 300px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .visual-web {
@@ -2310,6 +2324,7 @@ section {
     .portfolio-visuals {
         min-height: auto;
         background: #1E1E22;
+        border-radius: 16px;
     }
 
     .portfolio-item:hover .visual-mobile {
@@ -2317,28 +2332,36 @@ section {
     }
 
     .portfolio-item {
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        overflow: visible;
     }
 
     .portfolio-item:hover {
         transform: translateY(-5px);
+        box-shadow: none;
+        border-color: transparent;
     }
-    
+
     .portfolio-info {
-        padding: 0.7rem 1rem;
+        order: -1;
+        padding: 1rem 0.2rem;
+        background: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        border-top: none;
     }
     
     .portfolio-info h3 {
-        font-size: 0.5rem;
+        font-size: 1.4rem;
     }
     
     .view-project {
-        font-size: 0.5rem;
-    }
-
-    .portfolio-visuals {
-        min-height: 130px;
+        font-size: 0.75rem;
     }
 }
 
@@ -2441,6 +2464,11 @@ section {
     background: transparent;
     position: relative;
     z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
 }
 
 .process-grid {

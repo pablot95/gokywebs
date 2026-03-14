@@ -1248,14 +1248,11 @@ function togglePortfolio() {
             e.preventDefault();
             var name = document.getElementById('boceto-name').value.trim();
             var business = document.getElementById('boceto-business').value.trim();
-            var social = document.getElementById('boceto-social').value.trim();
-            var whatsapp = document.getElementById('boceto-whatsapp').value.trim();
+
             
             var msg = 'Hola! Quiero mi boceto gratis\n\n';
             msg += 'Nombre: ' + name + '\n';
             msg += 'Negocio: ' + business + '\n';
-            if (social) msg += 'Instagram/Web: ' + social + '\n';
-            msg += 'WhatsApp: ' + whatsapp;
             
             window.open('https://wa.me/5491125068578?text=' + encodeURIComponent(msg), '_blank');
             bocetoForm.reset();
