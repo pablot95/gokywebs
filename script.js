@@ -1,4 +1,4 @@
-﻿const navbar = document.querySelector('.navbar');
+const navbar = document.querySelector('.navbar');
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -787,10 +787,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Pricing cards: 3D tilt cascade ---
-    gsap.utils.toArray('.pricing-card').forEach((card, i) => {
-        gsap.set(card, { opacity: 1, clearProps: 'transform' });
+    // --- Explainer sections: feature cards cascade ---
+    gsap.utils.toArray('.explainer-text').forEach((text) => {
+        gsap.from(text, {
+            scrollTrigger: {
+                trigger: text,
+                start: 'top 85%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            x: -60,
+            duration: 0.9,
+            ease: 'power3.out'
+        });
+    });
 
+    gsap.utils.toArray('.feature-card').forEach((card, i) => {
         gsap.from(card, {
             scrollTrigger: {
                 trigger: card,
@@ -798,90 +810,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleActions: 'play none none none'
             },
             opacity: 0,
-            y: 120,
-            rotateX: 25,
-            scale: 0.85,
-            transformOrigin: 'center bottom',
-            duration: 1,
-            delay: i * 0.2,
+            x: 60,
+            y: 20,
+            scale: 0.9,
+            duration: 0.7,
+            delay: i * 0.1,
             ease: 'back.out(1.5)',
             immediateRender: false
         });
-
-        // Header del card
-        const header = card.querySelector('.card-header');
-        if (header) {
-            gsap.from(header, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: -20,
-                duration: 0.4,
-                delay: i * 0.2 + 0.7,
-                ease: 'power2.out',
-                immediateRender: false
-            });
-        }
-
-        // Features stagger
-        const features = card.querySelectorAll('.card-features li');
-        if (features.length) {
-            gsap.from(features, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                x: -30,
-                stagger: 0.08,
-                duration: 0.4,
-                delay: i * 0.2 + 0.8,
-                ease: 'power2.out',
-                immediateRender: false
-            });
-        }
-
-        // Precio animaciÃ³n especial
-        const priceEl = card.querySelector('.price');
-        if (priceEl) {
-            gsap.from(priceEl, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                scale: 0.5,
-                duration: 0.5,
-                delay: i * 0.2 + 0.5,
-                ease: 'back.out(3)',
-                immediateRender: false
-            });
-        }
-
-        // CTA button
-        const cta = card.querySelector('.btn-card-cta');
-        if (cta) {
-            gsap.from(cta, {
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 90%',
-                    toggleActions: 'play none none none'
-                },
-                opacity: 0,
-                y: 20,
-                scale: 0.8,
-                duration: 0.5,
-                delay: i * 0.2 + 0.9,
-                ease: 'back.out(2)',
-                immediateRender: false
-            });
-        }
     });
+
+    // --- Comparison cards ---
+    gsap.utils.toArray('.comparison-card').forEach((card, i) => {
+        gsap.from(card, {
+            scrollTrigger: {
+                trigger: card,
+                start: 'top 88%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            y: 80,
+            scale: 0.85,
+            duration: 0.9,
+            delay: i * 0.2,
+            ease: 'back.out(1.7)',
+            immediateRender: false
+        });
+    });
+
+    const vsEl = document.querySelector('.comparison-vs');
+    if (vsEl) {
+        gsap.from(vsEl, {
+            scrollTrigger: {
+                trigger: vsEl,
+                start: 'top 88%',
+                toggleActions: 'play none none none'
+            },
+            opacity: 0,
+            scale: 0,
+            rotation: 360,
+            duration: 0.8,
+            delay: 0.3,
+            ease: 'elastic.out(1, 0.4)'
+        });
+    }
 
     // --- Footer: reveal cinematogrÃ¡fico ---
     const footerTl = gsap.timeline({
@@ -948,23 +920,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Addon checks: micro-animaciÃ³n de apariciÃ³n ---
-    gsap.utils.toArray('.addon-check').forEach((addon, i) => {
-        gsap.from(addon, {
-            scrollTrigger: {
-                trigger: addon,
-                start: 'top 90%',
-                toggleActions: 'play none none none'
-            },
-            opacity: 0,
-            x: 30,
-            scale: 0.9,
-            duration: 0.4,
-            delay: i * 0.05,
-            ease: 'power2.out'
-        });
-    });
-
     // --- WhatsApp float: entrada dramÃ¡tica ---
     gsap.from('.whatsapp-float', {
         opacity: 0,
@@ -983,7 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
         timeline: document.querySelectorAll('.timeline-item').length
     });
     
-    const words = ['tu negocio.', 'tus ventas.', 'tu marca.'];
+    const words = ['Descubrilo acá.', 'Tu web ideal.', 'Boceto gratis.'];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -1147,7 +1102,7 @@ function togglePortfolio() {
     
     if (isExpanded) {
         grid.classList.remove('show-all');
-        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver mÃ¡s proyectos';
+        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver más proyectos';
         if (portfolioSection) {
             portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -1180,65 +1135,6 @@ function togglePortfolio() {
         }
     }
 }
-
-/* â”€â”€ Pricing Card Add-ons: dynamic price + WhatsApp message â”€â”€ */
-(function() {
-    const isEnglish = window.location.pathname.includes('/en/');
-
-    function formatPrice(value) {
-        if (isEnglish) {
-            return '$' + value.toLocaleString('en-US');
-        }
-        return '$' + value.toLocaleString('es-AR');
-    }
-
-    document.querySelectorAll('.pricing-card').forEach(card => {
-        const basePrice = parseInt(card.dataset.basePrice, 10);
-        const priceEl = card.querySelector('.price');
-        const ctaLink = card.querySelector('.btn-card-cta');
-        const planName = card.querySelector('.card-header h3').textContent.trim();
-        const originalHref = ctaLink.getAttribute('href');
-
-        card.querySelectorAll('.addon-check input[type="checkbox"]').forEach(cb => {
-            cb.addEventListener('change', () => {
-                const label = cb.closest('.addon-check');
-                label.classList.toggle('selected', cb.checked);
-                updateCard(card, basePrice, priceEl, ctaLink, planName);
-            });
-        });
-    });
-
-    function updateCard(card, basePrice, priceEl, ctaLink, planName) {
-        let total = basePrice;
-        const selectedAddons = [];
-
-        card.querySelectorAll('.addon-check input[type="checkbox"]:checked').forEach(cb => {
-            const addonPrice = parseInt(cb.closest('.addon-check').dataset.addonPrice, 10);
-            total += addonPrice;
-            selectedAddons.push(cb.dataset.addonName);
-        });
-
-        priceEl.textContent = formatPrice(total);
-
-        let msg;
-        if (isEnglish) {
-            msg = `Hi, I'm interested in the ${planName} plan`;
-            if (selectedAddons.length > 0) {
-                msg += ` with: ${selectedAddons.join(', ')}`;
-            }
-            msg += `. Total: ${formatPrice(total)}`;
-        } else {
-            msg = `Hola, me interesa el plan ${planName}`;
-            if (selectedAddons.length > 0) {
-                msg += ` con: ${selectedAddons.join(', ')}`;
-            }
-            msg += `. Total: ${formatPrice(total)}`;
-        }
-
-        ctaLink.href = `https://wa.me/5491125068578?text=${encodeURIComponent(msg)}`;
-    }
-})();
-
 
 /* -- Boceto form: send via WhatsApp -- */
 (function() {
