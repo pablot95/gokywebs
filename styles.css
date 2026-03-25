@@ -2287,14 +2287,11 @@ section {
     }
 
     .portfolio-grid {
-        grid-template-columns: 1fr;
-        gap: 2rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
         margin-top: 2rem;
         width: 100%;
-        padding: 0.5rem;
-        max-width: 300px;
-        margin-left: auto;
-        margin-right: auto;
+        padding: 0 0.5rem;
     }
 
     .visual-web {
@@ -2348,6 +2345,8 @@ section {
     }
 
     .portfolio-info {
+        display: flex;
+        flex-direction: column;
         order: -1;
         padding: 1rem 0.2rem;
         background: transparent;
@@ -2357,7 +2356,7 @@ section {
     }
     
     .portfolio-info h3 {
-        font-size: 1.4rem;
+        font-size: 0.75rem;
     }
     
     .view-project {
@@ -2422,6 +2421,11 @@ section {
     .addons-tooltip ul li {
         font-size: 0.82rem;
         line-height: 1.45;
+    }
+    .portfolio-toggle-btn{
+        padding: 0.5rem 0.5rem;
+        font-size: 1rem;
+        min-width: 200px;
     }
 }
 
@@ -2562,7 +2566,7 @@ section {
     background: rgba(37, 99, 235, 0.4);
     border: 1px solid rgba(37, 99, 235, 0.2);
     border-radius: 50px;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.8);
 }
