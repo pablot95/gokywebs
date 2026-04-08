@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GokyWebs – Contanos sobre tu negocio</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="../logonuevo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Background glow -->
+    <div class="bg-glow"></div>
+
+    <div class="form-wrapper">
+
+        <!-- Header -->
+        <header class="form-header">
+            <a href="../" class="logo">
+                <img src="../logonuevo.png" alt="GokyWebs" class="logo-img">
+                <span class="logo-text">GokyWebs</span>
+            </a>
+            <p class="header-sub">Completá el formulario y nos contactamos en menos de 24 h</p>
+        </header>
+
+        <!-- Progress bar -->
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-label" id="progressLabel">Paso 1 de 8</span>
+        </div>
+
+        <!-- Form card -->
+        <div class="form-card">
+            <form id="leadForm" novalidate>
+
+                <!-- ─── STEP 1: Nombre + Negocio ─── -->
+                <div class="step active" data-step="1">
+                    <div class="step-icon">👋</div>
+                    <h2 class="step-title">¡Hola! Empecemos por lo básico</h2>
+                    <p class="step-desc">Solo nos lleva 2 minutos.</p>
+
+                    <div class="field-group">
+                        <label class="field-label" for="nombre">Tu nombre <span class="req">*</span></label>
+                        <input type="text" id="nombre" name="nombre" class="text-input" placeholder="Ej: Lucas García" autocomplete="given-name" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="negocio">¿A qué se dedica tu negocio? <span class="req">*</span></label>
+                        <textarea id="negocio" name="negocio" class="text-input textarea" placeholder="Ej: Tengo una clínica de estética láser en Palermo…" rows="3" required></textarea>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 2: Antigüedad ─── -->
+                <div class="step" data-step="2">
+                    <div class="step-icon">📅</div>
+                    <h2 class="step-title">¿Hace cuánto estás operando?</h2>
+                    <p class="step-desc">Seleccioná la opción que más se ajuste.</p>
+
+                    <div class="options-grid" id="antiguedad">
+                        <label class="option-card">
+                            <input type="radio" name="antiguedad" value="Menos de 6 meses">
+                            <span class="option-content">
+                                <span class="option-icon">🌱</span>
+                                <span class="option-text">Menos de 6 meses</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="antiguedad" value="6 meses – 1 año">
+                            <span class="option-content">
+                                <span class="option-icon">📈</span>
+                                <span class="option-text">6 meses – 1 año</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="antiguedad" value="1–3 años">
+                            <span class="option-content">
+                                <span class="option-icon">🏢</span>
+                                <span class="option-text">1–3 años</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="antiguedad" value="+3 años">
+                            <span class="option-content">
+                                <span class="option-icon">🏆</span>
+                                <span class="option-text">+3 años</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 3: Objetivo ─── -->
+                <div class="step" data-step="3">
+                    <div class="step-icon">🎯</div>
+                    <h2 class="step-title">¿Qué estás buscando lograr con tu web?</h2>
+                    <p class="step-desc">Podés elegir más de una opción.</p>
+
+                    <div class="options-grid" id="objetivo">
+                        <label class="option-card checkbox-card">
+                            <input type="checkbox" name="objetivo" value="Tener presencia online">
+                            <span class="option-content">
+                                <span class="option-icon">🌐</span>
+                                <span class="option-text">Tener presencia online</span>
+                            </span>
+                            <span class="check-mark">✓</span>
+                        </label>
+                        <label class="option-card checkbox-card">
+                            <input type="checkbox" name="objetivo" value="Generar más consultas">
+                            <span class="option-content">
+                                <span class="option-icon">💬</span>
+                                <span class="option-text">Generar más consultas</span>
+                            </span>
+                            <span class="check-mark">✓</span>
+                        </label>
+                        <label class="option-card checkbox-card">
+                            <input type="checkbox" name="objetivo" value="Vender más productos/servicios">
+                            <span class="option-content">
+                                <span class="option-icon">💰</span>
+                                <span class="option-text">Vender más productos/servicios</span>
+                            </span>
+                            <span class="check-mark">✓</span>
+                        </label>
+                        <label class="option-card checkbox-card">
+                            <input type="checkbox" name="objetivo" value="Escalar el negocio">
+                            <span class="option-content">
+                                <span class="option-icon">🚀</span>
+                                <span class="option-text">Escalar el negocio</span>
+                            </span>
+                            <span class="check-mark">✓</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 4: Web actual ─── -->
+                <div class="step" data-step="4">
+                    <div class="step-icon">💻</div>
+                    <h2 class="step-title">¿Tenés web actualmente?</h2>
+
+                    <div class="options-grid" id="web_actual">
+                        <label class="option-card">
+                            <input type="radio" name="web_actual" value="No tengo web">
+                            <span class="option-content">
+                                <span class="option-icon">❌</span>
+                                <span class="option-text">No</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="web_actual" value="Sí, pero no genera resultados">
+                            <span class="option-content">
+                                <span class="option-icon">😞</span>
+                                <span class="option-text">Sí, pero no genera resultados</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="web_actual" value="Sí, pero quiero mejorarla">
+                            <span class="option-content">
+                                <span class="option-icon">🔧</span>
+                                <span class="option-text">Sí, pero quiero mejorarla</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 5: Hosting/Dominio ─── -->
+                <div class="step" data-step="5">
+                    <div class="step-icon">🖥️</div>
+                    <h2 class="step-title">¿Contás con hosting y/o dominio?</h2>
+
+                    <div class="options-grid" id="hosting">
+                        <label class="option-card">
+                            <input type="radio" name="hosting" value="No, no tengo ninguno">
+                            <span class="option-content">
+                                <span class="option-icon">❌</span>
+                                <span class="option-text">No, no tengo ninguno</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="hosting" value="Tengo dominio, pero no hosting">
+                            <span class="option-content">
+                                <span class="option-icon">🌐</span>
+                                <span class="option-text">Tengo dominio, no hosting</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="hosting" value="Tengo hosting, pero no dominio">
+                            <span class="option-content">
+                                <span class="option-icon">🖥️</span>
+                                <span class="option-text">Tengo hosting, no dominio</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="hosting" value="Sí, tengo ambos">
+                            <span class="option-content">
+                                <span class="option-icon">✅</span>
+                                <span class="option-text">Sí, tengo ambos</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 6: Cuándo empezar ─── -->
+                <div class="step" data-step="6">
+                    <div class="step-icon">⏱️</div>
+                    <h2 class="step-title">¿Cuándo querés empezar?</h2>
+
+                    <div class="options-grid" id="cuando">
+                        <label class="option-card">
+                            <input type="radio" name="cuando" value="Solo estoy averiguando">
+                            <span class="option-content">
+                                <span class="option-icon">🧐</span>
+                                <span class="option-text">Solo estoy averiguando</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="cuando" value="En 1–3 meses">
+                            <span class="option-content">
+                                <span class="option-icon">📆</span>
+                                <span class="option-text">En 1–3 meses</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="cuando" value="En las próximas semanas">
+                            <span class="option-content">
+                                <span class="option-icon">📅</span>
+                                <span class="option-text">En las próximas semanas</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="cuando" value="Lo antes posible">
+                            <span class="option-content">
+                                <span class="option-icon">⚡</span>
+                                <span class="option-text">Lo antes posible</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 7: Por qué una web ─── -->
+                <div class="step" data-step="7">
+                    <div class="step-icon">💡</div>
+                    <h2 class="step-title">¿Por qué creés que tu negocio necesita una web profesional ahora?</h2>
+                    <p class="step-desc">Sé tan específico como quieras.</p>
+
+                    <div class="field-group">
+                        <textarea id="por_que" name="por_que" class="text-input textarea" placeholder="Ej: Mis competidores ya tienen web y yo no, pierdo clientes todos los días…" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <!-- ─── STEP 8: Facturación ─── -->
+                <div class="step" data-step="8">
+                    <div class="step-icon">💵</div>
+                    <h2 class="step-title">Una última pregunta…</h2>
+                    <p class="step-desc step-highlight">👉 Trabajamos con negocios que ya están en marcha y buscan escalar. ¿Cuál es tu facturación mensual aproximada?</p>
+
+                    <div class="options-grid" id="facturacion">
+                        <label class="option-card">
+                            <input type="radio" name="facturacion" value="$500.000 – $2.000.000">
+                            <span class="option-content">
+                                <span class="option-icon">💰</span>
+                                <span class="option-text">$500.000 – $2.000.000</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="facturacion" value="$2.000.000 – $10.000.000">
+                            <span class="option-content">
+                                <span class="option-icon">💎</span>
+                                <span class="option-text">$2.000.000 – $10.000.000</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="facturacion" value="+$10.000.000">
+                            <span class="option-content">
+                                <span class="option-icon">🏆</span>
+                                <span class="option-text">+$10.000.000</span>
+                            </span>
+                        </label>
+                        <label class="option-card">
+                            <input type="radio" name="facturacion" value="Prefiero no contestar">
+                            <span class="option-content">
+                                <span class="option-icon">🤐</span>
+                                <span class="option-text">Prefiero no contestar</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Navigation buttons -->
+        <div class="nav-buttons">
+            <button type="button" class="btn btn-back" id="btnBack" style="display:none">← Atrás</button>
+            <button type="button" class="btn btn-next" id="btnNext">Continuar →</button>
+            <button type="button" class="btn btn-submit" id="btnSubmit" style="display:none">
+                Enviar por WhatsApp 💬
+            </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="form-footer">
+            <p>Tu información es privada y solo será usada para contactarte. 🔒</p>
+        </footer>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
