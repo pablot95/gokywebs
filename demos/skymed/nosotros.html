@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nosotros | SkyMed Consultorios</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container-fluid">
+            <a href="index.html" class="nav-logo-link">
+                <img src="images/logo.png" alt="SkyMed" class="nav-logo-img">
+            </a>
+            <div class="nav-right">
+                <ul class="nav-menu">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="nosotros.html" class="active">Nosotros</a></li>
+                    <li><a href="staff.html">Staff</a></li>
+                    <li><a href="estudios.html">Estudios</a></li>
+                    <li><a href="contacto.html">Contacto</a></li>
+                    <li><a href="preguntas-frecuentes.html">FAQ</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="https://blipdoc.com/portal/skymedconsultorios" class="cta-btn" target="_blank" rel="noopener">SOLICITAR TURNO</a>
+                </div>
+                <button class="mobile-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header page-header--nosotros">
+        <div class="container-fluid">
+            <h1 class="page-header-title">NOSOTROS</h1>
+        </div>
+    </div>
+
+    <!-- Nosotros Content -->
+    <section class="nosotros-section">
+        <div class="container-fluid">
+            <div class="nosotros-wrapper">
+                <div class="nosotros-left">
+                    <div class="nosotros-content">
+                        <h2 class="nosotros-subtitle">Bienvenidos a SkyMed Consultorios</h2>
+                        <p class="nosotros-text">Somos un Equipo de Profesionales de la Salud, cuyo objetivo es la atención de nuestros pacientes de forma personalizada.</p>
+                        <p class="nosotros-text">Jerarquizamos el trabajo en conjunto, posicionando al paciente en el centro de nuestros cuidados desde hace ya más de 20 años.</p>
+                    </div>
+                    <div class="nosotros-lema">
+                        <div class="lema-card">
+                            <p class="lema-label">NUESTRO LEMA</p>
+                            <blockquote class="lema-quote">&ldquo;Experiencia, Trayectoria y Calidez Humana&rdquo;</blockquote>
+                        </div>
+                    </div>
+                </div>
+                <div class="nosotros-map">
+                    <img src="images/mapita.jpeg" alt="Ubicación SkyMed Consultorios" class="nosotros-map-img">
+                </div>
+            </div>
+        </div>
+                <div class="container-fluid">
+            <div class="consultorio-fotos-grid">
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="0">
+                    <img src="images/consultorio.jpg" alt="Exterior SkyMed Consultorios" class="consultorio-foto">
+                </div>
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="1">
+                    <img src="images/consultorio2.jpeg" alt="Consultorio SkyMed" class="consultorio-foto">
+                </div>
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="2">
+                    <img src="images/interior.jpeg" alt="Interior SkyMed Consultorios" class="consultorio-foto">
+                </div>
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="3">
+                    <img src="images/consultorio3.jpeg" alt="Consultorio SkyMed" class="consultorio-foto">
+                </div>
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="4">
+                    <img src="images/otroconsultorio.jpeg" alt="Sala de espera SkyMed" class="consultorio-foto">
+                </div>
+                <div class="consultorio-foto-block lightbox-trigger" data-lightbox-index="5">
+                    <img src="images/consultorio4.jpeg" alt="Consultorio SkyMed" class="consultorio-foto">
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="footer-bottom-simple">
+        <div class="container-fluid footer-bar">
+            <span>&copy; 2026 SkyMed Consultorios Médicos. Todos los derechos reservados.</span>
+            <div class="footer-bar-contact">
+                <a href="preguntas-frecuentes.html"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+                <a href="https://wa.me/5491166111111"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+            </div>
+        </div>
+        <div class="container-fluid footer-credit">
+            <span>Developed and designed by: <a href="https://gokywebs.net" target="_blank" rel="noopener">Gokywebs</a></span>
+        </div>
+    </footer>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="nosotrosLightbox" role="dialog" aria-modal="true">
+        <div class="lightbox-overlay" id="lightboxOverlay"></div>
+        <button class="lightbox-close" id="lightboxClose" aria-label="Cerrar">&times;</button>
+        <button class="lightbox-nav lightbox-prev" id="lightboxPrev" aria-label="Anterior"><i class="fa-solid fa-chevron-left"></i></button>
+        <div class="lightbox-img-wrap">
+            <img src="" alt="" class="lightbox-img" id="lightboxImg">
+            <p class="lightbox-caption" id="lightboxCaption"></p>
+        </div>
+        <button class="lightbox-nav lightbox-next" id="lightboxNext" aria-label="Siguiente"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

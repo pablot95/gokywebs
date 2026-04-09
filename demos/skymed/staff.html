@@ -1,0 +1,699 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff | SkyMed Consultorios</title>
+    <link rel="icon" type="image/png" href="images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container-fluid">
+            <a href="index.html" class="nav-logo-link">
+                <img src="images/logo.png" alt="SkyMed" class="nav-logo-img">
+            </a>
+            <div class="nav-right">
+                <ul class="nav-menu">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="nosotros.html">Nosotros</a></li>
+                    <li><a href="staff.html" class="active">Staff</a></li>
+                    <li><a href="estudios.html">Estudios</a></li>
+                    <li><a href="contacto.html">Contacto</a></li>
+                    <li><a href="preguntas-frecuentes.html">FAQ</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="https://blipdoc.com/portal/skymedconsultorios" class="cta-btn" target="_blank" rel="noopener">SOLICITAR TURNO</a>
+                </div>
+                <button class="mobile-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header page-header--staff">
+        <div class="container-fluid">
+            <h1 class="page-header-title">STAFF</h1>
+            <p class="page-header-subtitle">Nuestro equipo de profesionales</p>
+        </div>
+    </div>
+
+    <!-- Staff Content -->
+    <section class="staff-section">
+        <div class="container-fluid">
+
+            <div class="staff-filters" id="staffFilters">
+                <button class="staff-filters-toggle" id="staffFiltersToggle">
+                    <i class="fa-solid fa-filter"></i> Filtrar por especialidad
+                    <i class="fa-solid fa-chevron-down staff-filters-toggle-icon"></i>
+                </button>
+                <div class="staff-filters-list">
+                <button class="staff-filter-btn active" data-filter="todos">Todos</button>
+                <button class="staff-filter-btn" data-filter="cardiologia">Cardiología</button>
+                <button class="staff-filter-btn" data-filter="cirugia-plastica">Cirugía Plástica</button>
+                <button class="staff-filter-btn" data-filter="clinica-medica">Clínica Médica</button>
+                <button class="staff-filter-btn" data-filter="dermatologia">Dermatología</button>
+                <button class="staff-filter-btn" data-filter="diagnosticos-por-imagenes">Diagnóstico por Imágenes</button>
+                <button class="staff-filter-btn" data-filter="endocrinologia">Endocrinología</button>
+                <button class="staff-filter-btn" data-filter="flebologia">Flebología</button>
+                <button class="staff-filter-btn" data-filter="fonoaudiologia">Fonoaudiología</button>
+                <button class="staff-filter-btn" data-filter="gastroenterologia">Gastroenterología</button>
+                <button class="staff-filter-btn" data-filter="ginecologia">Ginecología</button>
+                <button class="staff-filter-btn" data-filter="neumonologia">Neumonología</button>
+                <button class="staff-filter-btn" data-filter="neurociencias">Neurociencias</button>
+                <button class="staff-filter-btn" data-filter="nutricion">Nutrición</button>
+                <button class="staff-filter-btn" data-filter="oftalmologia">Oftalmología</button>
+                <button class="staff-filter-btn" data-filter="otorrinolaringologia">ORL</button>
+                <button class="staff-filter-btn" data-filter="pediatria">Pediatría</button>
+                <button class="staff-filter-btn" data-filter="proctologia">Proctología</button>
+                <button class="staff-filter-btn" data-filter="psicologia">Psicología</button>
+                <button class="staff-filter-btn" data-filter="reumatologia">Reumatología</button>
+                <button class="staff-filter-btn" data-filter="rpg">RPG</button>
+                <button class="staff-filter-btn" data-filter="traumatologia">Traumatología</button>
+                <button class="staff-filter-btn" data-filter="urologia">Urología</button>
+                </div>
+            </div>
+
+            <div class="staff-groups-flow">
+
+            <!-- Cardiología -->
+            <div class="staff-group" data-category="cardiologia" data-count="4">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+                    <h2 class="staff-group-title">Cardiología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/3.jpeg" alt="Dr. Peirano, Joaquín" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Peirano, Joaquín</h3>
+                            <p class="staff-card-specialty">Cardiología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/4.jpeg" alt="Dr. Colangelo, Héctor" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Colangelo, Héctor</h3>
+                            <p class="staff-card-specialty">Cardiología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/37.jpeg" alt="Dra. Arismendi, Lorena" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Arismendi, Lorena</h3>
+                            <p class="staff-card-specialty">Cardiología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/43.jpeg" alt="Dra. Ottonello, Virginia" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Ottonello, Virginia</h3>
+                            <p class="staff-card-specialty">Cardiología Infantil</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clínica Médica -->
+            <div class="staff-group" data-category="clinica-medica" data-count="3">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-stethoscope"></i></div>
+                    <h2 class="staff-group-title">Clínica Médica</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/13.jpeg" alt="Dra. Diego, Andrea" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Diego, Andrea</h3>
+                            <p class="staff-card-specialty">Clínica Médica · Especialista en obesidad y tabaquismo</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/39.jpeg" alt="Dra. Kempel, Mariana" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Kempel, Mariana</h3>
+                            <p class="staff-card-specialty">Clínica Médica · ASMA · EPOC</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/28.jpeg" alt="Dra. Schaffer, María Cecilia" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Schaffer, María Cecilia</h3>
+                            <p class="staff-card-specialty">Clínica Médica y Diabetología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cirugía Plástica -->
+            <div class="staff-group" data-category="cirugia-plastica" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-hand-holding-medical"></i></div>
+                    <h2 class="staff-group-title">Cirugía Plástica</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/1.jpeg" alt="Dra. Bramati, María Laura" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Bramati, María Laura</h3>
+                            <p class="staff-card-specialty">Cirugía Plástica</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde 310 en adelante y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dermatología -->
+            <div class="staff-group" data-category="dermatologia" data-count="3">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-hand-dots"></i></div>
+                    <h2 class="staff-group-title">Dermatología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/7.jpeg" alt="Dr. Gomez, José Luis" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Gomez, José Luis</h3>
+                            <p class="staff-card-specialty">Dermatología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/30.jpeg" alt="Dra. Pagliarino, María Sol" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Pagliarino, María Sol</h3>
+                            <p class="staff-card-specialty">Dermatología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/8.jpeg" alt="Dra. Gomez, Luciana" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Gomez, Luciana</h3>
+                            <p class="staff-card-specialty">Dermatología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Diagnóstico por Imágenes -->
+            <div class="staff-group" data-category="diagnosticos-por-imagenes" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-x-ray"></i></div>
+                    <h2 class="staff-group-title">Diagnóstico por Imágenes</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/16.jpeg" alt="Dr. Fraga, Gustavo" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Fraga, Gustavo</h3>
+                            <p class="staff-card-specialty">Diagnóstico por Imágenes</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endocrinología -->
+            <div class="staff-group" data-category="endocrinologia" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-flask-vial"></i></div>
+                    <h2 class="staff-group-title">Endocrinología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/27.jpeg" alt="Dra. Moral, Rosario" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Moral, Rosario</h3>
+                            <p class="staff-card-specialty">Endocrinología y Diabetología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/29.jpeg" alt="Dra. Garnero, Victoria" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Garnero, Victoria</h3>
+                            <p class="staff-card-specialty">Endocrinología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flebología -->
+            <div class="staff-group" data-category="flebologia" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-heart-circle-bolt"></i></div>
+                    <h2 class="staff-group-title">Flebología y Cirugía Cardiovascular</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/5.jpeg" alt="Dr. De Pina Diaz Pedro, Flavio" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. De Pina Diaz Pedro, Flavio</h3>
+                            <p class="staff-card-specialty">Flebología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/34.jpeg" alt="Dr. Carnero, Lisandro" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Carnero, Lisandro</h3>
+                            <p class="staff-card-specialty">Flebología y Cirugía Cardiovascular</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fonoaudiología -->
+            <div class="staff-group" data-category="fonoaudiologia" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-ear-listen"></i></div>
+                    <h2 class="staff-group-title">Fonoaudiología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/26.jpeg" alt="Dra. Villarreal, Laura" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Villarreal, Laura</h3>
+                            <p class="staff-card-specialty">Fonoaudiología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Swiss Medical y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gastroenterología -->
+            <div class="staff-group" data-category="gastroenterologia" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-microscope"></i></div>
+                    <h2 class="staff-group-title">Gastroenterología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/20.jpeg" alt="Dra. Signorelli, Mariela" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Signorelli, Mariela</h3>
+                            <p class="staff-card-specialty">Gastroenterología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/21.jpeg" alt="Dra. Linares, María Eugenia" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Linares, María Eugenia</h3>
+                            <p class="staff-card-specialty">Gastroenterología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ginecología -->
+            <div class="staff-group" data-category="ginecologia" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-person-dress"></i></div>
+                    <h2 class="staff-group-title">Ginecología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/19.jpeg" alt="Dra. Heer, Carolina" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Heer, Carolina</h3>
+                            <p class="staff-card-specialty">Ginecología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/18.jpeg" alt="Dra. Bado, Cristina" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Bado, Cristina</h3>
+                            <p class="staff-card-specialty">Ginecología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neumonología -->
+            <div class="staff-group" data-category="neumonologia" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-lungs"></i></div>
+                    <h2 class="staff-group-title">Neumonología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/36.jpeg" alt="Dra. Décima, Tamara" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Décima, Tamara</h3>
+                            <p class="staff-card-specialty">Neumonología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Neurociencias -->
+            <div class="staff-group" data-category="neurociencias" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-brain"></i></div>
+                    <h2 class="staff-group-title">Neurociencias</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/25.jpeg" alt="Dr. Asmus, Humberto" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Asmus, Humberto</h3>
+                            <p class="staff-card-specialty">Neurocirugía</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/41.jpeg" alt="Dra. Raskovsky, Vanesa" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Raskovsky, Vanesa</h3>
+                            <p class="staff-card-specialty">Neurología Infantil</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nutrición -->
+            <div class="staff-group" data-category="nutricion" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-apple-whole"></i></div>
+                    <h2 class="staff-group-title">Nutrición</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/15.jpeg" alt="Lic. Sierra, Cristina" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Sierra, Cristina</h3>
+                            <p class="staff-card-specialty">Nutrición</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/17.jpeg" alt="Lic. Schlumpp, Mariana" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Schlumpp, Mariana</h3>
+                            <p class="staff-card-specialty">Nutrición</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oftalmología -->
+            <div class="staff-group" data-category="oftalmologia" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-eye"></i></div>
+                    <h2 class="staff-group-title">Oftalmología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/40.jpeg" alt="Dra. Luna, Analía" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Luna, Analía</h3>
+                            <p class="staff-card-specialty">Oftalmología (solo estudios)</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Otorrinolaringología -->
+            <div class="staff-group" data-category="otorrinolaringologia" data-count="2">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-ear-deaf"></i></div>
+                    <h2 class="staff-group-title">Otorrinolaringología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/10.jpeg" alt="Dr. Carrizo, Luis" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Carrizo, Luis</h3>
+                            <p class="staff-card-specialty">Otorrinolaringología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/11.jpeg" alt="Dra. Giusti, Cristina" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Giusti, Cristina</h3>
+                            <p class="staff-card-specialty">Otorrinolaringología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pediatría -->
+            <div class="staff-group" data-category="pediatria" data-count="3">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-baby"></i></div>
+                    <h2 class="staff-group-title">Pediatría</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/22.jpeg" alt="Dra. Pulvirenti, Liliana" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Pulvirenti, Liliana</h3>
+                            <p class="staff-card-specialty">Pediatría</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/23.jpeg" alt="Dr. Bruhn, Arturo" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Bruhn, Arturo</h3>
+                            <p class="staff-card-specialty">Pediatría</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/24.jpeg" alt="Dr. Repetto, Santiago" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Repetto, Santiago</h3>
+                            <p class="staff-card-specialty">Pediatría</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde a partir 310 y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proctología y Cirugía General -->
+            <div class="staff-group" data-category="proctologia" data-count="3">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-kit-medical"></i></div>
+                    <h2 class="staff-group-title">Proctología y Cirugía General</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/32.jpeg" alt="Dr. González Massa, Marcos" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. González Massa, Marcos</h3>
+                            <p class="staff-card-specialty">Proctología y Cirugía General</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde, Swiss Medical y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/33.jpeg" alt="Dr. Avellaneda, Nicolás" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Avellaneda, Nicolás</h3>
+                            <p class="staff-card-specialty">Proctología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/35.jpeg" alt="Dr. Tricarico, Juan Martín" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Tricarico, Juan Martín</h3>
+                            <p class="staff-card-specialty">Proctología y Cirugía General</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Psicología -->
+            <div class="staff-group" data-category="psicologia" data-count="4">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-comments"></i></div>
+                    <h2 class="staff-group-title">Psicología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/14.jpeg" alt="Lic. Reynals, Lucrecia" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Reynals, Lucrecia</h3>
+                            <p class="staff-card-specialty">Psicología · Trastorno de la conducta alimentaria (TCA)</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/31.jpeg" alt="Lic. Naveyras, María Rosalía" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Naveyras, María Rosalía</h3>
+                            <p class="staff-card-specialty">Psicología · Sexología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/38.jpeg" alt="Lic. Lorenzo, Andrea" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Lorenzo, Andrea</h3>
+                            <p class="staff-card-specialty">Psicología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/veronicalopez.jpeg" alt="Lic. Lopez Srebot, Veronica" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Lopez Srebot, Veronica</h3>
+                            <p class="staff-card-specialty">Psicología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reumatología -->
+            <div class="staff-group" data-category="reumatologia" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-joint"></i></div>
+                    <h2 class="staff-group-title">Reumatología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/malenaviola.jpeg" alt="Dra. Viola, Malena" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dra. Viola, Malena</h3>
+                            <p class="staff-card-specialty">Reumatología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RPG y Rehabilitación -->
+            <div class="staff-group" data-category="rpg" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-person-walking"></i></div>
+                    <h2 class="staff-group-title">Reeducación Postural (RPG)</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/6.jpeg" alt="Lic. Mombelli, Gabriela" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Lic. Mombelli, Gabriela</h3>
+                            <p class="staff-card-specialty">RPG</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Sólo particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traumatología -->
+            <div class="staff-group" data-category="traumatologia" data-count="3">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-bone"></i></div>
+                    <h2 class="staff-group-title">Traumatología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/9.jpeg" alt="Dr. Firman, Elíseo" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Firman, Elíseo</h3>
+                            <p class="staff-card-specialty">Traumatología de Rodilla</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/12.jpeg" alt="Dr. Pace, Germán" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Pace, Germán</h3>
+                            <p class="staff-card-specialty">Traumatología de Pie</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                    <div class="staff-card">
+                        <img src="images/staff/42.jpeg" alt="Dr. Imposti, Félix" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Imposti, Félix</h3>
+                            <p class="staff-card-specialty">Traumatología de Columna</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Urología -->
+            <div class="staff-group" data-category="urologia" data-count="1">
+                <div class="staff-group-header">
+                    <div class="staff-group-icon"><i class="fa-solid fa-vial"></i></div>
+                    <h2 class="staff-group-title">Urología</h2>
+                </div>
+                <div class="staff-grid">
+                    <div class="staff-card">
+                        <img src="images/staff/2.jpeg" alt="Dr. Jiménez Torrado, Juan Manuel" class="staff-card-img">
+                        <div class="staff-card-body">
+                            <h3 class="staff-card-name">Dr. Jiménez Torrado, Juan Manuel</h3>
+                            <p class="staff-card-specialty">Urología</p>
+                            <p class="staff-card-insurance"><i class="fa-solid fa-shield-heart"></i> Osde y particular</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </div><!-- /staff-groups-flow -->
+
+        </div>
+    </section>
+
+    <!-- Modal -->
+    <div class="modal" id="skymedModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            <div class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-bottom-simple">
+        <div class="container-fluid footer-bar">
+            <span>&copy; 2026 SkyMed Consultorios Médicos. Todos los derechos reservados.</span>
+            <div class="footer-bar-contact">
+                <a href="preguntas-frecuentes.html"><i class="fa-solid fa-circle-question"></i> FAQ</a>
+                <a href="https://wa.me/5491166111111"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+            </div>
+        </div>
+        <div class="container-fluid footer-credit">
+            <span>Developed and designed by: <a href="https://gokywebs.net" target="_blank" rel="noopener">Gokywebs</a></span>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
