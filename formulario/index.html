@@ -9,7 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../formulario/styles.css">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
@@ -32,7 +33,7 @@
             <div class="progress-bar">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
-            <span class="progress-label" id="progressLabel">Paso 1 de 8</span>
+            <span class="progress-label" id="progressLabel">Paso 1 de 7</span>
         </div>
 
         <!-- Form card -->
@@ -48,6 +49,11 @@
                     <div class="field-group">
                         <label class="field-label" for="nombre">Tu nombre <span class="req">*</span></label>
                         <input type="text" id="nombre" name="nombre" class="text-input" placeholder="Ej: Lucas García" autocomplete="given-name" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="celular">Tu celular <span class="req">*</span></label>
+                        <input type="tel" id="celular" name="celular" class="text-input" placeholder="Ej: +54 9 11 1234-5678" autocomplete="tel" required>
                     </div>
 
                     <div class="field-group">
@@ -210,10 +216,10 @@
 
                     <div class="options-grid" id="cuando">
                         <label class="option-card">
-                            <input type="radio" name="cuando" value="Solo estoy averiguando">
+                            <input type="radio" name="cuando" value="Lo antes posible">
                             <span class="option-content">
-                                <span class="option-icon">🧐</span>
-                                <span class="option-text">Solo estoy averiguando</span>
+                                <span class="option-icon">⚡</span>
+                                <span class="option-text">Lo antes posible</span>
                             </span>
                         </label>
                         <label class="option-card">
@@ -231,12 +237,13 @@
                             </span>
                         </label>
                         <label class="option-card">
-                            <input type="radio" name="cuando" value="Lo antes posible">
+                            <input type="radio" name="cuando" value="Solo estoy averiguando">
                             <span class="option-content">
-                                <span class="option-icon">⚡</span>
-                                <span class="option-text">Lo antes posible</span>
+                                <span class="option-icon">🧐</span>
+                                <span class="option-text">Solo estoy averiguando</span>
                             </span>
                         </label>
+
                     </div>
                 </div>
 
@@ -251,44 +258,6 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 8: Facturación ─── -->
-                <div class="step" data-step="8">
-                    <div class="step-icon">💵</div>
-                    <h2 class="step-title">Una última pregunta…</h2>
-                    <p class="step-desc step-highlight">👉 Trabajamos con negocios que ya están en marcha y buscan escalar. ¿Cuál es tu facturación mensual aproximada?</p>
-
-                    <div class="options-grid" id="facturacion">
-                        <label class="option-card">
-                            <input type="radio" name="facturacion" value="$500.000 – $2.000.000">
-                            <span class="option-content">
-                                <span class="option-icon">💰</span>
-                                <span class="option-text">$500.000 – $2.000.000</span>
-                            </span>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="facturacion" value="$2.000.000 – $10.000.000">
-                            <span class="option-content">
-                                <span class="option-icon">💎</span>
-                                <span class="option-text">$2.000.000 – $10.000.000</span>
-                            </span>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="facturacion" value="+$10.000.000">
-                            <span class="option-content">
-                                <span class="option-icon">🏆</span>
-                                <span class="option-text">+$10.000.000</span>
-                            </span>
-                        </label>
-                        <label class="option-card">
-                            <input type="radio" name="facturacion" value="Prefiero no contestar">
-                            <span class="option-content">
-                                <span class="option-icon">🤐</span>
-                                <span class="option-text">Prefiero no contestar</span>
-                            </span>
-                        </label>
-                    </div>
-                </div>
-
             </form>
         </div>
 
@@ -297,7 +266,7 @@
             <button type="button" class="btn btn-back" id="btnBack" style="display:none">← Atrás</button>
             <button type="button" class="btn btn-next" id="btnNext">Continuar →</button>
             <button type="button" class="btn btn-submit" id="btnSubmit" style="display:none">
-                Enviar por WhatsApp 💬
+                Enviar consulta ✉️
             </button>
         </div>
 
@@ -308,6 +277,6 @@
 
     </div>
 
-    <script src="../formulario/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
