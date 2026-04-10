@@ -28,23 +28,17 @@
             <p class="header-sub">Completá el formulario y nos contactamos en menos de 24 h</p>
         </header>
 
-        <!-- Progress bar -->
-        <div class="progress-container">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <span class="progress-label" id="progressLabel">Paso 1 de 7</span>
-        </div>
-
         <!-- Form card -->
         <div class="form-card">
             <form id="leadForm" novalidate>
 
-                <!-- ─── STEP 1: Nombre + Negocio ─── -->
-                <div class="step active" data-step="1">
-                    <div class="step-icon">👋</div>
-                    <h2 class="step-title">¡Hola! Empecemos por lo básico</h2>
-                    <p class="step-desc">Solo nos lleva 2 minutos.</p>
+                <!-- ─── Datos de contacto ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">👋</span>
+                        <h2 class="step-title">¡Hola! Empecemos por lo básico</h2>
+                        <p class="step-desc">Solo nos lleva 2 minutos.</p>
+                    </div>
 
                     <div class="field-group">
                         <label class="field-label" for="nombre">Tu nombre <span class="req">*</span></label>
@@ -62,11 +56,15 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 2: Antigüedad ─── -->
-                <div class="step" data-step="2">
-                    <div class="step-icon">📅</div>
-                    <h2 class="step-title">¿Hace cuánto estás operando?</h2>
-                    <p class="step-desc">Seleccioná la opción que más se ajuste.</p>
+                <div class="section-divider"></div>
+
+                <!-- ─── Antigüedad ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">📅</span>
+                        <h2 class="step-title">¿Hace cuánto estás operando?</h2>
+                        <p class="step-desc">Seleccioná la opción que más se ajuste.</p>
+                    </div>
 
                     <div class="options-grid" id="antiguedad">
                         <label class="option-card">
@@ -100,11 +98,15 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 3: Objetivo ─── -->
-                <div class="step" data-step="3">
-                    <div class="step-icon">🎯</div>
-                    <h2 class="step-title">¿Qué estás buscando lograr con tu web?</h2>
-                    <p class="step-desc">Podés elegir más de una opción.</p>
+                <div class="section-divider"></div>
+
+                <!-- ─── Objetivo ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">🎯</span>
+                        <h2 class="step-title">¿Qué estás buscando lograr con tu web?</h2>
+                        <p class="step-desc">Podés elegir más de una opción.</p>
+                    </div>
 
                     <div class="options-grid" id="objetivo">
                         <label class="option-card checkbox-card">
@@ -142,10 +144,14 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 4: Web actual ─── -->
-                <div class="step" data-step="4">
-                    <div class="step-icon">💻</div>
-                    <h2 class="step-title">¿Tenés web actualmente?</h2>
+                <div class="section-divider"></div>
+
+                <!-- ─── Web actual ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">💻</span>
+                        <h2 class="step-title">¿Tenés web actualmente?</h2>
+                    </div>
 
                     <div class="options-grid" id="web_actual">
                         <label class="option-card">
@@ -172,10 +178,14 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 5: Hosting/Dominio ─── -->
-                <div class="step" data-step="5">
-                    <div class="step-icon">🖥️</div>
-                    <h2 class="step-title">¿Contás con hosting y/o dominio?</h2>
+                <div class="section-divider"></div>
+
+                <!-- ─── Hosting/Dominio ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">🖥️</span>
+                        <h2 class="step-title">¿Contás con hosting y/o dominio?</h2>
+                    </div>
 
                     <div class="options-grid" id="hosting">
                         <label class="option-card">
@@ -209,10 +219,14 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 6: Cuándo empezar ─── -->
-                <div class="step" data-step="6">
-                    <div class="step-icon">⏱️</div>
-                    <h2 class="step-title">¿Cuándo querés empezar?</h2>
+                <div class="section-divider"></div>
+
+                <!-- ─── Cuándo empezar ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">⏱️</span>
+                        <h2 class="step-title">¿Cuándo querés empezar?</h2>
+                    </div>
 
                     <div class="options-grid" id="cuando">
                         <label class="option-card">
@@ -247,28 +261,32 @@
                     </div>
                 </div>
 
-                <!-- ─── STEP 7: Por qué una web ─── -->
-                <div class="step" data-step="7">
-                    <div class="step-icon">💡</div>
-                    <h2 class="step-title">¿Por qué creés que tu negocio necesita una web profesional ahora?</h2>
-                    <p class="step-desc">Sé tan específico como quieras.</p>
+                <div class="section-divider"></div>
+
+                <!-- ─── Por qué una web ─── -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <span class="section-icon">💡</span>
+                        <h2 class="step-title">¿Por qué creés que tu negocio necesita una web profesional ahora?</h2>
+                        <p class="step-desc">Sé tan específico como quieras (opcional).</p>
+                    </div>
 
                     <div class="field-group">
                         <textarea id="por_que" name="por_que" class="text-input textarea" placeholder="Ej: Mis competidores ya tienen web y yo no, pierdo clientes todos los días…" rows="4"></textarea>
                     </div>
                 </div>
 
+                <!-- ─── Enviar ─── -->
+                <div class="submit-row">
+                    <button type="button" class="btn btn-submit" id="btnSubmit">
+                        Enviar consulta ✉️
+                    </button>
+                </div>
+
             </form>
         </div>
 
-        <!-- Navigation buttons -->
-        <div class="nav-buttons">
-            <button type="button" class="btn btn-back" id="btnBack" style="display:none">← Atrás</button>
-            <button type="button" class="btn btn-next" id="btnNext">Continuar →</button>
-            <button type="button" class="btn btn-submit" id="btnSubmit" style="display:none">
-                Enviar consulta ✉️
-            </button>
-        </div>
+
 
         <!-- Footer -->
         <footer class="form-footer">

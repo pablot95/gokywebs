@@ -1,109 +1,76 @@
 /* ─────────────────────────────────────────────
-   GokyWebs – Formulario de leads
+   GokyWebs – Formulario de leads (página única)
    Envío por Email (EmailJS)
    ───────────────────────────────────────────── */
 
 const EMAILJS_SERVICE  = 'service_wg4bw4e';
 const EMAILJS_TEMPLATE = 'template_o8ju6cu';
 const EMAILJS_KEY      = '5lJCf2hCkPyXNXwas';
-const TOTAL_STEPS      = 7;
-
-let currentStep = 1;
+const SHEETS_URL       = 'https://script.google.com/macros/s/AKfycbwkCSm6DFckoRWhlGuoEW3BqOovtUySN_jLA_I7j26WGWu22S418wycNdHdN-_1UzAW/exec';
 
 /* ── Init EmailJS ── */
 emailjs.init(EMAILJS_KEY);
 
 /* ── DOM refs ── */
-const progressFill  = document.getElementById('progressFill');
-const progressLabel = document.getElementById('progressLabel');
-const btnBack       = document.getElementById('btnBack');
-const btnNext       = document.getElementById('btnNext');
-const btnSubmit     = document.getElementById('btnSubmit');
-
-updateUI();
+const btnSubmit = document.getElementById('btnSubmit');
 
 /* ──────────────────────────────────────────────
-   Navigation
+   Submit
    ────────────────────────────────────────────── */
-btnNext.addEventListener('click', () => {
-    if (!validateStep(currentStep)) return;
-    if (currentStep < TOTAL_STEPS) showStep(currentStep + 1);
-});
-
-btnBack.addEventListener('click', () => {
-    if (currentStep > 1) showStep(currentStep - 1);
-});
-
 btnSubmit.addEventListener('click', () => {
-    if (!validateStep(currentStep)) return;
+    if (!validateAll()) return;
     sendToEmail();
 });
 
 /* ──────────────────────────────────────────────
-   Show a step
+   Validación completa del formulario
    ────────────────────────────────────────────── */
-function showStep(newStep) {
-    document.querySelector('.step.active')?.classList.remove('active');
-    currentStep = newStep;
-    document.querySelector(`.step[data-step="${currentStep}"]`)?.classList.add('active');
-    updateUI();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+function validateAll() {
+    // Limpiar errores previos
+    document.querySelectorAll('.error-msg').forEach(e => e.remove());
+    document.querySelectorAll('.error').forEach(e => e.classList.remove('error'));
 
-/* ──────────────────────────────────────────────
-   Update progress & buttons
-   ────────────────────────────────────────────── */
-function updateUI() {
-    progressFill.style.width  = (currentStep / TOTAL_STEPS * 100) + '%';
-    progressLabel.textContent = `Paso ${currentStep} de ${TOTAL_STEPS}`;
-    btnBack.style.display     = currentStep > 1             ? 'inline-flex' : 'none';
-    btnNext.style.display     = currentStep < TOTAL_STEPS   ? 'inline-flex' : 'none';
-    btnSubmit.style.display   = currentStep === TOTAL_STEPS ? 'inline-flex' : 'none';
-}
-
-/* ──────────────────────────────────────────────
-   Validation
-   ────────────────────────────────────────────── */
-function validateStep(step) {
-    const stepEl = document.querySelector(`.step[data-step="${step}"]`);
     let valid = true;
+    let firstError = null;
 
-    stepEl.querySelectorAll('.error-msg').forEach(e => e.remove());
-    stepEl.querySelectorAll('.error').forEach(e => e.classList.remove('error'));
+    // Campos de texto requeridos
+    const nombre  = document.getElementById('nombre');
+    const celular = document.getElementById('celular');
+    const negocio = document.getElementById('negocio');
 
-    switch (step) {
-        case 1: {
-            const nombre  = document.getElementById('nombre');
-            const celular = document.getElementById('celular');
-            const negocio = document.getElementById('negocio');
-            if (!nombre.value.trim())  { markInputError(nombre,  'Por favor ingresá tu nombre.');   valid = false; }
-            if (!celular.value.trim()) { markInputError(celular, 'Por favor ingresá tu celular.');  valid = false; }
-            if (!negocio.value.trim()) { markInputError(negocio, 'Contanos a qué se dedica tu negocio.'); valid = false; }
-            break;
+    if (!nombre.value.trim())  { markInputError(nombre,  'Por favor ingresá tu nombre.');          valid = false; firstError = firstError || nombre; }
+    if (!celular.value.trim()) { markInputError(celular, 'Por favor ingresá tu celular.');         valid = false; firstError = firstError || celular; }
+    if (!negocio.value.trim()) { markInputError(negocio, 'Contanos a qué se dedica tu negocio.'); valid = false; firstError = firstError || negocio; }
+
+    // Grupos de radio requeridos
+    const radioGroups = [
+        { id: 'antiguedad', name: 'antiguedad' },
+        { id: 'web_actual', name: 'web_actual' },
+        { id: 'hosting',   name: 'hosting'    },
+        { id: 'cuando',    name: 'cuando'     },
+    ];
+
+    radioGroups.forEach(({ id, name }) => {
+        if (!getRadioValue(name)) {
+            const el = document.getElementById(id);
+            markGroupError(el, 'Seleccioná una opción.');
+            valid = false;
+            firstError = firstError || el;
         }
-        case 2:
-            if (!getRadioValue('antiguedad'))
-                { markGroupError(document.getElementById('antiguedad'), 'Seleccioná una opción.'); valid = false; }
-            break;
-        case 3:
-            if (!document.querySelectorAll('input[name="objetivo"]:checked').length)
-                { markGroupError(document.getElementById('objetivo'), 'Seleccioná al menos una opción.'); valid = false; }
-            break;
-        case 4:
-            if (!getRadioValue('web_actual'))
-                { markGroupError(document.getElementById('web_actual'), 'Seleccioná una opción.'); valid = false; }
-            break;
-        case 5:
-            if (!getRadioValue('hosting'))
-                { markGroupError(document.getElementById('hosting'), 'Seleccioná una opción.'); valid = false; }
-            break;
-        case 6:
-            if (!getRadioValue('cuando'))
-                { markGroupError(document.getElementById('cuando'), 'Seleccioná una opción.'); valid = false; }
-            break;
-        case 7:
-            break; // opcional
+    });
+
+    // Checkboxes: al menos uno
+    if (!document.querySelectorAll('input[name="objetivo"]:checked').length) {
+        const el = document.getElementById('objetivo');
+        markGroupError(el, 'Seleccioná al menos una opción.');
+        valid = false;
+        firstError = firstError || el;
     }
+
+    if (!valid && firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     return valid;
 }
 
@@ -113,7 +80,6 @@ function markInputError(input, msg) {
     err.className   = 'error-msg visible';
     err.textContent = msg;
     input.parentNode.appendChild(err);
-    input.focus();
 }
 
 function markGroupError(groupEl, msg) {
@@ -149,7 +115,6 @@ async function sendToEmail() {
     const por_que     = document.getElementById('por_que').value.trim() || '(no respondió)';
     const fecha       = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
 
-    // Loading state
     btnSubmit.classList.add('loading');
     btnSubmit.textContent = 'Enviando';
 
@@ -159,10 +124,16 @@ async function sendToEmail() {
     };
 
     try {
-        await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, templateParams);
+        await Promise.allSettled([
+            emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, templateParams),
+            fetch(SHEETS_URL, {
+                method: 'POST',
+                body: JSON.stringify(templateParams),
+            }),
+        ]);
         showSuccessScreen(nombre);
     } catch (err) {
-        console.error('EmailJS error:', err);
+        console.error('Error al enviar:', err);
         btnSubmit.classList.remove('loading');
         btnSubmit.textContent = 'Enviar consulta ✉️';
         alert('Ocurrió un error al enviar. Por favor intentá de nuevo.');
@@ -173,12 +144,7 @@ async function sendToEmail() {
    Success screen con animación
    ────────────────────────────────────────────── */
 function showSuccessScreen(nombre) {
-    const card       = document.querySelector('.form-card');
-    const navButtons = document.querySelector('.nav-buttons');
-    const progress   = document.querySelector('.progress-container');
-
-    navButtons.style.display = 'none';
-    progress.style.display   = 'none';
+    const card = document.querySelector('.form-card');
 
     card.innerHTML = `
         <div class="success-screen active" id="successScreen">
@@ -194,6 +160,7 @@ function showSuccessScreen(nombre) {
     `;
 
     launchConfetti();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ──────────────────────────────────────────────
