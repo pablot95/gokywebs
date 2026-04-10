@@ -152,35 +152,6 @@ section {
 
 
 
-.section-header {
-    text-align: center;
-    margin-bottom: 4rem;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 28px;
-    padding: 2rem 1rem;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    gap: 4rem;
-    text-align: center;
-    max-width: 900px;
-}
-
-.section-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;  
-    transform: translateX(-50%);
-    width: auto;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.5), transparent);
-}
-
 .section-title {
     font-size: 2rem;
     font-weight: 700;
@@ -929,11 +900,10 @@ section {
 }
 
 .portfolio-container{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    max-width: 1600px;
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1.5rem;
 }
 
 .portfolio.section-padding {
@@ -948,39 +918,84 @@ section {
     margin-top: 2rem;
 }
 
-/* Ocultar items extra por defecto */
-.portfolio-item.portfolio-hidden {
+/* Ocultar items extra por defecto — ahora manejado por JS con data-category */
+.portfolio-item.filter-hidden {
     display: none;
 }
 
-.portfolio-grid.show-all .portfolio-item.portfolio-hidden {
-    display: block;
-}
-
-/* Contenedor del botÃ³n toggle */
-.portfolio-toggle-container {
+/* ─── Portfolio Filters ─── */
+.portfolio-filters {
     display: flex;
-    justify-content: center;
-    margin-top: 2.5rem;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 1.5rem;
 }
 
-.portfolio-toggle-btn {
-    padding: 0.8rem 2.5rem;
-    border-radius: 50px;
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.55rem 1.3rem;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.9rem;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 1.4rem;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s ease;
+    font-family: var(--font-primary);
+    white-space: nowrap;
 }
 
-.portfolio-toggle-btn:hover {
-    transform: translateY(-4px) scale(1.05);
-    box-shadow: var(--shadow-purple);
+.filter-btn:hover {
+    border-color: rgba(37,99,235,0.5);
+    color: #fff;
+    background: rgba(37,99,235,0.1);
 }
+
+.filter-btn.active {
+    background: var(--color-blue);
+    border-color: var(--color-blue);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(37,99,235,0.35);
+}
+
+/* Items sin link */
+.portfolio-nohref {
+    cursor: default;
+    opacity: 0.78;
+}
+
+.portfolio-nohref:hover {
+    transform: none !important;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+
+.view-project--soon {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.35) !important;
+    font-style: italic;
+    opacity: 1 !important;
+}
+
+/* Animación al filtrar */
+@keyframes filterFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.portfolio-item.filter-show {
+    animation: filterFadeIn 0.35s ease both;
+}
+
+/* ─── Sin toggle button ─── */
 
 .portfolio-item {
     display: block;
     position: relative;
-    border-radius: 24px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.06);
     box-shadow: 0 15px 35px rgba(0,0,0,0.2);
     transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.4s ease;
@@ -1000,7 +1015,7 @@ section {
 .portfolio-visuals {
     position: relative;
     width: 100%;
-    min-height: 160px;
+    min-height: 300px;
     overflow: hidden;
     background: #f0f0f0;
 }
@@ -1270,7 +1285,7 @@ section {
     padding: 3rem 0;
     background: transparent;
     position: relative;
-    overflow: hidden;
+    overflow: clip;
 }
 
 .portfolio::before {
@@ -1290,7 +1305,7 @@ section {
     bottom: 10%;
     right: -10%;
     width: 500px;
-    height: 500px;
+    height: 600px;
     background: radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
     border-radius: 50%;
 }
@@ -1303,7 +1318,7 @@ section {
 }
 
 .proposal-section .container {
-    max-width: 95%;
+    max-width: 100%;
 }
 
 .proposal-content {
@@ -2291,6 +2306,26 @@ section {
         margin-top: 2rem;
         width: 100%;
         padding: 0 0.5rem;
+    }
+
+    .portfolio-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .portfolio-filters::-webkit-scrollbar {
+        display: none;
+    }
+
+    .filter-btn {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.9rem;
+        flex-shrink: 0;
     }
 
     .visual-web {

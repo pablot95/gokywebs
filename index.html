@@ -401,18 +401,18 @@
 
 
    <section id="portafolio" class="portfolio">
-        <div class="container portfolio-container">
-            <div class="section-header" data-aos="fade-up">
-                <div class="section-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="m7 2 5 5-5 5"/><path d="M2 14h6"/><circle cx="16" cy="16" r="2"/></svg>
-                </div>
-                <div class="section-header-text">
-                    <h2 class="section-title">Proyectos Destacados</h2>
-                </div>
+        <div class="portfolio-container">
+
+            <div class="portfolio-filters" id="portfolioFilters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="landing">Landings</button>
+                <button class="filter-btn" data-filter="tienda">Tiendas Online</button>
+                <button class="filter-btn" data-filter="inmobiliaria">Inmobiliarias</button>
+                <button class="filter-btn" data-filter="corporativa">Web Corporativa</button>
             </div>
 
             <div class="portfolio-grid" id="portfolioGrid">
-                <a href="https://www.encantoestetica.com.ar/" target="_blank" class="portfolio-item"  data-aos-delay="0">
+                <a href="https://www.encantoestetica.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/encantoweb.png" alt="Encanto Estética Web">
@@ -429,7 +429,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.estudioasilva.com.ar/" target="_blank" class="portfolio-item"  data-aos-delay="100">
+                <a href="https://www.estudioasilva.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/abogadaaldanaweb.png" alt="Abogada Aldana Silva Web">
@@ -446,7 +446,7 @@
                     </div>
                 </a>
 
-                <a href="https://licenciadaluena.com.ar" target="_blank" class="portfolio-item"  data-aos-delay="0">
+                <a href="https://licenciadaluena.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/psicologaluana.png" alt="Psicóloga Luana Web">
@@ -463,7 +463,7 @@
                     </div>
                 </a>
 
-                <a href="https://agrimensurasatelital.com" target="_blank" class="portfolio-item"  data-aos-delay="100">
+                <a href="https://agrimensurasatelital.com" target="_blank" class="portfolio-item" data-category="corporativa">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/agrimensuraweb.png" alt="Agrimensura Satelital Web">
@@ -480,7 +480,7 @@
                     </div>
                 </a>
 
-                <a href="https://cococatering.com.ar" target="_blank" class="portfolio-item"  data-aos-delay="0">
+                <a href="https://cococatering.com.ar" target="_blank" class="portfolio-item" data-category="tienda">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/cocoweb.png" alt="Coco Catering Web">
@@ -497,7 +497,7 @@
                     </div>
                 </a>
 
-                <a href="https://bastonspaulete.com/" target="_blank" class="portfolio-item" data-aos-delay="100">
+                <a href="https://bastonspaulete.com/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/bastonspauleteweb.png" alt="Bastons Paulete Web">
@@ -514,7 +514,7 @@
                     </div>
                 </a>
 
-                <a href="https://grupohv.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos-delay="100">
+                <a href="https://grupohv.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/logisticaweb.png" alt="Grupo HV Web">
@@ -531,7 +531,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.petit-app.com" target="_blank" class="portfolio-item portfolio-hidden" data-aos-delay="200">
+                <a href="https://www.petit-app.com" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/petitweb.png" alt="Petit App Web">
@@ -548,25 +548,9 @@
                     </div>
                 </a>
 
-                <!-- Items ocultos -->
-                <a href="https://esbelt.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos-delay="100">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/esbeltweb.png" alt="Esbelt Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/esbeltcelu.jpeg" alt="Esbelt Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Esbelt</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
 
-                <a href="https://shirtsn-co.vercel.app" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+
+                <a href="https://shirtsn-co.vercel.app" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/shirtsweb.png" alt="Shirts & Co Web">
@@ -583,7 +567,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="100">
+                <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/hostelweb.png" alt="Hostels Rosario Web">
@@ -600,7 +584,7 @@
                     </div>
                 </a>
 
-                <a href="https://italianosdelmundo.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+                <a href="https://italianosdelmundo.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/ciudadaniaweb.png" alt="Italianos del Mundo Web">
@@ -617,7 +601,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.csgestionpymes.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+                <a href="https://www.csgestionpymes.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/gestionpymesweb.png" alt="CS gestion pymes Web">
@@ -634,7 +618,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.zechtatuajes.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="100">
+                <a href="https://www.zechtatuajes.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/tatuajesweb.png" alt="Zech Web">
@@ -651,7 +635,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.aisamsalud.com.ar/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+                <a href="https://www.aisamsalud.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/aisamcentrosalud.png" alt="Aisam Centro de Salud Web">
@@ -668,7 +652,7 @@
                     </div>
                 </a>
 
-                <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="100">
+                <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/gomezasociadosweb.png" alt="Gomez & Asociados Web">
@@ -685,7 +669,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.mgabogado.com.ar/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+                <a href="https://www.mgabogado.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/abogadomgweb.png" alt="Abogado MG Web">
@@ -702,7 +686,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="100">
+                <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/vicenzoweb.png" alt="Espacio Vicenzo Web">
@@ -719,7 +703,7 @@
                     </div>
                 </a>
 
-                <a href="https://experienciaki.com.ar/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="100">
+                <a href="https://experienciaki.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/experienciakiweb.png" alt="Experiencia Ki Web">
@@ -736,7 +720,7 @@
                     </div>
                 </a>
 
-                <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="portfolio-item portfolio-hidden" data-aos="fade-up" data-aos-delay="0">
+                <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="portfolio-item" data-category="corporativa">
                     <div class="portfolio-visuals">
                         <div class="visual-web">
                             <img src="imagenes/maritimosweb.png" alt="Galeón Consultora Web">
@@ -752,13 +736,160 @@
                         <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
                     </div>
                 </a>
+                    
 
-            </div>
+                <!-- ── LANDINGS con link ── -->
+                <a href="https://www.masmomentosunicos.com/" target="_blank" class="portfolio-item" data-category="landing">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/barratragosweb.png" alt="Barra Tragos Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/barratragoscelu.png" alt="Barra Tragos Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Barra Tragos</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
 
-            <div class="portfolio-toggle-container">
-                <button class="btn btn-primary portfolio-toggle-btn" id="portfolioToggle" onclick="togglePortfolio()">
-                    <span>Ver más proyectos</span>
-                </button>
+                <a href="https://tuprepagaonline.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/prepagaweb.png" alt="Prepaga Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/prepagacelu.png" alt="Prepaga Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Prepaga</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://www.sanatoriosarmientosalud.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/sanatorioweb.png" alt="Sanatorio Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/sanatoriocelu.png" alt="Sanatorio Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Sanatorio Sarmiento</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <!-- ── TIENDAS con link ── -->
+                <a href="https://www.danielsaire.com.ar/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/airesweb.png" alt="Aires Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/airescelu.png" alt="Aires Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Daniel's Aire</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="http://distririogrande.com.ar/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/distritoweb.png" alt="Distrito Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/distritocelu.png" alt="Distrito Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Distrito Río Grande</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://www.gokywebs.net/demos/EsteticaCursos/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/esteticaweb.png" alt="Estética Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/esteticacelu.png" alt="Estética Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Estética Cursos</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="http://gicold.com.ar/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/gicoldweb.png" alt="Gicold Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/gicoldcelu.png" alt="Gicold Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Gicold</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://tusencantosindumentaria.com.ar/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/tusencantosweb.png" alt="Tus Encantos Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/tusencantoscelu.png" alt="Tus Encantos Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Tus Encantos</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <a href="https://botinesfv.com/" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/botinesweb.png" alt="Botines Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/botinescelu.png" alt="Botines Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Botines FV</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <!-- ── INMOBILIARIA con link ── -->
+                <a href="http://ventoinmobiliaria.com.ar/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/ventoweb.png" alt="Vento Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/ventocelu.png" alt="Vento Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Vento Inmobiliaria</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <!-- ── CORPORATIVA con link ── -->
+                <a href="https://www.urgencias24hs.com.ar/" target="_blank" class="portfolio-item" data-category="corporativa">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/odontoweb.png" alt="Odontobosques Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/odontocelu.png" alt="Odontobosques Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Odontobosques</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+                <a href="https://esbelt.com.ar" target="_blank" class="portfolio-item" data-category="tienda">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web">
+                            <img src="imagenes/esbeltweb.png" alt="Esbelt Web">
+                        </div>
+                        <div class="visual-mobile">
+                            <div class="mobile-frame">
+                                <img src="imagenes/esbeltcelu.jpeg" alt="Esbelt Mobile">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Esbelt</h3>
+                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
+                    </div>
+                </a>
+
+                <div class="portfolio-item portfolio-nohref" data-category="corporativa">
+                    <div class="portfolio-visuals">
+                        <div class="visual-web"><img src="imagenes/servitechweb.png" alt="Servitech Web"></div>
+                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/servitechcelu.png" alt="Servitech Mobile"></div></div>
+                    </div>
+                    <div class="portfolio-info">
+                        <h3>Servitech</h3>
+                        <span class="view-project view-project--soon">Sin link aún</span>
+                    </div>
+                </div>
+
             </div>
         </div>
     </section>

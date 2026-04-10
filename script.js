@@ -1093,47 +1093,41 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     });
 }
 
-function togglePortfolio() {
-    const grid = document.getElementById('portfolioGrid');
-    const btn = document.getElementById('portfolioToggle');
-    const isExpanded = grid.classList.contains('show-all');
-    const isEnglish = window.location.pathname.includes('/en/');
-    const portfolioSection = document.getElementById('portafolio') || document.getElementById('portfolio');
-    
-    if (isExpanded) {
-        grid.classList.remove('show-all');
-        btn.querySelector('span').textContent = isEnglish ? 'See more projects' : 'Ver más proyectos';
-        if (portfolioSection) {
-            portfolioSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    } else {
-        grid.classList.add('show-all');
-        btn.querySelector('span').textContent = isEnglish ? 'See less' : 'Ver menos';
-        
-        if (typeof gsap !== 'undefined') {
-            const hiddenItems = document.querySelectorAll('.portfolio-hidden');
-            hiddenItems.forEach((item, index) => {
-                const column = index % 3;
-                let animProps = { opacity: 0, duration: 0.8, ease: 'back.out(1.5)', clearProps: 'all' };
-                
-                if (column === 0) {
-                    animProps.x = -100;
-                    animProps.rotateY = -15;
-                } else if (column === 1) {
-                    animProps.y = 80;
-                    animProps.scale = 0.8;
+function initPortfolioFilter() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const items      = document.querySelectorAll('#portfolioGrid .portfolio-item[data-category]');
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.dataset.filter;
+
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            let visibleIndex = 0;
+            items.forEach(item => {
+                const matches = filter === 'all' || item.dataset.category === filter;
+                item.classList.remove('filter-show');
+
+                if (matches) {
+                    item.classList.remove('filter-hidden');
+                    const delay = visibleIndex * 0.04;
+                    item.style.animationDelay = delay + 's';
+                    void item.offsetWidth; // reflow para reiniciar animación
+                    item.classList.add('filter-show');
+                    visibleIndex++;
                 } else {
-                    animProps.x = 100;
-                    animProps.rotateY = 15;
+                    item.classList.add('filter-hidden');
                 }
-                
-                gsap.from(item, {
-                    ...animProps,
-                    delay: index * 0.1
-                });
             });
-        }
-    }
+        });
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPortfolioFilter);
+} else {
+    initPortfolioFilter();
 }
 
 /* -- Boceto form: send via WhatsApp -- */
