@@ -1093,33 +1093,98 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     });
 }
 
+const PORTFOLIO_LIMIT = 6;
+let currentPortfolioFilter = 'all';
+let portfolioExpanded = false;
+
+function killGsap(item) {
+    if (typeof gsap !== 'undefined') {
+        gsap.killTweensOf(item);
+        gsap.set(item, { clearProps: 'all' });
+    }
+}
+
+function applyPortfolioFilter(filter) {
+    const items = Array.from(document.querySelectorAll('#portfolioGrid .portfolio-item[data-category]'));
+    const verMasWrapper = document.getElementById('portfolioMoreWrapper');
+
+    const matching    = items.filter(item => filter === 'all' || item.dataset.category === filter);
+    const notMatching = items.filter(item => !(filter === 'all' || item.dataset.category === filter));
+    const toShow = portfolioExpanded ? matching : matching.slice(0, PORTFOLIO_LIMIT);
+    const toHide = notMatching.concat(portfolioExpanded ? [] : matching.slice(PORTFOLIO_LIMIT));
+
+    // Ocultar items que no corresponden
+    toHide.forEach(item => {
+        killGsap(item);
+        item.classList.remove('filter-show');
+        item.classList.add('filter-hidden');
+    });
+
+    // Quitar clases de los items a mostrar (necesario para reiniciar la animación CSS)
+    toShow.forEach(item => {
+        killGsap(item);
+        item.classList.remove('filter-show', 'filter-hidden');
+    });
+
+    // Forzar reflow una sola vez
+    var grid = document.getElementById('portfolioGrid');
+    if (grid) void grid.offsetHeight;
+
+    // Agregar filter-show con delay escalonado
+    toShow.forEach((item, i) => {
+        item.style.animationDelay = (i * 0.04) + 's';
+        item.classList.add('filter-show');
+    });
+
+    if (verMasWrapper) {
+        verMasWrapper.style.display = (!portfolioExpanded && matching.length > PORTFOLIO_LIMIT) ? 'flex' : 'none';
+    }
+}
+
+function initPortfolioLimit() {
+    const items = Array.from(document.querySelectorAll('#portfolioGrid .portfolio-item[data-category]'));
+    items.slice(PORTFOLIO_LIMIT).forEach(item => item.classList.add('filter-hidden'));
+
+    const verMasWrapper = document.getElementById('portfolioMoreWrapper');
+    if (verMasWrapper && items.length > PORTFOLIO_LIMIT) {
+        verMasWrapper.style.display = 'flex';
+    }
+}
+
 function initPortfolioFilter() {
     const filterBtns = document.querySelectorAll('.filter-btn');
-    const items      = document.querySelectorAll('#portfolioGrid .portfolio-item[data-category]');
+
+    // Mover portfolio justo después del hero
+    const heroSection = document.getElementById('inicio');
+    const portfolioSection = document.getElementById('portafolio');
+    if (heroSection && portfolioSection) {
+        heroSection.after(portfolioSection);
+        if (typeof ScrollTrigger !== 'undefined') {
+            ScrollTrigger.refresh();
+        }
+    }
+
+    // Ocultar ítems más allá del límite sin activar animaciones
+    initPortfolioLimit();
+
+    // Botón Ver más
+    const verMasBtn = document.getElementById('portfolioVerMas');
+    if (verMasBtn) {
+        verMasBtn.addEventListener('click', () => {
+            portfolioExpanded = true;
+            applyPortfolioFilter(currentPortfolioFilter);
+        });
+    }
 
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            const filter = btn.dataset.filter;
+            currentPortfolioFilter = btn.dataset.filter;
+            portfolioExpanded = false;
 
             filterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            let visibleIndex = 0;
-            items.forEach(item => {
-                const matches = filter === 'all' || item.dataset.category === filter;
-                item.classList.remove('filter-show');
-
-                if (matches) {
-                    item.classList.remove('filter-hidden');
-                    const delay = visibleIndex * 0.04;
-                    item.style.animationDelay = delay + 's';
-                    void item.offsetWidth; // reflow para reiniciar animación
-                    item.classList.add('filter-show');
-                    visibleIndex++;
-                } else {
-                    item.classList.add('filter-hidden');
-                }
-            });
+            applyPortfolioFilter(currentPortfolioFilter);
         });
     });
 }

@@ -906,6 +906,24 @@ section {
     padding: 0 1.5rem;
 }
 
+.portfolio-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.portfolio-header h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-white);
+    font-family: var(--font-display);
+    margin-bottom: 0.5rem;
+}
+
+.portfolio-header p {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
 .portfolio.section-padding {
     padding: 4rem 0;
     position: relative;
@@ -921,6 +939,12 @@ section {
 /* Ocultar items extra por defecto — ahora manejado por JS con data-category */
 .portfolio-item.filter-hidden {
     display: none;
+}
+
+.portfolio-more-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 2.5rem;
 }
 
 /* ─── Portfolio Filters ─── */
@@ -1297,6 +1321,7 @@ section {
     height: 400px;
     background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
     border-radius: 50%;
+    pointer-events: none;
 }
 
 .portfolio::after {
