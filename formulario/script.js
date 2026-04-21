@@ -44,10 +44,7 @@ function validateAll() {
 
     // Grupos de radio requeridos
     const radioGroups = [
-        { id: 'antiguedad', name: 'antiguedad' },
-        { id: 'web_actual', name: 'web_actual' },
-        { id: 'hosting',   name: 'hosting'    },
-        { id: 'cuando',    name: 'cuando'     },
+        { id: 'hosting', name: 'hosting' },
     ];
 
     radioGroups.forEach(({ id, name }) => {
@@ -107,11 +104,9 @@ async function sendToEmail() {
     const nombre      = document.getElementById('nombre').value.trim();
     const celular     = document.getElementById('celular').value.trim();
     const negocio     = document.getElementById('negocio').value.trim();
-    const antiguedad  = getRadioValue('antiguedad');
     const objetivos   = getCheckboxValues('objetivo').join(', ');
-    const web_actual  = getRadioValue('web_actual');
     const hosting     = getRadioValue('hosting');
-    const cuando      = getRadioValue('cuando');
+    const referencia  = document.getElementById('referencia').value.trim() || '(no respondió)';
     const por_que     = document.getElementById('por_que').value.trim() || '(no respondió)';
     const fecha       = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
 
@@ -119,8 +114,8 @@ async function sendToEmail() {
     btnSubmit.textContent = 'Enviando';
 
     const templateParams = {
-        nombre, celular, negocio, antiguedad, objetivos,
-        web_actual, hosting, cuando, por_que, fecha,
+        nombre, celular, negocio, objetivos,
+        hosting, referencia, por_que, fecha,
     };
 
     try {
