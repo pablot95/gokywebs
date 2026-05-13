@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Panel de Clientes | Gokywebs Admin</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dashboard-body">
+    <header class="admin-header">
+        <div class="admin-header-inner">
+            <div class="login-logo">
+                <span class="logo-mark">G</span>
+                <span class="logo-text">Gokywebs <small>Admin</small></span>
+            </div>
+            <div class="header-actions">
+                <span id="userEmail" class="user-email"></span>
+                <button id="logoutBtn" class="btn-ghost">Cerrar sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <h1>Clientes</h1>
+                    <p class="muted">Gestiona el listado de clientes y sus pagos.</p>
+                </div>
+                <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-label">Total clientes</span>
+                    <span id="statCount" class="stat-value">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Valor total</span>
+                    <span id="statTotal" class="stat-value">$0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Total abonado</span>
+                    <span id="statPaid" class="stat-value">$0</span>
+                </div>
+                <div class="stat-card stat-pending">
+                    <span class="stat-label">Saldo pendiente</span>
+                    <span id="statPending" class="stat-value">$0</span>
+                </div>
+            </div>
+
+            <div class="search-row">
+                <input type="search" id="searchInput" placeholder="Buscar por nombre, proyecto o teléfono...">
+            </div>
+
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Proyecto</th>
+                            <th>Teléfono</th>
+                            <th class="num">Valor total</th>
+                            <th class="num">Abonado</th>
+                            <th class="num">Saldo</th>
+                            <th class="center">Estado</th>
+                            <th class="center">Demo presentada</th>
+                            <th class="center">Hablarle el día</th>
+                            <th class="actions-col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTbody">
+                        <tr class="empty-row"><td colspan="10">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal cliente -->
+    <div id="clientModal" class="modal-backdrop" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo cliente</h2>
+                <button class="modal-close" id="closeModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="clientForm">
+                <input type="hidden" id="clientId">
+
+                <label for="nombre">Nombre</label>
+                <input type="text" id="nombre" required maxlength="80">
+
+                <label for="proyecto">Proyecto</label>
+                <input type="text" id="proyecto" required maxlength="120">
+
+                <label for="telefono">Teléfono</label>
+                <input type="tel" id="telefono" required maxlength="30">
+
+                <div class="grid-2">
+                    <div>
+                        <label for="valorTotal">Valor total</label>
+                        <input type="number" id="valorTotal" min="0" step="0.01" required>
+                    </div>
+                    <div>
+                        <label for="abono">Cuánto abonó</label>
+                        <input type="number" id="abono" min="0" step="0.01" required value="0">
+                    </div>
+                </div>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" id="soloInteresado">
+                    <span>Solo interesado (desmarcado = Cliente)</span>
+                </label>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" id="demoPresentada">
+                    <span>Demo presentada</span>
+                </label>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" id="cancelBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="saveBtn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

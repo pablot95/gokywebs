@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Admin · Login | Gokywebs</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-logo">
+                <span class="logo-mark">G</span>
+                <span class="logo-text">Gokywebs <small>Admin</small></span>
+            </div>
+            <h1>Iniciar sesión</h1>
+            <p class="subtitle">Acceso restringido para administradores</p>
+
+            <form id="loginForm" autocomplete="on">
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" name="email" placeholder="tu@correo.com" required>
+
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required minlength="6">
+
+                <button type="submit" id="loginBtn">
+                    <span class="btn-label">Entrar</span>
+                </button>
+
+                <div id="loginError" class="error-msg" hidden></div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="login.js"></script>
+</body>
+</html>
