@@ -1,7 +1,27 @@
 /* ─────────────────────────────────────────────
    GokyWebs – Formulario de leads (página única)
-   Envío por Email (EmailJS)
+   Envío por Email (EmailJS) + guardado en Firestore
    ───────────────────────────────────────────── */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ",
+    authDomain: "gokywebs-967cd.firebaseapp.com",
+    projectId: "gokywebs-967cd",
+    storageBucket: "gokywebs-967cd.firebasestorage.app",
+    messagingSenderId: "50030976147",
+    appId: "1:50030976147:web:9f07245b536a75833a4166"
+};
+
+const _app = initializeApp(firebaseConfig);
+const db = getFirestore(_app);
 
 const EMAILJS_SERVICE  = 'service_wg4bw4e';
 const EMAILJS_TEMPLATE = 'template_o8ju6cu';
@@ -98,6 +118,24 @@ function getCheckboxValues(name) {
 }
 
 /* ──────────────────────────────────────────────
+   Guardar cliente en Firestore (admin)
+   ────────────────────────────────────────────── */
+async function saveClientToFirestore(nombre, telefono, proyecto) {
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD en timezone local
+    await addDoc(collection(db, "clientes"), {
+        nombre,
+        telefono,
+        proyecto,
+        valorTotal: 0,
+        abono: 0,
+        esCliente: false,
+        demoPresentada: false,
+        hablarleElDia: today,
+        createdAt: serverTimestamp(),
+    });
+}
+
+/* ──────────────────────────────────────────────
    Send via EmailJS
    ────────────────────────────────────────────── */
 async function sendToEmail() {
@@ -125,6 +163,7 @@ async function sendToEmail() {
                 method: 'POST',
                 body: JSON.stringify(templateParams),
             }),
+            saveClientToFirestore(nombre, celular, negocio),
         ]);
         showSuccessScreen(nombre);
     } catch (err) {
