@@ -157,7 +157,7 @@ async function sendToEmail() {
     };
 
     try {
-        await Promise.allSettled([
+        const results = await Promise.allSettled([
             emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, templateParams),
             fetch(SHEETS_URL, {
                 method: 'POST',
@@ -165,6 +165,17 @@ async function sendToEmail() {
             }),
             saveClientToFirestore(nombre, celular, negocio),
         ]);
+
+        // Log de errores individuales para diagnóstico
+        results.forEach((r, i) => {
+            const labels = ['EmailJS', 'Google Sheets', 'Firestore'];
+            if (r.status === 'rejected') {
+                console.error(`❌ Error en ${labels[i]}:`, r.reason);
+            } else {
+                console.log(`✅ ${labels[i]}: OK`);
+            }
+        });
+
         showSuccessScreen(nombre);
     } catch (err) {
         console.error('Error al enviar:', err);
