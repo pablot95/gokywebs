@@ -53,6 +53,18 @@ searchInput.addEventListener("input", render);
 // --- Estado ---
 let clients = [];
 
+function getEstado(c) {
+    if (c.estadoCliente) return c.estadoCliente;
+    return c.esCliente ? "cliente" : "interesado";
+}
+
+function formatDate(val) {
+    if (!val) return "—";
+    const [, m, d] = val.split("-");
+    const months = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    return `${parseInt(d)} de ${months[parseInt(m) - 1]}`;
+}
+
 function fmtMoney(n) {
     const v = Number(n) || 0;
     return v.toLocaleString("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -84,25 +96,33 @@ function render() {
             (c.telefono || "").toLowerCase().includes(term))
         : clients;
 
+    list.sort((a, b) => {
+        const da = a.hablarleElDia || "";
+        const db2 = b.hablarleElDia || "";
+        if (da && db2) return da < db2 ? -1 : da > db2 ? 1 : 0;
+        if (da) return -1;
+        if (db2) return 1;
+        return 0;
+    });
+
     if (list.length === 0) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="10">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
     } else {
         tbody.innerHTML = list.map(c => {
             const saldo = (Number(c.valorTotal) || 0) - (Number(c.abono) || 0);
-            const saldoClass = saldo <= 0 ? "paid" : "pending";
             const demo = !!c.demoPresentada;
-            const esCliente = !!c.esCliente;
-            return `
-                <tr>
+                    const estado = getEstado(c);
+                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : "Solo interesado";
+                    return `
+                <tr class="client-row" data-row-id="${c.id}">
                     <td>${escapeHtml(c.nombre)}</td>
-                    <td>${escapeHtml(c.proyecto)}</td>
-                    <td>${escapeHtml(c.telefono)}</td>
+                    <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
+                    <td class="col-telefono">${escapeHtml(c.telefono)}</td>
                     <td class="num">${fmtMoney(c.valorTotal)}</td>
                     <td class="num">${fmtMoney(c.abono)}</td>
-                    <td class="num ${saldoClass}">${fmtMoney(saldo)}</td>
                     <td class="center">
-                        <button class="toggle-pill status ${esCliente ? 'cliente' : 'interesado'}" data-toggle-status="${c.id}" title="Click para cambiar">
-                            ${esCliente ? 'Cliente' : 'Solo interesado'}
+                        <button class="toggle-pill status ${estado}" data-cycle-status="${c.id}" title="Click para cambiar">
+                            ${estadoLabel}
                         </button>
                     </td>
                     <td class="center">
@@ -111,7 +131,10 @@ function render() {
                         </button>
                     </td>
                     <td class="center">
-                        <input type="date" class="inline-date" data-date-id="${c.id}" value="${escapeHtml(c.hablarleElDia || '')}" title="Hablarle el día">
+                        <div class="date-cell" data-date-id="${c.id}">
+                            <span class="date-label${c.hablarleElDia ? ' has-date' : ''}">${formatDate(c.hablarleElDia)}</span>
+                            <input type="date" class="inline-date" value="${escapeHtml(c.hablarleElDia || '')}">
+                        </div>
                     </td>
                     <td class="actions-col">
                         <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
@@ -128,22 +151,46 @@ function render() {
         acc.paid += Number(c.abono) || 0;
         return acc;
     }, { total: 0, paid: 0 });
+    const pendingSoloClientes = clients
+        .filter(c => getEstado(c) === "cliente")
+        .reduce((acc, c) => acc + Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0)), 0);
     statCount.textContent = clients.length;
     statTotal.textContent = fmtMoney(totals.total);
     statPaid.textContent = fmtMoney(totals.paid);
-    statPending.textContent = fmtMoney(totals.total - totals.paid);
+    statPending.textContent = fmtMoney(pendingSoloClientes);
 
     // Listeners de acciones
+    tbody.querySelectorAll(".client-row").forEach(row => {
+        row.addEventListener("click", (e) => {
+            if (e.target.closest("button, input, .date-cell, .actions-col")) return;
+            openModal(row.dataset.rowId);
+        });
+    });
     tbody.querySelectorAll(".icon-btn.edit").forEach(b =>
         b.addEventListener("click", () => openModal(b.dataset.id)));
     tbody.querySelectorAll(".icon-btn.delete").forEach(b =>
         b.addEventListener("click", () => removeClient(b.dataset.id)));
     tbody.querySelectorAll("[data-toggle-demo]").forEach(b =>
         b.addEventListener("click", () => toggleField(b.dataset.toggleDemo, "demoPresentada")));
-    tbody.querySelectorAll("[data-toggle-status]").forEach(b =>
-        b.addEventListener("click", () => toggleField(b.dataset.toggleStatus, "esCliente")));
-    tbody.querySelectorAll("[data-date-id]").forEach(input =>
-        input.addEventListener("change", () => updateField(input.dataset.dateId, "hablarleElDia", input.value || "")));
+    tbody.querySelectorAll("[data-cycle-status]").forEach(b =>
+        b.addEventListener("click", () => cycleStatus(b.dataset.cycleStatus)));
+    tbody.querySelectorAll(".date-cell").forEach(cell => {
+        const label = cell.querySelector(".date-label");
+        const input = cell.querySelector(".inline-date");
+        label.addEventListener("click", () => {
+            cell.classList.add("editing");
+            input.focus();
+        });
+        input.addEventListener("change", async () => {
+            await updateField(cell.dataset.dateId, "hablarleElDia", input.value || "");
+            label.textContent = formatDate(input.value);
+            label.className = "date-label" + (input.value ? " has-date" : "");
+            cell.classList.remove("editing");
+        });
+        input.addEventListener("blur", () => {
+            cell.classList.remove("editing");
+        });
+    });
 }
 
 async function updateField(id, field, value) {
@@ -172,6 +219,22 @@ async function toggleField(id, field) {
     }
 }
 
+async function cycleStatus(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const current = getEstado(c);
+    const next = current === "interesado" ? "quiere-demo" : current === "quiere-demo" ? "cliente" : "interesado";
+    try {
+        await updateDoc(doc(db, "clientes", id), {
+            estadoCliente: next,
+            updatedAt: serverTimestamp()
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error al actualizar: " + err.message);
+    }
+}
+
 function openModal(id = null) {
     form.reset();
     document.getElementById("clientId").value = "";
@@ -186,12 +249,12 @@ function openModal(id = null) {
         document.getElementById("valorTotal").value = c.valorTotal ?? 0;
         document.getElementById("abono").value = c.abono ?? 0;
         document.getElementById("demoPresentada").checked = !!c.demoPresentada;
-        document.getElementById("soloInteresado").checked = !c.esCliente;
+        document.getElementById("estadoCliente").value = getEstado(c);
     } else {
         modalTitle.textContent = "Nuevo cliente";
         document.getElementById("abono").value = 0;
         document.getElementById("demoPresentada").checked = false;
-        document.getElementById("soloInteresado").checked = false;
+        document.getElementById("estadoCliente").value = "interesado";
     }
     modal.hidden = false;
 }
@@ -208,7 +271,7 @@ form.addEventListener("submit", async (e) => {
         proyecto: document.getElementById("proyecto").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
         demoPresentada: document.getElementById("demoPresentada").checked,
-        esCliente: !document.getElementById("soloInteresado").checked,
+        estadoCliente: document.getElementById("estadoCliente").value,
         valorTotal: Number(document.getElementById("valorTotal").value) || 0,
         abono: Number(document.getElementById("abono").value) || 0,
         updatedAt: serverTimestamp()

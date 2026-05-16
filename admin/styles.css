@@ -210,7 +210,7 @@ input:focus {
 }
 
 .admin-main {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
     padding: 32px 24px 80px;
 }
@@ -322,6 +322,10 @@ input:focus {
 .clients-table .num.pending { color: var(--warning); font-weight: 600; }
 .clients-table .center { text-align: center; }
 
+.col-proyecto { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.col-telefono { min-width: 100px; }
+.clients-table tbody .client-row { cursor: pointer; }
+
 .toggle-pill {
     border: 1px solid var(--border-strong);
     background: var(--bg-elev);
@@ -353,7 +357,7 @@ input:focus {
 .toggle-pill.status {
     text-transform: none;
     letter-spacing: 0.02em;
-    min-width: 110px;
+    min-width: 135px;
 }
 
 .toggle-pill.status.cliente {
@@ -362,11 +366,39 @@ input:focus {
     color: #93C5FD;
 }
 
+.toggle-pill.status.quiere-demo {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.5);
+    color: #C4B5FD;
+}
+
 .toggle-pill.status.interesado {
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.45);
     color: #FCD34D;
 }
+
+.date-cell { display: inline-block; }
+.date-cell .inline-date { display: none; }
+.date-cell.editing .date-label { display: none; }
+.date-cell.editing .inline-date { display: inline-block; }
+
+.date-label {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    display: inline-block;
+    min-width: 100px;
+    transition: background .15s, border-color .15s;
+}
+.date-label:hover {
+    background: var(--bg-elev);
+    border-color: var(--border);
+}
+.date-label.has-date { color: #93C5FD; }
 
 .inline-date {
     background: var(--bg-elev);
@@ -386,10 +418,6 @@ input:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
-}
-.inline-date:not([value=""]):valid {
-    border-color: rgba(37, 99, 235, 0.4);
-    color: #93C5FD;
 }
 
 .checkbox-row {

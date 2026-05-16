@@ -59,11 +59,10 @@
                     <thead>
                         <tr>
                             <th>Nombre</th>
-                            <th>Proyecto</th>
-                            <th>Teléfono</th>
+                            <th class="col-proyecto">Proyecto</th>
+                            <th class="col-telefono">Teléfono</th>
                             <th class="num">Valor total</th>
                             <th class="num">Abonado</th>
-                            <th class="num">Saldo</th>
                             <th class="center">Estado</th>
                             <th class="center">Demo presentada</th>
                             <th class="center">Hablarle el día</th>
@@ -71,7 +70,7 @@
                         </tr>
                     </thead>
                     <tbody id="clientsTbody">
-                        <tr class="empty-row"><td colspan="10">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -108,10 +107,12 @@
                     </div>
                 </div>
 
-                <label class="checkbox-row">
-                    <input type="checkbox" id="soloInteresado">
-                    <span>Solo interesado (desmarcado = Cliente)</span>
-                </label>
+                <label for="estadoCliente">Estado</label>
+                <select id="estadoCliente">
+                    <option value="interesado">Solo interesado</option>
+                    <option value="quiere-demo">Quiere demo</option>
+                    <option value="cliente">Cliente</option>
+                </select>
 
                 <label class="checkbox-row">
                     <input type="checkbox" id="demoPresentada">
