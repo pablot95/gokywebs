@@ -64,13 +64,12 @@
                             <th class="num">Valor total</th>
                             <th class="num">Abonado</th>
                             <th class="center">Estado</th>
-                            <th class="center">Demo presentada</th>
                             <th class="center">Hablarle el día</th>
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTbody">
-                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -111,13 +110,9 @@
                 <select id="estadoCliente">
                     <option value="interesado">Solo interesado</option>
                     <option value="quiere-demo">Quiere demo</option>
+                    <option value="demo-presentada">Demo presentada</option>
                     <option value="cliente">Cliente</option>
                 </select>
-
-                <label class="checkbox-row">
-                    <input type="checkbox" id="demoPresentada">
-                    <span>Demo presentada</span>
-                </label>
 
                 <div class="modal-actions">
                     <button type="button" class="btn-ghost" id="cancelBtn">Cancelar</button>

@@ -110,9 +110,8 @@ function render() {
     } else {
         tbody.innerHTML = list.map(c => {
             const saldo = (Number(c.valorTotal) || 0) - (Number(c.abono) || 0);
-            const demo = !!c.demoPresentada;
                     const estado = getEstado(c);
-                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : "Solo interesado";
+                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "demo-presentada" ? "Demo presentada" : "Solo interesado";
                     return `
                 <tr class="client-row" data-row-id="${c.id}">
                     <td>${escapeHtml(c.nombre)}</td>
@@ -123,11 +122,6 @@ function render() {
                     <td class="center">
                         <button class="toggle-pill status ${estado}" data-cycle-status="${c.id}" title="Click para cambiar">
                             ${estadoLabel}
-                        </button>
-                    </td>
-                    <td class="center">
-                        <button class="toggle-pill ${demo ? 'on' : 'off'}" data-toggle-demo="${c.id}" title="Click para cambiar">
-                            ${demo ? 'Sí' : 'No'}
                         </button>
                     </td>
                     <td class="center">
@@ -170,8 +164,6 @@ function render() {
         b.addEventListener("click", () => openModal(b.dataset.id)));
     tbody.querySelectorAll(".icon-btn.delete").forEach(b =>
         b.addEventListener("click", () => removeClient(b.dataset.id)));
-    tbody.querySelectorAll("[data-toggle-demo]").forEach(b =>
-        b.addEventListener("click", () => toggleField(b.dataset.toggleDemo, "demoPresentada")));
     tbody.querySelectorAll("[data-cycle-status]").forEach(b =>
         b.addEventListener("click", () => cycleStatus(b.dataset.cycleStatus)));
     tbody.querySelectorAll(".date-cell").forEach(cell => {
@@ -223,7 +215,7 @@ async function cycleStatus(id) {
     const c = clients.find(x => x.id === id);
     if (!c) return;
     const current = getEstado(c);
-    const next = current === "interesado" ? "quiere-demo" : current === "quiere-demo" ? "cliente" : "interesado";
+    const next = current === "interesado" ? "quiere-demo" : current === "quiere-demo" ? "demo-presentada" : current === "demo-presentada" ? "cliente" : "interesado";
     try {
         await updateDoc(doc(db, "clientes", id), {
             estadoCliente: next,
@@ -248,12 +240,10 @@ function openModal(id = null) {
         document.getElementById("telefono").value = c.telefono || "";
         document.getElementById("valorTotal").value = c.valorTotal ?? 0;
         document.getElementById("abono").value = c.abono ?? 0;
-        document.getElementById("demoPresentada").checked = !!c.demoPresentada;
         document.getElementById("estadoCliente").value = getEstado(c);
     } else {
         modalTitle.textContent = "Nuevo cliente";
         document.getElementById("abono").value = 0;
-        document.getElementById("demoPresentada").checked = false;
         document.getElementById("estadoCliente").value = "interesado";
     }
     modal.hidden = false;
@@ -270,7 +260,6 @@ form.addEventListener("submit", async (e) => {
         nombre: document.getElementById("nombre").value.trim(),
         proyecto: document.getElementById("proyecto").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
-        demoPresentada: document.getElementById("demoPresentada").checked,
         estadoCliente: document.getElementById("estadoCliente").value,
         valorTotal: Number(document.getElementById("valorTotal").value) || 0,
         abono: Number(document.getElementById("abono").value) || 0,

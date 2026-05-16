@@ -372,6 +372,12 @@ input:focus {
     color: #C4B5FD;
 }
 
+.toggle-pill.status.demo-presentada {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.5);
+    color: #6EE7B7;
+}
+
 .toggle-pill.status.interesado {
     background: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.45);
