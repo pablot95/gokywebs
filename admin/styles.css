@@ -107,6 +107,7 @@ input[type="password"],
 input[type="text"],
 input[type="tel"],
 input[type="number"],
+input[type="date"],
 input[type="search"],
 select {
     width: 100%;
@@ -123,11 +124,23 @@ select {
     font-family: inherit;
     appearance: none;
     -webkit-appearance: none;
+    color-scheme: dark;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 14px center;
     background-size: 16px;
     padding-right: 40px;
+    cursor: pointer;
+}
+
+select option {
+    background: #17171B;
+    color: #F5F5F7;
+}
+
+input[type="date"] {
+    color-scheme: dark;
+    font-family: inherit;
     cursor: pointer;
 }
 
@@ -141,25 +154,25 @@ select:focus {
 #estadoCliente[data-estado="interesado"] {
     border-color: rgba(245, 158, 11, 0.5);
     background-color: rgba(245, 158, 11, 0.07);
-    color: #FCD34D;
+    box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.6);
 }
 
 #estadoCliente[data-estado="quiere-demo"] {
     border-color: rgba(139, 92, 246, 0.5);
     background-color: rgba(139, 92, 246, 0.08);
-    color: #C4B5FD;
+    box-shadow: inset 3px 0 0 rgba(139, 92, 246, 0.7);
 }
 
 #estadoCliente[data-estado="demo-presentada"] {
     border-color: rgba(16, 185, 129, 0.5);
     background-color: rgba(16, 185, 129, 0.08);
-    color: #6EE7B7;
+    box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7);
 }
 
 #estadoCliente[data-estado="cliente"] {
     border-color: rgba(37, 99, 235, 0.5);
     background-color: rgba(37, 99, 235, 0.08);
-    color: #93C5FD;
+    box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.8);
 }
 
 input:focus {

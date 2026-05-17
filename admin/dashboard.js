@@ -277,6 +277,7 @@ function openModal(id = null) {
         document.getElementById("valorTotal").value = c.valorTotal ?? 0;
         document.getElementById("abono").value = c.abono ?? 0;
         document.getElementById("estadoCliente").value = getEstado(c);
+        document.getElementById("hablarleElDia").value = c.hablarleElDia || "";
     } else {
         modalTitle.textContent = "Nuevo cliente";
         document.getElementById("abono").value = 0;
@@ -305,6 +306,7 @@ form.addEventListener("submit", async (e) => {
         proyecto: document.getElementById("proyecto").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
         estadoCliente: document.getElementById("estadoCliente").value,
+        hablarleElDia: document.getElementById("hablarleElDia").value || "",
         valorTotal: Number(document.getElementById("valorTotal").value) || 0,
         abono: Number(document.getElementById("abono").value) || 0,
         updatedAt: serverTimestamp()
