@@ -50,6 +50,41 @@ document.getElementById("cancelBtn").addEventListener("click", closeModal);
 modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
 searchInput.addEventListener("input", render);
 
+// --- Tabs ---
+let activeTab = "clientes";
+document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeTab = btn.dataset.tab;
+        document.getElementById("tabClientes").hidden = activeTab !== "clientes";
+        document.getElementById("tabCalendario").hidden = activeTab !== "calendario";
+        if (activeTab === "calendario") renderCal();
+    });
+});
+
+// --- Calendario DOM ---
+const calGrid = document.getElementById("calGrid");
+const calMonthLabel = document.getElementById("calMonthLabel");
+const dayModal = document.getElementById("dayModal");
+const dayModalTitle = document.getElementById("dayModalTitle");
+const dayModalBody = document.getElementById("dayModalBody");
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+
+document.getElementById("calPrev").addEventListener("click", () => {
+    calMonth--;
+    if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderCal();
+});
+document.getElementById("calNext").addEventListener("click", () => {
+    calMonth++;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderCal();
+});
+document.getElementById("closeDayModalBtn").addEventListener("click", () => { dayModal.hidden = true; });
+dayModal.addEventListener("click", (e) => { if (e.target === dayModal) dayModal.hidden = true; });
+
 // --- Estado ---
 let clients = [];
 
@@ -81,6 +116,7 @@ function initRealtime() {
     onSnapshot(q, (snap) => {
         clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         render();
+        if (activeTab === "calendario") renderCal();
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
@@ -246,12 +282,20 @@ function openModal(id = null) {
         document.getElementById("abono").value = 0;
         document.getElementById("estadoCliente").value = "interesado";
     }
+    syncEstadoSelect();
     modal.hidden = false;
 }
 
 function closeModal() {
     modal.hidden = true;
 }
+
+function syncEstadoSelect() {
+    const sel = document.getElementById("estadoCliente");
+    sel.dataset.estado = sel.value;
+}
+
+document.getElementById("estadoCliente").addEventListener("change", syncEstadoSelect);
 
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -300,4 +344,80 @@ async function removeClient(id) {
         console.error(err);
         alert("Error al eliminar: " + err.message);
     }
+}
+
+// --- Calendario ---
+const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+
+function getDemosForDate(dateStr) {
+    return clients.filter(c => getEstado(c) === "quiere-demo" && c.hablarleElDia === dateStr);
+}
+
+function renderCal() {
+    calMonthLabel.textContent = `${MONTHS_ES[calMonth]} ${calYear}`;
+    const firstDow = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const startOffset = (firstDow + 6) % 7;
+
+    const today = new Date();
+    const todayY = today.getFullYear();
+    const todayM = today.getMonth();
+    const todayD = today.getDate();
+
+    let html = `<div class="cal-day-names">
+        <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+    </div><div class="cal-days">`;
+
+    for (let i = 0; i < startOffset; i++) {
+        html += `<div class="cal-cell empty"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        const demos = getDemosForDate(dateStr);
+        const isToday = todayY === calYear && todayM === calMonth && todayD === d;
+        const cls = ["cal-cell", isToday ? "today" : "", demos.length > 0 ? "has-demos" : ""].filter(Boolean).join(" ");
+        html += `<div class="${cls}" data-date="${dateStr}">
+            <span class="cal-day-num">${d}</span>
+            ${demos.length > 0 ? `<span class="cal-badge">${demos.length} demo${demos.length > 1 ? "s" : ""}</span>` : ""}
+        </div>`;
+    }
+
+    html += `</div>`;
+    calGrid.innerHTML = html;
+
+    calGrid.querySelectorAll(".cal-cell[data-date]").forEach(cell => {
+        cell.addEventListener("click", () => openDayModal(cell.dataset.date));
+    });
+}
+
+function openDayModal(dateStr) {
+    const demos = getDemosForDate(dateStr);
+    const [y, m, d] = dateStr.split("-");
+    dayModalTitle.textContent = `${parseInt(d)} de ${MONTHS_ES[parseInt(m) - 1]} ${y}`;
+
+    if (demos.length === 0) {
+        dayModalBody.innerHTML = `<p class="muted" style="padding:16px 0">No hay demos para este día.</p>`;
+    } else {
+        dayModalBody.innerHTML = `<div class="demo-list">${demos.map(c => `
+            <div class="demo-item">
+                <div class="demo-item-info">
+                    <span class="demo-item-name">${escapeHtml(c.nombre)}</span>
+                    <span class="demo-item-proyecto">${escapeHtml(c.proyecto)}</span>
+                </div>
+                <button class="btn-mark-demo" data-mark-id="${c.id}">✓ Marcar hecha</button>
+            </div>
+        `).join("")}</div>`;
+
+        dayModalBody.querySelectorAll(".btn-mark-demo").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                btn.disabled = true;
+                btn.textContent = "Guardando...";
+                await updateField(btn.dataset.markId, "estadoCliente", "demo-presentada");
+                dayModal.hidden = true;
+            });
+        });
+    }
+
+    dayModal.hidden = false;
 }

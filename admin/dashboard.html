@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="../logonuevo.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -22,7 +23,12 @@
     </header>
 
     <main class="admin-main">
-        <section class="panel">
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="clientes">Clientes</button>
+            <button class="tab-btn" data-tab="calendario">Calendario</button>
+        </nav>
+
+        <section class="panel tab-panel" id="tabClientes">
             <div class="panel-header">
                 <div>
                     <h1>Clientes</h1>
@@ -74,7 +80,34 @@
                 </table>
             </div>
         </section>
+
+        <!-- Tab: Calendario -->
+        <section class="panel tab-panel" id="tabCalendario" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Calendario de demos</h1>
+                    <p class="muted">Clientes con estado "Quiere demo" agendados por fecha.</p>
+                </div>
+            </div>
+            <div class="cal-nav">
+                <button id="calPrev" class="btn-ghost cal-nav-btn">&#8249;</button>
+                <span id="calMonthLabel" class="cal-month-label"></span>
+                <button id="calNext" class="btn-ghost cal-nav-btn">&#8250;</button>
+            </div>
+            <div class="cal-grid" id="calGrid"></div>
+        </section>
     </main>
+
+    <!-- Modal día -->
+    <div id="dayModal" class="modal-backdrop" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="dayModalTitle"></h2>
+                <button class="modal-close" id="closeDayModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="dayModalBody"></div>
+        </div>
+    </div>
 
     <!-- Modal cliente -->
     <div id="clientModal" class="modal-backdrop" hidden>
