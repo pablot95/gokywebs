@@ -208,6 +208,10 @@ function render() {
         label.addEventListener("click", () => {
             cell.classList.add("editing");
             input.focus();
+            try { input.showPicker(); } catch (e) {}
+        });
+        input.addEventListener("click", () => {
+            try { input.showPicker(); } catch (e) {}
         });
         input.addEventListener("change", async () => {
             await updateField(cell.dataset.dateId, "hablarleElDia", input.value || "");
@@ -297,6 +301,10 @@ function syncEstadoSelect() {
 }
 
 document.getElementById("estadoCliente").addEventListener("change", syncEstadoSelect);
+
+document.getElementById("hablarleElDia").addEventListener("click", function () {
+    try { this.showPicker(); } catch (e) {}
+});
 
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
