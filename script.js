@@ -1529,10 +1529,12 @@ function initPortfolioCatFilter() {
             btn.classList.add('active');
             sections.forEach(sec => {
                 const hasItems = sec.querySelector('.pf-track')?.children.length > 0;
-                if (target === 'all') {
-                    sec.style.display = hasItems ? '' : 'none';
+                const match = (target === 'all' || sec.dataset.cat === target) && hasItems;
+                if (match) {
+                    sec.classList.remove('is-hidden');
+                    sec.style.display = '';
                 } else {
-                    sec.style.display = (sec.dataset.cat === target && hasItems) ? '' : 'none';
+                    sec.style.display = 'none';
                 }
             });
             window.dispatchEvent(new Event('resize'));

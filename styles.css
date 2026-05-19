@@ -3373,6 +3373,7 @@ section {
     transition: all 0.25s ease;
     font-family: var(--font-primary);
     white-space: nowrap;
+    touch-action: manipulation;
 }
 
 .pf-cat:hover {
