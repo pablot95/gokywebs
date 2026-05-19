@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Redirigiendo… | GokyWebs</title>
+    <script>
+        // GitHub Pages 404 trick:
+        // Convierte /serviciosprofesionales → /?p=serviciosprofesionales
+        var seg = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+        if (seg) {
+            window.location.replace('/?p=' + encodeURIComponent(seg));
+        } else {
+            window.location.replace('/');
+        }
+    </script>
+</head>
+<body></body>
+</html>

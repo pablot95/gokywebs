@@ -1326,7 +1326,7 @@ const PORTFOLIO_DEMOS = {
     profesionales: [
         // Salud / consultorios
         { id: 'PiscoPsi', name: 'Pisco Psicología' },
-        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos' },
+        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'png' },
         { id: 'MecanicoDental', name: 'Mecánico Dental' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs' },
         { id: 'AHCD', name: 'AHCD' },
@@ -1377,7 +1377,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'MaceIntimates', name: 'Mace Intimates' }
     ],
     gastronomia: [
-        { id: 'Dulces', name: 'Dulces' },
+        { id: 'Dulces', name: 'Dulces', ext: 'png' },
         { id: 'NiftyBar', name: 'Nifty Bar' },
         { id: 'RestoVinoteca', name: 'Resto Vinoteca' },
         { id: 'RossiCakes', name: 'Rossi Cakes' },
@@ -1407,10 +1407,10 @@ function createDemoCard(demo) {
     card.setAttribute('data-demo-id', demo.id);
     card.setAttribute('data-demo-name', demo.name);
     card.innerHTML = `
-        <span class="pf-demo-badge">Demo</span>
+        
         <div class="pf-visuals">
-            <div class="pf-web"><img src="imagenes/demos/${demo.id}_Web.jpg" alt="${demo.name} Web" loading="lazy"></div>
-            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id}_Celu.jpg" alt="${demo.name} Mobile" loading="lazy"></div></div>
+            <div class="pf-web"><img src="imagenes/demos/${demo.id}_Web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
+            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id}_Celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
         </div>
         <div class="pf-info">
             <h4>${demo.name}</h4>
