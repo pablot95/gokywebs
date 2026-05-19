@@ -1284,3 +1284,459 @@ document.addEventListener('DOMContentLoaded', function() {
         duration: 1, delay: 2.5, ease: 'elastic.out(1, 0.4)'
     });
 });
+
+/* ═══════════════════════════════════════════════
+   NEW PORTFOLIO — Category Carousels + Demo Modal
+   ═══════════════════════════════════════════════ */
+
+const PORTFOLIO_DEMOS = {
+    comercios: [
+        // Tiendas y bazares
+        { id: 'BlanqueriaBazar', name: 'Blanquería Bazar' },
+        { id: 'PapeleraTriunfo', name: 'Papelera Triunfo' },
+        { id: 'HemaImportados', name: 'Hema Importados' },
+        { id: 'VidrieraLeoRocha', name: 'Vidriera Leo Rocha' },
+        { id: 'SerBotanica', name: 'Ser Botánica' },
+        { id: 'TiendaAzurduy', name: 'Tienda Azurduy' },
+        { id: 'MiauMiau', name: 'Miau Miau Pet' },
+        // Hogar, muebles, construcción
+        { id: 'DormiLupe', name: 'Dormi Lupe' },
+        { id: 'VerticeHogar', name: 'Vértice Hogar' },
+        { id: 'ZepolMuebles', name: 'Zepol Muebles' },
+        { id: 'ArteMetalico', name: 'Arte Metálico' },
+        { id: 'mylomuebles', name: 'Mylo Muebles' },
+        // Belleza / estética (tiendas)
+        { id: 'Cuarzoestetica', name: 'Cuarzo Estética' },
+        { id: 'EsteticaCursos', name: 'Estética Cursos' },
+        // Automotriz
+        { id: 'FrenosdeDisco', name: 'Frenos de Disco' },
+        { id: 'Autofull', name: 'Autofull' },
+        { id: 'RepuestosAutos', name: 'Repuestos Autos' },
+        // Limpieza
+        { id: 'ValenClean', name: 'Valen Clean' },
+        // Deporte / actividades
+        { id: 'PeakLifters', name: 'Peak Lifters' },
+        { id: 'Airsoft', name: 'Airsoft' },
+        { id: 'CeroDescensos', name: 'Cero Descensos' },
+        { id: 'Padel', name: 'Pádel Club' },
+        { id: 'VoleyClub', name: 'Vóley Club' },
+        // Cultura
+        { id: 'Libros', name: 'Librería' }
+    ],
+    profesionales: [
+        // Salud / consultorios
+        { id: 'PiscoPsi', name: 'Pisco Psicología' },
+        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos' },
+        { id: 'MecanicoDental', name: 'Mecánico Dental' },
+        { id: 'Ambulancias', name: 'Ambulancias 24hs' },
+        { id: 'AHCD', name: 'AHCD' },
+        // Belleza / spa / fitness (servicios)
+        { id: 'Barberia', name: 'Barbería' },
+        { id: 'Lessence', name: "L'essence Estética" },
+        { id: 'Estetica', name: 'Estética' },
+        { id: 'DanzaPole', name: 'Danza Pole' },
+        // Legales / consultoría / publicidad
+        { id: 'EstudioJuridico', name: 'Estudio Jurídico' },
+        { id: 'AdrianaTraductoraProfesora', name: 'Adriana Traductora' },
+        { id: 'Consultora', name: 'Consultora' },
+        { id: 'InfinityTrading', name: 'Infinity Trading' },
+        { id: 'MFCGroup', name: 'MFC Group Publicidad' },
+        { id: 'Brandaurea', name: 'Brandaurea' },
+        { id: 'DespachanteDos', name: 'Despachante de Aduana' },
+        { id: 'SeguroClick', name: 'Seguro Click' },
+        { id: 'SeguridadPrivada', name: 'Seguridad Privada' },
+        { id: 'Axiotek', name: 'Axiotek' },
+        { id: 'InstitutoIFPA', name: 'Instituto IFPA' },
+        { id: 'Estudiorrpp', name: 'Estudio RRPP' },
+        // Construcción / oficios
+        { id: 'JavierConstrucciones', name: 'Javier Construcciones' },
+        { id: 'DiegoTechista', name: 'Diego Techista' },
+        // Turismo / esoterismo / cultura
+        { id: 'Patagonianativa', name: 'Patagonia Nativa' },
+        { id: 'ConcienciaTriskel', name: 'Conciencia Triskel' },
+        { id: 'Musica', name: 'Academia de Música' },
+        { id: 'MarTarot', name: 'Mar Tarot' },
+        { id: 'Tarot', name: 'Tarot' },
+        // Servicios técnicos
+        { id: 'Servicioelectro', name: 'Servicio Electro' },
+        { id: 'ServiceRefrigeracion', name: 'Service Refrigeración' },
+        { id: 'ClubCarGarage', name: 'Club Car Garage' },
+        { id: 'HidroArca', name: 'Hidro Arca' },
+        { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones' },
+        // Comercios reasignados (productos especializados)
+        { id: 'AguadeMesa', name: 'Agua de Mesa' },
+        { id: 'Gione15', name: 'Gione 15' }
+    ],
+    moda: [
+        { id: 'Remeras', name: 'Remeras' },
+        { id: 'SimonataStore', name: 'Simonata Store' },
+        { id: 'Distinta', name: 'Distinta' },
+        { id: 'Dominus', name: 'Dominus Jeans' },
+        { id: 'RopaBears', name: 'Ropa Bears' },
+        { id: 'Damassco', name: 'Damassco' },
+        { id: 'MaceIntimates', name: 'Mace Intimates' }
+    ],
+    gastronomia: [
+        { id: 'Dulces', name: 'Dulces' },
+        { id: 'NiftyBar', name: 'Nifty Bar' },
+        { id: 'RestoVinoteca', name: 'Resto Vinoteca' },
+        { id: 'RossiCakes', name: 'Rossi Cakes' },
+        { id: 'Milanesas', name: 'Milanesas' }
+    ],
+    tecnologia: [
+        { id: 'Celulares', name: 'Celulares' },
+        { id: 'TvDigital', name: 'TV Digital' },
+        { id: 'VelariumCelulares', name: 'Velarium Celulares' },
+        { id: 'ServiceNotebooks', name: 'Service Notebooks' },
+        { id: 'NexumCelulares', name: 'Nexum Celulares' },
+        { id: 'MercadoLibre', name: 'Mercado Libre' },
+        { id: 'ImpresionesJN', name: 'Impresiones JN' }
+    ],
+    inmobiliaria: [
+        { id: 'NoemiWichandInmo', name: 'Noemi Wichand' },
+        { id: 'Tasador', name: 'Tasador' },
+        { id: 'InmobiliariaForte', name: 'Inmobiliaria Forte' },
+        { id: 'PalmarInmuebles', name: 'Palmar Inmuebles' }
+    ]
+};
+
+function createDemoCard(demo) {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'pf-card is-demo';
+    card.setAttribute('data-demo-id', demo.id);
+    card.setAttribute('data-demo-name', demo.name);
+    card.innerHTML = `
+        <span class="pf-demo-badge">Demo</span>
+        <div class="pf-visuals">
+            <div class="pf-web"><img src="imagenes/demos/${demo.id}_Web.jpg" alt="${demo.name} Web" loading="lazy"></div>
+            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id}_Celu.jpg" alt="${demo.name} Mobile" loading="lazy"></div></div>
+        </div>
+        <div class="pf-info">
+            <h4>${demo.name}</h4>
+            <span class="pf-cta">Ver demo <span class="pf-arr">→</span></span>
+        </div>
+    `;
+    return card;
+}
+
+function injectDemoCards() {
+    Object.entries(PORTFOLIO_DEMOS).forEach(([cat, demos]) => {
+        const section = document.querySelector(`.pf-section[data-cat="${cat}"]`);
+        if (!section) return;
+        const track = section.querySelector('.pf-track');
+        if (!track) return;
+        demos.forEach(demo => track.appendChild(createDemoCard(demo)));
+    });
+}
+
+function initPortfolioCarousels() {
+    document.querySelectorAll('.pf-section').forEach(section => {
+        if (section.dataset.rows === '2') return; // las marquee se manejan aparte
+        const track = section.querySelector('.pf-track');
+        const prevBtn = section.querySelector('.pf-prev');
+        const nextBtn = section.querySelector('.pf-next');
+        if (!track || !prevBtn || !nextBtn) return;
+
+        const scrollByAmount = () => {
+            const firstCard = track.querySelector('.pf-card');
+            if (!firstCard) return 300;
+            const cardWidth = firstCard.getBoundingClientRect().width;
+            const gap = parseFloat(getComputedStyle(track).gap) || 16;
+            return cardWidth + gap;
+        };
+
+        const updateArrows = () => {
+            const maxScroll = track.scrollWidth - track.clientWidth;
+            prevBtn.disabled = track.scrollLeft <= 1;
+            nextBtn.disabled = track.scrollLeft >= maxScroll - 1;
+        };
+
+        prevBtn.addEventListener('click', () => {
+            track.scrollBy({ left: -scrollByAmount(), behavior: 'smooth' });
+        });
+        nextBtn.addEventListener('click', () => {
+            track.scrollBy({ left: scrollByAmount(), behavior: 'smooth' });
+        });
+        track.addEventListener('scroll', updateArrows, { passive: true });
+        window.addEventListener('resize', updateArrows);
+
+        // Drag-to-scroll con mouse (igual que swipe en mobile)
+        let isDown = false;
+        let startX = 0;
+        let startScroll = 0;
+        let moved = 0;
+
+        let onMouseMove = null;
+        let onMouseUp = null;
+
+        track.addEventListener('mousedown', (e) => {
+            // Solo botón izquierdo, ignorar si fue sobre un link/botón interactivo dentro de una card
+            if (e.button !== 0) return;
+            isDown = true;
+            moved = 0;
+            startX = e.pageX;
+            startScroll = track.scrollLeft;
+            // No añadir is-dragging todavía: se añade solo tras movimiento real
+
+            onMouseMove = (ev) => {
+                if (!isDown) return;
+                ev.preventDefault();
+                const dx = ev.pageX - startX;
+                moved = Math.abs(dx);
+                if (moved > 8) track.classList.add('is-dragging');
+                track.scrollLeft = startScroll - dx;
+            };
+            onMouseUp = () => {
+                if (!isDown) return;
+                isDown = false;
+                track.classList.remove('is-dragging');
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+                onMouseMove = null;
+                onMouseUp = null;
+            };
+
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Si hubo drag significativo, cancelar el click siguiente para que no abra modal/link
+        track.addEventListener('click', (e) => {
+            if (moved > 8) {
+                e.preventDefault();
+                e.stopPropagation();
+                moved = 0;
+            }
+        }, true);
+
+        // Hide section if track is empty
+        if (!track.children.length) {
+            section.classList.add('is-hidden');
+        }
+
+        setTimeout(updateArrows, 100);
+    });
+}
+
+function initPortfolioCatFilter() {
+    const cats = document.querySelectorAll('.pf-cat');
+    const sections = document.querySelectorAll('.pf-section');
+    cats.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.cat;
+            cats.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            sections.forEach(sec => {
+                const hasItems = sec.querySelector('.pf-track')?.children.length > 0;
+                if (target === 'all') {
+                    sec.style.display = hasItems ? '' : 'none';
+                } else {
+                    sec.style.display = (sec.dataset.cat === target && hasItems) ? '' : 'none';
+                }
+            });
+            window.dispatchEvent(new Event('resize'));
+        });
+    });
+}
+
+function initDemoModal() {
+    const modal = document.getElementById('demoModal');
+    if (!modal) return;
+    const titleEl = document.getElementById('demoModalTitle');
+    const imgWeb = document.getElementById('demoModalImgWeb');
+    const imgCelu = document.getElementById('demoModalImgCelu');
+
+    const open = (id, name) => {
+        titleEl.textContent = name;
+        imgWeb.src = `imagenes/demos/${id}_Web.jpg`;
+        imgWeb.alt = `${name} - Vista Web`;
+        imgCelu.src = `imagenes/demos/${id}_Celu.jpg`;
+        imgCelu.alt = `${name} - Vista Mobile`;
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
+        modal.querySelectorAll('.demo-modal-pane').forEach(p => p.scrollTop = 0);
+    };
+
+    const close = () => {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+    };
+
+    document.addEventListener('click', (e) => {
+        const card = e.target.closest('.pf-card.is-demo');
+        if (card) {
+            e.preventDefault();
+            open(card.dataset.demoId, card.dataset.demoName);
+        }
+    });
+
+    modal.querySelectorAll('[data-close]').forEach(el => {
+        el.addEventListener('click', close);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('is-open')) close();
+    });
+}
+
+/* ─── Double-row Marquee Carousel ─── */
+function initMarqueeSection(section) {
+    const wrap = section.querySelector('.pf-track-wrap');
+    const singleTrack = section.querySelector('.pf-track');
+    if (!wrap || !singleTrack) return;
+
+    const cards = Array.from(singleTrack.children);
+    if (cards.length === 0) {
+        section.classList.add('is-hidden');
+        return;
+    }
+
+    // Reconstruir el wrap con dos tracks (top y bottom)
+    wrap.innerHTML = '';
+    const topTrack = document.createElement('div');
+    topTrack.className = 'pf-track pf-track-marquee';
+    topTrack.dataset.row = 'top';
+    const botTrack = document.createElement('div');
+    botTrack.className = 'pf-track pf-track-marquee';
+    botTrack.dataset.row = 'bottom';
+    wrap.appendChild(topTrack);
+    wrap.appendChild(botTrack);
+
+    // Distribuir alternadamente
+    cards.forEach((card, i) => {
+        (i % 2 === 0 ? topTrack : botTrack).appendChild(card);
+    });
+
+    // Duplicar contenido para loop infinito sin saltos
+    [topTrack, botTrack].forEach(t => {
+        const originals = Array.from(t.children);
+        originals.forEach(c => t.appendChild(c.cloneNode(true)));
+    });
+
+    // Estado por fila
+    const rows = [
+        { el: topTrack, dir: -1, x: 0, dragging: false, half: 0 }, // top: derecha → izquierda
+        { el: botTrack, dir: +1, x: 0, dragging: false, half: 0 }  // bottom: izquierda → derecha
+    ];
+
+    const measure = () => {
+        rows.forEach(r => {
+            r.half = r.el.scrollWidth / 2;
+        });
+        // El track bottom arranca con offset para que el contenido se vea desplazado
+        if (rows[1].x === 0) rows[1].x = -rows[1].half / 2;
+    };
+    measure();
+    window.addEventListener('resize', measure);
+
+    const apply = (r) => {
+        // Wrap continuo
+        if (r.half > 0) {
+            while (r.x <= -r.half) r.x += r.half;
+            while (r.x > 0) r.x -= r.half;
+        }
+        r.el.style.transform = `translate3d(${r.x}px, 0, 0)`;
+    };
+
+    const speed = 0.4; // px por frame (~24px/s a 60fps)
+    let rafId = null;
+    const tick = () => {
+        rows.forEach(r => {
+            if (!r.dragging) r.x += r.dir * speed;
+            apply(r);
+        });
+        rafId = requestAnimationFrame(tick);
+    };
+    rows.forEach(apply);
+    rafId = requestAnimationFrame(tick);
+
+    // Drag con sync inverso entre filas
+    rows.forEach((row, idx) => {
+        const other = rows[1 - idx];
+        let startPageX = 0, startRowX = 0, startOtherX = 0, moved = 0, isDown = false;
+        let onMove = null, onUp = null;
+
+        const begin = (pageX) => {
+            isDown = true;
+            moved = 0;
+            startPageX = pageX;
+            startRowX = row.x;
+            startOtherX = other.x;
+            row.dragging = true;
+            other.dragging = true;
+            // No añadir is-dragging todavía: se añade solo tras movimiento real
+        };
+        const move = (pageX) => {
+            if (!isDown) return;
+            const dx = pageX - startPageX;
+            moved = Math.abs(dx);
+            if (moved > 8) {
+                row.el.classList.add('is-dragging');
+                other.el.classList.add('is-dragging');
+            }
+            row.x = startRowX + dx;
+            other.x = startOtherX - dx;
+            apply(row); apply(other);
+        };
+        const end = () => {
+            if (!isDown) return;
+            isDown = false;
+            row.dragging = false;
+            other.dragging = false;
+            row.el.classList.remove('is-dragging');
+            other.el.classList.remove('is-dragging');
+            if (onMove) window.removeEventListener('mousemove', onMove);
+            if (onUp) window.removeEventListener('mouseup', onUp);
+            onMove = null; onUp = null;
+        };
+
+        row.el.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            begin(e.pageX);
+            onMove = (ev) => move(ev.pageX);
+            onUp = () => end();
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        });
+        row.el.addEventListener('touchstart', (e) => begin(e.touches[0].pageX), { passive: true });
+        row.el.addEventListener('touchmove', (e) => move(e.touches[0].pageX), { passive: true });
+        row.el.addEventListener('touchend', end);
+        row.el.addEventListener('touchcancel', end);
+
+        // Cancelar click solo si hubo drag REAL (moved > 8 al final del drag)
+        row.el.addEventListener('click', (e) => {
+            if (moved > 8) {
+                e.preventDefault();
+                e.stopPropagation();
+                moved = 0;
+            }
+        }, true);
+    });
+}
+
+function initMarqueeCarousels() {
+    document.querySelectorAll('.pf-section[data-rows="2"]').forEach(initMarqueeSection);
+}
+
+function initNewPortfolio() {
+    injectDemoCards();
+    initMarqueeCarousels();
+    initPortfolioCarousels();
+    initPortfolioCatFilter();
+    initDemoModal();
+
+    // Evitar que el navegador "agarre" imágenes con drag nativo al hacer click sostenido
+    const pfCats = document.getElementById('pfCategories');
+    if (pfCats) {
+        pfCats.addEventListener('dragstart', e => e.preventDefault());
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initNewPortfolio);
+} else {
+    initNewPortfolio();
+}

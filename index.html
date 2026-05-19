@@ -28,7 +28,7 @@
     <meta property="twitter:description" content="Expertos en diseño web, landing pages y E-commerce. Potenciá tu negocio hoy.">
     <meta property="twitter:image" content="logonuevo.png">
 
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -404,501 +404,320 @@
 
             <div class="portfolio-header">
                 <h2>Nuestro <span class="highlight-landing">Portfolio</span></h2>
-                <p>Proyectos reales de clientes que confiaron en nosotros</p>
+                <p>Proyectos reales de clientes y demos por rubro</p>
             </div>
 
-            <div class="portfolio-filters" id="portfolioFilters">
-                <button class="filter-btn active" data-filter="all">Todos</button>
-                <button class="filter-btn" data-filter="landing">Landings</button>
-                <button class="filter-btn" data-filter="ecommerce">E-commerce</button>
-                <button class="filter-btn" data-filter="inmobiliaria">Inmobiliarias</button>
-                <button class="filter-btn" data-filter="corporativa">Web Corporativa</button>
+            <div class="pf-cats" id="pfCats">
+                <button class="pf-cat active" data-cat="all">Todos</button>
+                <button class="pf-cat" data-cat="comercios">Comercios & Tiendas</button>
+                <button class="pf-cat" data-cat="profesionales">Servicios Profesionales</button>
+                <button class="pf-cat" data-cat="moda">Moda & Indumentaria</button>
+                <button class="pf-cat" data-cat="gastronomia">Gastronomía & Eventos</button>
+                <button class="pf-cat" data-cat="tecnologia">Tecnología & Electrónica</button>
+                <button class="pf-cat" data-cat="inmobiliaria">Inmobiliaria</button>
             </div>
 
-            <div class="portfolio-grid" id="portfolioGrid">
-                <a href="https://www.encantoestetica.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/encantoweb.png" alt="Encanto Estética Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/encantocelu.jpeg" alt="Encanto Estética Mobile">
+            <div class="pf-categories" id="pfCategories">
+
+            <!-- ═══ COMERCIOS & TIENDAS ═══ -->
+            <article class="pf-section" data-cat="comercios" data-rows="2">
+                <header class="pf-section-head">
+                    <h3>Comercios & Tiendas</h3>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://esbelt.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/esbeltweb.png" alt="Esbelt Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/esbeltcelu.jpeg" alt="Esbelt Mobile"></div></div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Encanto Estética</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.estudioasilva.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/abogadaaldanaweb.png" alt="Abogada Aldana Silva Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/aldanaabogadacelu.jpeg" alt="Abogada Aldana Silva Mobile">
+                            <div class="pf-info"><h4>Esbelt</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.danielsaire.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/airesweb.png" alt="Daniel's Aire Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/airescelu.png" alt="Daniel's Aire Mobile"></div></div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Estudio A. Silva</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://licenciadaluena.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/psicologaluana.png" alt="Psicóloga Luana Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/psicologaluanacelu.jpeg" alt="Psicóloga Luana Mobile">
+                            <div class="pf-info"><h4>Daniel's Aire</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="http://distririogrande.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/distritoweb.png" alt="Distrito Río Grande Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/distritocelu.png" alt="Distrito Río Grande Mobile"></div></div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Psicóloga Luana</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://agrimensurasatelital.com" target="_blank" class="portfolio-item" data-category="corporativa">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/agrimensuraweb.png" alt="Agrimensura Satelital Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/agrimensuracelu.jpeg" alt="Agrimensura Satelital Mobile">
+                            <div class="pf-info"><h4>Distrito Río Grande</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="http://gicold.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/gicoldweb.png" alt="Gicold Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/gicoldcelu.png" alt="Gicold Mobile"></div></div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Agrimensura Satelital</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://cococatering.com.ar" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/cocoweb.png" alt="Coco Catering Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/cococelu.jpeg" alt="Coco Catering Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Coco Catering</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://bastonspaulete.com/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/bastonspauleteweb.png" alt="Bastons Paulete Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/bastonspauletecelu.jpeg" alt="Bastons Paulete Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Bastons Paulete</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://grupohv.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/logisticaweb.png" alt="Grupo HV Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/logisticacelu.jpeg" alt="Grupo HV Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Grupo HV</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.petit-app.com" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/petitweb.png" alt="Petit App Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/petitcelu.jpeg" alt="Petit App Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Petit App</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-
-
-                <a href="https://shirtsn-co.vercel.app" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/shirtsweb.png" alt="Shirts & Co Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/shirtscelu.jpeg" alt="Shirts & Co Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Shirts & Co</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/hostelweb.png" alt="Hostels Rosario Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/hostelcelu.jpeg" alt="Hostels Rosario Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Hostels Rosario</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://italianosdelmundo.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/ciudadaniaweb.png" alt="Italianos del Mundo Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/ciudadaniacelu.jpeg" alt="Italianos del Mundo Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Italianos del Mundo</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.csgestionpymes.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/gestionpymesweb.png" alt="CS gestion pymes Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/gestionpymecelu.jpeg" alt="CS gestion pymes Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>CS Gestión Pymes</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.zechtatuajes.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/tatuajesweb.png" alt="Zech Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/tatuajescelu.jpeg" alt="Zech Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Zech</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.aisamsalud.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/aisamcentrosalud.png" alt="Aisam Centro de Salud Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/aisamcentrosaludcelu.jpeg" alt="Aisam Centro de Salud Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Aisam Centro de Salud</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/gomezasociadosweb.png" alt="Gomez & Asociados Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/gomezasociadoscelu.jpeg" alt="Gomez & Asociados Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Gómez & Asociados</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.mgabogado.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/abogadomgweb.png" alt="Abogado MG Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/abogadomgcelu.jpeg" alt="Abogado MG Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Abogado MG</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/vicenzoweb.png" alt="Espacio Vicenzo Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/vicenzocelu.jpeg" alt="Espacio Vicenzo Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Espacio Vicenzo</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://experienciaki.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/experienciakiweb.png" alt="Experiencia Ki Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/experienciakicelu.jpeg" alt="Experiencia Ki Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Experiencia Ki</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="portfolio-item" data-category="corporativa">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/maritimosweb.png" alt="Galeón Consultora Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/maritimocelu.jpeg" alt="Galeón Consultora Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Galeón Consultora</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-                    
-
-                <!-- ── LANDINGS con link ── -->
-                <a href="https://www.masmomentosunicos.com/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/barratragosweb.png" alt="Barra Tragos Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/barratragoscelu.png" alt="Barra Tragos Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Barra Tragos</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://tuprepagaonline.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/prepagaweb.png" alt="Prepaga Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/prepagacelu.png" alt="Prepaga Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Prepaga</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.sanatoriosarmientosalud.com.ar/" target="_blank" class="portfolio-item" data-category="landing">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/sanatorioweb.png" alt="Sanatorio Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/sanatoriocelu.png" alt="Sanatorio Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Sanatorio Sarmiento</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-    
-                <a href="https://www.danielsaire.com.ar/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/airesweb.png" alt="Aires Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/airescelu.png" alt="Aires Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Daniel's Aire</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="http://distririogrande.com.ar/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/distritoweb.png" alt="Distrito Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/distritocelu.png" alt="Distrito Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Distrito Río Grande</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://www.gokywebs.net/demos/EsteticaCursos/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/esteticaweb.png" alt="Estética Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/esteticacelu.png" alt="Estética Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Estética Cursos</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="http://gicold.com.ar/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/gicoldweb.png" alt="Gicold Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/gicoldcelu.png" alt="Gicold Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Gicold</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://tusencantosindumentaria.com.ar/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/tusencantosweb.png" alt="Tus Encantos Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/tusencantoscelu.png" alt="Tus Encantos Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Tus Encantos</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <a href="https://botinesfv.com/" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/botinesweb.png" alt="Botines Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/botinescelu.png" alt="Botines Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Botines FV</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <!-- ── INMOBILIARIA con link ── -->
-                <a href="http://ventoinmobiliaria.com.ar/" target="_blank" class="portfolio-item" data-category="inmobiliaria">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/ventoweb.png" alt="Vento Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/ventocelu.png" alt="Vento Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Vento Inmobiliaria</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <!-- ── CORPORATIVA con link ── -->
-                <a href="https://www.urgencias24hs.com.ar/" target="_blank" class="portfolio-item" data-category="corporativa">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/odontoweb.png" alt="Odontobosques Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/odontocelu.png" alt="Odontobosques Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Odontobosques</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-                <a href="https://esbelt.com.ar" target="_blank" class="portfolio-item" data-category="ecommerce">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web">
-                            <img src="imagenes/esbeltweb.png" alt="Esbelt Web">
-                        </div>
-                        <div class="visual-mobile">
-                            <div class="mobile-frame">
-                                <img src="imagenes/esbeltcelu.jpeg" alt="Esbelt Mobile">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Esbelt</h3>
-                        <span class="view-project">Visitar sitio <span class="arrow">→</span></span>
-                    </div>
-                </a>
-
-                <div class="portfolio-item portfolio-nohref" data-category="corporativa">
-                    <div class="portfolio-visuals">
-                        <div class="visual-web"><img src="imagenes/servitechweb.png" alt="Servitech Web"></div>
-                        <div class="visual-mobile"><div class="mobile-frame"><img src="imagenes/servitechcelu.png" alt="Servitech Mobile"></div></div>
-                    </div>
-                    <div class="portfolio-info">
-                        <h3>Servitech</h3>
-                        <span class="view-project view-project--soon">Sin link aún</span>
+                            <div class="pf-info"><h4>Gicold</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
                     </div>
                 </div>
+            </article>
 
-            </div>
-            <div class="portfolio-more-wrapper" id="portfolioMoreWrapper" style="display:none;">
-                <button class="btn btn-secondary" id="portfolioVerMas">
-                    <span>Ver más proyectos</span>
-                </button>
+            <!-- ═══ SERVICIOS PROFESIONALES ═══ -->
+            <article class="pf-section" data-cat="profesionales" data-rows="2">
+                <header class="pf-section-head">
+                    <h3>Servicios Profesionales</h3>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://www.encantoestetica.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/encantoweb.png" alt="Encanto Estética Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/encantocelu.jpeg" alt="Encanto Estética Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Encanto Estética</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.zechtatuajes.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/tatuajesweb.png" alt="Zech Tatuajes Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/tatuajescelu.jpeg" alt="Zech Tatuajes Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Zech Tatuajes</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://experienciaki.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/experienciakiweb.png" alt="Experiencia Ki Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/experienciakicelu.jpeg" alt="Experiencia Ki Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Experiencia Ki</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/hostelweb.png" alt="Hostels Rosario Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/hostelcelu.jpeg" alt="Hostels Rosario Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Hostels Rosario</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.espaciovicenzo.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/vicenzoweb.png" alt="Espacio Vicenzo Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/vicenzocelu.jpeg" alt="Espacio Vicenzo Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Espacio Vicenzo</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://licenciadaluena.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/psicologaluana.png" alt="Psicóloga Luana Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/psicologaluanacelu.jpeg" alt="Psicóloga Luana Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Psicóloga Luana</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.aisamsalud.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/aisamcentrosalud.png" alt="Aisam Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/aisamcentrosaludcelu.jpeg" alt="Aisam Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Aisam Centro de Salud</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://tuprepagaonline.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/prepagaweb.png" alt="Prepaga Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/prepagacelu.png" alt="Prepaga Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Prepaga Online</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.sanatoriosarmientosalud.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/sanatorioweb.png" alt="Sanatorio Sarmiento Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/sanatoriocelu.png" alt="Sanatorio Sarmiento Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Sanatorio Sarmiento</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.urgencias24hs.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/odontoweb.png" alt="Odontobosques Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/odontocelu.png" alt="Odontobosques Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Odontobosques</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.estudioasilva.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/abogadaaldanaweb.png" alt="Estudio A. Silva Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/aldanaabogadacelu.jpeg" alt="Estudio A. Silva Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Estudio A. Silva</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://agrimensurasatelital.com" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/agrimensuraweb.png" alt="Agrimensura Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/agrimensuracelu.jpeg" alt="Agrimensura Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Agrimensura Satelital</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.csgestionpymes.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/gestionpymesweb.png" alt="CS Gestión Pymes Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/gestionpymecelu.jpeg" alt="CS Gestión Pymes Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>CS Gestión Pymes</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/maritimosweb.png" alt="Galeón Consultora Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/maritimocelu.jpeg" alt="Galeón Consultora Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Galeón Consultora</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.mgabogado.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/abogadomgweb.png" alt="Abogado MG Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/abogadomgcelu.jpeg" alt="Abogado MG Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Abogado MG</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://italianosdelmundo.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/ciudadaniaweb.png" alt="Italianos del Mundo Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/ciudadaniacelu.jpeg" alt="Italianos del Mundo Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Italianos del Mundo</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://grupohv.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/logisticaweb.png" alt="Grupo HV Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/logisticacelu.jpeg" alt="Grupo HV Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Grupo HV</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- ═══ MODA & INDUMENTARIA ═══ -->
+            <article class="pf-section" data-cat="moda">
+                <header class="pf-section-head">
+                    <h3>Moda & Indumentaria</h3>
+                    <div class="pf-nav">
+                        <button class="pf-arrow pf-prev" aria-label="Anterior">←</button>
+                        <button class="pf-arrow pf-next" aria-label="Siguiente">→</button>
+                    </div>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://shirtsn-co.vercel.app" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/shirtsweb.png" alt="Shirts & Co Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/shirtscelu.jpeg" alt="Shirts & Co Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Shirts & Co</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://tusencantosindumentaria.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/tusencantosweb.png" alt="Tus Encantos Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/tusencantoscelu.png" alt="Tus Encantos Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Tus Encantos</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://botinesfv.com/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/botinesweb.png" alt="Botines FV Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/botinescelu.png" alt="Botines FV Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Botines FV</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- ═══ GASTRONOMÍA & EVENTOS ═══ -->
+            <article class="pf-section" data-cat="gastronomia">
+                <header class="pf-section-head">
+                    <h3>Gastronomía & Eventos</h3>
+                    <div class="pf-nav">
+                        <button class="pf-arrow pf-prev" aria-label="Anterior">←</button>
+                        <button class="pf-arrow pf-next" aria-label="Siguiente">→</button>
+                    </div>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://cococatering.com.ar" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/cocoweb.png" alt="Coco Catering Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/cococelu.jpeg" alt="Coco Catering Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Coco Catering</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://www.masmomentosunicos.com/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/barratragosweb.png" alt="Barra Tragos Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/barratragoscelu.png" alt="Barra Tragos Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Barra Tragos</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
+            <!-- ═══ TECNOLOGÍA & ELECTRÓNICA ═══ -->
+            <article class="pf-section" data-cat="tecnologia">
+                <header class="pf-section-head">
+                    <h3>Tecnología & Electrónica</h3>
+                    <div class="pf-nav">
+                        <button class="pf-arrow pf-prev" aria-label="Anterior">←</button>
+                        <button class="pf-arrow pf-next" aria-label="Siguiente">→</button>
+                    </div>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://www.petit-app.com" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/petitweb.png" alt="Petit App Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/petitcelu.jpeg" alt="Petit App Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Petit App</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <div class="pf-card pf-card-nohref">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/servitechweb.png" alt="Servitech Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/servitechcelu.png" alt="Servitech Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Servitech</h4><span class="pf-cta pf-cta--soon">Sin link aún</span></div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- ═══ INMOBILIARIA ═══ -->
+            <article class="pf-section" data-cat="inmobiliaria">
+                <header class="pf-section-head">
+                    <h3>Inmobiliaria</h3>
+                    <div class="pf-nav">
+                        <button class="pf-arrow pf-prev" aria-label="Anterior">←</button>
+                        <button class="pf-arrow pf-next" aria-label="Siguiente">→</button>
+                    </div>
+                </header>
+                <div class="pf-track-wrap">
+                    <div class="pf-track">
+                        <a href="https://bastonspaulete.com/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/bastonspauleteweb.png" alt="Bastons Paulete Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/bastonspauletecelu.jpeg" alt="Bastons Paulete Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Bastons Paulete</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/gomezasociadosweb.png" alt="Gómez & Asociados Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/gomezasociadoscelu.jpeg" alt="Gómez & Asociados Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Gómez & Asociados</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                        <a href="http://ventoinmobiliaria.com.ar/" target="_blank" class="pf-card">
+                            <div class="pf-visuals">
+                                <div class="pf-web"><img src="imagenes/ventoweb.png" alt="Vento Inmobiliaria Web"></div>
+                                <div class="pf-celu"><div class="pf-phone"><img src="imagenes/ventocelu.png" alt="Vento Inmobiliaria Mobile"></div></div>
+                            </div>
+                            <div class="pf-info"><h4>Vento Inmobiliaria</h4><span class="pf-cta">Visitar <span class="pf-arr">→</span></span></div>
+                        </a>
+                    </div>
+                </div>
+            </article>
+
             </div>
         </div>
     </section>
@@ -1009,7 +828,28 @@
         <span>Pedir presupuesto</span>
     </a>
 
-    <script src="script.js"></script>
+    <!-- Modal para demos -->
+    <div class="demo-modal" id="demoModal" aria-hidden="true">
+        <div class="demo-modal-backdrop" data-close></div>
+        <div class="demo-modal-content">
+            <header class="demo-modal-head">
+                <h3 class="demo-modal-title" id="demoModalTitle">Demo</h3>
+                <button class="demo-modal-close" data-close aria-label="Cerrar">✕</button>
+            </header>
+            <div class="demo-modal-body">
+                <div class="demo-modal-pane demo-modal-pane--web">
+                    <span class="demo-modal-tag">Web</span>
+                    <img id="demoModalImgWeb" alt="">
+                </div>
+                <div class="demo-modal-pane demo-modal-pane--celu">
+                    <span class="demo-modal-tag">Mobile</span>
+                    <img id="demoModalImgCelu" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=4"></script>
     <script src="routing.js"></script>
 </body>
 </html>
