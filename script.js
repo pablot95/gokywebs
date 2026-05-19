@@ -1409,8 +1409,8 @@ function createDemoCard(demo) {
     card.innerHTML = `
         
         <div class="pf-visuals">
-            <div class="pf-web"><img src="imagenes/demos/${demo.id}_Web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
-            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id}_Celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
+            <div class="pf-web"><img src="imagenes/demos/${demo.id.toLowerCase()}_web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
+            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id.toLowerCase()}_celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
         </div>
         <div class="pf-info">
             <h4>${demo.name}</h4>
