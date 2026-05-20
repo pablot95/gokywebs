@@ -1,4 +1,4 @@
-const navbar = document.querySelector('.navbar');
+﻿const navbar = document.querySelector('.navbar');
 const menuToggle = document.getElementById('menuToggle');
 const navMenu = document.getElementById('navMenu');
 const navLinks = document.querySelectorAll('.nav-link');
@@ -218,7 +218,7 @@ if (contactForm) {
         emailjs.sendForm('service_w15l48a', 'template_u110bgf', '#contactForm')
             .then(function(response) {
                 console.log('SUCCESS!', response.status, response.text);
-                showNotification('Â¡Mensaje enviado con Ã©xito! Te responderemos pronto.', 'success');
+                showNotification('¡Mensaje enviado con éxito! Te responderemos pronto.', 'success');
                 contactForm.reset();
             }, function(error) {
                 console.log('FAILED...', error);
@@ -555,11 +555,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     gsap.registerPlugin(ScrollTrigger);
-    console.log('âœ… GSAP OK');
+    console.log('✅ GSAP OK');
     
-    /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    /* ==============================================
        ANIMACIONES DE ENTRADA CREATIVAS - GSAP
-       â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+       ============================================== */
 
     // --- Hero: entrada cinematica con stagger ---
     const heroTl = gsap.timeline({ defaults: { ease: 'power4.out' } });
@@ -855,7 +855,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Footer: reveal cinematogrÃ¡fico ---
+    // --- Footer: reveal cinematográfico ---
     const footerTl = gsap.timeline({
         scrollTrigger: {
             trigger: '.footer',
@@ -920,7 +920,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- WhatsApp float: entrada dramÃ¡tica ---
+    // --- WhatsApp float: entrada dramática ---
     gsap.from('.whatsapp-float', {
         opacity: 0,
         scale: 0,
@@ -931,7 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ease: 'elastic.out(1, 0.4)'
     });
     
-    console.log('âœ… Animaciones configuradas');
+    console.log('✅ Animaciones configuradas');
     console.log('ðŸ“Š Elements:', {
         services: document.querySelectorAll('.service-card').length,
         portfolio: document.querySelectorAll('.portfolio-item').length,
@@ -993,8 +993,8 @@ if (contactFormElement) {
 
         emailjs.sendForm(serviceID, templateID, this)
             .then(() => {
-                btn.innerText = 'Â¡Enviado!';
-                alert('Â¡Mensaje enviado con Ã©xito!');
+                btn.innerText = '¡Enviado!';
+                alert('¡Mensaje enviado con éxito!');
                 this.reset();
                 setTimeout(() => {
                     btn.innerText = originalText;
@@ -1074,7 +1074,7 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
             }
         );
 
-        // AnimaciÃ³n de la info del portfolio
+        // Animación de la info del portfolio
         const info = item.querySelector('.portfolio-info');
         if (info) {
             gsap.from(info, {

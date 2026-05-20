@@ -1531,7 +1531,7 @@ section {
     letter-spacing: -1px;
 }
 
-/* â”€â”€ Card Add-ons (inline checkboxes) â”€â”€ */
+/* -- Card Add-ons (inline checkboxes) -- */
 .card-addons {
     padding: 1rem 0rem 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -1899,9 +1899,9 @@ section {
     50% { box-shadow: 0 8px 32px rgba(37, 211, 102, 0.5), 0 0 0 12px rgba(37, 211, 102, 0.1), 0 0 0 24px rgba(37, 211, 102, 0.05); }
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ==============================================
    ANIMACIONES DE ENTRADA CREATIVAS
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   ============================================== */
 
 /* --- Reveal base: ocultar antes de animar --- */
 .reveal-ready {
@@ -1921,21 +1921,21 @@ section {
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* --- Slide desde la izquierda con rotaciÃ³n --- */
+/* --- Slide desde la izquierda con rotación --- */
 @keyframes slideInLeftRotate {
     0% { opacity: 0; transform: translateX(-120px) rotate(-8deg) scale(0.9); }
     70% { opacity: 1; transform: translateX(10px) rotate(1deg) scale(1.02); }
     100% { opacity: 1; transform: translateX(0) rotate(0) scale(1); }
 }
 
-/* --- Slide desde la derecha con rotaciÃ³n --- */
+/* --- Slide desde la derecha con rotación --- */
 @keyframes slideInRightRotate {
     0% { opacity: 0; transform: translateX(120px) rotate(8deg) scale(0.9); }
     70% { opacity: 1; transform: translateX(-10px) rotate(-1deg) scale(1.02); }
     100% { opacity: 1; transform: translateX(0) rotate(0) scale(1); }
 }
 
-/* --- Scale bounce (zoom elÃ¡stico) --- */
+/* --- Scale bounce (zoom elástico) --- */
 @keyframes scaleBounceIn {
     0% { opacity: 0; transform: scale(0.3); }
     50% { opacity: 1; transform: scale(1.08); }
@@ -1974,7 +1974,7 @@ section {
     100% { opacity: 1; transform: rotate(0) scale(1); }
 }
 
-/* --- Elastic drop (caÃ­da elÃ¡stica) --- */
+/* --- Elastic drop (caída elástica) --- */
 @keyframes elasticDrop {
     0% { opacity: 0; transform: translateY(-100px) scaleY(1.4) scaleX(0.8); }
     30% { transform: translateY(10px) scaleY(0.9) scaleX(1.05); }
@@ -1999,7 +1999,7 @@ section {
     100% { opacity: 1; transform: translateY(0) rotateX(0deg); }
 }
 
-/* --- Text reveal por lÃ­nea (mÃ¡scara) --- */
+/* --- Text reveal por línea (máscara) --- */
 @keyframes textRevealMask {
     0% { clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%); transform: translateY(20px); }
     100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); transform: translateY(0); }
