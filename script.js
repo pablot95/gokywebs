@@ -1310,8 +1310,10 @@ const PORTFOLIO_DEMOS = {
         { id: 'EsteticaCursos', name: 'Estética Cursos', url: 'https://estetica-cursos.vercel.app' },
         // Automotriz
         { id: 'FrenosdeDisco', name: 'Frenos de Disco', url: 'https://frenosde-disco.vercel.app' },
-        { id: 'Autofull', name: 'Autofull', url: 'https://auto-full-zeta.vercel.app' },
+        { id: 'Autofull', name: 'Autofull', url: 'https://autofullneumaticos.com.ar' },
         { id: 'RepuestosAutos', name: 'Repuestos Autos', url: 'https://autopartes-del-este.vercel.app' },
+        // Hogar
+        { id: 'HogarVerde', name: 'Hogar Verde' },
         // Limpieza
         { id: 'ValenClean', name: 'Valen Clean', url: 'https://valenclean.vercel.app' },
         // Deporte / actividades
@@ -1326,20 +1328,26 @@ const PORTFOLIO_DEMOS = {
     profesionales: [
         // Salud / consultorios
         { id: 'PiscoPsi', name: 'Pisco Psicología', url: 'https://psico-psi.vercel.app' },
+        { id: 'AlderPsicologia', name: 'Alder Psicología', url: 'https://www.psicorodas.com.ar/' },
+        { id: 'DrTauil', name: 'Dr. Tauil' },
+        { id: 'Skymed', name: 'SkyMed', url: 'https://www.skymedconsultorios.com/' },
         { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'png' },
-        { id: 'Mecanico', name: 'Mecánico Dental', url: 'https://juan-mecanico-orcin.vercel.app' },
-        { id: 'Ambulancias', name: 'Ambulancias 24hs' },
+        { id: 'Mecanico', name: 'Mecánico', url: 'https://rivasrys.com.ar' },
+        { id: 'Ambulancias', name: 'Ambulancias 24hs', url: 'https://urgencias24hs.com.ar' },
         { id: 'AHCD', name: 'AHCD', url: 'https://ahcd-coach.vercel.app' },
         // Belleza / spa / fitness (servicios)
         { id: 'Barberia', name: 'Barbería' },
         { id: 'Lessence', name: "L'essence Estética", url: 'https://lessence.vercel.app' },
-        { id: 'Estetica', name: 'Estética', url: 'https://encanto-estetica.vercel.app' },
-        { id: 'DanzaPole', name: 'Danza Pole', url: 'https://prisma-vision.vercel.app' },
+        { id: 'Estetica', name: 'Estética', url: 'https://encantoestetica.com.ar' },
+        { id: 'DanzaPole', name: 'Danza Pole' },
         // Legales / consultoría / publicidad
-        { id: 'EstudioJuridico', name: 'Estudio Jurídico', url: 'https://gestoriaintegral.vercel.app' },
+        { id: 'EstudioJuridico', name: 'Estudio Jurídico', url: 'https://mtgestoriaintegral.com.ar' },
+        { id: 'RamagliaEstudioJuridico', name: 'Ramaglia Estudio Jurídico' },
+        { id: 'ServiciosMigratorios', name: 'Servicios Migratorios' },
+        { id: 'GrupoAcot', name: 'Grupo Acot', url: 'https://grupoacot.com/' },
         { id: 'AdrianaTraductoraProfesora', name: 'Adriana Traductora', url: 'https://adriana-traductora.vercel.app' },
-        { id: 'Consultora', name: 'Consultora', url: 'https://consultora-chi.vercel.app' },
-        { id: 'InfinityTrading', name: 'Infinity Trading', url: 'https://infinitytrading-fawn.vercel.app' },
+        { id: 'Consultora', name: 'Consultora', url: 'https://pgmsconsultora.com.ar' },
+        { id: 'InfinityTrading', name: 'Infinity Trading', url: 'https://infinitytrader.com.ar' },
         { id: 'MFCGroup', name: 'MFC Group Publicidad', url: 'https://mf-cgroup.vercel.app' },
         { id: 'Brandaurea', name: 'Brandaurea', url: 'https://amp-solutions.vercel.app' },
         { id: 'DespachanteDos', name: 'Despachante de Aduana', url: 'https://despachante.vercel.app' },
@@ -1349,8 +1357,14 @@ const PORTFOLIO_DEMOS = {
         { id: 'Tuproductoronline', name: 'Tu Productor Online', url: 'https://tuproductoronline.vercel.app' },
         { id: 'InstitutoIFPA', name: 'Instituto IFPA', url: 'https://ifpa.vercel.app' },
         { id: 'Estudiorrpp', name: 'Estudio RRPP', url: 'https://estudiorrpp.vercel.app' },
+        // Educación / artes
+        { id: 'LenguasAdicionales', name: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar' },
+        { id: 'ProfeArtes', name: 'Profe Artes', url: 'https://catalinasolaridorda.com.ar' },
+        { id: 'ArtesMarciales', name: 'Artes Marciales' },
         // Construcción / oficios
         { id: 'JavierConstrucciones', name: 'Javier Construcciones', url: 'https://javier-construcciones.vercel.app' },
+        { id: 'MantenimientoObras', name: 'Mantenimiento de Obras' },
+        { id: 'Pintura', name: 'Pintura' },
         { id: 'DiegoTechista', name: 'Diego Techista', url: 'https://techos-zingueria.vercel.app' },
         // Turismo / esoterismo / cultura
         { id: 'Patagonianativa', name: 'Patagonia Nativa', url: 'https://patagonianativa.vercel.app' },
@@ -1375,7 +1389,9 @@ const PORTFOLIO_DEMOS = {
         { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' },
         { id: 'RopaBears', name: 'Ropa Bears' },
         { id: 'Damassco', name: 'Damassco' },
-        { id: 'MaceIntimates', name: 'Mace Intimates' }
+        { id: 'MaceIntimates', name: 'Mace Intimates' },
+        { id: 'Mima', name: 'Mima' },
+        { id: 'RopaMirame', name: 'Ropa Mírame' }
     ],
     gastronomia: [
         { id: 'Dulces', name: 'Dulces', ext: 'png' },
@@ -1390,7 +1406,8 @@ const PORTFOLIO_DEMOS = {
         { id: 'VelariumCelulares', name: 'Velarium Celulares', url: 'https://velarium-celulares.vercel.app' },
         { id: 'ServiceNotebooks', name: 'Service Notebooks', url: 'https://smrtec.vercel.app' },
         { id: 'NexumCelulares', name: 'Nexum Celulares', url: 'https://nexum-celulares.vercel.app' },
-        { id: 'ImpresionesJN', name: 'Impresiones JN', url: 'https://impresiones-jn.vercel.app' }
+        { id: 'ImpresionesJN', name: 'Impresiones JN', url: 'https://impresiones-jn.vercel.app' },
+        { id: 'GraficayPloteo', name: 'Gráfica y Ploteo', url: 'https://mattigraff.com.ar' }
     ],
     inmobiliaria: [
         { id: 'NoemiWichandInmo', name: 'Noemi Wichand', url: 'https://noemi-wichand.vercel.app' },
