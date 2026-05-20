@@ -41,6 +41,7 @@
 html {
     scroll-behavior: smooth;
     font-size: 16px;
+    overflow-x: hidden;
 }
 
 body {
@@ -2167,7 +2168,7 @@ section {
     .nav-menu {
         position: fixed;
         top: 60px;
-        right: -100%;
+        right: 1rem;
         width: 50%;
         height: 30vh;
         background: rgba(0, 0, 0, 0.5);
@@ -2181,10 +2182,14 @@ section {
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         border-radius: 36px;
         border: 1px solid rgba(255, 255, 255, 0.1);
+        transform: translateX(calc(100% + 2rem));
+        visibility: hidden;
+        z-index: 999;
     }
     
     .nav-menu.active {
-        right: 0;
+        transform: translateX(0);
+        visibility: visible;
     }
     
     .menu-toggle {
