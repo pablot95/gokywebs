@@ -1538,6 +1538,29 @@ function initPortfolioCarousels() {
     });
 }
 
+function pfLoadSectionImages(section) {
+    section.querySelectorAll('img[data-src]').forEach(img => {
+        img.src = img.dataset.src;
+        img.removeAttribute('data-src');
+    });
+}
+
+function initPfLazyImages() {
+    if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.pf-section').forEach(pfLoadSectionImages);
+        return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                pfLoadSectionImages(entry.target);
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { rootMargin: '200px 0px', threshold: 0 });
+    document.querySelectorAll('.pf-section').forEach(section => observer.observe(section));
+}
+
 function initPortfolioCatFilter() {
     const cats = document.querySelectorAll('.pf-cat');
     const sections = document.querySelectorAll('.pf-section');
@@ -1552,6 +1575,7 @@ function initPortfolioCatFilter() {
                 if (match) {
                     sec.classList.remove('is-hidden');
                     sec.style.display = '';
+                    pfLoadSectionImages(sec);
                 } else {
                     sec.style.display = 'none';
                 }
@@ -1761,6 +1785,7 @@ function initNewPortfolio() {
     initPortfolioCarousels();
     initPortfolioCatFilter();
     initDemoModal();
+    initPfLazyImages();
 
     // Evitar que el navegador "agarre" imágenes con drag nativo al hacer click sostenido
     const pfCats = document.getElementById('pfCategories');
