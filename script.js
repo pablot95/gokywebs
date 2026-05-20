@@ -1293,110 +1293,110 @@ const PORTFOLIO_DEMOS = {
     comercios: [
         // Tiendas y bazares
         { id: 'BlanqueriaBazar', name: 'Blanquería Bazar' },
-        { id: 'PapeleraTriunfo', name: 'Papelera Triunfo' },
-        { id: 'HemaImportados', name: 'Hema Importados' },
-        { id: 'VidrieraLeoRocha', name: 'Vidriera Leo Rocha' },
-        { id: 'SerBotanica', name: 'Ser Botánica' },
-        { id: 'TiendaAzurduy', name: 'Tienda Azurduy' },
+        { id: 'PapeleraTriunfo', name: 'Papelera Triunfo', url: 'https://papelera-triunfo.vercel.app' },
+        { id: 'HemaImportados', name: 'Hema Importados', url: 'https://hema-importados.vercel.app' },
+        { id: 'VidrieraLeoRocha', name: 'Vidriera Leo Rocha', url: 'https://vidriera-leo-rocha.vercel.app' },
+        { id: 'SerBotanica', name: 'Ser Botánica', url: 'https://ser-botanica.vercel.app' },
+        { id: 'TiendaAzurduy', name: 'Tienda Azurduy', url: 'https://tienda-azurduy.vercel.app' },
         { id: 'MiauMiau', name: 'Miau Miau Pet' },
         // Hogar, muebles, construcción
-        { id: 'DormiLupe', name: 'Dormi Lupe' },
-        { id: 'VerticeHogar', name: 'Vértice Hogar' },
-        { id: 'ZepolMuebles', name: 'Zepol Muebles' },
+        { id: 'DormiLupe', name: 'Dormi Lupe', url: 'https://dormi-lupe.vercel.app' },
+        { id: 'VerticeHogar', name: 'Vértice Hogar', url: 'https://verticehogar.vercel.app' },
+        { id: 'ZepolMuebles', name: 'Zepol Muebles', url: 'https://zepol.vercel.app' },
         { id: 'ArteMetalico', name: 'Arte Metálico' },
-        { id: 'mylomuebles', name: 'Mylo Muebles' },
+        { id: 'mylomuebles', name: 'Mylo Muebles', url: 'https://mylo-muebles.vercel.app' },
         // Belleza / estética (tiendas)
-        { id: 'Cuarzoestetica', name: 'Cuarzo Estética' },
-        { id: 'EsteticaCursos', name: 'Estética Cursos' },
+        { id: 'Cuarzoestetica', name: 'Cuarzo Estética', url: 'https://cuarzoestetica.vercel.app' },
+        { id: 'EsteticaCursos', name: 'Estética Cursos', url: 'https://estetica-cursos.vercel.app' },
         // Automotriz
-        { id: 'FrenosdeDisco', name: 'Frenos de Disco' },
-        { id: 'Autofull', name: 'Autofull' },
-        { id: 'RepuestosAutos', name: 'Repuestos Autos' },
+        { id: 'FrenosdeDisco', name: 'Frenos de Disco', url: 'https://frenosde-disco.vercel.app' },
+        { id: 'Autofull', name: 'Autofull', url: 'https://auto-full-zeta.vercel.app' },
+        { id: 'RepuestosAutos', name: 'Repuestos Autos', url: 'https://autopartes-del-este.vercel.app' },
         // Limpieza
-        { id: 'ValenClean', name: 'Valen Clean' },
+        { id: 'ValenClean', name: 'Valen Clean', url: 'https://valenclean.vercel.app' },
         // Deporte / actividades
-        { id: 'PeakLifters', name: 'Peak Lifters' },
-        { id: 'Airsoft', name: 'Airsoft' },
-        { id: 'CeroDescensos', name: 'Cero Descensos' },
-        { id: 'Padel', name: 'Pádel Club' },
-        { id: 'VoleyClub', name: 'Vóley Club' },
+        { id: 'PeakLifters', name: 'Peak Lifters', url: 'https://peak-lifters.vercel.app' },
+        { id: 'Airsoft', name: 'Airsoft', url: 'https://airgrip.vercel.app' },
+        { id: 'CeroDescensos', name: 'Cero Descensos', url: 'https://cero-descensos.vercel.app' },
+        { id: 'Padel', name: 'Pádel Club', url: 'https://padel-ps.vercel.app' },
+        { id: 'VoleyClub', name: 'Vóley Club', url: 'https://vivodeportes.vercel.app' },
         // Cultura
         { id: 'Libros', name: 'Librería' }
     ],
     profesionales: [
         // Salud / consultorios
-        { id: 'PiscoPsi', name: 'Pisco Psicología' },
+        { id: 'PiscoPsi', name: 'Pisco Psicología', url: 'https://psico-psi.vercel.app' },
         { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'png' },
-        { id: 'MecanicoDental', name: 'Mecánico Dental' },
+        { id: 'Mecanico', name: 'Mecánico Dental', url: 'https://juan-mecanico-orcin.vercel.app' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs' },
-        { id: 'AHCD', name: 'AHCD' },
+        { id: 'AHCD', name: 'AHCD', url: 'https://ahcd-coach.vercel.app' },
         // Belleza / spa / fitness (servicios)
         { id: 'Barberia', name: 'Barbería' },
-        { id: 'Lessence', name: "L'essence Estética" },
-        { id: 'Estetica', name: 'Estética' },
-        { id: 'DanzaPole', name: 'Danza Pole' },
+        { id: 'Lessence', name: "L'essence Estética", url: 'https://lessence.vercel.app' },
+        { id: 'Estetica', name: 'Estética', url: 'https://encanto-estetica.vercel.app' },
+        { id: 'DanzaPole', name: 'Danza Pole', url: 'https://prisma-vision.vercel.app' },
         // Legales / consultoría / publicidad
-        { id: 'EstudioJuridico', name: 'Estudio Jurídico' },
-        { id: 'AdrianaTraductoraProfesora', name: 'Adriana Traductora' },
-        { id: 'Consultora', name: 'Consultora' },
-        { id: 'InfinityTrading', name: 'Infinity Trading' },
-        { id: 'MFCGroup', name: 'MFC Group Publicidad' },
-        { id: 'Brandaurea', name: 'Brandaurea' },
-        { id: 'DespachanteDos', name: 'Despachante de Aduana' },
-        { id: 'SeguroClick', name: 'Seguro Click' },
-        { id: 'SeguridadPrivada', name: 'Seguridad Privada' },
-        { id: 'Axiotek', name: 'Axiotek' },
-        { id: 'InstitutoIFPA', name: 'Instituto IFPA' },
-        { id: 'Estudiorrpp', name: 'Estudio RRPP' },
+        { id: 'EstudioJuridico', name: 'Estudio Jurídico', url: 'https://gestoriaintegral.vercel.app' },
+        { id: 'AdrianaTraductoraProfesora', name: 'Adriana Traductora', url: 'https://adriana-traductora.vercel.app' },
+        { id: 'Consultora', name: 'Consultora', url: 'https://consultora-chi.vercel.app' },
+        { id: 'InfinityTrading', name: 'Infinity Trading', url: 'https://infinitytrading-fawn.vercel.app' },
+        { id: 'MFCGroup', name: 'MFC Group Publicidad', url: 'https://mf-cgroup.vercel.app' },
+        { id: 'Brandaurea', name: 'Brandaurea', url: 'https://amp-solutions.vercel.app' },
+        { id: 'DespachanteDos', name: 'Despachante de Aduana', url: 'https://despachante.vercel.app' },
+        { id: 'SeguroClick', name: 'Seguro Click', url: 'https://seguro-click.vercel.app' },
+        { id: 'SeguridadPrivada', name: 'Seguridad Privada', url: 'https://indumentaria-policial.vercel.app' },
+        { id: 'Axiotek', name: 'Axiotek', url: 'https://axiotek.vercel.app' },
+        { id: 'Tuproductoronline', name: 'Tu Productor Online', url: 'https://tuproductoronline.vercel.app' },
+        { id: 'InstitutoIFPA', name: 'Instituto IFPA', url: 'https://ifpa.vercel.app' },
+        { id: 'Estudiorrpp', name: 'Estudio RRPP', url: 'https://estudiorrpp.vercel.app' },
         // Construcción / oficios
-        { id: 'JavierConstrucciones', name: 'Javier Construcciones' },
-        { id: 'DiegoTechista', name: 'Diego Techista' },
+        { id: 'JavierConstrucciones', name: 'Javier Construcciones', url: 'https://javier-construcciones.vercel.app' },
+        { id: 'DiegoTechista', name: 'Diego Techista', url: 'https://techos-zingueria.vercel.app' },
         // Turismo / esoterismo / cultura
-        { id: 'Patagonianativa', name: 'Patagonia Nativa' },
-        { id: 'ConcienciaTriskel', name: 'Conciencia Triskel' },
+        { id: 'Patagonianativa', name: 'Patagonia Nativa', url: 'https://patagonianativa.vercel.app' },
+        { id: 'ConcienciaTriskel', name: 'Conciencia Triskel', url: 'https://conciencia-triskel.vercel.app' },
         { id: 'Musica', name: 'Academia de Música' },
-        { id: 'MarTarot', name: 'Mar Tarot' },
+        { id: 'MarTarot', name: 'Mar Tarot', url: 'https://tarot-mar.vercel.app' },
         { id: 'Tarot', name: 'Tarot' },
         // Servicios técnicos
         { id: 'Servicioelectro', name: 'Servicio Electro' },
-        { id: 'ServiceRefrigeracion', name: 'Service Refrigeración' },
-        { id: 'ClubCarGarage', name: 'Club Car Garage' },
-        { id: 'HidroArca', name: 'Hidro Arca' },
-        { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones' },
+        { id: 'ServiceRefrigeracion', name: 'Service Refrigeración', url: 'https://m-rrefrigeracion.vercel.app' },
+        { id: 'ClubCarGarage', name: 'Club Car Garage', url: 'https://club-car-garage.vercel.app' },
+        { id: 'HidroArca', name: 'Hidro Arca', url: 'https://hidro-arca.vercel.app' },
+        { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones', url: 'https://delta-pampa-fumigaciones.vercel.app' },
         // Comercios reasignados (productos especializados)
         { id: 'AguadeMesa', name: 'Agua de Mesa' },
-        { id: 'Gione15', name: 'Gione 15' }
+        { id: 'Gione15', name: 'Gione 15', url: 'https://gione.vercel.app' }
     ],
     moda: [
         { id: 'Remeras', name: 'Remeras' },
-        { id: 'SimonataStore', name: 'Simonata Store' },
-        { id: 'Distinta', name: 'Distinta' },
-        { id: 'Dominus', name: 'Dominus Jeans' },
+        { id: 'SimonataStore', name: 'Simonata Store', url: 'https://simonata.vercel.app' },
+        { id: 'Distinta', name: 'Distinta', url: 'https://distinta.vercel.app' },
+        { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' },
         { id: 'RopaBears', name: 'Ropa Bears' },
         { id: 'Damassco', name: 'Damassco' },
         { id: 'MaceIntimates', name: 'Mace Intimates' }
     ],
     gastronomia: [
         { id: 'Dulces', name: 'Dulces', ext: 'png' },
-        { id: 'NiftyBar', name: 'Nifty Bar' },
-        { id: 'RestoVinoteca', name: 'Resto Vinoteca' },
+        { id: 'NiftyBar', name: 'Nifty Bar', url: 'https://nifty-bar.vercel.app' },
+        { id: 'RestoVinoteca', name: 'Resto Vinoteca', url: 'https://resto-vinoteca.vercel.app' },
         { id: 'RossiCakes', name: 'Rossi Cakes' },
         { id: 'Milanesas', name: 'Milanesas' }
     ],
     tecnologia: [
         { id: 'Celulares', name: 'Celulares' },
         { id: 'TvDigital', name: 'TV Digital' },
-        { id: 'VelariumCelulares', name: 'Velarium Celulares' },
-        { id: 'ServiceNotebooks', name: 'Service Notebooks' },
-        { id: 'NexumCelulares', name: 'Nexum Celulares' },
-        { id: 'MercadoLibre', name: 'Mercado Libre' },
-        { id: 'ImpresionesJN', name: 'Impresiones JN' }
+        { id: 'VelariumCelulares', name: 'Velarium Celulares', url: 'https://velarium-celulares.vercel.app' },
+        { id: 'ServiceNotebooks', name: 'Service Notebooks', url: 'https://smrtec.vercel.app' },
+        { id: 'NexumCelulares', name: 'Nexum Celulares', url: 'https://nexum-celulares.vercel.app' },
+        { id: 'ImpresionesJN', name: 'Impresiones JN', url: 'https://impresiones-jn.vercel.app' }
     ],
     inmobiliaria: [
-        { id: 'NoemiWichandInmo', name: 'Noemi Wichand' },
+        { id: 'NoemiWichandInmo', name: 'Noemi Wichand', url: 'https://noemi-wichand.vercel.app' },
         { id: 'Tasador', name: 'Tasador' },
-        { id: 'InmobiliariaForte', name: 'Inmobiliaria Forte' },
-        { id: 'PalmarInmuebles', name: 'Palmar Inmuebles' }
+        { id: 'InmobiliariaForte', name: 'Inmobiliaria Forte', url: 'https://forte-propiedades.vercel.app' },
+        { id: 'PalmarInmuebles', name: 'Palmar Inmuebles', url: 'https://palmar-inmuebles.vercel.app' }
     ]
 };
 
@@ -1406,15 +1406,17 @@ function createDemoCard(demo) {
     card.className = 'pf-card is-demo';
     card.setAttribute('data-demo-id', demo.id);
     card.setAttribute('data-demo-name', demo.name);
+    card.setAttribute('data-demo-ext', demo.ext || 'jpg');
+    card.setAttribute('data-demo-url', demo.url || '');
     card.innerHTML = `
         
         <div class="pf-visuals">
-            <div class="pf-web"><img src="imagenes/demos/${demo.id.toLowerCase()}_web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
-            <div class="pf-celu"><div class="pf-phone"><img src="imagenes/demos/${demo.id.toLowerCase()}_celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
+            <div class="pf-web"><img src="images/${demo.id.toLowerCase()}_web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
+            <div class="pf-celu"><div class="pf-phone"><img src="images/${demo.id.toLowerCase()}_celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
         </div>
         <div class="pf-info">
             <h4>${demo.name}</h4>
-            <span class="pf-cta">Ver demo <span class="pf-arr">→</span></span>
+            <span class="pf-cta">${demo.url ? 'Ver sitio' : 'Ver demo'} <span class="pf-arr">→</span></span>
         </div>
     `;
     return card;
@@ -1548,13 +1550,22 @@ function initDemoModal() {
     const titleEl = document.getElementById('demoModalTitle');
     const imgWeb = document.getElementById('demoModalImgWeb');
     const imgCelu = document.getElementById('demoModalImgCelu');
+    const visitBtn = document.getElementById('demoModalVisit');
 
-    const open = (id, name) => {
+    const open = (id, name, ext = 'jpg', url = '') => {
         titleEl.textContent = name;
-        imgWeb.src = `imagenes/demos/${id}_Web.jpg`;
+        imgWeb.src = `images/${id.toLowerCase()}_web.${ext}`;
         imgWeb.alt = `${name} - Vista Web`;
-        imgCelu.src = `imagenes/demos/${id}_Celu.jpg`;
+        imgCelu.src = `images/${id.toLowerCase()}_celu.${ext}`;
         imgCelu.alt = `${name} - Vista Mobile`;
+        if (visitBtn) {
+            if (url) {
+                visitBtn.href = url;
+                visitBtn.style.display = '';
+            } else {
+                visitBtn.style.display = 'none';
+            }
+        }
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('modal-open');
@@ -1568,10 +1579,14 @@ function initDemoModal() {
     };
 
     document.addEventListener('click', (e) => {
-        const card = e.target.closest('.pf-card.is-demo');
-        if (card) {
+        const demoCard = e.target.closest('.pf-card.is-demo');
+        const clientCard = e.target.closest('.pf-card.is-client');
+        if (demoCard) {
             e.preventDefault();
-            open(card.dataset.demoId, card.dataset.demoName);
+            open(demoCard.dataset.demoId, demoCard.dataset.demoName, demoCard.dataset.demoExt || 'jpg', demoCard.dataset.demoUrl || '');
+        } else if (clientCard) {
+            e.preventDefault();
+            open(clientCard.dataset.imgId, clientCard.dataset.name, clientCard.dataset.imgExt || 'jpg', clientCard.dataset.url || '');
         }
     });
 

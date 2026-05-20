@@ -307,10 +307,6 @@ section {
 }
 
 .navbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
     background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -3834,6 +3830,28 @@ section {
     font-weight: 700;
     color: #fff;
     font-family: var(--font-display);
+}
+
+.demo-modal-visit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563EB, #3B82F6);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.2s;
+    margin-left: auto;
+    margin-right: 0.75rem;
+    white-space: nowrap;
+}
+
+.demo-modal-visit:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
 }
 
 .demo-modal-close {
