@@ -1355,7 +1355,6 @@ const PORTFOLIO_DEMOS = {
         { id: 'SeguridadPrivada', name: 'Seguridad Privada', url: 'https://indumentaria-policial.vercel.app' },
         { id: 'Axiotek', name: 'Axiotek', url: 'https://axiotek.vercel.app' },
         { id: 'Tuproductoronline', name: 'Tu Productor Online', url: 'https://tuproductoronline.vercel.app' },
-        { id: 'InstitutoIFPA', name: 'Instituto IFPA', url: 'https://ifpa.vercel.app' },
         { id: 'Estudiorrpp', name: 'Estudio RRPP', url: 'https://estudiorrpp.vercel.app' },
         // Educación / artes
         { id: 'LenguasAdicionales', name: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar' },
@@ -1379,11 +1378,9 @@ const PORTFOLIO_DEMOS = {
         { id: 'HidroArca', name: 'Hidro Arca', url: 'https://hidro-arca.vercel.app' },
         { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones', url: 'https://delta-pampa-fumigaciones.vercel.app' },
         // Comercios reasignados (productos especializados)
-        { id: 'AguadeMesa', name: 'Agua de Mesa' },
         { id: 'Gione15', name: 'Gione 15', url: 'https://gione.vercel.app' }
     ],
     moda: [
-        { id: 'Remeras', name: 'Remeras' },
         { id: 'SimonataStore', name: 'Simonata Store', url: 'https://simonata.vercel.app' },
         { id: 'Distinta', name: 'Distinta', url: 'https://distinta.vercel.app' },
         { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' },
