@@ -2211,10 +2211,11 @@ section {
     .hero {
         padding-top: 10px;
         max-height: 90vh;
-        padding-top: 80px;
+        padding-top: 40px;
         padding-bottom: 2rem;
         height: auto;
     }
+    
 
     .hero-visual {
         display: none;
@@ -2225,8 +2226,8 @@ section {
     }
     
     .hero-title {
-        font-size: 2rem;
-        margin-top: 6rem;
+        font-size: 2.5rem;
+        margin-top: 1rem;
     }
     
     .hero-description {
@@ -3456,7 +3457,8 @@ section {
 /* Track / Carousel */
 .pf-track-wrap {
     position: relative;
-    overflow: hidden;
+    overflow: hidden;    /* fallback navegadores muy viejos */
+    overflow: clip;      /* no bloquea el scroll táctil del hijo en iOS */
     border-radius: 16px;
     isolation: isolate;
 }
@@ -3466,12 +3468,13 @@ section {
     gap: 1rem;
     overflow-x: auto;
     overflow-y: hidden;
-    scroll-snap-type: x mandatory;
+    scroll-snap-type: x proximity;
     scroll-behavior: smooth;
-    padding: 0.5rem 0.25rem 1.5rem;
-    margin: -0.5rem -0.25rem -1.5rem;
+    padding: 0.5rem 0.25rem 1rem;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 .pf-track::-webkit-scrollbar {
@@ -3512,6 +3515,7 @@ section {
     margin: 0;
     flex-wrap: nowrap;
     user-select: none;
+    touch-action: pan-y;
 }
 
 .pf-track-marquee .pf-card {

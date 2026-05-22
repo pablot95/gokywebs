@@ -932,13 +932,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     console.log('✅ Animaciones configuradas');
-    console.log('ðŸ“Š Elements:', {
+    console.log('📊 Elements:', {
         services: document.querySelectorAll('.service-card').length,
         portfolio: document.querySelectorAll('.portfolio-item').length,
         timeline: document.querySelectorAll('.timeline-item').length
     });
     
-    const words = ['Descubrilo acá.', 'Tu web ideal.', 'Boceto gratis.'];
+    const words = ['Descubrilo acá.', 'Tu web ideal.', 'Vende online.', 'Tu marca en la web.'];
     let wordIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -1205,7 +1205,7 @@ if (document.readyState === 'loading') {
             var business = document.getElementById('boceto-business').value.trim();
 
             
-            var msg = 'Hola! Quiero mi boceto gratis\n\n';
+            var msg = 'Hola! Quiero mi mock-up gratis\n\n';
             msg += 'Nombre: ' + name + '\n';
             msg += 'Negocio: ' + business + '\n';
             
@@ -1334,7 +1334,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'png' },
         { id: 'Mecanico', name: 'Mecánico', url: 'https://rivasrys.com.ar' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs', url: 'https://urgencias24hs.com.ar' },
-        { id: 'AHCD', name: 'AHCD', url: 'https://ahcd-coach.vercel.app' },
+        { id: 'AHCD', name: 'AHCD', url: 'https://ahcd.org.ar/' },
         // Belleza / spa / fitness (servicios)
         { id: 'Barberia', name: 'Barbería' },
         { id: 'Lessence', name: "L'essence Estética", url: 'https://lessence.vercel.app' },
@@ -1374,7 +1374,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'Tarot', name: 'Tarot' },
         // Servicios técnicos
         { id: 'Servicioelectro', name: 'Servicio Electro' },
-        { id: 'ServiceRefrigeracion', name: 'Service Refrigeración', url: 'https://m-rrefrigeracion.vercel.app' },
+        { id: 'ServiceRefrigeracion', name: 'SMRTEC', url: 'https://smrtec.vercel.app/' },
         { id: 'ClubCarGarage', name: 'Club Car Garage', url: 'https://club-car-garage.vercel.app' },
         { id: 'HidroArca', name: 'Hidro Arca', url: 'https://hidro-arca.vercel.app' },
         { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones', url: 'https://delta-pampa-fumigaciones.vercel.app' },
@@ -1401,7 +1401,6 @@ const PORTFOLIO_DEMOS = {
         { id: 'Milanesas', name: 'Milanesas' }
     ],
     tecnologia: [
-        { id: 'Celulares', name: 'Celulares' },
         { id: 'TvDigital', name: 'TV Digital' },
         { id: 'VelariumCelulares', name: 'Velarium Celulares', url: 'https://velarium-celulares.vercel.app' },
         { id: 'ServiceNotebooks', name: 'Service Notebooks', url: 'https://smrtec.vercel.app' },
@@ -1520,12 +1519,38 @@ function initPortfolioCarousels() {
             window.addEventListener('mouseup', onMouseUp);
         });
 
-        // Si hubo drag significativo, cancelar el click siguiente para que no abra modal/link
+        // Touch / swipe para mobile
+        // Usamos la posición del dedo (NO scrollLeft) para distinguir tap vs swipe.
+        // scrollLeft no es confiable porque el scroll inercial de iOS sigue cambiándolo
+        // después de que el usuario levanta el dedo, lo que haría que un tap rápido
+        // tras un swipe quede bloqueado incorrectamente.
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchMoved = 0;
+
+        track.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            touchMoved = 0;
+        }, { passive: true });
+
+        track.addEventListener('touchend', (e) => {
+            const t = e.changedTouches[0];
+            const dx = Math.abs(t.clientX - touchStartX);
+            const dy = Math.abs(t.clientY - touchStartY);
+            touchMoved = Math.max(dx, dy);
+            updateArrows();
+        }, { passive: true });
+
+        // Si hubo swipe significativo, cancelar el click siguiente para que no abra modal/link
+        // Threshold mayor para touch (30px) porque el dedo naturalmente se mueve algunos
+        // pixeles durante un tap. Para mouse mantenemos 8px (es más preciso).
         track.addEventListener('click', (e) => {
-            if (moved > 8) {
+            if (moved > 8 || touchMoved > 30) {
                 e.preventDefault();
                 e.stopPropagation();
                 moved = 0;
+                touchMoved = 0;
             }
         }, true);
 
