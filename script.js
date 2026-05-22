@@ -1536,17 +1536,19 @@ function initPortfolioCarousels() {
 
         track.addEventListener('touchend', (e) => {
             const t = e.changedTouches[0];
-            const dx = Math.abs(t.clientX - touchStartX);
-            const dy = Math.abs(t.clientY - touchStartY);
-            touchMoved = Math.max(dx, dy);
+            // Solo movimiento HORIZONTAL cuenta como swipe en un carrusel horizontal.
+            // Math.max(dx, dy) incluía movimiento vertical (normal en cualquier tap),
+            // lo que bloqueaba los clicks aunque el usuario NO estuviera haciendo swipe.
+            touchMoved = Math.abs(t.clientX - touchStartX);
             updateArrows();
         }, { passive: true });
 
-        // Si hubo swipe significativo, cancelar el click siguiente para que no abra modal/link
-        // Threshold mayor para touch (30px) porque el dedo naturalmente se mueve algunos
-        // pixeles durante un tap. Para mouse mantenemos 8px (es más preciso).
+        // Cancelar el click siguiente solo si hubo swipe horizontal significativo.
+        // En mobile el browser ya suprime clicks después de swipes reales,
+        // así que touchMoved solo necesita cubrir el caso de movimiento horizontal
+        // deliberado (no el temblor vertical natural de cualquier tap).
         track.addEventListener('click', (e) => {
-            if (moved > 8 || touchMoved > 30) {
+            if (moved > 8 || touchMoved > 15) {
                 e.preventDefault();
                 e.stopPropagation();
                 moved = 0;
