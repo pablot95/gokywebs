@@ -37,23 +37,11 @@
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
             </div>
 
-            <div class="stats-row">
-                <div class="stat-card">
-                    <span class="stat-label">Total clientes</span>
-                    <span id="statCount" class="stat-value">0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Valor total</span>
-                    <span id="statTotal" class="stat-value">$0</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Total abonado</span>
-                    <span id="statPaid" class="stat-value">$0</span>
-                </div>
-                <div class="stat-card stat-pending">
-                    <span class="stat-label">Saldo pendiente</span>
-                    <span id="statPending" class="stat-value">$0</span>
-                </div>
+            <div class="filter-pills">
+                <button class="filter-pill active" data-filter="todos">Todos <span class="pill-count" id="countTodos">0</span></button>
+                <button class="filter-pill" data-filter="interesados">Interesados <span class="pill-count" id="countInteresados">0</span></button>
+                <button class="filter-pill" data-filter="seguimiento">Seguimiento <span class="pill-count" id="countSeguimiento">0</span></button>
+                <button class="filter-pill" data-filter="clientes">Clientes <span class="pill-count" id="countClientes">0</span></button>
             </div>
 
             <div class="search-row">
@@ -71,11 +59,12 @@
                             <th class="num">Abonado</th>
                             <th class="center">Estado</th>
                             <th class="center">Hablarle el día</th>
+                            <th class="notes-col-th">Notas</th>
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTbody">
-                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -86,7 +75,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Calendario de demos</h1>
-                    <p class="muted">Clientes con estado "Quiere demo" agendados por fecha.</p>
+                    <p class="muted">Clientes en estado "Quiere demo" o "Seguimiento" agendados por fecha.</p>
                 </div>
             </div>
             <div class="cal-nav">
@@ -143,7 +132,7 @@
                 <select id="estadoCliente">
                     <option value="interesado">Solo interesado</option>
                     <option value="quiere-demo">Quiere demo</option>
-                    <option value="demo-presentada">Demo presentada</option>
+                    <option value="seguimiento">Seguimiento</option>
                     <option value="cliente">Cliente</option>
                 </select>
 

@@ -39,15 +39,12 @@ const form = document.getElementById("clientForm");
 const modalTitle = document.getElementById("modalTitle");
 const searchInput = document.getElementById("searchInput");
 
-const statCount = document.getElementById("statCount");
-const statTotal = document.getElementById("statTotal");
-const statPaid = document.getElementById("statPaid");
-const statPending = document.getElementById("statPending");
+const statCount = null; // eliminado
 
 document.getElementById("openModalBtn").addEventListener("click", () => openModal());
-document.getElementById("closeModalBtn").addEventListener("click", closeModal);
-document.getElementById("cancelBtn").addEventListener("click", closeModal);
-modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+document.getElementById("closeModalBtn").addEventListener("click", tryCloseModal);
+document.getElementById("cancelBtn").addEventListener("click", tryCloseModal);
+modal.addEventListener("click", (e) => { if (e.target === modal) tryCloseModal(); });
 searchInput.addEventListener("input", render);
 
 // --- Tabs ---
@@ -87,10 +84,21 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal) dayModal.
 
 // --- Estado ---
 let clients = [];
+let activeFilter = "todos";
+
+// --- Filtros de viñeta ---
+document.querySelectorAll(".filter-pill").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".filter-pill").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFilter = btn.dataset.filter;
+        render();
+    });
+});
 
 function getEstado(c) {
-    if (c.estadoCliente) return c.estadoCliente;
-    return c.esCliente ? "cliente" : "interesado";
+    const e = c.estadoCliente || (c.esCliente ? "cliente" : "interesado");
+    return e === "demo-presentada" ? "seguimiento" : e;
 }
 
 function formatDate(val) {
@@ -119,18 +127,22 @@ function initRealtime() {
         if (activeTab === "calendario") renderCal();
     }, (err) => {
         console.error(err);
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
     });
 }
 
 function render() {
     const term = searchInput.value.trim().toLowerCase();
+    const filtered = activeFilter === "todos" ? clients
+        : activeFilter === "interesados" ? clients.filter(c => getEstado(c) === "interesado")
+        : activeFilter === "seguimiento" ? clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c)))
+        : clients.filter(c => getEstado(c) === "cliente");
     const list = term
-        ? clients.filter(c =>
+        ? filtered.filter(c =>
             (c.nombre || "").toLowerCase().includes(term) ||
             (c.proyecto || "").toLowerCase().includes(term) ||
             (c.telefono || "").toLowerCase().includes(term))
-        : clients;
+        : filtered;
 
     list.sort((a, b) => {
         const da = a.hablarleElDia || "";
@@ -147,7 +159,7 @@ function render() {
         tbody.innerHTML = list.map(c => {
             const saldo = (Number(c.valorTotal) || 0) - (Number(c.abono) || 0);
                     const estado = getEstado(c);
-                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "demo-presentada" ? "Demo presentada" : "Solo interesado";
+                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
                     return `
                 <tr class="client-row" data-row-id="${c.id}">
                     <td>${escapeHtml(c.nombre)}</td>
@@ -156,14 +168,23 @@ function render() {
                     <td class="num">${fmtMoney(c.valorTotal)}</td>
                     <td class="num">${fmtMoney(c.abono)}</td>
                     <td class="center">
-                        <button class="toggle-pill status ${estado}" data-cycle-status="${c.id}" title="Click para cambiar">
-                            ${estadoLabel}
-                        </button>
+                        <select class="inline-status-select ${estado}" data-status-id="${c.id}">
+                            <option value="interesado"${estado === 'interesado' ? ' selected' : ''}>Solo interesado</option>
+                            <option value="quiere-demo"${estado === 'quiere-demo' ? ' selected' : ''}>Quiere demo</option>
+                            <option value="seguimiento"${estado === 'seguimiento' ? ' selected' : ''}>Seguimiento</option>
+                            <option value="cliente"${estado === 'cliente' ? ' selected' : ''}>Cliente</option>
+                        </select>
                     </td>
                     <td class="center">
                         <div class="date-cell" data-date-id="${c.id}">
                             <span class="date-label${c.hablarleElDia ? ' has-date' : ''}">${formatDate(c.hablarleElDia)}</span>
                             <input type="date" class="inline-date" value="${escapeHtml(c.hablarleElDia || '')}">
+                        </div>
+                    </td>
+                    <td class="notes-col">
+                        <div class="notes-cell" data-note-id="${c.id}">
+                            <span class="notes-label${c.notas ? ' has-note' : ''}">${escapeHtml(c.notas || 'Agregar nota…')}</span>
+                            <textarea class="notes-input" maxlength="500" rows="2" data-original="${escapeHtml(c.notas || '')}">${escapeHtml(c.notas || '')}</textarea>
                         </div>
                     </td>
                     <td class="actions-col">
@@ -175,24 +196,19 @@ function render() {
         }).join("");
     }
 
-    // Stats globales (no dependen del filtro)
-    const totals = clients.reduce((acc, c) => {
-        acc.total += Number(c.valorTotal) || 0;
-        acc.paid += Number(c.abono) || 0;
-        return acc;
-    }, { total: 0, paid: 0 });
-    const pendingSoloClientes = clients
-        .filter(c => getEstado(c) === "cliente")
-        .reduce((acc, c) => acc + Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0)), 0);
-    statCount.textContent = clients.length;
-    statTotal.textContent = fmtMoney(totals.total);
-    statPaid.textContent = fmtMoney(totals.paid);
-    statPending.textContent = fmtMoney(pendingSoloClientes);
+    // Contadores de viñetas
+    const countInteresados = clients.filter(c => getEstado(c) === "interesado").length;
+    const countSeguimiento = clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c))).length;
+    const countClientes = clients.filter(c => getEstado(c) === "cliente").length;
+    document.getElementById("countTodos").textContent = clients.length;
+    document.getElementById("countInteresados").textContent = countInteresados;
+    document.getElementById("countSeguimiento").textContent = countSeguimiento;
+    document.getElementById("countClientes").textContent = countClientes;
 
     // Listeners de acciones
     tbody.querySelectorAll(".client-row").forEach(row => {
         row.addEventListener("click", (e) => {
-            if (e.target.closest("button, input, .date-cell, .actions-col")) return;
+            if (e.target.closest("button, input, select, .date-cell, .actions-col, .notes-col")) return;
             openModal(row.dataset.rowId);
         });
     });
@@ -200,8 +216,31 @@ function render() {
         b.addEventListener("click", () => openModal(b.dataset.id)));
     tbody.querySelectorAll(".icon-btn.delete").forEach(b =>
         b.addEventListener("click", () => removeClient(b.dataset.id)));
-    tbody.querySelectorAll("[data-cycle-status]").forEach(b =>
-        b.addEventListener("click", () => cycleStatus(b.dataset.cycleStatus)));
+    tbody.querySelectorAll("[data-status-id]").forEach(sel => {
+        sel.addEventListener("change", () => setStatus(sel.dataset.statusId, sel.value));
+    });
+    tbody.querySelectorAll(".notes-cell").forEach(cell => {
+        const label = cell.querySelector(".notes-label");
+        const textarea = cell.querySelector(".notes-input");
+        label.addEventListener("click", () => {
+            cell.classList.add("editing");
+            textarea.focus();
+        });
+        textarea.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                textarea.value = textarea.dataset.original;
+                cell.classList.remove("editing");
+            }
+        });
+        textarea.addEventListener("blur", async () => {
+            const val = textarea.value.trim();
+            cell.classList.remove("editing");
+            label.textContent = val || "Agregar nota…";
+            label.className = "notes-label" + (val ? " has-note" : "");
+            textarea.dataset.original = val;
+            await updateField(cell.dataset.noteId, "notas", val);
+        });
+    });
     tbody.querySelectorAll(".date-cell").forEach(cell => {
         const label = cell.querySelector(".date-label");
         const input = cell.querySelector(".inline-date");
@@ -251,14 +290,10 @@ async function toggleField(id, field) {
     }
 }
 
-async function cycleStatus(id) {
-    const c = clients.find(x => x.id === id);
-    if (!c) return;
-    const current = getEstado(c);
-    const next = current === "interesado" ? "quiere-demo" : current === "quiere-demo" ? "demo-presentada" : current === "demo-presentada" ? "cliente" : "interesado";
+async function setStatus(id, value) {
     try {
         await updateDoc(doc(db, "clientes", id), {
-            estadoCliente: next,
+            estadoCliente: value,
             updatedAt: serverTimestamp()
         });
     } catch (err) {
@@ -269,6 +304,7 @@ async function cycleStatus(id) {
 
 function openModal(id = null) {
     form.reset();
+    formDirty = false;
     document.getElementById("clientId").value = "";
     if (id) {
         const c = clients.find(x => x.id === id);
@@ -289,6 +325,21 @@ function openModal(id = null) {
     }
     syncEstadoSelect();
     modal.hidden = false;
+    // Marcar dirty a partir del primer cambio del usuario
+    setTimeout(() => {
+        form.querySelectorAll("input, select, textarea").forEach(el => {
+            el.addEventListener("input", markDirty, { once: false });
+            el.addEventListener("change", markDirty, { once: false });
+        });
+    }, 0);
+}
+
+let formDirty = false;
+function markDirty() { formDirty = true; }
+
+function tryCloseModal() {
+    if (formDirty && !confirm("Tenés cambios sin guardar. ¿Salir de todos modos?")) return;
+    closeModal();
 }
 
 function closeModal() {
@@ -334,6 +385,7 @@ form.addEventListener("submit", async (e) => {
                 createdBy: currentUser?.uid || null
             });
         }
+        formDirty = false;
         closeModal();
     } catch (err) {
         console.error(err);
@@ -360,7 +412,7 @@ async function removeClient(id) {
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function getDemosForDate(dateStr) {
-    return clients.filter(c => getEstado(c) === "quiere-demo" && c.hablarleElDia === dateStr);
+    return clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c)) && c.hablarleElDia === dateStr);
 }
 
 function renderCal() {
@@ -384,12 +436,15 @@ function renderCal() {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const demos = getDemosForDate(dateStr);
+        const demosQuierDemo = getDemosForDate(dateStr).filter(c => getEstado(c) === "quiere-demo");
+        const demosSeguimiento = getDemosForDate(dateStr).filter(c => getEstado(c) === "seguimiento");
+        const demos = [...demosQuierDemo, ...demosSeguimiento];
         const isToday = todayY === calYear && todayM === calMonth && todayD === d;
         const cls = ["cal-cell", isToday ? "today" : "", demos.length > 0 ? "has-demos" : ""].filter(Boolean).join(" ");
         html += `<div class="${cls}" data-date="${dateStr}">
             <span class="cal-day-num">${d}</span>
-            ${demos.length > 0 ? `<span class="cal-badge">${demos.length} demo${demos.length > 1 ? "s" : ""}</span>` : ""}
+            ${demosQuierDemo.length > 0 ? `<span class="cal-badge badge-demo">${demosQuierDemo.length}</span>` : ""}
+            ${demosSeguimiento.length > 0 ? `<span class="cal-badge badge-seguimiento">${demosSeguimiento.length}</span>` : ""}
         </div>`;
     }
 
@@ -407,23 +462,54 @@ function openDayModal(dateStr) {
     dayModalTitle.textContent = `${parseInt(d)} de ${MONTHS_ES[parseInt(m) - 1]} ${y}`;
 
     if (demos.length === 0) {
-        dayModalBody.innerHTML = `<p class="muted" style="padding:16px 0">No hay demos para este día.</p>`;
+        dayModalBody.innerHTML = `<p class="muted" style="padding:16px 0">No hay eventos para este día.</p>`;
     } else {
-        dayModalBody.innerHTML = `<div class="demo-list">${demos.map(c => `
-            <div class="demo-item">
-                <div class="demo-item-info">
-                    <span class="demo-item-name">${escapeHtml(c.nombre)}</span>
-                    <span class="demo-item-proyecto">${escapeHtml(c.proyecto)}</span>
+        dayModalBody.innerHTML = `<div class="demo-list">${demos.map(c => {
+            const estado = getEstado(c);
+            const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
+            const btnNext = estado === "quiere-demo" ? "seguimiento" : "cliente";
+            const btnPresentadaLabel = estado === "quiere-demo" ? "Presentada" : "Confirmar cliente";
+            const saldo = Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0));
+            return `
+            <div class="demo-item" data-item-id="${c.id}">
+                <div class="demo-item-header">
+                    <div class="demo-item-main">
+                        <span class="demo-item-name">${escapeHtml(c.nombre)}</span>
+                        <span class="demo-item-proyecto">${escapeHtml(c.proyecto)}</span>
+                    </div>
+                    <button class="btn-check-done" data-check-id="${c.id}" title="Marcar como hecho">&#10003; Hecho</button>
                 </div>
-                <button class="btn-mark-demo" data-mark-id="${c.id}">✓ Marcar hecha</button>
+                <div class="demo-item-details">
+                    <div class="demo-detail"><span class="demo-detail-label">Teléfono</span><span>${escapeHtml(c.telefono || '—')}</span></div>
+                    <div class="demo-detail"><span class="demo-detail-label">Valor total</span><span>${fmtMoney(c.valorTotal)}</span></div>
+                    <div class="demo-detail"><span class="demo-detail-label">Abonado</span><span class="abonado-val">${fmtMoney(c.abono)}</span></div>
+                    <div class="demo-detail"><span class="demo-detail-label">Saldo</span><span class="saldo-val">${fmtMoney(saldo)}</span></div>
+                    <div class="demo-detail full-width"><span class="demo-detail-label">Estado</span><span class="estado-mini ${estado}">${estadoLabel}</span></div>
+                </div>
+                ${c.notas ? `<div class="demo-item-notas">📝 ${escapeHtml(c.notas)}</div>` : ''}
+                <div class="demo-item-actions">
+                    <button class="btn-presentada" data-mark-id="${c.id}" data-mark-next="${btnNext}">${btnPresentadaLabel}</button>
+                </div>
             </div>
-        `).join("")}</div>`;
+        `;
+        }).join("")}</div>`;
 
-        dayModalBody.querySelectorAll(".btn-mark-demo").forEach(btn => {
+        // Visual: marcar/desmarcar hecho (sin Firestore)
+        dayModalBody.querySelectorAll(".btn-check-done").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const item = dayModalBody.querySelector(`.demo-item[data-item-id="${btn.dataset.checkId}"]`);
+                const isDone = item.classList.toggle("done");
+                btn.classList.toggle("checked", isDone);
+                btn.textContent = isDone ? "✓ Hecho" : "✓ Hecho";
+            });
+        });
+
+        // Presentada: guarda en Firestore
+        dayModalBody.querySelectorAll(".btn-presentada").forEach(btn => {
             btn.addEventListener("click", async () => {
                 btn.disabled = true;
                 btn.textContent = "Guardando...";
-                await updateField(btn.dataset.markId, "estadoCliente", "demo-presentada");
+                await updateField(btn.dataset.markId, "estadoCliente", btn.dataset.markNext);
                 dayModal.hidden = true;
             });
         });
