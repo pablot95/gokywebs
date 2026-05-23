@@ -135,7 +135,8 @@ function render() {
     const term = searchInput.value.trim().toLowerCase();
     const filtered = activeFilter === "todos" ? clients
         : activeFilter === "interesados" ? clients.filter(c => getEstado(c) === "interesado")
-        : activeFilter === "seguimiento" ? clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c)))
+        : activeFilter === "quiere-demo" ? clients.filter(c => getEstado(c) === "quiere-demo")
+        : activeFilter === "seguimiento" ? clients.filter(c => getEstado(c) === "seguimiento")
         : clients.filter(c => getEstado(c) === "cliente");
     const list = term
         ? filtered.filter(c =>
@@ -198,10 +199,12 @@ function render() {
 
     // Contadores de viñetas
     const countInteresados = clients.filter(c => getEstado(c) === "interesado").length;
-    const countSeguimiento = clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c))).length;
+    const countQuiereDemo = clients.filter(c => getEstado(c) === "quiere-demo").length;
+    const countSeguimiento = clients.filter(c => getEstado(c) === "seguimiento").length;
     const countClientes = clients.filter(c => getEstado(c) === "cliente").length;
     document.getElementById("countTodos").textContent = clients.length;
     document.getElementById("countInteresados").textContent = countInteresados;
+    document.getElementById("countQuiereDemo").textContent = countQuiereDemo;
     document.getElementById("countSeguimiento").textContent = countSeguimiento;
     document.getElementById("countClientes").textContent = countClientes;
 
