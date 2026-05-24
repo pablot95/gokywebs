@@ -100,7 +100,7 @@ document.querySelectorAll(".filter-pill").forEach(btn => {
 
 function getEstado(c) {
     const e = c.estadoCliente || (c.esCliente ? "cliente" : "interesado");
-    return e === "demo-presentada" ? "seguimiento" : e;
+    return (e === "demo-presentada" || e === "quiere-demo") ? "seguimiento" : e;
 }
 
 function formatDate(val) {
@@ -148,7 +148,6 @@ function render() {
     const term = searchInput.value.trim().toLowerCase();
     const filtered = activeFilter === "todos" ? clients
         : activeFilter === "interesados" ? clients.filter(c => getEstado(c) === "interesado")
-        : activeFilter === "quiere-demo" ? clients.filter(c => getEstado(c) === "quiere-demo")
         : activeFilter === "seguimiento" ? clients.filter(c => getEstado(c) === "seguimiento")
         : clients.filter(c => getEstado(c) === "cliente");
     const list = term
@@ -173,7 +172,7 @@ function render() {
         tbody.innerHTML = list.map(c => {
             const saldo = (Number(c.valorTotal) || 0) - (Number(c.abono) || 0);
                     const estado = getEstado(c);
-                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
+                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
                     return `
                 <tr class="client-row" data-row-id="${c.id}">
                     <td>${escapeHtml(c.nombre)}</td>
@@ -184,7 +183,6 @@ function render() {
                     <td class="center">
                         <select class="inline-status-select ${estado}" data-status-id="${c.id}">
                             <option value="interesado"${estado === 'interesado' ? ' selected' : ''}>Solo interesado</option>
-                            <option value="quiere-demo"${estado === 'quiere-demo' ? ' selected' : ''}>Quiere demo</option>
                             <option value="seguimiento"${estado === 'seguimiento' ? ' selected' : ''}>Seguimiento</option>
                             <option value="cliente"${estado === 'cliente' ? ' selected' : ''}>Cliente</option>
                         </select>
@@ -212,12 +210,10 @@ function render() {
 
     // Contadores de viñetas
     const countInteresados = clients.filter(c => getEstado(c) === "interesado").length;
-    const countQuiereDemo = clients.filter(c => getEstado(c) === "quiere-demo").length;
     const countSeguimiento = clients.filter(c => getEstado(c) === "seguimiento").length;
     const countClientes = clients.filter(c => getEstado(c) === "cliente").length;
     document.getElementById("countTodos").textContent = clients.length;
     document.getElementById("countInteresados").textContent = countInteresados;
-    document.getElementById("countQuiereDemo").textContent = countQuiereDemo;
     document.getElementById("countSeguimiento").textContent = countSeguimiento;
     document.getElementById("countClientes").textContent = countClientes;
 
@@ -455,6 +451,7 @@ function renderPropuestas() {
                 <td style="font-size:12px;max-width:160px">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-prop-id="${p.id}" style="font-size:13px">Ver →</button>
+                    <button class="btn-presentada-prop" data-prop-presentada="${p.id}" style="font-size:13px">Presentada</button>
                     <button class="icon-btn delete" data-prop-del="${p.id}" title="Eliminar">🗑</button>
                 </td>
             </tr>
@@ -463,6 +460,9 @@ function renderPropuestas() {
 
     tbody.querySelectorAll("[data-prop-id]").forEach(btn => {
         btn.addEventListener("click", () => openPropuestaModal(btn.dataset.propId));
+    });
+    tbody.querySelectorAll("[data-prop-presentada]").forEach(btn => {
+        btn.addEventListener("click", () => openPresentadaModal(btn.dataset.propPresentada));
     });
     tbody.querySelectorAll("[data-prop-del]").forEach(btn => {
         btn.addEventListener("click", () => removePropuesta(btn.dataset.propDel));
@@ -514,11 +514,67 @@ async function removeClient(id) {
     }
 }
 
+// --- Modal Presentada (propuesta → seguimiento en clientes) ---
+const presentadaModal = document.getElementById("presentadaModal");
+const presentadaForm  = document.getElementById("presentadaForm");
+
+document.getElementById("closePresentadaModalBtn").addEventListener("click", () => { presentadaModal.hidden = true; });
+document.getElementById("cancelPresentadaBtn").addEventListener("click", () => { presentadaModal.hidden = true; });
+presentadaModal.addEventListener("click", (e) => { if (e.target === presentadaModal) presentadaModal.hidden = true; });
+
+function openPresentadaModal(propId) {
+    const p = propuestas.find(x => x.id === propId);
+    if (!p) return;
+    document.getElementById("presentadaPropId").value = propId;
+    document.getElementById("presentadaNombre").value = p.nombre_negocio || "";
+    document.getElementById("presentadaFecha").value = "";
+    document.getElementById("presentadaValor").value = 0;
+    presentadaModal.hidden = false;
+}
+
+presentadaForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const propId  = document.getElementById("presentadaPropId").value;
+    const nombre  = document.getElementById("presentadaNombre").value.trim();
+    const fecha   = document.getElementById("presentadaFecha").value || "";
+    const valor   = Number(document.getElementById("presentadaValor").value) || 0;
+
+    const p = propuestas.find(x => x.id === propId);
+    if (!p) return;
+
+    const saveBtn = document.getElementById("savePresentadaBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Guardando...";
+
+    try {
+        await addDoc(collection(db, "clientes"), {
+            nombre,
+            proyecto:       p.rubro || "",
+            telefono:       p.telefono || p.contacto_cel || "",
+            estadoCliente:  "seguimiento",
+            hablarleElDia:  fecha,
+            valorTotal:     valor,
+            abono:          0,
+            notas:          "",
+            createdAt:      serverTimestamp(),
+            createdBy:      currentUser?.uid || null
+        });
+        await deleteDoc(doc(db, "propuestas", propId));
+        presentadaModal.hidden = true;
+    } catch (err) {
+        console.error(err);
+        alert("Error: " + err.message);
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = "Confirmar";
+    }
+});
+
 // --- Calendario ---
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function getDemosForDate(dateStr) {
-    return clients.filter(c => ["quiere-demo", "seguimiento"].includes(getEstado(c)) && c.hablarleElDia === dateStr);
+    return clients.filter(c => getEstado(c) === "seguimiento" && c.hablarleElDia === dateStr);
 }
 
 function renderCal() {
@@ -542,15 +598,12 @@ function renderCal() {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const demosQuierDemo = getDemosForDate(dateStr).filter(c => getEstado(c) === "quiere-demo");
-        const demosSeguimiento = getDemosForDate(dateStr).filter(c => getEstado(c) === "seguimiento");
-        const demos = [...demosQuierDemo, ...demosSeguimiento];
+        const demos = getDemosForDate(dateStr);
         const isToday = todayY === calYear && todayM === calMonth && todayD === d;
         const cls = ["cal-cell", isToday ? "today" : "", demos.length > 0 ? "has-demos" : ""].filter(Boolean).join(" ");
         html += `<div class="${cls}" data-date="${dateStr}">
             <span class="cal-day-num">${d}</span>
-            ${demosQuierDemo.length > 0 ? `<span class="cal-badge badge-demo">${demosQuierDemo.length}</span>` : ""}
-            ${demosSeguimiento.length > 0 ? `<span class="cal-badge badge-seguimiento">${demosSeguimiento.length}</span>` : ""}
+            ${demos.length > 0 ? `<span class="cal-badge badge-seguimiento">${demos.length}</span>` : ""}
         </div>`;
     }
 
@@ -572,9 +625,7 @@ function openDayModal(dateStr) {
     } else {
         dayModalBody.innerHTML = `<div class="demo-list">${demos.map(c => {
             const estado = getEstado(c);
-            const estadoLabel = estado === "cliente" ? "Cliente" : estado === "quiere-demo" ? "Quiere demo" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
-            const btnNext = estado === "quiere-demo" ? "seguimiento" : "cliente";
-            const btnPresentadaLabel = estado === "quiere-demo" ? "Presentada" : "Confirmar cliente";
+            const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
             const saldo = Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0));
             return `
             <div class="demo-item" data-item-id="${c.id}">
@@ -594,7 +645,7 @@ function openDayModal(dateStr) {
                 </div>
                 ${c.notas ? `<div class="demo-item-notas">📝 ${escapeHtml(c.notas)}</div>` : ''}
                 <div class="demo-item-actions">
-                    <button class="btn-presentada" data-mark-id="${c.id}" data-mark-next="${btnNext}">${btnPresentadaLabel}</button>
+                    <button class="btn-presentada" data-mark-id="${c.id}" data-mark-next="cliente">Confirmar cliente</button>
                 </div>
             </div>
         `;
