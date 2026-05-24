@@ -4048,5 +4048,8 @@ body.modal-open {
     .demo-modal-pane {
         padding: 1rem;
     }
+    .logo-img{
+        height: 40px;
+    }
 }
 
