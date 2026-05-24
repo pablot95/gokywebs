@@ -3598,7 +3598,10 @@ section {
 @media (max-width: 480px) {
     .pf-card,
     .pf-track-marquee .pf-card {
-        flex: 0 0 25% !important;
+        flex: 0 0 30% !important;
+    }
+    .pf-info h4 {
+        display: none;
     }
 }
 
@@ -3991,7 +3994,7 @@ body.modal-open {
         gap: 2.5rem;
     }
     .pf-section-head h3 {
-        font-size: 1.7rem;
+        font-size: 1.2rem;
         text-align: center;
         margin-bottom: 0.5rem;
         margin-top: 1.6rem;

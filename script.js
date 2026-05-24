@@ -528,7 +528,7 @@ if ('IntersectionObserver' in window) {
                 }
             }
         });
-    });
+    }, { rootMargin: '0px 0px 600px 0px' });
 
     const lazyImages = document.querySelectorAll('img[data-src]');
     lazyImages.forEach(img => imageObserver.observe(img));
@@ -1312,8 +1312,6 @@ const PORTFOLIO_DEMOS = {
         { id: 'FrenosdeDisco', name: 'Frenos de Disco', url: 'https://frenosde-disco.vercel.app' },
         { id: 'Autofull', name: 'Autofull', url: 'https://autofullneumaticos.com.ar' },
         { id: 'RepuestosAutos', name: 'Repuestos Autos', url: 'https://autopartes-del-este.vercel.app' },
-        // Hogar
-        { id: 'HogarVerde', name: 'Hogar Verde' },
         // Limpieza
         { id: 'ValenClean', name: 'Valen Clean', url: 'https://valenclean.vercel.app' },
         // Deporte / actividades
@@ -1321,9 +1319,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'Airsoft', name: 'Airsoft', url: 'https://airgrip.vercel.app' },
         { id: 'CeroDescensos', name: 'Cero Descensos', url: 'https://cero-descensos.vercel.app' },
         { id: 'Padel', name: 'Pádel Club', url: 'https://padel-ps.vercel.app' },
-        { id: 'VoleyClub', name: 'Vóley Club', url: 'https://vivodeportes.vercel.app' },
-        // Cultura
-        { id: 'Libros', name: 'Librería' }
+        { id: 'VoleyClub', name: 'Vóley Club', url: 'https://vivodeportes.vercel.app' }
     ],
     profesionales: [
         // Salud / consultorios
@@ -1331,7 +1327,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'AlderPsicologia', name: 'Alder Psicología', url: 'https://www.psicorodas.com.ar/' },
         { id: 'DrTauil', name: 'Dr. Tauil' },
         { id: 'Skymed', name: 'SkyMed', url: 'https://www.skymedconsultorios.com/' },
-        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'png' },
+        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'jpg' },
         { id: 'Mecanico', name: 'Mecánico', url: 'https://rivasrys.com.ar' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs', url: 'https://urgencias24hs.com.ar' },
         { id: 'AHCD', name: 'AHCD', url: 'https://ahcd.org.ar/' },
@@ -1391,7 +1387,7 @@ const PORTFOLIO_DEMOS = {
         { id: 'RopaMirame', name: 'Ropa Mírame' }
     ],
     gastronomia: [
-        { id: 'Dulces', name: 'Dulces', ext: 'png' },
+        { id: 'Dulces', name: 'Dulces', ext: 'jpg' },
         { id: 'NiftyBar', name: 'Nifty Bar', url: 'https://nifty-bar.vercel.app' },
         { id: 'RestoVinoteca', name: 'Resto Vinoteca', url: 'https://resto-vinoteca.vercel.app' },
         { id: 'RossiCakes', name: 'Rossi Cakes' },
@@ -1424,8 +1420,8 @@ function createDemoCard(demo) {
     card.innerHTML = `
         
         <div class="pf-visuals">
-            <div class="pf-web"><img src="images/${demo.id.toLowerCase()}_web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
-            <div class="pf-celu"><div class="pf-phone"><img src="images/${demo.id.toLowerCase()}_celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
+            <div class="pf-web"><img src="images/previews/${demo.id.toLowerCase()}_web.${demo.ext||'jpg'}" alt="${demo.name} Web" loading="lazy"></div>
+            <div class="pf-celu"><div class="pf-phone"><img src="images/previews/${demo.id.toLowerCase()}_celu.${demo.ext||'jpg'}" alt="${demo.name} Mobile" loading="lazy"></div></div>
         </div>
         <div class="pf-info">
             <h4>${demo.name}</h4>
