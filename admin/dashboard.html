@@ -26,6 +26,7 @@
         <nav class="tab-nav">
             <button class="tab-btn active" data-tab="clientes">Clientes</button>
             <button class="tab-btn" data-tab="calendario">Calendario</button>
+            <button class="tab-btn" data-tab="propuestas">Propuestas <span class="pill-count" id="countPropuestas">0</span></button>
         </nav>
 
         <section class="panel tab-panel" id="tabClientes">
@@ -71,6 +72,36 @@
             </div>
         </section>
 
+        <!-- Tab: Propuestas -->
+        <section class="panel tab-panel" id="tabPropuestas" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Propuestas recibidas</h1>
+                    <p class="muted">Briefs enviados por clientes desde la página de propuesta.</p>
+                </div>
+            </div>
+            <div class="search-row">
+                <input type="search" id="searchPropuestas" placeholder="Buscar por marca, rubro o contacto...">
+            </div>
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Marca / Negocio</th>
+                            <th>Contacto</th>
+                            <th>Rubro</th>
+                            <th class="center">Colores</th>
+                            <th class="actions-col">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="propuestasTbody">
+                        <tr class="empty-row"><td colspan="6">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- Tab: Calendario -->
         <section class="panel tab-panel" id="tabCalendario" hidden>
             <div class="panel-header">
@@ -96,6 +127,17 @@
                 <button class="modal-close" id="closeDayModalBtn" aria-label="Cerrar">&times;</button>
             </div>
             <div id="dayModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Modal detalle propuesta -->
+    <div id="propuestaModal" class="modal-backdrop" hidden>
+        <div class="modal modal-propuesta">
+            <div class="modal-header">
+                <h2 id="propuestaModalTitle">Detalle de propuesta</h2>
+                <button class="modal-close" id="closePropuestaModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="propuestaModalBody" class="propuesta-detail"></div>
         </div>
     </div>
 

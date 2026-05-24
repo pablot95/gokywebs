@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GokyWebs – Propuesta personalizada</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="../logonuevo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+<body>
+
+    <div class="page-wrapper">
+
+        <!-- Header -->
+        <header class="header">
+            <a href="https://www.gokywebs.com" class="logo" target="_blank">
+                <img src="../logonuevo.png" alt="GokyWebs" class="logo-img">
+                <span class="logo-text">GokyWebs</span>
+            </a>
+            <p class="header-tagline">Completá el brief y armamos tu propuesta a medida 🎨</p>
+        </header>
+
+        <!-- Hero text -->
+        <div class="hero-text">
+            <h1 class="hero-title">Contanos sobre tu marca</h1>
+            <p class="hero-desc">Con esta info diseñamos una propuesta que realmente te represente. Solo te lleva 2 minutos.</p>
+        </div>
+
+        <!-- Card -->
+        <div class="form-card" id="formCard">
+            <form id="propuestaForm" novalidate autocomplete="off">
+
+                <!-- ─── Nombre del negocio ─── -->
+                <div class="form-section">
+                    <div class="section-label">
+                        <span class="step-number">01</span>
+                        <span class="step-name">Tu marca</span>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="nombre_negocio">
+                            Nombre del negocio o marca <span class="req">*</span>
+                        </label>
+                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder=" " required>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="rubro">
+                            Rubro / ¿A qué se dedica? <span class="req">*</span>
+                        </label>
+                        <textarea id="rubro" name="rubro" class="field-input field-textarea" placeholder="" rows="2" required></textarea>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- ─── Identidad visual ─── -->
+                <div class="form-section">
+                    <div class="section-label">
+                        <span class="step-number">02</span>
+                        <span class="step-name">Identidad visual</span>
+                    </div>
+
+                    <!-- Colores -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Colores de marca
+                            <span class="field-hint">Seleccioná hasta 3 colores o escribí los nombres.</span>
+                        </label>
+                        <div class="color-row">
+                            <div class="color-slot">
+                                <input type="color" id="color1" name="color1" class="color-picker" value="#2563EB" title="Color principal">
+                                <span class="color-label">Principal</span>
+                                <input type="text" id="color1_hex" name="color1_hex" class="hex-input" value="#2563EB" maxlength="7" placeholder="#000000">
+                            </div>
+                            <div class="color-slot">
+                                <input type="color" id="color2" name="color2" class="color-picker" value="#ffffff" title="Color secundario">
+                                <span class="color-label">Secundario</span>
+                                <input type="text" id="color2_hex" name="color2_hex" class="hex-input" value="#ffffff" maxlength="7" placeholder="#000000">
+                            </div>
+                            <div class="color-slot">
+                                <input type="color" id="color3" name="color3" class="color-picker" value="#0F0F10" title="Color acento">
+                                <span class="color-label">Acento</span>
+                                <input type="text" id="color3_hex" name="color3_hex" class="hex-input" value="#0F0F10" maxlength="7" placeholder="#000000">
+                            </div>
+                        </div>
+                        <div class="field-group" style="margin-top:12px">
+                            <textarea id="colores_extra" name="colores_extra" class="field-input field-textarea" rows="2" placeholder=""></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Tipografías -->
+                    <div class="field-group">
+                        <label class="field-label" for="tipografias">
+                            Tipografías
+                            <span class="field-hint">¿Usás alguna fuente en tu marca? Si no sabés el nombre, describí el estilo (elegante, moderna, redondeada…)</span>
+                        </label>
+                        <textarea id="tipografias" name="tipografias" class="field-input field-textarea" rows="3" placeholder=""></textarea>
+                    </div>
+
+                    <!-- Referencias visuales -->
+                    <div class="field-group">
+                        <label class="field-label" for="referencias">
+                            Referencias visuales
+                            <span class="field-hint">
+                                Pegá links de webs que te gusten, describí el estilo o mencioná ejemplos de
+                                <a href="https://www.gokywebs.com" target="_blank" class="inline-link">gokywebs.com</a>
+                                
+                            </span>
+                        </label>
+                        <textarea id="referencias" name="referencias" class="field-input field-textarea" rows="4" placeholder=""></textarea>
+                        <div class="tip-box">
+                            <span class="tip-icon">💡</span>
+                            <span>En <a href="https://www.gokywebs.com" target="_blank" class="inline-link">gokywebs.com</a> podés ver todos nuestros trabajos y usar los que más te gusten como referencia.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ─── Submit ─── -->
+                <div class="submit-row">
+                    <button type="button" id="btnEnviar" class="btn-submit">
+                        Enviar
+                    </button>
+                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu propuesta.</p>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 GokyWebs · <a href="https://www.gokywebs.com" target="_blank">www.gokywebs.com</a></p>
+        </footer>
+
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>

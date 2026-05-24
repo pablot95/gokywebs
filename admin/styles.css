@@ -975,10 +975,80 @@ input:focus {
 }
 .btn-presentada:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ===== PROPUESTAS ===== */
+.swatches-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.color-swatch {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+}
+
+.color-swatch.lg {
+    width: 28px;
+    height: 28px;
+}
+
+/* Modal propuesta */
+.modal-propuesta {
+    max-width: 540px;
+}
+
+.propuesta-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0 8px;
+}
+
+.prop-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.prop-row-block {
+    flex-direction: column;
+    gap: 6px;
+}
+
+.prop-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    min-width: 130px;
+    flex-shrink: 0;
+    padding-top: 2px;
+}
+
+.prop-text {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    color: var(--text);
+    width: 100%;
+}
+
 @media (max-width: 600px) {
     .grid-2 { grid-template-columns: 1fr; }
     .panel { padding: 20px; }
     .admin-main { padding: 20px 16px 60px; }
     .cal-cell { min-height: 58px; padding: 6px; }
     .cal-badge { font-size: 10px; padding: 2px 6px; }
+    .prop-label { min-width: 100px; }
 }

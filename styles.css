@@ -2364,8 +2364,9 @@ section {
         position: relative;
         bottom: auto;
         right: auto;
-        width: 100%;
-        max-width: 100%;
+        width: 70%;
+        max-width: 220px;
+        margin: 0 auto;
         filter: none;
     }
 
@@ -2373,7 +2374,7 @@ section {
         border: none;
         border-radius: 24px;
         background: transparent;
-        aspect-ratio: auto;
+        aspect-ratio: 9/19.5;
     }
 
     .mobile-frame::before {
@@ -3536,10 +3537,10 @@ section {
 @media (max-width: 768px) {
     .pf-card,
     .pf-track-marquee .pf-card {
-        flex: 0 0 38% !important;
+        flex: 0 0 30% !important;
     }
     .pf-visuals {
-        aspect-ratio: 9 / 17 !important;
+        aspect-ratio: 9 / 16 !important;
         background: #050507;
     }
     .pf-web {
@@ -3597,7 +3598,7 @@ section {
 @media (max-width: 480px) {
     .pf-card,
     .pf-track-marquee .pf-card {
-        flex: 0 0 42% !important;
+        flex: 0 0 25% !important;
     }
 }
 

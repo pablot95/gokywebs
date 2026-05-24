@@ -54,8 +54,9 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         activeTab = btn.dataset.tab;
-        document.getElementById("tabClientes").hidden = activeTab !== "clientes";
+        document.getElementById("tabClientes").hidden   = activeTab !== "clientes";
         document.getElementById("tabCalendario").hidden = activeTab !== "calendario";
+        document.getElementById("tabPropuestas").hidden = activeTab !== "propuestas";
         if (activeTab === "calendario") renderCal();
     });
 });
@@ -84,6 +85,7 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal) dayModal.
 
 // --- Estado ---
 let clients = [];
+let propuestas = [];
 let activeFilter = "todos";
 
 // --- Filtros de viñeta ---
@@ -128,6 +130,17 @@ function initRealtime() {
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="9">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+    });
+
+    // ── Propuestas realtime ──
+    const qProp = query(collection(db, "propuestas"), orderBy("createdAt", "desc"));
+    onSnapshot(qProp, (snap) => {
+        propuestas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPropuestas();
+        const el = document.getElementById("countPropuestas");
+        if (el) el.textContent = propuestas.length;
+    }, (err) => {
+        console.error("Propuestas error:", err);
     });
 }
 
@@ -398,6 +411,102 @@ form.addEventListener("submit", async (e) => {
         saveBtn.textContent = "Guardar";
     }
 });
+
+// --- Propuestas ---
+const propuestaModal     = document.getElementById("propuestaModal");
+const propuestaModalBody = document.getElementById("propuestaModalBody");
+const propuestaModalTitle = document.getElementById("propuestaModalTitle");
+const searchPropuestasInput = document.getElementById("searchPropuestas");
+
+document.getElementById("closePropuestaModalBtn").addEventListener("click", () => { propuestaModal.hidden = true; });
+propuestaModal.addEventListener("click", (e) => { if (e.target === propuestaModal) propuestaModal.hidden = true; });
+searchPropuestasInput.addEventListener("input", renderPropuestas);
+
+function renderPropuestas() {
+    const tbody = document.getElementById("propuestasTbody");
+    const term  = searchPropuestasInput.value.trim().toLowerCase();
+    const list  = term
+        ? propuestas.filter(p =>
+            (p.nombre_negocio  || "").toLowerCase().includes(term) ||
+            (p.rubro           || "").toLowerCase().includes(term) ||
+            (p.contacto_nombre || "").toLowerCase().includes(term) ||
+            (p.contacto_cel    || "").toLowerCase().includes(term))
+        : propuestas;
+
+    if (list.length === 0) {
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No hay propuestas${term ? " para esa búsqueda" : " recibidas aún"}.</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(p => {
+        const fecha = p.createdAt?.toDate
+            ? p.createdAt.toDate().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" })
+            : (p.fecha || "—");
+        const colores = [p.color1, p.color2, p.color3].filter(Boolean);
+        const swatches = colores.map(c =>
+            `<span class="color-swatch" style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></span><span style="font-size:11px;font-family:monospace">${escapeHtml(c)}</span>`
+        ).join(" ");
+        return `
+            <tr class="client-row">
+                <td>${escapeHtml(fecha)}</td>
+                <td><strong>${escapeHtml(p.nombre_negocio || "—")}</strong></td>
+                <td>
+                    <div>${escapeHtml(p.contacto_nombre || "—")}</div>
+                    <div class="muted" style="font-size:12px">${escapeHtml(p.contacto_cel || "")}</div>
+                </td>
+                <td>${escapeHtml(p.rubro || "—")}</td>
+                <td class="center"><div class="swatches-row">${swatches || "—"}</div></td>
+                <td class="actions-col">
+                    <button class="btn-ghost" data-prop-id="${p.id}" style="font-size:13px">Ver →</button>
+                    <button class="icon-btn delete" data-prop-del="${p.id}" title="Eliminar">🗑</button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    tbody.querySelectorAll("[data-prop-id]").forEach(btn => {
+        btn.addEventListener("click", () => openPropuestaModal(btn.dataset.propId));
+    });
+    tbody.querySelectorAll("[data-prop-del]").forEach(btn => {
+        btn.addEventListener("click", () => removePropuesta(btn.dataset.propDel));
+    });
+}
+
+function openPropuestaModal(id) {
+    const p = propuestas.find(x => x.id === id);
+    if (!p) return;
+    propuestaModalTitle.textContent = p.nombre_negocio || "Propuesta";
+
+    const colores = [p.color1, p.color2, p.color3].filter(Boolean);
+    const swatches = colores.map(c =>
+        `<span class="color-swatch lg" style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></span><span style="font-size:12px;font-family:monospace">${escapeHtml(c)}</span>`
+    ).join(" ");
+
+    propuestaModalBody.innerHTML = `
+        <div class="prop-row"><span class="prop-label">Contacto</span><span>${escapeHtml(p.contacto_nombre || "—")} · ${escapeHtml(p.contacto_cel || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Negocio / Marca</span><span>${escapeHtml(p.nombre_negocio || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(p.rubro || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Colores</span><span class="swatches-row">${swatches || "—"}</span></div>
+        ${p.colores_extra ? `<div class="prop-row"><span class="prop-label">Aclaración colores</span><span>${escapeHtml(p.colores_extra)}</span></div>` : ""}
+        <div class="prop-row"><span class="prop-label">Tipografías</span><span>${escapeHtml(p.tipografias || "(no completó)")}</span></div>
+        <div class="prop-row prop-row-block"><span class="prop-label">Referencias visuales</span><p class="prop-text">${escapeHtml(p.referencias || "(no completó)")}</p></div>
+        ${p.extra ? `<div class="prop-row prop-row-block"><span class="prop-label">Algo más</span><p class="prop-text">${escapeHtml(p.extra)}</p></div>` : ""}
+        <div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha</span><span>${escapeHtml(p.fecha || "—")}</span></div>
+    `;
+    propuestaModal.hidden = false;
+}
+
+async function removePropuesta(id) {
+    const p = propuestas.find(x => x.id === id);
+    if (!p) return;
+    if (!confirm(`¿Eliminar la propuesta de "${p.nombre_negocio || "este negocio"}"? No se puede deshacer.`)) return;
+    try {
+        await deleteDoc(doc(db, "propuestas", id));
+    } catch (err) {
+        console.error(err);
+        alert("Error al eliminar: " + err.message);
+    }
+}
 
 async function removeClient(id) {
     const c = clients.find(x => x.id === id);
