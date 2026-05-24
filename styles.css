@@ -308,14 +308,17 @@ section {
 }
 
 .navbar {
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 1000;  
     transition: var(--transition);
     margin-top: 20px;
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    height: auto;
+    padding: 0.5rem 0;
 }
 
 .navbar::before {
@@ -328,8 +331,8 @@ section {
 }
 
 .navbar.scrolled {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    background: rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.97);
 }
 
 .navbar.scrolled::before {
@@ -340,11 +343,11 @@ section {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.2rem 0;
+    padding: 0;
 }
 
 .logo-img {
-    height: 40px;
+    height: 52px;
     width: auto;
     object-fit: contain;
     transition: var(--transition);
@@ -367,7 +370,7 @@ section {
 .nav-link {
     font-size: 0.938rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(15, 15, 16, 0.75);
     position: relative;
     transition: var(--transition);
 }
@@ -384,7 +387,7 @@ section {
 }
 
 .nav-link:hover {
-    color: var(--color-white);
+    color: #0F0F10;
 }
 
 .nav-link:hover::after {
@@ -405,12 +408,13 @@ section {
     display: block;
     width: 25px;
     height: 2px;
-    background-color: var(--color-white);
+    background-color: #0F0F10;
     transition: var(--transition);
 }
 
 .hero {
-    max-height: 120vh;
+    height: 100dvh;
+    max-height: 100dvh;
     display: flex;
     align-items: center;
     padding-top: 0px;

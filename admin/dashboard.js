@@ -442,10 +442,7 @@ function renderPropuestas() {
         const fecha = p.createdAt?.toDate
             ? p.createdAt.toDate().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" })
             : (p.fecha || "—");
-        const colores = [p.color1, p.color2, p.color3].filter(Boolean);
-        const swatches = colores.map(c =>
-            `<span class="color-swatch" style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></span><span style="font-size:11px;font-family:monospace">${escapeHtml(c)}</span>`
-        ).join(" ");
+        const coloresTexto = p.colores || p.colores_extra || "";
         return `
             <tr class="client-row">
                 <td>${escapeHtml(fecha)}</td>
@@ -455,7 +452,7 @@ function renderPropuestas() {
                     <div class="muted" style="font-size:12px">${escapeHtml(p.telefono || p.contacto_cel || "")}</div>
                 </td>
                 <td>${escapeHtml(p.rubro || "—")}</td>
-                <td class="center"><div class="swatches-row">${swatches || "—"}</div></td>
+                <td style="font-size:12px;max-width:160px">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-prop-id="${p.id}" style="font-size:13px">Ver →</button>
                     <button class="icon-btn delete" data-prop-del="${p.id}" title="Eliminar">🗑</button>
@@ -477,18 +474,14 @@ function openPropuestaModal(id) {
     if (!p) return;
     propuestaModalTitle.textContent = p.nombre_negocio || "Propuesta";
 
-    const colores = [p.color1, p.color2, p.color3].filter(Boolean);
-    const swatches = colores.map(c =>
-        `<span class="color-swatch lg" style="background:${escapeHtml(c)}" title="${escapeHtml(c)}"></span><span style="font-size:12px;font-family:monospace">${escapeHtml(c)}</span>`
-    ).join(" ");
+    const coloresTexto = p.colores || p.colores_extra || "";
 
     propuestaModalBody.innerHTML = `
         <div class="prop-row"><span class="prop-label">Contacto</span><span>${escapeHtml(p.contacto_nombre || "—")} · ${escapeHtml(p.contacto_cel || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Negocio / Marca</span><span>${escapeHtml(p.nombre_negocio || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Teléfono / WhatsApp</span><span>${escapeHtml(p.telefono || p.contacto_cel || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(p.rubro || "—")}</span></div>
-        <div class="prop-row"><span class="prop-label">Colores</span><span class="swatches-row">${swatches || "—"}</span></div>
-        ${p.colores_extra ? `<div class="prop-row"><span class="prop-label">Aclaración colores</span><span>${escapeHtml(p.colores_extra)}</span></div>` : ""}
+        ${coloresTexto ? `<div class="prop-row prop-row-block"><span class="prop-label">Colores</span><p class="prop-text">${escapeHtml(coloresTexto)}</p></div>` : ""}
         <div class="prop-row"><span class="prop-label">Tipografías</span><span>${escapeHtml(p.tipografias || "(no completó)")}</span></div>
         <div class="prop-row prop-row-block"><span class="prop-label">Referencias visuales</span><p class="prop-text">${escapeHtml(p.referencias || "(no completó)")}</p></div>
         ${p.extra ? `<div class="prop-row prop-row-block"><span class="prop-label">Algo más</span><p class="prop-text">${escapeHtml(p.extra)}</p></div>` : ""}
