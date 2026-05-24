@@ -221,6 +221,13 @@ body {
     resize: vertical;
 }
 
+.field-textarea.autosize {
+    min-height: unset;
+    height: auto;
+    overflow: hidden;
+    resize: none;
+}
+
 /* ─── Error msg ─── */
 .error-msg {
     font-size: 0.8rem;
@@ -232,64 +239,83 @@ body {
     display: block;
 }
 
-/* ─── Color row ─── */
-.color-row {
+/* ─── Color palette ─── */
+.color-palette {
     display: flex;
-    gap: 16px;
     flex-wrap: wrap;
+    gap: 10px;
 }
 
-.color-slot {
+.cp-chip {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    padding: 0;
+    outline: none;
+    flex-shrink: 0;
+}
+
+.cp-chip:hover {
+    transform: scale(1.15);
+}
+
+.cp-chip.selected {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.22);
+    transform: scale(1.15);
+}
+
+/* fila de chips seleccionados */
+.cp-selected {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-height: 0;
+    transition: min-height 0.2s;
+}
+
+.cp-selected:not(:empty) {
+    margin-top: 6px;
+}
+
+.cp-pill {
+    display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
-    min-width: 90px;
-}
-
-.color-picker {
-    width: 56px;
-    height: 56px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    padding: 2px;
-    background: white;
-    transition: var(--transition);
-}
-
-.color-picker:hover {
-    border-color: var(--blue);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
-}
-
-.color-label {
-    font-size: 0.75rem;
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    border-radius: 20px;
+    padding: 4px 10px 4px 6px;
+    font-size: 0.78rem;
     font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.hex-input {
-    width: 100%;
-    padding: 6px 8px;
-    border: 1.5px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
     color: var(--text);
-    font-family: 'Courier New', monospace;
-    font-size: 0.8rem;
-    text-align: center;
-    outline: none;
-    transition: var(--transition);
 }
 
-.hex-input:focus {
-    border-color: var(--border-focus);
-    background: white;
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+.cp-pill-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.08);
+    flex-shrink: 0;
+}
+
+.cp-pill-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 0.9rem;
+    line-height: 1;
+    padding: 0;
+    margin-left: 2px;
+}
+
+.cp-pill-remove:hover {
+    color: #ef4444;
 }
 
 /* ─── Tip box ─── */
@@ -453,16 +479,8 @@ body {
         padding: 16px 18px 24px;
     }
 
-    .color-row {
-        gap: 10px;
-    }
-
-    .color-slot {
-        min-width: 70px;
-    }
-
-    .color-picker {
-        width: 48px;
-        height: 48px;
+    .cp-chip {
+        width: 36px;
+        height: 36px;
     }
 }

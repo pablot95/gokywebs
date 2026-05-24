@@ -29,24 +29,6 @@ const EMAILJS_KEY      = '5lJCf2hCkPyXNXwas';
 
 emailjs.init(EMAILJS_KEY);
 
-/* ── Sincronizar color picker ↔ hex input ── */
-['1','2','3'].forEach(n => {
-    const picker = document.getElementById(`color${n}`);
-    const hex    = document.getElementById(`color${n}_hex`);
-    if (!picker || !hex) return;
-
-    picker.addEventListener('input', () => {
-        hex.value = picker.value;
-    });
-
-    hex.addEventListener('input', () => {
-        const val = hex.value.trim();
-        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-            picker.value = val;
-        }
-    });
-});
-
 /* ── DOM refs ── */
 const btnEnviar = document.getElementById('btnEnviar');
 btnEnviar.addEventListener('click', () => {
@@ -62,6 +44,7 @@ function validateAll() {
 
     const fields = [
         { id: 'nombre_negocio',  msg: 'Por favor ingresá el nombre del negocio o marca.' },
+        { id: 'telefono',        msg: 'Por favor ingresá un número de teléfono o WhatsApp.' },
         { id: 'rubro',           msg: 'Contanos a qué se dedica tu negocio.' },
     ];
 
@@ -100,11 +83,9 @@ async function sendForm() {
 
     const params = {
         nombre_negocio:  get('nombre_negocio'),
+        telefono:        get('telefono'),
         rubro:           get('rubro'),
-        color1:          get('color1_hex') || get('color1'),
-        color2:          get('color2_hex') || get('color2'),
-        color3:          get('color3_hex') || get('color3'),
-        colores_extra:   get('colores_extra') || '(sin aclaración)',
+        colores:         get('colores_extra') || '(no completó)',
         tipografias:     get('tipografias')   || '(no completó)',
         referencias:     get('referencias')   || '(no completó)',
         fecha: new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
@@ -147,3 +128,14 @@ function showSuccess(nombre) {
     `;
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+/* ── Auto-resize textareas ── */
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+document.querySelectorAll('textarea.autosize').forEach(ta => {
+    autoGrow(ta); // altura inicial
+    ta.addEventListener('input', () => autoGrow(ta));
+});

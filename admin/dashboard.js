@@ -452,7 +452,7 @@ function renderPropuestas() {
                 <td><strong>${escapeHtml(p.nombre_negocio || "—")}</strong></td>
                 <td>
                     <div>${escapeHtml(p.contacto_nombre || "—")}</div>
-                    <div class="muted" style="font-size:12px">${escapeHtml(p.contacto_cel || "")}</div>
+                    <div class="muted" style="font-size:12px">${escapeHtml(p.telefono || p.contacto_cel || "")}</div>
                 </td>
                 <td>${escapeHtml(p.rubro || "—")}</td>
                 <td class="center"><div class="swatches-row">${swatches || "—"}</div></td>
@@ -485,6 +485,7 @@ function openPropuestaModal(id) {
     propuestaModalBody.innerHTML = `
         <div class="prop-row"><span class="prop-label">Contacto</span><span>${escapeHtml(p.contacto_nombre || "—")} · ${escapeHtml(p.contacto_cel || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Negocio / Marca</span><span>${escapeHtml(p.nombre_negocio || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Teléfono / WhatsApp</span><span>${escapeHtml(p.telefono || p.contacto_cel || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(p.rubro || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Colores</span><span class="swatches-row">${swatches || "—"}</span></div>
         ${p.colores_extra ? `<div class="prop-row"><span class="prop-label">Aclaración colores</span><span>${escapeHtml(p.colores_extra)}</span></div>` : ""}
