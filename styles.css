@@ -2225,10 +2225,10 @@ section {
     }
     
     .hero {
-        padding-top: 110px;
+        padding-top: 25%;
         padding-bottom: 2rem;
         height: auto;
-        min-height: 100dvh;
+        min-height: 75vh;
         overflow: clip;
     }
     
