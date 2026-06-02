@@ -35,14 +35,20 @@
                     <h1>Clientes</h1>
                     <p class="muted">Gestiona el listado de clientes y sus pagos.</p>
                 </div>
+                <div class="stats-box">
+                    <div class="stat-item">
+                        <span class="stat-label">Total pendiente de cobro</span>
+                        <span class="stat-value" id="totalPendiente">$0</span>
+                    </div>
+                </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
             </div>
 
             <div class="filter-pills">
-                <button class="filter-pill active" data-filter="todos">Todos <span class="pill-count" id="countTodos">0</span></button>
-                <button class="filter-pill" data-filter="interesados">Interesados <span class="pill-count" id="countInteresados">0</span></button>
-                <button class="filter-pill" data-filter="seguimiento">Seguimiento <span class="pill-count" id="countSeguimiento">0</span></button>
-                <button class="filter-pill" data-filter="clientes">Clientes <span class="pill-count" id="countClientes">0</span></button>
+                <button class="filter-pill active" data-filter="seguimiento1">Seguimiento 1 <span class="pill-count" id="countSeg1">0</span></button>
+                <button class="filter-pill" data-filter="seguimiento2">Seguimiento 2 <span class="pill-count" id="countSeg2">0</span></button>
+                <button class="filter-pill" data-filter="seguimiento3">Seguimiento 3 <span class="pill-count" id="countSeg3">0</span></button>
+                <button class="filter-pill" data-filter="clientes">Cliente <span class="pill-count" id="countClientes">0</span></button>
             </div>
 
             <div class="search-row">
@@ -133,7 +139,7 @@
     <div id="presentadaModal" class="modal-backdrop" hidden>
         <div class="modal">
             <div class="modal-header">
-                <h2>Pasar a Seguimiento</h2>
+                <h2>Pasar a Seguimiento 1</h2>
                 <button class="modal-close" id="closePresentadaModalBtn" aria-label="Cerrar">&times;</button>
             </div>
             <form id="presentadaForm">
@@ -195,13 +201,22 @@
 
                 <label for="estadoCliente">Estado</label>
                 <select id="estadoCliente">
-                    <option value="interesado">Solo interesado</option>
-                    <option value="seguimiento">Seguimiento</option>
+                    <option value="seguimiento1">Seguimiento 1</option>
+                    <option value="seguimiento2">Seguimiento 2</option>
+                    <option value="seguimiento3">Seguimiento 3</option>
                     <option value="cliente">Cliente</option>
                 </select>
 
                 <label for="hablarleElDia">Hablarle el día</label>
                 <input type="date" id="hablarleElDia">
+
+                <!-- Datos originales de la propuesta (solo lectura) -->
+                <div id="propuestaInfoSection" style="display:none;margin-top:16px">
+                    <details>
+                        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--accent-green,#4ade80);padding:8px 0;user-select:none">📋 Detalle de propuesta original</summary>
+                        <div id="propuestaInfoBody" class="propuesta-detail" style="margin-top:8px;font-size:13px"></div>
+                    </details>
+                </div>
 
                 <div class="modal-actions">
                     <button type="button" class="btn-ghost" id="cancelBtn">Cancelar</button>

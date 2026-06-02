@@ -86,7 +86,7 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal) dayModal.
 // --- Estado ---
 let clients = [];
 let propuestas = [];
-let activeFilter = "todos";
+let activeFilter = "seguimiento1";
 
 // --- Filtros de viñeta ---
 document.querySelectorAll(".filter-pill").forEach(btn => {
@@ -99,8 +99,10 @@ document.querySelectorAll(".filter-pill").forEach(btn => {
 });
 
 function getEstado(c) {
-    const e = c.estadoCliente || (c.esCliente ? "cliente" : "interesado");
-    return (e === "demo-presentada" || e === "quiere-demo") ? "seguimiento" : e;
+    const e = c.estadoCliente || "seguimiento1";
+    if (e === "seguimiento" || e === "demo-presentada" || e === "quiere-demo") return "seguimiento2";
+    if (e === "interesado") return "seguimiento1";
+    return e;
 }
 
 function formatDate(val) {
@@ -146,9 +148,9 @@ function initRealtime() {
 
 function render() {
     const term = searchInput.value.trim().toLowerCase();
-    const filtered = activeFilter === "todos" ? clients
-        : activeFilter === "interesados" ? clients.filter(c => getEstado(c) === "interesado")
-        : activeFilter === "seguimiento" ? clients.filter(c => getEstado(c) === "seguimiento")
+    const filtered = activeFilter === "seguimiento1" ? clients.filter(c => getEstado(c) === "seguimiento1")
+        : activeFilter === "seguimiento2" ? clients.filter(c => getEstado(c) === "seguimiento2")
+        : activeFilter === "seguimiento3" ? clients.filter(c => getEstado(c) === "seguimiento3")
         : clients.filter(c => getEstado(c) === "cliente");
     const list = term
         ? filtered.filter(c =>
@@ -172,7 +174,7 @@ function render() {
         tbody.innerHTML = list.map(c => {
             const saldo = (Number(c.valorTotal) || 0) - (Number(c.abono) || 0);
                     const estado = getEstado(c);
-                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
+                    const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento3" ? "Seguimiento 3" : estado === "seguimiento2" ? "Seguimiento 2" : "Seguimiento 1";
                     return `
                 <tr class="client-row" data-row-id="${c.id}">
                     <td>${escapeHtml(c.nombre)}</td>
@@ -182,8 +184,9 @@ function render() {
                     <td class="num">${fmtMoney(c.abono)}</td>
                     <td class="center">
                         <select class="inline-status-select ${estado}" data-status-id="${c.id}">
-                            <option value="interesado"${estado === 'interesado' ? ' selected' : ''}>Solo interesado</option>
-                            <option value="seguimiento"${estado === 'seguimiento' ? ' selected' : ''}>Seguimiento</option>
+                            <option value="seguimiento1"${estado === 'seguimiento1' ? ' selected' : ''}>Seguimiento 1</option>
+                            <option value="seguimiento2"${estado === 'seguimiento2' ? ' selected' : ''}>Seguimiento 2</option>
+                            <option value="seguimiento3"${estado === 'seguimiento3' ? ' selected' : ''}>Seguimiento 3</option>
                             <option value="cliente"${estado === 'cliente' ? ' selected' : ''}>Cliente</option>
                         </select>
                     </td>
@@ -209,13 +212,25 @@ function render() {
     }
 
     // Contadores de viñetas
-    const countInteresados = clients.filter(c => getEstado(c) === "interesado").length;
-    const countSeguimiento = clients.filter(c => getEstado(c) === "seguimiento").length;
+    const countSeg1 = clients.filter(c => getEstado(c) === "seguimiento1").length;
+    const countSeg2 = clients.filter(c => getEstado(c) === "seguimiento2").length;
+    const countSeg3 = clients.filter(c => getEstado(c) === "seguimiento3").length;
     const countClientes = clients.filter(c => getEstado(c) === "cliente").length;
-    document.getElementById("countTodos").textContent = clients.length;
-    document.getElementById("countInteresados").textContent = countInteresados;
-    document.getElementById("countSeguimiento").textContent = countSeguimiento;
+    document.getElementById("countSeg1").textContent = countSeg1;
+    document.getElementById("countSeg2").textContent = countSeg2;
+    document.getElementById("countSeg3").textContent = countSeg3;
     document.getElementById("countClientes").textContent = countClientes;
+
+    // Calcular total pendiente de cobro solo de clientes
+    const totalPendiente = clients
+        .filter(c => getEstado(c) === "cliente")
+        .reduce((sum, c) => {
+            const valorTotal = Number(c.valorTotal) || 0;
+            const abonado = Number(c.abono) || 0;
+            const pendiente = valorTotal - abonado;
+            return sum + (pendiente > 0 ? pendiente : 0);
+        }, 0);
+    document.getElementById("totalPendiente").textContent = fmtMoney(totalPendiente);
 
     // Listeners de acciones
     tbody.querySelectorAll(".client-row").forEach(row => {
@@ -304,10 +319,26 @@ async function toggleField(id, field) {
 
 async function setStatus(id, value) {
     try {
-        await updateDoc(doc(db, "clientes", id), {
+        const c = clients.find(x => x.id === id);
+        const prevEstado = c ? getEstado(c) : null;
+
+        const updateData = {
             estadoCliente: value,
             updatedAt: serverTimestamp()
-        });
+        };
+
+        // Avanzar fecha automáticamente según la transición
+        if (prevEstado === "seguimiento1" && value === "seguimiento2") {
+            const d = new Date();
+            d.setDate(d.getDate() + 3);
+            updateData.hablarleElDia = d.toISOString().split("T")[0];
+        } else if (prevEstado === "seguimiento2" && value === "seguimiento3") {
+            const d = new Date();
+            d.setDate(d.getDate() + 10);
+            updateData.hablarleElDia = d.toISOString().split("T")[0];
+        }
+
+        await updateDoc(doc(db, "clientes", id), updateData);
     } catch (err) {
         console.error(err);
         alert("Error al actualizar: " + err.message);
@@ -330,10 +361,35 @@ function openModal(id = null) {
         document.getElementById("abono").value = c.abono ?? 0;
         document.getElementById("estadoCliente").value = getEstado(c);
         document.getElementById("hablarleElDia").value = c.hablarleElDia || "";
+
+        // Mostrar datos de propuesta original si existen
+        const propSection = document.getElementById("propuestaInfoSection");
+        const propBody    = document.getElementById("propuestaInfoBody");
+        const hasPropData = c.contactoNombre || c.colores || c.tipografias || c.referencias || c.logoUrl || c.extra;
+        if (hasPropData) {
+            const logoRow = c.logoUrl
+                ? `<div class="prop-row"><span class="prop-label">Logo</span><span><a href="${escapeHtml(c.logoUrl)}" target="_blank" download="${escapeHtml(c.logoNombre || 'logo')}" style="color:var(--accent-green);font-weight:600">⬇ Descargar logo</a> <span class="muted" style="font-size:11px">(${escapeHtml(c.logoNombre || '')})</span></span></div>`
+                : `<div class="prop-row"><span class="prop-label">Logo</span><span class="muted">No subió logo</span></div>`;
+            propBody.innerHTML = `
+                ${c.contactoNombre ? `<div class="prop-row"><span class="prop-label">Contacto</span><span>${escapeHtml(c.contactoNombre)}</span></div>` : ""}
+                ${c.colores     ? `<div class="prop-row prop-row-block"><span class="prop-label">Colores</span><p class="prop-text">${escapeHtml(c.colores)}</p></div>` : ""}
+                ${c.tipografias ? `<div class="prop-row"><span class="prop-label">Tipografías</span><span>${escapeHtml(c.tipografias)}</span></div>` : ""}
+                ${c.referencias ? `<div class="prop-row prop-row-block"><span class="prop-label">Referencias</span><p class="prop-text">${escapeHtml(c.referencias)}</p></div>` : ""}
+                ${c.extra       ? `<div class="prop-row prop-row-block"><span class="prop-label">Algo más</span><p class="prop-text">${escapeHtml(c.extra)}</p></div>` : ""}
+                ${logoRow}
+                ${c.propuestaFecha  ? `<div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha propuesta</span><span>${escapeHtml(c.propuestaFecha)}</span></div>` : ""}
+            `;
+            propSection.style.display = "";
+        } else {
+            propSection.style.display = "none";
+            propBody.innerHTML = "";
+        }
     } else {
         modalTitle.textContent = "Nuevo cliente";
         document.getElementById("abono").value = 0;
-        document.getElementById("estadoCliente").value = "interesado";
+        document.getElementById("estadoCliente").value = "seguimiento1";
+        document.getElementById("propuestaInfoSection").style.display = "none";
+        document.getElementById("propuestaInfoBody").innerHTML = "";
     }
     syncEstadoSelect();
     modal.hidden = false;
@@ -440,11 +496,11 @@ function renderPropuestas() {
             : (p.fecha || "—");
         const coloresTexto = p.colores || p.colores_extra || "";
         return `
-            <tr class="client-row">
+            <tr class="client-row" data-row-prop-id="${p.id}" style="cursor:pointer">
                 <td>${escapeHtml(fecha)}</td>
                 <td><strong>${escapeHtml(p.nombre_negocio || "—")}</strong></td>
                 <td>
-                    <div>${escapeHtml(p.contacto_nombre || "—")}</div>
+                    <div>${escapeHtml(p.nombre || p.contacto_nombre || "—")}</div>
                     <div class="muted" style="font-size:12px">${escapeHtml(p.telefono || p.contacto_cel || "")}</div>
                 </td>
                 <td>${escapeHtml(p.rubro || "—")}</td>
@@ -458,6 +514,12 @@ function renderPropuestas() {
         `;
     }).join("");
 
+    tbody.querySelectorAll("[data-row-prop-id]").forEach(row => {
+        row.addEventListener("click", (e) => {
+            if (e.target.closest("button, .actions-col")) return;
+            openPropuestaModal(row.dataset.rowPropId);
+        });
+    });
     tbody.querySelectorAll("[data-prop-id]").forEach(btn => {
         btn.addEventListener("click", () => openPropuestaModal(btn.dataset.propId));
     });
@@ -476,15 +538,24 @@ function openPropuestaModal(id) {
 
     const coloresTexto = p.colores || p.colores_extra || "";
 
+    const ynLabel = { si: "✅ Sí", no: "❌ No", ns: "🤷 No sé", "(no respondió)": "—" };
+    const yn = v => ynLabel[v] || escapeHtml(v || "—");
+
+    const logoRow = p.logoUrl
+        ? `<div class="prop-row"><span class="prop-label">Logo</span><span><a href="${escapeHtml(p.logoUrl)}" target="_blank" download="${escapeHtml(p.logoNombre || 'logo')}" style="color:var(--accent-green);font-weight:600">⬇ Descargar logo</a> <span class="muted" style="font-size:11px">(${escapeHtml(p.logoNombre || '')})</span></span></div>`
+        : `<div class="prop-row"><span class="prop-label">Logo</span><span class="muted">No subió logo</span></div>`;
+
     propuestaModalBody.innerHTML = `
-        <div class="prop-row"><span class="prop-label">Contacto</span><span>${escapeHtml(p.contacto_nombre || "—")} · ${escapeHtml(p.contacto_cel || "—")}</span></div>
-        <div class="prop-row"><span class="prop-label">Negocio / Marca</span><span>${escapeHtml(p.nombre_negocio || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Nombre</span><span>${escapeHtml(p.nombre || p.contacto_nombre || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Teléfono / WhatsApp</span><span>${escapeHtml(p.telefono || p.contacto_cel || "—")}</span></div>
+        <div class="prop-row"><span class="prop-label">Negocio / Marca</span><span>${escapeHtml(p.nombre_negocio || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(p.rubro || "—")}</span></div>
         ${coloresTexto ? `<div class="prop-row prop-row-block"><span class="prop-label">Colores</span><p class="prop-text">${escapeHtml(coloresTexto)}</p></div>` : ""}
         <div class="prop-row"><span class="prop-label">Tipografías</span><span>${escapeHtml(p.tipografias || "(no completó)")}</span></div>
         <div class="prop-row prop-row-block"><span class="prop-label">Referencias visuales</span><p class="prop-text">${escapeHtml(p.referencias || "(no completó)")}</p></div>
         ${p.extra ? `<div class="prop-row prop-row-block"><span class="prop-label">Algo más</span><p class="prop-text">${escapeHtml(p.extra)}</p></div>` : ""}
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
+        ${logoRow}
         <div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha</span><span>${escapeHtml(p.fecha || "—")}</span></div>
     `;
     propuestaModal.hidden = false;
@@ -549,13 +620,23 @@ presentadaForm.addEventListener("submit", async (e) => {
     try {
         await addDoc(collection(db, "clientes"), {
             nombre,
-            proyecto:       p.rubro || "",
-            telefono:       p.telefono || p.contacto_cel || "",
-            estadoCliente:  "seguimiento",
-            hablarleElDia:  fecha,
-            valorTotal:     valor,
-            abono:          0,
-            notas:          "",
+            proyecto:        p.rubro || "",
+            telefono:        p.telefono || p.contacto_cel || "",
+            estadoCliente:   "seguimiento1",
+            hablarleElDia:   fecha,
+            valorTotal:      valor,
+            abono:           0,
+            notas:           "",
+            // ── Datos originales de la propuesta ──
+            propuestaId:     propId,
+            propuestaFecha:  p.fecha || "",
+            contactoNombre:  p.nombre || p.contacto_nombre || "",
+            colores:         p.colores || p.colores_extra || "",
+            tipografias:     p.tipografias || "",
+            referencias:     p.referencias || "",
+            logoUrl:         p.logoUrl || "",
+            logoNombre:      p.logoNombre || "",
+            extra:           p.extra || "",
             createdAt:      serverTimestamp(),
             createdBy:      currentUser?.uid || null
         });
@@ -574,7 +655,14 @@ presentadaForm.addEventListener("submit", async (e) => {
 const MONTHS_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 
 function getDemosForDate(dateStr) {
-    return clients.filter(c => getEstado(c) === "seguimiento" && c.hablarleElDia === dateStr);
+    return clients.filter(c => {
+        const e = getEstado(c);
+        return (e === "seguimiento1" || e === "seguimiento2" || e === "seguimiento3") && c.hablarleElDia === dateStr;
+    });
+}
+
+function getDemosByStatus(dateStr, status) {
+    return clients.filter(c => getEstado(c) === status && c.hablarleElDia === dateStr);
 }
 
 function renderCal() {
@@ -598,12 +686,19 @@ function renderCal() {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-        const demos = getDemosForDate(dateStr);
+        const seg1 = getDemosByStatus(dateStr, "seguimiento1");
+        const seg2 = getDemosByStatus(dateStr, "seguimiento2");
+        const seg3 = getDemosByStatus(dateStr, "seguimiento3");
+        const hasAny = seg1.length + seg2.length + seg3.length > 0;
         const isToday = todayY === calYear && todayM === calMonth && todayD === d;
-        const cls = ["cal-cell", isToday ? "today" : "", demos.length > 0 ? "has-demos" : ""].filter(Boolean).join(" ");
+        const cls = ["cal-cell", isToday ? "today" : "", hasAny ? "has-demos" : ""].filter(Boolean).join(" ");
+        let badges = "";
+        if (seg1.length > 0) badges += `<span class="cal-badge badge-seg1">${seg1.length}</span>`;
+        if (seg2.length > 0) badges += `<span class="cal-badge badge-seg2">${seg2.length}</span>`;
+        if (seg3.length > 0) badges += `<span class="cal-badge badge-seg3">${seg3.length}</span>`;
         html += `<div class="${cls}" data-date="${dateStr}">
             <span class="cal-day-num">${d}</span>
-            ${demos.length > 0 ? `<span class="cal-badge badge-seguimiento">${demos.length}</span>` : ""}
+            ${badges}
         </div>`;
     }
 
@@ -625,7 +720,7 @@ function openDayModal(dateStr) {
     } else {
         dayModalBody.innerHTML = `<div class="demo-list">${demos.map(c => {
             const estado = getEstado(c);
-            const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento" ? "Seguimiento" : "Solo interesado";
+            const estadoLabel = estado === "cliente" ? "Cliente" : estado === "seguimiento3" ? "Seguimiento 3" : estado === "seguimiento2" ? "Seguimiento 2" : "Seguimiento 1";
             const saldo = Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0));
             return `
             <div class="demo-item" data-item-id="${c.id}">
@@ -634,7 +729,10 @@ function openDayModal(dateStr) {
                         <span class="demo-item-name">${escapeHtml(c.nombre)}</span>
                         <span class="demo-item-proyecto">${escapeHtml(c.proyecto)}</span>
                     </div>
-                    <button class="btn-check-done" data-check-id="${c.id}" title="Marcar como hecho">&#10003; Hecho</button>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <button class="btn-check-done" data-check-id="${c.id}" title="Marcar como hecho">&#10003; Hecho</button>
+                        <button class="icon-btn delete btn-cal-delete" data-cal-del-id="${c.id}" title="Eliminar cliente">🗑</button>
+                    </div>
                 </div>
                 <div class="demo-item-details">
                     <div class="demo-detail"><span class="demo-detail-label">Teléfono</span><span>${escapeHtml(c.telefono || '—')}</span></div>
@@ -642,6 +740,10 @@ function openDayModal(dateStr) {
                     <div class="demo-detail"><span class="demo-detail-label">Abonado</span><span class="abonado-val">${fmtMoney(c.abono)}</span></div>
                     <div class="demo-detail"><span class="demo-detail-label">Saldo</span><span class="saldo-val">${fmtMoney(saldo)}</span></div>
                     <div class="demo-detail full-width"><span class="demo-detail-label">Estado</span><span class="estado-mini ${estado}">${estadoLabel}</span></div>
+                    <div class="demo-detail full-width">
+                        <span class="demo-detail-label">Cambiar fecha</span>
+                        <input type="date" class="inline-date cal-change-date" data-cal-date-id="${c.id}" value="${escapeHtml(c.hablarleElDia || '')}">
+                    </div>
                 </div>
                 ${c.notas ? `<div class="demo-item-notas">📝 ${escapeHtml(c.notas)}</div>` : ''}
                 <div class="demo-item-actions">
@@ -658,6 +760,35 @@ function openDayModal(dateStr) {
                 const isDone = item.classList.toggle("done");
                 btn.classList.toggle("checked", isDone);
                 btn.textContent = isDone ? "✓ Hecho" : "✓ Hecho";
+            });
+        });
+
+        // Cambiar fecha desde el modal del calendario
+        dayModalBody.querySelectorAll(".cal-change-date").forEach(input => {
+            input.addEventListener("change", async () => {
+                const id = input.dataset.calDateId;
+                const newDate = input.value || "";
+                await updateField(id, "hablarleElDia", newDate);
+                renderCal();
+                openDayModal(dateStr);
+            });
+        });
+
+        // Eliminar cliente desde el modal del calendario
+        dayModalBody.querySelectorAll(".btn-cal-delete").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const id = btn.dataset.calDelId;
+                const c = clients.find(x => x.id === id);
+                if (!c) return;
+                if (!confirm(`¿Eliminar al cliente "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
+                try {
+                    await deleteDoc(doc(db, "clientes", id));
+                    renderCal();
+                    openDayModal(dateStr);
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al eliminar: " + err.message);
+                }
             });
         });
 

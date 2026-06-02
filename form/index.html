@@ -28,21 +28,21 @@
         <!-- Hero text -->
         <div class="hero-text">
             <h1 class="hero-title">Contanos sobre tu marca</h1>
-            <p class="hero-desc">Con esta info diseñamos una propuesta que realmente te represente. Solo te lleva 2 minutos.</p>
+            <p class="hero-desc">Con esta info diseñamos una propuesta y un boceto grátis que realmente te represente. Solo te lleva 2 minutos.</p>
         </div>
 
         <!-- Card -->
         <div class="form-card" id="formCard">
             <form id="propuestaForm" novalidate autocomplete="off">
 
-                <!-- ─── Nombre del negocio ─── -->
+                <!-- ─── Datos de contacto ─── -->
                 <div class="form-section">
 
                     <div class="field-group">
-                        <label class="field-label" for="nombre_negocio">
-                            Nombre del negocio o marca <span class="req">*</span>
+                        <label class="field-label" for="nombre">
+                            Tu nombre <span class="req">*</span>
                         </label>
-                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder=" " required>
+                        <input type="text" id="nombre" name="nombre" class="field-input" placeholder=" " required>
                     </div>
 
                     <div class="field-group">
@@ -50,6 +50,13 @@
                             Teléfono / WhatsApp <span class="req">*</span>
                         </label>
                         <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="nombre_negocio">
+                            Nombre del negocio o marca <span class="req">*</span>
+                        </label>
+                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder=" " required>
                     </div>
 
                     <div class="field-group">
@@ -92,12 +99,34 @@
                             </span>
                         </label>
                         <textarea id="referencias" name="referencias" class="field-input field-textarea autosize" rows="1" placeholder=""></textarea>
-                        <div class="tip-box">
-                            <span class="tip-icon">💡</span>
-                            <span>En <a href="https://www.gokywebs.com" target="_blank" class="inline-link">gokywebs.com</a> podés ver todos nuestros trabajos y usar los que más te gusten como referencia.</span>
-                        </div>
                     </div>
                 </div>
+                
+                <!-- ─── Recursos ─── -->
+                <div class="form-section">
+
+                    <!-- Logo -->
+                    <div class="field-group">
+                        <label class="field-label">
+                            Logo de tu marca
+                            <span class="field-hint">Si tenés un logo subilo acá. Arrastralo o hacé clic para elegirlo.</span>
+                        </label>
+                        <div class="logo-dropzone" id="logoDropzone">
+                            <input type="file" id="logoInput" accept="image/*,.svg,.ai,.eps,.pdf">
+                            <span class="logo-dropzone-icon">🖼️</span>
+                            <p class="logo-dropzone-text"><strong>Arrastrá tu logo acá</strong> o hacé clic para elegirlo</p>
+                            <p class="logo-dropzone-subtext">PNG, JPG, SVG, AI, EPS, PDF · Máx. 10 MB</p>
+                        </div>
+                        <div class="logo-preview" id="logoPreview" style="display:none">
+                            <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Vista previa del logo">
+                            <span class="logo-preview-name" id="logoPreviewName"></span>
+                            <button type="button" class="logo-preview-remove" id="logoRemoveBtn" title="Quitar logo">✕</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="divider"></div>
 
                 <!-- ─── Submit ─── -->
                 <div class="submit-row">

@@ -23,11 +23,79 @@ const firebaseConfig = {
 const _app = initializeApp(firebaseConfig);
 const db   = getFirestore(_app);
 
+const LOGO_UPLOAD_URL = '/form/upload-logo.php';
+
 const EMAILJS_SERVICE  = 'service_wg4bw4e';
 const EMAILJS_TEMPLATE = 'template_propuesta';
 const EMAILJS_KEY      = '5lJCf2hCkPyXNXwas';
 
 emailjs.init(EMAILJS_KEY);
+
+/* ── Logo drag & drop ── */
+let selectedLogoFile = null;
+
+const logoDropzone   = document.getElementById('logoDropzone');
+const logoInput      = document.getElementById('logoInput');
+const logoPreview    = document.getElementById('logoPreview');
+const logoPreviewImg = document.getElementById('logoPreviewImg');
+const logoPreviewName= document.getElementById('logoPreviewName');
+const logoRemoveBtn  = document.getElementById('logoRemoveBtn');
+
+logoDropzone.addEventListener('click', () => logoInput.click());
+
+logoInput.addEventListener('change', () => {
+    if (logoInput.files[0]) setLogoFile(logoInput.files[0]);
+});
+
+logoDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    logoDropzone.classList.add('drag-over');
+});
+logoDropzone.addEventListener('dragleave', () => logoDropzone.classList.remove('drag-over'));
+logoDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    logoDropzone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) setLogoFile(file);
+});
+
+function setLogoFile(file) {
+    if (file.size > 10 * 1024 * 1024) {
+        alert('El archivo supera el límite de 10 MB.');
+        return;
+    }
+    selectedLogoFile = file;
+    logoPreviewName.textContent = file.name;
+    logoDropzone.style.display = 'none';
+    logoPreview.style.display  = 'flex';
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => { logoPreviewImg.src = e.target.result; };
+        reader.readAsDataURL(file);
+    } else {
+        logoPreviewImg.src = '';
+        logoPreviewImg.style.display = 'none';
+    }
+}
+
+logoRemoveBtn.addEventListener('click', () => {
+    selectedLogoFile = null;
+    logoInput.value  = '';
+    logoPreviewImg.src = '';
+    logoPreviewImg.style.display = 'block';
+    logoPreview.style.display  = 'none';
+    logoDropzone.style.display = '';
+});
+
+/* ── Yes/No toggles ── */
+document.querySelectorAll('.yn-group').forEach(group => {
+    group.querySelectorAll('.yn-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            group.querySelectorAll('.yn-btn').forEach(b => b.className = 'yn-btn');
+            btn.classList.add('yn-active-' + btn.dataset.val);
+        });
+    });
+});
 
 /* ── DOM refs ── */
 const btnEnviar = document.getElementById('btnEnviar');
@@ -43,8 +111,9 @@ function validateAll() {
     let firstError = null;
 
     const fields = [
-        { id: 'nombre_negocio',  msg: 'Por favor ingresá el nombre del negocio o marca.' },
+        { id: 'nombre',          msg: 'Por favor ingresá tu nombre.' },
         { id: 'telefono',        msg: 'Por favor ingresá un número de teléfono o WhatsApp.' },
+        { id: 'nombre_negocio',  msg: 'Por favor ingresá el nombre del negocio o marca.' },
         { id: 'rubro',           msg: 'Contanos a qué se dedica tu negocio.' },
     ];
 
@@ -82,6 +151,7 @@ async function sendForm() {
     const get = id => (document.getElementById(id)?.value ?? '').trim();
 
     const params = {
+        nombre:          get('nombre'),
         nombre_negocio:  get('nombre_negocio'),
         telefono:        get('telefono'),
         rubro:           get('rubro'),
@@ -94,6 +164,26 @@ async function sendForm() {
     btnEnviar.classList.add('loading');
     btnEnviar.textContent = 'Enviando…';
 
+    /* ── Subir logo a Hostinger si existe ── */
+    if (selectedLogoFile) {
+        try {
+            const formData = new FormData();
+            formData.append('logo', selectedLogoFile);
+            const res  = await fetch(LOGO_UPLOAD_URL, { method: 'POST', body: formData });
+            const json = await res.json();
+            if (json.url) {
+                params.logoUrl    = json.url;
+                params.logoNombre = selectedLogoFile.name;
+            } else {
+                throw new Error(json.error || 'respuesta inválida');
+            }
+        } catch (err) {
+            console.warn('No se pudo subir el logo:', err);
+            params.logoUrl    = '';
+            params.logoNombre = selectedLogoFile.name + ' (no subido)';
+        }
+    }
+
     try {
         await Promise.allSettled([
             emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, params),
@@ -102,7 +192,7 @@ async function sendForm() {
                 createdAt: serverTimestamp(),
             }),
         ]);
-        showSuccess(params.contacto_nombre);
+        showSuccess(params.nombre);
     } catch (err) {
         console.error('Error al enviar:', err);
         btnEnviar.classList.remove('loading');

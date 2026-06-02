@@ -1,0 +1,12 @@
+# Bloquear listado de directorio
+Options -Indexes
+
+# No ejecutar PHP ni scripts en esta carpeta
+<FilesMatch "\.(php|php5|phtml|pl|py|sh|cgi)$">
+    Deny from all
+</FilesMatch>
+
+# Permitir solo imágenes y archivos de diseño
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|pdf|ai|eps)$">
+    Allow from all
+</FilesMatch>

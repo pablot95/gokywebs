@@ -151,22 +151,22 @@ select:focus {
 }
 
 /* Colores dinámicos por estado */
-#estadoCliente[data-estado="interesado"] {
-    border-color: rgba(245, 158, 11, 0.5);
-    background-color: rgba(245, 158, 11, 0.07);
-    box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.6);
+#estadoCliente[data-estado="seguimiento1"] {
+    border-color: rgba(6, 182, 212, 0.5);
+    background-color: rgba(6, 182, 212, 0.08);
+    box-shadow: inset 3px 0 0 rgba(6, 182, 212, 0.7);
 }
 
-#estadoCliente[data-estado="quiere-demo"] {
-    border-color: rgba(139, 92, 246, 0.5);
-    background-color: rgba(139, 92, 246, 0.08);
-    box-shadow: inset 3px 0 0 rgba(139, 92, 246, 0.7);
-}
-
-#estadoCliente[data-estado="seguimiento"] {
+#estadoCliente[data-estado="seguimiento2"] {
     border-color: rgba(16, 185, 129, 0.5);
     background-color: rgba(16, 185, 129, 0.08);
     box-shadow: inset 3px 0 0 rgba(16, 185, 129, 0.7);
+}
+
+#estadoCliente[data-estado="seguimiento3"] {
+    border-color: rgba(245, 158, 11, 0.5);
+    background-color: rgba(245, 158, 11, 0.07);
+    box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.6);
 }
 
 #estadoCliente[data-estado="cliente"] {
@@ -300,6 +300,36 @@ input:focus {
     margin: 0;
     width: auto;
     padding: 11px 20px;
+}
+
+.stats-box {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px 20px;
+    min-width: 200px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.stat-value {
+    display: block;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.02em;
 }
 
 .filter-pills {
@@ -480,17 +510,17 @@ input:focus {
     border-color: rgba(37, 99, 235, 0.5);
     color: #93C5FD;
 }
-.inline-status-select.quiere-demo {
-    background-color: rgba(139, 92, 246, 0.15);
-    border-color: rgba(139, 92, 246, 0.5);
-    color: #C4B5FD;
+.inline-status-select.seguimiento1 {
+    background-color: rgba(6, 182, 212, 0.12);
+    border-color: rgba(6, 182, 212, 0.45);
+    color: #67E8F9;
 }
-.inline-status-select.seguimiento {
+.inline-status-select.seguimiento2 {
     background-color: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.5);
     color: #6EE7B7;
 }
-.inline-status-select.interesado {
+.inline-status-select.seguimiento3 {
     background-color: rgba(245, 158, 11, 0.12);
     border-color: rgba(245, 158, 11, 0.45);
     color: #FCD34D;
@@ -656,7 +686,8 @@ input:focus {
 }
 
 #clientForm,
-#dayModalBody {
+#dayModalBody,
+#propuestaModalBody {
     overflow-y: auto;
     flex: 1;
     scrollbar-width: thin;
@@ -836,12 +867,16 @@ input:focus {
     text-align: center;
 }
 
-.badge-demo {
-    background: rgba(139, 92, 246, 0.85);
+.badge-seg1 {
+    background: rgba(6, 182, 212, 0.85);
 }
 
-.badge-seguimiento {
+.badge-seg2 {
     background: rgba(16, 185, 129, 0.85);
+}
+
+.badge-seg3 {
+    background: rgba(245, 158, 11, 0.85);
 }
 
 /* ===== DEMO ITEMS (modal día) ===== */
@@ -918,9 +953,9 @@ input:focus {
     border: 1px solid var(--border-strong);
 }
 .estado-mini.cliente { background: rgba(37,99,235,.15); border-color: rgba(37,99,235,.5); color: #93C5FD; }
-.estado-mini.quiere-demo { background: rgba(139,92,246,.15); border-color: rgba(139,92,246,.5); color: #C4B5FD; }
-.estado-mini.seguimiento { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.5); color: #6EE7B7; }
-.estado-mini.interesado { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.45); color: #FCD34D; }
+.estado-mini.seguimiento1 { background: rgba(6,182,212,.12); border-color: rgba(6,182,212,.45); color: #67E8F9; }
+.estado-mini.seguimiento2 { background: rgba(16,185,129,.15); border-color: rgba(16,185,129,.5); color: #6EE7B7; }
+.estado-mini.seguimiento3 { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.45); color: #FCD34D; }
 
 .demo-item-notas {
     font-size: 13px;
@@ -1036,6 +1071,7 @@ input:focus {
 .prop-row-block {
     flex-direction: column;
     gap: 6px;
+    min-width: 0;
 }
 
 .prop-label {
@@ -1059,6 +1095,9 @@ input:focus {
     white-space: pre-wrap;
     color: var(--text);
     width: 100%;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 @media (max-width: 600px) {

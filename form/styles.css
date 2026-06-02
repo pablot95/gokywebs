@@ -484,3 +484,131 @@ body {
         height: 36px;
     }
 }
+
+/* ─── Logo dropzone ─── */
+.logo-dropzone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    padding: 28px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    user-select: none;
+}
+
+.logo-dropzone:hover,
+.logo-dropzone.drag-over {
+    border-color: var(--blue);
+    background: var(--blue-light);
+}
+
+.logo-dropzone input[type="file"] { display: none; }
+
+.logo-dropzone-icon { font-size: 2rem; line-height: 1; }
+
+.logo-dropzone-text {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.logo-dropzone-text strong { color: var(--blue); }
+
+.logo-dropzone-subtext {
+    font-size: 0.75rem;
+    color: var(--text-light);
+}
+
+.logo-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--blue-light);
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--blue-mid);
+    margin-top: 4px;
+}
+
+.logo-preview-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid var(--border);
+}
+
+.logo-preview-name {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+    word-break: break-all;
+}
+
+.logo-preview-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--error);
+    font-size: 1rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.logo-preview-remove:hover {
+    background: rgba(239,68,68,0.1);
+}
+
+/* ─── Yes/No toggles ─── */
+.yn-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.yn-btn {
+    padding: 9px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 50px;
+    background: var(--bg);
+    color: var(--text-muted);
+    font-family: var(--font);
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+
+.yn-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: var(--blue-light);
+}
+
+.yn-btn.yn-active-si {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #fff;
+}
+
+.yn-btn.yn-active-no {
+    background: #F1F5F9;
+    border-color: #94A3B8;
+    color: #334155;
+}
+
+.yn-btn.yn-active-ns {
+    background: #FFF7ED;
+    border-color: #FED7AA;
+    color: #9A3412;
+}

@@ -308,12 +308,11 @@ section {
 }
 
 .navbar {
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(255, 255, 255, 0.72);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     z-index: 1000;
     transition: var(--transition);
-    position: fixed;
     top: 20px;
     left: 1.5rem;
     right: 1.5rem;
@@ -321,7 +320,7 @@ section {
     border: 1px solid rgba(0, 0, 0, 0.07);
     box-shadow: 0 4px 24px rgba(0,0,0,0.08);
     height: auto;
-    padding: 0.5rem 0;
+    padding:  0;
 }
 
 .navbar::before {
@@ -416,7 +415,7 @@ section {
 }
 
 .hero {
-    height: 100dvh;
+    height: 70dvh;
     max-height: 100dvh;
     display: flex;
     align-items: center;
@@ -924,12 +923,12 @@ section {
 }
 
 .portfolio-header p {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.5rem;
+    color: white;
 }
 
 .portfolio.section-padding {
-    padding: 4rem 0;
+    padding: 2rem 0;
     position: relative;
 }
 
@@ -2225,10 +2224,10 @@ section {
     }
     
     .hero {
-        padding-top: 25%;
-        padding-bottom: 2rem;
+        padding-top: 10%;
+        padding-bottom: 1rem;
         height: auto;
-        min-height: 75vh;
+        min-height: 50vh;
         overflow: clip;
     }
     
@@ -3417,6 +3416,7 @@ section {
 
 .pf-section {
     width: 100%;
+    margin-bottom: 2rem;
 }
 
 .pf-section.is-hidden {
@@ -3426,134 +3426,101 @@ section {
 .pf-section-head {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1.25rem;
-    padding: 0 0.25rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    position: relative;
+}
+
+.pf-section-head::after {
+    content: '';
+    position: absolute;
+    bottom: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 48px;
+    height: 3px;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: 12px;
 }
 
 .pf-section-head h3 {
-    font-size: 3rem;
+    font-size: 2rem;
     font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.3px;
+    letter-spacing: -1px;
     margin: 0;
+    text-align: center;
+    padding: 0rem 3rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.93), rgba(223, 223, 223, 0.95));
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    color: black;
 }
 
-.pf-nav {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.pf-arrow {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 1.05rem;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.pf-arrow:hover:not(:disabled) {
-    background: rgba(37, 99, 235, 0.2);
-    border-color: rgba(37, 99, 235, 0.6);
-    color: #fff;
-    transform: scale(1.05);
-}
-
-.pf-arrow:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-/* Track / Carousel */
-.pf-track-wrap {
-    position: relative;
-    overflow: hidden;    /* fallback navegadores muy viejos */
-    overflow: clip;      /* no bloquea el scroll táctil del hijo en iOS */
-    border-radius: 16px;
-    isolation: isolate;
-}
-
-.pf-track {
-    display: flex;
+/* ─── Grid de portfolio ─── */
+.pf-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x proximity;
-    scroll-behavior: smooth;
-    padding: 0.5rem 0.25rem 1rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    touch-action: pan-x pan-y;
-    -webkit-overflow-scrolling: touch;
 }
 
-.pf-track::-webkit-scrollbar {
+/* Ocultar cards más allá de 8 en desktop */
+.pf-grid .pf-card:nth-child(n+9) {
     display: none;
 }
 
-/* Drag-to-scroll (desktop): cursor grab/grabbing */
-@media (hover: hover) and (pointer: fine) {
-    .pf-track {
-        cursor: grab;
-    }
-    .pf-track.is-dragging {
-        cursor: grabbing;
-        scroll-behavior: auto;
-        scroll-snap-type: none;
-    }
-    .pf-track.is-dragging .pf-card {
-        pointer-events: none;
-    }
+/* Cuando la sección está expandida, mostrar todas */
+.pf-section--expanded .pf-grid .pf-card {
+    display: block;
 }
 
-/* ─── Marquee de doble fila (comercios + profesionales) ─── */
-.pf-section[data-rows="2"] .pf-track-wrap {
+/* Botón Ver más */
+.pf-ver-mas-wrap {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    overflow: hidden;
-    cursor: grab;
+    justify-content: center;
+    margin-top: 1.5rem;
 }
 
-.pf-track-marquee {
-    display: flex;
-    gap: 1rem;
-    overflow: visible;
-    scroll-snap-type: none;
-    will-change: transform;
-    padding: 0.25rem 0;
-    margin: 0;
-    flex-wrap: nowrap;
-    user-select: none;
-    touch-action: pan-y;
+.pf-ver-mas {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.6rem 2rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: none;
 }
 
-.pf-track-marquee .pf-card {
-    flex: 0 0 320px;
-    scroll-snap-align: none;
+.pf-ver-mas.is-visible {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
-.pf-track-marquee.is-dragging {
-    cursor: grabbing;
+.pf-ver-mas:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.5);
+    color: #fff;
 }
 
-.pf-track-marquee.is-dragging .pf-card {
-    pointer-events: none;
-}
-
-/* ─── Mobile: preview celu para TODOS los carruseles, 2.5 cards visibles ─── */
 @media (max-width: 768px) {
-    .pf-card,
-    .pf-track-marquee .pf-card {
-        flex: 0 0 30% !important;
+    .pf-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
     }
+
+    /* En mobile ocultar más allá de 6 */
+    .pf-grid .pf-card:nth-child(n+7) {
+        display: none;
+    }
+
+    .pf-section--expanded .pf-grid .pf-card {
+        display: block;
+    }
+
     .pf-visuals {
         aspect-ratio: 9 / 16 !important;
         background: #050507;
@@ -3590,9 +3557,6 @@ section {
         object-fit: cover;
         object-position: top center;
     }
-    .pf-card:hover .pf-celu {
-        bottom: auto;
-    }
     .pf-info {
         padding: 0.5rem 0.7rem;
     }
@@ -3611,9 +3575,9 @@ section {
 }
 
 @media (max-width: 480px) {
-    .pf-card,
-    .pf-track-marquee .pf-card {
-        flex: 0 0 30% !important;
+    .pf-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
     }
     .pf-info h4 {
         display: none;
@@ -3622,9 +3586,7 @@ section {
 
 /* Card */
 .pf-card {
-    flex: 0 0 320px;
     min-width: 0;
-    scroll-snap-align: start;
     position: relative;
     display: block;
     border-radius: 14px;
@@ -4009,7 +3971,7 @@ body.modal-open {
         gap: 2.5rem;
     }
     .pf-section-head h3 {
-        font-size: 1.2rem;
+        font-size: 1.6rem;
         text-align: center;
         margin-bottom: 0.5rem;
         margin-top: 1.6rem;

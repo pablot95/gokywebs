@@ -1294,48 +1294,33 @@ const PORTFOLIO_DEMOS = {
         // Tiendas y bazares
         { id: 'BlanqueriaBazar', name: 'Blanquería Bazar' },
         { id: 'PapeleraTriunfo', name: 'Papelera Triunfo', url: 'https://papelera-triunfo.vercel.app' },
-        { id: 'HemaImportados', name: 'Hema Importados', url: 'https://hema-importados.vercel.app' },
-        { id: 'VidrieraLeoRocha', name: 'Vidriera Leo Rocha', url: 'https://vidriera-leo-rocha.vercel.app' },
         { id: 'SerBotanica', name: 'Ser Botánica', url: 'https://ser-botanica.vercel.app' },
         { id: 'TiendaAzurduy', name: 'Tienda Azurduy', url: 'https://tienda-azurduy.vercel.app' },
-        { id: 'MiauMiau', name: 'Miau Miau Pet' },
         // Hogar, muebles, construcción
         { id: 'DormiLupe', name: 'Dormi Lupe', url: 'https://dormi-lupe.vercel.app' },
         { id: 'VerticeHogar', name: 'Vértice Hogar', url: 'https://verticehogar.vercel.app' },
         { id: 'ZepolMuebles', name: 'Zepol Muebles', url: 'https://zepol.vercel.app' },
-        { id: 'ArteMetalico', name: 'Arte Metálico' },
         { id: 'mylomuebles', name: 'Mylo Muebles', url: 'https://mylo-muebles.vercel.app' },
         // Belleza / estética (tiendas)
-        { id: 'Cuarzoestetica', name: 'Cuarzo Estética', url: 'https://cuarzoestetica.vercel.app' },
         { id: 'EsteticaCursos', name: 'Estética Cursos', url: 'https://estetica-cursos.vercel.app' },
         // Automotriz
-        { id: 'FrenosdeDisco', name: 'Frenos de Disco', url: 'https://frenosde-disco.vercel.app' },
         { id: 'Autofull', name: 'Autofull', url: 'https://autofullneumaticos.com.ar' },
-        { id: 'RepuestosAutos', name: 'Repuestos Autos', url: 'https://autopartes-del-este.vercel.app' },
         // Limpieza
         { id: 'ValenClean', name: 'Valen Clean', url: 'https://valenclean.vercel.app' },
         // Deporte / actividades
-        { id: 'PeakLifters', name: 'Peak Lifters', url: 'https://peak-lifters.vercel.app' },
-        { id: 'Airsoft', name: 'Airsoft', url: 'https://airgrip.vercel.app' },
-        { id: 'CeroDescensos', name: 'Cero Descensos', url: 'https://cero-descensos.vercel.app' },
-        { id: 'Padel', name: 'Pádel Club', url: 'https://padel-ps.vercel.app' },
-        { id: 'VoleyClub', name: 'Vóley Club', url: 'https://vivodeportes.vercel.app' }
+        { id: 'PeakLifters', name: 'Peak Lifters', url: 'https://peak-lifters.vercel.app' }
     ],
     profesionales: [
         // Salud / consultorios
         { id: 'PiscoPsi', name: 'Pisco Psicología', url: 'https://psico-psi.vercel.app' },
         { id: 'AlderPsicologia', name: 'Alder Psicología', url: 'https://www.psicorodas.com.ar/' },
-        { id: 'DrTauil', name: 'Dr. Tauil' },
         { id: 'Skymed', name: 'SkyMed', url: 'https://www.skymedconsultorios.com/' },
         { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'jpg' },
         { id: 'Mecanico', name: 'Mecánico', url: 'https://rivasrys.com.ar' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs', url: 'https://urgencias24hs.com.ar' },
         { id: 'AHCD', name: 'AHCD', url: 'https://ahcd.org.ar/' },
         // Belleza / spa / fitness (servicios)
-        { id: 'Barberia', name: 'Barbería' },
         { id: 'Lessence', name: "L'essence Estética", url: 'https://lessence.vercel.app' },
-        { id: 'Estetica', name: 'Estética', url: 'https://encantoestetica.com.ar' },
-        { id: 'DanzaPole', name: 'Danza Pole' },
         // Legales / consultoría / publicidad
         { id: 'EstudioJuridico', name: 'Estudio Jurídico', url: 'https://mtgestoriaintegral.com.ar' },
         { id: 'RamagliaEstudioJuridico', name: 'Ramaglia Estudio Jurídico' },
@@ -1351,39 +1336,26 @@ const PORTFOLIO_DEMOS = {
         { id: 'SeguridadPrivada', name: 'Seguridad Privada', url: 'https://indumentaria-policial.vercel.app' },
         { id: 'Axiotek', name: 'Axiotek', url: 'https://axiotek.vercel.app' },
         { id: 'Tuproductoronline', name: 'Tu Productor Online', url: 'https://tuproductoronline.vercel.app' },
-        { id: 'Estudiorrpp', name: 'Estudio RRPP', url: 'https://estudiorrpp.vercel.app' },
         // Educación / artes
         { id: 'LenguasAdicionales', name: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar' },
         { id: 'ProfeArtes', name: 'Profe Artes', url: 'https://catalinasolaridorda.com.ar' },
         { id: 'ArtesMarciales', name: 'Artes Marciales' },
         // Construcción / oficios
-        { id: 'JavierConstrucciones', name: 'Javier Construcciones', url: 'https://javier-construcciones.vercel.app' },
         { id: 'MantenimientoObras', name: 'Mantenimiento de Obras' },
-        { id: 'Pintura', name: 'Pintura' },
-        { id: 'DiegoTechista', name: 'Diego Techista', url: 'https://techos-zingueria.vercel.app' },
         // Turismo / esoterismo / cultura
         { id: 'Patagonianativa', name: 'Patagonia Nativa', url: 'https://patagonianativa.vercel.app' },
         { id: 'ConcienciaTriskel', name: 'Conciencia Triskel', url: 'https://conciencia-triskel.vercel.app' },
-        { id: 'Musica', name: 'Academia de Música' },
-        { id: 'MarTarot', name: 'Mar Tarot', url: 'https://tarot-mar.vercel.app' },
         { id: 'Tarot', name: 'Tarot' },
         // Servicios técnicos
         { id: 'Servicioelectro', name: 'Servicio Electro' },
         { id: 'ServiceRefrigeracion', name: 'SMRTEC', url: 'https://smrtec.vercel.app/' },
-        { id: 'ClubCarGarage', name: 'Club Car Garage', url: 'https://club-car-garage.vercel.app' },
         { id: 'HidroArca', name: 'Hidro Arca', url: 'https://hidro-arca.vercel.app' },
         { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones', url: 'https://delta-pampa-fumigaciones.vercel.app' },
         // Comercios reasignados (productos especializados)
-        { id: 'Gione15', name: 'Gione 15', url: 'https://gione.vercel.app' }
     ],
     moda: [
-        { id: 'SimonataStore', name: 'Simonata Store', url: 'https://simonata.vercel.app' },
         { id: 'Distinta', name: 'Distinta', url: 'https://distinta.vercel.app' },
         { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' },
-        { id: 'RopaBears', name: 'Ropa Bears' },
-        { id: 'Damassco', name: 'Damassco' },
-        { id: 'MaceIntimates', name: 'Mace Intimates' },
-        { id: 'Mima', name: 'Mima' },
         { id: 'RopaMirame', name: 'Ropa Mírame' }
     ],
     gastronomia: [
@@ -1396,16 +1368,13 @@ const PORTFOLIO_DEMOS = {
     tecnologia: [
         { id: 'TvDigital', name: 'TV Digital' },
         { id: 'VelariumCelulares', name: 'Velarium Celulares', url: 'https://velarium-celulares.vercel.app' },
-        { id: 'ServiceNotebooks', name: 'Service Notebooks', url: 'https://smrtec.vercel.app' },
         { id: 'NexumCelulares', name: 'Nexum Celulares', url: 'https://nexum-celulares.vercel.app' },
         { id: 'ImpresionesJN', name: 'Impresiones JN', url: 'https://impresiones-jn.vercel.app' },
         { id: 'GraficayPloteo', name: 'Gráfica y Ploteo', url: 'https://mattigraff.com.ar' }
     ],
     inmobiliaria: [
         { id: 'NoemiWichandInmo', name: 'Noemi Wichand', url: 'https://noemi-wichand.vercel.app' },
-        { id: 'Tasador', name: 'Tasador' },
         { id: 'InmobiliariaForte', name: 'Inmobiliaria Forte', url: 'https://forte-propiedades.vercel.app' },
-        { id: 'PalmarInmuebles', name: 'Palmar Inmuebles', url: 'https://palmar-inmuebles.vercel.app' }
     ]
 };
 
@@ -1435,126 +1404,54 @@ function injectDemoCards() {
     Object.entries(PORTFOLIO_DEMOS).forEach(([cat, demos]) => {
         const section = document.querySelector(`.pf-section[data-cat="${cat}"]`);
         if (!section) return;
-        const track = section.querySelector('.pf-track');
-        if (!track) return;
-        demos.forEach(demo => track.appendChild(createDemoCard(demo)));
+        const grid = section.querySelector('.pf-grid');
+        if (!grid) return;
+        demos.forEach(demo => grid.appendChild(createDemoCard(demo)));
     });
 }
 
-function initPortfolioCarousels() {
+function initPortfolioGrid() {
+    const LIMIT_DESKTOP = 8;
+    const LIMIT_MOBILE  = 6;
+
     document.querySelectorAll('.pf-section').forEach(section => {
-        if (section.dataset.rows === '2') return; // las marquee se manejan aparte
-        const track = section.querySelector('.pf-track');
-        const prevBtn = section.querySelector('.pf-prev');
-        const nextBtn = section.querySelector('.pf-next');
-        if (!track || !prevBtn || !nextBtn) return;
+        const grid   = section.querySelector('.pf-grid');
+        const verMas = section.querySelector('.pf-ver-mas');
+        if (!grid) return;
 
-        const scrollByAmount = () => {
-            const firstCard = track.querySelector('.pf-card');
-            if (!firstCard) return 300;
-            const cardWidth = firstCard.getBoundingClientRect().width;
-            const gap = parseFloat(getComputedStyle(track).gap) || 16;
-            return cardWidth + gap;
-        };
-
-        const updateArrows = () => {
-            const maxScroll = track.scrollWidth - track.clientWidth;
-            prevBtn.disabled = track.scrollLeft <= 1;
-            nextBtn.disabled = track.scrollLeft >= maxScroll - 1;
-        };
-
-        prevBtn.addEventListener('click', () => {
-            track.scrollBy({ left: -scrollByAmount(), behavior: 'smooth' });
-        });
-        nextBtn.addEventListener('click', () => {
-            track.scrollBy({ left: scrollByAmount(), behavior: 'smooth' });
-        });
-        track.addEventListener('scroll', updateArrows, { passive: true });
-        window.addEventListener('resize', updateArrows);
-
-        // Drag-to-scroll con mouse (igual que swipe en mobile)
-        let isDown = false;
-        let startX = 0;
-        let startScroll = 0;
-        let moved = 0;
-
-        let onMouseMove = null;
-        let onMouseUp = null;
-
-        track.addEventListener('mousedown', (e) => {
-            // Solo botón izquierdo, ignorar si fue sobre un link/botón interactivo dentro de una card
-            if (e.button !== 0) return;
-            isDown = true;
-            moved = 0;
-            startX = e.pageX;
-            startScroll = track.scrollLeft;
-            // No añadir is-dragging todavía: se añade solo tras movimiento real
-
-            onMouseMove = (ev) => {
-                if (!isDown) return;
-                ev.preventDefault();
-                const dx = ev.pageX - startX;
-                moved = Math.abs(dx);
-                if (moved > 8) track.classList.add('is-dragging');
-                track.scrollLeft = startScroll - dx;
-            };
-            onMouseUp = () => {
-                if (!isDown) return;
-                isDown = false;
-                track.classList.remove('is-dragging');
-                window.removeEventListener('mousemove', onMouseMove);
-                window.removeEventListener('mouseup', onMouseUp);
-                onMouseMove = null;
-                onMouseUp = null;
-            };
-
-            window.addEventListener('mousemove', onMouseMove);
-            window.addEventListener('mouseup', onMouseUp);
-        });
-
-        // Touch / swipe para mobile
-        // Usamos la posición del dedo (NO scrollLeft) para distinguir tap vs swipe.
-        // scrollLeft no es confiable porque el scroll inercial de iOS sigue cambiándolo
-        // después de que el usuario levanta el dedo, lo que haría que un tap rápido
-        // tras un swipe quede bloqueado incorrectamente.
-        let touchStartX = 0;
-        let touchStartY = 0;
-        let touchMoved = 0;
-
-        track.addEventListener('touchstart', (e) => {
-            touchStartX = e.touches[0].clientX;
-            touchStartY = e.touches[0].clientY;
-            touchMoved = 0;
-        }, { passive: true });
-
-        track.addEventListener('touchend', (e) => {
-            const t = e.changedTouches[0];
-            // Solo movimiento HORIZONTAL cuenta como swipe en un carrusel horizontal.
-            // Math.max(dx, dy) incluía movimiento vertical (normal en cualquier tap),
-            // lo que bloqueaba los clicks aunque el usuario NO estuviera haciendo swipe.
-            touchMoved = Math.abs(t.clientX - touchStartX);
-            updateArrows();
-        }, { passive: true });
-
-        // Cancelar el click siguiente solo si hubo swipe horizontal significativo.
-        // En mobile el browser ya suprime clicks después de swipes reales,
-        // así que touchMoved solo necesita cubrir el caso de movimiento horizontal
-        // deliberado (no el temblor vertical natural de cualquier tap).
-        track.addEventListener('click', (e) => {
-            if (moved > 8 || touchMoved > 15) {
-                e.preventDefault();
-                e.stopPropagation();
-                moved = 0;
-                touchMoved = 0;
-            }
-        }, true);
-
-        // Hide section if track is empty
-        if (!track.children.length) {
+        const cards = Array.from(grid.querySelectorAll('.pf-card'));
+        if (cards.length === 0) {
             section.classList.add('is-hidden');
+            return;
         }
 
-        setTimeout(updateArrows, 100);
+        const isMobile = () => window.innerWidth <= 768;
+        const limit    = () => isMobile() ? LIMIT_MOBILE : LIMIT_DESKTOP;
+
+        const updateVerMas = () => {
+            if (!verMas) return;
+            const expanded = section.classList.contains('pf-section--expanded');
+            if (cards.length > limit()) {
+                verMas.classList.add('is-visible');
+                verMas.innerHTML = expanded ? 'Ver menos <span>↑</span>' : 'Ver más <span>↓</span>';
+            } else {
+                verMas.classList.remove('is-visible');
+            }
+        };
+
+        updateVerMas();
+        window.addEventListener('resize', updateVerMas);
+
+        if (verMas) {
+            verMas.addEventListener('click', () => {
+                section.classList.toggle('pf-section--expanded');
+                updateVerMas();
+                if (!section.classList.contains('pf-section--expanded')) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                pfLoadSectionImages(section);
+            });
+        }
     });
 }
 
@@ -1590,7 +1487,7 @@ function initPortfolioCatFilter() {
             cats.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             sections.forEach(sec => {
-                const hasItems = sec.querySelector('.pf-track')?.children.length > 0;
+                const hasItems = sec.querySelector('.pf-grid')?.children.length > 0;
                 const match = (target === 'all' || sec.dataset.cat === target) && hasItems;
                 if (match) {
                     sec.classList.remove('is-hidden');
@@ -1660,149 +1557,10 @@ function initDemoModal() {
     });
 }
 
-/* ─── Double-row Marquee Carousel ─── */
-function initMarqueeSection(section) {
-    const wrap = section.querySelector('.pf-track-wrap');
-    const singleTrack = section.querySelector('.pf-track');
-    if (!wrap || !singleTrack) return;
-
-    const cards = Array.from(singleTrack.children);
-    if (cards.length === 0) {
-        section.classList.add('is-hidden');
-        return;
-    }
-
-    // Reconstruir el wrap con dos tracks (top y bottom)
-    wrap.innerHTML = '';
-    const topTrack = document.createElement('div');
-    topTrack.className = 'pf-track pf-track-marquee';
-    topTrack.dataset.row = 'top';
-    const botTrack = document.createElement('div');
-    botTrack.className = 'pf-track pf-track-marquee';
-    botTrack.dataset.row = 'bottom';
-    wrap.appendChild(topTrack);
-    wrap.appendChild(botTrack);
-
-    // Distribuir alternadamente
-    cards.forEach((card, i) => {
-        (i % 2 === 0 ? topTrack : botTrack).appendChild(card);
-    });
-
-    // Duplicar contenido para loop infinito sin saltos
-    [topTrack, botTrack].forEach(t => {
-        const originals = Array.from(t.children);
-        originals.forEach(c => t.appendChild(c.cloneNode(true)));
-    });
-
-    // Estado por fila
-    const rows = [
-        { el: topTrack, dir: -1, x: 0, dragging: false, half: 0 }, // top: derecha → izquierda
-        { el: botTrack, dir: +1, x: 0, dragging: false, half: 0 }  // bottom: izquierda → derecha
-    ];
-
-    const measure = () => {
-        rows.forEach(r => {
-            r.half = r.el.scrollWidth / 2;
-        });
-        // El track bottom arranca con offset para que el contenido se vea desplazado
-        if (rows[1].x === 0) rows[1].x = -rows[1].half / 2;
-    };
-    measure();
-    window.addEventListener('resize', measure);
-
-    const apply = (r) => {
-        // Wrap continuo
-        if (r.half > 0) {
-            while (r.x <= -r.half) r.x += r.half;
-            while (r.x > 0) r.x -= r.half;
-        }
-        r.el.style.transform = `translate3d(${r.x}px, 0, 0)`;
-    };
-
-    const speed = 0.4; // px por frame (~24px/s a 60fps)
-    let rafId = null;
-    const tick = () => {
-        rows.forEach(r => {
-            if (!r.dragging) r.x += r.dir * speed;
-            apply(r);
-        });
-        rafId = requestAnimationFrame(tick);
-    };
-    rows.forEach(apply);
-    rafId = requestAnimationFrame(tick);
-
-    // Drag con sync inverso entre filas
-    rows.forEach((row, idx) => {
-        const other = rows[1 - idx];
-        let startPageX = 0, startRowX = 0, startOtherX = 0, moved = 0, isDown = false;
-        let onMove = null, onUp = null;
-
-        const begin = (pageX) => {
-            isDown = true;
-            moved = 0;
-            startPageX = pageX;
-            startRowX = row.x;
-            startOtherX = other.x;
-            row.dragging = true;
-            other.dragging = true;
-            // No añadir is-dragging todavía: se añade solo tras movimiento real
-        };
-        const move = (pageX) => {
-            if (!isDown) return;
-            const dx = pageX - startPageX;
-            moved = Math.abs(dx);
-            if (moved > 8) {
-                row.el.classList.add('is-dragging');
-                other.el.classList.add('is-dragging');
-            }
-            row.x = startRowX + dx;
-            other.x = startOtherX - dx;
-            apply(row); apply(other);
-        };
-        const end = () => {
-            if (!isDown) return;
-            isDown = false;
-            row.dragging = false;
-            other.dragging = false;
-            row.el.classList.remove('is-dragging');
-            other.el.classList.remove('is-dragging');
-            if (onMove) window.removeEventListener('mousemove', onMove);
-            if (onUp) window.removeEventListener('mouseup', onUp);
-            onMove = null; onUp = null;
-        };
-
-        row.el.addEventListener('mousedown', (e) => {
-            if (e.button !== 0) return;
-            begin(e.pageX);
-            onMove = (ev) => move(ev.pageX);
-            onUp = () => end();
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
-        });
-        row.el.addEventListener('touchstart', (e) => begin(e.touches[0].pageX), { passive: true });
-        row.el.addEventListener('touchmove', (e) => move(e.touches[0].pageX), { passive: true });
-        row.el.addEventListener('touchend', end);
-        row.el.addEventListener('touchcancel', end);
-
-        // Cancelar click solo si hubo drag REAL (moved > 8 al final del drag)
-        row.el.addEventListener('click', (e) => {
-            if (moved > 8) {
-                e.preventDefault();
-                e.stopPropagation();
-                moved = 0;
-            }
-        }, true);
-    });
-}
-
-function initMarqueeCarousels() {
-    document.querySelectorAll('.pf-section[data-rows="2"]').forEach(initMarqueeSection);
-}
 
 function initNewPortfolio() {
     injectDemoCards();
-    initMarqueeCarousels();
-    initPortfolioCarousels();
+    initPortfolioGrid();
     initPortfolioCatFilter();
     initDemoModal();
     initPfLazyImages();
