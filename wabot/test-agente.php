@@ -669,6 +669,9 @@ echo "— El desempate del comercio vive en el playbook —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
 caso('nombra el desempate de comercios', strpos($sistema, 'DESEMPATE OBLIGATORIO CON COMERCIOS') !== false);
+caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
+    strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
+    && strpos($sistema, 'NO elijas uno solo y descartes el otro en silencio') !== false);
 caso('con la ferretería en la lista', stripos($sistema, 'ferretería') !== false);
 caso('y aclara que un comercio nunca es institucional',
     strpos($sistema, 'NUNCA es una web institucional') !== false);
