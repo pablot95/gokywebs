@@ -395,6 +395,26 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['items' => $items], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    // Lo consulta el admin (Bocetos) para el puntito rojo: si el cliente no
+    // contestó el aviso de la mañana en 24h, o cuánto le falta para eso.
+    if ($a === 'avisos_estado') {
+        header('Content-Type: application/json; charset=utf-8');
+        $items = [];
+        foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+            $clave = basename($f, '.json');
+            if (stripos($clave, 'TEST') !== false) continue;
+            $cv = wabot_conv_load($clave);
+            if (empty($cv['lead_creado']) || !empty($cv['presentado_ts']) || !empty($cv['archivado'])) continue;
+            if (empty($cv['muestra_aviso_ts'])) continue;
+            $items[] = [
+                'tel'              => $cv['tel'],
+                'muestra_aviso_ts' => (int)$cv['muestra_aviso_ts'],
+                'ultimo_cliente_ts'=> (int)($cv['ultimo_cliente_ts'] ?? 0),
+            ];
+        }
+        echo json_encode(['items' => $items], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     if ($a === 'conv_toggle' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['bot_off'] = empty($conv['bot_off']);

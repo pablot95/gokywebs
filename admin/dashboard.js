@@ -89,6 +89,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.body.classList.toggle("propuestas-tab", activeTab === "propuestas");
         document.getElementById("tabMantenimiento").hidden = activeTab !== "mantenimiento";
         if (activeTab === "calendario") renderCal();
+        if (activeTab === "propuestas") sincronizarAvisosBoceto();
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
         if (activeTab === "completados") renderCompletados();
         if (activeTab === "metricas") renderSubMetrica(subMetrica);
@@ -184,6 +185,52 @@ async function sincronizarPresentados() {
     }
 }
 setInterval(sincronizarPresentados, 10 * 60 * 1000);
+
+/* ── Puntito del aviso de la mañana, en Bocetos ──
+   Guarda por teléfono cuándo salió el aviso de la mañana (wabot) y cuándo
+   escribió el cliente por última vez. Con eso, cada fila calcula si ya
+   pasaron 24h sin contestar (puntito rojo) o cuánto falta para eso. */
+let wabotAvisos = {};
+async function sincronizarAvisosBoceto() {
+    if (!currentUser) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "avisos_estado" }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        wabotAvisos = {};
+        for (const item of (data.items || [])) {
+            const clave = cleanArgPhone(item.tel);
+            if (clave) wabotAvisos[clave] = item;
+        }
+        renderPropuestas();
+    } catch (e) {
+        console.warn("No se pudo sincronizar el aviso de la mañana con el bot:", e);
+    }
+}
+setInterval(sincronizarAvisosBoceto, 10 * 60 * 1000);
+// Sin fetch nuevo: solo repinta para que la cuenta regresiva no quede vieja.
+setInterval(() => { if (Object.keys(wabotAvisos).length) renderPropuestas(); }, 60 * 1000);
+
+/** Estado del puntito para un boceto: null si no aplica (sin aviso o ya contestó). */
+function estadoAvisoBoceto(p) {
+    const clave = cleanArgPhone(p.telefono || p.contacto_cel);
+    const item = clave ? wabotAvisos[clave] : null;
+    if (!item) return null;
+    if (item.ultimo_cliente_ts > item.muestra_aviso_ts) return null; // ya contestó
+
+    const limite = (item.muestra_aviso_ts + 24 * 3600) * 1000;
+    const faltan = limite - Date.now();
+    if (faltan <= 0) return { vencido: true };
+
+    const h = Math.floor(faltan / 3600000);
+    const m = Math.floor((faltan % 3600000) / 60000);
+    return { vencido: false, texto: h > 0 ? `faltan ${h}h ${m}min` : `faltan ${m}min` };
+}
 
 /* El panel del bot nunca tiene scroll propio: o crece hasta su alto real y
    scrollea la página del admin (pestañas largas como Textos o Entrenamiento),
@@ -1998,9 +2045,14 @@ function renderPropuestas() {
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
+        const aviso = estadoAvisoBoceto(p);
         return `
             <tr class="client-row" data-row-prop-id="${p.id}" style="cursor:pointer">
-                <td>${escapeHtml(fecha)}</td>
+                <td>
+                    ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
+                    ${escapeHtml(fecha)}
+                    ${aviso && !aviso.vencido ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(aviso.texto)}</div>` : ""}
+                </td>
                 <td class="prop-col-marca">
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`
