@@ -2482,7 +2482,15 @@ function getInputValue(id) {
     return el ? el.value.trim() : "";
 }
 
-function getPropuestaCopyText(p) {
+const SLUG_ACENTOS = { "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u", "ñ": "n", "ü": "u" };
+function slugNegocio(nombre) {
+    return String(nombre || "")
+        .toLowerCase()
+        .replace(/[áéíóúñü]/g, c => SLUG_ACENTOS[c] || c)
+        .replace(/[^a-z0-9]/g, "");
+}
+
+function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const { nombreNegocio } = getPropuestaNegocioFields(p);
     const fondos = cleanFieldValue(p.color_fondos);
@@ -2492,7 +2500,21 @@ function getPropuestaCopyText(p) {
         ? cleanFieldValue(p.colores || p.colores_extra || "")
         : "";
 
-    return formatCopyRows([
+    let prefijo = "";
+    if (conInstruccionesDemo) {
+        const tipoWeb = getPropuestaTipoWeb(p);
+        const esComercioOCatalogo = /ecommerce|e-commerce|cat[aá]logo/i.test(tipoWeb);
+        const slug = slugNegocio(nombreNegocio) || "[definir-nombre-del-negocio]";
+        prefijo = [
+            "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
+            `Creá la carpeta del proyecto en DemosEnProceso/${slug}/.`,
+            esComercioOCatalogo
+                ? "Buscá en internet un máximo de 10 imágenes coherentes con el negocio; 6 de esas 10 tienen que ser fotos de productos específicos."
+                : "Buscá en internet un máximo de 10 imágenes coherentes con el negocio.",
+        ].join("\n") + "\n\n";
+    }
+
+    return prefijo + formatCopyRows([
         { title: "Nombre del negocio / marca", value: nombreNegocio },
         { title: "Sobre el negocio y qué quiere lograr con la web", value: getPropuestaSobreNegocio(p) },
         { title: "Adicionales elegidos", value: cleanFieldValue(p.adicionales_texto) },
@@ -2543,7 +2565,7 @@ async function copyPropuesta(id, btn) {
     if (!p) return;
 
     try {
-        await writeTextToClipboard(getPropuestaCopyText(p));
+        await writeTextToClipboard(getPropuestaCopyText(p, { conInstruccionesDemo: true }));
         if (btn) {
             const original = btn.textContent;
             btn.textContent = "Copiado";
