@@ -6,3 +6,4 @@ config/arca/*.key
 config/arca/*.crt
 config/arca/*.csr
 config/arca/ticket-*.json
+wabot/bot-config.json
