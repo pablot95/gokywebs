@@ -131,9 +131,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
- * Vista para imprimir todos los chats que ARRANCARON un día puntual (no los
- * activos ese día: el primer mensaje del cliente cayó ese día). Página HTML
- * lista para Ctrl+P, no un .txt — pensada para revisar en papel.
+ * Descarga en .txt todos los chats que ARRANCARON un día puntual (no los
+ * activos ese día: el primer mensaje del cliente cayó ese día). Mismo
+ * formato que export_chats, pero agrupado por día de inicio en vez de
+ * por actividad reciente.
  */
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'imprimir_chats') {
     $fecha = (string)($_GET['fecha'] ?? '');
@@ -155,63 +156,40 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     }
     usort($chats, function ($a, $b) { return (int)$a['chat_started_ts'] - (int)$b['chat_started_ts']; });
 
-    $eh = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
-    header('Content-Type: text/html; charset=utf-8');
-    header('Cache-Control: private, max-age=0, no-store');
-    ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Chats del <?= $eh($fecha) ?> — Gokywebs</title>
-<style>
-body { font: 14px/1.5 system-ui, sans-serif; color: #111; max-width: 780px; margin: 0 auto; padding: 24px 16px 60px; }
-h1 { font-size: 20px; margin-bottom: 4px; }
-.sub { color: #555; margin-bottom: 20px; }
-.no-print { margin-bottom: 20px; }
-.no-print button { font: inherit; padding: 8px 16px; cursor: pointer; }
-.chat { border: 1px solid #ccc; border-radius: 8px; padding: 14px 16px; margin-bottom: 22px; page-break-inside: avoid; }
-.chat h2 { font-size: 15px; margin: 0 0 4px; }
-.chat .meta { color: #555; font-size: 12.5px; margin-bottom: 10px; }
-.linea { margin: 3px 0; }
-.linea .hora { color: #888; font-size: 11.5px; }
-.linea .quien { font-weight: 700; }
-.linea.cliente .quien { color: #1d4ed8; }
-.linea.bot .quien, .linea.humano .quien { color: #15803d; }
-@media print { .no-print { display: none; } body { max-width: none; } }
-</style>
-</head>
-<body>
-<h1>Chats iniciados el <?= $eh($fecha) ?></h1>
-<p class="sub"><?= count($chats) ?> conversación<?= count($chats) === 1 ? '' : 'es' ?></p>
-<div class="no-print"><button onclick="window.print()">Imprimir</button></div>
-<?php if (!$chats): ?>
-    <p>No hay conversaciones que hayan arrancado ese día.</p>
-<?php endif; ?>
-<?php foreach ($chats as $cv): ?>
-    <?php
-    $nombre = wabot_nombre_agenda($cv) ?: 'Sin nombre';
-    $tel    = wabot_canal($cv) === 'instagram' ? ('Instagram: ' . wabot_channel_user_id($cv)) : wabot_formatear_tel($cv['tel'] ?? '');
-    $tipo   = wabot_tipo_label($cv['tipo'] ?? '', $cfg) ?: ($cv['tipo'] ?? '-');
-    ?>
-    <div class="chat">
-        <h2><?= $eh($nombre) ?></h2>
-        <div class="meta"><?= $eh($tel) ?> · fase: <?= $eh($cv['fase'] ?? '-') ?> · tipo: <?= $eh($tipo) ?><?= !empty($cv['handoff_pendiente']) ? ' · Pablo pendiente' : '' ?><?= !empty($cv['archivado']) ? ' · archivado' : '' ?></div>
-        <?php foreach ((array)($cv['transcript'] ?? []) as $linea): ?>
-            <?php
-            $q = $linea['q'] ?? '';
-            $quienLabel = ['cliente' => 'Cliente', 'bot' => 'Bot', 'humano' => 'Vos'][$q] ?? $q;
-            $horaLinea = !empty($linea['ts']) ? date('d/m H:i', (int)$linea['ts']) : '';
+    $bloques = [];
+    foreach ($chats as $cv) {
+        $nombre = wabot_nombre_agenda($cv) ?: 'Sin nombre';
+        $tel    = wabot_canal($cv) === 'instagram' ? ('IG:' . wabot_channel_user_id($cv)) : wabot_formatear_tel($cv['tel'] ?? '');
+        $tipo   = wabot_tipo_label($cv['tipo'] ?? '', $cfg) ?: ($cv['tipo'] ?? '-');
+
+        $lineas = [];
+        $lineas[] = str_repeat('=', 60);
+        $lineas[] = "Nombre: $nombre | Tel: $tel | Canal: " . wabot_canal($cv)
+                  . " | Fase: " . ($cv['fase'] ?? '-') . " | Tipo: $tipo"
+                  . (!empty($cv['handoff_pendiente']) ? ' | PABLO PENDIENTE' : '')
+                  . (!empty($cv['archivado']) ? ' | archivado' : '');
+        $lineas[] = str_repeat('=', 60);
+        foreach ((array)($cv['transcript'] ?? []) as $linea) {
+            $ts = (int)($linea['ts'] ?? 0);
+            $horaLinea = $ts ? date('d/m H:i', $ts) : '--/-- --:--';
+            $quien = ['cliente' => 'Cliente', 'bot' => 'Bot', 'humano' => 'Vos (Pablo)'][$linea['q'] ?? ''] ?? ($linea['q'] ?? '?');
             $texto = trim((string)($linea['t'] ?? ''));
-            if (!empty($linea['media']['clase'])) $texto .= ($texto !== '' ? ' ' : '') . '[adjunto: ' . $linea['media']['clase'] . ']';
-            ?>
-            <div class="linea <?= $eh($q) ?>"><span class="hora">[<?= $eh($horaLinea) ?>]</span> <span class="quien"><?= $eh($quienLabel) ?>:</span> <?= $eh($texto) ?></div>
-        <?php endforeach; ?>
-    </div>
-<?php endforeach; ?>
-</body>
-</html>
-<?php
+            if (!empty($linea['media']['clase'])) {
+                $texto .= ($texto !== '' ? ' ' : '') . '[adjunto: ' . $linea['media']['clase'] . ']';
+            }
+            $lineas[] = "[$horaLinea] $quien: $texto";
+        }
+        $bloques[] = implode("\n", $lineas);
+    }
+
+    $salida = $bloques
+        ? "Chats iniciados el $fecha — " . count($bloques) . " conversación" . (count($bloques) === 1 ? '' : 'es') . "\n\n" . implode("\n\n", $bloques) . "\n"
+        : "No hubo conversaciones que hayan arrancado el $fecha.\n";
+
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Content-Disposition: attachment; filename="wabot-chats-' . $fecha . '.txt"');
+    header('Cache-Control: private, max-age=0, no-store');
+    echo $salida;
     exit;
 }
 
@@ -998,13 +976,13 @@ body.embed { min-height: 0; }
         <div class="card">
             <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
                 <div>
-                    <strong>Imprimir chats de un día</strong>
-                    <p class="meta">Página lista para Ctrl+P con los chats que ARRANCARON ese día, charla completa.</p>
+                    <strong>Chats de un día en .txt</strong>
+                    <p class="meta">Descarga los chats que ARRANCARON ese día, charla completa.</p>
                 </div>
-                <form method="get" action="admin.php" target="_blank" class="fila" style="gap:8px">
+                <form method="get" action="admin.php" class="fila" style="gap:8px">
                     <input type="hidden" name="accion" value="imprimir_chats">
                     <input type="date" name="fecha" value="<?= date('Y-m-d') ?>" required style="width:auto;background:#10131f;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit">
-                    <button type="submit" class="sec">Imprimir</button>
+                    <button type="submit" class="sec">Descargar</button>
                 </form>
             </div>
         </div>
