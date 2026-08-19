@@ -2956,9 +2956,9 @@ async function presentarPropuesta(propId) {
     const linkedLead = p.presupuestoId ? leads.find(l => l.id === p.presupuestoId) : null;
     const valor = p.precioTotal || linkedLead?.totalPrice || 0;
 
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const hablarleElDia = tomorrow.toISOString().split("T")[0];
+    const en72Horas = new Date();
+    en72Horas.setDate(en72Horas.getDate() + 3);
+    const hablarleElDia = en72Horas.toISOString().split("T")[0];
 
     // Snapshot completo del boceto: como acto seguido borramos la propuesta original,
     // esta es la única copia que queda. Guardar TODO evita perder campos (rubro,
