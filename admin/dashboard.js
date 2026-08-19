@@ -1598,6 +1598,7 @@ function briefDetailHTML(src) {
     const adicionales = cleanFieldValue(src.adicionales_texto || src.adicionalesTexto || "");
     const ciudad    = cleanFieldValue(src.ciudad_zona || src.ciudadZona || "");
     const cantCursos= cleanFieldValue(src.cant_cursos || src.cantCursos || "");
+    const imagenes  = Number(src.imagenes_recibidas || src.imagenesRecibidas || 0);
     const colores   = cleanFieldValue(src.colores || src.colores_extra || "");
     const fondos    = cleanFieldValue(src.color_fondos || src.colorFondos || "");
     const principal = cleanFieldValue(src.color_principal || src.colorPrincipal || "");
@@ -1629,6 +1630,7 @@ function briefDetailHTML(src) {
         row("Adicionales elegidos", adicionales, true),
         row("Ciudad / zona", ciudad),
         row("Cantidad de cursos", cantCursos),
+        row("Imágenes que mandó", imagenes > 0 ? String(imagenes) : ""),
         row("Colores", colores, true),
         row("Fondos", fondos),
         row("Color principal", principal),
@@ -2063,6 +2065,9 @@ function renderPropuestas() {
                         ? `<div style="margin-top:5px"><span style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap">✓ Quiere la muestra</span></div>`
                         : p.confirmoMuestra === false
                         ? `<div style="margin-top:5px"><span style="background:rgba(245,158,11,.13);color:#F59E0B;border:1px solid rgba(245,158,11,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Vio el precio pero no confirmó — priorizá los verdes">Solo vio precio</span></div>`
+                        : ""}
+                    ${Number(p.imagenes_recibidas || 0) > 0
+                        ? `<div style="margin-top:5px"><span class="muted" style="font-size:11px" title="Cantidad de imágenes que mandó por WhatsApp/Instagram">📷 ${Number(p.imagenes_recibidas)}</span></div>`
                         : ""}
                 </td>
                 <td class="prop-col-contacto">
@@ -2522,6 +2527,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Ciudad / zona", value: p.ciudad_zona || "" },
         { title: "Objetivos seleccionados", value: objetivosTexto },
         { title: "Cantidad de cursos", value: p.cant_cursos || "" },
+        { title: "Imágenes que mandó por WhatsApp/Instagram", value: Number(p.imagenes_recibidas || 0) > 0 ? String(p.imagenes_recibidas) : "" },
         { title: "Color de fondos", value: fondos },
         { title: "Color principal", value: principal },
         { title: "Color secundario", value: secundario },

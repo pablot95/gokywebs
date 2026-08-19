@@ -747,6 +747,7 @@ $cLead['canal'] = 'whatsapp';
 $cLead['nombre'] = 'Ana Prueba';
 $cLead['tipo'] = 'catalogo';
 $cLead['productos_cantidad'] = 40;
+$cLead['imagenes_recibidas'] = 3;
 $cLead['descripcion'] = 'vende ropa';
 $cLead['colores'] = 'negro y verde';
 $cLead['colores_hex'] = ['principal' => '#000000', 'secundario' => '#00AA00', 'fondos' => '#FFFFFF'];
@@ -757,6 +758,7 @@ $campos = wabot_lead_campos($cLead, $cfg, false);
 $valor = function ($k) use ($campos) { $v = $campos[$k] ?? null; return $v ? reset($v) : null; };
 
 caso('la cantidad de productos llega al boceto', $valor('productos_cantidad') === '40');
+caso('la cantidad de imágenes que mandó también', $valor('imagenes_recibidas') === '3');
 caso('y el precio cotizado también', $valor('presupuesto_cotizado') === '$220.000');
 caso('el nombre del cliente no viaja vacío', $valor('nombre') === 'Ana Prueba');
 caso('el rubro sale del brief', $valor('rubro') === 'Indumentaria');

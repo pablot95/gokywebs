@@ -114,6 +114,7 @@ function wabot_procesar_entrante($ev, $cfg) {
         $bin = wabot_bajar_media($canal, $media);
         if ($bin) {
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], 'imagen');
+            $conv['imagenes_recibidas'] = (int)($conv['imagenes_recibidas'] ?? 0) + 1;
             if (!empty($cfg['leer_imagenes'])) {
                 $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'imagen', $media['caption']);
                 if ($desc !== null) {

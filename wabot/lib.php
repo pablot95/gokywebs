@@ -601,6 +601,7 @@ function wabot_conv_load($clave) {
         'colores_hex'      => null,
         'referencia'       => null,
         'productos_cantidad' => null,
+        'imagenes_recibidas' => 0,
         'precio_dado'      => false,
         'objecion_dicha'   => [],
         'referencia_preguntada' => false,
@@ -698,6 +699,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
         $conv[$k] = null;
     }
     $conv['fase'] = 'nuevo';
+    $conv['imagenes_recibidas'] = 0;
     $conv['precio_dado'] = false;
     $conv['objecion_dicha'] = [];
     $conv['referencia_preguntada'] = false;
@@ -2495,6 +2497,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'tipoDetectado'      => ['stringValue' => $tipo],
         'tipoDetectadoLabel' => ['stringValue' => $label],
         'productos_cantidad' => ['integerValue' => (string)$productos],
+        'imagenes_recibidas' => ['integerValue' => (string)((int)($conv['imagenes_recibidas'] ?? 0))],
         'presupuesto_cotizado' => ['stringValue' => $cotizado],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],
