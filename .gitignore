@@ -7,3 +7,6 @@ config/arca/*.crt
 config/arca/*.csr
 config/arca/ticket-*.json
 wabot/bot-config.json
+demo/*
+!demo/track.js
+!demo/track.php
