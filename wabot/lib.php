@@ -219,6 +219,8 @@ function wabot_config_ventas(&$cfg) {
         // {demo} se reemplaza por el link de la demo ya presentada.
         'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos: {demo}. Contame qué te pareció o si hay algo que te gustaría cambiar.',
         'muestra_aviso' => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
+        // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
+        'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
     ];
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
@@ -286,6 +288,13 @@ function wabot_config_ventas(&$cfg) {
     $procesoViejo = 'Primero te armamos una muestra gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.';
     if (trim((string)($cfg['info']['proceso'] ?? '')) === $procesoViejo) {
         $cfg['info']['proceso'] = 'Primero te armamos una demo gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.';
+    }
+
+    // Ahora también pedimos el nombre del negocio: el texto viejo (sin
+    // {faltan}) se pisa por el nuevo para que la lista de lo que falta entre.
+    $predisenoViejo = 'El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito solo dos cosas: una descripción breve de lo que ofrecés, y los colores de tu marca. Pasámelos por acá y te lo preparamos.';
+    if (trim((string)($cfg['prediseno'] ?? '')) === $predisenoViejo) {
+        $cfg['prediseno'] = "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.";
     }
 }
 
@@ -575,6 +584,30 @@ function wabot_nombre_agenda($conv) {
         return $negocio . ' - ' . $persona;
     }
     return $negocio !== '' ? $negocio : $persona;
+}
+
+/** Qué le falta pedir para el prediseño: nunca lo que el cliente ya dio. */
+function wabot_prediseno_faltan($conv) {
+    $items = [];
+    if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
+    if (trim((string)($conv['descripcion']    ?? '')) === '') $items[] = 'Una descripción breve de lo que ofrecés';
+    if (trim((string)($conv['colores']        ?? '')) === '') $items[] = 'Los colores de tu marca';
+    return $items;
+}
+
+/**
+ * El ofrecimiento del prediseño, con la lista de lo que realmente falta —
+ * saltos de línea de verdad, no a criterio del modelo. Si ya se sabe todo
+ * (nombre detectado antes en la charla, por ejemplo), no hay nada que listar.
+ */
+function wabot_prediseno_texto($conv, $cfg) {
+    $faltan = wabot_prediseno_faltan($conv);
+    if (!$faltan) {
+        return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
+    }
+    $lista = implode("\n", array_map(function ($i) { return "- $i"; }, $faltan));
+    $base  = (string)($cfg['prediseno'] ?? '');
+    return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 }
 
 function wabot_conv_load($clave) {

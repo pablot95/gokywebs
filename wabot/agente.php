@@ -356,6 +356,7 @@ function wabot_agente_tools($cerrada = false) {
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
+                    'nombre_negocio' => ['type' => 'string', 'description' => 'El nombre del negocio o marca, tal como lo dijo. No lo inventes ni lo saques del rubro.'],
                     'descripcion' => ['type' => 'string', 'description' => 'Qué ofrece el cliente, con sus palabras.'],
                     'colores'     => ['type' => 'string', 'description' => 'Los colores de su marca, tal como los dijo.'],
                     'referencia'  => ['type' => 'string', 'description' => 'La web o el estilo que nombró, con SUS palabras y sin resumir.'],
@@ -364,10 +365,11 @@ function wabot_agente_tools($cerrada = false) {
         ],
         [
             'name' => 'guardar_prediseno',
-            'description' => 'Guardá los datos del prediseño. Antes de llamarla tenés que tener las tres cosas: descripción de lo que ofrece, colores de su marca, y haberle preguntado por una web de referencia o un estilo. Cierra la charla y la toma una persona.',
+            'description' => 'Guardá los datos del prediseño. Antes de llamarla tenés que tener las cuatro cosas: nombre del negocio, descripción de lo que ofrece, colores de su marca, y haberle preguntado por una web de referencia o un estilo. Cierra la charla y la toma una persona.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
+                    'nombre_negocio' => ['type' => 'string', 'description' => 'El nombre del negocio o marca, tal como lo dijo.'],
                     'descripcion' => ['type' => 'string', 'description' => 'Qué ofrece el cliente, resumido en una línea.'],
                     'colores'     => ['type' => 'string', 'description' => 'Los colores de su marca, tal como los dijo.'],
                     'referencia'  => ['type' => 'string', 'description' => 'La web que le gustó y el estilo que describió, con SUS palabras y sin resumir: si dijo "royalcanin, limpia y con muchas fotos", guardá eso entero, porque el detalle visual es lo que sirve para diseñar. Cadena vacía solo si dijo que no tiene ninguna.'],
@@ -464,7 +466,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
             if ($clave === 'prediseno') {
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);
-                return ['texto' => $cfg['prediseno'], 'nota' => 'Pedile la descripción y los colores.'];
+                return ['texto' => wabot_prediseno_texto($conv, $cfg), 'nota' => 'Pedile de a una lo que falte: nombre del negocio, descripción, colores.'];
             }
             // El mantenimiento cambia de precio y de link según lo cotizado.
             if ($clave === 'mantenimiento') {
@@ -531,8 +533,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
                 return ['error' => 'Todavía no le diste el precio. Antes de guardar el prediseño, llamá a dar_precio con el tipo que ya identificaste.',
                         'anotado' => wabot_agente_ficha($conv)];
             }
-            if (($conv['descripcion'] ?? '') === '' || ($conv['colores'] ?? '') === '') {
-                return ['error' => 'Faltan datos: necesito descripción y colores.',
+            if (($conv['descripcion'] ?? '') === '' || ($conv['colores'] ?? '') === '' || trim((string)($conv['nombre_negocio'] ?? '')) === '') {
+                return ['error' => 'Faltan datos: necesito nombre del negocio, descripción y colores.',
                         'anotado' => wabot_agente_ficha($conv)];
             }
             // En Instagram falta el teléfono: se pide antes de cerrar, si no el
@@ -680,6 +682,10 @@ function wabot_agente_anotar($args, &$conv) {
         $v = trim((string)($args[$k] ?? ''));
         if ($v !== '') $conv[$k] = $v;
     }
+    if (trim((string)($args['nombre_negocio'] ?? '')) !== '') {
+        $limpio = wabot_nombre_negocio_limpiar($args['nombre_negocio']);
+        if ($limpio !== '') $conv['nombre_negocio'] = $limpio;
+    }
     if (array_key_exists('referencia', $args)) {
         $ref = trim((string)$args['referencia']);
         if ($ref !== '' && !wabot_es_negativa($ref) && !wabot_apunta_a_lo_ya_dicho($ref)) {
@@ -694,6 +700,7 @@ function wabot_agente_anotar($args, &$conv) {
 /** Qué datos del prediseño ya están, para que el modelo no los vuelva a pedir. */
 function wabot_agente_ficha($conv) {
     return [
+        'nombre_negocio' => (string)($conv['nombre_negocio'] ?? ''),
         'descripcion' => (string)($conv['descripcion'] ?? ''),
         'colores'     => (string)($conv['colores'] ?? ''),
         'referencia'  => (string)($conv['referencia'] ?? ''),
@@ -775,13 +782,15 @@ REGLAS QUE NO PODÉS ROMPER
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
-Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio. Si muerde, pedile tres cosas, de a una por mensaje:
-1. Una descripción breve de lo que ofrece.
-2. Los colores de su marca.
-3. Si tiene alguna página de referencia que le haya gustado, o algún estilo pensado. Aclarale que puede ser de cualquier rubro y que si no tiene ninguna no hay problema.
-APENAS el cliente te contesta una de las tres, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlas las tres: si la charla se corta y no lo anotaste, ese dato se pierde y después se lo terminamos pidiendo de nuevo, que es lo peor que nos puede pasar.
-Cuando tengas las tres respuestas (la tercera puede ser "no tengo"), llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos, ni formularios.
-Si el cliente ya te había pasado una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
+Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio. Si muerde, pedile cuatro cosas, de a una por mensaje:
+1. El nombre de su negocio o marca.
+2. Una descripción breve de lo que ofrece.
+3. Los colores de su marca.
+4. Si tiene alguna página de referencia que le haya gustado, o algún estilo pensado. Aclarale que puede ser de cualquier rubro y que si no tiene ninguna no hay problema.
+El texto que le mandás al ofrecer el prediseño ya lista, con saltos de línea, solo lo que realmente falta (algún dato puede venir de antes en la charla). No repitas esa lista con otras palabras: mandá ese texto tal cual y después pedí el resto de a uno.
+APENAS el cliente te contesta uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde y después se lo terminamos pidiendo de nuevo, que es lo peor que nos puede pasar. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.
+Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos, ni formularios.
+Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.

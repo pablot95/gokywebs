@@ -1721,5 +1721,28 @@ $inicioChat['chat_started_ts'] = 123456;
 wabot_conv_transcript($inicioChat, 'cliente', 'Volví');
 caso('la fecha de inicio no cambia con mensajes posteriores', $inicioChat['chat_started_ts'] === 123456);
 
+echo "— Qué falta pedir para el prediseño —\n";
+
+$cfgPredis = wabot_config_load();
+
+caso('sin nada conocido, pide las tres cosas',
+    wabot_prediseno_faltan(['nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+        'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
+    ]);
+caso('lo que ya se sabe no se vuelve a pedir',
+    wabot_prediseno_faltan(['nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
+        'Una descripción breve de lo que ofrecés',
+    ]);
+caso('con las tres cosas ya sabidas, no falta nada',
+    wabot_prediseno_faltan(['nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
+
+$textoConFaltantes = wabot_prediseno_texto(['nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
+caso('el texto lista lo que falta con saltos de línea reales',
+    strpos($textoConFaltantes, "- El nombre de tu negocio\n- Una descripción breve de lo que ofrecés\n- Los colores de tu marca") !== false);
+
+$textoSinFaltantes = wabot_prediseno_texto(['nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón'], $cfgPredis);
+caso('si ya se sabe todo, el texto no lista nada',
+    strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

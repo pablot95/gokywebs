@@ -60,14 +60,19 @@ caso('info desconocida → cae en la respuesta de escape', $r['texto'] === $cfg[
 
 $c = convNueva();
 $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
-$r = wabot_agente_ejecutar('guardar_prediseno', ['descripcion' => 'ropa deportiva', 'colores' => 'negro y verde'], $c, $cfg);
-caso('guardar_prediseno con los 2 datos → crea el lead, cierra y deriva',
+$r = wabot_agente_ejecutar('guardar_prediseno', ['nombre_negocio' => 'Deportes Andina', 'descripcion' => 'ropa deportiva', 'colores' => 'negro y verde'], $c, $cfg);
+caso('guardar_prediseno con los 3 datos → crea el lead, cierra y deriva',
     !empty($r['terminal']) && $c['lead_creado'] === true && $c['fase'] === 'derivado'
     && $c['descripcion'] === 'ropa deportiva');
 
 $c = convNueva();
-$r = wabot_agente_ejecutar('guardar_prediseno', ['descripcion' => 'algo', 'colores' => ''], $c, $cfg);
+$r = wabot_agente_ejecutar('guardar_prediseno', ['nombre_negocio' => 'Algo', 'descripcion' => 'algo', 'colores' => ''], $c, $cfg);
 caso('guardar_prediseno sin colores → error, no crea lead', isset($r['error']) && empty($c['lead_creado']));
+
+$c = convNueva();
+$c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
+$r = wabot_agente_ejecutar('guardar_prediseno', ['descripcion' => 'ropa deportiva', 'colores' => 'negro y verde'], $c, $cfg);
+caso('guardar_prediseno sin nombre del negocio → error, no crea lead', isset($r['error']) && empty($c['lead_creado']));
 
 $c = convNueva();
 $c['transcript'][] = ['q'=>'cliente','t'=>'quiero hablar con Pablo','ts'=>time()];
@@ -392,7 +397,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 
 $c = convNueva();
 $c['tipo'] = 'ecommerce'; $c['fase'] = 'prediseno'; $c['precio_dado'] = true;
-wabot_agente_ejecutar('anotar_prediseno', ['descripcion'=>'mates','colores'=>'marron','referencia'=>'no'], $c, $cfg);
+wabot_agente_ejecutar('anotar_prediseno', ['nombre_negocio'=>'Mates del Sur','descripcion'=>'mates','colores'=>'marron','referencia'=>'no'], $c, $cfg);
 $r = wabot_agente_ejecutar('guardar_prediseno', [], $c, $cfg);
 caso('el cierre deja la charla derivada', $c['fase'] === 'derivado' && $r['texto'] === $cfg['prediseno_completo']);
 
