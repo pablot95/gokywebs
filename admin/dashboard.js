@@ -2099,6 +2099,7 @@ function renderPropuestas() {
                 </td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-prop-copy="${p.id}" style="font-size:13px">Copiar</button>
+                    <!--
                     <span style="position:relative;display:inline-block">
                         <button type="button" class="btn-ghost" data-prop-img-toggle="${p.id}" style="font-size:13px" title="Prompts de imágenes (Lan / Ecom / 6 / 10)">🖼</button>
                         <span class="prop-img-menu" data-prop-img-menu="${p.id}" hidden style="position:absolute;top:100%;left:0;z-index:20;display:flex;gap:4px;background:#171a2b;border:1px solid #2a2f4a;border-radius:8px;padding:6px;margin-top:4px;white-space:nowrap">
@@ -2108,6 +2109,7 @@ function renderPropuestas() {
                             <button class="btn-ghost btn-image-prompt-zip" data-prop-ecom-zip="${p.id}" style="font-size:13px" title="Copiar el pedido de armar el ZIP con las 10 imágenes">10</button>
                         </span>
                     </span>
+                    -->
                     <button class="btn-toggle-prop${p.bocetoHecho ? ' active' : ''}" data-prop-boceto="${p.id}" style="font-size:13px">Boceto hecho</button>
                     <button class="btn-presentada-prop" data-prop-presentada="${p.id}" style="font-size:13px">Presentar</button>
                     <button class="icon-btn" data-agenda-nombre="${escapeHtml(p.nombre || p.contacto_nombre || '')}" data-agenda-proyecto="${escapeHtml(p.nombre_negocio || p.rubro || '')}" title="Agregar al calendario">📅</button>
