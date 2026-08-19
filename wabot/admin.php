@@ -164,7 +164,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','desempate_cursos','desempate_turnos','desempate_comercio','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','presentados_recordatorio'] as $k) {
+        foreach (['menu','def_tipos','contame','desempate_cursos','desempate_turnos','desempate_comercio','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','presentados_recordatorio','muestra_aviso'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -194,6 +194,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_horas'])) {
             $cfg['seguimiento_horas'] = max(0.5, min(22, (float)$_POST['seguimiento_horas']));
         }
+        $cfg['muestra_aviso_activo'] = !empty($_POST['muestra_aviso_activo']);
         if (isset($_POST['presentados_recordatorio_horas'])) {
             $cfg['presentados_recordatorio_horas'] = max(1, min(168, (float)$_POST['presentados_recordatorio_horas']));
         }
@@ -1076,6 +1077,16 @@ body.embed { min-height: 0; }
             </p>
             <label>Seguimiento después de dar el precio</label><textarea name="seguimiento_precio" rows="3"><?= $e($cfg['seguimiento_precio'] ?? '') ?></textarea>
             <label>Seguimiento cuando faltan datos</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Aviso antes de la muestra</h2>
+            <p class="meta" style="margin-bottom:8px">El prediseño tarda 24 a 48 h y Meta solo deja mandar texto libre dentro de las 24 h desde el último mensaje del cliente. Esto manda un aviso corto antes de que esa ventana se cierre (a las 8:00 del día siguiente, o un rato antes de que cierre si eso ya es tarde) para que el cliente conteste algo y quede lugar para mandarle la muestra real ese mismo día.</p>
+            <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
+                <input type="checkbox" name="muestra_aviso_activo" value="1" <?= !empty($cfg['muestra_aviso_activo']) ? 'checked' : '' ?> style="width:auto">
+                Mandar el aviso previo
+            </label>
+            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento y las muestras presentadas (<code>wabot/seguimiento.php</code>).</p>
+            <label>Mensaje del aviso</label><textarea name="muestra_aviso" rows="2"><?= $e($cfg['muestra_aviso'] ?? '') ?></textarea>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Muestras presentadas</h2>

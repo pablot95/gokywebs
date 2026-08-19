@@ -1430,6 +1430,58 @@ $presArchivarConfirmado = $presArchivar; $presArchivarConfirmado['presentado_con
 caso('si ya confirmó, nunca se archiva solo por inactividad',
     !wabot_presentado_archivar_corresponde($presArchivarConfirmado, $cfgPres, $ahoraPres));
 
+echo "— Aviso antes de que cierre la ventana de la muestra —\n";
+
+$cfgAviso = $cfg; $cfgAviso['muestra_aviso_activo'] = true; $cfgAviso['muestra_aviso'] = 'Hola {nombre}, tu muestra va a estar lista hoy.';
+
+$clienteManana = gmmktime(11, 0, 0, 8, 19, 2026); // 8:00 hora AR
+$limiteManana = $clienteManana + 24 * 3600;
+$candManana = wabot_muestra_aviso_hora_candidata($clienteManana, $limiteManana);
+caso('si escribió a las 8 de la mañana, el aviso cae justo antes de que cierre la ventana (no a las 8am del día siguiente)',
+    $candManana === $limiteManana - 30 * 60);
+
+$clienteTarde = gmmktime(18, 0, 0, 8, 19, 2026); // 15:00 hora AR
+$limiteTarde = $clienteTarde + 24 * 3600;
+$candTarde = wabot_muestra_aviso_hora_candidata($clienteTarde, $limiteTarde);
+caso('si escribió a la tarde, el aviso cae a las 8am del día siguiente (con margen de sobra antes del cierre)',
+    $candTarde === $limiteTarde - 7 * 3600 && $candTarde < $limiteTarde - 30 * 60);
+
+$clienteMadrugada = gmmktime(5, 0, 0, 8, 19, 2026); // 2:00 hora AR
+$limiteMadrugada = $clienteMadrugada + 24 * 3600;
+$candMadrugada = wabot_muestra_aviso_hora_candidata($clienteMadrugada, $limiteMadrugada);
+caso('si escribió de madrugada, nunca manda el aviso después de que cierra la ventana',
+    $candMadrugada < $limiteMadrugada);
+
+$ahoraAv = $limiteManana - 20 * 60; // 20 min antes del cierre: ya pasó el candidato (30 min antes)
+$avEnVentana = conv_nueva();
+$avEnVentana['fase'] = 'derivado';
+$avEnVentana['lead_creado'] = true;
+$avEnVentana['ultimo_cliente_ts'] = $clienteManana;
+caso('con la ventana por cerrarse y todavía sin avisar, corresponde mandar el aviso',
+    wabot_muestra_aviso_corresponde($avEnVentana, $cfgAviso, $ahoraAv) === true);
+
+$avTemprano = $avEnVentana;
+caso('mucho antes del horario elegido, todavía no corresponde',
+    !wabot_muestra_aviso_corresponde($avTemprano, $cfgAviso, $clienteManana + 3600));
+
+$avYaEnviado = $avEnVentana; $avYaEnviado['muestra_aviso_enviado'] = true;
+caso('el aviso se manda una sola vez', !wabot_muestra_aviso_corresponde($avYaEnviado, $cfgAviso, $ahoraAv));
+
+$avYaPresentada = $avEnVentana; $avYaPresentada['presentado_ts'] = $ahoraAv;
+caso('si ya se presentó la muestra, no hace falta el aviso previo',
+    !wabot_muestra_aviso_corresponde($avYaPresentada, $cfgAviso, $ahoraAv));
+
+$avSinLead = $avEnVentana; $avSinLead['lead_creado'] = false;
+caso('sin lead creado (no pidió muestra todavía) no corresponde',
+    !wabot_muestra_aviso_corresponde($avSinLead, $cfgAviso, $ahoraAv));
+
+$avOtraFase = $avEnVentana; $avOtraFase['fase'] = 'precio';
+caso('fuera de la fase derivado no corresponde', !wabot_muestra_aviso_corresponde($avOtraFase, $cfgAviso, $ahoraAv));
+
+$avVentanaCerrada = $avEnVentana;
+caso('con la ventana ya cerrada, no tiene sentido mandarlo',
+    !wabot_muestra_aviso_corresponde($avVentanaCerrada, $cfgAviso, $limiteManana + 3600));
+
 echo "— Emojis y reacciones dicen algo, no se pierden —\n";
 
 caso('un pulgar arriba solo → "si"', wabot_emoji_a_texto('👍') === 'si');

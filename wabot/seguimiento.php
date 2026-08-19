@@ -30,6 +30,7 @@ if (php_sapi_name() !== 'cli') {
 
 $cfg = wabot_config_load();
 $res = wabot_seguimiento_correr($cfg);
+$aviso = wabot_muestra_aviso_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
 
 echo json_encode([
@@ -37,6 +38,11 @@ echo json_encode([
     'enviados'  => $res['enviados'],
     'fallidos'  => $res['fallidos'],
     'detalle'   => $res['detalle'],
+    'muestra_aviso' => [
+        'revisadas' => $aviso['revisadas'],
+        'enviados'  => $aviso['enviados'],
+        'detalle'   => $aviso['detalle'],
+    ],
     'presentados' => [
         'revisadas'     => $presentados['revisadas'],
         'recordatorios' => $presentados['recordatorios'],

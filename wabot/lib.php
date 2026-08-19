@@ -218,6 +218,7 @@ function wabot_config_ventas(&$cfg) {
         'sistema_cierre'    => 'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.',
         // {muestra} se reemplaza por el link de la muestra ya presentada.
         'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la muestra que te preparamos: {muestra}. Contame qué te pareció o si hay algo que te gustaría cambiar.',
+        'muestra_aviso' => 'Hola {nombre}, buen día! Tu muestra va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
     ];
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
@@ -226,6 +227,7 @@ function wabot_config_ventas(&$cfg) {
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 48;
     if (!isset($cfg['presentados_archivar_horas']))     $cfg['presentados_archivar_horas']     = 168;
+    if (!isset($cfg['muestra_aviso_activo'])) $cfg['muestra_aviso_activo'] = true;
 
     if (in_array(trim((string)($cfg['derivar'] ?? '')), [
         'Listo, te paso con una persona del equipo que sigue la charla desde acá.',
@@ -569,6 +571,10 @@ function wabot_conv_load($clave) {
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
         'cliente_id'             => null,
+        // Aviso mandado antes de que se cierre la ventana de 24h de Meta,
+        // mientras se espera para presentar la muestra: ver wabot_muestra_aviso_correr().
+        'muestra_aviso_enviado' => false,
+        'muestra_aviso_ts'      => 0,
         'espera_avisada'   => false,
         'no_texto_avisado' => false,
         'bot_off'          => false,
@@ -660,6 +666,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
     $conv['cliente_id'] = null;
+    $conv['muestra_aviso_enviado'] = false;
+    $conv['muestra_aviso_ts'] = 0;
     $conv['espera_avisada'] = false;
     $conv['no_texto_avisado'] = false;
     $conv['lead_creado'] = false;
@@ -2119,6 +2127,91 @@ function wabot_seguimiento_correr($cfg, $ahora = null) {
 function wabot_seguimiento_estado_cron() {
     $j = json_decode((string)@file_get_contents(WABOT_DATA . '/seguimiento-estado.json'), true);
     return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'enviados' => 0, 'fallidos' => 0];
+}
+
+/* ───────────────────── Aviso previo a la muestra ─────────────────────
+ *
+ * El prediseño tarda 24 a 48 h, y Meta solo deja mandar texto libre dentro
+ * de las 24 h desde el último mensaje del cliente. Si el cliente escribió y
+ * no vuelve a escribir, para cuando la muestra está lista la ventana ya
+ * cerró y "Presentar" no puede avisarle.
+ *
+ * Este módulo manda, una sola vez, un aviso corto antes de que esa ventana
+ * se cierre — con suerte el cliente contesta algo y la ventana se renueva,
+ * dejando lugar para el mensaje real de la muestra más tarde ese mismo día.
+ * Elige el horario así: preferentemente a las 8:00 del día siguiente a que
+ * escribió, pero si eso ya cae muy cerca (o después) del cierre de la
+ * ventana, lo manda un rato antes de que cierre en vez de esperar.
+ */
+
+function wabot_muestra_aviso_hora_candidata($ultimoClienteTs, $limite) {
+    // Argentina no tiene horario de verano: UTC-3 fijo. Todo se calcula a
+    // mano en el "reloj local" corrido -3h, sin depender de la zona horaria
+    // que tenga configurada el servidor (strtotime() sí dependería de eso).
+    $margenSeguridad = 30 * 60;
+    $limiteConMargen = $limite - $margenSeguridad;
+
+    $localTs = $ultimoClienteTs - 3 * 3600;
+    $medianocheLocalMismoDia = $localTs - ($localTs % 86400);
+    $ochoAMDiaSiguienteUtc = $medianocheLocalMismoDia + 86400 + 8 * 3600 + 3 * 3600;
+
+    return min($ochoAMDiaSiguienteUtc, $limiteConMargen);
+}
+
+function wabot_muestra_aviso_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || empty($cfg['muestra_aviso_activo'])) return false;
+    if (empty($cv['lead_creado']) || ($cv['fase'] ?? '') !== 'derivado') return false;
+    if (!empty($cv['presentado_ts']) || !empty($cv['muestra_aviso_enviado'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+
+    $ultimoCliente = (int)($cv['ultimo_cliente_ts'] ?? 0);
+    if ($ultimoCliente <= 0) return false;
+    $limite = $ultimoCliente + 24 * 3600;
+    if ($ahora >= $limite) return false; // la ventana ya cerró, no hay nada que avisar
+
+    $candidato = wabot_muestra_aviso_hora_candidata($ultimoCliente, $limite);
+    return $ahora >= $candidato;
+}
+
+/** Recorre las conversaciones que piden avisar antes de que cierre la ventana. */
+function wabot_muestra_aviso_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (($cv['fase'] ?? '') !== 'derivado' || empty($cv['lead_creado'])) continue;
+        $res['revisadas']++;
+
+        if (!wabot_muestra_aviso_corresponde($cv, $cfg, $ahora)) continue;
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_muestra_aviso_corresponde($cv, $cfg, $ahora)) continue;
+
+            $texto = trim(wabot_personalizar($cfg['muestra_aviso'] ?? '', $cv));
+            if ($texto === '') continue;
+            $cv['muestra_aviso_ts'] = $ahora;
+            $ok = wabot_enviar($cv, $texto);
+            if ($ok) {
+                $cv['muestra_aviso_enviado'] = true;
+                wabot_conv_transcript($cv, 'bot', $texto);
+                wabot_evento($cv, 'muestra_aviso_enviado');
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('muestra_aviso', ['tel' => $cv['tel'], 'ok' => $ok]);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
 }
 
 /* ──────────────────────── Muestras presentadas ────────────────────────
