@@ -779,13 +779,18 @@ function wabot_lista_items() {
  * En qué columna de Conversaciones va cada chat. Excluyentes y por prioridad:
  * si el cliente escribió y el bot no le va a contestar, eso manda sobre todo.
  *
- * atencion → el cliente está esperando que le conteste una persona.
- * muestra  → pidió el prediseño y ya pasó los datos: es cola de trabajo.
- * chat     → el bot la está llevando, no hay nada que hacer.
+ * atencion    → el cliente está esperando que le conteste una persona.
+ * presentados → ya se le mandó la muestra, esperando que confirme algo.
+ * muestra     → pidió el prediseño y ya pasó los datos: es cola de trabajo.
+ * chat        → el bot la está llevando, no hay nada que hacer.
  */
 function wabot_conv_grupo($cv) {
     // Archivado gana sobre todo: Pablo lo sacó a mano de la vista de trabajo.
     if (!empty($cv['archivado'])) return 'archivado';
+
+    // Ya se le mandó la muestra y todavía no confirmó nada: deja de ser
+    // trabajo pendiente de diseño (Muestras) y pasa a esperar al cliente.
+    if (!empty($cv['presentado_ts']) && empty($cv['presentado_confirmado'])) return 'presentados';
 
     // Un prediseño cerrado NO es una promesa de atención pendiente: es un
     // boceto para diseñar, y su lugar es la cola de Muestras. Se evalúa ANTES
@@ -2322,20 +2327,6 @@ function wabot_presentados_correr($cfg, $ahora = null) {
 function wabot_presentados_estado_cron() {
     $j = json_decode((string)@file_get_contents(WABOT_DATA . '/presentados-estado.json'), true);
     return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'recordatorios' => 0, 'archivados' => 0];
-}
-
-/** Conversaciones con muestra presentada, todavía sin confirmar ni archivar. */
-function wabot_presentados_listar() {
-    $items = [];
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
-        $clave = basename($f, '.json');
-        if (stripos($clave, 'TEST') !== false) continue;
-        $cv = wabot_conv_load($clave);
-        if (empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado']) || !empty($cv['archivado'])) continue;
-        $items[] = $cv;
-    }
-    usort($items, function ($a, $b) { return (int)$a['presentado_ts'] - (int)$b['presentado_ts']; });
-    return $items;
 }
 
 /* ─────────────────── Lead a Firestore (colección propuestas) ─────────── */

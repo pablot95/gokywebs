@@ -987,6 +987,16 @@ $base = ['canal'=>'whatsapp','fase'=>'derivado','bot_off'=>false,'pausado_hasta'
          'transcript'=>[['q'=>'bot','t'=>'Listo, con eso ya lo preparamos.','ts'=>1]]];
 caso('una muestra recién cerrada está en Muestras', wabot_conv_grupo($base) === 'muestra');
 
+// Una vez presentada, sale de Muestras y pasa a su propia columna.
+$presentadaSinConfirmar = $base;
+$presentadaSinConfirmar['presentado_ts'] = time();
+caso('una muestra ya presentada sin confirmar va a Presentados, no a Muestras',
+    wabot_conv_grupo($presentadaSinConfirmar) === 'presentados');
+$presentadaConfirmada = $presentadaSinConfirmar;
+$presentadaConfirmada['presentado_confirmado'] = true;
+caso('una vez que confirmó, vuelve a Muestras (queda como cola de trabajo)',
+    wabot_conv_grupo($presentadaConfirmada) === 'muestra');
+
 // El caso de Pablo: contesta él, el cliente responde y queda último.
 $base['transcript'][] = ['q'=>'humano','t'=>'Te mando la muestra mañana','ts'=>2];
 $base['transcript'][] = ['q'=>'cliente','t'=>'dale, gracias!','ts'=>3];

@@ -299,7 +299,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv = wabot_conv_load($_POST['tel']);
         $conv['presentado_confirmado'] = empty($conv['presentado_confirmado']);
         wabot_conv_save($conv);
-        header('Location: admin.php?tab=presentados'); exit;
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
     }
     if ($a === 'responder_audio' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
@@ -737,7 +737,6 @@ body.embed { min-height: 0; }
         <?php
         $navTabs = [
             'conversaciones' => 'Conversaciones',
-            'presentados'    => 'Presentados',
             'embudo'         => 'Embudo',
             'probar'         => 'Probar',
             'textos'         => 'Textos',
@@ -757,62 +756,7 @@ body.embed { min-height: 0; }
     <?php if (isset($_GET['boceto_ok'])) echo '<p class="ok">Boceto creado: ya aparece en la pestaña Bocetos.</p>'; ?>
     <?php if (isset($_GET['boceto_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo crear el boceto: Firestore rechazó el alta. Quedó guardado igual en Estado → "Prediseños que no llegaron a Bocetos". Revisá el log en wabot/data/log/.</p>'; ?>
 
-    <?php if ($tab === 'presentados'): ?>
-        <?php
-        $presentados = wabot_presentados_listar();
-        $cronPres = function_exists('wabot_presentados_estado_cron') ? wabot_presentados_estado_cron() : ['ultimo_run_ts' => 0];
-        ?>
-        <div class="fila" style="justify-content:space-between;margin-bottom:12px">
-            <div>
-                <strong>Muestras presentadas sin confirmar</strong>
-                <p class="meta">A las <?= $e((string)($cfg['presentados_recordatorio_horas'] ?? 48)) ?> h sin confirmar, el bot reinsiste una vez. A las <?= $e((string)($cfg['presentados_archivar_horas'] ?? 168)) ?> h, el chat se archiva solo.</p>
-            </div>
-            <span class="meta">
-                <?= !empty($cronPres['ultimo_run_ts'])
-                    ? 'Cron: última corrida ' . $e(date('d/m/Y H:i', (int)$cronPres['ultimo_run_ts']))
-                      . ' · recordatorios ' . (int)($cronPres['recordatorios'] ?? 0)
-                      . ' · archivados ' . (int)($cronPres['archivados'] ?? 0)
-                    : 'Cron: todavía no corrió' ?>
-            </span>
-        </div>
-
-        <?php if (!$presentados): ?>
-            <div class="card"><p class="meta">No hay muestras presentadas esperando confirmación.</p></div>
-        <?php endif; ?>
-
-        <?php foreach ($presentados as $cv): ?>
-            <?php
-            $horasEspera = round((time() - (int)$cv['presentado_ts']) / 3600, 1);
-            $recordatorioListo = !empty($cv['presentado_recordatorio_enviado']);
-            ?>
-            <div class="card">
-                <div class="fila" style="justify-content:space-between;flex-wrap:wrap">
-                    <div>
-                        <strong><?= $e(wabot_nombre_agenda($cv) ?: 'Sin nombre') ?></strong>
-                        <span class="canal-tag canal-tag--<?= $e(wabot_canal($cv)) ?>"><?= wabot_canal($cv) === 'instagram' ? 'IG' : 'WSP' ?></span>
-                        <p class="meta">
-                            <?= $e(wabot_canal($cv) === 'instagram' ? wabot_channel_user_id($cv) : wabot_formatear_tel($cv['tel'])) ?>
-                            · presentada hace <?= $horasEspera ?> h
-                            <?= $recordatorioListo ? ' · <span style="color:var(--warn)">recordatorio ya enviado</span>' : '' ?>
-                        </p>
-                        <?php if (!empty($cv['presentado_slug'])): ?>
-                            <p class="meta">gokywebs.com/demo/<?= $e($cv['presentado_slug']) ?></p>
-                        <?php endif; ?>
-                    </div>
-                    <div class="fila" style="gap:6px">
-                        <a href="admin.php?tab=conversaciones&ver=<?= $e($cv['tel']) ?>"><button type="button" class="sec">Ver chat</button></a>
-                        <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($cv['tel']) ?>">
-                            <button>Confirmó</button>
-                        </form>
-                        <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($cv['tel']) ?>">
-                            <button type="submit" class="sec">Archivar</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        <?php endforeach; ?>
-
-    <?php elseif ($tab === 'embudo'): ?>
+    <?php if ($tab === 'embudo'): ?>
         <?php
         $embudo = function_exists('wabot_embudo_resumen') ? (array)wabot_embudo_resumen() : [];
         $numeros = function ($valores, $campoAlternativo = '') {
@@ -1259,6 +1203,7 @@ body.embed { min-height: 0; }
             <nav class="conv-nav">
                 <button type="button" class="conv-nav-btn" data-grupo="chat">Chats <span class="conv-cuenta" id="cuentaChat">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra">Muestras <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="presentados">Presentados <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="atencion">Te esperan <span class="conv-cuenta" id="cuentaAtencion">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="archivado">Archivados <span class="conv-cuenta" id="cuentaArchivado">0</span></button>
             </nav>
@@ -1312,6 +1257,10 @@ body.embed { min-height: 0; }
                             <?php if ($bocetoHecho): ?><input type="hidden" name="forzar" value="1"><?php endif; ?>
                             <button class="sec"<?= $bocetoHecho ? '' : ' style="border-color:var(--ac);color:var(--ac)"' ?>><?= $bocetoHecho ? 'Rehacer boceto' : '+ Crear boceto' ?></button>
                         </form>
+                        <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
+                        <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button>Confirmó la muestra</button></form>
+                        <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
                         <form method="post" onsubmit="return confirm('Resetear esta conversación?')"><input type="hidden" name="accion" value="conv_reset"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -1353,10 +1302,11 @@ body.embed { min-height: 0; }
 
         /* ── Lista de la izquierda ── */
         const GRUPOS = {
-            chat:     { titulo: 'Chats',      cuenta: document.getElementById('cuentaChat'),      vacio: 'Ninguna charla abierta.' },
-            muestra:  { titulo: 'Muestras',   cuenta: document.getElementById('cuentaMuestra'),   vacio: 'Ninguna muestra pedida.' },
-            atencion: { titulo: 'Te esperan', cuenta: document.getElementById('cuentaAtencion'),  vacio: 'Nadie esperando.' },
-            archivado:{ titulo: 'Archivados', cuenta: document.getElementById('cuentaArchivado'), vacio: 'Nada archivado.' },
+            chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
+            muestra:    { titulo: 'Muestras',    cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna muestra pedida.' },
+            presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna muestra presentada esperando confirmación.' },
+            atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
+            archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');
@@ -1373,7 +1323,14 @@ body.embed { min-height: 0; }
         let itemsCache = [];
         let sincronizado = false;
         let firmaLista = '';
-        const fechasChatsSeleccionadas = new Set();
+        // Persistido: abrir un chat navega a admin.php?ver=… (recarga la página
+        // entera), así que sin esto el filtro de fecha se perdía cada vez.
+        let fechasGuardadas = [];
+        try { fechasGuardadas = JSON.parse(localStorage.getItem('wabotFechas') || '[]'); } catch (e) {}
+        const fechasChatsSeleccionadas = new Set(Array.isArray(fechasGuardadas) ? fechasGuardadas : []);
+        function guardarFechasSeleccionadas() {
+            try { localStorage.setItem('wabotFechas', JSON.stringify([...fechasChatsSeleccionadas])); } catch (e) {}
+        }
 
         function activarGrupo(grupo, recordar) {
             if (!GRUPOS[grupo]) return;
@@ -1499,7 +1456,7 @@ body.embed { min-height: 0; }
             firmaLista = firma;
 
             listaEl.innerHTML = '';
-            const cuentas = { chat: 0, muestra: 0, atencion: 0, archivado: 0 };
+            const cuentas = { chat: 0, muestra: 0, presentados: 0, atencion: 0, archivado: 0 };
             let visibles = 0;
 
             for (const it of items) {
@@ -1588,6 +1545,7 @@ body.embed { min-height: 0; }
             if (key === '__todas') fechasChatsSeleccionadas.clear();
             else if (fechasChatsSeleccionadas.has(key)) fechasChatsSeleccionadas.delete(key);
             else fechasChatsSeleccionadas.add(key);
+            guardarFechasSeleccionadas();
             firmaLista = '';
             pintarLista(itemsCache);
         });
