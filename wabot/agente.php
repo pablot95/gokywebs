@@ -195,11 +195,11 @@ function wabot_texto_promete_cierre($texto) {
     if ($t === '') return false;
 
     $registro = '(registr|anot|guardam|guardad|tomad nota|tomo nota|quedo todo|quedo registrad|ya tengo todo|con esto ya|pasamos el pedido|derivad|paso tu consulta|ya esta todo)';
-    $accion   = '(prepara|armamos|arma|disen|muestra|predise|boceto|equipo|pablo|te escrib|te contact|se comunica|comunicamos|coordinar|24 a 48|24 y 48)';
+    $accion   = '(prepara|armamos|arma|disen|muestra|\bdemo\b|predise|boceto|equipo|pablo|te escrib|te contact|se comunica|comunicamos|coordinar|24 a 48|24 y 48)';
 
     if (preg_match('/' . $registro . '/u', $t) && preg_match('/' . $accion . '/u', $t)) return true;
     if (preg_match('/(pablo|el equipo|nuestro equipo).{0,45}(te escrib|te contact|se comunica|comunicando|se pone en contacto|te acerca|coordina)/u', $t)) return true;
-    if (preg_match('/(en breve|enseguida|en un rato|pronto).{0,40}(te escrib|te contact|se comunica|la muestra|el predise)/u', $t)) return true;
+    if (preg_match('/(en breve|enseguida|en un rato|pronto).{0,40}(te escrib|te contact|se comunica|la muestra|la demo|el predise)/u', $t)) return true;
 
     return false;
 }
@@ -222,7 +222,8 @@ function wabot_agente_marcar_nombre_usado($texto, &$conv) {
  */
 function wabot_agente_filtrar_aparte($texto, $aparte) {
     if (!$aparte) return [];
-    if (mb_stripos($texto, 'predise') !== false || mb_stripos($texto, 'muestra') !== false) return [];
+    // \b en "demo": es corto y aparece adentro de "podemos".
+    if (mb_stripos($texto, 'predise') !== false || mb_stripos($texto, 'muestra') !== false || preg_match('/\bdemo\b/iu', $texto)) return [];
     return $aparte;
 }
 
@@ -337,7 +338,7 @@ function wabot_agente_tools($cerrada = false) {
         $consultar,
         [
             'name' => 'manejar_objecion',
-            'description' => 'Trae la respuesta comercial oficial para una objeción y la conecta con la muestra gratis. Usala SIEMPRE para estas cuatro objeciones; no improvises.',
+            'description' => 'Trae la respuesta comercial oficial para una objeción y la conecta con la demo gratis. Usala SIEMPRE para estas cuatro objeciones; no improvises.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -509,7 +510,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
             ];
             if ($tipo === 'plataforma' && empty($conv['cta_muestra'])) {
                 $res['aparte'] = trim((string)($cfg['cta_muestra'] ?? ''));
-                $res['nota'] .= ' La invitación a la muestra sale en un globo aparte: no la repitas.';
+                $res['nota'] .= ' La invitación a la demo sale en un globo aparte: no la repitas.';
             }
             $conv['cta_muestra'] = true;
             wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'objecion_' . $tipo]);
@@ -611,14 +612,14 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
     return ['error' => 'Herramienta desconocida.'];
 }
 
-/** Agrega un único empujón hacia la muestra después de una duda en fase precio. */
+/** Agrega un único empujón hacia la demo después de una duda en fase precio. */
 function wabot_agente_agregar_cta($res, &$conv, $cfg) {
     if (($conv['fase'] ?? '') !== 'precio' || !empty($conv['cta_muestra'])) return $res;
     $cta = trim((string)($cfg['cta_muestra'] ?? ''));
     if ($cta === '') return $res;
     $res['aparte'] = $cta;
     $res['nota'] = trim((string)($res['nota'] ?? ''))
-                 . ' La invitación a la muestra sale después en otro globo: no la repitas.';
+                 . ' La invitación a la demo sale después en otro globo: no la repitas.';
     $conv['cta_muestra'] = true;
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'duda_caliente']);
     return $res;
@@ -764,12 +765,12 @@ REGLAS QUE NO PODÉS ROMPER
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
 - Las dudas sobre cómo trabajamos, pago, plazos, hosting, mantenimiento, carga de productos, logo, marketing, reuniones o tecnología se contestan llamando a consultar_info. Nunca de memoria.
-- Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la muestra gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
+- Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la demo gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que ese detalle se lo confirma el equipo. No inventes.
 - Nunca bajes el precio ni ofrezcas descuentos.
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto: ahí ya están las 3 cuotas sin interés. Es la ÚNICA situación donde se mencionan — nunca las ofrezcas de entrada (regalás el descuento a alguien que iba a pagar igual) y nunca calcules el monto de cada cuota.
-- Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la muestra gratis; no las reemplaces por "te confirma el equipo".
-- Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la muestra en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
+- Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por "te confirma el equipo".
+- Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la demo en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
 - El mantenimiento es opcional y se contesta con consultar_info, que ya te devuelve el precio y el link que corresponden al tipo cotizado. No los digas de memoria: cambian según la web.
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
@@ -789,7 +790,7 @@ HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.
 
 ESTILO
-- Voseo argentino, cordial y directo, como el dueño de la agencia. Formal en el registro, tuteando en la conjugación: "te preparo la muestra", "contame qué necesitás", nunca "le preparo" ni "cuénteme".
+- Voseo argentino, cordial y directo, como el dueño de la agencia. Formal en el registro, tuteando en la conjugación: "te preparo la demo", "contame qué necesitás", nunca "le preparo" ni "cuénteme".
 - Sin emojis y sin íconos.
 - Nunca uses los signos de apertura de interrogación ni de exclamación: solo el de cierre o ninguno.
 - Con las tildes correctas: "querés", "preferís", "ahí". Cercano no es escribir mal.

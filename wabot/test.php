@@ -287,7 +287,7 @@ caso('no le interesa → cierre cordial sin derivar', $r === [$cfg['no_interesa'
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'ecommerce';
 clasifica(['menciona_plataforma']);
 $r = wabot_engine('y tienda nube no me conviene?', $c, $cfg);
-caso('nombra Tienda Nube → compara y ofrece la muestra',
+caso('nombra Tienda Nube → compara y ofrece la demo',
     $r === [$cfg['plataformas'], $cfg['cta_muestra']] && $c['cta_muestra'] === true);
 
 echo "— Fallback y reset —\n";
@@ -558,7 +558,7 @@ $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['pregunta_info'], ['info_keys' => ['proceso']]);
 $r = wabot_engine('como se manejan ustedes?', $c, $cfg);
 caso('explica el proceso completo', $r === [$cfg['info']['proceso']]);
-caso('arranca por la muestra gratis', stripos($r[0], 'muestra gratis') !== false);
+caso('arranca por la demo gratis', stripos($r[0], 'demo gratis') !== false);
 caso('nombra la seña para avanzar', stripos($r[0], 'seña') !== false);
 caso('y aclara que el resto se paga con la web terminada y subida',
     stripos($r[0], 'terminada y subida') !== false);
@@ -574,7 +574,7 @@ clasifica(['pregunta_info'], ['info_keys' => ['proceso', 'pago']]);
 $r = wabot_engine('como trabajan y como se paga?', $c, $cfg);
 caso('las dos preguntas juntas → las dos respuestas en bullets',
     count($r) === 1 && strpos($r[0], '- ') === 0
-    && stripos($r[0], 'muestra gratis') !== false && strpos($r[0], '$60.000') !== false);
+    && stripos($r[0], 'demo gratis') !== false && strpos($r[0], '$60.000') !== false);
 
 // También se contesta con la charla ya cerrada.
 $c2 = conv_nueva(); $c2['fase'] = 'derivado'; $c2['cierre'] = 'prediseno'; $c2['espera_avisada'] = true;
@@ -660,7 +660,7 @@ caso('y muestra el desglose completo, no solo el total',
     && strpos($r[0], '$20.000') !== false && strpos($r[0], '40 productos') !== false);
 caso('con el link del presupuesto de Catálogo', strpos($r[0], 'presupuestos/Catalogo') !== false);
 caso('respeta el salto de línea obligatorio antes del link', strpos($r[0], "\n") !== false);
-caso('y ofrece la muestra gratis igual que los demás tipos', count($r) === 2);
+caso('y ofrece la demo gratis igual que los demás tipos', count($r) === 2);
 
 foreach ([[10, '$205.000'], [50, '$225.000'], [100, '$250.000'], [1, '$200.500']] as $par) {
     list($n, $esperado) = $par;
@@ -1403,7 +1403,7 @@ echo "— Muestras presentadas: recordatorio a las 48h, archivo a la semana —\
 
 $ahoraPres = time();
 $cfgPres = $cfg; $cfgPres['presentados_recordatorio_horas'] = 48; $cfgPres['presentados_archivar_horas'] = 168;
-$cfgPres['presentados_recordatorio'] = 'Hola {nombre}, viste la muestra? {muestra}';
+$cfgPres['presentados_recordatorio'] = 'Hola {nombre}, viste la demo? {demo}';
 
 $presEspera = conv_nueva();
 $presEspera['nombre'] = 'Marcos';
@@ -1628,7 +1628,7 @@ echo "— Una objeción no repite el discurso completo la segunda vez —\n";
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'ecommerce';
 clasifica(['objecion_pensarlo']);
 $r1 = wabot_engine('lo tengo que pensar', $c, $cfg);
-caso('la primera vez, el discurso completo (explica + ofrece la muestra)', $r1 === [$cfg['pensarlo']]);
+caso('la primera vez, el discurso completo (explica + ofrece la demo)', $r1 === [$cfg['pensarlo']]);
 $r2 = wabot_engine('igual necesito pensarlo un poco más', $c, $cfg);
 caso('la segunda vez, un reconocimiento corto — no el mismo discurso de nuevo',
     $r2 === [$cfg['objecion_repetida']] && $r2 !== $r1);

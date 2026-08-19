@@ -657,11 +657,12 @@ function wabot_engine($texto, &$conv, $cfg) {
                 $out[] = $cfg['info']['otra'];
             }
             // Se respondió una duda y la charla quedaría en punto muerto: se
-            // cierra con un empujón suave hacia la muestra, una sola vez, y
+            // cierra con un empujón suave hacia la demo, una sola vez, y
             // nunca si la respuesta ya la menciona (las objeciones lo hacen).
             if ($out && $conv['fase'] === 'precio' && empty($conv['cta_muestra'])) {
                 $dicho = mb_strtolower(implode(' ', $out));
-                if (mb_strpos($dicho, 'muestra') === false && mb_strpos($dicho, 'predise') === false) {
+                // \b y no strpos: "demo" es corto y aparece adentro de "podemos".
+                if (!preg_match('/\bdemo\b/u', $dicho) && mb_strpos($dicho, 'predise') === false) {
                     $out[] = $cfg['cta_muestra'];
                 }
                 $conv['cta_muestra'] = true;

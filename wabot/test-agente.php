@@ -638,9 +638,9 @@ echo "— Objeciones y CTA caliente —\n";
 
 $c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $r = wabot_agente_ejecutar('manejar_objecion', ['tipo'=>'pensarlo'], $c, $cfg);
-caso('pensarlo responde con la muestra y marca el CTA usado',
+caso('pensarlo responde con la demo y marca el CTA usado',
     $r['texto'] === $cfg['pensarlo'] && $c['cta_muestra'] === true
-    && (stripos($r['texto'], 'muestra') !== false || stripos($r['texto'], 'predise') !== false));
+    && (stripos($r['texto'], 'muestra') !== false || stripos($r['texto'], 'demo') !== false || stripos($r['texto'], 'predise') !== false));
 
 $c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'ecommerce';
 $r = wabot_agente_ejecutar('manejar_objecion', ['tipo'=>'plataforma'], $c, $cfg);

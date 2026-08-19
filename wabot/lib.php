@@ -72,7 +72,7 @@ function wabot_config_load() {
 
     if (!isset($cfg['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = 2;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
-        $cfg['espera_prediseno'] = 'Listo, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas. Recordá que es solo una muestra, luego se adapta a lo que vos necesites. Te la mandamos por acá mismo apenas esté lista.';
+        $cfg['espera_prediseno'] = 'Listo, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas. Recordá que es solo una demo, luego se adapta a lo que vos necesites. Te la mandamos por acá mismo apenas esté lista.';
     }
     if (!isset($cfg['demora_por_longitud']))   $cfg['demora_por_longitud']   = true;
     if (!isset($cfg['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = 16;
@@ -200,11 +200,11 @@ function wabot_migrar_conversaciones_instagram() {
  */
 function wabot_config_ventas(&$cfg) {
     $defaults = [
-        'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la muestra gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
-        'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la muestra gratis para que lo evalúen viendo algo concreto. Se las armo?',
-        'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una muestra gratis de cómo quedaría renovada, sin compromiso, para que compares.',
-        'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la muestra gratis? Es sin compromiso.',
-        'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la muestra gratis así ves cómo quedaría antes de definir nada. La armamos?',
+        'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
+        'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
+        'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
+        'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
+        'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
         'seguimiento_datos' => 'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.',
         'sistema_pregunta'  => 'Sí, también desarrollamos sistemas de gestión a medida. Contame qué necesitás que resuelva y qué problema querés ordenar.',
         'sistema_pregunta_usuarios' => 'Perfecto. Aproximadamente cuántas personas usarían el sistema?',
@@ -216,9 +216,9 @@ function wabot_config_ventas(&$cfg) {
         'desempate_cursos_2'   => 'Te lo simplifico: querés vender los cursos desde la web con los videos y acceso para cada alumno (respondé "vender"), o solo mostrarlos y que te escriban (respondé "mostrar")?',
         'menu_vuelve'       => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
         'sistema_cierre'    => 'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.',
-        // {muestra} se reemplaza por el link de la muestra ya presentada.
-        'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la muestra que te preparamos: {muestra}. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-        'muestra_aviso' => 'Hola {nombre}, buen día! Tu muestra va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
+        // {demo} se reemplaza por el link de la demo ya presentada.
+        'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos: {demo}. Contame qué te pareció o si hay algo que te gustaría cambiar.',
+        'muestra_aviso' => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
     ];
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
@@ -240,6 +240,52 @@ function wabot_config_ventas(&$cfg) {
         'Ya le pasé tu consulta a Pablo: te escribe a la brevedad.',
     ], true)) {
         $cfg['espera'] = 'Pablo ya tiene tu consulta y te escribe en un rato por acá.';
+    }
+
+    // "Muestra" pasó a llamarse "demo" (19-ago-2026): migra los textos viejos
+    // que ya estaban guardados, porque el default de arriba solo pisa un campo
+    // vacío y estos ya tenían contenido.
+    $migracionesDemo = [
+        'prediseno_whatsapp' => [
+            'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la muestra cuando esté lista.'
+                => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
+        ],
+        'prediseno_completo' => [
+            'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.'
+                => 'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.',
+        ],
+        'pensarlo' => [
+            'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la muestra gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?'
+                => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
+        ],
+        'socio' => [
+            'Perfecto, consultalo con tranquilidad. Si querés, les preparo la muestra gratis para que lo evalúen viendo algo concreto. Se las armo?'
+                => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
+        ],
+        'ya_tengo_web' => [
+            'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una muestra gratis de cómo quedaría renovada, sin compromiso, para que compares.'
+                => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
+        ],
+        'cta_muestra' => [
+            'Querés que mientras tanto te vaya preparando la muestra gratis? Es sin compromiso.'
+                => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
+        ],
+        'seguimiento_precio' => [
+            'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la muestra gratis así ves cómo quedaría antes de definir nada. La armamos?'
+                => 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
+        ],
+        'presentados_recordatorio' => [
+            'Hola {nombre}, te quería consultar si pudiste ver la muestra que te preparamos: {muestra}. Contame qué te pareció o si hay algo que te gustaría cambiar.'
+                => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos: {demo}. Contame qué te pareció o si hay algo que te gustaría cambiar.',
+        ],
+    ];
+    foreach ($migracionesDemo as $campo => $reemplazos) {
+        $actual = trim((string)($cfg[$campo] ?? ''));
+        if (isset($reemplazos[$actual])) $cfg[$campo] = $reemplazos[$actual];
+    }
+    $procesoViejo = 'Primero te armamos una muestra gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.';
+    if (trim((string)($cfg['info']['proceso'] ?? '')) === $procesoViejo) {
+        $cfg['info']['proceso'] = 'Primero te armamos una demo gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.';
     }
 }
 
@@ -1532,7 +1578,7 @@ GUIA:
 - cursos_vender / cursos_mostrar: SOLO si la conversación está en la pregunta de cursos — quiere venderlos desde la web con acceso de alumnos, o solo mostrarlos y que lo contacten.
 - productos_y_cursos: vende productos Y ADEMÁS cursos online.
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
-- quiere_prediseno: pide el prediseño/muestra gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
+- quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
 - pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones o tecnología → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
@@ -1547,7 +1593,7 @@ GUIA:
 
 REGLA DE ORO DEL "SÍ" PELADO
 Si el cliente contesta solo "si", "dale", "ok", "listo", "bueno", "de una", "joya" o parecido, está contestando LA ÚLTIMA PREGUNTA QUE HIZO EL BOT. Mirá el último mensaje del bot antes de etiquetar:
-- Si el bot ofreció el prediseño o la muestra gratis → quiere_prediseno.
+- Si el bot ofreció el prediseño o la demo gratis → quiere_prediseno.
 - Si el bot preguntó por los turnos → turnos_si.
 - Si el bot preguntó si quiere vender online o solo mostrar el negocio, un "si" pelado no alcanza para saber cuál: usá otro. Pero "vender", "lo primero", "online" → comercio_vender; "mostrar", "que me contacten" → comercio_mostrar.
 - Si el bot preguntó por los cursos → cursos_vender o cursos_mostrar, según cuál de las dos opciones esté aceptando.
@@ -2257,7 +2303,7 @@ function wabot_presentado_recordatorio_texto($cv, $cfg) {
     $base = trim((string)($cfg['presentados_recordatorio'] ?? ''));
     $slug = trim((string)($cv['presentado_slug'] ?? ''));
     $link = $slug !== '' ? 'gokywebs.com/demo/' . $slug : '';
-    return str_replace('{muestra}', $link, $base);
+    return str_replace('{demo}', $link, $base);
 }
 
 /** Recorre las conversaciones con muestra presentada: reinsiste o archiva. */

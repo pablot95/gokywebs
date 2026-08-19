@@ -345,7 +345,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Content-Type: application/json; charset=utf-8');
         $negocio = trim((string)($_POST['negocio'] ?? ''));
         $slug = $negocio !== '' ? wabot_slug_demo($negocio) : '';
-        if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la muestra: falta el nombre del negocio.']); exit; }
+        if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la demo: falta el nombre del negocio.']); exit; }
 
         $conv = wabot_conv_load($_POST['tel']);
         if (wabot_ventana_restante($conv) <= 0) {
@@ -353,7 +353,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        $texto = "Ya preparamos la muestra para tu web (considerá que las imágenes también son de muestra).\n\n"
+        $texto = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\n"
                . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
                . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar";
 
@@ -898,8 +898,8 @@ body.embed { min-height: 0; }
             'prediseno_wsp' => 'Pidiendo WhatsApp', 'derivado' => 'Derivados',
         ];
         $etiquetasEvento = [
-            'precio_dado' => 'Precio dado', 'muestra_ofrecida' => 'Muestra ofrecida',
-            'muestra_aceptada' => 'Muestra aceptada', 'seguimiento_enviado' => 'Seguimiento enviado',
+            'precio_dado' => 'Precio dado', 'muestra_ofrecida' => 'Demo ofrecida',
+            'muestra_aceptada' => 'Demo aceptada', 'seguimiento_enviado' => 'Seguimiento enviado',
             'seguimiento_respondido' => 'Seguimiento respondido', 'sistema_calificado' => 'Sistema calificado',
             'lead_recibido' => 'Lead recibido', 'handoff_solicitado' => 'Pablo solicitado',
             'handoff_creado' => 'Derivado a Pablo', 'handoff_rechazado' => 'Derivación evitada',
@@ -925,7 +925,7 @@ body.embed { min-height: 0; }
         <div class="embudo-kpis">
             <div class="embudo-kpi"><strong><?= number_format($total, 0, ',', '.') ?></strong><span>Conversaciones</span></div>
             <div class="embudo-kpi"><strong><?= number_format($precio, 0, ',', '.') ?></strong><span>Llegaron al precio</span></div>
-            <div class="embudo-kpi"><strong><?= number_format($muestra, 0, ',', '.') ?></strong><span>Aceptaron la muestra</span></div>
+            <div class="embudo-kpi"><strong><?= number_format($muestra, 0, ',', '.') ?></strong><span>Aceptaron la demo</span></div>
             <div class="embudo-kpi"><strong><?= number_format($derivado, 0, ',', '.') ?></strong><span>Derivadas a Pablo</span></div>
         </div>
 
@@ -942,8 +942,8 @@ body.embed { min-height: 0; }
                     </div>
                 <?php endforeach; ?>
                 <div class="embudo-conversiones">
-                    <span class="pill">Precio → muestra: <?= number_format($precioAMuestra, 1, ',', '.') ?>%</span>
-                    <span class="pill">Muestra → Pablo: <?= number_format($muestraADerivacion, 1, ',', '.') ?>%</span>
+                    <span class="pill">Precio → demo: <?= number_format($precioAMuestra, 1, ',', '.') ?>%</span>
+                    <span class="pill">Demo → Pablo: <?= number_format($muestraADerivacion, 1, ',', '.') ?>%</span>
                 </div>
             </div>
 
@@ -1141,18 +1141,18 @@ body.embed { min-height: 0; }
             <label>Seguimiento cuando faltan datos</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
         </div>
         <div class="card">
-            <h2 style="margin-top:0">Aviso antes de la muestra</h2>
-            <p class="meta" style="margin-bottom:8px">El prediseño tarda 24 a 48 h y Meta solo deja mandar texto libre dentro de las 24 h desde el último mensaje del cliente. Esto manda un aviso corto antes de que esa ventana se cierre (a las 8:00 del día siguiente, o un rato antes de que cierre si eso ya es tarde) para que el cliente conteste algo y quede lugar para mandarle la muestra real ese mismo día.</p>
+            <h2 style="margin-top:0">Aviso antes de la demo</h2>
+            <p class="meta" style="margin-bottom:8px">El prediseño tarda 24 a 48 h y Meta solo deja mandar texto libre dentro de las 24 h desde el último mensaje del cliente. Esto manda un aviso corto antes de que esa ventana se cierre (a las 8:00 del día siguiente, o un rato antes de que cierre si eso ya es tarde) para que el cliente conteste algo y quede lugar para mandarle la demo real ese mismo día.</p>
             <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
                 <input type="checkbox" name="muestra_aviso_activo" value="1" <?= !empty($cfg['muestra_aviso_activo']) ? 'checked' : '' ?> style="width:auto">
                 Mandar el aviso previo
             </label>
-            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento y las muestras presentadas (<code>wabot/seguimiento.php</code>).</p>
+            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento y las demos presentadas (<code>wabot/seguimiento.php</code>).</p>
             <label>Mensaje del aviso</label><textarea name="muestra_aviso" rows="2"><?= $e($cfg['muestra_aviso'] ?? '') ?></textarea>
         </div>
         <div class="card">
-            <h2 style="margin-top:0">Muestras presentadas</h2>
-            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, el bot le manda al cliente el link de la muestra. Si no confirma nada, esto pasa después.</p>
+            <h2 style="margin-top:0">Demos presentadas</h2>
+            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, el bot le manda al cliente el link de la demo. Si no confirma nada, esto pasa después.</p>
             <div class="fila" style="gap:18px;align-items:flex-end">
                 <div>
                     <label>Horas sin confirmar para reinsistir</label>
@@ -1165,7 +1165,7 @@ body.embed { min-height: 0; }
             </div>
             <p class="meta" style="margin-top:8px">El recordatorio se manda una sola vez y solo dentro de la ventana de 24 h que permite Meta. Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
             <label>Mensaje de recordatorio</label><textarea name="presentados_recordatorio" rows="3"><?= $e($cfg['presentados_recordatorio'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:4px"><code>{muestra}</code> se reemplaza por el link de la muestra ya presentada.</p>
+            <p class="meta" style="margin-top:4px"><code>{demo}</code> se reemplaza por el link de la demo ya presentada.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Info fija (respuestas a preguntas)</h2>
@@ -1320,7 +1320,7 @@ body.embed { min-height: 0; }
 
             <nav class="conv-nav">
                 <button type="button" class="conv-nav-btn" data-grupo="chat">Chats <span class="conv-cuenta" id="cuentaChat">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="muestra">Muestras <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="muestra">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentados">Presentados <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="atencion">Te esperan <span class="conv-cuenta" id="cuentaAtencion">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="archivado">Archivados <span class="conv-cuenta" id="cuentaArchivado">0</span></button>
@@ -1377,7 +1377,7 @@ body.embed { min-height: 0; }
                         </form>
                         <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
                         <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button>Confirmó la muestra</button></form>
+                            <button>Confirmó la demo</button></form>
                         <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
@@ -1421,8 +1421,8 @@ body.embed { min-height: 0; }
         /* ── Lista de la izquierda ── */
         const GRUPOS = {
             chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
-            muestra:    { titulo: 'Muestras',    cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna muestra pedida.' },
-            presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna muestra presentada esperando confirmación.' },
+            muestra:    { titulo: 'Demos',       cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna demo pedida.' },
+            presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna demo presentada esperando confirmación.' },
             atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
