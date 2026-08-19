@@ -32,7 +32,7 @@ if (!empty($_POST['clave'])) {
 $logueado = !empty($_SESSION['wabot']);
 
 $cfg = wabot_config_load();
-$ACCIONES = ['rubro_landing','rubro_ecommerce','rubro_inmobiliaria','rubro_cursos','rubro_institucional','rubro_comercio','rubro_sistema','servicio_con_turnos','turnos_si','turnos_no','comercio_vender','comercio_mostrar','elige_landing','elige_ecommerce','algo_diferente','cursos_vender','cursos_mostrar','pregunta_tipos','quiere_prediseno','datos_prediseno','pregunta_info','objecion_caro','objecion_pensarlo','objecion_socio','objecion_ya_tiene_web','menciona_plataforma','no_interesa','quiere_avanzar','pide_humano','productos_y_cursos','cambia_tipo','saludo','otro'];
+$ACCIONES = ['rubro_landing','rubro_ecommerce','rubro_inmobiliaria','rubro_cursos','rubro_institucional','rubro_comercio','rubro_hibrido','rubro_sistema','servicio_con_turnos','turnos_si','turnos_no','comercio_vender','comercio_mostrar','hibrido_trabajos','hibrido_catalogo','hibrido_vender','elige_landing','elige_ecommerce','algo_diferente','cursos_vender','cursos_mostrar','pregunta_tipos','quiere_prediseno','datos_prediseno','pregunta_info','objecion_caro','objecion_pensarlo','objecion_socio','objecion_ya_tiene_web','menciona_plataforma','no_interesa','quiere_avanzar','pide_humano','productos_y_cursos','cambia_tipo','saludo','otro'];
 // Si una versión futura del motor agrega una etiqueta, el panel tiene que
 // conservarla aunque todavía no figure arriba: abrir y guardar Entrenamiento
 // nunca puede convertir un ejemplo válido en la primera opción del select.
@@ -227,7 +227,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','desempate_cursos','desempate_turnos','desempate_comercio','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','presentados_recordatorio','muestra_aviso'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','muestra_aviso'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -871,7 +871,8 @@ body.embed { min-height: 0; }
         $etiquetasFase = [
             'nuevo' => 'Nuevos', 'menu' => 'Calificando', 'algo_diferente' => 'Por entender',
             'desempate_turnos' => 'Definiendo turnos', 'desempate_cursos' => 'Definiendo cursos',
-            'desempate_comercio' => 'Definiendo comercio', 'sistema_brief' => 'Brief de sistema',
+            'desempate_comercio' => 'Definiendo comercio', 'desempate_hibrido' => 'Definiendo objetivo',
+            'sistema_brief' => 'Brief de sistema',
             'precio' => 'Precio dado', 'prediseno' => 'Pidiendo datos', 'prediseno_ref' => 'Pidiendo referencia',
             'prediseno_wsp' => 'Pidiendo WhatsApp', 'derivado' => 'Derivados',
         ];
@@ -1044,9 +1045,11 @@ body.embed { min-height: 0; }
             <label>Primer mensaje (menú)</label><textarea name="menu" rows="4"><?= $e($cfg['menu']) ?></textarea>
             <label>Qué es cada una (si pregunta)</label><textarea name="def_tipos" rows="3"><?= $e($cfg['def_tipos']) ?></textarea>
             <label>Algo diferente</label><textarea name="contame" rows="2"><?= $e($cfg['contame']) ?></textarea>
+            <label>Ya contó qué ofrece, pero falta definir el objetivo</label><textarea name="aclarar_objetivo" rows="2"><?= $e($cfg['aclarar_objetivo'] ?? '') ?></textarea>
             <label>Pregunta de desempate para cursos</label><textarea name="desempate_cursos" rows="3"><?= $e($cfg['desempate_cursos']) ?></textarea>
             <label>Pregunta de desempate para turnos (peluquerías, consultorios, canchas…)</label><textarea name="desempate_turnos" rows="3"><?= $e($cfg['desempate_turnos'] ?? '') ?></textarea>
             <label>Pregunta de desempate para comercios (ferreterías, kioscos, locales…)</label><textarea name="desempate_comercio" rows="3"><?= $e($cfg['desempate_comercio'] ?? '') ?></textarea>
+            <label>Pregunta para trabajos/productos a medida (cortinas, toldos, aberturas, muebles…)</label><textarea name="desempate_hibrido" rows="3"><?= $e($cfg['desempate_hibrido'] ?? '') ?></textarea>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Precio</h2>
@@ -1080,6 +1083,7 @@ body.embed { min-height: 0; }
             <label>Lo tiene que hablar con su socio/a</label><textarea name="socio" rows="2"><?= $e($cfg['socio'] ?? '') ?></textarea>
             <label>Ya tiene una web y quiere renovarla</label><textarea name="ya_tengo_web" rows="2"><?= $e($cfg['ya_tengo_web'] ?? '') ?></textarea>
             <label>Empujón suave después de contestar una duda</label><textarea name="cta_muestra" rows="2"><?= $e($cfg['cta_muestra'] ?? '') ?></textarea>
+            <label>Cierre sin presión (solo averiguaba / más adelante / sin presupuesto)</label><textarea name="cierre_suave" rows="2"><?= $e($cfg['cierre_suave'] ?? '') ?></textarea>
             <label>Nombra Tienda Nube o similar</label><textarea name="plataformas" rows="2"><?= $e($cfg['plataformas']) ?></textarea>
             <label>No le interesa</label><textarea name="no_interesa" rows="2"><?= $e($cfg['no_interesa']) ?></textarea>
             <label>Mandó audio/imagen</label><textarea name="no_texto" rows="2"><?= $e($cfg['no_texto']) ?></textarea>
@@ -1151,6 +1155,8 @@ body.embed { min-height: 0; }
                 <label><?= $e($k) ?><?= $k === 'mantenimiento' ? ' — {precio} y {link} salen del plan de abajo, según el tipo cotizado' : '' ?></label>
                 <textarea name="info_<?= $e($k) ?>" rows="2"><?= $e($v) ?></textarea>
             <?php endforeach; ?>
+            <label>Renovación después del primer año de hosting y dominio</label>
+            <textarea name="hosting_renovacion" rows="3"><?= $e($cfg['hosting_renovacion'] ?? '') ?></textarea>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Planes de mantenimiento</h2>

@@ -204,6 +204,11 @@ function wabot_config_ventas(&$cfg) {
         'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
         'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
         'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
+        'cierre_suave'      => 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.',
+        'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
+        'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
+        'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", según cuál sea el objetivo principal de la web.',
+        'hosting_renovacion' => 'Después del primer año, el hosting y el dominio se renuevan una vez por año. Como el valor puede cambiar según el dominio y el plan vigente, antes del vencimiento te confirmamos el importe actualizado.',
         'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
         'seguimiento_datos' => 'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.',
         'sistema_pregunta'  => 'Sí, también desarrollamos sistemas de gestión a medida. Contame qué necesitás que resuelva y qué problema querés ordenar.',
@@ -224,6 +229,34 @@ function wabot_config_ventas(&$cfg) {
     ];
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
+    }
+
+    if (empty($cfg['msg_precio_variantes']) || !is_array($cfg['msg_precio_variantes'])) {
+        $cfg['msg_precio_variantes'] = [
+            "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}.\nAcá podés ver todo lo que incluye y otros trabajos realizados: {link}",
+            "En este caso iría con {desc}. Todo el desarrollo tendría un valor de {precio}.\nTe dejo el detalle completo y ejemplos de trabajos acá: {link}",
+            "La opción que mejor encaja es {desc}. El valor por el desarrollo completo es de {precio}.\nEn este link está detallado lo que incluye: {link}",
+            "Para ese objetivo, lo adecuado sería {desc}. El desarrollo completo queda en {precio}.\nPodés revisar el alcance y otros trabajos en: {link}",
+            "Con esa modalidad necesitarías {desc}. El valor total del desarrollo es de {precio}.\nAcá tenés el presupuesto detallado: {link}",
+        ];
+    }
+    if (empty($cfg['msg_precio_catalogo_variantes']) || !is_array($cfg['msg_precio_catalogo_variantes'])) {
+        $cfg['msg_precio_catalogo_variantes'] = [
+            "Para tu caso iría un {desc}. Con {cantidad} productos queda en {total}: {base} por el desarrollo más {unitario} por cada producto cargado ({productos}).\nAcá podés ver el detalle completo: {link}",
+            "Con {cantidad} productos, el {desc} tiene un valor total de {total}: {base} de desarrollo y {productos} por la carga, a {unitario} cada uno.\nTe dejo el presupuesto detallado: {link}",
+            "La opción que encaja es {desc}. Para {cantidad} productos, el total es {total}, compuesto por {base} de desarrollo más {productos} de carga ({unitario} por producto).\nPodés revisar todo lo incluido acá: {link}",
+            "Para mostrar esos {cantidad} productos necesitarías {desc}. El desarrollo queda en {total}: {base} más {unitario} por cada producto cargado ({productos}).\nAcá está el alcance completo: {link}",
+            "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno.\nTe dejo el detalle: {link}",
+        ];
+    }
+    if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $cfg['msg_prediseno_oferta_variantes'] = [
+            'Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?',
+            'También podemos armarte una demo sin costo y sin compromiso, así evaluás algo concreto. Querés que la preparemos?',
+            'Como siguiente paso, podemos mostrarte una demo gratis de tu propia web. Te gustaría que la armemos?',
+            'Antes de que decidas, te podemos preparar una demo sin cargo para que veas el resultado. Avanzamos con eso?',
+            'Si te sirve para evaluarlo, armamos una demo gratis adaptada a tu negocio. Querés que la preparemos?',
+        ];
     }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -640,6 +673,7 @@ function wabot_conv_load($clave) {
         'referencia_preguntada' => false,
         'cta_muestra'      => false,
         'seguimiento_enviado' => false,
+        'seguimiento_bloqueado' => false,
         'seguimiento_estado' => null,
         'seguimiento_intentos' => 0,
         'seguimiento_ultimo_intento_ts' => 0,
@@ -738,6 +772,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['referencia_preguntada'] = false;
     $conv['cta_muestra'] = false;
     $conv['seguimiento_enviado'] = false;
+    $conv['seguimiento_bloqueado'] = false;
     $conv['seguimiento_estado'] = null;
     $conv['seguimiento_intentos'] = 0;
     $conv['seguimiento_ultimo_intento_ts'] = 0;
@@ -1574,7 +1609,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     }
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
-    $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
+    $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
     $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, otra";
 
     $ejemplos = '';
@@ -1591,6 +1626,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     }
 
     $indicaciones = trim((string)($cfg['indicaciones'] ?? ''));
+    $hechosCliente = implode(' | ', wabot_contexto_cliente_sesion($conv, 16));
 
     $prompt = <<<EOT
 Sos el clasificador de intenciones del bot comercial de Gokywebs (agencia argentina de diseño web que vende webs por WhatsApp). NO redactás respuestas: solo etiquetás el mensaje del cliente. Respondé SOLO un JSON válido con esta forma exacta:
@@ -1604,7 +1640,9 @@ GUIA:
 - servicio_con_turnos: un servicio que atiende POR TURNO O RESERVA, con día y hora. Peluquería, barbería, salón de belleza, estética, spa, masajes, uñas, depilación, tatuajes; consultorio médico, odontológico, kinesiología, psicología, nutrición, fonoaudiología; veterinaria; gimnasio, pilates, yoga, clases con cupo; canchas de fútbol, pádel o tenis; cabañas, hotel, alquiler temporario; restaurante que reserva mesa; taller mecánico con turno; estudio fotográfico con sesiones. **Todavía no se sabe si quiere el sistema de turnos online**: por eso NO es rubro_landing.
 - rubro_comercio: vende productos físicos pero NO dijo todavía que quiera cobrar/vender online, tenga local o venda por redes: mates, ropa, velas, ferretería, kiosco, dietética, bazar, vivero, panadería, pet shop, repuestos. **Falta preguntarle si quiere vender desde la web o solo mostrar y cerrar por WhatsApp**: por eso NO es rubro_ecommerce ni rubro_institucional.
 - comercio_vender / comercio_mostrar: SOLO si la conversación está en la pregunta del comercio — quiere vender online con catálogo y carrito (vender), o solo mostrar el negocio y que lo contacten (mostrar).
-- rubro_institucional: es una EMPRESA (no un profesional solo NI un comercio a la calle) o una institución: pyme, fábrica, distribuidora, constructora grande, consultora, estudio con equipo, colegio, escuela, universidad, fundación, ONG, club, cámara, sindicato, municipio, asociación. Necesita una web más completa que una landing. Un local que vende productos NO va acá: va por rubro_comercio.
+- rubro_hibrido: fabrica o instala productos a medida que pueden mostrarse como trabajos, como catálogo o venderse online: cortinas, toldos, aberturas, cerramientos, muebles a medida, carpintería, herrería, amoblamientos, mamparas. NO alcanza el rubro para cotizar.
+- hibrido_trabajos / hibrido_catalogo / hibrido_vender: SOLO al responder la pregunta del rubro híbrido. Trabajos y consultas por WhatsApp = trabajos; exhibir modelos o productos = catálogo; carrito y cobro online = vender.
+- rubro_institucional: es una institución (colegio, universidad, fundación, ONG, club, cámara, sindicato, municipio, asociación) o una empresa que claramente quiere presentar su historia, equipo y servicios. Una pyme o fábrica que produce/vende cosas y podría necesitar catálogo, ecommerce o mostrar trabajos NO se clasifica automáticamente como institucional: usá rubro_comercio o rubro_hibrido según corresponda.
 - turnos_si / turnos_no: SOLO si la conversación está en la pregunta de turnos — quiere que sus clientes saquen turno solos desde la web (si), o alcanza con que lo contacten por WhatsApp (no).
 - rubro_ecommerce: dice explícitamente que quiere VENDER ONLINE, tener tienda con carrito, o ya vende por internet (incluye revender marcas como Just, Essen, Avon). Si solo cuenta que TIENE un local o comercio, usá rubro_comercio.
 - rubro_inmobiliaria: rubro inmobiliario o publica propiedades.
@@ -1639,10 +1677,16 @@ Nunca lo etiquetes como quiere_avanzar: un "dale" no es pedir el CBU, es decir q
 - saludo: solo saluda o agradece, sin contenido.
 - otro: nada de lo anterior aplica con claridad.
 
+ERRORES DE ESCRITURA:
+- Interpretá usando el contexto antes de tomar literalmente una frase rara. Si una corrección evidente produce una intención natural, usala.
+- Ejemplo real: "que me re ofendas?" en una charla donde pide orientación significa "qué me recomendás?", no que esté hablando de una ofensa.
+- Si hay más de una interpretación razonable, usá otro para que el bot pida una aclaración; nunca respondas al significado absurdo.
+
 CONTEXTO DE LA CONVERSACIÓN:
 - Fase actual: {$conv['fase']}
 - Tipo ya asignado: {$conv['tipo']}
 - Último mensaje del bot: "$ultimoBot"
+- Hechos que el cliente ya dijo en esta sesión: "$hechosCliente"
 
 EOT;
 
@@ -2125,7 +2169,8 @@ function wabot_embudo_resumen() {
 function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['seguimiento_activo'])) return false;
-    if (!empty($cv['seguimiento_enviado']) || ($cv['seguimiento_estado'] ?? '') === 'enviado') return false;
+    if (!empty($cv['seguimiento_enviado']) || !empty($cv['seguimiento_bloqueado'])
+        || in_array(($cv['seguimiento_estado'] ?? ''), ['enviado', 'bloqueado'], true)) return false;
     if ((int)($cv['seguimiento_intentos'] ?? 0) >= 3) return false;
     if (!empty($cv['bot_off']) || !empty($cv['handoff_pendiente']) || (int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
 

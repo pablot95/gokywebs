@@ -47,6 +47,14 @@ function wabot_agente($mensaje, &$conv, $cfg) {
 
 /** Una ejecución aislada del agente; el wrapper decide si confirma el estado. */
 function wabot_agente_intento($mensaje, &$conv, $cfg) {
+    if (!empty($conv['seguimiento_bloqueado']) && wabot_reabre_consulta($mensaje)) {
+        $conv['seguimiento_bloqueado'] = false;
+        $conv['seguimiento_estado'] = null;
+        if (in_array(($conv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion'], true)) $conv['cierre'] = null;
+    }
+    $cierreSinPresion = wabot_cierre_sin_presion_tipo($mensaje);
+    if ($cierreSinPresion !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierreSinPresion);
+
     // Este paso no necesita IA: el identificador de Instagram no sirve como
     // teléfono y el número que manda el cliente se valida antes de crear el lead.
     if (($conv['fase'] ?? '') === 'prediseno_wsp') {
@@ -147,6 +155,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            if (wabot_agente_repite_pregunta_contestada($texto, $conv)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'pregunta ya respondida', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             $limpio = wabot_validar_redaccion($texto, implode("\n", $pendientes), $cfg);
             if ($limpio === null) return null;
             wabot_agente_marcar_nombre_usado($limpio, $conv);
@@ -227,6 +240,27 @@ function wabot_agente_filtrar_aparte($texto, $aparte) {
     return $aparte;
 }
 
+/** Red de seguridad: no permite preguntar de nuevo el dato comercial básico. */
+function wabot_agente_repite_pregunta_contestada($texto, $conv) {
+    if (!wabot_contexto_cliente_tiene_negocio($conv)) return false;
+    $t = wabot_normalizar_frase($texto);
+    return (bool)(
+        preg_match('/\b(que vendes|que venden|que comercializas|que productos vendes)\b/u', $t)
+        || preg_match('/\b(que servicio ofreces|que servicios ofrecen|a que te dedicas|a que se dedican)\b/u', $t)
+        || preg_match('/\bcontame\b.{0,35}\b(que vendes|que ofreces|a que te dedicas)\b/u', $t)
+    );
+}
+
+/** Correcciones de alta confianza; el original siempre queda en el transcript. */
+function wabot_interpretar_typo_contextual($mensaje) {
+    $t = wabot_normalizar_frase($mensaje);
+    if (preg_match('/\bque me re ofend(?:as|es|a)\b/u', $t)
+        || preg_match('/\bque me reofend(?:as|es|a)\b/u', $t)) {
+        return 'qué me recomendás?';
+    }
+    return null;
+}
+
 /**
  * Lo que este cliente contó en charlas ANTERIORES (antes del último reset).
  *
@@ -288,7 +322,12 @@ function wabot_agente_historial($conv, $mensaje) {
             'parts' => [['text' => $t['t']]],
         ];
     }
-    $contents[] = ['role' => 'user', 'parts' => [['text' => $mensaje]]];
+    $mensajeModelo = $mensaje;
+    $interpretacion = wabot_interpretar_typo_contextual($mensaje);
+    if ($interpretacion !== null) {
+        $mensajeModelo .= "\n[Interpretación contextual de alta confianza: \"$interpretacion\". Respondé a esa intención y no al significado literal del typo.]";
+    }
+    $contents[] = ['role' => 'user', 'parts' => [['text' => $mensajeModelo]]];
     return $contents;
 }
 
@@ -325,7 +364,7 @@ function wabot_agente_tools($cerrada = false) {
                     'tipo' => [
                         'type' => 'string',
                         'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
-                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. catalogo: vende productos pero NO quiere cobrar online: quiere mostrar su catálogo y que le consulten por WhatsApp. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: una EMPRESA o institución, no un profesional solo NI un comercio a la calle (pyme, fábrica, distribuidora, consultora, colegio, fundación, ONG, club, municipio); un local que vende productos va por el desempate de comercios. ecommerce exige que YA HAYA CONFIRMADO que quiere vender online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
+                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. catalogo: vende productos pero NO quiere cobrar online: quiere mostrar su catálogo y que le consulten por WhatsApp. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: una empresa/institución que quiere presentar historia, equipo y servicios; no un profesional solo ni un comercio. Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. ecommerce exige que YA HAYA CONFIRMADO que quiere vender online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
                     ],
                     'productos' => [
                         'type' => 'integer',
@@ -348,6 +387,20 @@ function wabot_agente_tools($cerrada = false) {
                     ],
                 ],
                 'required' => ['tipo'],
+            ],
+        ],
+        [
+            'name' => 'cerrar_sin_presion',
+            'description' => 'Cierra cordialmente SIN vender ni ofrecer la demo cuando el cliente dice que solo averiguaba, que será más adelante, que hoy no tiene presupuesto o que no le interesa. También bloquea el seguimiento automático.',
+            'parameters' => [
+                'type' => 'object',
+                'properties' => [
+                    'motivo' => [
+                        'type' => 'string',
+                        'enum' => ['solo_averiguando', 'mas_adelante', 'sin_presupuesto', 'no_interesa'],
+                    ],
+                ],
+                'required' => ['motivo'],
             ],
         ],
         [
@@ -429,6 +482,15 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
             if (!isset($cfg['tipos'][$tipo])) {
                 return ['error' => 'Tipo desconocido.'];
             }
+            $contextoCliente = wabot_contexto_cliente_texto($conv);
+            if (wabot_contexto_es_hibrido($contextoCliente)
+                && wabot_desempate_por_palabras('desempate_hibrido', $contextoCliente) === null) {
+                $conv['fase'] = 'desempate_hibrido';
+                return [
+                    'error' => 'El rubro admite más de un tipo de web y todavía falta confirmar el objetivo.',
+                    'nota' => 'No cotices todavía. Preguntá UNA sola cosa: si quiere mostrar trabajos y recibir consultas, exhibir modelos/productos en catálogo con WhatsApp, o vender y cobrar online.',
+                ];
+            }
             // Nunca dos precios distintos en la misma charla.
             if (!empty($conv['tipo']) && $conv['tipo'] !== $tipo) {
                 $causa = wabot_agente_handoff_causa($conv, ['causa' => 'ambiguedad']);
@@ -481,6 +543,12 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
                     'nota' => 'Contestá con esto. El monto de la seña ya es el que corresponde a lo cotizado.',
                 ], $conv, $cfg);
             }
+            if ($clave === 'hosting') {
+                return wabot_agente_agregar_cta([
+                    'texto' => wabot_texto_hosting($conv, $cfg),
+                    'nota' => 'Contestá con toda esta información. Si el importe futuro no está fijado, no lo inventes: explicá la renovación anual y que se confirma antes del vencimiento.',
+                ], $conv, $cfg);
+            }
             // La respuesta oficial a "es caro": acá viven las 3 cuotas sin
             // interés, así el modelo no inventa montos dividiendo el precio.
             if ($clave === 'objecion_precio') {
@@ -517,6 +585,12 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
             $conv['cta_muestra'] = true;
             wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'objecion_' . $tipo]);
             return $res;
+
+        case 'cerrar_sin_presion':
+            $motivo = (string)($args['motivo'] ?? 'solo_averiguando');
+            $tipoCierre = $motivo === 'no_interesa' ? 'rechazo' : 'consulta';
+            $r = wabot_cerrar_sin_presion($conv, $cfg, $tipoCierre);
+            return ['texto' => $r[0], 'terminal' => true];
 
         case 'anotar_prediseno':
             wabot_agente_anotar($args, $conv);
@@ -714,6 +788,7 @@ function wabot_agente_sistema($conv, $cfg) {
     $ind   = trim((string)($cfg['indicaciones'] ?? ''));
     $canal = wabot_canal($conv);
     $nombre = trim((string)($conv['nombre'] ?? ''));
+    $hechosCliente = wabot_contexto_cliente_sesion($conv, 18);
 
     $p = <<<EOT
 Sos el asistente comercial de Gokywebs, agencia argentina de diseño y desarrollo de páginas web y sistemas de gestión. Atendés por WhatsApp o Instagram a dueños de negocios que responden a un anuncio. Tu objetivo es entender qué necesitan, avanzar la venta y dejar siempre un próximo paso concreto.
@@ -724,8 +799,14 @@ CÓMO TRABAJÁS
 - Una pregunta por mensaje. Mensajes cortos, de 2 a 4 líneas: es chat.
 - Apuntá a dar el precio rápido, sin interrogatorios. Si con lo que te dijeron ya sabés qué tipo es, dalo.
 - Pero si el rubro no alcanza para saber qué tipo de web necesita, preguntá lo que haga falta (de a una) antes de cotizar. Cotizar mal por no preguntar es el peor error: después no se puede dar otro precio.
-- No repitas lo que ya dijiste en la charla.
+- Antes de hacer una pregunta, revisá TODOS los hechos que el cliente ya dijo. Nunca preguntes qué vende, qué servicio ofrece ni qué necesita si eso ya aparece en la charla; confirmalo con tus palabras y avanzá al siguiente dato faltante.
+- No repitas lo que ya dijiste en la charla ni arranques siempre con "Perfecto". Alterná aperturas naturales o entrá directo en la respuesta.
 - Un "sí", "dale", "ok", "listo" o "de una" pelados contestan LA ÚLTIMA PREGUNTA QUE HICISTE, no abren un tema nuevo. Si venías de ofrecer el prediseño, ese "dale" es que lo acepta: pedile la descripción, no lo derives. Derivar ahí corta la venta en el mejor momento.
+
+ERRORES DE ESCRITURA Y AUTOCORRECTOR
+- Antes de interpretar literalmente una frase extraña, buscá la corrección que tenga sentido con la conversación. Si hay una opción claramente más probable, respondé a esa intención.
+- Ejemplo real: "que me re ofendas?" en una charla donde pide orientación significa "qué me recomendás?". Nunca contestes como si realmente estuviera hablando de una ofensa.
+- Si quedan dos interpretaciones razonables, pedí una aclaración corta. No construyas una respuesta alrededor de un significado absurdo.
 
 LOS TIPOS DE WEB
 - Landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp. Plomero, gasista, electricista, pintor, fletes, cerrajero, jardinero, contador, abogado, fotógrafo. Es la web más básica: presenta y contacta.
@@ -747,6 +828,11 @@ Si vende CUALQUIER producto y no dijo cómo quiere usar la web, SIEMPRE pregunt�
 Ejemplos de comercios: ferretería, kiosco, almacén, dietética, ropa, bazar, vivero, librería, juguetería, panadería, carnicería, pet shop, corralón y repuestos.
 Vender online = ecommerce. Solo mostrar el catálogo y que le escriban = web con catálogo, y ahí necesitás UN dato más antes de dar el precio: cuántos productos va a publicar, porque se cobra $500 por cada uno. Preguntáselo con dar_precio(catalogo) sin el parámetro productos, que te devuelve la pregunta exacta; cuando te diga el número, volvés a llamarla con productos. Nunca estimes vos la cantidad ni cotices sin ese dato. Un comercio a la calle NUNCA es una web institucional.
 
+DESEMPATE OBLIGATORIO PARA PRODUCTOS O TRABAJOS A MEDIDA
+Si fabrica o instala cortinas, toldos, aberturas, cerramientos, muebles a medida, trabajos de carpintería/herrería, amoblamientos, mamparas o algo parecido, el rubro solo NO alcanza para cotizar institucional ni landing.
+Preguntá una sola cosa: si la web sería para mostrar trabajos y recibir consultas, para exhibir modelos/productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online.
+Mostrar trabajos/recibir consultas = landing. Exhibir modelos/productos = catálogo y después preguntás cantidad. Vender y cobrar online = ecommerce.
+
 DESEMPATE OBLIGATORIO CON CURSOS
 Si da o vende cursos, antes de cotizar preguntale si quiere venderlos desde la web misma con los videos y acceso para cada alumno, o si prefiere solo mostrarlos y que lo contacten por WhatsApp. Venderlos = plataforma de cursos. Solo mostrarlos = landing.
 
@@ -756,7 +842,7 @@ Esto es distinto de vender productos y cursos EN LA MISMA web (ese caso sigue ye
 Si llega al prediseño y pide uno para cada web, avanzá con el primero como siempre; para el segundo llamá a derivar aclarando que hay una segunda web pendiente de cotizar — un solo prediseño automático es por conversación, el resto lo coordina Pablo directo.
 
 EMPRESA O INSTITUCIÓN
-Si te dice que es una empresa, una pyme, una fábrica, una institución, un colegio, una fundación o una ONG, eso NO es una landing: es una web institucional y se cotiza como tal. No hace falta preguntar nada más.
+Si te dice que es una institución, colegio, fundación u ONG, o una empresa que claramente quiere presentar su historia, equipo y servicios, eso NO es una landing: es una web institucional. La palabra "empresa" o "fábrica" sola no habilita a cotizar cuando el negocio produce o vende cosas que podrían necesitar catálogo, ecommerce o muestra de trabajos: en esos casos hacé el desempate correspondiente.
 
 SISTEMAS DE GESTIÓN A MEDIDA
 - También hacemos sistemas, apps internas y paneles a medida para stock, ventas, turnos, clientes, operaciones o procesos propios.
@@ -777,6 +863,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Nunca bajes el precio ni ofrezcas descuentos.
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto: ahí ya están las 3 cuotas sin interés. Es la ÚNICA situación donde se mencionan — nunca las ofrezcas de entrada (regalás el descuento a alguien que iba a pagar igual) y nunca calcules el monto de cada cuota.
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por "te confirma el equipo".
+- "Lo tengo que pensar" NO es lo mismo que "solo estaba averiguando", "más adelante", "ahora no tengo presupuesto" o "no me interesa". En esas cuatro salidas llamá a cerrar_sin_presion: cerrá cordialmente, no ofrezcas la demo, no hagas otra pregunta y no intentes recuperar la venta.
 - Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la demo en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
 - El mantenimiento es opcional y se contesta con consultar_info, que ya te devuelve el precio y el link que corresponden al tipo cotizado. No los digas de memoria: cambian según la web.
 - Si dice que no le interesa, cerrá cordial y sin insistir.
@@ -861,6 +948,12 @@ EOT;
             . "esa charla anterior NO valen: la cotización arranca de nuevo con las herramientas.\n\n";
     }
 
+    if ($hechosCliente) {
+        $p .= "HECHOS QUE EL CLIENTE YA DIJO EN ESTA SESIÓN\n";
+        foreach ($hechosCliente as $hecho) $p .= '- "' . $hecho . "\"\n";
+        $p .= "Estos hechos son memoria, no preguntas pendientes. No vuelvas a pedir ninguno; usalos para resumir el caso y preguntar solamente lo que todavía falte.\n\n";
+    }
+
     $f = wabot_agente_ficha($conv);
     $fs = wabot_agente_ficha_sistema($conv);
     $p .= "ESTADO DE ESTA CHARLA\n";
@@ -872,6 +965,7 @@ EOT;
     $p .= "- Fase: " . $conv['fase'] . "\n";
     $p .= "- Handoff pendiente: " . (!empty($conv['handoff_pendiente']) ? 'sí' : 'no') . "\n";
     $p .= "- Aclaraciones ambiguas fallidas: " . (int)($conv['aclaraciones_fallidas'] ?? 0) . " de 2\n";
+    $p .= "- Seguimiento comercial bloqueado: " . (!empty($conv['seguimiento_bloqueado']) ? 'sí; no vendas ni ofrezcas la demo' : 'no') . "\n";
     $p .= "- Descripción anotada: " . ($f['descripcion'] !== '' ? $f['descripcion'] : 'todavía no') . "\n";
     $p .= "- Colores anotados: "    . ($f['colores']     !== '' ? $f['colores']     : 'todavía no') . "\n";
     $p .= "- Referencia anotada: "  . ($f['referencia']  !== '' ? $f['referencia']

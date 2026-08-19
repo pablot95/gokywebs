@@ -1744,5 +1744,88 @@ $textoSinFaltantes = wabot_prediseno_texto(['nombre_negocio' => 'Mate Sur', 'des
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
 
+echo "— Regresiones comerciales reales —\n";
+
+$c = conv_nueva();
+$c['session_started_ts'] = time() - 30;
+$c['transcript'] = [
+    ['q'=>'cliente','t'=>'Vendo zapatillas','ts'=>time()-20],
+    ['q'=>'bot','t'=>'Querés vender online o mostrar el catálogo y que te escriban?','ts'=>time()-15],
+    ['q'=>'cliente','t'=>'Catálogo y WhatsApp','ts'=>time()-5],
+];
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
+$r = wabot_engine('Catálogo y WhatsApp', $c, $cfg);
+caso('si falla la IA, recuerda que Gabriela vende zapatillas y avanza al catálogo',
+    $c['fase'] === 'catalogo_cantidad'
+    && $r === [$cfg['catalogo_cantidad']]
+    && stripos($r[0], 'qué vend') === false);
+
+$c = conv_nueva();
+$c['session_started_ts'] = time() - 20;
+$c['transcript'] = [[
+    'q'=>'cliente',
+    't'=>'Tengo un negocio de entrenamiento. Quiero WhatsApp y compra online de rutinas personalizadas; más adelante, suplementos.',
+    'ts'=>time()-5,
+]];
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
+$r = wabot_engine($c['transcript'][0]['t'], $c, $cfg);
+caso('si Lucas ya explicó el negocio, pide definir el objetivo y no vuelve a preguntar qué vende',
+    $r === [$cfg['aclarar_objetivo']] && stripos($r[0], 'qué vend') === false);
+
+$c = conv_nueva();
+clasifica(['rubro_hibrido']);
+$r = wabot_engine('Es de cortinas y toldos', $c, $cfg);
+caso('cortinas y toldos abre una sola pregunta de diagnóstico antes de cotizar',
+    $r === [$cfg['desempate_hibrido']]
+    && $c['fase'] === 'desempate_hibrido'
+    && empty($c['precio_dado']));
+clasifica(['hibrido_catalogo']);
+$r = wabot_engine('Quiero mostrar modelos en catálogo y recibir consultas por WhatsApp', $c, $cfg);
+caso('la respuesta de diagnóstico recién entonces clasifica como catálogo',
+    $r === [$cfg['catalogo_cantidad']] && $c['fase'] === 'catalogo_cantidad');
+
+$c = conv_nueva();
+$c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['cta_muestra'] = true;
+clasifica(['pensarlo']);
+$r = wabot_engine('Por el momento estaba preguntando, más adelante me comunico', $c, $cfg);
+caso('una señal explícita de “solo averiguo” cierra sin insistir con la muestra',
+    count($r) === 1
+    && stripos($r[0], 'muestra') === false
+    && !empty($c['seguimiento_bloqueado'])
+    && ($c['seguimiento_estado'] ?? '') === 'bloqueado');
+caso('el cierre suave también impide el seguimiento automático',
+    !wabot_seguimiento_corresponde($c, $cfg, time() + 86400));
+
+$c = conv_nueva();
+$c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['cta_muestra'] = false;
+$c['session_started_ts'] = time() - 30;
+$c['transcript'] = [[
+    'q'=>'bot',
+    't'=>'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?',
+    'ts'=>time()-20,
+]];
+clasifica(['pregunta_info'], ['info_keys'=>['hosting']]);
+$r = wabot_engine('Después de un año de hosting y dominio gratis, cuánto se paga y cada cuánto?', $c, $cfg);
+caso('hosting explica la renovación anual y evita repetir la oferta de demo',
+    count($r) === 1
+    && stripos($r[0], 'una vez por año') !== false
+    && stripos($r[0], 'antes del vencimiento') !== false
+    && stripos($r[0], 'demo') === false
+    && !empty($c['cta_muestra']));
+
+$variantesPrecio = [];
+for ($i = 1; $i <= 15; $i++) {
+    $cv = conv_nueva();
+    $cv['conversation_key'] = 'VARIANTE-' . $i;
+    $cv['session_id'] = 'SESION-' . $i;
+    $cv['chat_started_ts'] = 1000 + $i;
+    $variantesPrecio[] = wabot_msg_precio_texto('landing', $cfg, $cv);
+}
+caso('los mensajes comerciales tienen variantes naturales sin perder precio ni enlace',
+    count(array_unique($variantesPrecio)) >= 3
+    && count(array_filter($variantesPrecio, function ($t) {
+        return strpos($t, '$200.000') !== false && strpos($t, 'presupuestos/Landing') !== false;
+    })) === count($variantesPrecio));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

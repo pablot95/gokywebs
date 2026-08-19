@@ -24,6 +24,7 @@ function convNueva($tel = 'AGTEST') {
         'conversation_key'=>$tel,'channel_user_id'=>$tel,'telefono_wsp'=>null,
         'descripcion'=>null,'brief'=>null,'colores'=>null,'colores_hex'=>null,'referencia'=>null,
         'referencia_preguntada'=>false,'cta_muestra'=>false,'seguimiento_enviado'=>false,
+        'seguimiento_bloqueado'=>false,
         'espera_avisada'=>false,'no_texto_avisado'=>false,'bot_off'=>false,'pausado_hasta'=>0,
         'lead_creado'=>false,'sistema_lead_creado'=>false,'handoff_pendiente'=>false,'aclaraciones_fallidas'=>0,
         'aclaracion_pendiente'=>false,'sistema_problema'=>null,'sistema_actual'=>null,
@@ -411,8 +412,9 @@ caso('sin guardar_prediseno no puede reabrir el prediseño',
 
 $abierta = array_column(wabot_agente_tools(false), 'name');
 caso('con la charla abierta las tiene todas',
-    count($abierta) === 8 && in_array('dar_precio', $abierta, true)
-    && in_array('anotar_sistema', $abierta, true) && in_array('manejar_objecion', $abierta, true));
+    count($abierta) === 9 && in_array('dar_precio', $abierta, true)
+    && in_array('anotar_sistema', $abierta, true) && in_array('manejar_objecion', $abierta, true)
+    && in_array('cerrar_sin_presion', $abierta, true));
 
 caso('y el prompt le avisa que la charla está cerrada',
     strpos(wabot_agente_sistema($c, $cfg), 'ESTA CHARLA YA ESTA CERRADA') !== false);
@@ -749,6 +751,73 @@ caso('no promete otro número', strpos($cfg['prediseno_completo'], '2506-8578') 
 caso('avisa que la muestra llega por acá mismo', stripos($cfg['prediseno_completo'], 'por acá mismo') !== false);
 caso('la bienvenida es la pregunta abierta, ya no el menú de opciones',
     strpos($cfg['menu'], 'Contame un poco') !== false && stripos($cfg['menu'], 'Landing (') === false);
+
+echo "— Regresiones de conversaciones reales —\n";
+
+$c = convNueva();
+$c['session_started_ts'] = time() - 30;
+$c['transcript'] = [
+    ['q'=>'cliente','t'=>'Vendo zapatillas','ts'=>time()-20],
+    ['q'=>'bot','t'=>'Querés vender online o mostrar el catálogo y que te escriban?','ts'=>time()-15],
+    ['q'=>'cliente','t'=>'Catálogo y WhatsApp','ts'=>time()-5],
+];
+caso('la ficha de sesión conserva que Gabriela vende zapatillas',
+    strpos(wabot_contexto_cliente_texto($c), 'Vendo zapatillas') !== false);
+caso('el agente rechaza volver a preguntar qué vende',
+    wabot_agente_repite_pregunta_contestada('Contame un poco más, qué vendés o qué servicio ofrecés?', $c));
+caso('pero permite preguntar el dato siguiente',
+    !wabot_agente_repite_pregunta_contestada('Cuántos productos querés publicar?', $c));
+
+caso('interpreta el typo real como "qué me recomendás"',
+    wabot_interpretar_typo_contextual('que me re ofendas?') === 'qué me recomendás?');
+$histTypo = wabot_agente_historial($c, 'que me re ofendas?');
+$ultimoTypo = end($histTypo);
+caso('la interpretación contextual llega al modelo sin alterar el transcript',
+    strpos($ultimoTypo['parts'][0]['text'], 'qué me recomendás') !== false
+    && $c['transcript'][0]['t'] === 'Vendo zapatillas');
+
+$c = convNueva();
+$c['session_started_ts'] = time() - 10;
+$c['transcript'] = [['q'=>'cliente','t'=>'Es de cortinas y toldos','ts'=>time()-5]];
+$c['_mensaje_agente'] = 'Es de cortinas y toldos';
+$r = wabot_agente_ejecutar('dar_precio', ['tipo'=>'institucional'], $c, $cfg);
+caso('cortinas y toldos no se cotiza institucional sin diagnosticar',
+    isset($r['error']) && $c['fase'] === 'desempate_hibrido' && empty($c['precio_dado']));
+$c['transcript'][] = ['q'=>'cliente','t'=>'Quiero mostrar trabajos y recibir consultas por WhatsApp','ts'=>time()];
+$c['_mensaje_agente'] = 'Quiero mostrar trabajos y recibir consultas por WhatsApp';
+$r = wabot_agente_ejecutar('dar_precio', ['tipo'=>'landing'], $c, $cfg);
+caso('después de confirmar el objetivo sí permite cotizar',
+    !isset($r['error']) && strpos($r['texto'], '$200.000') !== false);
+
+$c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+$r = wabot_agente_intento('Por el momento estaba preguntando, más adelante me comunico', $c, $cfg);
+caso('"solo averiguaba" cierra sin ofrecer la demo',
+    count($r) === 1 && stripos($r[0], 'demo') === false && !empty($c['seguimiento_bloqueado']));
+caso('el cierre suave deja el seguimiento realmente bloqueado',
+    ($c['seguimiento_estado'] ?? '') === 'bloqueado' && ($c['cierre'] ?? '') === 'consulta_sin_presion');
+caso('"no tengo plata" también es una salida comercial explícita',
+    wabot_cierre_sin_presion_tipo('Gracias, pero no tengo plata') === 'consulta');
+caso('"más adelante suplementos" describe el proyecto y no cierra la charla',
+    wabot_cierre_sin_presion_tipo('Más adelante quiero sumar suplementos') === null);
+
+$c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+$c['session_started_ts'] = time() - 20;
+$c['transcript'] = [['q'=>'bot','t'=>$cfg['msg_prediseno_oferta'],'ts'=>time()-10]];
+wabot_turno_preparar($c, $cfg);
+$c['_mensaje_agente'] = 'Después de un año de hosting y dominio gratis, cuánto se paga y cada cuánto?';
+$r = wabot_agente_ejecutar('consultar_info', ['clave'=>'hosting'], $c, $cfg);
+caso('hosting responde qué pasa después del primer año',
+    stripos($r['texto'], 'una vez por año') !== false && stripos($r['texto'], 'antes del vencimiento') !== false);
+caso('si la demo ya fue ofrecida, la duda de hosting no agrega otro CTA', empty($r['aparte']));
+caso('un chat anterior a la corrección reconstruye el CTA usado desde el transcript', !empty($c['cta_muestra']));
+
+$c['session_started_ts'] = time() - 10;
+$c['transcript'][] = ['q'=>'cliente','t'=>'Vendo zapatillas y quiero un catálogo con WhatsApp','ts'=>time()-5];
+$promptReal = wabot_agente_sistema($c, $cfg);
+caso('el playbook incluye hechos de sesión, typos y cierres sin presión',
+    strpos($promptReal, 'HECHOS QUE EL CLIENTE YA DIJO') !== false
+    && strpos($promptReal, 'que me re ofendas') !== false
+    && strpos($promptReal, 'cerrar_sin_presion') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -32,7 +32,8 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
             }
             foreach (['referencia_preguntada','cta_muestra','seguimiento_enviado','espera_avisada',
                       'no_texto_avisado','lead_creado','handoff_pendiente','nombre_usado',
-                      'aclaracion_pendiente','sistema_lead_creado','precio_dado'] as $k) {
+                      'aclaracion_pendiente','sistema_lead_creado','precio_dado',
+                      'seguimiento_bloqueado'] as $k) {
                 $conv[$k] = false;
             }
             $conv['aclaraciones_fallidas'] = 0;
@@ -46,6 +47,11 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
 
     if (empty($conv['session_started_ts'])) $conv['session_started_ts'] = $ahora;
     if (empty($conv['session_id'])) $conv['session_id'] = bin2hex(random_bytes(6));
+    // Compatibilidad con conversaciones iniciadas antes de que cta_muestra se
+    // persistiera al cotizar: el transcript sigue siendo la fuente de verdad.
+    if (empty($conv['cta_muestra']) && wabot_cta_muestra_ya_ofrecida($conv)) {
+        $conv['cta_muestra'] = true;
+    }
     $conv['ultimo_ts'] = $ahora;
 }
 
@@ -90,6 +96,100 @@ function wabot_ultimo_texto_cliente($conv) {
         if (($t['q'] ?? '') === 'cliente') return trim((string)($t['t'] ?? ''));
     }
     return '';
+}
+
+/**
+ * Hechos textuales de la sesión actual. El historial corto del modelo sirve para
+ * conversar, pero no puede ser la única memoria: al caer una llamada de IA el
+ * fallback también necesita saber qué vende el cliente y qué objetivo describió.
+ */
+function wabot_contexto_cliente_sesion($conv, $max = 18) {
+    $inicio = (int)($conv['session_started_ts'] ?? 0);
+    $hechos = [];
+    foreach ((array)($conv['transcript'] ?? []) as $t) {
+        if (($t['q'] ?? '') !== 'cliente') continue;
+        if ($inicio > 0 && (int)($t['ts'] ?? 0) < $inicio) continue;
+        $texto = trim(preg_replace('/\s+/u', ' ', (string)($t['t'] ?? '')));
+        if ($texto === '') continue;
+        $hechos[] = mb_substr($texto, 0, 260);
+    }
+    return array_slice($hechos, -max(1, (int)$max));
+}
+
+function wabot_contexto_cliente_texto($conv, $max = 18) {
+    return trim(implode(' ', wabot_contexto_cliente_sesion($conv, $max)));
+}
+
+/** Reconstruye el CTA usado en chats viejos mirando solo lo dicho por el bot. */
+function wabot_cta_muestra_ya_ofrecida($conv) {
+    $inicio = (int)($conv['session_started_ts'] ?? 0);
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+        if (($linea['q'] ?? '') !== 'bot') continue;
+        if ($inicio > 0 && (int)($linea['ts'] ?? 0) < $inicio) continue;
+        $t = wabot_normalizar_frase((string)($linea['t'] ?? ''));
+        if (!preg_match('/\b(demo|muestra|prediseno)\b/u', $t)) continue;
+        if (preg_match('/\b(gratis|sin cargo|sin costo|sin compromiso|armamos|armarte|preparamos|prepararte|queres que)\b/u', $t)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Hay información comercial real; no corresponde volver a preguntar "qué vendés". */
+function wabot_contexto_cliente_tiene_negocio($conv) {
+    $t = wabot_normalizar_frase(wabot_contexto_cliente_texto($conv));
+    if ($t === '') return false;
+    if (wabot_fallback_rubro_local($t) !== null) return true;
+    return (bool)preg_match('/\b(vendo|vendemos|hago|hacemos|ofrezco|ofrecemos|me dedico|nos dedicamos|tengo un|tengo una|negocio|empresa|emprendimiento|local|marca|servicio|productos?|rutinas?|entrenamiento|zapatillas?|cortinas?|toldos?)\b/u', $t);
+}
+
+/** Rubros que pueden ser portfolio, catálogo o venta online: requieren una pregunta. */
+function wabot_contexto_es_hibrido($texto) {
+    $t = wabot_normalizar_frase($texto);
+    return $t !== '' && (bool)preg_match('/\b(cortinas?|toldos?|aberturas?|muebles? a medida|carpinteria|herrerias?|cerramientos?|amoblamientos?|mesadas?|mamparas?)\b/u', $t);
+}
+
+/**
+ * Señales de salida comercial. Se separan de "lo voy a pensar": cuando alguien
+ * dice que solo averiguaba, que será más adelante o que hoy no tiene presupuesto,
+ * se cierra bien y se bloquea el seguimiento automático.
+ */
+function wabot_cierre_sin_presion_tipo($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return null;
+
+    if (preg_match('/\b(no me interesa|no estoy interesado|no estoy interesada|dejalo ahi)\b/u', $t)
+        || preg_match('/\bgracias pero no(?: gracias)?$/u', $t)) {
+        return 'rechazo';
+    }
+    if (preg_match('/\b(solo|solamente|unicamente|por ahora|por el momento)\b.{0,35}\b(averigu|consult|pregunt|viendo|cotiz)\w*/u', $t)
+        || preg_match('/\b(mas adelante|en otro momento|cuando pueda|cuando tenga)\b.{0,45}\b(escrib|contact|comunic|retom|veo|vemos|avanzo|avanzamos)\w*/u', $t)
+        || preg_match('/\b(no tengo|no cuento con)\b.{0,20}\b(plata|dinero|presupuesto|fondos)\b/u', $t)
+        || preg_match('/\bno puedo\b.{0,20}\b(pagar|afrontar)\b/u', $t)
+        || preg_match('/\b(ahora|hoy|por ahora|por el momento)\b.{0,25}\b(no tengo|no cuento con|no puedo)\b.{0,25}\b(plata|dinero|presupuesto|fondos|pagar)\b/u', $t)
+        || preg_match('/\b(no tengo|no cuento con|no puedo)\b.{0,25}\b(plata|dinero|presupuesto|fondos|pagar)\b.{0,25}\b(ahora|hoy|por ahora|por el momento)\b/u', $t)) {
+        return 'consulta';
+    }
+    return null;
+}
+
+function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
+    $conv['seguimiento_bloqueado'] = true;
+    $conv['seguimiento_estado'] = 'bloqueado';
+    $conv['cta_muestra'] = true;
+    $conv['cierre'] = $tipo === 'rechazo' ? 'sin_interes' : 'consulta_sin_presion';
+    wabot_handoff_aclaracion_resuelta($conv);
+    wabot_evento_sesion($conv, 'consulta_cerrada', ['causa' => $tipo]);
+    $texto = $tipo === 'rechazo'
+        ? (string)($cfg['no_interesa'] ?? 'Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.')
+        : (string)($cfg['cierre_suave'] ?? 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.');
+    return [$texto];
+}
+
+/** Un mensaje nuevo y explícitamente comprador vuelve a habilitar el seguimiento. */
+function wabot_reabre_consulta($texto) {
+    $t = wabot_normalizar_frase($texto);
+    return $t !== '' && (bool)preg_match('/\b(ahora si|quiero retomar|quiero avanzar|quiero contratar|quiero arrancar|mandame el cbu|como te pago)\b/u', $t);
 }
 
 /**
@@ -186,6 +286,9 @@ function wabot_handoff_marcar(&$conv, $causa = 'derivacion') {
 
 /** Textos seguros cuando la dependencia de IA no está disponible. Nunca deriva. */
 function wabot_fallback_ia($texto, &$conv, $cfg) {
+    $cierre = wabot_cierre_sin_presion_tipo($texto);
+    if ($cierre !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierre);
+
     switch ($conv['fase'] ?? 'nuevo') {
         case 'nuevo':
             $t = wabot_normalizar_frase($texto);
@@ -200,7 +303,48 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
         case 'menu':
         case 'algo_diferente':
             $t = wabot_normalizar_frase($texto);
+            $infoLocal = wabot_info_por_palabras($texto);
+            if ($infoLocal !== null) {
+                if ($infoLocal === 'mantenimiento') return [wabot_texto_mantenimiento($conv, $cfg)];
+                if ($infoLocal === 'pago') return [wabot_texto_pago($conv, $cfg)];
+                if ($infoLocal === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
+                return [(string)($cfg['info'][$infoLocal] ?? $cfg['info']['otra'])];
+            }
+
+            $contexto = wabot_contexto_cliente_texto($conv);
+            if (wabot_contexto_es_hibrido($contexto)) {
+                $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
+                if ($objetivo === 'hibrido_vender')   return wabot_precio('ecommerce', $conv, $cfg);
+                if ($objetivo === 'hibrido_catalogo') return wabot_precio('catalogo', $conv, $cfg);
+                if ($objetivo === 'hibrido_trabajos') return wabot_precio('landing', $conv, $cfg);
+                $conv['fase'] = 'desempate_hibrido';
+                wabot_handoff_aclaracion_resuelta($conv);
+                return [(string)$cfg['desempate_hibrido']];
+            }
+
             $rubroLocal = wabot_fallback_rubro_local($t);
+            $rubroContexto = wabot_fallback_rubro_local($contexto);
+
+            // Gabriela: "vendo zapatillas" quedó en el turno anterior y ahora
+            // responde "catálogo y WhatsApp". Aunque Gemini caiga, se juntan
+            // ambas piezas antes de decidir.
+            if ($rubroContexto === 'comercio_pendiente') {
+                $objetivo = wabot_desempate_por_palabras('desempate_comercio', $texto);
+                if ($objetivo === 'comercio_vender')  return wabot_precio('ecommerce', $conv, $cfg);
+                if ($objetivo === 'comercio_mostrar') return wabot_precio('catalogo', $conv, $cfg);
+            }
+            if ($rubroContexto === 'turnos_pendiente') {
+                $objetivo = wabot_desempate_por_palabras('desempate_turnos', $texto);
+                if ($objetivo === 'turnos_si') return wabot_precio('turnos', $conv, $cfg);
+                if ($objetivo === 'turnos_no') return wabot_precio('landing', $conv, $cfg);
+            }
+            if ($rubroContexto === 'cursos') {
+                $objetivo = wabot_desempate_por_palabras('desempate_cursos', $texto);
+                if ($objetivo === 'cursos_vender')  return wabot_precio('elearning', $conv, $cfg);
+                if ($objetivo === 'cursos_mostrar') return wabot_precio('landing', $conv, $cfg);
+            }
+
+            if ($rubroLocal === null) $rubroLocal = $rubroContexto;
             if ($rubroLocal === 'sistema_pendiente') {
                 $conv['fase'] = 'sistema_problema';
                 wabot_handoff_aclaracion_resuelta($conv);
@@ -214,9 +358,17 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             if ($rubroLocal !== null) return wabot_precio($rubroLocal, $conv, $cfg);
             $conv['fase'] = 'algo_diferente';
-            return [$cfg['contame']];
+            return [wabot_contexto_cliente_tiene_negocio($conv)
+                ? (string)$cfg['aclarar_objetivo']
+                : (string)$cfg['contame']];
         case 'desempate_turnos':  return [$cfg['desempate_turnos']];
         case 'desempate_comercio': return [$cfg['desempate_comercio']];
+        case 'desempate_hibrido':
+            $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
+            if ($objetivo === 'hibrido_vender')   return wabot_precio('ecommerce', $conv, $cfg);
+            if ($objetivo === 'hibrido_catalogo') return wabot_precio('catalogo', $conv, $cfg);
+            if ($objetivo === 'hibrido_trabajos') return wabot_precio('landing', $conv, $cfg);
+            return [$cfg['desempate_hibrido']];
         case 'catalogo_cantidad':
             $cantFallback = wabot_extraer_cantidad_productos($texto);
             if ($cantFallback !== null) return wabot_catalogo_cotizar($cantFallback, $conv, $cfg);
@@ -305,11 +457,12 @@ function wabot_fallback_rubro_local($t) {
         || preg_match('/\bvender\b.{0,30}\b(online|por internet|desde la web|por la web)\b/u', $t)) {
         return 'ecommerce';
     }
+    if (wabot_contexto_es_hibrido($t)) return 'hibrido_pendiente';
     if (preg_match('/\b(peluqueria|barberia|estetica|spa|masajes|unas|depilacion|tatuajes|consultorio|odontologia|psicologia|veterinaria|gimnasio|pilates|yoga|canchas|cabanas|hotel|taller mecanico)\b/u', $t)) {
         return 'turnos_pendiente';
     }
     if (preg_match('/\b(curso|cursos|capacitacion|capacitaciones|talleres|clases online)\b/u', $t)) return 'cursos';
-    if (preg_match('/\b(mates?|velas|ropa|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|local|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|fabricamos|indumentaria|marroquineria|cosmetica|perfumeria)\b/u', $t)) {
+    if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|local|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|fabricamos|indumentaria|marroquineria|cosmetica|perfumeria)\b/u', $t)) {
         return 'comercio_pendiente';
     }
     if (preg_match('/\b(inmobiliaria|propiedades|bienes raices)\b/u', $t)) return 'inmobiliaria';
@@ -360,6 +513,7 @@ function wabot_texto_aclaracion($conv, $cfg) {
     $yaPregunto = !empty($conv['aclaracion_pendiente']);
     if ($fase === 'desempate_turnos')   return $yaPregunto && !empty($cfg['desempate_turnos_2'])   ? $cfg['desempate_turnos_2']   : $cfg['desempate_turnos'];
     if ($fase === 'desempate_comercio') return $yaPregunto && !empty($cfg['desempate_comercio_2']) ? $cfg['desempate_comercio_2'] : $cfg['desempate_comercio'];
+    if ($fase === 'desempate_hibrido')  return $yaPregunto && !empty($cfg['desempate_hibrido_2'])  ? $cfg['desempate_hibrido_2']  : $cfg['desempate_hibrido'];
     if ($fase === 'desempate_cursos')   return $yaPregunto && !empty($cfg['desempate_cursos_2'])   ? $cfg['desempate_cursos_2']   : $cfg['desempate_cursos'];
     if ($fase === 'catalogo_cantidad')  return $yaPregunto && !empty($cfg['catalogo_cantidad_2'])  ? $cfg['catalogo_cantidad_2']  : $cfg['catalogo_cantidad'];
     if ($fase === 'sistema_problema') return wabot_sistema_texto('problema', $cfg);
@@ -415,6 +569,14 @@ function wabot_engine($texto, &$conv, $cfg) {
     wabot_turno_preparar($conv, $cfg, $ahora);
     wabot_turno_marcar($conv);
 
+    if (!empty($conv['seguimiento_bloqueado']) && wabot_reabre_consulta($texto)) {
+        $conv['seguimiento_bloqueado'] = false;
+        $conv['seguimiento_estado'] = null;
+        if (in_array(($conv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion'], true)) $conv['cierre'] = null;
+    }
+    $cierreSinPresion = wabot_cierre_sin_presion_tipo($texto);
+    if ($cierreSinPresion !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierreSinPresion);
+
     // Charla cerrada: el bot sigue disponible para sacarle dudas, pero NO vuelve
     // a vender. Nunca cotiza de nuevo, nunca reabre el prediseño y nunca deriva
     // otra vez: eso ya pasó. Solo contesta lo que sabe contestar.
@@ -469,7 +631,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         return wabot_handoff_intentar($texto, $conv, $cfg, $has('productos_y_cursos') ? 'productos_y_cursos' : null);
     }
     if ($has('no_interesa')) {
-        return [$cfg['no_interesa']];
+        return wabot_cerrar_sin_presion($conv, $cfg, 'rechazo');
     }
 
     /* ── Cambio de tipo después del precio: confirmar antes del handoff ── */
@@ -502,7 +664,8 @@ function wabot_engine($texto, &$conv, $cfg) {
         foreach ($keys as $k) {
             if (!isset($cfg['info'][$k])) continue;
             $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
-                : ($k === 'pago' ? wabot_texto_pago($conv, $cfg) : $cfg['info'][$k]);
+                : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
+                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : $cfg['info'][$k]));
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
         $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
@@ -563,6 +726,17 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($has('comercio_vender'))    { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
             elseif ($has('comercio_mostrar')) { $out = array_merge($out, wabot_precio('catalogo', $conv, $cfg)); }
             else                            { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
+            break;
+
+        case 'desempate_hibrido':
+            if (!$has('hibrido_vender') && !$has('hibrido_catalogo') && !$has('hibrido_trabajos')) {
+                $local = wabot_desempate_por_palabras('desempate_hibrido', $texto);
+                if ($local !== null) { $acc[] = $local; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
+            }
+            if ($has('hibrido_vender'))            { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
+            elseif ($has('hibrido_catalogo'))      { $out = array_merge($out, wabot_precio('catalogo', $conv, $cfg)); }
+            elseif ($has('hibrido_trabajos'))      { $out = array_merge($out, wabot_precio('landing', $conv, $cfg)); }
+            else                                   { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
             break;
 
         case 'desempate_cursos':
@@ -767,6 +941,7 @@ function wabot_rubro_de($acc) {
     // faltan hacer. El resto sí sale directo al precio.
     if (in_array('rubro_cursos', $acc, true))                                        return 'cursos';
     if (in_array('servicio_con_turnos', $acc, true))                                 return 'turnos_pendiente';
+    if (in_array('rubro_hibrido', $acc, true))                                       return 'hibrido_pendiente';
     if (in_array('rubro_comercio', $acc, true))                                      return 'comercio_pendiente';
     if (in_array('rubro_sistema', $acc, true))                                       return 'sistema_pendiente';
     if (in_array('rubro_institucional', $acc, true))                                 return 'institucional';
@@ -784,6 +959,7 @@ function wabot_desempate_de($r) {
     if ($r === 'cursos')           return ['desempate_cursos', 'desempate_cursos'];
     if ($r === 'turnos_pendiente') return ['desempate_turnos', 'desempate_turnos'];
     if ($r === 'comercio_pendiente') return ['desempate_comercio', 'desempate_comercio'];
+    if ($r === 'hibrido_pendiente')  return ['desempate_hibrido', 'desempate_hibrido'];
     if ($r === 'sistema_pendiente')  return ['sistema_problema', 'sistema_pregunta'];
     return null;
 }
@@ -812,7 +988,9 @@ function wabot_info_por_palabras($texto) {
     if (preg_match('/(como se paga|formas de pago|medios de pago|se puede pagar|transferencia|mercado pago|en cuotas|senia|sena)/u', $t)) return 'pago';
     if (preg_match('/(hosting|dominio|servidor|el .com|la direccion web)/u', $t)) return 'hosting';
     if (preg_match('/(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)/u', $t)) return 'carga';
-    if (preg_match('/(logo|isotipo|identidad|marca grafica)/u', $t)) return 'logo';
+    // Palabras completas: "catálogo" contiene "logo" como substring y no es
+    // una consulta sobre identidad visual.
+    if (preg_match('/(?:^|\s)(?:logo|isotipo|identidad|marca grafica)(?:\s|$)/u', $t)) return 'logo';
     if (preg_match('/(publicidad|marketing|redes|instagram|pauta|anuncios|posteos)/u', $t)) return 'marketing';
     if (preg_match('/(reunion|videollamada|llamada|nos juntamos|zoom|meet)/u', $t)) return 'reuniones';
     if (preg_match('/(wordpress|wix|tiendanube|shopify|con que lo hacen|que tecnologia|codigo)/u', $t)) return 'tecnologia';
@@ -848,18 +1026,33 @@ function wabot_desempate_por_palabras($fase, $texto) {
     switch ($fase) {
         case 'desempate_comercio':
             if ($tiene(array_merge($primera, [
-                'vender', 'venderlos', 'venderlas', 'venta', 'ventas', 'carrito', 'catalogo', 'tienda', 'online',
+                'vender', 'venderlos', 'venderlas', 'venta', 'ventas', 'carrito', 'tienda', 'online',
                 'ecommerce', 'e commerce', 'cobrar', 'cobro', 'comprar', 'compren', 'compras',
                 'por la web', 'por la pagina', 'desde la web', 'desde la pagina', 'en la web', 'en la pagina',
                 'por internet', 'por la pag', 'la web', 'la pagina', 'que compren', 'pagar', 'paguen',
                 'mercado pago', 'con pago', 'todo online', 'la completa', 'la tienda',
             ]))) return 'comercio_vender';
             if ($tiene(array_merge($segunda, [
-                'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'presentacion', 'presentar', 'contacten', 'contacto',
+                'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo', 'presentacion', 'presentar', 'contacten', 'contacto',
                 'whatsapp', 'wsp', 'wp', 'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
                 'escriban', 'que me hablen', 'me contacten', 'la simple', 'la basica', 'sin carrito',
                 'sin cobro', 'nomas', 'solamente mostrar', 'que muestre',
             ]))) return 'comercio_mostrar';
+            return null;
+        case 'desempate_hibrido':
+            if ($tiene([
+                'vender online', 'vender por la web', 'vender desde la web', 'tienda online', 'ecommerce',
+                'e commerce', 'carrito', 'cobro online', 'cobrar online', 'que compren', 'que paguen',
+            ])) return 'hibrido_vender';
+            if ($tiene([
+                'catalogo', 'catálogo', 'modelos', 'productos', 'exhibir modelos', 'mostrar modelos',
+                'catalogo por whatsapp', 'catalogo con whatsapp', 'lista de productos',
+            ])) return 'hibrido_catalogo';
+            if ($tiene([
+                'mostrar trabajos', 'trabajos realizados', 'portfolio', 'portafolio', 'obras', 'proyectos',
+                'recibir consultas', 'pedir presupuesto', 'cotizacion', 'cotizaciones', 'que me contacten',
+                'que me escriban', 'presentar la empresa', 'mostrar lo que hacemos',
+            ])) return 'hibrido_trabajos';
             return null;
         case 'desempate_turnos':
             if ($tiene(array_merge($primera, [
@@ -963,11 +1156,35 @@ function wabot_texto_mantenimiento($conv, $cfg) {
     return str_replace(['{precio}', '{link}'], [$plan['precio'], $plan['link']], $base);
 }
 
+/** Hosting: responde también qué pasa al terminar el primer año incluido. */
+function wabot_texto_hosting($conv, $cfg) {
+    $base = trim((string)($cfg['info']['hosting'] ?? ''));
+    $renovacion = trim((string)($cfg['hosting_renovacion'] ?? ''));
+    if ($renovacion === '') return $base;
+    if (mb_stripos($base, $renovacion) !== false) return $base;
+    return trim($base . "\n" . $renovacion);
+}
+
 function wabot_texto_pago($conv, $cfg) {
     $tipo = $conv['tipo'] ?? '';
     $sena = $cfg['tipos'][$tipo]['sena'] ?? '';
     if ($sena === '') return (string)($cfg['info']['pago_generico'] ?? $cfg['info']['pago'] ?? '');
     return str_replace('{sena}', $sena, (string)($cfg['info']['pago'] ?? ''));
+}
+
+/** Elige una variante estable por conversación; precios y links siguen exactos. */
+function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
+    $base = (string)($cfg[$clave] ?? '');
+    // Los tests y llamadas internas sin conversación real conservan la plantilla
+    // editable principal. En producción, chat_started_ts existe desde el ingreso.
+    if ((int)($conv['chat_started_ts'] ?? 0) <= 0) return $base;
+    $variantes = array_values(array_filter((array)($cfg[$claveVariantes] ?? []), function ($v) {
+        return is_string($v) && trim($v) !== '';
+    }));
+    if (!$variantes) return $base;
+    $semilla = wabot_conversation_key($conv) . '|' . (string)($conv['session_id'] ?? '') . '|' . $clave;
+    $indice = hexdec(substr(hash('sha256', $semilla), 0, 8)) % count($variantes);
+    return $variantes[$indice];
 }
 
 /* Arma el mensaje de precio del tipo y fija la fase. */
@@ -988,9 +1205,10 @@ function wabot_precio($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
     $out = [wabot_msg_precio_texto($tipo, $cfg, $conv)];
-    $oferta = trim((string)($cfg['msg_prediseno_oferta'] ?? ''));
+    $oferta = trim(wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg));
     if ($oferta !== '') {
         $out[] = $oferta;
+        $conv['cta_muestra'] = true;
         wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
     }
     return $out;
@@ -1011,16 +1229,22 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
         $cantidad = (int)(is_array($conv) ? ($conv['productos_cantidad'] ?? 0) : 0);
         if ($cantidad > 0) {
             $d = wabot_catalogo_total($cantidad, $cfg);
+            $plantilla = is_array($conv)
+                ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
+                : (string)$cfg['msg_precio_catalogo'];
             return str_replace(
                 ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}'],
                 [$desc, $d['cantidad'], wabot_moneda($d['total']), wabot_moneda($d['base']),
-                 wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link']],
-                $cfg['msg_precio_catalogo']
+                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link']],
+                $plantilla
             );
         }
     }
 
-    return str_replace(['{desc}', '{precio}', '{link}'], [$desc, $t['precio'], $t['link']], $cfg['msg_precio']);
+    $plantilla = is_array($conv)
+        ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
+        : (string)$cfg['msg_precio'];
+    return str_replace(['{desc}', '{precio}', '{link}'], [$desc, $t['precio'], $t['link']], $plantilla);
 }
 
 function wabot_catalogo_preguntar(&$conv, $cfg) {
