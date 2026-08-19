@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260804-brand-row1">
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
@@ -22,118 +22,156 @@
                 <img src="../logo.png" alt="GokyWebs" class="logo-img">
                 <span class="logo-text">GokyWebs</span>
             </a>
-            <p class="header-tagline">Completá el brief y armamos tu propuesta a medida 🎨</p>
         </header>
 
-        <!-- Hero text -->
-        <div class="hero-text">
-            <h1 class="hero-title">Contanos sobre tu marca</h1>
-            <p class="hero-desc">Con esta info diseñamos una propuesta y un boceto grátis que realmente te represente. Solo te lleva 2 minutos.</p>
-        </div>
+        <!-- Presentación -->
+        <section class="hero-text" aria-labelledby="formHeroTitle">
+            <p class="hero-eyebrow">Tu web, antes de contratarla</p>
+            <h1 class="hero-title" id="formHeroTitle">La primera entrega es GRATIS</h1>
+            <button class="btn-que-es-muestra" id="btnQueEsMuestra">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Ver qué incluye y cómo funciona
+            </button>
+        </section>
+
 
         <!-- Card -->
         <div class="form-card" id="formCard">
+
+            <!-- Indicador de pasos -->
+            <div class="steps-indicator" id="stepsIndicator">
+                <div class="step-dot active" data-s="1">
+                    <div class="step-dot-circle">1</div>
+                    <div class="step-dot-label">Tu negocio</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-dot" data-s="2">
+                    <div class="step-dot-circle">2</div>
+                    <div class="step-dot-label">Estilo + Logo</div>
+                </div>
+            </div>
+
             <form id="propuestaForm" novalidate autocomplete="off">
 
-                <!-- ─── Datos de contacto ─── -->
-                <div class="form-section">
+                <!-- ─── PASO 1: Tu negocio ─── -->
+                <div class="form-step" data-step="1">
+                    <div class="form-section">
 
-                    <div class="field-group">
-                        <label class="field-label" for="nombre">
-                            Tu nombre <span class="req">*</span>
-                        </label>
-                        <input type="text" id="nombre" name="nombre" class="field-input" placeholder=" " required>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label" for="telefono">
-                            Teléfono / WhatsApp <span class="req">*</span>
-                        </label>
-                        <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="" required>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label" for="nombre_negocio">
-                            Nombre del negocio o marca <span class="req">*</span>
-                        </label>
-                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder=" " required>
-                    </div>
-
-                    <div class="field-group">
-                        <label class="field-label" for="rubro">
-                            Rubro / ¿A qué se dedica? <span class="req">*</span>
-                        </label>
-                        <textarea id="rubro" name="rubro" class="field-input field-textarea autosize" placeholder="" rows="1" required></textarea>
-                    </div>
-                </div>
-
-                <div class="divider"></div>
-
-                <!-- ─── Identidad visual ─── -->
-                <div class="form-section">
-
-                    <!-- Colores -->
-                    <div class="field-group">
-                        <label class="field-label" for="colores_extra">
-                            Colores de marca ( Los que querés que predominen en tu web )
-                            <span class="field-hint">Si sabés los códigos HEX o RGB mejor, si no escribí los nombres.</span>
-                        </label>
-                        <textarea id="colores_extra" name="colores_extra" class="field-input field-textarea autosize" rows="1" placeholder=""></textarea>
-                    </div>
-
-                    <!-- Tipografías -->
-                    <div class="field-group">
-                        <label class="field-label" for="tipografias">
-                            Tipografías
-                            <span class="field-hint">Si no sabés el nombre, describí el estilo (elegante, moderna, redondeada…)</span>
-                        </label>
-                        <textarea id="tipografias" name="tipografias" class="field-input field-textarea autosize" rows="1" placeholder=""></textarea>
-                    </div>
-
-                    <!-- Referencias visuales -->
-                    <div class="field-group">
-                        <label class="field-label" for="referencias">
-                            Referencias visuales
-                            <span class="field-hint">
-                                Pegá links de webs que te gusten o describí el estilo
-                            </span>
-                        </label>
-                        <textarea id="referencias" name="referencias" class="field-input field-textarea autosize" rows="1" placeholder=""></textarea>
-                    </div>
-                </div>
-                
-                <!-- ─── Recursos ─── -->
-                <div class="form-section">
-
-                    <!-- Logo -->
-                    <div class="field-group">
-                        <label class="field-label">
-                            Logo de tu marca
-                            <span class="field-hint">Si tenés un logo subilo acá. Arrastralo o hacé clic para elegirlo.</span>
-                        </label>
-                        <div class="logo-dropzone" id="logoDropzone">
-                            <input type="file" id="logoInput" accept="image/*,.svg,.ai,.eps,.pdf">
-                            <span class="logo-dropzone-icon">🖼️</span>
-                            <p class="logo-dropzone-text"><strong>Arrastrá tu logo acá</strong> o hacé clic para elegirlo</p>
-                            <p class="logo-dropzone-subtext">PNG, JPG, SVG, AI, EPS, PDF · Máx. 10 MB</p>
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 1 de 2</span>
+                            <h2 class="step-header-title">Tu negocio</h2>
                         </div>
-                        <div class="logo-preview" id="logoPreview" style="display:none">
-                            <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Vista previa del logo">
-                            <span class="logo-preview-name" id="logoPreviewName"></span>
-                            <button type="button" class="logo-preview-remove" id="logoRemoveBtn" title="Quitar logo">✕</button>
+                        <div class="field-group">
+                            <label class="field-label" for="nombre_negocio">
+                                Nombre del negocio o marca
+                            </label>
+                            <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="">
                         </div>
+                        <div class="field-group">
+                            <label class="field-label" for="rubro">
+                                Contanos sobre tu negocio y qué querés lograr con la web <span class="req">*</span>
+                                <span class="field-hint">Decinos a qué te dedicás, cuáles son tus principales productos o servicios y qué te gustaría que haga la gente al entrar.</span>
+                            </label>
+                            <textarea id="rubro" name="rubro" class="field-input field-textarea autosize" rows="1" placeholder="" required></textarea>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="telefono">
+                                Teléfono / WhatsApp <span class="req">*</span>
+                            </label>
+                            <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
+                        </div>
+
                     </div>
 
+                    <div class="step-nav">
+                        <div></div>
+                        <button type="button" class="btn-step btn-step-next" data-next="2">Continuar <span class="btn-step-arrow">→</span></button>
+                    </div>
                 </div>
 
-                <div class="divider"></div>
+                <!-- ─── PASO 2: Estilo + Logo ─── -->
+                <div class="form-step" data-step="2" hidden>
+                    <div class="form-section">
 
-                <!-- ─── Submit ─── -->
-                <div class="submit-row">
-                    <button type="button" id="btnEnviar" class="btn-submit">
-                        Enviar
-                    </button>
-                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu propuesta.</p>
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 2 de 2</span>
+                            <p class="step-header-desc">Todo este paso es opcional. Completalo para que podamos personalizar mejor tu muestra.</p>
+                        </div>
+
+                        <!-- Cantidad de cursos (solo e-learning, se muestra según ?tipo=) -->
+                        <div class="field-group" id="elearningField" style="display:none">
+                            <label class="field-label" for="cant_cursos">
+                                ¿Cuántos cursos vas a ofrecer, aprox?
+                                <span class="field-hint">Para dimensionar la plataforma de cursos.</span>
+                            </label>
+                            <select id="cant_cursos" name="cant_cursos" class="field-input">
+                                <option value="">Elegí una opción</option>
+                                <option value="1 curso">1 curso</option>
+                                <option value="Entre 2 y 5">Entre 2 y 5</option>
+                                <option value="Entre 6 y 15">Entre 6 y 15</option>
+                                <option value="Más de 15">Más de 15</option>
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">
+                                Colores
+                                <span class="field-hint">¿Tenés colores de marca?</span>
+                            </label>
+                            <div class="color-fields-grid">
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_principal">Color principal</label>
+                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_secundario">Color secundario</label>
+                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_fondos">Color de fondos</label>
+                                    <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="brand-assets-row">
+                            <div class="field-group brand-assets-field brand-fonts-field">
+                                <label class="field-label" for="tipografias">
+                                    Tipografías
+                                </label>
+                                <textarea id="tipografias" name="tipografias" class="field-input field-textarea autosize" rows="1" placeholder="Ej: algo moderno y limpio / me gusta Inter o Montserrat"></textarea>
+                            </div>
+
+                            <div class="field-group brand-assets-field brand-logo-field">
+                                <label class="field-label">
+                                    Logo de tu marca
+                                </label>
+                                <div class="logo-dropzone" id="logoDropzone">
+                                    <input type="file" id="logoInput" accept="image/*,.svg,.ai,.eps,.pdf">
+                                    <span class="logo-dropzone-icon">🖼️</span>
+                                    <p class="logo-dropzone-text"><strong>Hacé clic para elegirlo</strong></p>
+                                    <p class="logo-dropzone-subtext">PNG, JPG, SVG, AI, EPS, PDF · Máx. 10 MB</p>
+                                </div>
+                                <div class="logo-preview" id="logoPreview" style="display:none">
+                                    <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Vista previa del logo">
+                                    <span class="logo-preview-name" id="logoPreviewName"></span>
+                                    <button type="button" class="logo-preview-remove" id="logoRemoveBtn" title="Quitar logo">✕</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <div class="submit-row">
+                        <div class="step-nav step-nav-submit">
+                            <button type="button" class="btn-step btn-step-prev" data-prev="1">← Anterior</button>
+                            <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
+                        </div>
+                        <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu muestra.</p>
+                    </div>
                 </div>
 
             </form>
@@ -145,6 +183,121 @@
         </footer>
 
     </div>
+
+    <!-- Modal: ¿Qué es una Primera entrega GRATIS? -->
+    <div class="que-es-overlay" id="queEsOverlay" role="dialog" aria-modal="true" aria-labelledby="queEsTitle">
+        <div class="que-es-modal">
+            <div class="que-es-header">
+                <h2 class="que-es-title" id="queEsTitle">¿Qué es una Primera entrega GRATIS?</h2>
+                <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="que-es-body">
+
+                <p class="que-es-intro">
+                    Una muestra es un <strong>diseño real de tu sitio web</strong>, hecho 100% a medida según tu marca, rubro y estilo — <strong>sin costo y sin compromiso</strong>. No es un template genérico: es tu web, antes de contratarla.
+                </p>
+
+                <div class="que-es-block">
+                    <div class="que-es-block-title">¿Para qué sirve?</div>
+                    <div class="que-es-items">
+                        <div class="que-es-item">
+                            <div class="que-es-item-icon">🎨</div>
+                            <div class="que-es-item-text">
+                                <strong>Ver antes de decidir</strong>
+                                Visualizá cómo quedaría tu web con tus colores y estilo, antes de gastar un peso.
+                            </div>
+                        </div>
+                        <div class="que-es-item">
+                            <div class="que-es-item-icon">✅</div>
+                            <div class="que-es-item-text">
+                                <strong>Cero riesgo</strong>
+                                Si la muestra no te convence, no hay cargo. Si te gusta, ahí sí avanzamos.
+                            </div>
+                        </div>
+                        <div class="que-es-item">
+                            <div class="que-es-item-icon">⚡</div>
+                            <div class="que-es-item-text">
+                                <strong>Ahorrás tiempo y plata</strong>
+                                Confirmás que el estilo es el que querés antes de arrancar el desarrollo completo.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="que-es-block">
+                    <div class="que-es-block-title">¿Cómo sigue?</div>
+                    <div class="que-es-steps">
+                        <div class="que-es-step">
+                            <div class="que-es-step-line"></div>
+                            <div class="que-es-step-num">1</div>
+                            <div class="que-es-step-text">
+                                <strong>Completás este formulario</strong>
+                                Solo lleva 2 minutos. Nos contás tu negocio, colores y estilo.
+                            </div>
+                        </div>
+                        <div class="que-es-step">
+                            <div class="que-es-step-line"></div>
+                            <div class="que-es-step-num">2</div>
+                            <div class="que-es-step-text">
+                                <strong>Nuestro equipo diseña tu muestra</strong>
+                                Armamos una sección real de tu sitio, personalizada para vos.
+                            </div>
+                        </div>
+                        <div class="que-es-step">
+                            <div class="que-es-step-line"></div>
+                            <div class="que-es-step-num">3</div>
+                            <div class="que-es-step-text">
+                                <strong>Te la enviamos en 24 a 48 horas</strong>
+                                Recibís la muestra por WhatsApp para verla y comentar.
+                            </div>
+                        </div>
+                        <div class="que-es-step">
+                            <div class="que-es-step-num">4</div>
+                            <div class="que-es-step-text">
+                                <strong>Decidís sin presión</strong>
+                                Si te gusta el estilo, arrancamos el proyecto completo. Si no, sin cargo ni compromiso.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="que-es-cta">
+                    <div class="que-es-cta-icon">🚀</div>
+                    <div class="que-es-cta-text">
+                        <strong>Ya lo sabés todo — ahora es el momento</strong>
+                        Completá el formulario, en menos de 2 minutos estás listo.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ── Modal "¿Qué es una muestra?" ── */
+        const _qeOverlay = document.getElementById('queEsOverlay');
+        document.getElementById('btnQueEsMuestra').addEventListener('click', () => {
+            _qeOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+        document.getElementById('queEsClose').addEventListener('click', () => {
+            _qeOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+        _qeOverlay.addEventListener('click', (e) => {
+            if (e.target === _qeOverlay) {
+                _qeOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && _qeOverlay.classList.contains('open')) {
+                _qeOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+        /* La navegación de pasos y la validación viven en script.js (única fuente). */
+    </script>
 
     <script type="module" src="script.js"></script>
 </body>

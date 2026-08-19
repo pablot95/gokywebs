@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="../logonuevo.png">
+    <title>Admin · Visitas por demo | Gokywebs</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0b0f1a; --panel: #131a2b; --panel-2: #1a2438; --line: #243149;
+            --text: #eef1fb; --muted: #93a0bd; --accent: #35e08b; --accent-2: #4a9eff;
+            --bar: #2a3a5c;
+        }
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            background: #0b0f1a; color: #eef1fb; min-height: 100vh; padding: 24px 16px 60px;
+        }
+        .wrap { max-width: 960px; margin: 0 auto; }
+        .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+        .top h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+        .top-actions { display: flex; gap: 8px; }
+        .lnk { color: #93a0bd; text-decoration: none; font-size: .9rem; padding: 8px 12px; border: 1px solid #243149; border-radius: 8px; background: #131a2b; }
+        .lnk:hover { color: #eef1fb; border-color: #35e08b; }
+        .sub { color: #93a0bd; font-size: .9rem; margin-bottom: 20px; }
+
+        .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+        .ranges { display: inline-flex; background: #131a2b; border: 1px solid #243149; border-radius: 10px; padding: 4px; gap: 2px; }
+        .ranges button {
+            border: 0; background: transparent; color: #93a0bd; font: inherit; font-size: .88rem;
+            padding: 7px 14px; border-radius: 7px; cursor: pointer;
+        }
+        .ranges button.active { background: #35e08b; color: #06210f; font-weight: 600; }
+        .search { flex: 1; min-width: 180px; }
+        .search input {
+            width: 100%; background: #131a2b; border: 1px solid #243149; border-radius: 10px;
+            color: #eef1fb; font: inherit; font-size: .9rem; padding: 9px 12px;
+        }
+        .search input:focus { outline: none; border-color: #35e08b; }
+
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+        .card { background: #131a2b; border: 1px solid #243149; border-radius: 12px; padding: 14px 16px; }
+        .card .n { font-size: 1.7rem; font-weight: 700; letter-spacing: -0.02em; }
+        .card .l { color: #93a0bd; font-size: .8rem; margin-top: 2px; }
+
+        table { width: 100%; border-collapse: collapse; background: #131a2b; border: 1px solid #243149; border-radius: 12px; overflow: hidden; }
+        thead th {
+            text-align: left; font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
+            color: #93a0bd; font-weight: 600; padding: 12px 14px; border-bottom: 1px solid #243149; white-space: nowrap;
+        }
+        thead th.num { text-align: right; }
+        tbody td { padding: 12px 14px; border-bottom: 1px solid #1c2740; font-size: .92rem; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: 0; }
+        tbody tr:hover { background: #17203400; background: rgba(53,224,139,.04); }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+        td.num .uni { color: #93a0bd; font-weight: 400; }
+        .demo-name { display: flex; align-items: center; gap: 8px; }
+        .demo-name a { color: #eef1fb; text-decoration: none; font-weight: 600; }
+        .demo-name a:hover { color: #35e08b; }
+        .demo-name .open { color: #4a9eff; font-size: .8rem; text-decoration: none; opacity: .8; }
+        .demo-name .open:hover { opacity: 1; }
+        .ref-dot { display: inline-block; }
+        .last { color: #93a0bd; font-size: .86rem; white-space: nowrap; }
+        .bar-wrap { width: 80px; height: 8px; background: #243149; border-radius: 4px; overflow: hidden; }
+        .bar { height: 100%; background: linear-gradient(90deg, #35e08b, #4a9eff); border-radius: 4px; }
+
+        .state { text-align: center; padding: 48px 16px; color: #93a0bd; }
+        .state.err { color: #ff8a80; }
+        @media (max-width: 600px) {
+            .cards { grid-template-columns: 1fr 1fr; }
+            .col-bar, th.col-bar { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="top">
+            <h1>Visitas por demo</h1>
+            <div class="top-actions">
+                <a class="lnk" href="dashboard.html">← Dashboard</a>
+                <a class="lnk" id="logoutBtn" href="#">Salir</a>
+            </div>
+        </div>
+        <p class="sub">Cuánta gente entra a cada muestra en <strong>gokywebs.com/demo/…</strong> · las visitas tuyas se excluyen abriendo cualquier demo con <code>?notrack=1</code></p>
+
+        <div class="controls">
+            <div class="ranges" id="ranges">
+                <button data-range="today">Hoy</button>
+                <button data-range="7d" class="active">7 días</button>
+                <button data-range="30d">30 días</button>
+                <button data-range="all">Todo</button>
+            </div>
+            <div class="search">
+                <input type="search" id="search" placeholder="Buscar demo por nombre…" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="card"><div class="n" id="cVisits">—</div><div class="l">Visitas totales</div></div>
+            <div class="card"><div class="n" id="cUniques">—</div><div class="l">Personas distintas</div></div>
+            <div class="card"><div class="n" id="cDemos">—</div><div class="l">Demos con visitas</div></div>
+        </div>
+
+        <div id="content">
+            <div class="state" id="state">Cargando…</div>
+        </div>
+    </div>
+
+    <script type="module" src="demos.js"></script>
+</body>
+</html>

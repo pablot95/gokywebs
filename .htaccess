@@ -1,0 +1,2 @@
+# Evita que el repositorio git (si queda deployado) sea navegable públicamente.
+RedirectMatch 404 /\.git

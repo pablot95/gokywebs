@@ -1,0 +1,318 @@
+:root {
+    /* Mismos tokens que /pago para que sean la misma familia visual */
+    --bg: #f8fafc;
+    --bg-card: #ffffff;
+    --blue: #2563EB;
+    --blue-2: #3B82F6;
+    --blue-text: #1D4ED8;
+    --blue-glow: rgba(37,99,235,0.15);
+    --blue-border: rgba(37,99,235,0.25);
+    --green: #047857;
+    --green-dim: rgba(16,185,129,0.1);
+    --green-border: rgba(16,185,129,0.28);
+    --text: #0f172a;
+    --text-muted: #475569;
+    --text-light: #64748b;
+    --border: rgba(15,23,42,0.08);
+    --border-2: rgba(15,23,42,0.14);
+    --radius: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --font: 'Inter', system-ui, sans-serif;
+    --ease: cubic-bezier(0.4,0,0.2,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+
+/* ── Header / Footer (idénticos a /pago) ── */
+.pres-header {
+    position: fixed; inset: 0 0 auto;
+    z-index: 200;
+    padding: 0 2rem;
+    height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(248,250,252,0.9);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+}
+.header-logo { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.01em; color: var(--text); }
+.btn-back {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.82rem; font-weight: 500; color: var(--text-muted);
+    background: none; border: none; transition: color 0.2s; padding: 0.4rem 0;
+}
+.btn-back:hover { color: var(--text); }
+.btn-back svg { width: 16px; height: 16px; }
+
+.pres-footer {
+    text-align: center; padding: 2rem;
+    font-size: 0.78rem; color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    margin-top: 1rem;
+}
+.pres-footer a { color: var(--blue-text); }
+
+/* ── Hero: "Gokywebs" + tipo de web ── */
+.prep-hero { padding: 6.5rem 1.5rem 1rem; text-align: center; max-width: 720px; margin: 0 auto; }
+.prep-eyebrow {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--blue-text); margin-bottom: 0.75rem;
+}
+.prep-brand { font-size: clamp(2.1rem, 6vw, 2.9rem); font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+.prep-tipo {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: var(--blue-glow); border: 1px solid var(--blue-border);
+    color: var(--blue-text); border-radius: 100px;
+    padding: 0.4rem 1.1rem; font-size: 0.85rem; font-weight: 700;
+    margin-top: 1.1rem;
+}
+.prep-cliente { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 0.7rem; }
+
+.pago-main { max-width: 820px; margin: 0 auto; padding: 1.5rem 1.5rem 2rem; }
+.pago-section { margin-bottom: 2.75rem; }
+.pago-section-eyebrow {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--blue-text); margin-bottom: 0.6rem;
+}
+.pago-section-title { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.5rem; color: var(--text); }
+.pago-section-desc { font-size: 0.9rem; color: var(--text-muted); line-height: 1.65; margin-bottom: 1.5rem; }
+
+/* ── Precio grande ── */
+.price-hero { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 1.5rem; }
+.price-hero b { font-size: clamp(2.3rem, 7vw, 3rem); font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+.price-hero span { font-size: 0.95rem; color: var(--text-muted); font-weight: 600; }
+
+
+/* ── Checklist numerada (incluye) ── */
+.check-list { list-style: none; counter-reset: incluye; display: grid; gap: 0.75rem; margin-bottom: 1.5rem; }
+.check-list li { counter-increment: incluye; position: relative; padding-left: 1.9rem; font-size: 0.92rem; color: var(--text); line-height: 1.5; }
+.check-list li::before {
+    content: counter(incluye);
+    position: absolute; top: 1px; left: 0;
+    width: 20px; height: 20px; border-radius: 50%; background: var(--green-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 800; color: var(--green);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Seña / saldo / entrega, + cuotas en su propia fila horizontal al pie ── */
+.plan-pago {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05); margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+.plan-pago-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+}
+.plan-pago-stats > div { min-width: 0; }
+.plan-pago .et { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.3rem; }
+.plan-pago .val { font-size: 1.3rem; font-weight: 800; color: var(--text); }
+.plan-pago .val.saldo { color: var(--green); }
+.plan-pago .val.cuotas { color: var(--blue-text); }
+.plan-pago-cuotas {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    width: 100%;
+    margin-top: 1.1rem; padding-top: 1rem; border-top: 1px dashed var(--border-2);
+}
+.plan-pago-cuotas .et { margin-bottom: 0; }
+.plan-pago-cuotas .val { font-size: 1.05rem; }
+
+.btn-pay-deposit {
+    width: 100%;
+    min-height: 54px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.95rem 1.5rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--blue-text), var(--blue-2));
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease), filter 0.2s var(--ease);
+}
+
+.btn-pay-deposit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.32);
+    filter: brightness(1.04);
+}
+
+.btn-pay-deposit:active {
+    transform: translateY(0);
+}
+
+.btn-pay-deposit:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.28);
+    outline-offset: 3px;
+}
+
+/* ── Mantenimiento ── */
+.mant-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem 1.75rem;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+}
+.mant-price { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 1.1rem; }
+.mant-price b { font-size: 1.8rem; font-weight: 800; color: var(--text); }
+.mant-price span { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+.mant-card .check-list { margin-bottom: 0; }
+
+.addon-note {
+    margin-top: 1.1rem; padding-top: 1rem;
+    border-top: 1px dashed var(--border-2);
+    font-size: 0.88rem; font-weight: 600; color: var(--text-muted);
+}
+.btn-addon-toggle {
+    width: 100%; min-height: 48px; margin-top: 1.1rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.8rem 1.4rem; border-radius: 999px;
+    border: 2px solid var(--blue-text); background: none;
+    color: var(--blue-text); font-family: var(--font);
+    font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; cursor: pointer;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.btn-addon-toggle:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,99,235,0.18); }
+.btn-addon-toggle:focus-visible { outline: 3px solid rgba(37,99,235,0.28); outline-offset: 3px; }
+.mant-card.addon-added { border-color: var(--blue-border); box-shadow: 0 0 0 3px var(--blue-glow); }
+.mant-card.addon-added .btn-addon-toggle { background: var(--blue-text); color: #fff; }
+
+/* ── Otros trabajos (previews de webs reales) ── */
+.works-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2.5rem 1.5rem;
+}
+.work-card {
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.work-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+}
+.work-view {
+    display: block;
+    aspect-ratio: 16 / 9;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15,23,42,0.3) transparent;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+}
+.work-view img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.work-scroll-hint {
+    position: sticky;
+    bottom: 0.5rem;
+    display: block;
+    width: max-content;
+    margin: -2.1rem auto 0.5rem;
+    padding: 0.22rem 0.7rem;
+    border-radius: 100px;
+    background: rgba(15,23,42,0.62);
+    color: #fff;
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+    pointer-events: none;
+}
+.btn-more-works {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; min-height: 48px; margin-top: 1rem;
+    padding: 0.8rem 1.4rem; border-radius: 999px;
+    border: 2px solid var(--blue-text);
+    color: var(--blue-text);
+    font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.btn-more-works:hover {
+    background: var(--blue-text); color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(37,99,235,0.18);
+}
+.btn-more-works:focus-visible { outline: 3px solid rgba(37,99,235,0.28); outline-offset: 3px; }
+.work-info {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.84rem; font-weight: 700; color: var(--text);
+    min-width: 0;
+}
+.work-info:hover { color: var(--blue-text); }
+.work-info > .work-cta {
+    flex-shrink: 0;
+    font-size: 0.76rem; font-weight: 700; color: var(--blue-text);
+    white-space: nowrap;
+}
+
+/* ── Timeline "Cómo sigue" (idéntico a /pago) ── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.timeline-step { display: flex; gap: 1rem; align-items: flex-start; padding: 1.1rem 0; border-bottom: 1px solid var(--border); }
+.timeline-step:last-child { border-bottom: none; }
+.timeline-num {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue-text), var(--blue));
+    color: #fff; font-size: 0.85rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+}
+.timeline-body h3 { font-size: 0.98rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--text); }
+.timeline-body p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+.timeline-body p strong { color: var(--text); }
+
+/* ── Modificaciones incluidas (idéntico a /pago) ── */
+.mods-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 1.5rem 1.75rem;
+    display: flex; gap: 1.1rem; align-items: flex-start;
+    box-shadow: 0 2px 12px rgba(15,23,42,0.05);
+}
+.mods-icon { font-size: 1.6rem; flex-shrink: 0; }
+.mods-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text); }
+.mods-card p { font-size: 0.86rem; color: var(--text-muted); line-height: 1.65; }
+.mods-card p strong { color: var(--text); }
+
+/* ── Soporte ── */
+.prep-support { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; }
+.prep-support a { color: var(--blue-text); font-weight: 600; }
+
+@media (max-width: 540px) {
+    .prep-hero { padding: 6rem 1.25rem 0.75rem; }
+    .pago-main { padding: 1.25rem 1rem 2rem; }
+    .plan-pago { padding: 1.1rem 1rem; }
+    .plan-pago-stats { gap: 0.75rem; }
+    .plan-pago .val { font-size: 1.05rem; }
+    .works-grid { grid-template-columns: minmax(0, 1fr); gap: 3rem; }
+    .works-grid .work-card { margin: 0 -1rem; border-radius: 8px; }
+}
+
+/* ── Impresión / Guardar como PDF ──
+   El header es fixed (tapa contenido en papel) y varias cosas no tienen
+   sentido en una hoja: volver al inicio, pagar la seña, el link de soporte.
+   Se sacan y se compensa el padding que el header fixed le reservaba al hero. */
+@media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { background: #fff; }
+    .pres-header, .btn-pay-deposit, .prep-support { display: none !important; }
+    .prep-hero { padding: 0.5rem 0 1rem; }
+    .pago-section { break-inside: avoid; page-break-inside: avoid; margin-bottom: 1.75rem; }
+    .plan-pago, .mant-card, .mods-card { box-shadow: none; border: 1px solid var(--border-2); }
+    .pres-footer { margin-top: 0.5rem; padding: 1rem; }
+}

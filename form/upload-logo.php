@@ -90,7 +90,7 @@ if (!move_uploaded_file($file['tmp_name'], $destPath)) {
 }
 
 /* ── Construir URL pública ── */
-$baseUrl = 'https://gokywebs.com/propuesta/logos/';
+$baseUrl = 'https://gokywebs.com/form/logos/';
 $url     = $baseUrl . $uniqueName;
 
 echo json_encode(['url' => $url, 'nombre' => $originalName]);

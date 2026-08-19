@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar Completados — Gokywebs Admin</title>
+    <style>
+        body { font-family: monospace; max-width: 600px; margin: 60px auto; padding: 0 20px; background: #0f1117; color: #e2e8f0; }
+        h1 { font-size: 1.2rem; margin-bottom: 8px; }
+        p { color: #94a3b8; font-size: 0.88rem; margin-bottom: 24px; }
+        button { background: #2563eb; color: white; border: none; padding: 12px 28px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        button:disabled { opacity: 0.4; cursor: not-allowed; }
+        #log { margin-top: 24px; display: flex; flex-direction: column; gap: 6px; }
+        .row { font-size: 0.85rem; padding: 6px 10px; border-radius: 6px; background: #1e2532; }
+        .ok  { border-left: 3px solid #4ade80; }
+        .err { border-left: 3px solid #f87171; }
+        #status { margin-bottom: 16px; font-size: 0.88rem; color: #facc15; }
+    </style>
+</head>
+<body>
+    <h1>📦 Importar Completados — Junio 2026</h1>
+    <p>Abrí esta página mientras estás logueado en el admin. Hacé clic en Importar para cargar los clientes.</p>
+    <div id="status">Verificando autenticación…</div>
+    <button id="btnImport" disabled>Importar 12 clientes</button>
+    <div id="log"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            Timestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ",
+            authDomain: "gokywebs-967cd.firebaseapp.com",
+            projectId: "gokywebs-967cd",
+            storageBucket: "gokywebs-967cd.firebasestorage.app",
+            messagingSenderId: "50030976147",
+            appId: "1:50030976147:web:9f07245b536a75833a4166"
+        };
+
+        const app  = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db   = getFirestore(app);
+
+        // Datos a importar — junio 2026
+        const DATA = [
+            { nombre: "Niftybar",        valorTotal: 270000, dia: 2  },
+            { nombre: "Rebels",          valorTotal: 270000, dia: 4  },
+            { nombre: "Tijeras",         valorTotal: 270000, dia: 6  },
+            { nombre: "Mrtruck",         valorTotal: 150000, dia: 8  },
+            { nombre: "Amparando",       valorTotal: 150000, dia: 9  },
+            { nombre: "MArtamontesano",  valorTotal: 150000, dia: 11 },
+            { nombre: "Axtiotek",        valorTotal: 150000, dia: 12 },
+            { nombre: "Culturapixel",    valorTotal: 150000, dia: 14 },
+            { nombre: "Pastore",         valorTotal: 220000, dia: 16 },
+            { nombre: "Moksha",          valorTotal: 160000, dia: 18 },
+            { nombre: "Locufre",         valorTotal: 330000, dia: 20 },
+            { nombre: "Kare",            valorTotal: 330000, dia: 22 },
+        ];
+
+        const status  = document.getElementById('status');
+        const btn     = document.getElementById('btnImport');
+        const log     = document.getElementById('log');
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                status.textContent = '⚠️ No estás logueado. Primero logueate en /admin/index.html y volvé acá.';
+                return;
+            }
+            status.textContent = `✅ Logueado como ${user.email}`;
+            btn.disabled = false;
+        });
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Importando…';
+
+            for (const item of DATA) {
+                try {
+                    const fecha = new Date(2026, 5, item.dia); // mes 5 = junio (0-indexed)
+                    await addDoc(collection(db, 'completados'), {
+                        nombre:        item.nombre,
+                        proyecto:      item.nombre,
+                        valorTotal:    item.valorTotal,
+                        abono:         item.valorTotal,
+                        telefono:      '',
+                        estadoCliente: 'cliente',
+                        notas:         '',
+                        createdAt:     Timestamp.fromDate(fecha),
+                        completadoAt:  Timestamp.fromDate(fecha),
+                    });
+                    log.innerHTML += `<div class="row ok">✅ ${item.nombre} — $${item.valorTotal.toLocaleString('es-AR')}</div>`;
+                } catch (err) {
+                    log.innerHTML += `<div class="row err">❌ ${item.nombre}: ${err.message}</div>`;
+                }
+            }
+
+            btn.textContent = '¡Hecho!';
+        });
+    </script>
+</body>
+</html>

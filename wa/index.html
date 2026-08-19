@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="robots" content="noindex">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GokyWebs</title>
+    <!-- Desde el 31-jul-2026 el bot de WhatsApp ya no manda al /form: todo el
+         flujo pasa por /presupuesto (calculadora + muestra gratis). Este
+         redirect queda vivo para los links /wa ya enviados en chats viejos.
+         Se conserva ?origen=whatsapp por si el presupuesto lo aprovecha a futuro;
+         el ?tipo= viejo se descarta (la calculadora clasifica sola). -->
+    <script>
+        location.replace('/presupuesto/?origen=whatsapp');
+    </script>
+    <style>body{font-family:system-ui,sans-serif;background:#05070e;color:#eef1fb;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}a{color:#35e08b}</style>
+</head>
+<body>
+    <p>Te estamos llevando a tu presupuesto… <a href="/presupuesto/?origen=whatsapp">Tocá acá si no avanza.</a></p>
+</body>
+</html>

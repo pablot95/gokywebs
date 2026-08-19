@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
-<html lang="es">
+<!DOCTYPE html>
+<html lang="es-AR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GRECFMV1N7"></script>
     <script>
@@ -11,15 +11,18 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-GRECFMV1N7');
+      gtag('config', 'AW-10808865418');
     </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-10808865418"></script>
 
     <title>GokyWebs | Diseño Web, Landing Pages y E-commerce en Argentina</title>
     <meta name="description" content="GokyWebs: agencia de diseño y desarrollo web en Argentina. Creamos landing pages, tiendas online y sitios corporativos con diseño moderno y resultados reales. Pedí tu presupuesto gratis.">
     <meta name="keywords" content="diseño web argentina, páginas web profesionales, landing page, ecommerce, tienda online, desarrollo web, agencia web argentina, crear página web, gokywebs">
     <meta name="author" content="GokyWebs">
     <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#05070e">
     <link rel="canonical" href="https://www.gokywebs.com/">
+
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.gokywebs.com/">
     <meta property="og:title" content="GokyWebs | Diseño Web Profesional en Argentina">
@@ -33,774 +36,245 @@
     <meta property="twitter:description" content="Agencia de diseño web en Argentina. Landing pages, e-commerce y sitios corporativos. Pedí tu presupuesto gratis.">
     <meta property="twitter:image" content="https://www.gokywebs.com/logo.png">
 
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="icon" type="image/png" href="logo.png">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="logo.png">
-    
-    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="home.css?v=23">
+
+    <noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+
     <script type="application/ld+json">
-    [
     {
-        "@context": "https://schema.org",
-        "@type": "ProfessionalService",
-        "name": "GokyWebs",
-        "image": "https://www.gokywebs.com/logo.png",
-        "description": "Agencia de diseño y desarrollo web en Argentina especializada en landing pages, e-commerce y sitios corporativos.",
-        "url": "https://www.gokywebs.com",
-        "priceRange": "$$",
-        "address": {
-          "@type": "PostalAddress",
-          "addressCountry": "AR"
-        },
-        "telephone": "+5491125068578"
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "SiteNavigationElement",
-        "name": "Landing Page",
-        "url": "https://www.gokywebs.com/#landing"
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "SiteNavigationElement",
-        "name": "E-commerce",
-        "url": "https://www.gokywebs.com/#ecommerce"
-      },
-      {
-         "@context": "https://schema.org",
-         "@type": "SiteNavigationElement",
-         "name": "Servicios",
-         "url": "https://www.gokywebs.com/#servicios"
-      }
-    ]
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "GokyWebs",
+      "description": "Agencia de diseño y desarrollo web: landing pages, e-commerce y sitios a medida.",
+      "url": "https://www.gokywebs.com/",
+      "logo": "https://www.gokywebs.com/logo.png",
+      "areaServed": "Argentina",
+      "sameAs": ["https://www.instagram.com/gokywebs.net"],
+      "priceRange": "$$"
+    }
     </script>
-    
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-10808865418"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'AW-10808865418');
-</script>
 <body>
-    <div class="custom-cursor">
-        <div class="cursor-dot"></div>
-        <div class="cursor-outline"></div>
+
+    <a class="skip-link" href="#servicios">Saltar al contenido</a>
+    <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="/" class="brand" aria-label="GokyWebs, inicio">
+                <img src="logonav.png" alt="GokyWebs" height="40">
+            </a>
+            <nav class="nav" aria-label="Principal">
+                <a href="#servicios">Servicios</a>
+                <a href="#portafolio">Portfolio</a>
+                <a href="#proceso">Proceso</a>
+            </nav>
+            <a class="btn btn-primary btn-sm nav-cta" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Muestra gratis</a>
+            <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <nav aria-label="Menú">
+            <a href="#servicios">Servicios</a>
+            <a href="#portafolio">Portfolio</a>
+            <a href="#proceso">Proceso</a>
+            <a class="btn btn-primary" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Quiero mi muestra gratis</a>
+        </nav>
     </div>
-    
-    <div id="particles-js"></div>
-    <nav class="navbar">
-        <div class="container">
-            <div class="nav-content">
-                <div class="logo">
-                    <a href="/">
-                        <img src="logonav.png" alt="GokyWebs" class="logo-img" height="36">
+
+    <main id="inicio">
+
+        <section class="hero" id="hero">
+            <iframe class="hero-bg" id="hero-bg" src="assets/hero-bg.html?v=4" title="Fondo animado GokyWebs" tabindex="-1" aria-hidden="true" loading="eager"></iframe>
+            <div class="hero-scrim" aria-hidden="true"></div>
+            <div class="hero-stage">
+
+                <div class="hero-beat beat-main">
+                    <div class="beat-main-inner">
+                        <p class="eyebrow hero-eyebrow">Estudio de diseño web · Argentina</p>
+                        <h1 class="hero-title">Tu negocio merece más que <em>una plantilla.</em></h1>
+                        <p class="hero-sub">Webs a medida, rápidas y pensadas para vender. La ves terminada antes de pagar un peso.</p>
+                        <div class="hero-cta">
+                            <a class="btn btn-primary" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Quiero mi muestra gratis</a>
+                        </div>
+                        <div class="hero-cue" aria-hidden="true"><span></span>Deslizá · el viaje recién empieza</div>
+                    </div>
+                </div>
+
+                <div class="hero-beat beat-center">
+                    <p class="beat-lead">Sin riesgo</p>
+                    <p class="beat-big">Primera entrega gratis.</p>
+                </div>
+
+                <div class="hero-beat beat-center">
+                    <p class="beat-lead">Qué hacemos</p>
+                    <p class="beat-big">Landings, tiendas online y sitios a medida</p>
+                </div>
+
+                <div class="hero-beat beat-center">
+                    <p class="beat-lead">Portfolio</p>
+                    <p class="beat-big">Webs reales, de negocios reales.</p>
+                </div>
+
+                <div class="hero-beat beat-center">
+                    <p class="beat-lead">Todos los rubros</p>
+                    <p class="beat-big">Cada negocio, con su web a medida.</p>
+                </div>
+
+                <div class="hero-beat beat-center">
+                    <p class="beat-lead">Resultados</p>
+                    <p class="beat-big">40 negocios ya estrenaron la suya.</p>
+                </div>
+
+                <div class="hero-beat beat-center beat-final">
+                    <p class="beat-lead">El próximo puede ser el tuyo</p>
+                    <p class="beat-big">¿Arrancamos con tu web?</p>
+                    <div class="beat-actions">
+                        <a class="btn btn-primary" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Quiero mi muestra gratis</a>
+                        <a class="btn btn-ghost" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+                    </div>
+                </div>
+
+                <a class="hero-corner hero-corner-br" href="#portafolio">Ver los 40 trabajos <span aria-hidden="true">→</span></a>
+
+            </div>
+        </section>
+
+        <section class="section servicios" id="servicios">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Qué hacemos</p>
+                    <h2 class="section-title" data-animate style="opacity:0;transform:translateY(28px)">Tres formas de poner tu negocio online.</h2>
+                </div>
+                <div class="serv-rows" data-stagger>
+                    <a class="serv-row" href="/form/" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="serv-num" aria-hidden="true">01</span>
+                        <h3 class="serv-name">Landing Page</h3>
+                        <p class="serv-desc">Tu negocio en una página que convierte visitas en consultas. Ideal para servicios, turnos y profesionales.</p>
+                        <span class="serv-arrow" aria-hidden="true">→</span>
+                    </a>
+                    <a class="serv-row" href="/form/" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="serv-num" aria-hidden="true">02</span>
+                        <h3 class="serv-name">Tienda Online</h3>
+                        <p class="serv-desc">Catálogo, carrito y pagos con Mercado Pago. Tu local abierto las 24 horas, sin comisiones de marketplace.</p>
+                        <span class="serv-arrow" aria-hidden="true">→</span>
+                    </a>
+                    <a class="serv-row" href="/form/" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="serv-num" aria-hidden="true">03</span>
+                        <h3 class="serv-name">Web a medida</h3>
+                        <p class="serv-desc">Reservas, cursos online, sistemas internos, membresías: lo que tu negocio necesite, lo construimos.</p>
+                        <span class="serv-arrow" aria-hidden="true">→</span>
                     </a>
                 </div>
-                <ul class="nav-menu" id="navMenu">
-                    <li><a href="#portafolio" class="nav-link">Portfolio</a></li>
-                    <li><a href="#landing" class="nav-link">Landing Page</a></li>
-                    <li><a href="#ecommerce" class="nav-link">E-commerce</a></li>
-                </ul>
-                <a href="/form/" class="btn btn-primary nav-cta">
-                    <span>Pedir presupuesto</span>
-                </a>
-                <button class="menu-toggle" id="menuToggle">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+            </div>
+        </section>
+
+        <section class="section portfolio" id="portafolio">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Portfolio</p>
+                    <h2 class="section-title" data-animate style="opacity:0;transform:translateY(28px)">Webs reales, de negocios reales.</h2>
+                </div>
+                <div class="pf-filters" aria-label="Filtrar portfolio">
+                    <button class="pf-cat active" data-cat="all">Todos</button>
+                    <button class="pf-cat" data-cat="ecommerce">Ecommerce</button>
+                    <button class="pf-cat" data-cat="comercios">Comercios &amp; Tiendas</button>
+                    <button class="pf-cat" data-cat="profesionales">Servicios Profesionales</button>
+                    <button class="pf-cat" data-cat="moda">Moda &amp; Indumentaria</button>
+                    <button class="pf-cat" data-cat="gastronomia">Gastronomía &amp; Eventos</button>
+                    <button class="pf-cat" data-cat="tecnologia">Tecnología &amp; Electrónica</button>
+                    <button class="pf-cat" data-cat="inmobiliaria">Inmobiliaria</button>
+                </div>
+                <div class="pf-grid" id="pfGrid"></div>
+            </div>
+        </section>
+
+        <section class="section proceso" id="proceso">
+            <div class="container">
+                <div class="section-head">
+                    <p class="eyebrow">Cómo funciona</p>
+                    <h2 class="section-title" data-animate style="opacity:0;transform:translateY(28px)">De WhatsApp a tu web publicada, en 4 pasos.</h2>
+                </div>
+                <ol class="pasos" data-stagger>
+                    <li class="paso" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="paso-num" aria-hidden="true">01</span>
+                        <div><h3>Nos escribís</h3><p>Nos contás de tu negocio por WhatsApp. Dos minutos, sin formularios eternos.</p></div>
+                    </li>
+                    <li class="paso" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="paso-num" aria-hidden="true">02</span>
+                        <div><h3>Ves tu muestra gratis</h3><p>En 24-48 horas te mostramos tu web andando. Sin señas ni compromiso.</p></div>
+                    </li>
+                    <li class="paso" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="paso-num" aria-hidden="true">03</span>
+                        <div><h3>Ajustamos juntos</h3><p>Textos, fotos, colores: pulimos los detalles hasta que la sientas tuya.</p></div>
+                    </li>
+                    <li class="paso" data-animate style="opacity:0;transform:translateY(28px)">
+                        <span class="paso-num" aria-hidden="true">04</span>
+                        <div><h3>La publicamos</h3><p>Con tu dominio, hosting y todo configurado. Vos te dedicás a atender clientes.</p></div>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="cta-final">
+            <div class="container cta-inner">
+                <h2 data-animate style="opacity:0;transform:translateY(28px)">Tu muestra gratis te está esperando.</h2>
+                <p data-animate style="opacity:0;transform:translateY(24px)">Escribinos hoy y en 48 horas ves tu web terminada. Si no te gusta, no pasa nada.</p>
+                <div class="cta-actions" data-animate style="opacity:0;transform:translateY(24px)">
+                    <a class="btn btn-primary btn-lg" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Pedir mi muestra gratis</a>
+                    <a class="btn btn-ghost btn-lg" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <img src="logonav.png" alt="GokyWebs" height="42">
+                <p>Estudio de diseño y desarrollo web. Landing pages, e-commerce y sitios a medida para negocios de toda Argentina.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Navegación</h4>
+                <a href="#inicio">Inicio</a>
+                <a href="#servicios">Servicios</a>
+                <a href="#portafolio">Portfolio</a>
+                <a href="#proceso">Proceso</a>
+            </div>
+            <div class="footer-col">
+                <h4>Contacto</h4>
+                <a href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">WhatsApp</a>
+                <a href="https://www.instagram.com/gokywebs.net" target="_blank" rel="noopener">Instagram</a>
+                <a href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener">Muestra gratis</a>
+                <a href="/en/">English version</a>
             </div>
         </div>
-    </nav>
-
-    <section id="inicio" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <div class="hero-text" data-aos="fade-right" data-aos-duration="1000">
-                    <div class="glitch-wrapper">
-                        <h1 class="hero-title glitch" data-text="Landing Page o E-commerce?">
-                            Landing Page<br>
-                            o E-commerce?<br>
-                            <span class="accent typing-effect"></span>
-                        </h1>
-                    </div>
-                    <p class="hero-description" data-aos="fade-up" data-aos-delay="200">
-                        Conocé la diferencia y descubrí cuál es la solución ideal para hacer crecer tu negocio online.
-                    </p>
-
-                    <div class="hero-buttons" data-aos="fade-up" data-aos-delay="400">
-                        <a href="/form/" class="btn btn-secondary magnetic">
-                            <span>Pedir presupuesto</span>
-                        </a>
-                    </div>
-                </div>
-                <div class="hero-visual" data-aos="fade-left" data-aos-duration="1000">
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="dot dot-red"></span>
-                                <span class="dot dot-yellow"></span>
-                                <span class="dot dot-green"></span>
-                            </div>
-                            <div class="browser-url">
-                                <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                                </svg>
-                                <span>tuproyecto.com</span>
-                            </div>
-                        </div>
-                        <div class="browser-content">
-                            <div class="mockup-nav">
-                                <div class="mockup-logo"></div>
-                                <div class="mockup-menu">
-                                    <span class="menu-line"></span>
-                                    <span class="menu-line"></span>
-                                    <span class="menu-line"></span>
-                                </div>
-                            </div>
-                            <div class="mockup-hero">
-                                <div class="mockup-text">
-                                    <div class="text-line long"></div>
-                                    <div class="text-line medium"></div>
-                                    <div class="text-line short"></div>
-                                </div>
-                                <div class="mockup-image"></div>
-                            </div>
-                            <div class="mockup-cards">
-                                <div class="mockup-card card-1"></div>
-                                <div class="mockup-card card-2"></div>
-                                <div class="mockup-card card-3"></div>
-                            </div>
-                        </div>
-                        <div class="code-snippets">
-                            <div class="code-snippet snippet-1">
-                                <span class="code-tag">&lt;div&gt;</span>
-                            </div>
-                            <div class="code-snippet snippet-2">
-                                <span class="code-tag">CSS</span>
-                            </div>
-                            <div class="code-snippet snippet-3">
-                                <span class="code-tag">{ }</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="floating-shapes">
-            <div class="shape-blob shape-1"></div>
-            <div class="shape-blob shape-2"></div>
-            <div class="shape-blob shape-3"></div>
-        </div>
-    </section>
-
-    <!-- ¿QUÉ ES UNA LANDING PAGE? -->
-    <section id="landing" class="explainer-section landing-section">
-        <div class="container">
-            <div class="explainer-layout">
-                <div class="explainer-text">
-                    <span class="explainer-badge">💡 Ideal para captar clientes</span>
-                    <h2 class="explainer-title">¿Qué es una <span class="highlight-landing">Landing Page</span>?</h2>
-                    <p class="explainer-description">
-                        Una Landing Page es una página web de una sola vista, diseñada con un objetivo claro: <strong>convertir visitantes en clientes</strong>. Perfecta para promocionar tu servicio, captar leads o generar ventas directas.
-                    </p>
-                    <p class="explainer-description">
-                        Es tu carta de presentación online: rápida, enfocada y profesional. Todo lo que tu cliente necesita saber, en un solo scroll.
-                    </p>
-                    <div class="explainer-ideal">
-                        <h4>Ideal para:</h4>
-                        <div class="ideal-tags">
-                            <span class="ideal-tag">Profesionales independientes</span>
-                            <span class="ideal-tag">Servicios</span>
-                            <span class="ideal-tag">Lanzamientos</span>
-                            <span class="ideal-tag">Captación de clientes</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="explainer-features">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Diseño Informativo</h4>
-                            <p>Una página que comunica tu propuesta de valor de forma clara y atractiva.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Formulario de Contacto</h4>
-                            <p>Recibí consultas directamente en tu email sin intermediarios.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Botones a WhatsApp y Redes</h4>
-                            <p>Conectá con tus clientes por el canal que prefieran, al instante.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Optimización SEO</h4>
-                            <p>Aparecé en Google cuando tus clientes buscan lo que ofrecés.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>100% Responsive</h4>
-                            <p>Perfecta en celular, tablet y desktop. Tu web se adapta a cualquier pantalla.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="ecommerce" class="explainer-section ecommerce-section">
-        <div class="container">
-            <div class="explainer-layout reverse">
-                <div class="explainer-text">
-                    <span class="explainer-badge ecommerce-badge">💻 Vendé las 24hs del día</span>
-                    <h2 class="explainer-title">¿Qué es un <span class="highlight-ecommerce">E-commerce</span>?</h2>
-                    <p class="explainer-description">
-                        Un E-commerce es tu negocio abierto las 24 horas, los 7 días de la semana. Tus clientes pueden ver tus productos, agregarlos al carrito y <strong>pagar directamente desde la web</strong>.
-                    </p>
-                    <p class="explainer-description">
-                        Incluye todo lo de una web corporativa, más las herramientas necesarias para gestionar y vender tus productos online de forma profesional.
-                    </p>
-                    <div class="explainer-ideal">
-                        <h4>Ideal para:</h4>
-                        <div class="ideal-tags">
-                            <span class="ideal-tag ecommerce-tag">Marcas de indumentaria</span>
-                            <span class="ideal-tag ecommerce-tag">Productos físicos</span>
-                            <span class="ideal-tag ecommerce-tag">Emprendedores</span>
-                            <span class="ideal-tag ecommerce-tag">Negocios con stock</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="explainer-features">
-                    <div class="feature-card ecommerce-card">
-                        <div class="feature-icon ecommerce-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Carrito de Compras</h4>
-                            <p>Tus clientes eligen productos, agregan al carrito y compran sin salir de tu web.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card ecommerce-card">
-                        <div class="feature-icon ecommerce-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Integración de Pagos</h4>
-                            <p>Cobrá con tarjetas de crédito, débito y Mercado Pago integrado.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card ecommerce-card">
-                        <div class="feature-icon ecommerce-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Panel de Gestión</h4>
-                            <p>Administrá productos, precios, stock e imágenes desde un panel fácil de usar.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card ecommerce-card">
-                        <div class="feature-icon ecommerce-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>Web Corporativa Incluida</h4>
-                            <p>Hasta 5 secciones con diseño a medida y estructura profesional.</p>
-                        </div>
-                    </div>
-                    <div class="feature-card ecommerce-card">
-                        <div class="feature-icon ecommerce-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                        </div>
-                        <div class="feature-info">
-                            <h4>SEO + Responsive</h4>
-                            <p>Optimizada para Google y perfecta en cualquier dispositivo.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- COMPARATIVA VISUAL -->
-    <section class="comparison-section">
-        <div class="container">
-            <div class="comparison-header">
-                <h2>¿Cuál necesitás?</h2>
-                <p>Elegí la solución que se adapte a tu negocio</p>
-            </div>
-            <div class="comparison-cards">
-                <div class="comparison-card landing-comp">
-                    <div class="comp-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                    </div>
-                    <h3>Landing Page</h3>
-                    <p class="comp-subtitle">Mostrá tu servicio y captá clientes</p>
-                    <ul class="comp-features">
-                        <li>Una sola página</li>
-                        <li>Diseño informativo</li>
-                        <li>Formulario + WhatsApp</li>
-                        <li>SEO optimizado</li>
-                        <li>100% responsive</li>
-                    </ul>
-                    <a href="#boceto" class="btn btn-primary comp-cta"><span>Pedir presupuesto</span></a>
-                </div>
-                <div class="comparison-vs">VS</div>
-                <div class="comparison-card ecommerce-comp">
-                    <div class="comp-icon ecommerce-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                    </div>
-                    <h3>E-commerce</h3>
-                    <p class="comp-subtitle">Vendé tus productos 24/7</p>
-                    <ul class="comp-features">
-                        <li>Web corporativa completa</li>
-                        <li>Carrito de compras</li>
-                        <li>Mercado Pago integrado</li>
-                        <li>Panel de gestión</li>
-                        <li>SEO + responsive</li>
-                    </ul>
-                    <a href="#boceto" class="btn btn-primary comp-cta"><span>Pedir presupuesto</span></a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-   <section id="portafolio" class="portfolio">
-        <div class="portfolio-container">
-
-            <div class="portfolio-header">
-                <p>Proyectos reales de clientes</p>
-            </div>
-
-            <div class="pf-cats" id="pfCats">
-                <button class="pf-cat active" data-cat="all">Todos</button>
-                <button class="pf-cat" data-cat="comercios">Comercios & Tiendas</button>
-                <button class="pf-cat" data-cat="profesionales">Servicios Profesionales</button>
-                <button class="pf-cat" data-cat="moda">Moda & Indumentaria</button>
-                <button class="pf-cat" data-cat="gastronomia">Gastronomía & Eventos</button>
-                <button class="pf-cat" data-cat="tecnologia">Tecnología & Electrónica</button>
-                <button class="pf-cat" data-cat="inmobiliaria">Inmobiliaria</button>
-            </div>
-
-            <div class="pf-categories" id="pfCategories">
-
-            <!-- --- COMERCIOS & TIENDAS --- -->
-            <article class="pf-section" data-cat="comercios">
-                <header class="pf-section-head">
-                    <h3>Comercios & Tiendas</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://www.danielsaire.com.ar/" target="_blank" class="pf-card is-client" data-name="Daniel's Aire" data-url="https://www.danielsaire.com.ar/" data-img-id="vendecursos" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/vendecursos_web.jpg" alt="Daniel's Aire Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/vendecursos_celu.jpg" alt="Daniel's Aire Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Daniel's Aire</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="http://distririogrande.com.ar/" target="_blank" class="pf-card is-client" data-name="Distrito Río Grande" data-url="http://distririogrande.com.ar/" data-img-id="distribuidorariogrande" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/distribuidorariogrande_web.jpg" alt="Distrito Río Grande Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/distribuidorariogrande_celu.jpg" alt="Distrito Río Grande Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Distrito Río Grande</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="http://gicold.com.ar/" target="_blank" class="pf-card is-client" data-name="Gicold" data-url="http://gicold.com.ar/" data-img-id="gicoldelectro" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/gicoldelectro_web.jpg" alt="Gicold Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/gicoldelectro_celu.jpg" alt="Gicold Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Gicold</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            <!-- --- SERVICIOS PROFESIONALES --- -->
-            <article class="pf-section" data-cat="profesionales">
-                <header class="pf-section-head">
-                    <h3>Servicios Profesionales</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://www.encantoestetica.com.ar/" target="_blank" class="pf-card is-client" data-name="Encanto Estética" data-url="https://www.encantoestetica.com.ar/" data-img-id="encantoestetica" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/encantoestetica_web.jpg" alt="Encanto Estética Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/encantoestetica_celu.jpg" alt="Encanto Estética Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Encanto Estética</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.zechtatuajes.com.ar" target="_blank" class="pf-card is-client" data-name="Zech Tatuajes" data-url="https://www.zechtatuajes.com.ar" data-img-id="tatuajes" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/tatuajes_web.jpg" alt="Zech Tatuajes Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/tatuajes_celu.jpg" alt="Zech Tatuajes Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Zech Tatuajes</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://experienciaki.com.ar/" target="_blank" class="pf-card is-client" data-name="Experiencia Ki" data-url="https://experienciaki.com.ar/" data-img-id="experienciaki" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/experienciaki_web.jpg" alt="Experiencia Ki Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/experienciaki_celu.jpg" alt="Experiencia Ki Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Experiencia Ki</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.hostelsrosarinos.com.ar/" target="_blank" class="pf-card is-client" data-name="Hostels Rosario" data-url="https://www.hostelsrosarinos.com.ar/" data-img-id="hostels" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/hostels_web.jpg" alt="Hostels Rosario Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/hostels_celu.jpg" alt="Hostels Rosario Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Hostels Rosario</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://espaciovicenzo.com.ar" target="_blank" class="pf-card is-client" data-name="Espacio Vicenzo" data-url="https://espaciovicenzo.com.ar" data-img-id="vicenzoadicciones" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/vicenzoadicciones_web.jpg" alt="Espacio Vicenzo Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/vicenzoadicciones_celu.jpg" alt="Espacio Vicenzo Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Espacio Vicenzo</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://licenciadaluena.com.ar" target="_blank" class="pf-card is-client" data-name="Psicóloga Luana" data-url="https://licenciadaluena.com.ar" data-img-id="psicologa" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/psicologa_web.jpg" alt="Psicóloga Luana Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/psicologa_celu.jpg" alt="Psicóloga Luana Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Psicóloga Luana</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.aisamsalud.com.ar/" target="_blank" class="pf-card is-client" data-name="Aisam Centro de Salud" data-url="https://www.aisamsalud.com.ar/" data-img-id="saludmental" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/saludmental_web.jpg" alt="Aisam Centro de Salud Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/saludmental_celu.jpg" alt="Aisam Centro de Salud Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Aisam Centro de Salud</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://tuprepagaonline.com.ar/" target="_blank" class="pf-card is-client" data-name="Prepaga Online" data-url="https://tuprepagaonline.com.ar/" data-img-id="prepagas" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/prepagas_web.jpg" alt="Prepaga Online Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/prepagas_celu.jpg" alt="Prepaga Online Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Prepaga Online</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.sanatoriosarmientosalud.com.ar/" target="_blank" class="pf-card is-client" data-name="Sanatorio Sarmiento" data-url="https://www.sanatoriosarmientosalud.com.ar/" data-img-id="sanatorio" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/sanatorio_web.jpg" alt="Sanatorio Sarmiento Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/sanatorio_celu.jpg" alt="Sanatorio Sarmiento Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Sanatorio Sarmiento</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.urgencias24hs.com.ar/" target="_blank" class="pf-card is-client" data-name="Odontobosques" data-url="https://www.urgencias24hs.com.ar/" data-img-id="odontobosques" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/odontobosques_web.jpg" alt="Odontobosques Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/odontobosques_celu.jpg" alt="Odontobosques Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Odontobosques</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.estudioasilva.com.ar/" target="_blank" class="pf-card is-client" data-name="Estudio A. Silva" data-url="https://www.estudioasilva.com.ar/" data-img-id="abogadaaldana" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/abogadaaldana_web.jpg" alt="Estudio A. Silva Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/abogadaaldana_celu.jpg" alt="Estudio A. Silva Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Estudio A. Silva</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://agrimensurasatelital.com" target="_blank" class="pf-card is-client" data-name="Agrimensura Satelital" data-url="https://agrimensurasatelital.com" data-img-id="agrimensura" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/agrimensura_web.jpg" alt="Agrimensura Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/agrimensura_celu.jpg" alt="Agrimensura Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Agrimensura Satelital</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.csgestionpymes.com.ar" target="_blank" class="pf-card is-client" data-name="CS Gestión Pymes" data-url="https://www.csgestionpymes.com.ar" data-img-id="gestionpyme" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/gestionpyme_web.jpg" alt="CS Gestión Pymes Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/gestionpyme_celu.jpg" alt="CS Gestión Pymes Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>CS Gestión Pymes</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.consultoramaritima.com.ar/" target="_blank" class="pf-card is-client" data-name="Galeón Consultora" data-url="https://www.consultoramaritima.com.ar/" data-img-id="serviciosmaritimos" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/serviciosmaritimos_web.jpg" alt="Galeón Consultora Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/serviciosmaritimos_celu.jpg" alt="Galeón Consultora Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Galeón Consultora</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://italianosdelmundo.com.ar" target="_blank" class="pf-card is-client" data-name="Italianos del Mundo" data-url="https://italianosdelmundo.com.ar" data-img-id="ciudadania" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/ciudadania_web.jpg" alt="Italianos del Mundo Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/ciudadania_celu.jpg" alt="Italianos del Mundo Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Italianos del Mundo</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://grupohv.com.ar" target="_blank" class="pf-card is-client" data-name="Grupo HV" data-url="https://grupohv.com.ar" data-img-id="logistica" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/logistica_web.jpg" alt="Grupo HV Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/logistica_celu.jpg" alt="Grupo HV Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Grupo HV</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            <!-- --- MODA & INDUMENTARIA --- -->
-            <article class="pf-section" data-cat="moda">
-                <header class="pf-section-head">
-                    <h3>Moda & Indumentaria</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://tusencantosindumentaria.com.ar/" target="_blank" class="pf-card is-client" data-name="Tus Encantos" data-url="https://tusencantosindumentaria.com.ar/" data-img-id="tusencantos" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/tusencantos_web.jpg" alt="Tus Encantos Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/tusencantos_celu.jpg" alt="Tus Encantos Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Tus Encantos</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://botinesfv.com/" target="_blank" class="pf-card is-client" data-name="Botines FV" data-url="https://botinesfv.com/" data-img-id="botines" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/botines_web.jpg" alt="Botines FV Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/botines_celu.jpg" alt="Botines FV Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Botines FV</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            <!-- --- GASTRONOMÍA & EVENTOS --- -->
-            <article class="pf-section" data-cat="gastronomia">
-                <header class="pf-section-head">
-                    <h3>Gastronomía & Eventos</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://cococatering.com.ar" target="_blank" class="pf-card is-client" data-name="Coco Catering" data-url="https://cococatering.com.ar" data-img-id="coco" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/cocó_web.jpg" alt="Coco Catering Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/cocó_celu.jpg" alt="Coco Catering Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Coco Catering</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://www.masmomentosunicos.com/" target="_blank" class="pf-card is-client" data-name="Barra Tragos" data-url="https://www.masmomentosunicos.com/" data-img-id="barratragos" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/barratragos_web.jpg" alt="Barra Tragos Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/barratragos_celu.jpg" alt="Barra Tragos Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Barra Tragos</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            <!-- --- TECNOLOGÍA & ELECTRÓNICA --- -->
-            <article class="pf-section" data-cat="tecnologia">
-                <header class="pf-section-head">
-                    <h3>Tecnología & Electrónica</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://www.petit-app.com" target="_blank" class="pf-card is-client" data-name="Petit App" data-url="https://www.petit-app.com" data-img-id="petit" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/petit_web.jpg" alt="Petit App Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/petit_celu.jpg" alt="Petit App Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Petit App</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <button type="button" class="pf-card is-client" data-name="Servitech" data-url="https://servitech.vercel.app" data-img-id="servitechba" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/servitechba_web.jpg" alt="Servitech Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/servitechba_celu.jpg" alt="Servitech Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Servitech</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </button>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            <!-- --- INMOBILIARIA --- -->
-            <article class="pf-section" data-cat="inmobiliaria">
-                <header class="pf-section-head">
-                    <h3>Inmobiliaria</h3>
-                </header>
-                <div class="pf-grid">
-                    <a href="https://bastonspaulete.com/" target="_blank" class="pf-card is-client" data-name="Bastons Paulete" data-url="https://bastonspaulete.com/" data-img-id="consorcios" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/consorcios_web.jpg" alt="Bastons Paulete Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/consorcios_celu.jpg" alt="Bastons Paulete Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Bastons Paulete</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="https://inmobiliariagomezyasociados.com/" target="_blank" class="pf-card is-client" data-name="Gómez &amp; Asociados" data-url="https://inmobiliariagomezyasociados.com/" data-img-id="inmobiliariagomezasociados" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/inmobiliariagomezasociados_web.jpg" alt="Gómez &amp; Asociados Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/inmobiliariagomezasociados_celu.jpg" alt="Gómez &amp; Asociados Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Gómez &amp; Asociados</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                    <a href="http://ventoinmobiliaria.com.ar/" target="_blank" class="pf-card is-client" data-name="Vento Inmobiliaria" data-url="http://ventoinmobiliaria.com.ar/" data-img-id="ventoinmobiliaria" data-img-ext="jpg">
-                        <div class="pf-visuals">
-                            <div class="pf-web"><img data-src="images/previews/ventoinmobiliaria_web.jpg" alt="Vento Inmobiliaria Web" loading="lazy"></div>
-                            <div class="pf-celu"><div class="pf-phone"><img data-src="images/previews/ventoinmobiliaria_celu.jpg" alt="Vento Inmobiliaria Mobile" loading="lazy"></div></div>
-                        </div>
-                        <div class="pf-info"><h4>Vento Inmobiliaria</h4><span class="pf-cta">Ver sitio <span class="pf-arr">&rarr;</span></span></div>
-                    </a>
-                </div>
-                <div class="pf-ver-mas-wrap"><button class="pf-ver-mas" type="button">Ver más <span>↓</span></button></div>
-            </article>
-
-            </div>
-        </div>
-    </section>
-
-    
-
-    <!-- RESULTADOS / BENEFICIOS -->
-    <section id="resultados" class="results-section">
-            <div class="results-grid">
-                <div class="result-card">
-                    <div class="result-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </div>
-                    <h3>Más ventas</h3>
-                    <p>Webs diseñadas para convertir visitantes en clientes reales.</p>
-                </div>
-                <div class="result-card">
-                    <div class="result-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                    </div>
-                    <h3>Mejor imagen de marca</h3>
-                    <p>Diseño profesional que transmite confianza y credibilidad.</p>
-                </div>
-                <div class="result-card">
-                    <div class="result-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    </div>
-                    <h3>Velocidad y SEO</h3>
-                    <p>Sitios rápidos y optimizados que aparecen en Google.</p>
-                </div>
-                <div class="result-card"> 
-                    <div class="result-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-                    </div>
-                    <h3>Adaptable a celular</h3>
-                    <p>Perfecto en cualquier dispositivo: celular, tablet o desktop.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-brand">
-                    <div class="logo">
-                        <img src="logo.png" alt="GokyWebs" class="logo-img logo-footer" height="44">
-                    </div>
-                    <p>Agencia especializada en Diseño Web, E-commerce y Landing Pages.</p>
-                </div>
-                
-                <div class="footer-links">
-                    <div class="footer-column">
-                        <h4>Navegación</h4>
-                        <ul>
-                            <li><a href="#inicio">Inicio</a></li>
-                            <li><a href="#landing">Landing Page</a></li>
-                            <li><a href="#ecommerce">E-commerce</a></li>
-                            <li><a href="#portafolio">Portafolio</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="footer-column">
-                        <h4>Servicios Web</h4>
-                        <ul>
-                            <li><a href="#servicios">Diseño Web</a></li>
-                            <li><a href="#servicios">E-commerce</a></li>
-                            <li><a href="#servicios">Posicionamiento SEO</a></li>
-                            <li><a href="#servicios">Desarrollo Web</a></li>
-                        </ul>
-                    </div>
-                    
-                    <div class="footer-column">
-                        <h4>Síguenos</h4>
-                        <div class="social-links">
-                            <a href="https://www.instagram.com/gokywebs.net" aria-label="Instagram" target="_blank" rel="noopener noreferrer">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="none" stroke="white" stroke-width="2"></path>
-                                    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="white" stroke-width="2"></line>
-                                </svg>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; 2026 GokyWebs. Todos los derechos reservados.</p>
-            </div>
+        <div class="footer-bottom">
+            <span>© <span id="year"></span> GokyWebs · Argentina</span>
+            <span class="footer-tag">Webs que se sienten caras, a precio de barrio.</span>
         </div>
     </footer>
 
-    <a href="https://wa.me/5491125068578" class="whatsapp-float" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-        </svg>
+    <a class="wsp-float" id="wsp-float" href="https://wa.me/5491140688675?text=Hola%21%20Quiero%20mi%20muestra%20gratis%20para%20mi%20negocio." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.16-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.8-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35zM12 2a10 10 0 0 0-8.6 15.06L2 22l5.06-1.32A10 10 0 1 0 12 2z"/></svg>
     </a>
 
-    <a href="#boceto" class="boceto-float" aria-label="Pedir presupuesto">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg>
-        <span>Pedir presupuesto</span>
-    </a>
-
-    <!-- Modal para demos -->
-    <div class="demo-modal" id="demoModal" aria-hidden="true">
-        <div class="demo-modal-backdrop" data-close></div>
-        <div class="demo-modal-content">
-            <header class="demo-modal-head">
-                <h3 class="demo-modal-title" id="demoModalTitle">Demo</h3>
-                <a class="demo-modal-visit" id="demoModalVisit" target="_blank" rel="noopener noreferrer">Visitar &rarr;</a>
-                <button class="demo-modal-close" data-close aria-label="Cerrar">&times;</button>
-            </header>
-            <div class="demo-modal-body">
-                <div class="demo-modal-pane demo-modal-pane--web">
-                    <span class="demo-modal-tag">Web</span>
-                    <img id="demoModalImgWeb" alt="">
-                </div>
-                <div class="demo-modal-pane demo-modal-pane--celu">
-                    <span class="demo-modal-tag">Mobile</span>
-                    <img id="demoModalImgCelu" alt="">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js?v=4"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+    <script src="https://unpkg.com/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+    <script src="portfolio-data.js?v=4"></script>
+    <script src="home.js?v=25"></script>
     <script src="routing.js"></script>
 </body>
 </html>
-

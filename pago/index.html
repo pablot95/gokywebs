@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagar seña — Gokywebs</title>
+    <link rel="icon" type="image/png" href="../logo.png">
+    <meta name="description" content="Aboná la seña para arrancar tu proyecto web con Gokywebs.">
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="pres-header">
+    <a href="../index.html" class="header-logo">
+        <span>Gokywebs</span>
+    </a>
+    <a href="../index.html" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al inicio
+    </a>
+</header>
+
+<div id="autoRedirect" class="auto-redirect">
+    <div class="auto-redirect-card">
+        <div class="auto-redirect-spinner" aria-hidden="true"></div>
+        <p class="auto-redirect-text">Te llevamos a Mercado Pago para pagar <strong id="montoRedirect">$90.000</strong>…</p>
+        <button type="button" id="btnVerOtrasFormas" class="auto-redirect-alt">Prefiero ver otras formas de pago</button>
+    </div>
+</div>
+
+<div class="pago-hero" id="pagoHero" hidden>
+    <p class="pago-badge">✓ Ya viste tu muestra</p>
+    <p class="pago-sub">Te gustó el diseño y querés avanzar. Con la seña arrancamos hoy mismo a aplicar los cambios y dejar tu web lista.</p>
+</div>
+
+<main class="pago-main" id="pagoMain" hidden>
+
+    <section class="pago-section" id="pagar">
+        <p class="pago-section-eyebrow">Pagá tu seña</p>
+        <h2 class="pago-section-title">Elegí cómo abonar los <span id="montoTitle">$90.000</span></h2>
+
+        <div class="retry-banner" id="retryBanner">
+            <span>⚠️</span>
+            <span>El pago no pudo procesarse. Podés intentar de nuevo o abonar por transferencia.</span>
+        </div>
+
+        <div class="pay-methods">
+
+            <!-- Mercado Pago -->
+            <div class="pay-card is-featured">
+                <div class="pay-card-header">
+                    <div class="pay-card-icon">💳</div>
+                    <h3>Mercado Pago</h3>
+                    <p>Tarjeta de crédito, débito o hasta 12 cuotas.</p>
+                </div>
+                <div class="pay-card-body">
+                    <form id="mpForm" novalidate style="display:flex;flex-direction:column;flex:1">
+                        <div class="form-group">
+                            <label class="form-label" for="mp-nombre">Nombre completo <span style="color:var(--red)">*</span></label>
+                            <input type="text" id="mp-nombre" class="form-input" placeholder="Juan García" autocomplete="name">
+                            <span class="form-error" id="err-nombre">Ingresá tu nombre completo</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="mp-tel">Tu WhatsApp <span style="color:var(--red)">*</span></label>
+                            <div class="phone-row">
+                                <select id="mp-pais" class="phone-country" aria-label="Código de país">
+                                    <option value="+54" selected>🇦🇷 +54</option>
+                                    <option value="+598">🇺🇾 +598</option>
+                                    <option value="+56">🇨🇱 +56</option>
+                                    <option value="+55">🇧🇷 +55</option>
+                                    <option value="+57">🇨🇴 +57</option>
+                                    <option value="+51">🇵🇪 +51</option>
+                                    <option value="+52">🇲🇽 +52</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                </select>
+                                <input type="tel" id="mp-tel" class="form-input phone-num" placeholder="11 1234-5678" autocomplete="tel" inputmode="numeric">
+                            </div>
+                            <span class="form-error" id="err-tel">Ingresá un número válido (mínimo 7 dígitos)</span>
+                        </div>
+
+                        <button type="submit" class="btn-pay" id="btnPay" style="margin-top:auto">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            Pagar con Mercado Pago
+                        </button>
+                        <div class="mp-seal">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Pago 100% seguro · SSL encriptado
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Transferencia bancaria -->
+            <div class="pay-card">
+                <div class="pay-card-header">
+                    <div class="pay-card-icon">🏦</div>
+                    <h3>Transferencia bancaria</h3>
+                    <p>Sin comisión, acreditación en el día.</p>
+                </div>
+                <div class="pay-card-body">
+                    <div class="transfer-alias-row">
+                        <div>
+                            <div class="tr-label">Alias</div>
+                            <div class="tr-value" id="aliasValue">pablotravis</div>
+                        </div>
+                        <button type="button" class="btn-copy" id="btnCopyAlias">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar
+                        </button>
+                    </div>
+                    <p class="transfer-meta"><strong>Pablo Travi</strong> · Santander Río · <span id="montoTransfer">$90.000</span></p>
+                    <a href="#" id="btnWspTransfer" class="btn-wsp-transfer" target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        Ya transferí, mando el comprobante
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="pago-section" id="como-sigue">
+        <p class="pago-section-eyebrow">Cómo sigue</p>
+        <h2 class="pago-section-title">De la seña a tu web online</h2>
+        <div class="timeline">
+            <div class="timeline-step">
+                <div class="timeline-num">1</div>
+                <div class="timeline-body">
+                    <h3>Abonás la seña de <span id="montoTimeline">$90.000</span></h3>
+                    <p>Arrancamos con tu proyecto ese mismo día, ya sea por transferencia o con Mercado Pago.</p>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-num">2</div>
+                <div class="timeline-body">
+                    <h3>Aplicamos tus modificaciones</h3>
+                    <p>Sumamos los cambios que nos pediste sobre la muestra y todo lo que tu web necesita para quedar terminada: textos definitivos, contenido real, ajustes de diseño y las funciones de tu proyecto.</p>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-num">3</div>
+                <div class="timeline-body">
+                    <h3>Tu web queda lista y online</h3>
+                    <p>En un <strong>máximo de 7 días</strong> (o menos) tenés tu sitio terminado y publicado.</p>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-num">4</div>
+                <div class="timeline-body">
+                    <h3>Pagás el saldo restante</h3>
+                    <p>Con la web ya entregada, tenés <strong>7 días</strong> para abonar el saldo final.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pago-section" id="modificaciones">
+        <p class="pago-section-eyebrow">Modificaciones incluidas</p>
+        <h2 class="pago-section-title">3 intercambios de ajustes</h2>
+        <div class="mods-card">
+            <span class="mods-icon">🔄</span>
+            <div>
+                <h3>Contando el intercambio inicial</h3>
+                <p>El proyecto incluye <strong>3 rondas de modificaciones</strong>: la primera tanda de cambios que ya nos pasaste sobre la muestra cuenta como el intercambio 1, y quedan <strong>2 rondas más</strong> disponibles para pulir el resultado antes de la entrega. Cada intercambio es una tanda de pedidos que nos mandás junta — así avanzamos ordenados y sin ida y vuelta interminable.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pago-section" id="inversion">
+        <p class="pago-section-eyebrow">Inversión</p>
+        <h2 class="pago-section-title">Seña según el tipo de web</h2>
+        <p class="pago-section-desc">Pago único por proyecto. Todos los tipos de web incluyen diseño responsive, SEO básico y hosting + dominio del primer año.</p>
+        <div class="price-table-wrap">
+            <table class="price-table">
+                <thead>
+                    <tr>
+                        <th>Tipo de web</th>
+                        <th style="text-align:right">Total</th>
+                        <th style="text-align:right">Seña</th>
+                        <th style="text-align:right">Saldo tras la seña</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td class="tipo">🚀 Landing Page</td><td class="num">$150.000</td><td class="num">$60.000</td><td class="num saldo">$90.000</td></tr>
+                    <tr><td class="tipo">🚀 Landing multipágina</td><td class="num">$200.000</td><td class="num">$60.000</td><td class="num saldo">$140.000</td></tr>
+                    <tr><td class="tipo">🏬 Catálogo administrable</td><td class="num">$150.000</td><td class="num">$90.000</td><td class="num saldo">$60.000</td></tr>
+                    <tr><td class="tipo">🏠 Web Inmobiliaria</td><td class="num">$240.000</td><td class="num">$90.000</td><td class="num saldo">$150.000</td></tr>
+                    <tr><td class="tipo">🛒 E-commerce</td><td class="num">$270.000</td><td class="num">$90.000</td><td class="num saldo">$180.000</td></tr>
+                    <tr><td class="tipo">🎓 E-learning</td><td class="num">$320.000</td><td class="num">$90.000</td><td class="num saldo">$230.000</td></tr>
+                    <tr><td class="tipo">🛒🎓 E-commerce + E-learning</td><td class="num">$350.000</td><td class="num">$90.000</td><td class="num saldo">$260.000</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="price-note">Si tu proyecto suma agenda de turnos, login de usuarios u otra funcionalidad adicional, el saldo se ajusta con lo que ya charlamos por WhatsApp.</p>
+    </section>
+
+    <section class="pago-section" id="confianza" style="margin-bottom:0.5rem">
+        <div class="trust-row">
+            <div class="trust-item">
+                <span class="trust-icon">💬</span>
+                <div>
+                    <strong>Apenas se acredita</strong>
+                    <span>Te contactamos por WhatsApp y arrancamos con tu proyecto ese mismo día.</span>
+                </div>
+            </div>
+            <div class="trust-item">
+                <span class="trust-icon">🔒</span>
+                <div>
+                    <strong>Tu código, tu propiedad</strong>
+                    <span>El sitio te pertenece al 100%. Te entregamos todos los archivos y accesos.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="pres-footer">
+    &copy; 2026 Gokywebs · <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">gokywebs.com</a>
+</footer>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

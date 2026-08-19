@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Cómo activar las credenciales de producción de PayPal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-blue:#003087;
+    --color-blue-light:#009CDE;
+    --color-green:#16A34A;
+    --color-green-bright:#4ADE80;
+    --bg:#000000;
+    --bg-elev:#F3F4F6;
+    --bg-card:#FFFFFF;
+    --border:rgba(0,0,0,0.1);
+    --border-strong:rgba(0,0,0,0.16);
+    --text:#0F0F10;
+    --text-muted:#6B7280;
+    --text-light:#F5F5F7;
+    --text-light-muted:#A1A1AA;
+    --font-primary:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display:'Space Grotesk', var(--font-primary);
+    --radius:14px;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:var(--font-primary);
+    background:var(--bg);
+    color:var(--text-light);
+    line-height:1.65;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  .wrapper{
+    max-width:1200px;
+    margin:0 auto;
+    padding:48px 24px 100px;
+  }
+
+  img, video{ max-width:100%; height:auto; }
+
+  /* ---- Header ---- */
+  header{
+    margin-bottom:40px;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(74,222,128,0.12);
+    border:1px solid rgba(74,222,128,0.3);
+    color:var(--color-green-bright);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(28px, 5vw, 42px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+    color:var(--text-light);
+  }
+
+  header p.lead{
+    color:var(--text-light-muted);
+    font-size:17px;
+    max-width:680px;
+  }
+
+  /* ---- Aviso ---- */
+  .alert{
+    display:flex;
+    gap:14px;
+    background:rgba(0,156,222,0.08);
+    border:1px solid rgba(0,156,222,0.25);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin:28px 0 8px;
+    font-size:14.5px;
+    color:#bde8fa;
+  }
+
+  .alert.warn{
+    background:rgba(245,158,11,0.08);
+    border-color:rgba(245,158,11,0.3);
+    color:#FCD34D;
+  }
+
+  .alert .icon{ font-size:20px; line-height:1; flex-shrink:0; }
+
+  /* ---- Pasos ---- */
+  .step{
+    position:relative;
+    border:1px solid var(--border);
+    background:var(--bg-card);
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    border-radius:var(--radius);
+    padding:28px 28px 26px 88px;
+    margin-bottom:22px;
+    scroll-margin-top:24px;
+  }
+
+  .step .step-num{
+    position:absolute;
+    top:28px;
+    left:24px;
+    width:46px;
+    height:46px;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue-light) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    color:#fff;
+    box-shadow:0 8px 20px rgba(0,48,135,0.35);
+  }
+
+  .step h3{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+
+  .step p{ margin-bottom:12px; color:#374151; }
+  .step p:last-child{ margin-bottom:0; }
+
+  .step ul, .step ol.sub{
+    margin:12px 0 14px 0;
+    padding-left:22px;
+    color:#374151;
+  }
+
+  .step ul li, .step ol.sub li{
+    margin-bottom:6px;
+  }
+
+  .step ol.sub{ list-style:decimal; }
+
+  .step a{
+    color:var(--color-blue);
+    text-decoration:underline;
+    text-decoration-color:rgba(0,48,135,0.35);
+    text-underline-offset:2px;
+    transition:color .15s, text-decoration-color .15s;
+  }
+
+  .step a:hover{
+    color:var(--color-blue-light);
+    text-decoration-color:var(--color-blue-light);
+  }
+
+  .step a code{ color:inherit; }
+
+  code, .kbd{
+    font-family:'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background:var(--bg-elev);
+    border:1px solid var(--border-strong);
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:0.88em;
+    color:#15803d;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .tip{
+    margin-top:14px;
+    background:rgba(22,163,74,0.07);
+    border:1px solid rgba(22,163,74,0.25);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;
+    color:#14532d;
+  }
+
+  .tip strong{ color:var(--color-green); }
+
+  .warn-box{
+    margin-top:14px;
+    background:rgba(217,119,6,0.08);
+    border:1px solid rgba(217,119,6,0.28);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;
+    color:#7C2D12;
+  }
+
+  .warn-box strong{ color:#B45309; }
+
+  /* ---- Final ---- */
+  .final{
+    margin-top:48px;
+    text-align:center;
+    padding:32px 24px;
+    border-radius:var(--radius);
+    background:var(--bg-card);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+
+  .final h2{
+    font-family:var(--font-display);
+    font-size:24px;
+    margin-bottom:10px;
+  }
+
+  .final p{ color:var(--text-muted); max-width:540px; margin:0 auto; }
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    color:var(--text-light-muted);
+    font-size:13px;
+  }
+
+  /* ---- Print ---- */
+  @media print{
+    body{ background:#fff; color:#111; }
+    .step{ background:#fff; border:1px solid #ddd; break-inside:avoid; }
+  }
+
+  @media (max-width:640px){
+    body{ font-size:15px; }
+    .wrapper{ padding:28px 14px 50px; }
+
+    header{ margin-bottom:28px; }
+    .badge{ font-size:11px; padding:5px 12px; margin-bottom:14px; }
+    h1{ font-size:26px; }
+    header p.lead{ font-size:15px; }
+
+    .step{
+      padding:20px 16px;
+      margin-bottom:16px;
+      border-radius:12px;
+    }
+    .step .step-num{
+      position:static;
+      margin-bottom:12px;
+      width:40px;
+      height:40px;
+      font-size:17px;
+    }
+    .step h3{ font-size:18px; }
+    .step p, .step ul, .step ol.sub{ font-size:14.5px; }
+
+    .tip, .warn-box{ padding:10px 12px; font-size:13.5px; }
+
+    .final{ padding:24px 16px; margin-top:32px; }
+    .final h2{ font-size:20px; }
+    .final p{ font-size:14px; }
+  }
+
+  @media (max-width:380px){
+    h1{ font-size:22px; }
+    .step{ padding:16px 12px; }
+    .step .step-num{ width:36px; height:36px; font-size:15px; border-radius:10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <span class="badge">🔵 PayPal · Checkout</span>
+    <h1>Cómo activar las credenciales de producción de PayPal</h1>
+    <p class="lead">Guía paso a paso, de principio a fin, para obtener las claves <strong>Live</strong> de PayPal y empezar a recibir pagos reales en dólares desde tu sitio.</p>
+  </header>
+
+  <!-- PASO 1 -->
+  <section class="step" id="paso1">
+    <div class="step-num">1</div>
+    <h3>Crear (o ingresar a) una cuenta PayPal Business</h3>
+    <p>PayPal distingue entre cuentas <strong>Personal</strong> y <strong>Business</strong>. Para recibir pagos desde un sitio web se necesita obligatoriamente una cuenta <strong>Business</strong>.</p>
+    <p>Si todavía no tenés una, creala en:</p>
+    <p><a href="https://www.paypal.com/ar/webapps/mpp/account-selection" target="_blank" rel="noopener noreferrer"><code>https://www.paypal.com/ar/webapps/mpp/account-selection</code></a></p>
+    <p>Si ya tenés cuenta Personal de PayPal, podés convertirla a Business desde la configuración de la cuenta, sin perder el historial ni el saldo.</p>
+    <div class="warn-box"><strong>Importante:</strong> el email de esta cuenta es el que recibe los pagos y las notificaciones. Usá uno al que tengas acceso permanente.</div>
+  </section>
+
+  <!-- PASO 2 -->
+  <section class="step" id="paso2">
+    <div class="step-num">2</div>
+    <h3>Verificar y activar la cuenta Business</h3>
+    <p>Recién creada, la cuenta puede tener limitaciones hasta que PayPal verifique la identidad y los datos del negocio. Para activarla completamente, PayPal solicita:</p>
+    <ul>
+      <li>Confirmación del email registrado.</li>
+      <li>Datos del negocio: nombre, tipo (persona física / empresa), rubro y sitio web.</li>
+      <li>Datos personales del titular: nombre completo, fecha de nacimiento, documento de identidad.</li>
+      <li>Cuenta bancaria (CBU/CVU) para recibir las transferencias de los fondos cobrados.</li>
+    </ul>
+    <p>Este proceso lo tiene que completar el <strong>dueño de la cuenta</strong>, ya que son sus datos personales y bancarios. Una vez verificada, la cuenta queda habilitada para recibir pagos reales.</p>
+    <div class="tip"><strong>Tip:</strong> si la cuenta ya existía y ya se usó para comprar con PayPal, es probable que la verificación de identidad esté completa. Solo falta completar los datos del negocio.</div>
+  </section>
+
+  <!-- PASO 3 -->
+  <section class="step" id="paso3">
+    <div class="step-num">3</div>
+    <h3>Ingresar al portal de desarrolladores de PayPal</h3>
+    <p>Las credenciales de integración se gestionan desde el <strong>PayPal Developer Dashboard</strong>, que es independiente del panel de cuenta normal:</p>
+    <p><a href="https://developer.paypal.com/dashboard/" target="_blank" rel="noopener noreferrer"><code>https://developer.paypal.com/dashboard/</code></a></p>
+    <p>Iniciá sesión con el mismo email y contraseña de la cuenta PayPal Business. El developer dashboard es el lugar donde se crean las <strong>Apps</strong> que generan las claves de API.</p>
+  </section>
+
+  <!-- PASO 4 -->
+  <section class="step" id="paso4">
+    <div class="step-num">4</div>
+    <h3>Cambiar a modo Live</h3>
+    <p>Al entrar al Developer Dashboard, PayPal muestra por defecto el entorno <strong>Sandbox</strong> (pruebas). Hay que cambiarlo a <strong>Live</strong> para obtener las credenciales reales.</p>
+    <ol class="sub">
+      <li>Buscá el toggle o selector en la parte superior del dashboard que dice <strong>"Sandbox"</strong> / <strong>"Live"</strong>.</li>
+      <li>Hacé clic en <strong>Live</strong>. La interfaz va a cambiar y vas a ver las apps y credenciales del entorno de producción.</li>
+    </ol>
+    <div class="warn-box"><strong>Atención:</strong> las credenciales de Sandbox y de Live son distintas. Si por error se cargan las de Sandbox en el administrador del sitio, los pagos van a fallar. Siempre verificar que el toggle esté en <strong>Live</strong> antes de copiar.</div>
+  </section>
+
+  <!-- PASO 5 -->
+  <section class="step" id="paso5">
+    <div class="step-num">5</div>
+    <h3>Crear una App en modo Live</h3>
+    <p>Dentro del Developer Dashboard en modo Live, andá a <strong>Apps &amp; Credentials</strong> y creá una nueva app (o usá una existente si ya fue creada antes):</p>
+    <ol class="sub">
+      <li>Hacé clic en <strong>"Create App"</strong>.</li>
+      <li>Poné un nombre descriptivo para la app (por ejemplo: <em>Sitio Web — NombredelNegocio</em>).</li>
+      <li>En <strong>App Type</strong> seleccioná <strong>Merchant</strong> (es para cobrar, no para pagar).</li>
+      <li>Hacé clic en <strong>"Create App"</strong> para confirmar.</li>
+    </ol>
+    <p>Si ya existe una app de proyectos anteriores, podés reutilizarla. Cada app puede integrarse con múltiples sitios.</p>
+  </section>
+
+  <!-- PASO 6 -->
+  <section class="step" id="paso6">
+    <div class="step-num">6</div>
+    <h3>Copiar el Client ID y el Client Secret</h3>
+    <p>Al entrar a la app recién creada (o existente), PayPal muestra las credenciales de Live:</p>
+    <ul>
+      <li><code>Client ID</code> — visible directamente, empieza con <code>AX...</code> o similar.</li>
+      <li><code>Client Secret</code> — está oculto por defecto. Hacé clic en <strong>"Show"</strong> para revelarlo.</li>
+    </ul>
+    <p>Copiá ambos valores. Los vas a necesitar en el paso siguiente.</p>
+    <div class="warn-box"><strong>Nunca</strong> compartas el <code>Client Secret</code> por chat, correo o repositorios públicos: con él se pueden generar cobros en nombre de la cuenta. Si alguna vez se filtra, se puede regenerar ("Regenerate Secret") desde esta misma pantalla.</div>
+  </section>
+
+  <!-- PASO 7 -->
+  <section class="step" id="paso7">
+    <div class="step-num">7</div>
+    <h3>Cargar las credenciales en el administrador</h3>
+    <p>En el administrador del sitio, entrá a <strong>Configuración → PayPal</strong> y pegá los dos valores:</p>
+    <ul>
+      <li>Campo <code>Client ID</code> → pegá el <code>Client ID</code> copiado del paso 6.</li>
+      <li>Campo <code>Client Secret</code> → pegá el <code>Client Secret</code> copiado del paso 6.</li>
+    </ul>
+    <p>Hacé clic en <strong>Guardar</strong>. El administrador confirma que las credenciales quedaron guardadas y muestra el estado <em>"Client Secret configurado ✓"</em>.</p>
+    <div class="tip"><strong>Tip:</strong> una vez guardado, el Client Secret no se vuelve a mostrar en el admin (por seguridad). Si alguna vez necesitás actualizarlo, simplemente pegás el nuevo valor y guardás de nuevo.</div>
+    <div class="warn-box"><strong>Verificación:</strong> desde la sección <em>Link de pago → PayPal</em> del administrador, generá un link de prueba de bajo monto (por ejemplo USD 1) y completá el pago real para confirmar que la integración quedó funcionando correctamente en producción.</div>
+  </section>
+
+  <div class="final">
+    <h2>🎉 Producción activada</h2>
+    <p>Con estos pasos, PayPal queda configurado y el sitio puede generar links de pago en dólares. Si en algún momento rotás el Client Secret por seguridad, solo hace falta repetir el paso 6 y actualizar el valor en el administrador.</p>
+  </div>
+
+  <footer>
+    GokyWebs — Instructivo interno de activación de PayPal
+  </footer>
+
+</div>
+</body>
+</html>

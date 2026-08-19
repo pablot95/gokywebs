@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Seña confirmada! Completá tu brief | Gokywebs</title>
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .exito-wrap { max-width: 660px; margin: 0 auto; padding: 7rem 1.5rem 5rem; }
+
+        .exito-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
+            color: #34D399; border-radius: 100px;
+            padding: 0.4rem 1rem; font-size: 0.82rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem;
+        }
+        .exito-title { font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.75rem; line-height: 1.15; color: var(--text); }
+        .exito-title span { color: #10B981; }
+        .exito-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 2rem; }
+
+        .payment-pill {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: rgba(37,99,235,0.1); border: 1px solid var(--blue-border);
+            border-radius: var(--radius); padding: 0.65rem 1rem;
+            font-size: 0.82rem; color: var(--text-muted); margin-bottom: 2rem;
+        }
+        .payment-pill strong { color: var(--blue-2); }
+
+        .pending-box {
+            text-align: center; padding: 2.5rem;
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.25);
+            border-radius: var(--radius-xl); margin-bottom: 2rem;
+        }
+        .pending-box h2 { font-size: 1.35rem; font-weight: 700; color: var(--amber); margin-bottom: 0.5rem; }
+        .pending-box p { font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; }
+
+        .brief-card {
+            background: #ffffff; border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 24px; overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        .brief-header {
+            padding: 1.5rem 2rem; border-bottom: 1px solid rgba(0,0,0,0.07);
+            background: linear-gradient(135deg, rgba(37,99,235,0.04), #fff);
+        }
+        .brief-header h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; color: #111827; }
+        .brief-header p { font-size: 0.82rem; color: #6B7280; }
+        .brief-body { padding: 1.75rem 2rem; }
+
+        .brief-section-title {
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.18em;
+            text-transform: uppercase; color: #2563EB; margin-bottom: 1rem;
+            padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.07);
+        }
+        .brief-group { margin-bottom: 1.25rem; }
+        .brief-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; display: block; }
+        .brief-label .req { color: #EF4444; }
+
+        .brief-input, .brief-textarea {
+            width: 100%; padding: 0.82rem 1rem;
+            background: #f9fafb; border: 1.5px solid rgba(0,0,0,0.12);
+            border-radius: 12px; color: #111827;
+            font-size: 0.88rem; outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s; font-family: var(--font);
+        }
+        .brief-input::placeholder, .brief-textarea::placeholder { color: #9CA3AF; }
+        .brief-input:focus, .brief-textarea:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        .brief-textarea { resize: vertical; min-height: 90px; }
+
+        .logo-upload-row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        .btn-upload {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.7rem 1.2rem; background: #f3f4f6;
+            border: 1.5px dashed rgba(0,0,0,0.18); border-radius: 12px;
+            font-size: 0.84rem; font-weight: 600; color: #6B7280;
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .btn-upload:hover { border-color: #2563EB; color: #2563EB; background: rgba(37,99,235,0.06); }
+        #logoFile { display: none; }
+        #logoName { font-size: 0.8rem; color: #9CA3AF; }
+
+        .color-row { display: flex; gap: 0.65rem; align-items: flex-start; flex-wrap: wrap; }
+        .color-swatches-wrap { display: flex; gap: 0.65rem; align-items: flex-start; flex-wrap: wrap; }
+        .color-swatch-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+        .color-swatch {
+            width: 44px; height: 44px; border-radius: 10px;
+            border: 1.5px solid rgba(0,0,0,0.12); cursor: pointer;
+        }
+        .color-swatch-label { font-size: 0.65rem; color: #9CA3AF; font-weight: 500; }
+        .btn-add-color {
+            height: 44px; padding: 0 1rem; border-radius: 10px;
+            border: 1.5px dashed rgba(0,0,0,0.18); background: #f3f4f6;
+            display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+            font-size: 0.82rem; font-weight: 600; color: #6B7280; cursor: pointer;
+            transition: all 0.2s; flex-shrink: 0; white-space: nowrap;
+        }
+        .btn-add-color:hover { border-color: #2563EB; color: #2563EB; background: rgba(37,99,235,0.06); }
+        .btn-add-color.hidden { display: none; }
+        .color-text { flex: 1; min-width: 180px; }
+
+        .social-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+        .btn-submit-brief {
+            width: 100%; padding: 1.1rem; border: none; border-radius: 12px;
+            font-size: 0.95rem; font-weight: 700; letter-spacing: 0.03em;
+            background: linear-gradient(135deg, #2563EB, #4F46E5);
+            color: #fff; cursor: pointer; margin-top: 0.5rem;
+            box-shadow: 0 6px 24px rgba(37,99,235,0.35);
+            transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .btn-submit-brief:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(37,99,235,0.5); }
+        .btn-submit-brief:disabled { opacity: 0.55; pointer-events: none; }
+
+        .thanks-card {
+            display: none; text-align: center; padding: 3rem 2rem;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-xl); animation: cardIn 0.5s ease both;
+        }
+        @keyframes cardIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+        .thanks-card.visible { display: block; }
+        .thanks-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+        .thanks-card h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem; color: var(--text); }
+        .thanks-card p { font-size: 0.9rem; color: var(--text-muted); line-height: 1.75; max-width: 440px; margin: 0 auto 1.5rem; }
+        .btn-volver {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.75rem 1.75rem; background: #2563EB; color: #fff;
+            border-radius: 12px; font-size: 0.88rem; font-weight: 700;
+            border: none; cursor: pointer; transition: all 0.2s; text-decoration: none;
+        }
+        .btn-volver:hover { background: #1d4ed8; }
+
+        .toast-wrap { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 500; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast { background: #111827; color: #F9FAFB; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1.25rem; font-size: 0.84rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2); animation: toastIn 0.3s ease both; }
+        .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: #2563EB; flex-shrink: 0; }
+        .toast.success .toast-dot { background: #10B981; }
+        .toast.error .toast-dot { background: #EF4444; }
+        @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+        @media (max-width: 540px) {
+            .social-grid { grid-template-columns: 1fr; }
+            .brief-body { padding: 1.25rem; }
+            .brief-header { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="pres-header">
+    <a href="../index.html" class="header-logo">
+        <span>Gokywebs</span>
+    </a>
+    <a href="../index.html" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Inicio
+    </a>
+</header>
+
+<div class="exito-wrap">
+
+    <div id="pendingBox" class="pending-box" style="display:none">
+        <h2>⏳ Pago en proceso</h2>
+        <p>Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.</p>
+    </div>
+
+    <div id="mainContent">
+        <p class="exito-badge">✓ Seña confirmada</p>
+        <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
+        <p class="exito-desc">Ya recibimos tu seña de <span id="senaDesc">$90.000</span>. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.</p>
+
+        <div class="payment-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Pago ID: <strong id="paymentIdDisplay">—</strong> &nbsp;·&nbsp; Seña: <strong id="senaPill">$90.000 ✓</strong>
+        </div>
+
+        <div class="brief-card" id="briefCard">
+            <div class="brief-header">
+                <h2>📋 Completá el brief de tu proyecto</h2>
+                <p>Esta información es clave para que podamos diseñar exactamente lo que necesitás. Cuanto más detalle, mejor resultado.</p>
+            </div>
+            <div class="brief-body">
+                <form id="briefForm" novalidate>
+
+                    <p class="brief-section-title">Tu identidad visual</p>
+
+                    <div class="brief-group">
+                        <label class="brief-label">Logo</label>
+                        <div class="logo-upload-row">
+                            <label class="btn-upload" for="logoFile">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                                Subir logo
+                            </label>
+                            <input type="file" id="logoFile" accept="image/*,.pdf,.ai,.eps,.svg">
+                            <span id="logoName">JPG, PNG, SVG, PDF · Máx 5MB</span>
+                        </div>
+                        <input type="text" id="logoUrl" class="brief-input" placeholder="O pegá el link de Google Drive / Dropbox con tu logo" style="margin-top:0.6rem">
+                    </div>
+
+                    <div class="brief-group">
+                        <label class="brief-label">Colores que querés en tu web</label>
+                        <div class="color-row">
+                            <div class="color-swatches-wrap" id="colorSwatches">
+                                <button type="button" class="btn-add-color" id="btnAddColor">+ Agregar color</button>
+                            </div>
+                            <div class="color-text">
+                                <textarea id="colorsText" class="brief-textarea" style="min-height:70px" placeholder="O describí el estilo que buscás: ej: tonos tierra, rústico, elegante con dorado y negro, minimalista…"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="brief-group">
+                        <label class="brief-label">Tipografía / estilo de letra</label>
+                        <input type="text" id="tipografia" class="brief-input" placeholder="Ej: moderna, sans-serif, manuscrita, clásica con serifa…">
+                    </div>
+
+                    <p class="brief-section-title" style="margin-top:1.5rem">Contenido y páginas</p>
+
+                    <div class="brief-group">
+                        <label class="brief-label">¿Qué páginas / secciones querés? <span class="req">*</span></label>
+                        <textarea id="paginas" class="brief-textarea" placeholder="Ej: Inicio, Quiénes somos, Servicios, Galería, Contacto. O describí qué secciones querés en cada página."></textarea>
+                    </div>
+
+                    <div class="brief-group">
+                        <label class="brief-label">Textos que ya tenés escritos</label>
+                        <textarea id="textos" class="brief-textarea" placeholder="Si ya tenés textos para tu web, contanos qué tenés o pegá los que quieras usar. Si no tenés, nosotros los redactamos."></textarea>
+                    </div>
+
+                    <div class="brief-group">
+                        <label class="brief-label">Referencias de webs que te gustan</label>
+                        <textarea id="referencias" class="brief-textarea" style="min-height:70px" placeholder="Pegá links de sitios web que te gusten (puede ser de cualquier rubro). Eso nos ayuda a entender el estilo que buscás."></textarea>
+                    </div>
+
+                    <p class="brief-section-title" style="margin-top:1.5rem">Redes sociales</p>
+                    <div class="social-grid">
+                        <div class="brief-group">
+                            <label class="brief-label">Instagram</label>
+                            <input type="text" id="social-ig" class="brief-input" placeholder="@tunombre">
+                        </div>
+                        <div class="brief-group">
+                            <label class="brief-label">Facebook</label>
+                            <input type="text" id="social-fb" class="brief-input" placeholder="facebook.com/tunombre">
+                        </div>
+                        <div class="brief-group">
+                            <label class="brief-label">TikTok</label>
+                            <input type="text" id="social-tk" class="brief-input" placeholder="@tunombre">
+                        </div>
+                        <div class="brief-group">
+                            <label class="brief-label">LinkedIn / Otra red</label>
+                            <input type="text" id="social-li" class="brief-input" placeholder="URL o usuario">
+                        </div>
+                    </div>
+
+                    <p class="brief-section-title" style="margin-top:1.5rem">Observaciones adicionales</p>
+                    <div class="brief-group">
+                        <label class="brief-label">¿Algo más que quieras contarnos?</label>
+                        <textarea id="observaciones" class="brief-textarea" placeholder="Cualquier detalle extra, preferencia, funcionalidad específica o cosa importante que sepamos antes de empezar."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit-brief" id="submitBriefBtn">
+                        ✓ Enviar brief y comenzar proyecto
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="thanks-card" id="thanksCard">
+            <div class="thanks-icon">🎉</div>
+            <h2>¡Brief recibido!</h2>
+            <p>Ya tenemos todo lo que necesitamos para empezar. En las próximas 48 horas recibirás novedades del equipo de Gokywebs. Revisá tu casilla de email.</p>
+            <a href="../index.html" class="btn-volver">← Volver al inicio</a>
+        </div>
+    </div>
+
+</div>
+
+<footer class="pres-footer">
+    &copy; 2025 Gokywebs · <a href="https://gokywebs.com" target="_blank">gokywebs.com</a>
+</footer>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ",
+    authDomain: "gokywebs-967cd.firebaseapp.com",
+    projectId: "gokywebs-967cd",
+    storageBucket: "gokywebs-967cd.firebasestorage.app",
+    messagingSenderId: "50030976147",
+    appId: "1:50030976147:web:9f07245b536a75833a4166"
+};
+
+const params        = new URLSearchParams(window.location.search);
+const paymentId     = params.get('payment_id') || '—';
+const paymentStatus = params.get('status') || 'approved';
+
+document.getElementById('paymentIdDisplay').textContent = paymentId;
+if (paymentStatus === 'pending') document.getElementById('pendingBox').style.display = '';
+
+function toast(msg, type = 'info') {
+    const wrap = document.getElementById('toastWrap');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = `<span class="toast-dot"></span><span>${msg}</span>`;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+let app, db;
+try {
+    app = initializeApp(firebaseConfig);
+    db  = getFirestore(app);
+} catch(e) { console.warn('Firebase no disponible:', e); }
+
+const presupuestoRaw = localStorage.getItem('gky_presupuesto');
+const presupuesto    = presupuestoRaw ? JSON.parse(presupuestoRaw) : {};
+
+// Seña real de este presupuesto (60.000 landing / 90.000 el resto, guardada por script.js
+// antes del redirect a Mercado Pago) — con fallback al default histórico si el draft no la trae.
+const senaVal = Number(presupuesto.sena) || 90000;
+const senaFmt = '$' + senaVal.toLocaleString('es-AR');
+document.getElementById('senaDesc')?.replaceChildren(document.createTextNode(senaFmt));
+const senaPillEl = document.getElementById('senaPill');
+if (senaPillEl) senaPillEl.textContent = senaFmt + ' ✓';
+
+/* ── Guardar en admin apenas carga la página (sin esperar el brief) ── */
+if (db && presupuesto.reference) {
+    addDoc(collection(db, 'presupuestos'), {
+        createdAt:       serverTimestamp(),
+        paymentId,
+        paymentStatus,
+        reference:       presupuesto.reference       || '—',
+        siteType:        presupuesto.siteType         || '—',
+        totalPrice:      presupuesto.totalPrice       || 0,
+        sena:            senaVal,
+        businessType:    presupuesto.businessType     || '—',
+        objectives:      presupuesto.objectives       || [],
+        functionalities: presupuesto.functionalities  || [],
+        pages:           presupuesto.pages            || '—',
+        extras:          presupuesto.extras            || [],
+        nombre:          presupuesto.clientData?.nombre   || '—',
+        email:           presupuesto.clientData?.email    || '—',
+        telefono:        presupuesto.clientData?.telefono || '—',
+        cuit:            presupuesto.clientData?.cuit     || '—',
+        negocio:         presupuesto.clientData?.negocio  || '—',
+        briefCompleted:  false
+    }).catch(err => console.warn('Admin save error:', err));
+}
+
+/* ── Color picker: hasta 2 colores extra ── */
+const colorSwatches = document.getElementById('colorSwatches');
+const btnAddColor   = document.getElementById('btnAddColor');
+let colorCount      = 0;
+const MAX_COLORS    = 5;
+const DEFAULT_COLORS = ['#2563EB', '#F9FAFB', '#111827', '#6366F1', '#10B981'];
+
+btnAddColor.addEventListener('click', () => {
+    if (colorCount >= MAX_COLORS) return;
+    colorCount++;
+    const wrap = document.createElement('div');
+    wrap.className = 'color-swatch-wrap';
+    wrap.innerHTML = `<input type="color" class="color-swatch" id="colorDyn${colorCount}" value="${DEFAULT_COLORS[colorCount - 1] || '#6366F1'}">
+                      <span class="color-swatch-label">Color ${colorCount}</span>`;
+    colorSwatches.insertBefore(wrap, btnAddColor);
+    if (colorCount >= MAX_COLORS) btnAddColor.classList.add('hidden');
+});
+
+/* ── Logo upload ── */
+const logoFileInput = document.getElementById('logoFile');
+logoFileInput.addEventListener('change', () => {
+    const file = logoFileInput.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast('El archivo es muy grande (máx 5MB)', 'error'); logoFileInput.value = ''; return; }
+    document.getElementById('logoName').textContent = '✓ ' + file.name;
+    document.getElementById('logoName').style.color = '#10B981';
+});
+
+async function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+/* ── Submit brief ── */
+document.getElementById('briefForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const paginas = document.getElementById('paginas').value.trim();
+    if (!paginas) { toast('Contanos qué páginas/secciones querés', 'error'); document.getElementById('paginas').focus(); return; }
+
+    const submitBtn = document.getElementById('submitBriefBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Guardando…';
+
+    let logoBase64 = '';
+    const logoFile = logoFileInput.files[0];
+    if (logoFile && logoFile.size < 1.5 * 1024 * 1024) {
+        try { logoBase64 = await fileToBase64(logoFile); } catch(e) {}
+    }
+    const logoUrlVal = document.getElementById('logoUrl').value.trim();
+
+    const allColors = Array.from(colorSwatches.querySelectorAll('input[type="color"]')).map(el => el.value);
+
+    const briefData = {
+        createdAt:       serverTimestamp(),
+        paymentId,
+        paymentStatus,
+        reference:       presupuesto.reference       || '—',
+        siteType:        presupuesto.siteType         || '—',
+        totalPrice:      presupuesto.totalPrice       || 0,
+        sena:            senaVal,
+        businessType:    presupuesto.businessType     || '—',
+        objectives:      presupuesto.objectives       || [],
+        functionalities: presupuesto.functionalities  || [],
+        pages:           presupuesto.pages            || '—',
+        extras:          presupuesto.extras            || [],
+        nombre:          presupuesto.clientData?.nombre   || '—',
+        email:           presupuesto.clientData?.email    || '—',
+        telefono:        presupuesto.clientData?.telefono || '—',
+        cuit:            presupuesto.clientData?.cuit     || '—',
+        negocio:         presupuesto.clientData?.negocio  || '—',
+        logoUrl:         logoUrlVal || (logoBase64 ? '(archivo subido)' : '—'),
+        logoNombre:      logoFile?.name || '—',
+        colores:         allColors.join(', '),
+        coloresDesc:     document.getElementById('colorsText').value.trim(),
+        tipografia:      document.getElementById('tipografia').value.trim(),
+        paginas,
+        textos:          document.getElementById('textos').value.trim(),
+        referencias:     document.getElementById('referencias').value.trim(),
+        socialMedia: {
+            instagram: document.getElementById('social-ig').value.trim(),
+            facebook:  document.getElementById('social-fb').value.trim(),
+            tiktok:    document.getElementById('social-tk').value.trim(),
+            linkedin:  document.getElementById('social-li').value.trim()
+        },
+        observaciones:   document.getElementById('observaciones').value.trim(),
+        briefCompleted:  true
+    };
+
+    try {
+        if (db) addDoc(collection(db, 'presupuestos'), briefData).catch(err => console.warn('Firebase brief:', err));
+
+        if (typeof emailjs !== 'undefined') {
+            emailjs.init('pGNjMv6kEjZEWWdIi');
+
+            const totalFmt     = '$' + Number(briefData.totalPrice).toLocaleString('es-AR');
+            const remainingFmt = '$' + Number(briefData.totalPrice - senaVal).toLocaleString('es-AR');
+            const pagesLabel   = { '1': '1 pagina (hasta 5 secciones)', '2-4': '2 a 4 paginas', 'mas5': 'mas de 5 paginas' };
+            const pagesText    = pagesLabel[briefData.pages] || briefData.pages || '—';
+            const objText      = Array.isArray(briefData.objectives) ? briefData.objectives.join(', ') : '—';
+            const funcText     = Array.isArray(briefData.functionalities) ? briefData.functionalities.join(', ') : '—';
+            const fechaText    = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+            emailjs.send('service_1lw1c2p', 'template_1mq1gt7', {
+                to_name:      briefData.nombre,
+                to_email:     briefData.email,
+                project_type: briefData.siteType,
+                total_price:  totalFmt,
+                sena_paid:    senaFmt,
+                remaining:    remainingFmt,
+                negocio:      briefData.negocio || briefData.businessType,
+                payment_id:   paymentId
+            }).catch(err => console.warn('EmailJS cliente error:', err));
+
+            emailjs.send('service_1lw1c2p', 'template_xugoxum', {
+                client_name:     briefData.nombre,
+                client_email:    briefData.email,
+                client_phone:    briefData.telefono,
+                client_cuit:     briefData.cuit,
+                negocio:         briefData.negocio || '—',
+                business_type:   briefData.businessType,
+                site_type:       briefData.siteType,
+                total_price:     totalFmt,
+                sena:            senaFmt,
+                remaining:       remainingFmt,
+                payment_id:      paymentId,
+                payment_status:  briefData.paymentStatus || 'approved',
+                pages:           pagesText,
+                objectives:      objText,
+                functionalities: funcText,
+                colores:         briefData.colores || '—',
+                referencias:     briefData.referencias || '—',
+                observaciones:   briefData.observaciones || '—',
+                logo_url:        briefData.logoUrl && briefData.logoUrl.startsWith('http') ? briefData.logoUrl : '(no URL)',
+                fecha:           fechaText
+            }).catch(err => console.warn('EmailJS admin error:', err));
+        }
+
+        localStorage.removeItem('gky_presupuesto');
+        document.getElementById('briefCard').style.display = 'none';
+        document.getElementById('thanksCard').classList.add('visible');
+        document.getElementById('thanksCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    } catch (err) {
+        console.error(err);
+        toast('Error al guardar. Intentá de nuevo o escribinos por WhatsApp.', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✓ Enviar brief y comenzar proyecto';
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</body>
+</html>

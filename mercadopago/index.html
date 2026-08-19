@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Cómo activar las credenciales de producción de Checkout Pro (Mercado Pago)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-blue:#2563EB;
+    --color-blue-light:#3B82F6;
+    --color-green:#16A34A;
+    --color-green-bright:#4ADE80;
+    --bg:#000000;
+    --bg-elev:#F3F4F6;
+    --bg-card:#FFFFFF;
+    --border:rgba(0,0,0,0.1);
+    --border-strong:rgba(0,0,0,0.16);
+    --text:#0F0F10;
+    --text-muted:#6B7280;
+    --text-light:#F5F5F7;
+    --text-light-muted:#A1A1AA;
+    --font-primary:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display:'Space Grotesk', var(--font-primary);
+    --radius:14px;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:var(--font-primary);
+    background:var(--bg);
+    color:var(--text-light);
+    line-height:1.65;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  .wrapper{
+    max-width:1200px;
+    margin:0 auto;
+    padding:48px 24px 100px;
+  }
+
+  img, video{ max-width:100%; height:auto; }
+
+  /* ---- Instructivo completo en video ---- */
+  .video-instruction{
+    width:100%;
+    margin-bottom:48px;
+  }
+
+  .mercadopago-link{
+    display:inline-block;
+    margin-bottom:14px;
+    color:#60A5FA;
+    font-weight:600;
+    text-decoration:underline;
+    text-decoration-color:rgba(96,165,250,0.45);
+    text-underline-offset:3px;
+    overflow-wrap:anywhere;
+  }
+
+  .mercadopago-link:hover,
+  .mercadopago-link:focus-visible{
+    color:#93C5FD;
+    text-decoration-color:currentColor;
+  }
+
+  .full-instruction-video{
+    display:block;
+    width:100%;
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:var(--radius);
+    background:#050505;
+    box-shadow:0 22px 70px rgba(0,0,0,0.42);
+  }
+
+  .credentials-email{
+    display:block;
+    width:max-content;
+    max-width:100%;
+    margin:14px auto 0;
+    color:var(--text-light);
+    font-weight:600;
+    text-align:center;
+    text-decoration:none;
+    overflow-wrap:anywhere;
+  }
+
+  .credentials-email:hover,
+  .credentials-email:focus-visible{
+    color:#93C5FD;
+    text-decoration:underline;
+  }
+
+  /* ---- Header ---- */
+  header{
+    margin-bottom:40px;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(74,222,128,0.12);
+    border:1px solid rgba(74,222,128,0.3);
+    color:var(--color-green-bright);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(28px, 5vw, 42px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+    color:var(--text-light);
+  }
+
+  header p.lead{
+    color:var(--text-light-muted);
+    font-size:17px;
+    max-width:680px;
+  }
+
+  /* ---- Aviso ---- */
+  .alert{
+    display:flex;
+    gap:14px;
+    background:rgba(37,99,235,0.08);
+    border:1px solid rgba(37,99,235,0.25);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin:28px 0 8px;
+    font-size:14.5px;
+    color:#cdd9ff;
+  }
+
+  .alert.warn{
+    background:rgba(245,158,11,0.08);
+    border-color:rgba(245,158,11,0.3);
+    color:#FCD34D;
+  }
+
+  .alert .icon{ font-size:20px; line-height:1; flex-shrink:0; }
+
+  /* ---- Pasos ---- */
+  .step{
+    position:relative;
+    border:1px solid var(--border);
+    background:var(--bg-card);
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    border-radius:var(--radius);
+    padding:28px 28px 26px 88px;
+    margin-bottom:22px;
+    scroll-margin-top:24px;
+  }
+
+  .step .step-num{
+    position:absolute;
+    top:28px;
+    left:24px;
+    width:46px;
+    height:46px;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue-light) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    color:#fff;
+    box-shadow:0 8px 20px rgba(37,99,235,0.35);
+  }
+
+  .step h3{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+
+  .step p{ margin-bottom:12px; color:#374151; }
+  .step p:last-child{ margin-bottom:0; }
+
+  .step ul, .step ol.sub{
+    margin:12px 0 14px 0;
+    padding-left:22px;
+    color:#374151;
+  }
+
+  .step ul li, .step ol.sub li{
+    margin-bottom:6px;
+  }
+
+  .step ol.sub{ list-style:decimal; }
+
+  .step a{
+    color:var(--color-blue);
+    text-decoration:underline;
+    text-decoration-color:rgba(37,99,235,0.35);
+    text-underline-offset:2px;
+    transition:color .15s, text-decoration-color .15s;
+  }
+
+  .step a:hover{
+    color:var(--color-blue-light);
+    text-decoration-color:var(--color-blue-light);
+  }
+
+  .step a code{ color:inherit; }
+
+  code, .kbd{
+    font-family:'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background:var(--bg-elev);
+    border:1px solid var(--border-strong);
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:0.88em;
+    color:#15803d;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .tip{
+    margin-top:14px;
+    background:rgba(22,163,74,0.07);
+    border:1px solid rgba(22,163,74,0.25);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:18px;
+    color:#14532d;
+  }
+
+  .tip strong{ color:var(--color-green); }
+
+  .warn-box{
+    margin-top:14px;
+    background:rgba(217,119,6,0.08);
+    border:1px solid rgba(217,119,6,0.28);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;
+    color:#7C2D12;
+  }
+
+  .warn-box strong{ color:#B45309; }
+
+  .step-shot{
+    appearance:none;
+    display:block;
+    width:260px;
+    max-width:100%;
+    margin-top:18px;
+    border:1px solid rgba(37,99,235,0.22);
+    border-radius:10px;
+    background:#fff;
+    padding:8px;
+    cursor:pointer;
+    text-align:left;
+    box-shadow:0 8px 22px rgba(15,23,42,0.08);
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+  }
+
+  .step-shot:hover,
+  .step-shot:focus-visible{
+    transform:translateY(-2px);
+    border-color:var(--color-blue);
+    box-shadow:0 12px 26px rgba(37,99,235,0.16);
+    outline:none;
+  }
+
+  .step-shot img{
+    display:block;
+    width:100%;
+    height:130px;
+    object-fit:cover;
+    object-position:top left;
+    border-radius:7px;
+    border:1px solid var(--border);
+  }
+
+  .step-shot span{
+    display:block;
+    margin-top:7px;
+    color:var(--color-blue);
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .modal{
+    position:fixed;
+    inset:0;
+    z-index:30;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:26px;
+    background:rgba(0,0,0,0.82);
+  }
+
+  .modal.is-open{ display:flex; }
+
+  .modal-dialog{
+    position:relative;
+    width:min(1120px, 100%);
+    max-height:92vh;
+    display:grid;
+    grid-template-rows:auto minmax(0, 1fr) auto;
+    gap:12px;
+  }
+
+  .modal-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    color:#fff;
+  }
+
+  .modal-title{
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:700;
+  }
+
+  .modal-close,
+  .modal-nav{
+    border:0;
+    background:rgba(255,255,255,0.14);
+    color:#fff;
+    cursor:pointer;
+    transition:background .15s ease, transform .15s ease;
+  }
+
+  .modal-close{
+    width:42px;
+    height:42px;
+    border-radius:50%;
+    font-size:28px;
+    line-height:1;
+  }
+
+  .modal-close:hover,
+  .modal-nav:hover,
+  .modal-close:focus-visible,
+  .modal-nav:focus-visible{
+    background:rgba(255,255,255,0.24);
+    outline:none;
+  }
+
+  .modal-media{
+    position:relative;
+    min-height:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .modal-media img{
+    display:block;
+    max-width:100%;
+    max-height:calc(92vh - 130px);
+    width:auto;
+    border-radius:12px;
+    background:#fff;
+    box-shadow:0 24px 80px rgba(0,0,0,0.45);
+  }
+
+  .modal-nav{
+    position:absolute;
+    top:50%;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    transform:translateY(-50%);
+    font-size:30px;
+  }
+
+  .modal-nav:hover{ transform:translateY(-50%) scale(1.04); }
+  .modal-prev{ left:12px; }
+  .modal-next{ right:12px; }
+
+  .modal-caption{
+    color:#E5E7EB;
+    text-align:center;
+    font-size:14px;
+  }
+
+  /* ---- Final ---- */
+  .final{
+    margin-top:48px;
+    text-align:center;
+    padding:32px 24px;
+    border-radius:var(--radius);
+    background:var(--bg-card);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+
+  .final h2{
+    font-family:var(--font-display);
+    font-size:24px;
+    margin-bottom:10px;
+  }
+
+  .final p{ color:var(--text-muted); max-width:540px; margin:0 auto; }
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    color:var(--text-light-muted);
+    font-size:13px;
+  }
+
+  /* ---- Print ---- */
+  @media print{
+    body{ background:#fff; color:#111; }
+    .step{ background:#fff; border:1px solid #ddd; break-inside:avoid; }
+  }
+
+  @media (max-width:640px){
+    body{ font-size:15px; }
+    .wrapper{ padding:28px 14px 50px; }
+
+    header{ margin-bottom:28px; }
+    .badge{ font-size:11px; padding:5px 12px; margin-bottom:14px; }
+    h1{ font-size:26px; }
+    header p.lead{ font-size:15px; }
+    .video-instruction{ margin-bottom:34px; }
+    .mercadopago-link{ margin-bottom:10px; font-size:14px; }
+    .full-instruction-video{ border-radius:10px; }
+    .credentials-email{ margin-top:10px; font-size:14px; }
+
+    .step{
+      padding:20px 16px;
+      margin-bottom:16px;
+      border-radius:12px;
+    }
+    .step .step-num{
+      position:static;
+      margin-bottom:12px;
+      width:40px;
+      height:40px;
+      font-size:17px;
+    }
+    .step h3{ font-size:18px; }
+    .step p, .step ul, .step ol.sub{ font-size:14.5px; }
+    .step-shot{ width:100%; }
+    .step-shot img{ height:120px; }
+
+    .modal{ padding:12px; }
+    .modal-dialog{ max-height:94vh; }
+    .modal-title{ font-size:15px; }
+    .modal-media img{ max-height:calc(94vh - 128px); border-radius:8px; }
+    .modal-nav{
+      width:40px;
+      height:40px;
+      font-size:26px;
+      background:rgba(0,0,0,0.48);
+    }
+    .modal-prev{ left:6px; }
+    .modal-next{ right:6px; }
+
+    .tip, .warn-box{ padding:10px 12px; font-size:13.5px; }
+
+    .final{ padding:24px 16px; margin-top:32px; }
+    .final h2{ font-size:20px; }
+    .final p{ font-size:14px; }
+  }
+
+  @media (max-width:380px){
+    h1{ font-size:22px; }
+    .step{ padding:16px 12px; }
+    .step .step-num{ width:36px; height:36px; font-size:15px; border-radius:10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <section class="video-instruction" aria-label="Instructivo completo de Mercado Pago">
+    <a class="mercadopago-link" href="https://www.mercadopago.com.ar/developers/panel" target="_blank" rel="noopener noreferrer">https://www.mercadopago.com.ar/developers/panel</a>
+    <video class="full-instruction-video" controls preload="metadata" playsinline>
+      <source src="VideoInstructivoMP.mp4" type="video/mp4">
+      Tu navegador no puede reproducir este video. <a href="VideoInstructivoMP.mp4">Descargar instructivo</a>.
+    </video>
+    <a class="credentials-email" href="mailto:pablo.travi95@gmail.com">pablo.travi95@gmail.com</a>
+  </section>
+
+  <header>
+    <span class="badge">🟢 Mercado Pago · Checkout Pro</span>
+    <h1>Cómo activar las credenciales de producción de Checkout Pro</h1>
+    <p class="lead">Guía paso a paso, de principio a fin, para integrar Mercado Pago en modo <strong>producción</strong> y empezar a recibir pagos reales en tu cuenta.</p>
+  </header>
+
+  <!-- PASO 1 -->
+  <section class="step" id="paso1">
+    <div class="step-num">1</div>
+    <h3>Entrar a Configuración en Mercado Pago</h3>
+    <p>Con la cuenta ya verificada, ingresá a Mercado Pago y abrí el menú de <strong>Configuración</strong>.</p>
+    <p><a href="https://www.mercadopago.com.ar/developers/panel" target="_blank" rel="noopener noreferrer"><code>https://www.mercadopago.com.ar/developers/panel</code></a></p>
+    <p>Este es el panel donde se gestionan las <strong>aplicaciones</strong> y las <strong>credenciales</strong> (tanto de prueba como de producción).</p>
+    <button class="step-shot" type="button" data-gallery-index="0" aria-label="Abrir imagen de referencia del paso 1">
+      <img src="paso1-iraconfiguracionenmercadopago.png" alt="Captura del menú de configuración en Mercado Pago" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 2 -->
+  <section class="step" id="paso2">
+    <div class="step-num">2</div>
+    <h3>Crear una aplicación</h3>
+    <p>Si todavía no existe una integración para este proyecto, hacé clic en <strong>Crear aplicación</strong>. Si ya fue creada anteriormente, podés reutilizar esa misma aplicación.</p>
+    <button class="step-shot" type="button" data-gallery-index="1" aria-label="Abrir imagen de referencia del paso 2">
+      <img src="paso4-crearaplicacion.png" alt="Captura del botón Crear aplicación" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 3 -->
+  <section class="step" id="paso3">
+    <div class="step-num">3</div>
+    <h3>Ingresar el nombre de la aplicación</h3>
+    <p>Escribí un nombre que permita identificar fácilmente la integración, por ejemplo el <strong>nombre de la empresa o del sitio web</strong>. Después hacé clic en <strong>Continuar</strong>.</p>
+    <button class="step-shot" type="button" data-gallery-index="2" aria-label="Abrir imagen de referencia del paso 3">
+      <img src="paso-crear-nombre.png" alt="Captura del campo para ingresar el nombre de la aplicación" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 4 -->
+  <section class="step" id="paso4">
+    <div class="step-num">4</div>
+    <h3>Elegir Pagos online y Desarrollo propio</h3>
+    <p>Cuando Mercado Pago pregunte por el tipo de integración, seleccioná <strong>Pagos online</strong> y luego <strong>Desarrollo propio</strong>. Es la opción correcta para un sitio propio en HTML/PHP.</p>
+    <button class="step-shot" type="button" data-gallery-index="3" aria-label="Abrir imagen de referencia del paso 4">
+      <img src="paso5-elegimospagoonlineydesarrollopropio.png" alt="Captura de selección de Pagos online y Desarrollo propio" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 5 -->
+  <section class="step" id="paso5">
+    <div class="step-num">5</div>
+    <h3>Elegir Checkout Pro</h3>
+    <p>Seleccioná <strong>Checkout Pro</strong>. Este modelo redirige al comprador al formulario seguro de Mercado Pago y es el que ya viene implementado en el sitio.</p>
+    <button class="step-shot" type="button" data-gallery-index="4" aria-label="Abrir imagen de referencia del paso 5">
+      <img src="paso6-elegimoscheckoutpro.png" alt="Captura de selección de Checkout Pro" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 6 -->
+  <section class="step" id="paso6">
+    <div class="step-num">6</div>
+    <h3>Abrir Credenciales de producción</h3>
+    <p>Dentro de la aplicación, entrá a la pestaña <strong>Credenciales de producción</strong>. Si la cuenta está verificada y tiene los datos completos, las credenciales estarán disponibles para copiar.</p>
+    <button class="step-shot" type="button" data-gallery-index="5" aria-label="Abrir imagen de referencia del paso 6">
+      <img src="paso7-elegimoscredencialesproduccion.png" alt="Captura de la pestaña Credenciales de producción" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <!-- PASO 7 -->
+  <section class="step" id="paso7">
+    <div class="step-num">7</div>
+    <h3>Copiar Public Key y Access Token (o compartirlas directamente)</h3>
+    <p>Desde acá hay dos caminos para que las credenciales lleguen al sitio. Elegí el que te resulte más cómodo:</p>
+    <p><strong>Opción A — Copiarlas vos mismo:</strong></p>
+    <ul>
+      <li><code>Public Key</code> (empieza con <code>APP_USR-...</code>)</li>
+      <li><code>Access Token</code> (también empieza con <code>APP_USR-...</code>)</li>
+    </ul>
+    <p>Con estos dos valores copiados, continuá al paso 8 para pegarlos en el administrador del sitio.</p>
+    <button class="step-shot" type="button" data-gallery-index="6" aria-label="Abrir imagen de referencia del paso 7">
+      <img src="paso8-copiamoslascredenciales.png" alt="Captura de las credenciales Public Key y Access Token" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+    <div class="tip">
+      <strong>Opción B — Compartirlas directamente con Gokywebs (más simple, no hay que copiar ni pegar nada):</strong> en esta misma pantalla de <strong>Credenciales de producción</strong>, más abajo vas a encontrar la sección <strong>«Compartí las credenciales con un desarrollador»</strong>. Hacé clic en <strong>Compartir credenciales</strong> e ingresá el mail <code>pablo.travi95@gmail.com</code>. Mercado Pago nos da acceso directo a esas claves de forma segura, sin que circulen por chat ni mail, y nosotros las cargamos en el administrador. Podés revocar el acceso cuando quieras eliminando esa cuenta compartida desde la misma sección.
+    </div>
+    <button class="step-shot" type="button" data-gallery-index="7" aria-label="Abrir imagen de referencia de la opción B, compartir credenciales">
+      <img src="paso8b-compartircredenciales.png" alt="Captura de la sección Compartir credenciales con un desarrollador, con el botón Compartir credenciales marcado" loading="lazy">
+      <span>Ver referencia — Opción B</span>
+    </button>
+  </section>
+
+  <!-- PASO 8 -->
+  <section class="step" id="paso8">
+    <div class="step-num">8</div>
+    <h3>Pegar las credenciales en el administrador</h3>
+    <p>Si elegiste la <strong>Opción A</strong> del paso anterior: en el administrador del sitio, entrá a <strong>Configuración -> Mercado Pago</strong> y pegá los valores en los campos <code>Public Key</code> y <code>Access Token</code>.</p>
+    <div class="tip">Guardá los cambios y hacé una prueba de compra real de bajo monto para confirmar que el checkout quedó funcionando en producción.</div>
+    <p>Si elegiste la <strong>Opción B</strong> (compartir credenciales por mail a <code>pablo.travi95@gmail.com</code>): este paso lo hacemos nosotros — no necesitás tocar el administrador.</p>
+    <button class="step-shot" type="button" data-gallery-index="8" aria-label="Abrir imagen de referencia del paso 8">
+      <img src="paso9-enadminconfiguracionlaspegamos.png" alt="Captura de los campos de Mercado Pago en el administrador" loading="lazy">
+      <span>Ver referencia</span>
+    </button>
+  </section>
+
+  <div class="final">
+    <h2>🎉 Producción activada</h2>
+    <p>Con estos pasos, la aplicación queda con sus credenciales de producción listas para reemplazar a las de prueba. Cualquier cambio futuro de credenciales (por ejemplo si se rota el Access Token por seguridad) se hace repitiendo los pasos 6 a 8 — o volviendo a compartirlas a <code>pablo.travi95@gmail.com</code> si preferís la Opción B.</p>
+  </div>
+
+  <footer>
+    GokyWebs — Instructivo interno de activación de Mercado Pago Checkout Pro
+  </footer>
+
+</div>
+
+<div class="modal" id="imageModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-dialog">
+    <div class="modal-top">
+      <div class="modal-title" id="modalTitle">Referencia del paso</div>
+      <button class="modal-close" type="button" aria-label="Cerrar imagen">&times;</button>
+    </div>
+    <div class="modal-media">
+      <button class="modal-nav modal-prev" type="button" aria-label="Imagen anterior">&#8249;</button>
+      <img src="" alt="" id="modalImage">
+      <button class="modal-nav modal-next" type="button" aria-label="Imagen siguiente">&#8250;</button>
+    </div>
+    <p class="modal-caption" id="modalCaption"></p>
+  </div>
+</div>
+
+<script>
+  const galleryImages = [
+    {
+      src: 'paso1-iraconfiguracionenmercadopago.png',
+      title: 'Paso 1: Entrar a Configuración en Mercado Pago',
+      alt: 'Captura del menú de configuración en Mercado Pago'
+    },
+    {
+      src: 'paso4-crearaplicacion.png',
+      title: 'Paso 2: Crear una aplicación',
+      alt: 'Captura del botón Crear aplicación'
+    },
+    {
+      src: 'paso-crear-nombre.png',
+      title: 'Paso 3: Ingresar el nombre de la aplicación',
+      alt: 'Captura del campo para ingresar el nombre de la aplicación'
+    },
+    {
+      src: 'paso5-elegimospagoonlineydesarrollopropio.png',
+      title: 'Paso 4: Elegir Pagos online y Desarrollo propio',
+      alt: 'Captura de selección de Pagos online y Desarrollo propio'
+    },
+    {
+      src: 'paso6-elegimoscheckoutpro.png',
+      title: 'Paso 5: Elegir Checkout Pro',
+      alt: 'Captura de selección de Checkout Pro'
+    },
+    {
+      src: 'paso7-elegimoscredencialesproduccion.png',
+      title: 'Paso 6: Abrir Credenciales de producción',
+      alt: 'Captura de la pestaña Credenciales de producción'
+    },
+    {
+      src: 'paso8-copiamoslascredenciales.png',
+      title: 'Paso 7: Copiar Public Key y Access Token',
+      alt: 'Captura de las credenciales Public Key y Access Token'
+    },
+    {
+      src: 'paso8b-compartircredenciales.png',
+      title: 'Paso 7 — Opción B: Compartir credenciales con un desarrollador',
+      alt: 'Captura de la sección Compartir credenciales con un desarrollador, con el botón Compartir credenciales marcado'
+    },
+    {
+      src: 'paso9-enadminconfiguracionlaspegamos.png',
+      title: 'Paso 8: Pegar las credenciales en el administrador',
+      alt: 'Captura de los campos de Mercado Pago en el administrador'
+    }
+  ];
+
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalCaption = document.getElementById('modalCaption');
+  const closeButton = modal.querySelector('.modal-close');
+  const prevButton = modal.querySelector('.modal-prev');
+  const nextButton = modal.querySelector('.modal-next');
+  const thumbnailButtons = document.querySelectorAll('.step-shot');
+  let currentImageIndex = 0;
+
+  function renderModalImage(){
+    const image = galleryImages[currentImageIndex];
+    modalImage.src = image.src;
+    modalImage.alt = image.alt;
+    modalTitle.textContent = image.title;
+    modalCaption.textContent = `${currentImageIndex + 1} de ${galleryImages.length}`;
+  }
+
+  function openModal(index){
+    currentImageIndex = index;
+    renderModalImage();
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    closeButton.focus();
+  }
+
+  function closeModal(){
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    const originButton = document.querySelector(`.step-shot[data-gallery-index="${currentImageIndex}"]`);
+    (originButton || thumbnailButtons[0]).focus();
+  }
+
+  function moveGallery(direction){
+    currentImageIndex = (currentImageIndex + direction + galleryImages.length) % galleryImages.length;
+    renderModalImage();
+  }
+
+  thumbnailButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      openModal(Number(button.dataset.galleryIndex));
+    });
+  });
+
+  closeButton.addEventListener('click', closeModal);
+  prevButton.addEventListener('click', () => moveGallery(-1));
+  nextButton.addEventListener('click', () => moveGallery(1));
+
+  modal.addEventListener('click', (event) => {
+    if(event.target === modal){
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if(!modal.classList.contains('is-open')) return;
+    if(event.key === 'Escape') closeModal();
+    if(event.key === 'ArrowLeft') moveGallery(-1);
+    if(event.key === 'ArrowRight') moveGallery(1);
+  });
+</script>
+</body>
+</html>

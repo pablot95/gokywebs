@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Guía del panel de administración — GokyWebs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB;
+    --blue-light:#3B82F6;
+    --green:#16A34A;
+    --green-bright:#4ADE80;
+    --amber:#F59E0B;
+    --red:#EF4444;
+
+    --bg:#08090C;
+    --bg-soft:#0F1117;
+    --card:#FFFFFF;
+    --card-soft:#F6F7F9;
+
+    --text:#0F0F10;
+    --text-muted:#5B6472;
+    --light:#F5F5F7;
+    --light-muted:#9AA3B2;
+
+    --line:rgba(0,0,0,0.09);
+    --line-light:rgba(255,255,255,0.10);
+
+    --font:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display:'Space Grotesk', var(--font);
+    --radius:16px;
+    --shadow:0 18px 50px -30px rgba(0,0,0,0.7);
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; scroll-padding-top:24px; }
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--light);
+    line-height:1.65;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  img{ max-width:100%; height:auto; }
+  a{ color:inherit; }
+
+  /* ══ Portada ══ */
+  .hero{
+    border-bottom:1px solid var(--line-light);
+    background:
+      radial-gradient(80% 120% at 15% 0%, rgba(37,99,235,0.20), transparent 60%),
+      radial-gradient(60% 100% at 90% 10%, rgba(22,163,74,0.14), transparent 60%);
+  }
+  .hero-inner{ max-width:1180px; margin:0 auto; padding:56px 24px 44px; }
+  .badge{
+    display:inline-flex; align-items:center; gap:8px;
+    background:rgba(59,130,246,0.14); border:1px solid rgba(59,130,246,0.32);
+    color:#9DC0FF; font-size:12.5px; font-weight:600;
+    letter-spacing:0.05em; text-transform:uppercase;
+    padding:6px 14px; border-radius:999px; margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--font-display); font-weight:700;
+    font-size:clamp(30px, 5vw, 46px); line-height:1.1;
+    letter-spacing:-0.02em; margin-bottom:16px;
+  }
+  .lead{ color:var(--light-muted); font-size:17.5px; max-width:640px; }
+
+  /* ══ Primeros pasos ══ */
+  .startup{
+    margin-top:34px; display:grid; gap:12px;
+    grid-template-columns:repeat(auto-fit, minmax(min(230px,100%), 1fr));
+  }
+  .startup-card{
+    background:rgba(255,255,255,0.045); border:1px solid var(--line-light);
+    border-radius:14px; padding:16px 18px;
+  }
+  .startup-card b{
+    display:flex; align-items:center; gap:9px;
+    font-family:var(--font-display); font-size:15px; margin-bottom:5px;
+  }
+  .startup-card b i{
+    display:grid; place-items:center; flex:none;
+    width:24px; height:24px; border-radius:8px;
+    background:var(--blue); color:#fff;
+    font-size:12px; font-style:normal; font-weight:700;
+  }
+  .startup-card span{ color:var(--light-muted); font-size:13.5px; display:block; }
+
+  /* ══ Layout ══ */
+  .layout{
+    max-width:1180px; margin:0 auto; padding:40px 24px 90px;
+    display:grid; grid-template-columns:238px minmax(0,1fr); gap:40px; align-items:start;
+  }
+
+  /* ══ Índice lateral ══ */
+  .toc{ position:sticky; top:24px; }
+  .toc-group + .toc-group{ margin-top:20px; }
+  .toc-group > p{
+    font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--light-muted); margin-bottom:8px; padding-left:12px;
+  }
+  .toc a{
+    display:flex; align-items:center; gap:9px;
+    padding:7px 12px; border-radius:9px;
+    color:var(--light-muted); text-decoration:none;
+    font-size:14px; font-weight:500;
+    border-left:2px solid transparent;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .toc a:hover{ background:rgba(255,255,255,0.06); color:#fff; border-left-color:var(--blue-light); }
+  .toc a em{ font-style:normal; font-size:15px; opacity:.85; width:19px; text-align:center; flex:none; }
+
+  /* ══ Bloques ══ */
+  .block{ scroll-margin-top:24px; }
+  .block + .block{ margin-top:52px; }
+  .block-head{ margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid var(--line-light); }
+  .block-head h2{
+    font-family:var(--font-display); font-size:23px; font-weight:700;
+    letter-spacing:-0.01em; display:flex; align-items:center; gap:11px;
+  }
+  .block-head h2 span{
+    display:grid; place-items:center; width:30px; height:30px; flex:none;
+    border-radius:9px; background:rgba(59,130,246,0.16);
+    border:1px solid rgba(59,130,246,0.3); font-size:15px;
+  }
+  .block-head p{ color:var(--light-muted); font-size:14.5px; margin-top:7px; }
+
+  /* ══ Tarjetas de sección ══ */
+  .card{
+    background:var(--card); color:var(--text);
+    border-radius:var(--radius); padding:26px 28px;
+    box-shadow:var(--shadow); scroll-margin-top:24px;
+  }
+  .card + .card{ margin-top:16px; }
+  .card-top{
+    display:flex; align-items:flex-start; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; margin-bottom:6px;
+  }
+  .card h3{
+    font-family:var(--font-display); font-size:20px; font-weight:700;
+    letter-spacing:-0.01em; color:var(--text);
+  }
+  .chip{
+    flex:none; font-size:11.5px; font-weight:600; letter-spacing:0.03em;
+    padding:4px 11px; border-radius:999px; white-space:nowrap;
+  }
+  .chip-daily{ background:rgba(37,99,235,0.1); color:#1D4ED8; }
+  .chip-once{ background:rgba(22,163,74,0.11); color:#15803D; }
+  .card > p{ color:var(--text-muted); font-size:15px; }
+  .card > p + p{ margin-top:10px; }
+
+  .card h4{
+    font-family:var(--font-display); font-size:14.5px; font-weight:700;
+    color:var(--text); margin:20px 0 9px;
+    padding-top:16px; border-top:1px solid var(--line);
+  }
+  .card h4:first-of-type{ margin-top:18px; }
+
+  ul, ol{ margin:11px 0 0 0; padding-left:20px; }
+  li{ margin-bottom:8px; font-size:14.7px; color:var(--text-muted); }
+  li:last-child{ margin-bottom:0; }
+  li strong, p strong{ color:var(--text); font-weight:600; }
+  ol li::marker{ font-weight:700; color:var(--blue); }
+
+  /* Pasos numerados */
+  .howto{ counter-reset:paso; list-style:none; padding:0; margin-top:12px; }
+  .howto li{
+    counter-increment:paso; position:relative;
+    padding:9px 0 9px 38px; margin-bottom:0; font-size:14.7px;
+    border-bottom:1px dashed var(--line);
+  }
+  .howto li:last-child{ border-bottom:0; padding-bottom:0; }
+  .howto li::before{
+    content:counter(paso); position:absolute; left:0; top:9px;
+    display:grid; place-items:center; width:24px; height:24px;
+    border-radius:8px; background:var(--card-soft); border:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--blue);
+  }
+
+  /* Avisos */
+  .note{
+    margin-top:16px; padding:13px 16px; border-radius:11px;
+    font-size:14px; line-height:1.55; border:1px solid;
+  }
+  .note strong{ font-weight:700; }
+  .note-tip{ background:rgba(22,163,74,0.07); border-color:rgba(22,163,74,0.22); color:#14532D; }
+  .note-warn{ background:rgba(245,158,11,0.09); border-color:rgba(245,158,11,0.28); color:#78350F; }
+  .note-danger{ background:rgba(239,68,68,0.07); border-color:rgba(239,68,68,0.25); color:#7F1D1D; }
+
+  /* Tabla comparativa */
+  .compare{ width:100%; border-collapse:collapse; margin-top:14px; font-size:14.3px; }
+  .compare th, .compare td{ text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .compare th{ font-size:12.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); font-weight:700; }
+  .compare td:first-child{ font-weight:600; color:var(--text); white-space:nowrap; }
+  .compare td{ color:var(--text-muted); }
+
+  .after-table{ margin-top:14px; }
+  code{
+    background:var(--card-soft); border:1px solid var(--line);
+    padding:1px 6px; border-radius:5px; font-size:13px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, monospace; color:#1D4ED8;
+  }
+
+  /* ══ Cierre ══ */
+  .final{
+    margin-top:56px; padding:34px 30px; border-radius:var(--radius);
+    background:linear-gradient(135deg, rgba(37,99,235,0.16), rgba(22,163,74,0.12));
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .final h2{ font-family:var(--font-display); font-size:22px; margin-bottom:10px; }
+  .final p{ color:var(--light-muted); font-size:15px; max-width:660px; }
+
+  footer{
+    border-top:1px solid var(--line-light); margin-top:56px; padding:24px;
+    text-align:center; color:var(--light-muted); font-size:13.5px;
+  }
+
+  /* ══ Video instructivo ══ */
+  .video-band{
+    border-bottom:1px solid var(--line-light);
+    background:
+      radial-gradient(70% 140% at 50% -10%, rgba(37,99,235,0.22), transparent 65%),
+      var(--bg-soft);
+    padding:40px 24px 44px;
+  }
+  .video-inner{ max-width:840px; margin:0 auto; text-align:center; }
+  .video-inner h2{
+    font-family:var(--font-display); font-weight:700;
+    font-size:clamp(21px, 3vw, 26px); letter-spacing:-0.01em; margin-bottom:8px;
+  }
+  .video-inner > p{ color:var(--light-muted); font-size:15px; max-width:520px; margin:0 auto 22px; }
+  .video-frame{
+    position:relative; border-radius:var(--radius); overflow:hidden;
+    box-shadow:var(--shadow); border:1px solid var(--line-light);
+    aspect-ratio:21/9; background:#000;
+  }
+  .video-frame video{ width:100%; height:100%; display:block; object-fit:contain; background:#000; }
+  .video-meta{
+    margin-top:12px; display:flex; align-items:center; justify-content:center;
+    gap:8px; color:var(--light-muted); font-size:13px;
+  }
+
+  @media (max-width:900px){
+    .layout{ grid-template-columns:1fr; gap:26px; padding-top:28px; }
+    .toc{
+      position:static; background:rgba(255,255,255,0.045);
+      border:1px solid var(--line-light); border-radius:14px; padding:16px 14px;
+    }
+    .toc-group{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:4px; }
+    .toc-group > p{ grid-column:1/-1; }
+    .card{ padding:22px 20px; }
+    .video-frame{ aspect-ratio:16/9; }
+  }
+</style>
+</head>
+<body>
+
+<div class="video-band" id="video-instructivo">
+  <div class="video-inner">
+    <span class="badge">▶️ Empezá por acá</span>
+    <h2>Video instructivo del panel</h2>
+    <p>Un recorrido de menos de 3 minutos por las pantallas que vas a usar. Si es la primera vez que entrás, mirá esto antes de tocar nada.</p>
+    <div class="video-frame">
+      <video controls preload="metadata" poster="poster-instructivo.webp" playsinline>
+        <source src="instructivopaneladmin.mp4" type="video/mp4">
+        Tu navegador no puede reproducir este video. Descargalo desde <a href="instructivopaneladmin.mp4">este link</a>.
+      </video>
+    </div>
+    <p class="video-meta">⏱️ 2:45</p>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-inner">
+    <span class="badge">🛠️ Panel de administración</span>
+    <h1>Cómo manejar tu tienda</h1>
+    <p class="lead">Todo lo que ves en tu web sale de este panel: los productos, los precios, las promociones, los envíos y los textos legales. No hace falta saber nada técnico — se maneja con formularios y botones.</p>
+
+    <div class="startup">
+      <div class="startup-card">
+        <b><i>1</i> Armá el catálogo</b>
+        <span>Primero las categorías, después los productos.</span>
+      </div>
+      <div class="startup-card">
+        <b><i>2</i> Configurá los envíos</b>
+        <span>Cuánto cobrás y a dónde llegás.</span>
+      </div>
+      <div class="startup-card">
+        <b><i>3</i> Conectá los cobros</b>
+        <span>Mercado Pago y/o transferencia.</span>
+      </div>
+      <div class="startup-card">
+        <b><i>4</i> Completá los legales</b>
+        <span>Obligatorio para vender online en el país.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="Índice">
+    <div class="toc-group">
+      <p>Antes de empezar</p>
+      <a href="#video-instructivo"><em>▶️</em> Video instructivo</a>
+    </div>
+    <div class="toc-group">
+      <p>Todos los días</p>
+      <a href="#resumen"><em>📊</em> Resumen</a>
+      <a href="#productos"><em>📦</em> Productos</a>
+      <a href="#pedidos"><em>🛒</em> Pedidos</a>
+    </div>
+    <div class="toc-group">
+      <p>Armar el catálogo</p>
+      <a href="#categorias"><em>🏷️</em> Categorías</a>
+      <a href="#caracteristicas"><em>📏</em> Características</a>
+      <a href="#promociones"><em>％</em> Promociones</a>
+      <a href="#banners"><em>🖼️</em> Banners</a>
+    </div>
+    <div class="toc-group">
+      <p>Configurar una vez</p>
+      <a href="#negocio"><em>🏪</em> Datos del negocio</a>
+      <a href="#envios"><em>🚚</em> Envíos</a>
+      <a href="#transportistas"><em>📮</em> Transportistas</a>
+      <a href="#mercadopago"><em>💳</em> Mercado Pago</a>
+      <a href="#emails"><em>✉️</em> Emails</a>
+      <a href="#avisos"><em>📢</em> Avisos</a>
+      <a href="#legales"><em>⚖️</em> Legales</a>
+    </div>
+    <div class="toc-group">
+      <p>Cuenta y obligaciones</p>
+      <a href="#arrepentimientos"><em>↩️</em> Arrepentimientos</a>
+      <a href="#cuenta"><em>🔑</em> Tu cuenta</a>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- ══════ BLOQUE 1 ══════ -->
+    <section class="block" id="dia-a-dia">
+      <div class="block-head">
+        <h2><span>📊</span> Todos los días</h2>
+        <p>Las tres pantallas que vas a abrir seguido: ver cómo viene la cosa, cargar productos y despachar pedidos.</p>
+      </div>
+
+      <article class="card" id="resumen">
+        <div class="card-top"><h3>Resumen</h3><span class="chip chip-daily">Uso diario</span></div>
+        <p>Es la pantalla que se abre apenas entrás. De un vistazo te muestra cómo viene la tienda.</p>
+        <ul>
+          <li><strong>Ventas aprobadas</strong>: cuánto facturaste con pagos ya confirmados.</li>
+          <li><strong>Pedidos pendientes</strong>: los que están esperando algo tuyo.</li>
+          <li><strong>Productos activos</strong>: cuántos se están mostrando en la web ahora mismo.</li>
+          <li><strong>Stock crítico</strong>: productos con 5 unidades o menos. Tocá el recuadro y se despliega la lista, con un acceso directo para editar cada uno.</li>
+        </ul>
+        <p>Más abajo aparecen los <strong>pedidos recientes</strong>, para entrar directo al último que llegó.</p>
+        <div class="note note-tip"><strong>Tip:</strong> si "Stock crítico" no dice 0, revisalo antes de hacer publicidad — no hay nada peor que traer visitas a un producto agotado.</div>
+      </article>
+
+      <article class="card" id="productos">
+        <div class="card-top"><h3>Productos</h3><span class="chip chip-daily">Uso diario</span></div>
+        <p>El catálogo completo. Acá cargás lo que vendés y controlás precio, stock y fotos.</p>
+
+        <h4>Cargar un producto</h4>
+        <ol class="howto">
+          <li>Tocá <strong>+ Producto</strong> arriba a la derecha.</li>
+          <li>Completá nombre, categoría y precio (es lo mínimo indispensable).</li>
+          <li>Arrastrá las fotos al recuadro o hacé click para elegirlas. <strong>La primera es la portada</strong>, y podés cambiar cuál con el botón de estrella.</li>
+          <li>Si tiene rebaja, cargá el <strong>precio de lista</strong> y el <strong>% de descuento</strong>: el panel calcula el precio final y en la web se muestra el de lista tachado al lado.</li>
+          <li>Guardá. Ya está publicado si dejaste tildado "Activo".</li>
+        </ol>
+
+        <h4>Cambios rápidos sin abrir el formulario</h4>
+        <p>En la tabla podés editar <strong>directo sobre la fila</strong> el nombre, SKU, categoría, precio, stock y si está activo. Se guarda solo: vas a ver un cartelito de "Guardando…" y después "Guardado".</p>
+        <p>Y si tildás varios productos con los casilleros de la izquierda, aparece una barra para <strong>activarlos, desactivarlos o archivarlos todos juntos</strong>.</p>
+
+        <h4>Otras acciones de cada producto</h4>
+        <ul>
+          <li><strong>Duplicar</strong>: crea una copia con todos los datos cargados. Ideal para productos parecidos — cambiás lo que difiere y listo.</li>
+          <li><strong>Destacado</strong>: lo hace aparecer primero en el inicio de la web.</li>
+          <li><strong>Tipo de entrega</strong>: físico (se envía), digital (no requiere envío) o <strong>solo retiro</strong> (el cliente lo pasa a buscar, no se puede despachar).</li>
+          <li><strong>Importar / Exportar CSV</strong>: para cargar o actualizar muchos productos de una. Las variantes y la descripción larga conviene revisarlas después desde el formulario.</li>
+        </ul>
+
+        <h4>Stock</h4>
+        <p>Se descuenta solo con cada venta. Cuando llega a 0, el producto queda como "Sin stock" y no se puede comprar hasta que cargues unidades. Si el producto tiene variantes (talles, colores), <strong>el stock se lleva por combinación</strong> y el campo de stock general desaparece — ver <a href="#caracteristicas">Características</a>.</p>
+
+        <div class="note note-warn"><strong>Ojo con peso y medidas:</strong> solo hacen falta si activaste Correo Argentino o Andreani. Con tarifa plana ni aparecen. Si no los cargás en un producto puntual, se usa el valor predeterminado de la pestaña Envíos.</div>
+      </article>
+
+      <article class="card" id="pedidos">
+        <div class="card-top"><h3>Pedidos</h3><span class="chip chip-daily">Uso diario</span></div>
+        <p>Todas las compras, con su estado de pago y de preparación. Podés buscar por número o cliente y filtrar por estado.</p>
+
+        <h4>Qué hacer con un pedido</h4>
+        <ol class="howto">
+          <li>Abrilo para ver los datos del cliente, qué compró, cómo paga y a dónde va.</li>
+          <li>Si pagó por <strong>transferencia</strong>, tocá <strong>Ver comprobante</strong> para revisar el archivo que subió, y después <strong>confirmá el pago</strong>.</li>
+          <li>Actualizá la <strong>preparación</strong> a medida que avanza: pendiente → en preparación → enviado → entregado.</li>
+        </ol>
+
+        <h4>Casos especiales</h4>
+        <ul>
+          <li><strong>Cancelar</strong>: libera el stock reservado y deja el pedido marcado como cancelado.</li>
+          <li><strong>Registrar reembolso y reponer stock</strong>: para cuando un pago entró pero no podés cumplirlo. Devuelve las unidades al catálogo.</li>
+          <li><strong>Marcar reembolso realizado</strong>: para dejar asentado que ya devolviste la plata.</li>
+        </ul>
+        <div class="note note-tip"><strong>Tip:</strong> si cargaste franjas horarias de entrega, la franja que eligió el cliente aparece acá, en el detalle del pedido.</div>
+      </article>
+    </section>
+
+    <!-- ══════ BLOQUE 2 ══════ -->
+    <section class="block" id="catalogo">
+      <div class="block-head">
+        <h2><span>🏷️</span> Armar el catálogo</h2>
+        <p>La estructura de tu tienda. Se define al principio y después se toca poco.</p>
+      </div>
+
+      <article class="card" id="categorias">
+        <div class="card-top"><h3>Categorías</h3><span class="chip chip-once">Se arma una vez</span></div>
+        <p>Los grupos en los que se ordena el catálogo: "Remeras", "Accesorios", "Herramientas". Cada producto va en una.</p>
+        <ul>
+          <li>Al crearla solo te pide el <strong>nombre</strong> y una <strong>imagen</strong> opcional. El identificador interno se genera solo, no tenés que inventarlo.</li>
+          <li>Una vez creada, si la volvés a abrir aparecen las <strong>subcategorías</strong> (para dividir "Remeras" en "Manga corta" y "Manga larga") y, si usás transportistas, el <strong>envío predeterminado</strong> de esa categoría (peso y medidas típicas, para no cargarlas producto por producto).</li>
+        </ul>
+        <div class="note note-tip"><strong>Por qué en dos pasos:</strong> creás rápido lo básico y configurás el detalle después, sin que el formulario inicial te abrume.</div>
+      </article>
+
+      <article class="card" id="caracteristicas">
+        <div class="card-top"><h3>Características</h3><span class="chip chip-once">Se arma una vez</span></div>
+        <p>Acá definís <strong>una sola vez</strong> las variantes que después usás en cualquier producto: talles, colores, medidas, sabores.</p>
+
+        <ol class="howto">
+          <li>Creá la característica, por ejemplo "Talle".</li>
+          <li>Cargá sus valores uno por uno: S, M, L, XL.</li>
+          <li>Si es de <strong>color</strong>, activá el modo paleta y elegí el color real de cada valor — así el cliente ve el color, no solo el nombre.</li>
+          <li>Después, en cada producto, elegís qué características tiene y qué valores aplican. El panel arma <strong>una fila por combinación</strong> y le ponés stock a cada una.</li>
+        </ol>
+
+        <p>Un producto con Talle (S, M, L) y Color (Negro, Blanco) genera 6 combinaciones, cada una con su stock propio.</p>
+        <div class="note note-tip"><strong>Dato:</strong> si el producto usa una característica de color, podés indicar <strong>a qué color corresponde cada foto</strong> — así la imagen cambia cuando el cliente elige el color.</div>
+      </article>
+
+      <article class="card" id="promociones">
+        <div class="card-top"><h3>Promociones</h3><span class="chip chip-once">Cuando quieras</span></div>
+        <p>Reglas de descuento automáticas. En el menú lateral figuran como <strong>Promociones</strong>.</p>
+        <ul>
+          <li>Podés aplicarlas a toda la tienda, a una categoría o a productos puntuales.</li>
+          <li>Se pueden atar a un <strong>código de cupón</strong> que el cliente escribe en el checkout.</li>
+          <li>Podés ponerles fecha de inicio y fin: arrancan y terminan solas.</li>
+        </ul>
+        <div class="note note-warn"><strong>No se acumulan:</strong> si dos promociones aplican al mismo producto, se usa una sola. Tenelo en cuenta antes de armar varias en simultáneo.</div>
+      </article>
+
+      <article class="card" id="banners">
+        <div class="card-top"><h3>Banners</h3><span class="chip chip-once">Cuando quieras</span></div>
+        <p>Las imágenes grandes que rotan en el inicio de la web. Podés tener hasta 12.</p>
+        <ol class="howto">
+          <li>Tocá <strong>Subir banner</strong> y elegí la imagen. Se recorta sola al formato ancho del carrusel.</li>
+          <li>Escribí el <strong>texto alternativo</strong> (describe la imagen para quien no puede verla, y ayuda en Google).</li>
+          <li>Opcional: poné un <strong>link</strong> para que el banner lleve a una categoría o producto.</li>
+          <li>Ordenalos con las flechas y usá el interruptor <strong>Visible</strong> para mostrar u ocultar sin borrar.</li>
+          <li>Tocá <strong>Guardar</strong> — los cambios no se aplican hasta que lo hagas.</li>
+        </ol>
+        <div class="note note-tip"><strong>Tip:</strong> subí imágenes anchas y con el texto importante al centro, porque en celular se recorta por los costados.</div>
+      </article>
+    </section>
+
+    <!-- ══════ BLOQUE 3 ══════ -->
+    <section class="block" id="configuracion">
+      <div class="block-head">
+        <h2><span>⚙️</span> Configurar una vez</h2>
+        <p>Todo esto vive en <strong>Configuración</strong>, dividido en pestañas. Se completa al arrancar y casi no se vuelve a tocar.</p>
+      </div>
+
+      <article class="card" id="negocio">
+        <div class="card-top"><h3>Datos del negocio</h3><span class="chip chip-once">Configuración › General</span></div>
+        <p>La identidad de la tienda y cómo cobrás.</p>
+        <ul>
+          <li><strong>Logo</strong>: se sube acá y aparece en el header de la web y en los emails.</li>
+          <li><strong>Nombre de la tienda</strong> y <strong>WhatsApp</strong> de contacto.</li>
+          <li><strong>Texto de envíos</strong>: la frase corta del pie de página, tipo "Envíos a todo el país".</li>
+          <li><strong>Tiempo estimado de entrega</strong>: se le muestra al cliente al comprar.</li>
+        </ul>
+
+        <h4>Transferencia bancaria</h4>
+        <p>Si completás <strong>Alias y CBU</strong>, la transferencia aparece como forma de pago en el checkout. Si los dejás vacíos, esa opción no se le muestra a nadie.</p>
+
+        <h4>Retiro en el local</h4>
+        <p>Al activarlo, el cliente puede elegir <strong>retirar sin pagar envío</strong> y no tiene que cargar su dirección. Usá el campo de aclaración para poner dónde y en qué horario se retira.</p>
+
+        <h4>Modo de venta</h4>
+        <table class="compare"><tbody>
+          <tr><th>Modo</th><th>Qué pasa en la web</th></tr>
+          <tr><td>Venta online</td><td>El cliente compra y paga desde el sitio.</td></tr>
+          <tr><td>Catálogo con cotización</td><td>No hay carrito de pago: el cliente pide presupuesto y vos cerrás la venta por afuera.</td></tr>
+        </tbody></table>
+      </article>
+
+      <article class="card" id="envios">
+        <div class="card-top"><h3>Envíos</h3><span class="chip chip-once">Configuración › Envíos</span></div>
+        <p>Cuánto cobrás por mandar los pedidos.</p>
+
+        <table class="compare"><tbody>
+          <tr><th>Modo</th><th>Cuándo conviene</th></tr>
+          <tr><td>Tarifa plana</td><td>Cobrás un precio fijo. Lo más simple y lo más usado.</td></tr>
+          <tr><td>Transportistas</td><td>El precio lo calcula Correo Argentino o Andreani según destino y peso.</td></tr>
+          <tr><td>Híbrido</td><td>Combina los dos.</td></tr>
+        </tbody></table>
+
+        <h4>Precios por provincia</h4>
+        <p>Podés fijar un precio distinto para provincias puntuales. Ese valor <strong>reemplaza</strong> a la tarifa general en esa provincia.</p>
+
+        <h4>Franjas horarias</h4>
+        <p>Si cargás franjas (por ejemplo "Mañana (9 a 13)"), el cliente elige la suya al comprar y te queda registrada en el pedido. Si no cargás ninguna, no se le pregunta nada.</p>
+
+        <h4>Dimensiones predeterminadas</h4>
+        <p>Peso y medidas que se usan cuando un producto no tiene las suyas. Solo importa si usás transportistas.</p>
+      </article>
+
+      <article class="card" id="transportistas">
+        <div class="card-top"><h3>Transportistas</h3><span class="chip chip-once">Configuración › Transportistas</span></div>
+        <p>Las credenciales de Correo Argentino y Andreani, para que coticen el envío en tiempo real. <strong>Solo hacen falta si en Envíos elegiste Transportistas o Híbrido.</strong></p>
+        <ul>
+          <li><strong>Código postal de origen</strong>: desde dónde despachás. Lo usan los dos.</li>
+          <li><strong>Andreani</strong>: número de cliente, contrato, URL de cotización y API Key.</li>
+          <li><strong>Correo Argentino</strong>: usuario, ID de cliente, URL base y contraseña.</li>
+        </ul>
+        <div class="note note-warn"><strong>Correo Argentino no cotiza sin el ID de cliente</strong>, aunque el usuario y la contraseña sean correctos. Es el error más común al conectarlo.</div>
+        <div class="note note-tip"><strong>Sobre las claves:</strong> dejar la API Key o la contraseña en blanco <strong>no borra</strong> lo guardado — solo se reemplaza si escribís una nueva. Por seguridad nunca se muestran otra vez.</div>
+      </article>
+
+      <article class="card" id="mercadopago">
+        <div class="card-top"><h3>Mercado Pago</h3><span class="chip chip-once">Configuración › Mercado Pago</span></div>
+        <p>Para cobrar con tarjeta, débito y dinero en cuenta. Se cargan dos datos que saca de tu propia cuenta de Mercado Pago: la <strong>Public Key</strong> y el <strong>Access Token</strong>.</p>
+        <div class="note note-tip"><strong>La plata va directo a tu cuenta</strong> de Mercado Pago. Gokywebs no toca ni ve tus cobros.</div>
+        <div class="note note-warn">El <strong>Access Token</strong> es una clave privada: no la compartas por WhatsApp ni email. Igual que arriba, dejarla en blanco no borra la guardada.</div>
+      </article>
+
+      <article class="card" id="emails">
+        <div class="card-top"><h3>Emails automáticos</h3><span class="chip chip-once">Configuración › EmailJS</span></div>
+        <p>Los correos que salen solos cuando alguien compra: uno al cliente con su pedido y otro a vos avisándote de la venta.</p>
+        <p>Se conectan con una cuenta de <strong>EmailJS</strong> (Service ID, Public Key, Private Key y los dos IDs de template). Normalmente esto lo deja configurado Gokywebs.</p>
+        <div class="note note-warn"><strong>La Private Key es obligatoria:</strong> sin ella EmailJS rechaza los envíos hechos desde el servidor. Si dejaron de llegar los mails, es lo primero a revisar.</div>
+      </article>
+
+      <article class="card" id="avisos">
+        <div class="card-top"><h3>Avisos</h3><span class="chip chip-once">Configuración › Avisos</span></div>
+        <p>La barra finita de arriba de todo, sobre el header. Escribís <strong>un aviso por línea</strong> y podés usar emojis.</p>
+        <p>Si ponés varios, rotan solos. Si lo dejás vacío, la barra desaparece.</p>
+        <div class="note note-tip"><strong>Ideas:</strong> 🚚 Envíos a todo el país · 💳 Hasta 6 cuotas sin interés · 🎁 Envío gratis desde $50.000</div>
+      </article>
+
+      <article class="card" id="legales">
+        <div class="card-top"><h3>Legales</h3><span class="chip chip-once">Configuración › Legales</span></div>
+        <p>Los textos y datos obligatorios para vender online en Argentina.</p>
+        <ul>
+          <li><strong>Términos y condiciones</strong>, <strong>Privacidad</strong> y <strong>Cambios y devoluciones</strong>: se editan como texto común y arman las páginas legales del sitio.</li>
+          <li><strong>Data Fiscal de AFIP</strong>: subís el QR y ponés el link del contribuyente. Es obligatorio y tiene que estar visible.</li>
+          <li><strong>Defensa del Consumidor</strong>: el link oficial que va en el pie de página.</li>
+        </ul>
+        <div class="note note-danger"><strong>No es opcional.</strong> Data Fiscal y el botón de arrepentimiento son exigidos por ley para el comercio electrónico. Si todavía no los cargaste, es lo primero que conviene completar.</div>
+      </article>
+    </section>
+
+    <!-- ══════ BLOQUE 4 ══════ -->
+    <section class="block" id="cuenta-obligaciones">
+      <div class="block-head">
+        <h2><span>🔑</span> Cuenta y obligaciones</h2>
+        <p>Tu acceso y lo que la ley te pide tener a mano.</p>
+      </div>
+
+      <article class="card" id="arrepentimientos">
+        <div class="card-top"><h3>Arrepentimientos</h3><span class="chip chip-daily">Revisá seguido</span></div>
+        <p>La ley argentina obliga a tener un <strong>botón de arrepentimiento</strong>: el cliente puede cancelar una compra dentro de los 10 días. Cuando alguien lo usa, la solicitud te llega acá con fecha, nombre, email, pedido y motivo.</p>
+        <div class="note note-warn"><strong>Tenés que responderlas.</strong> Entrá cada tanto aunque no te llegue aviso: es una obligación legal, no una sugerencia.</div>
+      </article>
+
+      <article class="card" id="cuenta">
+        <div class="card-top"><h3>Tu cuenta</h3><span class="chip chip-once">Configuración › Cuenta</span></div>
+        <p>El acceso al panel es tuyo y de nadie más.</p>
+        <ul>
+          <li><strong>Cambiar contraseña</strong>: pide la actual, elegís la nueva y listo, sin salir del panel.</li>
+          <li><strong>¿Olvidaste tu contraseña?</strong>: desde la pantalla de ingreso, con tu email te llega un link para elegir una nueva.</li>
+        </ul>
+        <div class="note note-danger"><strong>Nadie de Gokywebs puede ver ni recuperar tu contraseña.</strong> Si la perdés, el único camino es el link de recuperación a tu email.</div>
+      </article>
+    </section>
+
+    <!-- ══════ ARCHIVAR VS ELIMINAR ══════ -->
+    <section class="block" id="archivar">
+      <div class="block-head">
+        <h2><span>🗑️</span> Archivar o eliminar</h2>
+        <p>Dos cosas parecidas que hacen algo muy distinto. Vale la pena entender la diferencia antes de tocar el botón rojo.</p>
+      </div>
+
+      <article class="card">
+        <table class="compare"><tbody>
+          <tr><th></th><th>Archivar</th><th>Eliminar definitivamente</th></tr>
+          <tr>
+            <td>Qué hace</td>
+            <td>Lo saca de la web pero lo guarda.</td>
+            <td>Lo borra para siempre de la base de datos.</td>
+          </tr>
+          <tr>
+            <td>¿Se puede volver atrás?</td>
+            <td>Sí, con "Restaurar".</td>
+            <td>No. No hay deshacer.</td>
+          </tr>
+          <tr>
+            <td>Pedidos anteriores</td>
+            <td>Siguen mostrando bien el producto.</td>
+            <td>Pueden quedar incompletos.</td>
+          </tr>
+          <tr>
+            <td>Cuándo usarlo</td>
+            <td>Dejaste de vender algo, o es de temporada.</td>
+            <td>Lo cargaste por error y nunca se vendió.</td>
+          </tr>
+        </tbody></table>
+        <p class="after-table">Están disponibles en <strong>Productos</strong>, <strong>Categorías</strong>, <strong>Características</strong> y <strong>Promociones</strong>. Para ver lo archivado, tildá <strong>"Mostrar archivados"</strong> arriba de la tabla.</p>
+        <div class="note note-danger"><strong>Regla simple:</strong> ante la duda, archivá. Es reversible y no rompe nada. Eliminar definitivamente te va a pedir confirmación dos veces, justamente porque no tiene vuelta atrás.</div>
+      </article>
+    </section>
+
+    <div class="final">
+      <h2>🎉 Eso es todo</h2>
+      <p>Con esto manejás tu tienda de punta a punta: catálogo, ventas, promociones, envíos, cobros, legales y comunicación con tus clientes. Cualquier duda puntual sobre tu panel, escribinos y te damos una mano.</p>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  GokyWebs — Guía del panel de administración
+</footer>
+
+</body>
+</html>

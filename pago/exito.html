@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¡Seña confirmada! — Gokywebs</title>
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .exito-wrap { max-width: 620px; margin: 0 auto; padding: 7rem 1.5rem 5rem; text-align: center; }
+        .exito-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: var(--green-dim); border: 1px solid var(--green-border);
+            color: var(--green); border-radius: 100px;
+            padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 700;
+            letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1.25rem;
+        }
+        .exito-title { font-size: clamp(1.75rem, 5vw, 2.4rem); font-weight: 800; letter-spacing: -0.02em; margin-bottom: 0.85rem; line-height: 1.2; color: var(--text); }
+        .exito-title span { color: var(--green); }
+        .exito-desc { font-size: 0.95rem; color: var(--text-muted); line-height: 1.75; margin-bottom: 2rem; }
+        .pending-box {
+            text-align: left; padding: 1.25rem 1.5rem;
+            background: var(--amber-dim); border: 1px solid rgba(245,158,11,0.3);
+            border-radius: var(--radius-lg); margin-bottom: 1.75rem;
+        }
+        .pending-box h2 { font-size: 1.05rem; font-weight: 700; color: var(--amber); margin-bottom: 0.4rem; }
+        .pending-box p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.7; }
+        .recap { text-align: left; margin-bottom: 2rem; }
+        .btn-wsp-final {
+            display: inline-flex; align-items: center; gap: 0.55rem;
+            padding: 0.95rem 1.75rem; background: #0F7A40; color: #fff;
+            border-radius: var(--radius); font-size: 0.92rem; font-weight: 700;
+            transition: all 0.2s var(--ease);
+        }
+        .btn-wsp-final:hover { transform: translateY(-1px); box-shadow: 0 8px 26px rgba(15,122,64,0.3); }
+    </style>
+</head>
+<body>
+
+<header class="pres-header">
+    <a href="../index.html" class="header-logo"><span>Gokywebs</span></a>
+    <a href="../index.html" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Inicio
+    </a>
+</header>
+
+<div class="exito-wrap">
+    <p class="exito-badge">✓ Seña confirmada</p>
+    <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
+    <p class="exito-desc">Ya recibimos tu seña de <span id="montoExito">$90.000</span>. Nos ponemos en contacto por WhatsApp para arrancar hoy mismo con las modificaciones y todo lo que necesita tu web.</p>
+
+    <div id="pendingBox" class="pending-box" style="display:none">
+        <h2>⏳ Pago en proceso</h2>
+        <p>Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos por WhatsApp.</p>
+    </div>
+
+    <div class="recap">
+        <div class="timeline">
+            <div class="timeline-step">
+                <div class="timeline-num">✓</div>
+                <div class="timeline-body">
+                    <h3>Seña abonada</h3>
+                    <p>Ya la recibimos, gracias.</p>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-num">2</div>
+                <div class="timeline-body">
+                    <h3>Aplicamos tus modificaciones</h3>
+                    <p>Arrancamos con los cambios sobre la muestra y todo lo que tu web necesita.</p>
+                </div>
+            </div>
+            <div class="timeline-step">
+                <div class="timeline-num">3</div>
+                <div class="timeline-body">
+                    <h3>Web lista en máximo 7 días</h3>
+                    <p>Y después, tenés <strong>7 días</strong> para abonar el saldo restante.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="#" id="btnWspFinal" class="btn-wsp-final" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Avisar por WhatsApp
+    </a>
+</div>
+
+<footer class="pres-footer">
+    &copy; 2026 Gokywebs · <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">gokywebs.com</a>
+</footer>
+
+<script>
+    const WHATSAPP_NUMBER = '5491125068578';
+    const params = new URLSearchParams(window.location.search);
+    if ((params.get('status') || 'approved') === 'pending') {
+        document.getElementById('pendingBox').style.display = '';
+    }
+
+    let pago = {};
+    try { pago = JSON.parse(localStorage.getItem('gky_pago') || '{}'); } catch (e) {}
+
+    // El monto real viaja en la URL de vuelta de Mercado Pago (crear-preferencia.php lo agrega
+    // a success/pending) — con eso alcanza, no depende de que el localStorage siga vivo.
+    const montoParam = Math.floor(Number(params.get('monto')));
+    const monto = (Number.isFinite(montoParam) && montoParam >= 1000) ? montoParam : 90000;
+    const montoFmt = '$' + monto.toLocaleString('es-AR');
+    const montoEl = document.getElementById('montoExito');
+    if (montoEl) montoEl.textContent = montoFmt;
+
+    const nombre = pago.nombre ? `Soy ${pago.nombre}. ` : '';
+    const msg = `Hola! ${nombre}Acabo de abonar ${montoFmt} por Mercado Pago para mi proyecto.`;
+    document.getElementById('btnWspFinal').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+
+    localStorage.removeItem('gky_pago');
+</script>
+</body>
+</html>

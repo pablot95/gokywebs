@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <title>GokyWebs — Fondo hero</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background:
+        radial-gradient(120% 90% at 50% 42%, #0a0f1e 0%, #070b16 46%, #04060d 100%);
+    }
+
+    /* Glows de marca, muy tenues, derivan apenas con el scroll */
+    .glow { position: fixed; border-radius: 50%; filter: blur(90px); will-change: transform; transition: background-color 0.9s cubic-bezier(0.23, 1, 0.32, 1); }
+    .glow-a { width: 46vw; height: 46vw; left: -14vw; top: -16vh; background-color: rgba(63, 99, 255, 0.16); }
+    .glow-b { width: 40vw; height: 40vw; right: -12vw; bottom: -18vh; background-color: rgba(53, 224, 139, 0.09); }
+
+    /* Órbitas: elipses finas que insinúan la espiral de previews */
+    .orbits { position: fixed; inset: -12%; width: 124%; height: 124%; will-change: transform; }
+    .orbits ellipse { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; transition: stroke 0.9s cubic-bezier(0.23, 1, 0.32, 1); }
+
+    .grain { position: fixed; inset: 0; opacity: 0.05; pointer-events: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .glow, .orbits { transform: none !important; }
+    }
+
+    /* En pantallas tactiles la atmosfera principal ya la dibuja el portal.
+       Evitamos dos filtros gigantes y el ruido SVG, que son caros para la GPU. */
+    @media (max-width: 700px), (pointer: coarse) {
+      .glow, .grain { display: none; }
+      .orbits ellipse { transition-duration: 0.4s; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-a" id="glowA"></div>
+  <div class="glow glow-b" id="glowB"></div>
+
+  <svg class="orbits" id="orbits" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g>
+      <ellipse cx="720" cy="560" rx="620" ry="150" stroke="rgba(255,255,255,0.055)" transform="rotate(-7 720 560)"/>
+      <ellipse cx="720" cy="430" rx="640" ry="165" stroke="rgba(255,255,255,0.04)" transform="rotate(-7 720 430)"/>
+      <ellipse cx="720" cy="300" rx="600" ry="145" stroke="rgba(91,140,255,0.06)" transform="rotate(-7 720 300)"/>
+    </g>
+  </svg>
+
+  <svg class="grain" aria-hidden="true">
+    <filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter>
+    <rect width="100%" height="100%" filter="url(#n)"/>
+  </svg>
+
+  <script>
+    (function () {
+      'use strict';
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var glowA = document.getElementById('glowA');
+      var glowB = document.getElementById('glowB');
+      var orbits = document.getElementById('orbits');
+      var orbitLines = orbits.querySelectorAll('ellipse');
+      var target = 0, current = 0, raf = null;
+
+      function parseHex(hex) {
+        var clean = String(hex || '').replace('#', '');
+        if (clean.length === 3) clean = clean.replace(/(.)/g, '$1$1');
+        var value = parseInt(clean, 16);
+        if (!isFinite(value)) return null;
+        return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+      }
+
+      function rgba(rgb, alpha) {
+        return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + alpha + ')';
+      }
+
+      function mix(a, b, amount) {
+        return a.map(function (value, i) { return Math.round(value + (b[i] - value) * amount); });
+      }
+
+      function setProjectColor(color) {
+        var primary = parseHex(color);
+        if (!primary) {
+          glowA.style.backgroundColor = 'rgba(63,99,255,.16)';
+          glowB.style.backgroundColor = 'rgba(53,224,139,.09)';
+          orbitLines[0].style.stroke = 'rgba(255,255,255,.055)';
+          orbitLines[1].style.stroke = 'rgba(255,255,255,.04)';
+          orbitLines[2].style.stroke = 'rgba(91,140,255,.06)';
+          return;
+        }
+        var secondary = mix(primary, [53, 224, 139], 0.38);
+        glowA.style.backgroundColor = rgba(primary, 0.2);
+        glowB.style.backgroundColor = rgba(secondary, 0.12);
+        orbitLines[0].style.stroke = rgba(primary, 0.1);
+        orbitLines[1].style.stroke = rgba(secondary, 0.075);
+        orbitLines[2].style.stroke = rgba(primary, 0.13);
+      }
+
+      function render() {
+        raf = null;
+        current += (target - current) * 0.08;
+        if (Math.abs(target - current) > 0.0005) raf = requestAnimationFrame(render);
+        var p = current;
+        /* Todo sube apenas con el scroll, acompañando la espiral que trepa */
+        glowA.style.transform = 'translate3d(' + (p * 6) + 'vw,' + (p * -10) + 'vh,0)';
+        glowB.style.transform = 'translate3d(' + (p * -5) + 'vw,' + (p * -14) + 'vh,0)';
+        orbits.style.transform = 'translate3d(0,' + (p * -9) + 'vh,0) rotate(' + (p * -4) + 'deg)';
+      }
+
+      window.addEventListener('message', function (e) {
+        if (!e.data) return;
+        if (e.data.type === 'project') {
+          setProjectColor(e.data.color);
+          return;
+        }
+        if (e.data.type !== 'scroll' || reduce) return;
+        target = Math.min(Math.max(e.data.progress || 0, 0), 1);
+        if (!raf) raf = requestAnimationFrame(render);
+      });
+    })();
+  </script>
+</body>
+</html>

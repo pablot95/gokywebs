@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cromor</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="auth-page">
+
+    <!-- Corazones flotantes de fondo -->
+    <div class="hearts" id="hearts"></div>
+
+    <div class="auth-welcome">
+      <h1>Cromor</h1>
+      <p class="auth-sub">Tu espacio para organizar el día</p>
+    </div>
+
+    <div class="auth-card">
+
+      <!-- ═══ LOGIN ═══ -->
+      <div class="auth-view active" id="view-login">
+        <h2>Iniciar sesión</h2>
+        <p class="auth-card-hint">Ingresá con tu email y contraseña</p>
+        <div class="auth-error" id="loginError" hidden></div>
+        <form id="formLogin">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input type="email" id="loginEmail" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="loginPass">Contraseña</label>
+            <input type="password" id="loginPass" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+        </form>
+        <div class="auth-links">
+          <button type="button" class="link" data-view="reset">¿Olvidaste tu contraseña?</button>
+          <span>¿No tenés cuenta? <button type="button" class="link" data-view="register">Crear cuenta</button></span>
+        </div>
+      </div>
+
+      <!-- ═══ REGISTRO ═══ -->
+      <div class="auth-view" id="view-register">
+        <h2>Crear cuenta</h2>
+        <p class="auth-card-hint">Registrate para empezar a usar Hola Mor</p>
+        <div class="auth-error" id="registerError" hidden></div>
+        <form id="formRegister">
+          <div class="form-group">
+            <label for="registerEmail">Email</label>
+            <input type="email" id="registerEmail" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="registerPass">Contraseña</label>
+            <input type="password" id="registerPass" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="registerPass2">Repetir contraseña</label>
+            <input type="password" id="registerPass2" required minlength="6" autocomplete="new-password">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="registerBtn">Crear cuenta</button>
+        </form>
+        <div class="auth-links">
+          <span>¿Ya tenés cuenta? <button type="button" class="link" data-view="login">Iniciar sesión</button></span>
+        </div>
+      </div>
+
+      <!-- ═══ RECUPERAR CONTRASEÑA ═══ -->
+      <div class="auth-view" id="view-reset">
+        <h2>Recuperar contraseña</h2>
+        <p class="auth-card-hint">Te enviamos un email para restablecerla</p>
+        <div class="auth-error" id="resetError" hidden></div>
+        <div class="auth-success" id="resetSuccess" hidden></div>
+        <form id="formReset">
+          <div class="form-group">
+            <label for="resetEmail">Email</label>
+            <input type="email" id="resetEmail" required autocomplete="email">
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="resetBtn">Enviar email</button>
+        </form>
+        <div class="auth-links">
+          <button type="button" class="link" data-view="login">Volver a iniciar sesión</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script type="module" src="js/auth.js"></script>
+</body>
+</html>

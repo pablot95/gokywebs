@@ -4,55 +4,98 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <link rel="icon" type="image/png" href="../logonuevo.png">
+    <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=20260818-sticky">
 </head>
 <body class="dashboard-body">
-    <header class="admin-header">
-        <div class="admin-header-inner">
-            <div class="login-logo">
-                <span class="logo-mark">G</span>
-                <span class="logo-text">Gokywebs <small>Admin</small></span>
-            </div>
-            <div class="header-actions">
-                <span id="userEmail" class="user-email"></span>
-                <button id="logoutBtn" class="btn-ghost">Cerrar sesión</button>
-            </div>
-        </div>
-    </header>
-
     <main class="admin-main">
         <nav class="tab-nav">
-            <button class="tab-btn active" data-tab="clientes">Clientes</button>
-            <button class="tab-btn" data-tab="calendario">Calendario</button>
-            <button class="tab-btn" data-tab="propuestas">Propuestas <span class="pill-count" id="countPropuestas">0</span></button>
+            <button class="tab-btn active" data-tab="clientes">Clientes <span class="pill-count" id="countClientesTab">0</span></button>
+            <button class="tab-btn" data-tab="wabot"><svg class="ico-wsp" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2Zm0 1.67c2.2 0 4.27.86 5.83 2.42a8.19 8.19 0 0 1 2.42 5.82c0 4.54-3.7 8.24-8.25 8.24a8.23 8.23 0 0 1-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24Zm-2.4 4.34c-.16 0-.42.06-.64.3-.22.24-.85.83-.85 2.02s.87 2.34.99 2.5c.12.16 1.7 2.6 4.13 3.64.58.25 1.03.4 1.38.51.58.19 1.11.16 1.53.1.47-.07 1.43-.59 1.63-1.15.2-.56.2-1.04.14-1.15-.06-.1-.22-.16-.46-.28-.24-.12-1.43-.71-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.94-1.2-.72-.64-1.2-1.43-1.34-1.67-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.31-.74-1.79-.2-.47-.4-.4-.54-.41-.14 0-.3-.01-.46-.01Z"/></svg>WhatsApp</button>
+            <button class="tab-btn" data-tab="propuestas">Bocetos <span class="pill-count" id="countPropuestas">0</span></button>
+            <button class="tab-btn" data-tab="seguimientos">Seguimientos <span class="pill-count" id="countSegTab">0</span></button>
+            <button class="tab-btn" data-tab="calendario">📅 Calendario <span class="pill-count" id="countTareas" style="background:var(--accent-orange,#232323)">0</span></button>
+            <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
+            <button class="tab-btn" data-tab="mantenimiento">🔧 Mantenimiento <span class="pill-count" id="countMantenimiento">0</span></button>
+            <div class="tab-spacer"></div>
+            <button class="tab-btn tab-btn--secondary tab-btn--completados" data-tab="completados">Completados <span class="pill-count" id="countCompletados">0</span></button>
+            <span id="userEmail" class="user-email"></span>
+            <button id="logoutBtn" class="tabs-salir" title="Cerrar sesión">Salir</button>
         </nav>
 
         <section class="panel tab-panel" id="tabClientes">
             <div class="panel-header">
                 <div>
                     <h1>Clientes</h1>
-                    <p class="muted">Gestiona el listado de clientes y sus pagos.</p>
+                    <p class="muted">Proyectos activos y pagos.</p>
                 </div>
-                <div class="stats-box">
+                <div class="stats-box stats-box--periods">
                     <div class="stat-item">
                         <span class="stat-label">Total pendiente de cobro</span>
                         <span class="stat-value" id="totalPendiente">$0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Este mes</span>
+                        <span class="stat-value" id="totalPendienteMes">$0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Mes anterior</span>
+                        <span class="stat-value" id="totalPendienteMesAnterior">$0</span>
                     </div>
                 </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
             </div>
 
-            <div class="filter-pills">
-                <button class="filter-pill active" data-filter="seguimiento1">Seguimiento 1 <span class="pill-count" id="countSeg1">0</span></button>
-                <button class="filter-pill" data-filter="seguimiento2">Seguimiento 2 <span class="pill-count" id="countSeg2">0</span></button>
-                <button class="filter-pill" data-filter="seguimiento3">Seguimiento 3 <span class="pill-count" id="countSeg3">0</span></button>
-                <button class="filter-pill" data-filter="clientes">Cliente <span class="pill-count" id="countClientes">0</span></button>
+            <div class="search-row">
+                <input type="search" id="searchInput" placeholder="Buscar por nombre, proyecto o teléfono...">
+            </div>
+
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th class="col-proyecto">Proyecto</th>
+                            <th class="col-telefono">Teléfono</th>
+                            <th class="num">Valor total</th>
+                            <th class="num">Abonado</th>
+                            <th class="notes-col-th">Notas</th>
+                            <th class="actions-col">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTbody">
+                        <tr class="empty-row"><td colspan="7">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab: Seguimientos -->
+        <section class="panel tab-panel" id="tabSeguimientos" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Seguimientos</h1>
+                    <p class="muted">Prospectos y leads en proceso de seguimiento.</p>
+                </div>
+                <div class="stats-box">
+                    <div class="stat-item">
+                        <span class="stat-label">Total en seguimiento</span>
+                        <span class="stat-value" id="totalSeguimientos">0</span>
+                    </div>
+                </div>
+                <button id="openModalBtnSeg" class="btn-primary">+ Nuevo</button>
+            </div>
+
+
+            <div class="seg-views" id="segViews">
+                <button class="seg-chip active" data-segview="seguimiento1">En seguimiento <span class="seg-chip-count" id="segCountV1">0</span></button>
+                <button class="seg-chip" data-segview="ultimo-mensaje">Último mensaje <span class="seg-chip-count" id="segCountUM">0</span></button>
+                <button class="seg-chip" data-segview="standby">Stand by <span class="seg-chip-count" id="segCountSB">0</span></button>
             </div>
 
             <div class="search-row">
-                <input type="search" id="searchInput" placeholder="Buscar por nombre, proyecto o teléfono...">
+                <input type="search" id="searchSegInput" placeholder="Buscar por nombre, proyecto o teléfono...">
             </div>
 
             <div class="table-wrapper">
@@ -70,21 +113,23 @@
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody id="clientsTbody">
+                    <tbody id="segTbody">
                         <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- Tab: Propuestas -->
+        <!-- Tab: Bocetos (ex Propuestas) -->
         <section class="panel tab-panel" id="tabPropuestas" hidden>
             <div class="panel-header">
                 <div>
-                    <h1>Propuestas recibidas</h1>
-                    <p class="muted">Briefs enviados por clientes desde la página de propuesta.</p>
+                    <h1>Bocetos recibidos</h1>
+                    <p class="muted">Briefs recibidos desde gokywebs.com/form o cargados a mano con lo que pasó el cliente por WhatsApp.</p>
                 </div>
+                <button id="openNuevoBocetoBtn" class="btn-primary">+ Nuevo boceto</button>
             </div>
+            <div class="fecha-chips" id="propFechaChips"></div>
             <div class="search-row">
                 <input type="search" id="searchPropuestas" placeholder="Buscar por marca, rubro o contacto...">
             </div>
@@ -93,15 +138,263 @@
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Marca / Negocio</th>
-                            <th>Contacto</th>
-                            <th>Rubro</th>
-                            <th class="center">Colores</th>
+                            <th class="prop-col-marca">Marca / Negocio</th>
+                            <th class="prop-col-contacto">Contacto</th>
+                            <th class="prop-col-tipo">Tipo de web</th>
+                            <th class="center prop-col-colores">Colores</th>
+                            <th class="center">Logo</th>
+                            <th class="notes-col-th">Notas</th>
                             <th class="actions-col">Detalle</th>
                         </tr>
                     </thead>
                     <tbody id="propuestasTbody">
-                        <tr class="empty-row"><td colspan="6">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab: Señados (ex Presupuestos) -->
+        <section class="panel tab-panel" id="tabPresupuestos" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Señados</h1>
+                    <p class="muted">Clientes que calcularon precio y pagaron la seña desde la página de presupuesto.</p>
+                </div>
+            </div>
+            <div class="search-row">
+                <input type="search" id="searchPresupuestos" placeholder="Buscar por nombre, negocio o tipo de sitio…">
+            </div>
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Negocio / Rubro</th>
+                            <th>Tipo de sitio</th>
+                            <th class="num">Total</th>
+                            <th class="center">Seña</th>
+                            <th class="center">Brief</th>
+                            <th class="actions-col">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="presupuestosTbody">
+                        <tr class="empty-row"><td colspan="8">Cargando…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab: Presupuestos / Leads -->
+        <section class="panel tab-panel" id="tabLeads" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Presupuestos</h1>
+                    <p class="muted">Visitantes que calcularon el precio de su sitio (aunque no hayan pagado aún).</p>
+                </div>
+            </div>
+            <div class="search-row">
+                <input type="search" id="searchLeads" placeholder="Buscar por rubro o tipo de sitio…">
+            </div>
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Rubro</th>
+                            <th>Teléfono</th>
+                            <th>Tipo de sitio</th>
+                            <th class="num">Total estimado</th>
+                            <th class="center">Boceto</th>
+                            <th class="actions-col">Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leadsTbody">
+                        <tr class="empty-row"><td colspan="7">Cargando…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab: Stats -->
+        <!-- Tab: Métricas — agrupa Stats, Embudo y Visitas por demo en sub-pestañas -->
+        <section class="tab-panel" id="tabMetricas" hidden>
+        <nav class="subtab-nav" id="metricasNav">
+            <button class="subtab-btn active" data-sub="stats">🧮 Stats</button>
+            <button class="subtab-btn" data-sub="embudo">📊 Embudo</button>
+            <button class="subtab-btn" data-sub="demos">📈 Visitas demos</button>
+        </nav>
+
+        <section class="panel" id="tabStats">
+            <div class="panel-header">
+                <div>
+                    <h1>Stats</h1>
+                    <p class="muted">Cuándo se llenan los bocetos, cuándo entran las señas y cuánto suma cada semana entre clientes y completados.</p>
+                </div>
+            </div>
+            <div id="statsContent"><p class="muted">Cargando…</p></div>
+        </section>
+
+        <!-- Sub-tab: Embudos -->
+        <section class="panel" id="tabEmbudo" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Embudo del presupuesto</h1>
+                    <p class="muted">Recorrido completo: desde que entran a la calculadora hasta que confirman el boceto.</p>
+                </div>
+                <div class="ranges-stack">
+                    <div class="embudo-ranges" id="embudoRanges">
+                        <button type="button" class="btn-ghost" data-range="today">Hoy</button>
+                        <button type="button" class="btn-ghost active" data-range="7d">7 días</button>
+                        <button type="button" class="btn-ghost" data-range="30d">30 días</button>
+                        <button type="button" class="btn-ghost" data-range="all">Todo</button>
+                    </div>
+                    <div class="embudo-dates">
+                        <label class="date-field">Desde <input type="date" id="embudoFrom" class="date-input"></label>
+                        <label class="date-field">Hasta <input type="date" id="embudoTo" class="date-input"></label>
+                        <button type="button" class="btn-ghost" id="embudoDatesClear" hidden>Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            <div id="embudoPresupuestoContent"><p class="muted">Cargando…</p></div>
+
+            <!-- Embudo del formulario (reactivado 03-ago-2026 a pedido de Pablo —
+                 estuvo comentado desde el 31-jul-2026, ver dashboard.js). -->
+            <div class="embudo-section-divider"></div>
+            <div class="embudo-secondary-heading">
+                <h2>Embudo del formulario</h2>
+                <p class="muted">Cuánta gente entra a gokywebs.com/form y cuánta llega a enviar la muestra. Usa el mismo rango de fechas.</p>
+            </div>
+            <div id="embudoContent"><p class="muted">Cargando…</p></div>
+        </section>
+
+        <!-- Sub-tab: Visitas por demo -->
+        <section class="panel" id="tabDemos" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Visitas por demo</h1>
+                    <p class="muted">Cuánta gente entra a cada muestra en gokywebs.com/demo/… · tus propias visitas se excluyen abriendo el demo con <code>?notrack=1</code></p>
+                </div>
+                <div class="ranges-stack">
+                    <div class="embudo-ranges" id="demosRanges">
+                        <button type="button" class="btn-ghost" data-range="today">Hoy</button>
+                        <button type="button" class="btn-ghost active" data-range="7d">7 días</button>
+                        <button type="button" class="btn-ghost" data-range="30d">30 días</button>
+                        <button type="button" class="btn-ghost" data-range="all">Todo</button>
+                    </div>
+                    <div class="embudo-dates">
+                        <label class="date-field">Desde <input type="date" id="demosFrom" class="date-input"></label>
+                        <label class="date-field">Hasta <input type="date" id="demosTo" class="date-input"></label>
+                        <button type="button" class="btn-ghost" id="demosDatesClear" hidden>Limpiar</button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin:0 0 14px">
+                <input type="search" id="demosSearch" placeholder="Buscar demo por nombre…" autocomplete="off" style="width:100%;max-width:320px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
+            </div>
+            <div id="demosContent"><p class="muted">Cargando…</p></div>
+        </section>
+        </section><!-- /tabMetricas -->
+
+        <!-- Tab: WhatsApp — el panel del bot (wabot/admin.php) embebido -->
+        <section class="tab-panel" id="tabWabot" hidden>
+            <div class="wabot-frame-wrap">
+                <iframe id="wabotFrame" title="Panel del bot de WhatsApp" src="about:blank"></iframe>
+            </div>
+        </section>
+
+        <!-- Tab: Mantenimiento (suscriptores) -->
+        <section class="panel tab-panel" id="tabMantenimiento" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Mantenimiento</h1>
+                    <p class="muted">Suscriptores de los planes de mantenimiento. Se cargan solos cuando alguien paga por Mercado Pago, o agregalos a mano. El check de "pidió cambios" se reinicia según el día de alta de cada cliente.</p>
+                </div>
+                <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
+            </div>
+            <div style="margin:0 0 14px">
+                <input type="search" id="searchMant" placeholder="Buscar por nombre, email o WhatsApp…" autocomplete="off" style="width:100%;max-width:320px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
+            </div>
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Alta</th>
+                            <th>Suscriptor</th>
+                            <th>Plan / precio</th>
+                            <th class="col-telefono">WhatsApp</th>
+                            <th>Dominio</th>
+                            <th class="center">Estado</th>
+                            <th class="center">Pidió cambios en este período</th>
+                            <th class="actions-col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="mantTbody">
+                        <tr class="empty-row"><td colspan="8">Cargando…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tab: Completados -->
+        <section class="panel tab-panel" id="tabCompletados" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Completados</h1>
+                    <p class="muted">Clientes cuyo proyecto fue finalizado y entregado. El período se calcula por la fecha de creación del boceto.</p>
+                </div>
+                <div class="stats-box stats-box--periods">
+                    <div class="stat-item">
+                        <span class="stat-label" id="completadosTotalLabel">Cobrado</span>
+                        <span class="stat-value" id="completadosTotal">$0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Este mes</span>
+                        <span class="stat-value" id="completadosEsteMes">$0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Mes anterior</span>
+                        <span class="stat-value" id="completadosMesAnterior">$0</span>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-row-completados">
+                <div class="filtro-modo" role="group" aria-label="Período a mostrar">
+                    <button type="button" class="filtro-modo-btn" data-modo="mes" aria-pressed="true">Mes</button>
+                    <button type="button" class="filtro-modo-btn" data-modo="rango" aria-pressed="false">Rango</button>
+                    <button type="button" class="filtro-modo-btn" data-modo="todo" aria-pressed="false">Todo</button>
+                </div>
+                <select id="completadosMesSelect" class="mes-select" aria-label="Mes del boceto"></select>
+                <div class="rango-inputs" id="completadosRango" hidden>
+                    <label class="rango-field">
+                        <span>Desde</span>
+                        <input type="month" id="completadosDesde" class="mes-input">
+                    </label>
+                    <label class="rango-field">
+                        <span>Hasta</span>
+                        <input type="month" id="completadosHasta" class="mes-input">
+                    </label>
+                </div>
+            </div>
+
+            <div class="sketch-stats" id="completadosSketchStats"></div>
+
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th class="col-proyecto">Proyecto</th>
+                            <th class="col-telefono">Teléfono</th>
+                            <th class="num">Valor total</th>
+                            <th class="num">Abonado</th>
+                            <th class="center">Completado el</th>
+                            <th class="actions-col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="completadosTbody">
+                        <tr class="empty-row"><td colspan="7">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -109,24 +402,27 @@
 
         <!-- Tab: Calendario -->
         <section class="panel tab-panel" id="tabCalendario" hidden>
-            <div class="panel-header">
-                <div>
-                    <h1>Calendario de demos</h1>
-                    <p class="muted">Clientes en estado "Seguimiento" agendados por fecha.</p>
-                </div>
+            <div class="cal-layout">
+                <aside class="cal-sidebar">
+                    <div class="cal-nav">
+                        <button id="calPrev" class="btn-ghost cal-nav-btn">&#8249;</button>
+                        <span id="calMonthLabel" class="cal-month-label"></span>
+                        <button id="calNext" class="btn-ghost cal-nav-btn">&#8250;</button>
+                    </div>
+                    <div class="cal-leyenda">
+                        <span class="cal-leyenda-item"><span class="cal-badge badge-imp1"></span> Importancia 1</span>
+                        <span class="cal-leyenda-item"><span class="cal-badge badge-imp2"></span> Importancia 2</span>
+                    </div>
+                    <button class="btn-primary cal-add-btn" id="addTareaHoyBtn">+ Agregar tarea hoy</button>
+                </aside>
+                <div class="cal-grid" id="calGrid"></div>
             </div>
-            <div class="cal-nav">
-                <button id="calPrev" class="btn-ghost cal-nav-btn">&#8249;</button>
-                <span id="calMonthLabel" class="cal-month-label"></span>
-                <button id="calNext" class="btn-ghost cal-nav-btn">&#8250;</button>
-            </div>
-            <div class="cal-grid" id="calGrid"></div>
         </section>
     </main>
 
     <!-- Modal día -->
     <div id="dayModal" class="modal-backdrop" hidden>
-        <div class="modal">
+        <div class="modal modal--day">
             <div class="modal-header">
                 <h2 id="dayModalTitle"></h2>
                 <button class="modal-close" id="closeDayModalBtn" aria-label="Cerrar">&times;</button>
@@ -135,37 +431,244 @@
         </div>
     </div>
 
-    <!-- Modal Presentada (propuesta → seguimiento) -->
-    <div id="presentadaModal" class="modal-backdrop" hidden>
-        <div class="modal">
+    <!-- Modal agregar tarea -->
+    <div id="taskModal" class="modal-backdrop" hidden>
+        <div class="modal modal--task">
             <div class="modal-header">
-                <h2>Pasar a Seguimiento 1</h2>
-                <button class="modal-close" id="closePresentadaModalBtn" aria-label="Cerrar">&times;</button>
+                <h2 id="taskModalTitle">Agregar tarea</h2>
+                <button class="modal-close" id="closeTaskModalBtn" aria-label="Cerrar">&times;</button>
             </div>
-            <form id="presentadaForm">
-                <input type="hidden" id="presentadaPropId">
-                <label for="presentadaNombre">Nombre del cliente</label>
-                <input type="text" id="presentadaNombre" required maxlength="80">
-                <label for="presentadaFecha">Fecha de seguimiento</label>
-                <input type="date" id="presentadaFecha">
-                <label for="presentadaValor">Valor del proyecto ($)</label>
-                <input type="number" id="presentadaValor" min="0" step="1" value="0">
+            <form id="taskForm">
+                <div class="form-row">
+                    <label class="form-label" for="taskFecha">Fecha</label>
+                    <label class="date-click-wrap">
+                        <input type="date" id="taskFecha" class="form-input" required>
+                    </label>
+                </div>
+                <div class="form-row">
+                    <label class="form-label">Tarea <span class="required">*</span></label>
+                    <textarea id="taskTexto" class="form-input" rows="3" placeholder="Descripción de la tarea..." required></textarea>
+                </div>
+                <div class="form-row-split">
+                    <div class="form-row">
+                        <label class="form-label">Horario <span class="muted">(opcional)</span></label>
+                        <div class="hora-selector">
+                            <select id="taskHoraH" class="form-select hora-select">
+                                <option value="">—</option>
+                            </select>
+                            <span class="hora-sep">:</span>
+                            <select id="taskHoraM" class="form-select hora-select" disabled>
+                                <option value="00">00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">Importancia</label>
+                        <div class="importance-selector">
+                            <label class="imp-option">
+                                <input type="radio" name="taskImp" value="1" checked>
+                                <span class="imp-label imp1">1 — Normal</span>
+                            </label>
+                            <label class="imp-option">
+                                <input type="radio" name="taskImp" value="2">
+                                <span class="imp-label imp2">2 — Urgente</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row" id="taskContextoRow" style="display:none">
+                    <label class="form-label">Contexto</label>
+                    <input type="text" id="taskContexto" class="form-input" readonly>
+                </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-ghost" id="cancelPresentadaBtn">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="savePresentadaBtn">Confirmar</button>
+                    <button type="button" class="btn-secondary" id="cancelTaskBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary">Guardar tarea</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal detalle presupuesto -->
+    <div id="presupuestoModal" class="modal-backdrop" hidden>
+        <div class="modal modal-propuesta">
+            <div class="modal-header">
+                <h2 id="presupuestoModalTitle">Detalle de presupuesto</h2>
+                <button class="modal-close" id="closePresupuestoModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="presupuestoModalBody" class="propuesta-detail"></div>
         </div>
     </div>
 
     <!-- Modal detalle propuesta -->
     <div id="propuestaModal" class="modal-backdrop" hidden>
         <div class="modal modal-propuesta">
-            <div class="modal-header">
+            <div class="modal-header modal-header--no-title">
                 <h2 id="propuestaModalTitle">Detalle de propuesta</h2>
                 <button class="modal-close" id="closePropuestaModalBtn" aria-label="Cerrar">&times;</button>
             </div>
-            <div id="propuestaModalBody" class="propuesta-detail"></div>
+            <form id="propuestaForm">
+                <div id="propuestaModalBody" class="propuesta-detail"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" id="cancelPropuestaBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="savePropuestaBtn">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal nuevo boceto (carga manual desde chat de WhatsApp) -->
+    <div id="nuevoBocetoModal" class="modal-backdrop" hidden>
+        <div class="modal modal-propuesta">
+            <div class="modal-header">
+                <h2>Nuevo boceto</h2>
+                <button class="modal-close" id="closeNuevoBocetoBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="nuevoBocetoForm">
+                <div class="propuesta-detail">
+                    <div class="nb-paste">
+                        <label for="nbPaste">Pegá lo que te pasó el cliente por WhatsApp</label>
+                        <textarea id="nbPaste" rows="5" placeholder="Ej: Somos Don Corte, barbería en Quilmes. IG @doncorte. Colores azul y negro. Tipografía moderna."></textarea>
+                        <button type="button" class="btn-ghost" id="nbAutofillBtn">✨ Autocompletar campos</button>
+                        <p class="nb-hint muted" id="nbAutofillMsg" hidden></p>
+                    </div>
+
+                    <hr class="nb-sep">
+
+                    <label for="nbNombreNegocio">Nombre del negocio / marca *</label>
+                    <input type="text" id="nbNombreNegocio" maxlength="160" placeholder="Don Corte">
+
+                    <label for="nbRubro">Rubro / a qué se dedica</label>
+                    <textarea id="nbRubro" rows="2" maxlength="300" style="resize:vertical" placeholder="Barbería"></textarea>
+
+                    <label for="nbTipo">Tipo de web *</label>
+                    <select id="nbTipo">
+                        <option value="landing">💼 Landing · mostrar negocio y recibir consultas</option>
+                        <option value="catalogo">🏬 Catálogo · pedidos por WhatsApp</option>
+                        <option value="inmobiliaria">🏠 Inmobiliaria · publicar propiedades</option>
+                        <option value="ecommerce">🛒 Ecommerce · vender y cobrar online</option>
+                        <option value="elearning">🎓 E-learning · vender cursos</option>
+                        <option value="ecommerce-elearning">🛒🎓 Tienda + Cursos</option>
+                    </select>
+
+                    <div id="nbTipoPaginaRow" class="nb-inline">
+                        <span class="nb-inline-label">Tamaño</span>
+                        <label class="nb-radio"><input type="radio" name="nbTipoPagina" value="Una página" checked> Una página</label>
+                        <label class="nb-radio"><input type="radio" name="nbTipoPagina" value="Multipágina"> Multipágina</label>
+                    </div>
+
+                    <div class="nb-inline">
+                        <label class="nb-check"><input type="checkbox" id="nbReservas"> 📅 Suma reservas de turnos / citas / alojamiento</label>
+                    </div>
+
+                    <div class="nb-price" id="nbPriceBox">
+                        <div class="nb-price-type" id="nbPriceType">—</div>
+                        <div class="nb-price-grid">
+                            <div><span>Total</span><strong id="nbPriceTotal">$0</strong></div>
+                            <div><span>Seña</span><strong id="nbPriceSena">$0</strong></div>
+                            <div><span>Saldo</span><strong id="nbPriceSaldo">$0</strong></div>
+                        </div>
+                    </div>
+
+                    <hr class="nb-sep">
+
+                    <label for="nbContacto">Nombre de contacto</label>
+                    <input type="text" id="nbContacto" maxlength="120" placeholder="(opcional)">
+
+                    <label for="nbTelefono">Teléfono / WhatsApp</label>
+                    <input type="text" id="nbTelefono" maxlength="40" placeholder="11 2345 6789">
+
+                    <label for="nbInstagram">Instagram</label>
+                    <input type="text" id="nbInstagram" maxlength="120" placeholder="@usuario">
+
+                    <label for="nbCiudadZona">Ciudad / zona <span class="muted nb-when">(landing e inmobiliaria)</span></label>
+                    <input type="text" id="nbCiudadZona" maxlength="120" placeholder="Quilmes, Zona Sur">
+
+                    <label for="nbCantProductos">Cantidad de productos <span class="muted nb-when">(catálogo / ecommerce)</span></label>
+                    <input type="text" id="nbCantProductos" maxlength="80" placeholder="~50 productos">
+
+                    <label for="nbCantCursos">Cantidad de cursos <span class="muted nb-when">(e-learning)</span></label>
+                    <input type="text" id="nbCantCursos" maxlength="40" placeholder="4 cursos">
+
+                    <label for="nbColores">Colores de marca</label>
+                    <input type="text" id="nbColores" maxlength="200" placeholder="Azul y negro">
+
+                    <label for="nbTipografias">Tipografía de preferencia</label>
+                    <input type="text" id="nbTipografias" maxlength="120" placeholder="Moderna / sans serif (si no sabe, dejalo vacío)">
+
+                    <label for="nbNotas">Notas internas</label>
+                    <textarea id="nbNotas" rows="2" maxlength="500" placeholder="Notas para vos (no van al cliente)"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" id="cancelNuevoBocetoBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="saveNuevoBocetoBtn">Crear boceto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal detalle lead (presupuesto sin pago) -->
+    <div id="leadModal" class="modal-backdrop" hidden>
+        <div class="modal modal-propuesta">
+            <div class="modal-header">
+                <h2 id="leadModalTitle">Detalle de presupuesto</h2>
+                <button class="modal-close" id="closeLeadModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="leadModalBody" class="propuesta-detail"></div>
+        </div>
+    </div>
+
+    <!-- Modal: agregar / editar suscriptor de mantenimiento -->
+    <div id="mantModal" class="modal-backdrop" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="mantModalTitle">Agregar suscriptor</h2>
+                <button class="modal-close" id="closeMantModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <form id="mantForm">
+                <div class="propuesta-detail">
+                    <div class="mant-source-picker">
+                        <label for="mantCompletado">Tomar datos de Completados</label>
+                        <select id="mantCompletado">
+                            <option value="">Cargar datos manualmente</option>
+                        </select>
+                        <p class="mant-source-hint">Solo copia los datos al mantenimiento. El cliente sigue apareciendo en Completados.</p>
+                    </div>
+
+                    <label for="mantNombre">Nombre</label>
+                    <input type="text" id="mantNombre" maxlength="120" placeholder="Nombre del cliente">
+
+                    <label for="mantEmail">Email</label>
+                    <input type="email" id="mantEmail" maxlength="160" placeholder="cliente@email.com">
+
+                    <label for="mantWhatsapp">WhatsApp</label>
+                    <input type="text" id="mantWhatsapp" maxlength="40" placeholder="11 2345 6789">
+
+                    <label for="mantDominio">Dominio</label>
+                    <input type="text" id="mantDominio" maxlength="160" placeholder="midominio.com">
+
+                    <label for="mantPlan">Plan / descripción *</label>
+                    <input type="text" id="mantPlan" maxlength="120" required placeholder="Ej.: Mantenimiento ecommerce">
+
+                    <label for="mantMonto">Precio mensual *</label>
+                    <input type="number" id="mantMonto" min="0" step="1" inputmode="numeric" required placeholder="Ej.: 15000">
+
+                    <label for="mantEstado">Estado</label>
+                    <select id="mantEstado">
+                        <option value="activo">Activo</option>
+                        <option value="pausado">Pausado</option>
+                    </select>
+
+                    <label for="mantNotas">Notas internas</label>
+                    <textarea id="mantNotas" rows="2" maxlength="300" placeholder="(opcional)"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" id="cancelMantBtn">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="saveMantBtn">Guardar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -201,20 +704,36 @@
 
                 <label for="estadoCliente">Estado</label>
                 <select id="estadoCliente">
-                    <option value="seguimiento1">Seguimiento 1</option>
-                    <option value="seguimiento2">Seguimiento 2</option>
-                    <option value="seguimiento3">Seguimiento 3</option>
+                    <option value="seguimiento1">Seguimiento</option>
+                    <option value="ultimo-mensaje">Último mensaje</option>
+                    <option value="standby">Stand by</option>
                     <option value="cliente">Cliente</option>
                 </select>
 
-                <label for="hablarleElDia">Hablarle el día</label>
-                <input type="date" id="hablarleElDia">
+                <div id="hablarleElDiaField">
+                    <label for="hablarleElDia">Hablarle el día</label>
+                    <input type="date" id="hablarleElDia">
+                </div>
+
+                <!-- Checklist de entrega (solo clientes) -->
+                <div id="tareasSection" style="display:none;margin-top:16px">
+                    <label>Checklist de entrega</label>
+                    <div class="tareas-checklist" id="tareasChecklist"></div>
+                </div>
 
                 <!-- Datos originales de la propuesta (solo lectura) -->
                 <div id="propuestaInfoSection" style="display:none;margin-top:16px">
                     <details>
                         <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--accent-green,#4ade80);padding:8px 0;user-select:none">📋 Detalle de propuesta original</summary>
                         <div id="propuestaInfoBody" class="propuesta-detail" style="margin-top:8px;font-size:13px"></div>
+                    </details>
+                </div>
+
+                <!-- Datos del presupuesto vinculado (solo lectura) -->
+                <div id="presupuestoInfoSection" style="display:none;margin-top:16px">
+                    <details>
+                        <summary style="cursor:pointer;font-weight:600;font-size:13px;color:var(--accent-green,#4ade80);padding:8px 0;user-select:none">💰 Detalle del presupuesto vinculado</summary>
+                        <div id="presupuestoInfoBody" class="propuesta-detail" style="margin-top:8px;font-size:13px"></div>
                     </details>
                 </div>
 
@@ -226,6 +745,47 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js"></script>
+    <!-- Modal: Imágenes del boceto -->
+    <div id="imagesModal" class="modal-backdrop" hidden>
+        <div class="modal modal-propuesta">
+            <div class="modal-header">
+                <h2 id="imagesModalTitle">Imágenes del boceto</h2>
+                <button class="modal-close" id="closeImagesModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div id="imagesModalBody" class="propuesta-detail"></div>
+        </div>
+    </div>
+
+    <div id="facturaModal" class="modal-backdrop" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="facturaModalTitulo">Emitir factura y completar</h2>
+                <button class="modal-close" id="closeFacturaModalBtn" aria-label="Cerrar">&times;</button>
+            </div>
+
+            <div id="facturaEntornoAviso" class="factura-aviso" hidden></div>
+
+            <div class="factura-resumen">
+                <div><span>Cliente</span><strong id="facturaCliente">—</strong></div>
+                <div><span>Comprobante</span><strong id="facturaComprobante">—</strong></div>
+            </div>
+
+            <label for="facturaTotal">Importe a facturar</label>
+            <input type="number" id="facturaTotal" min="0" step="0.01">
+
+            <label for="facturaDocumento">DNI o CUIT del cliente <span class="muted">(opcional — vacío emite a consumidor final)</span></label>
+            <input type="text" id="facturaDocumento" maxlength="13" placeholder="Sin identificar">
+
+            <div id="facturaError" class="factura-error" hidden></div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" id="facturaCancelarBtn">Cancelar</button>
+                <button type="button" class="btn-ghost" id="facturaSinFacturarBtn">Completar sin facturar</button>
+                <button type="button" class="btn-primary" id="facturaEmitirBtn">Emitir factura</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js?v=20260818-sticky"></script>
 </body>
 </html>

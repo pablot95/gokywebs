@@ -1,0 +1,8 @@
+# Credenciales reales — nunca commitear. Ver config/mp-config.example.php.
+config/mp-config.php
+config/wabot-config.php
+wabot/data/
+config/arca/*.key
+config/arca/*.crt
+config/arca/*.csr
+config/arca/ticket-*.json

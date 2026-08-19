@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cromor</title>
+  <link rel="icon" type="image/png" href="/cromor2/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+
+  <div class="app-shell" id="appShell" hidden>
+
+    <header class="app-header">
+      <h1>Cromor</h1>
+      <div class="app-user">
+        <span id="userEmail"></span>
+        <button class="btn btn-outline btn-notif" id="notifPermBtn" type="button" hidden></button>
+        <button class="btn btn-outline" id="logoutBtn">Cerrar sesión</button>
+      </div>
+    </header>
+
+<nav class="app-tabs">
+  <button class="tab-btn active" data-tab="hoy">Hoy</button>
+  <button class="tab-btn" data-tab="calendario">Calendario</button>
+  <div class="completed-strip" id="completedTasksBar" aria-live="polite"></div>
+</nav>
+
+    <main class="app-main">
+
+      <!-- ═══ TAB: HOY ═══ -->
+      <section class="tab-panel active" id="tab-hoy">
+        <div class="hoy-layout">
+
+          <!-- Columna 1: reloj general -->
+          <aside class="hoy-col hoy-col--clock">
+            <div class="today-label" id="todayLabel">—</div>
+<div class="clock-card" id="generalClockCard">
+  <span class="clock-label">Hoy</span>
+
+  <div class="clock-face">
+    <div class="clock-hand" id="clockHand"></div>
+    <div class="clock-center"></div>
+  </div>
+
+  <input class="clock-digital" id="generalDisplay" value="00:00:00" inputmode="numeric" readonly title="Pausá el reloj para editar el tiempo">
+
+  <div class="clock-sa">
+    <span>Tiempo SA</span>
+    <strong id="generalSaDisplay">00:00:00</strong>
+  </div>
+
+  <button class="btn btn-primary btn-full" id="generalToggleBtn">▶ Iniciar</button>
+</div>
+            <div class="finish-day">
+              <button class="btn btn-danger btn-full" id="finishDayBtn">Finalizar día</button>
+            </div>
+          </aside>
+
+          <!-- Columna 2: proyectos -->
+          <section class="hoy-col hoy-col--proyectos" id="projectsPanel">
+            <div class="col-header">
+              <h2>Proyectos</h2>
+              <button class="panel-toggle-btn" id="projectsPanelToggle" type="button" aria-expanded="true" aria-label="Minimizar proyectos" title="Minimizar proyectos">−</button>
+            </div>
+            <div class="add-row">
+              <input type="text" id="newCategoryName" placeholder="Nuevo proyecto" maxlength="40">
+              <button class="btn btn-primary" id="addCategoryBtn">Agregar proyecto</button>
+            </div>
+            <div class="proyectos-list" id="categoryList">
+              <p class="empty-hint">Todavía no agregaste proyectos.</p>
+            </div>
+          </section>
+          <div class="add-task-between">
+            <button class="nav-add-task-btn" id="openAddTaskNavBtn" type="button">+ Agregar task</button>
+            <button class="nav-add-task-btn nav-add-task-btn--secondary" id="openAddTaskCategoryBtn" type="button">Categorías</button>
+          </div>
+
+          <!-- Columna 3: tasks (con su propio reloj cada una) -->
+          <section class="hoy-col hoy-col--tasks">
+            <div class="tasks-scroll" id="projectList"></div>
+          </section>
+
+        </div>
+      </section>
+
+      <!-- ═══ MODAL: NUEVA TASK ═══ -->
+      <div class="modal-overlay" id="addTaskModal">
+        <div class="modal-box">
+          <button class="btn-icon btn-icon--delete modal-close" id="addTaskModalClose" aria-label="Cerrar">✕</button>
+          <h3>Nueva task</h3>
+          <p class="modal-subtitle">Agregá una tarea con su propio cronómetro</p>
+          <div class="form-group">
+            <label for="newProjectName">Nombre</label>
+            <input type="text" id="newProjectName" placeholder="Nombre de la task" maxlength="60">
+          </div>
+          <div class="form-group">
+            <label for="newProjectCategory">Proyecto</label>
+            <select id="newProjectCategory">
+              <option value="">Sin proyecto</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="newProjectTipo">Categoría</label>
+            <select id="newProjectTipo">
+              <option value="">Sin categoría</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-full" id="addProjectBtn">Crear task</button>
+        </div>
+      </div>
+
+      <!-- â•â•â• MODAL: CATEGORÃAS DE TASK â•â•â• -->
+      <div class="modal-overlay" id="addTaskCategoryModal">
+        <div class="modal-box">
+          <button class="btn-icon btn-icon--delete modal-close" id="addTaskCategoryModalClose" aria-label="Cerrar">x</button>
+          <h3>Categorías</h3>
+          <p class="modal-subtitle">Agregá o eliminá categorías para clasificar tus tasks</p>
+          <div class="form-group">
+            <label for="newTaskCategoryName">Nombre</label>
+            <input type="text" id="newTaskCategoryName" placeholder="Ej: Diseño, Reunión, Admin" maxlength="24">
+          </div>
+          <button class="btn btn-primary btn-full" id="addTaskCategoryBtn">Crear categoría</button>
+          <div class="task-categories-manager" id="taskTypeCategoryList"></div>
+        </div>
+      </div>
+
+      <!-- ═══ MODAL: COMENTARIO DE TASK ═══ -->
+      <div class="modal-overlay" id="taskCommentModal">
+        <div class="modal-box">
+          <button class="btn-icon btn-icon--delete modal-close" id="taskCommentModalClose" aria-label="Cerrar">✕</button>
+          <h3>Comentario</h3>
+          <p class="modal-subtitle" id="taskCommentSubtitle">Solo se ve en el calendario, no en la card</p>
+          <div class="form-group">
+            <label for="taskCommentText">Comentario</label>
+            <textarea id="taskCommentText" rows="5" maxlength="500" placeholder="Escribí un comentario para esta task…"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" id="saveTaskCommentBtn">Guardar comentario</button>
+        </div>
+      </div>
+
+      <!-- ═══ TAB: CALENDARIO ═══ -->
+      <section class="tab-panel" id="tab-calendario">
+        <div class="calendar-card">
+          <div class="calendar-header">
+            <button class="calendar-nav-btn" id="prevMonthBtn" aria-label="Mes anterior">‹</button>
+            <h2 id="calendarTitle">—</h2>
+            <button class="calendar-nav-btn" id="nextMonthBtn" aria-label="Mes siguiente">›</button>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ═══ MODAL: DETALLE DEL DÍA ═══ -->
+  <div class="modal-overlay" id="dayModal">
+    <div class="modal-box modal-box--wide">
+      <button class="btn-icon btn-icon--delete modal-close" id="dayModalClose" aria-label="Cerrar">✕</button>
+      <h3 id="dayModalTitle">—</h3>
+      <p class="modal-subtitle">Resumen del trabajo realizado</p>
+
+      <div class="day-export-row" style="margin-bottom:14px">
+        <button class="btn btn-outline" id="dayModalExportBtn" type="button">⬇ Exportar a Excel</button>
+      </div>
+
+      <div class="modal-section">
+        <h4>Tiempo general</h4>
+        <div class="modal-total"><span>Total del día</span><span id="dayModalTotal">00:00:00</span></div>
+        <div class="modal-total modal-total--sa"><span>Tiempo SA</span><span id="dayModalUnassigned">00:00:00</span></div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Por tipo</h4>
+        <div class="modal-tipo-totals" id="dayModalTipoTotals"></div>
+      </div>
+
+      <div class="modal-columns">
+        <div class="modal-section">
+          <h4>Por task</h4>
+          <div class="modal-list" id="dayModalProjects"></div>
+        </div>
+
+        <div class="modal-section">
+          <h4>Por proyecto</h4>
+          <div class="modal-list" id="dayModalCategories"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Popup de recordatorio: el reloj general quedó en pausa -->
+  <div class="pause-popup" id="pausePopup" role="alertdialog" aria-labelledby="pausePopupTitle" hidden>
+    <div class="pause-popup-box">
+      <span class="pause-popup-icon" aria-hidden="true">⏸</span>
+      <div class="pause-popup-text">
+        <strong id="pausePopupTitle">El reloj general está en pausa</strong>
+        <span>Seguís usando la compu — dale play para no perder el tiempo.</span>
+      </div>
+      <div class="pause-popup-actions">
+        <button class="btn btn-primary" id="pausePopupPlay" type="button">▶ Darle play</button>
+        <button class="btn btn-outline" id="pausePopupDismiss" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Picker de destino del tiempo editado -->
+  <div id="time-apply-picker" hidden>
+    <span class="tap-label" id="tapLabel"></span>
+    <button class="tap-btn" id="tapBtnA"></button>
+    <button class="tap-btn" id="tapBtnB"></button>
+    <button class="tap-cancel" id="tapCancel" title="Cancelar">✕</button>
+  </div>
+
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>

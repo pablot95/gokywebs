@@ -1292,7 +1292,6 @@ document.addEventListener('DOMContentLoaded', function() {
 const PORTFOLIO_DEMOS = {
     comercios: [
         // Tiendas y bazares
-        { id: 'BlanqueriaBazar', name: 'Blanquería Bazar' },
         { id: 'PapeleraTriunfo', name: 'Papelera Triunfo', url: 'https://papelera-triunfo.vercel.app' },
         { id: 'SerBotanica', name: 'Ser Botánica', url: 'https://ser-botanica.vercel.app' },
         { id: 'TiendaAzurduy', name: 'Tienda Azurduy', url: 'https://tienda-azurduy.vercel.app' },
@@ -1313,18 +1312,13 @@ const PORTFOLIO_DEMOS = {
     profesionales: [
         // Salud / consultorios
         { id: 'PiscoPsi', name: 'Pisco Psicología', url: 'https://psico-psi.vercel.app' },
-        { id: 'AlderPsicologia', name: 'Alder Psicología', url: 'https://www.psicorodas.com.ar/' },
         { id: 'Skymed', name: 'SkyMed', url: 'https://www.skymedconsultorios.com/' },
-        { id: 'SolucionHonorariosMedicos', name: 'Honorarios Médicos', ext: 'jpg' },
         { id: 'Mecanico', name: 'Mecánico', url: 'https://rivasrys.com.ar' },
         { id: 'Ambulancias', name: 'Ambulancias 24hs', url: 'https://urgencias24hs.com.ar' },
-        { id: 'AHCD', name: 'AHCD', url: 'https://ahcd.org.ar/' },
         // Belleza / spa / fitness (servicios)
         { id: 'Lessence', name: "L'essence Estética", url: 'https://lessence.vercel.app' },
         // Legales / consultoría / publicidad
         { id: 'EstudioJuridico', name: 'Estudio Jurídico', url: 'https://mtgestoriaintegral.com.ar' },
-        { id: 'RamagliaEstudioJuridico', name: 'Ramaglia Estudio Jurídico' },
-        { id: 'ServiciosMigratorios', name: 'Servicios Migratorios' },
         { id: 'GrupoAcot', name: 'Grupo Acot', url: 'https://grupoacot.com/' },
         { id: 'AdrianaTraductoraProfesora', name: 'Adriana Traductora', url: 'https://adriana-traductora.vercel.app' },
         { id: 'Consultora', name: 'Consultora', url: 'https://pgmsconsultora.com.ar' },
@@ -1335,19 +1329,12 @@ const PORTFOLIO_DEMOS = {
         { id: 'SeguroClick', name: 'Seguro Click', url: 'https://seguro-click.vercel.app' },
         { id: 'SeguridadPrivada', name: 'Seguridad Privada', url: 'https://indumentaria-policial.vercel.app' },
         { id: 'Axiotek', name: 'Axiotek', url: 'https://axiotek.vercel.app' },
-        { id: 'Tuproductoronline', name: 'Tu Productor Online', url: 'https://tuproductoronline.vercel.app' },
         // Educación / artes
         { id: 'LenguasAdicionales', name: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar' },
         { id: 'ProfeArtes', name: 'Profe Artes', url: 'https://catalinasolaridorda.com.ar' },
-        { id: 'ArtesMarciales', name: 'Artes Marciales' },
-        // Construcción / oficios
-        { id: 'MantenimientoObras', name: 'Mantenimiento de Obras' },
         // Turismo / esoterismo / cultura
-        { id: 'Patagonianativa', name: 'Patagonia Nativa', url: 'https://patagonianativa.vercel.app' },
         { id: 'ConcienciaTriskel', name: 'Conciencia Triskel', url: 'https://conciencia-triskel.vercel.app' },
-        { id: 'Tarot', name: 'Tarot' },
         // Servicios técnicos
-        { id: 'Servicioelectro', name: 'Servicio Electro' },
         { id: 'ServiceRefrigeracion', name: 'SMRTEC', url: 'https://smrtec.vercel.app/' },
         { id: 'HidroArca', name: 'Hidro Arca', url: 'https://hidro-arca.vercel.app' },
         { id: 'DeltaPampaFumigaciones', name: 'Delta Pampa Fumigaciones', url: 'https://delta-pampa-fumigaciones.vercel.app' },
@@ -1355,18 +1342,13 @@ const PORTFOLIO_DEMOS = {
     ],
     moda: [
         { id: 'Distinta', name: 'Distinta', url: 'https://distinta.vercel.app' },
-        { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' },
-        { id: 'RopaMirame', name: 'Ropa Mírame' }
+        { id: 'Dominus', name: 'Dominus Jeans', url: 'https://dominus-chi.vercel.app' }
     ],
     gastronomia: [
-        { id: 'Dulces', name: 'Dulces', ext: 'jpg' },
         { id: 'NiftyBar', name: 'Nifty Bar', url: 'https://nifty-bar.vercel.app' },
-        { id: 'RestoVinoteca', name: 'Resto Vinoteca', url: 'https://resto-vinoteca.vercel.app' },
-        { id: 'RossiCakes', name: 'Rossi Cakes' },
-        { id: 'Milanesas', name: 'Milanesas' }
+        { id: 'RestoVinoteca', name: 'Resto Vinoteca', url: 'https://resto-vinoteca.vercel.app' }
     ],
     tecnologia: [
-        { id: 'TvDigital', name: 'TV Digital' },
         { id: 'VelariumCelulares', name: 'Velarium Celulares', url: 'https://velarium-celulares.vercel.app' },
         { id: 'NexumCelulares', name: 'Nexum Celulares', url: 'https://nexum-celulares.vercel.app' },
         { id: 'ImpresionesJN', name: 'Impresiones JN', url: 'https://impresiones-jn.vercel.app' },
@@ -1401,58 +1383,146 @@ function createDemoCard(demo) {
 }
 
 function injectDemoCards() {
+    const grid = document.getElementById('pfGrid');
+    if (!grid) return;
     Object.entries(PORTFOLIO_DEMOS).forEach(([cat, demos]) => {
-        const section = document.querySelector(`.pf-section[data-cat="${cat}"]`);
-        if (!section) return;
-        const grid = section.querySelector('.pf-grid');
-        if (!grid) return;
-        demos.forEach(demo => grid.appendChild(createDemoCard(demo)));
+        demos.forEach(demo => {
+            const card = createDemoCard(demo);
+            card.dataset.cat = cat;
+            grid.appendChild(card);
+        });
     });
 }
 
 function initPortfolioGrid() {
-    const LIMIT_DESKTOP = 8;
-    const LIMIT_MOBILE  = 6;
+    const LIMIT_DESKTOP = 20;
+    const LIMIT_MOBILE  = 15;
+    const grid   = document.getElementById('pfGrid');
+    const verMas = document.getElementById('pfVerMas');
+    if (!grid) return;
 
-    document.querySelectorAll('.pf-section').forEach(section => {
-        const grid   = section.querySelector('.pf-grid');
-        const verMas = section.querySelector('.pf-ver-mas');
-        if (!grid) return;
+    let currentCat = 'all';
+    let expanded   = false;
 
-        const cards = Array.from(grid.querySelectorAll('.pf-card'));
-        if (cards.length === 0) {
-            section.classList.add('is-hidden');
-            return;
-        }
+    const isMobile  = () => window.innerWidth <= 768;
+    const limit     = () => isMobile() ? LIMIT_MOBILE : LIMIT_DESKTOP;
+    const allCards  = () => Array.from(grid.querySelectorAll(':scope > .pf-card'));
+    const matching  = () => allCards().filter(c => currentCat === 'all' || c.dataset.cat === currentCat);
 
-        const isMobile = () => window.innerWidth <= 768;
-        const limit    = () => isMobile() ? LIMIT_MOBILE : LIMIT_DESKTOP;
-
-        const updateVerMas = () => {
-            if (!verMas) return;
-            const expanded = section.classList.contains('pf-section--expanded');
-            if (cards.length > limit()) {
+    const applyVisibility = () => {
+        const vis = matching();
+        const lim = expanded ? Infinity : limit();
+        allCards().forEach(card => {
+            const idx = vis.indexOf(card);
+            card.style.display = (idx >= 0 && idx < lim) ? '' : 'none';
+        });
+        if (verMas) {
+            if (!expanded && vis.length > limit()) {
                 verMas.classList.add('is-visible');
-                verMas.innerHTML = expanded ? 'Ver menos <span>↑</span>' : 'Ver más <span>↓</span>';
+                verMas.innerHTML = 'Ver más <span>↓</span>';
+            } else if (expanded) {
+                verMas.classList.add('is-visible');
+                verMas.innerHTML = 'Ver menos <span>↑</span>';
             } else {
                 verMas.classList.remove('is-visible');
             }
-        };
-
-        updateVerMas();
-        window.addEventListener('resize', updateVerMas);
-
-        if (verMas) {
-            verMas.addEventListener('click', () => {
-                section.classList.toggle('pf-section--expanded');
-                updateVerMas();
-                if (!section.classList.contains('pf-section--expanded')) {
-                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                pfLoadSectionImages(section);
-            });
         }
-    });
+    };
+
+    grid._setFilter = (cat) => {
+        currentCat = cat;
+        expanded = false;
+        applyVisibility();
+        pfLoadSectionImages(grid);
+        const vis = matching();
+        vis.slice(0, limit()).forEach((card, i) => {
+            card.classList.remove('pf-visible');
+            card.style.setProperty('--pf-delay', `${i * 50}ms`);
+            void card.offsetWidth;
+            card.classList.add('pf-anim-ready', 'pf-anim-card', 'pf-visible');
+        });
+    };
+
+    applyVisibility();
+    window.addEventListener('resize', applyVisibility);
+
+    if (verMas) {
+        verMas.addEventListener('click', () => {
+            if (!expanded) {
+                const prevLim = limit();
+                expanded = true;
+                applyVisibility();
+                matching().slice(prevLim).forEach((card, i) => {
+                    card.classList.remove('pf-visible');
+                    card.style.setProperty('--pf-delay', `${i * 70}ms`);
+                    void card.offsetWidth;
+                    card.classList.add('pf-anim-ready', 'pf-anim-card', 'pf-visible');
+                });
+                pfLoadSectionImages(grid);
+            } else {
+                expanded = false;
+                applyVisibility();
+                grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    }
+}
+
+function initPfAnimations() {
+    if (!('IntersectionObserver' in window)) {
+        document.querySelectorAll('.pf-anim-ready').forEach(el => el.classList.add('pf-visible'));
+        return;
+    }
+
+    // Portfolio header
+    const header = document.querySelector('.portfolio-header');
+    if (header) {
+        header.classList.add('pf-anim-ready', 'pf-anim-header');
+        new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => {
+                if (!e.isIntersecting) return;
+                e.target.classList.add('pf-visible');
+                obs.unobserve(e.target);
+            });
+        }, { threshold: 0.25 }).observe(header);
+    }
+
+    // Pills de categoría
+    const catBtns = document.querySelectorAll('.pf-cat');
+    if (catBtns.length) {
+        const cObs = new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => {
+                if (!e.isIntersecting) return;
+                e.target.classList.add('pf-visible');
+                obs.unobserve(e.target);
+            });
+        }, { threshold: 0.4 });
+        catBtns.forEach((btn, i) => {
+            btn.classList.add('pf-anim-ready', 'pf-anim-cat');
+            btn.style.setProperty('--pf-delay', `${i * 55}ms`);
+            cObs.observe(btn);
+        });
+    }
+
+    // Grid cards
+    const grid = document.getElementById('pfGrid');
+    if (grid) {
+        Array.from(grid.querySelectorAll(':scope > .pf-card')).forEach((card, i) => {
+            card.classList.add('pf-anim-ready', 'pf-anim-card');
+            card.style.setProperty('--pf-delay', `${100 + i * 55}ms`);
+        });
+        new IntersectionObserver((entries, obs) => {
+            entries.forEach(e => {
+                if (!e.isIntersecting) return;
+                Array.from(grid.querySelectorAll(':scope > .pf-card')).forEach(card => {
+                    if (getComputedStyle(card).display !== 'none') {
+                        card.classList.add('pf-visible');
+                    }
+                });
+                obs.unobserve(e.target);
+            });
+        }, { threshold: 0.04, rootMargin: '0px 0px -30px 0px' }).observe(grid);
+    }
 }
 
 function pfLoadSectionImages(section) {
@@ -1463,40 +1533,64 @@ function pfLoadSectionImages(section) {
 }
 
 function initPfLazyImages() {
+    const grid = document.getElementById('pfGrid');
+    if (!grid) {
+        document.querySelectorAll('img[data-src]').forEach(img => { img.src = img.dataset.src; img.removeAttribute('data-src'); });
+        return;
+    }
     if (!('IntersectionObserver' in window)) {
-        document.querySelectorAll('.pf-section').forEach(pfLoadSectionImages);
+        pfLoadSectionImages(grid);
         return;
     }
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                pfLoadSectionImages(entry.target);
+                pfLoadSectionImages(grid);
                 observer.unobserve(entry.target);
             }
         });
-    }, { rootMargin: '200px 0px', threshold: 0 });
-    document.querySelectorAll('.pf-section').forEach(section => observer.observe(section));
+    }, { rootMargin: '300px 0px', threshold: 0 });
+    observer.observe(grid);
 }
 
 function initPortfolioCatFilter() {
-    const cats = document.querySelectorAll('.pf-cat');
-    const sections = document.querySelectorAll('.pf-section');
+    const cats     = document.querySelectorAll('.pf-cat');
+    const trigger  = document.getElementById('pfFilterTrigger');
+    const backdrop = document.getElementById('pfCatsBackdrop');
+    const catsEl   = document.getElementById('pfCats');
+    const grid     = document.getElementById('pfGrid');
+
+    const openSheet = () => {
+        if (!catsEl) return;
+        catsEl.classList.add('is-open');
+        if (backdrop) backdrop.classList.add('is-visible');
+        if (trigger) trigger.classList.add('is-open');
+        document.body.classList.add('pf-sheet-open');
+    };
+    const closeSheet = () => {
+        if (!catsEl) return;
+        catsEl.classList.remove('is-open');
+        if (backdrop) backdrop.classList.remove('is-visible');
+        if (trigger) trigger.classList.remove('is-open');
+        document.body.classList.remove('pf-sheet-open');
+    };
+
+    if (trigger) {
+        trigger.addEventListener('click', () => {
+            catsEl && catsEl.classList.contains('is-open') ? closeSheet() : openSheet();
+        });
+    }
+    if (backdrop) backdrop.addEventListener('click', closeSheet);
+
     cats.forEach(btn => {
         btn.addEventListener('click', () => {
             const target = btn.dataset.cat;
             cats.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            sections.forEach(sec => {
-                const hasItems = sec.querySelector('.pf-grid')?.children.length > 0;
-                const match = (target === 'all' || sec.dataset.cat === target) && hasItems;
-                if (match) {
-                    sec.classList.remove('is-hidden');
-                    sec.style.display = '';
-                    pfLoadSectionImages(sec);
-                } else {
-                    sec.style.display = 'none';
-                }
-            });
+            const label = document.getElementById('pfFilterLabel');
+            if (label) label.textContent = btn.textContent.trim();
+            closeSheet();
+            if (grid && grid._setFilter) grid._setFilter(target);
             window.dispatchEvent(new Event('resize'));
         });
     });
@@ -1564,12 +1658,10 @@ function initNewPortfolio() {
     initPortfolioCatFilter();
     initDemoModal();
     initPfLazyImages();
+    initPfAnimations();
 
-    // Evitar que el navegador "agarre" imágenes con drag nativo al hacer click sostenido
-    const pfCats = document.getElementById('pfCategories');
-    if (pfCats) {
-        pfCats.addEventListener('dragstart', e => e.preventDefault());
-    }
+    const pfGrid = document.getElementById('pfGrid');
+    if (pfGrid) pfGrid.addEventListener('dragstart', e => e.preventDefault());
 }
 
 if (document.readyState === 'loading') {

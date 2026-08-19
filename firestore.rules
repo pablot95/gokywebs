@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+          && request.auth.token.email == "pablo.travi95@gmail.com";
+    }
+
+    match /clientes/{doc}      { allow read, write: if isAdmin(); }
+    match /propuestas/{doc}    {
+      allow create: if true;           // formulario /form escribe sin login
+      allow read, delete: if isAdmin();
+      // El form (sin login) confirma su muestra o reenvía tras "volver a revisar":
+      // solo puede tocar campos del propio formulario + el flag de confirmación,
+      // nunca los campos internos del admin (notas, contactado, bocetoHecho,
+      // presentada, createdBy…) ni borrar. Update amplio sigue siendo solo admin.
+      allow update: if isAdmin() || request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'confirmoMuestra', 'confirmadoAt', 'updatedAt',
+        'to_name', 'nombre', 'telefono', 'negocio_rubro', 'nombre_negocio', 'rubro',
+        'instagram', 'ciudad_zona', 'cant_cursos', 'objetivos', 'objetivos_texto',
+        'tipo_pagina', 'tipo_web', 'que_incluye', 'precio_total', 'precio_sena',
+        'precio_saldo', 'adicionales', 'color_fondos', 'color_principal',
+        'color_secundario', 'colores', 'tipografias', 'fecha', 'logoUrl', 'logoNombre',
+        'tipoDetectado', 'tipoDetectadoLabel', 'precioTotal', 'sena', 'saldo', 'presupuestoId'
+      ]);
+    }
+    match /presupuestos/{doc}  {
+      allow create: if true;           // visitantes guardan su lead sin login
+      allow read, update, delete: if isAdmin();
+    }
+    match /presupuesto_funnel/{doc} {
+      // Un doc por sesión de /presupuesto/, escrito con merge a medida que
+      // avanza (paso 1 → paso 2 → paso 3 → precio → muestra → confirmó).
+      // Sin login: solo puede tocar sus propios campos de progreso, nunca
+      // agregar campos arbitrarios.
+      allow create: if true;
+      // ⚠️ hasOnly: si /presupuesto/script.js manda UN campo que no esté acá,
+      // Firestore rechaza la escritura entera y se pierde ese hito del embudo.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'step1At', 'step2At', 'step3At', 'precioAt', 'muestraAt', 'confirmoAt',
+        'customObjAt',
+        'phone', 'siteType', 'totalPrice', 'updatedAt'
+      ]);
+      allow read, delete: if isAdmin();
+    }
+    match /mantenimiento/{doc} {
+      allow create: if true;           // el webhook de MP (sin login) carga suscriptores
+      allow read, update, delete: if isAdmin();   // solo Pablo lista/edita/elimina
+    }
+    match /completados/{doc}   { allow read, write: if isAdmin(); }
+    match /tareas/{doc}        { allow read, write: if isAdmin(); }
+  }
+}

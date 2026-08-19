@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Guía del panel de administración (Cursos) — GokyWebs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-blue:#2563EB;
+    --color-blue-light:#3B82F6;
+    --color-green:#16A34A;
+    --color-green-bright:#4ADE80;
+    --bg:#000000;
+    --bg-elev:#F3F4F6;
+    --bg-card:#FFFFFF;
+    --border:rgba(0,0,0,0.1);
+    --border-strong:rgba(0,0,0,0.16);
+    --text:#0F0F10;
+    --text-muted:#6B7280;
+    --text-light:#F5F5F7;
+    --text-light-muted:#A1A1AA;
+    --font-primary:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display:'Space Grotesk', var(--font-primary);
+    --radius:14px;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:var(--font-primary);
+    background:var(--bg);
+    color:var(--text-light);
+    line-height:1.65;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  .wrapper{
+    max-width:1100px;
+    margin:0 auto;
+    padding:48px 24px 100px;
+  }
+
+  img{ max-width:100%; height:auto; }
+
+  /* ---- Header ---- */
+  header{
+    margin-bottom:36px;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(59,130,246,0.12);
+    border:1px solid rgba(59,130,246,0.3);
+    color:var(--color-blue-light);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(28px, 5vw, 42px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+    color:var(--text-light);
+  }
+
+  header p.lead{
+    color:var(--text-light-muted);
+    font-size:17px;
+    max-width:680px;
+  }
+
+  /* ---- Video ---- */
+  .video-wrap{
+    margin-bottom:36px;
+    border-radius:var(--radius);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.1);
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+    background:#000;
+  }
+
+  .video-wrap video{
+    display:block;
+    width:100%;
+    height:auto;
+    max-height:80vh;
+  }
+
+  /* ---- Índice ---- */
+  nav.toc{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:24px;
+  }
+
+  nav.toc a{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.1);
+    color:var(--text-light-muted);
+    text-decoration:none;
+    font-size:13.5px;
+    font-weight:500;
+    padding:7px 13px;
+    border-radius:999px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+
+  nav.toc a:hover{
+    background:rgba(59,130,246,0.14);
+    border-color:rgba(59,130,246,0.35);
+    color:#cdd9ff;
+  }
+
+  nav.toc a .num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--color-blue);
+    color:#fff;
+    font-size:10.5px;
+    font-weight:700;
+  }
+
+  /* ---- Secciones ---- */
+  .step{
+    position:relative;
+    border:1px solid var(--border);
+    background:var(--bg-card);
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    border-radius:var(--radius);
+    padding:28px 28px 26px 88px;
+    margin-bottom:22px;
+    scroll-margin-top:24px;
+  }
+
+  .step .step-num{
+    position:absolute;
+    top:28px;
+    left:24px;
+    width:46px;
+    height:46px;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue-light) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    color:#fff;
+    box-shadow:0 8px 20px rgba(37,99,235,0.35);
+  }
+
+  .step h3{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+
+  .step .subtitle{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    color:var(--color-blue);
+    margin-bottom:6px;
+  }
+
+  .step p{ margin-bottom:12px; color:#374151; }
+  .step p:last-child{ margin-bottom:0; }
+
+  .step ul{
+    margin:12px 0 14px 0;
+    padding-left:22px;
+    color:#374151;
+  }
+
+  .step ul li{ margin-bottom:6px; }
+  .step ul li strong{ color:var(--text); }
+
+  code{
+    font-family:'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background:var(--bg-elev);
+    border:1px solid var(--border-strong);
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:0.88em;
+    color:#15803d;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .tip{
+    margin-top:14px;
+    background:rgba(22,163,74,0.07);
+    border:1px solid rgba(22,163,74,0.25);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14.5px;
+    color:#14532d;
+  }
+
+  .tip strong{ color:var(--color-green); }
+
+  .warn-box{
+    margin-top:14px;
+    background:rgba(217,119,6,0.08);
+    border:1px solid rgba(217,119,6,0.28);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;
+    color:#7C2D12;
+  }
+
+  .warn-box strong{ color:#B45309; }
+
+  /* ---- Final ---- */
+  .final{
+    margin-top:48px;
+    text-align:center;
+    padding:32px 24px;
+    border-radius:var(--radius);
+    background:var(--bg-card);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+
+  .final h2{
+    font-family:var(--font-display);
+    font-size:24px;
+    margin-bottom:10px;
+  }
+
+  .final p{ color:var(--text-muted); max-width:560px; margin:0 auto; }
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    color:var(--text-light-muted);
+    font-size:13px;
+  }
+
+  @media print{
+    body{ background:#fff; color:#111; }
+    .step{ background:#fff; border:1px solid #ddd; break-inside:avoid; }
+    nav.toc{ display:none; }
+  }
+
+  @media (max-width:640px){
+    body{ font-size:15px; }
+    .wrapper{ padding:28px 14px 50px; }
+
+    header{ margin-bottom:28px; }
+    .badge{ font-size:11px; padding:5px 12px; margin-bottom:14px; }
+    h1{ font-size:26px; }
+    header p.lead{ font-size:15px; }
+
+    .step{
+      padding:20px 16px;
+      margin-bottom:16px;
+      border-radius:12px;
+    }
+    .step .step-num{
+      position:static;
+      margin-bottom:12px;
+      width:40px;
+      height:40px;
+      font-size:17px;
+    }
+    .step h3{ font-size:18px; }
+    .step p, .step ul{ font-size:14.5px; }
+
+    .tip, .warn-box{ padding:10px 12px; font-size:13.5px; }
+
+    .final{ padding:24px 16px; margin-top:32px; }
+    .final h2{ font-size:20px; }
+    .final p{ font-size:14px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <span class="badge">🎓 Panel de administración · Cursos</span>
+    <h1>Cómo usar el panel de administración de tu plataforma de cursos</h1>
+    <p class="lead">Esta guía explica, sección por sección, qué hace cada parte del panel de tu plataforma de e-learning y para qué la vas a usar en el día a día. No hace falta ningún conocimiento técnico: todo se maneja desde botones y formularios.</p>
+
+    <div class="video-wrap">
+      <video src="Panelelearning.mp4" controls playsinline preload="metadata"></video>
+    </div>
+
+    <nav class="toc" aria-label="Índice de secciones">
+      <a href="#cursos"><span class="num">1</span> Cursos</a>
+      <a href="#videos"><span class="num">2</span> Videos y materiales</a>
+      <a href="#alumnos"><span class="num">3</span> Alumnos</a>
+      <a href="#ventas"><span class="num">4</span> Ventas</a>
+      <a href="#inicio"><span class="num">5</span> Contenido del inicio</a>
+      <a href="#imagenes"><span class="num">6</span> Imágenes del sitio</a>
+      <a href="#configuracion"><span class="num">7</span> Configuración</a>
+    </nav>
+  </header>
+
+  <!-- 1. CURSOS -->
+  <section class="step" id="cursos">
+    <div class="step-num">1</div>
+    <span class="subtitle">Catálogo</span>
+    <h3>Cursos</h3>
+    <p>Acá cargás cada curso que se vende en la plataforma: título, descripción, precio, categoría y la imagen de portada.</p>
+    <ul>
+      <li>Cada curso lleva su <strong>precio</strong> y su <strong>categoría</strong> (las categorías de cursos se definen para agrupar y filtrar el catálogo).</li>
+      <li>La <strong>portada</strong> es la imagen que representa al curso en el catálogo y en el detalle.</li>
+      <li>Un curso puede tener <strong>precio $0 / gratuito</strong> si querés ofrecer una clase de muestra o un curso de bienvenida.</li>
+      <li>Creás, editás o eliminás cursos cuando quieras — el catálogo del sitio se actualiza solo.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> no hace falta tocar código para agregar o sacar cursos — todo el catálogo se arma desde acá.</div>
+  </section>
+
+  <!-- 2. VIDEOS Y MATERIALES -->
+  <section class="step" id="videos">
+    <div class="step-num">2</div>
+    <span class="subtitle">Contenido</span>
+    <h3>Videos y materiales</h3>
+    <p>Es el contenido que el alumno ve <strong>dentro</strong> de cada curso una vez que lo compró: las clases en video y los materiales de apoyo.</p>
+    <ul>
+      <li>Cargás las <strong>clases en video</strong> de cada curso y las ordenás en el orden en que se deben ver.</li>
+      <li>Podés sumar <strong>materiales descargables</strong> (PDFs, guías, plantillas) para que el alumno los baje desde su curso.</li>
+      <li>Solo los alumnos que <strong>compraron el curso</strong> pueden ver sus videos y materiales — el acceso se habilita automáticamente cuando el pago se aprueba.</li>
+    </ul>
+    <div class="warn-box"><strong>Importante:</strong> los videos se muestran <em>dentro</em> de la plataforma para el alumno que pagó; no son un enlace público. Así protegés tu contenido.</div>
+  </section>
+
+  <!-- 3. ALUMNOS -->
+  <section class="step" id="alumnos">
+    <div class="step-num">3</div>
+    <span class="subtitle">Comunidad</span>
+    <h3>Alumnos <span style="font-weight:400;color:#6B7280;font-size:14px">(pestaña "Usuarios")</span></h3>
+    <p>El listado de las personas registradas en tu plataforma y a qué cursos tienen acceso.</p>
+    <ul>
+      <li>Cada persona que se registra crea su <strong>cuenta con email y contraseña</strong> y, al comprar, el curso queda vinculado a esa cuenta.</li>
+      <li>Ves quién está registrado y qué cursos tiene habilitados.</li>
+      <li>El alumno entra a su cuenta desde el sitio y ve "Mis cursos" con todo lo que compró.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> el registro de alumnos es automático — no tenés que darles de alta uno por uno; se registran solos desde el sitio.</div>
+  </section>
+
+  <!-- 4. VENTAS -->
+  <section class="step" id="ventas">
+    <div class="step-num">4</div>
+    <span class="subtitle">Ventas</span>
+    <h3>Ventas <span style="font-weight:400;color:#6B7280;font-size:14px">(pestaña "Pedidos")</span></h3>
+    <p>El registro de todas las compras de cursos realizadas en la plataforma.</p>
+    <ul>
+      <li>Ves qué alumno compró, qué curso y el <strong>estado del pago</strong>.</li>
+      <li>Cuando un pago se aprueba, el sistema <strong>habilita el acceso al curso</strong> automáticamente y le avisa al alumno — no tenés que hacerlo a mano.</li>
+      <li>Podés eliminar pedidos de prueba o duplicados.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> como el acceso se da solo al aprobarse el pago, no hace falta que habilites cursos manualmente salvo un caso muy puntual.</div>
+  </section>
+
+  <!-- 5. CONTENIDO DEL INICIO -->
+  <section class="step" id="inicio">
+    <div class="step-num">5</div>
+    <span class="subtitle">Marketing</span>
+    <h3>Contenido del inicio</h3>
+    <p>Son las secciones editables de la página de inicio (la parte "de venta" del sitio, antes de que el visitante compre). Cada una tiene su propia pestaña en el panel:</p>
+    <ul>
+      <li><strong>Servicios</strong>: los servicios o propuestas que mostrás en el inicio.</li>
+      <li><strong>Clientes</strong>: testimonios, logos o referencias de quienes ya confiaron en vos.</li>
+      <li><strong>Cuadros</strong>: los bloques destacados del inicio (beneficios, diferenciales, secciones con imagen y texto).</li>
+      <li><strong>Textos</strong>: los textos de las distintas secciones del sitio, para ajustar títulos y descripciones sin tocar el diseño.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> si tu plataforma no usa alguna de estas secciones, simplemente dejala vacía — no aparece en el sitio.</div>
+  </section>
+
+  <!-- 6. IMÁGENES DEL SITIO -->
+  <section class="step" id="imagenes">
+    <div class="step-num">6</div>
+    <span class="subtitle">Diseño</span>
+    <h3>Imágenes del sitio</h3>
+    <p>Las fotos que se usan en las distintas secciones de la web (portada, banners, fondos, etc.), fuera de las portadas de los cursos.</p>
+    <ul>
+      <li>Cada espacio de imagen tiene una vista previa y un botón para reemplazarla por otra.</li>
+      <li>El cambio se ve reflejado apenas subís el archivo nuevo.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> ideal para actualizar la estética del sitio en una campaña puntual, sin esperar a que un programador haga el cambio.</div>
+  </section>
+
+  <!-- 7. CONFIGURACIÓN -->
+  <section class="step" id="configuracion">
+    <div class="step-num">7</div>
+    <span class="subtitle">Datos técnicos</span>
+    <h3>Configuración</h3>
+    <p>Es el "panel de control" de la plataforma: acá se cargan los datos que la hacen funcionar.</p>
+    <ul>
+      <li><strong>Mercado Pago</strong>: Public Key y Access Token, para poder cobrar los cursos online.</li>
+      <li><strong>Cambiar contraseña</strong>: para actualizar tu clave de acceso al panel cuando quieras.</li>
+    </ul>
+    <div class="warn-box"><strong>Importante:</strong> una vez cargados estos datos correctamente, no hace falta volver a tocarlos — salvo que alguna credencial cambie (por ejemplo, si renovás el token de Mercado Pago).</div>
+  </section>
+
+  <div class="final">
+    <h2>🎉 Eso es todo</h2>
+    <p>Con estas secciones manejás el 100% de tu plataforma de forma autónoma: cursos, contenido, alumnos, ventas y la conexión con el medio de pago. Cualquier duda puntual sobre tu panel, estamos para ayudarte.</p>
+  </div>
+
+  <footer>
+    GokyWebs — Guía general del panel de administración (Cursos)
+  </footer>
+
+</div>
+</body>
+</html>

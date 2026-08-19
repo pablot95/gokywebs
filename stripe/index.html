@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Cómo activar las credenciales de producción de Stripe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --color-blue:#635BFF;
+    --color-blue-light:#8B85FF;
+    --color-green:#16A34A;
+    --color-green-bright:#4ADE80;
+    --bg:#000000;
+    --bg-elev:#F3F4F6;
+    --bg-card:#FFFFFF;
+    --border:rgba(0,0,0,0.1);
+    --border-strong:rgba(0,0,0,0.16);
+    --text:#0F0F10;
+    --text-muted:#6B7280;
+    --text-light:#F5F5F7;
+    --text-light-muted:#A1A1AA;
+    --font-primary:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display:'Space Grotesk', var(--font-primary);
+    --radius:14px;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  html{ scroll-behavior:smooth; }
+
+  body{
+    font-family:var(--font-primary);
+    background:var(--bg);
+    color:var(--text-light);
+    line-height:1.65;
+    font-size:16px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  .wrapper{
+    max-width:1200px;
+    margin:0 auto;
+    padding:48px 24px 100px;
+  }
+
+  img, video{ max-width:100%; height:auto; }
+
+  /* ---- Header ---- */
+  header{
+    margin-bottom:40px;
+  }
+
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(74,222,128,0.12);
+    border:1px solid rgba(74,222,128,0.3);
+    color:var(--color-green-bright);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:999px;
+    margin-bottom:18px;
+  }
+
+  h1{
+    font-family:var(--font-display);
+    font-size:clamp(28px, 5vw, 42px);
+    font-weight:700;
+    letter-spacing:-0.01em;
+    margin-bottom:14px;
+    color:var(--text-light);
+  }
+
+  header p.lead{
+    color:var(--text-light-muted);
+    font-size:17px;
+    max-width:680px;
+  }
+
+  /* ---- Aviso ---- */
+  .alert{
+    display:flex;
+    gap:14px;
+    background:rgba(99,91,255,0.08);
+    border:1px solid rgba(99,91,255,0.25);
+    border-radius:var(--radius);
+    padding:18px 20px;
+    margin:28px 0 8px;
+    font-size:14.5px;
+    color:#dcdaff;
+  }
+
+  .alert.warn{
+    background:rgba(245,158,11,0.08);
+    border-color:rgba(245,158,11,0.3);
+    color:#FCD34D;
+  }
+
+  .alert .icon{ font-size:20px; line-height:1; flex-shrink:0; }
+
+  /* ---- Pasos ---- */
+  .step{
+    position:relative;
+    border:1px solid var(--border);
+    background:var(--bg-card);
+    color:var(--text);
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+    border-radius:var(--radius);
+    padding:28px 28px 26px 88px;
+    margin-bottom:22px;
+    scroll-margin-top:24px;
+  }
+
+  .step .step-num{
+    position:absolute;
+    top:28px;
+    left:24px;
+    width:46px;
+    height:46px;
+    border-radius:12px;
+    background:linear-gradient(135deg, var(--color-blue) 0%, var(--color-blue-light) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:20px;
+    color:#fff;
+    box-shadow:0 8px 20px rgba(99,91,255,0.35);
+  }
+
+  .step h3{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+
+  .step p{ margin-bottom:12px; color:#374151; }
+  .step p:last-child{ margin-bottom:0; }
+
+  .step ul, .step ol.sub{
+    margin:12px 0 14px 0;
+    padding-left:22px;
+    color:#374151;
+  }
+
+  .step ul li, .step ol.sub li{
+    margin-bottom:6px;
+  }
+
+  .step ol.sub{ list-style:decimal; }
+
+  .step a{
+    color:var(--color-blue);
+    text-decoration:underline;
+    text-decoration-color:rgba(99,91,255,0.35);
+    text-underline-offset:2px;
+    transition:color .15s, text-decoration-color .15s;
+  }
+
+  .step a:hover{
+    color:var(--color-blue-light);
+    text-decoration-color:var(--color-blue-light);
+  }
+
+  .step a code{ color:inherit; }
+
+  code, .kbd{
+    font-family:'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background:var(--bg-elev);
+    border:1px solid var(--border-strong);
+    border-radius:6px;
+    padding:2px 7px;
+    font-size:0.88em;
+    color:#15803d;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .tip{
+    margin-top:14px;
+    background:rgba(22,163,74,0.07);
+    border:1px solid rgba(22,163,74,0.25);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:18px;
+    color:#14532d;
+  }
+
+  .tip strong{ color:var(--color-green); }
+
+  .warn-box{
+    margin-top:14px;
+    background:rgba(217,119,6,0.08);
+    border:1px solid rgba(217,119,6,0.28);
+    border-radius:10px;
+    padding:12px 16px;
+    font-size:14px;
+    color:#7C2D12;
+  }
+
+  .warn-box strong{ color:#B45309; }
+
+  /* ---- Final ---- */
+  .final{
+    margin-top:48px;
+    text-align:center;
+    padding:32px 24px;
+    border-radius:var(--radius);
+    background:var(--bg-card);
+    color:var(--text);
+    border:1px solid var(--border);
+  }
+
+  .final h2{
+    font-family:var(--font-display);
+    font-size:24px;
+    margin-bottom:10px;
+  }
+
+  .final p{ color:var(--text-muted); max-width:540px; margin:0 auto; }
+
+  footer{
+    margin-top:40px;
+    text-align:center;
+    color:var(--text-light-muted);
+    font-size:13px;
+  }
+
+  /* ---- Print ---- */
+  @media print{
+    body{ background:#fff; color:#111; }
+    .step{ background:#fff; border:1px solid #ddd; break-inside:avoid; }
+  }
+
+  @media (max-width:640px){
+    body{ font-size:15px; }
+    .wrapper{ padding:28px 14px 50px; }
+
+    header{ margin-bottom:28px; }
+    .badge{ font-size:11px; padding:5px 12px; margin-bottom:14px; }
+    h1{ font-size:26px; }
+    header p.lead{ font-size:15px; }
+
+    .step{
+      padding:20px 16px;
+      margin-bottom:16px;
+      border-radius:12px;
+    }
+    .step .step-num{
+      position:static;
+      margin-bottom:12px;
+      width:40px;
+      height:40px;
+      font-size:17px;
+    }
+    .step h3{ font-size:18px; }
+    .step p, .step ul, .step ol.sub{ font-size:14.5px; }
+
+    .tip, .warn-box{ padding:10px 12px; font-size:13.5px; }
+
+    .final{ padding:24px 16px; margin-top:32px; }
+    .final h2{ font-size:20px; }
+    .final p{ font-size:14px; }
+  }
+
+  @media (max-width:380px){
+    h1{ font-size:22px; }
+    .step{ padding:16px 12px; }
+    .step .step-num{ width:36px; height:36px; font-size:15px; border-radius:10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <span class="badge">🟣 Stripe · Checkout</span>
+    <h1>Cómo activar las credenciales de producción de Stripe</h1>
+    <p class="lead">Guía paso a paso, de principio a fin, para activar la cuenta de Stripe en modo <strong>producción (Live)</strong> y empezar a recibir pagos reales en tu sitio.</p>
+  </header>
+
+  <!-- PASO 1 -->
+  <section class="step" id="paso1">
+    <div class="step-num">1</div>
+    <h3>Crear (o ingresar a) la cuenta de Stripe</h3>
+    <p>Si todavía no tenés cuenta, creala en:</p>
+    <p><a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener noreferrer"><code>https://dashboard.stripe.com/register</code></a></p>
+    <p>Si ya tenés una cuenta de Stripe, ingresá directamente al panel:</p>
+    <p><a href="https://dashboard.stripe.com/login" target="_blank" rel="noopener noreferrer"><code>https://dashboard.stripe.com/login</code></a></p>
+    <p>Usá un email al que tengas acceso permanente: ahí van a llegar las notificaciones de pagos, alertas de seguridad y verificación de la cuenta.</p>
+  </section>
+
+  <!-- PASO 2 -->
+  <section class="step" id="paso2">
+    <div class="step-num">2</div>
+    <h3>Activar la cuenta (datos del negocio)</h3>
+    <p>Recién creada, la cuenta arranca en modo <strong>Test</strong>. Para poder cobrar de verdad hay que <strong>activarla</strong> completando los datos del negocio. Stripe va a pedir, entre otras cosas:</p>
+    <ul>
+      <li>Tipo de negocio (persona física / monotributo / sociedad) y rubro.</li>
+      <li>Datos fiscales: CUIT, razón social, dirección.</li>
+      <li>Datos del titular de la cuenta (nombre, fecha de nacimiento, documento).</li>
+      <li>Cuenta bancaria (CBU/CVU) donde Stripe va a depositar lo cobrado.</li>
+      <li>Sitio web o descripción del producto/servicio que se vende.</li>
+    </ul>
+    <p>Este paso lo tiene que hacer el <strong>dueño de la cuenta/negocio</strong>, ya que son sus datos personales y bancarios. Una vez enviada la información, Stripe puede tardar de minutos a un par de días en revisarla y activar el modo Live.</p>
+    <div class="warn-box"><strong>Importante:</strong> hasta que la cuenta no esté activada, las claves "Live" van a estar visibles pero los pagos reales pueden quedar retenidos o rechazados. Mientras tanto se puede seguir probando todo con las claves de <strong>Test</strong>.</div>
+  </section>
+
+  <!-- PASO 3 -->
+  <section class="step" id="paso3">
+    <div class="step-num">3</div>
+    <h3>Obtener las claves de API (modo Live)</h3>
+    <p>Dentro del Dashboard, andá a <strong>Desarrolladores → Claves de API</strong> (en inglés: <em>Developers → API keys</em>):</p>
+    <p><a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer"><code>https://dashboard.stripe.com/apikeys</code></a></p>
+    <ol class="sub">
+      <li>Arriba a la derecha, asegurate de que el switch <strong>"Modo de prueba" / "Test mode"</strong> esté <strong>desactivado</strong> (esto muestra las claves de producción/Live).</li>
+      <li>Vas a ver dos valores:
+        <ul>
+          <li><code>Clave publicable</code> / <code>Publishable key</code> (empieza con <code>pk_live_...</code>)</li>
+          <li><code>Clave secreta</code> / <code>Secret key</code> (empieza con <code>sk_live_...</code>) — para verla hay que hacer clic en "Revelar clave en vivo".</li>
+        </ul>
+      </li>
+    </ol>
+    <div class="tip">Copiá ambos valores y agregalos en tu sitio. En admin -> Configuración -> Stripe. Vas a ver dos campos para completar: <code>Publishable Key</code> y <code>Secret Key</code>.</div>
+    <div class="warn-box"><strong>Nunca</strong> compartas la <code>Secret key</code> por chat, mail o la subas a un repositorio público: con ella se pueden generar cobros desde la cuenta. Si alguna vez se filtra, se puede regenerar ("roll key") desde esta misma pantalla.</div>
+  </section>
+
+  <!-- PASO 4 -->
+  <section class="step" id="paso4">
+    <div class="step-num">4</div>
+    <h3>Configurar el Webhook (confirmación de pagos)</h3>
+    <p>Para que el sitio se entere automáticamente cuando un pago se aprueba, hay que crear un <strong>endpoint de webhook</strong>:</p>
+    <ol class="sub">
+      <li>Andá a <a href="https://dashboard.stripe.com/webhooks" target="_blank" rel="noopener noreferrer"><code>Desarrolladores → Webhooks</code></a> y hacé clic en <strong>"Agregar endpoint" / "Add endpoint"</strong>.</li>
+      <li>En <strong>"URL del endpoint"</strong> pegá la dirección del sitio que te pasamos (algo del estilo <code>https://tusitio.com/api/stripe-webhook.php</code>).</li>
+      <li>Seleccioná los eventos a escuchar, como mínimo: <code>checkout.session.completed</code> y <code>payment_intent.succeeded</code>.</li>
+      <li>Guardá el endpoint y copiá el <strong>"Signing secret"</strong> que aparece (empieza con <code>whsec_...</code>).</li>
+    </ol>
+    <div class="tip">Ese <code>whsec_...</code> también se carga en admin -> Configuración -> Stripe, en el campo <code>Webhook Secret</code>.</div>
+  </section>
+
+  <div class="final">
+    <h2>🎉 Producción activada</h2>
+    <p>Con estos pasos, la cuenta de Stripe queda activada y lista para reemplazar las claves de prueba por las de producción. Si en algún momento necesitás rotar una clave por seguridad, solo hace falta repetir el paso 3 (o el 4 para el webhook) y actualizar el valor en admin -> Configuración.</p>
+  </div>
+
+  <footer>
+    GokyWebs — Instructivo interno de activación de Stripe
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculá el precio de tu web | Gokywebs</title>
+    <link rel="icon" type="image/png" href="../logo.png">
+    <meta name="description" content="Descubrí cuánto cuesta tu sitio web en menos de 2 minutos. Respondé 4 preguntas y obtené un presupuesto al instante.">
+    <meta name="robots" content="noindex">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=5">
+    <script>
+        try {
+            var _d = JSON.parse(sessionStorage.getItem('gky_pres_draft'));
+            if (_d && _d._step === 5) document.documentElement.classList.add('has-result');
+        } catch(e) {}
+    </script>
+</head>
+<body>
+
+<header class="pres-header">
+    <a href="../index.html" class="header-logo">
+        <span>Gokywebs</span>
+    </a>
+    <a href="../index.html" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Volver al inicio
+    </a>
+</header>
+
+<div class="pres-hero">
+    <p>Respondé 4 preguntas y calculamos el precio de tu web al instante.</p>
+</div>
+
+<main class="pres-main">
+
+    <div class="steps-bar" id="stepsBar">
+        <div class="step-dot active" id="dot-1">1</div>
+        <div class="step-line" id="line-1"></div>
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-line" id="line-2"></div>
+        <div class="step-dot" id="dot-3">3</div>
+    </div>
+
+    <div class="live-budget" id="liveBudget" aria-live="polite">
+        <span class="live-budget-label">Presupuesto estimado</span>
+        <strong id="liveBudgetTotal">$0</strong>
+        <small id="liveBudgetDetail">Base $0 · Adicionales $0</small>
+    </div>
+
+    <div class="step-card active" id="step-1">
+        <p class="step-label">Paso 1 de 3</p>
+        <h2 class="step-question">¿A qué se dedica tu negocio?</h2>
+        <div class="autocomplete-wrap">
+            <input type="text" id="businessInput" class="autocomplete-input" placeholder="Ej: Inmobiliaria, Psicología, Indumentaria…" autocomplete="off" spellcheck="false">
+            <div class="autocomplete-dropdown" id="autocompleteList"></div>
+        </div>
+        <p class="form-helper" style="margin-top:0.6rem">Podés elegir una opción o escribir el tuyo.</p>
+
+        <div class="step1-phone-wrap" style="margin-top:1.25rem">
+            <label class="step1-phone-label" for="step1Tel">Tu número de WhatsApp <span aria-hidden="true">*</span></label>
+            <div class="phone-row">
+                <select id="step1Pais" class="phone-country">
+                    <option value="+54" selected>🇦🇷 +54</option>
+                    <option value="+598">🇺🇾 +598</option>
+                    <option value="+56">🇨🇱 +56</option>
+                    <option value="+55">🇧🇷 +55</option>
+                    <option value="+57">🇨🇴 +57</option>
+                    <option value="+51">🇵🇪 +51</option>
+                    <option value="+52">🇲🇽 +52</option>
+                    <option value="+591">🇧🇴 +591</option>
+                    <option value="+595">🇵🇾 +595</option>
+                    <option value="+593">🇪🇨 +593</option>
+                    <option value="+58">🇻🇪 +58</option>
+                    <option value="+34">🇪🇸 +34</option>
+                    <option value="+1">🇺🇸 +1</option>
+                    <option value="+44">🇬🇧 +44</option>
+                </select>
+                <input type="tel" id="step1Tel" class="form-input phone-num" placeholder="11 1234-5678" autocomplete="tel-national" inputmode="numeric" required aria-required="true">
+            </div>
+            <span class="form-error" id="err-step1Tel" style="display:none;font-size:0.78rem;color:var(--error,#f87171);margin-top:0.3rem">Ingresá un número válido (mínimo 7 dígitos)</span>
+        </div>
+
+        <div class="step-nav">
+            <button class="btn-next" id="next1">Siguiente →</button>
+        </div>
+    </div>
+
+    <div class="step-card" id="step-2">
+        <p class="step-label">Paso 2 de 3</p>
+        <h2 class="step-question">¿Qué quiero mostrar en mi web?</h2>
+        <div class="pills-grid pills-grid-obj" id="obj-pills">
+            <button class="pill pill-obj" data-value="mostrar-negocio">
+                💼 Mostrar servicios o prestaciones
+                <span class="pill-obj-hint">Consultas por WhatsApp o formulario — para oficios, profesionales y negocios</span>
+            </button>
+            <button class="pill pill-obj" data-value="vender-online">
+                🛒 Productos y venta online
+                <span class="pill-obj-hint">También incluye venta por WhatsApp</span>
+            </button>
+            <button class="pill pill-obj" data-value="cursos-lms">
+                🎓 Cursos o institución educativa (LMS)
+                <span class="pill-obj-hint">Alumnos con acceso propio, evaluaciones, docentes y chat</span>
+            </button>
+            <button class="pill pill-obj" data-value="otro">
+                ✨ Quiero algo diferente
+                <span class="pill-obj-hint">Contanos qué necesitás y hablamos por WhatsApp</span>
+            </button>
+        </div>
+        <div class="custom-request-wsp" id="customObjWrap">
+            <label class="form-label" for="customObjTexto" style="display:block;margin-bottom:0.5rem">Contanos qué necesitás</label>
+            <textarea id="customObjTexto" class="form-input" rows="3" maxlength="400" placeholder="Ej: un sistema de turnos con calendario propio, una app, algo bien puntual…" style="width:100%;margin-bottom:0.8rem;resize:vertical"></textarea>
+            <a href="#" id="customObjWspLink" class="btn-wsp" target="_blank" rel="noopener">💬 Hablar por WhatsApp</a>
+        </div>
+        <div class="step-nav">
+            <button class="btn-prev" id="prev2">← Anterior</button>
+            <button class="btn-next" id="next2">Siguiente →</button>
+        </div>
+    </div>
+
+    <div class="step-card" id="step-3">
+        <p class="step-label">Paso 3 de 3</p>
+        <div id="func-included" style="margin-bottom:1.5rem;padding:1rem 1.1rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)"></div>
+        <p style="font-size:0.95rem;font-weight:600;color:black;margin-bottom:0.5rem">Podés agregar funcionalidades extras:</p>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1.1rem">Podés elegir más de uno. Cada ítem suma al precio final.</p>
+        <div class="pills-grid" id="func-pills">
+            <button class="pill addon" data-value="calendario" data-extra="50000">📅 Agenda de turnos <span class="pill-price" id="pillCalendarioPrice">+$50.000</span></button>
+            <button class="pill addon" data-value="login" data-extra="50000">👤 Login de usuarios <span class="pill-price" id="pillLoginPrice">+$50.000</span></button>
+            <button class="pill addon" data-value="dominio-com" data-extra="12000">🌐 Dominio .com <span class="pill-price">+$12.000</span></button>
+        </div>
+        <p class="form-helper" style="margin-top:0.5rem">El presupuesto ya incluye dominio .com.ar — este adicional es solo si además querés un .com.</p>
+        <p class="form-helper" id="comboHint" style="display:none;margin-top:0.3rem">Elegís las dos: <strong>Agenda de turnos + Login por $50.000</strong> en total.</p>
+        <div class="custom-request-wrap">
+            <button type="button" class="pill pill-custom" id="customRequestBtn">✨ Quiero algo diferente</button>
+            <div class="custom-request-wsp" id="customRequestWsp">
+                <p>Contanos qué necesitás y lo armamos a medida.</p>
+                <a href="#" id="customRequestWspLink" class="btn-wsp" target="_blank" rel="noopener">💬 Hablar por WhatsApp</a>
+            </div>
+        </div>
+        <div class="step-nav">
+            <button class="btn-prev" id="prev3">← Anterior</button>
+            <button class="btn-calc" id="calcBtn">Calcular precio →</button>
+        </div>
+    </div>
+
+    <div class="result-section" id="resultSection">
+        <span class="result-type-badge" id="typeBadge"></span>
+        <div class="price-card">
+            <div class="price-card-body">
+                <p class="includes-title">¿Qué incluye?</p>
+                <ul class="includes-list" id="includesList"></ul>
+                <div class="extras-block" id="extrasBlock" style="display:none">
+                    <p class="extras-title">Funcionalidades adicionales</p>
+                    <div id="extrasList"></div>
+                </div>
+                <div class="price-totals">
+                    <div class="price-total-row">
+                        <span class="label">Precio base</span>
+                        <span class="value" id="priceBase">$0</span>
+                    </div>
+                    <div class="price-total-row" id="extrasRow" style="display:none">
+                        <span class="label">Adicionales</span>
+                        <span class="value" id="priceExtras">$0</span>
+                    </div>
+                    <div class="price-final-group">
+                        <div class="price-final-row">
+                            <span class="label">Total</span>
+                            <span class="value" id="priceFinal">$0</span>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-muestra" id="btnMuestraGratis" style="margin-top:0.75rem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                    Quiero la muestra gratis
+                </button>
+                <button class="btn-que-es" id="btnQueEs">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    <span id="btnQueEsLabel">¿Qué es una landing?</span>
+                </button>
+            </div>
+
+        </div>
+
+        <div class="result-actions">
+            <button class="btn-reset-calc" id="btnResetCalc">
+                ← Calcular de nuevo
+            </button>
+        </div>
+    </div>
+
+    <div class="similar-section" id="similarSection">
+        <h3 class="similar-title">Proyectos similares al tuyo</h3>
+        <p class="similar-sub" id="similarSub"></p>
+        <div class="similar-grid" id="similarGrid"></div>
+    </div>
+
+    <div class="checkout-section" id="checkoutSection">
+        <div class="checkout-card">
+            <div class="checkout-header">
+                <h2>Completá tus datos para pagar la seña</h2>
+                <p>Tu información está protegida. El pago se procesa con Mercado Pago.</p>
+            </div>
+            <div class="checkout-body">
+                <div class="checkout-summary">
+                    <div>
+                        <p class="cs-label">Tipo de sitio</p>
+                        <p class="cs-value" id="summTypeName">—</p>
+                    </div>
+                    <div>
+                        <p class="cs-label">Inversión total</p>
+                        <p class="cs-value" id="summTotal">—</p>
+                    </div>
+                    <div>
+                        <p class="cs-label">Seña a pagar hoy</p>
+                        <p class="cs-sena" id="summSena">—</p>
+                    </div>
+                </div>
+
+                <form id="checkoutForm" novalidate>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nombre completo <span>*</span></label>
+                            <input type="text" id="cf-nombre" class="form-input" placeholder="Juan García" required autocomplete="name">
+                            <span class="form-error" id="err-nombre">Ingresá tu nombre completo</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email <span>*</span></label>
+                            <input type="email" id="cf-email" class="form-input" placeholder="juan@ejemplo.com" required autocomplete="email">
+                            <span class="form-error" id="err-email">Ingresá un email válido</span>
+                        </div>
+                        <div class="form-group full">
+                            <label class="form-label">Teléfono / WhatsApp <span>*</span></label>
+                            <div class="phone-row">
+                                <select id="cf-pais" class="phone-country">
+                                    <option value="+54" selected>🇦🇷 +54</option>
+                                    <option value="+598">🇺🇾 +598</option>
+                                    <option value="+56">🇨🇱 +56</option>
+                                    <option value="+55">🇧🇷 +55</option>
+                                    <option value="+57">🇨🇴 +57</option>
+                                    <option value="+51">🇵🇪 +51</option>
+                                    <option value="+52">🇲🇽 +52</option>
+                                    <option value="+591">🇧🇴 +591</option>
+                                    <option value="+595">🇵🇾 +595</option>
+                                    <option value="+593">🇪🇨 +593</option>
+                                    <option value="+58">🇻🇪 +58</option>
+                                    <option value="+34">🇪🇸 +34</option>
+                                    <option value="+1">🇺🇸 +1</option>
+                                    <option value="+44">🇬🇧 +44</option>
+                                </select>
+                                <input type="tel" id="cf-tel" class="form-input phone-num" placeholder="11 1234-5678" required autocomplete="tel-national" inputmode="numeric">
+                            </div>
+                            <span class="form-error" id="err-tel">Ingresá un número de teléfono válido (mínimo 7 dígitos)</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CUIT / DNI <span>*</span></label>
+                            <input type="text" id="cf-cuit" class="form-input" placeholder="20-12345678-9" required>
+                            <span class="form-error" id="err-cuit">Ingresá tu CUIT o DNI</span>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nombre del negocio / marca</label>
+                            <input type="text" id="cf-negocio" class="form-input" placeholder="Mi Empresa S.A.">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pay" id="btnPay">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        Pagar con Mercado Pago
+                    </button>
+                    <div class="mp-seal">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Pago 100% seguro · SSL encriptado · Mercado Pago
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<footer class="pres-footer">
+    &copy; 2025 Gokywebs · <a href="https://gokywebs.com" target="_blank">gokywebs.com</a>
+</footer>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- Modal: ¿Qué es? -->
+<div class="que-es-overlay" id="queEsOverlay" role="dialog" aria-modal="true">
+    <div class="que-es-modal">
+        <button class="que-es-close" id="queEsClose" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="que-es-icon" id="queEsIcon">🌐</div>
+        <h3 class="que-es-title" id="queEsTitle">¿Qué es una Landing Page?</h3>
+        <p class="que-es-body" id="queEsBody"></p>
+        <div class="que-es-bullets" id="queEsBullets"></div>
+    </div>
+</div>
+
+<!-- Modal: Cómo trabajamos -->
+<div class="ctm-overlay" id="ctmOverlay" role="dialog" aria-modal="true" aria-label="Cómo trabajamos">
+    <div class="ctm-modal">
+        <button class="ctm-close" id="ctmClose" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+
+        <div class="ctm-header">
+            <div class="ctm-header-icon">🤝</div>
+            <h2 class="ctm-title">¿Cómo trabajamos?</h2>
+            <p class="ctm-subtitle">Un proceso simple, claro y con vos en el centro. Así es como llevamos tu idea a la web.</p>
+        </div>
+
+        <div class="ctm-steps">
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">1</div>
+                <div class="ctm-step-body">
+                    <h3>Pagás la seña y reservás tu lugar</h3>
+                    <p>Con la seña arrancamos el proyecto (60.000 para landing, 90.000 para el resto de los sitios). El saldo restante se abona al aprobar el diseño final, antes de la entrega.</p>
+                </div>
+            </div>
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">2</div>
+                <div class="ctm-step-body">
+                    <h3>Completás el brief del proyecto</h3>
+                    <p>Te enviamos un formulario para que nos cuentes todo: logo, colores, textos, referencias de sitios que te gustan y las páginas que querés. Cuanto más detalle, mejor resultado.</p>
+                </div>
+            </div>
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">3</div>
+                <div class="ctm-step-body">
+                    <h3>Diseñamos el primer boceto</h3>
+                    <p>En un plazo de <strong>2 a 3 días hábiles</strong> te mostramos el primer diseño de tu sitio. Lo compartimos por link para que lo veas en tiempo real, en computadora y en celular.</p>
+                </div>
+            </div>
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">4</div>
+                <div class="ctm-step-body">
+                    <h3>Revisiones y ajustes</h3>
+                    <p>Tenés <strong>hasta 3 rondas de revisión</strong> incluidas. Nos mandás tus cambios y los incorporamos. Podés ajustar colores, textos, orden de secciones y más. Sin apuros.</p>
+                </div>
+            </div>
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">5</div>
+                <div class="ctm-step-body">
+                    <h3>Aprobás y pagás el saldo</h3>
+                    <p>Cuando el diseño esté aprobado por vos, abonás el saldo restante y preparamos todo para el lanzamiento. El sitio queda listo para publicar.</p>
+                </div>
+            </div>
+
+            <div class="ctm-step">
+                <div class="ctm-step-num">6</div>
+                <div class="ctm-step-body">
+                    <h3>Publicación y entrega</h3>
+                    <p>Publicamos tu web en el dominio que elijas, configuramos el hosting, el SSL y las cuentas de email si las necesitás. Te entregamos accesos y te capacitamos para que puedas manejarlo vos.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="ctm-footer-info">
+            <div class="ctm-info-item">
+                <span class="ctm-info-icon">💬</span>
+                <div>
+                    <strong>Comunicación directa</strong>
+                    <span>Trabajamos por WhatsApp. Sin intermediarios, sin tickets. Hablás directo con el desarrollador.</span>
+                </div>
+            </div>
+            <div class="ctm-info-item">
+                <span class="ctm-info-icon">📱</span>
+                <div>
+                    <strong>Responsive garantizado</strong>
+                    <span>Todos nuestros sitios se ven perfectos en celular, tablet y computadora. Siempre.</span>
+                </div>
+            </div>
+            <div class="ctm-info-item">
+                <span class="ctm-info-icon">🔒</span>
+                <div>
+                    <strong>Tu código, tu propiedad</strong>
+                    <span>El sitio te pertenece al 100%. Te entregamos todos los archivos y accesos sin excepción.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="ctm-cta-wrap">
+            <button class="ctm-cta-btn" id="ctmCtaBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                Contratar ahora
+            </button>
+            <p class="ctm-cta-note">Te llevamos al formulario de pago de la seña</p>
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Quiero una muestra gratis -->
+<div class="muestra-overlay" id="muestraOverlay" role="dialog" aria-modal="true" aria-label="Quiero mi muestra gratis">
+    <div class="muestra-modal" id="muestraModal">
+        <button class="muestra-close" id="muestraClose" aria-label="Cerrar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="muestra-icon">🎨</div>
+        <h3 class="muestra-title">Últimos datos para tu boceto</h3>
+        <p class="muestra-sub">Con esto ya podemos armar el primer diseño de tu web.</p>
+
+        <form id="muestraForm">
+            <div class="form-group full" style="margin-bottom:0.9rem">
+                <label class="form-label" for="muestraNombreNegocio">Nombre del negocio / marca <span>*</span></label>
+                <input type="text" id="muestraNombreNegocio" class="form-input" maxlength="160" placeholder="Ej: Panadería La Espiga" required>
+                <span class="form-error" id="err-muestraNombreNegocio">Contanos cómo se llama tu negocio</span>
+            </div>
+            <div class="muestra-colors">
+                <label class="muestra-color-field">
+                    <span>Color principal</span>
+                    <input type="color" id="muestraColorPrincipal" value="#2563EB">
+                </label>
+                <label class="muestra-color-field">
+                    <span>Color secundario</span>
+                    <input type="color" id="muestraColorSecundario" value="#16A34A">
+                </label>
+                <label class="muestra-color-field">
+                    <span>Color de fondos</span>
+                    <input type="color" id="muestraColorFondos" value="#F9FAFB">
+                </label>
+            </div>
+            <div class="form-group full" style="margin-top:0.9rem;margin-bottom:0">
+                <label class="form-label" for="muestraNotas">Contanos un poco de tu web <span>*</span></label>
+                <textarea id="muestraNotas" class="form-input" rows="3" placeholder="Qué querés mostrar, referencias que te gustan, textos que ya tengas…" required></textarea>
+                <span class="form-error" id="err-muestraNotas">Contanos al menos un par de líneas</span>
+            </div>
+            <button type="submit" class="btn-muestra-confirm" id="btnMuestraConfirm">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="17" height="17"><path d="M20 6L9 17l-5-5"/></svg>
+                Confirmar y crear mi boceto
+            </button>
+        </form>
+    </div>
+</div>
+
+<script type="module" src="script.js?v=19"></script>
+</body>
+</html>
