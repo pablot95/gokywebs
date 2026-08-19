@@ -1069,8 +1069,6 @@ function initRealtime() {
     onSnapshot(qTareas, (snap) => {
         tareas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         if (activeTab === "calendario") renderCal();
-        const el = document.getElementById("countTareas");
-        if (el) el.textContent = tareas.length;
     }, (err) => {
         console.error("Tareas error:", err);
     });
@@ -1104,7 +1102,6 @@ function _updateClientCounters() {
     const nSB = clients.filter(c => getEstado(c) === "standby").length;
 
     document.getElementById("countClientesTab").textContent = nClientes;
-    document.getElementById("countSegTab").textContent = nSeg + nUM + nSB;
     const seg1El = document.getElementById("countSeg1");
     if (seg1El) seg1El.textContent = nSeg;
     const totalSegEl = document.getElementById("totalSeguimientos");
