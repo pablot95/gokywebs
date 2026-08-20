@@ -2506,10 +2506,15 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
 
     let prefijo = "";
     if (conInstruccionesDemo) {
+        const tipoWeb = getPropuestaTipoWeb(p);
+        const esComercioOCatalogo = /ecommerce|e-commerce|cat[aá]logo/i.test(tipoWeb);
         const slug = slugNegocio(nombreNegocio) || "[definir-nombre-del-negocio]";
         prefijo = [
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
-            `La carpeta ya está armada en Gokywebsweb/demo/${slug}/, con las imágenes puestas adentro.`,
+            `Creá la carpeta del proyecto en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
+            esComercioOCatalogo
+                ? "Buscá en internet un máximo de 10 imágenes coherentes con el negocio; 6 de esas 10 tienen que ser fotos de productos específicos."
+                : "Buscá en internet un máximo de 10 imágenes coherentes con el negocio.",
         ].join("\n") + "\n\n";
     }
 
