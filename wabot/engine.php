@@ -430,7 +430,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
         case 'prediseno':
             if (!empty($conv['descripcion']) && empty($conv['colores'])) return [$cfg['prediseno_falta_colores']];
             if (!empty($conv['colores']) && empty($conv['descripcion'])) return [$cfg['prediseno_falta_descripcion']];
-            return [$cfg['prediseno']];
+            return [wabot_prediseno_texto($conv, $cfg)];
         case 'prediseno_ref': return [$cfg['prediseno_referencia']];
         case 'prediseno_wsp':
             $num = wabot_extraer_celular($texto);
@@ -826,7 +826,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                     $out[] = $cfg['prediseno_referencia'];
                     break;
                 }
-                $out[] = $cfg['prediseno'];
+                $out[] = wabot_prediseno_texto($conv, $cfg);
             } elseif (!$out) {
                 $out[] = $cfg['info']['otra'];
             }
@@ -862,7 +862,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             }
             if ($conv['descripcion'] !== null)      { $out[] = $cfg['prediseno_falta_colores']; }
             elseif ($conv['colores'] !== null)      { $out[] = $cfg['prediseno_falta_descripcion']; }
-            elseif (!$out)                          { $out[] = $cfg['prediseno']; }
+            elseif (!$out)                          { $out[] = wabot_prediseno_texto($conv, $cfg); }
             break;
 
         case 'prediseno_ref':

@@ -127,7 +127,7 @@ echo "— Después del precio —\n";
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['quiere_prediseno']);
 $r = wabot_engine('me interesa el prediseño', $c, $cfg);
-caso('pide el prediseño → lo explica y pide los 2 datos', $r === [$cfg['prediseno']] && $c['fase'] === 'prediseno');
+caso('pide el prediseño → lo explica y pide los 3 datos', $r === [wabot_prediseno_texto($c, $cfg)] && $c['fase'] === 'prediseno');
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['objecion_caro']);
@@ -608,7 +608,7 @@ wabot_engine('Por mes cuanto tengo que pagar', $c, $cfg);
 clasifica(['quiere_avanzar']);
 $r = wabot_engine('Ok dale', $c, $cfg);
 caso('"Ok dale" tras el precio → pide los datos del prediseño, NO deriva',
-    $r === [$cfg['prediseno']] && $c['fase'] === 'prediseno');
+    $r === [wabot_prediseno_texto($c, $cfg)] && $c['fase'] === 'prediseno');
 caso('y la charla sigue viva', $c['fase'] !== 'derivado');
 
 foreach (['dale', 'ok', 'si', 'listo', 'de una', 'joya', 'me sirve', 'buenisimo', 'claro'] as $si) {

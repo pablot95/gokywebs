@@ -1068,7 +1068,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Prediseño</h2>
-            <label>Ofrecimiento (pide descripción + colores)</label><textarea name="prediseno" rows="3"><?= $e($cfg['prediseno']) ?></textarea>
+            <label>Ofrecimiento (usá {faltan}: se reemplaza por lo que falte — nombre, descripción, colores — uno por renglón)</label><textarea name="prediseno" rows="3"><?= $e($cfg['prediseno']) ?></textarea>
             <label>Falta la descripción</label><textarea name="prediseno_falta_descripcion" rows="2"><?= $e($cfg['prediseno_falta_descripcion']) ?></textarea>
             <label>Faltan los colores</label><textarea name="prediseno_falta_colores" rows="2"><?= $e($cfg['prediseno_falta_colores']) ?></textarea>
             <label>Datos completos (cierra y deriva)</label><textarea name="prediseno_completo" rows="2"><?= $e($cfg['prediseno_completo']) ?></textarea>
