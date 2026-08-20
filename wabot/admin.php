@@ -425,6 +425,15 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     if ($a === 'transcript' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $conv = wabot_conv_load($_POST['tel']);
+        // Abrir el chat es lo que lo marca "leído". Solo se llama para la
+        // conversación abierta en el panel (cada 5s mientras siga abierta), así
+        // que no hace falta un botón aparte ni un evento de "marcar leído".
+        $ultimaFila = end($conv['transcript']);
+        $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
+        if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
+            $conv['panel_visto_ts'] = time();
+            wabot_conv_save($conv);
+        }
         echo json_encode([
             'transcript' => $conv['transcript'],
             'fase'       => $conv['fase'],
@@ -1303,11 +1312,21 @@ body.embed { min-height: 0; }
     <?php elseif ($tab === 'conversaciones'): ?>
         <?php
         $ver   = $_GET['ver'] ?? '';
+        $conv     = $ver !== '' ? wabot_conv_load($ver) : null;
+        // Abrir el chat lo marca leído antes de armar la lista, para que el
+        // contador de Demos/Presentados ya salga descontado en esta misma carga.
+        if ($conv) {
+            $ultimaFila = end($conv['transcript']);
+            $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
+            if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
+                $conv['panel_visto_ts'] = time();
+                wabot_conv_save($conv);
+            }
+        }
         // La lista la arma lib.php y se pinta por JS: el render inicial y el
         // refresco automático usan exactamente los mismos datos y el mismo código.
         $items = wabot_lista_items();
 
-        $conv     = $ver !== '' ? wabot_conv_load($ver) : null;
         $convClave = $conv ? (string)($conv['conversation_key'] ?? $ver) : '';
         $restante = $conv ? wabot_ventana_restante($conv) : 0;
         ?>
@@ -1570,11 +1589,15 @@ body.embed { min-height: 0; }
 
             listaEl.innerHTML = '';
             const cuentas = { chat: 0, muestra: 0, presentados: 0, atencion: 0, archivado: 0 };
+            // Demos y Presentados muestran cuántos chats tienen algo sin leer,
+            // no el total de la cola — para eso ya está la lista abierta.
+            const cuentasNoLeidos = { muestra: 0, presentados: 0 };
             let visibles = 0;
 
             for (const it of items) {
                 const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
                 cuentas[grupo]++;
+                if (it.no_leido && grupo in cuentasNoLeidos) cuentasNoLeidos[grupo]++;
                 if (grupo !== grupoActivo) continue;
                 if (fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
@@ -1644,8 +1667,9 @@ body.embed { min-height: 0; }
                 listaEl.appendChild(a);
             }
 
-            for (const g of Object.keys(GRUPOS)) GRUPOS[g].cuenta.textContent = cuentas[g];
-            for (const b of navBtns) b.classList.toggle('tiene', cuentas[b.dataset.grupo] > 0);
+            const cuentasMostradas = { ...cuentas, ...cuentasNoLeidos };
+            for (const g of Object.keys(GRUPOS)) GRUPOS[g].cuenta.textContent = cuentasMostradas[g];
+            for (const b of navBtns) b.classList.toggle('tiene', cuentasMostradas[b.dataset.grupo] > 0);
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size;
                 listaEl.innerHTML = '<p class="conv-vacio">' + (filtrando ? 'No hay chats que coincidan con los filtros.' : GRUPOS[grupoActivo].vacio) + '</p>';

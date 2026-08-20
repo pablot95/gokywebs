@@ -708,6 +708,7 @@ function wabot_conv_load($clave) {
         'msgs'             => [],
         'ultimo_ts'        => 0,
         'ultimo_cliente_ts'=> 0,
+        'panel_visto_ts'   => 0,
         'session_id'       => null,
         'session_started_ts' => 0,
         // Primer inicio real del chat; no cambia cuando se reinicia el embudo.
@@ -898,6 +899,7 @@ function wabot_lista_items() {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
+            'no_leido' => (int)($ult['ts'] ?? 0) > (int)($cv['panel_visto_ts'] ?? 0),
         ];
     }
     return $items;

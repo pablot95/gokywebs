@@ -40,6 +40,7 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     document.getElementById("userEmail").textContent = user.email || "";
     initRealtime();
+    sincronizarNoLeidosWabot();
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
@@ -69,6 +70,7 @@ let activeTab = "clientes";
 let wabotPantallaFija = true;
 document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.addEventListener("click", () => {
+        const tabAnterior = activeTab;
         document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
         activeTab = btn.dataset.tab;
@@ -95,6 +97,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         if (activeTab === "metricas") renderSubMetrica(subMetrica);
         if (activeTab === "wabot") { abrirWabot(); requestAnimationFrame(ajustarAltoWabot); }
         if (activeTab === "mantenimiento") renderMantenimiento();
+        if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
 });
 
@@ -185,6 +188,32 @@ async function sincronizarPresentados() {
     }
 }
 setInterval(sincronizarPresentados, 10 * 60 * 1000);
+
+/* ── Contador de "sin leer" en la pestaña WhatsApp ──
+   Mismo criterio que las columnas Demos/Presentados del panel embebido:
+   chats de esos dos grupos con actividad más nueva que la última vez que
+   Pablo abrió esa conversación puntual. Se consulta aparte (no depende de
+   que el iframe esté cargado) para que el número se vea sin entrar a la pestaña. */
+async function sincronizarNoLeidosWabot() {
+    if (!currentUser) return;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "lista" }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        const items = data.items || [];
+        const noLeidos = items.filter(it => (it.grupo === "muestra" || it.grupo === "presentados") && it.no_leido).length;
+        const el = document.getElementById("countWabotNoLeidos");
+        if (el) el.textContent = noLeidos;
+    } catch (e) {
+        console.warn("No se pudo sincronizar los no leídos del bot:", e);
+    }
+}
+setInterval(sincronizarNoLeidosWabot, 60 * 1000);
 
 /* ── Puntito del aviso de la mañana, en Bocetos ──
    Guarda por teléfono cuándo salió el aviso de la mañana (wabot) y cuándo
