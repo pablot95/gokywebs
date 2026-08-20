@@ -171,6 +171,8 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
     // Largo razonable para WhatsApp: si se fue de mambo, mejor el texto fijo.
     if (mb_strlen($s) > 700) return null;
 
+    if (preg_match('/\b(el|la|los|las) (un|una)\b/iu', $s)) return null;
+
     // El precio del mensaje base tiene que estar idéntico. La regex termina en
     // dígito a propósito: "un valor de $200.000." lleva el punto de la oración
     // pegado, y si se lo tragara exigiría un "$200.000." literal que el modelo

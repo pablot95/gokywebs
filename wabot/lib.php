@@ -208,7 +208,7 @@ function wabot_config_ventas(&$cfg) {
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
         'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
         'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", según cuál sea el objetivo principal de la web.',
-        'hosting_renovacion' => 'Después del primer año, el hosting y el dominio se renuevan una vez por año. Como el valor puede cambiar según el dominio y el plan vigente, antes del vencimiento te confirmamos el importe actualizado.',
+        'hosting_renovacion' => 'Después del primer año, el hosting y el dominio se renuevan una vez al año. Como el valor puede cambiar según el dominio y el plan vigente, antes del vencimiento te confirmamos el importe actualizado.',
         'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
         'seguimiento_datos' => 'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.',
         'sistema_pregunta'  => 'Sí, también desarrollamos sistemas de gestión a medida. Contame qué necesitás que resuelva y qué problema querés ordenar.',
@@ -233,20 +233,20 @@ function wabot_config_ventas(&$cfg) {
 
     if (empty($cfg['msg_precio_variantes']) || !is_array($cfg['msg_precio_variantes'])) {
         $cfg['msg_precio_variantes'] = [
-            "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}.\nAcá podés ver todo lo que incluye y otros trabajos realizados: {link}",
-            "En este caso iría con {desc}. Todo el desarrollo tendría un valor de {precio}.\nTe dejo el detalle completo y ejemplos de trabajos acá: {link}",
-            "La opción que mejor encaja es {desc}. El valor por el desarrollo completo es de {precio}.\nEn este link está detallado lo que incluye: {link}",
-            "Para ese objetivo, lo adecuado sería {desc}. El desarrollo completo queda en {precio}.\nPodés revisar el alcance y otros trabajos en: {link}",
-            "Con esa modalidad necesitarías {desc}. El valor total del desarrollo es de {precio}.\nAcá tenés el presupuesto detallado: {link}",
+            "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién cuando la web está terminada, o con tarjeta hasta en 12 cuotas.\nAcá podés ver todo lo que incluye y otros trabajos realizados: {link}",
+            "En este caso iría con {desc}. Todo el desarrollo tendría un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle completo y ejemplos de trabajos acá: {link}",
+            "La opción que mejor encaja es {desc}. El valor por el desarrollo completo es de {precio}: se reserva con una seña de {sena} y el saldo se abona al entregar la web, o con tarjeta hasta en 12 cuotas.\nEn este link está detallado lo que incluye: {link}",
+            "Para ese objetivo, lo adecuado sería {desc}. El desarrollo completo queda en {precio}. Arrancás con una seña de {sena} y el resto lo pagás recién con la web entregada, o con tarjeta hasta en 12 cuotas.\nPodés revisar el alcance y otros trabajos en: {link}",
+            "Con esa modalidad necesitarías {desc}. El valor total del desarrollo es de {precio}: seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.\nAcá tenés el presupuesto detallado: {link}",
         ];
     }
     if (empty($cfg['msg_precio_catalogo_variantes']) || !is_array($cfg['msg_precio_catalogo_variantes'])) {
         $cfg['msg_precio_catalogo_variantes'] = [
-            "Para tu caso iría un {desc}. Con {cantidad} productos queda en {total}: {base} por el desarrollo más {unitario} por cada producto cargado ({productos}).\nAcá podés ver el detalle completo: {link}",
-            "Con {cantidad} productos, el {desc} tiene un valor total de {total}: {base} de desarrollo y {productos} por la carga, a {unitario} cada uno.\nTe dejo el presupuesto detallado: {link}",
-            "La opción que encaja es {desc}. Para {cantidad} productos, el total es {total}, compuesto por {base} de desarrollo más {productos} de carga ({unitario} por producto).\nPodés revisar todo lo incluido acá: {link}",
-            "Para mostrar esos {cantidad} productos necesitarías {desc}. El desarrollo queda en {total}: {base} más {unitario} por cada producto cargado ({productos}).\nAcá está el alcance completo: {link}",
-            "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno.\nTe dejo el detalle: {link}",
+            "Para tu caso iría {desc}. Con {cantidad} productos queda en {total}: {base} por el desarrollo más {unitario} por cada producto cargado ({productos}). Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.\nAcá podés ver el detalle completo: {link}",
+            "Con {cantidad} productos queda en un total de {total}: {base} de desarrollo y {productos} por la carga, a {unitario} cada uno. Es {desc}. Se reserva con una seña de {sena} y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el presupuesto detallado: {link}",
+            "La opción que encaja es {desc}. Para {cantidad} productos, el total es {total}, compuesto por {base} de desarrollo más {productos} de carga ({unitario} por producto). Arrancás con una seña de {sena} y el resto al entregar, o con tarjeta hasta en 12 cuotas.\nPodés revisar todo lo incluido acá: {link}",
+            "Para mostrar esos {cantidad} productos necesitarías {desc}. El desarrollo queda en {total}: {base} más {unitario} por cada producto cargado ({productos}). Seña de {sena} para arrancar y el saldo con la web entregada, o con tarjeta hasta en 12 cuotas.\nAcá está el alcance completo: {link}",
+            "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle: {link}",
         ];
     }
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
@@ -846,6 +846,17 @@ function wabot_media_guardar($clave, $bytes, $mime, $clase) {
     return ['clase' => $clase, 'mime' => $mime, 'archivo' => $nombre, 'bytes' => strlen($bytes)];
 }
 
+/** La última foto que mandó el cliente, para la miniatura en la lista de chats. */
+function wabot_ultima_foto_cliente($cv) {
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (($fila['media']['clase'] ?? '') === 'imagen' && !empty($fila['media']['archivo'])) {
+            return $fila['media']['archivo'];
+        }
+    }
+    return null;
+}
+
 /**
  * Lista de conversaciones para el panel, ordenada por actividad más reciente.
  * La usan el render inicial de la pestaña y el refresco automático por JSON,
@@ -875,6 +886,7 @@ function wabot_lista_items() {
             'nombre_negocio' => $cv['nombre_negocio'] ?? '',
             'nombre_agenda' => wabot_nombre_agenda($cv),
             'telefono_wsp' => $cv['telefono_wsp'] ?? '',
+            'foto'   => wabot_ultima_foto_cliente($cv),
             'fase'   => $cv['fase'],
             'tipo'   => $cv['tipo'],
             'ult'    => $ult ? mb_substr($ult['t'], 0, 70) : '',

@@ -76,5 +76,42 @@ $cfgOff = $cfg; $cfgOff['leer_imagenes'] = false; $cfgOff['escuchar_audios'] = f
 caso('apagados → el webhook ni descarga el archivo',
     empty($cfgOff['leer_imagenes']) && empty($cfgOff['escuchar_audios']));
 
+echo "— Última foto del cliente, para la miniatura de la lista —\n";
+
+$sinFotos = convNueva();
+$sinFotos['transcript'] = [
+    ['q' => 'cliente', 't' => 'hola'],
+    ['q' => 'bot', 't' => 'hola! contame que necesitas'],
+];
+caso('sin imágenes en el transcript → null', wabot_ultima_foto_cliente($sinFotos) === null);
+
+$conFoto = convNueva();
+$conFoto['transcript'] = [
+    ['q' => 'cliente', 't' => '[imagen]', 'media' => ['clase' => 'imagen', 'archivo' => '20260101-120000-aaaaaaaa.jpg']],
+    ['q' => 'bot', 't' => 'lindo local!'],
+    ['q' => 'cliente', 't' => 'gracias'],
+];
+caso('toma la última imagen que mandó el cliente, no cualquier mensaje',
+    wabot_ultima_foto_cliente($conFoto) === '20260101-120000-aaaaaaaa.jpg');
+
+$dosFotos = convNueva();
+$dosFotos['transcript'] = [
+    ['q' => 'cliente', 't' => '[imagen]', 'media' => ['clase' => 'imagen', 'archivo' => 'vieja.jpg']],
+    ['q' => 'cliente', 't' => '[imagen]', 'media' => ['clase' => 'imagen', 'archivo' => 'nueva.jpg']],
+];
+caso('con varias, es la más reciente', wabot_ultima_foto_cliente($dosFotos) === 'nueva.jpg');
+
+$soloAudio = convNueva();
+$soloAudio['transcript'] = [
+    ['q' => 'cliente', 't' => '[audio]', 'media' => ['clase' => 'audio', 'archivo' => 'nota.ogg']],
+];
+caso('un audio del cliente no cuenta como foto', wabot_ultima_foto_cliente($soloAudio) === null);
+
+$fotoDelBot = convNueva();
+$fotoDelBot['transcript'] = [
+    ['q' => 'bot', 't' => '[imagen]', 'media' => ['clase' => 'imagen', 'archivo' => 'nuestra.jpg']],
+];
+caso('una imagen que mandó el bot no cuenta como foto del cliente', wabot_ultima_foto_cliente($fotoDelBot) === null);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

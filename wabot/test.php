@@ -501,7 +501,7 @@ clasifica(['rubro_landing']);
 $r = wabot_engine('soy plomero', $c, $cfg);
 caso('primero explica QUÉ es y recién después dice cuánto sale',
     strpos($r[0], 'para lo tuyo va una página a tu medida') !== false
-    && strpos($r[0], 'Todo el desarrollo tendría un valor de $200.000.') !== false
+    && strpos($r[0], 'Todo el desarrollo tendría un valor de $200.000') !== false
     && strpos($r[0], 'para lo tuyo va') < strpos($r[0], '$200.000'));
 caso('el link arranca en un renglón nuevo', strpos($r[0], "\nEn este link podés ver detallado") !== false);
 caso('es un solo salto de línea, no un párrafo suelto', substr_count($r[0], "\n") === 1);
@@ -1609,14 +1609,39 @@ foreach ([
 ] as $par) {
     list($tipo, $sena) = $par;
     $texto = wabot_texto_pago(['tipo' => $tipo], $cfg);
-    caso("$tipo cotizado → la seña dice $sena y ninguna otra", strpos($texto, $sena) !== false);
+    // "seña de $X", no el monto suelto: una cuota de otro tipo puede coincidir
+    // en número con la seña de este (ej. turnos cotiza 6 cuotas de $60.000,
+    // que es justo la seña de landing) sin que sea el dato equivocado.
+    caso("$tipo cotizado → la seña dice $sena y ninguna otra", strpos($texto, 'seña de ' . $sena) !== false);
     $otras = array_diff(['$60.000', '$80.000', '$90.000'], [$sena]);
     foreach ($otras as $otraSena) {
-        caso("$tipo cotizado → NO menciona la seña de otro tipo ($otraSena)", strpos($texto, $otraSena) === false);
+        caso("$tipo cotizado → NO menciona la seña de otro tipo ($otraSena)", strpos($texto, 'seña de ' . $otraSena) === false);
     }
 }
 caso('sin tipo cotizado todavía, la seña es la genérica con los 3 montos',
     wabot_texto_pago(['tipo' => null], $cfg) === $cfg['info']['pago_generico']);
+
+echo "— Las cuotas que se dicen son las del tipo ya cotizado —\n";
+
+$cuotasPorTipo = [
+    'landing'       => ['12' => '$32.000', '6' => '$48.000', '3' => '$84.000'],
+    'catalogo'      => ['12' => '$32.000', '6' => '$48.000', '3' => '$84.000'],
+    'turnos'        => ['12' => '$39.000', '6' => '$60.000', '3' => '$105.000'],
+    'institucional' => ['12' => '$39.000', '6' => '$60.000', '3' => '$105.000'],
+    'inmobiliaria'  => ['12' => '$46.000', '6' => '$70.000', '3' => '$121.000'],
+    'ecommerce'     => ['12' => '$50.000', '6' => '$76.000', '3' => '$134.000'],
+    'elearning'     => ['12' => '$50.000', '6' => '$76.000', '3' => '$134.000'],
+];
+foreach ($cuotasPorTipo as $tipo => $cuotas) {
+    $texto = wabot_texto_pago(['tipo' => $tipo], $cfg);
+    caso("$tipo cotizado → 12 cuotas de {$cuotas['12']}", strpos($texto, '12 cuotas de ' . $cuotas['12']) !== false);
+    caso("$tipo cotizado → 6 de {$cuotas['6']}", strpos($texto, '6 de ' . $cuotas['6']) !== false);
+    caso("$tipo cotizado → 3 de {$cuotas['3']}", strpos($texto, '3 de ' . $cuotas['3']) !== false);
+}
+caso('landing NO lleva las cuotas de ecommerce (montos de otro tipo)',
+    strpos(wabot_texto_pago(['tipo' => 'landing'], $cfg), '$50.000') === false);
+caso('sin tipo cotizado, la genérica no inventa montos de cuota',
+    strpos(wabot_texto_pago(['tipo' => null], $cfg), 'cuotas de $') === false);
 caso('institucional ya no promete panel propio: eso es solo de ecommerce, elearning e inmobiliaria',
     stripos($cfg['tipos']['institucional']['desc'], 'panel') === false);
 caso('la respuesta sobre quién carga el contenido nombra las 3 excepciones con panel',
@@ -1808,7 +1833,7 @@ clasifica(['pregunta_info'], ['info_keys'=>['hosting']]);
 $r = wabot_engine('Después de un año de hosting y dominio gratis, cuánto se paga y cada cuánto?', $c, $cfg);
 caso('hosting explica la renovación anual y evita repetir la oferta de demo',
     count($r) === 1
-    && stripos($r[0], 'una vez por año') !== false
+    && stripos($r[0], 'una vez al año') !== false
     && stripos($r[0], 'antes del vencimiento') !== false
     && stripos($r[0], 'demo') === false
     && !empty($c['cta_muestra']));

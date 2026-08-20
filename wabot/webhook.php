@@ -348,7 +348,25 @@ foreach (($payload['entry'] ?? []) as $entry) {
         }
 
         if ($campo !== 'messages') continue;
-        if (!empty($valor['statuses'])) continue; // acuses de entrega/lectura: no interesan
+        if (!empty($valor['statuses'])) {
+            // Meta acepta el envío en el momento (200 + message id) y recién acá,
+            // asíncrono, avisa si en verdad nunca llegó — por ejemplo, la ventana
+            // de 24hs se cerró un segundo después de nuestro chequeo. Antes esto
+            // se descartaba entero y el fallo quedaba invisible para Pablo.
+            foreach ($valor['statuses'] as $st) {
+                if (($st['status'] ?? '') !== 'failed') continue;
+                $clave = preg_replace('/[^0-9]/', '', (string)($st['recipient_id'] ?? ''));
+                if ($clave === '') continue;
+                $err = $st['errors'][0] ?? [];
+                $motivo = trim((string)($err['title'] ?? '')) ?: (trim((string)($err['message'] ?? '')) ?: 'motivo desconocido');
+                wabot_log('error', ['donde' => 'whatsapp_status_failed', 'tel' => $clave,
+                    'wamid' => $st['id'] ?? '', 'codigo' => $err['code'] ?? null, 'motivo' => $motivo]);
+                $conv = wabot_conv_load($clave);
+                wabot_conv_transcript($conv, 'sistema', 'WhatsApp no pudo entregar el último mensaje (' . $motivo . '). Probá reenviarlo.');
+                wabot_conv_save($conv);
+            }
+            continue;
+        }
 
         // Meta manda el nombre del perfil de WhatsApp junto a los mensajes:
         // es el único nombre del cliente que tenemos, y va al boceto.

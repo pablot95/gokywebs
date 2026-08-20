@@ -63,9 +63,13 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     $mimes = ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif',
               'ogg' => 'audio/ogg', 'mp3' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'amr' => 'audio/amr', 'bin' => 'application/octet-stream'];
     $ext = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
+    // modo=ver: para <img>/<audio> y el clic de "ver completa" — se muestra
+    // inline en vez de forzar la descarga. Sin ese parámetro, el link de
+    // "Descargar" sigue bajando el archivo como siempre.
+    $disposicion = ($_GET['modo'] ?? '') === 'ver' ? 'inline' : 'attachment';
     header('Content-Type: ' . ($mimes[$ext] ?? 'application/octet-stream'));
     header('Content-Length: ' . filesize($ruta));
-    header('Content-Disposition: attachment; filename="' . $clave . '-' . $archivo . '"');
+    header('Content-Disposition: ' . $disposicion . '; filename="' . $clave . '-' . $archivo . '"');
     header('Cache-Control: private, max-age=0, no-store');
     readfile($ruta);
     exit;
@@ -183,7 +187,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     }
 
     $salida = $bloques
-        ? "Chats iniciados el $fecha — " . count($bloques) . " conversación" . (count($bloques) === 1 ? '' : 'es') . "\n\n" . implode("\n\n", $bloques) . "\n"
+        ? "Chats iniciados el $fecha — " . count($bloques) . ' ' . (count($bloques) === 1 ? 'conversación' : 'conversaciones') . "\n\n" . implode("\n\n", $bloques) . "\n"
         : "No hubo conversaciones que hayan arrancado el $fecha.\n";
 
     header('Content-Type: text/plain; charset=utf-8');
@@ -567,7 +571,12 @@ code { background:#10131f; padding:2px 7px; border-radius:6px; font-size:13px; w
 .burb.cliente { align-self:flex-start; background:#232842; border-bottom-left-radius:4px; }
 .burb.bot { align-self:flex-end; background:#1f4d33; border-bottom-right-radius:4px; }
 .burb.humano { align-self:flex-end; background:#40350f; border-bottom-right-radius:4px; }
-.media-dl { display:block; margin-top:6px; font-size:12.5px; font-weight:600; color:var(--ac); text-decoration:underline; }
+.burb.sistema { align-self:center; background:#3a1a1a; color:#f3a6a6; font-size:12.5px; text-align:center; max-width:92%; }
+.media-box { margin-top:6px; display:flex; flex-direction:column; align-items:flex-start; gap:4px; }
+.burb.bot .media-box, .burb.humano .media-box { align-items:flex-end; }
+.media-img { display:block; max-width:220px; max-height:220px; border-radius:8px; cursor:zoom-in; object-fit:cover; }
+.media-audio { max-width:260px; height:36px; }
+.media-dl { display:block; font-size:12.5px; font-weight:600; color:var(--ac); text-decoration:underline; }
 .grabando { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:9px; padding:9px 12px; background:#2a1a1a; border:1px solid var(--bad); border-radius:10px; }
 /* Sin esto la caja de grabación se ve SIEMPRE: el atributo hidden del HTML se
    apoya en un `display:none` de la hoja del navegador, y cualquier display
@@ -666,10 +675,12 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-list[data-grupo="atencion"] { border-color:var(--warn); }
 .conv-item .pill.espera { background:#3a2f10; color:var(--warn); }
 .conv-items { flex:1 1 0; min-height:0; overflow-y:auto; }
-.conv-item { display:block; padding:11px 13px; border-bottom:1px solid var(--line); color:var(--tx); border-left:3px solid transparent; cursor:pointer; }
+.conv-item { display:flex; align-items:flex-start; gap:9px; padding:11px 13px; border-bottom:1px solid var(--line); color:var(--tx); border-left:3px solid transparent; cursor:pointer; }
 .conv-item:last-child { border-bottom:0; }
 .conv-item:hover { background:#1e2338; }
 .conv-item.on { background:#232842; border-left-color:var(--ac); }
+.conv-item-foto { width:34px; height:34px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid var(--line); }
+.conv-item-body { flex:1 1 0; min-width:0; }
 .conv-item-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .conv-item-nombre { display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; }
 .conv-item-tel { font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1573,6 +1584,17 @@ body.embed { min-height: 0; }
                 a.className = 'conv-item' + (it.tel === SEL ? ' on' : '');
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
 
+                if (it.foto) {
+                    const foto = document.createElement('img');
+                    foto.className = 'conv-item-foto';
+                    foto.src = 'admin.php?accion=media&tel=' + encodeURIComponent(it.tel) + '&archivo=' + encodeURIComponent(it.foto) + '&modo=ver';
+                    foto.loading = 'lazy';
+                    foto.alt = '';
+                    a.appendChild(foto);
+                }
+                const body = document.createElement('div');
+                body.className = 'conv-item-body';
+
                 const top = document.createElement('div');
                 top.className = 'conv-item-top';
                 const nombreBox = document.createElement('span');
@@ -1617,7 +1639,8 @@ body.embed { min-height: 0; }
                     pills.appendChild(p2);
                 }
 
-                a.appendChild(top); a.appendChild(ult); a.appendChild(pills);
+                body.appendChild(top); body.appendChild(ult); body.appendChild(pills);
+                a.appendChild(body);
                 listaEl.appendChild(a);
             }
 
@@ -1714,13 +1737,32 @@ body.embed { min-height: 0; }
                 d.className = 'burb ' + t.q;
                 d.textContent = t.t;
                 if (t.media && t.media.archivo) {
+                    const base = 'admin.php?accion=media&tel=' + encodeURIComponent(TEL) + '&archivo=' + encodeURIComponent(t.media.archivo);
+                    const caja = document.createElement('div');
+                    caja.className = 'media-box';
+                    if (t.media.clase === 'imagen') {
+                        const img = document.createElement('img');
+                        img.className = 'media-img';
+                        img.src = base + '&modo=ver';
+                        img.loading = 'lazy';
+                        img.alt = 'Imagen del chat';
+                        img.addEventListener('click', () => window.open(base + '&modo=ver', '_blank', 'noopener'));
+                        caja.appendChild(img);
+                    } else if (t.media.clase === 'audio') {
+                        const audio = document.createElement('audio');
+                        audio.className = 'media-audio';
+                        audio.controls = true;
+                        audio.preload = 'none';
+                        audio.src = base + '&modo=ver';
+                        caja.appendChild(audio);
+                    }
                     const a = document.createElement('a');
                     a.className = 'media-dl';
-                    a.href = 'admin.php?accion=media&tel=' + encodeURIComponent(TEL) + '&archivo=' + encodeURIComponent(t.media.archivo);
-                    a.textContent = (t.media.clase === 'audio' ? '🎵 Descargar audio' : '📷 Descargar imagen')
-                        + (t.media.bytes ? ' (' + Math.max(1, Math.round(t.media.bytes / 1024)) + ' KB)' : '');
+                    a.href = base;
+                    a.textContent = 'Descargar' + (t.media.bytes ? ' (' + Math.max(1, Math.round(t.media.bytes / 1024)) + ' KB)' : '');
                     a.target = '_blank'; a.rel = 'noopener';
-                    d.appendChild(a);
+                    caja.appendChild(a);
+                    d.appendChild(caja);
                 }
                 const m = document.createElement('div');
                 m.className = 'meta';

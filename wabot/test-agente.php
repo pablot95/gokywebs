@@ -807,7 +807,7 @@ wabot_turno_preparar($c, $cfg);
 $c['_mensaje_agente'] = 'Después de un año de hosting y dominio gratis, cuánto se paga y cada cuánto?';
 $r = wabot_agente_ejecutar('consultar_info', ['clave'=>'hosting'], $c, $cfg);
 caso('hosting responde qué pasa después del primer año',
-    stripos($r['texto'], 'una vez por año') !== false && stripos($r['texto'], 'antes del vencimiento') !== false);
+    stripos($r['texto'], 'una vez al año') !== false && stripos($r['texto'], 'antes del vencimiento') !== false);
 caso('si la demo ya fue ofrecida, la duda de hosting no agrega otro CTA', empty($r['aparte']));
 caso('un chat anterior a la corrección reconstruye el CTA usado desde el transcript', !empty($c['cta_muestra']));
 

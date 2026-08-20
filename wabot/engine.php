@@ -284,10 +284,28 @@ function wabot_handoff_marcar(&$conv, $causa = 'derivacion') {
     wabot_evento_sesion($conv, 'derivado', ['causa' => $causa]);
 }
 
+function wabot_ultimo_texto_bot($conv) {
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $t) {
+        if (($t['q'] ?? '') === 'bot') return trim((string)($t['t'] ?? ''));
+    }
+    return '';
+}
+
 /** Textos seguros cuando la dependencia de IA no está disponible. Nunca deriva. */
 function wabot_fallback_ia($texto, &$conv, $cfg) {
     $cierre = wabot_cierre_sin_presion_tipo($texto);
     if ($cierre !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierre);
+
+    $faseActual = $conv['fase'] ?? 'nuevo';
+    if (!in_array($faseActual, ['nuevo', 'menu', 'algo_diferente'], true)) {
+        $infoFase = wabot_info_por_palabras($texto);
+        if ($infoFase !== null) {
+            if ($infoFase === 'mantenimiento') return [wabot_texto_mantenimiento($conv, $cfg)];
+            if ($infoFase === 'pago') return [wabot_texto_pago($conv, $cfg)];
+            if ($infoFase === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
+            return [(string)($cfg['info'][$infoFase] ?? $cfg['info']['otra'])];
+        }
+    }
 
     switch ($conv['fase'] ?? 'nuevo') {
         case 'nuevo':
@@ -428,9 +446,13 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             return [$cfg['info']['otra']];
         case 'prediseno':
-            if (!empty($conv['descripcion']) && empty($conv['colores'])) return [$cfg['prediseno_falta_colores']];
-            if (!empty($conv['colores']) && empty($conv['descripcion'])) return [$cfg['prediseno_falta_descripcion']];
-            return [wabot_prediseno_texto($conv, $cfg)];
+            if (!empty($conv['descripcion']) && empty($conv['colores'])) $pedido = (string)$cfg['prediseno_falta_colores'];
+            elseif (!empty($conv['colores']) && empty($conv['descripcion'])) $pedido = (string)$cfg['prediseno_falta_descripcion'];
+            else $pedido = wabot_prediseno_texto($conv, $cfg);
+            if (trim($pedido) !== '' && trim($pedido) === wabot_ultimo_texto_bot($conv)) {
+                return [(string)($cfg['repregunta_suave'] ?? 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo, y seguimos con la demo cuando quieras.')];
+            }
+            return [$pedido];
         case 'prediseno_ref': return [$cfg['prediseno_referencia']];
         case 'prediseno_wsp':
             $num = wabot_extraer_celular($texto);
@@ -986,7 +1008,12 @@ function wabot_info_por_palabras($texto) {
     if (preg_match('/(por mes|mensual|al mes|cada mes|mantenimiento|abono|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)) return 'mantenimiento';
     if (preg_match('/(cuanto tarda|cuanto demora|plazo|cuando esta|cuando la tienen|tiempo de entrega|para cuando)/u', $t)) return 'plazos';
     if (preg_match('/(como se paga|formas de pago|medios de pago|se puede pagar|transferencia|mercado pago|en cuotas|senia|sena)/u', $t)) return 'pago';
-    if (preg_match('/(hosting|dominio|servidor|el .com|la direccion web)/u', $t)) return 'hosting';
+    if (preg_match('/(hostin|dominio|servidor|el .com|la direccion web)/u', $t)) return 'hosting';
+    if (preg_match('/(hacen paginas?|crean paginas?|hacen webs?|hacen sitios|disenan paginas?|hacen las paginas)/u', $t)) return 'que_hacemos';
+    if (preg_match('/(sin internet|se corta (el )?internet|sin conexion|funciona offline|no tengo internet|sin senal|sin wifi)/u', $t)) return 'internet';
+    if (preg_match('/(estafa|estafaron|estafado|desconfi|es seguro esto|son confiables|es confiable|quiero referencias|garantia de que)/u', $t)) return 'confianza';
+    if (preg_match('/(pixel|google analytics|analytics|codigo de seguimiento|conversiones de meta)/u', $t)) return 'pixel';
+    if (preg_match('/(precios? de cada|todos los precios|lista de precios|precios? de los servicios|desde el basico|precios? de todos)/u', $t)) return 'rangos';
     if (preg_match('/(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)/u', $t)) return 'carga';
     // Palabras completas: "catálogo" contiene "logo" como substring y no es
     // una consulta sobre identidad visual.
@@ -1167,9 +1194,15 @@ function wabot_texto_hosting($conv, $cfg) {
 
 function wabot_texto_pago($conv, $cfg) {
     $tipo = $conv['tipo'] ?? '';
-    $sena = $cfg['tipos'][$tipo]['sena'] ?? '';
+    $datosTipo = $cfg['tipos'][$tipo] ?? [];
+    $sena = $datosTipo['sena'] ?? '';
     if ($sena === '') return (string)($cfg['info']['pago_generico'] ?? $cfg['info']['pago'] ?? '');
-    return str_replace('{sena}', $sena, (string)($cfg['info']['pago'] ?? ''));
+    $cuotas = $datosTipo['cuotas'] ?? [];
+    return str_replace(
+        ['{sena}', '{cuotas_12}', '{cuotas_6}', '{cuotas_3}'],
+        [$sena, $cuotas['12'] ?? '', $cuotas['6'] ?? '', $cuotas['3'] ?? ''],
+        (string)($cfg['info']['pago'] ?? '')
+    );
 }
 
 /** Elige una variante estable por conversación; precios y links siguen exactos. */
@@ -1233,9 +1266,9 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
                 ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
                 : (string)$cfg['msg_precio_catalogo'];
             return str_replace(
-                ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}'],
+                ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}', '{sena}'],
                 [$desc, $d['cantidad'], wabot_moneda($d['total']), wabot_moneda($d['base']),
-                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link']],
+                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link'], (string)($t['sena'] ?? '')],
                 $plantilla
             );
         }
@@ -1244,7 +1277,7 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
     $plantilla = is_array($conv)
         ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
         : (string)$cfg['msg_precio'];
-    return str_replace(['{desc}', '{precio}', '{link}'], [$desc, $t['precio'], $t['link']], $plantilla);
+    return str_replace(['{desc}', '{precio}', '{link}', '{sena}'], [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? '')], $plantilla);
 }
 
 function wabot_catalogo_preguntar(&$conv, $cfg) {
