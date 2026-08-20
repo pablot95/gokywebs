@@ -1,0 +1,12 @@
+[
+  { "file": "cocina-hero-1920x1280.webp", "origin": "Pexels", "id": "8146322", "url": "https://www.pexels.com/photo/8146322/", "use": "hero" },
+  { "file": "cocina-detalle-1600x1200.webp", "origin": "Pexels", "id": "8089082", "url": "https://www.pexels.com/photo/8089082/", "use": "servicio cocinas" },
+  { "file": "placard-medida-1200x1500.webp", "origin": "Pexels", "id": "7061419", "url": "https://www.pexels.com/photo/7061419/", "use": "servicio placares" },
+  { "file": "placard-interior-1200x1500.webp", "origin": "Pexels", "id": "8134812", "url": "https://www.pexels.com/photo/8134812/", "use": "galeria placares" },
+  { "file": "taller-corte-1600x1200.webp", "origin": "Pexels", "id": "5710836", "url": "https://www.pexels.com/photo/5710836/", "use": "taller / proceso" },
+  { "file": "taller-lijado-1200x1500.webp", "origin": "Pexels", "id": "5710742", "url": "https://www.pexels.com/photo/5710742/", "use": "taller / sobre nosotros" },
+  { "file": "manos-medida-1200x1500.webp", "origin": "Pexels", "id": "5973888", "url": "https://www.pexels.com/photo/5973888/", "use": "detalle medida" },
+  { "file": "boceto-plano-1200x1500.webp", "origin": "Pexels", "id": "6790045", "url": "https://www.pexels.com/photo/6790045/", "use": "detalle proceso / plano" },
+  { "file": "textura-madera-1600x1200.webp", "origin": "Pexels", "id": "5225594", "url": "https://www.pexels.com/photo/5225594/", "use": "textura / fondo decorativo" },
+  { "file": "manos-cinta-1200x1500.webp", "origin": "Pexels", "id": "8447774", "url": "https://www.pexels.com/photo/8447774/", "use": "detalle medida CTA" }
+]
