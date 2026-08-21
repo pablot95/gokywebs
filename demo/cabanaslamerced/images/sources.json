@@ -1,0 +1,12 @@
+[
+  { "file": "hero-construccion-1920x1080.webp", "origin": "Pexels", "id": "37627682", "url": "https://www.pexels.com/photo/37627682/", "use": "hero" },
+  { "file": "placares-1200x1200.webp", "origin": "Pexels", "id": "6580380", "url": "https://www.pexels.com/photo/6580380/", "use": "producto — placares" },
+  { "file": "escaleras-1200x1200.webp", "origin": "Pexels", "id": "13005094", "url": "https://www.pexels.com/photo/13005094/", "use": "producto — escaleras" },
+  { "file": "decks-pergolas-1200x1200.webp", "origin": "Pexels", "id": "7587884", "url": "https://www.pexels.com/photo/7587884/", "use": "producto — decks y pérgolas" },
+  { "file": "muebles-cocina-1200x1200.webp", "origin": "Pexels", "id": "4030055", "url": "https://www.pexels.com/photo/4030055/", "use": "producto — muebles de cocina" },
+  { "file": "puertas-detalle-1200x1200.webp", "origin": "Pexels", "id": "5691518", "url": "https://www.pexels.com/photo/5691518/", "use": "producto — puertas" },
+  { "file": "ventanas-1200x1200.webp", "origin": "Pexels", "id": "6010299", "url": "https://www.pexels.com/photo/6010299/", "use": "producto — ventanas" },
+  { "file": "cinta-metrica-1200x1600.webp", "origin": "Pexels", "id": "5973888", "url": "https://www.pexels.com/photo/5973888/", "use": "recurso gráfico — cinta métrica" },
+  { "file": "construccion-editorial-1600x1300.webp", "origin": "Pexels", "id": "6082416", "url": "https://www.pexels.com/photo/6082416/", "use": "editorial — servicios de construcción" },
+  { "file": "carpintero-editorial-1600x1300.webp", "origin": "Pexels", "id": "4792525", "url": "https://www.pexels.com/photo/4792525/", "use": "editorial — carpintería" }
+]
