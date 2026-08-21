@@ -24,6 +24,19 @@ function wabot_responder($texto, &$conv, $cfg) {
     // el motor de reglas puede no ejecutarse nunca.
     wabot_turno_preparar($conv, $cfg, time());
 
+    // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.
+    // Si el bot todavía no habló y el cliente no dijo nada de su negocio no hay
+    // nada que razonar: dejarlo en manos de la IA solo hacía que cada cliente
+    // recibiera una presentación distinta y más larga. Corta antes del motor
+    // también, porque el clasificador manda algunos openers a "contame" y otros
+    // al saludo — acá tienen que salir todos iguales. Y de paso ahorra la
+    // llamada a Gemini, que en el primer mensaje no aporta nada.
+    $apertura = wabot_apertura($conv, $cfg);
+    if ($apertura !== $cfg['contame'] && wabot_apertura_generica($texto)) {
+        $conv['fase'] = 'menu';
+        return [$apertura];
+    }
+
     // Modo agente: Gemini lleva la charla con herramientas. Si falla por lo que
     // sea, seguimos abajo con el motor de reglas, que nunca deja al cliente sin
     // respuesta. Ojo: la conversación puede haber quedado ya derivada por una

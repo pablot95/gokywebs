@@ -261,6 +261,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_horas'])) {
             $cfg['seguimiento_horas'] = max(0.5, min(22, (float)$_POST['seguimiento_horas']));
         }
+        if (isset($_POST['seguimiento_hora_desde'])) {
+            $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
+        }
+        if (isset($_POST['seguimiento_hora_hasta'])) {
+            $cfg['seguimiento_hora_hasta'] = max(0, min(23, (int)$_POST['seguimiento_hora_hasta']));
+        }
         $cfg['muestra_aviso_activo'] = !empty($_POST['muestra_aviso_activo']);
         if (isset($_POST['presentados_recordatorio_horas'])) {
             $cfg['presentados_recordatorio_horas'] = max(1, min(168, (float)$_POST['presentados_recordatorio_horas']));
@@ -1129,8 +1135,15 @@ body.embed { min-height: 0; }
                     <label>Horas de silencio</label>
                     <input type="number" name="seguimiento_horas" min="0.5" max="22" step="0.5" value="<?= $e((string)($cfg['seguimiento_horas'] ?? 3)) ?>" style="width:110px">
                 </div>
+                <div>
+                    <label>Solo entre las (hora argentina)</label>
+                    <input type="number" name="seguimiento_hora_desde" min="0" max="23" step="1" value="<?= $e((string)($cfg['seguimiento_hora_desde'] ?? 8)) ?>" style="width:70px">
+                    <span class="meta">y las</span>
+                    <input type="number" name="seguimiento_hora_hasta" min="0" max="23" step="1" value="<?= $e((string)($cfg['seguimiento_hora_hasta'] ?? 20)) ?>" style="width:70px">
+                </div>
             </div>
             <p class="meta" style="margin-top:8px">Se manda una sola vez y dentro de la ventana permitida por Meta. <code>{nombre}</code> usa el primer nombre si está disponible. Requiere que Hostinger ejecute <code>wabot/seguimiento.php</code> por cron cada 30 minutos.</p>
+            <p class="meta" style="margin-top:5px">Fuera de esa franja el seguimiento espera a la mañana siguiente. Única excepción: si esperar dejaría vencer las 24 h de Meta, sale igual — mejor a destiempo que perderlo.</p>
             <?php $cronSeg = function_exists('wabot_seguimiento_estado_cron') ? wabot_seguimiento_estado_cron() : ['ultimo_run_ts'=>0]; ?>
             <p class="meta" style="margin-top:5px">
                 Estado del cron: <?= !empty($cronSeg['ultimo_run_ts'])

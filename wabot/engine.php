@@ -1434,6 +1434,48 @@ function wabot_es_negativa($texto) {
 }
 
 /**
+ * ¿El primer mensaje no trae NADA del negocio? Son los openers que genera el
+ * propio anuncio ("Hola. ¿Puedo obtener más información sobre esto?", "Quiero
+ * una página web") o un saludo suelto. Ante uno de estos no hay nada que
+ * razonar, así que la apertura sale fija y ni se llama a la IA: es lo que evita
+ * que cada cliente reciba una presentación distinta e inflada de Gokywebs.
+ *
+ * Se resuelve sacando el relleno conocido en vez de listar frases enteras: así
+ * cualquier combinación de saludo + pedido de info entra igual, y en cuanto
+ * queda una palabra propia (el rubro, el negocio) deja de ser genérico y
+ * contesta la IA como siempre.
+ */
+function wabot_apertura_generica($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return true;
+    if (mb_strlen($t) > 90) return false;
+
+    $relleno = [
+        'puedo obtener mas informacion sobre esto', 'puedo obtener mas informacion',
+        'quiero mi demo gratis para mi negocio', 'quiero mi demo gratis',
+        'quisiera mas informacion', 'quiero mas informacion', 'mas informacion',
+        'necesito informacion', 'quiero informacion', 'me pasas informacion',
+        'quiero una pagina web', 'necesito una pagina web', 'quiero mi pagina web',
+        'quiero hacer una pagina web', 'quiero una web', 'necesito una web',
+        'quiero una pagina', 'pagina web', 'paginas web', 'sitio web', 'la web',
+        'buenas noches', 'buenas tardes', 'buenos dias', 'buen dia',
+        'hola como estas', 'hola que tal', 'como estas', 'que tal', 'buenas',
+        'hola', 'holaa', 'holaaa', 'ola', 'saludos', 'gracias', 'por favor',
+        'me interesa', 'info', 'informacion', 'consulta', 'web', 'demo',
+        'quiero', 'necesito', 'quisiera', 'vi su anuncio', 'vi el anuncio',
+        'y', 'e', 'o', 'de', 'la', 'el', 'un', 'una', 'sobre', 'esto', 'esta',
+    ];
+    usort($relleno, function ($a, $b) { return mb_strlen($b) - mb_strlen($a); });
+
+    foreach ($relleno as $frase) {
+        $t = trim(preg_replace('/\b' . preg_quote($frase, '/') . '\b/u', ' ', $t));
+        $t = trim(preg_replace('/\s+/u', ' ', $t));
+        if ($t === '') return true;
+    }
+    return $t === '';
+}
+
+/**
  * En WhatsApp ya tenemos el teléfono y se cierra. En Instagram no: el IGSID no
  * da forma de contactarlo, así que antes de cerrar se le pide el WhatsApp. Sin
  * ese número el boceto llega sin destinatario y la muestra no se puede entregar.

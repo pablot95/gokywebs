@@ -260,6 +260,8 @@ function wabot_config_ventas(&$cfg) {
     }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
+    if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;
+    if (!isset($cfg['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = 20;
     if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 48;
     if (!isset($cfg['presentados_archivar_horas']))     $cfg['presentados_archivar_horas']     = 168;
     if (!isset($cfg['muestra_aviso_activo'])) $cfg['muestra_aviso_activo'] = true;
@@ -2180,6 +2182,37 @@ function wabot_embudo_resumen() {
  * Lo dispara wabot/seguimiento.php vía cron. Sin cron configurado, no corre.
  */
 
+/**
+ * La hora local argentina (UTC-3 fijo, sin horario de verano) de un timestamp.
+ * Se calcula a mano por la misma razón que en el aviso de muestra: date() y
+ * strtotime() dependen de la zona horaria que tenga configurada el servidor.
+ */
+function wabot_hora_local($ts) {
+    $local = $ts - 3 * 3600;
+    return (int)floor(($local % 86400) / 3600);
+}
+
+/**
+ * ¿Es una hora decente para escribirle a alguien que no pidió que le escriban?
+ * El seguimiento sale por cron, así que sin esto le llega a cualquier hora: el
+ * 20-ago salieron a las 20:30 y de madrugada.
+ *
+ * Acá NO va la excepción de "mandalo igual antes de que venza la ventana" que
+ * sí tiene el aviso de muestra. Son cosas distintas: sin el aviso se cae la
+ * entrega de un prediseño ya prometido, mientras que el seguimiento es solo un
+ * empujón comercial — a las 23:00 molesta más de lo que vende, y perderlo no
+ * cuesta nada. Si la ventana se cierra antes de la mañana, no sale y listo.
+ *
+ * `hasta` es la última hora en la que puede salir, sin incluirla: 8 y 20
+ * significan de 08:00 a 19:59.
+ */
+function wabot_seguimiento_hora_ok($cfg, $ahora) {
+    $desde = max(0, min(23, (int)($cfg['seguimiento_hora_desde'] ?? 8)));
+    $hasta = max(0, min(24, (int)($cfg['seguimiento_hora_hasta'] ?? 20)));
+    $hora  = wabot_hora_local($ahora);
+    return $hora >= $desde && $hora < $hasta;
+}
+
 function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['seguimiento_activo'])) return false;
@@ -2207,6 +2240,8 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     // Dentro de la ventana de 24 h de Meta, con margen: fuera de ella el
     // mensaje rebota y encima quema el único seguimiento disponible.
     if ($ahora - (int)($cv['ultimo_cliente_ts'] ?? 0) > 22 * 3600) return false;
+
+    if (!wabot_seguimiento_hora_ok($cfg, $ahora)) return false;
 
     return true;
 }

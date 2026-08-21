@@ -828,5 +828,38 @@ caso('el playbook exige mensajes simples: sin pitch inicial, precio sin preámbu
 caso('el playbook manda "cuánto sale" a precio, nunca a formas de pago',
     strpos($promptReal, 'NUNCA con las formas de pago') !== false);
 
+echo "— El saludo de apertura es fijo, aunque el modo agente esté prendido —\n";
+$vistoPorAgente = [];
+$GLOBALS['WABOT_TEST_AGENTE'] = function ($m, &$trabajo, $cfg) use (&$vistoPorAgente) {
+    $vistoPorAgente[] = $m;
+    return ['Hola! En Gokywebs diseñamos páginas web a medida para negocios. Contame a qué te dedicás.'];
+};
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
+
+foreach (['Hola. ¿Puedo obtener más información sobre esto?', '¡Hola! Quiero más información',
+          'Hola, quiero una página web', 'web', 'Buenas noches'] as $opener) {
+    $c = convNueva();
+    $vistoPorAgente = [];
+    $r = wabot_responder($opener, $c, $cfg);
+    caso("\"$opener\" recibe el saludo fijo sin pasar por la IA",
+        $r === [$cfg['menu']] && $vistoPorAgente === []);
+}
+
+$c = convNueva();
+$vistoPorAgente = [];
+wabot_responder('Soy abogada', $c, $cfg);
+caso('un primer mensaje que ya trae el rubro sí lo maneja el agente', $vistoPorAgente === ['Soy abogada']);
+
+$c = convNueva();
+$c['session_started_ts'] = time() - 300;
+$c['ultimo_ts'] = time() - 59;
+$c['transcript'][] = ['q' => 'cliente', 't' => 'Hola', 'ts' => time() - 60];
+$c['transcript'][] = ['q' => 'bot', 't' => $cfg['menu'], 'ts' => time() - 59];
+$vistoPorAgente = [];
+wabot_responder('Hola', $c, $cfg);
+caso('con el bot ya hablando en esta sesión, un "hola" suelto vuelve a la IA y no re-saluda',
+    $vistoPorAgente === ['Hola']);
+unset($GLOBALS['WABOT_TEST_AGENTE'], $GLOBALS['WABOT_TEST_CLASIFICADOR']);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

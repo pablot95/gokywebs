@@ -1353,7 +1353,10 @@ caso('el segundo DM recupera fase, tipo e historial anteriores',
     && $recargadaIg['channel_user_id'] === $igsidPrueba);
 @unlink($pathIgPrueba);
 
-$ahoraSeg = time();
+// Fijado a las 14:00 hora argentina: el seguimiento ahora respeta una franja
+// horaria, así que con time() crudo estos casos pasarían o fallarían según la
+// hora a la que se corran los tests.
+$ahoraSeg = (int)(floor((time() - 3 * 3600) / 86400) * 86400) + 14 * 3600 + 3 * 3600;
 $cfgSeg = $cfg; $cfgSeg['seguimiento_activo'] = true; $cfgSeg['seguimiento_horas'] = 3;
 $caliente = conv_nueva();
 $caliente['fase'] = 'precio';
@@ -1374,6 +1377,41 @@ $fueraVentana = $caliente; $fueraVentana['ultimo_cliente_ts'] = $ahoraSeg - 23 *
 caso('fuera de la ventana de Meta no intenta texto libre', !wabot_seguimiento_corresponde($fueraVentana, $cfgSeg, $ahoraSeg));
 $yaEnviado = $caliente; $yaEnviado['seguimiento_enviado'] = true;
 caso('un seguimiento exitoso no se repite', !wabot_seguimiento_corresponde($yaEnviado, $cfgSeg, $ahoraSeg));
+
+echo "— Franja horaria del seguimiento (el bug de las 20:30 del 20-ago) —\n";
+$hLocal = function ($h) { return (int)(floor((time() - 3 * 3600) / 86400) * 86400) + $h * 3600 + 3 * 3600; };
+caso('las 14:00 son hora hábil', wabot_hora_local($hLocal(14)) === 14);
+caso('las 03:00 también se calculan bien', wabot_hora_local($hLocal(3)) === 3);
+
+// El caso real: el bot le escribió a leny a las 03:10 y el cron mandó el
+// seguimiento a las 20:30. Con la franja 8-20 eso ya no sale a esa hora.
+$leny = $caliente;
+$leny['ultimo_cliente_ts'] = $hLocal(3);
+$leny['transcript'] = [['q'=>'cliente','t'=>'Es una fundación','ts'=>$hLocal(3)],
+                       ['q'=>'bot','t'=>'Te paso el presupuesto','ts'=>$hLocal(3) + 600]];
+caso('a las 20:30 ya no se manda un seguimiento', !wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(20) + 1800));
+caso('a las 23:00 tampoco', !wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(23)));
+caso('a las 06:00 tampoco: todavía es de madrugada', !wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(6)));
+caso('a las 09:00 sí sale', wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(9)) === true);
+
+// Un empujón comercial a destiempo molesta más de lo que vende: si la ventana
+// se cierra de madrugada, se pierde el seguimiento y no se manda igual (a
+// diferencia del aviso de muestra, donde sí se prioriza no perder la entrega).
+$porVencer = $caliente;
+$porVencer['ultimo_cliente_ts'] = $hLocal(2);
+$porVencer['transcript'] = [['q'=>'cliente','t'=>'Dale','ts'=>$hLocal(2)],
+                            ['q'=>'bot','t'=>'Te paso el presupuesto','ts'=>$hLocal(2) + 600]];
+caso('aunque la ventana esté por vencer, de madrugada no se manda',
+    !wabot_seguimiento_corresponde($porVencer, $cfgSeg, $hLocal(5)));
+
+caso('las 19:59 son el último minuto hábil',
+    wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(19) + 3540) === true);
+caso('las 20:00 en punto ya quedan afuera',
+    !wabot_seguimiento_corresponde($leny, $cfgSeg, $hLocal(20)));
+
+$cfgAmplio = $cfgSeg; $cfgAmplio['seguimiento_hora_desde'] = 0; $cfgAmplio['seguimiento_hora_hasta'] = 24;
+caso('la franja es configurable: con 0-24 vuelve el comportamiento viejo',
+    wabot_seguimiento_corresponde($leny, $cfgAmplio, $hLocal(20) + 1800) === true);
 
 $vieja = $caliente;
 $vieja['fase'] = 'derivado';
