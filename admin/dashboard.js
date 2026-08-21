@@ -207,7 +207,8 @@ async function sincronizarNoLeidosWabot() {
         });
         const data = await res.json();
         const items = data.items || [];
-        const noLeidos = items.filter(it => it.grupo !== "archivado" && it.quien === "cliente").length;
+        const noLeidos = items.filter(it =>
+            it.grupo !== "archivado" && it.quien === "cliente" && it.no_leido).length;
         const el = document.getElementById("countWabotNoLeidos");
         if (el) el.textContent = noLeidos;
     } catch (e) {

@@ -2371,5 +2371,40 @@ caso('el texto no repite el precio ni presiona',
     strpos((string)$cfg['ultima_llamada'], '$') === false
     && stripos((string)$cfg['ultima_llamada'], 'demo') !== false);
 
+echo "— La historia vieja de una charla ya no se tira —\n";
+
+$claveHist = 'TESTHIST' . getmypid();
+@unlink(WABOT_DATA . '/conv/' . $claveHist . '.json');
+@unlink(wabot_historial_path($claveHist));
+
+$cH = wabot_conv_load($claveHist);
+$base = time() - 300 * 60;
+for ($i = 0; $i < 200; $i++) {
+    $cH['transcript'][] = ['q' => $i % 2 ? 'bot' : 'cliente', 't' => 'mensaje ' . $i, 'ts' => $base + $i * 60];
+}
+wabot_conv_save($cH);
+
+$guardada = wabot_conv_load($claveHist);
+caso('el archivo vivo se queda con las últimas líneas nomás',
+    count($guardada['transcript']) === WABOT_TRANSCRIPT_VIVO);
+$completo = wabot_transcript_completo($claveHist, $guardada);
+caso('pero la charla completa sigue estando entera', count($completo) === 200);
+caso('incluido el primer mensaje de todos', ($completo[0]['t'] ?? '') === 'mensaje 0');
+caso('y el último', (end($completo)['t'] ?? '') === 'mensaje 199');
+caso('en orden cronológico',
+    (int)$completo[0]['ts'] < (int)$completo[100]['ts'] && (int)$completo[100]['ts'] < (int)end($completo)['ts']);
+
+// Guardar dos veces no puede duplicar lo ya archivado.
+wabot_conv_save($guardada);
+$otraVez = wabot_transcript_completo($claveHist, wabot_conv_load($claveHist));
+caso('guardar de nuevo no duplica el historial', count($otraVez) === 200);
+
+// El chat que viaja con el boceto también sale completo.
+caso('el chat exportado al boceto arranca desde el principio',
+    strpos(wabot_transcript_texto($guardada, 999999), 'mensaje 0') !== false);
+
+@unlink(WABOT_DATA . '/conv/' . $claveHist . '.json');
+@unlink(wabot_historial_path($claveHist));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

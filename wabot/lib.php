@@ -15,7 +15,8 @@ define('WABOT_DATA', __DIR__ . '/data');
 function wabot_ensure_dirs() {
     foreach ([WABOT_DATA, WABOT_DATA . '/conv', WABOT_DATA . '/log',
               WABOT_DATA . '/cola', WABOT_DATA . '/lock', WABOT_DATA . '/media',
-              WABOT_DATA . '/migrated', WABOT_DATA . '/ig-profile'] as $d) {
+              WABOT_DATA . '/migrated', WABOT_DATA . '/ig-profile',
+              WABOT_DATA . '/historial'] as $d) {
         if (!is_dir($d)) @mkdir($d, 0755, true);
     }
     $ht = WABOT_DATA . '/.htaccess';
@@ -1149,6 +1150,60 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     return true;
 }
 
+define('WABOT_TRANSCRIPT_VIVO', 80);
+
+/**
+ * El archivo de la conversación guarda solo las últimas líneas para no crecer
+ * sin techo (se lee entero en cada refresco de la lista del panel). Lo que se
+ * cae de ahí NO se tira: se appendea a data/historial/{clave}.jsonl.
+ *
+ * Antes se descartaba, y con eso desaparecía la historia vieja de las charlas
+ * largas: el 22-ago Pablo no encontraba nada anterior al 18/08.
+ */
+function wabot_historial_path($clave) {
+    return WABOT_DATA . '/historial/' . preg_replace('/[^0-9A-Za-z]/', '', (string)$clave) . '.jsonl';
+}
+
+function wabot_historial_guardar($clave, $lineas) {
+    if (!$lineas) return;
+    wabot_ensure_dirs();
+    $dir = dirname(wabot_historial_path($clave));
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return;
+    $buffer = '';
+    foreach ($lineas as $linea) {
+        if (!is_array($linea)) continue;
+        $buffer .= json_encode($linea, JSON_UNESCAPED_UNICODE) . "\n";
+    }
+    if ($buffer !== '') @file_put_contents(wabot_historial_path($clave), $buffer, FILE_APPEND | LOCK_EX);
+}
+
+/** La charla COMPLETA: lo archivado más lo que sigue en el archivo vivo. */
+function wabot_transcript_completo($clave, $conv = null) {
+    $vivo = is_array($conv) ? (array)($conv['transcript'] ?? []) : [];
+    $path = wabot_historial_path($clave);
+    if (!file_exists($path)) return $vivo;
+
+    $viejas = [];
+    foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $linea) {
+        $fila = json_decode($linea, true);
+        if (is_array($fila) && isset($fila['q'])) $viejas[] = $fila;
+    }
+    if (!$viejas) return $vivo;
+
+    // El archivado puede solaparse con el vivo si un guardado se repitió: se
+    // deduplica por quién + texto + segundo exacto.
+    $vistos = [];
+    $todas = [];
+    foreach (array_merge($viejas, $vivo) as $fila) {
+        $k = ($fila['q'] ?? '') . "\0" . ($fila['t'] ?? '') . "\0" . (int)($fila['ts'] ?? 0);
+        if (isset($vistos[$k])) continue;
+        $vistos[$k] = true;
+        $todas[] = $fila;
+    }
+    usort($todas, function ($a, $b) { return (int)($a['ts'] ?? 0) <=> (int)($b['ts'] ?? 0); });
+    return $todas;
+}
+
 function wabot_conv_save($conv) {
     wabot_ensure_dirs();
     $clave = wabot_conversation_key($conv);
@@ -1156,7 +1211,14 @@ function wabot_conv_save($conv) {
     $conv['channel_user_id'] = wabot_channel_user_id($conv);
     $conv['tel'] = $conv['channel_user_id'];
     $conv['msgs'] = array_slice((array)($conv['msgs'] ?? []), -30);
-    $conv['transcript'] = array_slice((array)($conv['transcript'] ?? []), -60);
+
+    $transcript = (array)($conv['transcript'] ?? []);
+    if (count($transcript) > WABOT_TRANSCRIPT_VIVO) {
+        $sobran = array_slice($transcript, 0, count($transcript) - WABOT_TRANSCRIPT_VIVO);
+        wabot_historial_guardar($clave, $sobran);
+        $conv['transcript'] = array_slice($transcript, -WABOT_TRANSCRIPT_VIVO);
+    }
+
     $ok = wabot_json_guardar_atomico(wabot_conv_path($clave), $conv);
     if (!$ok) wabot_log('error', ['donde' => 'conv_save', 'clave' => $clave]);
     return $ok;
@@ -3059,7 +3121,8 @@ function wabot_lead_objetivo($objetivo, $conv, $cfg) {
  */
 function wabot_transcript_texto($conv, $maxChars = 12000) {
     $lineas = [];
-    foreach ((array)($conv['transcript'] ?? []) as $t) {
+    $completo = wabot_transcript_completo(wabot_conversation_key($conv), $conv);
+    foreach ($completo as $t) {
         $quien = ['cliente' => 'Cliente', 'bot' => 'Bot', 'humano' => 'Vos'][$t['q'] ?? ''] ?? null;
         if ($quien === null) continue;
         $texto = trim((string)($t['t'] ?? ''));

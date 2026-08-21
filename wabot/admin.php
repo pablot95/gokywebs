@@ -446,7 +446,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             wabot_conv_save($conv);
         }
         echo json_encode([
-            'transcript' => $conv['transcript'],
+            'transcript' => wabot_transcript_completo($_POST['tel'], $conv),
             'fase'       => $conv['fase'],
             'ventana'    => wabot_ventana_restante($conv),
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
@@ -474,11 +474,18 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (mb_strlen($nuevo) > 4000) { echo json_encode(['error' => 'Ese texto es demasiado largo.']); exit; }
 
         $conv = wabot_conv_load($_POST['tel']);
+        // Se ubica por timestamp y no por índice: el chat del panel muestra el
+        // historial archivado junto al vivo, así que las posiciones no coinciden.
         $lineas = (array)($conv['transcript'] ?? []);
-        if (!isset($lineas[$idx]) || (int)($lineas[$idx]['ts'] ?? 0) !== $ts) {
-            echo json_encode(['error' => 'Ese mensaje ya no está donde estaba. Recargá el chat y probá de nuevo.']);
+        $encontrado = null;
+        foreach ($lineas as $i => $linea) {
+            if ((int)($linea['ts'] ?? 0) === $ts) { $encontrado = $i; break; }
+        }
+        if ($encontrado === null) {
+            echo json_encode(['error' => 'Ese mensaje es viejo y ya quedó archivado: solo se pueden corregir los del tramo reciente.']);
             exit;
         }
+        $idx = $encontrado;
         $conv['transcript'][$idx]['t'] = $nuevo;
         $conv['transcript'][$idx]['editado'] = time();
         wabot_conv_save($conv);
@@ -1540,10 +1547,14 @@ body.embed { min-height: 0; }
             atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
+        // Dos condiciones, y hacen falta las dos: que el último mensaje sea del
+        // cliente (nadie le contestó) Y que no lo hayas abierto desde entonces.
+        // Sin la segunda, abrir el chat no lo sacaba de la lista, porque el
+        // último mensaje seguía siendo del cliente igual.
         function esNoLeido(it) {
             const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
             if (grupo === 'archivado') return false;
-            return it.quien === 'cliente';
+            return it.quien === 'cliente' && !!it.no_leido;
         }
         // Subdivisión de "No leídos": Presentadas y Demos son las columnas que ya
         // existen; todo lo demás (chat normal o "te espera") cae en Chats normales.
