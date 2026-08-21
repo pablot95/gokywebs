@@ -190,10 +190,11 @@ async function sincronizarPresentados() {
 setInterval(sincronizarPresentados, 10 * 60 * 1000);
 
 /* ── Contador de "sin leer" en la pestaña WhatsApp ──
-   Mismo criterio que la pestaña "No leídos" del panel embebido: chats con
-   actividad más nueva que la última vez que Pablo abrió esa conversación, más
-   los que lo están esperando. Los archivados no cuentan. Se consulta aparte
-   (no depende de que el iframe esté cargado) para verlo sin entrar a la pestaña. */
+   Mismo criterio que la pestaña "No leídos" del panel embebido: el ÚLTIMO
+   mensaje de la charla lo mandó el cliente (nadie —ni el bot, ni vos— le
+   contestó todavía). Si el bot ya respondió, no cuenta como pendiente aunque
+   nunca hayas abierto esa respuesta. Los archivados no cuentan. Se consulta
+   aparte (no depende de que el iframe esté cargado) para verlo sin entrar. */
 async function sincronizarNoLeidosWabot() {
     if (!currentUser) return;
     try {
@@ -206,8 +207,7 @@ async function sincronizarNoLeidosWabot() {
         });
         const data = await res.json();
         const items = data.items || [];
-        const noLeidos = items.filter(it =>
-            it.grupo !== "archivado" && (it.no_leido || it.grupo === "atencion")).length;
+        const noLeidos = items.filter(it => it.grupo !== "archivado" && it.quien === "cliente").length;
         const el = document.getElementById("countWabotNoLeidos");
         if (el) el.textContent = noLeidos;
     } catch (e) {

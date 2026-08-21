@@ -754,6 +754,7 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-item.sin-leer .conv-item-ult { color:#b9c8e8; font-weight:600; }
 .conv-item.sin-leer .conv-item-hora { color:#7fa7f0; font-weight:700; }
 .conv-item-punto { width:8px; height:8px; border-radius:50%; background:#4f8cff; flex-shrink:0; box-shadow:0 0 0 3px rgba(79,140,255,.18); }
+.conv-sub-header { padding:9px 13px 5px; font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--dim); background:var(--bg); position:sticky; top:0; z-index:1; }
 .conv-nav-btn[data-grupo="no_leidos"] .conv-cuenta { background:#16294d; color:#7fa7f0; }
 .conv-nav-btn[data-grupo="no_leidos"].tiene { border-color:#4f8cff; color:#9dc0ff; }
 .conv-nav-btn[data-grupo="no_leidos"].on { border-color:#4f8cff; color:#cfe0ff; }
@@ -1507,8 +1508,9 @@ body.embed { min-height: 0; }
 
         /* ── Lista de la izquierda ── */
         // "No leídos" no es un grupo excluyente como los demás: es una vista que
-        // cruza todas las columnas. Junta lo que tenga mensajes sin abrir MÁS
-        // todos los "Te esperan" (que por definición son gente esperando).
+        // cruza todas las columnas. Entra un chat SOLO si el último mensaje es
+        // del cliente — si el bot (o vos) ya contestó, no cuenta como pendiente,
+        // aunque nunca hayas abierto esa respuesta.
         const GRUPOS = {
             no_leidos:  { titulo: 'No leídos',   cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Nada sin leer.', vista: true },
             chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
@@ -1517,12 +1519,23 @@ body.embed { min-height: 0; }
             atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
-        // Un chat entra a "No leídos" si tiene algo sin abrir o si te está
-        // esperando. Los archivados quedan afuera a propósito: los sacaste vos.
         function esNoLeido(it) {
             const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
             if (grupo === 'archivado') return false;
-            return !!it.no_leido || grupo === 'atencion';
+            return it.quien === 'cliente';
+        }
+        // Subdivisión de "No leídos": Presentadas y Demos son las columnas que ya
+        // existen; todo lo demás (chat normal o "te espera") cae en Chats normales.
+        const SUBGRUPOS_NO_LEIDOS = [
+            { clave: 'presentados', titulo: 'Presentadas' },
+            { clave: 'muestra',     titulo: 'Demos' },
+            { clave: 'chat',        titulo: 'Chats normales' },
+        ];
+        function subGrupoNoLeido(it) {
+            const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
+            if (grupo === 'presentados') return 'presentados';
+            if (grupo === 'muestra') return 'muestra';
+            return 'chat';
         }
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');
@@ -1683,6 +1696,7 @@ body.embed { min-height: 0; }
             // no el total de la cola — para eso ya está la lista abierta.
             const cuentasNoLeidos = { muestra: 0, presentados: 0 };
             let visibles = 0;
+            const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
             for (const it of items) {
                 const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
@@ -1761,7 +1775,23 @@ body.embed { min-height: 0; }
 
                 body.appendChild(top); body.appendChild(ult); body.appendChild(pills);
                 a.appendChild(body);
-                listaEl.appendChild(a);
+                renderizados.push({ it, el: a });
+            }
+
+            if (grupoActivo === 'no_leidos') {
+                // Presentadas / Demos / Chats normales, en ese orden, cada una con
+                // su encabezado — solo si tiene algo, para no listar títulos vacíos.
+                for (const sub of SUBGRUPOS_NO_LEIDOS) {
+                    const deEsteGrupo = renderizados.filter(r => subGrupoNoLeido(r.it) === sub.clave);
+                    if (!deEsteGrupo.length) continue;
+                    const encabezado = document.createElement('div');
+                    encabezado.className = 'conv-sub-header';
+                    encabezado.textContent = sub.titulo + ' (' + deEsteGrupo.length + ')';
+                    listaEl.appendChild(encabezado);
+                    for (const r of deEsteGrupo) listaEl.appendChild(r.el);
+                }
+            } else {
+                for (const r of renderizados) listaEl.appendChild(r.el);
             }
 
             const cuentasMostradas = { ...cuentas, ...cuentasNoLeidos };
