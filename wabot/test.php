@@ -592,20 +592,19 @@ clasifica(['pregunta_info'], ['info_keys' => ['proceso']]);
 $r = wabot_engine('me recordas como seguia?', $c2, $cfg);
 caso('con la charla cerrada también explica el proceso', $r === [$cfg['info']['proceso']]);
 
-echo "— Las 3 cuotas sin interés solo salen ante la objeción —\n";
+echo "— La objeción de precio no promete cuotas sin interés que las páginas no respaldan —\n";
 
-caso('la objeción de precio sí las ofrece', stripos($cfg['caro'], '3 cuotas sin interés') !== false);
-caso('la respuesta de pago NO las regala de entrada',
-    stripos($cfg['info']['pago'], 'sin interés') === false);
+caso('el texto de "caro" ya no menciona cuotas sin interés', stripos($cfg['caro'], 'sin interés') === false);
+caso('la respuesta de pago tampoco', stripos($cfg['info']['pago'], 'sin interés') === false);
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'turnos';
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('como se paga?', $c, $cfg);
-caso('preguntar cómo se paga no dispara las 3 cuotas', stripos($r[0], 'sin interés') === false);
+caso('preguntar cómo se paga no dispara la objeción de precio', $r[0] !== $cfg['caro']);
 
 clasifica(['objecion_caro']);
 $r = wabot_engine('uh, me parece caro', $c, $cfg);
-caso('decir que es caro sí las dispara', stripos($r[0], '3 cuotas sin interés') !== false);
+caso('decir que es caro sí dispara la respuesta oficial', $r[0] === $cfg['caro']);
 
 echo "— Un \"dale\" pelado acepta la muestra, no corta la venta —\n";
 
@@ -1944,7 +1943,7 @@ caso('"me parece caro" solo, no es regateo', wabot_es_regateo('me parece caro') 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['chat_started_ts'] = time();
 clasifica(['otro']);
 $r = wabot_engine('no hay forma de que me lo dejes en 150?', $c, $cfg);
-caso('el primer regateo recibe la respuesta oficial de precio (las 3 cuotas sin interés)',
+caso('el primer regateo recibe la respuesta oficial de precio, sin bajar el monto',
     $r === [$cfg['caro']] && $c['fase'] === 'precio');
 $r = wabot_engine('dale, si me haces 10 por ciento de descuento cierro ya mismo', $c, $cfg);
 caso('el regateo insistente va a Pablo, nunca a la despedida',

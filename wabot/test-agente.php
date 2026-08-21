@@ -536,17 +536,18 @@ caso('ecommerce → el plan de $15.000',
 
 caso('ya no queda ningún {precio} sin reemplazar', strpos($r['texto'], '{') === false);
 
-echo "— Las 3 cuotas sin interés son una carta, no un folleto —\n";
+echo "— La objeción de precio es una carta oficial, no un folleto de cuotas sin interés —\n";
 
 caso('el prompt manda la objeción a consultar_info, no a la memoria del modelo',
     stripos(wabot_agente_sistema($c, $cfg), "consultar_info('objecion_precio')") !== false);
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'objecion_precio'], $c, $cfg);
-caso('objecion_precio devuelve el texto oficial con las 3 cuotas',
-    $r['texto'] === $cfg['caro'] && stripos($r['texto'], '3 cuotas sin interés') !== false);
-caso('y le prohíbe calcular el monto de cada cuota',
-    stripos($r['nota'], 'no calcules') !== false);
+caso('objecion_precio devuelve el texto oficial de "caro" tal cual',
+    $r['texto'] === $cfg['caro']);
+caso('y ya no promete 3 cuotas sin interés', stripos($r['texto'], 'sin interés') === false);
+caso('y le prohíbe inventar un plan de cuotas o calcular el monto de cada una',
+    stripos($r['nota'], 'no inventes') !== false || stripos($r['nota'], 'no calcules') !== false);
 
 foreach (wabot_agente_tools(true) as $t) {
     if ($t['name'] === 'consultar_info') {

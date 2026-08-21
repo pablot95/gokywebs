@@ -340,7 +340,9 @@ function wabot_config_ventas(&$cfg) {
     $migraciones2108 = [
         'caro' => [
             'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, te lo podemos dividir en 3 cuotas sin interés para que no lo sientas de una. En el link del presupuesto tenés el detalle de todo lo que incluye.'
-                => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, lo dividimos en 3 cuotas sin interés por transferencia, sin recargo sobre el precio de lista. En el link del presupuesto tenés el detalle de todo lo que incluye.',
+                => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.',
+            'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, lo dividimos en 3 cuotas sin interés por transferencia, sin recargo sobre el precio de lista. En el link del presupuesto tenés el detalle de todo lo que incluye.'
+                => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.',
         ],
         'ya_tengo_web' => [
             'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.'
