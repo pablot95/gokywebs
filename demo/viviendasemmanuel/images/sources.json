@@ -1,0 +1,12 @@
+[
+  { "file": "hero-vivienda-1920x1080.webp", "origin": "Pexels", "id": "30580640", "url": "https://www.pexels.com/photo/30580640/", "use": "hero" },
+  { "file": "familia-primera-casa-1200x1600.webp", "origin": "Pexels", "id": "7578988", "url": "https://www.pexels.com/photo/7578988/", "use": "momento firma / cierre" },
+  { "file": "obra-cimientos-1600x1300.webp", "origin": "Pexels", "id": "11565004", "url": "https://www.pexels.com/photo/11565004/", "use": "servicios — construcción" },
+  { "file": "plano-manos-1200x1200.webp", "origin": "Pexels", "id": "9052461", "url": "https://www.pexels.com/photo/9052461/", "use": "servicios — financiación" },
+  { "file": "living-moderno-1600x1300.webp", "origin": "Pexels", "id": "30386991", "url": "https://www.pexels.com/photo/30386991/", "use": "proyectos — interior" },
+  { "file": "cocina-moderna-1200x1200.webp", "origin": "Pexels", "id": "7533853", "url": "https://www.pexels.com/photo/7533853/", "use": "proyectos — interior" },
+  { "file": "dormitorio-luminoso-1600x1300.webp", "origin": "Pexels", "id": "5998134", "url": "https://www.pexels.com/photo/5998134/", "use": "proyectos — interior" },
+  { "file": "casa-clasica-jardin-1600x1300.webp", "origin": "Pexels", "id": "4469136", "url": "https://www.pexels.com/photo/4469136/", "use": "proyectos / servicios" },
+  { "file": "equipo-obra-1600x1300.webp", "origin": "Pexels", "id": "29083058", "url": "https://www.pexels.com/photo/29083058/", "use": "nosotros — equipo" },
+  { "file": "detalle-construccion-1200x1200.webp", "origin": "Pexels", "id": "4509089", "url": "https://www.pexels.com/photo/4509089/", "use": "detalle / textura" }
+]
