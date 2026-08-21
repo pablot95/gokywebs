@@ -254,7 +254,11 @@ function estadoAvisoBoceto(p) {
     if (!item) return null;
     if (item.ultimo_cliente_ts > item.muestra_aviso_ts) return null; // ya contestó
 
-    const limite = (item.muestra_aviso_ts + 24 * 3600) * 1000;
+    // La ventana de Meta la reabre el CLIENTE, no el aviso que mandó el bot:
+    // contarla desde muestra_aviso_ts daba hasta 24 h de más y el boceto figuraba
+    // con tiempo de sobra cuando en realidad ya no se le podía escribir.
+    if (!item.ultimo_cliente_ts) return { vencido: true };
+    const limite = (item.ultimo_cliente_ts + 24 * 3600) * 1000;
     const faltan = limite - Date.now();
     if (faltan <= 0) return { vencido: true };
 
@@ -2103,6 +2107,9 @@ function renderPropuestas() {
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`
                         : `<strong>—</strong>`}
+                    ${slugNegocio(nombreNegocio)
+                        ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
+                        : ""}
                     ${p.confirmoMuestra === true
                         ? `<div style="margin-top:5px"><span style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap">✓ Quiere la muestra</span></div>`
                         : p.confirmoMuestra === false
@@ -2983,17 +2990,19 @@ async function togglePropuestaFlag(id, field, btn) {
 // link de la muestra por el mismo número: ver wabot/admin.php (presentar_muestra).
 // clienteId viaja para que wabot pueda avisarle después al admin (recordatorio
 // enviado / chat archivado) sobre este mismo cliente: ver sincronizarPresentados().
-async function enviarMuestraWhatsapp(p, clienteId) {
+async function enviarMuestraWhatsapp(p, clienteId, { forzar = false } = {}) {
     const telefono = p.telefono || p.contacto_cel || "";
     const negocio  = p.nombre_negocio || p.rubro || "";
     if (!telefono || !negocio) return { error: "Falta teléfono o nombre del negocio: avisale la muestra a mano." };
 
     try {
         await wabotAuthHandshake();
+        const cuerpo = { accion: "presentar_muestra", tel: telefono, negocio, cliente_id: clienteId || "" };
+        if (forzar) cuerpo.forzar = "1";
         const res = await fetch("../wabot/admin.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ accion: "presentar_muestra", tel: telefono, negocio, cliente_id: clienteId || "" }),
+            body: new URLSearchParams(cuerpo),
             credentials: "same-origin"
         });
         return await res.json();
@@ -3023,8 +3032,24 @@ async function presentarPropuesta(propId) {
     // recordatorio a las 48h y el archivo a la semana saben a qué cliente avisarle.
     const clienteRef = doc(collection(db, "clientes"));
 
-    const envio = await enviarMuestraWhatsapp(p, clienteRef.id);
-    if (envio?.error) alert("No se pudo mandar el link de la muestra: " + envio.error);
+    // Si el aviso no sale (ventana de Meta cerrada, sin teléfono, Meta lo rechaza),
+    // el servidor no toca nada: se pregunta antes de pasarla igual, en vez de
+    // avisar cuando el movimiento ya está hecho y no hay vuelta atrás.
+    let envio = await enviarMuestraWhatsapp(p, clienteRef.id);
+    if (envio?.error) {
+        const igual = confirm(
+            "No se le pudo mandar el link por WhatsApp:\n\n" + envio.error +
+            "\n\n¿Pasarla a presentada igual?\n" +
+            "Se mueve a Seguimiento y el link se lo tenés que mandar vos a mano."
+        );
+        if (!igual) return;
+        envio = await enviarMuestraWhatsapp(p, clienteRef.id, { forzar: true });
+        if (envio?.error) {
+            alert("Tampoco se pudo marcar como presentada en el bot: " + envio.error +
+                  "\n\nNo se movió nada. Probá de nuevo.");
+            return;
+        }
+    }
 
     try {
         await setDoc(clienteRef, {

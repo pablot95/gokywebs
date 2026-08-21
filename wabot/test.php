@@ -1794,10 +1794,14 @@ caso('no toma una descripción genérica como nombre comercial',
     wabot_nombre_negocio_detectar('Somos una empresa de limpieza') === '');
 
 $agenda = ['nombre_negocio' => 'Mate Sur', 'nombre' => 'Marcos Pérez'];
-caso('agenda como Negocio - Persona cuando tiene los dos datos',
-    wabot_nombre_agenda($agenda) === 'Mate Sur - Marcos Pérez');
+caso('agenda como Persona - Negocio cuando tiene los dos datos',
+    wabot_nombre_agenda($agenda) === 'Marcos Pérez - Mate Sur');
 caso('si solo conoce a la persona, no agrega separadores vacíos',
     wabot_nombre_agenda(['nombre' => 'Marcos Pérez']) === 'Marcos Pérez');
+caso('si solo conoce el negocio, lo agenda con ese nombre',
+    wabot_nombre_agenda(['nombre_negocio' => 'Mate Sur']) === 'Mate Sur');
+caso('un perfil inservible no se antepone al negocio',
+    wabot_nombre_agenda(['nombre_negocio' => 'Black Automotores', 'nombre' => '.']) === 'Black Automotores');
 caso('si negocio y perfil tienen el mismo nombre, no lo duplica',
     wabot_nombre_agenda(['nombre_negocio' => 'Glow Nails', 'nombre' => 'Glow Nails']) === 'Glow Nails');
 
@@ -2477,6 +2481,22 @@ $idx2 = array_search('QAORD2', array_column($itemsOrd, 'tel'), true);
 caso('el chat con el mensaje más reciente va primero aunque su archivo sea más viejo', $idx2 < $idx1);
 
 foreach (['QAORD1', 'QAORD2'] as $t) @unlink(WABOT_DATA . '/conv/' . $t . '.json');
+
+echo "— La ventana de Meta se mide desde el último mensaje del cliente —\n";
+
+$ahoraV = time();
+caso('recién escribió → quedan casi 24 h',
+    abs(wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV]) - 24 * 3600) < 5);
+caso('escribió hace 20 h → quedan 4',
+    abs(wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 20 * 3600]) - 4 * 3600) < 5);
+caso('escribió hace 25 h → la ventana está cerrada',
+    wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 25 * 3600]) === 0);
+// El aviso de la mañana lo manda el bot y NO reabre nada: el boceto figuraba
+// con horas de sobra cuando en realidad ya no se le podía escribir.
+caso('un aviso del bot reciente no reabre la ventana de un cliente callado hace 25 h',
+    wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 25 * 3600, 'muestra_aviso_ts' => $ahoraV - 3600]) === 0);
+caso('sin ningún mensaje del cliente la ventana está cerrada',
+    wabot_ventana_restante([]) === 0);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

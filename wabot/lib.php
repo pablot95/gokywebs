@@ -962,10 +962,12 @@ function wabot_nombre_agenda($conv) {
     // Un perfil llamado "." no puede colgarse del nombre del negocio: quedaba
     // "Black Automotores - ." en la agenda y, peor, en los textos al cliente.
     $persona = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+    // Primero la persona: en la agenda se busca por quién es, y el negocio
+    // queda al lado para ubicar de qué proyecto se trata.
     if ($negocio !== '' && $persona !== '' && mb_strtolower($negocio) !== mb_strtolower($persona)) {
-        return $negocio . ' - ' . $persona;
+        return $persona . ' - ' . $negocio;
     }
-    return $negocio !== '' ? $negocio : $persona;
+    return $persona !== '' ? $persona : $negocio;
 }
 
 /** Qué le falta pedir para el prediseño: nunca lo que el cliente ya dio. */
@@ -1033,6 +1035,8 @@ function wabot_conv_load($clave) {
         'presentado_confirmado'  => false,
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
+        // Se pasó a presentada sin que saliera el aviso: el link lo mandó Pablo.
+        'presentado_sin_aviso'   => false,
         // Parte 2 de la venta (después de presentar la demo).
         'videollamada_ofrecida'  => false,
         'cambios_pedidos'        => null,
@@ -1140,6 +1144,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_confirmado'] = false;
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
+    $conv['presentado_sin_aviso'] = false;
     $conv['videollamada_ofrecida'] = false;
     $conv['cambios_pedidos'] = null;
     $conv['pago_avisado_ts'] = 0;

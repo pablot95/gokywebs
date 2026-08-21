@@ -336,7 +336,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la demo: falta el nombre del negocio.']); exit; }
 
         $conv = wabot_conv_load($_POST['tel']);
-        if (wabot_ventana_restante($conv) <= 0) {
+
+        // Con forzar=1 Pablo ya decidió, desde el admin, pasarla a presentada
+        // aunque el aviso no salga: se marca todo igual y el link lo manda él.
+        $forzar = !empty($_POST['forzar']);
+
+        if (!$forzar && wabot_ventana_restante($conv) <= 0) {
             echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja mandarle texto libre hasta que el cliente vuelva a escribir. Avisale a mano.']);
             exit;
         }
@@ -345,9 +350,13 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
                . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
 
-        if (!wabot_enviar($conv, $texto)) {
-            echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);
-            exit;
+        $enviado = false;
+        if (!$forzar || wabot_ventana_restante($conv) > 0) {
+            $enviado = wabot_enviar($conv, $texto);
+            if (!$enviado && !$forzar) {
+                echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);
+                exit;
+            }
         }
 
         // NO se pausa el bot: presentar la demo abre la parte 2 de la venta, y
@@ -364,13 +373,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
-        wabot_conv_transcript($conv, 'humano', $texto);
+        // El aviso no salió: queda anotado para no dar por hecho que el cliente
+        // tiene el link, ni acá ni en el recordatorio de las 20 h.
+        $conv['presentado_sin_aviso'] = !$enviado;
+        if ($enviado) wabot_conv_transcript($conv, 'humano', $texto);
         if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel_presentar']);
         wabot_evento($conv, 'muestra_presentada');
         wabot_conv_save($conv);
-        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug]);
+        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug, 'enviado' => $enviado]);
 
-        echo json_encode(['ok' => true]);
+        echo json_encode(['ok' => true, 'enviado' => $enviado, 'slug' => $slug]);
         exit;
     }
     if ($a === 'presentado_confirmar' && !empty($_POST['tel'])) {
