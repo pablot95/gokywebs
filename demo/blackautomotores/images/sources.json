@@ -1,0 +1,38 @@
+[
+  {
+    "file": "hero-pickup-clasica-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7873720/",
+    "use": "Hero"
+  },
+  {
+    "file": "vehiculo-pickup-clasica-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7873720/",
+    "use": "Vehiculo destacado en catalogo"
+  },
+  {
+    "file": "familia-sedan-vehiculo-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/36833508/",
+    "use": "Vehiculo destacado / seccion confianza"
+  },
+  {
+    "file": "asesor-atencion-clientes-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/36730228/",
+    "use": "Seccion como comprar / atencion"
+  },
+  {
+    "file": "entrega-llaves-cliente-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7144201/",
+    "use": "Seccion cierre / entrega"
+  },
+  {
+    "file": "apreton-manos-cierre-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/33175650/",
+    "use": "Seccion confianza"
+  }
+]

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Automotores | Agencia de autos en Salta Capital</title>
+<meta name="description" content="Catálogo de autos usados en Salta Capital. 15 vehículos revisados, con financiación y transferencia incluida. Consultá por WhatsApp.">
+<meta property="og:title" content="Black Automotores | Agencia de autos en Salta Capital">
+<meta property="og:description" content="Catálogo de 15 vehículos en Salta Capital, revisión mecánica y consulta directa por WhatsApp.">
+<meta property="og:image" content="images/hero-pickup-clasica-1920x1080.webp">
+<meta name="theme-color" content="#121212">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800;900&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23000000'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' font-weight='700' fill='%23FF0000' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<header class="site-header" id="siteHeader">
+  <div class="header-inner">
+    <a class="brand" href="#inicio">
+      <span class="brand-black">BLACK</span><span class="brand-sub">AUTOMOTORES</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Navegación principal">
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <ul class="nav-list">
+        <li><a href="#catalogo">Catálogo</a></li>
+        <li><a href="#ruta">Cómo comprás</a></li>
+        <li><a href="#confianza">Garantías</a></li>
+        <li><a href="#faq">Preguntas</a></li>
+      </ul>
+      <a class="nav-wsp" data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493873115008" target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a>
+    </nav>
+    <button type="button" class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-haspopup="true" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+  </div>
+</header>
+<div class="nav-scrim" id="navScrim" hidden></div>
+
+<main id="main">
+
+  <section class="hero" id="inicio">
+    <svg class="hero-ruta" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-50,550 C 200,550 250,300 500,300 S 800,50 1050,50" />
+    </svg>
+    <div class="hero-content">
+      <p class="hero-eyebrow" data-animate="up" style="transform:translateY(20px);opacity:0">Agencia de autos en Salta Capital</p>
+      <h1 data-animate="up" style="transform:translateY(36px);opacity:0">Tu próximo auto <span>está acá</span></h1>
+      <p class="hero-lead" data-animate="up" style="transform:translateY(28px);opacity:0" data-delay="0.1">15 vehículos revisados y listos para transferir. Elegís, consultás por WhatsApp y coordinamos todo.</p>
+      <div class="hero-ctas" data-animate="up" style="transform:translateY(28px);opacity:0" data-delay="0.2">
+        <a class="btn btn-cta" href="#catalogo">Ver catálogo completo</a>
+        <a class="btn btn-ghost" data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493873115008" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-media">
+      <img src="images/hero-pickup-clasica-1920x1080.webp" alt="Vehículo del catálogo de Black Automotores" width="1920" height="1080" fetchpriority="high">
+    </div>
+  </section>
+
+  <section class="destacados" aria-labelledby="destacados-h">
+    <div class="section-head">
+      <h2 id="destacados-h" data-animate="up" style="transform:translateY(24px);opacity:0">Destacados</h2>
+      <a class="ver-todo" href="#catalogo">Ver los 15 vehículos →</a>
+    </div>
+    <div class="hscroll" id="railDestacados">
+      <div class="hscroll-track" id="railDestacadosTrack"></div>
+    </div>
+  </section>
+
+  <section class="tipos" aria-label="Categorías de vehículos">
+    <span class="tipos-chip">15<small>vehículos en stock</small></span>
+    <h2 class="sr-only">Categorías de vehículos</h2>
+    <div class="tipos-track" id="tiposTrack"></div>
+  </section>
+
+  <section class="catalogo" id="catalogo" aria-labelledby="catalogo-h">
+    <div class="section-head">
+      <h2 id="catalogo-h" data-animate="up" style="transform:translateY(24px);opacity:0">Catálogo completo</h2>
+    </div>
+    <div class="catalogo-controles">
+      <div class="buscador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="buscador" placeholder="Buscar por marca o modelo..." aria-label="Buscar en el catálogo">
+      </div>
+      <div class="filtros">
+        <select id="filtroTipo" aria-label="Filtrar por tipo">
+          <option value="">Todos los tipos</option>
+        </select>
+        <select id="filtroMarca" aria-label="Filtrar por marca">
+          <option value="">Todas las marcas</option>
+        </select>
+        <select id="filtroOrden" aria-label="Ordenar por">
+          <option value="relevancia">Más relevantes</option>
+          <option value="precio-asc">Menor precio</option>
+          <option value="precio-desc">Mayor precio</option>
+          <option value="año-desc">Más nuevos</option>
+        </select>
+      </div>
+    </div>
+    <p class="catalogo-resultados" id="catalogoResultados" aria-live="polite"></p>
+    <div class="catalogo-grid" id="catalogoGrid"></div>
+    <p class="catalogo-vacio" id="catalogoVacio" hidden>No encontramos vehículos con esos filtros. Probá con otra búsqueda.</p>
+  </section>
+
+  <section class="ruta" id="ruta" aria-labelledby="ruta-h">
+    <div class="ruta-inner">
+      <p class="eyebrow eyebrow-light" data-animate="up" style="transform:translateY(18px);opacity:0">Cómo comprás</p>
+      <h2 id="ruta-h" data-animate="up" style="transform:translateY(28px);opacity:0">Tu ruta hacia el auto nuevo</h2>
+      <div class="ruta-stage" id="rutaStage">
+        <div class="ruta-visual">
+          <svg viewBox="0 0 300 500" class="ruta-svg" id="rutaSvg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <path class="ruta-track" d="M150,20 C 60,120 240,180 150,260 C 60,340 240,380 150,480" />
+            <path class="ruta-progreso" id="rutaProgreso" d="M150,20 C 60,120 240,180 150,260 C 60,340 240,380 150,480" />
+            <g id="rutaAuto" class="ruta-auto">
+              <path d="M-14,4 L-11,-3 Q-8,-7 -2,-7 L7,-7 Q11,-6 13,-2 L14,4 Q14,7 11,7 L-11,7 Q-14,7 -14,4 Z" fill="var(--color-secondary)"/>
+              <circle cx="-7" cy="7" r="3" fill="#0A0A0A"/>
+              <circle cx="8" cy="7" r="3" fill="#0A0A0A"/>
+            </g>
+          </svg>
+        </div>
+        <ol class="ruta-pasos" id="rutaPasos">
+          <li class="ruta-paso is-on" data-paso="0">
+            <span class="paso-folio">01</span>
+            <h3>Elegís tu auto</h3>
+            <p>Recorrés el catálogo completo y filtrás por lo que necesitás.</p>
+          </li>
+          <li class="ruta-paso" data-paso="1">
+            <span class="paso-folio">02</span>
+            <h3>Coordinamos la prueba</h3>
+            <p>Lo ves y lo probás en persona antes de decidir.</p>
+          </li>
+          <li class="ruta-paso" data-paso="2">
+            <span class="paso-folio">03</span>
+            <h3>Financiación a medida</h3>
+            <p>Vemos juntos la forma de pago que mejor te sirva.</p>
+          </li>
+          <li class="ruta-paso" data-paso="3">
+            <span class="paso-folio">04</span>
+            <h3>Te lo llevás</h3>
+            <p>Transferencia incluida — te vas manejando tu auto.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="confianza" id="confianza" aria-labelledby="confianza-h">
+    <div class="confianza-media">
+      <img src="images/asesor-atencion-clientes-1600x1300.webp" alt="Asesor de Black Automotores atendiendo a una pareja de clientes" width="1600" height="1300" loading="lazy">
+    </div>
+    <div class="confianza-texto">
+      <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">Garantías</p>
+      <h2 id="confianza-h" data-animate="up" style="transform:translateY(28px);opacity:0">Comprás con respaldo real</h2>
+      <ul class="confianza-lista" data-animate-stagger>
+        <li><h3>Revisión mecánica</h3><p>Cada vehículo se revisa antes de publicarse.</p></li>
+        <li><h3>Financiación disponible</h3><p>Te contamos las opciones al consultar.</p></li>
+        <li><h3>Transferencia incluida</h3><p>El trámite va por nuestra cuenta.</p></li>
+        <li><h3>Atención directa</h3><p>Hablás con nosotros, sin intermediarios.</p></li>
+      </ul>
+      <figure class="confianza-sello">
+        <img src="images/apreton-manos-cierre-1200x1600.webp" alt="Apretón de manos al cerrar la operación" width="1200" height="1600" loading="lazy">
+        <figcaption>Del primer mensaje a las llaves en mano.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" aria-labelledby="faq-h">
+    <div class="section-head">
+      <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">Preguntas frecuentes</p>
+      <h2 id="faq-h" data-animate="up" style="transform:translateY(28px);opacity:0">Antes de escribirnos</h2>
+    </div>
+    <div class="faq-lista">
+      <details>
+        <summary>¿Puedo ver el auto antes de decidir?</summary>
+        <p>Sí, coordinamos la visita y la prueba de manejo por WhatsApp.</p>
+      </details>
+      <details>
+        <summary>¿La transferencia está incluida?</summary>
+        <p>Sí, el trámite de transferencia va incluido en la operación.</p>
+      </details>
+      <details>
+        <summary>¿Tienen financiación?</summary>
+        <p>Sí, te contamos las opciones disponibles al momento de consultar.</p>
+      </details>
+      <details>
+        <summary>¿Reciben mi auto en parte de pago?</summary>
+        <p>Consultanos el modelo y lo evaluamos juntos por WhatsApp.</p>
+      </details>
+      <details>
+        <summary>¿Los vehículos tienen revisión mecánica?</summary>
+        <p>Sí, cada unidad se revisa antes de sumarse al catálogo.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="cierre" aria-labelledby="cierre-h">
+    <div class="cierre-media">
+      <img src="images/entrega-llaves-cliente-1200x1600.webp" alt="Entrega de llaves a una clienta" width="1200" height="1600" loading="lazy">
+    </div>
+    <div class="cierre-content">
+      <h2 id="cierre-h" data-animate="up" style="transform:translateY(28px);opacity:0">¿Ya elegiste tu auto?</h2>
+      <p data-animate="up" style="transform:translateY(24px);opacity:0" data-delay="0.1">Escribinos por WhatsApp y arrancamos.</p>
+      <a class="btn btn-cta" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay="0.2" data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493873115008" target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" id="contacto">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="brand-black">BLACK</span><span class="brand-sub">AUTOMOTORES</span>
+      <p>Agencia de autos usados en Salta Capital.</p>
+    </div>
+    <div class="footer-col">
+      <h3>Navegación</h3>
+      <ul>
+        <li><a href="#catalogo">Catálogo</a></li>
+        <li><a href="#ruta">Cómo comprás</a></li>
+        <li><a href="#faq">Preguntas</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Contacto</h3>
+      <ul>
+        <li><a data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493873115008" target="_blank" rel="noopener noreferrer">+54 9 387 311-5008</a></li>
+        <li><a href="mailto:hola@blackautomotores.com">hola@blackautomotores.com</a></li>
+        <li>Salta Capital, Salta</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© <span id="anioActual"></span> Black Automotores. Vehículos y precios utilizados con fines demostrativos.</p>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<div class="modal-overlay" id="modalOverlay" hidden></div>
+<div class="modal-vehiculo" id="modalVehiculo" role="dialog" aria-modal="true" inert>
+  <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="modal-scroll" id="modalScroll"></div>
+</div>
+
+<div class="floating-stack">
+  <a class="floating-wsp" id="floatingWsp" data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493873115008" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp">
+    <span class="pulse-ring" aria-hidden="true"></span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.6 6.32A8.86 8.86 0 0 0 11.9 4C7.1 4 3.2 7.9 3.2 12.7c0 1.55.4 3.02 1.16 4.32L3 21l4.1-1.31a9.05 9.05 0 0 0 4.76 1.32h.01c4.8 0 8.7-3.9 8.7-8.7 0-2.32-.9-4.5-2.97-6zm-5.7 13.31h-.01a7.4 7.4 0 0 1-3.77-1.03l-.27-.16-2.8.9.9-2.7-.17-.28a7.35 7.35 0 0 1-1.13-3.93c0-4.07 3.32-7.38 7.4-7.38 1.97 0 3.83.77 5.22 2.16a7.32 7.32 0 0 1 2.16 5.23c0 4.08-3.32 7.39-7.4 7.39zm4.05-5.54c-.22-.11-1.3-.64-1.5-.72-.2-.07-.35-.11-.5.11-.15.22-.57.72-.7.87-.13.15-.26.16-.48.05-.22-.11-.94-.35-1.79-1.11-.66-.59-1.11-1.32-1.24-1.54-.13-.22-.01-.35.1-.46.1-.1.22-.26.33-.39.11-.13.15-.22.22-.37.07-.15.04-.28-.02-.39-.06-.11-.5-1.2-.68-1.65-.18-.43-.36-.37-.5-.38-.13-.01-.28-.01-.43-.01-.15 0-.39.06-.6.28-.2.22-.79.77-.79 1.87s.81 2.17.92 2.32c.11.15 1.6 2.44 3.87 3.42.54.23.96.37 1.29.48.54.17 1.03.15 1.42.09.43-.06 1.3-.53 1.49-1.04.18-.51.18-.94.13-1.03-.05-.09-.2-.15-.42-.26z"/></svg>
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
