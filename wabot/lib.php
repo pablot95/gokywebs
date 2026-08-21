@@ -523,15 +523,25 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     // devolvió el checkout real. El de 12 está verificado contra ese checkout;
     // los de 3 y 6 salen de la misma tasa.
     $factores = ['12' => 0.125841, '6' => 0.209734, '3' => 0.380983];
+    // 3 pagos por transferencia: montos fijos que definió Pablo, no la misma
+    // tasa que las cuotas de tarjeta de arriba (esas sí tienen interés). Es
+    // otra forma de pago aparte, para el que quiere adelantar en menos partes
+    // sin pasar por tarjeta.
+    $pagos3PorTotal = [200000 => 70000, 250000 => 85000, 290000 => 100000, 320000 => 110000];
     foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
         $total = (int)preg_replace('/\D/', '', (string)($datos['precio'] ?? ''));
         // El catálogo cotiza por cantidad de productos: su total no es fijo, así
         // que no puede tener cuotas de lista (ver info.pago_catalogo). Se le
         // sacan para que nadie lea montos que no corresponden a lo cotizado.
-        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas']); continue; }
+        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas'], $cfg['tipos'][$tipo]['pagos3']); continue; }
         if ($total <= 0) continue;
         foreach ($factores as $n => $factor) {
             $cfg['tipos'][$tipo]['cuotas'][$n] = wabot_moneda((int)round($total * $factor));
+        }
+        if (isset($pagos3PorTotal[$total])) {
+            $cfg['tipos'][$tipo]['pagos3'] = wabot_moneda($pagos3PorTotal[$total]);
+        } else {
+            unset($cfg['tipos'][$tipo]['pagos3']);
         }
     }
 
@@ -568,6 +578,23 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes'] as $clave) {
         if (empty($cfg[$clave]) || !is_array($cfg[$clave])) continue;
         $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
+    }
+
+    // Agrega la opción de 3 pagos por transferencia al lado de "hasta en 12
+    // cuotas" — solo en los mensajes de precio con un total fijo (catálogo no
+    // entra, cotiza por cantidad). {pagos3} lo resuelve wabot_msg_precio_texto()
+    // con el monto real de cada tipo; si no hay un monto definido para ese
+    // precio, la misma función saca la frase entera en vez de dejarla rota.
+    $conPagos3 = function ($texto) {
+        return str_replace(
+            'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
+            'Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.',
+            (string)$texto
+        );
+    };
+    if (!empty($cfg['msg_precio'])) $cfg['msg_precio'] = $conPagos3($cfg['msg_precio']);
+    if (!empty($cfg['msg_precio_variantes']) && is_array($cfg['msg_precio_variantes'])) {
+        $cfg['msg_precio_variantes'] = array_map($conPagos3, $cfg['msg_precio_variantes']);
     }
 
     // En la parte 1 se lo nombra por el ROL ("el desarrollador"), nunca por el

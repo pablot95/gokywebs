@@ -2852,5 +2852,45 @@ wabot_config_ventas($cargaVieja);
 caso('el texto viejo migra al nuevo en un bot-config.json existente',
     $cargaVieja['info']['carga'] === $cfg['info']['carga']);
 
+echo "— 3 pagos por transferencia, al lado de las cuotas de tarjeta —\n";
+
+foreach ([
+    'landing'       => '$70.000',
+    'turnos'        => '$85.000',
+    'institucional' => '$85.000',
+    'inmobiliaria'  => '$100.000',
+    'ecommerce'     => '$110.000',
+    'elearning'     => '$110.000',
+] as $tipo => $monto) {
+    $texto = wabot_msg_precio_texto($tipo, $cfg);
+    caso("$tipo ofrece 3 pagos de $monto", strpos($texto, "en 3 pagos de $monto,") !== false);
+    caso("$tipo mantiene la mención a las 12 cuotas de tarjeta", strpos($texto, 'o con tarjeta hasta en 12 cuotas') !== false);
+}
+
+caso('catálogo no menciona 3 pagos: cotiza por cantidad, no tiene un total fijo',
+    strpos($cfg['msg_precio_catalogo'], '3 pagos') === false);
+caso('y no tiene un pagos3 calculado en la config',
+    !isset($cfg['tipos']['catalogo']['pagos3']));
+
+$cfgSinTabla = wabot_config_load();
+$cfgSinTabla['tipos']['landing']['precio'] = '$275.000';
+wabot_config_ventas($cfgSinTabla);
+caso('un precio que no está en la tabla de 3 pagos no arma un monto inventado',
+    !isset($cfgSinTabla['tipos']['landing']['pagos3']));
+caso('y el mensaje cae a la frase de siempre, sin un {pagos3} roto',
+    strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), '{pagos3}') === false
+    && strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.') !== false);
+
+$vieja = wabot_config_load();
+$vieja['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
+En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
+$vieja['msg_precio_variantes'] = ['Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
+Acá podés ver todo lo que incluye y otros trabajos realizados: {link}'];
+wabot_config_ventas($vieja);
+caso('un bot-config.json de producción (sin la frase nueva) migra sola en msg_precio',
+    strpos($vieja['msg_precio'], 'en 3 pagos de {pagos3},') !== false);
+caso('y también en cada variante de msg_precio_variantes',
+    strpos($vieja['msg_precio_variantes'][0], 'en 3 pagos de {pagos3},') !== false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
