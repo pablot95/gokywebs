@@ -2018,10 +2018,18 @@ async function savePropuestaTipoWeb(input) {
 function getPropuestaFechaInfo(p) {
     if (p.createdAt?.toDate) {
         const d = p.createdAt.toDate();
-        return { key: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }), sortMs: d.getTime() };
+        // Hora a mano, no toLocaleTimeString con hour12:false: algunos
+        // motores devuelven "24:00" en vez de "00:00" a medianoche.
+        const hh = String(d.getHours()).padStart(2, "0");
+        const mm = String(d.getMinutes()).padStart(2, "0");
+        return {
+            key: d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+            hora: hh + ":" + mm,
+            sortMs: d.getTime(),
+        };
     }
-    if (p.fecha) return { key: p.fecha, sortMs: -Infinity };
-    return { key: "Sin fecha", sortMs: -Infinity };
+    if (p.fecha) return { key: p.fecha, hora: "", sortMs: -Infinity };
+    return { key: "Sin fecha", hora: "", sortMs: -Infinity };
 }
 
 // Fechas marcadas para filtrar Bocetos. Vive fuera de renderPropuestas() para
@@ -2109,7 +2117,7 @@ function renderPropuestas() {
     }
 
     tbody.innerHTML = list.map(p => {
-        const fecha = getPropuestaFechaInfo(p).key;
+        const { key: fecha, hora } = getPropuestaFechaInfo(p);
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
@@ -2119,7 +2127,7 @@ function renderPropuestas() {
                 <td>
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
-                    ${aviso && !aviso.vencido ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(aviso.texto)}</div>` : ""}
+                    ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}
                 </td>
                 <td class="prop-col-marca">
                     ${nombreNegocio
