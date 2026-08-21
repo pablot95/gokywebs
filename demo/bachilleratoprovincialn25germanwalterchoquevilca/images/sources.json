@@ -1,0 +1,44 @@
+[
+  {
+    "file": "hero-quebrada-tilcara-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/4673743/",
+    "use": "Hero (Inicio)"
+  },
+  {
+    "file": "tilcara-calle-colonial-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/13146359/",
+    "use": "Nosotros / ubicacion"
+  },
+  {
+    "file": "paisaje-andino-cordillera-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/14015886/",
+    "use": "Contacto / paisaje regional"
+  },
+  {
+    "file": "salinas-norte-argentino-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/6097178/",
+    "use": "Orientaciones - Turismo"
+  },
+  {
+    "file": "informatica-codigo-pantalla-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/6424591/",
+    "use": "Orientaciones - Informatica"
+  },
+  {
+    "file": "turismo-grupo-mirador-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/9943235/",
+    "use": "Orientaciones - Turismo"
+  },
+  {
+    "file": "estudiantes-aula-moderna-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/8423431/",
+    "use": "Vida escolar / Nosotros"
+  }
+]
