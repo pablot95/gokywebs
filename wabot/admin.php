@@ -1651,18 +1651,27 @@ body.embed { min-height: 0; }
             - Que no lo hayas abierto desde ese mensaje. */
         const GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
         function esNoLeido(it) {
-            if (!GRUPOS_SIN_LEER.includes(it.grupo)) return false;
+            if (it.grupo === 'archivado') return false;
+            // O está en la parte 2, o el bot se calló en esta charla: apagado,
+            // pausado, o porque te derivó la consulta. Una derivación tiene que
+            // verse SÍ o SÍ — el bot le prometió al cliente que contestás vos.
+            if (!GRUPOS_SIN_LEER.includes(it.grupo) && !it.espera && !it.handoff_pendiente) return false;
             return it.quien === 'cliente' && !!it.no_leido;
         }
         const SUBGRUPOS_NO_LEIDOS = [
+            { clave: 'derivado',    titulo: 'Te derivó la consulta' },
             { clave: 'pago',        titulo: 'Pagaron' },
             { clave: 'presentados', titulo: 'Con la demo entregada' },
             { clave: 'muestra',     titulo: 'Con demo por presentar' },
         ];
         function subGrupoNoLeido(it) {
-            if (it.grupo === 'presentados' || it.grupo === 'presentadas_48') return 'presentados';
-            if (it.grupo === 'pago') return 'pago';
-            return 'muestra';
+            if (GRUPOS_SIN_LEER.includes(it.grupo)) {
+                if (it.grupo === 'presentados' || it.grupo === 'presentadas_48') return 'presentados';
+                if (it.grupo === 'pago') return 'pago';
+                return 'muestra';
+            }
+            // Lo que entró por el otro camino: el bot dejó de contestar.
+            return 'derivado';
         }
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');

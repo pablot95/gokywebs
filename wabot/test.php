@@ -2678,7 +2678,10 @@ echo "— Qué entra en Sin leer: solo parte 2, sin contestar y sin abrir —\n"
 // Réplica en PHP de esNoLeido() de admin.php: son las mismas tres condiciones.
 $GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
 $entraEnSinLeer = function ($cv) use ($GRUPOS_SIN_LEER) {
-    if (!in_array(wabot_conv_grupo($cv), $GRUPOS_SIN_LEER, true)) return false;
+    $grupo = wabot_conv_grupo($cv);
+    if ($grupo === 'archivado') return false;
+    $botSeCallo = wabot_conv_espera_respuesta($cv) || !empty($cv['handoff_pendiente']);
+    if (!in_array($grupo, $GRUPOS_SIN_LEER, true) && !$botSeCallo) return false;
     $ult = end($cv['transcript']);
     if (($ult['q'] ?? '') !== 'cliente') return false;
     return wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0);
@@ -2717,6 +2720,26 @@ caso('parte 1: uno que vio el precio y contestó → NO',
     $entraEnSinLeer($armarSL(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], [['bot', 'Sale $X'], ['cliente', 'Y con catálogo?']])) === false);
 caso('un archivado no entra aunque tenga todo lo demás',
     $entraEnSinLeer($armarSL(array_merge($demoEntregada, ['archivado' => true]), [['humano', 'demo'], ['cliente', 'gracias']])) === false);
+
+// El agujero que dejó sacar "Te esperan": si el bot deriva la consulta, le
+// prometió al cliente que contesta una persona. Eso tiene que verse en algún
+// lado o la promesa queda colgada entre cientos de charlas.
+$derivado = ['fase' => 'derivado', 'cierre' => 'derivacion', 'handoff_pendiente' => true, 'tipo' => 'landing'];
+caso('el bot te derivó la consulta y el cliente contestó → SÍ',
+    $entraEnSinLeer($armarSL($derivado, [['bot', 'Esa duda te la contesta el desarrollador'], ['cliente', 'Dale, gracias']])) === true);
+caso('aunque haya visto el precio y esté en el embudo → SÍ',
+    $entraEnSinLeer($armarSL(array_merge($derivado, ['precio_dado' => true]), [['bot', 'Te deriva'], ['cliente', 'Ok, espero']])) === true);
+caso('el bot apagado a mano y el cliente escribiendo → SÍ',
+    $entraEnSinLeer($armarSL(['bot_off' => true, 'fase' => 'menu', 'tipo' => 'landing'],
+        [['bot', 'x'], ['cliente', 'Hola? hay alguien?']])) === true);
+caso('un sistema a medida derivado → SÍ',
+    $entraEnSinLeer($armarSL(['fase' => 'derivado', 'tipo' => 'sistema', 'handoff_pendiente' => true, 'sistema_lead_creado' => true],
+        [['bot', 'Pablo te arma la propuesta'], ['cliente', 'Perfecto']])) === true);
+// Pero derivar no lo mete para siempre: si vos ya contestaste, sale.
+caso('si ya le contestaste vos, la derivación sale de la lista',
+    $entraEnSinLeer($armarSL($derivado, [['cliente', 'Dale, gracias'], ['humano', 'Hola, te contesto yo']])) === false);
+caso('y una charla de parte 1 con el bot andando sigue afuera',
+    $entraEnSinLeer($armarSL(['fase' => 'menu', 'tipo' => 'landing'], [['bot', 'Hola!'], ['cliente', 'Quiero una web']])) === false);
 
 echo "— El perfil de WhatsApp no siempre es un nombre —\n";
 

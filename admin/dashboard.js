@@ -212,7 +212,9 @@ async function sincronizarNoLeidosWabot() {
         // esperando respuesta y el chat sin abrir.
         const GRUPOS_SIN_LEER = ["pago", "presentados", "presentadas_48", "muestra"];
         const noLeidos = items.filter(it =>
-            GRUPOS_SIN_LEER.includes(it.grupo) && it.quien === "cliente" && it.no_leido).length;
+            it.grupo !== "archivado"
+            && (GRUPOS_SIN_LEER.includes(it.grupo) || it.espera || it.handoff_pendiente)
+            && it.quien === "cliente" && it.no_leido).length;
         const el = document.getElementById("countWabotNoLeidos");
         if (el) el.textContent = noLeidos;
     } catch (e) {
