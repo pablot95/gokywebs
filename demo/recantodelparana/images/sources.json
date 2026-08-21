@@ -1,0 +1,50 @@
+[
+  {
+    "file": "hero-atardecer-rio-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/29150568/",
+    "use": "Hero"
+  },
+  {
+    "file": "rio-calmo-entorno-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/38351825/",
+    "use": "Entorno / el rio"
+  },
+  {
+    "file": "cabana-ceibo-exterior-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/5644485/",
+    "use": "Cabana Ceibo"
+  },
+  {
+    "file": "cabana-timbo-exterior-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/8092395/",
+    "use": "Cabana Timbo"
+  },
+  {
+    "file": "detalle-madera-artesanal-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/13005858/",
+    "use": "Detalle / cierre"
+  },
+  {
+    "file": "familia-picnic-aire-libre-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7669127/",
+    "use": "Entorno / familia"
+  },
+  {
+    "file": "hamaca-atardecer-descanso-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/1229753/",
+    "use": "Entorno / descanso"
+  },
+  {
+    "file": "bosque-luz-ambiente-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/36085405/",
+    "use": "Fondo de seccion / ambiente"
+  }
+]
