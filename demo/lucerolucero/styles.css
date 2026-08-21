@@ -260,7 +260,7 @@ body.no-scroll { overflow: hidden; }
     position: sticky; top: 0; height: 100svh; grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr); gap: var(--sp-3); padding-block: var(--sp-6);
   }
-  .recorrido-stage.is-sticky-mobile .recorrido-visual { height: auto; min-height: 0; }
+  .recorrido-stage.is-sticky-mobile .recorrido-visual { height: 38svh; min-height: 220px; }
   .recorrido-stage.is-sticky-mobile .recorrido-pasos { position: relative; height: 100%; gap: 0; }
   .recorrido-stage.is-sticky-mobile .recorrido-pasos .paso {
     position: absolute; inset: 0; align-content: center; opacity: 0;

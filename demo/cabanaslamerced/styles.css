@@ -183,9 +183,13 @@ body.no-scroll { overflow: hidden; }
 .stepper { display: flex; align-items: center; border: 1.5px solid var(--color-border); border-radius: var(--radius-full); flex: none; }
 .stepper button { width: 30px; height: 32px; display: grid; place-items: center; font-size: 1rem; font-weight: 700; color: var(--color-primary-text); }
 .stepper span { min-width: 16px; text-align: center; font-weight: 700; font-size: .82rem; }
-.prod-add { flex-grow: 1; min-width: 0; min-height: 40px; padding-inline: .6rem; border-radius: var(--radius-full); background: var(--color-primary-soft); color: var(--color-primary-text); font-weight: 700; font-size: .8rem; white-space: nowrap; transition: background .2s, color .2s; }
+.prod-add { flex-grow: 1; min-width: 0; min-height: 40px; padding-inline: .6rem; border-radius: var(--radius-full); background: var(--color-primary-soft); color: var(--color-primary-text); font-weight: 700; font-size: .8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background .2s, color .2s; }
 .prod-add:hover { background: var(--color-primary); color: var(--color-cta-text); }
 .prod-add.is-added { background: var(--color-primary); color: var(--color-cta-text); }
+@media (max-width: 640px) {
+  .catalogo-grid .prod-actions { flex-direction: column; align-items: stretch; gap: .4rem; }
+  .catalogo-grid .stepper { align-self: center; }
+}
 
 .trust-bar { padding-block: var(--section-pad-y); background: var(--color-ink); color: var(--color-bg); }
 .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--sp-5); }
