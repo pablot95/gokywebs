@@ -230,7 +230,32 @@ function wabot_config_ventas(&$cfg) {
         'confirma_cambio_2' => 'Decime nomás: es para el mismo proyecto que veníamos viendo (respondé "mismo") o es otra web aparte (respondé "otra")?',
         'confirma_cambio_mismo' => 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?',
         'baja' => 'Listo, no te escribimos más. Gracias por avisar.',
-        'precio_resumen' => "El total es {precio} por todo el desarrollo, con una seña de {sena} para arrancar y el saldo al entregar la web.\nEl detalle completo está acá: {link}",
+        'precio_resumen' => "El total es {precio} por todo el desarrollo, y el detalle completo está acá: {link}",
+
+        /* ── Parte 2 de la venta: después de presentar la demo ──
+         * Recién acá aparecen la seña, los datos de transferencia y el link de
+         * tarjeta. Antes de la demo NO se mencionan (decisión de Pablo, 22-ago).
+         * El nombre "Pablo" también se reserva para acá: la primera vez que el
+         * cliente lo lee es en la oferta de videollamada. */
+        'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
+        'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
+        'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
+        // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
+        // Pablo directamente. Es el único texto donde aparece su nombre.
+        'postdemo_videollamada' => 'Si te sirve, coordinamos una videollamada con Pablo, el desarrollador: te muestra todo en vivo y te saca las dudas de una. Te lo paso así arreglan el horario?',
+        // Sin link: las 3 cuotas sin interés las arma Pablo a mano.
+        'postdemo_cuotas_sin_interes' => 'Si te sirve para acomodarlo, lo podemos dividir en 3 cuotas sin interés, sin recargo sobre el precio. Te lo prepara Pablo directamente y te lo pasa por acá. Avanzamos así?',
+        'postdemo_cambios' => 'Perfecto, tomo nota de esos cambios. Los aplicamos apenas confirmes y la web queda como la necesitás.',
+        'postdemo_pago_avisado' => 'Buenísimo, lo verificamos y te confirmamos por acá. Cualquier cosa quedamos en contacto.',
+        'postdemo_no_gusto' => 'Gracias por la sinceridad, me sirve. Contame qué es lo que no te cerró y lo revisamos.',
+        // "Dale, la voy a mirar" es la respuesta más común y la que más se cae:
+        // no se presiona, se deja la puerta abierta y se avisa que volvemos.
+        'postdemo_la_miro' => 'Dale, miralo con tranquilidad. Cualquier duda que te surja escribime por acá y te la contesto al toque.',
+        'pago_alias' => 'pablotravis',
+        'pago_titular' => 'PABLO TRAVI',
+        'pago_cbu' => '0720071788000003618268',
+        'pago_documento' => 'CUIT 20-39148294-3',
+        'pago_link_base' => 'gokywebs.com/pago?monto=',
     ];
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
@@ -267,7 +292,13 @@ function wabot_config_ventas(&$cfg) {
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;
     if (!isset($cfg['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = 20;
-    if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 48;
+    // 20 h, no 48: Meta solo deja escribir texto libre dentro de las 24 h desde
+    // el último mensaje del cliente. Con 48 el recordatorio caía SIEMPRE fuera
+    // de la ventana y no se mandaba nunca (verificado el 22-ago). Los que igual
+    // no contestan quedan a la vista en la pestaña "Presentadas 48hs" del panel.
+    if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 20;
+    if ((float)$cfg['presentados_recordatorio_horas'] > 22) $cfg['presentados_recordatorio_horas'] = 20;
+    if (!isset($cfg['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = 48;
     if (!isset($cfg['presentados_archivar_horas']))     $cfg['presentados_archivar_horas']     = 168;
     if (!isset($cfg['muestra_aviso_activo'])) $cfg['muestra_aviso_activo'] = true;
 
@@ -416,6 +447,138 @@ function wabot_config_ventas(&$cfg) {
             && (array)($ej['info_keys'] ?? []) === ['mantenimiento']) {
             $cfg['ejemplos'][$iEj]['info_keys'] = ['hosting'];
         }
+    }
+
+    wabot_config_venta_en_dos_partes($cfg);
+}
+
+/**
+ * La venta pasó a tener dos partes (22-ago), y eso cambia qué se dice y cuándo:
+ *
+ *  1) Antes de la demo: rubro → precio TOTAL → demo gratis. Sin seña, sin montos
+ *     de cuota y sin el nombre de Pablo. Solo se menciona que hay hasta 12 cuotas.
+ *  2) Después de presentar la demo: recién ahí aparecen la seña, los datos de
+ *     transferencia, el link de tarjeta y —si duda— la videollamada con Pablo.
+ *
+ * Los montos de cuota que había estaban ~25% por encima de lo que cobra Mercado
+ * Pago de verdad (verificado contra un checkout real: $320.000 → 12x $40.269,33,
+ * CFT 125%). Se recalculan con esa tasa.
+ */
+function wabot_config_venta_en_dos_partes(&$cfg) {
+    // Factores de cuota derivados del CFT 125% anual (tasa mensual 6,991%) que
+    // devolvió el checkout real. El de 12 está verificado contra ese checkout;
+    // los de 3 y 6 salen de la misma tasa.
+    $factores = ['12' => 0.125841, '6' => 0.209734, '3' => 0.380983];
+    foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
+        $total = (int)preg_replace('/\D/', '', (string)($datos['precio'] ?? ''));
+        // El catálogo cotiza por cantidad de productos: su total no es fijo, así
+        // que no puede tener cuotas de lista (ver info.pago_catalogo). Se le
+        // sacan para que nadie lea montos que no corresponden a lo cotizado.
+        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas']); continue; }
+        if ($total <= 0) continue;
+        foreach ($factores as $n => $factor) {
+            $cfg['tipos'][$tipo]['cuotas'][$n] = wabot_moneda((int)round($total * $factor));
+        }
+    }
+
+    // Sin la seña y sin montos de cuota: eso es de la parte 2.
+    // El salto de línea antes del link NO se toca: es el formato del mensaje de
+    // precio y hay un guard que lo reimpone. Por eso se colapsan espacios y
+    // tabs, nunca los \n.
+    $sinSena = function ($texto) {
+        $t = (string)$texto;
+        $reemplazo = ' Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.';
+        $t = str_replace(
+            [' Se arranca con una seña de {sena} y el saldo recién cuando la web está terminada, o con tarjeta hasta en 12 cuotas.',
+             ' Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.',
+             ' Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.',
+             ' Arrancás con una seña de {sena} y el resto lo pagás recién con la web entregada, o con tarjeta hasta en 12 cuotas.',
+             ' Arrancás con una seña de {sena} y el resto al entregar, o con tarjeta hasta en 12 cuotas.',
+             ' Se reserva con una seña de {sena} y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.',
+             ' Seña de {sena} para arrancar y el saldo con la web entregada, o con tarjeta hasta en 12 cuotas.'],
+            $reemplazo, $t
+        );
+        // Las que colgaban de dos puntos ("{precio}: se reserva con…") necesitan
+        // que el precio quede cerrado con punto, no con el dos puntos huérfano.
+        $t = str_replace(
+            [': se reserva con una seña de {sena} y el saldo se abona al entregar la web, o con tarjeta hasta en 12 cuotas.',
+             ': seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.'],
+            '.' . $reemplazo, $t
+        );
+        $t = str_replace(' .', '.', $t);
+        return preg_replace('/[ \t]+/u', ' ', $t);
+    };
+    foreach (['msg_precio', 'msg_precio_catalogo'] as $clave) {
+        if (!empty($cfg[$clave])) $cfg[$clave] = $sinSena($cfg[$clave]);
+    }
+    foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes'] as $clave) {
+        if (empty($cfg[$clave]) || !is_array($cfg[$clave])) continue;
+        $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
+    }
+
+    // El nombre propio se reserva para la videollamada de la parte 2.
+    $sinNombrePropio = [
+        'derivar' => [
+            'Perfecto, {nombre}. Tu consulta la sigue Pablo directamente: te escribe a la brevedad por acá para avanzar.'
+                => 'Perfecto, {nombre}. Tu consulta la sigue el equipo directamente: te escriben a la brevedad por acá para avanzar.',
+            'Genial {nombre}. Pablo te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.'
+                => 'Genial {nombre}. El equipo te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.',
+        ],
+        'espera' => [
+            'Pablo ya tiene tu consulta y te escribe a la brevedad por acá.'
+                => 'El equipo ya tiene tu consulta y te escribe a la brevedad por acá.',
+            'Pablo ya tiene tu consulta y te escribe en un rato por acá.'
+                => 'El equipo ya tiene tu consulta y te escribe en un rato por acá.',
+        ],
+        'espera_prediseno' => [
+            'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma Pablo cuando te escriba.'
+                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirman cuando te escriban.',
+        ],
+        'sistema_whatsapp' => [
+            'Última cosa: pasame tu número de WhatsApp así Pablo te envía por ahí la propuesta del sistema.'
+                => 'Última cosa: pasame tu número de WhatsApp así te enviamos por ahí la propuesta del sistema.',
+        ],
+        'sistema_cierre' => [
+            'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida. Te escribe en un rato para definir el próximo paso.'
+                => 'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida. Te escribimos en un rato para definir el próximo paso.',
+            'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.'
+                => 'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida: te escribimos a la brevedad para definir el próximo paso.',
+        ],
+    ];
+    foreach ($sinNombrePropio as $campo => $reemplazos) {
+        $actual = trim((string)($cfg[$campo] ?? ''));
+        if (isset($reemplazos[$actual])) $cfg[$campo] = $reemplazos[$actual];
+    }
+
+    // El resumen corto de precio también adelantaba la seña.
+    if (strpos((string)($cfg['precio_resumen'] ?? ''), '{sena}') !== false) {
+        $cfg['precio_resumen'] = "El total es {precio} por todo el desarrollo, y el detalle completo está acá: {link}";
+    }
+
+    // Los datos bancarios completos (CBU + CUIT) y la videollamada sin coordinar
+    // horarios llegaron después de la primera versión de la parte 2.
+    if (strpos((string)($cfg['postdemo_transferencia'] ?? ''), '{cbu}') === false) {
+        $cfg['postdemo_transferencia'] = "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.";
+    }
+    if (stripos((string)($cfg['postdemo_videollamada'] ?? ''), 'horario') !== false) {
+        $cfg['postdemo_videollamada'] = 'Si te sirve, coordinamos una videollamada con Pablo, el desarrollador: te muestra todo en vivo y te saca las dudas de una. Te lo paso así arreglan el horario?';
+    }
+    if (trim((string)($cfg['pago_titular'] ?? '')) === 'Pablo Travi (Santander Río)') {
+        $cfg['pago_titular'] = 'PABLO TRAVI';
+    }
+    $infoSinNombre = [
+        'reuniones' => [
+            'Las reuniones se coordinan con Pablo al avanzar el proyecto.'
+                => 'Las reuniones se coordinan al avanzar el proyecto.',
+        ],
+        'otra' => [
+            'Ese detalle te lo confirma Pablo en la charla.'
+                => 'Ese detalle te lo confirma el equipo en la charla.',
+        ],
+    ];
+    foreach ($infoSinNombre as $campo => $reemplazos) {
+        $actual = trim((string)($cfg['info'][$campo] ?? ''));
+        if (isset($reemplazos[$actual])) $cfg['info'][$campo] = $reemplazos[$actual];
     }
 }
 
@@ -772,6 +935,9 @@ function wabot_conv_load($clave) {
         'presentado_confirmado'  => false,
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
+        // Parte 2 de la venta (después de presentar la demo).
+        'videollamada_ofrecida'  => false,
+        'cambios_pedidos'        => null,
         'cliente_id'             => null,
         // Aviso mandado antes de que se cierre la ventana de 24h de Meta,
         // mientras se espera para presentar la muestra: ver wabot_muestra_aviso_correr().
@@ -870,6 +1036,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_confirmado'] = false;
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
+    $conv['videollamada_ofrecida'] = false;
+    $conv['cambios_pedidos'] = null;
     $conv['cliente_id'] = null;
     $conv['muestra_aviso_enviado'] = false;
     $conv['muestra_aviso_ts'] = 0;
@@ -1009,7 +1177,12 @@ function wabot_conv_grupo($cv) {
 
     // Ya se le mandó la muestra y todavía no confirmó nada: deja de ser
     // trabajo pendiente de diseño (Muestras) y pasa a esperar al cliente.
-    if (!empty($cv['presentado_ts']) && empty($cv['presentado_confirmado'])) return 'presentados';
+    if (!empty($cv['presentado_ts']) && empty($cv['presentado_confirmado'])) {
+        // Pasadas 48 h sin que conteste una sola vez, sale de la cola normal y va
+        // a su propia columna: son los que hay que salir a buscar a mano, porque
+        // la ventana de 24 h de Meta ya no deja escribirles sin plantilla.
+        return wabot_presentada_sin_respuesta($cv) ? 'presentadas_48' : 'presentados';
+    }
 
     // Un prediseño cerrado NO es una promesa de atención pendiente: es un
     // boceto para diseñar, y su lugar es la cola de Muestras. Se evalúa ANTES
@@ -1039,6 +1212,28 @@ function wabot_conv_grupo($cv) {
     // ambos y los mezclaba en la cola Muestras.
     if (wabot_conv_espera_respuesta($cv)) return 'atencion';
     return 'chat';
+}
+
+/**
+ * Demo presentada hace más de 48 h y el cliente no contestó NADA desde entonces.
+ *
+ * Es el agujero real del embudo: manda "dale, la miro" (o ni eso) y desaparece.
+ * A esa altura la ventana de 24 h de Meta ya está cerrada, así que el bot no
+ * puede escribirle sin una plantilla aprobada — por eso estos chats se separan
+ * en su propia columna, para que Pablo los recupere a mano.
+ */
+function wabot_presentada_sin_respuesta($cv, $cfg = null, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $presentado = (int)($cv['presentado_ts'] ?? 0);
+    if ($presentado <= 0 || !empty($cv['presentado_confirmado'])) return false;
+    $horas = (float)($cfg['presentadas_sin_respuesta_horas'] ?? 48);
+    if ($ahora - $presentado < $horas * 3600) return false;
+    // Si escribió DESPUÉS de que le mandamos la demo, la charla sigue viva.
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $linea) {
+        if ((int)($linea['ts'] ?? 0) < $presentado) break;
+        if (($linea['q'] ?? '') === 'cliente') return false;
+    }
+    return true;
 }
 
 /** El cliente escribió y el bot no le va a contestar: lo tiene que tomar Pablo. */

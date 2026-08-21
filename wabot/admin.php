@@ -350,9 +350,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
-        $conv['pausado_hasta'] = time() + $horas * 3600;
+        // NO se pausa el bot: presentar la demo abre la parte 2 de la venta, y
+        // ahí el bot sigue trabajando (aclara dudas, pasa la seña, ofrece la
+        // videollamada). Antes esto lo dejaba mudo 24 h y la venta se frenaba.
+        $conv['pausado_hasta'] = 0;
         $conv['handoff_pendiente'] = false;
+        $conv['fase'] = 'postdemo';
+        $conv['cierre'] = null;
+        $conv['espera_avisada'] = false;
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $slug;
         $conv['presentado_confirmado'] = false;
@@ -755,6 +760,11 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-item.sin-leer .conv-item-hora { color:#7fa7f0; font-weight:700; }
 .conv-item-punto { width:8px; height:8px; border-radius:50%; background:#4f8cff; flex-shrink:0; box-shadow:0 0 0 3px rgba(79,140,255,.18); }
 .conv-sub-header { padding:9px 13px 5px; font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--dim); background:var(--bg); position:sticky; top:0; z-index:1; }
+/* Los que se enfriaron: la ventana de Meta ya cerró y hay que ir a buscarlos. */
+.conv-nav-btn[data-grupo="presentadas_48"] .conv-cuenta { background:#3a1f10; color:#f0a020; }
+.conv-nav-btn[data-grupo="presentadas_48"].tiene { border-color:var(--warn); color:var(--warn); }
+.conv-nav-btn[data-grupo="presentadas_48"].on { border-color:var(--warn); color:#ffcd7a; }
+.conv-list[data-grupo="presentadas_48"] .conv-list-head { color:var(--warn); }
 .conv-nav-btn[data-grupo="no_leidos"] .conv-cuenta { background:#16294d; color:#7fa7f0; }
 .conv-nav-btn[data-grupo="no_leidos"].tiene { border-color:#4f8cff; color:#9dc0ff; }
 .conv-nav-btn[data-grupo="no_leidos"].on { border-color:#4f8cff; color:#cfe0ff; }
@@ -1410,6 +1420,7 @@ body.embed { min-height: 0; }
                 <button type="button" class="conv-nav-btn" data-grupo="chat">Chats <span class="conv-cuenta" id="cuentaChat">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentados">Presentados <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="presentadas_48">Presentadas 48hs <span class="conv-cuenta" id="cuentaPresentadas48">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="atencion">Te esperan <span class="conv-cuenta" id="cuentaAtencion">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="archivado">Archivados <span class="conv-cuenta" id="cuentaArchivado">0</span></button>
             </nav>
@@ -1516,6 +1527,7 @@ body.embed { min-height: 0; }
             chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
             muestra:    { titulo: 'Demos',       cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna demo pedida.' },
             presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna demo presentada esperando confirmación.' },
+            presentadas_48:{ titulo: 'Presentadas 48hs', cuenta: document.getElementById('cuentaPresentadas48'), vacio: 'Ninguna demo sin respuesta hace más de 48 horas.' },
             atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
@@ -1533,7 +1545,7 @@ body.embed { min-height: 0; }
         ];
         function subGrupoNoLeido(it) {
             const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
-            if (grupo === 'presentados') return 'presentados';
+            if (grupo === 'presentados' || grupo === 'presentadas_48') return 'presentados';
             if (grupo === 'muestra') return 'muestra';
             return 'chat';
         }
@@ -1691,7 +1703,7 @@ body.embed { min-height: 0; }
             firmaLista = firma;
 
             listaEl.innerHTML = '';
-            const cuentas = { no_leidos: 0, chat: 0, muestra: 0, presentados: 0, atencion: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, atencion: 0, archivado: 0 };
             // Demos y Presentados muestran cuántos chats tienen algo sin leer,
             // no el total de la cola — para eso ya está la lista abierta.
             const cuentasNoLeidos = { muestra: 0, presentados: 0 };

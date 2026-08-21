@@ -1671,15 +1671,19 @@ caso('sin tipo cotizado todavía, la seña es la genérica con los 3 montos',
 
 echo "— Las cuotas que se dicen son las del tipo ya cotizado —\n";
 
+// Recalculadas el 22-ago con el CFT real de Mercado Pago (125%): el checkout
+// devolvió $320.000 → 12x $40.269,33, y las viejas estaban ~25% por encima.
+// El catálogo ya no tiene cuotas de lista: su total depende de los productos.
 $cuotasPorTipo = [
-    'landing'       => ['12' => '$32.000', '6' => '$48.000', '3' => '$84.000'],
-    'catalogo'      => ['12' => '$32.000', '6' => '$48.000', '3' => '$84.000'],
-    'turnos'        => ['12' => '$39.000', '6' => '$60.000', '3' => '$105.000'],
-    'institucional' => ['12' => '$39.000', '6' => '$60.000', '3' => '$105.000'],
-    'inmobiliaria'  => ['12' => '$46.000', '6' => '$70.000', '3' => '$121.000'],
-    'ecommerce'     => ['12' => '$50.000', '6' => '$76.000', '3' => '$134.000'],
-    'elearning'     => ['12' => '$50.000', '6' => '$76.000', '3' => '$134.000'],
+    'landing'       => ['12' => '$25.168', '6' => '$41.947', '3' => '$76.197'],
+    'turnos'        => ['12' => '$31.460', '6' => '$52.434', '3' => '$95.246'],
+    'institucional' => ['12' => '$31.460', '6' => '$52.434', '3' => '$95.246'],
+    'inmobiliaria'  => ['12' => '$36.494', '6' => '$60.823', '3' => '$110.485'],
+    'ecommerce'     => ['12' => '$40.269', '6' => '$67.115', '3' => '$121.915'],
+    'elearning'     => ['12' => '$40.269', '6' => '$67.115', '3' => '$121.915'],
 ];
+caso('la cuota de 12 de ecommerce es la que devuelve el checkout real de Mercado Pago',
+    ($cfg['tipos']['ecommerce']['cuotas']['12'] ?? '') === '$40.269');
 foreach ($cuotasPorTipo as $tipo => $cuotas) {
     $texto = wabot_texto_pago(['tipo' => $tipo, 'precio_dado' => true], $cfg);
     caso("$tipo cotizado → 12 cuotas de {$cuotas['12']}", strpos($texto, '12 cuotas de ' . $cuotas['12']) !== false);
@@ -2040,6 +2044,179 @@ echo "— El reset de sesión limpia el archivado —\n";
 $c = conv_nueva(); $c['archivado'] = true; $c['ultimo_ts'] = time() - 10 * 86400; $c['fase'] = 'derivado';
 wabot_conv_reset_si_vieja($c, $cfg, time());
 caso('una charla archivada que vuelve a los 10 días reaparece en el panel', $c['archivado'] === false);
+
+echo "— Parte 1: sin seña, sin montos de cuota y sin el nombre de Pablo —\n";
+
+foreach (array_merge([$cfg['msg_precio']], $cfg['msg_precio_variantes'],
+                     [$cfg['msg_precio_catalogo']], $cfg['msg_precio_catalogo_variantes']) as $i => $plantilla) {
+    caso("la plantilla de precio #$i no menciona la seña", strpos($plantilla, '{sena}') === false);
+    caso("la plantilla de precio #$i deja el link en su propio renglón", strpos($plantilla, "\n") !== false);
+}
+caso('el mensaje de precio sí menciona que hay hasta 12 cuotas',
+    stripos(wabot_msg_precio_texto('landing', $cfg), '12 cuotas') !== false);
+caso('pero NO dice el monto de cada cuota',
+    strpos(wabot_msg_precio_texto('landing', $cfg), '$25.168') === false);
+caso('el resumen de precio tampoco adelanta la seña',
+    strpos((string)$cfg['precio_resumen'], '{sena}') === false);
+
+foreach (['derivar', 'espera', 'espera_prediseno', 'sistema_whatsapp', 'sistema_cierre'] as $clave) {
+    caso("el texto \"$clave\" de la parte 1 no nombra a Pablo", stripos((string)$cfg[$clave], 'pablo') === false);
+}
+foreach (['otra', 'reuniones'] as $clave) {
+    caso("info.$clave no nombra a Pablo", stripos((string)$cfg['info'][$clave], 'pablo') === false);
+}
+caso('el único texto que nombra a Pablo es la videollamada de la parte 2',
+    stripos((string)$cfg['postdemo_videollamada'], 'pablo') !== false);
+
+// Si el cliente pregunta explícitamente cómo se paga, ahí sí va todo.
+$c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
+$r = wabot_engine('cuanto es la seña?', $c, $cfg);
+caso('preguntar por la seña sí la responde, con el monto y las cuotas reales',
+    strpos($r[0], '$60.000') !== false && strpos($r[0], '$25.168') !== false);
+
+echo "— Parte 2: la demo presentada reactiva el bot para cerrar —\n";
+
+$cPost = conv_nueva();
+$cPost['fase'] = 'postdemo'; $cPost['tipo'] = 'ecommerce'; $cPost['precio_dado'] = true;
+$cPost['presentado_ts'] = time(); $cPost['presentado_slug'] = 'tiendaana';
+
+caso('los datos de transferencia traen seña, alias y titular',
+    strpos(wabot_postdemo_transferencia($cPost, $cfg), '$90.000') !== false
+    && strpos(wabot_postdemo_transferencia($cPost, $cfg), 'pablotravis') !== false
+    && stripos(wabot_postdemo_transferencia($cPost, $cfg), 'PABLO TRAVI') !== false);
+caso('y siempre ofrecen la tarjeta como alternativa',
+    stripos(wabot_postdemo_transferencia($cPost, $cfg), 'tarjeta') !== false);
+caso('el link de tarjeta se arma con el monto de la seña, no con el total',
+    strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), 'gokywebs.com/pago?monto=90000') !== false
+    && strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), '320000') === false);
+
+$cLanding = conv_nueva(); $cLanding['tipo'] = 'landing';
+caso('cada tipo arma su propio link', strpos(wabot_postdemo_link_tarjeta($cLanding, $cfg), 'monto=60000') !== false);
+
+caso('"ya te transferí" se detecta', wabot_dice_que_pago('listo, ya te transferi') === true);
+caso('"te mando el comprobante" también', wabot_dice_que_pago('te mando el comprobante') === true);
+caso('"cuando transfiero?" NO es un aviso de pago', wabot_dice_que_pago('cuando tengo que transferir?') === false);
+caso('"prefiero con tarjeta" se detecta', wabot_prefiere_tarjeta('prefiero pagar con tarjeta') === true);
+caso('"pasame el link" también', wabot_prefiere_tarjeta('pasame el link de pago') === true);
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r = wabot_engine('me gusto mucho, como sigo?', $c, $cfg);
+caso('querer avanzar tras la demo devuelve los datos para transferir',
+    strpos($r[0], 'pablotravis') !== false && $c['fase'] === 'postdemo');
+
+clasifica(['otro']);
+$r = wabot_engine('prefiero con tarjeta', $c, $cfg);
+caso('pedir tarjeta devuelve el link armado', strpos($r[0], 'pago?monto=90000') !== false);
+
+clasifica(['otro']);
+$r = wabot_engine('ya te transferi la seña', $c, $cfg);
+caso('avisar el pago cierra y deriva para verificar',
+    $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && $c['presentado_confirmado'] === true);
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r = wabot_engine('mmm no se, lo tengo que pensar bien', $c, $cfg);
+caso('ante la duda ofrece la videollamada con Pablo',
+    stripos($r[0], 'pablo') !== false && stripos($r[0], 'videollamada') !== false
+    && $c['videollamada_ofrecida'] === true);
+
+clasifica(['otro']);
+$r = wabot_engine('mmm sigo sin estar seguro', $c, $cfg);
+caso('no repite la videollamada dos veces', stripos(implode(' ', $r), 'videollamada') === false);
+
+caso('"como sigo?" tras la demo es querer avanzar', wabot_postdemo_quiere_avanzar('me gusto mucho, como sigo?') === true);
+caso('"quiero avanzar" también', wabot_postdemo_quiere_avanzar('listo, quiero avanzar') === true);
+caso('"lo tengo que pensar" NO es querer avanzar', wabot_postdemo_quiere_avanzar('lo tengo que pensar') === false);
+caso('"lo tengo que pensar" sí es duda', wabot_postdemo_duda('lo tengo que pensar') === true);
+caso('"y si no me gusta como queda?" es duda', wabot_postdemo_duda('y si no me gusta como queda?') === true);
+caso('"me encanto" no es duda', wabot_postdemo_duda('me encanto la demo') === false);
+
+// Un mensaje neutro no dispara la videollamada: solo pregunta qué le pareció.
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['saludo']);
+$r = wabot_engine('hola', $c, $cfg);
+caso('un saludo tras la demo no quema la videollamada', empty($c['videollamada_ofrecida']));
+
+// La demo presentada NO deja mudo al bot: esa era la razón por la que la parte 2
+// no existía (presentar pausaba el chat 24 h).
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+$c['pausado_hasta'] = 0;
+caso('tras presentar la demo el bot queda activo, no pausado', (int)$c['pausado_hasta'] === 0);
+
+echo "— Parte 2: datos bancarios completos, cuotas sin interés y \"la voy a mirar\" —\n";
+
+$cPost = conv_nueva(); $cPost['fase'] = 'postdemo'; $cPost['tipo'] = 'ecommerce'; $cPost['precio_dado'] = true;
+$transfer = wabot_postdemo_transferencia($cPost, $cfg);
+foreach (['0720071788000003618268' => 'el CBU', 'pablotravis' => 'el alias',
+          'PABLO TRAVI' => 'el titular', '20-39148294-3' => 'el CUIT',
+          'Santander' => 'el banco', '$90.000' => 'la seña'] as $dato => $que) {
+    caso("los datos de transferencia traen $que", strpos($transfer, $dato) !== false);
+}
+
+// El bot ofrece la videollamada, pero el horario lo arregla Pablo: no pregunta
+// día ni hora, porque después no tiene con qué confirmarlos.
+caso('la videollamada no le pide al cliente un día ni un horario',
+    !preg_match('/(qué|que) (día|dia|horario|hora)|cuándo te|decime .{0,20}(día|dia|horario)|te queda cómodo/iu',
+        (string)$cfg['postdemo_videollamada']));
+caso('y deja claro que el horario lo arregla Pablo',
+    stripos((string)$cfg['postdemo_videollamada'], 'arreglan el horario') !== false);
+
+caso('"es muy caro" tras la demo es objeción de plata', wabot_postdemo_objecion_plata('uh es muy caro para mi') === true);
+caso('"no tengo la plata ahora" también', wabot_postdemo_objecion_plata('no tengo la plata ahora') === true);
+caso('"me encanto" no lo es', wabot_postdemo_objecion_plata('me encanto') === false);
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r = wabot_engine('uh, es mucha plata para mi ahora', $c, $cfg);
+caso('la objeción de plata ofrece las 3 cuotas sin interés',
+    stripos($r[0], '3 cuotas sin interés') !== false && $c['cuotas_ofrecidas'] === true);
+caso('y aclara que no hay link, que lo arma Pablo', stripos($r[0], 'pablo') !== false);
+clasifica(['otro']);
+$r = wabot_engine('igual sigue siendo caro', $c, $cfg);
+caso('las 3 cuotas no se repiten', stripos(implode(' ', $r), '3 cuotas sin interés') === false);
+
+caso('"dale, la voy a mirar" se detecta', wabot_postdemo_la_va_a_mirar('dale, la voy a mirar') === true);
+caso('"ahora la miro y te digo" también', wabot_postdemo_la_va_a_mirar('ahora la miro y te digo') === true);
+caso('"dejame que la vea tranquilo" también', wabot_postdemo_la_va_a_mirar('dejame que la vea tranquilo') === true);
+caso('"ya la mire, me gusto" NO es eso', wabot_postdemo_la_va_a_mirar('ya la mire, me gusto') === false);
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r = wabot_engine('dale, la voy a mirar', $c, $cfg);
+caso('"la voy a mirar" recibe UNA línea sin presión, sin pedir plata',
+    count($r) === 1 && strpos($r[0], 'pablotravis') === false && stripos($r[0], 'tranquilidad') !== false);
+caso('y no quema la videollamada ni las cuotas',
+    empty($c['videollamada_ofrecida']) && empty($c['cuotas_ofrecidas']));
+
+echo "— Presentadas 48hs: las que se enfriaron salen de la cola normal —\n";
+
+$ahoraP = time();
+$fria = ['presentado_ts' => $ahoraP - 49 * 3600, 'presentado_confirmado' => false,
+         'transcript' => [['q' => 'humano', 't' => 'te mando la demo', 'ts' => $ahoraP - 49 * 3600]]];
+caso('49 h sin que conteste una sola vez → Presentadas 48hs', wabot_conv_grupo($fria) === 'presentadas_48');
+$contesto = $fria;
+$contesto['transcript'][] = ['q' => 'cliente', 't' => 'dale la miro', 'ts' => $ahoraP - 40 * 3600];
+caso('si contestó algo después de la demo, sigue en Presentados', wabot_conv_grupo($contesto) === 'presentados');
+$reciente = $fria; $reciente['presentado_ts'] = $ahoraP - 10 * 3600;
+$reciente['transcript'][0]['ts'] = $ahoraP - 10 * 3600;
+caso('a las 10 h todavía no se enfría', wabot_conv_grupo($reciente) === 'presentados');
+$confirmada = $fria; $confirmada['presentado_confirmado'] = true;
+caso('una demo ya confirmada nunca cae ahí', wabot_conv_grupo($confirmada) !== 'presentadas_48');
+
+echo "— El recordatorio entra en la ventana de 24 h de Meta —\n";
+
+caso('el recordatorio se manda a las 20 h, no a las 48', (float)$cfg['presentados_recordatorio_horas'] <= 22);
+$cfgViejo = $cfg; $cfgViejo['presentados_recordatorio_horas'] = 48;
+$cvRec = ['presentado_ts' => $ahoraP - 21 * 3600, 'presentado_confirmado' => false,
+          'presentado_recordatorio_enviado' => false, 'ultimo_cliente_ts' => $ahoraP - 21 * 3600,
+          'bot_off' => false, 'archivado' => false, 'pausado_hasta' => 0,
+          'transcript' => [['q' => 'cliente', 't' => 'dale', 'ts' => $ahoraP - 21 * 3600]]];
+caso('con 20 h el recordatorio SÍ sale dentro de la ventana',
+    wabot_presentado_recordatorio_corresponde($cvRec, $cfg, $ahoraP) === true);
+caso('con las 48 h viejas caía fuera de la ventana y no salía nunca',
+    wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

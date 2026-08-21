@@ -86,8 +86,10 @@ function convNueva() {
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
+// Sin la seña: en la parte 1 de la venta no se menciona (desde el 22-ago), y el
+// validador rechaza cualquier monto que no esté en el texto base.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va una Landing: \$200.000 por todo el desarrollo, con seña de \$60.000 y el saldo al entregar. Todo el detalle está acá: gokywebs.com/presupuestos/Landing y te hacemos un prediseño gratis antes de que decidas.";
+    return "Mirá, para lo tuyo va una Landing: \$200.000 por todo el desarrollo. Todo el detalle está acá: gokywebs.com/presupuestos/Landing y te hacemos un prediseño gratis antes de que decidas.";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
@@ -129,8 +131,11 @@ caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'Perfecto, para lo tuyo va una tienda online completa') === 0
     && strpos($r[0], '$320.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $320.000 por todo, con seña de $90.000, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $320.000 por todo, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
+caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
+    wabot_validar_redaccion('Sale $320.000 por todo, con seña de $90.000, mirá gokywebs.com/presupuestos/Ecommerce',
+        wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
 caso('el link va en su propio renglón, no pegado a la frase del precio',
     substr_count($r[0], "\n") === 1 && strpos($r[0], "\nEn este link") !== false);
 

@@ -532,6 +532,26 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                 return [(string)($cfg['repregunta_suave'] ?? 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo, y seguimos con la demo cuando quieras.')];
             }
             return [$pedido];
+        case 'postdemo':
+            if (wabot_dice_que_pago($texto)) {
+                $conv['presentado_confirmado'] = true;
+                return array_merge([(string)$cfg['postdemo_pago_avisado']], wabot_derivar($conv, $cfg, 'pago_explicito'));
+            }
+            if (wabot_prefiere_tarjeta($texto)) {
+                $link = wabot_postdemo_link_tarjeta($conv, $cfg);
+                if ($link !== '') return [$link];
+            }
+            if (wabot_postdemo_quiere_avanzar($texto)) return [wabot_postdemo_transferencia($conv, $cfg)];
+            if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
+                $conv['cuotas_ofrecidas'] = true;
+                return [(string)$cfg['postdemo_cuotas_sin_interes']];
+            }
+            if (wabot_postdemo_la_va_a_mirar($texto)) return [(string)$cfg['postdemo_la_miro']];
+            if (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
+                $conv['videollamada_ofrecida'] = true;
+                return [(string)$cfg['postdemo_videollamada']];
+            }
+            return [(string)$cfg['postdemo_apertura']];
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
                 $conv['referencia'] = wabot_referencia_utilizable($texto) ? trim($texto) : '';
@@ -961,6 +981,49 @@ function wabot_engine($texto, &$conv, $cfg) {
 
         case 'sistema_listo':
             return array_merge($out, wabot_sistema_completo($conv, $cfg));
+
+        case 'postdemo':
+            // Parte 2: se cierra la venta. No se recotiza ni se reabre nada.
+            if (wabot_dice_que_pago($texto)) {
+                $conv['presentado_confirmado'] = true;
+                wabot_evento_sesion($conv, 'pago_avisado');
+                $out[] = (string)$cfg['postdemo_pago_avisado'];
+                return array_merge($out, wabot_derivar($conv, $cfg, 'pago_explicito'));
+            }
+            if (wabot_prefiere_tarjeta($texto)) {
+                $link = wabot_postdemo_link_tarjeta($conv, $cfg);
+                if ($link !== '') { $out[] = $link; break; }
+            }
+            if ($out || $has('saludo')) break;
+            if (wabot_postdemo_quiere_avanzar($texto) || wabot_handoff_causa_explicita($texto) !== null) {
+                $out[] = wabot_postdemo_transferencia($conv, $cfg);
+                break;
+            }
+            // Objeción de plata: las 3 cuotas sin interés. No hay link para eso,
+            // las arma Pablo, así que la charla queda con él.
+            if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
+                $conv['cuotas_ofrecidas'] = true;
+                wabot_evento_sesion($conv, 'cuotas_sin_interes_ofrecidas');
+                $out[] = (string)$cfg['postdemo_cuotas_sin_interes'];
+                break;
+            }
+            // "Dale, la voy a mirar": no se empuja. Se responde corto y se deja
+            // el seguimiento automático para más tarde.
+            if (wabot_postdemo_la_va_a_mirar($texto)) {
+                $out[] = (string)$cfg['postdemo_la_miro'];
+                break;
+            }
+            // La videollamada es la carta que destraba una venta frenada, y es el
+            // único texto donde aparece el nombre de Pablo. Se juega una sola vez
+            // y solo ante una duda real, no ante cualquier mensaje.
+            if (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
+                $conv['videollamada_ofrecida'] = true;
+                wabot_evento_sesion($conv, 'videollamada_ofrecida');
+                $out[] = (string)$cfg['postdemo_videollamada'];
+                break;
+            }
+            $out[] = (string)$cfg['postdemo_apertura'];
+            break;
 
         case 'confirma_cambio':
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -1419,6 +1482,117 @@ function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
  * prediseño. Van separados a propósito, con una pausa en el medio, porque el
  * precio necesita su momento antes de que llegue la oferta.
  */
+/* ───────────────────── Parte 2: después de la demo ─────────────────────
+ *
+ * Presentada la demo, el bot deja de "estar cerrado" y pasa a cerrar la venta:
+ * aclara dudas, pasa la seña y los datos de transferencia, arma el link de
+ * tarjeta y —si el cliente duda— ofrece la videollamada con Pablo. Todo esto
+ * NO existe antes de la demo: es lo que separa la parte 1 de la parte 2.
+ */
+
+/** La seña que corresponde al tipo cotizado, ya formateada. */
+function wabot_sena_de($conv, $cfg) {
+    $tipo = (string)($conv['tipo'] ?? '');
+    return trim((string)($cfg['tipos'][$tipo]['sena'] ?? ''));
+}
+
+function wabot_postdemo_transferencia($conv, $cfg) {
+    $sena = wabot_sena_de($conv, $cfg);
+    if ($sena === '') return (string)($cfg['info']['pago_generico'] ?? '');
+    return str_replace(
+        ['{sena}', '{cbu}', '{alias}', '{titular}', '{documento}'],
+        [$sena, (string)($cfg['pago_cbu'] ?? ''), (string)($cfg['pago_alias'] ?? ''),
+         (string)($cfg['pago_titular'] ?? ''), (string)($cfg['pago_documento'] ?? '')],
+        (string)($cfg['postdemo_transferencia'] ?? '')
+    );
+}
+
+/** Link de checkout por el monto de la seña: gokywebs.com/pago?monto=60000 */
+function wabot_postdemo_link_tarjeta($conv, $cfg) {
+    $sena = wabot_sena_de($conv, $cfg);
+    $monto = (int)preg_replace('/\D/', '', $sena);
+    if ($monto <= 0) return '';
+    return str_replace(
+        ['{sena}', '{link}'],
+        [$sena, (string)($cfg['pago_link_base'] ?? 'gokywebs.com/pago?monto=') . $monto],
+        (string)($cfg['postdemo_tarjeta'] ?? '')
+    );
+}
+
+/** ¿Está avisando que ya pagó? Se valida con el texto, no con una etiqueta. */
+function wabot_dice_que_pago($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(ya )?(te )?(hice|realice|mande|envie|deposite|pague|abone|transferi)\b.{0,25}\b(transferencia|deposito|pago|seña|sena|plata)\b/u', $t)
+        || preg_match('/\b(ya )?(te )?(transferi|deposite|pague|abone)\b/u', $t)
+        || preg_match('/\b(listo|hecho|ya esta)\b.{0,20}\b(transferencia|transferi|pague|deposito|deposite)\b/u', $t)
+        || preg_match('/\bcomprobante\b/u', $t)
+    );
+}
+
+/** Después de ver la demo, quiere avanzar: pide el próximo paso o le gustó. */
+function wabot_postdemo_quiere_avanzar($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    if (wabot_es_afirmativa($texto)) return true;
+    return (bool)(
+        preg_match('/\bcomo\b.{0,12}\b(sigo|seguimos|sigue|hago|hacemos|arranco|arrancamos|procedo|avanzo|avanzamos|continuo)\b/u', $t)
+        || preg_match('/\b(que|cual)\b.{0,15}\b(paso|pasos|siguiente|sigue ahora)\b/u', $t)
+        || preg_match('/\b(quiero|queremos|vamos a|listo para)\b.{0,20}\b(avanzar|arrancar|empezar|contratar|seguir|hacerla|comprarla)\b/u', $t)
+        || preg_match('/\b(me gusto|me encanto|me gusta|quedo (muy )?(bien|linda|buena|barbara)|esta (muy )?(buena|linda|barbara)|buenisima|espectacular|hermosa)\b/u', $t)
+        || preg_match('/\b(dale|listo)\b.{0,20}\b(avanzamos|arrancamos|seguimos|vamos)\b/u', $t)
+    );
+}
+
+/**
+ * "Dale, la voy a mirar" — la respuesta más común después de mandar la demo, y
+ * la que más ventas se lleva puestas. No es un no, pero tampoco es un sí: no se
+ * presiona, se deja la puerta abierta y se vuelve más tarde (dentro de la
+ * ventana de 24 h de Meta, que es lo único que permite escribir sin plantilla).
+ */
+function wabot_postdemo_la_va_a_mirar($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '' || mb_strlen($t) > 90) return false;
+    return (bool)(
+        preg_match('/\b(la|lo|los|las)\b.{0,12}\b(voy a|vamos a)\b.{0,8}\b(mirar|ver|revisar|chequear|leer)\b/u', $t)
+        || preg_match('/\b(ahora|despues|luego|mas tarde|en un rato|cuando pueda)\b.{0,20}\b(la|lo)\b.{0,8}\b(miro|veo|reviso|chequeo)\b/u', $t)
+        || preg_match('/\b(la|lo)\b.{0,8}\b(miro|veo|reviso|chequeo)\b.{0,20}\b(despues|luego|mas tarde|en un rato|tranquilo|con calma|y te digo|y te aviso|y te cuento)\b/u', $t)
+        || preg_match('/\b(dejame|deja que)\b.{0,10}\b(la|lo)\b.{0,8}\b(mire|vea|revise)\b/u', $t)
+        || preg_match('/\b(le doy una mirada|le echo un vistazo|la reviso bien)\b/u', $t)
+    );
+}
+
+/** Objeción de plata en la parte 2: es donde entran las 3 cuotas sin interés. */
+function wabot_postdemo_objecion_plata($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(es caro|muy caro|carisimo|es mucha plata|es mucho|se me va de presupuesto|no me da el presupuesto)\b/u', $t)
+        || preg_match('/\b(no tengo|no cuento con)\b.{0,20}\b(plata|dinero|presupuesto|fondos)\b/u', $t)
+        || preg_match('/\bno puedo\b.{0,20}\b(pagar|afrontar|de una)\b/u', $t)
+        || preg_match('/\b(junto|reuno|consigo)\b.{0,15}\b(la plata|el dinero)\b/u', $t)
+    );
+}
+
+/** Duda, lo tiene que pensar o desconfía: es cuando entra la videollamada. */
+function wabot_postdemo_duda($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(lo tengo que pensar|lo pienso|tengo que pensarlo|dejame pensarlo|lo voy a pensar|lo consulto|lo hablo con)\b/u', $t)
+        || preg_match('/\b(no se|no estoy segur|tengo dudas|me da cosa|desconfi|no me convence|dudo)\b/u', $t)
+        || preg_match('/\b(y si|que pasa si)\b.{0,30}\b(no me gusta|sale mal|no funciona|no cumplen)\b/u', $t)
+    );
+}
+
+/** Pidió pagar con tarjeta en vez de transferencia. */
+function wabot_prefiere_tarjeta($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(tarjeta|credito|debito|cuotas|link de pago|mercado ?pago|pasame el link)\b/u', $t);
+}
+
 function wabot_precio_resumen($conv, $cfg) {
     $tipo = (string)($conv['tipo'] ?? '');
     if ($tipo === '' || empty($conv['precio_dado']) || !isset($cfg['tipos'][$tipo])) {
