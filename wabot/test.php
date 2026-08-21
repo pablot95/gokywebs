@@ -2498,5 +2498,21 @@ caso('un aviso del bot reciente no reabre la ventana de un cliente callado hace 
 caso('sin ningún mensaje del cliente la ventana está cerrada',
     wabot_ventana_restante([]) === 0);
 
+echo "— El aviso de la mañana no promete un horario que puede no cumplirse —\n";
+
+caso('el aviso de la mañana no dice "más tarde"', stripos($cfg['muestra_aviso'], 'más tarde') === false);
+caso('el aviso de la mañana no dice "en preparación"', stripos($cfg['muestra_aviso'], 'en preparación') === false);
+caso('el aviso de la mañana dice "hoy", sin comprometer un horario', stripos($cfg['muestra_aviso'], 'hoy') !== false);
+
+foreach ([
+    'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
+    'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.',
+] as $viejo) {
+    $cMigrar = ['muestra_aviso' => $viejo];
+    wabot_config_ventas($cMigrar);
+    caso('migra "' . mb_substr($viejo, 34, 30) . '…" al texto sin horario',
+        $cMigrar['muestra_aviso'] === $cfg['muestra_aviso']);
+}
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

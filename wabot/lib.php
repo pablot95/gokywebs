@@ -225,7 +225,7 @@ function wabot_config_ventas(&$cfg) {
         // Sin el link: ya se lo mandamos al presentar la demo, y repetirlo suena
         // a que el bot no se acuerda de lo que ya hizo.
         'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-        'muestra_aviso' => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
+        'muestra_aviso' => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
@@ -399,8 +399,13 @@ function wabot_config_ventas(&$cfg) {
                 => 'Después del primer año, el hosting y el dominio se renuevan una vez al año: hoy la renovación ronda los $50.000 anuales en total, y antes del vencimiento te confirmamos el importe actualizado. Si tenés el plan de mantenimiento activo, no la pagás: el hosting y el dominio ya están incluidos.',
         ],
         'muestra_aviso' => [
+            // "más tarde" y "en preparación" son textos que tuvo este mismo mensaje
+            // antes: ninguno de los dos debe sobrevivir, "más tarde" porque promete
+            // un horario que el prediseño no siempre cumple.
             'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.'
-                => 'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.',
+                => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
+            'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.'
+                => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
