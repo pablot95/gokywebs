@@ -1084,6 +1084,13 @@ function wabot_prediseno_texto($conv, $cfg) {
     return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 }
 
+/** Si ya existe un archivo para esa conversación, sin crearlo ni tocarlo. */
+function wabot_conv_existe($clave) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    if ($clave === '') return false;
+    return file_exists(wabot_conv_path($clave));
+}
+
 function wabot_conv_load($clave) {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if ($clave === '') $clave = 'sin-tel';

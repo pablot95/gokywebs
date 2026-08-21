@@ -348,6 +348,17 @@ if (($payload['object'] ?? '') === 'instagram') {
                 $clave = 'ig' . $para;
                 $textoEco = trim((string)($ev['message']['text'] ?? '[mensaje]'));
 
+                // Si todavía no existe conversación con esta persona, este eco no
+                // puede ser Pablo respondiendo a mano desde la app: no hay nada
+                // que responder todavía. Es la respuesta automática de Instagram
+                // al comentario en una publicación ("respuesta a comentarios"),
+                // que manda el mensaje ANTES de que el cliente escriba. Tratarla
+                // como si fuera Pablo pausaba el bot 24 h desde el minuto cero, y
+                // el primer mensaje real del cliente caía en un chat ya pausado
+                // — el síntoma que reportó Pablo: todo Instagram nuevo cae en
+                // "Te esperan" aunque sea el primer mensaje.
+                if (!wabot_conv_existe($clave)) continue;
+
                 // El candado es el mismo que toma el envío: sin esto el eco podía
                 // pisar la conversación mientras el bot todavía estaba mandando
                 // la tanda de respuestas.

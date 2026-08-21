@@ -2911,5 +2911,17 @@ caso('y el que ya tenía la versión intermedia (con tarjeta) también termina s
     strpos($intermedio['msg_precio'], 'en 3 pagos de {pagos3}.') !== false
     && stripos($intermedio['msg_precio'], 'tarjeta') === false);
 
+echo "— wabot_conv_existe: si ya hay conversación, sin crearla ni tocarla —\n";
+
+$claveExiste = 'TESTEXISTE' . getmypid();
+@unlink(WABOT_DATA . '/conv/' . $claveExiste . '.json');
+caso('todavía no existe archivo → false', wabot_conv_existe($claveExiste) === false);
+caso('consultar si existe no la crea', !file_exists(WABOT_DATA . '/conv/' . $claveExiste . '.json'));
+wabot_conv_save(wabot_conv_load($claveExiste));
+caso('una vez guardada, existe', wabot_conv_existe($claveExiste) === true);
+caso('con caracteres raros en la clave, igual la encuentra',
+    wabot_conv_existe('  ' . $claveExiste . '!!') === true);
+@unlink(WABOT_DATA . '/conv/' . $claveExiste . '.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
