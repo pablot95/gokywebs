@@ -1291,7 +1291,6 @@ function wabot_ultima_foto_cliente($cv) {
  */
 function wabot_lista_items() {
     $archivos = glob(WABOT_DATA . '/conv/*.json') ?: [];
-    usort($archivos, function ($a, $b) { return filemtime($b) - filemtime($a); });
 
     $items = [];
     foreach ($archivos as $f) {
@@ -1328,6 +1327,7 @@ function wabot_lista_items() {
             'no_leido' => (int)($ult['ts'] ?? 0) > (int)($cv['panel_visto_ts'] ?? 0),
         ];
     }
+    usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
     return $items;
 }
 

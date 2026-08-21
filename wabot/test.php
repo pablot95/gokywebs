@@ -2456,5 +2456,27 @@ foreach (['bilingüe', 'cPanel', 'FTP', 'licencias', 'backup'] as $palabra) {
     caso("el precio no menciona \"$palabra\" por su cuenta", stripos($dicho, $palabra) === false);
 }
 
+echo "— La lista de chats ordena por el último mensaje, no por cuándo se tocó el archivo —\n";
+
+foreach (['QAORD1', 'QAORD2'] as $t) @unlink(WABOT_DATA . '/conv/' . $t . '.json');
+
+$base = time() - 1000;
+$cOrd1 = wabot_conv_load('QAORD1');
+$cOrd1['transcript'][] = ['q' => 'cliente', 't' => 'hola', 'ts' => $base];
+wabot_conv_save($cOrd1);
+
+$cOrd2 = wabot_conv_load('QAORD2');
+$cOrd2['transcript'][] = ['q' => 'bot', 't' => 'chau', 'ts' => $base + 400];
+wabot_conv_save($cOrd2);
+
+touch(WABOT_DATA . '/conv/QAORD1.json', time());
+
+$itemsOrd = array_values(array_filter(wabot_lista_items(), fn($i) => str_starts_with($i['tel'], 'QAORD')));
+$idx1 = array_search('QAORD1', array_column($itemsOrd, 'tel'), true);
+$idx2 = array_search('QAORD2', array_column($itemsOrd, 'tel'), true);
+caso('el chat con el mensaje más reciente va primero aunque su archivo sea más viejo', $idx2 < $idx1);
+
+foreach (['QAORD1', 'QAORD2'] as $t) @unlink(WABOT_DATA . '/conv/' . $t . '.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
