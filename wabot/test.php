@@ -188,12 +188,18 @@ caso('pasa la referencia → cierra, crea lead y deriva',
 echo "— Cerrada pero disponible para dudas —
 ";
 
+// Un "gracias" con la charla cerrada NO se contesta: la despedida ya se dijo y
+// encadenar dos o tres cierres es lo que delata al bot (Refrigcar y Black
+// Automotores, 22-ago).
 clasifica(['saludo']);
 $r = wabot_engine('gracias!', $c, $cfg);
-caso('el primer mensaje tras el cierre aclara cómo sigue',
-    $r === [$cfg['espera_prediseno']]);
-caso('NO le repite "te atiende una persona del equipo": ya sabe que le escribe Pablo',
-    $r !== [$cfg['espera']]);
+caso('un agradecimiento tras el cierre no recibe respuesta', $r === []);
+clasifica(['saludo']);
+caso('un "ok" tampoco', wabot_engine('ok', $c, $cfg) === []);
+clasifica(['saludo']);
+caso('ni un "igualmente, gracias"', wabot_engine('Igualmente. Gracias', $c, $cfg) === []);
+clasifica(['saludo']);
+caso('ni un pulgar arriba solo', wabot_engine('👍', $c, $cfg) === []);
 
 // Acá está el pedido: la charla quedó cerrada pero el bot sigue contestando.
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
@@ -1975,8 +1981,13 @@ caso('"cuanto sale?" en fase precio pide el precio ya cotizado',
     wabot_info_por_palabras('cuanto sale?', 'precio') === 'precio_actual');
 caso('"cual era el precio total?" en fase precio también',
     wabot_info_por_palabras('cual era el precio total?', 'precio') === 'precio_actual');
-caso('"cuanto sale una pagina?" al arrancar va a rangos',
-    wabot_info_por_palabras('cuanto sale una pagina?', 'nuevo') === 'rangos');
+caso('"cuanto sale una pagina?" al arrancar pregunta el tipo, no se escapa',
+    wabot_info_por_palabras('cuanto sale una pagina?', 'nuevo') === 'precio_sin_rubro');
+caso('"Que precio tiene" también (caso Abel)',
+    wabot_info_por_palabras('Que precio tiene', 'nuevo') === 'precio_sin_rubro');
+caso('y ese texto le pregunta para qué la necesita',
+    stripos((string)$cfg['info']['precio_sin_rubro'], 'para qué la querés') !== false
+    || stripos((string)$cfg['info']['precio_sin_rubro'], 'contame') !== false);
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['cta_muestra'] = true;
 clasifica(['otro']);
@@ -2217,6 +2228,63 @@ caso('con 20 h el recordatorio SÍ sale dentro de la ventana',
     wabot_presentado_recordatorio_corresponde($cvRec, $cfg, $ahoraP) === true);
 caso('con las 48 h viejas caía fuera de la ventana y no salía nunca',
     wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === false);
+
+echo "— Revisión de chats reales del 22-ago —\n";
+
+// Black Automotores: un perfil de WhatsApp llamado "." hacía que el bot
+// escribiera "Listo ., con eso ya lo preparamos.".
+caso('un nombre "." no se usa como nombre', wabot_nombre_usable('.') === '');
+caso('ni un emoji suelto', wabot_nombre_usable('🔥') === '');
+caso('ni un teléfono', wabot_nombre_usable('+54 9 11 2506-8578') === '');
+caso('ni un mail', wabot_nombre_usable('juan@gmail.com') === '');
+caso('un nombre real sí', wabot_nombre_usable('Marta Gómez') === 'Marta Gómez');
+caso('el texto sale sin el hueco cuando el nombre no sirve',
+    wabot_personalizar('Listo {nombre}, con eso ya lo preparamos.', ['nombre' => '.']) === 'Listo, con eso ya lo preparamos.');
+caso('y con un nombre real usa el primero',
+    wabot_personalizar('Listo {nombre}, con eso ya lo preparamos.', ['nombre' => 'Marta Gómez']) === 'Listo Marta, con eso ya lo preparamos.');
+caso('la agenda no cuelga un "." del nombre del negocio',
+    wabot_nombre_agenda(['nombre_negocio' => 'Black Automotores', 'nombre' => '.']) === 'Black Automotores');
+
+// "Quiero publicar los vehículos" es una respuesta clara al desempate y el bot
+// la repreguntaba.
+caso('"quiero publicar los vehiculos" resuelve el desempate del comercio',
+    wabot_desempate_por_palabras('desempate_comercio', 'Quiero publicar los vehiculos') === 'comercio_mostrar');
+caso('"solo exhibir los modelos" también',
+    wabot_desempate_por_palabras('desempate_comercio', 'solo exhibir los modelos') === 'comercio_mostrar');
+caso('y "quiero cobrar online" sigue siendo vender',
+    wabot_desempate_por_palabras('desempate_comercio', 'quiero cobrar online') === 'comercio_vender');
+
+// Una asociación civil no es una empresa.
+caso('el texto de institucional ya no habla de "la empresa"',
+    stripos((string)$cfg['tipos']['institucional']['desc'], 'de la empresa') === false);
+
+// De dónde somos / si hay oficina.
+caso('"de donde son?" se reconoce', wabot_info_por_palabras('de donde son?') === 'ubicacion');
+caso('"tienen oficina?" también', wabot_info_por_palabras('tienen oficina para ir?') === 'ubicacion');
+caso('la respuesta dice Tigre y que es remoto',
+    stripos((string)$cfg['info']['ubicacion'], 'Tigre') !== false
+    && stripos((string)$cfg['info']['ubicacion'], 'remota') !== false);
+
+// Una descripción larga no se confunde con una pregunta de pago.
+caso('"que paguen la suscripcion por mercado pago" dentro de una descripción NO es la pregunta de pago',
+    wabot_info_por_palabras('necesito registro de socios, que paguen la suscripcion por mercado pago, un panel para ver los estados de cada uno y avisos automaticos por email') === null);
+caso('pero "como se paga?" sigue andando', wabot_info_por_palabras('como se paga?') === 'pago');
+
+// El chat completo viaja con el boceto.
+$cChat = conv_nueva();
+$cChat['transcript'] = [
+    ['q' => 'cliente', 't' => 'hola, tengo una veterinaria', 'ts' => time() - 300],
+    ['q' => 'bot',     't' => 'Perfecto, contame', 'ts' => time() - 290],
+];
+$txtChat = wabot_transcript_texto($cChat);
+caso('el chat exportado trae quién dijo qué', strpos($txtChat, 'Cliente: hola, tengo una veterinaria') !== false
+    && strpos($txtChat, 'Bot: Perfecto, contame') !== false);
+$cLargo = conv_nueva();
+$cLargo['transcript'] = [];
+for ($i = 0; $i < 400; $i++) $cLargo['transcript'][] = ['q' => 'cliente', 't' => str_repeat('x', 60), 'ts' => time()];
+caso('un chat larguísimo se recorta y conserva el final',
+    mb_strlen(wabot_transcript_texto($cLargo)) <= 12100
+    && strpos(wabot_transcript_texto($cLargo), 'charla recortada') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

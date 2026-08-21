@@ -1669,6 +1669,17 @@ function briefDetailHTML(src) {
         row("Instagram", instagram),
         row("Referencias web", referencias, true),
         row("Algo más", extra, true),
+        // La charla entera, plegada: se abre solo si hace falta ir al detalle.
+        (() => {
+            const chat = cleanFieldValue(src.chat_completo || "");
+            if (!chat) return "";
+            return `<div class="prop-row" style="display:block">
+                <details style="margin-top:4px">
+                    <summary style="cursor:pointer;color:var(--accent-green);font-weight:600;font-size:12px">Ver el chat con el cliente</summary>
+                    <pre style="white-space:pre-wrap;word-break:break-word;font-size:11.5px;line-height:1.5;margin:8px 0 0;padding:9px 11px;background:rgba(255,255,255,.04);border-radius:8px;max-height:340px;overflow:auto">${escapeHtml(chat)}</pre>
+                </details>
+            </div>`;
+        })(),
     ].join("");
 
     const logoRow = logoUrl
@@ -2548,6 +2559,13 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         ].join("\n") + "\n\n";
     }
 
+    // La charla completa va al final, después de los campos: primero lo
+    // resumido (que es lo que se usa siempre) y abajo el respaldo textual.
+    const chat = cleanFieldValue(p.chat_completo || "");
+    const bloqueChat = chat
+        ? `\n\nAcá está el chat con el cliente, por si algún dato del brief quedó corto:\n\n${chat}\n`
+        : "";
+
     return prefijo + formatCopyRows([
         { title: "Nombre del negocio / marca", value: nombreNegocio },
         { title: "Sobre el negocio y qué quiere lograr con la web", value: getPropuestaSobreNegocio(p) },
@@ -2563,7 +2581,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Color secundario", value: secundario },
         { title: "Colores de marca", value: coloresLegacy },
         { title: "Tipografías", value: p.tipografias || "" },
-    ]);
+    ]) + bloqueChat;
 }
 
 async function writeTextToClipboard(texto) {

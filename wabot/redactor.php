@@ -38,6 +38,15 @@ function wabot_responder($texto, &$conv, $cfg) {
         return [$apertura];
     }
 
+    // Charla cerrada + acuse de recibo ("ok", "gracias", "igualmente", 👍) =
+    // silencio. Va acá, antes del agente, porque el que encadenaba tres
+    // despedidas seguidas era el modelo, no el motor: una regla de prompt no
+    // alcanzaba. Ver wabot_es_acuse().
+    if (($conv['fase'] ?? '') === 'derivado' && wabot_es_acuse($texto)) {
+        $conv['espera_avisada'] = true;
+        return [];
+    }
+
     // Modo agente: Gemini lleva la charla con herramientas. Si falla por lo que
     // sea, seguimos abajo con el motor de reglas, que nunca deja al cliente sin
     // respuesta. Ojo: la conversación puede haber quedado ya derivada por una

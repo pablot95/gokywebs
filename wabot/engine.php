@@ -230,6 +230,34 @@ function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
     return [$texto];
 }
 
+/**
+ * ¿Es un acuse de recibo y nada más? "Ok", "gracias", "dale", "igualmente", 👍.
+ *
+ * Con la charla ya cerrada, esto NO merece respuesta: el cliente está cerrando
+ * educadamente, no preguntando. Contestarle encadena dos y tres despedidas
+ * seguidas —"te mandamos la demo" / "en cuanto esté lista" / "quedamos a la
+ * espera"— que es exactamente lo que delata a un bot. Pasó con Refrigcar y con
+ * Black Automotores el 22-ago.
+ */
+function wabot_es_acuse($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return true;                  // solo un emoji o un sticker
+    if (mb_strlen($t) > 40) return false;
+    $acuses = ['ok', 'oka', 'okey', 'okay', 'okis', 'dale', 'listo', 'perfecto', 'perfe',
+               'genial', 'buenisimo', 'barbaro', 'joya', 'excelente', 'gracias',
+               'muchas gracias', 'mil gracias', 'gracias igualmente', 'igualmente',
+               'igual mente', 'saludos', 'un saludo', 'abrazo', 'un abrazo', 'chau',
+               'nos vemos', 'hasta luego', 'buen dia', 'buenas noches', 'buenas tardes',
+               'de nada', 'no hay problema', 'sin problema', 'esta bien', 'ta bien',
+               'copado', 'buenardo', 'de diez', 'va bien', 'me parece bien', 'entendido',
+               'recibido', 'ya esta', 'bien', 'bueno'];
+    // Se sacan los conectores para que "ok gracias" o "dale, muchas gracias"
+    // entren igual que sus partes sueltas.
+    $limpio = trim(preg_replace('/\b(ok|dale|listo|y|pues|bueno|muy|todo|muchas|mil|un|una|te|le|les|lo|la)\b/u', ' ', $t));
+    $limpio = trim(preg_replace('/\s+/u', ' ', $limpio));
+    return in_array($t, $acuses, true) || ($limpio !== '' && in_array($limpio, $acuses, true)) || $limpio === '';
+}
+
 /** Un mensaje nuevo y explícitamente comprador vuelve a habilitar el seguimiento. */
 function wabot_reabre_consulta($texto) {
     $t = wabot_normalizar_frase($texto);
@@ -961,8 +989,14 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($r !== null && wabot_desempate_de($r) === null) { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); break; }
             if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
             $conv['sistema_problema'] = trim($texto);
-            $conv['fase'] = 'sistema_usuarios';
             wabot_handoff_aclaracion_resuelta($conv);
+            // Si ya explicó el sistema con detalle, no se lo interroga más: se
+            // cierra con lo que dio. Preguntar tres cosas a quien ya contó todo
+            // se siente como un formulario (caso Payaso Natalio, 22-ago).
+            if (wabot_sistema_ya_explicado($conv)) {
+                return array_merge($out, wabot_sistema_completo($conv, $cfg));
+            }
+            $conv['fase'] = 'sistema_usuarios';
             $out[] = wabot_sistema_texto('usuarios', $cfg);
             break;
 
@@ -970,9 +1004,9 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
             if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
             $conv['sistema_usuarios'] = trim($texto);
-            $conv['fase'] = 'sistema_actual';
-            $out[] = wabot_sistema_texto('actual', $cfg);
-            break;
+            // Dos preguntas es el techo: con el problema y los usuarios alcanza
+            // para que Pablo cotice. El "cómo lo maneja hoy" quedó como opcional.
+            return array_merge($out, wabot_sistema_completo($conv, $cfg));
 
         case 'sistema_actual':
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -1235,8 +1269,19 @@ function wabot_info_por_palabras($texto, $fase = null) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return null;
 
+    // Este matcher es el respaldo local para PREGUNTAS cortas. Un párrafo largo
+    // sin signo de pregunta casi siempre es el cliente describiendo su negocio o
+    // su sistema, y ahí una palabra suelta manda a la clave equivocada: "que
+    // paguen la suscripción por mercado pago" es una FUNCIÓN del sistema que
+    // pide, no una pregunta sobre cómo pagarnos a nosotros.
+    if (mb_strlen($t) > 120
+        && strpos((string)$texto, '?') === false
+        && !preg_match('/^(que|cual|cuales|cuanto|cuanta|como|cuando|donde|quien|se puede|puedo|hacen|tienen|incluye|aceptan)\b/u', $t)) {
+        return null;
+    }
+
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|mantenimiento|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)) return 'mantenimiento';
-    if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|plazo\w*|cuando esta|cuando la tienen|tiempo de entrega|para cuando)/u', $t)) return 'plazos';
+    if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|cuanto tiempo|plazo\w*|cuando esta|cuando la tienen|cuando la entregan|tiempo de entrega|para cuando|en cuanto la|cuando estaria)/u', $t)) return 'plazos';
     if (preg_match('/\b(como se paga\w*|formas? de pago|medios? de pago|se puede pagar|transferencia\w*|mercado pago|en cuotas|senia|sena)\b/u', $t)) return 'pago';
     if (preg_match('/\bhostin|\b(dominio\w*|servidor\w*|el punto com|puntocom|la direccion web)\b/u', $t)) return 'hosting';
     if (preg_match('/\b(hacen paginas?|crean paginas?|hacen webs?|hacen sitios|disenan paginas?|hacen las paginas)\b/u', $t)) return 'que_hacemos';
@@ -1244,15 +1289,18 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(estafa\w*|es seguro esto|son confiables|es confiable|quiero referencias|garantia de que)\b|desconfi/u', $t)) return 'confianza';
     if (preg_match('/\b(pixel|google analytics|analytics|codigo de seguimiento|conversiones de meta)\b/u', $t)) return 'pixel';
     if (preg_match('/\b(precios? de cada|todos los precios|lista de precios|precios? de los servicios|desde el basico|precios? de todos)\b/u', $t)) return 'rangos';
-    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale)|que precio|cual (es|era) el precio|precio total|el precio final)\b/u', $t)) {
-        if (in_array($fase, ['precio', 'confirma_cambio', 'derivado'], true)) return 'precio_actual';
-        if (in_array($fase, ['nuevo', 'menu', 'algo_diferente'], true)) return 'rangos';
+    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)) {
+        if (in_array($fase, ['precio', 'confirma_cambio', 'derivado', 'postdemo'], true)) return 'precio_actual';
+        // Sin saber qué tipo de web necesita no hay precio exacto: se le pregunta
+        // en vez de escaparse con "eso te lo confirma el equipo" (caso Abel).
+        if (in_array($fase, ['nuevo', 'menu', 'algo_diferente'], true)) return 'precio_sin_rubro';
     }
     if (preg_match('/\b(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)\b/u', $t)) return 'carga';
     // Palabras completas: "catálogo" contiene "logo" como substring y no es
     // una consulta sobre identidad visual.
     if (preg_match('/(?:^|\s)(?:logo|isotipo|identidad|marca grafica)(?:\s|$)/u', $t)) return 'logo';
     if (preg_match('/\b(publicidad|marketing|pauta|anuncios|posteos|redes sociales|(hacen|manejan|llevan) (las )?redes|community)\b/u', $t)) return 'marketing';
+    if (preg_match('/\b(de donde son|donde estan|donde quedan|en que (ciudad|provincia|zona|localidad)|son de (aca|argentina)|tienen (oficina|local|sucursal)|puedo ir|nos podemos ver|donde los ubico|de que (ciudad|provincia|pais))\b/u', $t)) return 'ubicacion';
     if (preg_match('/\b(reunion|videollamada|llamada|nos juntamos|zoom|meet)\b/u', $t)) return 'reuniones';
     if (preg_match('/\b(wordpress|wix|tiendanube|shopify|con que lo hacen|que tecnologia|codigo)\b/u', $t)) return 'tecnologia';
     if (preg_match('/\b(como (se )?manejan|como trabajan|como es el proceso|como sigue|como funciona el trabajo)\b/u', $t)) return 'proceso';
@@ -1299,6 +1347,13 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'whatsapp', 'wsp', 'wp', 'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
                 'escriban', 'que me hablen', 'me contacten', 'la simple', 'la basica', 'sin carrito',
                 'sin cobro', 'nomas', 'solamente mostrar', 'que muestre',
+                // "Quiero publicar los vehículos" es una respuesta clarísima que
+                // el bot repreguntaba (caso Black Automotores, 22-ago): publicar,
+                // exhibir o listar es mostrar, no cobrar online.
+                'publicar', 'publicarlos', 'publicarlas', 'publico', 'publicamos',
+                'exhibir', 'exhibirlos', 'listar', 'subir los productos', 'subirlos',
+                'que se vean', 'para que vean', 'ver los modelos', 'los vehiculos',
+                'las propiedades', 'los productos', 'mi stock', 'el stock',
             ]))) return 'comercio_mostrar';
             return null;
         case 'desempate_hibrido':
@@ -1309,6 +1364,7 @@ function wabot_desempate_por_palabras($fase, $texto) {
             if ($tiene([
                 'catalogo', 'catálogo', 'modelos', 'productos', 'exhibir modelos', 'mostrar modelos',
                 'catalogo por whatsapp', 'catalogo con whatsapp', 'lista de productos',
+                'publicar', 'publicarlos', 'exhibir', 'listar', 'que se vean',
             ])) return 'hibrido_catalogo';
             if ($tiene([
                 'mostrar trabajos', 'trabajos realizados', 'portfolio', 'portafolio', 'obras', 'proyectos',
@@ -1695,6 +1751,14 @@ function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
  * se calla en vez de llenar el chat de muletillas.
  */
 function wabot_cerrada($texto, &$conv, $cfg) {
+    // Un "ok", un "gracias" o un pulgar arriba con la charla ya cerrada no
+    // necesitan respuesta: la despedida ya se dijo. Antes que nada, y sin gastar
+    // una llamada a la IA.
+    if (wabot_es_acuse($texto)) {
+        $conv['espera_avisada'] = true;
+        return [];
+    }
+
     $out = [];
     $c = (!isset($GLOBALS['WABOT_TEST_CLASIFICADOR'])
           && function_exists('wabot_ia_disponible') && !wabot_ia_disponible())
@@ -1716,11 +1780,22 @@ function wabot_cerrada($texto, &$conv, $cfg) {
         $acc = $c['acciones'];
         $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
 
+        // El respaldo local también vale acá: si el clasificador no etiquetó
+        // nada, una pregunta concreta ("en cuánto tiempo la tienen?") quedaba
+        // sin respuesta y el cliente veía un cuelgue.
+        $infoLocalCerrada = wabot_info_por_palabras($texto, 'derivado');
+        if ($infoLocalCerrada !== null && !$has('pregunta_info') && !$has('pregunta_tipos')) {
+            $acc[] = 'pregunta_info';
+            $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
+        }
+
         if ($has('pregunta_info') || $has('pregunta_tipos')) {
             $lineas = [];
             $keysCerrada = $c['info_keys'] ?: [];
-            $infoLocalCerrada = wabot_info_por_palabras($texto, 'derivado');
             if ($infoLocalCerrada === 'precio_actual') $keysCerrada = ['precio_actual'];
+            elseif ($infoLocalCerrada !== null && !in_array($infoLocalCerrada, $keysCerrada, true)) {
+                array_unshift($keysCerrada, $infoLocalCerrada);
+            }
             foreach ($keysCerrada as $k) {
                 if ($k === 'precio_actual') { $lineas[] = wabot_precio_resumen($conv, $cfg); continue; }
                 if (!isset($cfg['info'][$k])) continue;
@@ -1916,6 +1991,30 @@ function wabot_cerrar_o_pedir_whatsapp(&$conv, $cfg) {
  * Cierre del brief de un sistema de gestión: no hay precio de lista, así que
  * el lead viaja a Firestore con la descripción y Pablo cotiza a medida.
  */
+/**
+ * ¿Ya contó bastante como para cotizar sin seguir preguntando?
+ *
+ * El que pide un sistema suele explicarlo largo y con funciones concretas
+ * ("registro de socios, suscripción por Mercado Pago, panel de estados, avisos
+ * por mail"). A ese cliente no se lo interroga: se le resume y se le dice que
+ * lo cotizan. Preguntarle tres cosas más es lo que se siente como un formulario.
+ */
+function wabot_sistema_ya_explicado($conv) {
+    $problema = trim((string)($conv['sistema_problema'] ?? ''));
+    if ($problema === '') return false;
+    if (mb_strlen($problema) >= 140) return true;
+    // Varias funciones nombradas en la misma explicación.
+    $t = wabot_normalizar_frase($problema . ' ' . wabot_contexto_cliente_texto($conv, 6));
+    $senales = 0;
+    foreach (['registro', 'socios', 'suscripcion', 'suscriptores', 'mercado pago', 'pagos', 'cobros',
+              'panel', 'administracion', 'administrar', 'estados', 'avisos', 'notificaciones',
+              'mail', 'email', 'stock', 'turnos', 'clientes', 'reportes', 'facturacion',
+              'usuarios', 'roles', 'altas', 'bajas', 'vencimientos'] as $senal) {
+        if (mb_strpos($t, $senal) !== false) $senales++;
+    }
+    return $senales >= 3;
+}
+
 function wabot_sistema_completo(&$conv, $cfg) {
     $conv['tipo'] = 'sistema';
     $problema = trim((string)($conv['sistema_problema'] ?? ''));

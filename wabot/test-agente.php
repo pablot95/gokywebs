@@ -419,10 +419,12 @@ caso('con la charla abierta las tiene todas',
 caso('y el prompt le avisa que la charla está cerrada',
     strpos(wabot_agente_sistema($c, $cfg), 'ESTA CHARLA YA ESTA CERRADA') !== false);
 
+// Un acuse de recibo con la charla cerrada no se contesta, y el guard corre
+// ANTES del agente: el que encadenaba tres despedidas era el modelo.
 $r1 = wabot_responder('dale, gracias', $c, $cfg);
-caso('sigue hablando tras el cierre → contesta una línea, no silencio',
-    $r1 === [$cfg['espera_prediseno']]);
-caso('y no le repite lo de "una persona del equipo"', $r1 !== [$cfg['espera']]);
+caso('un "dale, gracias" tras el cierre queda en silencio', $r1 === []);
+$r1b = wabot_responder('en cuanto tiempo la tienen?', $c, $cfg);
+caso('pero una pregunta real sí se contesta', $r1b !== []);
 
 $r2 = wabot_responder('otra cosa mas', $c, $cfg);
 caso('un mensaje sin nada que contestar no fuerza una respuesta de relleno', $r2 === []);
@@ -592,13 +594,25 @@ $r1 = wabot_engine('necesito un sistema de stock', $c, $cfg);
 $r2 = wabot_engine('que controle entradas, salidas y alertas', $c, $cfg);
 $r3 = wabot_engine('lo usaríamos 8 personas', $c, $cfg);
 $r4 = wabot_engine('hoy usamos Excel', $c, $cfg);
-caso('el motor fijo pregunta problema, usuarios y método actual, en ese orden',
+// Dos preguntas es el techo: al que ya explicó el sistema no se lo interroga
+// más (caso Payaso Natalio, 22-ago).
+caso('el motor fijo pregunta como mucho dos cosas y cierra',
     $r1 === [wabot_sistema_texto('problema', $cfg)]
     && $r2 === [wabot_sistema_texto('usuarios', $cfg)]
-    && $r3 === [wabot_sistema_texto('actual', $cfg)]
-    && $r4 === [$cfg['sistema_cierre']]
+    && $r3 === [$cfg['sistema_cierre']]
     && $c['tipo'] === 'sistema' && $c['handoff_pendiente'] === true
     && $c['sistema_lead_creado'] === true && $c['lead_creado'] === false);
+
+// Y al que explicó todo de una, ni siquiera esas dos.
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return ['acciones'=>['otro'],'info_keys'=>[],'descripcion'=>null,'colores'=>null]; };
+$cDetallado = convNueva('AGSISTDET');
+$cDetallado['fase'] = 'sistema_problema';
+$rDet = wabot_engine('necesito registro de socios, que paguen la suscripcion por mercado pago, un panel para ver los estados de cada uno y que salgan avisos automaticos por email cuando vencen', $cDetallado, $cfg);
+caso('si ya explicó el sistema con detalle, cierra sin interrogarlo',
+    $rDet === [$cfg['sistema_cierre']] && $cDetallado['fase'] === 'derivado'
+    && $cDetallado['sistema_lead_creado'] === true);
+caso('y el cierre le dice que se cotiza según esas funciones',
+    stripos((string)$cfg['sistema_cierre'], 'cotizarlo según esas funciones') !== false);
 
 $c = convNueva('17841400000000000');
 $c['canal'] = 'instagram';

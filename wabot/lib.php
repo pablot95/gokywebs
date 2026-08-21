@@ -438,9 +438,25 @@ function wabot_config_ventas(&$cfg) {
     if (!isset($cfg['info']['pago_catalogo']) || trim((string)$cfg['info']['pago_catalogo']) === '') {
         $cfg['info']['pago_catalogo'] = 'El total cotizado es {precio}. Se abona por transferencia, con una seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.';
     }
+    $infoNuevas = [
+        // Preguntan el precio antes de decir a qué se dedican: sin el rubro no
+        // hay precio exacto, pero escaparse con "te lo confirma el equipo" tira
+        // la venta (caso Abel, 22-ago). Se le pregunta.
+        'precio_sin_rubro' => 'Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.',
+        'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
+    ];
+    foreach ($infoNuevas as $clave => $texto) {
+        if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
+    }
     if (isset($cfg['tipos']['catalogo']['link'])
         && trim((string)$cfg['tipos']['catalogo']['link']) === 'https://gokywebs.com/presupuestos/Catalogo') {
         $cfg['tipos']['catalogo']['link'] = 'gokywebs.com/presupuestos/Catalogo';
+    }
+    // "las novedades de la empresa" le sonaba mal a una asociación civil, a una
+    // fundación o a un club, que son justo los que más piden institucional.
+    if (trim((string)($cfg['tipos']['institucional']['desc'] ?? ''))
+        === 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades de la empresa') {
+        $cfg['tipos']['institucional']['desc'] = 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades';
     }
     foreach (($cfg['ejemplos'] ?? []) as $iEj => $ej) {
         if (trim((string)($ej['texto'] ?? '')) === 'cuánto sale el hosting después?'
@@ -540,9 +556,13 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         ],
         'sistema_cierre' => [
             'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida. Te escribe en un rato para definir el próximo paso.'
-                => 'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida. Te escribimos en un rato para definir el próximo paso.',
+                => 'Perfecto, {nombre}, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.',
             'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.'
-                => 'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida: te escribimos a la brevedad para definir el próximo paso.',
+                => 'Perfecto, {nombre}, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.',
+            'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida. Te escribimos en un rato para definir el próximo paso.'
+                => 'Perfecto, {nombre}, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.',
+            'Excelente, {nombre}. Con esto ya podemos prepararte una propuesta a medida: te escribimos a la brevedad para definir el próximo paso.'
+                => 'Perfecto, {nombre}, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.',
         ],
     ];
     foreach ($sinNombrePropio as $campo => $reemplazos) {
@@ -587,11 +607,38 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
  * saca sin dejar huecos ("Hola {nombre}," queda "Hola,"). Nunca se manda un
  * {nombre} crudo al cliente.
  */
+/**
+ * ¿Sirve como nombre para tratar al cliente?
+ *
+ * El nombre sale del perfil de WhatsApp, así que puede ser cualquier cosa: ".",
+ * "🔥", un emoji, un teléfono o un mail. Pasó en producción: un perfil llamado
+ * "." hizo que el bot escribiera "Listo ., con eso ya lo preparamos.". Si no es
+ * un nombre de verdad, es mejor no usar ninguno.
+ */
+function wabot_nombre_usable($nombre) {
+    $n = trim(preg_replace('/\s+/u', ' ', (string)$nombre));
+    if ($n === '' || mb_strlen($n) < 2) return '';
+    if (preg_match('/@|https?:/i', $n)) return '';           // mails y links
+    if (preg_match('/^[\d\s+()\-.]+$/u', $n)) return '';      // teléfonos
+    // Tiene que tener al menos dos letras de verdad; los emojis no cuentan.
+    if (preg_match_all('/\p{L}/u', $n) < 2) return '';
+    return $n;
+}
+
+/** El primer nombre, solo si es utilizable. Cadena vacía si no sirve. */
+function wabot_primer_nombre($conv) {
+    $n = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+    if ($n === '') return '';
+    foreach (preg_split('/\s+/u', $n) as $parte) {
+        if (wabot_nombre_usable($parte) !== '') return $parte;
+    }
+    return '';
+}
+
 function wabot_personalizar($texto, $conv) {
     if (strpos($texto, '{nombre}') === false) return $texto;
-    $n = trim((string)($conv['nombre'] ?? ''));
-    if ($n !== '') {
-        $primero = preg_split('/\s+/', $n)[0];
+    $primero = wabot_primer_nombre($conv);
+    if ($primero !== '') {
         return str_replace('{nombre}', $primero, $texto);
     }
     // Sin nombre, se saca el marcador Y la coma que lo acompañaba, en las dos
@@ -863,7 +910,9 @@ function wabot_nombre_negocio_actualizar(&$conv, $texto) {
 /** Rótulo de agenda/lista: Negocio - Persona, usando solamente lo disponible. */
 function wabot_nombre_agenda($conv) {
     $negocio = trim((string)($conv['nombre_negocio'] ?? $conv['brief']['marca'] ?? ''));
-    $persona = trim((string)($conv['nombre'] ?? ''));
+    // Un perfil llamado "." no puede colgarse del nombre del negocio: quedaba
+    // "Black Automotores - ." en la agenda y, peor, en los textos al cliente.
+    $persona = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
     if ($negocio !== '' && $persona !== '' && mb_strtolower($negocio) !== mb_strtolower($persona)) {
         return $negocio . ' - ' . $persona;
     }
@@ -1934,7 +1983,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {
@@ -1977,7 +2026,7 @@ GUIA:
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
-- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel) o el precio de todos los servicios (rangos) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
+- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), o el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
   · **pago**: cómo se paga, con qué medios, si hay cuotas, cuánto es la seña. Es la pregunta por la PLATA. Si pregunta las dos cosas ("cómo trabajan y cómo se paga"), poné las dos claves.
 - objecion_caro: dice que es caro, regatea o pide descuento.
@@ -2873,6 +2922,31 @@ function wabot_lead_objetivo($objetivo, $conv, $cfg) {
  * insertó una vez en la función equivocada y mandó dos campos vacíos sin
  * que ningún test lo notara.
  */
+/**
+ * La charla completa en texto plano, para que viaje con el boceto.
+ *
+ * El resumen que arma Gemini es bueno pero pierde matices, y al diseñar sirve
+ * leer lo que el cliente dijo con sus palabras. Se corta por arriba para no
+ * romper el límite de un campo de Firestore.
+ */
+function wabot_transcript_texto($conv, $maxChars = 12000) {
+    $lineas = [];
+    foreach ((array)($conv['transcript'] ?? []) as $t) {
+        $quien = ['cliente' => 'Cliente', 'bot' => 'Bot', 'humano' => 'Vos'][$t['q'] ?? ''] ?? null;
+        if ($quien === null) continue;
+        $texto = trim((string)($t['t'] ?? ''));
+        if ($texto === '') continue;
+        $ts = (int)($t['ts'] ?? 0);
+        $hora = $ts ? date('d/m H:i', $ts) . ' ' : '';
+        $lineas[] = $hora . $quien . ': ' . $texto;
+    }
+    if (!$lineas) return '';
+    $texto = implode("\n", $lineas);
+    if (mb_strlen($texto) <= $maxChars) return $texto;
+    // Se conserva el FINAL, que es donde están los datos del prediseño.
+    return "[...charla recortada...]\n" . mb_substr($texto, -$maxChars);
+}
+
 function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $tipo  = $conv['tipo'] ?? '';
     $label = wabot_tipo_label($tipo, $cfg);
@@ -2907,6 +2981,9 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         ? (string)($conv['telefono_wsp'] ?? '')
         : wabot_channel_user_id($conv);
     return [
+        // La charla entera, para leerla al diseñar: los campos resumidos pierden
+        // matices que el cliente sí dijo ("para el Día del Padre hacemos combos").
+        'chat_completo'      => ['stringValue' => wabot_transcript_texto($conv)],
         // El admin muestra `telefono` en la ficha y en la tabla de Bocetos, y
         // `nombre` en la columna Contacto (que sin esto salía vacía).
         'telefono'           => ['stringValue' => wabot_formatear_tel($telefono)],
