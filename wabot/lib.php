@@ -1329,6 +1329,17 @@ function wabot_transcript_completo($clave, $conv = null) {
     return $todas;
 }
 
+/**
+ * Minúsculas y sin acentos, para comparar texto libre sin que "Colores" y
+ * "colóres" cuenten como distintos. A diferencia de wabot_normalizar_frase()
+ * NO saca números ni signos: buscar "$70.000" o un link tiene que seguir
+ * encontrando el "$70.000" o el link tal cual aparecen en el chat.
+ */
+function wabot_normalizar_busqueda($texto) {
+    $t = mb_strtolower(trim((string)$texto));
+    return strtr($t, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'ü' => 'u', 'ñ' => 'n']);
+}
+
 function wabot_conv_save($conv) {
     wabot_ensure_dirs();
     $clave = wabot_conversation_key($conv);

@@ -532,6 +532,69 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['items' => wabot_lista_items()], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    // Busca DENTRO de los mensajes, no en los datos de contacto: recorre cada
+    // conversación completa (lo vivo + lo archivado en historial/, ver
+    // wabot_transcript_completo) y devuelve las que tienen al menos un mensaje
+    // que coincide, con hasta 3 fragmentos de ejemplo por chat.
+    if ($a === 'buscar_mensajes') {
+        header('Content-Type: application/json; charset=utf-8');
+        $q = trim((string)($_POST['q'] ?? ''));
+        if (mb_strlen($q) < 2) { echo json_encode(['items' => []]); exit; }
+        $qNorm = wabot_normalizar_busqueda($q);
+
+        $resultados = [];
+        foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+            $clave = basename($f, '.json');
+            if (stripos($clave, 'TEST') !== false) continue;
+            $cv = wabot_conv_load($clave);
+            $completo = wabot_transcript_completo($clave, $cv);
+
+            $coincidencias = [];
+            $total = 0;
+            foreach ($completo as $linea) {
+                $texto = (string)($linea['t'] ?? '');
+                if ($texto === '') continue;
+                $pos = mb_strpos(wabot_normalizar_busqueda($texto), $qNorm);
+                if ($pos === false) continue;
+                $total++;
+                if (count($coincidencias) < 3) {
+                    // Recorte centrado en la coincidencia, no desde el principio del
+                    // mensaje: si el match cae lejos del arranque en un mensaje largo,
+                    // cortar desde 0 se lo perdía entero y el fragmento no mostraba
+                    // nada resaltado.
+                    $desde = max(0, $pos - 40);
+                    $fragmento = mb_substr($texto, $desde, 220);
+                    $hastaOriginal = $desde + mb_strlen($fragmento);
+                    if ($desde > 0) $fragmento = '…' . $fragmento;
+                    if ($hastaOriginal < mb_strlen($texto)) $fragmento .= '…';
+                    $coincidencias[] = [
+                        'quien' => (string)($linea['q'] ?? ''),
+                        't'     => $fragmento,
+                        'ts'    => (int)($linea['ts'] ?? 0),
+                    ];
+                }
+            }
+            if (!$total) continue;
+
+            $resultados[] = [
+                'tel'              => $clave,
+                'conversation_key' => $clave,
+                'canal'            => wabot_canal($cv),
+                'nombre_agenda'    => wabot_nombre_agenda($cv),
+                'nombre_negocio'   => (string)($cv['nombre_negocio'] ?? ''),
+                'grupo'            => wabot_conv_grupo($cv),
+                'total'            => $total,
+                'coincidencias'    => $coincidencias,
+            ];
+        }
+        usort($resultados, function ($x, $y) {
+            $tsX = max(array_column($x['coincidencias'], 'ts'));
+            $tsY = max(array_column($y['coincidencias'], 'ts'));
+            return $tsY <=> $tsX;
+        });
+        echo json_encode(['items' => array_slice($resultados, 0, 60)], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     // Lo consulta el admin (Seguimiento) para reflejar en Firestore lo que ya
     // pasó acá: mover a "último mensaje" cuando salió el recordatorio, borrar
     // el seguimiento cuando el chat se archivó por inactividad.
@@ -820,6 +883,11 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-fecha-chip { padding:5px 8px; border:1px solid var(--line); border-radius:99px; background:var(--card-2); color:var(--dim); font:inherit; font-size:11px; cursor:pointer; }
 .conv-fecha-chip:hover { border-color:var(--line-fuerte); color:var(--tx); }
 .conv-fecha-chip.on { background:var(--info); border-color:var(--info); color:#0b1424; }
+.conv-busqueda-fila--mensajes { margin-top:7px; }
+.conv-busqueda-fila--mensajes .conv-busqueda { background:var(--card-2); }
+.conv-item-mensaje-linea { font-size:12.5px; color:var(--dim); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.conv-item-mensaje-quien { color:var(--tenue); font-weight:600; }
+mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px; border-radius:3px; font-style:normal; }
 .conv-fecha-chip span { margin-left:3px; opacity:.75; font-size:10px; }
 .conv-fecha-vacio { margin:0; color:var(--dim); font-size:11px; }
 .conv-cuenta { background:var(--card-2); color:var(--dim); border-radius:20px; padding:1px 8px; font-size:11.5px; font-weight:700; }
@@ -1527,11 +1595,14 @@ body.embed { min-height: 0; }
                 <header class="conv-list-head" id="convListaTitulo">Chats</header>
                 <div class="conv-filtros">
                     <div class="conv-busqueda-fila">
-                        <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre o número…" autocomplete="off" aria-label="Buscar chats por nombre o número">
+                        <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número o proyecto">
                         <button type="button" class="conv-fecha-toggle" id="convFechaToggle" aria-expanded="false" aria-controls="convFechaPanel">Fecha <span class="conv-fecha-cuenta" id="convFechaCuenta" hidden>0</span></button>
                     </div>
                     <div class="conv-fecha-panel" id="convFechaPanel" hidden>
                         <div class="conv-fecha-chips" id="convFechaChips"></div>
+                    </div>
+                    <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
+                        <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
                 </div>
                 <div class="conv-items" id="listaItems"></div>
@@ -1678,6 +1749,9 @@ body.embed { min-height: 0; }
         const listaTit  = document.getElementById('convListaTitulo');
         const navBtns   = document.querySelectorAll('.conv-nav-btn');
         const buscarChatsEl = document.getElementById('convBuscar');
+        const buscarMensajesEl = document.getElementById('convBuscarMensajes');
+        let buscarMensajesTimer = null;
+        let buscarMensajesToken = 0;
         const fechaToggleEl = document.getElementById('convFechaToggle');
         const fechaPanelEl = document.getElementById('convFechaPanel');
         const fechaChipsEl = document.getElementById('convFechaChips');
@@ -1805,8 +1879,16 @@ body.embed { min-height: 0; }
             fechaToggleEl.classList.toggle('filtrando', cantidad > 0);
         }
 
+        function modoMensajes() {
+            return buscarMensajesEl.value.trim().length >= 2;
+        }
+
         function pintarLista(items) {
             itemsCache = items;
+            // Mientras se están mostrando resultados de "buscar en los mensajes",
+            // el refresco automático de la lista (cada 8 s) no debe pisarlos: esos
+            // resultados vienen de otro endpoint y tienen otra forma.
+            if (modoMensajes()) return;
 
             if (!sincronizado) {
                 sincronizado = true;
@@ -1821,6 +1903,11 @@ body.embed { min-height: 0; }
 
             renderFechasChats();
             const termino = buscarChatsEl.value.trim();
+            // Con texto en el buscador general, la búsqueda deja de estar atada a
+            // la pestaña activa: recorre TODOS los chats (nombre, número o
+            // proyecto), sin importar el grupo ni el filtro de fecha.
+            const buscandoGeneral = termino.length > 0;
+            listaTit.textContent = buscandoGeneral ? 'Buscando: "' + termino + '"' : GRUPOS[grupoActivo].titulo;
             const firma = JSON.stringify(items) + '|' + grupoActivo + '|' + termino + '|'
                 + [...fechasChatsSeleccionadas].sort().join(',');
             if (firma === firmaLista) return;
@@ -1839,8 +1926,8 @@ body.embed { min-height: 0; }
                 const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
-                if (!entraEnGrupoActivo(it)) continue;
-                if (fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
+                if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
+                if (!buscandoGeneral && fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
                 visibles++;
 
@@ -1918,7 +2005,7 @@ body.embed { min-height: 0; }
                 renderizados.push({ it, el: a });
             }
 
-            if (grupoActivo === 'no_leidos') {
+            if (grupoActivo === 'no_leidos' && !buscandoGeneral) {
                 // Presentadas / Demos / Chats normales, en ese orden, cada una con
                 // su encabezado — solo si tiene algo, para no listar títulos vacíos.
                 for (const sub of SUBGRUPOS_NO_LEIDOS) {
@@ -1948,6 +2035,110 @@ body.embed { min-height: 0; }
             firmaLista = '';
             pintarLista(itemsCache);
         });
+
+        // Resalta, dentro del fragmento que mandó el servidor, la parte que
+        // coincide con lo buscado — mismo criterio (sin acentos, sin mayúsculas)
+        // que arma el fragmento del lado de PHP.
+        function resaltarCoincidencia(texto, termino) {
+            const idx = normalizarBusqueda(texto).indexOf(normalizarBusqueda(termino));
+            if (idx === -1) return document.createTextNode(texto);
+            const frag = document.createDocumentFragment();
+            if (idx > 0) frag.appendChild(document.createTextNode(texto.slice(0, idx)));
+            const marca = document.createElement('mark');
+            marca.className = 'conv-resaltado';
+            marca.textContent = texto.slice(idx, idx + termino.length);
+            frag.appendChild(marca);
+            if (idx + termino.length < texto.length) frag.appendChild(document.createTextNode(texto.slice(idx + termino.length)));
+            return frag;
+        }
+
+        function pintarResultadosMensajes(items, termino) {
+            listaEl.innerHTML = '';
+            if (!items.length) {
+                const p = document.createElement('p');
+                p.className = 'conv-vacio';
+                p.textContent = 'Ningún mensaje contiene "' + termino + '".';
+                listaEl.appendChild(p);
+                return;
+            }
+            for (const it of items) {
+                const a = document.createElement('a');
+                a.className = 'conv-item conv-item-mensaje';
+                a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
+
+                const body = document.createElement('div');
+                body.className = 'conv-item-body';
+
+                const top = document.createElement('div');
+                top.className = 'conv-item-top';
+                const nombreBox = document.createElement('span');
+                nombreBox.className = 'conv-item-nombre';
+                const tel = document.createElement('span');
+                tel.className = 'conv-item-tel';
+                tel.textContent = it.nombre_agenda || it.nombre_negocio || it.tel;
+                const tag = document.createElement('span');
+                tag.className = 'canal-tag canal-tag--' + (it.canal === 'instagram' ? 'instagram' : 'whatsapp');
+                tag.textContent = it.canal === 'instagram' ? 'IG' : 'WA';
+                nombreBox.appendChild(tel); nombreBox.appendChild(tag);
+                const cuenta = document.createElement('span');
+                cuenta.className = 'conv-item-hora';
+                cuenta.textContent = it.total + (it.total === 1 ? ' coincidencia' : ' coincidencias');
+                top.appendChild(nombreBox); top.appendChild(cuenta);
+                body.appendChild(top);
+
+                for (const c of it.coincidencias) {
+                    const linea = document.createElement('div');
+                    linea.className = 'conv-item-mensaje-linea';
+                    const quien = document.createElement('span');
+                    quien.className = 'conv-item-mensaje-quien';
+                    quien.textContent = c.quien === 'cliente' ? 'Cliente: ' : (c.quien === 'humano' ? 'Vos: ' : 'Bot: ');
+                    linea.appendChild(quien);
+                    linea.appendChild(resaltarCoincidencia(c.t, termino));
+                    body.appendChild(linea);
+                }
+
+                a.appendChild(body);
+                listaEl.appendChild(a);
+            }
+        }
+
+        async function ejecutarBusquedaMensajes() {
+            const termino = buscarMensajesEl.value.trim();
+            if (termino.length < 2) return;
+            const miToken = ++buscarMensajesToken;
+            listaTit.textContent = 'Mensajes: "' + termino + '"';
+            const cargando = document.createElement('p');
+            cargando.className = 'conv-vacio';
+            cargando.textContent = 'Buscando…';
+            listaEl.innerHTML = '';
+            listaEl.appendChild(cargando);
+            try {
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ accion: 'buscar_mensajes', q: termino }) });
+                const j = await r.json();
+                if (miToken !== buscarMensajesToken) return;   // se siguió escribiendo, esta respuesta ya quedó vieja
+                pintarResultadosMensajes(j.items || [], termino);
+            } catch (e) {
+                if (miToken !== buscarMensajesToken) return;
+                const err = document.createElement('p');
+                err.className = 'conv-vacio';
+                err.textContent = 'No se pudo buscar. Probá de nuevo.';
+                listaEl.innerHTML = '';
+                listaEl.appendChild(err);
+            }
+        }
+
+        buscarMensajesEl.addEventListener('input', () => {
+            clearTimeout(buscarMensajesTimer);
+            if (!modoMensajes()) {
+                buscarMensajesToken++;   // descarta cualquier búsqueda en vuelo
+                firmaLista = '';
+                pintarLista(itemsCache);
+                return;
+            }
+            buscarMensajesTimer = setTimeout(ejecutarBusquedaMensajes, 350);
+        });
+
         fechaToggleEl.addEventListener('click', () => {
             const abrir = fechaPanelEl.hidden;
             fechaPanelEl.hidden = !abrir;

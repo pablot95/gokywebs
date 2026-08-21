@@ -2923,5 +2923,15 @@ caso('con caracteres raros en la clave, igual la encuentra',
     wabot_conv_existe('  ' . $claveExiste . '!!') === true);
 @unlink(WABOT_DATA . '/conv/' . $claveExiste . '.json');
 
+echo "— Normalizar texto para buscar dentro de los mensajes —\n";
+
+caso('minúsculas y sin acentos', wabot_normalizar_busqueda('Colóres y Diseño') === 'colores y diseno');
+caso('los números y signos quedan intactos: buscar un precio tiene que seguir funcionando',
+    wabot_normalizar_busqueda('Son $70.000') === 'son $70.000');
+caso('un link no se rompe', wabot_normalizar_busqueda('gokywebs.com/demo/Kiosco') === 'gokywebs.com/demo/kiosco');
+caso('recorta espacios de los bordes', wabot_normalizar_busqueda('  hola  ') === 'hola');
+caso('largo estable: acentuadas y sin acentuar dan el mismo largo (para que el resaltado no se desalinee)',
+    mb_strlen(wabot_normalizar_busqueda('áéíóúñ')) === mb_strlen('áéíóúñ'));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
