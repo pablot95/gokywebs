@@ -2076,6 +2076,17 @@ foreach (['derivar', 'espera', 'espera_prediseno', 'sistema_whatsapp', 'sistema_
 foreach (['otra', 'reuniones'] as $clave) {
     caso("info.$clave no nombra a Pablo", stripos((string)$cfg['info'][$clave], 'pablo') === false);
 }
+// Tampoco "el equipo": es una sola persona y suena a call center. Se lo nombra
+// por el rol hasta que aparece el nombre propio en la videollamada.
+foreach (['derivar', 'espera', 'espera_prediseno', 'sistema_whatsapp'] as $clave) {
+    caso("el texto \"$clave\" ya no dice \"el equipo\"", stripos((string)$cfg[$clave], 'el equipo') === false);
+}
+foreach (['otra', 'reuniones'] as $clave) {
+    caso("info.$clave tampoco dice \"el equipo\"", stripos((string)$cfg['info'][$clave], 'el equipo') === false);
+}
+caso('la respuesta de último recurso ahora manda la duda al desarrollador',
+    stripos((string)$cfg['info']['otra'], 'el desarrollador') !== false);
+caso('y la derivación también', stripos((string)$cfg['derivar'], 'el desarrollador') !== false);
 caso('el único texto que nombra a Pablo es la videollamada de la parte 2',
     stripos((string)$cfg['postdemo_videollamada'], 'pablo') !== false);
 

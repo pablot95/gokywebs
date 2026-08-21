@@ -532,27 +532,41 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
     }
 
-    // El nombre propio se reserva para la videollamada de la parte 2.
+    // En la parte 1 se lo nombra por el ROL ("el desarrollador"), nunca por el
+    // nombre propio —que se reserva para la videollamada de la parte 2— y nunca
+    // como "el equipo", que suena a call center y además no es cierto.
     $sinNombrePropio = [
         'derivar' => [
             'Perfecto, {nombre}. Tu consulta la sigue Pablo directamente: te escribe a la brevedad por acá para avanzar.'
-                => 'Perfecto, {nombre}. Tu consulta la sigue el equipo directamente: te escriben a la brevedad por acá para avanzar.',
+                => 'Perfecto, {nombre}. Tu consulta la sigue el desarrollador directamente: te escribe a la brevedad por acá para avanzar.',
+            'Perfecto, {nombre}. Tu consulta la sigue el equipo directamente: te escriben a la brevedad por acá para avanzar.'
+                => 'Perfecto, {nombre}. Tu consulta la sigue el desarrollador directamente: te escribe a la brevedad por acá para avanzar.',
             'Genial {nombre}. Pablo te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.'
-                => 'Genial {nombre}. El equipo te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.',
+                => 'Genial {nombre}. El desarrollador te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.',
+            'Genial {nombre}. El equipo te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.'
+                => 'Genial {nombre}. El desarrollador te escribe en un rato por acá para avanzar y, si está todo claro, arrancar hoy mismo.',
         ],
         'espera' => [
             'Pablo ya tiene tu consulta y te escribe a la brevedad por acá.'
-                => 'El equipo ya tiene tu consulta y te escribe a la brevedad por acá.',
+                => 'El desarrollador ya tiene tu consulta y te escribe a la brevedad por acá.',
+            'El equipo ya tiene tu consulta y te escribe a la brevedad por acá.'
+                => 'El desarrollador ya tiene tu consulta y te escribe a la brevedad por acá.',
             'Pablo ya tiene tu consulta y te escribe en un rato por acá.'
-                => 'El equipo ya tiene tu consulta y te escribe en un rato por acá.',
+                => 'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.',
+            'El equipo ya tiene tu consulta y te escribe en un rato por acá.'
+                => 'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.',
         ],
         'espera_prediseno' => [
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma Pablo cuando te escriba.'
-                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirman cuando te escriban.',
+                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.',
+            'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirman cuando te escriban.'
+                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.',
         ],
         'sistema_whatsapp' => [
             'Última cosa: pasame tu número de WhatsApp así Pablo te envía por ahí la propuesta del sistema.'
-                => 'Última cosa: pasame tu número de WhatsApp así te enviamos por ahí la propuesta del sistema.',
+                => 'Última cosa: pasame tu número de WhatsApp así el desarrollador te envía por ahí la propuesta del sistema.',
+            'Última cosa: pasame tu número de WhatsApp así te enviamos por ahí la propuesta del sistema.'
+                => 'Última cosa: pasame tu número de WhatsApp así el desarrollador te envía por ahí la propuesta del sistema.',
         ],
         'sistema_cierre' => [
             'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida. Te escribe en un rato para definir el próximo paso.'
@@ -586,14 +600,23 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     if (trim((string)($cfg['pago_titular'] ?? '')) === 'Pablo Travi (Santander Río)') {
         $cfg['pago_titular'] = 'PABLO TRAVI';
     }
+    // "El equipo" sonaba a call center y además es mentira: es una persona. En
+    // la parte 1 se lo nombra por el rol ("el desarrollador"), no por el nombre
+    // propio, que se reserva para la videollamada de la parte 2.
     $infoSinNombre = [
         'reuniones' => [
             'Las reuniones se coordinan con Pablo al avanzar el proyecto.'
-                => 'Las reuniones se coordinan al avanzar el proyecto.',
+                => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
+            'Las reuniones se coordinan al avanzar el proyecto.'
+                => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
+            'Las reuniones se coordinan con el equipo al avanzar el proyecto.'
+                => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
         ],
         'otra' => [
             'Ese detalle te lo confirma Pablo en la charla.'
-                => 'Ese detalle te lo confirma el equipo en la charla.',
+                => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
+            'Ese detalle te lo confirma el equipo en la charla.'
+                => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
         ],
     ];
     foreach ($infoSinNombre as $campo => $reemplazos) {
@@ -666,7 +689,7 @@ function wabot_config_descs(&$cfg) {
     $descs = [
         'landing'       => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp',
         'turnos'        => 'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel',
-        'institucional' => 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades de la empresa, y panel propio para publicar',
+        'institucional' => 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, y panel propio para publicar',
         'inmobiliaria'  => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas',
         'ecommerce'     => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos',
         'elearning'     => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online',
