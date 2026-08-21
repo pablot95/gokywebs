@@ -306,6 +306,8 @@ function wabot_config_ventas(&$cfg) {
     if (!isset($cfg['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = 48;
     if (!isset($cfg['ultima_llamada_activa'])) $cfg['ultima_llamada_activa'] = true;
     if (!isset($cfg['ultima_llamada_horas']))  $cfg['ultima_llamada_horas']  = 23;
+    // Editable desde Textos: el adicional por dejar la web en dos idiomas.
+    if (trim((string)($cfg['adicional_bilingue'] ?? '')) === '') $cfg['adicional_bilingue'] = '$30.000';
     if (!isset($cfg['presentados_archivar_horas']))     $cfg['presentados_archivar_horas']     = 168;
     if (!isset($cfg['muestra_aviso_activo'])) $cfg['muestra_aviso_activo'] = true;
 
@@ -438,6 +440,10 @@ function wabot_config_ventas(&$cfg) {
             'Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com podés ver más de 40 proyectos entregados y contactar a cualquiera de esos clientes.'
                 => 'Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com podés ver los proyectos entregados y contactar a cualquiera de esos clientes.',
         ],
+        'pixel' => [
+            'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas.'
+                => 'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas. Google Analytics y Search Console te los podemos vincular nosotros.',
+        ],
     ];
     if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
     foreach ($migracionesInfo2108 as $campo => $reemplazos) {
@@ -453,6 +459,17 @@ function wabot_config_ventas(&$cfg) {
         // la venta (caso Abel, 22-ago). Se le pregunta.
         'precio_sin_rubro' => 'Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
+
+        /* Las 13 preguntas de traspaso que hizo un cliente el 20-ago de una
+         * sola vez, con las respuestas que le dio Pablo. Son las dudas de
+         * alguien que ya tuvo una web y quedó atado al que se la hizo. */
+        'accesos' => "El hosting es nuestro y viene incluido, así que la web queda subida ahí. Igual tenés acceso: trabajamos con Hostinger, te mandamos una invitación al panel y los datos para entrar por FTP.\nSi preferís tener el control total, podés contratar vos el hosting y subimos la página directamente a ese. El dominio lo podemos registrar a tu nombre desde el arranque.",
+        'titularidad' => "El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.\nSiendo tuyos los dos, los renovás y los manejás vos sin depender de nadie.",
+        'emails' => 'Este plan no incluye casillas de correo corporativas. Se pueden sumar, pero no son transferibles: los accesos te los damos sin problema y si querés que queden a tu nombre las tenés que contratar vos. La configuración en Outlook, Gmail o el celular no la hacemos nosotros.',
+        'entrega_codigo' => 'Sí, te entregamos el código completo de la web. Base de datos solo llevan las que tienen panel propio (tienda, inmobiliaria y plataforma de cursos): en ese caso también te pasamos el acceso. Una landing, una web con turnos o una institucional no usa base de datos.',
+        'licencias' => 'Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Lo que sí es tuyo es la web: el código, el dominio y todo el contenido.',
+        'manual' => 'No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y en el resto los cambios de contenido los hacemos nosotros. Meter mano en el código ya es otra cosa: para eso haría falta un curso de desarrollo web.',
+        'bilingue' => 'Sí, la podemos hacer bilingüe. Tiene un adicional de {precio} sobre el valor de la web.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
@@ -2106,7 +2123,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {
@@ -2149,7 +2166,7 @@ GUIA:
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
-- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), o el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
+- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), casillas de correo corporativas (emails), si entregan el código o un backup (entrega_codigo), licencias de plugins o SDK (licencias), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
   · **pago**: cómo se paga, con qué medios, si hay cuotas, cuánto es la seña. Es la pregunta por la PLATA. Si pregunta las dos cosas ("cómo trabajan y cómo se paga"), poné las dos claves.
 - objecion_caro: dice que es caro, regatea o pide descuento.

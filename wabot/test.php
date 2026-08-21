@@ -2406,5 +2406,55 @@ caso('el chat exportado al boceto arranca desde el principio',
 @unlink(WABOT_DATA . '/conv/' . $claveHist . '.json');
 @unlink(wabot_historial_path($claveHist));
 
+echo "— Las 13 preguntas de traspaso (chat del 20-ago) —\n";
+
+foreach ([
+    'Me podes pasar el usuario y contraseña del cPanel?' => 'accesos',
+    'me das los datos de acceso por FTP?'                => 'accesos',
+    'el dominio queda a mi nombre?'                      => 'titularidad',
+    'el hosting esta a nombre de quien?'                 => 'titularidad',
+    'me dan las cuentas de correo corporativas?'         => 'emails',
+    'puedo tener mails con arroba mi dominio?'           => 'emails',
+    'me entregan un backup completo de la pagina?'       => 'entrega_codigo',
+    'me pasan el codigo fuente?'                         => 'entrega_codigo',
+    'las licencias de plugins estan a mi nombre?'        => 'licencias',
+    'me dan un manual para actualizar textos?'           => 'manual',
+    'tengo acceso al administrador tipo wordpress?'      => 'carga',
+    'la pueden hacer bilingue?'                          => 'bilingue',
+    'se puede en dos idiomas?'                           => 'bilingue',
+    'me vinculan search console?'                        => 'pixel',
+] as $pregunta => $clave) {
+    caso("\"" . mb_substr($pregunta, 0, 42) . "\" → $clave", wabot_info_por_palabras($pregunta) === $clave);
+}
+// Las que ya andaban no se rompen con las claves nuevas.
+caso('"usan wordpress?" sigue siendo una pregunta de tecnología', wabot_info_por_palabras('usan wordpress?') === 'tecnologia');
+caso('"cuando vence el dominio?" sigue siendo hosting', wabot_info_por_palabras('cuando vence el dominio?') === 'hosting');
+caso('"eso incluye el hosting?" también', wabot_info_por_palabras('eso incluye el hosting?') === 'hosting');
+
+foreach (['accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue'] as $clave) {
+    caso("la respuesta de \"$clave\" existe y no quedó vacía", trim((string)($cfg['info'][$clave] ?? '')) !== '');
+}
+caso('el adicional bilingüe sale con su precio, no con el placeholder',
+    strpos(wabot_texto_info('bilingue', $cfg), '$30.000') !== false
+    && strpos(wabot_texto_info('bilingue', $cfg), '{precio}') === false);
+caso('los accesos explican la invitación de Hostinger y el FTP',
+    stripos((string)$cfg['info']['accesos'], 'hostinger') !== false
+    && stripos((string)$cfg['info']['accesos'], 'ftp') !== false);
+caso('la titularidad no promete que el hosting quede a su nombre porque sí',
+    stripos((string)$cfg['info']['titularidad'], 'lo contratás vos') !== false);
+caso('los correos aclaran que no son transferibles',
+    stripos((string)$cfg['info']['emails'], 'no son transferibles') !== false);
+caso('las licencias aclaran que son de terceros',
+    stripos((string)$cfg['info']['licencias'], 'terceros') !== false);
+
+// Son respuestas: el bot no las saca de la nada.
+$c = conv_nueva(); $c['chat_started_ts'] = time();
+clasifica(['rubro_landing']);
+$r = wabot_engine('soy plomero', $c, $cfg);
+$dicho = implode(' ', $r);
+foreach (['bilingüe', 'cPanel', 'FTP', 'licencias', 'backup'] as $palabra) {
+    caso("el precio no menciona \"$palabra\" por su cuenta", stripos($dicho, $palabra) === false);
+}
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -867,7 +867,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             if (!isset($cfg['info'][$k])) continue;
             $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
-                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : $cfg['info'][$k]));
+                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : wabot_texto_info($k, $cfg)));
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
         $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
@@ -1295,6 +1295,20 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|mantenimiento|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)) return 'mantenimiento';
     if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|cuanto tiempo|plazo\w*|cuando esta|cuando la tienen|cuando la entregan|tiempo de entrega|para cuando|en cuanto la|cuando estaria)/u', $t)) return 'plazos';
     if (preg_match('/\b(como se paga\w*|formas? de pago|medios? de pago|se puede pagar|transferencia\w*|mercado pago|en cuotas|senia|sena)\b/u', $t)) return 'pago';
+    // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
+    // varias de ellas y, si no, todas caian en la respuesta de hosting.
+    if (preg_match('/\b(bilingue|dos idiomas|en ingles|version en ingles|multi ?idioma|traducida|traduccion de la web)\b/u', $t)) return 'bilingue';
+    if (preg_match('/\b(correos? corporativos?|casillas? de correo|mail corporativo|mails? corporativos?|cuentas? de (correo|mail)|arroba mi dominio|outlook|configurar el mail)\b/u', $t)) return 'emails';
+    if (preg_match('/\b(licencias?|plugins?|sdk|plantillas? compradas?|temas? comprados?)\b/u', $t)) return 'licencias';
+    if (preg_match('/\b(manual|instructivo|tutorial|capacitacion para usar|como la actualizo|actualizar (los )?textos|me ensenan a)\b/u', $t)) return 'manual';
+    if (preg_match('/\b(backup|respaldo|copia de seguridad|me entregan el codigo|entregan el codigo|codigo fuente|base de datos|acceso a la base)\b/u', $t)) return 'entrega_codigo';
+    if (preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)) return 'titularidad';
+    if (preg_match('/\b(cpanel|c panel|ftp|sftp|panel del hosting|panel de control|acceso al hosting|accesos? al servidor|credenciales|usuario y contrasena)\b/u', $t)) return 'accesos';
+    if (preg_match('/\b(search console|google search)\b/u', $t)) return 'pixel';
+    // "¿Usan WordPress?" es una pregunta por la tecnología; "¿tengo acceso al
+    // administrador tipo WordPress?" es por el panel. Solo la segunda va a carga.
+    if (preg_match('/\b(gestor de contenidos|administrador de la web|panel de administracion|panel administrador|back ?office)\b/u', $t)
+        || preg_match('/\b(acceso al|entran al|tengo|hay un|tiene)\b.{0,20}\b(wordpress|joomla|administrador)\b/u', $t)) return 'carga';
     if (preg_match('/\bhostin|\b(dominio\w*|servidor\w*|el punto com|puntocom|la direccion web)\b/u', $t)) return 'hosting';
     if (preg_match('/\b(hacen paginas?|crean paginas?|hacen webs?|hacen sitios|disenan paginas?|hacen las paginas)\b/u', $t)) return 'que_hacemos';
     if (preg_match('/\b(sin internet|se corta (el )?internet|sin conexion|funciona offline|no tengo internet|sin senal|sin wifi)\b/u', $t)) return 'internet';
@@ -1495,6 +1509,15 @@ function wabot_texto_mantenimiento($conv, $cfg) {
     $plan  = $planes[$clave] ?? $planes['otros'] ?? null;
     if (!$plan) return $base;
     return str_replace(['{precio}', '{link}'], [$plan['precio'], $plan['link']], $base);
+}
+
+/** Un texto de info con sus placeholders resueltos. */
+function wabot_texto_info($clave, $cfg) {
+    $texto = (string)($cfg['info'][$clave] ?? '');
+    if ($clave === 'bilingue') {
+        return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
+    }
+    return $texto;
 }
 
 /** Hosting: responde también qué pasa al terminar el primer año incluido. */
