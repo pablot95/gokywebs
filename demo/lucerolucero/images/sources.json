@@ -1,0 +1,72 @@
+[
+  {
+    "file": "complejo-casas-gemelas-1920x1080.webp",
+    "source": "pexels",
+    "id": "30580640",
+    "url": "https://www.pexels.com/photo/30580640/",
+    "use": "hero / el complejo"
+  },
+  {
+    "file": "casa-exterior-verde-1600x1300.webp",
+    "source": "pexels",
+    "id": "20296321",
+    "url": "https://www.pexels.com/photo/20296321/",
+    "use": "catalogo casa"
+  },
+  {
+    "file": "living-sofa-crema-1600x1300.webp",
+    "source": "pexels",
+    "id": "276746",
+    "url": "https://www.pexels.com/photo/276746/",
+    "use": "recorrido, living"
+  },
+  {
+    "file": "cocina-equipada-mesa-1600x1300.webp",
+    "source": "pexels",
+    "id": "7166645",
+    "url": "https://www.pexels.com/photo/7166645/",
+    "use": "recorrido, cocina"
+  },
+  {
+    "file": "dormitorio-moderno-1200x1600.webp",
+    "source": "pexels",
+    "id": "6903157",
+    "url": "https://www.pexels.com/photo/6903157/",
+    "use": "recorrido, dormitorio"
+  },
+  {
+    "file": "dormitorio-ropero-1200x1600.webp",
+    "source": "pexels",
+    "id": "7587809",
+    "url": "https://www.pexels.com/photo/7587809/",
+    "use": "catalogo casa, detalle ropero"
+  },
+  {
+    "file": "comedor-mesa-madera-1600x1300.webp",
+    "source": "pexels",
+    "id": "3935326",
+    "url": "https://www.pexels.com/photo/3935326/",
+    "use": "catalogo casa, comedor"
+  },
+  {
+    "file": "parrilla-detalle-1000x1000.webp",
+    "source": "pexels",
+    "id": "37030068",
+    "url": "https://www.pexels.com/photo/37030068/",
+    "use": "recorrido, parrilla / amenities"
+  },
+  {
+    "file": "camion-gran-porte-1600x1300.webp",
+    "source": "pexels",
+    "id": "12261472",
+    "url": "https://www.pexels.com/photo/12261472/",
+    "use": "para empresas, estacionamiento vehiculos grandes"
+  },
+  {
+    "file": "estacionamiento-amplio-1600x1300.webp",
+    "source": "pexels",
+    "id": "5231181",
+    "url": "https://www.pexels.com/photo/5231181/",
+    "use": "para empresas, estacionamiento amplio"
+  }
+]
