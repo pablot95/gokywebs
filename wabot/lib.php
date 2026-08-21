@@ -1372,13 +1372,19 @@ function wabot_lista_items() {
 }
 
 /**
- * En qué columna de Conversaciones va cada chat. Excluyentes y por prioridad:
- * si el cliente escribió y el bot no le va a contestar, eso manda sobre todo.
+ * En qué columna de Conversaciones va cada chat. Excluyentes y por prioridad.
  *
- * atencion    → el cliente está esperando que le conteste una persona.
  * presentados → ya se le mandó la muestra, esperando que confirme algo.
  * muestra     → pidió el prediseño y ya pasó los datos: es cola de trabajo.
+ * interesado  → vio el precio y no llegó a pedir la demo.
  * chat        → el bot la está llevando, no hay nada que hacer.
+ *
+ * Ya no existe el grupo 'atencion' ("Te esperan"): todo lo que caía ahí es,
+ * por definición, un chat donde el cliente escribió último y nadie le
+ * contestó — o sea, exactamente lo que ya lista "Sin leer". Eran dos listas
+ * con la misma gente y sacaba conversaciones de su grupo real del embudo.
+ * Que alguien espere respuesta se sigue viendo: la píldora de la fila y
+ * wabot_conv_espera_respuesta() siguen intactas.
  */
 function wabot_conv_grupo($cv) {
     // Archivado gana sobre todo: Pablo lo sacó a mano de la vista de trabajo.
@@ -1408,22 +1414,9 @@ function wabot_conv_grupo($cv) {
             || (!empty($cv['descripcion']) && !empty($cv['colores'])));
     if ($esMuestra) return 'muestra';
 
-    // Una promesa de atención humana es una tarea real y tiene prioridad sobre
-    // el canal y sobre quién escribió último.
-    if (!empty($cv['handoff_pendiente'])) return 'atencion';
-
     // WhatsApp e Instagram comparten la misma cola de chat: el canal se
     // distingue con una etiqueta al lado del nombre, no con una columna aparte.
 
-    // Muestras es definitivo: una vez que pidió el prediseño, la charla vive
-    // ahí aunque después escriba y esté esperando respuesta. Es tu cola de
-    // trabajo, no un estado que va y viene — si saltara a "Te esperan" cada vez
-    // que el cliente contesta, la lista de lo que hay que diseñar se vaciaría
-    // sola. Los que esperan respuesta se marcan con la píldora, no se mudan.
-    // Los sistemas generan una propuesta/brief, no un prediseño visual. También
-    // corrige chats creados por la versión intermedia que usaba lead_creado para
-    // ambos y los mezclaba en la cola Muestras.
-    if (wabot_conv_espera_respuesta($cv)) return 'atencion';
     // Vio el precio y siguió hablando, pero todavía no dio los datos de la demo:
     // es el que más cerca está de comprar sin haber pedido nada. Separarlo de
     // "Chats" hace visible dónde se está frenando el embudo.

@@ -1021,31 +1021,40 @@ $base['pausado_hasta'] = time() + 3600;
 caso('si el cliente contesta último, SIGUE en Muestras', wabot_conv_grupo($base) === 'muestra');
 caso('pero queda marcada como que te espera', wabot_conv_espera_respuesta($base) === true);
 
-// Sin muestra, ese mismo caso sí va a Te esperan.
+// Ya no hay grupo "Te esperan": esa charla vuelve a su lugar del embudo, y que
+// esté esperando respuesta se sigue viendo en la píldora de la fila.
 $sinMuestra = $base;
 $sinMuestra['lead_creado'] = false;
 $sinMuestra['descripcion'] = null;
 $sinMuestra['colores'] = null;
-caso('una charla sin muestra con el cliente esperando sí va a Te esperan',
-    wabot_conv_grupo($sinMuestra) === 'atencion');
+caso('una charla sin muestra con el cliente esperando cae en su grupo del embudo, no en uno aparte',
+    wabot_conv_grupo($sinMuestra) === 'chat');
+caso('pero sigue marcada como que te espera',
+    wabot_conv_espera_respuesta($sinMuestra) === true);
 
 // El bug real del chat de Claudio: wabot_prediseno_completo() SIEMPRE marca
-// handoff_pendiente (para que Pablo la vea como tarea), y ese flag tenía
-// prioridad absoluta sobre el grupo. Todo boceto recién cerrado caía en
-// "Te esperan" en vez de en "Muestras", y la cola de trabajo real quedaba
-// invisible detrás de derivaciones genéricas.
+// handoff_pendiente, y ese flag tenía prioridad absoluta sobre el grupo, así
+// que todo boceto recién cerrado desaparecía de la cola de trabajo. El grupo
+// "Te esperan" ya no existe, pero el caso se testea igual: la muestra manda.
 $claudio = ['canal'=>'whatsapp','tipo'=>'ecommerce','fase'=>'derivado','cierre'=>'prediseno',
             'handoff_pendiente'=>true,'bot_off'=>false,'pausado_hasta'=>0,
             'descripcion'=>'','colores'=>'los del logo','lead_creado'=>true,
             'transcript'=>[['q'=>'bot','t'=>'Listo, con eso ya lo preparamos.','ts'=>time()]]];
-caso('un boceto recién cerrado (handoff_pendiente Y cierre=prediseno a la vez) va a Muestras, no a Te esperan',
+caso('un boceto recién cerrado (handoff_pendiente Y cierre=prediseno a la vez) va a Muestras',
     wabot_conv_grupo($claudio) === 'muestra');
 
-// Una derivación real (sin prediseño) sigue yendo a Te esperan como corresponde.
+// Una derivación real: con el grupo aparte eliminado, cae en el embudo. El
+// handoff sigue registrado para la píldora, pero ya no la saca de su columna.
 $derivacionReal = ['canal'=>'whatsapp','fase'=>'derivado','cierre'=>'derivacion','handoff_pendiente'=>true,
                     'bot_off'=>false,'pausado_hasta'=>0,'descripcion'=>null,'colores'=>null,'lead_creado'=>false,
                     'transcript'=>[['q'=>'bot','t'=>'Tu consulta la sigue Pablo.','ts'=>time()]]];
-caso('una derivación sin prediseño sigue yendo a Te esperan', wabot_conv_grupo($derivacionReal) === 'atencion');
+caso('una derivación sin prediseño ya no se muda a un grupo aparte',
+    wabot_conv_grupo($derivacionReal) === 'chat');
+caso('pero el handoff queda registrado para la píldora de la fila',
+    !empty($derivacionReal['handoff_pendiente']));
+caso('ninguna conversación cae ya en el grupo "atencion", que no existe más',
+    !in_array(wabot_conv_grupo($derivacionReal), ['atencion'], true)
+    && !in_array(wabot_conv_grupo($sinMuestra), ['atencion'], true));
 
 // El mismo caso pero de punta a punta por wabot_lista_items(), que es lo que
 // arma el panel. admin.php tenía una segunda capa que releía handoff_pendiente

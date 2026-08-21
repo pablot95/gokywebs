@@ -743,11 +743,8 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .conv-nav-btn[data-grupo="pago"].tiene { color:var(--ac); }
 .conv-nav-btn[data-grupo="pago"].tiene .conv-cuenta { background:var(--ac-tenue); color:var(--ac); }
 .conv-nav-btn[data-grupo="pago"].on { border-left-color:var(--ac); }
-.conv-nav-btn[data-grupo="atencion"].tiene,
 .conv-nav-btn[data-grupo="muestra"].tiene { color:var(--warn); }
-.conv-nav-btn[data-grupo="atencion"].tiene .conv-cuenta,
 .conv-nav-btn[data-grupo="muestra"].tiene .conv-cuenta { background:var(--warn-tenue); color:var(--warn); }
-.conv-nav-btn[data-grupo="atencion"].on,
 .conv-nav-btn[data-grupo="muestra"].on { border-left-color:var(--warn); }
 .conv-nav-btn[data-grupo="presentadas_48"].tiene { color:var(--bad); }
 .conv-nav-btn[data-grupo="presentadas_48"].tiene .conv-cuenta { background:var(--bad-tenue); color:var(--bad); }
@@ -805,8 +802,6 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-fecha-vacio { margin:0; color:var(--dim); font-size:11px; }
 .conv-cuenta { background:var(--card-2); color:var(--dim); border-radius:20px; padding:1px 8px; font-size:11.5px; font-weight:700; }
 .conv-list[data-grupo="muestra"] .conv-list-head { color:var(--ac); }
-.conv-list[data-grupo="atencion"] .conv-list-head { color:var(--warn); }
-.conv-list[data-grupo="atencion"] { border-color:var(--warn); }
 .conv-item .pill.espera { background:#3a2f10; color:var(--warn); }
 .conv-items { flex:1 1 0; min-height:0; overflow-y:auto; }
 .conv-item { display:flex; align-items:flex-start; gap:9px; padding:11px 13px; border-bottom:1px solid var(--line); color:var(--tx); border-left:3px solid transparent; cursor:pointer; }
@@ -1494,7 +1489,6 @@ body.embed { min-height: 0; }
 
                 <p class="conv-nav-titulo">Te toca a vos</p>
                 <button type="button" class="conv-nav-btn" data-grupo="pago" title="Avisaron que transfirieron: hay que verificar que la plata haya entrado.">Avisaron que pagaron <span class="conv-cuenta" id="cuentaPago">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="atencion" title="El bot les prometió que les contestás vos.">Esperan respuesta <span class="conv-cuenta" id="cuentaAtencion">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra" title="Ya pasaron los datos y falta diseñarles la demo. Es tu cola de trabajo.">Demos por diseñar <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentadas_48" title="Tienen la demo hace más de 48 h y no contestaron nada. La ventana de WhatsApp ya cerró: hay que ir a buscarlos a mano.">Se enfriaron <span class="conv-cuenta" id="cuentaPresentadas48">0</span></button>
 
@@ -1608,7 +1602,6 @@ body.embed { min-height: 0; }
         const GRUPOS = {
             no_leidos:  { titulo: 'Sin leer',    cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Ningún mensaje sin abrir.', vista: true },
             pago:       { titulo: 'Avisaron que pagaron', cuenta: document.getElementById('cuentaPago'), vacio: 'Nadie avisó todavía que pagó.' },
-            atencion:   { titulo: 'Esperan respuesta',    cuenta: document.getElementById('cuentaAtencion'), vacio: 'Nadie esperando que le contestes.' },
             muestra:    { titulo: 'Demos por diseñar',    cuenta: document.getElementById('cuentaMuestra'), vacio: 'Ninguna demo pendiente de diseño.' },
             presentadas_48:{ titulo: 'Se enfriaron',      cuenta: document.getElementById('cuentaPresentadas48'), vacio: 'Ninguna demo sin respuesta hace más de 48 horas.' },
             interesado: { titulo: 'Vieron precio',        cuenta: document.getElementById('cuentaInteresado'), vacio: 'Nadie con el precio dado esperando decidir.' },
@@ -1798,7 +1791,7 @@ body.embed { min-height: 0; }
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, atencion: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
