@@ -2604,5 +2604,70 @@ $sinBoceto['tel'] = 'TESTLOGO';
 $sinBoceto['transcript'] = [$img('20260821-120000-dddddddd.png', '[foto] te paso el logo')];
 caso('sin boceto creado no se sincroniza nada', wabot_logo_sincronizar($sinBoceto) === false);
 
+echo "— Un mensaje automático no puede tapar lo que el cliente escribió y no leíste —\n";
+
+$ahoraNL = time();
+$sinLeer = wabot_conv_load('TESTNOLEIDO');
+$sinLeer['presentado_ts'] = $ahoraNL - 30 * 3600;
+$sinLeer['fase'] = 'postdemo';
+$sinLeer['panel_visto_ts'] = $ahoraNL - 10 * 3600;
+$sinLeer['transcript'] = [
+    ['q' => 'humano', 't' => 'Acá está tu demo', 'ts' => $ahoraNL - 30 * 3600],
+    ['q' => 'cliente', 't' => 'La miro y te digo', 'ts' => $ahoraNL - 5 * 3600],
+];
+$sinLeer['ultimo_cliente_ts'] = $ahoraNL - 5 * 3600;
+caso('el cliente escribió después de que abriste el chat → sin leer',
+    wabot_ultimo_cliente_ts($sinLeer) > (int)$sinLeer['panel_visto_ts']);
+
+// El caso que reportó Pablo: el recordatorio de las 20 h escribe DESPUÉS del
+// cliente, y con el criterio viejo ("el último mensaje es del cliente") el chat
+// se caía solo de la lista sin que nadie lo hubiera leído.
+$tapado = $sinLeer;
+$tapado['transcript'][] = ['q' => 'bot', 't' => 'Pudiste verla?', 'ts' => $ahoraNL - 2 * 3600];
+caso('el recordatorio del bot NO borra la marca de sin leer',
+    wabot_ultimo_cliente_ts($tapado) > (int)$tapado['panel_visto_ts']);
+caso('y el último mensaje ya no es del cliente, que es lo que antes lo escondía',
+    (end($tapado['transcript'])['q'] ?? '') === 'bot');
+
+$leido = $tapado;
+$leido['panel_visto_ts'] = $ahoraNL;
+caso('cuando lo abrís, recién ahí deja de estar sin leer',
+    wabot_ultimo_cliente_ts($leido) <= (int)$leido['panel_visto_ts']);
+
+$nuncaEscribio = wabot_conv_load('TESTNOLEIDO2');
+$nuncaEscribio['transcript'] = [['q' => 'bot', 't' => 'Hola, te escribo por tu consulta', 'ts' => $ahoraNL - 3600]];
+$nuncaEscribio['ultimo_cliente_ts'] = 0;
+$nuncaEscribio['panel_visto_ts'] = 0;
+caso('un chat donde el cliente nunca escribió no cuenta como sin leer',
+    wabot_ultimo_cliente_ts($nuncaEscribio) === 0);
+
+// El contador puede quedar viejo (charlas retomadas): manda la línea real.
+$contadorViejo = wabot_conv_load('TESTNOLEIDO3');
+$contadorViejo['ultimo_cliente_ts'] = $ahoraNL - 90000;
+$contadorViejo['transcript'] = [['q' => 'cliente', 't' => 'Hola de nuevo', 'ts' => $ahoraNL - 60]];
+caso('si el contador quedó viejo, vale el mensaje real del transcript',
+    wabot_ultimo_cliente_ts($contadorViejo) === $ahoraNL - 60);
+
+echo "— \"Ya la entregué\": sacar de la cola una demo entregada por otro medio —\n";
+
+$entregada = conv_nueva();
+$entregada['tipo'] = 'landing';
+$entregada['lead_creado'] = true;
+$entregada['descripcion'] = 'estudio contable';
+$entregada['colores'] = 'azul';
+caso('antes de marcarla está en la cola de diseño', wabot_conv_grupo($entregada) === 'muestra');
+
+$entregada['presentado_ts'] = time();
+$entregada['fase'] = 'postdemo';
+$entregada['presentado_sin_aviso'] = true;
+caso('marcada como entregada sale de la cola y pasa a Demo entregada',
+    wabot_conv_grupo($entregada) === 'presentados');
+caso('queda anotado que el aviso no salió por el bot',
+    !empty($entregada['presentado_sin_aviso']));
+
+@unlink(WABOT_DATA . '/conv/TESTNOLEIDO.json');
+@unlink(WABOT_DATA . '/conv/TESTNOLEIDO2.json');
+@unlink(WABOT_DATA . '/conv/TESTNOLEIDO3.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -1289,6 +1289,20 @@ function wabot_media_guardar($clave, $bytes, $mime, $clase) {
     return ['clase' => $clase, 'mime' => $mime, 'archivo' => $nombre, 'bytes' => strlen($bytes)];
 }
 
+/**
+ * Cuándo escribió el cliente por última vez. Mira el transcript y no solo el
+ * contador: si la charla se retomó o el contador quedó viejo, la línea real
+ * manda. Devuelve 0 si el cliente nunca escribió.
+ */
+function wabot_ultimo_cliente_ts($cv) {
+    $ts = (int)($cv['ultimo_cliente_ts'] ?? 0);
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        return max($ts, (int)($fila['ts'] ?? 0));
+    }
+    return $ts;
+}
+
 /** La última foto que mandó el cliente, para la miniatura en la lista de chats. */
 function wabot_ultima_foto_cliente($cv) {
     foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
@@ -1364,7 +1378,12 @@ function wabot_lista_items() {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
-            'no_leido' => (int)($ult['ts'] ?? 0) > (int)($cv['panel_visto_ts'] ?? 0),
+            // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
+            // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
+            // automático posterior (el recordatorio de 20 h, la última llamada,
+            // el aviso de la mañana) borraba la marca sin que hubieras leído
+            // nada: el chat desaparecía solo de la lista.
+            'no_leido' => wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });

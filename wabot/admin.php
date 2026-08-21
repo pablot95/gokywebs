@@ -385,6 +385,28 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['ok' => true, 'enviado' => $enviado, 'slug' => $slug]);
         exit;
     }
+    // La entregaste por fuera del bot (a mano, por mail, en persona): se marca
+    // igual que "Presentar" pero SIN mandarle nada al cliente, y sin escribir
+    // nada en el transcript, que es espejo de lo que salió de verdad.
+    if ($a === 'marcar_entregada' && !empty($_POST['tel'])) {
+        $conv = wabot_conv_load($_POST['tel']);
+        $negocio = trim((string)($conv['nombre_negocio'] ?? ''));
+        $conv['pausado_hasta'] = 0;
+        $conv['handoff_pendiente'] = false;
+        $conv['fase'] = 'postdemo';
+        $conv['cierre'] = null;
+        $conv['espera_avisada'] = false;
+        $conv['presentado_ts'] = time();
+        $conv['presentado_slug'] = $negocio !== '' ? wabot_slug_demo($negocio) : '';
+        $conv['presentado_confirmado'] = false;
+        $conv['presentado_recordatorio_enviado'] = false;
+        $conv['presentado_recordatorio_ts'] = 0;
+        $conv['presentado_sin_aviso'] = true;
+        wabot_evento($conv, 'muestra_presentada');
+        wabot_conv_save($conv);
+        wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
+    }
     if ($a === 'presentado_confirmar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['presentado_confirmado'] = empty($conv['presentado_confirmado']);
@@ -1550,6 +1572,16 @@ body.embed { min-height: 0; }
                             <?php if ($bocetoHecho): ?><input type="hidden" name="forzar" value="1"><?php endif; ?>
                             <button class="sec"<?= $bocetoHecho ? '' : ' style="border-color:var(--ac);color:var(--ac)"' ?>><?= $bocetoHecho ? 'Rehacer boceto' : '+ Crear boceto' ?></button>
                         </form>
+                        <?php
+                        // La demo se entrega apretando "Presentar" en Bocetos, pero
+                        // muchas salen por otro lado (a mano, por mail, en persona).
+                        // Sin esto esas charlas se quedaban para siempre en "Demos
+                        // por diseñar" y ensuciaban la cola de trabajo.
+                        if (empty($conv['presentado_ts']) && wabot_conv_grupo($conv) === 'muestra'): ?>
+                        <form method="post" onsubmit="return confirm('Marcar la demo como entregada?\n\nNo se le manda ningún mensaje al cliente: es para las que ya entregaste por otro medio. Sale de \'Demos por diseñar\' y pasa a \'Demo entregada\'.')">
+                            <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec">Ya la entregué</button></form>
+                        <?php endif; ?>
                         <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
                         <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button>Confirmó la demo</button></form>
@@ -1609,14 +1641,14 @@ body.embed { min-height: 0; }
             chat:       { titulo: 'Todas las charlas',    cuenta: document.getElementById('cuentaChat'), vacio: 'Ninguna charla abierta.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
-        // Dos condiciones, y hacen falta las dos: que el último mensaje sea del
-        // cliente (nadie le contestó) Y que no lo hayas abierto desde entonces.
-        // Sin la segunda, abrir el chat no lo sacaba de la lista, porque el
-        // último mensaje seguía siendo del cliente igual.
+        // `no_leido` ya viene resuelto del servidor: hay un mensaje del cliente
+        // posterior a la última vez que abriste el chat. Acá no se vuelve a
+        // mirar quién habló último — pedir eso hacía que un mensaje automático
+        // del bot tapara lo que el cliente había escrito y no leíste.
         function esNoLeido(it) {
             const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
             if (grupo === 'archivado') return false;
-            return it.quien === 'cliente' && !!it.no_leido;
+            return !!it.no_leido;
         }
         // Subdivisión de "No leídos": Presentadas y Demos son las columnas que ya
         // existen; todo lo demás (chat normal o "te espera") cae en Chats normales.
