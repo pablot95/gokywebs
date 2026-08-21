@@ -449,6 +449,13 @@ function wabot_config_ventas(&$cfg) {
             'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas.'
                 => 'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas. Google Analytics y Search Console te los podemos vincular nosotros.',
         ],
+        // La carga inicial del ecommerce: Pablo la aclaró en el chat real de
+        // Bruana Indumentaria (21-ago) y no estaba en ningún lado. Solo
+        // ecommerce; inmobiliaria, cursos y catálogo quedan como estaban.
+        'carga' => [
+            'Depende del tipo de web: en Ecommerce cargás y editás tus productos vos mismo desde un panel propio, en Inmobiliaria hacés lo mismo con las propiedades, y en Plataforma de cursos con tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.'
+                => 'Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.',
+        ],
     ];
     if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
     foreach ($migracionesInfo2108 as $campo => $reemplazos) {

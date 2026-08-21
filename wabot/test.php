@@ -2834,5 +2834,23 @@ caso('si la ventana ya cerró, no sale tarde',
 caso('antes de la hora candidata todavía no sale',
     wabot_muestra_aviso_corresponde($avBase, $cfgSale, gmmktime(9, 0, 0, 8, 19, 2026)) === false);
 
+echo "— Quién carga los productos del ecommerce (chat real de Bruana Indumentaria, 21-ago) —\n";
+
+caso('el ecommerce aclara que Gokywebs carga hasta 10 productos al arrancar',
+    strpos($cfg['info']['carga'], 'hasta 10 productos') !== false);
+caso('y que el resto lo carga el cliente desde el panel',
+    strpos($cfg['info']['carga'], 'seguís cargando y editando el resto vos mismo') !== false);
+caso('con el video explicativo del panel',
+    strpos($cfg['info']['carga'], 'video explicativo') !== false);
+caso('inmobiliaria y cursos no cambiaron: siguen sin el detalle de los 10',
+    strpos($cfg['info']['carga'], 'cargás las propiedades vos, y en Plataforma de cursos tus cursos') !== false);
+caso('catálogo sigue sin panel, eso no se tocó',
+    strpos($cfg['info']['carga'], 'En el resto (landing, turnos, institucional, catálogo) no incluye un panel') !== false);
+
+$cargaVieja = ['info' => ['carga' => 'Depende del tipo de web: en Ecommerce cargás y editás tus productos vos mismo desde un panel propio, en Inmobiliaria hacés lo mismo con las propiedades, y en Plataforma de cursos con tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.']];
+wabot_config_ventas($cargaVieja);
+caso('el texto viejo migra al nuevo en un bot-config.json existente',
+    $cargaVieja['info']['carga'] === $cfg['info']['carga']);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
