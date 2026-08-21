@@ -1,0 +1,56 @@
+[
+  {
+    "file": "hero-tv-sala-moderna-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7546648/",
+    "use": "Hero"
+  },
+  {
+    "file": "climatizacion-aire-acondicionado-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/38788452/",
+    "use": "Categoria Climatizacion"
+  },
+  {
+    "file": "heladera-abierta-cocina-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/38853682/",
+    "use": "Categoria Heladeras"
+  },
+  {
+    "file": "freidora-aire-electrodomestico-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/35285814/",
+    "use": "Categoria Pequenos electrodomesticos"
+  },
+  {
+    "file": "lavarropas-tambor-detalle-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/11899611/",
+    "use": "Categoria Lavado"
+  },
+  {
+    "file": "cocina-equipada-electrodomesticos-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/4030055/",
+    "use": "Seccion editorial cocina equipada"
+  },
+  {
+    "file": "lavanderia-lavarropas-fila-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/9669475/",
+    "use": "Seccion Lavado secundaria"
+  },
+  {
+    "file": "entrega-pedido-domicilio-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/6869055/",
+    "use": "Seccion envios / confianza"
+  },
+  {
+    "file": "compra-tienda-online-celular-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/7661072/",
+    "use": "Seccion tienda online / TikTok"
+  }
+]
