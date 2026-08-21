@@ -1,7 +1,7 @@
 const WHATSAPP_NUMBER = '5491132325398';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const normalizar = s => (s || '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
 const waHref = lines => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join('\n'))}`;
 
 const CATEGORIAS = [
