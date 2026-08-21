@@ -313,11 +313,10 @@ function initJsonLd() {
     "@type": "LodgingBusiness",
     name: "Recanto del Paraná",
     description:
-      "Complejo de cabañas para alquiler temporario junto al río Paraná, en Corrientes.",
+      "Complejo de cabañas para alquiler temporario junto al río Paraná.",
     telephone: `+${WHATSAPP_NUMBER}`,
     address: {
       "@type": "PostalAddress",
-      addressRegion: "Corrientes",
       addressCountry: "AR",
     },
   };
