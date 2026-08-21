@@ -205,9 +205,9 @@ section {
   border-bottom: 1px solid var(--color-border);
 }
 .header-inner {
-  max-width: var(--container);
+  max-width: 1360px;
   margin: 0 auto;
-  padding: 0.9rem 5vw;
+  padding: 0.9rem clamp(1.25rem, 3vw, 2.5rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -241,10 +241,12 @@ section {
 .nav-list {
   display: flex;
   align-items: center;
-  gap: 1.8rem;
+  gap: 1.5rem;
 }
 .nav-list a {
   font-weight: 500;
+  font-size: 0.92rem;
+  white-space: nowrap;
   color: var(--color-text-muted);
   transition: color 0.2s;
 }
@@ -517,10 +519,10 @@ section {
   height: 18px;
 }
 .card-body {
-  padding: 1.1rem 1.15rem 1.3rem;
+  padding: 0.9rem 1rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex: 1;
 }
 .card-cat {
@@ -532,16 +534,20 @@ section {
 .card-title {
   font-family: var(--font-body);
   font-weight: 700;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .card-marca {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   color: var(--color-text-muted);
 }
 .card-precios {
   margin-top: auto;
-  padding-top: 0.6rem;
+  padding-top: 0.45rem;
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
@@ -563,12 +569,12 @@ section {
   margin-top: 0.3rem;
 }
 .card-agregar {
-  margin-top: 0.8rem;
+  margin-top: 0.6rem;
   width: 100%;
-  padding: 0.7rem;
+  padding: 0.6rem;
   border-radius: 10px;
   font-weight: 600;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   background: var(--color-surface-2);
   transition: background 0.2s;
 }
@@ -642,8 +648,14 @@ section {
   margin: 0 auto;
   padding-inline: 5vw;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 1.1rem;
+}
+@media (max-width: 1024px) {
+  .categorias-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .categorias-grid { grid-template-columns: repeat(2, 1fr); }
 }
 .categoria-card {
   position: relative;
