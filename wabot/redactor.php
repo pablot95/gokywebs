@@ -32,7 +32,8 @@ function wabot_responder($texto, &$conv, $cfg) {
     // al saludo — acá tienen que salir todos iguales. Y de paso ahorra la
     // llamada a Gemini, que en el primer mensaje no aporta nada.
     $apertura = wabot_apertura($conv, $cfg);
-    if ($apertura !== $cfg['contame'] && wabot_apertura_generica($texto)) {
+    if ($apertura !== $cfg['contame'] && wabot_apertura_generica($texto)
+        && in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu'], true)) {
         $conv['fase'] = 'menu';
         return [$apertura];
     }
@@ -186,6 +187,9 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
 
     if (preg_match('/\b(el|la|los|las) (un|una)\b/iu', $s)) return null;
 
+    $regateo = '/\b(descuento|rebaja|bonificacion|bonificación|mitad de precio|precio especial|precio amigo|te lo dejo en|dejartelo en|dejártelo en|se lo dejo en|\d{1,2}\s?%\s?(de\s)?(desc|off|rebaja)|\d{1,2}\s?(por ciento|porciento)|\d{1,3}\s?(mil|lucas)\b)/iu';
+    if (preg_match($regateo, $s) && !preg_match($regateo, $base)) return null;
+
     // El precio del mensaje base tiene que estar idéntico. La regex termina en
     // dígito a propósito: "un valor de $200.000." lleva el punto de la oración
     // pegado, y si se lo tragara exigiría un "$200.000." literal que el modelo
@@ -223,10 +227,15 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
 
     // Y no puede aparecer ningún link que el base no tuviera.
     if (preg_match_all('#\b[a-z0-9.-]+\.[a-z]{2,}(?:/[^\s]*)?#i', $s, $u)) {
+        $normalizarLink = function ($l) {
+            $l = preg_replace('#^https?://#i', '', trim($l));
+            return rtrim($l, ".,;:!? \t");
+        };
         foreach ($u[0] as $encontrado) {
+            $enc = $normalizarLink($encontrado);
             $ok = false;
             foreach ($permitidos as $link) {
-                if (mb_strpos($encontrado, $link) === 0 || mb_strpos($link, $encontrado) === 0) { $ok = true; break; }
+                if ($enc === $normalizarLink($link)) { $ok = true; break; }
             }
             if (!$ok && mb_strpos($base, $encontrado) === false) return null;   // link inventado
         }

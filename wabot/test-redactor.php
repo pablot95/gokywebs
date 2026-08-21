@@ -161,5 +161,29 @@ $v = wabot_validar_redaccion(
     $cfg);
 caso('un link de mantenimiento inventado sí se rechaza', $v === null);
 
+echo "— Un descuento en palabras tampoco pasa el validador —\n";
+
+$basePrecio = 'El desarrollo completo tiene un valor de $200.000.';
+caso('"te lo dejo a mitad de precio" se rechaza',
+    wabot_validar_redaccion('Dale, te lo dejo a mitad de precio y arrancamos con los $200.000 en dos partes.', $basePrecio, $cfg) === null);
+caso('"20% de descuento" se rechaza',
+    wabot_validar_redaccion('Te hacemos un 20% de descuento sobre los $200.000.', $basePrecio, $cfg) === null);
+caso('"20 por ciento" en letras también',
+    wabot_validar_redaccion('Puedo bajarte un 20 por ciento si cerras hoy. Son $200.000.', $basePrecio, $cfg) === null);
+caso('"te queda en 160 mil" también',
+    wabot_validar_redaccion('Con la promo te queda en 160 mil. El precio de lista es $200.000.', $basePrecio, $cfg) === null);
+caso('una respuesta normal con el precio exacto sigue pasando',
+    wabot_validar_redaccion('El desarrollo completo sale $200.000 y arrancamos cuando quieras.', $basePrecio, $cfg) !== null);
+caso('si el BASE ya trae la palabra descuento (texto oficial), no se rechaza por eso',
+    wabot_validar_redaccion('No hacemos descuento, el precio es $200.000.', 'No hacemos descuento: el valor es $200.000.', $cfg) !== null);
+
+echo "— El chequeo de links es exacto: un dominio recortado no pasa —\n";
+
+$baseLink = "El detalle está acá: gokywebs.com/presupuestos/Landing";
+caso('el link exacto pasa',
+    wabot_validar_redaccion("Mirá el detalle en:\ngokywebs.com/presupuestos/Landing", $baseLink, $cfg) !== null);
+caso('"gokywebs.co" (dominio recortado) se rechaza',
+    wabot_validar_redaccion("Mirá el detalle en gokywebs.co y me contás.", $baseLink, $cfg) === null);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

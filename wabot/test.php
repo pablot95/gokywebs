@@ -144,13 +144,23 @@ $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['cambia_tipo']);
 $r = wabot_engine('ahora quiero vender online tambien', $c, $cfg);
 caso('cambia de tipo tras el precio → confirma el proyecto, sin recotizar ni derivar',
-    $r === [wabot_texto_aclaracion($c, $cfg)] && $c['fase'] === 'precio' && empty($c['handoff_pendiente']));
+    $r === [$cfg['confirma_cambio']] && $c['fase'] === 'confirma_cambio' && empty($c['handoff_pendiente']));
+
+clasifica(['otro']);
+$r = wabot_engine('es el mismo proyecto', $c, $cfg);
+caso('"es el mismo" vuelve a la venta con un próximo paso',
+    $r === [$cfg['confirma_cambio_mismo']] && $c['fase'] === 'precio' && empty($c['handoff_pendiente']));
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['rubro_ecommerce']);
 $r = wabot_engine('tambien vendo productos', $c, $cfg);
 caso('rubro distinto al tipo dado → aclara antes de tocar el presupuesto',
-    $r === [wabot_texto_aclaracion($c, $cfg)] && $c['fase'] === 'precio' && empty($c['handoff_pendiente']));
+    $r === [$cfg['confirma_cambio']] && $c['fase'] === 'confirma_cambio' && empty($c['handoff_pendiente']));
+
+clasifica(['otro']);
+$r = wabot_engine('no, es otra web aparte para otro negocio', $c, $cfg);
+caso('"es otra aparte" deriva a Pablo en vez de quedar en un callejón',
+    $r === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['otro']);
@@ -215,7 +225,7 @@ caso('y no repite el mismo escape dos veces seguidas', $r === []);
 // Pero si contesta otra cosa en el medio, el escape vuelve a estar disponible.
 clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
 $r = wabot_engine('el hosting va aparte?', $c, $cfg);
-caso('la duda del medio sí se contesta', $r === [$cfg['info']['hosting']]);
+caso('la duda del medio sí se contesta', $r === [wabot_texto_hosting($c, $cfg)]);
 clasifica(['otro']);
 $r = wabot_engine('mmm y otra cosa rara', $c, $cfg);
 caso('y después el escape vuelve a salir', $r === [$cfg['info']['otra']]);
@@ -1091,7 +1101,7 @@ caso('un no-número se rechaza y sigue pidiendo',
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('y cuanto tarda?', $c, $cfg);
 caso('una pregunta en ese paso se contesta sin comerse el pedido',
-    $r === [$cfg['info']['plazos']] && $c['fase'] === 'prediseno_wsp');
+    $r === [$cfg['info']['plazos'], $cfg['prediseno_whatsapp']] && $c['fase'] === 'prediseno_wsp');
 
 // En WhatsApp el paso ni existe: ya tenemos el teléfono.
 $c = conv_nueva(); $c['fase'] = 'prediseno_ref'; $c['tipo'] = 'landing';
@@ -1143,13 +1153,14 @@ $c = conv_nueva(); $c['fase'] = 'prediseno_ref'; $c['tipo'] = 'ecommerce';
 $c['descripcion'] = 'mates'; $c['colores'] = 'marron';
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('cuanto tarda el prediseño?', $c, $cfg);
-caso('pregunta en prediseno_ref → se contesta y NO cierra',
-    count($r) === 1 && $r[0] === $cfg['info']['plazos'] && $c['fase'] === 'prediseno_ref');
+caso('pregunta en prediseno_ref → se contesta, re-pide la referencia y NO cierra',
+    $r === [$cfg['info']['plazos'], $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
 caso('y la pregunta NO queda guardada como referencia', empty($c['referencia']) && $c['lead_creado'] === false);
 
 clasifica(['objecion_caro']);
 $r = wabot_engine('igual me parece caro', $c, $cfg);
-caso('objeción en prediseno_ref → tampoco cierra', $r === [$cfg['caro']] && $c['fase'] === 'prediseno_ref');
+caso('objeción en prediseno_ref → tampoco cierra',
+    $r === [$cfg['caro'], $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
 
 clasifica(['saludo']);
 $r = wabot_engine('gracias!', $c, $cfg);
@@ -1646,7 +1657,7 @@ foreach ([
     ['ecommerce', '$90.000'], ['elearning', '$90.000'],
 ] as $par) {
     list($tipo, $sena) = $par;
-    $texto = wabot_texto_pago(['tipo' => $tipo], $cfg);
+    $texto = wabot_texto_pago(['tipo' => $tipo, 'precio_dado' => true], $cfg);
     // "seña de $X", no el monto suelto: una cuota de otro tipo puede coincidir
     // en número con la seña de este (ej. turnos cotiza 6 cuotas de $60.000,
     // que es justo la seña de landing) sin que sea el dato equivocado.
@@ -1671,15 +1682,22 @@ $cuotasPorTipo = [
     'elearning'     => ['12' => '$50.000', '6' => '$76.000', '3' => '$134.000'],
 ];
 foreach ($cuotasPorTipo as $tipo => $cuotas) {
-    $texto = wabot_texto_pago(['tipo' => $tipo], $cfg);
+    $texto = wabot_texto_pago(['tipo' => $tipo, 'precio_dado' => true], $cfg);
     caso("$tipo cotizado → 12 cuotas de {$cuotas['12']}", strpos($texto, '12 cuotas de ' . $cuotas['12']) !== false);
     caso("$tipo cotizado → 6 de {$cuotas['6']}", strpos($texto, '6 de ' . $cuotas['6']) !== false);
     caso("$tipo cotizado → 3 de {$cuotas['3']}", strpos($texto, '3 de ' . $cuotas['3']) !== false);
 }
 caso('landing NO lleva las cuotas de ecommerce (montos de otro tipo)',
-    strpos(wabot_texto_pago(['tipo' => 'landing'], $cfg), '$50.000') === false);
+    strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), '$50.000') === false);
 caso('sin tipo cotizado, la genérica no inventa montos de cuota',
     strpos(wabot_texto_pago(['tipo' => null], $cfg), 'cuotas de $') === false);
+caso('la respuesta de pago del tipo cotizado arranca con el precio total',
+    strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), '$200.000') !== false);
+caso('con tipo puesto pero SIN precio dado (catálogo preguntando cantidad), la seña es la genérica',
+    wabot_texto_pago(['tipo' => 'catalogo'], $cfg) === $cfg['info']['pago_generico']);
+caso('el pago del catálogo cotizado usa el total calculado, no las cuotas de la base',
+    strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$250.000') !== false
+    && strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$32.000') === false);
 caso('institucional ya no promete panel propio: eso es solo de ecommerce, elearning e inmobiliaria',
     stripos($cfg['tipos']['institucional']['desc'], 'panel') === false);
 caso('la respuesta sobre quién carga el contenido nombra las 3 excepciones con panel',
@@ -1889,6 +1907,140 @@ caso('los mensajes comerciales tienen variantes naturales sin perder precio ni e
     && count(array_filter($variantesPrecio, function ($t) {
         return strpos($t, '$200.000') !== false && strpos($t, 'presupuestos/Landing') !== false;
     })) === count($variantesPrecio));
+
+echo "— El cierre sin presión ya no despide a un cliente que está comprando —\n";
+
+caso('"no quiero vender, solo recibir consultas" contesta un desempate, no es una despedida',
+    wabot_cierre_sin_presion_tipo('no quiero vender, solo recibir consultas') === null);
+caso('"solo vendo por instagram, queria consultar por una web" tampoco cierra',
+    wabot_cierre_sin_presion_tipo('solo vendo por instagram, queria consultar por una web') === null);
+caso('"por ahora solo estoy consultando precios, me pasas el de una landing?" pide una cotización',
+    wabot_cierre_sin_presion_tipo('por ahora solo estoy consultando precios, me pasas el de una landing?') === null);
+caso('"hola, no tengo presupuesto todavia, me pasas uno?" pide la cotización, no dice que no tiene plata',
+    wabot_cierre_sin_presion_tipo('hola, no tengo presupuesto todavia, me pasas uno?') === null);
+caso('"estoy averiguando nomas" sí es un cierre suave',
+    wabot_cierre_sin_presion_tipo('estoy averiguando nomas') === 'consulta');
+caso('"la verdad no tengo plata ahora" sigue cerrando',
+    wabot_cierre_sin_presion_tipo('no tengo plata ahora') === 'consulta');
+caso('"no me interesa" sigue siendo rechazo', wabot_cierre_sin_presion_tipo('no me interesa') === 'rechazo');
+caso('"no me interesa vender online" NO es rechazo: elige la otra opción del desempate',
+    wabot_cierre_sin_presion_tipo('no me interesa vender online') === null);
+caso('"borrame, no quiero recibir mas mensajes" es un pedido de baja',
+    wabot_cierre_sin_presion_tipo('borrame, no quiero recibir mas mensajes') === 'baja');
+
+$c = conv_nueva();
+clasifica(['otro']);
+$r = wabot_engine('no me escriban mas por favor, quiero darme de baja', $c, $cfg);
+caso('la baja contesta una línea, apaga el bot y bloquea el seguimiento',
+    $r === [$cfg['baja']] && $c['bot_off'] === true && $c['seguimiento_bloqueado'] === true && $c['cierre'] === 'baja');
+
+echo "— El regateo es un comprador, no una despedida —\n";
+
+caso('"no hay forma de que me lo dejes en 150?" es regateo', wabot_es_regateo('no hay forma de que me lo dejes en 150?') === true);
+caso('"dale, si me haces 10 por ciento de descuento cierro ya" es regateo',
+    wabot_es_regateo('dale, si me haces 10 por ciento de descuento cierro ya') === true);
+caso('"me parece caro" solo, no es regateo', wabot_es_regateo('me parece caro') === false);
+
+$c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['chat_started_ts'] = time();
+clasifica(['otro']);
+$r = wabot_engine('no hay forma de que me lo dejes en 150?', $c, $cfg);
+caso('el primer regateo recibe la respuesta oficial de precio (las 3 cuotas sin interés)',
+    $r === [$cfg['caro']] && $c['fase'] === 'precio');
+$r = wabot_engine('dale, si me haces 10 por ciento de descuento cierro ya mismo', $c, $cfg);
+caso('el regateo insistente va a Pablo, nunca a la despedida',
+    $r === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
+
+echo "— Un precio adentro de la respuesta no es una cantidad de productos —\n";
+
+caso('"son 30 productos de \$2000" cotiza 30', wabot_extraer_cantidad_productos('son 30 productos de $2000') === 30);
+caso('"tengo 20 productos, cada uno sale 500 pesos" cotiza 20',
+    wabot_extraer_cantidad_productos('tengo 20 productos, cada uno sale 500 pesos') === 20);
+caso('"unos 40" sigue andando', wabot_extraer_cantidad_productos('unos 40') === 40);
+caso('"40 articulos mas o menos" también', wabot_extraer_cantidad_productos('40 articulos mas o menos') === 40);
+
+echo "— Las palabras de info ya no matchean adentro de otras palabras —\n";
+
+caso('"soy disenadora de indumentaria" no es una pregunta de pago',
+    wabot_info_por_palabras('soy diseñadora de indumentaria') === null);
+caso('"doy clases de ensenanza de ingles" tampoco',
+    wabot_info_por_palabras('doy clases de enseñanza de inglés') === null);
+caso('"quiero el ecommerce completo" no es una pregunta de hosting',
+    wabot_info_por_palabras('quiero el ecommerce completo') === null);
+caso('"hago redes de proteccion para balcones" no es marketing',
+    wabot_info_por_palabras('hago redes de proteccion para balcones') === null);
+caso('"cuanto sale?" en fase precio pide el precio ya cotizado',
+    wabot_info_por_palabras('cuanto sale?', 'precio') === 'precio_actual');
+caso('"cual era el precio total?" en fase precio también',
+    wabot_info_por_palabras('cual era el precio total?', 'precio') === 'precio_actual');
+caso('"cuanto sale una pagina?" al arrancar va a rangos',
+    wabot_info_por_palabras('cuanto sale una pagina?', 'nuevo') === 'rangos');
+
+$c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['cta_muestra'] = true;
+clasifica(['otro']);
+$r = wabot_engine('perdon, cual era el precio total?', $c, $cfg);
+caso('"cual era el precio total" repite el TOTAL, no las cuotas solas',
+    count($r) === 1 && strpos($r[0], '$200.000') !== false && strpos($r[0], '$32.000') === false);
+
+echo "— Un taller mecánico no es un curso —\n";
+
+caso('"tengo un taller mecanico y vendemos repuestos" no deriva por productos_y_cursos',
+    wabot_handoff_causa_explicita('tengo un taller mecanico y vendemos repuestos') === null);
+caso('"doy talleres de costura online y vendo ropa" sí combina productos y cursos',
+    wabot_handoff_causa_explicita('doy talleres de costura online y vendo ropa') === 'productos_y_cursos');
+caso('"soy nutricionista" ahora dispara el desempate de turnos en el respaldo local',
+    wabot_fallback_rubro_local('soy nutricionista') === 'turnos_pendiente');
+caso('"soy manicura" también', wabot_fallback_rubro_local('soy manicura') === 'turnos_pendiente');
+
+echo "— Negativas y referencias con muletillas reales —\n";
+
+caso('"nop no tengo" cuenta como sin referencia', wabot_es_negativa('nop no tengo') === true);
+caso('"la vdd no" también', wabot_es_negativa('la vdd no') === true);
+caso('"me gusta la de nike" NO es negativa', wabot_es_negativa('me gusta la de nike') === false);
+caso('"ya te la mande recien, fijate mas arriba en el chat" apunta a lo ya dicho',
+    wabot_apunta_a_lo_ya_dicho('ya te la mande recien, fijate mas arriba en el chat') === true);
+caso('"elegi vos los colores" es delegar, no ambigüedad', wabot_es_delegacion('elegi vos los colores') === true);
+
+$c = conv_nueva(); $c['fase'] = 'prediseno'; $c['tipo'] = 'landing'; $c['descripcion'] = 'plomero';
+clasifica(['otro']);
+$r = wabot_engine('elegi vos los colores, cualquiera me da igual', $c, $cfg);
+caso('delegar los colores avanza a la referencia en vez de loopear',
+    $c['colores'] === 'A elección del diseñador' && $c['fase'] === 'prediseno_ref' && $r === [$cfg['prediseno_referencia']]);
+
+echo "— Volver a preguntar el precio no re-pega el bloque completo —\n";
+
+$c = conv_nueva(); $c['chat_started_ts'] = time();
+clasifica(['rubro_landing']);
+$r1 = wabot_engine('soy gasista', $c, $cfg);
+caso('la primera cotización sale completa en dos globos', count($r1) === 2 && strpos($r1[0], '$200.000') !== false);
+clasifica(['otro']);
+$r2 = wabot_engine('cuanto sale?', $c, $cfg);
+caso('la re-cotización del mismo tipo es UN resumen corto con el total',
+    count($r2) === 1 && strpos($r2[0], '$200.000') !== false && $r2[0] !== $r1[0]);
+$rq = wabot_precio('landing', $c, $cfg);
+caso('wabot_precio del mismo tipo ya cotizado devuelve el resumen, no re-pega el bloque',
+    count($rq) === 1 && strpos($rq[0], '$200.000') !== false && $rq[0] !== $r1[0]);
+
+echo "— Después de un cierre, un gracias no reabre el pitch —\n";
+
+$c = conv_nueva(); $c['fase'] = 'prediseno'; $c['tipo'] = 'landing';
+clasifica(['no_interesa']);
+$r = wabot_engine('sabes que no, no me interesa', $c, $cfg);
+caso('el rechazo cierra cordial', $r === [$cfg['no_interesa']] && $c['cierre'] === 'sin_interes');
+clasifica(['saludo']);
+$r = wabot_engine('gracias igual', $c, $cfg);
+caso('el gracias posterior queda en silencio, no re-manda el pitch', $r === []);
+clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
+$r = wabot_engine('cuanto tardan en general?', $c, $cfg);
+caso('pero una duda concreta sí se contesta', $r === [$cfg['info']['plazos']]);
+clasifica(['rubro_comercio']);
+$r = wabot_engine('che al final tengo una ferreteria y quiero la web', $c, $cfg);
+caso('un rubro nuevo reabre la venta', $r !== [] && $c['seguimiento_bloqueado'] === false);
+
+echo "— El reset de sesión limpia el archivado —\n";
+
+$c = conv_nueva(); $c['archivado'] = true; $c['ultimo_ts'] = time() - 10 * 86400; $c['fase'] = 'derivado';
+wabot_conv_reset_si_vieja($c, $cfg, time());
+caso('una charla archivada que vuelve a los 10 días reaparece en el panel', $c['archivado'] === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -343,7 +343,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 
         $texto = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\n"
                . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
-               . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar";
+               . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
 
         if (!wabot_enviar($conv, $texto)) {
             echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);

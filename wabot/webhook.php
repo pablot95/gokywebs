@@ -205,9 +205,17 @@ function wabot_procesar_entrante($ev, $cfg) {
                 wabot_conv_save($conv);
                 break;
             }
+            $conv['no_texto_avisado'] = false;
+
+            $vinoDeMedia = false;
+            foreach ($tanda as $item) {
+                if (!empty($item['media'])) $vinoDeMedia = true;
+            }
+            if ($vinoDeMedia) $conv['_texto_de_media'] = true;
 
             $entrada    = implode("\n", $usables);
             $respuestas = wabot_sin_repetidos_consecutivos(wabot_responder($entrada, $conv, $cfg));
+            unset($conv['_texto_de_media']);
 
             // Cada texto va como un mensaje aparte y tarda lo que tardaría en
             // escribirse. El primero descuenta lo que ya se fue esperando y
@@ -238,6 +246,46 @@ function wabot_procesar_entrante($ev, $cfg) {
     } finally {
         wabot_lock_soltar($lock);
     }
+
+    if (wabot_cola_tiene($clave)) {
+        $lock2 = wabot_lock_tomar($clave);
+        if ($lock2) {
+            try {
+                if (wabot_cola_tiene($clave)) {
+                    wabot_log('cola_rescatada', ['tel' => $de, 'canal' => $canal]);
+                    wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id);
+                }
+            } finally {
+                wabot_lock_soltar($lock2);
+            }
+        }
+    }
+}
+
+function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
+    $tanda = wabot_cola_drenar($clave);
+    if (!$tanda) return;
+    $conv = wabot_conv_load($clave);
+    wabot_conv_identidad_entrante($conv, $clave, $de, $canal);
+    $usables = [];
+    foreach ($tanda as $item) {
+        wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+        if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
+        if (!empty($item['n'])) $conv['nombre'] = $item['n'];
+    }
+    $conv['ultimo_cliente_ts'] = time();
+    $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
+    if (!$activo || !$usables) {
+        wabot_conv_save($conv);
+        return;
+    }
+    $respuestas = wabot_sin_repetidos_consecutivos(wabot_responder(implode("\n", $usables), $conv, $cfg));
+    foreach ($respuestas as $mensaje) {
+        $mensaje = wabot_personalizar($mensaje, $conv);
+        wabot_escribiendo($conv, $id);
+        if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
+    }
+    wabot_conv_save($conv);
 }
 
 /** Normaliza el adjunto de WhatsApp: {clase, ref, caption} o null. */
