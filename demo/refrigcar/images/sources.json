@@ -1,0 +1,38 @@
+[
+  {
+    "file": "hero-tecnico-aire-acondicionado-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/5463575/",
+    "use": "Hero"
+  },
+  {
+    "file": "diagnostico-manometro-gases-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/6471911/",
+    "use": "Capitulo de proceso - diagnostico"
+  },
+  {
+    "file": "camara-frigorifica-industrial-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/5953713/",
+    "use": "Servicio Camaras frigorificas"
+  },
+  {
+    "file": "heladera-comercial-servicio-1200x1600.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/8289912/",
+    "use": "Servicio Heladeras comerciales"
+  },
+  {
+    "file": "diagnostico-placa-electronica-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/9242887/",
+    "use": "Seccion editorial / Nosotros"
+  },
+  {
+    "file": "lavarropas-tambor-servicio-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/11899611/",
+    "use": "Servicio Lavarropas"
+  }
+]
