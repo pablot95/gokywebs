@@ -449,6 +449,38 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    /**
+     * Corrige el texto de una línea del transcript.
+     *
+     * OJO: WhatsApp y la API de Instagram NO permiten editar un mensaje ya
+     * entregado, así que esto NO cambia lo que el cliente recibió: corrige el
+     * REGISTRO del panel. Sirve sobre todo para arreglar la transcripción de un
+     * audio mal entendido, que además es lo que el bot lee como contexto.
+     *
+     * La línea se ubica por índice y se confirma con su ts: el transcript se
+     * recorta a las últimas 60 líneas, así que el índice solo no es estable.
+     */
+    if ($a === 'editar_mensaje' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $idx   = (int)($_POST['idx'] ?? -1);
+        $ts    = (int)($_POST['ts'] ?? 0);
+        $nuevo = trim((string)($_POST['texto'] ?? ''));
+        if ($nuevo === '') { echo json_encode(['error' => 'El mensaje no puede quedar vacío.']); exit; }
+        if (mb_strlen($nuevo) > 4000) { echo json_encode(['error' => 'Ese texto es demasiado largo.']); exit; }
+
+        $conv = wabot_conv_load($_POST['tel']);
+        $lineas = (array)($conv['transcript'] ?? []);
+        if (!isset($lineas[$idx]) || (int)($lineas[$idx]['ts'] ?? 0) !== $ts) {
+            echo json_encode(['error' => 'Ese mensaje ya no está donde estaba. Recargá el chat y probá de nuevo.']);
+            exit;
+        }
+        $conv['transcript'][$idx]['t'] = $nuevo;
+        $conv['transcript'][$idx]['editado'] = time();
+        wabot_conv_save($conv);
+        wabot_log('mensaje_editado', ['tel' => $conv['tel'], 'idx' => $idx, 'quien' => $lineas[$idx]['q'] ?? '']);
+        echo json_encode(['ok' => true]);
+        exit;
+    }
     if ($a === 'lista') {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(['items' => wabot_lista_items()], JSON_UNESCAPED_UNICODE);
@@ -604,6 +636,18 @@ code { background:#10131f; padding:2px 7px; border-radius:6px; font-size:13px; w
 @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.25 } }
 @media (prefers-reduced-motion: reduce) { .grabando-punto { animation:none } }
 .meta { font-size:11px; color:var(--dim); }
+.meta-editado { color:#8fa4c8; font-style:italic; }
+/* El lápiz aparece al pasar por encima de la burbuja: en el celular, donde no
+   hay hover, queda siempre visible (ver el @media de abajo). */
+.burb-editar { background:none; border:0; padding:0 0 0 8px; margin:0; font-size:11px; font-weight:600;
+    color:var(--ac); cursor:pointer; text-decoration:underline; opacity:0; transition:opacity .15s; }
+.burb:hover .burb-editar, .burb-editar:focus { opacity:1; }
+.burb-edit-box { margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+.burb-edit-box textarea { width:100%; min-width:240px; font:inherit; font-size:13.5px; padding:7px 9px;
+    border-radius:8px; border:1px solid var(--ac); background:#151a2c; color:var(--tx); resize:vertical; }
+.burb-edit-acciones { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
+.burb-edit-acciones button { font-size:12px; padding:4px 10px; }
+.burb-edit-aviso { font-size:10.5px; color:var(--dim); flex:1 1 140px; min-width:0; }
 .ej-fila { display:grid; grid-template-columns: 1fr 220px 150px 34px; gap:8px; margin-bottom:8px; align-items:center; }
 .campo-etiqueta { width:150px; flex-shrink:0; }
 .campo-etiqueta--ancha { width:340px; }
@@ -702,6 +746,17 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-item-hora { font-size:11px; color:var(--dim); flex-shrink:0; }
 .conv-item-ult { font-size:12.5px; color:var(--dim); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .conv-item-pills { margin-top:5px; display:flex; gap:5px; flex-wrap:wrap; }
+/* Sin abrir: el chat entero se destaca, no solo un puntito perdido. */
+.conv-item.sin-leer { background:#1b2745; border-left-color:#4f8cff; }
+.conv-item.sin-leer:hover { background:#202d50; }
+.conv-item.sin-leer.on { background:#232842; border-left-color:var(--ac); }
+.conv-item.sin-leer .conv-item-tel { color:#eaf1ff; }
+.conv-item.sin-leer .conv-item-ult { color:#b9c8e8; font-weight:600; }
+.conv-item.sin-leer .conv-item-hora { color:#7fa7f0; font-weight:700; }
+.conv-item-punto { width:8px; height:8px; border-radius:50%; background:#4f8cff; flex-shrink:0; box-shadow:0 0 0 3px rgba(79,140,255,.18); }
+.conv-nav-btn[data-grupo="no_leidos"] .conv-cuenta { background:#16294d; color:#7fa7f0; }
+.conv-nav-btn[data-grupo="no_leidos"].tiene { border-color:#4f8cff; color:#9dc0ff; }
+.conv-nav-btn[data-grupo="no_leidos"].on { border-color:#4f8cff; color:#cfe0ff; }
 .conv-vacio { padding:16px; color:var(--dim); font-size:13px; }
 
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
@@ -735,6 +790,10 @@ body.conv-full #respEstado { margin-top:4px; }
     .conv-nav-btn { padding:9px 10px; font-size:12.5px; }
 }
 
+/* Sin hover no hay forma de descubrir el lápiz: en touch va siempre visible. */
+@media (hover: none) {
+    .burb-editar { opacity:.75; }
+}
 @media (max-width: 900px) {
     /* Una columna: o las listas, o el chat — como WhatsApp en el celular. */
     .conv-split { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); }
@@ -1346,6 +1405,7 @@ body.embed { min-height: 0; }
         <div class="conv-split <?= $ver !== '' ? 'has-sel' : '' ?>">
 
             <nav class="conv-nav">
+                <button type="button" class="conv-nav-btn" data-grupo="no_leidos">No leídos <span class="conv-cuenta" id="cuentaNoLeidos">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="chat">Chats <span class="conv-cuenta" id="cuentaChat">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentados">Presentados <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
@@ -1446,13 +1506,24 @@ body.embed { min-height: 0; }
         const SEL = <?= json_encode($ver) ?>;
 
         /* ── Lista de la izquierda ── */
+        // "No leídos" no es un grupo excluyente como los demás: es una vista que
+        // cruza todas las columnas. Junta lo que tenga mensajes sin abrir MÁS
+        // todos los "Te esperan" (que por definición son gente esperando).
         const GRUPOS = {
+            no_leidos:  { titulo: 'No leídos',   cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Nada sin leer.', vista: true },
             chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
             muestra:    { titulo: 'Demos',       cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna demo pedida.' },
             presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna demo presentada esperando confirmación.' },
             atencion:   { titulo: 'Te esperan',  cuenta: document.getElementById('cuentaAtencion'),   vacio: 'Nadie esperando.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
+        // Un chat entra a "No leídos" si tiene algo sin abrir o si te está
+        // esperando. Los archivados quedan afuera a propósito: los sacaste vos.
+        function esNoLeido(it) {
+            const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
+            if (grupo === 'archivado') return false;
+            return !!it.no_leido || grupo === 'atencion';
+        }
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');
         const listaTit  = document.getElementById('convListaTitulo');
@@ -1531,11 +1602,17 @@ body.embed { min-height: 0; }
                 .some(v => v.includes(digitos));
         }
 
+        // Un ítem entra en la lista que se está mirando: por grupo excluyente, o
+        // por la vista cruzada de No leídos.
+        function entraEnGrupoActivo(it) {
+            if (grupoActivo === 'no_leidos') return esNoLeido(it);
+            return (GRUPOS[it.grupo] ? it.grupo : 'chat') === grupoActivo;
+        }
+
         function renderFechasChats() {
             const porFecha = new Map();
             for (const it of itemsCache) {
-                const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
-                if (grupo !== grupoActivo) continue;
+                if (!entraEnGrupoActivo(it)) continue;
                 const info = fechaInicioInfo(it);
                 const actual = porFecha.get(info.key);
                 if (actual) actual.cuenta++;
@@ -1601,7 +1678,7 @@ body.embed { min-height: 0; }
             firmaLista = firma;
 
             listaEl.innerHTML = '';
-            const cuentas = { chat: 0, muestra: 0, presentados: 0, atencion: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, chat: 0, muestra: 0, presentados: 0, atencion: 0, archivado: 0 };
             // Demos y Presentados muestran cuántos chats tienen algo sin leer,
             // no el total de la cola — para eso ya está la lista abierta.
             const cuentasNoLeidos = { muestra: 0, presentados: 0 };
@@ -1610,14 +1687,15 @@ body.embed { min-height: 0; }
             for (const it of items) {
                 const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
                 cuentas[grupo]++;
+                if (esNoLeido(it)) cuentas.no_leidos++;
                 if (it.no_leido && grupo in cuentasNoLeidos) cuentasNoLeidos[grupo]++;
-                if (grupo !== grupoActivo) continue;
+                if (!entraEnGrupoActivo(it)) continue;
                 if (fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
                 visibles++;
 
                 const a = document.createElement('a');
-                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '');
+                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (it.no_leido ? ' sin-leer' : '');
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
 
                 if (it.foto) {
@@ -1646,6 +1724,12 @@ body.embed { min-height: 0; }
                 tag.className = 'canal-tag canal-tag--' + (it.canal === 'instagram' ? 'instagram' : 'whatsapp');
                 tag.textContent = it.canal === 'instagram' ? 'IG' : 'WA';
                 nombreBox.appendChild(tel); nombreBox.appendChild(tag);
+                if (it.no_leido) {
+                    const punto = document.createElement('span');
+                    punto.className = 'conv-item-punto';
+                    punto.title = 'Sin abrir';
+                    nombreBox.appendChild(punto);
+                }
                 const h = document.createElement('span');
                 h.className = 'conv-item-hora';
                 h.textContent = hora(it.ts);
@@ -1681,8 +1765,10 @@ body.embed { min-height: 0; }
             }
 
             const cuentasMostradas = { ...cuentas, ...cuentasNoLeidos };
-            for (const g of Object.keys(GRUPOS)) GRUPOS[g].cuenta.textContent = cuentasMostradas[g];
-            for (const b of navBtns) b.classList.toggle('tiene', cuentasMostradas[b.dataset.grupo] > 0);
+            for (const g of Object.keys(GRUPOS)) {
+                if (GRUPOS[g].cuenta) GRUPOS[g].cuenta.textContent = cuentasMostradas[g] ?? 0;
+            }
+            for (const b of navBtns) b.classList.toggle('tiene', (cuentasMostradas[b.dataset.grupo] ?? 0) > 0);
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size;
                 listaEl.innerHTML = '<p class="conv-vacio">' + (filtrando ? 'No hay chats que coincidan con los filtros.' : GRUPOS[grupoActivo].vacio) + '</p>';
@@ -1769,6 +1855,7 @@ body.embed { min-height: 0; }
             ultimoRender = firma;
             const abajo = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 60;
             chat.innerHTML = '';
+            lineas.forEach((t, i) => { t.__idx = i; });
             for (const t of lineas) {
                 const d = document.createElement('div');
                 d.className = 'burb ' + t.q;
@@ -1807,10 +1894,72 @@ body.embed { min-height: 0; }
                 const dd = n => String(n).padStart(2, '0');
                 m.textContent = (t.q === 'humano' ? 'vos · ' : '') +
                     dd(f.getDate()) + '/' + dd(f.getMonth() + 1) + ' ' + dd(f.getHours()) + ':' + dd(f.getMinutes());
+                if (t.editado) {
+                    const ed = document.createElement('span');
+                    ed.className = 'meta-editado';
+                    ed.textContent = ' · editado';
+                    ed.title = 'Corregido en el panel. El cliente recibió el texto original.';
+                    m.appendChild(ed);
+                }
+                const lapiz = document.createElement('button');
+                lapiz.type = 'button';
+                lapiz.className = 'burb-editar';
+                lapiz.textContent = 'Editar';
+                lapiz.title = 'Corrige el registro del panel (y el contexto que lee el bot). No cambia lo que ya recibió el cliente.';
+                lapiz.addEventListener('click', ev => { ev.stopPropagation(); editarMensaje(t, d); });
+                m.appendChild(lapiz);
                 d.appendChild(m);
                 chat.appendChild(d);
             }
             if (abajo) chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Edición en el lugar: la burbuja se convierte en un textarea. Enter
+        // guarda, Escape cancela, Shift/Ctrl+Enter hacen salto de línea.
+        function editarMensaje(linea, burbuja) {
+            if (burbuja.querySelector('.burb-edit-box')) return;
+            const original = linea.t || '';
+            const caja = document.createElement('div');
+            caja.className = 'burb-edit-box';
+            const ta = document.createElement('textarea');
+            ta.value = original;
+            ta.rows = Math.min(8, Math.max(2, original.split('\n').length + 1));
+            const acciones = document.createElement('div');
+            acciones.className = 'burb-edit-acciones';
+            const guardar = document.createElement('button');
+            guardar.type = 'button'; guardar.textContent = 'Guardar';
+            const cancelar = document.createElement('button');
+            cancelar.type = 'button'; cancelar.className = 'sec'; cancelar.textContent = 'Cancelar';
+            const aviso = document.createElement('span');
+            aviso.className = 'burb-edit-aviso';
+            aviso.textContent = 'Solo corrige el registro; el cliente ya recibió el original.';
+            acciones.appendChild(guardar); acciones.appendChild(cancelar); acciones.appendChild(aviso);
+            caja.appendChild(ta); caja.appendChild(acciones);
+            burbuja.appendChild(caja);
+            ta.focus();
+            ta.selectionStart = ta.selectionEnd = ta.value.length;
+
+            const cerrar = () => caja.remove();
+            cancelar.addEventListener('click', cerrar);
+            guardar.addEventListener('click', async () => {
+                const nuevo = ta.value.trim();
+                if (nuevo === '' || nuevo === original) { cerrar(); return; }
+                guardar.disabled = true; guardar.textContent = 'Guardando…';
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'editar_mensaje', tel: TEL, idx: linea.__idx, ts: linea.ts, texto: nuevo }) });
+                    const j = await r.json();
+                    if (j.ok) { cerrar(); ultimoRender = ''; await refrescar(); await refrescarLista(); }
+                    else { aviso.textContent = j.error || 'No se pudo guardar.'; guardar.disabled = false; guardar.textContent = 'Guardar'; }
+                } catch (e) {
+                    aviso.textContent = 'Error de red: ' + e;
+                    guardar.disabled = false; guardar.textContent = 'Guardar';
+                }
+            });
+            ta.addEventListener('keydown', e => {
+                if (e.key === 'Escape') { e.preventDefault(); cerrar(); return; }
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); guardar.click(); }
+            });
         }
 
         function estadoVentana() {
@@ -1854,7 +2003,21 @@ body.embed { min-height: 0; }
         }
 
         btn.onclick = enviar;
-        txt.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
+        // Enter manda. Shift+Enter y Ctrl+Enter hacen salto de línea: el textarea
+        // ya inserta el salto solo con Shift, pero con Ctrl no, así que ahí se
+        // escribe a mano en la posición del cursor.
+        txt.addEventListener('keydown', e => {
+            if (e.key !== 'Enter') return;
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const ini = txt.selectionStart, fin = txt.selectionEnd;
+                txt.value = txt.value.slice(0, ini) + '\n' + txt.value.slice(fin);
+                txt.selectionStart = txt.selectionEnd = ini + 1;
+                txt.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
+            if (!e.shiftKey) { e.preventDefault(); enviar(); }
+        });
 
         // El menú "⋯" de acciones solo se usa en el celular; en pantalla grande
         // el botón está oculto por CSS y las acciones se ven siempre.

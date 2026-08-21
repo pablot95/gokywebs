@@ -190,10 +190,10 @@ async function sincronizarPresentados() {
 setInterval(sincronizarPresentados, 10 * 60 * 1000);
 
 /* ── Contador de "sin leer" en la pestaña WhatsApp ──
-   Mismo criterio que las columnas Demos/Presentados del panel embebido:
-   chats de esos dos grupos con actividad más nueva que la última vez que
-   Pablo abrió esa conversación puntual. Se consulta aparte (no depende de
-   que el iframe esté cargado) para que el número se vea sin entrar a la pestaña. */
+   Mismo criterio que la pestaña "No leídos" del panel embebido: chats con
+   actividad más nueva que la última vez que Pablo abrió esa conversación, más
+   los que lo están esperando. Los archivados no cuentan. Se consulta aparte
+   (no depende de que el iframe esté cargado) para verlo sin entrar a la pestaña. */
 async function sincronizarNoLeidosWabot() {
     if (!currentUser) return;
     try {
@@ -206,7 +206,8 @@ async function sincronizarNoLeidosWabot() {
         });
         const data = await res.json();
         const items = data.items || [];
-        const noLeidos = items.filter(it => (it.grupo === "muestra" || it.grupo === "presentados") && it.no_leido).length;
+        const noLeidos = items.filter(it =>
+            it.grupo !== "archivado" && (it.no_leido || it.grupo === "atencion")).length;
         const el = document.getElementById("countWabotNoLeidos");
         if (el) el.textContent = noLeidos;
     } catch (e) {

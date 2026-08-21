@@ -1130,6 +1130,29 @@ function wabot_salida_es_bot($id) {
 }
 
 /**
+ * Segundo reconocimiento de un eco propio, por CONTENIDO.
+ *
+ * El id no siempre alcanza: Instagram devuelve un message_id al enviar y el eco
+ * puede llegar con otro mid, y además el eco puede adelantarse a que se registre
+ * el id. Cuando eso pasa, el bot lee su propio mensaje como "lo contestó Pablo
+ * a mano", se pausa 24 h y no vuelve a atender ese chat: el síntoma es la charla
+ * clavada en "Te esperan" sin respuesta.
+ *
+ * Si el texto coincide con algo que el bot acaba de mandar, es nuestro.
+ */
+function wabot_eco_es_propio($conv, $texto, $ventanaSegundos = 900) {
+    $t = trim(preg_replace('/\s+/u', ' ', (string)$texto));
+    if ($t === '') return false;
+    $desde = time() - max(60, (int)$ventanaSegundos);
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+        if ((int)($linea['ts'] ?? 0) < $desde) break;
+        if (($linea['q'] ?? '') !== 'bot') continue;
+        if (trim(preg_replace('/\s+/u', ' ', (string)($linea['t'] ?? ''))) === $t) return true;
+    }
+    return false;
+}
+
+/**
  * Nombre/usuario de Instagram, best-effort y cacheado. La API de mensajes usa
  * el IGSID para este perfil; si la cuenta o permisos no lo permiten se deja
  * vacío y el flujo sigue normalmente.

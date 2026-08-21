@@ -344,13 +344,31 @@ if (($payload['object'] ?? '') === 'instagram') {
                 $para = (string)($ev['recipient']['id'] ?? '');
                 if ($para === '' || in_array($para, wabot_ig_ids_propios(), true)) continue;
                 $clave = 'ig' . $para;
-                $conv = wabot_conv_load($clave);
-                wabot_conv_identidad_entrante($conv, $clave, $para, 'instagram');
-                $conv['pausado_hasta'] = time() + (int)($cfg['pausa_horas_humano'] ?? 24) * 3600;
-                $conv['handoff_pendiente'] = false;
-                wabot_conv_transcript($conv, 'humano', trim((string)($ev['message']['text'] ?? '[mensaje]')));
-                wabot_evento($conv, 'humano_responde');
-                wabot_conv_save($conv);
+                $textoEco = trim((string)($ev['message']['text'] ?? '[mensaje]'));
+
+                // El candado es el mismo que toma el envío: sin esto el eco podía
+                // pisar la conversación mientras el bot todavía estaba mandando
+                // la tanda de respuestas.
+                $lockEco = wabot_lock_tomar($clave);
+                if (!$lockEco) continue;   // está contestando el bot: el eco es suyo
+                try {
+                    $conv = wabot_conv_load($clave);
+                    // Segundo filtro: si el texto es uno que el bot acaba de mandar,
+                    // el eco es propio aunque el mid no coincida con el id enviado.
+                    if (wabot_eco_es_propio($conv, $textoEco)) {
+                        wabot_salida_bot_marcar($id);
+                        continue;
+                    }
+                    wabot_conv_identidad_entrante($conv, $clave, $para, 'instagram');
+                    $conv['pausado_hasta'] = time() + (int)($cfg['pausa_horas_humano'] ?? 24) * 3600;
+                    $conv['handoff_pendiente'] = false;
+                    wabot_conv_transcript($conv, 'humano', $textoEco);
+                    wabot_evento($conv, 'humano_responde');
+                    wabot_conv_save($conv);
+                    wabot_log('pausa_humano', ['tel' => $para, 'canal' => 'instagram']);
+                } finally {
+                    wabot_lock_soltar($lockEco);
+                }
                 continue;
             }
             // Nuestra propia cuenta como emisor: mismo caso.
@@ -382,15 +400,26 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 if (!$para) continue;
                 $clave = preg_replace('/[^0-9]/', '', (string)$para);
                 if ($clave === '') continue;
-                $conv = wabot_conv_load($clave);
-                wabot_conv_identidad_entrante($conv, $clave, (string)$para, 'whatsapp');
-                $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
-                $conv['pausado_hasta'] = time() + $horas * 3600;
-                $conv['handoff_pendiente'] = false;
-                wabot_conv_transcript($conv, 'humano', (string)($eco['text']['body'] ?? '[mensaje]'));
-                wabot_evento($conv, 'humano_responde');
-                wabot_conv_save($conv);
-                wabot_log('pausa_humano', ['tel' => $para, 'horas' => $horas]);
+                $textoEco = (string)($eco['text']['body'] ?? '[mensaje]');
+
+                // Mismo guard que en Instagram: el eco de un mensaje que mandó el
+                // bot no puede pausar al bot. Ver wabot_eco_es_propio().
+                $lockEco = wabot_lock_tomar($clave);
+                if (!$lockEco) continue;
+                try {
+                    $conv = wabot_conv_load($clave);
+                    if (wabot_eco_es_propio($conv, $textoEco)) continue;
+                    wabot_conv_identidad_entrante($conv, $clave, (string)$para, 'whatsapp');
+                    $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
+                    $conv['pausado_hasta'] = time() + $horas * 3600;
+                    $conv['handoff_pendiente'] = false;
+                    wabot_conv_transcript($conv, 'humano', $textoEco);
+                    wabot_evento($conv, 'humano_responde');
+                    wabot_conv_save($conv);
+                    wabot_log('pausa_humano', ['tel' => $para, 'horas' => $horas]);
+                } finally {
+                    wabot_lock_soltar($lockEco);
+                }
             }
             continue;
         }
