@@ -2970,14 +2970,26 @@ function wabot_muestra_aviso_hora_candidata($ultimoClienteTs, $limite) {
     // Argentina no tiene horario de verano: UTC-3 fijo. Todo se calcula a
     // mano en el "reloj local" corrido -3h, sin depender de la zona horaria
     // que tenga configurada el servidor (strtotime() sí dependería de eso).
-    $margenSeguridad = 30 * 60;
+    // El margen tiene que dar para varias corridas del cron (cada 30 min): si
+    // fuera más corto que el intervalo, el único momento válido podía caer
+    // justo entre dos corridas y el aviso no salía nunca.
+    $margenSeguridad = 90 * 60;
     $limiteConMargen = $limite - $margenSeguridad;
 
     $localTs = $ultimoClienteTs - 3 * 3600;
-    $medianocheLocalMismoDia = $localTs - ($localTs % 86400);
-    $ochoAMDiaSiguienteUtc = $medianocheLocalMismoDia + 86400 + 8 * 3600 + 3 * 3600;
+    $medianocheLocal = $localTs - ($localTs % 86400);
 
-    return min($ochoAMDiaSiguienteUtc, $limiteConMargen);
+    // Las 8 de la mañana SIGUIENTES al mensaje: las de hoy si todavía no
+    // pasaron, las de mañana si ya pasaron. Antes se tomaban siempre las del
+    // día siguiente, así que el que escribía de madrugada se quedaba sin las
+    // 8 de esa misma mañana —que estaban a horas de distancia y adentro de la
+    // ventana— y el aviso le caía a la 1 AM del otro día, contra el límite.
+    $ochoAMLocal = $medianocheLocal + 8 * 3600;
+    if ($ochoAMLocal <= $localTs) $ochoAMLocal += 86400;
+
+    // En una ventana de 24 h hay exactamente unas 8 AM, así que no hay que
+    // elegir entre varias: o entran, o el aviso se adelanta contra el límite.
+    return min($ochoAMLocal + 3 * 3600, $limiteConMargen);
 }
 
 function wabot_muestra_aviso_corresponde($cv, $cfg, $ahora = null) {

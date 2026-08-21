@@ -1512,8 +1512,12 @@ $cfgAviso = $cfg; $cfgAviso['muestra_aviso_activo'] = true; $cfgAviso['muestra_a
 $clienteManana = gmmktime(11, 0, 0, 8, 19, 2026); // 8:00 hora AR
 $limiteManana = $clienteManana + 24 * 3600;
 $candManana = wabot_muestra_aviso_hora_candidata($clienteManana, $limiteManana);
-caso('si escribió a las 8 de la mañana, el aviso cae justo antes de que cierre la ventana (no a las 8am del día siguiente)',
-    $candManana === $limiteManana - 30 * 60);
+caso('si escribió justo a las 8, el aviso se adelanta contra el cierre (las 8 de hoy ya pasaron y las de mañana no entran)',
+    $candManana === $limiteManana - 90 * 60);
+// El margen tiene que superar al intervalo del cron (30 min) o el único
+// momento válido puede caer entre dos corridas y el aviso no sale nunca.
+caso('y ese margen le da al cron más de una corrida para agarrarlo',
+    ($limiteManana - $candManana) >= 3 * 30 * 60);
 
 $clienteTarde = gmmktime(18, 0, 0, 8, 19, 2026); // 15:00 hora AR
 $limiteTarde = $clienteTarde + 24 * 3600;
@@ -2772,6 +2776,63 @@ caso('un perfil que ya es el nombre del local no se escribe dos veces',
     wabot_nombre_agenda(['nombre' => 'Style Sozo', 'nombre_negocio' => 'Style Sozo Indumentaria']) === 'Style Sozo Indumentaria');
 caso('con nombre de persona de verdad, se agenda con los dos',
     wabot_nombre_agenda(['nombre' => 'Sofi', 'nombre_negocio' => 'Lucero Estudio']) === 'Sofi - Lucero Estudio');
+
+echo "— El aviso de la mañana sale a las 8, o antes de que venzan las 24 h —\n";
+
+// Barrido de las 24 horas del día: escriba cuando escriba, el aviso tiene que
+// salir a horario decente y SIEMPRE antes de que la ventana de Meta cierre.
+$aOcho = 0;
+$horaMala = [];
+$fueraDeVentana = [];
+$margenCorto = [];
+for ($h = 0; $h < 24; $h++) {
+    $tsCli = gmmktime($h + 3, 0, 0, 8, 18, 2026);   // hora AR $h del 18-ago
+    $limH  = $tsCli + 24 * 3600;
+    $cand  = wabot_muestra_aviso_hora_candidata($tsCli, $limH);
+    $horaAR = (int)gmdate('H', $cand - 3 * 3600);
+
+    if ($cand >= $limH || $cand <= $tsCli) $fueraDeVentana[] = $h;
+    if ($limH - $cand < 3 * 30 * 60) $margenCorto[] = $h;
+    if ($horaAR === 8) $aOcho++;
+    elseif ($horaAR < 6 || $horaAR > 21) $horaMala[] = "{$h}h→{$horaAR}h";
+}
+caso('escriba a la hora que escriba, el aviso cae dentro de la ventana', $fueraDeVentana === []);
+caso('y nunca en horario de madrugada', $horaMala === []);
+caso('la enorme mayoría sale exactamente a las 8 AM', $aOcho >= 22);
+caso('y siempre con margen para varias corridas del cron', $margenCorto === []);
+
+// El que escribe de madrugada tiene las 8 de ESA mañana a pocas horas: usarlas
+// en vez de las del día siguiente, que ya no entran en la ventana.
+$madrugada = gmmktime(5, 0, 0, 8, 18, 2026);         // 02:00 AR
+$candMadru = wabot_muestra_aviso_hora_candidata($madrugada, $madrugada + 24 * 3600);
+caso('el que escribe a las 2 AM recibe el aviso a las 8 de esa misma mañana',
+    gmdate('d H:i', $candMadru - 3 * 3600) === '18 08:00');
+
+$tarde = gmmktime(18, 0, 0, 8, 18, 2026);            // 15:00 AR
+$candTardeDia = wabot_muestra_aviso_hora_candidata($tarde, $tarde + 24 * 3600);
+caso('el que escribe a la tarde lo recibe a las 8 del día siguiente',
+    gmdate('d H:i', $candTardeDia - 3 * 3600) === '19 08:00');
+
+// La condición que pidió Pablo chequear: si la demo ya se presentó, no sale.
+$cfgSale = $cfg; $cfgSale['activo'] = true; $cfgSale['muestra_aviso_activo'] = true;
+$ahoraAv = gmmktime(12, 0, 0, 8, 19, 2026);          // 09:00 AR del día siguiente
+$avBase = ['lead_creado' => true, 'fase' => 'derivado', 'presentado_ts' => 0,
+           'muestra_aviso_enviado' => false, 'archivado' => false, 'bot_off' => false,
+           'pausado_hasta' => 0, 'ultimo_cliente_ts' => gmmktime(18, 0, 0, 8, 18, 2026)];
+
+caso('con la demo sin presentar, el aviso sale', wabot_muestra_aviso_corresponde($avBase, $cfgSale, $ahoraAv) === true);
+caso('con la demo YA presentada, no sale',
+    wabot_muestra_aviso_corresponde(array_merge($avBase, ['presentado_ts' => $ahoraAv - 7200]), $cfgSale, $ahoraAv) === false);
+caso('marcada a mano con "Ya la entregué", tampoco sale',
+    wabot_muestra_aviso_corresponde(array_merge($avBase, ['presentado_ts' => $ahoraAv - 7200, 'fase' => 'postdemo']), $cfgSale, $ahoraAv) === false);
+caso('y no se manda dos veces',
+    wabot_muestra_aviso_corresponde(array_merge($avBase, ['muestra_aviso_enviado' => true]), $cfgSale, $ahoraAv) === false);
+caso('si contestaste vos y quedó pausada, no sale',
+    wabot_muestra_aviso_corresponde(array_merge($avBase, ['pausado_hasta' => $ahoraAv + 3600]), $cfgSale, $ahoraAv) === false);
+caso('si la ventana ya cerró, no sale tarde',
+    wabot_muestra_aviso_corresponde(array_merge($avBase, ['ultimo_cliente_ts' => $ahoraAv - 25 * 3600]), $cfgSale, $ahoraAv) === false);
+caso('antes de la hora candidata todavía no sale',
+    wabot_muestra_aviso_corresponde($avBase, $cfgSale, gmmktime(9, 0, 0, 8, 19, 2026)) === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
