@@ -1,0 +1,72 @@
+[
+  {
+    "file": "hero-masaje-marmol-1920x1080.webp",
+    "source": "pexels",
+    "id": "9146381",
+    "url": "https://www.pexels.com/photo/9146381/",
+    "use": "hero"
+  },
+  {
+    "file": "espacio-arco-sillon-1600x1300.webp",
+    "source": "pexels",
+    "id": "12277631",
+    "url": "https://www.pexels.com/photo/12277631/",
+    "use": "quienes somos, el espacio"
+  },
+  {
+    "file": "servicio-facial-1200x1600.webp",
+    "source": "pexels",
+    "id": "9335967",
+    "url": "https://www.pexels.com/photo/9335967/",
+    "use": "servicio tratamientos faciales"
+  },
+  {
+    "file": "servicio-capilar-1200x1600.webp",
+    "source": "pexels",
+    "id": "6628814",
+    "url": "https://www.pexels.com/photo/6628814/",
+    "use": "servicio head spa / capilar"
+  },
+  {
+    "file": "servicio-relajacion-1200x1600.webp",
+    "source": "pexels",
+    "id": "3757942",
+    "url": "https://www.pexels.com/photo/3757942/",
+    "use": "servicio experiencias de relajacion"
+  },
+  {
+    "file": "ritual-gotero-1000x1000.webp",
+    "source": "pexels",
+    "id": "28994388",
+    "url": "https://www.pexels.com/photo/28994388/",
+    "use": "el ritual, paso diagnostico/producto"
+  },
+  {
+    "file": "ritual-limpieza-1000x1000.webp",
+    "source": "pexels",
+    "id": "6925542",
+    "url": "https://www.pexels.com/photo/6925542/",
+    "use": "el ritual, paso limpieza"
+  },
+  {
+    "file": "textura-toalla-1000x1000.webp",
+    "source": "pexels",
+    "id": "2672634",
+    "url": "https://www.pexels.com/photo/2672634/",
+    "use": "textura decorativa"
+  },
+  {
+    "file": "cierre-banera-1920x1080.webp",
+    "source": "pexels",
+    "id": "18161061",
+    "url": "https://www.pexels.com/photo/18161061/",
+    "use": "fondo cierre CTA"
+  },
+  {
+    "file": "quienes-somos-crema-1600x1300.webp",
+    "source": "pexels",
+    "id": "6810869",
+    "url": "https://www.pexels.com/photo/6810869/",
+    "use": "quienes somos / og:image"
+  }
+]
