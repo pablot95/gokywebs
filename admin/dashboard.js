@@ -207,8 +207,12 @@ async function sincronizarNoLeidosWabot() {
         });
         const data = await res.json();
         const items = data.items || [];
+        // Mismo criterio que la pestaña del panel (ver GRUPOS_SIN_LEER en
+        // wabot/admin.php): solo parte 2 y cola de demos, con el cliente
+        // esperando respuesta y el chat sin abrir.
+        const GRUPOS_SIN_LEER = ["pago", "presentados", "presentadas_48", "muestra"];
         const noLeidos = items.filter(it =>
-            it.grupo !== "archivado" && it.no_leido).length;
+            GRUPOS_SIN_LEER.includes(it.grupo) && it.quien === "cliente" && it.no_leido).length;
         const el = document.getElementById("countWabotNoLeidos");
         if (el) el.textContent = noLeidos;
     } catch (e) {

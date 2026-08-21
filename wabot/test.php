@@ -1829,21 +1829,25 @@ echo "— Qué falta pedir para el prediseño —\n";
 $cfgPredis = wabot_config_load();
 
 caso('sin nada conocido, pide las tres cosas',
-    wabot_prediseno_faltan(['nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
         'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
     ]);
+caso('y si el perfil de WhatsApp no sirve como nombre, pide cuatro',
+    wabot_prediseno_faltan(['nombre' => '.', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+        'Tu nombre', 'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
+    ]);
 caso('lo que ya se sabe no se vuelve a pedir',
-    wabot_prediseno_faltan(['nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
         'Una descripción breve de lo que ofrecés',
     ]);
 caso('con las tres cosas ya sabidas, no falta nada',
-    wabot_prediseno_faltan(['nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
 
-$textoConFaltantes = wabot_prediseno_texto(['nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
+$textoConFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
 caso('el texto lista lo que falta con saltos de línea reales',
     strpos($textoConFaltantes, "- El nombre de tu negocio\n- Una descripción breve de lo que ofrecés\n- Los colores de tu marca") !== false);
 
-$textoSinFaltantes = wabot_prediseno_texto(['nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón'], $cfgPredis);
+$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón'], $cfgPredis);
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
 
@@ -2668,6 +2672,83 @@ caso('queda anotado que el aviso no salió por el bot',
 @unlink(WABOT_DATA . '/conv/TESTNOLEIDO.json');
 @unlink(WABOT_DATA . '/conv/TESTNOLEIDO2.json');
 @unlink(WABOT_DATA . '/conv/TESTNOLEIDO3.json');
+
+echo "— Qué entra en Sin leer: solo parte 2, sin contestar y sin abrir —\n";
+
+// Réplica en PHP de esNoLeido() de admin.php: son las mismas tres condiciones.
+$GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
+$entraEnSinLeer = function ($cv) use ($GRUPOS_SIN_LEER) {
+    if (!in_array(wabot_conv_grupo($cv), $GRUPOS_SIN_LEER, true)) return false;
+    $ult = end($cv['transcript']);
+    if (($ult['q'] ?? '') !== 'cliente') return false;
+    return wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0);
+};
+
+$ahoraSL = time();
+$armarSL = function ($campos, $lineas) use ($ahoraSL) {
+    $cv = ['transcript' => [], 'panel_visto_ts' => $ahoraSL - 20 * 3600,
+           'archivado' => false, 'bot_off' => false, 'pausado_hasta' => 0,
+           'cierre' => null, 'fase' => 'nuevo', 'tipo' => null,
+           'descripcion' => null, 'colores' => null, 'lead_creado' => false];
+    foreach ($campos as $k => $v) $cv[$k] = $v;
+    foreach ($lineas as $i => $par) $cv['transcript'][] = ['q' => $par[0], 't' => $par[1], 'ts' => $ahoraSL - (60 - $i) * 60];
+    $cv['ultimo_cliente_ts'] = wabot_ultimo_cliente_ts($cv);
+    return $cv;
+};
+
+$demoEntregada = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraSL - 40 * 3600, 'lead_creado' => true];
+caso('demo entregada + el cliente contestó + no lo abriste → SÍ',
+    $entraEnSinLeer($armarSL($demoEntregada, [['humano', 'Acá está tu demo'], ['cliente', 'La miro y te digo']])) === true);
+caso('si el bot ya le contestó, está atendido → NO',
+    $entraEnSinLeer($armarSL($demoEntregada, [['cliente', 'La miro'], ['bot', 'Dale, cualquier cosa avisame']])) === false);
+caso('si lo abriste después del mensaje → NO',
+    $entraEnSinLeer($armarSL(array_merge($demoEntregada, ['panel_visto_ts' => $ahoraSL]), [['humano', 'demo'], ['cliente', 'gracias']])) === false);
+caso('demo por presentar + el cliente escribió → SÍ',
+    $entraEnSinLeer($armarSL(['fase' => 'derivado', 'tipo' => 'landing', 'lead_creado' => true, 'descripcion' => 'x', 'colores' => 'azul'],
+        [['bot', 'Listo, ya lo preparamos'], ['cliente', 'Te paso el logo']])) === true);
+caso('avisó que pagó y no lo abriste → SÍ',
+    $entraEnSinLeer($armarSL(['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraSL - 40 * 3600,
+        'pago_avisado_ts' => $ahoraSL - 3600, 'lead_creado' => true], [['bot', 'Te paso el CBU'], ['cliente', 'Listo, transferí']])) === true);
+
+// Lo que Pablo pidió sacar: la parte 1 la lleva el bot y no necesita revisión.
+caso('parte 1: una charla nueva con el cliente escribiendo → NO',
+    $entraEnSinLeer($armarSL(['fase' => 'menu', 'tipo' => 'landing'], [['bot', 'Hola!'], ['cliente', 'Hola, quiero una web']])) === false);
+caso('parte 1: uno que vio el precio y contestó → NO',
+    $entraEnSinLeer($armarSL(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], [['bot', 'Sale $X'], ['cliente', 'Y con catálogo?']])) === false);
+caso('un archivado no entra aunque tenga todo lo demás',
+    $entraEnSinLeer($armarSL(array_merge($demoEntregada, ['archivado' => true]), [['humano', 'demo'], ['cliente', 'gracias']])) === false);
+
+echo "— El perfil de WhatsApp no siempre es un nombre —\n";
+
+foreach ([
+    'Marcelo Polzoni'         => 'Marcelo Polzoni',
+    'Juan Carlos Perez Gomez' => 'Juan Carlos Perez Gomez',
+    'Dr. House'               => 'Dr. House',
+    'Ana'                     => 'Ana',
+] as $perfil => $esperado) {
+    caso("\"$perfil\" se usa tal cual", wabot_nombre_usable($perfil) === $esperado);
+}
+caso('los emojis del perfil no son parte del nombre',
+    wabot_nombre_usable('PeLa Lencioni ' . json_decode('"🔥"')) === 'PeLa Lencioni');
+caso('un perfil de solo emojis no sirve',
+    wabot_nombre_usable(json_decode('"🌸🌸🌸"')) === '');
+foreach ([
+    'Asi Soy Y Asi Me Quiero' => 'es una frase, no un nombre',
+    'GRACIAS A DIOS POR TODO' => 'es un slogan',
+    'Te amo mama'             => 'es una dedicatoria',
+    '.'                       => 'no tiene letras',
+    '+54 9 11 6654-5773'      => 'es un teléfono',
+    'hola@correo.com'         => 'es un mail',
+] as $perfil => $porque) {
+    caso("\"$perfil\" se descarta: $porque", wabot_nombre_usable($perfil) === '');
+}
+
+caso('el perfil que es una frase no se cuelga del negocio en la agenda',
+    wabot_nombre_agenda(['nombre' => 'Asi Soy Y Asi Me Quiero', 'nombre_negocio' => 'Style Sozo']) === 'Style Sozo');
+caso('un perfil que ya es el nombre del local no se escribe dos veces',
+    wabot_nombre_agenda(['nombre' => 'Style Sozo', 'nombre_negocio' => 'Style Sozo Indumentaria']) === 'Style Sozo Indumentaria');
+caso('con nombre de persona de verdad, se agenda con los dos',
+    wabot_nombre_agenda(['nombre' => 'Sofi', 'nombre_negocio' => 'Lucero Estudio']) === 'Sofi - Lucero Estudio');
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

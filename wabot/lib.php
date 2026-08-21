@@ -670,12 +670,27 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
  * un nombre de verdad, es mejor no usar ninguno.
  */
 function wabot_nombre_usable($nombre) {
-    $n = trim(preg_replace('/\s+/u', ' ', (string)$nombre));
+    // Los emojis del perfil de WhatsApp no son parte del nombre: "PeLa 🔥" se
+    // agenda "PeLa", y saludar "Hola Vero❤️" queda de cotillón.
+    $n = (string)$nombre;
+    $n = preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}\x{2190}-\x{21FF}\x{2B00}-\x{2BFF}\x{3030}\x{303D}\x{00A9}\x{00AE}]/u', ' ', $n);
+    $n = trim(preg_replace('/\s+/u', ' ', $n));
+    $n = trim($n, " \t\n\r\0\x0B-–—_.·|/\\");
+
     if ($n === '' || mb_strlen($n) < 2) return '';
     if (preg_match('/@|https?:/i', $n)) return '';           // mails y links
     if (preg_match('/^[\d\s+()\-.]+$/u', $n)) return '';      // teléfonos
     // Tiene que tener al menos dos letras de verdad; los emojis no cuentan.
     if (preg_match_all('/\p{L}/u', $n) < 2) return '';
+
+    // Un perfil de WhatsApp no siempre es un nombre: hay frases enteras ("Asi
+    // Soy Y Asi Me Quiero"), slogans y nombres de negocio. Saludar con eso o
+    // agendarlo así queda raro, y es lo que pasaba en producción.
+    // Cuatro entra ("Juan Carlos Pérez Gómez"); de ahí para arriba ya es frase.
+    if (count(preg_split('/\s+/u', $n)) > 4) return '';
+    if (preg_match('/[!¡?¿*#%]/u', $n)) return '';
+    if (preg_match('/\b(soy|somos|quiero|amo|vivo|bendecid|gracias a dios|te amo|dios|vs|www)\b/iu', $n)) return '';
+
     return $n;
 }
 
@@ -967,17 +982,28 @@ function wabot_nombre_agenda($conv) {
     // Un perfil llamado "." no puede colgarse del nombre del negocio: quedaba
     // "Black Automotores - ." en la agenda y, peor, en los textos al cliente.
     $persona = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+    // Muchos perfiles de WhatsApp son el nombre del local: colgarlo al lado del
+    // negocio daba "Distribuidora El Sol - Distribuidora El Sol" o repetía media
+    // marca. Si uno contiene al otro, es el mismo dato escrito dos veces.
+    if ($negocio !== '' && $persona !== '') {
+        $n = mb_strtolower($negocio);
+        $p = mb_strtolower($persona);
+        if ($n === $p || mb_strpos($n, $p) !== false || mb_strpos($p, $n) !== false) return $negocio;
+    }
     // Primero la persona: en la agenda se busca por quién es, y el negocio
     // queda al lado para ubicar de qué proyecto se trata.
-    if ($negocio !== '' && $persona !== '' && mb_strtolower($negocio) !== mb_strtolower($persona)) {
-        return $persona . ' - ' . $negocio;
-    }
+    if ($negocio !== '' && $persona !== '') return $persona . ' - ' . $negocio;
     return $persona !== '' ? $persona : $negocio;
 }
 
 /** Qué le falta pedir para el prediseño: nunca lo que el cliente ya dio. */
 function wabot_prediseno_faltan($conv) {
     $items = [];
+    // El nombre del perfil de WhatsApp sirve de arranque, pero muchos son
+    // frases o el nombre del local: sin uno de persona la agenda queda con
+    // cosas como "Asi Soy Y Asi Me Quiero - Style Sozo". Solo se pide cuando
+    // el perfil no dio nada usable.
+    if (wabot_nombre_usable((string)($conv['nombre'] ?? '')) === '') $items[] = 'Tu nombre';
     if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
     if (trim((string)($conv['descripcion']    ?? '')) === '') $items[] = 'Una descripción breve de lo que ofrecés';
     if (trim((string)($conv['colores']        ?? '')) === '') $items[] = 'Los colores de tu marca';

@@ -1510,8 +1510,8 @@ body.embed { min-height: 0; }
                 <button type="button" class="conv-nav-btn conv-nav-btn--filtro" data-grupo="no_leidos" title="Los chats donde el cliente escribió último y todavía no los abriste. Cruza todos los grupos de abajo.">Sin leer <span class="conv-cuenta" id="cuentaNoLeidos">0</span></button>
 
                 <p class="conv-nav-titulo">Te toca a vos</p>
-                <button type="button" class="conv-nav-btn" data-grupo="pago" title="Avisaron que transfirieron: hay que verificar que la plata haya entrado.">Avisaron que pagaron <span class="conv-cuenta" id="cuentaPago">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="muestra" title="Ya pasaron los datos y falta diseñarles la demo. Es tu cola de trabajo.">Demos por diseñar <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="pago" title="Avisaron que transfirieron: hay que verificar que la plata haya entrado.">Pagaron <span class="conv-cuenta" id="cuentaPago">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="muestra" title="Ya pasaron los datos y falta diseñarles la demo. Es tu cola de trabajo.">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentadas_48" title="Tienen la demo hace más de 48 h y no contestaron nada. La ventana de WhatsApp ya cerró: hay que ir a buscarlos a mano.">Se enfriaron <span class="conv-cuenta" id="cuentaPresentadas48">0</span></button>
 
                 <p class="conv-nav-titulo">Esperando al cliente</p>
@@ -1633,37 +1633,36 @@ body.embed { min-height: 0; }
         // aunque nunca hayas abierto esa respuesta.
         const GRUPOS = {
             no_leidos:  { titulo: 'Sin leer',    cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Ningún mensaje sin abrir.', vista: true },
-            pago:       { titulo: 'Avisaron que pagaron', cuenta: document.getElementById('cuentaPago'), vacio: 'Nadie avisó todavía que pagó.' },
-            muestra:    { titulo: 'Demos por diseñar',    cuenta: document.getElementById('cuentaMuestra'), vacio: 'Ninguna demo pendiente de diseño.' },
+            pago:       { titulo: 'Pagaron', cuenta: document.getElementById('cuentaPago'), vacio: 'Nadie avisó todavía que pagó.' },
+            muestra:    { titulo: 'Demos',    cuenta: document.getElementById('cuentaMuestra'), vacio: 'Ninguna demo pendiente de diseño.' },
             presentadas_48:{ titulo: 'Se enfriaron',      cuenta: document.getElementById('cuentaPresentadas48'), vacio: 'Ninguna demo sin respuesta hace más de 48 horas.' },
             interesado: { titulo: 'Vieron precio',        cuenta: document.getElementById('cuentaInteresado'), vacio: 'Nadie con el precio dado esperando decidir.' },
             presentados:{ titulo: 'Demo entregada',       cuenta: document.getElementById('cuentaPresentados'), vacio: 'Ninguna demo entregada esperando confirmación.' },
             chat:       { titulo: 'Todas las charlas',    cuenta: document.getElementById('cuentaChat'), vacio: 'Ninguna charla abierta.' },
             archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
         };
-        // `no_leido` ya viene resuelto del servidor: hay un mensaje del cliente
-        // posterior a la última vez que abriste el chat. Acá no se vuelve a
-        // mirar quién habló último — pedir eso hacía que un mensaje automático
-        // del bot tapara lo que el cliente había escrito y no leíste.
+        /* Sin leer es una lista de trabajo, no un inbox: solo los chats donde el
+           bot dejó de contestar, el cliente respondió igual, y no lo abriste.
+           Las tres condiciones juntas, y ninguna alcanza sola:
+            - Solo la parte 2 y la cola de demos. Los de la parte 1 los está
+              llevando el bot y no necesitan que mires nada.
+            - Que el último mensaje sea del cliente: si el bot ya le contestó,
+              está atendido.
+            - Que no lo hayas abierto desde ese mensaje. */
+        const GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
         function esNoLeido(it) {
-            const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
-            if (grupo === 'archivado') return false;
-            return !!it.no_leido;
+            if (!GRUPOS_SIN_LEER.includes(it.grupo)) return false;
+            return it.quien === 'cliente' && !!it.no_leido;
         }
-        // Subdivisión de "No leídos": Presentadas y Demos son las columnas que ya
-        // existen; todo lo demás (chat normal o "te espera") cae en Chats normales.
         const SUBGRUPOS_NO_LEIDOS = [
-            { clave: 'pago',        titulo: 'Avisaron que pagaron' },
+            { clave: 'pago',        titulo: 'Pagaron' },
             { clave: 'presentados', titulo: 'Con la demo entregada' },
-            { clave: 'muestra',     titulo: 'Con demo por diseñar' },
-            { clave: 'chat',        titulo: 'Resto de las charlas' },
+            { clave: 'muestra',     titulo: 'Con demo por presentar' },
         ];
         function subGrupoNoLeido(it) {
-            const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
-            if (grupo === 'presentados' || grupo === 'presentadas_48') return 'presentados';
-            if (grupo === 'muestra') return 'muestra';
-            if (grupo === 'pago') return 'pago';
-            return 'chat';
+            if (it.grupo === 'presentados' || it.grupo === 'presentadas_48') return 'presentados';
+            if (it.grupo === 'pago') return 'pago';
+            return 'muestra';
         }
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');

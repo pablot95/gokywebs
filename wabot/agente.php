@@ -503,6 +503,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
+                    'nombre' => ['type' => 'string', 'description' => 'El nombre de la PERSONA con la que hablás, si lo dice. Solo el nombre propio, sin el negocio.'],
                     'nombre_negocio' => ['type' => 'string', 'description' => 'El nombre del negocio o marca, tal como lo dijo. No lo inventes ni lo saques del rubro.'],
                     'descripcion' => ['type' => 'string', 'description' => 'Qué ofrece el cliente, con sus palabras.'],
                     'colores'     => ['type' => 'string', 'description' => 'Los colores de su marca, tal como los dijo.'],
@@ -516,6 +517,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
+                    'nombre' => ['type' => 'string', 'description' => 'El nombre de la PERSONA con la que hablás, si lo dijo en la charla. Solo el nombre propio, sin el negocio.'],
                     'nombre_negocio' => ['type' => 'string', 'description' => 'El nombre del negocio o marca, tal como lo dijo.'],
                     'descripcion' => ['type' => 'string', 'description' => 'Qué ofrece el cliente, resumido en una línea.'],
                     'colores'     => ['type' => 'string', 'description' => 'Los colores de su marca, tal como los dijo.'],
@@ -991,6 +993,12 @@ function wabot_agente_anotar($args, &$conv) {
         $limpio = wabot_nombre_negocio_limpiar($args['nombre_negocio']);
         if ($limpio !== '') $conv['nombre_negocio'] = $limpio;
     }
+    // El nombre que dice en la charla le gana al del perfil de WhatsApp: es el
+    // que da la persona, no el que tiene puesto de fantasía.
+    if (trim((string)($args['nombre'] ?? '')) !== '') {
+        $persona = wabot_nombre_usable($args['nombre']);
+        if ($persona !== '') $conv['nombre'] = $persona;
+    }
     if (array_key_exists('referencia', $args)) {
         $ref = trim((string)$args['referencia']);
         if ($ref !== '' && !wabot_es_negativa($ref) && !wabot_apunta_a_lo_ya_dicho($ref)) {
@@ -1006,6 +1014,7 @@ function wabot_agente_anotar($args, &$conv) {
 /** Qué datos del prediseño ya están, para que el modelo no los vuelva a pedir. */
 function wabot_agente_ficha($conv) {
     return [
+        'nombre' => wabot_nombre_usable((string)($conv['nombre'] ?? '')),
         'nombre_negocio' => (string)($conv['nombre_negocio'] ?? ''),
         'descripcion' => (string)($conv['descripcion'] ?? ''),
         'colores'     => (string)($conv['colores'] ?? ''),
@@ -1249,6 +1258,8 @@ EOT;
     $p .= "- Handoff pendiente: " . (!empty($conv['handoff_pendiente']) ? 'sí' : 'no') . "\n";
     $p .= "- Aclaraciones ambiguas fallidas: " . (int)($conv['aclaraciones_fallidas'] ?? 0) . " de 2\n";
     $p .= "- Seguimiento comercial bloqueado: " . (!empty($conv['seguimiento_bloqueado']) ? 'sí; no vendas ni ofrezcas la demo' : 'no') . "\n";
+    $p .= "- Nombre de la persona: " . ($f['nombre'] !== '' ? $f['nombre']
+                                      : 'todavía no; el perfil de WhatsApp no sirve (es una frase o el nombre del local), pedíselo junto con el resto de los datos del prediseño') . "\n";
     $p .= "- Descripción anotada: " . ($f['descripcion'] !== '' ? $f['descripcion'] : 'todavía no') . "\n";
     $p .= "- Colores anotados: "    . ($f['colores']     !== '' ? $f['colores']     : 'todavía no') . "\n";
     $p .= "- Referencia anotada: "  . ($f['referencia']  !== '' ? $f['referencia']

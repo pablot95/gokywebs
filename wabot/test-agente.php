@@ -1050,5 +1050,36 @@ caso('y le dice cómo contestar el "la voy a mirar"',
 caso('permite cambiar el tipo de web después de la demo',
     strpos($promptCierre, 'cambiar_tipo_web') !== false);
 
+echo "— El nombre que da en la charla le gana al del perfil de WhatsApp —\n";
+
+$dichoEnCharla = ['nombre' => 'Asi Soy Y Asi Me Quiero'];
+wabot_agente_anotar(['nombre' => 'Carolina'], $dichoEnCharla);
+caso('el nombre que dice en la charla pisa al del perfil', $dichoEnCharla['nombre'] === 'Carolina');
+
+$noPisa = ['nombre' => 'Marcelo Polzoni'];
+wabot_agente_anotar(['nombre' => '.'], $noPisa);
+caso('pero algo inservible no pisa un nombre que ya servía', $noPisa['nombre'] === 'Marcelo Polzoni');
+
+$sinNombre = ['nombre' => 'Marcelo Polzoni'];
+wabot_agente_anotar(['descripcion' => 'vende repuestos'], $sinNombre);
+caso('anotar otros datos no toca el nombre', $sinNombre['nombre'] === 'Marcelo Polzoni');
+
+$fichaSinNombre = wabot_agente_ficha(['nombre' => 'Asi Soy Y Asi Me Quiero']);
+caso('la ficha no le pasa al modelo un perfil que no sirve como nombre', $fichaSinNombre['nombre'] === '');
+$fichaConNombre = wabot_agente_ficha(['nombre' => 'Marcelo Polzoni']);
+caso('pero sí uno que sirve', $fichaConNombre['nombre'] === 'Marcelo Polzoni');
+
+$convNombre = wabot_conv_load('TESTNOMBREPERFIL');
+$convNombre['nombre'] = 'Asi Soy Y Asi Me Quiero';
+$promptNombre = wabot_agente_sistema($convNombre, $cfg);
+caso('cuando el perfil no sirve, el playbook le dice que pida el nombre',
+    stripos($promptNombre, 'Nombre de la persona') !== false
+    && stripos($promptNombre, 'pedíselo') !== false);
+
+$convNombre['nombre'] = 'Marcelo Polzoni';
+caso('y cuando sirve, se lo pasa hecho y no lo hace preguntar',
+    strpos(wabot_agente_sistema($convNombre, $cfg), 'Nombre de la persona: Marcelo Polzoni') !== false);
+@unlink(WABOT_DATA . '/conv/TESTNOMBREPERFIL.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
