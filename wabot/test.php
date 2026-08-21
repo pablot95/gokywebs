@@ -2084,9 +2084,10 @@ foreach (array_merge([$cfg['msg_precio']], $cfg['msg_precio_variantes'],
     caso("la plantilla de precio #$i no menciona la seña", strpos($plantilla, '{sena}') === false);
     caso("la plantilla de precio #$i deja el link en su propio renglón", strpos($plantilla, "\n") !== false);
 }
-caso('el mensaje de precio sí menciona que hay hasta 12 cuotas',
-    stripos(wabot_msg_precio_texto('landing', $cfg), '12 cuotas') !== false);
-caso('pero NO dice el monto de cada cuota',
+caso('el mensaje de precio NO menciona la tarjeta ni las 12 cuotas: eso se contesta solo si preguntan',
+    stripos(wabot_msg_precio_texto('landing', $cfg), '12 cuotas') === false
+    && stripos(wabot_msg_precio_texto('landing', $cfg), 'tarjeta') === false);
+caso('tampoco dice el monto de cada cuota',
     strpos(wabot_msg_precio_texto('landing', $cfg), '$25.168') === false);
 caso('el resumen de precio tampoco adelanta la seña',
     strpos((string)$cfg['precio_resumen'], '{sena}') === false);
@@ -2852,7 +2853,7 @@ wabot_config_ventas($cargaVieja);
 caso('el texto viejo migra al nuevo en un bot-config.json existente',
     $cargaVieja['info']['carga'] === $cfg['info']['carga']);
 
-echo "— 3 pagos por transferencia, al lado de las cuotas de tarjeta —\n";
+echo "— 3 pagos por transferencia, sin mencionar tarjeta ni 12 cuotas salvo que pregunten —\n";
 
 foreach ([
     'landing'       => '$70.000',
@@ -2863,12 +2864,17 @@ foreach ([
     'elearning'     => '$110.000',
 ] as $tipo => $monto) {
     $texto = wabot_msg_precio_texto($tipo, $cfg);
-    caso("$tipo ofrece 3 pagos de $monto", strpos($texto, "en 3 pagos de $monto,") !== false);
-    caso("$tipo mantiene la mención a las 12 cuotas de tarjeta", strpos($texto, 'o con tarjeta hasta en 12 cuotas') !== false);
+    caso("$tipo ofrece 3 pagos de $monto", strpos($texto, "en 3 pagos de $monto.") !== false);
+    caso("$tipo no menciona tarjeta ni 12 cuotas en el precio automático",
+        stripos($texto, 'tarjeta') === false && stripos($texto, '12 cuotas') === false);
 }
 
 caso('catálogo no menciona 3 pagos: cotiza por cantidad, no tiene un total fijo',
     strpos($cfg['msg_precio_catalogo'], '3 pagos') === false);
+caso('catálogo tampoco menciona tarjeta ni 12 cuotas',
+    stripos($cfg['msg_precio_catalogo'], 'tarjeta') === false && stripos($cfg['msg_precio_catalogo'], '12 cuotas') === false);
+caso('pero sigue diciendo que se puede pagar por transferencia',
+    strpos($cfg['msg_precio_catalogo'], 'Se puede abonar por transferencia.') !== false);
 caso('y no tiene un pagos3 calculado en la config',
     !isset($cfg['tipos']['catalogo']['pagos3']));
 
@@ -2877,20 +2883,33 @@ $cfgSinTabla['tipos']['landing']['precio'] = '$275.000';
 wabot_config_ventas($cfgSinTabla);
 caso('un precio que no está en la tabla de 3 pagos no arma un monto inventado',
     !isset($cfgSinTabla['tipos']['landing']['pagos3']));
-caso('y el mensaje cae a la frase de siempre, sin un {pagos3} roto',
+caso('y el mensaje cae a "se puede abonar por transferencia" a secas, sin un {pagos3} roto ni mencionar tarjeta',
     strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), '{pagos3}') === false
-    && strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.') !== false);
+    && strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia.') !== false
+    && stripos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'tarjeta') === false);
 
-$vieja = wabot_config_load();
-$vieja['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
+$original = wabot_config_load();
+$original['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
 En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
-$vieja['msg_precio_variantes'] = ['Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
+$original['msg_precio_variantes'] = ['Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
 Acá podés ver todo lo que incluye y otros trabajos realizados: {link}'];
-wabot_config_ventas($vieja);
-caso('un bot-config.json de producción (sin la frase nueva) migra sola en msg_precio',
-    strpos($vieja['msg_precio'], 'en 3 pagos de {pagos3},') !== false);
-caso('y también en cada variante de msg_precio_variantes',
-    strpos($vieja['msg_precio_variantes'][0], 'en 3 pagos de {pagos3},') !== false);
+wabot_config_ventas($original);
+caso('un bot-config.json que nunca vio esta migración termina sin tarjeta, con 3 pagos',
+    strpos($original['msg_precio'], 'en 3 pagos de {pagos3}.') !== false
+    && stripos($original['msg_precio'], 'tarjeta') === false);
+caso('lo mismo en cada variante de msg_precio_variantes',
+    strpos($original['msg_precio_variantes'][0], 'en 3 pagos de {pagos3}.') !== false
+    && stripos($original['msg_precio_variantes'][0], 'tarjeta') === false);
+
+// Estado intermedio: el que ya había recibido la primera versión de 3 pagos
+// (la que todavía mencionaba "o con tarjeta hasta en 12 cuotas" al lado).
+$intermedio = wabot_config_load();
+$intermedio['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.
+En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
+wabot_config_ventas($intermedio);
+caso('y el que ya tenía la versión intermedia (con tarjeta) también termina sin ella',
+    strpos($intermedio['msg_precio'], 'en 3 pagos de {pagos3}.') !== false
+    && stripos($intermedio['msg_precio'], 'tarjeta') === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

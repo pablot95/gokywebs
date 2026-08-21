@@ -580,21 +580,46 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
     }
 
-    // Agrega la opción de 3 pagos por transferencia al lado de "hasta en 12
-    // cuotas" — solo en los mensajes de precio con un total fijo (catálogo no
-    // entra, cotiza por cantidad). {pagos3} lo resuelve wabot_msg_precio_texto()
-    // con el monto real de cada tipo; si no hay un monto definido para ese
-    // precio, la misma función saca la frase entera en vez de dejarla rota.
+    // Agrega la opción de 3 pagos por transferencia al mensaje de precio —
+    // solo en los que tienen un total fijo (catálogo no entra, cotiza por
+    // cantidad). {pagos3} lo resuelve wabot_msg_precio_texto() con el monto
+    // real de cada tipo; si no hay un monto definido para ese precio, la misma
+    // función saca la frase entera en vez de dejarla rota.
+    //
+    // "Hasta en 12 cuotas" NO va acá: el precio automático no menciona tarjeta,
+    // eso se contesta solo si el cliente pregunta cómo se paga (info.pago, que
+    // ya existe para eso). Dos pasadas porque hay configs en dos estados: las
+    // que nunca vieron esta migración (texto original, sin 3 pagos) y las que
+    // ya habían recibido una versión anterior que sí mencionaba la tarjeta acá.
     $conPagos3 = function ($texto) {
-        return str_replace(
+        $t = str_replace(
             'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
-            'Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.',
+            'Se puede abonar por transferencia en 3 pagos de {pagos3}.',
             (string)$texto
+        );
+        return str_replace(
+            'Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.',
+            'Se puede abonar por transferencia en 3 pagos de {pagos3}.',
+            $t
         );
     };
     if (!empty($cfg['msg_precio'])) $cfg['msg_precio'] = $conPagos3($cfg['msg_precio']);
     if (!empty($cfg['msg_precio_variantes']) && is_array($cfg['msg_precio_variantes'])) {
         $cfg['msg_precio_variantes'] = array_map($conPagos3, $cfg['msg_precio_variantes']);
+    }
+
+    // El catálogo no tiene 3 pagos (total variable): se le saca la mención a
+    // la tarjeta directamente, sin reemplazarla por nada.
+    $sinCuotasCatalogo = function ($texto) {
+        return str_replace(
+            'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
+            'Se puede abonar por transferencia.',
+            (string)$texto
+        );
+    };
+    if (!empty($cfg['msg_precio_catalogo'])) $cfg['msg_precio_catalogo'] = $sinCuotasCatalogo($cfg['msg_precio_catalogo']);
+    if (!empty($cfg['msg_precio_catalogo_variantes']) && is_array($cfg['msg_precio_catalogo_variantes'])) {
+        $cfg['msg_precio_catalogo_variantes'] = array_map($sinCuotasCatalogo, $cfg['msg_precio_catalogo_variantes']);
     }
 
     // En la parte 1 se lo nombra por el ROL ("el desarrollador"), nunca por el

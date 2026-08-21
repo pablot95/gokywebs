@@ -1757,8 +1757,9 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
         : (string)$cfg['msg_precio'];
     $pagos3 = trim((string)($t['pagos3'] ?? ''));
     // Sin un monto de 3 pagos definido para este precio, se saca la frase
-    // entera: mejor la oferta de siempre que un "{pagos3}" roto en el chat.
-    if ($pagos3 === '') $plantilla = str_replace(' en 3 pagos de {pagos3},', '', $plantilla);
+    // entera: mejor "se puede abonar por transferencia" a secas que un
+    // "{pagos3}" roto en el chat con un cliente real.
+    if ($pagos3 === '') $plantilla = str_replace(' en 3 pagos de {pagos3}', '', $plantilla);
     return str_replace(
         ['{desc}', '{precio}', '{link}', '{sena}', '{pagos3}'],
         [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? ''), $pagos3],
