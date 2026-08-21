@@ -844,6 +844,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
                         'nota' => 'No cierres por las tuyas: esperá a que avise que hizo la transferencia o el pago.'];
             }
             $conv['presentado_confirmado'] = true;
+            $conv['pago_avisado_ts'] = time();
             wabot_evento_sesion($conv, 'pago_avisado');
             wabot_handoff_marcar($conv, 'pago_explicito');
             return ['texto' => (string)($cfg['postdemo_pago_avisado'] ?? ''), 'terminal' => true];
@@ -1197,6 +1198,7 @@ EOT;
         $p .= "- Si te dice que la va a mirar y te contesta después, no lo empujes: contestá en UNA línea cordial, dejale la puerta abierta y cortá ahí. Nada de insistir ni de repetir el precio.\n";
         $p .= "- Si avisa que ya pagó o transfirió: confirmar_pago.\n";
         $p .= "- Si dice que no le gustó la demo, preguntá QUE puntualmente no le cerró y derivá: eso no lo resolvés vos.\n";
+        $p .= "- Si te pide algo que no entendés o que ninguna herramienta cubre (un cambio raro, una condición nueva, algo técnico), NO improvises ni des vueltas: preguntá UNA vez para entenderlo y, si sigue sin quedar claro, derivá. En el cierre, un bot dando vueltas cuesta la venta.\n";
         $p .= "- No insistas más de dos veces. Si después de la videollamada sigue sin decidir, cerrá cordial con cerrar_sin_presion.\n";
         if (!empty($conv['cuotas_ofrecidas'])) $p .= "- Las 3 cuotas sin interés YA se las ofreciste: no las repitas.\n";
         if (!empty($conv['videollamada_ofrecida'])) $p .= "- La videollamada YA se la ofreciste: no la repitas.\n";

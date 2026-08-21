@@ -2297,5 +2297,79 @@ caso('un chat larguísimo se recorta y conserva el final',
     mb_strlen(wabot_transcript_texto($cLargo)) <= 12100
     && strpos(wabot_transcript_texto($cLargo), 'charla recortada') !== false);
 
+echo "— Parte 2: si no entiende, deriva en vez de dar vueltas —\n";
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r1 = wabot_engine('che y aquello que hablamos como viene', $c, $cfg);
+caso('ante lo que no entiende, primero pregunta', $r1 === [$cfg['postdemo_apertura']] && $c['fase'] === 'postdemo');
+clasifica(['otro']);
+$r2 = wabot_engine('pero lo otro, lo que te comente antes', $c, $cfg);
+caso('y a la segunda lo pasa a Pablo, no sigue dando vueltas',
+    $r2 === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
+
+echo "— El recordatorio no vuelve a mandar el link de la demo —\n";
+
+caso('el recordatorio de las 20 h ya no lleva {demo}',
+    strpos((string)$cfg['presentados_recordatorio'], '{demo}') === false);
+caso('pero sigue preguntando qué le pareció',
+    stripos((string)$cfg['presentados_recordatorio'], 'qué te pareció') !== false);
+$cRec = ['presentado_slug' => 'demoana', 'nombre' => 'Ana'];
+caso('y el texto armado no tiene ningún link de demo',
+    strpos(wabot_presentado_recordatorio_texto($cRec, $cfg), 'gokywebs.com/demo') === false);
+
+echo "— Pestaña \"Pagó\" —\n";
+
+$cPago = ['pago_avisado_ts' => time(), 'presentado_ts' => time() - 7200, 'presentado_confirmado' => true,
+          'transcript' => [['q' => 'cliente', 't' => 'ya te transferi', 'ts' => time()]]];
+caso('el que avisó que pagó tiene su propia columna', wabot_conv_grupo($cPago) === 'pago');
+caso('y gana sobre Presentados', wabot_conv_grupo($cPago) !== 'presentados');
+
+$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
+clasifica(['otro']);
+$r = wabot_engine('listo, ya te transferi la seña', $c, $cfg);
+caso('avisar el pago deja la marca de tiempo', (int)$c['pago_avisado_ts'] > 0);
+caso('y la conversación cae en la columna Pagó', wabot_conv_grupo($c) === 'pago');
+
+echo "— Interesados: vio el precio y no pidió la demo —\n";
+
+$cInt = ['precio_dado' => true, 'fase' => 'precio', 'tipo' => 'landing',
+         'transcript' => [['q' => 'bot', 't' => 'te paso el precio', 'ts' => time()]]];
+caso('el que vio el precio y no cerró es un interesado', wabot_conv_grupo($cInt) === 'interesado');
+$cCerro = $cInt; $cCerro['lead_creado'] = true;
+caso('el que ya pidió la demo NO es interesado: es una demo pedida', wabot_conv_grupo($cCerro) !== 'interesado');
+$cNo = $cInt; $cNo['cierre'] = 'sin_interes';
+caso('el que dijo que no tampoco', wabot_conv_grupo($cNo) !== 'interesado');
+$cSinPrecio = ['fase' => 'menu', 'transcript' => [['q' => 'bot', 't' => 'contame', 'ts' => time()]]];
+caso('el que ni vio el precio sigue en Chats', wabot_conv_grupo($cSinPrecio) === 'chat');
+
+echo "— Última llamada a las 23 h, antes de que cierre la ventana —\n";
+
+$ahoraU = time();
+$cfgU = $cfg; $cfgU['ultima_llamada_activa'] = true;
+$baseU = ['precio_dado' => true, 'fase' => 'precio', 'tipo' => 'landing', 'bot_off' => false,
+          'archivado' => false, 'pausado_hasta' => 0, 'seguimiento_bloqueado' => false,
+          'ultima_llamada_enviada' => false, 'ultimo_cliente_ts' => $ahoraU - 23.2 * 3600,
+          'transcript' => [['q' => 'bot', 't' => 'te paso el precio', 'ts' => $ahoraU - 23 * 3600]]];
+caso('a las 23.2 h corresponde el último aviso', wabot_ultima_llamada_corresponde($baseU, $cfgU, $ahoraU) === true);
+$temprano = $baseU; $temprano['ultimo_cliente_ts'] = $ahoraU - 10 * 3600;
+caso('a las 10 h todavía no', wabot_ultima_llamada_corresponde($temprano, $cfgU, $ahoraU) === false);
+$tarde = $baseU; $tarde['ultimo_cliente_ts'] = $ahoraU - 25 * 3600;
+caso('a las 25 h ya cerró la ventana de Meta y no se manda',
+    wabot_ultima_llamada_corresponde($tarde, $cfgU, $ahoraU) === false);
+$yaCerro = $baseU; $yaCerro['lead_creado'] = true;
+caso('al que ya pidió la demo no se le manda', wabot_ultima_llamada_corresponde($yaCerro, $cfgU, $ahoraU) === false);
+$contesto = $baseU;
+$contesto['transcript'][] = ['q' => 'cliente', 't' => 'lo veo y te digo', 'ts' => $ahoraU - 100];
+caso('si el cliente escribió último, la charla está viva y no corresponde',
+    wabot_ultima_llamada_corresponde($contesto, $cfgU, $ahoraU) === false);
+$repetido = $baseU; $repetido['ultima_llamada_enviada'] = true;
+caso('no se manda dos veces', wabot_ultima_llamada_corresponde($repetido, $cfgU, $ahoraU) === false);
+$cerrado = $baseU; $cerrado['seguimiento_bloqueado'] = true;
+caso('ni a quien pidió que no le escriban', wabot_ultima_llamada_corresponde($cerrado, $cfgU, $ahoraU) === false);
+caso('el texto no repite el precio ni presiona',
+    strpos((string)$cfg['ultima_llamada'], '$') === false
+    && stripos((string)$cfg['ultima_llamada'], 'demo') !== false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

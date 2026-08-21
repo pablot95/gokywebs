@@ -32,12 +32,18 @@ $cfg = wabot_config_load();
 $res = wabot_seguimiento_correr($cfg);
 $aviso = wabot_muestra_aviso_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
+$ultima = wabot_ultima_llamada_correr($cfg);
 
 echo json_encode([
     'revisadas' => $res['revisadas'],
     'enviados'  => $res['enviados'],
     'fallidos'  => $res['fallidos'],
     'detalle'   => $res['detalle'],
+    'ultima_llamada' => [
+        'revisadas' => $ultima['revisadas'],
+        'enviados'  => $ultima['enviados'],
+        'detalle'   => $ultima['detalle'],
+    ],
     'muestra_aviso' => [
         'revisadas' => $aviso['revisadas'],
         'enviados'  => $aviso['enviados'],

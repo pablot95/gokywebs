@@ -761,6 +761,11 @@ body.conv-full #respEstado { margin-top:4px; }
 .conv-item-punto { width:8px; height:8px; border-radius:50%; background:#4f8cff; flex-shrink:0; box-shadow:0 0 0 3px rgba(79,140,255,.18); }
 .conv-sub-header { padding:9px 13px 5px; font-size:11px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; color:var(--dim); background:var(--bg); position:sticky; top:0; z-index:1; }
 /* Los que se enfriaron: la ventana de Meta ya cerró y hay que ir a buscarlos. */
+.conv-nav-btn[data-grupo="pago"] .conv-cuenta { background:#0f3320; color:var(--ac); }
+.conv-nav-btn[data-grupo="pago"].tiene { border-color:var(--ac); color:var(--ac); }
+.conv-nav-btn[data-grupo="pago"].on { border-color:var(--ac); color:#8ff0b5; }
+.conv-list[data-grupo="pago"] .conv-list-head { color:var(--ac); }
+.conv-item.pago-avisado { border-left-color:var(--ac); background:#132a1e; }
 .conv-nav-btn[data-grupo="presentadas_48"] .conv-cuenta { background:#3a1f10; color:#f0a020; }
 .conv-nav-btn[data-grupo="presentadas_48"].tiene { border-color:var(--warn); color:var(--warn); }
 .conv-nav-btn[data-grupo="presentadas_48"].on { border-color:var(--warn); color:#ffcd7a; }
@@ -1417,6 +1422,8 @@ body.embed { min-height: 0; }
 
             <nav class="conv-nav">
                 <button type="button" class="conv-nav-btn" data-grupo="no_leidos">No leídos <span class="conv-cuenta" id="cuentaNoLeidos">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="pago">Pagó <span class="conv-cuenta" id="cuentaPago">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="interesado">Interesados <span class="conv-cuenta" id="cuentaInteresado">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="chat">Chats <span class="conv-cuenta" id="cuentaChat">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentados">Presentados <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
@@ -1524,6 +1531,8 @@ body.embed { min-height: 0; }
         // aunque nunca hayas abierto esa respuesta.
         const GRUPOS = {
             no_leidos:  { titulo: 'No leídos',   cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Nada sin leer.', vista: true },
+            pago:       { titulo: 'Pagó',        cuenta: document.getElementById('cuentaPago'),        vacio: 'Nadie avisó todavía que pagó.' },
+            interesado: { titulo: 'Interesados', cuenta: document.getElementById('cuentaInteresado'),  vacio: 'Nadie con precio dado esperando decidir.' },
             chat:       { titulo: 'Chats',       cuenta: document.getElementById('cuentaChat'),       vacio: 'Ninguna charla abierta.' },
             muestra:    { titulo: 'Demos',       cuenta: document.getElementById('cuentaMuestra'),    vacio: 'Ninguna demo pedida.' },
             presentados:{ titulo: 'Presentados', cuenta: document.getElementById('cuentaPresentados'),vacio: 'Ninguna demo presentada esperando confirmación.' },
@@ -1539,6 +1548,7 @@ body.embed { min-height: 0; }
         // Subdivisión de "No leídos": Presentadas y Demos son las columnas que ya
         // existen; todo lo demás (chat normal o "te espera") cae en Chats normales.
         const SUBGRUPOS_NO_LEIDOS = [
+            { clave: 'pago',        titulo: 'Pagaron' },
             { clave: 'presentados', titulo: 'Presentadas' },
             { clave: 'muestra',     titulo: 'Demos' },
             { clave: 'chat',        titulo: 'Chats normales' },
@@ -1547,6 +1557,7 @@ body.embed { min-height: 0; }
             const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
             if (grupo === 'presentados' || grupo === 'presentadas_48') return 'presentados';
             if (grupo === 'muestra') return 'muestra';
+            if (grupo === 'pago') return 'pago';
             return 'chat';
         }
         const listaEl   = document.getElementById('listaItems');
@@ -1703,7 +1714,7 @@ body.embed { min-height: 0; }
             firmaLista = firma;
 
             listaEl.innerHTML = '';
-            const cuentas = { no_leidos: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, atencion: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, atencion: 0, archivado: 0 };
             // Demos y Presentados muestran cuántos chats tienen algo sin leer,
             // no el total de la cola — para eso ya está la lista abierta.
             const cuentasNoLeidos = { muestra: 0, presentados: 0 };
@@ -1721,7 +1732,7 @@ body.embed { min-height: 0; }
                 visibles++;
 
                 const a = document.createElement('a');
-                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (it.no_leido ? ' sin-leer' : '');
+                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (it.no_leido ? ' sin-leer' : '') + (it.grupo === 'pago' ? ' pago-avisado' : '');
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
 
                 if (it.foto) {

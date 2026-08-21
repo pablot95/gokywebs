@@ -563,6 +563,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
         case 'postdemo':
             if (wabot_dice_que_pago($texto)) {
                 $conv['presentado_confirmado'] = true;
+                $conv['pago_avisado_ts'] = time();
                 return array_merge([(string)$cfg['postdemo_pago_avisado']], wabot_derivar($conv, $cfg, 'pago_explicito'));
             }
             if (wabot_prefiere_tarjeta($texto)) {
@@ -1020,6 +1021,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             // Parte 2: se cierra la venta. No se recotiza ni se reabre nada.
             if (wabot_dice_que_pago($texto)) {
                 $conv['presentado_confirmado'] = true;
+                $conv['pago_avisado_ts'] = time();
                 wabot_evento_sesion($conv, 'pago_avisado');
                 $out[] = (string)$cfg['postdemo_pago_avisado'];
                 return array_merge($out, wabot_derivar($conv, $cfg, 'pago_explicito'));
@@ -1055,6 +1057,16 @@ function wabot_engine($texto, &$conv, $cfg) {
                 wabot_evento_sesion($conv, 'videollamada_ofrecida');
                 $out[] = (string)$cfg['postdemo_videollamada'];
                 break;
+            }
+            // Salvaguarda: en el cierre no se puede quedar dando vueltas. Pregunta
+            // UNA vez y, si el segundo mensaje sigue sin entenderse, lo pasa a
+            // Pablo — que es quien puede resolver un pedido raro a esta altura.
+            // Contador propio y no wabot_handoff_ambiguedad() porque esa escala
+            // recién al tercer mensaje, y acá eso ya es un bot dando vueltas.
+            $conv['postdemo_sin_entender'] = (int)($conv['postdemo_sin_entender'] ?? 0) + 1;
+            if ((int)$conv['postdemo_sin_entender'] >= 2) {
+                $conv['postdemo_sin_entender'] = 0;
+                return array_merge($out, wabot_derivar($conv, $cfg, 'ambiguedad'));
             }
             $out[] = (string)$cfg['postdemo_apertura'];
             break;
