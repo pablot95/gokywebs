@@ -819,5 +819,14 @@ caso('el playbook incluye hechos de sesión, typos y cierres sin presión',
     && strpos($promptReal, 'que me re ofendas') !== false
     && strpos($promptReal, 'cerrar_sin_presion') !== false);
 
+caso('el playbook exige mensajes simples: sin pitch inicial, precio sin preámbulo y sin insistir ante un "mañana lo veo"',
+    strpos($promptReal, 'el cliente ya vio el anuncio') !== false
+    && strpos($promptReal, 'sin preámbulo') !== false
+    && strpos($promptReal, 'no aproveches para pedirle datos') !== false
+    && strpos($promptReal, 'frase tuya, antes del texto de dar_precio') === false);
+
+caso('el playbook manda "cuánto sale" a precio, nunca a formas de pago',
+    strpos($promptReal, 'NUNCA con las formas de pago') !== false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
