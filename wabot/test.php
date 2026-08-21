@@ -2514,5 +2514,86 @@ foreach ([
         $cMigrar['muestra_aviso'] === $cfg['muestra_aviso']);
 }
 
+echo "— El logo que manda el cliente se suma al boceto —\n";
+
+$img = function ($archivo, $texto) {
+    return ['q' => 'cliente', 't' => $texto, 'ts' => time(),
+            'media' => ['clase' => 'imagen', 'archivo' => $archivo]];
+};
+
+caso('sin fotos no hay logo', wabot_logo_cliente(['transcript' => []]) === null);
+
+$soloUna = ['transcript' => [$img('20260821-101500-aaaaaaaa.jpg', '[foto] un local de ropa')]];
+caso('si mandó una sola foto, esa es el logo', wabot_logo_cliente($soloUna) === '20260821-101500-aaaaaaaa.jpg');
+
+$variasFotos = ['transcript' => [
+    $img('20260821-101500-aaaaaaaa.jpg', '[foto] la vidriera del local'),
+    $img('20260821-101600-bbbbbbbb.png', '[foto] te paso el logo de la marca'),
+    $img('20260821-101700-cccccccc.jpg', '[foto] otra foto del local'),
+]];
+caso('con varias fotos gana la que el cliente llamó "logo", no la última',
+    wabot_logo_cliente($variasFotos) === '20260821-101600-bbbbbbbb.png');
+
+$dosLogos = ['transcript' => [
+    $img('20260821-101500-aaaaaaaa.png', '[foto] este es el logo'),
+    $img('20260821-101600-bbbbbbbb.png', '[foto] mejor este logo, el otro está viejo'),
+]];
+caso('si mandó dos logos, vale el último', wabot_logo_cliente($dosLogos) === '20260821-101600-bbbbbbbb.png');
+
+// "catálogo" contiene "logo" como substring: no puede contar como logo.
+$catalogo = ['transcript' => [
+    $img('20260821-101500-aaaaaaaa.jpg', '[foto] la primera foto'),
+    $img('20260821-101600-bbbbbbbb.jpg', '[foto] una hoja del catalogo impreso'),
+]];
+caso('"catálogo" no se confunde con "logo"', wabot_logo_cliente($catalogo) === '20260821-101600-bbbbbbbb.jpg');
+
+$soloBot = ['transcript' => [
+    ['q' => 'bot', 't' => 'te paso el logo nuestro', 'ts' => time(),
+     'media' => ['clase' => 'imagen', 'archivo' => '20260821-101500-aaaaaaaa.png']],
+]];
+caso('una imagen del bot no es el logo del cliente', wabot_logo_cliente($soloBot) === null);
+
+caso('la url del logo pega contra el panel, que pide sesión',
+    strpos(wabot_logo_url('5491122334455', '20260821-101500-aaaaaaaa.png'), 'wabot/admin.php?accion=media') !== false);
+
+$convLogo = conv_nueva();
+$convLogo['tipo'] = 'landing';
+$convLogo['nombre_negocio'] = 'Mate Sur';
+$convLogo['colores'] = 'verde y marrón';
+$convLogo['transcript'] = [$img('20260821-101600-bbbbbbbb.png', '[foto] te paso el logo')];
+$camposLogo = wabot_lead_campos($convLogo, $cfg);
+caso('el boceto viaja con el logo del cliente',
+    strpos((string)$camposLogo['logoUrl']['stringValue'], '20260821-101600-bbbbbbbb.png') !== false);
+caso('y con un nombre de archivo que conserva la extensión',
+    $camposLogo['logoNombre']['stringValue'] === 'logo.png');
+
+$sinLogo = conv_nueva();
+$sinLogo['tipo'] = 'landing';
+$sinLogo['nombre_negocio'] = 'Mate Sur';
+$camposSinLogo = wabot_lead_campos($sinLogo, $cfg);
+caso('sin foto, el boceto va con el logo vacío y no rompe',
+    $camposSinLogo['logoUrl']['stringValue'] === '' && $camposSinLogo['logoNombre']['stringValue'] === '');
+
+// El caso que importa: el logo llega DESPUÉS de creado el boceto.
+$tarde = conv_nueva();
+$tarde['tel'] = 'TESTLOGO';
+$tarde['lead_creado'] = true;
+$tarde['lead_doc'] = 'projects/x/databases/(default)/documents/propuestas/ABC123';
+$tarde['logo_sincronizado'] = null;
+caso('sin foto todavía, no hay nada que sincronizar', wabot_logo_sincronizar($tarde) === false);
+
+$tarde['transcript'] = [$img('20260821-120000-dddddddd.png', '[foto] te paso el logo')];
+caso('llega el logo tarde y se completa el boceto ya creado', wabot_logo_sincronizar($tarde) === true);
+caso('queda anotado cuál se mandó', $tarde['logo_sincronizado'] === '20260821-120000-dddddddd.png');
+caso('no se vuelve a mandar el mismo dos veces', wabot_logo_sincronizar($tarde) === false);
+
+$tarde['transcript'][] = $img('20260821-130000-eeeeeeee.png', '[foto] perdón, este es el logo bueno');
+caso('pero si manda otro logo, se actualiza de nuevo', wabot_logo_sincronizar($tarde) === true);
+
+$sinBoceto = conv_nueva();
+$sinBoceto['tel'] = 'TESTLOGO';
+$sinBoceto['transcript'] = [$img('20260821-120000-dddddddd.png', '[foto] te paso el logo')];
+caso('sin boceto creado no se sincroniza nada', wabot_logo_sincronizar($sinBoceto) === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

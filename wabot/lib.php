@@ -1061,6 +1061,10 @@ function wabot_conv_load($clave) {
         'bot_off'          => false,
         'pausado_hasta'    => 0,
         'lead_creado'      => false,
+        // Documento del boceto en Firestore y qué imagen ya se le mandó como
+        // logo: permiten completarlo si el cliente lo pasa después.
+        'lead_doc'         => null,
+        'logo_sincronizado'=> null,
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         'aclaraciones_fallidas' => 0,
@@ -1162,6 +1166,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['espera_avisada'] = false;
     $conv['no_texto_avisado'] = false;
     $conv['lead_creado'] = false;
+    $conv['lead_doc'] = null;
+    $conv['logo_sincronizado'] = null;
     $conv['sistema_lead_creado'] = false;
     $conv['lead_recibido_evento'] = false;
     $conv['handoff_pendiente'] = false;
@@ -1292,6 +1298,30 @@ function wabot_ultima_foto_cliente($cv) {
         }
     }
     return null;
+}
+
+/**
+ * Qué foto del cliente usar como logo del boceto: la última que mandó con
+ * "logo" en el texto o el pie de foto, o si nunca lo aclaró, la última foto
+ * que mandó en toda la charla (nadie manda referencias de diseño después
+ * de haber dado por cerrado el prediseño).
+ */
+function wabot_logo_cliente($cv) {
+    $ultimaImagen = null;
+    $ultimaConLogo = null;
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        $archivo = $fila['media']['archivo'] ?? null;
+        if (($fila['media']['clase'] ?? '') !== 'imagen' || !$archivo) continue;
+        $ultimaImagen = $archivo;
+        if (preg_match('/\blogo\b/iu', (string)($fila['t'] ?? ''))) $ultimaConLogo = $archivo;
+    }
+    return $ultimaConLogo ?? $ultimaImagen;
+}
+
+/** URL protegida (requiere sesión del panel) para bajar una imagen que mandó el cliente. */
+function wabot_logo_url($clave, $archivo) {
+    return 'https://gokywebs.com/wabot/admin.php?accion=media&tel=' . urlencode($clave) . '&archivo=' . urlencode($archivo);
 }
 
 /**
@@ -3195,6 +3225,10 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $cotizado  = wabot_lead_cotizado($conv, $cfg);
     $objetivo  = wabot_lead_objetivo($objetivo, $conv, $cfg);
 
+    $archivoLogo = wabot_logo_cliente($conv);
+    $logoUrl = $archivoLogo !== null ? wabot_logo_url(wabot_conversation_key($conv), $archivoLogo) : '';
+    $logoNombre = $archivoLogo !== null ? ('logo.' . strtolower(pathinfo($archivoLogo, PATHINFO_EXTENSION))) : '';
+
     $telefono = wabot_canal($conv) === 'instagram'
         ? (string)($conv['telefono_wsp'] ?? '')
         : wabot_channel_user_id($conv);
@@ -3228,6 +3262,11 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'tipoDetectadoLabel' => ['stringValue' => $label],
         'productos_cantidad' => ['integerValue' => (string)$productos],
         'imagenes_recibidas' => ['integerValue' => (string)((int)($conv['imagenes_recibidas'] ?? 0))],
+        // Mismos nombres que usa el formulario web, así el botón "Descargar
+        // logo" del boceto funciona igual venga de donde venga. Apunta al
+        // panel del bot, que pide sesión antes de servir el archivo.
+        'logoUrl'            => ['stringValue' => $logoUrl],
+        'logoNombre'         => ['stringValue' => $logoNombre],
         'presupuesto_cotizado' => ['stringValue' => $cotizado],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],
@@ -3299,7 +3338,61 @@ function wabot_firestore_lead(&$conv, $cfg) {
         wabot_log('error', ['donde' => 'firestore', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
         return false;
     }
+    // El id del documento queda guardado: es lo único que permite completarlo
+    // después, cuando el cliente manda el logo con el boceto ya creado.
+    $nombreDoc = json_decode((string)$res, true)['name'] ?? '';
+    if ($nombreDoc !== '') $conv['lead_doc'] = $nombreDoc;
+    $conv['logo_sincronizado'] = wabot_logo_cliente($conv);
+
     wabot_log('lead', ['clave' => wabot_conversation_key($conv), 'tipo' => (string)($conv['tipo'] ?? '')]);
     wabot_evento($conv, $esSistema ? 'sistema_calificado' : 'muestra_aceptada');
+    return true;
+}
+
+/**
+ * El cliente mandó el logo DESPUÉS de que se creara el boceto: se completa el
+ * documento que ya existe en vez de perderlo. No hace nada si no hay boceto,
+ * si no mandó ninguna imagen, o si esa imagen ya se había sincronizado.
+ */
+function wabot_logo_sincronizar(&$conv) {
+    if (empty($conv['lead_creado'])) return false;
+
+    $archivo = wabot_logo_cliente($conv);
+    if ($archivo === null || $archivo === ($conv['logo_sincronizado'] ?? null)) return false;
+
+    $doc = trim((string)($conv['lead_doc'] ?? ''));
+    if ($doc === '') return false;
+
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+        $conv['logo_sincronizado'] = $archivo;
+        return true;
+    }
+
+    $campos = [
+        'logoUrl'    => ['stringValue' => wabot_logo_url(wabot_conversation_key($conv), $archivo)],
+        'logoNombre' => ['stringValue' => 'logo.' . strtolower(pathinfo($archivo, PATHINFO_EXTENSION))],
+        'updatedAt'  => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+    ];
+    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=logoUrl&updateMask.fieldPaths=logoNombre&updateMask.fieldPaths=updatedAt';
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => $campos], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        wabot_log('error', ['donde' => 'firestore_logo', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        return false;
+    }
+    $conv['logo_sincronizado'] = $archivo;
+    wabot_log('logo_agregado', ['clave' => wabot_conversation_key($conv), 'archivo' => $archivo]);
     return true;
 }

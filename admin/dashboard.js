@@ -1009,7 +1009,10 @@ async function fetchProtectedFile(filePath, nombre) {
         headers: { 'Authorization': 'Bearer ' + idToken }
     });
     if (!res.ok) throw new Error('No se pudo descargar el archivo');
-    const blob = await res.blob();
+    guardarBlobComoArchivo(await res.blob(), nombre);
+}
+
+function guardarBlobComoArchivo(blob, nombre) {
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = blobUrl;
@@ -1023,6 +1026,15 @@ async function fetchProtectedFile(filePath, nombre) {
 async function downloadLogo(url, nombre) {
     try {
         const u = new URL(url);
+        // El logo que mandó el cliente por WhatsApp lo sirve el panel del bot,
+        // que se protege con su propia sesión en vez del token de Firebase.
+        if (u.pathname.includes('/wabot/admin.php')) {
+            await wabotAuthHandshake();
+            const res = await fetch('../wabot/admin.php' + u.search, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('El panel del bot no devolvió el archivo');
+            guardarBlobComoArchivo(await res.blob(), nombre);
+            return;
+        }
         const filePath = u.pathname.replace(/^\//, '');
         await fetchProtectedFile(filePath, nombre);
     } catch (err) {

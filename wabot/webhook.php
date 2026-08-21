@@ -184,6 +184,7 @@ function wabot_procesar_entrante($ev, $cfg) {
                 if (!empty($item['n'])) $conv['nombre'] = $item['n'];
             }
             $conv['ultimo_cliente_ts'] = time();   // reabre la ventana de 24 h
+            wabot_logo_sincronizar($conv);
             if ($primerContacto) {
                 $conv['lead_recibido_evento'] = true;
                 wabot_evento($conv, 'lead_recibido');
@@ -274,6 +275,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         if (!empty($item['n'])) $conv['nombre'] = $item['n'];
     }
     $conv['ultimo_cliente_ts'] = time();
+    wabot_logo_sincronizar($conv);
     $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
     if (!$activo || !$usables) {
         wabot_conv_save($conv);
