@@ -1,0 +1,10 @@
+[
+  { "file": "hero-inspeccion-1920x1080.webp", "origin": "Pexels", "id": "8961034", "url": "https://www.pexels.com/photo/8961034/", "use": "hero" },
+  { "file": "nosotros-evaluacion-equipo-1600x1300.webp", "origin": "Pexels", "id": "5324937", "url": "https://www.pexels.com/photo/5324937/", "use": "nosotros" },
+  { "file": "servicio-higiene-laboral-1600x1300.webp", "origin": "Pexels", "id": "31336007", "url": "https://www.pexels.com/photo/31336007/", "use": "servicios — seguridad e higiene laboral" },
+  { "file": "servicio-seguridad-obras-1600x1300.webp", "origin": "Pexels", "id": "28196526", "url": "https://www.pexels.com/photo/28196526/", "use": "servicios — seguridad en obras" },
+  { "file": "servicio-evaluacion-riesgo-1600x1300.webp", "origin": "Pexels", "id": "8654753", "url": "https://www.pexels.com/photo/8654753/", "use": "servicios — evaluaciones de riesgo" },
+  { "file": "servicio-capacitaciones-1600x1300.webp", "origin": "Pexels", "id": "8961260", "url": "https://www.pexels.com/photo/8961260/", "use": "servicios — capacitaciones" },
+  { "file": "servicio-emergencias-1600x1300.webp", "origin": "Pexels", "id": "4805958", "url": "https://www.pexels.com/photo/4805958/", "use": "servicios — planes de emergencia" },
+  { "file": "cierre-planta-industrial-1920x1080.webp", "origin": "Pexels", "id": "10490664", "url": "https://www.pexels.com/photo/10490664/", "use": "cierre / momento firma (Inicio)" }
+]
