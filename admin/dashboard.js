@@ -2015,6 +2015,15 @@ async function savePropuestaTipoWeb(input) {
    cambia en los dos lugares a la vez. Sin Timestamp (bocetos viejos, de antes
    de que existiera createdAt) se agrupa por el texto crudo de `fecha`, y sin
    ningún dato de fecha van todos juntos bajo "Sin fecha". */
+// Los bocetos viejos que llegaron sin createdAt como Timestamp de Firestore
+// igual guardan la hora adentro del string `fecha` ("18/8/2026, 09:05:00"),
+// que es lo que ya se ve en el modal. Se rescata de ahí en vez de mostrarlos
+// sin hora cuando el dato está ahí nomás, escrito distinto.
+function horaDeFechaTexto(fecha) {
+    const m = /,\s*(\d{1,2}):(\d{2})/.exec(fecha || "");
+    return m ? m[1].padStart(2, "0") + ":" + m[2] : "";
+}
+
 function getPropuestaFechaInfo(p) {
     if (p.createdAt?.toDate) {
         const d = p.createdAt.toDate();
@@ -2028,7 +2037,7 @@ function getPropuestaFechaInfo(p) {
             sortMs: d.getTime(),
         };
     }
-    if (p.fecha) return { key: p.fecha, hora: "", sortMs: -Infinity };
+    if (p.fecha) return { key: p.fecha, hora: horaDeFechaTexto(p.fecha), sortMs: -Infinity };
     return { key: "Sin fecha", hora: "", sortMs: -Infinity };
 }
 
