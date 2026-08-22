@@ -79,7 +79,7 @@ function wabot_config_load() {
 
     if (!isset($cfg['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = 2;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
-        $cfg['espera_prediseno'] = 'Listo, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas. Recordá que es solo una demo, luego se adapta a lo que vos necesites. Te la mandamos por acá mismo apenas esté lista.';
+        $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.';
     }
     if (!isset($cfg['demora_por_longitud']))   $cfg['demora_por_longitud']   = true;
     if (!isset($cfg['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = 16;
@@ -237,7 +237,11 @@ function wabot_config_ventas(&$cfg) {
         // Sin el link: ya se lo mandamos al presentar la demo, y repetirlo suena
         // a que el bot no se acuerda de lo que ya hizo.
         'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-        'muestra_aviso' => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
+        // Este mensaje existe para que el cliente CONTESTE: su respuesta es lo
+        // único que reabre la ventana de 24 h de Meta y permite mandarle la
+        // demo después. Por eso termina en una pregunta binaria, que es la de
+        // menor fricción, y encima sirve para diseñar.
+        'muestra_aviso' => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
@@ -347,9 +351,20 @@ function wabot_config_ventas(&$cfg) {
             'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la muestra cuando esté lista.'
                 => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
         ],
+        // "24 a 48 horas" es vago y encima juega en contra: cuanto más lejos se
+        // promete, más chance de que la ventana de Meta cierre antes de poder
+        // mandar la demo. {entrega} lo reemplaza por "hoy" o "mañana" según la
+        // hora en que cerró (ver wabot_dia_entrega).
+        // Este es EL mensaje que cierra la recolección, así que es el que tiene
+        // que dejar la pregunta abierta: wabot_texto_espera() solo dispara si
+        // el cliente ya volvió a escribir, y ahí la pregunta llega tarde.
         'prediseno_completo' => [
             'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.'
-                => 'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.',
+                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
+            'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.'
+                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
+            'Listo {nombre}, con eso ya lo preparamos. Te mandamos la demo por acá mismo {entrega}.'
+                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
         ],
         'pensarlo' => [
             'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la muestra gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?'
@@ -418,9 +433,11 @@ function wabot_config_ventas(&$cfg) {
             // antes: ninguno de los dos debe sobrevivir, "más tarde" porque promete
             // un horario que el prediseño no siempre cumple.
             'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.'
-                => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
+                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
             'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.'
-                => 'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.',
+                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
+            'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.'
+                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
@@ -467,6 +484,12 @@ function wabot_config_ventas(&$cfg) {
         'pixel' => [
             'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas.'
                 => 'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas. Google Analytics y Search Console te los podemos vincular nosotros.',
+        ],
+        // La primera versión podía leerse como que trabajamos sobre la web que
+        // ya tiene, y no es así (ver info.tecnologia).
+        'ya_tiene_plataforma' => [
+            'No necesariamente tenés que reemplazarla. Contame qué te gustaría mejorar de la que tenés y vemos si te conviene rehacerla, o si con lo que ya tenés alcanza. Si querés pasame el link y la reviso.'
+                => 'Pasame el link y la reviso, y te digo con franqueza si te conviene una nueva o si con la que tenés ya estás bien. Aclaro una cosa para que no haya confusión: nosotros no trabajamos sobre webs ya hechas, hacemos una nueva a medida. Así que solo tendría sentido si la actual te está quedando corta.',
         ],
         // La carga inicial del ecommerce: Pablo la aclaró en el chat real de
         // Bruana Indumentaria (21-ago) y no estaba en ningún lado. Solo
@@ -518,7 +541,10 @@ function wabot_config_ventas(&$cfg) {
         // Ya tiene otra web (WordPress, Tiendanube, la que le hizo un conocido).
         // No se le dice que la tire: se ofrece revisarla. Genera más confianza
         // que empujar el reemplazo y evita prometer sobre algo que no vimos.
-        'ya_tiene_plataforma' => 'No necesariamente tenés que reemplazarla. Contame qué te gustaría mejorar de la que tenés y vemos si te conviene rehacerla, o si con lo que ya tenés alcanza. Si querés pasame el link y la reviso.',
+        // No se empuja el reemplazo, pero tampoco se promete trabajar sobre la
+        // web que ya tiene: nosotros hacemos una a medida desde cero (ver
+        // info.tecnologia, que dice justamente eso).
+        'ya_tiene_plataforma' => 'Pasame el link y la reviso, y te digo con franqueza si te conviene una nueva o si con la que tenés ya estás bien. Aclaro una cosa para que no haya confusión: nosotros no trabajamos sobre webs ya hechas, hacemos una nueva a medida. Así que solo tendría sentido si la actual te está quedando corta.',
 
         /* Bajan la ansiedad del que nunca tuvo una web: ninguna de estas exige
          * que el cliente tenga algo listo antes de empezar. */
@@ -721,11 +747,18 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
             'El equipo ya tiene tu consulta y te escribe en un rato por acá.'
                 => 'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.',
         ],
+        // Los tres cierres viejos eran afirmaciones: no dejaban nada que
+        // contestar y la charla se enfriaba justo cuando más falta hace que
+        // siga viva (hay que poder mandarle la demo dentro de las 24 h de Meta).
         'espera_prediseno' => [
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma Pablo cuando te escriba.'
-                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.',
+                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirman cuando te escriban.'
-                => 'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.',
+                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+            'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.'
+                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+            'Listo, ya quedó todo anotado. Una sola cosa más mientras la preparamos: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.'
+                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
         ],
         'sistema_whatsapp' => [
             'Última cosa: pasame tu número de WhatsApp así Pablo te envía por ahí la propuesta del sistema.'
@@ -845,6 +878,11 @@ function wabot_primer_nombre($conv) {
 }
 
 function wabot_personalizar($texto, $conv) {
+    // {entrega} = "hoy" o "mañana" según la hora en que se cerró el prediseño.
+    if (strpos($texto, '{entrega}') !== false) {
+        $cuando = wabot_dia_entrega(time());
+        $texto = str_replace('{entrega}', $cuando['palabra'], $texto);
+    }
     if (strpos($texto, '{nombre}') === false) return $texto;
     $primero = wabot_primer_nombre($conv);
     if ($primero !== '') {
@@ -3025,6 +3063,35 @@ function wabot_seguimiento_hora_ok($cfg, $ahora) {
     $hasta = max(0, min(24, (int)($cfg['seguimiento_hora_hasta'] ?? 20)));
     $hora  = wabot_hora_local($ahora);
     return $hora >= $desde && $hora < $hasta;
+}
+
+/**
+ * Cuándo se entrega la demo, en las palabras del cliente.
+ *
+ * El día del cliente no arranca a las 00:00 sino cuando se despierta: el que
+ * cierra a las 2 AM sigue mentalmente en el día anterior, y para él "mañana"
+ * es la fecha de calendario que ya empezó. Por eso el corte va a las 3 AM.
+ *
+ *   03:00 a 10:59  → se entrega HOY (misma fecha)
+ *   11:00 a 23:59  → MAÑANA (fecha siguiente)
+ *   00:00 a 02:59  → MAÑANA para él, que es la misma fecha de calendario
+ *
+ * Devuelve ['palabra' => 'hoy'|'mañana', 'fecha' => 'Y-m-d'].
+ */
+function wabot_dia_entrega($ts = null) {
+    $ts = $ts ?? time();
+    $localTs = (int)$ts - 3 * 3600;              // reloj argentino, UTC-3 fijo
+    $hora = (int)gmdate('G', $localTs);
+    $fechaHoy = gmdate('Y-m-d', $localTs);
+
+    if ($hora >= 3 && $hora < 11) {
+        return ['palabra' => 'hoy', 'fecha' => $fechaHoy];
+    }
+    if ($hora < 3) {
+        // Trasnochado: para él es "mañana", pero cae en la fecha que ya corre.
+        return ['palabra' => 'mañana', 'fecha' => $fechaHoy];
+    }
+    return ['palabra' => 'mañana', 'fecha' => gmdate('Y-m-d', $localTs + 86400)];
 }
 
 /** ¿Los dos timestamps caen el mismo día calendario argentino (UTC-3 fijo)? */

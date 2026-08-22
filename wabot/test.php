@@ -3226,7 +3226,7 @@ foreach ([
     'otro me cobra mas barato'                   => 'comparando',
     'me pasaron un presupuesto de 150 mil'       => 'comparando',
     'ya tengo una pagina'                        => 'ya_tiene_plataforma',
-    'tengo tiendanube'                           => 'ya_tiene_plataforma',
+    'mi web esta en wordpress'                   => 'ya_tiene_plataforma',
     'se ve bien en el celular?'                  => 'responsive',
     'no se nada de paginas web'                  => 'no_se_nada',
     'no tengo logo'                              => 'sin_logo',
@@ -3267,8 +3267,9 @@ caso('comparando no ataca al competidor ni baja el precio',
     stripos($cfg['info']['comparando'], 'descuento') === false
     && stripos($cfg['info']['comparando'], 'está perfecto comparar') !== false);
 caso('y usa la muestra como diferencial', stripos($cfg['info']['comparando'], 'muestra') !== false);
-caso('ya_tiene_plataforma no empuja a reemplazar',
-    stripos($cfg['info']['ya_tiene_plataforma'], 'No necesariamente') !== false);
+caso('ya_tiene_plataforma no empuja a reemplazar: ofrece revisarla primero',
+    stripos($cfg['info']['ya_tiene_plataforma'], 'la reviso') !== false
+    && stripos($cfg['info']['ya_tiene_plataforma'], 'si con la que tenés ya estás bien') !== false);
 caso('google NO promete salir primero',
     stripos($cfg['info']['google'], 'primero') === false && stripos($cfg['info']['google'], 'garantiz') === false);
 caso('seguridad no promete riesgo cero',
@@ -3292,6 +3293,76 @@ $d500 = wabot_catalogo_total(500, $cfg);
 caso('500 productos = $200.000 de base', $d500['base'] === 200000);
 caso('más $250.000 de carga', $d500['productos'] === 250000);
 caso('total $450.000', $d500['total'] === 450000);
+
+echo "— Día de entrega: el día del cliente arranca a las 3 AM, no a las 00:00 —\n";
+
+$diaAR = function ($hora, $min = 30) { return gmmktime($hora + 3, $min, 0, 8, 21, 2026); };
+foreach ([3, 7, 10] as $h) {
+    $d = wabot_dia_entrega($diaAR($h));
+    caso("cierra {$h}:30 → se entrega HOY", $d['palabra'] === 'hoy' && $d['fecha'] === '2026-08-21');
+}
+foreach ([11, 15, 23] as $h) {
+    $d = wabot_dia_entrega($diaAR($h));
+    caso("cierra {$h}:30 → mañana, y cae en la fecha siguiente", $d['palabra'] === 'mañana' && $d['fecha'] === '2026-08-22');
+}
+// El trasnochado: para él es "mañana" (después de dormir) pero es la misma fecha.
+foreach ([0, 1, 2] as $h) {
+    $d = wabot_dia_entrega($diaAR($h));
+    caso("cierra {$h}:30 de madrugada → le decimos mañana, pero es la misma fecha",
+        $d['palabra'] === 'mañana' && $d['fecha'] === '2026-08-21');
+}
+caso('justo a las 3:00 ya es "hoy"', wabot_dia_entrega($diaAR(3, 0))['palabra'] === 'hoy');
+caso('justo a las 11:00 ya es "mañana"', wabot_dia_entrega($diaAR(11, 0))['palabra'] === 'mañana');
+caso('a las 2:59 todavía es "mañana"', wabot_dia_entrega($diaAR(2, 59))['palabra'] === 'mañana');
+
+caso('el cierre del prediseño ya no promete "24 a 48 horas"',
+    stripos($cfg['prediseno_completo'], '24 a 48') === false);
+caso('y usa el placeholder del día concreto',
+    strpos($cfg['prediseno_completo'], '{entrega}') !== false);
+caso('{entrega} se resuelve al mandar el mensaje',
+    strpos(wabot_personalizar($cfg['prediseno_completo'], ['nombre' => 'Ana']), '{entrega}') === false
+    && preg_match('/\b(hoy|mañana)\b/u', wabot_personalizar($cfg['prediseno_completo'], ['nombre' => 'Ana'])));
+
+echo "— Los mensajes del hueco ahora piden respuesta —\n";
+
+// La charla se enfriaba porque los tres mensajes seguidos eran afirmaciones:
+// nada que contestar, y sin respuesta del cliente la ventana de Meta cierra.
+caso('el cierre de la recolección deja una pregunta abierta', mb_strpos($cfg['prediseno_completo'], '?') !== false);
+caso('y sirve para diseñar, no es relleno', mb_stripos($cfg['prediseno_completo'], 'destacar') !== false);
+caso('la línea de espera NO repite esa misma pregunta', mb_stripos($cfg['espera_prediseno'], 'destacar') === false);
+caso('pero sí recuerda cuándo llega la demo', mb_strpos($cfg['espera_prediseno'], '{entrega}') !== false);
+caso('el aviso de la mañana termina en pregunta', mb_strpos($cfg['muestra_aviso'], '?') !== false);
+caso('y es binaria, que es la de menor fricción',
+    mb_stripos($cfg['muestra_aviso'], ' o más ') !== false);
+caso('sigue diciendo que la demo sale hoy', mb_stripos($cfg['muestra_aviso'], 'hoy') !== false);
+
+foreach ([
+    'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.' => 'espera_prediseno',
+    'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.' => 'prediseno_completo',
+    'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.' => 'muestra_aviso',
+    'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.' => 'prediseno_completo',
+] as $textoViejo => $clave) {
+    $cvMig = [$clave => $textoViejo];
+    wabot_config_ventas($cvMig);
+    caso("el $clave viejo de producción migra solo", $cvMig[$clave] === $cfg[$clave]);
+}
+
+echo "— Tiendanube: no trabajamos ahí, y ya tenía su respuesta —\n";
+
+caso('"tengo tiendanube" NO cae en ya_tiene_plataforma',
+    wabot_info_por_palabras('tengo tiendanube') !== 'ya_tiene_plataforma');
+caso('shopify tampoco', wabot_info_por_palabras('vendo por shopify') !== 'ya_tiene_plataforma');
+caso('wix tampoco', wabot_info_por_palabras('uso wix') !== 'ya_tiene_plataforma');
+caso('una web propia en WordPress sí',
+    wabot_info_por_palabras('mi web esta en wordpress') === 'ya_tiene_plataforma');
+caso('y "ya tengo una pagina" también',
+    wabot_info_por_palabras('ya tengo una pagina') === 'ya_tiene_plataforma');
+caso('la objeción de plataformas de alquiler sigue existiendo aparte',
+    stripos($cfg['plataformas'], 'alquiler mensual') !== false);
+caso('ya_tiene_plataforma no promete trabajar sobre la web existente',
+    stripos($cfg['info']['ya_tiene_plataforma'], 'no trabajamos sobre webs ya hechas') !== false);
+caso('y no contradice a info.tecnologia',
+    stripos($cfg['info']['tecnologia'], 'trabajamos sobre webs ya hechas') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

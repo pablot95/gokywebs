@@ -1483,8 +1483,11 @@ function wabot_info_por_palabras($texto, $fase = null) {
     }
     if (preg_match('/\b(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)\b/u', $t)) return 'carga';
 
-    // Ya tiene web o vende en una plataforma: se ofrece revisarla, no reemplazarla.
-    if (preg_match('/\b(tiendanube|tienda ?nube|mercado ?shops|shopify|wix|wordpress|woocommerce|empretienda)\b/u', $t)
+    // Ya tiene una web propia (la hizo otro, está en WordPress): se ofrece
+    // revisarla en vez de empujar el reemplazo. Tiendanube, Shopify y Wix NO
+    // entran acá a propósito: no trabajamos sobre esas plataformas y ya tienen
+    // su respuesta en la objeción de alquiler mensual (menciona_plataforma).
+    if (preg_match('/\b(wordpress|woocommerce)\b/u', $t)
         && !preg_match('/\b(que tecnologia|con que (lo|la) hacen|usan|trabajan con)\b/u', $t)) return 'ya_tiene_plataforma';
     if (preg_match('/\b(ya tengo (una |mi )?(pagina|web|sitio)|tengo (una |mi )?(pagina|web|sitio) (hecha|armada|actual|vieja)|mi (pagina|web) actual)\b/u', $t)) return 'ya_tiene_plataforma';
     // Palabras completas: "catálogo" contiene "logo" como substring y no es

@@ -763,7 +763,7 @@ caso('no toma como suyas las respuestas del bot',
 
 echo "— El mensaje de cierre avisa que la muestra llega por el mismo canal —\n";
 caso('no promete otro número', strpos($cfg['prediseno_completo'], '2506-8578') === false);
-caso('avisa que la muestra llega por acá mismo', stripos($cfg['prediseno_completo'], 'por acá mismo') !== false);
+caso('avisa que la muestra llega por el mismo canal', stripos($cfg['prediseno_completo'], 'por acá') !== false);
 caso('la bienvenida es la pregunta abierta, ya no el menú de opciones',
     strpos($cfg['menu'], 'Contame un poco') !== false && stripos($cfg['menu'], 'Landing (') === false);
 
