@@ -3014,5 +3014,37 @@ foreach (['Bueno, aguardo entonces', 'aguardo', 'quedo atento', 'quedo a la espe
 caso('pero una pregunta de verdad sigue sin ser acuse', wabot_es_acuse('De donde son?') === false);
 caso('y un mensaje con contenido tampoco', wabot_es_acuse('quiero una web para mi kiosco') === false);
 
+echo "— Re-chequeo contra los chats reales del 21-ago (frases textuales) —\n";
+
+caso('Oscar: "tenes alguna para ver de algún cirujano..." → ejemplos (sustantivo elidido)',
+    wabot_info_por_palabras('Esta bien gracias tenes alguna para ver de algún cirujano plástico o clínica dental de estética', 'precio') === 'ejemplos');
+caso('Julieta: "plantillas como de encuentas" → formularios (typo tolerado)',
+    wabot_info_por_palabras('Ustedes pueden hacer plantillas como de encuentas , que la persona la pueda llenar en su casa ?', 'derivado') === 'formularios');
+caso('Hanni: "más información sobre esto? Preciop" → precio (typo al final)',
+    wabot_info_por_palabras('Hola. ¿Puedo obtener más información sobre esto? Preciop', 'nuevo') === 'precio_sin_rubro');
+caso('Abel: "Que precio tiene" → precio sin rubro',
+    wabot_info_por_palabras('Que precio tiene', 'nuevo') === 'precio_sin_rubro');
+caso('pero "precio" en medio de una frase descriptiva no dispara',
+    wabot_info_por_palabras('vendo productos de limpieza a buen precio para comercios') === null);
+
+caso('"Bueno,.aguardo entonces" (puntuación pegada) es acuse',
+    wabot_es_acuse('Bueno,.aguardo entonces') === true);
+caso('"Ha ok !" es acuse', wabot_es_acuse('Ha ok !') === true);
+caso('"si" solo NO es acuse: puede estar contestando una pregunta',
+    wabot_es_acuse('si') === false);
+
+caso('"A ver armemos" no es un nombre de persona',
+    wabot_nombre_usable('A ver armemos') === '');
+caso('"Antuarezdesign" (handle de una palabra, 13+ letras) tampoco',
+    wabot_nombre_usable('Antuarezdesign') === '');
+caso('"Maximiliano" sigue siendo un nombre válido',
+    wabot_nombre_usable('Maximiliano') === 'Maximiliano');
+caso('"deeko" también: los apodos cortos se respetan',
+    wabot_nombre_usable('deeko') === 'deeko');
+
+caso('la zona horaria quedó en Buenos Aires', date_default_timezone_get() === 'America/Argentina/Buenos_Aires');
+caso('date() y el cálculo manual UTC-3 dan la misma hora',
+    date('H:i') === gmdate('H:i', time() - 3 * 3600));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

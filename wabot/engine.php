@@ -240,7 +240,10 @@ function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
  * Black Automotores el 22-ago.
  */
 function wabot_es_acuse($texto) {
-    $t = wabot_normalizar_frase($texto);
+    // Misma trampa que en wabot_info_por_palabras: borrar la puntuación en vez
+    // de cambiarla por espacio pega las palabras. "Bueno,.aguardo entonces"
+    // quedaba como "buenoaguardo entonces" y no lo reconocía nadie.
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$texto));
     if ($t === '') return true;                  // solo un emoji o un sticker
     if (mb_strlen($t) > 40) return false;
     $acuses = ['ok', 'oka', 'okey', 'okay', 'okis', 'dale', 'listo', 'perfecto', 'perfe',
@@ -258,7 +261,7 @@ function wabot_es_acuse($texto) {
                'quedo esperando', 'aguardo respuesta', 'espero respuesta', 'a la espera'];
     // Se sacan los conectores para que "ok gracias" o "dale, muchas gracias"
     // entren igual que sus partes sueltas.
-    $limpio = trim(preg_replace('/\b(ok|dale|listo|y|pues|bueno|muy|todo|muchas|mil|un|una|te|le|les|lo|la)\b/u', ' ', $t));
+    $limpio = trim(preg_replace('/\b(ok|dale|listo|y|pues|bueno|muy|todo|muchas|mil|un|una|te|le|les|lo|la|ah|ha|aja|ahh|oh)\b/u', ' ', $t));
     $limpio = trim(preg_replace('/\s+/u', ' ', $limpio));
     return in_array($t, $acuses, true) || ($limpio !== '' && in_array($limpio, $acuses, true)) || $limpio === '';
 }
@@ -1308,14 +1311,19 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
     // varias de ellas y, si no, todas caian en la respuesta de hosting.
     if (preg_match('/\b(bilingue|dos idiomas|en ingles|version en ingles|multi ?idioma|traducida|traduccion de la web)\b/u', $t)) return 'bilingue';
-    if (preg_match('/\b(formulario\w*|encuesta\w*|cuestionario\w*)\b/u', $t)) return 'formularios';
+    // "encuentas" y "formulaios" son typos reales de producción: se toleran las
+    // variantes con una letra cambiada de las dos palabras clave.
+    if (preg_match('/\b(formulari\w*|formulaio\w*|encuesta\w*|encuenta\w*|encusta\w*|cuestionario\w*|planillas? para (llenar|completar))\b/u', $t)) return 'formularios';
     if (preg_match('/\b(migracion|migrar|migran|pasar (mis|los) (contenidos?|textos?|datos)|traspasar (el )?contenido|mudar (la|mi) (web|pagina))\b/u', $t)) return 'migracion';
     if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
     // "¿Tienen alguna web para ver de dentista?" pide ejemplos, no el portfolio
     // general de que_hacemos: exige el verbo de mostrar junto al sustantivo.
     if (preg_match('/\b(ejemplos?|muestras? de trabajo|portfolio|porfolio|trabajos (que |ya )?(hicieron|realizados|hechos)|casos? de exito)\b/u', $t)
         || preg_match('/\b(tienen|tenes|tienes|hay|puedo ver|me (pasas|mandas)|mostrarme|ver alguna)\b.{0,30}\b(web|pagina|sitio|demo)\b.{0,40}\b(para ver|de otro|de algun|parecida|similar|del rubro|hecha)\b/u', $t)
-        || preg_match('/\b(tienen|tenes|hay)\b.{0,20}\b(alguna|algun)\b.{0,15}\b(web|pagina|sitio)\b.{0,20}\bpara ver\b/u', $t)) return 'ejemplos';
+        // "¿Tenés alguna para ver de algún cirujano?" — el sustantivo se elide
+        // porque la web ES el tema de toda la charla: alcanza con pedir ver
+        // alguna "de" un rubro (caso Oscar, 21-ago).
+        || preg_match('/\b(tenes|tienes|tienen|hay|me mostras|puedo ver)\b.{0,12}\b(alguna|alguno|algunas?)\b.{0,15}\b(para ver|ver)\b.{0,15}\bde\b/u', $t)) return 'ejemplos';
     if (preg_match('/\b(lleva|llevan|tiene|tienen|incluye|incluyen|van)\b.{0,20}\b(imagen|imagenes|foto|fotos)\b/u', $t)) return 'imagenes_web';
     if (preg_match('/\b(correos? corporativos?|casillas? de correo|mail corporativo|mails? corporativos?|cuentas? de (correo|mail)|arroba mi dominio|outlook|configurar el mail)\b/u', $t)) return 'emails';
     if (preg_match('/\b(licencias?|plugins?|sdk|plantillas? compradas?|temas? comprados?)\b/u', $t)) return 'licencias';
@@ -1350,7 +1358,10 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(estafa\w*|es seguro esto|son confiables|es confiable|quiero referencias|garantia de que)\b|desconfi/u', $t)) return 'confianza';
     if (preg_match('/\b(pixel|google analytics|analytics|codigo de seguimiento|conversiones de meta)\b/u', $t)) return 'pixel';
     if (preg_match('/\b(precios? de cada|todos los precios|lista de precios|precios? de los servicios|desde el basico|precios? de todos)\b/u', $t)) return 'rangos';
-    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)) {
+    // "Preciop" al final del mensaje es "precio" con el dedo resbalado: la
+    // palabra suelta pidiendo el valor (con hasta dos letras de yapa) cuenta.
+    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)
+        || preg_match('/\bprecio\w{0,2}\s*$/u', $t)) {
         if (in_array($fase, ['precio', 'confirma_cambio', 'derivado', 'postdemo'], true)) return 'precio_actual';
         // Sin saber qué tipo de web necesita no hay precio exacto: se le pregunta
         // en vez de escaparse con "eso te lo confirma el equipo" (caso Abel).

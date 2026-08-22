@@ -7,6 +7,12 @@
 
 require_once __DIR__ . '/../config/wabot-config.php';
 
+// Pablo y todos los clientes están en Argentina, pero PHP corría en UTC: cada
+// hora que se mostraba —el panel, los exports de chats, "pausado hasta"— salía
+// 3 horas corrida. Los cálculos internos no cambian: usan time() (absoluto) o
+// gmdate/gmmktime con el corrimiento -3 hecho a mano.
+date_default_timezone_set('America/Argentina/Buenos_Aires');
+
 define('WABOT_DIR', __DIR__);
 define('WABOT_DATA', __DIR__ . '/data');
 
@@ -758,6 +764,12 @@ function wabot_nombre_usable($nombre) {
     if (count(preg_split('/\s+/u', $n)) > 4) return '';
     if (preg_match('/[!¡?¿*#%]/u', $n)) return '';
     if (preg_match('/\b(soy|somos|quiero|amo|vivo|bendecid|gracias a dios|te amo|dios|vs|www)\b/iu', $n)) return '';
+    // "A ver armemos" quedó agendado como nombre en producción: era la
+    // respuesta del cliente, no su nombre. Las frases de avanzar no son nombres.
+    if (preg_match('/\b(a ver|armemos|hagamos|avancemos|empecemos|arranquemos|haceme|armame|mandame|pasame)\b/iu', $n)) return '';
+    // Una sola palabra de 13+ letras es un handle ("Antuarezdesign"), no un
+    // nombre de pila: el nombre argentino más largo común anda por las 11.
+    if (strpos($n, ' ') === false && mb_strlen($n) > 12) return '';
 
     return $n;
 }
