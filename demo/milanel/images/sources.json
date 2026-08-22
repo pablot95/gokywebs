@@ -1,0 +1,56 @@
+[
+  {
+    "file": "hero-pechuga-fresca-rosemary-1920x1080.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/5769376/",
+    "use": "Hero"
+  },
+  {
+    "file": "rebozado-casero-hierbas-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/4078178/",
+    "use": "Producto - rebozado casero"
+  },
+  {
+    "file": "pechuga-fresca-par-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/5769375/",
+    "use": "Producto - pechuga fresca"
+  },
+  {
+    "file": "cutlets-rebozados-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/11710530/",
+    "use": "Producto - cutlets rebozados"
+  },
+  {
+    "file": "milanesa-cortada-plato-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/6419734/",
+    "use": "Producto - milanesa lista"
+  },
+  {
+    "file": "milanesa-frita-plato-1200x1200.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/9872916/",
+    "use": "Producto - milanesa frita"
+  },
+  {
+    "file": "cocina-preparacion-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/15671373/",
+    "use": "Nuestro arte / proceso"
+  },
+  {
+    "file": "friendo-fuego-justo-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/4253702/",
+    "use": "Nuestro arte / fuego justo"
+  },
+  {
+    "file": "pedido-delivery-caja-1600x1300.webp",
+    "origin": "Pexels",
+    "url": "https://www.pexels.com/photo/12725398/",
+    "use": "Pedila hoy / delivery"
+  }
+]

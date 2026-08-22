@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MILANEL — Milanesas de pollo frescas, pedí online</title>
+<meta name="description" content="Pollería MILANEL: milanesas de pechuga fresca con rebozado casero. Catálogo completo, pedido y pago online, entrega coordinada por WhatsApp.">
+<meta property="og:title" content="MILANEL — La milanesa como debe ser">
+<meta property="og:description" content="Pechuga fresca, rebozado casero y fuego justo. Pedila hoy, comela hoy.">
+<meta property="og:image" content="images/hero-pechuga-fresca-rosemary-1920x1080.webp">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#E60000">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23E60000'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='30' font-weight='700' fill='%23F5F2EB' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<header class="site-header">
+  <div class="header-top">
+    <a class="brand" href="#main">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span class="brand-name">MILANEL</span>
+    </a>
+    <div class="header-actions">
+      <button type="button" class="cart-toggle" id="cartToggle" aria-label="Abrir carrito" aria-haspopup="dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H2"/><circle cx="9.5" cy="20" r="1.5"/><circle cx="17.5" cy="20" r="1.5"/></svg>
+        <span class="cart-badge" id="cartBadge" hidden>0</span>
+      </button>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-haspopup="true" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="header-bottom">
+    <nav class="main-nav" id="mainNav" aria-label="Navegación principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#carta">Ver la carta</a>
+      <a href="#categorias">Categorías</a>
+      <a href="#arte">Nuestro arte</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+  </div>
+</header>
+<div class="nav-backdrop" id="navBackdrop"></div>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="eyebrow eyebrow-light" data-animate="up" style="transform:translateY(18px);opacity:0">Pollería MILANEL</p>
+        <h1 data-animate="up" style="transform:translateY(28px);opacity:0">La milanesa<br>como debe ser</h1>
+        <p data-animate="up" style="transform:translateY(20px);opacity:0" data-delay="0.15">Pechuga fresca, rebozado casero y fuego justo. Pedila hoy, comela hoy.</p>
+        <div class="hero-actions" data-animate="up" style="transform:translateY(20px);opacity:0" data-delay="0.3">
+          <a class="btn btn-cta" href="#carta">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            Ver la carta
+          </a>
+          <a class="btn btn-ghost-light" href="#arte">Nuestro arte</a>
+        </div>
+      </div>
+      <div class="hero-media" data-animate="scale" style="transform:rotate(2deg) scale(.92);opacity:0" data-delay="0.1">
+        <img src="images/hero-pechuga-fresca-rosemary-1920x1080.webp" alt="Pechuga de pollo fresca con romero, lista para preparar" width="1920" height="1080" fetchpriority="high">
+        <span class="hero-badge">100%<br>pechuga<br>fresca</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      <span>PECHUGA FRESCA</span><span>REBOZADO CASERO</span><span>FUEGO JUSTO</span><span>PEDILA HOY, COMELA HOY</span>
+      <span>PECHUGA FRESCA</span><span>REBOZADO CASERO</span><span>FUEGO JUSTO</span><span>PEDILA HOY, COMELA HOY</span>
+    </div>
+  </div>
+
+  <section class="destacados" id="carta" aria-labelledby="destacados-h">
+    <div class="container destacados-head">
+      <div>
+        <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">La carta</p>
+        <h2 id="destacados-h" data-animate="up" style="transform:translateY(24px);opacity:0">Los más pedidos</h2>
+      </div>
+      <a class="ver-todo" href="#catalogo" data-animate="up" style="transform:translateY(18px);opacity:0">
+        Ver todo el catálogo
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="hscroll" id="destacadosRail">
+      <div class="hscroll-track" id="destacadosTrack"></div>
+    </div>
+  </section>
+
+  <section class="trust-bar" aria-label="Por qué elegirnos">
+    <div class="container trust-grid">
+      <div class="trust-item" data-animate="up" style="transform:translateY(24px);opacity:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v6M12 2c-3 2-4 5-4 8a4 4 0 0 0 8 0c0-3-1-6-4-8Z"/><path d="M12 16v6"/></svg>
+        <h3>Fuego justo</h3>
+        <p>Rebozado casero y cocción en el punto exacto — nunca de más, nunca de menos.</p>
+      </div>
+      <div class="trust-item" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay="0.1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z"/><path d="M9 13h6M9 17h6"/></svg>
+        <h3>Pedido claro</h3>
+        <p>Elegís, pagás y coordinamos todo por WhatsApp — sin vueltas.</p>
+      </div>
+      <div class="trust-item" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay="0.2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        <h3>Pedila hoy</h3>
+        <p>La preparamos fresca para el día del pedido — comela hoy.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="categorias" id="categorias" aria-labelledby="categorias-h">
+    <div class="container">
+      <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">Elegí tu categoría</p>
+      <h2 id="categorias-h" data-animate="up" style="transform:translateY(24px);opacity:0" class="destacados-head">Categorías</h2>
+    </div>
+    <div class="container cat-grid" id="catGrid" data-animate-stagger></div>
+  </section>
+
+  <section class="proceso" id="arte" aria-labelledby="proceso-h">
+    <div class="container proceso-head">
+      <p class="eyebrow eyebrow-light" data-animate="up" style="transform:translateY(18px);opacity:0">Nuestro arte</p>
+      <h2 id="proceso-h" data-animate="up" style="transform:translateY(24px);opacity:0">De la pechuga al plato</h2>
+      <p data-animate="up" style="transform:translateY(20px);opacity:0" data-delay="0.1">Tres pasos, siempre los mismos, siempre a mano — así hacemos cada milanesa.</p>
+    </div>
+    <div class="proceso-stage" id="procesoStage">
+      <div class="container proceso-grid">
+        <div class="proceso-visual" id="procesoVisual" aria-hidden="true">
+          <img class="is-active" data-paso="0" src="images/pechuga-fresca-par-1200x1200.webp" width="1200" height="1200" alt="">
+          <img data-paso="1" src="images/rebozado-casero-hierbas-1600x1300.webp" width="1600" height="1300" alt="">
+          <img data-paso="2" src="images/friendo-fuego-justo-1600x1300.webp" width="1600" height="1300" alt="">
+        </div>
+        <ol class="proceso-pasos" id="procesoPasos">
+          <li class="proceso-paso is-on" data-paso="0">
+            <span class="proceso-paso-num">01</span>
+            <h3>Pechuga fresca</h3>
+            <p>Seleccionamos la pechuga del día — nada de stock congelado esperando turno.</p>
+          </li>
+          <li class="proceso-paso" data-paso="1">
+            <span class="proceso-paso-num">02</span>
+            <h3>Rebozado casero</h3>
+            <p>Mezcla propia de pan rallado y hierbas, hecha en el local — no de bolsa.</p>
+          </li>
+          <li class="proceso-paso" data-paso="2">
+            <span class="proceso-paso-num">03</span>
+            <h3>Fuego justo</h3>
+            <p>El punto exacto de cocción para que llegue dorada por fuera y jugosa por dentro.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="catalogo" id="catalogo" aria-labelledby="catalogo-h">
+    <div class="container-wide catalogo-head">
+      <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">El catálogo completo</p>
+      <h2 id="catalogo-h" data-animate="up" style="transform:translateY(24px);opacity:0">Toda la carta MILANEL</h2>
+    </div>
+    <div class="container-wide catalogo-tools">
+      <div class="buscador">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="buscador" placeholder="Buscá por nombre o categoría…" aria-label="Buscar productos">
+      </div>
+      <div class="filtros">
+        <select id="filtroCategoria" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+        <select id="filtroFormato" aria-label="Filtrar por presentación"><option value="">Toda presentación</option></select>
+        <button type="button" class="limpiar-filtros" id="limpiarFiltros" hidden>Limpiar filtros</button>
+      </div>
+    </div>
+    <div class="container-wide">
+      <p class="resultados-count" id="resultadosCount" aria-live="polite"></p>
+      <div class="catalogo-grid" id="catalogoGrid"></div>
+      <div class="catalogo-vacio" id="sinResultados" hidden>
+        <p>No encontramos productos con esos filtros.</p>
+        <button type="button" class="btn btn-ghost" id="sinResultadosLimpiar">Limpiar filtros</button>
+      </div>
+      <button type="button" class="btn btn-ghost ver-mas" id="verMas">Ver más productos</button>
+    </div>
+  </section>
+
+  <section class="cierre" id="contacto" aria-labelledby="cierre-h">
+    <div class="container cierre-inner">
+      <h2 id="cierre-h" data-animate="up" style="transform:translateY(24px);opacity:0">Pedila hoy, comela hoy</h2>
+      <p data-animate="up" style="transform:translateY(20px);opacity:0" data-delay="0.1">Armá tu pedido y coordinamos la entrega directo por WhatsApp.</p>
+      <a class="btn btn-cta" data-animate="up" style="transform:translateY(20px);opacity:0" data-delay="0.2" data-wsp-msg="Hola! Quiero hacer un pedido en MILANEL." href="https://wa.me/5493513188893" target="_blank" rel="noopener noreferrer">
+        Escribinos por WhatsApp
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="brand-name display">MILANEL</span>
+      <p>Pollería especializada en milanesas de pechuga fresca con rebozado casero.</p>
+    </div>
+    <div class="footer-col">
+      <h3>Recorrer</h3>
+      <ul>
+        <li><a href="#carta">Ver la carta</a></li>
+        <li><a href="#categorias">Categorías</a></li>
+        <li><a href="#arte">Nuestro arte</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Contacto</h3>
+      <ul>
+        <li><a data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493513188893" target="_blank" rel="noopener noreferrer">+54 9 351 318-8893</a></li>
+        <li><a href="mailto:hola@milanel.com.ar">hola@milanel.com.ar</a></li>
+        <li>Córdoba, Argentina</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom container">
+    <p>© <span id="footerYear"></span> MILANEL. Sitio demostrativo — precios y stock con fines ilustrativos.</p>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<div class="floats">
+  <button type="button" class="float-btn cart-float" id="cartFloat" aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12L6 6Z"/><path d="M6 6 5 3H2"/><circle cx="9.5" cy="20" r="1.5"/><circle cx="17.5" cy="20" r="1.5"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wspFloat" data-wsp-msg="Hola! Quiero hacer una consulta." href="https://wa.me/5493513188893" target="_blank" rel="noopener noreferrer" aria-label="Escribir por WhatsApp">
+    <span class="pulse-ring" aria-hidden="true"></span>
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" inert>
+  <div class="drawer-head">
+    <h2 id="drawerTitle" class="display" style="font-size:1.3rem">Tu pedido</h2>
+    <button type="button" class="drawer-close" id="drawerClose" aria-label="Cerrar carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot" id="drawerFoot" hidden>
+    <div class="drawer-total"><span>Total</span><span id="drawerTotal">$0</span></div>
+    <button type="button" class="btn btn-cta" id="drawerCheckout" style="width:100%">Finalizar por WhatsApp</button>
+  </div>
+</aside>
+
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="product-modal" id="productModal" role="dialog" aria-modal="true" aria-label="Vista rápida del producto" inert>
+  <div class="modal-panel">
+    <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
