@@ -2923,6 +2923,42 @@ caso('con caracteres raros en la clave, igual la encuentra',
     wabot_conv_existe('  ' . $claveExiste . '!!') === true);
 @unlink(WABOT_DATA . '/conv/' . $claveExiste . '.json');
 
+echo "— wabot_conv_resolver: el teléfono del boceto → la conversación real —\n";
+
+$sufijoReal  = substr((string)getmypid() . '3115008', 0, 7);
+$claveReal   = '549387' . $sufijoReal;
+$abonadoReal = substr('387' . $sufijoReal, -8);
+@unlink(WABOT_DATA . '/conv/' . $claveReal . '.json');
+
+$m = 'sigue-con-valor-viejo';
+caso('sin conversación que corresponda → null, y no la crea',
+    wabot_conv_resolver($claveReal, $m) === null && !file_exists(WABOT_DATA . '/conv/' . $claveReal . '.json'));
+caso('y avisa que ese cliente nunca escribió', $m === 'sin_chat');
+
+wabot_conv_save(wabot_conv_load($claveReal));
+
+caso('la clave exacta se resuelve sola', wabot_conv_resolver($claveReal, $m) === $claveReal && $m === null);
+caso('formateado como lo muestra el panel', wabot_conv_resolver('+54 9 387 ' . substr($sufijoReal, 0, 3) . '-' . substr($sufijoReal, 3), $m) === $claveReal);
+caso('sin el 549 adelante, como lo carga el formulario', wabot_conv_resolver('387' . $sufijoReal, $m) === $claveReal);
+caso('con 0 y 15, como se escribe en Argentina', wabot_conv_resolver('0387 15 ' . $sufijoReal, $m) === $claveReal);
+caso('con el 0 pero sin el 15', wabot_conv_resolver('0387' . $sufijoReal, $m) === $claveReal);
+caso('solo el abonado', wabot_conv_resolver($abonadoReal, $m) === $claveReal);
+
+$claveOtra = '54911' . $abonadoReal;
+@unlink(WABOT_DATA . '/conv/' . $claveOtra . '.json');
+wabot_conv_save(wabot_conv_load($claveOtra));
+caso('dos chats que terminan igual → no adivina',
+    wabot_conv_resolver($abonadoReal, $m) === null && $m === 'ambiguo');
+caso('pero con la clave completa sí, aunque haya otro parecido',
+    wabot_conv_resolver($claveReal, $m) === $claveReal);
+@unlink(WABOT_DATA . '/conv/' . $claveOtra . '.json');
+
+caso('teléfono vacío → null sin tocar el disco', wabot_conv_resolver('', $m) === null && $m === 'vacio');
+caso('número demasiado corto para ser un teléfono', wabot_conv_resolver('1234', $m) === null && $m === 'corto');
+caso('el error de "nunca escribió" nombra el número', strpos(wabot_error_sin_chat('387 311-5008', 'sin_chat'), '387 311-5008') !== false);
+caso('el error ambiguo manda a abrirlo a mano', stripos(wabot_error_sin_chat('3115008', 'ambiguo'), 'panel del bot') !== false);
+@unlink(WABOT_DATA . '/conv/' . $claveReal . '.json');
+
 echo "— Normalizar texto para buscar dentro de los mensajes —\n";
 
 caso('minúsculas y sin acentos', wabot_normalizar_busqueda('Colóres y Diseño') === 'colores y diseno');

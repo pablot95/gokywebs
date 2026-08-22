@@ -335,11 +335,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $slug = $negocio !== '' ? wabot_slug_demo($negocio) : '';
         if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la demo: falta el nombre del negocio.']); exit; }
 
-        $conv = wabot_conv_load($_POST['tel']);
-
-        // Con forzar=1 Pablo ya decidió, desde el admin, pasarla a presentada
-        // aunque el aviso no salga: se marca todo igual y el link lo manda él.
         $forzar = !empty($_POST['forzar']);
+
+        $clave = wabot_conv_resolver($_POST['tel'], $motivo);
+        if ($clave === null) {
+            wabot_log('presentar_muestra_sin_chat', ['tel' => (string)$_POST['tel'], 'motivo' => $motivo, 'slug' => $slug, 'forzar' => $forzar]);
+            if (!$forzar) { echo json_encode(['error' => wabot_error_sin_chat($_POST['tel'], $motivo), 'sin_chat' => true]); exit; }
+            echo json_encode(['ok' => true, 'enviado' => false, 'sin_chat' => true, 'slug' => $slug]);
+            exit;
+        }
+        $conv = wabot_conv_load($clave);
 
         if (!$forzar && wabot_ventana_restante($conv) <= 0) {
             echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja mandarle texto libre hasta que el cliente vuelva a escribir. Avisale a mano.']);

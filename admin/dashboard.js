@@ -3089,7 +3089,9 @@ async function presentarPropuesta(propId) {
         const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
         alert("Quedó en Seguimiento, PERO el cliente no recibió nada.\n\n"
             + "Mandale vos el link por WhatsApp" + (link ? ":\n" + link : ".")
-            + "\n\nEn el panel del bot le vas a ver el cartel \"falta mandarle el link\".");
+            + (envio.sin_chat
+                ? "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta."
+                : "\n\nEn el panel del bot le vas a ver el cartel \"falta mandarle el link\"."));
     }
 
     try {

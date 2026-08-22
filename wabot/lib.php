@@ -1302,11 +1302,60 @@ function wabot_prediseno_texto($conv, $cfg) {
     return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 }
 
-/** Si ya existe un archivo para esa conversación, sin crearlo ni tocarlo. */
 function wabot_conv_existe($clave) {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if ($clave === '') return false;
     return file_exists(wabot_conv_path($clave));
+}
+
+function wabot_error_sin_chat($tel, $motivo) {
+    $num = trim((string)$tel);
+    if ($motivo === 'ambiguo') {
+        return "Hay más de una conversación que termina igual que $num: no sé a cuál mandarle la demo. Abrila desde el panel del bot y mandale el link desde ahí.";
+    }
+    if ($motivo === 'vacio' || $motivo === 'corto') {
+        return "El boceto no tiene un teléfono válido ($num): no hay conversación de WhatsApp donde mandar la demo.";
+    }
+    return "No hay ninguna conversación de WhatsApp con $num: este cliente nunca le escribió al bot, o lo tenés cargado con otro número. El link se lo tenés que mandar vos.";
+}
+
+function wabot_tel_abonados($tel) {
+    $d = ltrim(preg_replace('/\D/', '', (string)$tel), '0');
+    if (strpos($d, '54') === 0) $d = ltrim(substr($d, 2), '0');
+    if (strpos($d, '9') === 0 && strlen($d) > 10) $d = substr($d, 1);
+    if (strlen($d) < 8) return [];
+
+    $candidatos = [$d];
+    foreach ([2, 3, 4] as $largoArea) {
+        if (strlen($d) > $largoArea + 2 && substr($d, $largoArea, 2) === '15') {
+            $candidatos[] = substr($d, 0, $largoArea) . substr($d, $largoArea + 2);
+        }
+    }
+    $abonados = [];
+    foreach ($candidatos as $c) {
+        if (strlen($c) >= 8) $abonados[substr($c, -8)] = true;
+    }
+    return array_keys($abonados);
+}
+
+function wabot_conv_resolver($tel, &$motivo = null) {
+    $motivo = null;
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$tel);
+    if ($clave === '') { $motivo = 'vacio'; return null; }
+    if (wabot_conv_existe($clave)) return $clave;
+
+    $abonados = wabot_tel_abonados($clave);
+    if (!$abonados) { $motivo = 'corto'; return null; }
+
+    $coinciden = [];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $otra = basename($f, '.json');
+        if (!ctype_digit($otra)) continue;
+        if (array_intersect($abonados, wabot_tel_abonados($otra))) $coinciden[] = $otra;
+    }
+    if (count($coinciden) === 1) return $coinciden[0];
+    $motivo = $coinciden ? 'ambiguo' : 'sin_chat';
+    return null;
 }
 
 function wabot_conv_load($clave) {
