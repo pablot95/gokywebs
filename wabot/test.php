@@ -182,7 +182,7 @@ caso('completa los colores → pregunta por la referencia, todavía no cierra',
 
 $r = wabot_engine('me gusta como se ve estudiokahn.com', $c, $cfg);
 caso('pasa la referencia → cierra, crea lead y deriva',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado' && $c['lead_creado'] === true
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado' && $c['lead_creado'] === true
     && $c['referencia'] === 'me gusta como se ve estudiokahn.com');
 
 echo "— Cerrada pero disponible para dudas —
@@ -264,7 +264,7 @@ caso('pasa interés + los 2 datos juntos → pregunta la referencia', $r === [$c
 
 $r = wabot_engine('no tengo ninguna', $c, $cfg);
 caso('dice que no tiene referencia → cierra igual, sin guardar basura',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado' && $c['referencia'] === '' && $c['lead_creado'] === true);
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado' && $c['referencia'] === '' && $c['lead_creado'] === true);
 
 echo "— Detección de \"no tengo referencia\" —\n";
 foreach (['no', 'No', 'ninguna', 'no tengo', 'nada', 'NO TENGO NINGUNA', 'la verdad que no', '  no.  '] as $n) {
@@ -1101,7 +1101,7 @@ caso('en Instagram NO cierra: primero pide el WhatsApp',
 
 $r = wabot_engine('11 2506-8578', $c, $cfg);
 caso('con el número cierra y crea el lead',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado' && $c['lead_creado'] === true);
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado' && $c['lead_creado'] === true);
 caso('el número queda guardado en formato internacional', $c['telefono_wsp'] === '5491125068578');
 
 // Un número que no cierra se rechaza y se vuelve a pedir.
@@ -1123,7 +1123,7 @@ $c['descripcion'] = 'plomero'; $c['colores'] = 'azul';
 clasifica(['otro']);
 $r = wabot_engine('no tengo', $c, $cfg);
 caso('en WhatsApp cierra directo, sin pedir nada más',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado');
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado');
 
 // En Instagram, ni siquiera una intención de avanzar reemplaza el teléfono real.
 $c = conv_ig(); $c['fase'] = 'prediseno_wsp'; $c['tipo'] = 'landing';
@@ -1183,7 +1183,7 @@ caso('un gracias suelto no se vuelve la referencia', $c['fase'] === 'prediseno_r
 clasifica(['otro']);
 $r = wabot_engine('me gusta como se ve zara.com', $c, $cfg);
 caso('la respuesta de verdad sí cierra con la referencia bien guardada',
-    $r === [$cfg['prediseno_completo']] && $c['referencia'] === 'me gusta como se ve zara.com' && $c['lead_creado'] === true);
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['referencia'] === 'me gusta como se ve zara.com' && $c['lead_creado'] === true);
 
 echo "— Querer avanzar con los datos dados no tira el lead —\n";
 
@@ -1192,13 +1192,13 @@ $c['descripcion'] = 'plomero'; $c['colores'] = 'azul';
 clasifica(['quiere_avanzar']);
 $r = wabot_engine('dale, quiero arrancar ya', $c, $cfg);
 caso('quiere avanzar en prediseno_ref → cierra el prediseño, no deriva a secas',
-    $r === [$cfg['prediseno_completo']] && $c['lead_creado'] === true);
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['lead_creado'] === true);
 
 $c = conv_nueva(); $c['fase'] = 'prediseno_ref'; $c['tipo'] = 'landing';
 $c['descripcion'] = 'plomero'; $c['colores'] = 'azul';
 clasifica(['pide_humano']);
 $r = wabot_engine('pasame con una persona', $c, $cfg);
-caso('pedir humano ahí también salva el lead', $r === [$cfg['prediseno_completo']] && $c['lead_creado'] === true);
+caso('pedir humano ahí también salva el lead', $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['lead_creado'] === true);
 
 echo "— El desempate no es un callejón —\n";
 
@@ -3327,8 +3327,11 @@ echo "— Los mensajes del hueco ahora piden respuesta —\n";
 
 // La charla se enfriaba porque los tres mensajes seguidos eran afirmaciones:
 // nada que contestar, y sin respuesta del cliente la ventana de Meta cierra.
-caso('el cierre de la recolección deja una pregunta abierta', mb_strpos($cfg['prediseno_completo'], '?') !== false);
-caso('y sirve para diseñar, no es relleno', mb_stripos($cfg['prediseno_completo'], 'destacar') !== false);
+$cierreEcom = wabot_texto_prediseno_completo(['tipo' => 'ecommerce', 'imagenes_recibidas' => 0], $cfg);
+caso('el cierre de la recolección pide material, que es lo que filtra al curioso',
+    mb_stripos($cierreEcom, 'mandame') !== false);
+caso('y pide fotos del rubro que corresponde, no genéricas',
+    mb_stripos($cierreEcom, 'fotos de tus productos') !== false);
 caso('la línea de espera NO repite esa misma pregunta', mb_stripos($cfg['espera_prediseno'], 'destacar') === false);
 caso('pero sí recuerda cuándo llega la demo', mb_strpos($cfg['espera_prediseno'], '{entrega}') !== false);
 caso('el aviso de la mañana termina en pregunta', mb_strpos($cfg['muestra_aviso'], '?') !== false);
@@ -3363,6 +3366,45 @@ caso('ya_tiene_plataforma no promete trabajar sobre la web existente',
     stripos($cfg['info']['ya_tiene_plataforma'], 'no trabajamos sobre webs ya hechas') !== false);
 caso('y no contradice a info.tecnologia',
     stripos($cfg['info']['tecnologia'], 'trabajamos sobre webs ya hechas') !== false);
+
+echo "— El material que pide filtra al curioso, y es el que corresponde al rubro —\n";
+
+foreach ([
+    'catalogo'      => 'fotos de tus productos',
+    'ecommerce'     => 'fotos de tus productos',
+    'inmobiliaria'  => 'propiedades',
+    'turnos'        => 'del local o de los trabajos',
+    'institucional' => 'del lugar o de las actividades',
+    'elearning'     => 'dando clase',
+    'landing'       => 'tus trabajos, tu local o tu equipo',
+] as $tipo => $esperado) {
+    $pedido = wabot_imagenes_a_pedir(['tipo' => $tipo], $cfg);
+    caso("a $tipo le pide \"$esperado\"", mb_stripos($pedido, $esperado) !== false);
+    caso("  y siempre el logo", mb_stripos($pedido, 'logo') !== false || mb_stripos($pedido, 'escudo') !== false);
+}
+caso('a una inmobiliaria NO le pide fotos de productos',
+    mb_stripos(wabot_imagenes_a_pedir(['tipo' => 'inmobiliaria'], $cfg), 'productos') === false);
+caso('a una peluquería (turnos) tampoco',
+    mb_stripos(wabot_imagenes_a_pedir(['tipo' => 'turnos'], $cfg), 'productos') === false);
+caso('un tipo desconocido cae a un pedido genérico, nunca a vacío',
+    trim(wabot_imagenes_a_pedir(['tipo' => 'lo_que_sea'], $cfg)) !== ''
+    && mb_stripos(wabot_imagenes_a_pedir(['tipo' => 'lo_que_sea'], $cfg), 'logo') !== false);
+caso('sin tipo tampoco queda vacío',
+    trim(wabot_imagenes_a_pedir([], $cfg)) !== '');
+
+$cierreSinFotos = wabot_texto_prediseno_completo(['tipo' => 'catalogo', 'imagenes_recibidas' => 0], $cfg);
+caso('el cierre pide el material', mb_stripos($cierreSinFotos, 'mandame') !== false);
+caso('y no deja el placeholder crudo', mb_strpos($cierreSinFotos, '{imagenes}') === false);
+caso('explica POR QUÉ lo pide, no lo pide a secas',
+    mb_stripos($cierreSinFotos, 'tuya de verdad') !== false);
+
+$cierreConFotos = wabot_texto_prediseno_completo(['tipo' => 'catalogo', 'imagenes_recibidas' => 3], $cfg);
+caso('si ya mandó fotos, NO se las vuelve a pedir', mb_stripos($cierreConFotos, 'mandame') === false);
+caso('y las reconoce', mb_stripos($cierreConFotos, 'las fotos que me pasaste') !== false);
+caso('sin dejar el placeholder', mb_strpos($cierreConFotos, '{imagenes}') === false);
+
+caso('los dos textos siguen prometiendo el día concreto',
+    strpos($cierreSinFotos, '{entrega}') !== false && strpos($cierreConFotos, '{entrega}') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

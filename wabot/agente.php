@@ -783,7 +783,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
             }
             wabot_handoff_marcar($conv, 'prediseno');
-            return ['texto' => $cfg['prediseno_completo'], 'terminal' => true];
+            return ['texto' => wabot_texto_prediseno_completo($conv, $cfg), 'terminal' => true];
 
         case 'anotar_sistema':
             wabot_agente_anotar_sistema($args, $conv);

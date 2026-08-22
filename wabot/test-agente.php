@@ -369,7 +369,7 @@ caso('si el agente se cae, el motor NO vuelve a pedir descripción ni colores',
 caso('tampoco vuelve a pedir la referencia que ya estaba anotada',
     $r !== [$cfg['prediseno_referencia']]);
 caso('cierra con el mensaje final y crea el lead',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado' && $c['lead_creado'] === true);
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado' && $c['lead_creado'] === true);
 caso('la referencia que sobrevive es la que dio el cliente',
     $c['referencia'] === 'gokywebs.com');
 
@@ -382,7 +382,7 @@ caso('"no tengo ninguna" queda como preguntada y sin guardar basura',
     $c['referencia'] === '' && $c['referencia_preguntada'] === true);
 $r = wabot_responder('dale', $c, $cfg);
 caso('con la referencia ya contestada, cierra directo',
-    $r === [$cfg['prediseno_completo']] && $c['fase'] === 'derivado');
+    $r === [wabot_texto_prediseno_completo($c, $cfg)] && $c['fase'] === 'derivado');
 
 unset($GLOBALS['WABOT_TEST_AGENTE'], $GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
@@ -400,7 +400,7 @@ $c = convNueva();
 $c['tipo'] = 'ecommerce'; $c['fase'] = 'prediseno'; $c['precio_dado'] = true;
 wabot_agente_ejecutar('anotar_prediseno', ['nombre_negocio'=>'Mates del Sur','descripcion'=>'mates','colores'=>'marron','referencia'=>'no'], $c, $cfg);
 $r = wabot_agente_ejecutar('guardar_prediseno', [], $c, $cfg);
-caso('el cierre deja la charla derivada', $c['fase'] === 'derivado' && $r['texto'] === $cfg['prediseno_completo']);
+caso('el cierre deja la charla derivada', $c['fase'] === 'derivado' && $r['texto'] === wabot_texto_prediseno_completo($c, $cfg));
 
 caso('el cierre del prediseño queda marcado como tal', $c['cierre'] === 'prediseno');
 
@@ -763,7 +763,11 @@ caso('no toma como suyas las respuestas del bot',
 
 echo "— El mensaje de cierre avisa que la muestra llega por el mismo canal —\n";
 caso('no promete otro número', strpos($cfg['prediseno_completo'], '2506-8578') === false);
-caso('avisa que la muestra llega por el mismo canal', stripos($cfg['prediseno_completo'], 'por acá') !== false);
+caso('avisa cuándo llega la muestra, sin prometer plazos vagos',
+    strpos($cfg['prediseno_completo'], '{entrega}') !== false
+    && stripos($cfg['prediseno_completo'], '24 a 48') === false);
+caso('y la línea de espera sí aclara que llega por acá',
+    stripos($cfg['espera_prediseno'], 'por acá') !== false);
 caso('la bienvenida es la pregunta abierta, ya no el menú de opciones',
     strpos($cfg['menu'], 'Contame un poco') !== false && stripos($cfg['menu'], 'Landing (') === false);
 

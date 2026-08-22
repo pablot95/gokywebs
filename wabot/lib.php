@@ -214,6 +214,9 @@ function wabot_config_ventas(&$cfg) {
         'cierre_suave'      => 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.',
         // Se pega al cierre solo si ya hay un tipo cotizado: al que se va le
         // saca el costo de volver ("no tenés que explicar todo de nuevo").
+        // Si ya mandó fotos durante la charla, pedírselas de nuevo delata
+        // que el bot no vio lo que le mandaron.
+        'prediseno_completo_con_fotos' => 'Listo {nombre}, con eso ya lo preparamos. Con las fotos que me pasaste te la dejo lista {entrega} y te la mando por acá.',
         'cierre_memoria'    => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
         'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
@@ -360,11 +363,13 @@ function wabot_config_ventas(&$cfg) {
         // el cliente ya volvió a escribir, y ahí la pregunta llega tarde.
         'prediseno_completo' => [
             'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.'
-                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
+                => 'Listo {nombre}, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame {imagenes}. Con eso te la dejo lista {entrega}.',
             'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.'
-                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
+                => 'Listo {nombre}, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame {imagenes}. Con eso te la dejo lista {entrega}.',
             'Listo {nombre}, con eso ya lo preparamos. Te mandamos la demo por acá mismo {entrega}.'
-                => 'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.',
+                => 'Listo {nombre}, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame {imagenes}. Con eso te la dejo lista {entrega}.',
+            'Listo {nombre}, con eso ya lo preparamos: te mandamos la demo por acá {entrega}. Una última cosa que ayuda mucho: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.'
+                => 'Listo {nombre}, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame {imagenes}. Con eso te la dejo lista {entrega}.',
         ],
         'pensarlo' => [
             'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la muestra gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?'
@@ -903,6 +908,38 @@ function wabot_tipo_label($tipo, $cfg) {
 }
 
 /**
+ * Qué fotos pedirle, según lo que vende. Pedir "fotos de tus productos" a una
+ * peluquería o "fotos de tus propiedades" a una pollería delata que el bot no
+ * escuchó: cada tipo tiene su pedido, editable desde Textos.
+ *
+ * Es además el filtro de esfuerzo: juntar el logo y unas fotos es trabajo real,
+ * así que el que solo venía a mirar una demo gratis se cae acá, y el que sí
+ * quiere comprar invierte algo — y el que invierte, después contesta.
+ */
+function wabot_imagenes_a_pedir($conv, $cfg) {
+    $tipo = (string)($conv['tipo'] ?? '');
+    $pedido = trim((string)($cfg['tipos'][$tipo]['imagenes_pedido'] ?? ''));
+    if ($pedido !== '') return $pedido;
+    return trim((string)($cfg['imagenes_pedido_generico'] ?? 'el logo y 3 o 4 fotos de tu negocio'));
+}
+
+/**
+ * El texto que cierra la recolección, con {imagenes} ya resuelto según el
+ * rubro. Se resuelve acá y no en wabot_personalizar() porque hace falta $cfg.
+ * Si el cliente YA mandó fotos, no se le vuelven a pedir.
+ */
+function wabot_texto_prediseno_completo($conv, $cfg) {
+    $texto = (string)($cfg['prediseno_completo'] ?? '');
+    if (strpos($texto, '{imagenes}') === false) return $texto;
+
+    if ((int)($conv['imagenes_recibidas'] ?? 0) > 0) {
+        $yaMando = trim((string)($cfg['prediseno_completo_con_fotos'] ?? ''));
+        if ($yaMando !== '') return $yaMando;
+    }
+    return str_replace('{imagenes}', wabot_imagenes_a_pedir($conv, $cfg), $texto);
+}
+
+/**
  * Cada tipo lleva una descripción de lo que se cotiza ("una tienda online
  * completa: catálogo, carrito…"), que {desc} mete en el mensaje del precio.
  * Un config viejo no las tiene: se completan acá, y si el mensaje de precio
@@ -926,6 +963,26 @@ function wabot_config_descs(&$cfg) {
         if (trim((string)($t['desc'] ?? '')) === '' && isset($descs[$k])) {
             $cfg['tipos'][$k]['desc'] = $descs[$k];
         }
+    }
+
+    // Qué fotos pedirle a cada rubro. Pedirle "fotos de tus productos" a una
+    // peluquería delata que el bot no escuchó lo que le contaron.
+    $pedidos = [
+        'landing'       => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
+        'catalogo'      => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
+        'turnos'        => 'el logo y algunas fotos del local o de los trabajos que hacés',
+        'institucional' => 'el logo o escudo y algunas fotos del lugar o de las actividades',
+        'inmobiliaria'  => 'el logo y fotos de un par de propiedades que tengas publicadas',
+        'ecommerce'     => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
+        'elearning'     => 'el logo y alguna foto tuya dando clase o del material de los cursos',
+    ];
+    foreach (($cfg['tipos'] ?? []) as $k => $t) {
+        if (trim((string)($t['imagenes_pedido'] ?? '')) === '' && isset($pedidos[$k])) {
+            $cfg['tipos'][$k]['imagenes_pedido'] = $pedidos[$k];
+        }
+    }
+    if (trim((string)($cfg['imagenes_pedido_generico'] ?? '')) === '') {
+        $cfg['imagenes_pedido_generico'] = 'el logo y 3 o 4 fotos de tu negocio';
     }
     // Las versiones anteriores describían la web pero no decían para qué le
     // sirve al negocio: se actualizan solas en el bot-config.json que ya existe.

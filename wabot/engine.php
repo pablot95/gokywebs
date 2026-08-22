@@ -2287,5 +2287,5 @@ function wabot_prediseno_completo(&$conv, $cfg) {
     // Queda en espera no avisada a propósito: si el cliente sigue escribiendo,
     // se lleva una línea y recién después el bot se calla.
     wabot_handoff_marcar($conv, 'prediseno');
-    return [$cfg['prediseno_completo']];
+    return [wabot_texto_prediseno_completo($conv, $cfg)];
 }
