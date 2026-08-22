@@ -3046,5 +3046,27 @@ caso('la zona horaria quedó en Buenos Aires', date_default_timezone_get() === '
 caso('date() y el cálculo manual UTC-3 dan la misma hora',
     date('H:i') === gmdate('H:i', time() - 3 * 3600));
 
+echo "— El desempate no entra más en loop (MILANEL y Distribuidora, 21-ago) —\n";
+
+caso('la normalización cambia puntuación por espacio, no la borra',
+    wabot_normalizar_frase('web,boton') === 'web boton');
+caso('y conserva los números: los patrones de orden vuelven a existir',
+    wabot_normalizar_frase('Itiza las 2') === 'itiza las 2');
+
+foreach ([
+    'Gestion en la web,boton de pago y pedido integrado a WhatsApp' => 'comercio_vender',
+    'Coti,ane ambas'         => 'comercio_vender',
+    'Itiza las 2'            => 'comercio_vender',
+    'Quizá a las dos'        => 'comercio_vender',
+    'la 2'                   => 'comercio_mostrar',
+    'Quiero publicar los vehiculos' => 'comercio_mostrar',
+    'Que muestren y que contacten x whatsap' => 'comercio_mostrar',
+] as $frase => $lado) {
+    caso("\"" . mb_substr($frase, 0, 44) . "\" → $lado",
+        wabot_desempate_por_palabras('desempate_comercio', $frase) === $lado);
+}
+caso('"sin carrito" sigue negando aunque tenga otras señales',
+    wabot_desempate_por_palabras('desempate_comercio', 'quiero vender pero sin carrito') === 'comercio_mostrar');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

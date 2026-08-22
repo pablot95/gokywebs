@@ -1181,6 +1181,7 @@ function wabot_conv_load($clave) {
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         'aclaraciones_fallidas' => 0,
+        'desempates_preguntados' => [],
         'aclaracion_pendiente' => false,
         'aclaracion_ultimo_hash' => null,
         'nombre_usado'     => false,
@@ -1285,6 +1286,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['lead_recibido_evento'] = false;
     $conv['handoff_pendiente'] = false;
     $conv['aclaraciones_fallidas'] = 0;
+    $conv['desempates_preguntados'] = [];
     $conv['aclaracion_pendiente'] = false;
     $conv['aclaracion_ultimo_hash'] = null;
     $conv['nombre_usado'] = false;

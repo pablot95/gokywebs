@@ -1081,5 +1081,31 @@ caso('y cuando sirve, se lo pasa hecho y no lo hace preguntar',
     strpos(wabot_agente_sistema($convNombre, $cfg), 'Nombre de la persona: Marcelo Polzoni') !== false);
 @unlink(WABOT_DATA . '/conv/TESTNOMBREPERFIL.json');
 
+echo "— El desempate escala en vez de repetirse sin techo —\n";
+
+$convD = wabot_conv_load('TESTDESEMPESC');
+$convD['fase'] = 'menu';
+$r1 = wabot_agente_desempate_pendiente('ecommerce', 'algo incomprensible', $convD, $cfg);
+caso('la primera vez pregunta el desempate normal',
+    $r1 !== null && $r1['texto'] === $cfg['desempate_comercio'] && empty($r1['terminal']));
+$r2 = wabot_agente_desempate_pendiente('ecommerce', 'otra cosa rara', $convD, $cfg);
+caso('la segunda usa la versión simplificada, no la misma pregunta',
+    $r2 !== null && $r2['texto'] === $cfg['desempate_comercio_2'] && empty($r2['terminal']));
+$r3 = wabot_agente_desempate_pendiente('ecommerce', 'tercera sin sentido', $convD, $cfg);
+caso('la tercera deriva a Pablo en vez de insistir',
+    $r3 !== null && !empty($r3['terminal']) && $r3['texto'] === $cfg['derivar']);
+caso('y la conversación queda marcada como pendiente de atención',
+    !empty($convD['handoff_pendiente']));
+
+$convOK = wabot_conv_load('TESTDESEMPOK');
+$convOK['fase'] = 'menu';
+caso('con evidencia clara ("botón de pago y pedido integrado") no pregunta nada',
+    wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $convOK, $cfg) === null);
+caso('y "cotizame ambas" también deja cotizar directo',
+    wabot_agente_desempate_pendiente('ecommerce', 'Coti,ane ambas', $convOK, $cfg) === null);
+
+@unlink(WABOT_DATA . '/conv/TESTDESEMPESC.json');
+@unlink(WABOT_DATA . '/conv/TESTDESEMPOK.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

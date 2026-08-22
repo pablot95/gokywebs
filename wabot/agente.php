@@ -897,6 +897,19 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
     if ($ctx === '') return null;
 
     $pregunta = function ($fase, $claveTexto) use (&$conv, $cfg) {
+        // Freno de repetición: al que no contesta lo que la pregunta espera no
+        // se le repite la MISMA pregunta sin techo (a Distribuidora se la
+        // hicieron cinco veces seguidas). Segunda vez → la versión simplificada
+        // con opciones para responder en una palabra; tercera → lo toma Pablo.
+        $vez = (int)($conv['desempates_preguntados'][$fase] ?? 0) + 1;
+        $conv['desempates_preguntados'][$fase] = $vez;
+        if ($vez >= 3) {
+            wabot_handoff_marcar($conv, 'desempate_incomprendido');
+            return ['texto' => (string)$cfg['derivar'], 'exacta' => true, 'terminal' => true];
+        }
+        if ($vez === 2 && trim((string)($cfg[$claveTexto . '_2'] ?? '')) !== '') {
+            $claveTexto .= '_2';
+        }
         $conv['fase'] = $fase;
         wabot_handoff_aclaracion_resuelta($conv);
         return ['texto' => (string)$cfg[$claveTexto], 'exacta' => true,

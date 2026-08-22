@@ -1413,6 +1413,14 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'por la web', 'por la pagina', 'desde la web', 'desde la pagina', 'en la web', 'en la pagina',
                 'por internet', 'por la pag', 'la web', 'la pagina', 'que compren', 'pagar', 'paguen',
                 'mercado pago', 'con pago', 'todo online', 'la completa', 'la tienda',
+                // "Botón de pago y pedido integrado a WhatsApp" es ecommerce
+                // dicho con otras palabras (caso MILANEL): el "whatsapp" del
+                // final lo mandaba a catálogo porque estas señales no estaban.
+                'boton de pago', 'con boton', 'pedido integrado', 'pedidos integrados',
+                'gestionar las ventas', 'gestionar ventas', 'gestion de ventas', 'checkout',
+                // "Cotizame ambas": quiere las dos → se cotiza la completa, que
+                // incluye a la otra (caso Distribuidora, que la pidió 3 veces).
+                'ambas', 'ambos', 'las dos', 'los dos', 'las 2', 'los 2', 'las dos opciones',
             ]))) return 'comercio_vender';
             if ($tiene(array_merge($segunda, [
                 'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo', 'presentacion', 'presentar', 'contacten', 'contacto',
@@ -1965,7 +1973,12 @@ function wabot_apunta_a_lo_ya_dicho($texto) {
 function wabot_normalizar_frase($texto) {
     $t = mb_strtolower(trim($texto));
     $t = strtr($t, ['á'=>'a', 'é'=>'e', 'í'=>'i', 'ó'=>'o', 'ú'=>'u', 'ü'=>'u', 'ñ'=>'n']);
-    $t = preg_replace('/[^\p{L}\s]/u', '', $t);
+    // La puntuación se cambia por espacio, no se borra: "web,boton" pegado
+    // quedaba "webboton" y ningún patrón lo encontraba (pasó en producción con
+    // el desempate de MILANEL). Y los números se CONSERVAN: borrarlos dejaba
+    // "itiza las 2" como "itiza las", así que los patrones de orden ("la 1",
+    // "la 2", "opcion 1") no podían matchear nunca — estaban muertos.
+    $t = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $t);
     return trim(preg_replace('/\s+/', ' ', $t));
 }
 
