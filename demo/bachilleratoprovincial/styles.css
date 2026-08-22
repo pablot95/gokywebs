@@ -1008,6 +1008,123 @@ section {
   }
 }
 
+/* ---------- Método (Nosotros) ---------- */
+.metodo {
+  background: var(--color-bg-alt);
+}
+.metodo-grid {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding-inline: 6vw;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.6rem;
+}
+.metodo-paso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.metodo-num {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+.metodo-paso p {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+}
+
+/* ---------- Día en la escuela (Vida escolar) ---------- */
+.dia-timeline {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: 6vw;
+  display: flex;
+  flex-direction: column;
+}
+.dia-paso {
+  position: relative;
+  padding: 0 0 2rem 2.2rem;
+  border-left: 2px solid var(--color-border);
+}
+.dia-paso:last-child {
+  border-color: transparent;
+  padding-bottom: 0;
+}
+.dia-paso::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 0.2rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-primary);
+}
+.dia-paso h3 {
+  font-size: 1rem;
+}
+.dia-paso p {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  margin-top: 0.35rem;
+}
+
+/* ---------- FAQ ---------- */
+.faq {
+  background: var(--color-bg-alt);
+}
+.faq-list {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: 6vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.faq-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.3rem;
+  background: var(--color-bg);
+}
+.faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary::after {
+  content: "+";
+  flex: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--color-primary);
+  transition: rotate 0.3s;
+}
+.faq-item[open] summary::after {
+  rotate: 45deg;
+}
+.faq-item p {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  margin-top: 0.8rem;
+}
+
 /* ---------- Reveals ---------- */
 [data-animate] {
   will-change: transform, opacity;
