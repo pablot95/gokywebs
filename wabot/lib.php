@@ -215,6 +215,9 @@ function wabot_config_ventas(&$cfg) {
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
         'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
         'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", según cuál sea el objetivo principal de la web.',
+        // A un alojamiento no se le habla de "sacar turno eligiendo día y
+        // horario": se le habla de reservas, fechas y disponibilidad.
+        'desempate_turnos_alojamiento' => 'Te hago una pregunta que cambia bastante la web: querés que tus huéspedes puedan reservar solos desde la página, eligiendo las fechas y viendo la disponibilidad, o alcanza con que te consulten por WhatsApp y lo coordinás vos?',
         'hosting_renovacion' => 'Después del primer año, el hosting y el dominio se renuevan una vez al año. Como el valor puede cambiar según el dominio y el plan vigente, antes del vencimiento te confirmamos el importe actualizado.',
         'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
         'seguimiento_datos' => 'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.',
@@ -1076,6 +1079,25 @@ function wabot_nombre_agenda($conv) {
     return $persona !== '' ? $persona : $negocio;
 }
 
+/**
+ * ¿La descripción dice algo diseñable? "Servicios profesionales" a secas no:
+ * la demo se cerró así y Pablo tuvo que volver a preguntar qué servicios eran
+ * (caso Julieta, 21-ago). Se aceptan descripciones cortas pero concretas.
+ */
+function wabot_descripcion_generica($descripcion) {
+    // Sin wabot_normalizar_frase: esa vive en engine.php y este archivo también
+    // se carga solo (seguimiento.php).
+    $t = preg_replace('/[^\p{L}\s]/u', '', wabot_normalizar_busqueda($descripcion));
+    $t = trim(preg_replace('/\s+/u', ' ', $t));
+    if ($t === '') return true;
+    return in_array($t, [
+        'servicios profesionales', 'servicios', 'productos', 'venta de productos',
+        'productos y servicios', 'servicios varios', 'varios', 'de todo un poco',
+        'mi negocio', 'un negocio', 'emprendimiento', 'un emprendimiento',
+        'mi emprendimiento', 'ventas', 'comercio', 'negocio propio',
+    ], true);
+}
+
 /** Qué le falta pedir para el prediseño: nunca lo que el cliente ya dio. */
 function wabot_prediseno_faltan($conv) {
     $items = [];
@@ -1085,7 +1107,7 @@ function wabot_prediseno_faltan($conv) {
     // el perfil no dio nada usable.
     if (wabot_nombre_usable((string)($conv['nombre'] ?? '')) === '') $items[] = 'Tu nombre';
     if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
-    if (trim((string)($conv['descripcion']    ?? '')) === '') $items[] = 'Una descripción breve de lo que ofrecés';
+    if (wabot_descripcion_generica((string)($conv['descripcion'] ?? ''))) $items[] = 'Una descripción breve de lo que ofrecés';
     if (trim((string)($conv['colores']        ?? '')) === '') $items[] = 'Los colores de tu marca';
     return $items;
 }
@@ -1164,6 +1186,12 @@ function wabot_conv_load($clave) {
         // que vio el precio y no llegó a pedir la demo.
         'ultima_llamada_enviada' => false,
         'ultima_llamada_ts'      => 0,
+        // "Lo consulto y te aviso": el cliente prometió avisar él. El
+        // seguimiento automático no lo persigue ese mismo día.
+        'aviso_prometido_ts'     => 0,
+        // Entró pidiendo la demo: el precio no la vuelve a ofrecer, va directo
+        // a pedir los datos.
+        'demo_pedida_entrada'    => false,
         'cliente_id'             => null,
         // Aviso mandado antes de que se cierre la ventana de 24h de Meta,
         // mientras se espera para presentar la muestra: ver wabot_muestra_aviso_correr().
@@ -1274,6 +1302,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['postdemo_sin_entender'] = 0;
     $conv['ultima_llamada_enviada'] = false;
     $conv['ultima_llamada_ts'] = 0;
+    $conv['aviso_prometido_ts'] = 0;
+    $conv['demo_pedida_entrada'] = false;
     $conv['cliente_id'] = null;
     $conv['muestra_aviso_enviado'] = false;
     $conv['muestra_aviso_ts'] = 0;
@@ -2888,6 +2918,12 @@ function wabot_seguimiento_hora_ok($cfg, $ahora) {
     return $hora >= $desde && $hora < $hasta;
 }
 
+/** ¿Los dos timestamps caen el mismo día calendario argentino (UTC-3 fijo)? */
+function wabot_mismo_dia_ar($ts1, $ts2) {
+    if ((int)$ts1 <= 0 || (int)$ts2 <= 0) return false;
+    return gmdate('Y-m-d', (int)$ts1 - 3 * 3600) === gmdate('Y-m-d', (int)$ts2 - 3 * 3600);
+}
+
 function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo']) || empty($cfg['seguimiento_activo'])) return false;
@@ -2895,6 +2931,9 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
         || in_array(($cv['seguimiento_estado'] ?? ''), ['enviado', 'bloqueado'], true)) return false;
     if ((int)($cv['seguimiento_intentos'] ?? 0) >= 3) return false;
     if (!empty($cv['bot_off']) || !empty($cv['handoff_pendiente']) || (int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    // "Lo veo con mi socia y te aviso" el mismo día = silencio: el cliente
+    // tomó el control de los tiempos y perseguirlo ese día quema la venta.
+    if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
 
     // Solo etapas calientes: ya recibió precio/muestra o está completando la
     // muestra. Nunca se persigue una charla que apenas estaba calificándose.
@@ -2942,6 +2981,10 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     if (!empty($cv['ultima_llamada_enviada']) || !empty($cv['seguimiento_bloqueado'])) return false;
     if (!empty($cv['bot_off']) || !empty($cv['archivado'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    // Con una duda esperando a Pablo, o un "te aviso" del mismo día, este
+    // aviso también es perseguir: mismas reglas que el seguimiento común.
+    if (!empty($cv['handoff_pendiente'])) return false;
+    if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
     // Solo los que mostraron interés y no cerraron nada.
     if (!wabot_conv_interesado($cv)) return false;
     // El último tiene que haber sido el bot: si el cliente escribió después, la

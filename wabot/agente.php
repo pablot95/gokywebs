@@ -122,6 +122,7 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     $terminal   = null; // si una herramienta corta la charla, su texto es la respuesta final
     $exacta     = null; // corta solo esta vuelta, sin cerrar la conversación
     $aparte     = [];   // los que van en su propio globo, detrás del que escribe el modelo
+    $huboAnotacion = false; // alguna herramienta de anotar/guardar corrió de verdad
 
     for ($vuelta = 0; $vuelta < WABOT_AGENTE_MAX_VUELTAS; $vuelta++) {
         $r = wabot_agente_llamar($contents, $tools, $sistema);
@@ -164,6 +165,15 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            // Anotación fantasma: "ya sumé el logo", "anoté la descripción" sin
+            // que ninguna herramienta de anotar haya corrido. El bot confirmaba
+            // haber recibido cosas que nunca llegaron (deeko y Luicho, 21-ago).
+            if (!$huboAnotacion
+                && preg_match('/\b(anot[eé]|anotad[oa]|tom[eé] nota|ya (lo )?sum[eé]|qued[oó] (todo )?anotado|ya (lo )?registr[eé]|ya teng[oa] (el|la|tu|todos?)|ya agregu[eé])\b/iu', $texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'anota sin herramienta', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             $limpio = wabot_validar_redaccion($texto, implode("\n", $pendientes), $cfg);
             if ($limpio === null) return null;
             wabot_agente_marcar_nombre_usado($limpio, $conv);
@@ -182,6 +192,10 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 continue;
             }
             $res = wabot_agente_ejecutar($ll['name'] ?? '', $ll['args'] ?? [], $conv, $cfg, $mensaje);
+            if (in_array($ll['name'] ?? '', ['anotar_prediseno', 'guardar_prediseno', 'anotar_sistema', 'anotar_cambios'], true)
+                && empty($res['error'])) {
+                $huboAnotacion = true;
+            }
             if (!empty($res['texto']))    $pendientes[] = $res['texto'];
             if (!empty($res['terminal'])) $terminal     = $res['texto'];
             if (!empty($res['exacta']))   $exacta       = $res['texto'];
@@ -644,6 +658,22 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     $clave = $rescatada;
                 }
             }
+            // "¿El dominio viene incluido o se paga aparte?" pregunta por el
+            // COSTO, no por la titularidad. El modelo confundía las dos y la
+            // respuesta de "queda a tu nombre" desconcertaba al cliente (caso
+            // Agu, 21-ago): si el matcher determinista dice hosting, gana él.
+            if ($clave === 'titularidad' && trim((string)$mensaje) !== ''
+                && wabot_info_por_palabras($mensaje, $conv['fase'] ?? null) === 'hosting') {
+                wabot_log('info_rescatada', ['de' => 'titularidad', 'a' => 'hosting', 'msg' => mb_substr($mensaje, 0, 90)]);
+                $clave = 'hosting';
+            }
+            // Si aun así queda el comodín, la promesa se cumple de verdad: la
+            // duda figura como pendiente para Pablo y frena los seguimientos.
+            // Solo el flag — cambiar la fase descarrilaría la venta.
+            if ($clave === 'otra') {
+                $conv['handoff_pendiente'] = true;
+                wabot_evento_sesion($conv, 'duda_sin_respuesta');
+            }
             if ($clave === 'precio_cotizado') {
                 return ['texto' => wabot_precio_resumen($conv, $cfg),
                         'nota' => 'Es lo ya cotizado en esta charla: repetilo tal cual, sin recalcular nada.'];
@@ -917,8 +947,11 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
     };
 
     if ($tipo === 'ecommerce') {
+        // "Botón de pago y pedido integrado" ES querer cobrar online: el guard
+        // le pisaba la decisión al modelo y repetía el desempate ya contestado
+        // (caso MILANEL, 21-ago).
         $evidencia = wabot_desempate_por_palabras('desempate_comercio', $ctx) === 'comercio_vender'
-            || preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online|pago online|pagar online|vender online|vender por internet|vender por la web|vender desde la (web|pagina)|comprar desde la (web|pagina)|revendo|revendedora?)\b/u', wabot_normalizar_frase($ctx));
+            || preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online|pago online|pagar online|vender online|vender por internet|vender por la web|vender desde la (web|pagina)|comprar desde la (web|pagina)|revendo|revendedora?|boton de pago|botones de pago|pagos? integrados?|pedidos? integrados?|pasarela de pagos?|checkout|mercado ?pago|link de pago|que (paguen|compren) (desde|en|por) la (web|pagina))\b/u', wabot_normalizar_frase($ctx));
         if (!$evidencia) return $pregunta('desempate_comercio', 'desempate_comercio');
     }
     if ($tipo === 'catalogo') {
@@ -928,7 +961,7 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
     }
     if ($tipo === 'turnos') {
         $evidencia = wabot_desempate_por_palabras('desempate_turnos', $ctx) === 'turnos_si';
-        if (!$evidencia) return $pregunta('desempate_turnos', 'desempate_turnos');
+        if (!$evidencia) return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
     }
     if ($tipo === 'elearning') {
         $evidencia = wabot_desempate_por_palabras('desempate_cursos', $ctx) === 'cursos_vender';
@@ -939,7 +972,7 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
         $rubroCtx = wabot_fallback_rubro_local($ctxNorm);
         if ($rubroCtx === 'turnos_pendiente'
             && wabot_desempate_por_palabras('desempate_turnos', $ctx) === null) {
-            return $pregunta('desempate_turnos', 'desempate_turnos');
+            return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
         }
         if ($rubroCtx === 'comercio_pendiente'
             && wabot_desempate_por_palabras('desempate_comercio', $ctx) === null) {
@@ -1035,7 +1068,14 @@ function wabot_agente_anotar($args, &$conv) {
     }
     if (array_key_exists('referencia', $args)) {
         $ref = trim((string)$args['referencia']);
-        if ($ref !== '' && !wabot_es_negativa($ref) && !wabot_apunta_a_lo_ya_dicho($ref)) {
+        // "Rosa, amarillo, beige" contestado a la pregunta de la referencia
+        // sigue hablando de colores: se suma a los colores y la referencia
+        // queda sin contestar, así se le vuelve a preguntar bien (Julieta).
+        if ($ref !== '' && wabot_parece_lista_colores($ref)) {
+            $yaTiene = trim((string)($conv['colores'] ?? ''));
+            if ($yaTiene === '') $conv['colores'] = $ref;
+            elseif (mb_stripos($yaTiene, $ref) === false) $conv['colores'] = $yaTiene . ', ' . $ref;
+        } elseif ($ref !== '' && !wabot_es_negativa($ref) && !wabot_apunta_a_lo_ya_dicho($ref)) {
             $conv['referencia'] = $ref;
             $conv['referencia_preguntada'] = true;
         } elseif ($ref !== '' && wabot_es_negativa($ref)) {

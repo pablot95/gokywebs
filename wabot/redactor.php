@@ -38,6 +38,19 @@ function wabot_responder($texto, &$conv, $cfg) {
         return [$apertura];
     }
 
+    // "Lo veo con mi socia y te aviso": el cliente tomó el control de los
+    // tiempos. Queda anotado para que el seguimiento automático no lo persiga
+    // ese mismo día (casos Oscar y "veo el enlace con mi socia", 21-ago).
+    if (wabot_dijo_te_aviso($texto)) {
+        $conv['aviso_prometido_ts'] = time();
+    }
+
+    // "Quiero mi demo gratis" de entrada: cuando llegue el precio no se le
+    // vuelve a ofrecer la demo — se pasa directo a pedirle los datos.
+    if (wabot_pidio_demo_explicita($texto)) {
+        $conv['demo_pedida_entrada'] = true;
+    }
+
     // Charla cerrada + acuse de recibo ("ok", "gracias", "igualmente", 👍) =
     // silencio. Va acá, antes del agente, porque el que encadenaba tres
     // despedidas seguidas era el modelo, no el motor: una regla de prompt no
@@ -45,6 +58,18 @@ function wabot_responder($texto, &$conv, $cfg) {
     if (($conv['fase'] ?? '') === 'derivado' && wabot_es_acuse($texto)) {
         $conv['espera_avisada'] = true;
         return [];
+    }
+
+    // Lo mismo cuando la charla se cerró sin presión y el bot no dejó ninguna
+    // pregunta abierta: un "👍 si" después de "quedo a disposición" es un
+    // acuse, no un "sí, armala" — contestarlo con otra oferta de demo obligaba
+    // al cliente a frenar al bot ("Déjame hablarlo", 21-ago).
+    if (!empty($conv['cierre']) && (wabot_es_acuse($texto) || wabot_es_afirmativa($texto))) {
+        $ultimaDelBot = '';
+        foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+            if (($linea['q'] ?? '') === 'bot') { $ultimaDelBot = (string)($linea['t'] ?? ''); break; }
+        }
+        if (strpos($ultimaDelBot, '?') === false) return [];
     }
 
     // Modo agente: Gemini lleva la charla con herramientas. Si falla por lo que

@@ -266,6 +266,78 @@ function wabot_es_acuse($texto) {
     return in_array($t, $acuses, true) || ($limpio !== '' && in_array($limpio, $acuses, true)) || $limpio === '';
 }
 
+/**
+ * ¿Pidió la demo explícitamente? El CTA del anuncio dice "Quiero mi demo
+ * gratis": volver a preguntarle "¿querés que la preparemos?" a quien entró
+ * diciendo eso es no haberlo escuchado (caso Antuz, 21-ago).
+ */
+function wabot_pidio_demo_explicita($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\b(quiero (mi|la|una) demo|demo gratis (para|de) mi|quiero ver (mi|la|una) demo'
+        . '|me interesa la demo|armame (la|una) demo|haganme (la|una) demo|quiero la demo)\b/u', $t);
+}
+
+/**
+ * Qué texto usar para el desempate de turnos. A un complejo de cabañas no se
+ * le pregunta por "sacar el turno eligiendo día y horario": el rubro habla de
+ * reservas, fechas y disponibilidad (caso Recanto del Paraná, 21-ago).
+ */
+function wabot_clave_desempate_turnos($contexto, $cfg) {
+    $t = wabot_normalizar_frase($contexto);
+    $esAlojamiento = (bool)preg_match(
+        '/\b(cabana\w*|hotel\w*|hosteria\w*|hostal\w*|hostel\w*|posada\w*|complejo\w*|glamping|camping'
+        . '|alquiler\w* temporar\w*|apart\b|apart hotel|casa de campo|quinta\w*|estadia\w*|huespedes)\b/u', $t);
+    return $esAlojamiento && trim((string)($cfg['desempate_turnos_alojamiento'] ?? '')) !== ''
+        ? 'desempate_turnos_alojamiento'
+        : 'desempate_turnos';
+}
+
+/**
+ * ¿Prometió avisar él? "Lo veo con mi socia y te aviso" es el cliente tomando
+ * el control de los tiempos: perseguirlo ese mismo día quema la venta (casos
+ * Oscar y "veo el enlace con mi socia", 21-ago).
+ */
+function wabot_dijo_te_aviso($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\b(y te aviso|te aviso y|yo te aviso|les aviso|y te digo|y les digo|y te cuento|y te confirmo'
+        . '|lo consulto|lo consultamos|tengo que consultarlo|lo tengo que (hablar|consultar|charlar|ver)'
+        . '|dejame hablarlo|dejame consultarlo|dejame verlo|dejame pensarlo'
+        . '|lo (veo|hablo|charlo|converso|evaluo) con (mi|mis|la|el)'
+        . '|con mi socc?ia?o?\b|con mis socios|con mi pareja|con mi marido|con mi mujer|con mi familia)/u',
+        ' ' . $t . ' '
+    );
+}
+
+/**
+ * ¿Es solo una lista de colores? "Rosa, amarillo, beige" contestado a la
+ * pregunta de la referencia sigue hablando de colores, no de una web que le
+ * gustó (caso Julieta, 21-ago).
+ */
+function wabot_parece_lista_colores($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    $colores = ['rojo', 'roja', 'rosa', 'rosado', 'rosados', 'amarillo', 'amarilla', 'azul', 'azules', 'celeste',
+                'verde', 'verdes', 'violeta', 'lila', 'morado', 'purpura', 'naranja', 'beige', 'beis', 'crema',
+                'blanco', 'blanca', 'negro', 'negra', 'gris', 'grises', 'marron', 'bordo', 'dorado', 'dorados',
+                'plateado', 'turquesa', 'fucsia', 'coral', 'ocre', 'mostaza', 'terracota', 'nude', 'cobre', 'salmon'];
+    $conectores = ['y', 'o', 'con', 'el', 'la', 'los', 'las', 'un', 'una', 'algo', 'de', 'en',
+                   'claro', 'clara', 'claros', 'oscuro', 'oscura', 'oscuros', 'tonos', 'tono',
+                   'pasteles', 'pastel', 'calidos', 'calido', 'frios', 'suaves', 'colores', 'color'];
+    // "Colores cálidos" o "tonos pasteles" también hablan de paleta aunque no
+    // nombren ningún color concreto.
+    $familias = ['pastel', 'pasteles', 'calidos', 'calidas', 'frios', 'frias', 'neutros', 'neutrales', 'vivos', 'tierra'];
+    $hayColor = false;
+    foreach (preg_split('/\s+/u', $t) as $palabra) {
+        if (in_array($palabra, $colores, true) || in_array($palabra, $familias, true)) { $hayColor = true; continue; }
+        if (!in_array($palabra, $conectores, true)) return false;
+    }
+    return $hayColor;
+}
+
 /** Un mensaje nuevo y explícitamente comprador vuelve a habilitar el seguimiento. */
 function wabot_reabre_consulta($texto) {
     $t = wabot_normalizar_frase($texto);
@@ -447,7 +519,9 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($desempate !== null) {
                 $conv['fase'] = $desempate[0];
                 wabot_handoff_aclaracion_resuelta($conv);
-                return [$cfg[$desempate[1]]];
+                $claveTexto = $desempate[0] === 'desempate_turnos'
+                    ? wabot_clave_desempate_turnos($texto, $cfg) : $desempate[1];
+                return [$cfg[$claveTexto]];
             }
             if ($rubroLocal !== null) return wabot_precio($rubroLocal, $conv, $cfg);
             $infoLocal = wabot_info_por_palabras($texto, $conv['fase'] ?? 'menu');
@@ -878,6 +952,16 @@ function wabot_engine($texto, &$conv, $cfg) {
                 : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : wabot_texto_info($k, $cfg)));
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
+        // "Ese detalle te lo confirma Pablo" es una promesa: si sale, la duda
+        // queda pendiente de verdad — Pablo la ve en el panel y ni el
+        // seguimiento ni la última llamada persiguen una charla con una
+        // pregunta sin contestar (caso Eze, 21-ago). Solo el flag, sin
+        // wabot_handoff_marcar(): cambiar la fase a derivado por una pregunta
+        // lateral descarrilaría la venta entera.
+        if (in_array($cfg['info']['otra'], $lineas, true)) {
+            $conv['handoff_pendiente'] = true;
+            wabot_evento_sesion($conv, 'duda_sin_respuesta');
+        }
         $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
     }
 
@@ -1770,6 +1854,15 @@ function wabot_precio($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
     $out = [wabot_msg_precio_texto($tipo, $cfg, $conv)];
+    // El que entró diciendo "quiero mi demo gratis" ya contestó que sí:
+    // preguntarle de nuevo es no haberlo escuchado. Directo a los datos.
+    if (!empty($conv['demo_pedida_entrada'])) {
+        $conv['fase'] = 'prediseno';
+        $conv['cta_muestra'] = true;
+        wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'pedida_de_entrada']);
+        $out[] = wabot_prediseno_texto($conv, $cfg);
+        return $out;
+    }
     $oferta = trim(wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg));
     if ($oferta !== '') {
         $out[] = $oferta;

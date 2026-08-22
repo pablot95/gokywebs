@@ -208,5 +208,36 @@ caso('pero una redacción bien escrita sigue pasando',
 caso('y "una web" con un artículo solo no se confunde con el error',
     wabot_validar_redaccion('Te armamos una web a medida por $200.000, en 3 pagos de $70.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
 
+echo "— Tras un cierre sin presión, el acuse recibe silencio (caso 👍 si, 21-ago) —\n";
+
+$ahoraR = time();
+$cCierre = convNueva();
+$cCierre['fase'] = 'precio'; $cCierre['cierre'] = 'consulta_sin_presion'; $cCierre['precio_dado'] = true;
+$cCierre['chat_started_ts'] = $ahoraR - 600;
+$cCierre['transcript'] = [
+    ['q' => 'cliente', 't' => 'Veo el enlace con mi socia y te digo', 'ts' => $ahoraR - 120],
+    ['q' => 'bot', 't' => 'Perfecto. Quedo a disposición por cualquier consulta.', 'ts' => $ahoraR - 60],
+];
+caso('"👍🏻 si" después del cierre = silencio, no otra oferta de demo',
+    wabot_responder('👍🏻 si', $cCierre, $cfg) === []);
+caso('"ok gracias" también', wabot_responder('ok gracias', $cCierre, $cfg) === []);
+caso('pero una pregunta real después del cierre sí se atiende',
+    wabot_responder('cuanto salia el mantenimiento?', $cCierre, $cfg) !== []);
+
+$cPregunta = convNueva();
+$cPregunta['fase'] = 'precio'; $cPregunta['cierre'] = 'consulta_sin_presion'; $cPregunta['precio_dado'] = true;
+$cPregunta['chat_started_ts'] = $ahoraR - 600;
+$cPregunta['transcript'] = [['q' => 'bot', 't' => 'Querés que te prepare la demo?', 'ts' => $ahoraR - 60]];
+caso('si el bot dejó una pregunta abierta, un "si" NO es acuse y se contesta',
+    wabot_responder('si', $cPregunta, $cfg) !== []);
+
+caso('la promesa de aviso queda registrada al pasar por el redactor', (function () use ($cfg, $ahoraR) {
+    $c = convNueva();
+    $c['fase'] = 'precio'; $c['precio_dado'] = true; $c['chat_started_ts'] = $ahoraR - 600;
+    $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return ['acciones' => ['otro'], 'info_keys' => [], 'descripcion' => null, 'colores' => null]; };
+    wabot_responder('Lo veo con mi socia y te aviso', $c, $cfg);
+    return (int)($c['aviso_prometido_ts'] ?? 0) > 0;
+})());
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

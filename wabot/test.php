@@ -3068,5 +3068,83 @@ foreach ([
 caso('"sin carrito" sigue negando aunque tenga otras señales',
     wabot_desempate_por_palabras('desempate_comercio', 'quiero vender pero sin carrito') === 'comercio_mostrar');
 
+echo "— \"Te aviso\" frena la persecución del mismo día (Oscar, 21-ago) —\n";
+
+foreach (['Los veo con mi socia y te avisó', 'Veo el enlace con mi socia y te digo que nos pareció',
+          'Déjame hablarlo', 'lo consulto con mi marido', 'lo tengo que hablar con mi familia'] as $f) {
+    caso("\"" . mb_substr($f, 0, 42) . "\" es una promesa de aviso", wabot_dijo_te_aviso($f) === true);
+}
+caso('"quiero una web para mi kiosco" no lo es', wabot_dijo_te_aviso('quiero una web para mi kiosco') === false);
+caso('"si, dale, armala" tampoco', wabot_dijo_te_aviso('si, dale, armala') === false);
+
+$mediodiaAR = gmmktime(15, 0, 0, 8, 18, 2026);
+caso('mismo día argentino → mismo día', wabot_mismo_dia_ar($mediodiaAR, $mediodiaAR + 5 * 3600) === true);
+caso('a la 1 AM del día siguiente ya no', wabot_mismo_dia_ar($mediodiaAR, $mediodiaAR + 13 * 3600) === false);
+
+$cfgSeg = $cfg; $cfgSeg['activo'] = true; $cfgSeg['seguimiento_activo'] = true;
+$cvSeg = ['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true,
+          'transcript' => [['q' => 'bot', 't' => 'x', 'ts' => $mediodiaAR - 4 * 3600]],
+          'ultimo_cliente_ts' => $mediodiaAR - 4 * 3600, 'aviso_prometido_ts' => 0];
+caso('sin promesa, el seguimiento de la tarde sale', wabot_seguimiento_corresponde($cvSeg, $cfgSeg, $mediodiaAR) === true);
+$cvSeg['aviso_prometido_ts'] = $mediodiaAR - 3 * 3600;
+caso('con "te aviso" del mismo día, NO sale', wabot_seguimiento_corresponde($cvSeg, $cfgSeg, $mediodiaAR) === false);
+
+echo "— El comodín deja la duda pendiente de verdad (Eze, 21-ago) —\n";
+
+$cvOtra = conv_nueva();
+$cvOtra['fase'] = 'precio'; $cvOtra['tipo'] = 'ecommerce'; $cvOtra['precio_dado'] = true;
+clasifica(['pregunta_info'], ['info_keys' => ['otra']]);
+$rOtra = wabot_engine('cual es el cuit de la empresa?', $cvOtra, $cfg);
+caso('la respuesta es el comodín', strpos($rOtra[0] ?? '', 'desarrollador') !== false);
+caso('y la duda queda marcada para Pablo', $cvOtra['handoff_pendiente'] === true);
+caso('sin descarrilar la venta: la fase no cambió', $cvOtra['fase'] === 'precio');
+
+$cvInfo = conv_nueva();
+$cvInfo['fase'] = 'precio'; $cvInfo['tipo'] = 'landing'; $cvInfo['precio_dado'] = true;
+clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
+wabot_engine('cuanto sale el hosting?', $cvInfo, $cfg);
+caso('una info que SÍ se contesta no marca nada', empty($cvInfo['handoff_pendiente']));
+
+echo "— Cabañas hablan de reservas, no de turnos (Recanto, 21-ago) —\n";
+
+caso('complejo de cabañas → texto de alojamiento',
+    wabot_clave_desempate_turnos('Complejo de cabañas vacacionales. Alquiler temporario', $cfg) === 'desempate_turnos_alojamiento');
+caso('hotel también', wabot_clave_desempate_turnos('tengo un hotel en la costa', $cfg) === 'desempate_turnos_alojamiento');
+caso('una peluquería sigue con el texto de turnos', wabot_clave_desempate_turnos('peluqueria', $cfg) === 'desempate_turnos');
+caso('el texto de alojamiento existe y habla de fechas',
+    mb_stripos((string)($cfg['desempate_turnos_alojamiento'] ?? ''), 'fechas') !== false);
+
+echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
+
+caso('"Rosa .amarillo beige" parece lista de colores', wabot_parece_lista_colores('Rosa .amarillo beige') === true);
+caso('"tonos pasteles" también', wabot_parece_lista_colores('tonos pasteles') === true);
+caso('"la web de royalcanin" no', wabot_parece_lista_colores('la web de royalcanin') === false);
+caso('"Mi negocio se llama Rosa" tampoco', wabot_parece_lista_colores('Mi negocio se llama Rosa') === false);
+
+caso('"servicios profesionales" no alcanza como descripción', wabot_descripcion_generica('servicios profesionales') === true);
+caso('"balances y liquidación de sueldos" sí alcanza', wabot_descripcion_generica('balances y liquidación de sueldos') === false);
+caso('la descripción genérica vuelve a la lista de faltantes',
+    in_array('Una descripción breve de lo que ofrecés',
+        wabot_prediseno_faltan(['nombre' => 'Julieta', 'nombre_negocio' => 'JA', 'descripcion' => 'servicios profesionales', 'colores' => 'cálidos']), true));
+
+echo "— \"Quiero mi demo gratis\" de entrada no se vuelve a preguntar (Antuz, 21-ago) —\n";
+
+caso('el CTA del anuncio se detecta', wabot_pidio_demo_explicita('Hola! Quiero mi demo gratis para mi negocio.') === true);
+caso('"me pasas el precio?" no', wabot_pidio_demo_explicita('me pasas el precio?') === false);
+
+$cvDemo = conv_nueva();
+$cvDemo['demo_pedida_entrada'] = true; $cvDemo['chat_started_ts'] = time();
+clasifica(['rubro_landing']);
+$rDemo = wabot_precio('landing', $cvDemo, $cfg);
+caso('tras el precio va directo a los datos, sin re-ofrecer',
+    count($rDemo) === 2 && mb_stripos($rDemo[1], 'Necesito') !== false && mb_stripos($rDemo[1], 'Querés que') === false);
+caso('y la fase queda en prediseño', $cvDemo['fase'] === 'prediseno');
+
+$cvNormal = conv_nueva();
+$cvNormal['chat_started_ts'] = time();
+$rNormal = wabot_precio('landing', $cvNormal, $cfg);
+caso('sin ese pedido, la oferta de siempre sigue igual (pregunta, no recolecta)',
+    count($rNormal) === 2 && mb_strpos($rNormal[1], '?') !== false && mb_stripos($rNormal[1], 'Necesito') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

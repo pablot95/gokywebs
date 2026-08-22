@@ -1107,5 +1107,32 @@ caso('y "cotizame ambas" también deja cotizar directo',
 @unlink(WABOT_DATA . '/conv/TESTDESEMPESC.json');
 @unlink(WABOT_DATA . '/conv/TESTDESEMPOK.json');
 
+echo "— Guards nuevos de los chats del 21-ago —\n";
+
+$cM = ['tel' => 'TM', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
+caso('"botón de pago y pedido integrado" ya es evidencia de ecommerce: no repregunta',
+    wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $cM, $cfg) === null);
+caso('sin evidencia sigue preguntando como corresponde',
+    wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) !== null);
+
+$cRef = ['colores' => 'cálidos', 'referencia' => null, 'referencia_preguntada' => false];
+wabot_agente_anotar(['referencia' => 'Rosa .amarillo beige'], $cRef);
+caso('una "referencia" que es lista de colores se suma a los colores',
+    mb_stripos($cRef['colores'], 'Rosa') !== false);
+caso('y la referencia queda sin contestar, para preguntarla de nuevo',
+    empty($cRef['referencia_preguntada']) && empty($cRef['referencia']));
+
+$cTit = ['tel' => 'TT', 'fase' => 'precio', 'tipo' => 'landing', 'transcript' => [], 'msgs' => [], 'precio_dado' => true];
+$rTit = wabot_agente_ejecutar('consultar_info', ['clave' => 'titularidad'], $cTit, $cfg,
+    'Lo que quiero saber es como es el tema del dominio, viene incluido en el precio o se paga aparte?');
+caso('"¿incluido o se paga aparte?" contesta el costo del hosting, no la titularidad',
+    mb_stripos($rTit['texto'] ?? '', 'incluido') !== false && mb_stripos($rTit['texto'] ?? '', 'a tu nombre desde el primer día') === false);
+
+$cOtra = ['tel' => 'TO', 'fase' => 'precio', 'tipo' => 'landing', 'transcript' => [], 'msgs' => [], 'handoff_pendiente' => false];
+wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cOtra, $cfg, 'aceptan dogecoin como pago?');
+caso('el comodín del agente también deja la duda pendiente para Pablo',
+    $cOtra['handoff_pendiente'] === true);
+caso('sin cambiar la fase', $cOtra['fase'] === 'precio');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
