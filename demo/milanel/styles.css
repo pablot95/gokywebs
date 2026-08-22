@@ -49,6 +49,7 @@ p {
   --color-bg: #f5f2eb;
   --color-bg-red: #e60000;
   --color-red-deep: #b30000;
+  --color-hero-dark: #1c1410;
   --color-surface: #ffffff;
   --color-surface-alt: #efeae0;
   --color-text: #1c1410;
@@ -457,7 +458,7 @@ body.no-scroll {
 
 /* ---------- Hero ---------- */
 .hero {
-  background: var(--color-bg-red);
+  background: var(--color-hero-dark);
   position: relative;
   overflow: hidden;
   min-height: 88svh;
