@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=3">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important}</style></noscript>
 <script type="application/ld+json">
 {
@@ -78,6 +78,74 @@
     <div class="hero-media" data-animate="scale" style="transform:scale(.94);opacity:0" data-delay=".2">
       <img src="images/reportera-en-campo-1600x1300.webp" width="1600" height="1300" alt="Periodista con micrófono realizando una cobertura, cámara registrando la escena" fetchpriority="high">
     </div>
+  </div>
+</section>
+
+<section class="portada" id="portada" aria-labelledby="portada-h">
+  <div class="container-wide">
+    <div class="portada-head">
+      <div>
+        <p class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Portada</p>
+        <h2 id="portada-h" data-animate="up" style="transform:translateY(22px);opacity:0">Lo último de la región</h2>
+      </div>
+    </div>
+    <div class="portada-layout">
+      <article class="nota-destacada" data-animate="up" style="transform:translateY(24px);opacity:0">
+        <a class="nota-destacada-media" href="#secciones" aria-label="Se anticipa una buena temporada para la pesca del dorado en la costa del Paraná">
+          <img src="images/pescador-amanecer-rio-1600x1300.webp" width="1600" height="1300" alt="Pescador en un bote de madera al amanecer, sobre un río en calma" fetchpriority="high">
+          <span class="chip">Locales</span>
+        </a>
+        <div class="nota-destacada-body">
+          <h3><a href="#secciones">Se anticipa una buena temporada para la pesca del dorado en la costa del Paraná</a></h3>
+          <p>Pescadores de la zona esperan con expectativa el inicio de la temporada, un clásico que todos los años atrae visitantes a la costa de Itá Ibaté y alrededores.</p>
+          <a class="arrow-link" href="#secciones">Leer más <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </article>
+      <div class="noticias-grid" data-animate-stagger>
+        <article class="news-card" data-animate="up" style="transform:translateY(24px);opacity:0">
+          <a class="news-media" href="#secciones" aria-label="El fútbol amateur de la región prepara una nueva fecha de torneo">
+            <img src="images/futbol-amateur-cancha-1600x1300.webp" width="1600" height="1300" alt="Cancha de fútbol amateur de tierra, con arco y luces">
+            <span class="chip">Deportes</span>
+          </a>
+          <div class="news-body">
+            <h3><a href="#secciones">El fútbol amateur de la región prepara una nueva fecha de torneo</a></h3>
+          </div>
+        </article>
+        <article class="news-card" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay=".08">
+          <a class="news-media" href="#secciones" aria-label="Localidades vecinas preparan su agenda de actividades para el cierre del año">
+            <img src="images/bote-esteros-litoral-1600x1300.webp" width="1600" height="1300" alt="Bote de madera sobre los esteros del litoral correntino">
+            <span class="chip">Provincial</span>
+          </a>
+          <div class="news-body">
+            <h3><a href="#secciones">Localidades vecinas preparan su agenda de actividades para el cierre del año</a></h3>
+          </div>
+        </article>
+        <article class="news-card" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay=".16">
+          <a class="news-media" href="#secciones" aria-label="El Muelle Digital suma nuevas herramientas para cubrir la región">
+            <img src="images/redaccion-digital-manos-1200x1200.webp" width="1200" height="1200" alt="Manos trabajando sobre un teclado en una redacción digital">
+            <span class="chip">Locales</span>
+          </a>
+          <div class="news-body">
+            <h3><a href="#secciones">El Muelle Digital suma nuevas herramientas para cubrir la región</a></h3>
+          </div>
+        </article>
+        <article class="news-card" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay=".24">
+          <a class="news-media" href="#secciones" aria-label="El mate sigue siendo el gran punto de encuentro en los pueblos de la región">
+            <img src="images/mate-tradicion-litoral-1200x1200.webp" width="1200" height="1200" alt="Mates y yerba sobre un mantel artesanal">
+            <span class="chip">Provincial</span>
+          </a>
+          <div class="news-body">
+            <h3><a href="#secciones">El mate sigue siendo el gran punto de encuentro en los pueblos de la región</a></h3>
+          </div>
+        </article>
+      </div>
+    </div>
+    <nav class="secciones-rail" aria-label="Ir a una sección">
+      <a href="#secciones">Locales</a>
+      <a href="#secciones">Provincial</a>
+      <a href="#secciones">Nacionales</a>
+      <a href="#secciones">Deportes</a>
+    </nav>
   </div>
 </section>
 
@@ -168,7 +236,7 @@
 <section class="sobre" id="sobre">
   <div class="container-wide sobre-grid">
     <div class="sobre-media" data-animate="scale" style="transform:scale(.94);opacity:0">
-      <img src="images/maquina-escribir-news-1200x1200.webp" width="1200" height="1200" alt="Máquina de escribir con una hoja donde se lee la palabra News" loading="lazy">
+      <img src="images/maquina-escribir-news-1200x1200.webp" width="1200" height="1200" alt="Máquina de escribir con una hoja donde se lee la palabra News">
     </div>
     <div class="sobre-body">
       <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">SOBRE NOSOTROS</p>
