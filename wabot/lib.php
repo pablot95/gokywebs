@@ -482,6 +482,15 @@ function wabot_config_ventas(&$cfg) {
         'licencias' => 'Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Lo que sí es tuyo es la web: el código, el dominio y todo el contenido.',
         'manual' => 'No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y en el resto los cambios de contenido los hacemos nosotros. Meter mano en el código ya es otra cosa: para eso haría falta un curso de desarrollo web.',
         'bilingue' => 'Sí, la podemos hacer bilingüe. Tiene un adicional de {precio} sobre el valor de la web.',
+
+        /* Preguntas comerciales normales que caían en "eso te lo confirma el
+         * desarrollador" (chats reales del 21 y 22-ago). Derivarlas hacía
+         * parecer que el bot no sabe nada de lo que vende. */
+        'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales; si me decís de qué rubro sos, te oriento con el que más se parezca.',
+        'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
+        'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
+        'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',
+        'inscripcion' => 'Para hacerte la web no te pedimos ninguna inscripción ni condición fiscal: la contratás y listo. Si tu duda es si vos necesitás estar inscripto para vender, eso depende de tu situación y lo mejor es que lo confirmes con un contador.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
@@ -2278,7 +2287,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, inscripcion, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {

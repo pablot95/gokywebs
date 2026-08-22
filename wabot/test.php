@@ -2980,5 +2980,39 @@ caso('una coma sin espacio ya no fusiona dos palabras y mata la detección',
 caso('y con espacio da lo mismo que sin espacio',
     wabot_info_por_palabras('Hola, cuanto sale una web?', 'menu') === wabot_info_por_palabras('Hola,cuanto sale una web?', 'menu'));
 
+echo "— El comodín \"te lo confirma el desarrollador\" deja de tapar preguntas reales —\n";
+
+foreach ([
+    'tienen alguna web para ver de cirujano plastico o clinica dental estetica?' => 'ejemplos',
+    'tienen ejemplos de trabajos?'                                    => 'ejemplos',
+    'me pasas el portfolio?'                                          => 'ejemplos',
+    'Hacen migracion de mis contenidos de mi pagina?'                  => 'migracion',
+    'migran el contenido de mi web actual?'                            => 'migracion',
+    'pueden hacer formularios o encuestas para que la gente complete?' => 'formularios',
+    'No lleva imagen el portal que me ofreces?'                        => 'imagenes_web',
+    'la web lleva fotos?'                                              => 'imagenes_web',
+    'es necesario estar inscripto?'                                    => 'inscripcion',
+    'tengo que tener monotributo?'                                     => 'inscripcion',
+] as $pregunta => $clave) {
+    caso("\"" . mb_substr($pregunta, 0, 46) . "\" → $clave", wabot_info_por_palabras($pregunta) === $clave);
+    caso("  y $clave tiene texto cargado", trim((string)($cfg['info'][$clave] ?? '')) !== '');
+}
+
+caso('la respuesta fiscal no la contesta un desarrollador: manda al contador',
+    stripos($cfg['info']['inscripcion'], 'contador') !== false);
+caso('y aclara que para hacer la web no se pide inscripción',
+    stripos($cfg['info']['inscripcion'], 'no te pedimos') !== false);
+caso('los formularios se aclaran incluidos en el precio',
+    stripos($cfg['info']['formularios'], 'ya vienen en el precio') !== false);
+
+echo "— \"Bueno, aguardo entonces\" no es una duda —\n";
+
+foreach (['Bueno, aguardo entonces', 'aguardo', 'quedo atento', 'quedo a la espera',
+          'espero entonces', 'quedamos en contacto'] as $frase) {
+    caso("\"$frase\" cuenta como acuse, no como consulta", wabot_es_acuse($frase) === true);
+}
+caso('pero una pregunta de verdad sigue sin ser acuse', wabot_es_acuse('De donde son?') === false);
+caso('y un mensaje con contenido tampoco', wabot_es_acuse('quiero una web para mi kiosco') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

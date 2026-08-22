@@ -181,7 +181,7 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 ]];
                 continue;
             }
-            $res = wabot_agente_ejecutar($ll['name'] ?? '', $ll['args'] ?? [], $conv, $cfg);
+            $res = wabot_agente_ejecutar($ll['name'] ?? '', $ll['args'] ?? [], $conv, $cfg, $mensaje);
             if (!empty($res['texto']))    $pendientes[] = $res['texto'];
             if (!empty($res['terminal'])) $terminal     = $res['texto'];
             if (!empty($res['exacta']))   $exacta       = $res['texto'];
@@ -357,7 +357,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'precio_cotizado', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'precio_cotizado', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -570,7 +570,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
 }
 
 /** Ejecuta una herramienta y devuelve lo que ve el modelo. */
-function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
+function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
     switch ($nombre) {
 
         case 'dar_precio':
@@ -623,6 +623,27 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg) {
 
         case 'consultar_info':
             $clave = $args['clave'] ?? 'otra';
+            // "Esa duda te la contesta el desarrollador" tiene que ser el ÚLTIMO
+            // recurso, no el primero. El modelo eligía 'otra' para preguntas que
+            // el bot sabe contestar —de dónde somos, el precio, quién carga los
+            // productos— y el cliente se llevaba un comodín. Antes de rendirse
+            // se relee lo que escribió con el matcher de palabras del motor, que
+            // es determinista: si encuentra una clave real, gana esa.
+            if ($clave === 'otra' && trim((string)$mensaje) !== '') {
+                // "Bueno, aguardo entonces" no es una duda. Contestarle el
+                // comodín es lo que hace evidente que del otro lado hay un bot.
+                if (wabot_es_acuse($mensaje)) {
+                    return ['error' => 'Eso no es una pregunta, es un acuse de recibo. No uses consultar_info: contestá una sola línea cordial, o nada si la charla ya está cerrada.'];
+                }
+                $rescatada = wabot_info_por_palabras($mensaje, $conv['fase'] ?? null);
+                // precio_actual no es una clave de info: la contesta el resumen
+                // de lo ya cotizado, que acá se llama precio_cotizado.
+                if ($rescatada === 'precio_actual') $rescatada = 'precio_cotizado';
+                if ($rescatada !== null && $rescatada !== 'otra') {
+                    wabot_log('info_rescatada', ['de' => 'otra', 'a' => $rescatada, 'msg' => mb_substr($mensaje, 0, 90)]);
+                    $clave = $rescatada;
+                }
+            }
             if ($clave === 'precio_cotizado') {
                 return ['texto' => wabot_precio_resumen($conv, $cfg),
                         'nota' => 'Es lo ya cotizado en esta charla: repetilo tal cual, sin recalcular nada.'];
@@ -1111,7 +1132,8 @@ REGLAS QUE NO PODÉS ROMPER
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
-- Las dudas sobre cómo trabajamos, pago, plazos, hosting, mantenimiento, carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual) y si la web puede ser bilingüe (bilingue) se contestan llamando a consultar_info. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
+- Las dudas sobre cómo trabajamos, pago, plazos, hosting, mantenimiento, carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede ser bilingüe (bilingue), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
+- 'otra' es el ÚLTIMO recurso, no el primero: decir que la duda la contesta el desarrollador cuando la respuesta existe hace parecer que no conocés lo que vendés. Antes de usarla, fijate si entra en alguna clave de arriba. Y si el mensaje no es una pregunta —un 'dale', un 'gracias', un 'bueno, aguardo entonces'— no llames a consultar_info: contestá una línea corta o nada. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
 - Si te pregunta el precio ANTES de decirte qué tipo de web necesita ("cuánto sale?", "qué precio tiene?"), NO te escapes con una respuesta de relleno ni le tires todos los rangos: usá consultar_info('precio_sin_rubro'), que le pregunta para qué la necesita. Sin el rubro no hay precio exacto, pero la pregunta la hacés vos.
 - Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la demo gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.

@@ -194,7 +194,9 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
     // Largo razonable para WhatsApp: si se fue de mambo, mejor el texto fijo.
     if (mb_strlen($s) > 700) return null;
 
-    if (preg_match('/\b(el|la|los|las) (un|una)\b/iu', $s)) return null;
+    // Dos artículos pegados: "iría un una página" salió así en producción. El
+    // guard viejo solo miraba definido+indefinido y dejaba pasar un+una.
+    if (preg_match('/\b(el|la|los|las|un|una|unos|unas) (un|una|unos|unas|el|la|los|las)\b/iu', $s)) return null;
 
     $regateo = '/\b(descuento|rebaja|bonificacion|bonificación|mitad de precio|precio especial|precio amigo|te lo dejo en|dejartelo en|dejártelo en|se lo dejo en|\d{1,2}\s?%\s?(de\s)?(desc|off|rebaja)|\d{1,2}\s?(por ciento|porciento)|\d{1,3}\s?(mil|lucas)\b)/iu';
     if (preg_match($regateo, $s) && !preg_match($regateo, $base)) return null;

@@ -250,7 +250,12 @@ function wabot_es_acuse($texto) {
                'nos vemos', 'hasta luego', 'buen dia', 'buenas noches', 'buenas tardes',
                'de nada', 'no hay problema', 'sin problema', 'esta bien', 'ta bien',
                'copado', 'buenardo', 'de diez', 'va bien', 'me parece bien', 'entendido',
-               'recibido', 'ya esta', 'bien', 'bueno'];
+               'recibido', 'ya esta', 'bien', 'bueno',
+               // "Bueno, aguardo entonces" no es una duda: es esperar. El bot lo
+               // leía como consulta pendiente y contestaba el comodín de derivar.
+               'aguardo', 'aguardo entonces', 'espero', 'espero entonces', 'ahi espero',
+               'quedo atento', 'quedo atenta', 'quedo a la espera', 'quedamos en contacto',
+               'quedo esperando', 'aguardo respuesta', 'espero respuesta', 'a la espera'];
     // Se sacan los conectores para que "ok gracias" o "dale, muchas gracias"
     // entren igual que sus partes sueltas.
     $limpio = trim(preg_replace('/\b(ok|dale|listo|y|pues|bueno|muy|todo|muchas|mil|un|una|te|le|les|lo|la)\b/u', ' ', $t));
@@ -1303,6 +1308,15 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
     // varias de ellas y, si no, todas caian en la respuesta de hosting.
     if (preg_match('/\b(bilingue|dos idiomas|en ingles|version en ingles|multi ?idioma|traducida|traduccion de la web)\b/u', $t)) return 'bilingue';
+    if (preg_match('/\b(formulario\w*|encuesta\w*|cuestionario\w*)\b/u', $t)) return 'formularios';
+    if (preg_match('/\b(migracion|migrar|migran|pasar (mis|los) (contenidos?|textos?|datos)|traspasar (el )?contenido|mudar (la|mi) (web|pagina))\b/u', $t)) return 'migracion';
+    if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
+    // "¿Tienen alguna web para ver de dentista?" pide ejemplos, no el portfolio
+    // general de que_hacemos: exige el verbo de mostrar junto al sustantivo.
+    if (preg_match('/\b(ejemplos?|muestras? de trabajo|portfolio|porfolio|trabajos (que |ya )?(hicieron|realizados|hechos)|casos? de exito)\b/u', $t)
+        || preg_match('/\b(tienen|tenes|tienes|hay|puedo ver|me (pasas|mandas)|mostrarme|ver alguna)\b.{0,30}\b(web|pagina|sitio|demo)\b.{0,40}\b(para ver|de otro|de algun|parecida|similar|del rubro|hecha)\b/u', $t)
+        || preg_match('/\b(tienen|tenes|hay)\b.{0,20}\b(alguna|algun)\b.{0,15}\b(web|pagina|sitio)\b.{0,20}\bpara ver\b/u', $t)) return 'ejemplos';
+    if (preg_match('/\b(lleva|llevan|tiene|tienen|incluye|incluyen|van)\b.{0,20}\b(imagen|imagenes|foto|fotos)\b/u', $t)) return 'imagenes_web';
     if (preg_match('/\b(correos? corporativos?|casillas? de correo|mail corporativo|mails? corporativos?|cuentas? de (correo|mail)|arroba mi dominio|outlook|configurar el mail)\b/u', $t)) return 'emails';
     if (preg_match('/\b(licencias?|plugins?|sdk|plantillas? compradas?|temas? comprados?)\b/u', $t)) return 'licencias';
     if (preg_match('/\b(manual|instructivo|tutorial|capacitacion para usar|como la actualizo|actualizar (los )?textos|me ensenan a)\b/u', $t)) return 'manual';

@@ -964,9 +964,25 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 @media (max-width: 900px) {
     /* Una columna: o las listas, o el chat — como WhatsApp en el celular. */
     .conv-split { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); }
-    .conv-nav { flex-direction:row; overflow-x:auto; scrollbar-width:none; }
+    /* En horizontal los títulos de bloque no funcionan: quedan como columnas de
+       texto vertical entre los botones. Se ocultan y su lugar lo toma un
+       separador fino, que agrupa igual sin ocupar ancho. Los botones pasan a
+       ser fichas con borde: la barra lateral que marca el activo en desktop no
+       se lee en una fila. */
+    .conv-nav { flex-direction:row; align-items:center; gap:6px; overflow-x:auto; overscroll-behavior-x:contain;
+        scrollbar-width:none; padding:2px 0 8px; border-bottom:1px solid var(--line); }
     .conv-nav::-webkit-scrollbar { display:none; }
-    .conv-nav-btn { width:auto; flex:0 0 auto; white-space:nowrap; }
+    .conv-nav-titulo { flex:0 0 auto; width:1px; height:20px; margin:0 2px; padding:0;
+        background:var(--line); overflow:hidden; text-indent:-999px; }
+    .conv-nav-titulo:first-of-type { margin-left:0; }
+    .conv-nav-btn { width:auto; flex:0 0 auto; white-space:nowrap;
+        border:1px solid var(--line); border-left-width:1px; border-radius:99px; padding:7px 13px; }
+    .conv-nav-btn.on { border-color:var(--ac); background:var(--card-2); }
+    .conv-nav-btn[data-grupo="pago"].on { border-color:var(--ac); }
+    .conv-nav-btn[data-grupo="muestra"].on { border-color:var(--warn); }
+    .conv-nav-btn[data-grupo="presentadas_48"].on { border-color:var(--bad); }
+    .conv-nav-btn--filtro { margin-bottom:0; padding-bottom:7px; border-bottom-width:1px; border-radius:99px; }
+    .conv-nav-btn--filtro.on { border-color:var(--info); }
     .conv-split.has-sel .conv-nav, .conv-split.has-sel .conv-list { display:none; }
     .conv-split:not(.has-sel) .conv-main { display:none; }
     .conv-volver { display:inline-block; margin-bottom:8px; }
@@ -1579,12 +1595,12 @@ body.embed { min-height: 0; }
 
                 <p class="conv-nav-titulo">Te toca a vos</p>
                 <button type="button" class="conv-nav-btn" data-grupo="pago" title="Avisaron que transfirieron: hay que verificar que la plata haya entrado.">Pagaron <span class="conv-cuenta" id="cuentaPago">0</span></button>
+                <button type="button" class="conv-nav-btn" data-grupo="presentados" title="Ya les mandaste la demo y todavía no confirmaron nada.">Demo entregada <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="muestra" title="Ya pasaron los datos y falta diseñarles la demo. Es tu cola de trabajo.">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
                 <button type="button" class="conv-nav-btn" data-grupo="presentadas_48" title="Tienen la demo hace más de 48 h y no contestaron nada. La ventana de WhatsApp ya cerró: hay que ir a buscarlos a mano.">Se enfriaron <span class="conv-cuenta" id="cuentaPresentadas48">0</span></button>
 
                 <p class="conv-nav-titulo">Esperando al cliente</p>
                 <button type="button" class="conv-nav-btn" data-grupo="interesado" title="Vieron el precio y siguieron hablando, pero todavía no pasaron los datos para la demo.">Vieron precio <span class="conv-cuenta" id="cuentaInteresado">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="presentados" title="Ya les mandaste la demo y todavía no confirmaron nada.">Demo entregada <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
 
                 <p class="conv-nav-titulo">Resto</p>
                 <button type="button" class="conv-nav-btn" data-grupo="chat" title="Charlas en curso sin nada pendiente de tu lado.">Todas las charlas <span class="conv-cuenta" id="cuentaChat">0</span></button>

@@ -196,5 +196,17 @@ caso('el link exacto pasa',
 caso('"gokywebs.co" (dominio recortado) se rechaza',
     wabot_validar_redaccion("Mirá el detalle en gokywebs.co y me contás.", $baseLink, $cfg) === null);
 
+echo "— Dos artículos pegados: \"iría un una página\" (salió así en producción) —\n";
+
+$basePrecio = wabot_msg_precio_texto('landing', $cfg);
+caso('"un una" se rechaza y cae al texto fijo',
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $200.000, en 3 pagos de $70.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+caso('"la un" también',
+    wabot_validar_redaccion('Te queda la un página a medida: $200.000, en 3 pagos de $70.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+caso('pero una redacción bien escrita sigue pasando',
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $200.000, o en 3 pagos de $70.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+caso('y "una web" con un artículo solo no se confunde con el error',
+    wabot_validar_redaccion('Te armamos una web a medida por $200.000, en 3 pagos de $70.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
