@@ -1709,10 +1709,6 @@ function wabot_lista_items() {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
-            // Quedó marcada como presentada pero el link nunca salió: hay que
-            // mandárselo a mano. Sin esto no había forma de distinguirla de una
-            // entregada de verdad, y el cliente se quedaba esperando una demo
-            // que nadie le mandó.
             'sin_aviso' => !empty($cv['presentado_ts']) && !empty($cv['presentado_sin_aviso']),
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
@@ -1828,10 +1824,6 @@ function wabot_conv_espera_respuesta($cv) {
  * Fuera de esa ventana Meta NO deja mandar texto libre, solo plantillas aprobadas.
  */
 function wabot_ventana_restante($conv) {
-    // Por el transcript y no solo por el contador: si el contador quedó viejo
-    // (una charla retomada, un guardado que se pisó), la ventana se calculaba
-    // cerrada aunque el cliente hubiera escrito hace un rato — y ahí el panel
-    // se negaba a mandarle la demo teniendo permiso de sobra.
     $ultimo = wabot_ultimo_cliente_ts($conv);
     if ($ultimo <= 0) return 0;
     return max(0, ($ultimo + 24 * 3600) - time());

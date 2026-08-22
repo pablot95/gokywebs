@@ -407,9 +407,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
     }
-    // Reintento del link de la demo cuando la primera vez no salió. No vuelve
-    // a marcar nada: la conversación YA está presentada, lo único que falta es
-    // que el mensaje llegue.
     if ($a === 'reenviar_demo' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $slug = trim((string)($conv['presentado_slug'] ?? ''));
@@ -1702,8 +1699,6 @@ body.embed { min-height: 0; }
                             <button class="sec">Ya la entregué</button></form>
                         <?php endif; ?>
                         <?php
-                        // La demo quedó marcada pero el link nunca salió: se
-                        // puede reintentar sin volver a Bocetos.
                         if (!empty($conv['presentado_ts']) && !empty($conv['presentado_sin_aviso'])): ?>
                         <form method="post" onsubmit="return confirm('Reintentar el envío del link de la demo al cliente?')">
                             <input type="hidden" name="accion" value="reenviar_demo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">

@@ -3085,9 +3085,6 @@ async function presentarPropuesta(propId) {
             return;
         }
     }
-    // Aunque haya salido por el camino normal, si el mensaje no se envió el
-    // cliente se queda esperando una demo que nadie le mandó. Se avisa con el
-    // link listo para copiar, y queda marcada en el panel del bot.
     if (envio && envio.enviado === false) {
         const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
         alert("Quedó en Seguimiento, PERO el cliente no recibió nada.\n\n"
