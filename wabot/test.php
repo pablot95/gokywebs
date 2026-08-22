@@ -2933,5 +2933,52 @@ caso('recorta espacios de los bordes', wabot_normalizar_busqueda('  hola  ') ===
 caso('largo estable: acentuadas y sin acentuar dan el mismo largo (para que el resaltado no se desalinee)',
     mb_strlen(wabot_normalizar_busqueda('áéíóúñ')) === mb_strlen('áéíóúñ'));
 
+echo "— Editar la tienda y vender el dominio (chat real del 21-ago) —\n";
+
+// La consulta tal cual la escribió el cliente: pregunta DOS cosas y viene con
+// la puntuación pegada ("artículos,modificarle"). El bot contestó la renovación
+// del hosting y "eso te lo confirma el desarrollador", dejando sin responder lo
+// que sí sabía.
+$consultaReal = 'Otra consulta,es posible a futuro , añadir yo y/o restarle artículos,modificarle a la tienda ? Y /o hasta vender mi dominio de tienda web a futuro?';
+caso('la consulta real ya no cae en "eso te lo confirma el desarrollador"',
+    wabot_info_por_palabras($consultaReal) === 'carga');
+
+foreach ([
+    'es posible añadir yo articulos a la tienda?' => 'carga',
+    'puedo restarle articulos?'                   => 'carga',
+    'puedo modificarle a la tienda?'              => 'carga',
+    'puedo agregar productos yo despues?'         => 'carga',
+    'puedo sacar productos?'                      => 'carga',
+    'puedo editar los precios yo?'                => 'carga',
+    'los productos los cargo yo?'                 => 'carga',
+    'puedo cambiar las fotos?'                    => 'carga',
+    'puedo administrar mi tienda?'                => 'carga',
+    'puedo cargar propiedades yo?'                => 'carga',
+    'puedo vender mi dominio a futuro?'           => 'titularidad',
+    'puedo transferir el dominio?'                => 'titularidad',
+] as $pregunta => $clave) {
+    caso("\"" . mb_substr($pregunta, 0, 44) . "\" → $clave", wabot_info_por_palabras($pregunta) === $clave);
+}
+
+// La ambigüedad real: "la tienda" se puede editar o vender. Con el verbo de
+// propiedad manda la titularidad; con el de edición, el panel.
+caso('"cambiar de dueño la tienda" sigue siendo una pregunta por la titularidad',
+    wabot_info_por_palabras('puedo cambiar de dueno la tienda?') === 'titularidad');
+caso('"vender la tienda a futuro" también',
+    wabot_info_por_palabras('puedo vender la tienda a futuro?') === 'titularidad');
+
+// Lo que ya andaba no se movió.
+caso('"cuándo vence el dominio" sigue en hosting', wabot_info_por_palabras('cuando vence el dominio?') === 'hosting');
+caso('"cuánto sale la renovación del dominio" también', wabot_info_por_palabras('cuanto sale la renovacion del dominio?') === 'hosting');
+caso('"el dominio queda a mi nombre" sigue en titularidad', wabot_info_por_palabras('el dominio queda a mi nombre?') === 'titularidad');
+caso('describir el rubro no se confunde con editar productos', wabot_info_por_palabras('vendo productos de limpieza') === null);
+caso('"vendo ropa" tampoco', wabot_info_por_palabras('vendo ropa') === null);
+
+// La puntuación pegada rompía CUALQUIER detección, no solo esta.
+caso('una coma sin espacio ya no fusiona dos palabras y mata la detección',
+    wabot_info_por_palabras('Hola,cuanto sale una web?', 'menu') === 'precio_sin_rubro');
+caso('y con espacio da lo mismo que sin espacio',
+    wabot_info_por_palabras('Hola, cuanto sale una web?', 'menu') === wabot_info_por_palabras('Hola,cuanto sale una web?', 'menu'));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

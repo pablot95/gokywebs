@@ -1278,7 +1278,12 @@ function wabot_desempate_de($r) {
  * Devuelve la acción resuelta o null.
  */
 function wabot_info_por_palabras($texto, $fase = null) {
-    $t = wabot_normalizar_frase($texto);
+    // La puntuación se cambia por un espacio ANTES de normalizar. Si se borra
+    // sin más —que es lo que hace wabot_normalizar_frase()— quien escribe
+    // "artículos,modificarle" sin espacio termina con "articulosmodificarle",
+    // una sola palabra que ninguna clave reconoce. Pasó en producción: esa
+    // consulta se fue entera a "eso te lo confirma el desarrollador".
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$texto));
     if ($t === '') return null;
 
     // Este matcher es el respaldo local para PREGUNTAS cortas. Un párrafo largo
@@ -1302,13 +1307,29 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(licencias?|plugins?|sdk|plantillas? compradas?|temas? comprados?)\b/u', $t)) return 'licencias';
     if (preg_match('/\b(manual|instructivo|tutorial|capacitacion para usar|como la actualizo|actualizar (los )?textos|me ensenan a)\b/u', $t)) return 'manual';
     if (preg_match('/\b(backup|respaldo|copia de seguridad|me entregan el codigo|entregan el codigo|codigo fuente|base de datos|acceso a la base)\b/u', $t)) return 'entrega_codigo';
-    if (preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)) return 'titularidad';
+    // Editar productos va ANTES que titularidad porque el objeto no deja lugar a
+    // dudas: "añadir artículos" es el panel, no de quién es el dominio. Importa
+    // en las preguntas que traen las dos cosas juntas ("¿puedo añadir artículos
+    // y a futuro vender mi dominio?"), donde lo que el bot dejó sin contestar
+    // fue justamente la parte de los productos.
+    if (preg_match('/\b(agregar|agregarle|añadir|anadir|sumar|cargar|cargarle|subir|subirle|sacar|sacarle|quitar|quitarle|restar|restarle|borrar|eliminar|modificar|modificarle|editar|actualizar|cambiar|administrar|manejar)\b.{0,30}\b(producto|productos|articulo|articulos|item|items|precio|precios|foto|fotos|contenido|publicacion|publicaciones|propiedad|propiedades|curso|cursos|catalogo)\b/u', $t)
+        || preg_match('/\b(producto|productos|articulo|articulos|precio|precios|catalogo)\b.{0,30}\b(los cargo|las cargo|lo cargo|los subo|los edito|las edito|los modifico|los administro|los manejo|puedo cargar|puedo subir|puedo editar|puedo modificar|puedo agregar|puedo sacar)\b/u', $t)) return 'carga';
+    // "¿Puedo vender mi dominio a futuro?" es una pregunta por la titularidad,
+    // no por la renovación: sin esto caía en hosting y le contestaban el precio
+    // anual (caso real del 21-ago).
+    if (preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)
+        || preg_match('/\b(vender|venderlo|venderla|transferir|traspasar|ceder|pasarlo a otro|cambiar de dueno)\b.{0,25}\b(dominio|la web|la tienda|el sitio|la pagina)\b/u', $t)
+        || preg_match('/\b(dominio|la web|la tienda|el sitio|la pagina)\b.{0,25}\b(a mi nombre|es mio|me pertenece|puedo venderl|lo puedo vender|la puedo vender)/u', $t)) return 'titularidad';
     if (preg_match('/\b(cpanel|c panel|ftp|sftp|panel del hosting|panel de control|acceso al hosting|accesos? al servidor|credenciales|usuario y contrasena)\b/u', $t)) return 'accesos';
     if (preg_match('/\b(search console|google search)\b/u', $t)) return 'pixel';
     // "¿Usan WordPress?" es una pregunta por la tecnología; "¿tengo acceso al
     // administrador tipo WordPress?" es por el panel. Solo la segunda va a carga.
     if (preg_match('/\b(gestor de contenidos|administrador de la web|panel de administracion|panel administrador|back ?office)\b/u', $t)
         || preg_match('/\b(acceso al|entran al|tengo|hay un|tiene)\b.{0,20}\b(wordpress|joomla|administrador)\b/u', $t)) return 'carga';
+    // "Modificarle a la tienda" es ambiguo —puede ser editarla o venderla— así
+    // que va DESPUÉS de titularidad: "cambiar de dueño la tienda" tiene que
+    // seguir contestando de quién es, no cómo se edita.
+    if (preg_match('/\b(agregarle|añadir|anadir|cargar|cargarle|subir|subirle|sacarle|quitarle|restarle|modificar|modificarle|editar|actualizar|administrar|manejar|retocar)\b.{0,25}\b(la tienda|mi tienda|la pagina|mi pagina|el sitio|mi sitio|la web|mi web)\b/u', $t)) return 'carga';
     if (preg_match('/\bhostin|\b(dominio\w*|servidor\w*|el punto com|puntocom|la direccion web)\b/u', $t)) return 'hosting';
     if (preg_match('/\b(hacen paginas?|crean paginas?|hacen webs?|hacen sitios|disenan paginas?|hacen las paginas)\b/u', $t)) return 'que_hacemos';
     if (preg_match('/\b(sin internet|se corta (el )?internet|sin conexion|funciona offline|no tengo internet|sin senal|sin wifi)\b/u', $t)) return 'internet';
