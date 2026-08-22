@@ -227,7 +227,21 @@ function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
     $texto = $tipo === 'rechazo'
         ? (string)($cfg['no_interesa'] ?? 'Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.')
         : (string)($cfg['cierre_suave'] ?? 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.');
-    return [$texto];
+    return [$texto . wabot_cierre_con_memoria($conv, $cfg)];
+}
+
+/**
+ * El que se va sabiendo que no tiene que explicar todo de nuevo vuelve más
+ * fácil. Solo se agrega si de verdad hay algo guardado — decirlo sin tener el
+ * tipo cotizado sería una promesa vacía.
+ */
+function wabot_cierre_con_memoria($conv, $cfg) {
+    if (empty($conv['precio_dado']) || trim((string)($conv['tipo'] ?? '')) === '') return '';
+    $label = wabot_tipo_label((string)$conv['tipo'], $cfg);
+    if (trim($label) === '') return '';
+    $plantilla = (string)($cfg['cierre_memoria'] ?? '');
+    if (trim($plantilla) === '') return '';
+    return ' ' . str_replace('{tipo}', mb_strtolower($label), $plantilla);
 }
 
 /**
@@ -1395,6 +1409,22 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
     // varias de ellas y, si no, todas caian en la respuesta de hosting.
     if (preg_match('/\b(bilingue|dos idiomas|en ingles|version en ingles|multi ?idioma|traducida|traduccion de la web)\b/u', $t)) return 'bilingue';
+    // Está comparando o le pasaron otro precio: no se contesta con el precio de
+    // nuevo, se contesta corriendo la comparación a qué incluye cada uno.
+    if (preg_match('/\b(estoy (viendo|mirando|averiguando|comparando)|ando (viendo|mirando|averiguando)|comparando (precios?|presupuestos?)|pidiendo (otros )?presupuestos?|me pasaron (otro|un)|otro me (cobra|paso|hace)|mas barato en otro|vi otro (mas barato|presupuesto))\b/u', $t)) return 'comparando';
+    if (preg_match('/\b(responsive|es adaptable|se adapta al (celular|telefono|movil))\b/u', $t)
+        || (preg_match('/\b(celular|celulares|telefono|movil|mobile|tablet)\b/u', $t)
+            && preg_match('/\b(se ve|se abre|se adapta|funciona|anda|entra|entran|sirve|queda|visualiza)\b/u', $t))) return 'responsive';
+    if (preg_match('/\b(no se nada de|no entiendo nada de|no manejo|no soy de|soy (un )?desastre con)\b.{0,24}\b(paginas?|web|compu|tecnologia|sistemas|internet)\b/u', $t)) return 'no_se_nada';
+    if (preg_match('/\b(no tengo logo|sin logo|no cuento con logo|todavia no tengo logo|logo no tengo)\b/u', $t)) return 'sin_logo';
+    if (preg_match('/\b(no tengo (buenas )?fotos|sin fotos|fotos no tengo|no tengo imagenes|no cuento con fotos|malas fotos)\b/u', $t)) return 'sin_fotos';
+    if (preg_match('/\b(la muestra (ya )?es mi (pagina|web)|la demo (ya )?es (mi|la) (pagina|web)|esa (ya )?seria mi (pagina|web)|la muestra queda(ria)? (como|de) (mi|la) (pagina|web))\b/u', $t)) return 'muestra_no_es_final';
+    if (preg_match('/\b(es segura|es seguro|ssl|https|certificado de seguridad|me pueden hackear|la pueden hackear|seguridad de la (web|pagina))\b/u', $t)) return 'seguridad';
+    if (preg_match('/\b(salgo en google|aparecer en google|aparezco en google|posicionamiento|seo|google me encuentra|salir primero en google)\b/u', $t)) return 'google';
+    if (preg_match('/\b(google maps|el mapa|poner (el|un) mapa|ubicacion en el mapa|maps)\b/u', $t)) return 'maps';
+    if (preg_match('/\b(empezar (simple|basico|de a poco)|arrancar (simple|con lo basico)|despues (le )?(agrego|sumo|amplio)|ampliar (mas )?adelante|sumar (despues|mas adelante)|escalar (despues|mas adelante))\b/u', $t)) return 'ampliar_despues';
+    if (preg_match('/\b(que (necesitan|necesitas|precisan) de mi|que (te|les) tengo que (mandar|pasar|dar)|que datos (necesitan|precisan|hacen falta)|que me (van a )?pedir)\b/u', $t)) return 'que_necesitan';
+    if (preg_match('/\b(sos (un |una )?(bot|robot|ia|inteligencia artificial|maquina)|eres (un |una )?(bot|robot|ia)|hablo con (un )?(bot|robot|una maquina)|esto es (un )?(bot|automatico)|sos (una )?persona)\b/u', $t)) return 'soy_bot';
     // "encuentas" y "formulaios" son typos reales de producción: se toleran las
     // variantes con una letra cambiada de las dos palabras clave.
     if (preg_match('/\b(formulari\w*|formulaio\w*|encuesta\w*|encuenta\w*|encusta\w*|cuestionario\w*|planillas? para (llenar|completar))\b/u', $t)) return 'formularios';
@@ -1452,6 +1482,11 @@ function wabot_info_por_palabras($texto, $fase = null) {
         if (in_array($fase, ['nuevo', 'menu', 'algo_diferente'], true)) return 'precio_sin_rubro';
     }
     if (preg_match('/\b(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)\b/u', $t)) return 'carga';
+
+    // Ya tiene web o vende en una plataforma: se ofrece revisarla, no reemplazarla.
+    if (preg_match('/\b(tiendanube|tienda ?nube|mercado ?shops|shopify|wix|wordpress|woocommerce|empretienda)\b/u', $t)
+        && !preg_match('/\b(que tecnologia|con que (lo|la) hacen|usan|trabajan con)\b/u', $t)) return 'ya_tiene_plataforma';
+    if (preg_match('/\b(ya tengo (una |mi )?(pagina|web|sitio)|tengo (una |mi )?(pagina|web|sitio) (hecha|armada|actual|vieja)|mi (pagina|web) actual)\b/u', $t)) return 'ya_tiene_plataforma';
     // Palabras completas: "catálogo" contiene "logo" como substring y no es
     // una consulta sobre identidad visual.
     if (preg_match('/(?:^|\s)(?:logo|isotipo|identidad|marca grafica)(?:\s|$)/u', $t)) return 'logo';

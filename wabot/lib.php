@@ -212,6 +212,9 @@ function wabot_config_ventas(&$cfg) {
         'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
         'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
         'cierre_suave'      => 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.',
+        // Se pega al cierre solo si ya hay un tipo cotizado: al que se va le
+        // saca el costo de volver ("no tenés que explicar todo de nuevo").
+        'cierre_memoria'    => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
         'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
         'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", según cuál sea el objetivo principal de la web.',
@@ -293,13 +296,16 @@ function wabot_config_ventas(&$cfg) {
             "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle: {link}",
         ];
     }
+    // La demo no se ofrece como promoción ("te armamos una gratis") sino como
+    // lo que realmente es: la forma de que no tenga que decidir a ciegas por un
+    // monto grande. Es la ventaja competitiva más fuerte y estaba subaprovechada.
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $cfg['msg_prediseno_oferta_variantes'] = [
-            'Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?',
-            'También podemos armarte una demo sin costo y sin compromiso, así evaluás algo concreto. Querés que la preparemos?',
-            'Como siguiente paso, podemos mostrarte una demo gratis de tu propia web. Te gustaría que la armemos?',
-            'Antes de que decidas, te podemos preparar una demo sin cargo para que veas el resultado. Avanzamos con eso?',
-            'Si te sirve para evaluarlo, armamos una demo gratis adaptada a tu negocio. Querés que la preparemos?',
+            'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
+            'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
+            'Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?',
+            'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?',
+            'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?',
         ];
     }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
@@ -418,7 +424,9 @@ function wabot_config_ventas(&$cfg) {
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
-                => 'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?',
+                => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
+            'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?'
+                => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
         ],
     ];
     foreach ($migraciones2108 as $campo => $reemplazos) {
@@ -432,7 +440,9 @@ function wabot_config_ventas(&$cfg) {
         ],
         'mantenimiento' => [
             'El mantenimiento es opcional: cubre actualizaciones, cambios mensuales, soporte y más. Sale {precio} por mes y acá lo podés ver en detalle: {link}'
-                => 'El mantenimiento es opcional: cubre actualizaciones, cambios mensuales, soporte y más, e incluye el hosting y el dominio mientras esté activo. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}',
+                => 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}',
+            'El mantenimiento es opcional: cubre actualizaciones, cambios mensuales, soporte y más, e incluye el hosting y el dominio mientras esté activo. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}'
+                => 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}',
         ],
         'reuniones' => [
             'Las reuniones se coordinan con el equipo al avanzar el proyecto.'
@@ -500,6 +510,32 @@ function wabot_config_ventas(&$cfg) {
         'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
         'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',
         'inscripcion' => 'Para hacerte la web no te pedimos ninguna inscripción ni condición fiscal: la contratás y listo. Si tu duda es si vos necesitás estar inscripto para vender, eso depende de tu situación y lo mejor es que lo confirmes con un contador.',
+
+        /* Está comparando presupuestos: no se defiende el precio ni se ataca a
+         * nadie. Se corre la comparación de precio-contra-precio a qué entrega
+         * cada uno, y ahí la muestra gratis juega a favor. */
+        'comparando' => 'Está perfecto comparar, es lo que hay que hacer. Lo único que te diría es que mires también qué incluye cada propuesta, porque los precios cambian bastante según eso: si es a medida o una plantilla, si te queda panel propio, si el hosting y el dominio van incluidos. Y justamente por eso te armamos la muestra antes de que contrates: además del precio vas a poder comparar cómo queda realmente tu web.',
+        // Ya tiene otra web (WordPress, Tiendanube, la que le hizo un conocido).
+        // No se le dice que la tire: se ofrece revisarla. Genera más confianza
+        // que empujar el reemplazo y evita prometer sobre algo que no vimos.
+        'ya_tiene_plataforma' => 'No necesariamente tenés que reemplazarla. Contame qué te gustaría mejorar de la que tenés y vemos si te conviene rehacerla, o si con lo que ya tenés alcanza. Si querés pasame el link y la reviso.',
+
+        /* Bajan la ansiedad del que nunca tuvo una web: ninguna de estas exige
+         * que el cliente tenga algo listo antes de empezar. */
+        'no_se_nada' => 'No hace falta que sepas nada de eso, para eso estamos nosotros. Vos contanos de tu negocio y del resto nos encargamos: te vamos pidiendo solo la información que hace falta, en criollo.',
+        'sin_logo' => 'No es un problema, se puede avanzar igual: armamos la web con el nombre de tu negocio y una identidad visual acorde al rubro. Si más adelante conseguís un logo, se cambia sin rehacer nada.',
+        'sin_fotos' => 'No hace falta que tengas fotos para empezar. La primera muestra la armamos con imágenes acordes al rubro para definir la estética, y después las cambiamos por las tuyas cuando las tengas.',
+        'muestra_no_es_final' => 'No, la muestra es una primera versión para que veas el diseño y la idea general. Si te gusta y avanzamos, sobre esa base hacemos el desarrollo completo con tu contenido real y todas las funciones terminadas.',
+        'responsive' => 'Sí, la web se adapta sola al celular, la tablet y la computadora. De hecho la diseñamos pensando primero en el celular, que es de donde entra la mayoría de la gente.',
+        'seguridad' => 'La web va con certificado SSL, así que funciona con HTTPS y la información viaja cifrada. Ningún sistema conectado a internet puede prometer riesgo cero, pero se toman las medidas que corresponden y los datos sensibles quedan protegidos.',
+        // Nunca prometer posiciones en Google: depende de competencia y tiempo.
+        'google' => 'La web queda preparada técnicamente para que Google la encuentre e indexe, con la configuración SEO básica incluida. En qué puesto aparecés ya depende de la competencia de tu rubro, la antigüedad del sitio y el trabajo de posicionamiento sostenido, que es un servicio aparte.',
+        'maps' => 'Sí, si tenés local podemos sumar el mapa con tu ubicación y el acceso directo a Google Maps para que te lleguen con el GPS.',
+        'ampliar_despues' => 'Sí, y muchas veces es lo que recomendamos: arrancar con lo que necesitás hoy y sumar funciones cuando el negocio las pida. La web queda preparada para ampliarse sin tener que rehacerla de cero.',
+        'que_necesitan' => 'Poco: el nombre del negocio, una descripción breve de lo que ofrecés, los colores que te gustan y tus datos de contacto. Si tenés logo y fotos los usamos, y si no, arrancamos igual.',
+        // Mentir acá se paga caro: un cliente preguntó "sos una persona o robot"
+        // y el silencio fue peor que la verdad (Luicho, 21-ago).
+        'soy_bot' => 'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
@@ -596,6 +632,27 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes'] as $clave) {
         if (empty($cfg[$clave]) || !is_array($cfg[$clave])) continue;
         $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
+    }
+
+    // Las variantes viejas de la oferta de demo eran promoción ("te armamos una
+    // gratis"); las nuevas la plantean como no decidir a ciegas. Se reemplazan
+    // una por una, por texto exacto, en el bot-config.json que ya existe.
+    $ofertaNueva = [
+        'Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?'
+            => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
+        'También podemos armarte una demo sin costo y sin compromiso, así evaluás algo concreto. Querés que la preparemos?'
+            => 'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
+        'Como siguiente paso, podemos mostrarte una demo gratis de tu propia web. Te gustaría que la armemos?'
+            => 'Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?',
+        'Antes de que decidas, te podemos preparar una demo sin cargo para que veas el resultado. Avanzamos con eso?'
+            => 'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?',
+        'Si te sirve para evaluarlo, armamos una demo gratis adaptada a tu negocio. Querés que la preparemos?'
+            => 'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?',
+    ];
+    if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $cfg['msg_prediseno_oferta_variantes'] = array_map(function ($v) use ($ofertaNueva) {
+            return $ofertaNueva[trim((string)$v)] ?? $v;
+        }, $cfg['msg_prediseno_oferta_variantes']);
     }
 
     // Agrega la opción de 3 pagos por transferencia al mensaje de precio —
@@ -815,16 +872,39 @@ function wabot_tipo_label($tipo, $cfg) {
  * se actualiza al que primero explica qué es y después dice cuánto sale.
  */
 function wabot_config_descs(&$cfg) {
+    // Cada desc dice QUÉ es y, sobre todo, PARA QUÉ le sirve: el {desc} va
+    // antes del precio en el mensaje, así el número llega comprando algo en
+    // vez de ser "el precio de una página".
     $descs = [
-        'landing'       => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp',
-        'turnos'        => 'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel',
-        'institucional' => 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, y panel propio para publicar',
-        'inmobiliaria'  => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas',
-        'ecommerce'     => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos',
-        'elearning'     => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online',
+        'landing'       => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
+        'catalogo'      => 'una página con tu catálogo completo, donde cada producto tiene su foto, su descripción y un botón para consultarte directo por WhatsApp, así el cliente recorre todo solo y te llega la consulta con el producto ya elegido',
+        'turnos'        => 'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel, así dejás de coordinar horarios por chat y los turnos entran incluso fuera de hora',
+        'institucional' => 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, así la institución tiene una cara formal propia y no depende de una red social',
+        'inmobiliaria'  => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
+        'ecommerce'     => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando, incluso de madrugada',
+        'elearning'     => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo, sin que le mandes links ni videos a mano',
     ];
     foreach (($cfg['tipos'] ?? []) as $k => $t) {
         if (trim((string)($t['desc'] ?? '')) === '' && isset($descs[$k])) {
+            $cfg['tipos'][$k]['desc'] = $descs[$k];
+        }
+    }
+    // Las versiones anteriores describían la web pero no decían para qué le
+    // sirve al negocio: se actualizan solas en el bot-config.json que ya existe.
+    $conBeneficio = [
+        'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp' => 'landing',
+        'una página con tu catálogo completo, donde cada producto tiene su foto, su descripción y un botón para consultarte directo por WhatsApp' => 'catalogo',
+        'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel' => 'turnos',
+        'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades' => 'institucional',
+        'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, y panel propio para publicar' => 'institucional',
+        'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades de la empresa' => 'institucional',
+        'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas' => 'inmobiliaria',
+        'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos' => 'ecommerce',
+        'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online' => 'elearning',
+    ];
+    foreach (($cfg['tipos'] ?? []) as $k => $t) {
+        $actual = trim((string)($t['desc'] ?? ''));
+        if (isset($conBeneficio[$actual]) && $conBeneficio[$actual] === $k && isset($descs[$k])) {
             $cfg['tipos'][$k]['desc'] = $descs[$k];
         }
     }
@@ -1689,8 +1769,10 @@ function wabot_ig_ids_propios() {
 function wabot_enviar($conv, $texto) {
     // Último filtro antes de que el texto salga al cliente: ningún {nombre}
     // llega crudo, lo mande quien lo mande. Pasó en producción con el texto
-    // de derivación, que se armó sin pasar por wabot_personalizar().
-    $texto = wabot_personalizar($texto, $conv);
+    // de derivación, que se armó sin pasar por wabot_personalizar(). Acá
+    // también se rota la muletilla, así aplica a los textos fijos y a los que
+    // redacta el modelo por igual.
+    $texto = wabot_variar_muletilla(wabot_personalizar($texto, $conv), $conv);
     return wabot_canal($conv) === 'instagram'
         ? wabot_ig_send_text(wabot_channel_user_id($conv), $texto)
         : wabot_wa_send_text(wabot_channel_user_id($conv), $texto);
@@ -2086,6 +2168,33 @@ function wabot_sin_repetidos_consecutivos($mensajes) {
     return $out;
 }
 
+/**
+ * Rota la muletilla de apertura para que no salga "Perfecto" en cada mensaje.
+ * En los chats reales aparece tantas veces seguidas que se lee a chatbot; se
+ * mira el arranque de lo último que dijo el bot y, si se repite, se cambia por
+ * otra de la misma familia. Solo la primera palabra: el resto no se toca.
+ */
+function wabot_variar_muletilla($texto, $conv) {
+    $familia = ['Perfecto', 'Buenísimo', 'Dale', 'Listo', 'Genial', 'Bárbaro'];
+    if (!preg_match('/^(' . implode('|', $familia) . ')\b/u', (string)$texto, $m)) return $texto;
+    $actual = $m[1];
+
+    $previa = '';
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+        if (($linea['q'] ?? '') !== 'bot') continue;
+        if (preg_match('/^(' . implode('|', $familia) . ')\b/u', (string)($linea['t'] ?? ''), $p)) $previa = $p[1];
+        break;
+    }
+    if ($previa === '' || $previa !== $actual) return $texto;
+
+    // Alternativa estable por conversación: la misma charla no oscila entre
+    // dos palabras distintas cada vez que se repite.
+    $otras = array_values(array_filter($familia, function ($f) use ($actual) { return $f !== $actual; }));
+    $semilla = (string)($conv['conversation_key'] ?? $conv['tel'] ?? '') . '|' . count((array)($conv['transcript'] ?? []));
+    $elegida = $otras[hexdec(substr(hash('sha256', $semilla), 0, 8)) % count($otras)];
+    return $elegida . mb_substr($texto, mb_strlen($actual));
+}
+
 function wabot_moneda($monto) {
     return '$' . number_format((float)$monto, 0, ',', '.');
 }
@@ -2331,7 +2440,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, inscripcion, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {

@@ -3146,5 +3146,152 @@ $rNormal = wabot_precio('landing', $cvNormal, $cfg);
 caso('sin ese pedido, la oferta de siempre sigue igual (pregunta, no recolecta)',
     count($rNormal) === 2 && mb_strpos($rNormal[1], '?') !== false && mb_stripos($rNormal[1], 'Necesito') === false);
 
+echo "— TANDA 1: el precio llega comprando algo (beneficio antes del número) —\n";
+
+foreach (['landing' => 'te escribe sin preguntarte lo básico',
+          'catalogo' => 'te llega la consulta con el producto ya elegido',
+          'turnos' => 'los turnos entran incluso fuera de hora',
+          'institucional' => 'no depende de una red social',
+          'inmobiliaria' => 'te consulta por una propiedad concreta',
+          'ecommerce' => 'incluso de madrugada',
+          'elearning' => 'sin que le mandes links ni videos a mano'] as $tipo => $beneficio) {
+    caso("$tipo explica para qué le sirve, no solo qué es",
+        mb_stripos((string)$cfg['tipos'][$tipo]['desc'], $beneficio) !== false);
+}
+caso('el beneficio va ANTES del precio en el mensaje', (function () use ($cfg) {
+    $t = wabot_msg_precio_texto('ecommerce', $cfg);
+    return mb_strpos($t, 'de madrugada') < mb_strpos($t, '$320.000');
+})());
+caso('institucional sigue sin prometer panel propio',
+    stripos((string)$cfg['tipos']['institucional']['desc'], 'panel') === false);
+
+$descVieja = wabot_config_load();
+$descVieja['tipos']['ecommerce']['desc'] = 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos';
+wabot_config_descs($descVieja);
+caso('las desc viejas de producción migran solas al texto con beneficio',
+    $descVieja['tipos']['ecommerce']['desc'] === $cfg['tipos']['ecommerce']['desc']);
+
+echo "— La demo se ofrece como no decidir a ciegas, no como promoción —\n";
+
+caso('la oferta habla de decidir, no de "gratis" a secas',
+    mb_stripos($cfg['msg_prediseno_oferta'], 'decidas') !== false);
+caso('y sigue terminando en pregunta, que es lo que el flujo espera',
+    mb_strpos($cfg['msg_prediseno_oferta'], '?') !== false);
+caso('todas las variantes terminan en pregunta', (function () use ($cfg) {
+    foreach ((array)($cfg['msg_prediseno_oferta_variantes'] ?? []) as $v) {
+        if (mb_strpos($v, '?') === false) return false;
+    }
+    return count((array)($cfg['msg_prediseno_oferta_variantes'] ?? [])) >= 5;
+})());
+
+$ofertaVieja = wabot_config_load();
+$ofertaVieja['msg_prediseno_oferta'] = 'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?';
+$ofertaVieja['msg_prediseno_oferta_variantes'] = ['Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?'];
+wabot_config_ventas($ofertaVieja);
+caso('la oferta vieja de producción migra sola', $ofertaVieja['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']);
+caso('y sus variantes también', $ofertaVieja['msg_prediseno_oferta_variantes'][0] === $cfg['msg_prediseno_oferta_variantes'][0]);
+
+echo "— El que se va sabe que no tiene que explicar todo de nuevo —\n";
+
+$cvCierre = conv_nueva();
+$cvCierre['tipo'] = 'ecommerce'; $cvCierre['precio_dado'] = true;
+$rCierre = wabot_cerrar_sin_presion($cvCierre, $cfg, 'consulta');
+caso('el cierre recuerda el tipo ya cotizado', mb_stripos($rCierre[0], 'ecommerce') !== false);
+caso('y promete continuidad', mb_stripos($rCierre[0], 'no vas a tener que explicar') !== false);
+
+$cvSinPrecio = conv_nueva();
+$rSinPrecio = wabot_cerrar_sin_presion($cvSinPrecio, $cfg, 'consulta');
+caso('sin tipo cotizado NO promete memoria: sería una promesa vacía',
+    mb_stripos($rSinPrecio[0], 'no vas a tener que explicar') === false);
+
+echo "— El \"Perfecto\" deja de repetirse mensaje tras mensaje —\n";
+
+$cvMul = ['conversation_key' => 'MUL1', 'transcript' => [['q' => 'bot', 't' => 'Perfecto, ya lo anoté.', 'ts' => time()]]];
+$variado = wabot_variar_muletilla('Perfecto, ahora contame los colores.', $cvMul);
+caso('si el anterior arrancó igual, cambia la muletilla', mb_strpos($variado, 'Perfecto') !== 0);
+caso('pero el resto del mensaje queda intacto', mb_strpos($variado, ', ahora contame los colores.') !== false);
+
+$cvOtra = ['conversation_key' => 'MUL2', 'transcript' => [['q' => 'bot', 't' => 'Dale, lo vemos.', 'ts' => time()]]];
+caso('si el anterior arrancó distinto, no toca nada',
+    wabot_variar_muletilla('Perfecto, ahora contame los colores.', $cvOtra) === 'Perfecto, ahora contame los colores.');
+caso('un mensaje que no arranca con muletilla nunca se toca',
+    wabot_variar_muletilla('Tu demo va a estar lista hoy.', $cvMul) === 'Tu demo va a estar lista hoy.');
+caso('la alternativa es estable: dos veces seguidas da lo mismo',
+    wabot_variar_muletilla('Perfecto, dale.', $cvMul) === wabot_variar_muletilla('Perfecto, dale.', $cvMul));
+
+echo "— TANDA 2: preguntas frecuentes que antes caían en el comodín —\n";
+
+foreach ([
+    'estoy averiguando precios'                 => 'comparando',
+    'otro me cobra mas barato'                   => 'comparando',
+    'me pasaron un presupuesto de 150 mil'       => 'comparando',
+    'ya tengo una pagina'                        => 'ya_tiene_plataforma',
+    'tengo tiendanube'                           => 'ya_tiene_plataforma',
+    'se ve bien en el celular?'                  => 'responsive',
+    'no se nada de paginas web'                  => 'no_se_nada',
+    'no tengo logo'                              => 'sin_logo',
+    'no tengo buenas fotos'                      => 'sin_fotos',
+    'la muestra ya es mi pagina?'                => 'muestra_no_es_final',
+    'es segura la web?'                          => 'seguridad',
+    'me pueden hackear?'                         => 'seguridad',
+    'voy a aparecer en google?'                  => 'google',
+    'incluye seo?'                               => 'google',
+    'se puede poner google maps?'                => 'maps',
+    'puedo empezar simple y ampliar despues?'    => 'ampliar_despues',
+    'que necesitan de mi?'                       => 'que_necesitan',
+    'sos un bot?'                                => 'soy_bot',
+    'sos una persona o robot'                    => 'soy_bot',
+] as $pregunta => $clave) {
+    caso("\"" . mb_substr($pregunta, 0, 40) . "\" → $clave", wabot_info_por_palabras($pregunta) === $clave);
+    caso("  y $clave tiene texto", trim((string)($cfg['info'][$clave] ?? '')) !== '');
+}
+
+echo "— Las claves nuevas no le roban casos a las que ya andaban —\n";
+
+foreach ([
+    'usan wordpress?'                            => 'tecnologia',
+    'tengo acceso al administrador tipo wordpress?' => 'carga',
+    'migran el contenido de mi web actual?'      => 'migracion',
+    'quien carga los productos?'                 => 'carga',
+    'de donde son?'                              => 'ubicacion',
+    'cuando vence el dominio?'                   => 'hosting',
+    'vendo celulares'                            => null,
+] as $pregunta => $clave) {
+    caso("\"" . mb_substr($pregunta, 0, 40) . "\" sigue en " . var_export($clave, true),
+        wabot_info_por_palabras($pregunta) === $clave);
+}
+
+echo "— Contenido de las respuestas nuevas —\n";
+
+caso('comparando no ataca al competidor ni baja el precio',
+    stripos($cfg['info']['comparando'], 'descuento') === false
+    && stripos($cfg['info']['comparando'], 'está perfecto comparar') !== false);
+caso('y usa la muestra como diferencial', stripos($cfg['info']['comparando'], 'muestra') !== false);
+caso('ya_tiene_plataforma no empuja a reemplazar',
+    stripos($cfg['info']['ya_tiene_plataforma'], 'No necesariamente') !== false);
+caso('google NO promete salir primero',
+    stripos($cfg['info']['google'], 'primero') === false && stripos($cfg['info']['google'], 'garantiz') === false);
+caso('seguridad no promete riesgo cero',
+    stripos($cfg['info']['seguridad'], 'riesgo cero') !== false && stripos($cfg['info']['seguridad'], 'imposible') === false);
+caso('soy_bot admite que es un bot', stripos($cfg['info']['soy_bot'], 'asistente automático') !== false);
+caso('muestra_no_es_final aclara que no es la web final',
+    stripos($cfg['info']['muestra_no_es_final'], 'primera versión') !== false);
+
+echo "— Mantenimiento: 1 cambio por mes y planes con más —\n";
+
+$mant = wabot_texto_mantenimiento(['tipo' => 'landing', 'precio_dado' => true], $cfg);
+caso('dice que es un cambio por mes', mb_stripos($mant, 'un cambio por mes') !== false);
+caso('aclara que puede ser un cambio grande', mb_stripos($mant, 'grande') !== false);
+caso('menciona que hay planes con más cambios', mb_stripos($mant, 'planes más completos') !== false);
+caso('sin inventar un precio para esos planes',
+    substr_count($mant, '$') <= 1);
+
+echo "— 500 productos se cotizan, no se derivan —\n";
+
+$d500 = wabot_catalogo_total(500, $cfg);
+caso('500 productos = $200.000 de base', $d500['base'] === 200000);
+caso('más $250.000 de carga', $d500['productos'] === 250000);
+caso('total $450.000', $d500['total'] === 450000);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
