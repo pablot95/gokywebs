@@ -407,6 +407,31 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
     }
+    // Reintento del link de la demo cuando la primera vez no salió. No vuelve
+    // a marcar nada: la conversación YA está presentada, lo único que falta es
+    // que el mensaje llegue.
+    if ($a === 'reenviar_demo' && !empty($_POST['tel'])) {
+        $conv = wabot_conv_load($_POST['tel']);
+        $slug = trim((string)($conv['presentado_slug'] ?? ''));
+        $aviso = 'reenvio_sin_slug';
+        if ($slug !== '' && wabot_ventana_restante($conv) > 0) {
+            $texto = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\n"
+                   . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
+                   . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
+            if (wabot_enviar($conv, $texto)) {
+                $conv['presentado_sin_aviso'] = false;
+                wabot_conv_transcript($conv, 'humano', $texto);
+                wabot_conv_save($conv);
+                $aviso = 'reenvio_ok';
+            } else {
+                $aviso = 'reenvio_error';
+            }
+        } elseif ($slug !== '') {
+            $aviso = 'reenvio_ventana';
+        }
+        wabot_log('reenviar_demo', ['tel' => $conv['tel'], 'slug' => $slug, 'resultado' => $aviso]);
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel']) . '&' . $aviso . '=1'); exit;
+    }
     if ($a === 'presentado_confirmar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['presentado_confirmado'] = empty($conv['presentado_confirmado']);
@@ -1105,6 +1130,10 @@ body.embed { min-height: 0; }
 
     <?php if (isset($_GET['ok'])) echo '<p class="ok">Guardado.</p>'; ?>
     <?php if (isset($_GET['boceto_ok'])) echo '<p class="ok">Boceto creado: ya aparece en la pestaña Bocetos.</p>'; ?>
+    <?php if (isset($_GET['reenvio_ok'])) echo '<p class="ok">Listo: el cliente ya recibió el link de la demo.</p>'; ?>
+    <?php if (isset($_GET['reenvio_ventana'])) echo '<p class="ok" style="color:var(--warn)">Pasaron más de 24 h desde su último mensaje, así que WhatsApp no deja mandarlo. Hay que esperar a que escriba, o mandárselo desde tu WhatsApp.</p>'; ?>
+    <?php if (isset($_GET['reenvio_error'])) echo '<p class="ok" style="color:var(--bad)">WhatsApp rechazó el envío. Revisá el log en wabot/data/log/.</p>'; ?>
+    <?php if (isset($_GET['reenvio_sin_slug'])) echo '<p class="ok" style="color:var(--bad)">Esta conversación no tiene guardado el link de la demo. Presentala de nuevo desde Bocetos.</p>'; ?>
     <?php if (isset($_GET['boceto_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo crear el boceto: Firestore rechazó el alta. Quedó guardado igual en Estado → "Prediseños que no llegaron a Bocetos". Revisá el log en wabot/data/log/.</p>'; ?>
 
     <?php if ($tab === 'embudo'): ?>
@@ -1635,6 +1664,9 @@ body.embed { min-height: 0; }
                         <?php if (!empty($conv['bot_off'])): ?><span class="pill off">bot apagado acá</span><?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?><span class="pill pausa">pausado hasta <?= date('d/m H:i', (int)$conv['pausado_hasta']) ?></span><?php endif; ?>
                         <?php if (!empty($conv['handoff_pendiente'])): ?><span class="pill pausa" id="handoffPill">Pablo pendiente</span><?php endif; ?>
+                        <?php if (!empty($conv['presentado_ts']) && !empty($conv['presentado_sin_aviso'])): ?>
+                            <span class="pill off" title="Se marcó como presentada pero el mensaje con la demo nunca salió.">falta mandarle el link<?= !empty($conv['presentado_slug']) ? ' · gokywebs.com/demo/' . $e($conv['presentado_slug']) : '' ?></span>
+                        <?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -1668,6 +1700,14 @@ body.embed { min-height: 0; }
                         <form method="post" onsubmit="return confirm('Marcar la demo como entregada?\n\nNo se le manda ningún mensaje al cliente: es para las que ya entregaste por otro medio. Sale de \'Demos por diseñar\' y pasa a \'Demo entregada\'.')">
                             <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Ya la entregué</button></form>
+                        <?php endif; ?>
+                        <?php
+                        // La demo quedó marcada pero el link nunca salió: se
+                        // puede reintentar sin volver a Bocetos.
+                        if (!empty($conv['presentado_ts']) && !empty($conv['presentado_sin_aviso'])): ?>
+                        <form method="post" onsubmit="return confirm('Reintentar el envío del link de la demo al cliente?')">
+                            <input type="hidden" name="accion" value="reenviar_demo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button style="border-color:var(--warn);color:var(--warn)">Reintentar envío</button></form>
                         <?php endif; ?>
                         <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
                         <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -2002,6 +2042,13 @@ body.embed { min-height: 0; }
                     p1.className = 'pill ' + (it.estado === 'apagado' ? 'off' : 'pausa');
                     p1.textContent = it.estado === 'apagado' ? 'bot apagado' : 'lo seguís vos';
                     pills.appendChild(p1);
+                }
+                if (it.sin_aviso) {
+                    const ps = document.createElement('span');
+                    ps.className = 'pill off';
+                    ps.textContent = 'falta mandarle el link';
+                    ps.title = 'Quedó marcada como presentada pero el mensaje con la demo nunca salió. Mandáselo vos.';
+                    pills.appendChild(ps);
                 }
                 if (it.handoff_pendiente || it.espera) {
                     const pe = document.createElement('span');

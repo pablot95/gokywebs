@@ -3073,9 +3073,9 @@ async function presentarPropuesta(propId) {
     let envio = await enviarMuestraWhatsapp(p, clienteRef.id);
     if (envio?.error) {
         const igual = confirm(
-            "No se le pudo mandar el link por WhatsApp:\n\n" + envio.error +
+            "OJO: NO se le pudo mandar el link por WhatsApp.\n\n" + envio.error +
             "\n\n¿Pasarla a presentada igual?\n" +
-            "Se mueve a Seguimiento y el link se lo tenés que mandar vos a mano."
+            "Si aceptás, el cliente NO recibe nada: el link se lo tenés que mandar vos a mano."
         );
         if (!igual) return;
         envio = await enviarMuestraWhatsapp(p, clienteRef.id, { forzar: true });
@@ -3084,6 +3084,15 @@ async function presentarPropuesta(propId) {
                   "\n\nNo se movió nada. Probá de nuevo.");
             return;
         }
+    }
+    // Aunque haya salido por el camino normal, si el mensaje no se envió el
+    // cliente se queda esperando una demo que nadie le mandó. Se avisa con el
+    // link listo para copiar, y queda marcada en el panel del bot.
+    if (envio && envio.enviado === false) {
+        const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
+        alert("Quedó en Seguimiento, PERO el cliente no recibió nada.\n\n"
+            + "Mandale vos el link por WhatsApp" + (link ? ":\n" + link : ".")
+            + "\n\nEn el panel del bot le vas a ver el cartel \"falta mandarle el link\".");
     }
 
     try {
