@@ -226,7 +226,7 @@ p {
 
 .site-header {
   position: relative;
-  z-index: 15;
+  z-index: 130;
   background: var(--color-bg);
 }
 .header-top {
@@ -706,6 +706,7 @@ body.no-scroll {
 }
 .cierre-content {
   position: relative;
+  z-index: 1;
   max-width: 640px;
 }
 .cierre-content h2 {
