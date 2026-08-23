@@ -525,7 +525,7 @@ function wabot_config_ventas(&$cfg) {
         'demo_lista' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
             'params' => ['nombre'], 'boton' => [],
-            'texto' => 'Hola {nombre}! Ya tenemos lista la demo de tu web. Contestame este mensaje y te paso el link para verla.',
+            'texto' => 'Hola {nombre}! Ya tenemos lista la demo de tu web. Avisame si te la puedo enviar por acá.',
         ],
         'seguimiento_demo_72h' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
