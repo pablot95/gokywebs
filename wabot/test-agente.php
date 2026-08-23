@@ -86,6 +86,8 @@ $rc2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' =>
 caso('y al dar la cantidad cotiza de una, sin repreguntar la misma pregunta',
     empty($rc2['exacta']) && strpos($rc2['texto'], '$200.000') !== false
     && stripos($rc2['texto'], 'cuántos productos') === false);
+caso('y tampoco repite la descripción del catálogo, ya la vio en el pitch',
+    stripos($rc2['texto'], 'catálogo completo') === false);
 @unlink(WABOT_DATA . '/conv/AGPITCH2.json');
 
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);

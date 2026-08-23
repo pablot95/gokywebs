@@ -304,15 +304,12 @@ function wabot_config_ventas(&$cfg) {
             "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle: {link}",
         ];
     }
-    // La demo no se ofrece como promoción ("te armamos una gratis") sino como
-    // lo que realmente es: la forma de que no tenga que decidir a ciegas por un
-    // monto grande. Es la ventaja competitiva más fuerte y estaba subaprovechada.
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $cfg['msg_prediseno_oferta_variantes'] = [
-            'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
-            'Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?',
-            'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?',
-            'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?',
+            'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+            'Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?',
+            'Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?',
+            'El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?',
         ];
     }
     $ofertasRetiradas = [
@@ -396,6 +393,18 @@ function wabot_config_ventas(&$cfg) {
         if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] ?? '')) === '') {
             $cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] = $preguntas[1];
         }
+    }
+    if (isset($cfg['tipos']['turnos'])) {
+        if (trim((string)($cfg['tipos']['turnos']['desc_alojamiento'] ?? '')) === '') {
+            $cfg['tipos']['turnos']['desc_alojamiento'] = 'una web con reserva de estadías incluida: tus huéspedes eligen las fechas y ven la disponibilidad solos desde la página, y a vos te queda todo ordenado en un panel, así dejás de coordinar por chat';
+        }
+        if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] ?? '')) === '') {
+            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas cabañas o unidades tenés, así armamos la disponibilidad con eso?';
+        }
+    }
+    if (isset($cfg['tipos']['ecommerce'])
+        && trim((string)($cfg['tipos']['ecommerce']['desc_mayorista'] ?? '')) === '') {
+        $cfg['tipos']['ecommerce']['desc_mayorista'] = 'una tienda online pensada para mayoristas: catálogo con tus productos, cuentas exclusivas para que tus clientes revendedores compren con sus condiciones, y un panel propio para manejar todo vos';
     }
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
@@ -534,9 +543,11 @@ function wabot_config_ventas(&$cfg) {
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
-                => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
+                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
             'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?'
-                => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
+                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+            'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?'
+                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
         ],
     ];
     foreach ($migraciones2108 as $campo => $reemplazos) {
@@ -625,6 +636,8 @@ function wabot_config_ventas(&$cfg) {
          * parecer que el bot no sabe nada de lo que vende. */
         'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
         'exclusividad' => 'Sí, es exclusivo: cada web se diseña a medida para tu negocio, así que no reciclamos el mismo diseño con otro cliente.',
+        'fotos_propiedad' => 'Podés subir decenas de fotos por propiedad, y también video.',
+        'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
         'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
         'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',
@@ -747,9 +760,6 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         $cfg[$clave] = array_map($sinSena, $cfg[$clave]);
     }
 
-    // Las variantes viejas de la oferta de demo eran promoción ("te armamos una
-    // gratis"); las nuevas la plantean como no decidir a ciegas. Se reemplazan
-    // una por una, por texto exacto, en el bot-config.json que ya existe.
     $ofertaNueva = [
         'Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?'
             => 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
@@ -761,6 +771,14 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
             => 'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?',
         'Si te sirve para evaluarlo, armamos una demo gratis adaptada a tu negocio. Querés que la preparemos?'
             => 'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?',
+        'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?'
+            => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+        'Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?'
+            => 'Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?',
+        'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?'
+            => 'Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?',
+        'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?'
+            => 'El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?',
     ];
     if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $cfg['msg_prediseno_oferta_variantes'] = array_map(function ($v) use ($ofertaNueva) {

@@ -371,7 +371,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -627,6 +627,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     $conv['productos_cantidad'] = $cantidad;
                 } else {
                     $conv['pitch_hecho'] = true;
+                    $conv['pitch_tipo'] = 'catalogo';
                     $pregunta = wabot_catalogo_preguntar($conv, $cfg);
                     return ['texto' => $pregunta[0], 'exacta' => true,
                             'nota' => 'Todavía no sabemos cuántos productos tiene y sin ese dato no hay precio. Preguntáselo con este texto y esperá la respuesta.'];

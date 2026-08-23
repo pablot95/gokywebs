@@ -3257,6 +3257,18 @@ caso('"el diseño es exclusivo o le copian y pegan a otro cliente el mismo dise�
 caso('pero "me estafaron" sigue yendo a confianza, no a exclusividad',
     wabot_info_por_palabras('me estafaron con otra web antes, es confiable esto?', 'pitch') === 'confianza');
 
+caso('info.fotos_propiedad dice que son decenas de fotos y tambien video',
+    stripos($cfg['info']['fotos_propiedad'], 'decenas de fotos') !== false
+    && stripos($cfg['info']['fotos_propiedad'], 'video') !== false);
+caso('"cuantas fotos puedo poner por propiedad?" → fotos_propiedad',
+    wabot_info_por_palabras('cuantas fotos puedo poner por propiedad?', 'pitch') === 'fotos_propiedad');
+
+caso('info.impuestos_importacion contesta que NO calcula automatico',
+    stripos($cfg['info']['impuestos_importacion'], 'No,') === 0
+    && stripos($cfg['info']['impuestos_importacion'], 'funcionalidad extra') !== false);
+caso('"calcula automatico los impuestos de importacion?" → impuestos_importacion',
+    wabot_info_por_palabras('la pagina calcula automatico los impuestos de importacion o eso lo manejo yo aparte?', 'pitch') === 'impuestos_importacion');
+
 echo "— \"Bueno, aguardo entonces\" no es una duda —\n";
 
 foreach (['Bueno, aguardo entonces', 'aguardo', 'quedo atento', 'quedo a la espera',
@@ -3365,6 +3377,68 @@ caso('hotel también', wabot_clave_desempate_turnos('tengo un hotel en la costa'
 caso('una peluquería sigue con el texto de turnos', wabot_clave_desempate_turnos('peluqueria', $cfg) === 'desempate_turnos');
 caso('el texto de alojamiento existe y habla de fechas',
     mb_stripos((string)($cfg['desempate_turnos_alojamiento'] ?? ''), 'fechas') !== false);
+caso('departamentos que se alquilan por Airbnb/Booking también son alojamiento',
+    wabot_clave_desempate_turnos('Tengo 4 departamentos que alquilo por Booking y Airbnb', $cfg) === 'desempate_turnos_alojamiento');
+
+echo "— El pitch de turnos tampoco habla de \"día y horario\" si es alojamiento —\n";
+
+$convAloj = conv_nueva();
+$convAloj['transcript'] = [['q'=>'cliente','t'=>'Tenemos un complejo de cabañas en Villa La Angostura','ts'=>time()]];
+$pitchAloj = wabot_pitch_texto('turnos', $convAloj, $cfg);
+caso('cabañas → el pitch habla de huéspedes y fechas, no de día y horario',
+    stripos($pitchAloj, 'huéspedes') !== false && stripos($pitchAloj, 'día y horario') === false);
+caso('y pregunta por cabañas/unidades, no por "qué servicios ofrecés"',
+    stripos($pitchAloj, 'cabañas o unidades') !== false);
+
+$convPelu = conv_nueva();
+$convPelu['transcript'] = [['q'=>'cliente','t'=>'Tengo una peluqueria unisex','ts'=>time()]];
+$pitchPelu = wabot_pitch_texto('turnos', $convPelu, $cfg);
+caso('pero una peluquería sigue con el pitch normal de turnos',
+    stripos($pitchPelu, 'día y horario') !== false && stripos($pitchPelu, 'huéspedes') === false);
+
+echo "— Mayoristas que venden solo a otros comercios mencionan cuentas exclusivas —\n";
+
+$convMayorista = conv_nueva();
+$convMayorista['transcript'] = [['q'=>'cliente','t'=>'Somos una distribuidora mayorista de golosinas, vendemos solo a kioscos y almacenes, no al publico','ts'=>time()]];
+$pitchMayorista = wabot_pitch_texto('ecommerce', $convMayorista, $cfg);
+caso('distribuidora mayorista → el pitch menciona cuentas exclusivas',
+    stripos($pitchMayorista, 'cuentas exclusivas') !== false);
+
+$convEcommerceNormal = conv_nueva();
+$convEcommerceNormal['transcript'] = [['q'=>'cliente','t'=>'vendo velas aromaticas','ts'=>time()]];
+$pitchNormal = wabot_pitch_texto('ecommerce', $convEcommerceNormal, $cfg);
+caso('pero un ecommerce común sigue con "carrito y cobro online", no cuentas exclusivas',
+    stripos($pitchNormal, 'carrito y cobro online') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
+caso('"vendo al por mayor" también detecta mayorista', wabot_contexto_es_mayorista('vendo al por mayor articulos de limpieza') === true);
+
+echo "— El pitch no repite \"qué vendés\" si la respuesta corta ya lo dijo —\n";
+
+caso('"Arroz" tiene contenido específico', wabot_frase_tiene_contenido_especifico('Arroz') === true);
+caso('"Medias" también', wabot_frase_tiene_contenido_especifico('Medias') === true);
+caso('pero "Tengo un local" sigue sin decir qué vende',
+    wabot_frase_tiene_contenido_especifico('Tengo un local') === false);
+caso('"Vendo cosas" tampoco', wabot_frase_tiene_contenido_especifico('Vendo cosas') === false);
+caso('"Es un emprendimiento" tampoco', wabot_frase_tiene_contenido_especifico('Es un emprendimiento') === false);
+caso('"Trabajo por mi cuenta" tampoco', wabot_frase_tiene_contenido_especifico('Trabajo por mi cuenta') === false);
+caso('"Vendo repuestos de auto" sí (tiene un producto concreto)',
+    wabot_frase_tiene_contenido_especifico('Vendo repuestos de auto') === true);
+
+$convArroz = conv_nueva();
+$convArroz['transcript'] = [
+    ['q'=>'cliente','t'=>'Es un emprendimiento','ts'=>time()-10],
+    ['q'=>'cliente','t'=>'Arroz','ts'=>time()],
+];
+$pitchArroz = wabot_pitch_texto('ecommerce', $convArroz, $cfg);
+caso('"Arroz" tras la pregunta de rubro → NO repite "qué vendés exactamente"',
+    stripos($pitchArroz, 'qué vendés exactamente') === false);
+caso('sino que pasa a la segunda pregunta (cómo vendés hoy)',
+    stripos($pitchArroz, 'cómo vendés') !== false);
+
+$convLocalSolo = conv_nueva();
+$convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
+$pitchLocalSolo = wabot_pitch_texto('ecommerce', $convLocalSolo, $cfg);
+caso('pero "Tengo un local" solo sigue preguntando qué vende (no sabemos el producto)',
+    stripos($pitchLocalSolo, 'qué vendés exactamente') !== false);
 
 echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
 
@@ -3431,10 +3505,11 @@ wabot_config_descs($descVieja);
 caso('las desc viejas de producción migran solas al texto con beneficio',
     $descVieja['tipos']['ecommerce']['desc'] === $cfg['tipos']['ecommerce']['desc']);
 
-echo "— La demo se ofrece como no decidir a ciegas, no como promoción —\n";
+echo "— La oferta de la demo es simple: primer paso, gratis, y si avanza se piden datos —\n";
 
-caso('la oferta habla de decidir, no de "gratis" a secas',
-    mb_stripos($cfg['msg_prediseno_oferta'], 'decidas') !== false);
+caso('la oferta dice que es el primer paso y que es gratis',
+    mb_stripos($cfg['msg_prediseno_oferta'], 'primer paso') !== false
+    && mb_stripos($cfg['msg_prediseno_oferta'], 'gratis') !== false);
 caso('y sigue terminando en pregunta, que es lo que el flujo espera',
     mb_strpos($cfg['msg_prediseno_oferta'], '?') !== false);
 caso('ninguna variante arranca dando por hecho que va a pagar', (function () use ($cfg) {
@@ -3463,7 +3538,14 @@ $ofertaVieja['msg_prediseno_oferta'] = 'Siempre ofrecemos una demo gratis de la 
 $ofertaVieja['msg_prediseno_oferta_variantes'] = ['Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?'];
 wabot_config_ventas($ofertaVieja);
 caso('la oferta vieja de producción migra sola', $ofertaVieja['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']);
-caso('y sus variantes también', $ofertaVieja['msg_prediseno_oferta_variantes'][0] === $cfg['msg_prediseno_oferta_variantes'][0]);
+
+$ofertaIntermedia = wabot_config_load();
+$ofertaIntermedia['msg_prediseno_oferta'] = 'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?';
+$ofertaIntermedia['msg_prediseno_oferta_variantes'] = ['Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?'];
+wabot_config_ventas($ofertaIntermedia);
+caso('y la versión intermedia (la que estaba en producción hasta hoy) también migra',
+    $ofertaIntermedia['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']
+    && $ofertaIntermedia['msg_prediseno_oferta_variantes'][0] === $cfg['msg_prediseno_oferta_variantes'][1]);
 
 echo "— El que se va sabe que no tiene que explicar todo de nuevo —\n";
 

@@ -294,16 +294,29 @@ function wabot_pidio_demo_explicita($texto) {
         . '|me interesa (la|esa) (demo|muestra)|armame (la|una) (demo|muestra)|haganme (la|una) (demo|muestra)|quiero (la|esa) (demo|muestra))\b/u', $t);
 }
 
+function wabot_contexto_es_mayorista($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    return (bool)preg_match(
+        '/\bmayorista\w*\b|\bal por mayor\b|\bb2b\b'
+        . '|\bvendo\w*\b.{0,20}\b(solo|solamente|unicamente)\b.{0,20}\b(comercios?|negocios?|kioscos?|almacenes|revendedores?)\b'
+        . '|\bno\b.{0,15}\b(vendo|vendemos)\b.{0,15}\bal publico\b/u', $t);
+}
+
+function wabot_contexto_es_alojamiento($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    return (bool)preg_match(
+        '/\b(cabana\w*|hotel\w*|hosteria\w*|hostal\w*|hostel\w*|posada\w*|complejo\w*|glamping|camping'
+        . '|alquiler\w* temporar\w*|apart\b|apart hotel|casa de campo|quinta\w*|estadia\w*|huespedes'
+        . '|airbnb|booking|departamentos?\s+(en\s+)?alquiler|alquilo?\s+departamentos?)\b/u', $t);
+}
+
 /**
  * Qué texto usar para el desempate de turnos. A un complejo de cabañas no se
  * le pregunta por "sacar el turno eligiendo día y horario": el rubro habla de
  * reservas, fechas y disponibilidad (caso Recanto del Paraná, 21-ago).
  */
 function wabot_clave_desempate_turnos($contexto, $cfg) {
-    $t = wabot_normalizar_frase($contexto);
-    $esAlojamiento = (bool)preg_match(
-        '/\b(cabana\w*|hotel\w*|hosteria\w*|hostal\w*|hostel\w*|posada\w*|complejo\w*|glamping|camping'
-        . '|alquiler\w* temporar\w*|apart\b|apart hotel|casa de campo|quinta\w*|estadia\w*|huespedes)\b/u', $t);
+    $esAlojamiento = wabot_contexto_es_alojamiento($contexto);
     return $esAlojamiento && trim((string)($cfg['desempate_turnos_alojamiento'] ?? '')) !== ''
         ? 'desempate_turnos_alojamiento'
         : 'desempate_turnos';
@@ -1457,6 +1470,9 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(migracion|migrar|migran|pasar (mis|los) (contenidos?|textos?|datos)|traspasar (el )?contenido|mudar (la|mi) (web|pagina))\b/u', $t)) return 'migracion';
     if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
     if (preg_match('/\b(exclusiv\w*|diseno unico|copian y pegan|copian el diseno|mismo diseno|le copian|reciclan el diseno|plantilla repetida)\b/u', $t)) return 'exclusividad';
+    if (preg_match('/\b(cuantas?|cuantos)\b.{0,15}\b(fotos?|imagenes?|videos?)\b.{0,20}\bpropiedad/u', $t)
+        || preg_match('/\bpropiedad\w*\b.{0,20}\b(cuantas?|cuantos)\b.{0,15}\b(fotos?|imagenes?|videos?)\b/u', $t)) return 'fotos_propiedad';
+    if (preg_match('/\bimpuestos? de importacion|aranceles? de importacion|impuestos? aduaner\w*|calcula\w* (los )?impuestos\b/u', $t)) return 'impuestos_importacion';
     // "¿Tienen alguna web para ver de dentista?" pide ejemplos, no el portfolio
     // general de que_hacemos: exige el verbo de mostrar junto al sustantivo.
     if (preg_match('/\b(ejemplos?|muestras? de trabajo|portfolio|porfolio|trabajos (que |ya )?(hicieron|realizados|hechos)|casos? de exito)\b/u', $t)
@@ -1913,15 +1929,42 @@ function wabot_aporta_descripcion($texto) {
     return preg_match_all('/\p{L}/u', $t) >= 8;
 }
 
+function wabot_frase_tiene_contenido_especifico($texto) {
+    $relleno = ['tengo', 'tenemos', 'es', 'soy', 'somos', 'un', 'una', 'unos', 'unas',
+        'mi', 'mis', 'nuestro', 'nuestra', 'nuestros', 'nuestras', 'de', 'del', 'la', 'el', 'lo',
+        'negocio', 'negocios', 'empresa', 'empresas', 'emprendimiento', 'emprendimientos',
+        'local', 'locales', 'marca', 'marcas', 'servicio', 'servicios', 'producto', 'productos',
+        'comercio', 'comercios', 'cosa', 'cosas', 'algo', 'actividad', 'rubro', 'tipo', 'familiar',
+        'vendo', 'vendemos', 'venden', 'ofrezco', 'ofrecemos', 'ofrecen', 'hago', 'hacemos', 'hacen',
+        'dedico', 'dedicamos', 'trabajo', 'trabajamos', 'vender', 'ofrecer', 'hacer', 'por', 'cuenta', 'propia'];
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    $palabras = array_filter(explode(' ', $t), function ($p) use ($relleno) {
+        return mb_strlen($p) >= 3 && !in_array($p, $relleno, true);
+    });
+    return count($palabras) > 0;
+}
+
 function wabot_pitch_texto($tipo, $conv, $cfg) {
     $t = $cfg['tipos'][$tipo] ?? [];
-    $desc = trim((string)($t['desc'] ?? ''));
+    $contexto = wabot_contexto_cliente_texto($conv);
+    $variante = null;
+    if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
+    if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
+
+    $desc = $variante !== null ? trim((string)($t['desc_' . $variante] ?? '')) : '';
+    if ($desc === '') $desc = trim((string)($t['desc'] ?? ''));
     if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
 
-    $yaConto = mb_strlen(trim((string)($conv['descripcion'] ?? ''))) >= 25
-               && !wabot_descripcion_generica((string)($conv['descripcion'] ?? ''));
+    $ultimoMsg = trim((string)wabot_ultimo_texto_cliente($conv));
+    $respuestaEspecifica = !wabot_es_acuse($ultimoMsg) && !wabot_es_negativa($ultimoMsg)
+        && wabot_frase_tiene_contenido_especifico($ultimoMsg);
+    $yaConto = (mb_strlen(trim((string)($conv['descripcion'] ?? ''))) >= 25
+               && !wabot_descripcion_generica((string)($conv['descripcion'] ?? '')))
+               || $respuestaEspecifica;
     $clave = $yaConto ? 'pitch_pregunta_2' : 'pitch_pregunta';
-    $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
+    $pregunta = $variante !== null ? trim((string)($t['pitch_pregunta_' . $variante] ?? '')) : '';
+    if ($pregunta === '') $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
 
     $base = (string)($cfg['msg_pitch'] ?? '');
     return trim(str_replace(['{desc}', '{pregunta}'], [$desc, $pregunta], $base));
