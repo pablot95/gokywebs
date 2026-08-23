@@ -240,6 +240,11 @@ function wabot_config_ventas(&$cfg) {
         // Sin el link: ya se lo mandamos al presentar la demo, y repetirlo suena
         // a que el bot no se acuerda de lo que ya hizo.
         'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
+        // Segunda y última insistencia, cuando la ventana de 24 h está por
+        // cerrarse. Repetir el primero palabra por palabra delata al bot, así
+        // que este pregunta distinto y da una salida fácil al que no contesta
+        // porque no le gustó: eso también es información útil.
+        'presentados_recordatorio_2' => 'Hola {nombre}, no quiero robarte tiempo: si la demo no te terminó de cerrar, decime qué cambiarías y la ajustamos. Y si preferís dejarlo acá, también está perfecto, avisame nomás.',
         // Este mensaje existe para que el cliente CONTESTE: su respuesta es lo
         // único que reabre la ventana de 24 h de Meta y permite mandarle la
         // demo después. Por eso termina en una pregunta binaria, que es la de
@@ -325,6 +330,15 @@ function wabot_config_ventas(&$cfg) {
     // no contestan quedan a la vista en la pestaña "Presentadas 48hs" del panel.
     if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 20;
     if ((float)$cfg['presentados_recordatorio_horas'] > 22) $cfg['presentados_recordatorio_horas'] = 20;
+    // El disparo por tiempo no alcanzaba: si la demo sale unas horas después
+    // del último mensaje del cliente, la ventana de Meta muere antes de las 20 h
+    // y no salía nada. Ahora también dispara cuando quedan pocas horas de
+    // ventana, y se puede insistir más de una vez mientras siga abierta.
+    if (!isset($cfg['presentados_recordatorio_margen_horas'])) $cfg['presentados_recordatorio_margen_horas'] = 3;
+    if (!isset($cfg['presentados_recordatorio_min_horas']))    $cfg['presentados_recordatorio_min_horas']    = 3;
+    if (!isset($cfg['presentados_recordatorio_max']))          $cfg['presentados_recordatorio_max']          = 2;
+    if (!isset($cfg['presentados_recordatorio_espacio_horas'])) $cfg['presentados_recordatorio_espacio_horas'] = 10;
+    if (!isset($cfg['presentados_recordatorio_silencio_horas'])) $cfg['presentados_recordatorio_silencio_horas'] = 6;
     if (!isset($cfg['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = 48;
     if (!isset($cfg['ultima_llamada_activa'])) $cfg['ultima_llamada_activa'] = true;
     if (!isset($cfg['ultima_llamada_horas']))  $cfg['ultima_llamada_horas']  = 23;
@@ -1872,10 +1886,11 @@ function wabot_conv_espera_respuesta($cv) {
  * Segundos que quedan de la ventana de 24 h de WhatsApp (0 = cerrada).
  * Fuera de esa ventana Meta NO deja mandar texto libre, solo plantillas aprobadas.
  */
-function wabot_ventana_restante($conv) {
+function wabot_ventana_restante($conv, $ahora = null) {
+    $ahora = $ahora ?? time();
     $ultimo = wabot_ultimo_cliente_ts($conv);
     if ($ultimo <= 0) return 0;
-    return max(0, ($ultimo + 24 * 3600) - time());
+    return max(0, ($ultimo + 24 * 3600) - $ahora);
 }
 
 /* ───────────────────────── WhatsApp Cloud API ────────────────────────── */
@@ -3490,26 +3505,66 @@ function wabot_presentado_archivar_corresponde($cv, $cfg, $ahora = null) {
     return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
 }
 
+/** Cuántos recordatorios de demo presentada ya se le mandaron a esta charla. */
+function wabot_presentado_recordatorios_hechos($cv) {
+    if (isset($cv['presentado_recordatorios_enviados'])) {
+        return (int)$cv['presentado_recordatorios_enviados'];
+    }
+    // Las charlas anteriores al contador solo guardaban un bool.
+    return !empty($cv['presentado_recordatorio_enviado']) ? 1 : 0;
+}
+
 function wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo'])) return false;
     if (empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado'])) return false;
-    if (!empty($cv['presentado_recordatorio_enviado'])) return false;
     if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
 
-    $horas = (float)($cfg['presentados_recordatorio_horas'] ?? 48);
-    if ($ahora - (int)$cv['presentado_ts'] < $horas * 3600) return false;
+    $hechos = wabot_presentado_recordatorios_hechos($cv);
+    if ($hechos >= (int)($cfg['presentados_recordatorio_max'] ?? 2)) return false;
 
-    // Dentro de la ventana de 24 h de Meta, con margen: si el cliente lleva más
-    // de 22 h sin escribir, el texto libre rebota igual que en el seguimiento.
-    if ($ahora - (int)($cv['ultimo_cliente_ts'] ?? 0) > 22 * 3600) return false;
+    $ultimo = (int)($cv['presentado_recordatorio_ts'] ?? 0);
+    $espacio = (float)($cfg['presentados_recordatorio_espacio_horas'] ?? 10);
+    if ($ultimo > 0 && $ahora - $ultimo < $espacio * 3600) return false;
 
-    return true;
+    // Meta solo deja texto libre mientras la ventana de 24 h siga abierta, y
+    // esa ventana la abre el CLIENTE con su mensaje: no se puede reabrir desde
+    // acá. Si ya venció, ninguna insistencia sale.
+    $restante = wabot_ventana_restante($cv, $ahora);
+    if ($restante <= 0) return false;
+
+    // Nunca apenas entregada: darle tiempo real de mirarla.
+    $minimo = (float)($cfg['presentados_recordatorio_min_horas'] ?? 3);
+    if ($ahora - (int)$cv['presentado_ts'] < $minimo * 3600) return false;
+
+    // Si el cliente escribió recién, la charla está viva y la está llevando el
+    // bot por webhook: encajarle encima el recordatorio automático lo hace
+    // quedar como que no lee lo que le acaban de decir.
+    $vivo = (float)($cfg['presentados_recordatorio_silencio_horas'] ?? 6);
+    if ($ahora - wabot_ultimo_cliente_ts($cv) < $vivo * 3600) return false;
+
+    // La ventana está por cerrarse: es la ÚLTIMA chance de escribirle sin
+    // plantilla aprobada. Antes esto no existía y el recordatorio se calculaba
+    // solo desde presentado_ts, así que si la demo se entregaba unas horas
+    // después del último mensaje del cliente la ventana moría primero y no
+    // salía nunca (verificado 22-ago: quedaban 2 h útiles de margen).
+    $margen = (float)($cfg['presentados_recordatorio_margen_horas'] ?? 3);
+    if ($restante <= $margen * 3600) return true;
+
+    // Camino normal: pasó el tiempo de espera y la ventana sigue abierta.
+    $horas = (float)($cfg['presentados_recordatorio_horas'] ?? 20);
+    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
 }
 
 function wabot_presentado_recordatorio_texto($cv, $cfg) {
-    $base = trim((string)($cfg['presentados_recordatorio'] ?? ''));
+    // El segundo no puede ser el mismo texto: repetir palabra por palabra
+    // delata al bot y quema la última chance que da la ventana.
+    $clave = wabot_presentado_recordatorios_hechos($cv) >= 1
+        ? 'presentados_recordatorio_2'
+        : 'presentados_recordatorio';
+    $base = trim((string)($cfg[$clave] ?? ''));
+    if ($base === '') $base = trim((string)($cfg['presentados_recordatorio'] ?? ''));
     $slug = trim((string)($cv['presentado_slug'] ?? ''));
     $link = $slug !== '' ? 'gokywebs.com/demo/' . $slug : '';
     return str_replace('{demo}', $link, $base);
@@ -3557,6 +3612,7 @@ function wabot_presentados_correr($cfg, $ahora = null) {
             $cv['presentado_recordatorio_ts'] = $ahora;
             $ok = wabot_enviar($cv, $texto);
             if ($ok) {
+                $cv['presentado_recordatorios_enviados'] = wabot_presentado_recordatorios_hechos($cv) + 1;
                 $cv['presentado_recordatorio_enviado'] = true;
                 wabot_conv_transcript($cv, 'bot', $texto);
                 wabot_evento($cv, 'presentado_recordatorio_enviado');

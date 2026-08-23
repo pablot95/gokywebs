@@ -1474,9 +1474,12 @@ $presEspera = conv_nueva();
 $presEspera['nombre'] = 'Marcos';
 $presEspera['presentado_ts'] = $ahoraPres - 49 * 3600;
 $presEspera['presentado_slug'] = 'negociodemarcos';
-$presEspera['ultimo_cliente_ts'] = $ahoraPres - 1 * 3600;
-caso('a las 49h sin confirmar, con el cliente activo hace poco, corresponde el recordatorio',
+$presEspera['ultimo_cliente_ts'] = $ahoraPres - 8 * 3600;
+caso('a las 49h sin confirmar, con la ventana abierta y el cliente callado, corresponde el recordatorio',
     wabot_presentado_recordatorio_corresponde($presEspera, $cfgPres, $ahoraPres) === true);
+$presCharlando = $presEspera; $presCharlando['ultimo_cliente_ts'] = $ahoraPres - 1 * 3600;
+caso('pero si el cliente escribió recién, la charla la lleva el bot y no se le encaja el recordatorio',
+    !wabot_presentado_recordatorio_corresponde($presCharlando, $cfgPres, $ahoraPres));
 caso('el recordatorio lleva el link de la muestra y el nombre',
     strpos(wabot_personalizar(wabot_presentado_recordatorio_texto($presEspera, $cfgPres), $presEspera), 'gokywebs.com/demo/negociodemarcos') !== false
     && strpos(wabot_personalizar(wabot_presentado_recordatorio_texto($presEspera, $cfgPres), $presEspera), 'Marcos') !== false);
@@ -1487,8 +1490,22 @@ caso('antes de las 48h no corresponde', !wabot_presentado_recordatorio_correspon
 $presConfirmado = $presEspera; $presConfirmado['presentado_confirmado'] = true;
 caso('si Pablo ya marcó que confirmó, no se le insiste', !wabot_presentado_recordatorio_corresponde($presConfirmado, $cfgPres, $ahoraPres));
 
-$presYaEnviado = $presEspera; $presYaEnviado['presentado_recordatorio_enviado'] = true;
-caso('el recordatorio se manda una sola vez', !wabot_presentado_recordatorio_corresponde($presYaEnviado, $cfgPres, $ahoraPres));
+$presYaEnviado = $presEspera;
+$presYaEnviado['presentado_recordatorios_enviados'] = (int)($cfgPres['presentados_recordatorio_max'] ?? 2);
+caso('llegado al techo de insistencia, no se manda más',
+    !wabot_presentado_recordatorio_corresponde($presYaEnviado, $cfgPres, $ahoraPres));
+$presReciente = $presEspera;
+$presReciente['presentado_recordatorios_enviados'] = 1;
+$presReciente['presentado_recordatorio_ts'] = $ahoraPres - 2 * 3600;
+caso('y no se encadenan dos seguidos: hay un espacio mínimo entre uno y otro',
+    !wabot_presentado_recordatorio_corresponde($presReciente, $cfgPres, $ahoraPres));
+caso('el bool viejo de las charlas anteriores al contador cuenta como uno',
+    wabot_presentado_recordatorios_hechos(['presentado_recordatorio_enviado' => true]) === 1
+    && wabot_presentado_recordatorios_hechos([]) === 0);
+caso('el segundo recordatorio NO repite el texto del primero',
+    trim(wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 1], $cfg)) !== ''
+    && wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 1], $cfg)
+       !== wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 0], $cfg));
 
 $presSilencioLargo = $presEspera; $presSilencioLargo['ultimo_cliente_ts'] = $ahoraPres - 30 * 3600;
 caso('si el cliente lleva más de 22h sin escribir, no manda texto libre fuera de ventana',
@@ -2259,8 +2276,34 @@ $cvRec = ['presentado_ts' => $ahoraP - 21 * 3600, 'presentado_confirmado' => fal
           'transcript' => [['q' => 'cliente', 't' => 'dale', 'ts' => $ahoraP - 21 * 3600]]];
 caso('con 20 h el recordatorio SÍ sale dentro de la ventana',
     wabot_presentado_recordatorio_corresponde($cvRec, $cfg, $ahoraP) === true);
-caso('con las 48 h viejas caía fuera de la ventana y no salía nunca',
-    wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === false);
+caso('y con las 48 h viejas igual sale, porque la ventana está por cerrarse',
+    wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === true);
+
+// El agujero real: entre el último mensaje del cliente y la entrega de la demo
+// suelen pasar horas. Antes eso mataba el recordatorio, porque se contaba desde
+// presentado_ts y además exigía que el cliente hubiera escrito hace <22 h:
+// quedaban 2 h útiles de margen.
+$disparo = function ($gapHoras) use ($cfg, $ahoraP) {
+    $t0 = $ahoraP - 30 * 3600;
+    $cv = ['presentado_ts' => $t0, 'presentado_confirmado' => false,
+           'ultimo_cliente_ts' => $t0 - (int)($gapHoras * 3600),
+           'bot_off' => false, 'archivado' => false, 'pausado_hasta' => 0];
+    for ($m = 0; $m <= 60; $m++) {
+        $t = $t0 + (int)($m * 1800);
+        if (wabot_presentado_recordatorio_corresponde($cv, $cfg, $t)) return ($t - $t0) / 3600;
+    }
+    return null;
+};
+caso('demo entregada 5 h después del último mensaje: antes NO salía, ahora sí',
+    $disparo(5) !== null && $disparo(5) < 24);
+caso('entregada 10 h después: sale antes de que cierre la ventana',
+    $disparo(10) !== null && $disparo(10) <= 14);
+caso('entregada 18 h después: sale sobre la hora, no se pierde',
+    $disparo(18) !== null && $disparo(18) <= 6);
+caso('cuanto más tardó la entrega, antes sale el recordatorio',
+    $disparo(2) > $disparo(10) && $disparo(10) > $disparo(18));
+caso('con la ventana ya vencida al presentar, no se inventa un envío que rebotaría',
+    $disparo(25) === null);
 
 echo "— Revisión de chats reales del 22-ago —\n";
 

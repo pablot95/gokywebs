@@ -231,7 +231,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','muestra_aviso'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','presentados_recordatorio_2','muestra_aviso'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -1451,8 +1451,9 @@ body.embed { min-height: 0; }
                     <input type="number" name="presentados_archivar_horas" min="24" max="720" step="1" value="<?= $e((string)($cfg['presentados_archivar_horas'] ?? 168)) ?>" style="width:110px">
                 </div>
             </div>
-            <p class="meta" style="margin-top:8px">El recordatorio se manda una sola vez y solo dentro de la ventana de 24 h que permite Meta. Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
+            <p class="meta" style="margin-top:8px">Se manda hasta <?= $e((string)($cfg['presentados_recordatorio_max'] ?? 2)) ?> veces, siempre dentro de la ventana de 24 h que permite Meta: por tiempo cumplido, o antes si la ventana está por cerrarse y todavía no contestó. Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
             <label>Mensaje de recordatorio</label><textarea name="presentados_recordatorio" rows="3"><?= $e($cfg['presentados_recordatorio'] ?? '') ?></textarea>
+            <label>Segundo recordatorio (última chance antes de que cierre la ventana)</label><textarea name="presentados_recordatorio_2" rows="3"><?= $e($cfg['presentados_recordatorio_2'] ?? '') ?></textarea>
             <p class="meta" style="margin-top:4px"><code>{demo}</code> se reemplaza por el link de la demo ya presentada.</p>
         </div>
         <div class="card">
