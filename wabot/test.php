@@ -3373,8 +3373,9 @@ caso('y aclara que para hacer la web no se pide inscripción',
     stripos($cfg['info']['inscripcion'], 'no te pedimos') !== false);
 caso('los formularios se aclaran incluidos en el precio',
     stripos($cfg['info']['formularios'], 'ya vienen en el precio') !== false);
-caso('info.exclusividad existe y contesta que sí, es a medida',
-    stripos($cfg['info']['exclusividad'], 'no reciclamos el mismo diseño') !== false);
+caso('info.exclusividad existe, es a medida y aclara que no es exclusividad de rubro/zona',
+    stripos($cfg['info']['exclusividad'], 'no reciclamos el mismo diseño') !== false
+    && stripos($cfg['info']['exclusividad'], 'exclusividad de rubro') !== false);
 caso('"el diseño es exclusivo o le copian y pegan a otro cliente el mismo diseño?" → exclusividad, no confianza',
     wabot_info_por_palabras('el diseño es exclusivo o le copian y pegan a otro cliente el mismo diseño?', 'pitch') === 'exclusividad');
 caso('pero "me estafaron" sigue yendo a confianza, no a exclusividad',
@@ -3704,6 +3705,13 @@ $cierreViejo = wabot_config_load();
 $cierreViejo['cierre_suave'] = 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.';
 wabot_config_ventas($cierreViejo);
 caso('el cierre suave viejo de producción migra solo', $cierreViejo['cierre_suave'] === $cfg['cierre_suave']);
+
+caso('el saludo inicial ahora pregunta en qué puede ayudar, no por la web puntualmente',
+    stripos($cfg['menu'], 'en qué te puedo ayudar') !== false);
+$menuViejo = wabot_config_load();
+$menuViejo['menu'] = 'Hola, cómo estás? Contame un poco para qué necesitarías la web';
+wabot_config_ventas($menuViejo);
+caso('el saludo viejo de producción migra solo', $menuViejo['menu'] === $cfg['menu']);
 
 caso('soy_bot ya no arranca contestando "Sí" a "sos una persona?"',
     mb_stripos($cfg['info']['soy_bot'], 'No, soy el asistente') === 0);

@@ -209,6 +209,7 @@ function wabot_migrar_conversaciones_instagram() {
  */
 function wabot_config_ventas(&$cfg) {
     $defaults = [
+        'menu'              => 'Hola, cómo estás? Contame un poco en qué te puedo ayudar',
         'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
         'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
         'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
@@ -720,6 +721,10 @@ function wabot_config_ventas(&$cfg) {
     }
 
     $migraciones2108 = [
+        'menu' => [
+            'Hola, cómo estás? Contame un poco para qué necesitarías la web'
+                => 'Hola, cómo estás? Contame un poco en qué te puedo ayudar',
+        ],
         'caro' => [
             'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, te lo podemos dividir en 3 cuotas sin interés para que no lo sientas de una. En el link del presupuesto tenés el detalle de todo lo que incluye.'
                 => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.',
@@ -950,7 +955,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
          * desarrollador" (chats reales del 21 y 22-ago). Derivarlas hacía
          * parecer que el bot no sabe nada de lo que vende. */
         'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
-        'exclusividad' => 'Sí, es exclusivo: cada web se diseña a medida para tu negocio, así que no reciclamos el mismo diseño con otro cliente.',
+        'exclusividad' => 'Cada web se diseña a medida de tu negocio, buscando que tenga una identidad propia: no reciclamos el mismo diseño con otro cliente. Eso no es lo mismo que exclusividad de rubro o de zona, que no manejamos.',
         'fotos_propiedad' => 'Podés subir decenas de fotos por propiedad, y también video.',
         'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
