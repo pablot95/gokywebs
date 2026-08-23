@@ -310,11 +310,22 @@ function wabot_config_ventas(&$cfg) {
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $cfg['msg_prediseno_oferta_variantes'] = [
             'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?',
-            'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
             'Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?',
             'No te pedimos que decidas a ciegas. Te armamos una muestra de cómo quedaría tu web y la mirás con tranquilidad antes de definir nada. Te la preparamos?',
             'Lo que hacemos primero es una muestra de tu web, sin costo, así ves el resultado concreto antes de decidir si querés avanzar. La armamos?',
         ];
+    }
+    $ofertasRetiradas = [
+        'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
+    ];
+    if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $limpias = array_values(array_filter($cfg['msg_prediseno_oferta_variantes'], function ($v) use ($ofertasRetiradas) {
+            return !in_array(trim((string)$v), $ofertasRetiradas, true);
+        }));
+        if ($limpias) $cfg['msg_prediseno_oferta_variantes'] = $limpias;
+    }
+    if (in_array(trim((string)($cfg['msg_prediseno_oferta'] ?? '')), $ofertasRetiradas, true)) {
+        $cfg['msg_prediseno_oferta'] = $cfg['msg_prediseno_oferta_variantes'][0];
     }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -959,11 +970,11 @@ function wabot_config_descs(&$cfg) {
     $descs = [
         'landing'       => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
         'catalogo'      => 'una página con tu catálogo completo, donde cada producto tiene su foto, su descripción y un botón para consultarte directo por WhatsApp, así el cliente recorre todo solo y te llega la consulta con el producto ya elegido',
-        'turnos'        => 'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel, así dejás de coordinar horarios por chat y los turnos entran incluso fuera de hora',
+        'turnos'        => 'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel, así dejás de coordinar horarios por chat',
         'institucional' => 'una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, así la institución tiene una cara formal propia y no depende de una red social',
         'inmobiliaria'  => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
-        'ecommerce'     => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando, incluso de madrugada',
-        'elearning'     => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo, sin que le mandes links ni videos a mano',
+        'ecommerce'     => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando',
+        'elearning'     => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo',
     ];
     foreach (($cfg['tipos'] ?? []) as $k => $t) {
         if (trim((string)($t['desc'] ?? '')) === '' && isset($descs[$k])) {
@@ -1002,6 +1013,9 @@ function wabot_config_descs(&$cfg) {
         'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas' => 'inmobiliaria',
         'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos' => 'ecommerce',
         'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online' => 'elearning',
+        'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando, incluso de madrugada' => 'ecommerce',
+        'una web con reserva de turnos incluida: tus clientes eligen día y horario solos desde la página y a vos te queda todo ordenado en un panel, así dejás de coordinar horarios por chat y los turnos entran incluso fuera de hora' => 'turnos',
+        'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo, sin que le mandes links ni videos a mano' => 'elearning',
     ];
     foreach (($cfg['tipos'] ?? []) as $k => $t) {
         $actual = trim((string)($t['desc'] ?? ''));

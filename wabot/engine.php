@@ -715,7 +715,7 @@ function wabot_fallback_rubro_local($t) {
     if (preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases online)\b/u', $t)
         || preg_match('/\b(doy|dicto|damos|dictamos)\b.{0,15}\btaller(es)?\b/u', $t)) return 'cursos';
     if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|local|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|fabricamos|indumentaria|marroquineria|cosmetica|perfumeria)\b/u', $t)) {
-        return 'comercio_pendiente';
+        return 'ecommerce';
     }
     if (preg_match('/\b(inmobiliaria|propiedades|bienes raices)\b/u', $t)) return 'inmobiliaria';
     if (preg_match('/\b(empresa|pyme|fabrica|distribuidora|fundacion|ong|colegio|escuela|universidad|municipio|sindicato|asociacion)\b/u', $t)) {
@@ -1346,7 +1346,7 @@ function wabot_rubro_de($acc) {
     if (in_array('rubro_cursos', $acc, true))                                        return 'cursos';
     if (in_array('servicio_con_turnos', $acc, true))                                 return 'turnos_pendiente';
     if (in_array('rubro_hibrido', $acc, true))                                       return 'hibrido_pendiente';
-    if (in_array('rubro_comercio', $acc, true))                                      return 'comercio_pendiente';
+    if (in_array('rubro_comercio', $acc, true))                                      return 'ecommerce';
     if (in_array('rubro_sistema', $acc, true))                                       return 'sistema_pendiente';
     if (in_array('rubro_institucional', $acc, true))                                 return 'institucional';
     if (in_array('elige_landing', $acc, true) || in_array('rubro_landing', $acc, true))       return 'landing';
@@ -1362,7 +1362,6 @@ function wabot_rubro_de($acc) {
 function wabot_desempate_de($r) {
     if ($r === 'cursos')           return ['desempate_cursos', 'desempate_cursos'];
     if ($r === 'turnos_pendiente') return ['desempate_turnos', 'desempate_turnos'];
-    if ($r === 'comercio_pendiente') return ['desempate_comercio', 'desempate_comercio'];
     if ($r === 'hibrido_pendiente')  return ['desempate_hibrido', 'desempate_hibrido'];
     if ($r === 'sistema_pendiente')  return ['sistema_problema', 'sistema_pregunta'];
     return null;

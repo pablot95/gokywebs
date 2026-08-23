@@ -154,9 +154,8 @@ caso('si el agente falla, revierte la mutación parcial',
     $c['tipo'] === null && $c['fase'] === 'menu' && $r === [$cfg['menu']]
     && empty($c['eventos_emitidos_sesion']['precio_dado']));
 $r = wabot_responder('Para mates', $c, $cfg);
-caso('Hola → Para mates con toda la IA caída nunca deriva',
-    $c['fase'] === 'desempate_comercio' && empty($c['handoff_pendiente'])
-    && $r === [$cfg['desempate_comercio']]);
+caso('Hola → Para mates con toda la IA caída cotiza tienda online y nunca deriva',
+    $c['tipo'] === 'ecommerce' && $c['fase'] !== 'derivado' && empty($c['handoff_pendiente']));
 
 $faseVista = null;
 $GLOBALS['WABOT_TEST_AGENTE'] = function ($m, &$trabajo) use (&$faseVista) {
@@ -687,10 +686,12 @@ caso('si el modelo NO la mencionó, el globo aparte sale normal',
     wabot_agente_filtrar_aparte('Perfecto, eso tendría un valor de $320.000 para todo el desarrollo.', $oferta) === $oferta);
 caso('sin nada aparte no rompe', wabot_agente_filtrar_aparte('hola', []) === []);
 
-echo "— El desempate del comercio vive en el playbook —\n";
+echo "— El playbook manda tienda online para todo comercio —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
-caso('nombra el desempate de comercios', strpos($sistema, 'DESEMPATE OBLIGATORIO CON COMERCIOS') !== false);
+caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
+caso('y prohíbe expresamente la pregunta de carrito vs WhatsApp',
+    stripos($sistema, 'Esa pregunta está prohibida') !== false);
 caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
     strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
     && strpos($sistema, 'NO elijas uno solo y descartes el otro en silencio') !== false);
@@ -705,8 +706,8 @@ caso('exige tutear pero con registro formal',
     strpos($sistema, 'Formal en el registro, tuteando en la conjugación') !== false);
 caso('y pregunta antes de cotizar cuando el rubro no alcanza',
     strpos($sistema, 'Cotizar mal por no preguntar es el peor error') !== false);
-caso('para mates obliga a preguntar venta online versus mostrar',
-    stripos($sistema, 'para mates') !== false && stripos($sistema, 'todavía no alcanzan para cotizar') !== false);
+caso('para mates ya alcanza para cotizar tienda online',
+    stripos($sistema, 'para mates') !== false && stripos($sistema, 'alcanzan de sobra') !== false);
 caso('el playbook vende y califica sistemas de gestión',
     strpos($sistema, 'SISTEMAS DE GESTIÓN A MEDIDA') !== false
     && strpos($sistema, 'anotar_sistema') !== false && strpos($sistema, 'guardar_sistema') !== false);
@@ -887,9 +888,8 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Tengo un negocio y quiero una pagina'
 $c['transcript'][] = ['q'=>'cliente','t'=>'vendo ropa de bebe mas que nada','ts'=>time()-10];
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('vender ropa sin confirmar venta online NO cotiza ecommerce: sale el desempate exacto',
-    !empty($r['exacta']) && $r['texto'] === $cfg['desempate_comercio']
-    && $c['fase'] === 'desempate_comercio' && empty($c['precio_dado']));
+caso('vender ropa cotiza tienda online derecho, sin preguntar carrito vs WhatsApp',
+    empty($r['exacta']) && $c['tipo'] === 'ecommerce' && !empty($c['precio_dado']));
 
 $c = convNueva('AGGUARD2');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero una tienda online con carrito y cobro online para mi ropa','ts'=>time()-10];
@@ -1089,13 +1089,13 @@ echo "— El desempate escala en vez de repetirse sin techo —\n";
 
 $convD = wabot_conv_load('TESTDESEMPESC');
 $convD['fase'] = 'menu';
-$r1 = wabot_agente_desempate_pendiente('ecommerce', 'algo incomprensible', $convD, $cfg);
+$r1 = wabot_agente_desempate_pendiente('turnos', 'algo incomprensible', $convD, $cfg);
 caso('la primera vez pregunta el desempate normal',
-    $r1 !== null && $r1['texto'] === $cfg['desempate_comercio'] && empty($r1['terminal']));
-$r2 = wabot_agente_desempate_pendiente('ecommerce', 'otra cosa rara', $convD, $cfg);
+    $r1 !== null && $r1['texto'] === $cfg['desempate_turnos'] && empty($r1['terminal']));
+$r2 = wabot_agente_desempate_pendiente('turnos', 'otra cosa rara', $convD, $cfg);
 caso('la segunda usa la versión simplificada, no la misma pregunta',
-    $r2 !== null && $r2['texto'] === $cfg['desempate_comercio_2'] && empty($r2['terminal']));
-$r3 = wabot_agente_desempate_pendiente('ecommerce', 'tercera sin sentido', $convD, $cfg);
+    $r2 !== null && $r2['texto'] !== $r1['texto'] && empty($r2['terminal']));
+$r3 = wabot_agente_desempate_pendiente('turnos', 'tercera sin sentido', $convD, $cfg);
 caso('la tercera deriva a Pablo en vez de insistir',
     $r3 !== null && !empty($r3['terminal']) && $r3['texto'] === $cfg['derivar']);
 caso('y la conversación queda marcada como pendiente de atención',
@@ -1116,8 +1116,12 @@ echo "— Guards nuevos de los chats del 21-ago —\n";
 $cM = ['tel' => 'TM', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
 caso('"botón de pago y pedido integrado" ya es evidencia de ecommerce: no repregunta',
     wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $cM, $cfg) === null);
-caso('sin evidencia sigue preguntando como corresponde',
-    wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) !== null);
+caso('y una polleria también cotiza tienda online sin pregunta previa',
+    wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) === null);
+caso('pedir catálogo sin decir que NO quiere cobrar online cae en ecommerce',
+    wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM, $cfg) === ['tipo' => 'ecommerce']);
+caso('pero si dice explícitamente que no quiere cobrar online, se respeta el catálogo',
+    wabot_agente_desempate_pendiente('catalogo', 'solo mostrar los productos, que me consulten por whatsapp', $cM, $cfg) === null);
 
 $cRef = ['colores' => 'cálidos', 'referencia' => null, 'referencia_preguntada' => false];
 wabot_agente_anotar(['referencia' => 'Rosa .amarillo beige'], $cRef);

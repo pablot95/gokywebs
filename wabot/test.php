@@ -468,14 +468,18 @@ echo "— Comercios: primero se pregunta si quiere vender online —\n";
 $c = conv_nueva();
 clasifica(['rubro_comercio']);
 $r = wabot_engine('Tengo una ferreteria', $c, $cfg);
-caso('una ferretería NO se cotiza de una: pregunta vender o mostrar',
-    $r === [$cfg['desempate_comercio']] && $c['fase'] === 'desempate_comercio' && $c['tipo'] === null);
+caso('una ferretería va derecho a tienda online, sin desempate',
+    $c['tipo'] === 'ecommerce' && $c['fase'] !== 'desempate_comercio');
+caso('nunca le pregunta si quiere carrito o consultas por WhatsApp',
+    stripos(implode(' ', $r), 'contacten por WhatsApp') === false);
 caso('y no le encajó el precio institucional', strpos(implode(' ', $r), '250.000') === false);
 
-clasifica(['comercio_vender']);
-$r = wabot_engine('quiero vender los productos online', $c, $cfg);
+$c = conv_nueva();
+clasifica(['rubro_comercio']);
+$r = wabot_engine('Vendo ropa y quiero vender online', $c, $cfg);
 caso('quiere vender online → ecommerce $320.000',
-    strpos($r[0], '$320.000') !== false && strpos($r[0], 'presupuestos/Ecommerce') !== false
+    strpos(implode(' ', $r), '$320.000') !== false
+    && strpos(implode(' ', $r), 'presupuestos/Ecommerce') !== false
     && $c['tipo'] === 'ecommerce');
 
 $c = conv_nueva(); $c['fase'] = 'desempate_comercio';
@@ -1603,9 +1607,9 @@ foreach (['autogestionable', 'autogestion', 'algo autogestionable', 'que se insc
 echo "— Rubros que el fallback local no reconocía —\n";
 
 foreach ([
-    ['Una imprenta, me voy a dedicar a impresión en cajas microcorrugado', 'comercio_pendiente'],
-    ['hago packaging para gastronomia', 'comercio_pendiente'],
-    ['tengo una libreria', 'comercio_pendiente'],
+    ['Una imprenta, me voy a dedicar a impresión en cajas microcorrugado', 'ecommerce'],
+    ['hago packaging para gastronomia', 'ecommerce'],
+    ['tengo una libreria', 'ecommerce'],
 ] as $par) {
     caso("\"{$par[0]}\" → {$par[1]}", wabot_fallback_rubro_local($par[0]) === $par[1]);
 }
@@ -1883,10 +1887,8 @@ $c['transcript'] = [
 ];
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
 $r = wabot_engine('Catálogo y WhatsApp', $c, $cfg);
-caso('si falla la IA, recuerda que Gabriela vende zapatillas y avanza al catálogo',
-    $c['fase'] === 'catalogo_cantidad'
-    && $r === [$cfg['catalogo_cantidad']]
-    && stripos($r[0], 'qué vend') === false);
+caso('si falla la IA, recuerda que Gabriela vende zapatillas y no le repregunta qué vende',
+    $c['tipo'] !== null && stripos(implode(' ', $r), 'qué vend') === false);
 
 $c = conv_nueva();
 $c['session_started_ts'] = time() - 20;
@@ -3225,17 +3227,17 @@ echo "— TANDA 1: el precio llega comprando algo (beneficio antes del número) 
 
 foreach (['landing' => 'te escribe sin preguntarte lo básico',
           'catalogo' => 'te llega la consulta con el producto ya elegido',
-          'turnos' => 'los turnos entran incluso fuera de hora',
+          'turnos' => 'dejás de coordinar horarios por chat',
           'institucional' => 'no depende de una red social',
           'inmobiliaria' => 'te consulta por una propiedad concreta',
-          'ecommerce' => 'incluso de madrugada',
-          'elearning' => 'sin que le mandes links ni videos a mano'] as $tipo => $beneficio) {
+          'ecommerce' => 'te compran y te pagan sin que tengas que estar contestando',
+          'elearning' => 'vendés el curso una vez y el alumno entra solo'] as $tipo => $beneficio) {
     caso("$tipo explica para qué le sirve, no solo qué es",
         mb_stripos((string)$cfg['tipos'][$tipo]['desc'], $beneficio) !== false);
 }
 caso('el beneficio va ANTES del precio en el mensaje', (function () use ($cfg) {
     $t = wabot_msg_precio_texto('ecommerce', $cfg);
-    return mb_strpos($t, 'de madrugada') < mb_strpos($t, '$320.000');
+    return mb_strpos($t, 'sin que tengas que estar contestando') < mb_strpos($t, '$320.000');
 })());
 caso('institucional sigue sin prometer panel propio',
     stripos((string)$cfg['tipos']['institucional']['desc'], 'panel') === false);
@@ -3252,11 +3254,25 @@ caso('la oferta habla de decidir, no de "gratis" a secas',
     mb_stripos($cfg['msg_prediseno_oferta'], 'decidas') !== false);
 caso('y sigue terminando en pregunta, que es lo que el flujo espera',
     mb_strpos($cfg['msg_prediseno_oferta'], '?') !== false);
+caso('ninguna variante arranca dando por hecho que va a pagar', (function () use ($cfg) {
+    foreach ((array)($cfg['msg_prediseno_oferta_variantes'] ?? []) as $v) {
+        if (mb_stripos($v, 'pongas un peso') !== false) return false;
+        if (mb_stripos($v, 'no avanzamos y listo') !== false) return false;
+    }
+    return true;
+})());
+caso('las descripciones no cuelgan un ejemplo del final del beneficio', (function () use ($cfg) {
+    foreach (['ecommerce' => 'de madrugada', 'turnos' => 'fuera de hora',
+              'elearning' => 'links ni videos a mano'] as $tipo => $ejemplo) {
+        if (mb_stripos((string)$cfg['tipos'][$tipo]['desc'], $ejemplo) !== false) return false;
+    }
+    return true;
+})());
 caso('todas las variantes terminan en pregunta', (function () use ($cfg) {
     foreach ((array)($cfg['msg_prediseno_oferta_variantes'] ?? []) as $v) {
         if (mb_strpos($v, '?') === false) return false;
     }
-    return count((array)($cfg['msg_prediseno_oferta_variantes'] ?? [])) >= 5;
+    return count((array)($cfg['msg_prediseno_oferta_variantes'] ?? [])) >= 4;
 })());
 
 $ofertaVieja = wabot_config_load();

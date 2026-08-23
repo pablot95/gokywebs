@@ -472,7 +472,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     'tipo' => [
                         'type' => 'string',
                         'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
-                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. catalogo: vende productos pero NO quiere cobrar online: quiere mostrar su catálogo y que le consulten por WhatsApp. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: una empresa/institución que quiere presentar historia, equipo y servicios; no un profesional solo ni un comercio. Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. ecommerce exige que YA HAYA CONFIRMADO que quiere vender online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
+                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: una empresa/institución que quiere presentar historia, equipo y servicios; no un profesional solo ni un comercio. Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
                     ],
                     'productos' => [
                         'type' => 'integer',
@@ -602,7 +602,11 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 ];
             }
             $guardaDesempate = wabot_agente_desempate_pendiente($tipo, $contextoCliente, $conv, $cfg);
-            if ($guardaDesempate !== null) return $guardaDesempate;
+            if (isset($guardaDesempate['tipo'])) {
+                $tipo = $guardaDesempate['tipo'];
+            } elseif ($guardaDesempate !== null) {
+                return $guardaDesempate;
+            }
             // Nunca dos precios distintos en la misma charla.
             if (!empty($conv['tipo']) && $conv['tipo'] !== $tipo) {
                 $causa = wabot_agente_handoff_causa($conv, ['causa' => 'ambiguedad']);
@@ -946,18 +950,9 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
                 'nota' => 'Falta un desempate obligatorio antes de cotizar. Hacé esta pregunta tal cual y esperá la respuesta.'];
     };
 
-    if ($tipo === 'ecommerce') {
-        // "Botón de pago y pedido integrado" ES querer cobrar online: el guard
-        // le pisaba la decisión al modelo y repetía el desempate ya contestado
-        // (caso MILANEL, 21-ago).
-        $evidencia = wabot_desempate_por_palabras('desempate_comercio', $ctx) === 'comercio_vender'
-            || preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online|pago online|pagar online|vender online|vender por internet|vender por la web|vender desde la (web|pagina)|comprar desde la (web|pagina)|revendo|revendedora?|boton de pago|botones de pago|pagos? integrados?|pedidos? integrados?|pasarela de pagos?|checkout|mercado ?pago|link de pago|que (paguen|compren) (desde|en|por) la (web|pagina))\b/u', wabot_normalizar_frase($ctx));
-        if (!$evidencia) return $pregunta('desempate_comercio', 'desempate_comercio');
-    }
     if ($tipo === 'catalogo') {
-        $evidencia = wabot_desempate_por_palabras('desempate_comercio', $ctx) === 'comercio_mostrar'
-            || preg_match('/\b(catalogo|solo mostrar|mostrar los productos|mostrar mis productos|que me consulten|me escriban|consulten por whatsapp|sin cobro|sin carrito)\b/u', wabot_normalizar_frase($ctx));
-        if (!$evidencia) return $pregunta('desempate_comercio', 'desempate_comercio');
+        $evidencia = preg_match('/\b(catalogo|solo mostrar|mostrar los productos|mostrar mis productos|que me consulten|me escriban|consulten por whatsapp|sin cobro|sin carrito|no quiero cobrar|no vendo online)\b/u', wabot_normalizar_frase($ctx));
+        if (!$evidencia) return ['tipo' => 'ecommerce'];
     }
     if ($tipo === 'turnos') {
         $evidencia = wabot_desempate_por_palabras('desempate_turnos', $ctx) === 'turnos_si';
@@ -974,10 +969,7 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
             && wabot_desempate_por_palabras('desempate_turnos', $ctx) === null) {
             return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
         }
-        if ($rubroCtx === 'comercio_pendiente'
-            && wabot_desempate_por_palabras('desempate_comercio', $ctx) === null) {
-            return $pregunta('desempate_comercio', 'desempate_comercio');
-        }
+        if ($rubroCtx === 'ecommerce') return ['tipo' => 'ecommerce'];
         if ($rubroCtx === 'cursos'
             && wabot_desempate_por_palabras('desempate_cursos', $ctx) === null) {
             return $pregunta('desempate_cursos', 'desempate_cursos');
@@ -1149,10 +1141,11 @@ La pregunta es si quiere que sus clientes saquen el turno solos desde la página
 Que reserven desde la web = web con turnos. Que le escriban nomás = landing.
 NUNCA cotices uno de esos rubros sin haber hecho la pregunta.
 
-DESEMPATE OBLIGATORIO CON COMERCIOS
-Si vende CUALQUIER producto y no dijo cómo quiere usar la web, SIEMPRE preguntá antes de cotizar: si quiere vender desde la página con catálogo, carrito y cobro online, o mostrar lo que hace y que lo contacten por WhatsApp. Vale aunque no haya dicho que tiene un local. "Para mates", "vendo velas" o "hacemos muebles" todavía no alcanzan para cotizar.
-Ejemplos de comercios: ferretería, kiosco, almacén, dietética, ropa, bazar, vivero, librería, juguetería, panadería, carnicería, pet shop, corralón y repuestos.
-Vender online = ecommerce. Solo mostrar el catálogo y que le escriban = web con catálogo, y ahí necesitás UN dato más antes de dar el precio: cuántos productos va a publicar, porque la carga se cobra por producto. Preguntáselo con dar_precio(catalogo) sin el parámetro productos, que te devuelve la pregunta exacta; cuando te diga el número, volvés a llamarla con productos. Nunca estimes vos la cantidad ni cotices sin ese dato. Un comercio a la calle NUNCA es una web institucional.
+COMERCIOS: SIEMPRE TIENDA ONLINE
+Si vende CUALQUIER producto, el tipo es ecommerce y no se pregunta nada antes de cotizar. "Para mates", "vendo velas", "tengo una ferretería" o "una empresa de ropa" alcanzan de sobra: van a tienda online completa, con catálogo, carrito y cobro online.
+NUNCA le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp. Esa pregunta está prohibida: lo hace dudar de algo que ya damos por resuelto.
+Ejemplos de comercios: ferretería, kiosco, almacén, dietética, ropa, bazar, vivero, librería, juguetería, panadería, carnicería, pet shop, corralón y repuestos. Un comercio a la calle NUNCA es una web institucional.
+La única excepción es que el cliente diga por su cuenta que NO quiere cobrar online, que solo quiere mostrar y que le escriban: recién ahí va web con catálogo, y para esa necesitás cuántos productos va a publicar antes de dar el precio.
 
 DESEMPATE OBLIGATORIO PARA PRODUCTOS O TRABAJOS A MEDIDA
 Si fabrica o instala cortinas, toldos, aberturas, cerramientos, muebles a medida, trabajos de carpintería/herrería, amoblamientos, mamparas o algo parecido, el rubro solo NO alcanza para cotizar institucional ni landing.
