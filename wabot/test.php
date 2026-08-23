@@ -319,6 +319,24 @@ caso('Gemini caído después → reconoce un rubro claro y vende sin derivar',
     count($r) === 2 && strpos($r[0], '$160.000') !== false
     && $c['fase'] === 'precio' && $c['tipo'] === 'landing' && empty($c['handoff_pendiente']));
 
+$cPitchCaido = conv_nueva();
+$cPitchCaido['fase'] = 'pitch';
+$cPitchCaido['tipo'] = 'turnos';
+$cPitchCaido['pitch_hecho'] = true;
+$r = wabot_engine('me haces un descuento?', $cPitchCaido, $cfg);
+caso('Gemini caído en plena fase pitch (ya se mostró) → da el precio, no repite "contame más" en un loop',
+    strpos(implode(' ', $r), '$') !== false && strpos(implode(' ', $r), 'presupuestos/Turnos') !== false
+    && stripos(implode(' ', $r), 'contame un poco más') === false);
+
+$cPitchCatalogo = conv_nueva();
+$cPitchCatalogo['fase'] = 'pitch';
+$cPitchCatalogo['tipo'] = 'catalogo';
+$cPitchCatalogo['pitch_hecho'] = true;
+$cPitchCatalogo['productos_cantidad'] = 0;
+$r = wabot_engine('unos 45 mas o menos', $cPitchCatalogo, $cfg);
+caso('y en catálogo, con la IA caída, todavía puede sacar la cantidad con regex propia',
+    (int)$cPitchCatalogo['productos_cantidad'] === 45 && strpos(implode(' ', $r), '$202.500') !== false);
+
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $c['ultimo_ts'] = time() - 10 * 86400; // hace 10 días
 clasifica(['saludo']);

@@ -608,6 +608,12 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($num === null) return [wabot_sistema_whatsapp_texto($cfg, true)];
             $conv['telefono_wsp'] = $num;
             return wabot_sistema_completo($conv, $cfg);
+        case 'pitch':
+            if ($conv['tipo'] === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
+                $cantFallback = wabot_extraer_cantidad_productos($texto);
+                if ($cantFallback !== null) $conv['productos_cantidad'] = $cantFallback;
+            }
+            return wabot_precio((string)$conv['tipo'], $conv, $cfg);
         case 'precio':
             if (wabot_es_afirmativa($texto) && !empty($conv['cta_muestra'])) {
                 $conv['fase'] = 'prediseno';
