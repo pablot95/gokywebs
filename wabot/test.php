@@ -3001,6 +3001,28 @@ caso('demo entregada, el cliente escribió y el bot YA le contestó → sigue en
     $entraEnSinLeer($armarSL($demoEntregada,
         [['cliente', 'Me encantó la demo!'], ['bot', 'Qué bueno que te gustó. Le cambiarías algo?']])) === true);
 
+echo "— Demo entregada + interesado (DEI): le mandaste la demo y contestó algo —\n";
+
+caso('contestó después de que le mandaste la demo → SÍ',
+    wabot_presentada_con_interes($armarSL($demoEntregada, [['humano', 'Acá está tu demo'], ['cliente', 'Me encantó!']])) === true);
+caso('todavía no contestó nada → NO',
+    wabot_presentada_con_interes($armarSL($demoEntregada, [['humano', 'Acá está tu demo']])) === false);
+caso('lo que dijo ANTES de la demo no cuenta como interés en la demo',
+    wabot_presentada_con_interes(['presentado_ts' => $ahoraSL - 3600, 'transcript' => [
+        ['q' => 'cliente', 't' => 'Dale, mandala', 'ts' => $ahoraSL - 7200],
+        ['q' => 'humano', 't' => 'Acá está tu demo', 'ts' => $ahoraSL - 3600],
+    ]]) === false);
+caso('sin demo presentada, ni entra en la pregunta', wabot_presentada_con_interes(['transcript' => []]) === false);
+
+echo "— Cuántos mensajes tiene sin leer, para el globito de la lista —\n";
+
+$convCuenta = $armarSL($demoEntregada, [['bot', 'Acá está tu demo'], ['cliente', 'Me encantó!'], ['cliente', 'Cómo pago?']]);
+caso('dos mensajes del cliente después de la última vez que lo abriste → 2',
+    wabot_conv_sin_leer_cuenta($convCuenta) === 2);
+$convLeido = array_merge($convCuenta, ['panel_visto_ts' => $ahoraSL]);
+caso('si ya lo abriste después, vuelve a 0', wabot_conv_sin_leer_cuenta($convLeido) === 0);
+caso('sin transcript, 0 sin romper', wabot_conv_sin_leer_cuenta(['transcript' => []]) === 0);
+
 // Lo que Pablo pidió sacar: la parte 1 la lleva el bot y no necesita revisión.
 caso('parte 1: una charla nueva con el cliente escribiendo → NO',
     $entraEnSinLeer($armarSL(['fase' => 'menu', 'tipo' => 'landing'], [['bot', 'Hola!'], ['cliente', 'Hola, quiero una web']])) === false);

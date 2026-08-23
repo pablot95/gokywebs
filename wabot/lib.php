@@ -2209,6 +2209,8 @@ function wabot_lista_items() {
             // el aviso de la mañana) borraba la marca sin que hubieras leído
             // nada: el chat desaparecía solo de la lista.
             'no_leido' => wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0),
+            'sin_leer_cuenta' => wabot_conv_sin_leer_cuenta($cv),
+            'con_interes' => wabot_presentada_con_interes($cv),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -2300,6 +2302,26 @@ function wabot_presentada_sin_respuesta($cv, $cfg = null, $ahora = null) {
         if (($linea['q'] ?? '') === 'cliente') return false;
     }
     return true;
+}
+
+function wabot_presentada_con_interes($cv) {
+    $presentado = (int)($cv['presentado_ts'] ?? 0);
+    if ($presentado <= 0) return false;
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $linea) {
+        if ((int)($linea['ts'] ?? 0) < $presentado) break;
+        if (($linea['q'] ?? '') === 'cliente') return true;
+    }
+    return false;
+}
+
+function wabot_conv_sin_leer_cuenta($cv) {
+    $visto = (int)($cv['panel_visto_ts'] ?? 0);
+    $n = 0;
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $linea) {
+        if ((int)($linea['ts'] ?? 0) <= $visto) break;
+        if (($linea['q'] ?? '') === 'cliente') $n++;
+    }
+    return $n;
 }
 
 /** El cliente escribió y el bot no le va a contestar: lo tiene que tomar Pablo. */

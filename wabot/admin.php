@@ -857,7 +857,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .embudo-conversiones .pill { background:var(--ac-tenue); color:var(--ac); padding:5px 10px; }
 
 /* ===== CONVERSACIONES: tres listas a la izquierda, chat a la derecha ===== */
-.conv-split { display:grid; grid-template-columns: 168px minmax(0,340px) minmax(430px,1fr); gap:14px; align-items:stretch; }
+.conv-split { display:grid; grid-template-columns: minmax(0,420px) minmax(430px,1fr); gap:14px; align-items:stretch; }
 .conv-nav { display:flex; flex-direction:column; gap:3px; min-width:0; overflow-y:auto; scrollbar-width:thin; }
 /* Sin caja ni borde: nueve cajas apiladas eran nueve rectángulos compitiendo.
    La seleccionada se marca con fondo y una barra a la izquierda, como una
@@ -898,6 +898,49 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 
 /* WhatsApp e Instagram comparten la misma lista: se distinguen con esta
    etiqueta chica al lado del nombre, no con una columna aparte. */
+.conv-chips { display:flex; align-items:center; gap:6px; margin-top:7px; }
+.conv-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 11px;
+    border:1px solid var(--line); border-radius:99px; background:var(--card-2); color:var(--dim);
+    font:inherit; font-size:12px; font-weight:700; letter-spacing:.03em; cursor:pointer; }
+.conv-chip:hover { border-color:var(--line-fuerte); color:var(--tx); }
+.conv-chip.on { background:var(--info); border-color:var(--info); color:#0b1424; }
+.conv-chip--sl.on { background:var(--info); border-color:var(--info); }
+.conv-chip-n { min-width:17px; padding:0 5px; border-radius:99px; background:var(--info); color:#0b1424;
+    font-size:10.5px; font-weight:800; text-align:center; }
+.conv-chip.on .conv-chip-n { background:rgb(0 0 0 / .22); color:#0b1424; }
+.conv-chip--sl:not(.tiene) .conv-chip-n { background:var(--card); color:var(--tenue); }
+.conv-chips-mas { position:relative; margin-left:auto; }
+.conv-chip--mas { padding:0 9px; font-size:11px; }
+.conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
+    background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px;
+    box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
+.conv-chips-panel[hidden] { display:none; }
+.conv-chip-item { width:100%; text-align:left; padding:7px 9px; border:0; border-radius:7px;
+    background:transparent; color:var(--dim); font:inherit; font-size:12.5px; cursor:pointer; }
+.conv-chip-item:hover { background:var(--card); color:var(--tx); }
+.conv-chip-item.on { background:var(--info); color:#0b1424; font-weight:600; }
+
+.tabs-mini { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:10px; }
+.tabs-menu { position:relative; }
+.tabs-menu-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--line);
+    border-radius:8px; background:var(--card); color:var(--dim); font:inherit; font-size:13px; cursor:pointer; }
+.tabs-menu-btn:hover, .tabs-menu-btn[aria-expanded="true"] { border-color:var(--line-fuerte); color:var(--tx); }
+.tabs-menu-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:40; min-width:180px; padding:5px;
+    background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px;
+    box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
+.tabs-menu-panel[hidden] { display:none; }
+.tabs-menu-panel a { padding:8px 10px; border-radius:7px; color:var(--dim); font-size:13px; }
+.tabs-menu-panel a:hover { background:var(--card); color:var(--tx); }
+.tabs-menu-panel a.on { background:var(--card); color:var(--tx); font-weight:600; }
+
+.estado-tag { display:inline-block; flex-shrink:0; padding:1px 6px; border-radius:5px; font-size:10px;
+    font-weight:800; letter-spacing:.04em; vertical-align:middle; background:var(--card-2); color:var(--dim); }
+.estado-tag--de { background:var(--info-tenue); color:var(--info); }
+.estado-tag--d { background:var(--warn-tenue); color:var(--warn); }
+.conv-item-globo { min-width:19px; height:19px; padding:0 6px; border-radius:99px; background:var(--info);
+    color:#0b1424; font-size:11px; font-weight:800; display:inline-flex; align-items:center;
+    justify-content:center; flex-shrink:0; }
+
 .canal-tag { display:inline-block; flex-shrink:0; padding:1px 7px; border-radius:99px; font-size:10.5px; font-weight:700; letter-spacing:.02em; vertical-align:middle; }
 .canal-tag--whatsapp { background:var(--ac-tenue); color:var(--ac); }
 .canal-tag--instagram { background:#2c1f33; color:#c99ad8; }
@@ -973,6 +1016,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-item.sin-leer .conv-item-hora { color:var(--info); font-weight:600; }
 .conv-item.sin-leer.on { border-left-color:var(--ac); }
 .conv-item-punto { width:7px; height:7px; border-radius:50%; background:var(--info); flex-shrink:0; }
+.conv-item-derecha { display:flex; align-items:center; gap:6px; flex-shrink:0; }
 .conv-sub-header { padding:11px 13px 5px; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--tenue); background:var(--card); position:sticky; top:0; z-index:1; }
 .conv-list[data-grupo="pago"] .conv-list-head { color:var(--ac); }
 .conv-item.pago-avisado { border-left-color:var(--ac); background:var(--ac-tenue); }
@@ -1008,12 +1052,11 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
    scrollea, pero el chat sigue a la derecha. Nunca se va abajo del todo. */
 /* Sin lugar para cuatro al lado, se acomodan en dos filas de dos. */
 @media (max-width: 1650px) {
-    .conv-split { grid-template-columns: 158px minmax(0,320px) minmax(0,1fr); }
+    .conv-split { grid-template-columns: minmax(0,380px) minmax(0,1fr); }
 }
 
 @media (max-width: 1150px) {
-    .conv-split { grid-template-columns: 138px minmax(0,260px) minmax(0,1fr); }
-    .conv-nav-btn { padding:9px 10px; font-size:12.5px; }
+    .conv-split { grid-template-columns: minmax(0,320px) minmax(0,1fr); }
 }
 
 /* Sin hover no hay forma de descubrir el lápiz: en touch va siempre visible. */
@@ -1028,21 +1071,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
        separador fino, que agrupa igual sin ocupar ancho. Los botones pasan a
        ser fichas con borde: la barra lateral que marca el activo en desktop no
        se lee en una fila. */
-    .conv-nav { flex-direction:row; align-items:center; gap:6px; overflow-x:auto; overscroll-behavior-x:contain;
-        scrollbar-width:none; padding:2px 0 8px; border-bottom:1px solid var(--line); }
-    .conv-nav::-webkit-scrollbar { display:none; }
-    .conv-nav-titulo { flex:0 0 auto; width:1px; height:20px; margin:0 2px; padding:0;
-        background:var(--line); overflow:hidden; text-indent:-999px; }
-    .conv-nav-titulo:first-of-type { margin-left:0; }
-    .conv-nav-btn { width:auto; flex:0 0 auto; white-space:nowrap;
-        border:1px solid var(--line); border-left-width:1px; border-radius:99px; padding:7px 13px; }
-    .conv-nav-btn.on { border-color:var(--ac); background:var(--card-2); }
-    .conv-nav-btn[data-grupo="pago"].on { border-color:var(--ac); }
-    .conv-nav-btn[data-grupo="muestra"].on { border-color:var(--warn); }
-    .conv-nav-btn[data-grupo="presentadas_48"].on { border-color:var(--bad); }
-    .conv-nav-btn--filtro { margin-bottom:0; padding-bottom:7px; border-bottom-width:1px; border-radius:99px; }
-    .conv-nav-btn--filtro.on { border-color:var(--info); }
-    .conv-split.has-sel .conv-nav, .conv-split.has-sel .conv-list { display:none; }
+    .conv-split.has-sel .conv-list { display:none; }
     .conv-split:not(.has-sel) .conv-main { display:none; }
     .conv-volver { display:inline-block; margin-bottom:8px; }
 }
@@ -1143,24 +1172,48 @@ body.embed { min-height: 0; }
         <p class="sub">Motor propio sobre la Cloud API · <a href="admin.php?salir=1">salir</a></p>
     <?php endif; ?>
 
-    <div class="tabs">
-        <?php
-        $navTabs = [
-            'conversaciones' => 'Conversaciones',
-            'embudo'         => 'Embudo',
-            'probar'         => 'Probar',
-            'textos'         => 'Textos',
-            'entrenamiento'  => 'Entrenamiento',
-            'estado'         => 'Estado',
-        ];
-        foreach ($navTabs as $k => $v): ?>
-            <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"><?= $v ?></a>
-        <?php endforeach; ?>
+    <?php
+    $navTabs = [
+        'conversaciones' => 'Conversaciones',
+        'embudo'         => 'Embudo',
+        'probar'         => 'Probar',
+        'textos'         => 'Textos',
+        'entrenamiento'  => 'Entrenamiento',
+        'estado'         => 'Estado',
+    ];
+    ?>
+    <div class="tabs-mini">
         <?php if ($embed): ?>
             <span class="pill <?= !empty($cfg['activo']) ? 'on' : 'off' ?>"><?= !empty($cfg['activo']) ? 'BOT ACTIVO' : 'BOT APAGADO' ?></span>
             <a href="admin.php?embed=0" target="_blank" rel="noopener" class="tabs-aparte">Abrir aparte ↗</a>
         <?php endif; ?>
+        <div class="tabs-menu">
+            <button type="button" class="tabs-menu-btn" id="tabsMenuBtn" aria-expanded="false" aria-controls="tabsMenuPanel">
+                <?= $e($navTabs[$tab] ?? 'Menú') ?> <span aria-hidden="true">▾</span>
+            </button>
+            <nav class="tabs-menu-panel" id="tabsMenuPanel" hidden>
+                <?php foreach ($navTabs as $k => $v): ?>
+                    <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"><?= $v ?></a>
+                <?php endforeach; ?>
+            </nav>
+        </div>
     </div>
+    <script>
+    (function () {
+        var btn = document.getElementById('tabsMenuBtn'), panel = document.getElementById('tabsMenuPanel');
+        if (!btn || !panel) return;
+        btn.addEventListener('click', function () {
+            var abrir = panel.hidden;
+            panel.hidden = !abrir;
+            btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        });
+        document.addEventListener('click', function (ev) {
+            if (panel.hidden || btn.contains(ev.target) || panel.contains(ev.target)) return;
+            panel.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+        });
+    })();
+    </script>
 
     <?php if (isset($_GET['ok'])) echo '<p class="ok">Guardado.</p>'; ?>
     <?php if (isset($_GET['boceto_ok'])) echo '<p class="ok">Boceto creado: ya aparece en la pestaña Bocetos.</p>'; ?>
@@ -1687,28 +1740,7 @@ body.embed { min-height: 0; }
         ?>
         <div class="conv-split <?= $ver !== '' ? 'has-sel' : '' ?>">
 
-            <!-- El orden sigue el recorrido del cliente: consulta → precio →
-                 demo → entregada → pagó. "Sin leer" va aparte arriba porque no
-                 es un estado sino un filtro que cruza a todos los demás. -->
-            <nav class="conv-nav">
-                <button type="button" class="conv-nav-btn conv-nav-btn--filtro" data-grupo="no_leidos" title="Los chats donde el cliente escribió último y todavía no los abriste. Cruza todos los grupos de abajo.">Sin leer <span class="conv-cuenta" id="cuentaNoLeidos">0</span></button>
-
-                <p class="conv-nav-titulo">Te toca a vos</p>
-                <button type="button" class="conv-nav-btn" data-grupo="pago" title="Avisaron que transfirieron: hay que verificar que la plata haya entrado.">Pagaron <span class="conv-cuenta" id="cuentaPago">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="presentados" title="Ya les mandaste la demo y todavía no confirmaron nada.">Demo entregada <span class="conv-cuenta" id="cuentaPresentados">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="muestra" title="Ya pasaron los datos y falta diseñarles la demo. Es tu cola de trabajo.">Demos <span class="conv-cuenta" id="cuentaMuestra">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="presentadas_48" title="Tienen la demo hace más de 48 h y no contestaron nada. La ventana de WhatsApp ya cerró: hay que ir a buscarlos a mano.">Se enfriaron <span class="conv-cuenta" id="cuentaPresentadas48">0</span></button>
-
-                <p class="conv-nav-titulo">Esperando al cliente</p>
-                <button type="button" class="conv-nav-btn" data-grupo="interesado" title="Vieron el precio y siguieron hablando, pero todavía no pasaron los datos para la demo.">Vieron precio <span class="conv-cuenta" id="cuentaInteresado">0</span></button>
-
-                <p class="conv-nav-titulo">Resto</p>
-                <button type="button" class="conv-nav-btn" data-grupo="chat" title="Charlas en curso sin nada pendiente de tu lado.">Todas las charlas <span class="conv-cuenta" id="cuentaChat">0</span></button>
-                <button type="button" class="conv-nav-btn" data-grupo="archivado" title="Los que sacaste a mano de la vista de trabajo.">Archivados <span class="conv-cuenta" id="cuentaArchivado">0</span></button>
-            </nav>
-
             <aside class="conv-list" id="convLista">
-                <header class="conv-list-head" id="convListaTitulo">Chats</header>
                 <div class="conv-filtros">
                     <div class="conv-busqueda-fila">
                         <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número o proyecto">
@@ -1719,6 +1751,22 @@ body.embed { min-height: 0; }
                     </div>
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
+                    </div>
+                    <div class="conv-chips" id="convChips">
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">SL <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
+                        <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: ya les mandaste la demo.">DE</button>
+                        <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
+                        <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
+                        <div class="conv-chips-mas">
+                            <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
+                            <div class="conv-chips-panel" id="convChipsPanel" hidden>
+                                <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
+                                <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
+                                <button type="button" class="conv-chip-item" data-grupo="interesado">Vieron precio</button>
+                                <button type="button" class="conv-chip-item" data-grupo="chat">Todas las charlas</button>
+                                <button type="button" class="conv-chip-item" data-grupo="archivado">Archivados</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="conv-items" id="listaItems"></div>
@@ -1827,16 +1875,7 @@ body.embed { min-height: 0; }
         // cruza todas las columnas. Entra un chat SOLO si el último mensaje es
         // del cliente — si el bot (o vos) ya contestó, no cuenta como pendiente,
         // aunque nunca hayas abierto esa respuesta.
-        const GRUPOS = {
-            no_leidos:  { titulo: 'Sin leer',    cuenta: document.getElementById('cuentaNoLeidos'),   vacio: 'Ningún mensaje sin abrir.', vista: true },
-            pago:       { titulo: 'Pagaron', cuenta: document.getElementById('cuentaPago'), vacio: 'Nadie avisó todavía que pagó.' },
-            muestra:    { titulo: 'Demos',    cuenta: document.getElementById('cuentaMuestra'), vacio: 'Ninguna demo pendiente de diseño.' },
-            presentadas_48:{ titulo: 'Se enfriaron',      cuenta: document.getElementById('cuentaPresentadas48'), vacio: 'Ninguna demo sin respuesta hace más de 48 horas.' },
-            interesado: { titulo: 'Vieron precio',        cuenta: document.getElementById('cuentaInteresado'), vacio: 'Nadie con el precio dado esperando decidir.' },
-            presentados:{ titulo: 'Demo entregada',       cuenta: document.getElementById('cuentaPresentados'), vacio: 'Ninguna demo entregada esperando confirmación.' },
-            chat:       { titulo: 'Todas las charlas',    cuenta: document.getElementById('cuentaChat'), vacio: 'Ninguna charla abierta.' },
-            archivado:  { titulo: 'Archivados',  cuenta: document.getElementById('cuentaArchivado'),  vacio: 'Nada archivado.' },
-        };
+        const GRUPOS_VALIDOS = new Set(['pago', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
         /* Sin leer es una lista de trabajo, no un inbox: solo los chats donde el
            bot dejó de contestar, el cliente respondió igual, y no lo abriste.
            Las tres condiciones juntas, y ninguna alcanza sola:
@@ -1871,8 +1910,9 @@ body.embed { min-height: 0; }
         }
         const listaEl   = document.getElementById('listaItems');
         const listaCaja = document.getElementById('convLista');
-        const listaTit  = document.getElementById('convListaTitulo');
-        const navBtns   = document.querySelectorAll('.conv-nav-btn');
+        const navBtns   = document.querySelectorAll('[data-grupo]');
+        const chipsMasEl = document.getElementById('convChipsMas');
+        const chipsPanelEl = document.getElementById('convChipsPanel');
         const buscarChatsEl = document.getElementById('convBuscar');
         const buscarMensajesEl = document.getElementById('convBuscarMensajes');
         let buscarMensajesTimer = null;
@@ -1882,8 +1922,10 @@ body.embed { min-height: 0; }
         const fechaChipsEl = document.getElementById('convFechaChips');
         const fechaCuentaEl = document.getElementById('convFechaCuenta');
 
-        let grupoActivo = localStorage.getItem('wabotGrupo');
-        if (!GRUPOS[grupoActivo]) grupoActivo = 'chat';
+        const GRUPOS_POR_DEFECTO = ['muestra', 'presentados', 'presentadas_48'];
+        let filtrosGuardados = [];
+        try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
+        const filtrosActivos = new Set(Array.isArray(filtrosGuardados) ? filtrosGuardados : []);
         let itemsCache = [];
         let sincronizado = false;
         let firmaLista = '';
@@ -1896,18 +1938,33 @@ body.embed { min-height: 0; }
             try { localStorage.setItem('wabotFechas', JSON.stringify([...fechasChatsSeleccionadas])); } catch (e) {}
         }
 
-        function activarGrupo(grupo, recordar) {
-            if (!GRUPOS[grupo]) return;
-            grupoActivo = grupo;
-            if (recordar) localStorage.setItem('wabotGrupo', grupo);
-            for (const b of navBtns) b.classList.toggle('on', b.dataset.grupo === grupo);
-            listaCaja.dataset.grupo = grupo;
-            listaTit.textContent = GRUPOS[grupo].titulo;
+        function pintarChips() {
+            for (const b of navBtns) b.classList.toggle('on', filtrosActivos.has(b.dataset.grupo));
+        }
+
+        function alternarFiltro(grupo) {
+            if (filtrosActivos.has(grupo)) filtrosActivos.delete(grupo);
+            else filtrosActivos.add(grupo);
+            try { localStorage.setItem('wabotFiltros', JSON.stringify([...filtrosActivos])); } catch (e) {}
+            pintarChips();
             pintarLista(itemsCache);
         }
 
         for (const b of navBtns) {
-            b.addEventListener('click', () => activarGrupo(b.dataset.grupo, true));
+            b.addEventListener('click', () => alternarFiltro(b.dataset.grupo));
+        }
+        if (chipsMasEl) {
+            chipsMasEl.addEventListener('click', () => {
+                const abierto = chipsPanelEl.hidden;
+                chipsPanelEl.hidden = !abierto;
+                chipsMasEl.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            });
+            document.addEventListener('click', (ev) => {
+                if (chipsPanelEl.hidden) return;
+                if (chipsMasEl.contains(ev.target) || chipsPanelEl.contains(ev.target)) return;
+                chipsPanelEl.hidden = true;
+                chipsMasEl.setAttribute('aria-expanded', 'false');
+            });
         }
 
         function hora(ts) {
@@ -1950,11 +2007,21 @@ body.embed { min-height: 0; }
                 .some(v => v.includes(digitos));
         }
 
-        // Un ítem entra en la lista que se está mirando: por grupo excluyente, o
-        // por la vista cruzada de No leídos.
+        function esDEI(it) {
+            return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !!it.con_interes;
+        }
+
+        function cumpleFiltro(it, filtro) {
+            if (filtro === 'no_leidos') return esNoLeido(it);
+            if (filtro === 'dei') return esDEI(it);
+            if (filtro === 'presentados') return it.grupo === 'presentados' || it.grupo === 'presentadas_48';
+            return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
+        }
+
         function entraEnGrupoActivo(it) {
-            if (grupoActivo === 'no_leidos') return esNoLeido(it);
-            return (GRUPOS[it.grupo] ? it.grupo : 'chat') === grupoActivo;
+            if (!filtrosActivos.size) return GRUPOS_POR_DEFECTO.includes(it.grupo);
+            for (const f of filtrosActivos) if (cumpleFiltro(it, f)) return true;
+            return false;
         }
 
         function renderFechasChats() {
@@ -2017,23 +2084,13 @@ body.embed { min-height: 0; }
 
             if (!sincronizado) {
                 sincronizado = true;
-                const elegida = SEL ? items.find(x => x.tel === SEL) : null;
-                if (elegida && GRUPOS[elegida.grupo] && elegida.grupo !== grupoActivo) {
-                    activarGrupo(elegida.grupo, false);
-                    return;
-                }
-                activarGrupo(grupoActivo, false);
-                return;
+                pintarChips();
             }
 
             renderFechasChats();
             const termino = buscarChatsEl.value.trim();
-            // Con texto en el buscador general, la búsqueda deja de estar atada a
-            // la pestaña activa: recorre TODOS los chats (nombre, número o
-            // proyecto), sin importar el grupo ni el filtro de fecha.
             const buscandoGeneral = termino.length > 0;
-            listaTit.textContent = buscandoGeneral ? 'Buscando: "' + termino + '"' : GRUPOS[grupoActivo].titulo;
-            const firma = JSON.stringify(items) + '|' + grupoActivo + '|' + termino + '|'
+            const firma = JSON.stringify(items) + '|' + [...filtrosActivos].sort().join(',') + '|' + termino + '|'
                 + [...fechasChatsSeleccionadas].sort().join(',');
             if (firma === firmaLista) return;
             firmaLista = firma;
@@ -2048,7 +2105,7 @@ body.embed { min-height: 0; }
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
             for (const it of items) {
-                const grupo = GRUPOS[it.grupo] ? it.grupo : 'chat';
+                const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
@@ -2082,20 +2139,32 @@ body.embed { min-height: 0; }
                     : ('+' + (it.channel_user_id || it.tel));
                 tel.textContent = it.nombre_agenda || it.nombre || contacto;
                 if (it.nombre_agenda || it.nombre) tel.title = contacto;
-                const tag = document.createElement('span');
-                tag.className = 'canal-tag canal-tag--' + (it.canal === 'instagram' ? 'instagram' : 'whatsapp');
-                tag.textContent = it.canal === 'instagram' ? 'IG' : 'WA';
-                nombreBox.appendChild(tel); nombreBox.appendChild(tag);
-                if (it.no_leido) {
-                    const punto = document.createElement('span');
-                    punto.className = 'conv-item-punto';
-                    punto.title = 'Sin abrir';
-                    nombreBox.appendChild(punto);
+                nombreBox.appendChild(tel);
+                const etiqueta = esDEI(it) ? { txt: 'DEI', cls: 'de', tit: 'Demo entregada · contestó' }
+                    : (it.grupo === 'presentados' || it.grupo === 'presentadas_48')
+                        ? { txt: 'DE', cls: 'de', tit: 'Demo entregada' }
+                        : (it.grupo === 'muestra' ? { txt: 'D', cls: 'd', tit: 'Demo por armar' } : null);
+                if (etiqueta) {
+                    const tag = document.createElement('span');
+                    tag.className = 'estado-tag estado-tag--' + etiqueta.cls;
+                    tag.textContent = etiqueta.txt;
+                    tag.title = etiqueta.tit;
+                    nombreBox.appendChild(tag);
                 }
+                const derecha = document.createElement('span');
+                derecha.className = 'conv-item-derecha';
                 const h = document.createElement('span');
                 h.className = 'conv-item-hora';
                 h.textContent = hora(it.ts);
-                top.appendChild(nombreBox); top.appendChild(h);
+                derecha.appendChild(h);
+                if (it.no_leido) {
+                    const globo = document.createElement('span');
+                    globo.className = 'conv-item-globo';
+                    globo.textContent = it.sin_leer_cuenta > 0 ? it.sin_leer_cuenta : 1;
+                    globo.title = 'Mensajes sin leer';
+                    derecha.appendChild(globo);
+                }
+                top.appendChild(nombreBox); top.appendChild(derecha);
 
                 const ult = document.createElement('div');
                 ult.className = 'conv-item-ult';
@@ -2137,7 +2206,8 @@ body.embed { min-height: 0; }
                 renderizados.push({ it, el: a });
             }
 
-            if (grupoActivo === 'no_leidos' && !buscandoGeneral) {
+            const soloSinLeer = filtrosActivos.size === 1 && filtrosActivos.has('no_leidos');
+            if (soloSinLeer && !buscandoGeneral) {
                 // Presentadas / Demos / Chats normales, en ese orden, cada una con
                 // su encabezado — solo si tiene algo, para no listar títulos vacíos.
                 for (const sub of SUBGRUPOS_NO_LEIDOS) {
@@ -2153,13 +2223,16 @@ body.embed { min-height: 0; }
                 for (const r of renderizados) listaEl.appendChild(r.el);
             }
 
-            for (const g of Object.keys(GRUPOS)) {
-                if (GRUPOS[g].cuenta) GRUPOS[g].cuenta.textContent = cuentas[g] ?? 0;
+            const elSinLeer = document.getElementById('cuentaNoLeidos');
+            if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
+            for (const b of navBtns) {
+                if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
             }
-            for (const b of navBtns) b.classList.toggle('tiene', (cuentas[b.dataset.grupo] ?? 0) > 0);
             if (!visibles) {
-                const filtrando = termino || fechasChatsSeleccionadas.size;
-                listaEl.innerHTML = '<p class="conv-vacio">' + (filtrando ? 'No hay chats que coincidan con los filtros.' : GRUPOS[grupoActivo].vacio) + '</p>';
+                const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;
+                listaEl.innerHTML = '<p class="conv-vacio">'
+                    + (filtrando ? 'No hay chats que coincidan con los filtros.' : 'Ninguna demo ni charla con demo entregada.')
+                    + '</p>';
             }
         }
 
@@ -2238,7 +2311,6 @@ body.embed { min-height: 0; }
             const termino = buscarMensajesEl.value.trim();
             if (termino.length < 2) return;
             const miToken = ++buscarMensajesToken;
-            listaTit.textContent = 'Mensajes: "' + termino + '"';
             const cargando = document.createElement('p');
             cargando.className = 'conv-vacio';
             cargando.textContent = 'Buscando…';
