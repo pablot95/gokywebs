@@ -404,6 +404,9 @@ function wabot_config_ventas(&$cfg) {
         if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] ?? '')) === '') {
             $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas cabañas o unidades tenés, así armamos la disponibilidad con eso?';
         }
+        if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] ?? '')) === '') {
+            $cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] = 'Y hoy cómo manejás las reservas, por WhatsApp, alguna plataforma?';
+        }
     }
     if (isset($cfg['tipos']['ecommerce'])
         && trim((string)($cfg['tipos']['ecommerce']['desc_mayorista'] ?? '')) === '') {
@@ -2409,6 +2412,10 @@ function wabot_objecion_texto($clave, $textoCompleto, &$conv, $cfg) {
     $conv['objecion_dicha'] = (array)($conv['objecion_dicha'] ?? []);
     if (empty($conv['objecion_dicha'][$clave])) {
         $conv['objecion_dicha'][$clave] = true;
+        return $textoCompleto;
+    }
+    if (function_exists('wabot_texto_es_duda_de_valor')
+        && wabot_texto_es_duda_de_valor(wabot_ultimo_texto_cliente($conv))) {
         return $textoCompleto;
     }
     return (string)($cfg['objecion_repetida'] ?? $textoCompleto);

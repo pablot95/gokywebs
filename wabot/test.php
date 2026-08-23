@@ -3922,5 +3922,72 @@ $rSaludo = wabot_engine('hola', $cSaludo, $cfg);
 caso('un saludo pelado sí sigue recibiendo la apertura', count($rSaludo) === 1 && $rSaludo[0] === $cfg['menu']);
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
+echo "\n— Mostrar trabajos gana sobre la palabra suelta \"productos\" —\n";
+
+caso('"mostrar los trabajos que hice, no vendo productos" → trabajos, no catálogo',
+    wabot_desempate_por_palabras('desempate_hibrido', 'Quiero mostrar los trabajos que hice, no vendo productos de stock') === 'hibrido_trabajos');
+caso('un portfolio de obras también',
+    wabot_desempate_por_palabras('desempate_hibrido', 'quiero un portfolio de mis obras') === 'hibrido_trabajos');
+caso('pero pedir un catálogo con productos sigue siendo catálogo',
+    wabot_desempate_por_palabras('desempate_hibrido', 'quiero un catalogo con mis productos y que me escriban por whatsapp') === 'hibrido_catalogo');
+caso('y vender online sigue siendo vender',
+    wabot_desempate_por_palabras('desempate_hibrido', 'quiero vender online con carrito') === 'hibrido_vender');
+caso('rejas y portones ya se reconocen como trabajo a medida',
+    wabot_contexto_es_hibrido('Hago rejas y portones a medida')
+    && wabot_contexto_es_hibrido('hacemos placares y vestidores'));
+caso('sin romper los rubros que ya estaban',
+    wabot_contexto_es_hibrido('vendo cortinas') && wabot_contexto_es_hibrido('hago muebles a medida'));
+
+echo "\n— Si pide el precio, se le da el precio: no el pitch con una repregunta —\n";
+
+caso('detecta el pedido de precio dentro de un mensaje largo',
+    wabot_texto_pide_precio('tenemos como 800 productos y queriamos una pagina. Cuanto nos saldria algo asi?'));
+caso('y las formas cortas', wabot_texto_pide_precio('cuanto sale?') && wabot_texto_pide_precio('que precio tiene?'));
+caso('sin confundir otras preguntas con números',
+    !wabot_texto_pide_precio('vendo ropa, cuanto tenes de stock?')
+    && !wabot_texto_pide_precio('tengo 30 productos'));
+
+$convPidePrecio = conv_nueva();
+$convPidePrecio['pitch_hecho'] = false;
+$convPidePrecio['transcript'] = [['q'=>'cliente','t'=>'Tengo una casa de repuestos, 800 productos. Cuanto nos saldria?','ts'=>time()]];
+caso('con el precio pedido, el pitch ya no corresponde',
+    wabot_pitch_corresponde('ecommerce', $convPidePrecio, $cfg) === false);
+
+$convSinPedir = conv_nueva();
+$convSinPedir['pitch_hecho'] = false;
+$convSinPedir['transcript'] = [['q'=>'cliente','t'=>'Tengo una casa de repuestos de motos','ts'=>time()]];
+caso('pero si no lo pidió, el pitch sigue saliendo',
+    wabot_pitch_corresponde('ecommerce', $convSinPedir, $cfg) === true);
+
+echo "\n— Dudar de si conviene no es querer irse —\n";
+
+caso('"no se si vale la pena" es una duda, no un cierre',
+    wabot_texto_es_duda_de_valor('No se si vale la pena hacerla de nuevo')
+    && wabot_texto_es_duda_de_valor('no se si me conviene'));
+caso('pero irse de verdad sigue siendo irse',
+    !wabot_texto_es_duda_de_valor('no me interesa')
+    && !wabot_texto_es_duda_de_valor('por ahora solo estaba averiguando'));
+
+$convDuda = conv_nueva();
+$convDuda['objecion_dicha'] = ['ya_tengo_web' => true];
+$convDuda['transcript'] = [['q'=>'cliente','t'=>'No se si vale la pena hacerla de nuevo','ts'=>time()]];
+caso('repetir la objeción ante una duda NO devuelve la despedida',
+    wabot_objecion_texto('ya_tengo_web', $cfg['ya_tengo_web'], $convDuda, $cfg) === $cfg['ya_tengo_web']);
+
+$convInsiste = conv_nueva();
+$convInsiste['objecion_dicha'] = ['pensarlo' => true];
+$convInsiste['transcript'] = [['q'=>'cliente','t'=>'bueno, lo voy a pensar','ts'=>time()]];
+caso('y el que insiste con lo mismo sí recibe el cierre corto',
+    wabot_objecion_texto('pensarlo', $cfg['pensarlo'], $convInsiste, $cfg) === $cfg['objecion_repetida']);
+
+echo "\n— El alojamiento que ya dijo cuántas unidades tiene habla de reservas, no de turnos —\n";
+
+$convAlojCant = conv_nueva();
+$convAlojCant['transcript'] = [['q'=>'cliente','t'=>'Tengo un complejo de 6 cabañas en Merlo','ts'=>time()]];
+$pitchAlojCant = wabot_pitch_texto('turnos', $convAlojCant, $cfg);
+caso('no le pregunta de nuevo cuántas unidades', stripos($pitchAlojCant, 'cuántas cabañas o unidades') === false);
+caso('y la segunda pregunta habla de reservas, no de turnos',
+    stripos($pitchAlojCant, 'reservas') !== false && stripos($pitchAlojCant, 'tomás los turnos') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -597,13 +597,18 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 return ['error' => 'Tipo desconocido.'];
             }
             $contextoCliente = wabot_contexto_cliente_texto($conv);
-            if (wabot_contexto_es_hibrido($contextoCliente)
-                && wabot_desempate_por_palabras('desempate_hibrido', $contextoCliente) === null) {
-                $conv['fase'] = 'desempate_hibrido';
-                return [
-                    'error' => 'El rubro admite más de un tipo de web y todavía falta confirmar el objetivo.',
-                    'nota' => 'No cotices todavía. Preguntá UNA sola cosa: si quiere mostrar trabajos y recibir consultas, exhibir modelos/productos en catálogo con WhatsApp, o vender y cobrar online.',
-                ];
+            if (wabot_contexto_es_hibrido($contextoCliente)) {
+                $objetivoHibrido = wabot_desempate_por_palabras('desempate_hibrido', $contextoCliente);
+                if ($objetivoHibrido === null) {
+                    $conv['fase'] = 'desempate_hibrido';
+                    return [
+                        'error' => 'El rubro admite más de un tipo de web y todavía falta confirmar el objetivo.',
+                        'nota' => 'No cotices todavía. Preguntá UNA sola cosa: si quiere mostrar trabajos y recibir consultas, exhibir modelos/productos en catálogo con WhatsApp, o vender y cobrar online.',
+                    ];
+                }
+                $tipoHibrido = ['hibrido_vender' => 'ecommerce', 'hibrido_catalogo' => 'catalogo',
+                                'hibrido_trabajos' => 'landing'][$objetivoHibrido] ?? null;
+                if ($tipoHibrido !== null && $tipoHibrido !== $tipo) $tipo = $tipoHibrido;
             }
             if ($tipo === 'institucional' && ($conv['tipo'] ?? '') !== 'institucional'
                 && !wabot_pidio_institucional_explicito($contextoCliente)) {
@@ -775,6 +780,12 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             return $res;
 
         case 'cerrar_sin_presion':
+            if (wabot_texto_es_duda_de_valor(wabot_ultimo_texto_cliente($conv))) {
+                return [
+                    'error' => 'El cliente no se está yendo: está dudando de si le conviene, que es una objeción.',
+                    'nota' => 'No lo despidas. Si duda porque ya tiene una página, usá manejar_objecion(ya_tiene_web); si duda en general, contestale la duda y ofrecele la demo gratis, que existe justamente para que pueda verla antes de decidir.',
+                ];
+            }
             $motivo = (string)($args['motivo'] ?? 'solo_averiguando');
             $tipoCierre = $motivo === 'no_interesa' ? 'rechazo' : 'consulta';
             $r = wabot_cerrar_sin_presion($conv, $cfg, $tipoCierre);
@@ -1243,6 +1254,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí, y nunca calcules el monto de cada cuota.
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por una respuesta de relleno.
 - "Lo tengo que pensar" NO es lo mismo que "solo estaba averiguando", "más adelante", "ahora no tengo presupuesto" o "no me interesa". En esas cuatro salidas llamá a cerrar_sin_presion: cerrá cordialmente, no ofrezcas la demo, no hagas otra pregunta y no intentes recuperar la venta.
+- Dudar del VALOR tampoco es querer irse: "no sé si vale la pena", "no sé si me conviene", "no sé si la necesito", "¿realmente sirve?" son objeciones, no despedidas. NUNCA las contestes con cerrar_sin_presion — despedir a alguien que todavía está evaluando tira la venta sin que él lo haya pedido. Si duda porque ya tiene página, es manejar_objecion('ya_tiene_web'); si duda en general, contestale la duda y ofrecele la demo gratis, que es justo lo que existe para que no tenga que decidir a ciegas.
 - Insistir con un descuento NUNCA es "más adelante" ni "no me interesa", ni siquiera a la segunda o tercera vez que lo pide con otras palabras ("una rebajita", "si pago en efectivo, ahí sí baja?"): es la misma objeción de precio repetida. NO llames a cerrar_sin_presion para eso — repetí consultar_info('objecion_precio') o derivá con pago_explicito, como dice la regla de arriba. cerrar_sin_presion es solo para el que se quiere ir, nunca para el que sigue regateando.
 - Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la demo en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
 - El mantenimiento es opcional y se contesta con consultar_info, que ya te devuelve el precio y el link que corresponden al tipo cotizado. No los digas de memoria: cambian según la web.

@@ -147,7 +147,8 @@ function wabot_contexto_cliente_tiene_negocio($conv) {
 /** Rubros que pueden ser portfolio, catálogo o venta online: requieren una pregunta. */
 function wabot_contexto_es_hibrido($texto) {
     $t = wabot_normalizar_frase($texto);
-    return $t !== '' && (bool)preg_match('/\b(cortinas?|toldos?|aberturas?|muebles? a medida|carpinteria|herrerias?|cerramientos?|amoblamientos?|mesadas?|mamparas?)\b/u', $t);
+    return $t !== '' && (bool)preg_match('/\b(cortinas?|toldos?|aberturas?|muebles? a medida|carpinteria|herrerias?|cerramientos?|amoblamientos?|mesadas?|mamparas?'
+        . '|rejas?|portones?|placares?|vestidores?|pergolas?|decks?|barandas?|mosquiteros?|escaleras? a medida)\b/u', $t);
 }
 
 /**
@@ -329,6 +330,30 @@ function wabot_salida_ya_pregunta($out) {
         }
     }
     return false;
+}
+
+function wabot_texto_es_duda_de_valor($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    if (wabot_cierre_sin_presion_tipo($texto) !== null) return false;
+    return (bool)(
+        preg_match('/\bno se si\b/u', $t)
+        || preg_match('/\bno estoy segur[oa]\b/u', $t)
+        || preg_match('/\bvale la pena\b/u', $t)
+        || preg_match('/\b(me|nos|le|les) conviene\b/u', $t)
+        || preg_match('/\bsirve (de verdad|realmente)\b/u', $t)
+    );
+}
+
+function wabot_texto_pide_precio($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\bcuanto\b.{0,20}\b(sale|saldria|cuesta|costaria|vale|valdria|es|seria)\b/u', $t)
+        || preg_match('/\bque (precio|valor|costo)\b/u', $t)
+        || preg_match('/\b(cual es|decime|pasame|necesito saber|queria saber|me pasas)\b.{0,25}\b(precio|valor|presupuesto|costo)\b/u', $t)
+        || preg_match('/\b(precio|presupuesto)\b.{0,15}\b(de esto|de eso|de una web|de una pagina)\b/u', $t)
+    );
 }
 
 function wabot_contexto_tiene_cantidad_unidades($contexto) {
@@ -1673,6 +1698,11 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'e commerce', 'carrito', 'cobro online', 'cobrar online', 'que compren', 'que paguen',
             ])) return 'hibrido_vender';
             if ($tiene([
+                'mostrar trabajos', 'mostrar los trabajos', 'mostrar el trabajo', 'mostrar nuestros trabajos',
+                'mostrar mis trabajos', 'trabajos realizados', 'trabajos que hice', 'trabajos hechos',
+                'portfolio', 'portafolio', 'obras', 'mostrar lo que hacemos',
+            ])) return 'hibrido_trabajos';
+            if ($tiene([
                 'catalogo', 'catálogo', 'modelos', 'productos', 'exhibir modelos', 'mostrar modelos',
                 'catalogo por whatsapp', 'catalogo con whatsapp', 'lista de productos',
                 'publicar', 'publicarlos', 'exhibir', 'listar', 'que se vean',
@@ -2073,8 +2103,12 @@ function wabot_pitch_texto($tipo, $conv, $cfg) {
                || $respuestaEspecifica;
     $clave = $yaConto ? 'pitch_pregunta_2' : 'pitch_pregunta';
     $varianteYaContestada = $variante === 'alojamiento' && wabot_contexto_tiene_cantidad_unidades($contexto);
-    $pregunta = ($variante !== null && !$varianteYaContestada)
-        ? trim((string)($t['pitch_pregunta_' . $variante] ?? '')) : '';
+    $pregunta = '';
+    if ($variante !== null) {
+        $pregunta = $varianteYaContestada
+            ? trim((string)($t['pitch_pregunta_2_' . $variante] ?? ''))
+            : trim((string)($t['pitch_pregunta_' . $variante] ?? ''));
+    }
     if ($pregunta === '') $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
 
     $base = (string)($cfg['msg_pitch'] ?? '');
@@ -2086,6 +2120,7 @@ function wabot_pitch_corresponde($tipo, $conv, $cfg) {
     if (!empty($conv['pitch_hecho']) || !empty($conv['precio_dado'])) return false;
     if (!empty($conv['demo_pedida_entrada'])) return false;
     if (!empty($conv['pidio_precio'])) return false;
+    if (wabot_texto_pide_precio(wabot_ultimo_texto_cliente($conv))) return false;
     return trim((string)($cfg['tipos'][$tipo]['pitch_pregunta'] ?? '')) !== '';
 }
 
