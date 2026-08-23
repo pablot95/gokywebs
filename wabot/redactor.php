@@ -240,15 +240,20 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
     // dígito a propósito: "un valor de $200.000." lleva el punto de la oración
     // pegado, y si se lo tragara exigiría un "$200.000." literal que el modelo
     // nunca escribe — toda redacción caería al texto fijo sin motivo.
+    // El "$" es OPCIONAL a propósito: un monto parafraseado sin el signo
+    // ("35.000 pesos" en vez de "$35.000") es la forma en que se coló un
+    // precio corrompido del adicional bilingüe en producción (30.000 real
+    // pasó a 35.000). Cualquier número con formato de miles (punto cada 3
+    // dígitos) se valida igual, tenga o no el símbolo de pesos adelante.
     $preciosBase = [];
-    if (preg_match_all('/\$\s?\d(?:[\d.]*\d)?/u', $base, $m)) {
+    if (preg_match_all('/\$?\s?\d{1,3}(?:\.\d{3})+(?!\d)/u', $base, $m)) {
         $preciosBase = array_unique($m[0]);
         foreach ($preciosBase as $precio) {
             if (mb_strpos($s, $precio) === false) return null;
         }
     }
 
-    if (preg_match_all('/\$\s?\d(?:[\d.]*\d)?/u', $s, $ms)) {
+    if (preg_match_all('/\$?\s?\d{1,3}(?:\.\d{3})+(?!\d)/u', $s, $ms)) {
         $normalizar = function ($p) { return preg_replace('/[^0-9]/', '', $p); };
         $base_norm = array_map($normalizar, $preciosBase);
         foreach (array_unique($ms[0]) as $enSalida) {

@@ -132,6 +132,18 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         $partes = $r['candidates'][0]['content']['parts'] ?? [];
         if (!$partes) return null;
 
+        // Gemini puede cortar la respuesta a mitad de palabra (MAX_TOKENS, o un
+        // corte por SAFETY/RECITATION) y el texto que sí llegó queda incompleto
+        // ("mo" en vez de la frase entera, caso real 22-ago). Ese texto parcial
+        // no pasa ningún otro chequeo porque no rompe ninguna regla, solo está
+        // trunco, así que hay que cortar acá: mejor el motor de reglas que un
+        // mensaje roto al cliente.
+        $finishReason = $r['candidates'][0]['finishReason'] ?? 'STOP';
+        if ($finishReason !== 'STOP') {
+            wabot_log('error', ['donde' => 'agente', 'msg' => 'respuesta cortada', 'finishReason' => $finishReason]);
+            return null;
+        }
+
         $llamadas = [];
         $texto    = '';
         foreach ($partes as $p) {
@@ -293,6 +305,15 @@ function wabot_agente_empujon_postdemo($salida, $mensaje, &$conv, $cfg) {
 function wabot_agente_paraguas_clave($mensaje) {
     $t = wabot_normalizar_frase((string)$mensaje);
     if ($t === '') return null;
+    // El paraguas es para un rubro vago dicho solo ("hago consultoria", "doy
+    // clases de coaching"): ahí SÍ hace falta preguntar de qué se trata. Pero
+    // si el cliente ya contó un mensaje largo con varias actividades propias
+    // (caso real: almacén + clases de guitarra + alquiler de un patio para
+    // eventos, todo en la misma frase), la palabra "eventos" no puede pisar
+    // ese contexto entero y reemplazar la respuesta por la pregunta genérica
+    // de eventos — eso descarta lo demás que el cliente ya dijo. Un mensaje
+    // largo ya tiene contexto de sobra; el paraguas es solo para el vacío.
+    if (count(explode(' ', $t)) > 12) return null;
     if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia)\b/u', $t, $m)) {
         return $m[1];
     }
@@ -1229,7 +1250,8 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Antes de hacer una pregunta, revisá TODOS los hechos que el cliente ya dijo. Nunca preguntes qué vende, qué servicio ofrece ni qué necesita si eso ya aparece en la charla; confirmalo con tus palabras y avanzá al siguiente dato faltante.
 - "Soy profesional", "tengo un negocio", "es un emprendimiento", "vendo cosas" o "trabajo por mi cuenta" NO son una respuesta: no dicen QUÉ hace, vende u ofrece, por más que tengan varias palabras. No alcanzan para elegir tipo ni mucho menos para dar_precio, aunque la palabra "profesional" aparezca en la descripción de landing. Insistí con la misma pregunta reformulada hasta tener algo concreto (una profesión, un oficio, un producto).
 - En cambio, ni bien aparece algo concreto —aunque sea una sola palabra: "arroz", "medias", "velas"— eso YA alcanza para clasificar. No seas redundante pidiendo "contame qué vendés" de nuevo, y no le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp (ni con esas palabras ni parecidas, tipo "presentar servicios o vender y cobrar online"): esa pregunta está prohibida para cualquier producto, ver COMERCIOS más abajo.
-- OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "coaching", "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
+- OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "coaching", "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas SOLA, sin nada más, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
+- Esto NO aplica si la palabra paraguas aparece mezclada en un mensaje que ya cuenta otras actividades concretas (ej.: "tengo un almacén, doy clases de guitarra y alquilo el patio para eventos"). Ahí la palabra paraguas es solo un detalle más entre varios negocios, no el tema del mensaje: no le preguntes específicamente por esa palabra ignorando el resto. Tratalo como MÁS DE UN NEGOCIO (ver esa sección) y preguntale cuál quiere resolver primero con la web.
 - Cuando repreguntes eso, aprovechá la respuesta en el mensaje siguiente: si te dice "entrenamiento personal y funcional", nombralo con sus palabras al proponerle la web. Repetir el pitch genérico después de que te dio el detalle hace que se note que no lo leíste.
 - Nunca digas "ya tengo claro qué ofrecés" ni nada parecido si en realidad no te dijo nada específico: se nota que es falso y desconfía más. Confirmá con tus palabras SOLO cuando el dato que tenés es real.
 - No repitas lo que ya dijiste en la charla ni arranques siempre con "Perfecto". Alterná aperturas naturales o entrá directo en la respuesta.
@@ -1307,6 +1329,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la demo gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
 - No prometas secciones ni funcionalidades puntuales (blog, reservas, idiomas, integraciones) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma Pablo.
+- Si pide explícitamente una APP nativa para Android o iPhone (no una web), aclará que hacemos páginas y sistemas web, no apps nativas, y que una web funciona bien desde el celular; si insiste en que tiene que ser una app, decí que eso lo confirma el desarrollador. No seguas el desempate ni cotices como si la app ya fuera parte del servicio.
 - Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual ni el adicional por web bilingüe: si el cliente no pregunta, no existen. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó.
 - "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices ecommerce o turnos solo porque pidió "la más completa": eso exige la confirmación del desempate igual.
 - Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el total, nunca las cuotas solas.
