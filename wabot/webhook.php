@@ -96,12 +96,9 @@ function wabot_procesar_entrante($ev, $cfg) {
     $nombreEntrante = trim((string)($ev['nombre'] ?? ''));
     if ($nombreEntrante === '') $nombreEntrante = trim((string)($conv['nombre'] ?? ''));
 
-    // Desde acá se cuenta la demora, y el "escribiendo…" sale YA: leer una
-    // foto o transcribir un audio lleva unos segundos y el cliente tiene
-    // que ver que lo estamos atendiendo mientras tanto.
     $arranque = microtime(true);
-    $avisado  = wabot_avisar_al_recibir($conv, $cfg);
-    if ($avisado) wabot_escribiendo($conv, $id);
+    $primerContacto = empty($conv['lead_recibido_evento']);
+    $avisado = false;
     if ($nombreEntrante === '' && $canal === 'instagram') $nombreEntrante = wabot_ig_nombre($de);
 
     // Fotos y audios: se convierten a texto y entran al bot como si el cliente
@@ -160,7 +157,10 @@ function wabot_procesar_entrante($ev, $cfg) {
 
     try {
         do {
-            $espera = wabot_demora_restante($cfg, $arranque);
+            $objetivoDemora = $primerContacto
+                ? (float)($cfg['demora_primer_mensaje'] ?? 20)
+                : (float)($cfg['demora_segundos'] ?? 10);
+            $espera = wabot_demora_restante($cfg, $arranque, $objetivoDemora);
             if ($espera > 0) usleep((int)($espera * 1000000));
 
             $tanda = wabot_cola_drenar($clave);

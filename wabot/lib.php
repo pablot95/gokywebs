@@ -78,6 +78,8 @@ function wabot_config_load() {
     $cfg = is_array($cfg) ? $cfg : [];
 
     if (!isset($cfg['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = 2;
+    if (!isset($cfg['demora_segundos']))       $cfg['demora_segundos']       = 10;
+    if (!isset($cfg['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = 20;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
         $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.';
     }
@@ -2679,8 +2681,8 @@ function wabot_demora_tipeo($texto, $cfg) {
     return max($min, min($max, $segundos));
 }
 
-function wabot_demora_restante($cfg, $arranque) {
-    $objetivo = (float)($cfg['demora_segundos'] ?? 5);
+function wabot_demora_restante($cfg, $arranque, $objetivo = null) {
+    $objetivo = $objetivo ?? (float)($cfg['demora_segundos'] ?? 10);
     if ($objetivo <= 0) return 0.0;
     $transcurrido = microtime(true) - $arranque;
     return max(0.0, min($objetivo, $objetivo - $transcurrido));

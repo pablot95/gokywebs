@@ -246,7 +246,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             if (isset($_POST['mant_precio_' . $mp])) $cfg['mantenimiento_planes'][$mp]['precio'] = trim((string)$_POST['mant_precio_' . $mp]);
             if (isset($_POST['mant_link_' . $mp]))   $cfg['mantenimiento_planes'][$mp]['link']   = trim((string)$_POST['mant_link_' . $mp]);
         }
-        if (isset($_POST['demora_segundos']))    $cfg['demora_segundos']    = max(0, min(20, (int)$_POST['demora_segundos']));
+        if (isset($_POST['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = max(0, min(60, (int)$_POST['demora_primer_mensaje']));
+        if (isset($_POST['demora_segundos']))    $cfg['demora_segundos']    = max(0, min(60, (int)$_POST['demora_segundos']));
         if (isset($_POST['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = max(0, min(15, (int)$_POST['demora_entre_mensajes']));
         if (isset($_POST['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = max(5, min(200, (int)$_POST['tipeo_por_segundo']));
         if (isset($_POST['demora_minima']))         $cfg['demora_minima']         = max(0, min(10, (float)$_POST['demora_minima']));
@@ -1485,7 +1486,8 @@ body.embed { min-height: 0; }
         <div class="card">
             <h2 style="margin-top:0">Tiempos</h2>
             <div class="fila">
-                <div><label>Segundos antes de contestar</label><input type="number" name="demora_segundos" min="0" max="20" value="<?= (int)($cfg['demora_segundos'] ?? 5) ?>" style="width:100px"></div>
+                <div><label>Segundos antes de contestar (primer mensaje del cliente)</label><input type="number" name="demora_primer_mensaje" min="0" max="60" value="<?= (int)($cfg['demora_primer_mensaje'] ?? 20) ?>" style="width:100px"></div>
+                <div><label>Segundos antes de contestar (resto de la charla)</label><input type="number" name="demora_segundos" min="0" max="60" value="<?= (int)($cfg['demora_segundos'] ?? 10) ?>" style="width:100px"></div>
                 <div><label>Segundos entre mensajes (si no va por longitud)</label><input type="number" name="demora_entre_mensajes" min="0" max="15" value="<?= (int)($cfg['demora_entre_mensajes'] ?? 2) ?>" style="width:100px"></div>
             </div>
             <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">
@@ -1510,7 +1512,7 @@ body.embed { min-height: 0; }
                 </label>
             </div>
             <p class="meta" style="margin-top:6px">El audio se transcribe y el bot contesta como si lo hubieran escrito. La foto se describe (logo, captura de otra web, local, productos) y esa descripción entra a la charla. Si no se puede leer, pide que lo manden por texto.</p>
-            <p class="meta" style="margin-top:8px">Mientras espera, al cliente le aparece "escribiendo…". El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 5, espera solo 2 más. En 0 contesta al toque.</p>
+            <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
         </div>
         <button>Guardar textos</button>
         </form>

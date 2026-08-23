@@ -1477,12 +1477,16 @@ $cfgD['demora_segundos'] = 0;
 caso('demora en 0 → contesta al toque', wabot_demora_restante($cfgD, $ahoraF - 1) === 0.0);
 
 $cfgSin = $cfg; unset($cfgSin['demora_segundos']);
-caso('config vieja sin el campo → usa 5 por defecto',
-    abs(wabot_demora_restante($cfgSin, $ahoraF) - 5.0) < 0.1);
+caso('config vieja sin el campo → usa 10 por defecto',
+    abs(wabot_demora_restante($cfgSin, $ahoraF) - 10.0) < 0.1);
 
 $cfgD['demora_segundos'] = 5;
 caso('reloj corrido hacia atrás → nunca da negativo ni se pasa del tope',
     wabot_demora_restante($cfgD, $ahoraF + 100) >= 0.0 && wabot_demora_restante($cfgD, $ahoraF + 100) <= 5.0);
+
+caso('un objetivo explícito pisa el de la config (primer mensaje vs. el resto)',
+    abs(wabot_demora_restante($cfgD, $ahoraF, 20.0) - 20.0) < 0.1
+    && abs(wabot_demora_restante($cfgD, $ahoraF - 15, 20.0) - 5.0) < 0.1);
 
 echo "— Persistencia de Instagram, seguimiento y sesiones —\n";
 
