@@ -2033,7 +2033,7 @@ body.embed { min-height: 0; }
         function entraEnGrupoActivo(it) {
             const grupoFiltro = [...filtrosActivos].find(f => f !== 'no_leidos');
             const slActivo = filtrosActivos.has('no_leidos');
-            if (grupoFiltro) return cumpleFiltro(it, grupoFiltro) && (!slActivo || esNoLeido(it));
+            if (grupoFiltro) return cumpleFiltro(it, grupoFiltro) || (slActivo && esNoLeido(it));
             if (slActivo) return esNoLeido(it);
             return GRUPOS_POR_DEFECTO.includes(it.grupo);
         }
