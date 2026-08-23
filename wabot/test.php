@@ -58,7 +58,7 @@ caso('rubro en el primer mensaje → precio directo sin menú',
     strpos($r[0], '$160.000') !== false && strpos($r[0], 'presupuestos/Landing') !== false
     && $c['fase'] === 'precio' && $c['tipo'] === 'landing');
 caso('el precio llega en DOS mensajes: primero el precio, después la oferta',
-    count($r) === 2 && $r[1] === $cfg['msg_prediseno_oferta']);
+    count($r) === 2 && in_array($r[1], $cfg['msg_prediseno_oferta_variantes'], true));
 caso('el mensaje del precio ya no trae pegada la oferta del prediseño',
     stripos($r[0], 'predise') === false);
 
@@ -531,7 +531,7 @@ $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
 caso('el primer mensaje NO lleva el precio', count($rP) === 1 && strpos($rP[0], '$') === false);
 caso('ni el link del presupuesto', strpos($rP[0], 'presupuestos/') === false);
 caso('pero sí presenta la tienda online con sus beneficios',
-    stripos($rP[0], 'tienda online completa') !== false && stripos($rP[0], 'carrito') !== false);
+    stripos($rP[0], 'carrito') !== false);
 caso('y termina en una pregunta', mb_substr(trim($rP[0]), -1) === '?');
 caso('la fase queda esperando la respuesta', $cP['fase'] === 'pitch' && $cP['tipo'] === 'ecommerce');
 caso('todavía no se marcó el precio como dado', empty($cP['precio_dado']));
@@ -632,10 +632,10 @@ $c = conv_nueva();
 clasifica(['rubro_landing']);
 $r = wabot_engine('soy plomero', $c, $cfg);
 caso('primero explica QUÉ es y recién después dice cuánto sale',
-    strpos($r[0], 'para lo tuyo va una página a tu medida') !== false
-    && strpos($r[0], 'Todo el desarrollo tendría un valor de $160.000') !== false
-    && strpos($r[0], 'para lo tuyo va') < strpos($r[0], '$160.000'));
-caso('el link arranca en un renglón nuevo', strpos($r[0], "\nEn este link podés ver detallado") !== false);
+    mb_strlen($r[0]) > 60 && strpos($r[0], '$160.000') !== false
+    && strpos($r[0], '$160.000') > 40);
+caso('el link arranca en un renglón nuevo',
+    preg_match('/\ngokywebs\.com\/presupuestos\/Landing|\n[^\n]*gokywebs\.com/u', $r[0]) === 1);
 caso('es un solo salto de línea, no un párrafo suelto', substr_count($r[0], "\n") === 1);
 
 
@@ -3508,16 +3508,28 @@ echo "— El pitch de turnos tampoco habla de \"día y horario\" si es alojamien
 $convAloj = conv_nueva();
 $convAloj['transcript'] = [['q'=>'cliente','t'=>'Tenemos un complejo de cabañas en Villa La Angostura','ts'=>time()]];
 $pitchAloj = wabot_pitch_texto('turnos', $convAloj, $cfg);
-caso('cabañas → el pitch habla de huéspedes y fechas, no de día y horario',
-    stripos($pitchAloj, 'huéspedes') !== false && stripos($pitchAloj, 'día y horario') === false);
-caso('y pregunta por cabañas/unidades, no por "qué servicios ofrecés"',
-    stripos($pitchAloj, 'cabañas o unidades') !== false);
+caso('cabañas → el pitch habla de fechas, no de día y horario',
+    stripos($pitchAloj, 'fechas') !== false && stripos($pitchAloj, 'día y horario') === false);
+caso('y pregunta por unidades, no por "qué servicios ofrecés"',
+    stripos($pitchAloj, 'cuántas unidades') !== false);
+caso('ninguna variante de alojamiento vuelve a hablar de día y horario', (function () use ($cfg) {
+    foreach ((array)($cfg['tipos']['turnos']['desc_alojamiento_variantes'] ?? []) as $v) {
+        if (stripos($v, 'día y horario') !== false) return false;
+    }
+    return true;
+})());
 
 $convPelu = conv_nueva();
 $convPelu['transcript'] = [['q'=>'cliente','t'=>'Tengo una peluqueria unisex','ts'=>time()]];
 $pitchPelu = wabot_pitch_texto('turnos', $convPelu, $cfg);
-caso('pero una peluquería sigue con el pitch normal de turnos',
-    stripos($pitchPelu, 'día y horario') !== false && stripos($pitchPelu, 'huéspedes') === false);
+caso('pero una peluquería sigue con el pitch normal de turnos, no el de alojamiento',
+    stripos($pitchPelu, 'huéspedes') === false && stripos($pitchPelu, 'estadías') === false);
+caso('ninguna variante normal de turnos habla de huéspedes o estadías', (function () use ($cfg) {
+    foreach ((array)($cfg['tipos']['turnos']['desc_variantes'] ?? []) as $v) {
+        if (stripos($v, 'huéspedes') !== false || stripos($v, 'estadías') !== false) return false;
+    }
+    return true;
+})());
 
 echo "— Mayoristas que venden solo a otros comercios mencionan cuentas exclusivas —\n";
 
@@ -3530,8 +3542,14 @@ caso('distribuidora mayorista → el pitch menciona cuentas exclusivas',
 $convEcommerceNormal = conv_nueva();
 $convEcommerceNormal['transcript'] = [['q'=>'cliente','t'=>'vendo velas aromaticas','ts'=>time()]];
 $pitchNormal = wabot_pitch_texto('ecommerce', $convEcommerceNormal, $cfg);
-caso('pero un ecommerce común sigue con "carrito y cobro online", no cuentas exclusivas',
-    stripos($pitchNormal, 'carrito y cobro online') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
+caso('pero un ecommerce común sigue con "carrito", no "cuentas exclusivas"',
+    stripos($pitchNormal, 'carrito') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
+caso('ninguna variante normal de ecommerce habla de cuentas exclusivas', (function () use ($cfg) {
+    foreach ((array)($cfg['tipos']['ecommerce']['desc_variantes'] ?? []) as $v) {
+        if (stripos($v, 'cuentas exclusivas') !== false) return false;
+    }
+    return true;
+})());
 caso('"vendo al por mayor" también detecta mayorista', wabot_contexto_es_mayorista('vendo al por mayor articulos de limpieza') === true);
 caso('"vendemos solo a locales y comercios, no al publico" también (chat real, 23-ago)',
     wabot_contexto_es_mayorista('Somos una distribuidora de indumentaria, vendemos solo a locales y comercios, no al publico final') === true);
@@ -3558,8 +3576,12 @@ $convArroz['transcript'] = [
 $pitchArroz = wabot_pitch_texto('ecommerce', $convArroz, $cfg);
 caso('"Arroz" tras la pregunta de rubro → NO repite "qué vendés exactamente"',
     stripos($pitchArroz, 'qué vendés exactamente') === false);
-caso('sino que pasa a la segunda pregunta (cómo vendés hoy)',
-    stripos($pitchArroz, 'cómo vendés') !== false);
+caso('sino que pasa a la segunda pregunta (cómo vendés hoy)', (function () use ($pitchArroz, $cfg) {
+    foreach ((array)($cfg['tipos']['ecommerce']['pitch_pregunta_2_variantes'] ?? []) as $v) {
+        if (stripos($pitchArroz, $v) !== false) return true;
+    }
+    return false;
+})());
 
 $convLocalSolo = conv_nueva();
 $convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
@@ -3632,11 +3654,13 @@ wabot_config_descs($descVieja);
 caso('las desc viejas de producción migran solas al texto con beneficio',
     $descVieja['tipos']['ecommerce']['desc'] === $cfg['tipos']['ecommerce']['desc']);
 
-echo "— La oferta de la demo es simple: primer paso, gratis, y si avanza se piden datos —\n";
+echo "— La oferta de la demo es corta: sin costo, y nada de pasos ni condiciones —\n";
 
-caso('la oferta dice que es el primer paso y que es gratis',
-    mb_stripos($cfg['msg_prediseno_oferta'], 'primer paso') !== false
-    && mb_stripos($cfg['msg_prediseno_oferta'], 'gratis') !== false);
+caso('la oferta dice que la muestra no tiene costo',
+    mb_stripos($cfg['msg_prediseno_oferta'], 'sin costo') !== false
+    || mb_stripos($cfg['msg_prediseno_oferta'], 'gratis') !== false);
+caso('y no arrastra el guion viejo de "primer paso... si te gusta... la armamos"',
+    mb_stripos($cfg['msg_prediseno_oferta'], 'primer paso') === false);
 caso('y sigue terminando en pregunta, que es lo que el flujo espera',
     mb_strpos($cfg['msg_prediseno_oferta'], '?') !== false);
 caso('ninguna variante arranca dando por hecho que va a pagar', (function () use ($cfg) {
@@ -3673,6 +3697,27 @@ wabot_config_ventas($ofertaIntermedia);
 caso('y la versión intermedia (la que estaba en producción hasta hoy) también migra',
     $ofertaIntermedia['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']
     && $ofertaIntermedia['msg_prediseno_oferta_variantes'][0] === $cfg['msg_prediseno_oferta_variantes'][1]);
+
+caso('el cierre suave ya no dice "escribinos" en tono corporativo',
+    mb_stripos($cfg['cierre_suave'], 'escribinos') === false);
+$cierreViejo = wabot_config_load();
+$cierreViejo['cierre_suave'] = 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.';
+wabot_config_ventas($cierreViejo);
+caso('el cierre suave viejo de producción migra solo', $cierreViejo['cierre_suave'] === $cfg['cierre_suave']);
+
+caso('soy_bot ya no arranca contestando "Sí" a "sos una persona?"',
+    mb_stripos($cfg['info']['soy_bot'], 'No, soy el asistente') === 0);
+$soyBotViejo = wabot_config_load();
+$soyBotViejo['info']['soy_bot'] = 'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.';
+wabot_config_ventas($soyBotViejo);
+caso('el soy_bot viejo de producción migra solo', $soyBotViejo['info']['soy_bot'] === $cfg['info']['soy_bot']);
+
+caso('titularidad ya no dice que ambos (dominio y hosting) quedan del cliente por defecto',
+    mb_stripos($cfg['info']['titularidad'], 'siendo tuyos los dos') === false);
+$titularidadVieja = wabot_config_load();
+$titularidadVieja['info']['titularidad'] = "El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.\nSiendo tuyos los dos, los renovás y los manejás vos sin depender de nadie.";
+wabot_config_ventas($titularidadVieja);
+caso('la titularidad vieja de producción migra sola', $titularidadVieja['info']['titularidad'] === $cfg['info']['titularidad']);
 
 echo "— El que se va sabe que no tiene que explicar todo de nuevo —\n";
 
@@ -3933,7 +3978,8 @@ $pitchHostel = wabot_pitch_texto('turnos', $convHostel, $cfg);
 caso('el hostel que ya dijo cuántas habitaciones tiene no recibe la misma pregunta',
     stripos($pitchHostel, 'cuántas cabañas o unidades') === false);
 caso('pero sigue siendo el pitch de alojamiento, no el de turnos comunes',
-    stripos($pitchHostel, 'huéspedes') !== false);
+    stripos($pitchHostel, 'fechas') !== false || stripos($pitchHostel, 'estadías') !== false
+    || stripos($pitchHostel, 'huéspedes') !== false);
 
 caso('institucional ya no repite la pregunta por las secciones',
     $cfg['tipos']['institucional']['pitch_pregunta_2'] !== $cfg['tipos']['institucional']['pitch_pregunta']
@@ -4091,8 +4137,8 @@ caso('pero la misma conversación siempre recibe el mismo',
 
 caso('el desempate de turnos ya no usa la muletilla de siempre',
     stripos((string)$cfg['desempate_turnos'], 'cambia bastante la web') === false);
-caso('la oferta de la demo habla del estilo y los colores',
-    stripos((string)$cfg['msg_prediseno_oferta'], 'estilo') !== false);
+caso('la oferta de la demo sigue terminando en pregunta',
+    strpos((string)$cfg['msg_prediseno_oferta'], '?') !== false);
 
 echo "\n— Al presentar la demo se avisa que dura 7 días —\n";
 

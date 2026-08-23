@@ -213,7 +213,7 @@ function wabot_config_ventas(&$cfg) {
         'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
         'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
         'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
-        'cierre_suave'      => 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.',
+        'cierre_suave'      => 'Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá.',
         // Se pega al cierre solo si ya hay un tipo cotizado: al que se va le
         // saca el costo de volver ("no tenés que explicar todo de nuevo").
         // Si ya mandó fotos durante la charla, pedírselas de nuevo delata
@@ -327,22 +327,28 @@ function wabot_config_ventas(&$cfg) {
             "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle: {link}",
         ];
     }
+    $ofertaVariantesDefault = [
+        'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
+        'Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?',
+        'Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?',
+        'Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?',
+    ];
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
-        $cfg['msg_prediseno_oferta_variantes'] = [
-            'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
-            'Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?',
-            'Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?',
-            'El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?',
-        ];
+        $cfg['msg_prediseno_oferta_variantes'] = $ofertaVariantesDefault;
     }
     $ofertasRetiradas = [
         'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
+        'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+        'Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?',
+        'Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?',
+        'El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?',
+        'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
     ];
     if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $limpias = array_values(array_filter($cfg['msg_prediseno_oferta_variantes'], function ($v) use ($ofertasRetiradas) {
             return !in_array(trim((string)$v), $ofertasRetiradas, true);
         }));
-        if ($limpias) $cfg['msg_prediseno_oferta_variantes'] = $limpias;
+        $cfg['msg_prediseno_oferta_variantes'] = $limpias ?: $ofertaVariantesDefault;
     }
     if (in_array(trim((string)($cfg['msg_prediseno_oferta'] ?? '')), $ofertasRetiradas, true)) {
         $cfg['msg_prediseno_oferta'] = $cfg['msg_prediseno_oferta_variantes'][0];
@@ -425,7 +431,9 @@ function wabot_config_ventas(&$cfg) {
             $cfg['tipos']['turnos']['desc_alojamiento'] = 'una web con reserva de estadías incluida: tus huéspedes eligen las fechas y ven la disponibilidad solos desde la página, y a vos te queda todo ordenado en un panel, así dejás de coordinar por chat';
         }
         if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] ?? '')) === '') {
-            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas cabañas o unidades tenés, así armamos la disponibilidad con eso?';
+            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas unidades tenés, así armamos la disponibilidad con eso?';
+        } elseif (trim((string)$cfg['tipos']['turnos']['pitch_pregunta_alojamiento']) === 'Contame cuántas cabañas o unidades tenés, así armamos la disponibilidad con eso?') {
+            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas unidades tenés, así armamos la disponibilidad con eso?';
         }
         if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] ?? '')) === '') {
             $cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] = 'Y hoy cómo manejás las reservas, por WhatsApp, alguna plataforma?';
@@ -445,38 +453,59 @@ function wabot_config_ventas(&$cfg) {
             'En tu caso lo más práctico es una página con lo que hacés, algunos trabajos y un botón directo a tu WhatsApp.',
             'Ahí conviene una web propia: mostrás tus servicios, quién sos, y te contactan directo por WhatsApp.',
             'Se puede armar una página con tu actividad, tus trabajos y un contacto directo, para que no dependas solo de las redes.',
+            'Con lo que contás alcanza con una landing: tus servicios, algo de tu trabajo y un botón directo a WhatsApp.',
+            'Se puede hacer una página simple que te presente, muestre lo que hacés y lleve directo a tu WhatsApp.',
+            'Para eso funciona bien una web propia: contás quién sos, qué ofrecés, y de ahí te escriben directo.',
         ]],
         'ecommerce' => ['desc' => [
             'En ese caso te conviene una tienda online: catálogo, carrito, pagos online y un panel para administrar los productos y los pedidos.',
             'Ahí ya estaríamos hablando de una tienda online: catálogo, carrito y cobro, con un panel para manejar vos los productos y los pedidos.',
-            'Eso se puede hacer con ecommerce: el cliente elige, paga y te deja el pedido armado, sin que tengas que estar respondiendo uno por uno.',
+            'Eso se puede hacer con ecommerce: el cliente arma su carrito, paga y te deja el pedido armado, sin que tengas que estar respondiendo uno por uno.',
             'En ese caso podemos automatizar toda la compra desde la web: catálogo, carrito, cobro online y un panel para cargar los productos vos mismo.',
+            'Para vender así conviene una tienda online, con catálogo y carrito: el que compra elige, paga y te llega el pedido armado.',
+            'Se puede montar una tienda con catálogo, carrito y cobro online, para que dejes de cerrar ventas una por una por chat.',
+            'Con eso funciona una tienda online completa: catálogo, carrito y pago, todo desde la web.',
         ]],
         'turnos' => ['desc' => [
             'Entonces podemos hacer que reserven el turno solos desde la web, eligiendo día y horario, y a vos te queda todo ordenado en un panel.',
             'Ahí conviene una web con reserva de turnos: eligen día y horario ellos mismos, y vos manejás todo desde un panel sin coordinar por chat.',
             'Se puede armar para que saquen el turno directo desde la página, y vos ves la agenda ordenada en un panel.',
             'En ese caso arma la web con reserva online: el que te escribe ya ve los horarios libres y elige, y a vos te queda todo prolijo en un panel.',
+            'Para eso conviene una web con reserva online: eligen turno solos y a vos te queda todo prolijo en un panel.',
+            'Se puede hacer que reserven directo desde la página, sin ida y vuelta por WhatsApp, y vos manejás la agenda desde un panel.',
+            'Con turnos online alcanza: el que te escribe ya ve los horarios libres y elige el suyo.',
         ]],
         'institucional' => ['desc' => [
             'Ahí conviene una web institucional completa, con secciones para la historia, las autoridades, las actividades y las novedades.',
             'En ese caso se arma una web con varias páginas: historia, equipo, novedades y todo lo que necesiten mostrar por separado.',
             'Se puede organizar en varias secciones: historia, autoridades, novedades y la información que quieran tener siempre disponible.',
+            'Para organizar todo eso conviene una web institucional, con secciones separadas para cada cosa.',
+            'Se puede armar con varias secciones bien diferenciadas: historia, autoridades, novedades y lo que necesiten mostrar.',
+            'Con eso funciona mejor una web institucional completa, en vez de todo apretado en una sola página.',
         ]],
         'inmobiliaria' => ['desc' => [
             'Para una inmobiliaria haría una web donde puedas cargar las propiedades desde tu panel, y que la gente filtre por zona, precio y otras características.',
             'Ahí conviene una web con catálogo de propiedades: cada una con su ficha, y el interesado filtra por zona y precio antes de consultarte.',
             'Se puede armar con búsqueda y filtros, para que el interesado encuentre la propiedad que busca y te escriba ya con eso elegido.',
+            'Para publicar propiedades conviene un catálogo con filtros: el interesado busca por zona y precio antes de escribirte.',
+            'Se puede armar con ficha propia para cada propiedad, y que filtren por lo que buscan antes de consultarte.',
+            'Con eso funciona bien una web inmobiliaria: cargás las propiedades vos y el interesado filtra solo.',
         ]],
         'elearning' => ['desc' => [
             'En ese caso podemos armar una plataforma para que vendas los cursos desde la web y cada alumno tenga su propio acceso para ver las clases.',
             'Ahí conviene una plataforma de cursos: subís los videos, cobrás online y cada alumno entra con su acceso propio.',
             'Se puede armar para vender el curso una sola vez y que el alumno acceda solo, sin que tengas que mandarle nada a mano.',
+            'Para vender así conviene una plataforma de cursos: subís los videos y cada alumno entra con su acceso propio.',
+            'Se puede armar para que compren el curso y accedan solos, sin que tengas que mandarles nada a mano.',
+            'Con eso funciona una plataforma propia: cobrás online y el alumno ve las clases desde su cuenta.',
         ]],
         'catalogo' => ['desc' => [
             'En ese caso te conviene un catálogo online: cada producto con foto y descripción, y un botón para consultarte directo por WhatsApp.',
             'Se puede armar con todos tus productos, cada uno con su ficha, y que te escriban por WhatsApp ya con el producto elegido.',
             'Ahí lo mejor es un catálogo completo: el que entra recorre todo solo y te llega la consulta con el producto ya definido.',
+            'Para mostrar así conviene un catálogo online: cada producto con su ficha, y te escriben ya con el pedido elegido.',
+            'Se puede armar con todo tu catálogo cargado, para que el que entra recorra solo y te consulte por WhatsApp.',
+            'Con eso funciona bien un catálogo completo: mostrás todo y la consulta te llega ya definida.',
         ]],
     ];
     foreach ($descVariantes as $tipoV => $campos) {
@@ -496,26 +525,41 @@ function wabot_config_ventas(&$cfg) {
 
     $preguntaVariantes = [
         'landing' => [
-            'pitch_pregunta' => ['Contame qué servicios ofrecés y en qué zona trabajás?', 'Qué servicios ofrecés y en qué zona estás?'],
+            'pitch_pregunta' => [
+                'Contame qué servicios ofrecés y en qué zona trabajás?',
+                'Qué servicios ofrecés y en qué zona estás?',
+                'Contame un poco más qué hacés y dónde trabajás?',
+            ],
             'pitch_pregunta_2' => [
                 'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?',
                 'Hoy por dónde te llegan la mayoría de las consultas?',
                 'Las consultas hoy te llegan más por WhatsApp o por Instagram?',
+                'Y hoy la gente te encuentra más por recomendación, redes, o de las dos formas?',
             ],
         ],
         'ecommerce' => [
-            'pitch_pregunta' => ['Contame qué vendés exactamente, así la armamos con eso?', 'Qué es lo que vendés exactamente?'],
+            'pitch_pregunta' => [
+                'Contame qué vendés exactamente, así la armamos con eso?',
+                'Qué es lo que vendés exactamente?',
+                'Contame bien qué productos vendés?',
+            ],
             'pitch_pregunta_2' => [
                 'Y hoy cómo vendés, por Instagram, local, los dos?',
                 'Y actualmente cómo manejás las ventas?',
                 'Hoy los pedidos te llegan más por Instagram o también tenés local?',
+                'Y ahora mismo por dónde te compran más, redes o boca a boca?',
             ],
         ],
         'turnos' => [
-            'pitch_pregunta' => ['Contame qué servicios ofrecés, así armamos la agenda con eso?', 'Qué servicios ofrecés? Así armamos la agenda con eso.'],
+            'pitch_pregunta' => [
+                'Contame qué servicios ofrecés, así armamos la agenda con eso?',
+                'Qué servicios ofrecés? Así armamos la agenda con eso.',
+                'Contame qué servicios das, para armar bien la agenda?',
+            ],
             'pitch_pregunta_2' => [
                 'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?',
                 'Hoy los turnos los manejás por WhatsApp o con agenda de papel?',
+                'Y ahora cómo coordinás los horarios, por WhatsApp o a mano?',
             ],
         ],
         'institucional' => [
@@ -707,13 +751,19 @@ function wabot_config_ventas(&$cfg) {
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
-                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+                => 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
             'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?'
-                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+                => 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
             'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?'
-                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+                => 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
             'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?'
-                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+                => 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
+            'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?'
+                => 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
+        ],
+        'cierre_suave' => [
+            'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.'
+                => 'Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá.',
         ],
         'msg_pitch' => [
             'Buenísimo. Para lo tuyo va {desc}.
@@ -861,6 +911,14 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
             'Depende del tipo de web: en Ecommerce cargás y editás tus productos vos mismo desde un panel propio, en Inmobiliaria hacés lo mismo con las propiedades, y en Plataforma de cursos con tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.'
                 => 'Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.',
         ],
+        'soy_bot' => [
+            'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.'
+                => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
+        ],
+        'titularidad' => [
+            "El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.\nSiendo tuyos los dos, los renovás y los manejás vos sin depender de nadie."
+                => 'El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.',
+        ],
     ];
     if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
     foreach ($migracionesInfo2108 as $campo => $reemplazos) {
@@ -881,7 +939,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
          * sola vez, con las respuestas que le dio Pablo. Son las dudas de
          * alguien que ya tuvo una web y quedó atado al que se la hizo. */
         'accesos' => "El hosting es nuestro y viene incluido, así que la web queda subida ahí. Igual tenés acceso: trabajamos con Hostinger, te mandamos una invitación al panel y los datos para entrar por FTP.\nSi preferís tener el control total, podés contratar vos el hosting y subimos la página directamente a ese. El dominio lo podemos registrar a tu nombre desde el arranque.",
-        'titularidad' => "El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.\nSiendo tuyos los dos, los renovás y los manejás vos sin depender de nadie.",
+        'titularidad' => 'El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.',
         'emails' => 'Este plan no incluye casillas de correo corporativas. Se pueden sumar, pero no son transferibles: los accesos te los damos sin problema y si querés que queden a tu nombre las tenés que contratar vos. La configuración en Outlook, Gmail o el celular no la hacemos nosotros.',
         'entrega_codigo' => 'Sí, te entregamos el código completo de la web. Base de datos solo llevan las que tienen panel propio (tienda, inmobiliaria y plataforma de cursos): en ese caso también te pasamos el acceso. Una landing, una web con turnos o una institucional no usa base de datos.',
         'licencias' => 'Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Lo que sí es tuyo es la web: el código, el dominio y todo el contenido.',
@@ -927,7 +985,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         'que_necesitan' => 'Poco: el nombre del negocio, una descripción breve de lo que ofrecés, los colores que te gustan y tus datos de contacto. Si tenés logo y fotos los usamos, y si no, arrancamos igual.',
         // Mentir acá se paga caro: un cliente preguntó "sos una persona o robot"
         // y el silencio fue peor que la verdad (Luicho, 21-ago).
-        'soy_bot' => 'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
+        'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         'pago_sin_precio' => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
         'demo_vigencia' => 'La demo queda disponible por 7 días desde que te la mandamos, así tenés tiempo de revisarla bien. Si necesitás más tiempo, avisame y lo vemos.',
     ];

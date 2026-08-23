@@ -1947,9 +1947,6 @@ function wabot_texto_pago($conv, $cfg) {
 /** Elige una variante estable por conversación; precios y links siguen exactos. */
 function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
     $base = (string)($cfg[$clave] ?? '');
-    // Los tests y llamadas internas sin conversación real conservan la plantilla
-    // editable principal. En producción, chat_started_ts existe desde el ingreso.
-    if ((int)($conv['chat_started_ts'] ?? 0) <= 0) return $base;
     $variantes = array_values(array_filter((array)($cfg[$claveVariantes] ?? []), function ($v) {
         return is_string($v) && trim($v) !== '';
     }));
@@ -1966,7 +1963,6 @@ function wabot_tipo_variante($tipo, $campo, $conv, $cfg) {
         return is_string($v) && trim($v) !== '';
     }));
     if (!$variantes) return $base;
-    if ((int)($conv['chat_started_ts'] ?? 0) <= 0) return $base !== '' ? $base : $variantes[0];
     $semilla = wabot_conversation_key($conv) . '|' . (string)($conv['session_id'] ?? '') . '|' . $tipo . '|' . $campo;
     $indice = hexdec(substr(hash('sha256', $semilla), 0, 8)) % count($variantes);
     return $variantes[$indice];

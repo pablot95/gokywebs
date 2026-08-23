@@ -69,7 +69,7 @@ unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 caso('la primera llamada devuelve la presentación, no el precio',
     !empty($r['exacta']) && strpos($r['texto'], '$') === false
-    && stripos($r['texto'], 'tienda online completa') !== false
+    && stripos($r['texto'], 'carrito') !== false
     && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']));
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 caso('la segunda llamada, con el pitch ya hecho, sí da el precio',
@@ -529,7 +529,7 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('dar_precio devuelve la oferta como mensaje aparte',
-    ($r['aparte'] ?? '') === $cfg['msg_prediseno_oferta'] && $r['aparte'] !== '');
+    in_array($r['aparte'] ?? '', $cfg['msg_prediseno_oferta_variantes'], true) && ($r['aparte'] ?? '') !== '');
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);
 caso('el texto del precio no trae la oferta pegada',
@@ -582,7 +582,8 @@ $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
 caso('dar_precio(turnos) → $200.000 y el link de Turnos',
     strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Turnos') !== false);
-caso('y el link va en su renglón', strpos($r['texto'], "\nEn este link") !== false);
+caso('y el link va en su renglón',
+    preg_match('/\n[^\n]*gokywebs\.com/u', $r['texto']) === 1);
 
 $c = convNueva();
 $c['transcript'][] = ['q' => 'cliente', 't' => 'queremos algo mas completo, con varias paginas', 'ts' => time()];
@@ -802,8 +803,10 @@ caso('y aclara que un comercio nunca es institucional',
     strpos($sistema, 'NUNCA es una web institucional') !== false);
 caso('el tono es profesional y cercano, no vendedor ni de amigo',
     strpos($sistema, 'no como un amigo ni como un vendedor') !== false);
-caso('prohíbe las muletillas coloquiales ("che", "dale", "buenísimo")',
-    strpos($sistema, '"che", "dale"') !== false && strpos($sistema, '"buenísimo"') !== false);
+caso('prohíbe las muletillas coloquiales más informales ("che", "posta", "buenísimo")',
+    strpos($sistema, '"che"') !== false && strpos($sistema, '"buenísimo"') !== false);
+caso('pero "dale" sí está permitido para cerrar una frase corta',
+    strpos($sistema, '"Dale" está bien') !== false);
 caso('exige tutear pero con registro formal',
     strpos($sistema, 'Formal en el registro, tuteando en la conjugación') !== false);
 caso('y pregunta antes de cotizar cuando el rubro no alcanza',

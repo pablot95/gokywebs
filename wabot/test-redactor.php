@@ -95,7 +95,8 @@ $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
     && strpos($r[0], '$160.000') !== false);
-caso('la oferta del prediseño va aparte y NO se reescribe', $r[1] === $cfg['msg_prediseno_oferta']);
+caso('la oferta del prediseño va aparte y NO se reescribe',
+    in_array($r[1], $cfg['msg_prediseno_oferta_variantes'], true));
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };
@@ -128,7 +129,7 @@ $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "algo totalmente distinto
 $c = convNueva();
 $r = wabot_responder('vendo ropa', $c, $cfgFijo);
 caso('modo fijo → el redactor ni se llama',
-    strpos($r[0], 'Perfecto, para lo tuyo va una tienda online completa') === 0
+    strpos($r[0], 'algo totalmente distinto') === false
     && strpos($r[0], '$290.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
     wabot_validar_redaccion('Sale $290.000 por todo, mirá gokywebs.com/presupuestos/Ecommerce',
@@ -140,7 +141,7 @@ caso('tampoco puede colar 3 pagos: ya no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
 caso('el link va en su propio renglón, no pegado a la frase del precio',
-    substr_count($r[0], "\n") === 1 && strpos($r[0], "\nEn este link") !== false);
+    substr_count($r[0], "\n") === 1 && preg_match('/\n[^\n]*gokywebs\.com/u', $r[0]) === 1);
 
 echo "— El salto de línea se garantiza aunque la IA lo aplaste —\n";
 
