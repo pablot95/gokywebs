@@ -8,6 +8,11 @@
 
 require_once __DIR__ . '/redactor.php';
 
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+ini_set('error_log', WABOT_DATA . '/log/php-errors.log');
+
 // Sesión larga: el panel vive embebido en el admin, no queremos pedir la clave todo el tiempo.
 session_set_cookie_params([
     'lifetime' => 30 * 24 * 3600,
@@ -1754,7 +1759,7 @@ body.embed { min-height: 0; }
                     </div>
                     <div class="conv-chips" id="convChips">
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">SL <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: ya les mandaste la demo.">DE</button>
+                        <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
                         <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
                         <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
                         <div class="conv-chips-mas">
@@ -1943,8 +1948,15 @@ body.embed { min-height: 0; }
         }
 
         function alternarFiltro(grupo) {
-            if (filtrosActivos.has(grupo)) filtrosActivos.delete(grupo);
-            else filtrosActivos.add(grupo);
+            if (grupo === 'no_leidos') {
+                if (filtrosActivos.has(grupo)) filtrosActivos.delete(grupo);
+                else filtrosActivos.add(grupo);
+            } else if (filtrosActivos.has(grupo)) {
+                filtrosActivos.delete(grupo);
+            } else {
+                for (const f of [...filtrosActivos]) if (f !== 'no_leidos') filtrosActivos.delete(f);
+                filtrosActivos.add(grupo);
+            }
             try { localStorage.setItem('wabotFiltros', JSON.stringify([...filtrosActivos])); } catch (e) {}
             pintarChips();
             pintarLista(itemsCache);
@@ -2014,14 +2026,16 @@ body.embed { min-height: 0; }
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'dei') return esDEI(it);
-            if (filtro === 'presentados') return it.grupo === 'presentados' || it.grupo === 'presentadas_48';
+            if (filtro === 'presentados') return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !it.con_interes;
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
         function entraEnGrupoActivo(it) {
-            if (!filtrosActivos.size) return GRUPOS_POR_DEFECTO.includes(it.grupo);
-            for (const f of filtrosActivos) if (cumpleFiltro(it, f)) return true;
-            return false;
+            const grupoFiltro = [...filtrosActivos].find(f => f !== 'no_leidos');
+            const slActivo = filtrosActivos.has('no_leidos');
+            if (grupoFiltro) return cumpleFiltro(it, grupoFiltro) && (!slActivo || esNoLeido(it));
+            if (slActivo) return esNoLeido(it);
+            return GRUPOS_POR_DEFECTO.includes(it.grupo);
         }
 
         function renderFechasChats() {
