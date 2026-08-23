@@ -79,7 +79,8 @@ echo "— Integración con el motor —\n";
 function convNueva() {
     return ['tel'=>'RTEST','fase'=>'nuevo','tipo'=>null,'descripcion'=>null,'colores'=>null,
         'espera_avisada'=>false,'no_texto_avisado'=>false,'bot_off'=>false,'pausado_hasta'=>0,
-        'lead_creado'=>false,'msgs'=>[],'ultimo_ts'=>0,'ultimo_cliente_ts'=>0,'transcript'=>[]];
+        'lead_creado'=>false,'msgs'=>[],'ultimo_ts'=>0,'ultimo_cliente_ts'=>0,'transcript'=>[],
+        'pitch_hecho'=>true];
 }
 
 // El clasificador se simula; el redactor devuelve algo válido.

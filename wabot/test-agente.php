@@ -29,7 +29,7 @@ function convNueva($tel = 'AGTEST') {
         'lead_creado'=>false,'sistema_lead_creado'=>false,'handoff_pendiente'=>false,'aclaraciones_fallidas'=>0,
         'aclaracion_pendiente'=>false,'sistema_problema'=>null,'sistema_actual'=>null,
         'sistema_usuarios'=>null,'msgs'=>[],'ultimo_ts'=>0,'ultimo_cliente_ts'=>0,
-        'session_started_ts'=>0,'session_id'=>null,'transcript'=>[]];
+        'session_started_ts'=>0,'session_id'=>null,'transcript'=>[],'pitch_hecho'=>true];
 }
 
 echo "— Herramientas —\n";
@@ -43,6 +43,20 @@ caso('dar_precio(landing) → texto exacto y estado actualizado',
 caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
     && ($c['eventos_emitidos_sesion']['muestra_ofrecida'] ?? '') === $c['session_id']);
+
+echo "— El agente también pasa por el pitch antes del precio —\n";
+
+$cPitch = convNueva('AGPITCH1');
+unset($cPitch['pitch_hecho']);
+$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
+caso('la primera llamada devuelve la presentación, no el precio',
+    !empty($r['exacta']) && strpos($r['texto'], '$') === false
+    && stripos($r['texto'], 'tienda online completa') !== false
+    && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']));
+$r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
+caso('la segunda llamada, con el pitch ya hecho, sí da el precio',
+    empty($r2['exacta']) && strpos($r2['texto'], '$290.000') !== false);
+@unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('segundo precio distinto → no recotiza ni deriva sin aclarar',
@@ -698,6 +712,8 @@ caso('una empresa de limpieza o de fletes es landing, no institucional',
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
 caso('y prohíbe expresamente la pregunta de carrito vs WhatsApp',
     stripos($sistema, 'Esa pregunta está prohibida') !== false);
+caso('el playbook sabe que el precio va después de la presentación',
+    stripos($sistema, 'PRIMERO SE PRESENTA LA WEB') !== false);
 caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
     strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
     && strpos($sistema, 'NO elijas uno solo y descartes el otro en silencio') !== false);

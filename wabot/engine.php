@@ -1236,6 +1236,22 @@ function wabot_engine($texto, &$conv, $cfg) {
             }
             break;
 
+        case 'pitch':
+            if ($c['descripcion'] !== null) $conv['descripcion'] = $c['descripcion'];
+            if (($conv['descripcion'] ?? null) === null && wabot_aporta_descripcion($texto)) {
+                $conv['descripcion'] = trim($texto);
+            }
+            if (($conv['tipo'] ?? '') === 'catalogo') {
+                $cant = wabot_extraer_cantidad_productos($texto);
+                if ($cant !== null) $conv['productos_cantidad'] = $cant;
+            }
+            $rNuevoPitch = wabot_rubro_de($acc);
+            if ($rNuevoPitch !== null && wabot_desempate_de($rNuevoPitch) === null
+                && $rNuevoPitch !== ($conv['tipo'] ?? '')) {
+                $conv['tipo'] = $rNuevoPitch;
+            }
+            return array_merge($out, wabot_precio((string)$conv['tipo'], $conv, $cfg));
+
         case 'prediseno':
             if ($c['descripcion'] !== null) $conv['descripcion'] = $c['descripcion'];
             if ($c['colores']     !== null) $conv['colores']     = $c['colores'];
@@ -1876,7 +1892,48 @@ function wabot_precio_resumen($conv, $cfg) {
         [$precio, (string)($t['sena'] ?? ''), (string)($t['link'] ?? '')], $plantilla);
 }
 
+function wabot_aporta_descripcion($texto) {
+    $t = trim((string)$texto);
+    if (mb_strlen($t) < 12) return false;
+    if (wabot_es_acuse($t) || wabot_es_negativa($t)) return false;
+    return preg_match_all('/\p{L}/u', $t) >= 8;
+}
+
+function wabot_pitch_texto($tipo, $conv, $cfg) {
+    $t = $cfg['tipos'][$tipo] ?? [];
+    $desc = trim((string)($t['desc'] ?? ''));
+    if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
+
+    $yaConto = mb_strlen(trim((string)($conv['descripcion'] ?? ''))) >= 25
+               && !wabot_descripcion_generica((string)($conv['descripcion'] ?? ''));
+    $clave = $yaConto ? 'pitch_pregunta_2' : 'pitch_pregunta';
+    $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
+
+    $base = (string)($cfg['msg_pitch'] ?? '');
+    return trim(str_replace(['{desc}', '{pregunta}'], [$desc, $pregunta], $base));
+}
+
+function wabot_pitch_corresponde($tipo, $conv, $cfg) {
+    if (empty($cfg['pitch_activo'])) return false;
+    if (!empty($conv['pitch_hecho']) || !empty($conv['precio_dado'])) return false;
+    if (!empty($conv['demo_pedida_entrada'])) return false;
+    if (!empty($conv['pidio_precio'])) return false;
+    return trim((string)($cfg['tipos'][$tipo]['pitch_pregunta'] ?? '')) !== '';
+}
+
+function wabot_pitch($tipo, &$conv, $cfg) {
+    $conv['tipo'] = $tipo;
+    $conv['fase'] = 'pitch';
+    $conv['pitch_hecho'] = true;
+    wabot_handoff_aclaracion_resuelta($conv);
+    wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
+    return [wabot_pitch_texto($tipo, $conv, $cfg)];
+}
+
 function wabot_precio($tipo, &$conv, $cfg) {
+    if (wabot_pitch_corresponde($tipo, $conv, $cfg)) {
+        return wabot_pitch($tipo, $conv, $cfg);
+    }
     if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
         return wabot_catalogo_preguntar($conv, $cfg);
     }

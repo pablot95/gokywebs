@@ -349,6 +349,37 @@ function wabot_config_ventas(&$cfg) {
     if ((int)($cfg['tipos']['catalogo']['precio_base'] ?? 0) === 200000) {
         $cfg['tipos']['catalogo']['precio_base'] = 180000;
     }
+    if (trim((string)($cfg['msg_pitch'] ?? '')) === '') {
+        $cfg['msg_pitch'] = "Buenísimo. Para lo tuyo va {desc}.
+
+{pregunta}";
+    }
+    $pitchPreguntas = [
+        'landing'       => ['Contame qué servicios ofrecés y en qué zona trabajás?',
+                            'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?'],
+        'catalogo'      => ['Más o menos cuántos productos irían en el catálogo?',
+                            'Más o menos cuántos productos irían en el catálogo?'],
+        'turnos'        => ['Contame qué servicios ofrecés, así armamos la agenda con eso?',
+                            'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?'],
+        'institucional' => ['Contame un poco de la institución: qué secciones no pueden faltar?',
+                            'Y qué secciones no pueden faltar en la web?'],
+        'inmobiliaria'  => ['Más o menos cuántas propiedades tenés publicadas hoy?',
+                            'Más o menos cuántas propiedades tenés publicadas hoy?'],
+        'ecommerce'     => ['Contame qué vendés exactamente, así la armamos con eso?',
+                            'Y hoy cómo vendés, por Instagram, local, los dos?'],
+        'elearning'     => ['Contame qué cursos das y cómo los entregás hoy?',
+                            'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?'],
+    ];
+    foreach ($pitchPreguntas as $tipoPitch => $preguntas) {
+        if (!isset($cfg['tipos'][$tipoPitch])) continue;
+        if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta'] ?? '')) === '') {
+            $cfg['tipos'][$tipoPitch]['pitch_pregunta'] = $preguntas[0];
+        }
+        if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] ?? '')) === '') {
+            $cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] = $preguntas[1];
+        }
+    }
+    if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;

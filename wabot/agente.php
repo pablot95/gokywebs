@@ -632,7 +632,14 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 }
             }
 
+            $eraPitch = wabot_pitch_corresponde($tipo, $conv, $cfg);
             $precio = wabot_precio($tipo, $conv, $cfg);
+            if ($eraPitch) {
+                return [
+                    'texto' => $precio[0], 'exacta' => true,
+                    'nota'  => 'Todavía NO se da el precio. Mandá este texto tal cual: presenta el tipo de web y termina en una pregunta. Esperá la respuesta del cliente y recién en el turno siguiente volvés a llamar a dar_precio para el monto.',
+                ];
+            }
             return [
                 'texto' => $precio[0],
                 'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo, con el precio y el link idénticos, y respetando el salto de línea: la frase del link arranca en un renglón nuevo. NO le agregues introducciones ni frases de beneficio. NO menciones el prediseño gratis: sale solo, en un mensaje aparte, unos segundos después. Si lo escribís vos queda repetido.',
@@ -1173,6 +1180,11 @@ SISTEMAS DE GESTIÓN A MEDIDA
 - Cada dato se guarda en el mismo turno con anotar_sistema, aunque después cierres en ese mismo mensaje.
 - Al cerrar con guardar_sistema, antes resumí en una línea lo que entendiste y aclarale que al ser a medida hay que cotizarlo según esas funciones. Esa herramienta crea el brief y deja la propuesta con el desarrollador.
 - En Instagram guardar_sistema puede pedir el WhatsApp antes de cerrar. En ese caso hacé esa pregunta y no anuncies el cierre todavía; el código valida el número en el mensaje siguiente.
+
+PRIMERO SE PRESENTA LA WEB, EL PRECIO VA DESPUÉS
+Cuando ya sabés qué tipo de web necesita, llamá a dar_precio igual: la primera vez te va a devolver una PRESENTACIÓN (qué incluye esa web y para qué le sirve) que termina en una pregunta, sin ningún monto. Mandá ese texto tal cual y esperá que conteste.
+Cuando conteste, volvés a llamar a dar_precio y recién ahí viene el monto con el link.
+No te adelantes: no menciones precios, ni "te paso el presupuesto", ni el link, en el turno de la presentación.
 
 REGLAS QUE NO PODÉS ROMPER
 - Los precios y los links los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes.

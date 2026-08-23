@@ -22,7 +22,7 @@ function convNueva() {
     return ['tel'=>'MEDIA','fase'=>'nuevo','tipo'=>null,'descripcion'=>null,'colores'=>null,
         'colores_hex'=>null,'referencia'=>null,'espera_avisada'=>false,'no_texto_avisado'=>false,
         'bot_off'=>false,'pausado_hasta'=>0,'lead_creado'=>false,'msgs'=>[],'ultimo_ts'=>0,
-        'ultimo_cliente_ts'=>0,'transcript'=>[]];
+        'ultimo_cliente_ts'=>0,'transcript'=>[],'pitch_hecho'=>true];
 }
 
 echo "— Conversión de media a texto —\n";
