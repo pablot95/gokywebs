@@ -256,6 +256,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // Los checkbox no viajan cuando están destildados: por eso se leen del form entero.
         $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
+        foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePlant) {
+            if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
+            $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
+            $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
+            $cfg['plantillas'][$clavePlant]['activa'] = !empty($_POST["plantilla_{$clavePlant}_activa"]);
+        }
         if (isset($_POST['pausa_horas_humano'])) $cfg['pausa_horas_humano'] = max(1, (int)$_POST['pausa_horas_humano']);
         if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
         $cfg['seguimiento_activo'] = !empty($_POST['seguimiento_activo']);
@@ -347,7 +353,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         $conv = wabot_conv_load($clave);
 
-        if (!$forzar && wabot_ventana_restante($conv) <= 0) {
+        $ventanaAbierta = wabot_ventana_restante($conv) > 0;
+        $porPlantilla = !$ventanaAbierta && wabot_plantilla_config('demo_lista', $cfg) !== null;
+        if (!$forzar && !$ventanaAbierta && !$porPlantilla) {
             echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja mandarle texto libre hasta que el cliente vuelva a escribir. Avisale a mano.']);
             exit;
         }
@@ -356,7 +364,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $texto = $textos[0];
 
         $enviado = false;
-        if (!$forzar || wabot_ventana_restante($conv) > 0) {
+        if ($porPlantilla) {
+            $conv['presentado_slug'] = $slug;
+            $enviado = wabot_enviar_plantilla($conv, 'demo_lista', $cfg);
+            if (!$enviado && !$forzar) {
+                echo json_encode(['error' => 'La plantilla demo_lista no se pudo enviar. Revisá el log en wabot/data/log/.']);
+                exit;
+            }
+        } elseif (!$forzar || $ventanaAbierta) {
             $enviado = wabot_enviar($conv, $texto);
             if (!$enviado && !$forzar) {
                 echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);
@@ -381,7 +396,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // El aviso no salió: queda anotado para no dar por hecho que el cliente
         // tiene el link, ni acá ni en el recordatorio de las 20 h.
         $conv['presentado_sin_aviso'] = !$enviado;
-        if ($enviado) {
+        if ($enviado && !$porPlantilla) {
             wabot_conv_transcript($conv, 'humano', $texto);
             foreach (array_slice($textos, 1) as $extra) {
                 if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
@@ -1518,6 +1533,29 @@ body.embed { min-height: 0; }
             </div>
             <p class="meta" style="margin-top:6px">El audio se transcribe y el bot contesta como si lo hubieran escrito. La foto se describe (logo, captura de otra web, local, productos) y esa descripción entra a la charla. Si no se puede leer, pide que lo manden por texto.</p>
             <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
+            <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas.</p>
+            <?php $plantillasLabels = [
+                'demo_lista'           => 'Demo lista (para entregarla fuera de la ventana de 24 h)',
+                'seguimiento_demo_72h' => 'Seguimiento a las 72 h de presentada, sin contestar',
+                'seguimiento_demo_7d'  => 'Seguimiento a los 7 días de presentada, sin contestar',
+            ]; ?>
+            <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = $cfg['plantillas'][$clavePlant] ?? []; ?>
+                <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
+                    <div style="min-width:280px">
+                        <label><?= $e($labelPlant) ?></label>
+                        <input type="text" name="plantilla_<?= $e($clavePlant) ?>_nombre" placeholder="nombre_exacto_de_la_plantilla" value="<?= $e((string)($p['nombre'] ?? '')) ?>" style="width:100%">
+                    </div>
+                    <div><label>Idioma</label><input type="text" name="plantilla_<?= $e($clavePlant) ?>_idioma" value="<?= $e((string)($p['idioma'] ?? 'es_AR')) ?>" style="width:90px"></div>
+                    <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
+                        <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_activa" <?= !empty($p['activa']) ? 'checked' : '' ?>>
+                        Activa
+                    </label>
+                </div>
+            <?php endforeach; ?>
+            <p class="meta" style="margin-top:10px">Con las dos de seguimiento (72 h y 7 días) activas, el recordatorio de texto que hoy sale dentro de las primeras 24 h se apaga solo: lo reemplazan estas dos.</p>
         </div>
         <button>Guardar textos</button>
         </form>

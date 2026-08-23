@@ -32,6 +32,7 @@ $cfg = wabot_config_load();
 $res = wabot_seguimiento_correr($cfg);
 $aviso = wabot_muestra_aviso_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
+$plantillas = wabot_presentados_plantillas_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
 
 echo json_encode([
@@ -54,5 +55,10 @@ echo json_encode([
         'recordatorios' => $presentados['recordatorios'],
         'archivados'    => $presentados['archivados'],
         'detalle'       => $presentados['detalle'],
+    ],
+    'plantillas_seguimiento' => [
+        'revisadas' => $plantillas['revisadas'],
+        'enviadas'  => $plantillas['enviadas'],
+        'detalle'   => $plantillas['detalle'],
     ],
 ], JSON_UNESCAPED_UNICODE) . "\n";

@@ -521,6 +521,33 @@ function wabot_config_ventas(&$cfg) {
         }
     }
 
+    $plantillasDefault = [
+        'demo_lista' => [
+            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
+            'params' => ['nombre'], 'boton' => ['slug'],
+            'texto' => 'Hola {nombre}! Ya está lista la demo de tu web. Queda disponible por 7 días: gokywebs.com/demo/{slug}',
+        ],
+        'seguimiento_demo_72h' => [
+            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
+            'params' => ['nombre'], 'boton' => ['slug'],
+            'texto' => 'Hola {nombre}! Te escribo por la demo que te preparamos: pudiste verla? Contame qué te pareció o si hay algo que quieras cambiar.',
+        ],
+        'seguimiento_demo_7d' => [
+            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
+            'params' => ['nombre'], 'boton' => ['slug'],
+            'texto' => 'Hola {nombre}! Retomo por última vez por la demo de tu web. Si te quedó alguna duda escribime y seguimos.',
+        ],
+    ];
+    foreach ($plantillasDefault as $clave => $datos) {
+        if (!isset($cfg['plantillas'][$clave]) || !is_array($cfg['plantillas'][$clave])) {
+            $cfg['plantillas'][$clave] = $datos;
+            continue;
+        }
+        foreach ($datos as $k => $v) {
+            if (!isset($cfg['plantillas'][$clave][$k])) $cfg['plantillas'][$clave][$k] = $v;
+        }
+    }
+
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -1627,6 +1654,51 @@ function wabot_descripcion_desde_contexto($conv) {
     return $mejor;
 }
 
+function wabot_plantilla_config($clave, $cfg) {
+    $p = $cfg['plantillas'][$clave] ?? null;
+    if (!is_array($p)) return null;
+    if (empty($p['activa']) || trim((string)($p['nombre'] ?? '')) === '') return null;
+    return $p;
+}
+
+function wabot_plantilla_valor($campo, $conv) {
+    switch ($campo) {
+        case 'nombre':
+            $n = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+            return $n !== '' ? $n : 'Hola';
+        case 'slug':   return trim((string)($conv['presentado_slug'] ?? ''));
+        case 'negocio': return trim((string)($conv['nombre_negocio'] ?? ''));
+        default:       return trim((string)($conv[$campo] ?? ''));
+    }
+}
+
+function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
+    if (wabot_canal($conv) === 'instagram') return false;
+    $p = wabot_plantilla_config($clave, $cfg);
+    if ($p === null) return false;
+
+    $valores = [];
+    foreach ((array)($p['params'] ?? []) as $campo) $valores[$campo] = wabot_plantilla_valor($campo, $conv);
+    $valoresBoton = [];
+    foreach ((array)($p['boton'] ?? []) as $campo) $valoresBoton[$campo] = wabot_plantilla_valor($campo, $conv);
+    foreach ($valoresBoton as $campo => $v) {
+        if ($campo === 'slug' && $v === '') return false;
+    }
+
+    $ok = wabot_wa_send_template(wabot_channel_user_id($conv), $p['nombre'], $p['idioma'] ?? 'es_AR',
+                                 array_values($valores), array_values($valoresBoton));
+    if (!$ok) return false;
+
+    $texto = (string)($p['texto'] ?? '');
+    foreach (array_merge($valores, $valoresBoton) as $campo => $v) {
+        $texto = str_replace('{' . $campo . '}', $v, $texto);
+    }
+    $texto = trim($texto);
+    if ($texto !== '') wabot_conv_transcript($conv, 'bot', $texto);
+    wabot_log('plantilla_enviada', ['tel' => $conv['tel'] ?? '', 'plantilla' => $clave, 'nombre' => $p['nombre']]);
+    return true;
+}
+
 function wabot_muestra_presentar_textos($slug, $cfg) {
     $link = 'gokywebs.com/demo/' . trim((string)$slug);
     $base = trim((string)($cfg['muestra_presentar'] ?? ''));
@@ -2498,6 +2570,66 @@ function wabot_wa_send_text($tel, $texto) {
         wabot_log('error', ['donde' => 'wa_send', 'http' => $code, 'res' => substr((string)$res, 0, 500)]);
         return false;
     }
+    return true;
+}
+
+function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBoton = []) {
+    $nombre = trim((string)$nombre);
+    if ($nombre === '') return false;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $GLOBALS['WABOT_TEST_PLANTILLAS'][] = [$tel, $nombre, $idioma, $params, $paramsBoton];
+        return true;
+    }
+    if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') {
+        wabot_log('error', ['donde' => 'wa_template', 'msg' => 'config sin completar']);
+        return false;
+    }
+
+    $comoTexto = function ($v) { return ['type' => 'text', 'text' => (string)$v]; };
+    $componentes = [];
+    if ($params) {
+        $componentes[] = ['type' => 'body', 'parameters' => array_map($comoTexto, array_values($params))];
+    }
+    if ($paramsBoton) {
+        $componentes[] = ['type' => 'button', 'sub_type' => 'url', 'index' => '0',
+                          'parameters' => array_map($comoTexto, array_values($paramsBoton))];
+    }
+
+    $url = 'https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . WABOT_PHONE_NUMBER_ID . '/messages';
+    $payload = [
+        'messaging_product' => 'whatsapp',
+        'to'   => $tel,
+        'type' => 'template',
+        'template' => [
+            'name'     => $nombre,
+            'language' => ['code' => trim((string)$idioma) ?: 'es_AR'],
+        ],
+    ];
+    if ($componentes) $payload['template']['components'] = $componentes;
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . WABOT_META_TOKEN,
+            'Content-Type: application/json',
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        wabot_log('error', ['donde' => 'wa_template', 'plantilla' => $nombre, 'http' => $code,
+                            'res' => substr((string)$res, 0, 500)]);
+        return false;
+    }
+    $j = json_decode((string)$res, true);
+    $mid = (string)($j['messages'][0]['id'] ?? '');
+    if ($mid !== '') wabot_salida_bot_marcar($mid);
     return true;
 }
 
@@ -3881,6 +4013,10 @@ function wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora = null) {
     if (empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado'])) return false;
     if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if (wabot_plantilla_config('seguimiento_demo_72h', $cfg) !== null
+        && wabot_plantilla_config('seguimiento_demo_7d', $cfg) !== null) {
+        return false;
+    }
 
     $hechos = wabot_presentado_recordatorios_hechos($cv);
     if ($hechos >= (int)($cfg['presentados_recordatorio_max'] ?? 2)) return false;
@@ -3903,6 +4039,51 @@ function wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora = null) {
 
     $horas = (float)($cfg['presentados_recordatorio_horas'] ?? 20);
     return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
+}
+
+function wabot_presentado_plantilla_corresponde($cv, $cfg, $clave, $horas, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if (!empty($cv["plantilla_{$clave}_enviada"])) return false;
+    if (wabot_ventana_restante($cv, $ahora) > 0) return false;
+    if (wabot_plantilla_config($clave, $cfg) === null) return false;
+    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
+}
+
+function wabot_presentados_plantillas_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviadas' => 0, 'detalle' => []];
+    $horizontes = ['seguimiento_demo_72h' => 72, 'seguimiento_demo_7d' => 24 * 7];
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (empty($cv['presentado_ts'])) continue;
+        $res['revisadas']++;
+
+        foreach ($horizontes as $clavePlantilla => $horas) {
+            if (!wabot_presentado_plantilla_corresponde($cv, $cfg, $clavePlantilla, $horas, $ahora)) continue;
+            $lock = wabot_lock_tomar($clave);
+            if (!$lock) continue;
+            try {
+                $cv = wabot_conv_load($clave);
+                if (!wabot_presentado_plantilla_corresponde($cv, $cfg, $clavePlantilla, $horas, $ahora)) continue;
+                if (wabot_enviar_plantilla($cv, $clavePlantilla, $cfg)) {
+                    $cv["plantilla_{$clavePlantilla}_enviada"] = true;
+                    wabot_evento($cv, 'plantilla_seguimiento_enviada', ['plantilla' => $clavePlantilla]);
+                    wabot_conv_save($cv);
+                    $res['enviadas']++;
+                    $res['detalle'][] = "$clave:$clavePlantilla";
+                }
+            } finally {
+                wabot_lock_soltar($lock);
+            }
+        }
+    }
+    return $res;
 }
 
 function wabot_presentado_recordatorio_texto($cv, $cfg) {

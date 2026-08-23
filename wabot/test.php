@@ -4088,5 +4088,91 @@ caso('"el link se vence?" también',
 caso('pero preguntar cuánto tardan en hacerla sigue siendo plazos',
     wabot_info_por_palabras('cuanto tiempo tardan en hacerla?', 'precio') === 'plazos');
 
+echo "\n— Plantillas de Meta: lo único que sale con la ventana cerrada —\n";
+
+caso('las tres plantillas vienen definidas pero apagadas hasta cargar el nombre real',
+    isset($cfg['plantillas']['demo_lista'], $cfg['plantillas']['seguimiento_demo_72h'], $cfg['plantillas']['seguimiento_demo_7d'])
+    && empty($cfg['plantillas']['demo_lista']['activa']));
+caso('una plantilla sin nombre cargado no se puede usar',
+    wabot_plantilla_config('demo_lista', $cfg) === null);
+
+$cfgPlant = wabot_config_load();
+$cfgPlant['plantillas']['demo_lista']['nombre'] = 'demo_lista';
+$cfgPlant['plantillas']['demo_lista']['activa'] = true;
+caso('con nombre y activa, ya se puede usar', wabot_plantilla_config('demo_lista', $cfgPlant) !== null);
+
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$convPlant = ['tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
+              'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion', 'transcript' => []];
+caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'demo_lista', $cfgPlant) === true);
+$envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
+caso('con el nombre y el idioma correctos', $envio[1] === 'demo_lista' && $envio[2] === 'es_AR');
+caso('el nombre del cliente va como variable del cuerpo', $envio[3] === ['Yesica']);
+caso('y el slug como variable del botón', $envio[4] === ['yfprevencion']);
+caso('queda en el transcript con las variables ya resueltas',
+    strpos($convPlant['transcript'][0]['t'] ?? '', 'Yesica') !== false
+    && strpos($convPlant['transcript'][0]['t'] ?? '', 'yfprevencion') !== false);
+
+$sinSlug = ['tel' => '549110', 'channel_user_id' => '549110', 'canal' => 'whatsapp',
+            'nombre' => 'Ana', 'presentado_slug' => '', 'transcript' => []];
+caso('sin demo presentada no manda un link roto',
+    wabot_enviar_plantilla($sinSlug, 'demo_lista', $cfgPlant) === false);
+
+$igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagram',
+            'nombre' => 'Ana', 'presentado_slug' => 'x', 'transcript' => []];
+caso('y por Instagram no se usan plantillas',
+    wabot_enviar_plantilla($igPlant, 'demo_lista', $cfgPlant) === false);
+
+echo "\n— Seguimiento de la demo por plantilla a las 72 h y a los 7 días —\n";
+
+$cfgPlant72 = wabot_config_load();
+$cfgPlant72['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
+$cfgPlant72['plantillas']['seguimiento_demo_72h']['activa'] = true;
+$ahoraP = 2_000_000_000;
+
+$basePlant = function ($extra = []) use ($ahoraP) {
+    return array_merge([
+        'tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
+        'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion',
+        'presentado_ts' => $ahoraP - 73 * 3600, 'ultimo_cliente_ts' => $ahoraP - 73 * 3600,
+        'transcript' => [],
+    ], $extra);
+};
+
+caso('a las 73 h sin contestar, con la ventana cerrada, corresponde la plantilla de 72 h',
+    wabot_presentado_plantilla_corresponde($basePlant(), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === true);
+caso('a las 10 h todavía no', wabot_presentado_plantilla_corresponde(
+    $basePlant(['presentado_ts' => $ahoraP - 10 * 3600]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
+caso('si ya confirmó que avanza, no',
+    wabot_presentado_plantilla_corresponde($basePlant(['presentado_confirmado' => true]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
+caso('si ya se la mandamos, no se repite',
+    wabot_presentado_plantilla_corresponde($basePlant(['plantilla_seguimiento_demo_72h_enviada' => true]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
+caso('si la ventana todavía está abierta, la manda el recordatorio de texto, no la plantilla',
+    wabot_presentado_plantilla_corresponde($basePlant(['ultimo_cliente_ts' => $ahoraP - 2 * 3600]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
+caso('sin la plantilla activa, no corresponde',
+    wabot_presentado_plantilla_corresponde($basePlant(), wabot_config_load(), 'seguimiento_demo_72h', 72, $ahoraP) === false);
+
+echo "\n— Con las dos plantillas de demo activas, se apaga el recordatorio de texto post-demo —\n";
+
+$cfgAmbas = wabot_config_load();
+$cfgAmbas['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
+$cfgAmbas['plantillas']['seguimiento_demo_72h']['activa'] = true;
+$cfgAmbas['plantillas']['seguimiento_demo_7d']['nombre'] = 'x7d';
+$cfgAmbas['plantillas']['seguimiento_demo_7d']['activa'] = true;
+
+$convRecordatorio = [
+    'presentado_ts' => $ahoraP - 20 * 3600, 'ultimo_cliente_ts' => $ahoraP - 20 * 3600,
+];
+caso('sin las plantillas cargadas, el recordatorio de texto de siempre sigue andando',
+    wabot_presentado_recordatorio_corresponde($convRecordatorio, wabot_config_load(), $ahoraP) === true);
+caso('con las dos plantillas activas, ese recordatorio de texto se apaga: lo reemplazan',
+    wabot_presentado_recordatorio_corresponde($convRecordatorio, $cfgAmbas, $ahoraP) === false);
+
+$cfgSoloUna = wabot_config_load();
+$cfgSoloUna['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
+$cfgSoloUna['plantillas']['seguimiento_demo_72h']['activa'] = true;
+caso('si falta cargar la de 7 días, el recordatorio de texto sigue activo como respaldo',
+    wabot_presentado_recordatorio_corresponde($convRecordatorio, $cfgSoloUna, $ahoraP) === true);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
