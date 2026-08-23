@@ -4107,11 +4107,10 @@ $convPlant = ['tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'c
 caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'demo_lista', $cfgPlant) === true);
 $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
 caso('con el nombre y el idioma correctos', $envio[1] === 'demo_lista' && $envio[2] === 'es_AR');
-caso('el nombre del cliente va como variable del cuerpo', $envio[3] === ['Yesica']);
-caso('demo_lista no lleva botón: el link lo manda el bot cuando el cliente conteste',
-    $envio[4] === []);
-caso('queda en el transcript con las variables ya resueltas',
-    strpos($convPlant['transcript'][0]['t'] ?? '', 'Yesica') !== false);
+caso('demo_lista es texto fijo: sin variables de nombre ni botón',
+    $envio[3] === [] && $envio[4] === []);
+caso('queda en el transcript el texto de referencia',
+    strpos($convPlant['transcript'][0]['t'] ?? '', 'Ya tenemos lista la demo') !== false);
 
 $cfgPlant72Guard = wabot_config_load();
 $cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
