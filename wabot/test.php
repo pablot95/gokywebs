@@ -2096,6 +2096,12 @@ caso('"no hay forma de que me lo dejes en 150?" es regateo', wabot_es_regateo('n
 caso('"dale, si me haces 10 por ciento de descuento cierro ya" es regateo',
     wabot_es_regateo('dale, si me haces 10 por ciento de descuento cierro ya') === true);
 caso('"me parece caro" solo, no es regateo', wabot_es_regateo('me parece caro') === false);
+caso('"y si pago en efectivo, ahi si baja?" también es regateo (sin la palabra descuento)',
+    wabot_es_regateo('y si pago en efectivo, ahi si baja?') === true);
+caso('"me baja el precio si pago todo junto?" también es regateo',
+    wabot_es_regateo('me baja el precio si pago todo junto?') === true);
+caso('pero "quiero darme de baja" (opt-out) no se confunde con regateo',
+    wabot_es_regateo('no me escriban mas por favor, quiero darme de baja') === false);
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['chat_started_ts'] = time();
 clasifica(['otro']);
