@@ -626,6 +626,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 if ($cantidad >= WABOT_PRODUCTOS_MIN) {
                     $conv['productos_cantidad'] = $cantidad;
                 } else {
+                    $conv['pitch_hecho'] = true;
                     $pregunta = wabot_catalogo_preguntar($conv, $cfg);
                     return ['texto' => $pregunta[0], 'exacta' => true,
                             'nota' => 'Todavía no sabemos cuántos productos tiene y sin ese dato no hay precio. Preguntáselo con este texto y esperá la respuesta.'];

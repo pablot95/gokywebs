@@ -58,6 +58,18 @@ caso('la segunda llamada, con el pitch ya hecho, sí da el precio',
     empty($r2['exacta']) && strpos($r2['texto'], '$290.000') !== false);
 @unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
+$cCatPitch = convNueva('AGPITCH2');
+unset($cCatPitch['pitch_hecho']);
+$rc1 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo'], $cCatPitch, $cfg);
+caso('catálogo sin cantidad marca el pitch como hecho con su propia pregunta',
+    !empty($rc1['exacta']) && !empty($cCatPitch['pitch_hecho'])
+    && stripos($rc1['texto'], 'cuántos productos') !== false);
+$rc2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 40], $cCatPitch, $cfg);
+caso('y al dar la cantidad cotiza de una, sin repreguntar la misma pregunta',
+    empty($rc2['exacta']) && strpos($rc2['texto'], '$200.000') !== false
+    && stripos($rc2['texto'], 'cuántos productos') === false);
+@unlink(WABOT_DATA . '/conv/AGPITCH2.json');
+
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('segundo precio distinto → no recotiza ni deriva sin aclarar',
     isset($r['error']) && empty($r['terminal']) && $c['tipo'] === 'landing' && $c['fase'] === 'precio');
