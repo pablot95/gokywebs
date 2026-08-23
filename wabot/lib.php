@@ -249,6 +249,7 @@ function wabot_config_ventas(&$cfg) {
         // demo después. Por eso termina en una pregunta binaria, que es la de
         // menor fricción, y encima sirve para diseñar.
         'muestra_aviso' => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
+        'form_agradecimiento' => 'Hola {nombre}, gracias por completar el formulario! Ya arrancamos con tu demo. Cualquier cosa que quieras sumar, contámela por acá.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
@@ -1797,6 +1798,16 @@ function wabot_muestra_presentar_textos($slug, $cfg) {
     return $textos;
 }
 
+function wabot_form_link($conv, $cfg) {
+    if (wabot_canal($conv) !== 'whatsapp') return '';
+    $tel = wabot_channel_user_id($conv);
+    if ($tel === '') return '';
+    $neg = trim((string)($conv['nombre_negocio'] ?? ''));
+    $qs  = ['origen' => 'whatsapp', 't' => $tel];
+    if ($neg !== '') $qs['neg'] = $neg;
+    return 'https://gokywebs.com/form/?' . http_build_query($qs);
+}
+
 function wabot_prediseno_faltan($conv) {
     $items = [];
     if (wabot_nombre_confirmado_de($conv) === '') $items[] = 'Tu nombre';
@@ -1824,7 +1835,22 @@ function wabot_prediseno_texto($conv, $cfg) {
     }
     $lista = implode("\n", array_map(function ($i) { return "- $i"; }, $faltan));
     $base  = (string)($cfg['prediseno'] ?? '');
-    return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
+    $texto = strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
+
+    $link = wabot_form_link($conv, $cfg);
+    if ($link !== '') {
+        $yaOfrecido = false;
+        foreach ((array)($conv['transcript'] ?? []) as $fila) {
+            if (($fila['q'] ?? '') === 'bot' && strpos((string)($fila['t'] ?? ''), 'gokywebs.com/form/') !== false) {
+                $yaOfrecido = true;
+                break;
+            }
+        }
+        if (!$yaOfrecido) {
+            $texto .= "\n\nSi preferís, también podés cargarlos en esta página en vez de escribirlos acá: {$link}";
+        }
+    }
+    return $texto;
 }
 
 function wabot_conv_existe($clave) {
@@ -1955,6 +1981,11 @@ function wabot_conv_load($clave) {
         // logo: permiten completarlo si el cliente lo pasa después.
         'lead_doc'         => null,
         'logo_sincronizado'=> null,
+        'origen_prediseno'            => null,
+        'form_completado_ts'          => 0,
+        'form_agradecimiento_enviado' => false,
+        'form_link_enviado'           => false,
+        'form_link_ts'                => 0,
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         'aclaraciones_fallidas' => 0,
@@ -4096,6 +4127,54 @@ function wabot_muestra_aviso_correr($cfg, $ahora = null) {
     return $res;
 }
 
+function wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo'])) return false;
+    if (empty($cv['form_completado_ts']) || !empty($cv['form_agradecimiento_enviado'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    if (wabot_ultimo_cliente_ts($cv) >= (int)$cv['form_completado_ts']) return false;
+    $minutos = (float)($cfg['form_agradecimiento_minutos'] ?? 20);
+    return $ahora - (int)$cv['form_completado_ts'] >= $minutos * 60;
+}
+
+function wabot_form_agradecimiento_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (empty($cv['form_completado_ts'])) continue;
+        $res['revisadas']++;
+
+        if (!wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora)) continue;
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora)) continue;
+
+            $texto = trim(wabot_personalizar($cfg['form_agradecimiento'] ?? '', $cv));
+            if ($texto === '') continue;
+            $ok = wabot_enviar($cv, $texto);
+            if ($ok) {
+                $cv['form_agradecimiento_enviado'] = true;
+                wabot_conv_transcript($cv, 'bot', $texto);
+                wabot_evento($cv, 'form_agradecimiento_enviado');
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('form_agradecimiento', ['tel' => $cv['tel'], 'ok' => $ok]);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
 /* ──────────────────────── Muestras presentadas ────────────────────────
  *
  * Al apretar "Presentar" en un boceto del admin (wabot/admin.php, acción
@@ -4450,6 +4529,73 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'createdAt'          => ['timestampValue' => $ahora],
         'updatedAt'          => ['timestampValue' => $ahora],
     ];
+}
+
+function wabot_form_lead_validar($payload) {
+    $tel = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
+    $nombre = trim((string)($payload['nombre'] ?? ''));
+    $nombreNegocio = trim((string)($payload['nombre_negocio'] ?? ''));
+    $resumen = trim((string)($payload['resumen'] ?? ''));
+    $colores = trim((string)($payload['colores'] ?? ''));
+    if (strlen($tel) < 10 || strlen($tel) > 15) return null;
+    if ($nombre === '' || $nombreNegocio === '' || $resumen === '' || $colores === '') return null;
+    if (mb_strlen($nombre) > 80 || mb_strlen($nombreNegocio) > 80) return null;
+    if (mb_strlen($resumen) > 600 || mb_strlen($colores) > 200) return null;
+    return compact('tel', 'nombre', 'nombreNegocio', 'resumen', 'colores');
+}
+
+function wabot_form_lead_procesar($payload, $cfg) {
+    $datos = wabot_form_lead_validar($payload);
+    if ($datos === null) return ['ok' => false, 'error' => 'datos_invalidos'];
+    ['tel' => $tel, 'nombre' => $nombre, 'nombreNegocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] = $datos;
+
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', $tel);
+    $lock = null;
+    for ($intento = 0; $intento < 3; $intento++) {
+        $lock = wabot_lock_tomar($clave);
+        if ($lock !== null) break;
+        usleep(200000);
+    }
+    if ($lock === null) return ['ok' => false, 'error' => 'ocupado', 'reintentar' => true];
+
+    $conv = wabot_conv_load($clave);
+    if (empty($conv['canal'])) $conv['canal'] = 'whatsapp';
+    if (empty($conv['tel'])) $conv['tel'] = $clave;
+    if (empty($conv['channel_user_id'])) $conv['channel_user_id'] = $clave;
+    if (empty($conv['conversation_key'])) $conv['conversation_key'] = $clave;
+
+    $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
+
+    $personaLimpia = wabot_nombre_usable($nombre);
+    if ($personaLimpia !== '') { $conv['nombre'] = $personaLimpia; $conv['nombre_confirmado'] = true; }
+    $negocioLimpio = wabot_nombre_negocio_limpiar($nombreNegocio);
+    if ($negocioLimpio !== '') $conv['nombre_negocio'] = $negocioLimpio;
+    $conv['descripcion'] = $resumen;
+    $conv['colores'] = $colores;
+
+    if (empty($conv['form_completado_ts'])) {
+        wabot_conv_transcript($conv, 'sistema',
+            "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}");
+    }
+    $conv['form_completado_ts'] = time();
+    $conv['origen_prediseno'] = $conv['origen_prediseno'] ?: 'form';
+
+    if (!$huboChatReal && empty($conv['brief'])) {
+        $conv['brief'] = [
+            'marca' => $conv['nombre_negocio'], 'negocio' => $conv['descripcion'],
+            'ofrece' => $conv['descripcion'], 'objetivo' => '', 'referencia' => '',
+        ];
+    }
+
+    if (empty($conv['lead_creado'])) {
+        $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
+        wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
+    }
+    wabot_handoff_marcar($conv, 'prediseno');
+
+    wabot_conv_save($conv);
+    wabot_lock_soltar($lock);
+    return ['ok' => true];
 }
 
 function wabot_firestore_lead(&$conv, $cfg) {

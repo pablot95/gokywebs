@@ -902,6 +902,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                         'exacta' => true,
                         'nota' => 'Pedile el WhatsApp con este texto. Todavía NO cierres: falta ese dato.'];
             }
+            $conv['origen_prediseno'] = $conv['origen_prediseno'] ?: 'chat';
             if (empty($conv['lead_creado'])) {
                 $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
                 wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
@@ -1220,6 +1221,10 @@ function wabot_agente_sistema($conv, $cfg) {
     $extra = trim((string)($cfg['indicaciones_estilo'] ?? ''));
     $ind   = trim((string)($cfg['indicaciones'] ?? ''));
     $canal = wabot_canal($conv);
+    $linkForm = wabot_form_link($conv, $cfg);
+    $ofertaForm = $linkForm !== ''
+        ? "SIEMPRE ofrecele también este link para que cargue esos mismos datos en una página en vez de escribirlos acá: {$linkForm} — es una alternativa, no un reemplazo: si te contesta por chat en cambio, seguí normal con anotar_prediseno/guardar_prediseno como siempre. Mencioná el link UNA sola vez, la primera vez que le pidas estos datos; no lo repitas en mensajes siguientes.\n"
+        : '';
     $hechosCliente = wabot_contexto_cliente_sesion($conv, 18);
 
     $p = <<<EOT
@@ -1351,10 +1356,10 @@ Es gratis y sin compromiso: le armamos una versión de su web para que la vea an
 2. Una descripción breve de lo que ofrece.
 3. Los colores de su marca.
 4. Si tiene alguna página de referencia que le haya gustado, o algún estilo pensado. Aclarale que puede ser de cualquier rubro y que si no tiene ninguna no hay problema.
-**Pedíselas TODAS JUNTAS en un solo mensaje, como una lista corta, y aclarale que puede mandártelas todas de una.** Preguntar de a un dato por mensaje convierte esto en un interrogatorio de ocho turnos y es la parte donde más gente se cae. El texto que te devuelve la herramienta ya trae esa lista armada con saltos de línea y ya excluye lo que el cliente contó antes en la charla: mandalo tal cual, sin reescribirlo ni desarmarlo en preguntas sueltas.
+{$ofertaForm}**Pedíselas TODAS JUNTAS en un solo mensaje, como una lista corta, y aclarale que puede mandártelas todas de una.** Preguntar de a un dato por mensaje convierte esto en un interrogatorio de ocho turnos y es la parte donde más gente se cae. El texto que te devuelve la herramienta ya trae esa lista armada con saltos de línea y ya excluye lo que el cliente contó antes en la charla: mandalo tal cual, sin reescribirlo ni desarmarlo en preguntas sueltas.
 Si contesta varias cosas en un mismo mensaje, anotalas todas. Y si después de esa respuesta todavía falta algo, ahí sí pedí puntualmente lo que falte, nombrando solo eso.
 APENAS el cliente te contesta uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde y después se lo terminamos pidiendo de nuevo, que es lo peor que nos puede pasar. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.
-Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos, ni formularios.
+Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos. (El link del formulario de arriba es la única excepción: se puede ofrecer como alternativa al chat, no es un dato extra que le estés pidiendo.)
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno ANTES de mandar el pedido de datos, así el texto sale sin ese punto y no le preguntás algo que acaba de decirte. Pedir de nuevo lo que el cliente ya contó es la queja más común que recibimos.
 

@@ -34,6 +34,7 @@ $aviso = wabot_muestra_aviso_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
 $plantillas = wabot_presentados_plantillas_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
+$formAgradecimiento = wabot_form_agradecimiento_correr($cfg);
 
 echo json_encode([
     'revisadas' => $res['revisadas'],
@@ -60,5 +61,10 @@ echo json_encode([
         'revisadas' => $plantillas['revisadas'],
         'enviadas'  => $plantillas['enviadas'],
         'detalle'   => $plantillas['detalle'],
+    ],
+    'form_agradecimiento' => [
+        'revisadas' => $formAgradecimiento['revisadas'],
+        'enviados'  => $formAgradecimiento['enviados'],
+        'detalle'   => $formAgradecimiento['detalle'],
     ],
 ], JSON_UNESCAPED_UNICODE) . "\n";
