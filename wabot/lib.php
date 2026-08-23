@@ -1300,9 +1300,13 @@ function wabot_nombre_usable($nombre) {
     return $n;
 }
 
-/** El primer nombre, solo si es utilizable. Cadena vacía si no sirve. */
+function wabot_nombre_confirmado_de($conv) {
+    if (empty($conv['nombre_confirmado'])) return '';
+    return wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+}
+
 function wabot_primer_nombre($conv) {
-    $n = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+    $n = wabot_nombre_confirmado_de($conv);
     if ($n === '') return '';
     foreach (preg_split('/\s+/u', $n) as $parte) {
         if (wabot_nombre_usable($parte) !== '') return $parte;
@@ -1746,7 +1750,7 @@ function wabot_plantilla_config($clave, $cfg) {
 function wabot_plantilla_valor($campo, $conv) {
     switch ($campo) {
         case 'nombre':
-            $n = wabot_nombre_usable((string)($conv['nombre'] ?? ''));
+            $n = wabot_nombre_confirmado_de($conv);
             return $n !== '' ? $n : 'Hola';
         case 'slug':   return trim((string)($conv['presentado_slug'] ?? ''));
         case 'negocio': return trim((string)($conv['nombre_negocio'] ?? ''));
@@ -1795,11 +1799,7 @@ function wabot_muestra_presentar_textos($slug, $cfg) {
 
 function wabot_prediseno_faltan($conv) {
     $items = [];
-    // El nombre del perfil de WhatsApp sirve de arranque, pero muchos son
-    // frases o el nombre del local: sin uno de persona la agenda queda con
-    // cosas como "Asi Soy Y Asi Me Quiero - Style Sozo". Solo se pide cuando
-    // el perfil no dio nada usable.
-    if (wabot_nombre_usable((string)($conv['nombre'] ?? '')) === '') $items[] = 'Tu nombre';
+    if (wabot_nombre_confirmado_de($conv) === '') $items[] = 'Tu nombre';
     if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
     if (wabot_descripcion_generica((string)($conv['descripcion'] ?? ''))
         && wabot_descripcion_desde_contexto($conv) === '') {
@@ -1962,6 +1962,7 @@ function wabot_conv_load($clave) {
         'aclaracion_pendiente' => false,
         'aclaracion_ultimo_hash' => null,
         'nombre_usado'     => false,
+        'nombre_confirmado' => false,
         'lead_recibido_evento' => false,
         'cierre'           => null,
         'sistema_problema' => null,

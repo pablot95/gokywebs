@@ -20,7 +20,7 @@ function caso($nombre, $ok) {
     if (!$ok) $fallas++;
 }
 function convNueva($tel = 'AGTEST') {
-    return ['tel'=>$tel,'canal'=>'whatsapp','nombre'=>'Marcos','fase'=>'nuevo','tipo'=>null,
+    return ['tel'=>$tel,'canal'=>'whatsapp','nombre'=>'Marcos','nombre_confirmado'=>true,'fase'=>'nuevo','tipo'=>null,
         'conversation_key'=>$tel,'channel_user_id'=>$tel,'telefono_wsp'=>null,
         'descripcion'=>null,'brief'=>null,'colores'=>null,'colores_hex'=>null,'referencia'=>null,
         'referencia_preguntada'=>false,'cta_muestra'=>false,'seguimiento_enviado'=>false,
@@ -818,7 +818,7 @@ caso('el playbook vende y califica sistemas de gestión',
     && strpos($sistema, 'anotar_sistema') !== false && strpos($sistema, 'guardar_sistema') !== false);
 caso('nombre y canal llegan al prompt con uso moderado',
     strpos($sistema, '- Canal: whatsapp') !== false
-    && strpos($sistema, '- Nombre visible: Marcos') !== false
+    && strpos($sistema, '- Nombre de la persona: Marcos') !== false
     && strpos($sistema, 'SOLO el primer nombre una vez') !== false);
 caso('el modo agente también consume los ejemplos del panel de entrenamiento',
     strpos($sistema, 'EJEMPLOS ENTRENADOS POR EL DUEÑO') !== false
@@ -1246,6 +1246,11 @@ echo "— El nombre que da en la charla le gana al del perfil de WhatsApp —\n"
 $dichoEnCharla = ['nombre' => 'Asi Soy Y Asi Me Quiero'];
 wabot_agente_anotar(['nombre' => 'Carolina'], $dichoEnCharla);
 caso('el nombre que dice en la charla pisa al del perfil', $dichoEnCharla['nombre'] === 'Carolina');
+caso('y queda marcado como confirmado por el cliente', !empty($dichoEnCharla['nombre_confirmado']));
+
+$perfilSolo = ['nombre' => 'Vero', 'nombre_confirmado' => false];
+caso('un nombre que nunca se confirmó en la charla no se usa para saludar',
+    wabot_primer_nombre($perfilSolo) === '');
 
 $noPisa = ['nombre' => 'Marcelo Polzoni'];
 wabot_agente_anotar(['nombre' => '.'], $noPisa);
@@ -1257,7 +1262,7 @@ caso('anotar otros datos no toca el nombre', $sinNombre['nombre'] === 'Marcelo P
 
 $fichaSinNombre = wabot_agente_ficha(['nombre' => 'Asi Soy Y Asi Me Quiero']);
 caso('la ficha no le pasa al modelo un perfil que no sirve como nombre', $fichaSinNombre['nombre'] === '');
-$fichaConNombre = wabot_agente_ficha(['nombre' => 'Marcelo Polzoni']);
+$fichaConNombre = wabot_agente_ficha(['nombre' => 'Marcelo Polzoni', 'nombre_confirmado' => true]);
 caso('pero sí uno que sirve', $fichaConNombre['nombre'] === 'Marcelo Polzoni');
 
 $convNombre = wabot_conv_load('TESTNOMBREPERFIL');
@@ -1268,6 +1273,7 @@ caso('cuando el perfil no sirve, el playbook le dice que pida el nombre',
     && stripos($promptNombre, 'pedíselo') !== false);
 
 $convNombre['nombre'] = 'Marcelo Polzoni';
+$convNombre['nombre_confirmado'] = true;
 caso('y cuando sirve, se lo pasa hecho y no lo hace preguntar',
     strpos(wabot_agente_sistema($convNombre, $cfg), 'Nombre de la persona: Marcelo Polzoni') !== false);
 @unlink(WABOT_DATA . '/conv/TESTNOMBREPERFIL.json');

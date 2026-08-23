@@ -181,7 +181,7 @@ function wabot_procesar_entrante($ev, $cfg) {
                     $usables[] = $item['u'];
                     wabot_nombre_negocio_actualizar($conv, $item['u']);
                 }
-                if (!empty($item['n'])) $conv['nombre'] = $item['n'];
+                if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
             }
             $conv['ultimo_cliente_ts'] = time();   // reabre la ventana de 24 h
             wabot_logo_sincronizar($conv);
@@ -272,7 +272,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
     foreach ($tanda as $item) {
         wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
         if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
-        if (!empty($item['n'])) $conv['nombre'] = $item['n'];
+        if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
     }
     $conv['ultimo_cliente_ts'] = time();
     wabot_logo_sincronizar($conv);

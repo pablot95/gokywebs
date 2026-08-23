@@ -1052,7 +1052,7 @@ caso('las dos primeras fueron la reformulación (nunca la original repetida)',
 echo "— Ningún {nombre} sale crudo al cliente —\n";
 
 $sin = ['tel'=>'T1','canal'=>'whatsapp','nombre'=>''];
-$con = ['tel'=>'T2','canal'=>'whatsapp','nombre'=>'Lucía Gómez'];
+$con = ['tel'=>'T2','canal'=>'whatsapp','nombre'=>'Lucía Gómez','nombre_confirmado'=>true];
 foreach (['derivar', 'seguimiento_precio', 'seguimiento_datos', 'sistema_cierre', 'espera'] as $k) {
     if (!isset($cfg[$k])) continue;
     $a = wabot_personalizar($cfg[$k], $sin);
@@ -1521,6 +1521,7 @@ $cfgSeg = $cfg; $cfgSeg['seguimiento_activo'] = true; $cfgSeg['seguimiento_horas
 $caliente = conv_nueva();
 $caliente['fase'] = 'precio';
 $caliente['nombre'] = 'Marcos Pérez';
+$caliente['nombre_confirmado'] = true;
 $caliente['ultimo_cliente_ts'] = $ahoraSeg - 4 * 3600;
 $caliente['transcript'] = [['q'=>'cliente','t'=>'Dale, lo veo','ts'=>$ahoraSeg - 4 * 3600],
                            ['q'=>'bot','t'=>'Te paso el presupuesto','ts'=>$ahoraSeg - 3.5 * 3600]];
@@ -1607,6 +1608,7 @@ $cfgPres['presentados_recordatorio'] = 'Hola {nombre}, viste la demo? {demo}';
 
 $presEspera = conv_nueva();
 $presEspera['nombre'] = 'Marcos';
+$presEspera['nombre_confirmado'] = true;
 $presEspera['presentado_ts'] = $ahoraPres - 49 * 3600;
 $presEspera['presentado_slug'] = 'negociodemarcos';
 $presEspera['ultimo_cliente_ts'] = $ahoraPres - 8 * 3600;
@@ -1988,11 +1990,11 @@ caso('no inventa una marca a partir del rubro',
 caso('no toma una descripción genérica como nombre comercial',
     wabot_nombre_negocio_detectar('Somos una empresa de limpieza') === '');
 
-$agenda = ['nombre_negocio' => 'Mate Sur', 'nombre' => 'Marcos Pérez'];
+$agenda = ['nombre_negocio' => 'Mate Sur', 'nombre' => 'Marcos Pérez', 'nombre_confirmado' => true];
 caso('agenda como Persona - Negocio cuando tiene los dos datos',
     wabot_nombre_agenda($agenda) === 'Marcos Pérez - Mate Sur');
 caso('si solo conoce a la persona, no agrega separadores vacíos',
-    wabot_nombre_agenda(['nombre' => 'Marcos Pérez']) === 'Marcos Pérez');
+    wabot_nombre_agenda(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true]) === 'Marcos Pérez');
 caso('si solo conoce el negocio, lo agenda con ese nombre',
     wabot_nombre_agenda(['nombre_negocio' => 'Mate Sur']) === 'Mate Sur');
 caso('un perfil inservible no se antepone al negocio',
@@ -2016,7 +2018,7 @@ $cfgPredis = wabot_config_load();
 
 $refDicha = ['referencia_preguntada' => true];
 caso('sin nada conocido, pide las tres cosas',
-    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
         'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
     ]);
 caso('y si el perfil de WhatsApp no sirve como nombre, pide cuatro',
@@ -2024,27 +2026,27 @@ caso('y si el perfil de WhatsApp no sirve como nombre, pide cuatro',
         'Tu nombre', 'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
     ]);
 caso('lo que ya se sabe no se vuelve a pedir',
-    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
         'Una descripción breve de lo que ofrecés',
     ]);
 caso('con las tres cosas ya sabidas, no falta nada',
-    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
 
 caso('la referencia va en el MISMO pedido, no en un turno aparte',
     in_array('Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)',
-        wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']), true));
+        wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']), true));
 caso('pero si ya se la preguntaron, no se repite',
-    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
         'colores' => 'marrón', 'referencia_preguntada' => true]) === []);
 caso('ni si el cliente ya la dio',
-    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
         'colores' => 'marrón', 'referencia' => 'nike.com']) === []);
 
-$textoConFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
+$textoConFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
 caso('el texto lista lo que falta con saltos de línea reales',
     strpos($textoConFaltantes, "- El nombre de tu negocio\n- Una descripción breve de lo que ofrecés\n- Los colores de tu marca") !== false);
 
-$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
     'colores' => 'marrón', 'referencia_preguntada' => true], $cfgPredis);
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
@@ -2540,10 +2542,29 @@ caso('ni un emoji suelto', wabot_nombre_usable('🔥') === '');
 caso('ni un teléfono', wabot_nombre_usable('+54 9 11 2506-8578') === '');
 caso('ni un mail', wabot_nombre_usable('juan@gmail.com') === '');
 caso('un nombre real sí', wabot_nombre_usable('Marta Gómez') === 'Marta Gómez');
+
+echo "— El bot nunca usa el nombre del perfil de WhatsApp sin que el cliente lo haya confirmado él mismo —\n";
+
+caso('sin confirmar, un nombre que se ve perfecto NO se usa',
+    wabot_nombre_confirmado_de(['nombre' => 'Marta Gómez', 'nombre_confirmado' => false]) === '');
+caso('ni aunque falte directamente el flag',
+    wabot_nombre_confirmado_de(['nombre' => 'Marta Gómez']) === '');
+caso('confirmado, sí se usa (y sigue pasando por el filtro de siempre)',
+    wabot_nombre_confirmado_de(['nombre' => 'Marta Gómez', 'nombre_confirmado' => true]) === 'Marta Gómez');
+caso('confirmado pero con un valor que no sirve como nombre, sigue sin usarse',
+    wabot_nombre_confirmado_de(['nombre' => '.', 'nombre_confirmado' => true]) === '');
+caso('wabot_primer_nombre respeta lo mismo: sin confirmar, no saluda por el nombre',
+    wabot_primer_nombre(['nombre' => 'Marta Gómez', 'nombre_confirmado' => false]) === '');
+caso('wabot_prediseno_faltan sigue pidiendo el nombre aunque el perfil ya tenga uno que se ve bien',
+    in_array('Tu nombre', wabot_prediseno_faltan(['nombre' => 'Marta Gómez', 'nombre_confirmado' => false,
+        'nombre_negocio' => 'X', 'descripcion' => 'x', 'colores' => 'x']), true));
+caso('pero no lo pide más una vez confirmado',
+    !in_array('Tu nombre', wabot_prediseno_faltan(['nombre' => 'Marta Gómez', 'nombre_confirmado' => true,
+        'nombre_negocio' => 'X', 'descripcion' => 'x', 'colores' => 'x']), true));
 caso('el texto sale sin el hueco cuando el nombre no sirve',
     wabot_personalizar('Listo {nombre}, con eso ya lo preparamos.', ['nombre' => '.']) === 'Listo, con eso ya lo preparamos.');
 caso('y con un nombre real usa el primero',
-    wabot_personalizar('Listo {nombre}, con eso ya lo preparamos.', ['nombre' => 'Marta Gómez']) === 'Listo Marta, con eso ya lo preparamos.');
+    wabot_personalizar('Listo {nombre}, con eso ya lo preparamos.', ['nombre' => 'Marta Gómez', 'nombre_confirmado' => true]) === 'Listo Marta, con eso ya lo preparamos.');
 caso('la agenda no cuelga un "." del nombre del negocio',
     wabot_nombre_agenda(['nombre_negocio' => 'Black Automotores', 'nombre' => '.']) === 'Black Automotores');
 

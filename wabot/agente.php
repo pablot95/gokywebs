@@ -1180,11 +1180,9 @@ function wabot_agente_anotar($args, &$conv) {
         $limpio = wabot_nombre_negocio_limpiar($args['nombre_negocio']);
         if ($limpio !== '') $conv['nombre_negocio'] = $limpio;
     }
-    // El nombre que dice en la charla le gana al del perfil de WhatsApp: es el
-    // que da la persona, no el que tiene puesto de fantasía.
     if (trim((string)($args['nombre'] ?? '')) !== '') {
         $persona = wabot_nombre_usable($args['nombre']);
-        if ($persona !== '') $conv['nombre'] = $persona;
+        if ($persona !== '') { $conv['nombre'] = $persona; $conv['nombre_confirmado'] = true; }
     }
     if (array_key_exists('referencia', $args)) {
         $ref = trim((string)$args['referencia']);
@@ -1208,7 +1206,7 @@ function wabot_agente_anotar($args, &$conv) {
 /** Qué datos del prediseño ya están, para que el modelo no los vuelva a pedir. */
 function wabot_agente_ficha($conv) {
     return [
-        'nombre' => wabot_nombre_usable((string)($conv['nombre'] ?? '')),
+        'nombre' => wabot_nombre_confirmado_de($conv),
         'nombre_negocio' => (string)($conv['nombre_negocio'] ?? ''),
         'descripcion' => (string)($conv['descripcion'] ?? ''),
         'colores'     => (string)($conv['colores'] ?? ''),
@@ -1222,7 +1220,6 @@ function wabot_agente_sistema($conv, $cfg) {
     $extra = trim((string)($cfg['indicaciones_estilo'] ?? ''));
     $ind   = trim((string)($cfg['indicaciones'] ?? ''));
     $canal = wabot_canal($conv);
-    $nombre = trim((string)($conv['nombre'] ?? ''));
     $hechosCliente = wabot_contexto_cliente_sesion($conv, 18);
 
     $p = <<<EOT
@@ -1478,7 +1475,6 @@ EOT;
     $fs = wabot_agente_ficha_sistema($conv);
     $p .= "ESTADO DE ESTA CHARLA\n";
     $p .= "- Canal: $canal\n";
-    $p .= "- Nombre visible: " . ($nombre !== '' ? $nombre : 'no disponible') . "\n";
     $p .= "- Nombre ya usado por el bot: " . (!empty($conv['nombre_usado']) ? 'sí; no lo repitas' : 'no') . "\n";
     $p .= "- Sesión: " . (string)($conv['session_id'] ?? 'sin id') . "\n";
     $p .= "- Tipo ya cotizado: " . ($conv['tipo'] ? $conv['tipo'] : 'ninguno todavía') . "\n";
@@ -1487,7 +1483,7 @@ EOT;
     $p .= "- Aclaraciones ambiguas fallidas: " . (int)($conv['aclaraciones_fallidas'] ?? 0) . " de 2\n";
     $p .= "- Seguimiento comercial bloqueado: " . (!empty($conv['seguimiento_bloqueado']) ? 'sí; no vendas ni ofrezcas la demo' : 'no') . "\n";
     $p .= "- Nombre de la persona: " . ($f['nombre'] !== '' ? $f['nombre']
-                                      : 'todavía no; el perfil de WhatsApp no sirve (es una frase o el nombre del local), pedíselo junto con el resto de los datos del prediseño') . "\n";
+                                      : 'todavía no confirmado; NUNCA uses el nombre del perfil de WhatsApp sin que el cliente te lo haya dicho él mismo, pedíselo junto con el resto de los datos del prediseño') . "\n";
     $p .= "- Descripción anotada: " . ($f['descripcion'] !== '' ? $f['descripcion'] : 'todavía no') . "\n";
     $p .= "- Colores anotados: "    . ($f['colores']     !== '' ? $f['colores']     : 'todavía no') . "\n";
     $p .= "- Referencia anotada: "  . ($f['referencia']  !== '' ? $f['referencia']
