@@ -1843,7 +1843,7 @@ body.embed { min-height: 0; }
             // pausado, o porque te derivó la consulta. Una derivación tiene que
             // verse SÍ o SÍ — el bot le prometió al cliente que contestás vos.
             if (!GRUPOS_SIN_LEER.includes(it.grupo) && !it.espera && !it.handoff_pendiente) return false;
-            return it.quien === 'cliente' && !!it.no_leido;
+            return !!it.no_leido;
         }
         const SUBGRUPOS_NO_LEIDOS = [
             { clave: 'derivado',    titulo: 'Te derivó la consulta' },

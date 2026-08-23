@@ -2960,15 +2960,12 @@ caso('queda anotado que el aviso no salió por el bot',
 
 echo "— Qué entra en Sin leer: solo parte 2, sin contestar y sin abrir —\n";
 
-// Réplica en PHP de esNoLeido() de admin.php: son las mismas tres condiciones.
 $GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
 $entraEnSinLeer = function ($cv) use ($GRUPOS_SIN_LEER) {
     $grupo = wabot_conv_grupo($cv);
     if ($grupo === 'archivado') return false;
     $botSeCallo = wabot_conv_espera_respuesta($cv) || !empty($cv['handoff_pendiente']);
     if (!in_array($grupo, $GRUPOS_SIN_LEER, true) && !$botSeCallo) return false;
-    $ult = end($cv['transcript']);
-    if (($ult['q'] ?? '') !== 'cliente') return false;
     return wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0);
 };
 
@@ -2987,8 +2984,11 @@ $armarSL = function ($campos, $lineas) use ($ahoraSL) {
 $demoEntregada = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraSL - 40 * 3600, 'lead_creado' => true];
 caso('demo entregada + el cliente contestó + no lo abriste → SÍ',
     $entraEnSinLeer($armarSL($demoEntregada, [['humano', 'Acá está tu demo'], ['cliente', 'La miro y te digo']])) === true);
-caso('si el bot ya le contestó, está atendido → NO',
-    $entraEnSinLeer($armarSL($demoEntregada, [['cliente', 'La miro'], ['bot', 'Dale, cualquier cosa avisame']])) === false);
+caso('aunque el bot ya le haya contestado después, si vos no lo abriste sigue en Sin leer',
+    $entraEnSinLeer($armarSL($demoEntregada, [['cliente', 'La miro'], ['bot', 'Dale, cualquier cosa avisame']])) === true);
+caso('pero si YA lo abriste después de esa charla, ahí sí sale',
+    $entraEnSinLeer($armarSL(array_merge($demoEntregada, ['panel_visto_ts' => $ahoraSL]),
+        [['cliente', 'La miro'], ['bot', 'Dale, cualquier cosa avisame']])) === false);
 caso('si lo abriste después del mensaje → NO',
     $entraEnSinLeer($armarSL(array_merge($demoEntregada, ['panel_visto_ts' => $ahoraSL]), [['humano', 'demo'], ['cliente', 'gracias']])) === false);
 caso('demo por presentar + el cliente escribió → SÍ',
@@ -2997,6 +2997,9 @@ caso('demo por presentar + el cliente escribió → SÍ',
 caso('avisó que pagó y no lo abriste → SÍ',
     $entraEnSinLeer($armarSL(['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraSL - 40 * 3600,
         'pago_avisado_ts' => $ahoraSL - 3600, 'lead_creado' => true], [['bot', 'Te paso el CBU'], ['cliente', 'Listo, transferí']])) === true);
+caso('demo entregada, el cliente escribió y el bot YA le contestó → sigue en Sin leer',
+    $entraEnSinLeer($armarSL($demoEntregada,
+        [['cliente', 'Me encantó la demo!'], ['bot', 'Qué bueno que te gustó. Le cambiarías algo?']])) === true);
 
 // Lo que Pablo pidió sacar: la parte 1 la lleva el bot y no necesita revisión.
 caso('parte 1: una charla nueva con el cliente escribiendo → NO',
@@ -3022,7 +3025,8 @@ caso('un sistema a medida derivado → SÍ',
         [['bot', 'Pablo te arma la propuesta'], ['cliente', 'Perfecto']])) === true);
 // Pero derivar no lo mete para siempre: si vos ya contestaste, sale.
 caso('si ya le contestaste vos, la derivación sale de la lista',
-    $entraEnSinLeer($armarSL($derivado, [['cliente', 'Dale, gracias'], ['humano', 'Hola, te contesto yo']])) === false);
+    $entraEnSinLeer(array_merge($armarSL($derivado, [['cliente', 'Dale, gracias'], ['humano', 'Hola, te contesto yo']]),
+        ['panel_visto_ts' => $ahoraSL])) === false);
 caso('y una charla de parte 1 con el bot andando sigue afuera',
     $entraEnSinLeer($armarSL(['fase' => 'menu', 'tipo' => 'landing'], [['bot', 'Hola!'], ['cliente', 'Quiero una web']])) === false);
 
