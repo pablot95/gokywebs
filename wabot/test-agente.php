@@ -126,6 +126,10 @@ caso('pedido humano explícito → terminal, handoff real y fase derivado',
     !empty($r['terminal']) && $c['fase'] === 'derivado' && $c['handoff_pendiente'] === true
     && ($c['eventos_emitidos_sesion']['derivado'] ?? '') === $c['session_id']);
 
+caso('el prompt aclara que "sos un bot" + "quiero una persona" son DOS pedidos, no uno',
+    stripos(wabot_agente_sistema(convNueva(), $cfg), 'DOS cosas, no una') !== false
+    && stripos(wabot_agente_sistema(convNueva(), $cfg), 'pide_humano') !== false);
+
 $c = convNueva();
 $r = wabot_agente_ejecutar('herramienta_que_no_existe', [], $c, $cfg);
 caso('herramienta inventada por el modelo → error controlado', isset($r['error']));
@@ -586,13 +590,25 @@ echo "— La objeción de precio es una carta oficial, no un folleto de cuotas s
 caso('el prompt manda la objeción a consultar_info, no a la memoria del modelo',
     stripos(wabot_agente_sistema($c, $cfg), "consultar_info('objecion_precio')") !== false);
 
-$c = convNueva();
+$c = convNueva(); $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'objecion_precio'], $c, $cfg);
 caso('objecion_precio devuelve el texto oficial de "caro" tal cual',
     $r['texto'] === $cfg['caro']);
 caso('y ya no promete 3 cuotas sin interés', stripos($r['texto'], 'sin interés') === false);
 caso('y le prohíbe inventar un plan de cuotas o calcular el monto de cada una',
     stripos($r['nota'], 'no inventes') !== false || stripos($r['nota'], 'no calcules') !== false);
+
+$cSinPrecio = convNueva();
+$rSinPrecio = wabot_agente_ejecutar('consultar_info', ['clave' => 'objecion_precio'], $cSinPrecio, $cfg);
+caso('sin tipo ni precio dado, objecion_precio NO contesta con el folleto de "caro"',
+    ($rSinPrecio['texto'] ?? '') !== $cfg['caro']);
+caso('devuelve un error que manda a clasificar y cotizar primero',
+    isset($rSinPrecio['error']) && stripos($rSinPrecio['nota'], 'dar_precio') !== false);
+
+$cTipoSinPrecio = convNueva(); $cTipoSinPrecio['tipo'] = 'ecommerce';
+$rTipoSinPrecio = wabot_agente_ejecutar('consultar_info', ['clave' => 'objecion_precio'], $cTipoSinPrecio, $cfg);
+caso('con tipo pero sin precio_dado todavía, tampoco contesta el folleto de "caro"',
+    ($rTipoSinPrecio['texto'] ?? '') !== $cfg['caro']);
 
 foreach (wabot_agente_tools(true) as $t) {
     if ($t['name'] === 'consultar_info') {
@@ -624,6 +640,15 @@ caso('guardar_sistema cierra sin precio y deja handoff con brief',
     && $c['sistema_lead_creado'] === true && $c['lead_creado'] === false
     && strpos($c['descripcion'], 'Excel y cuadernos') !== false
     && strpos($c['descripcion'], '6 vendedores') !== false);
+
+$cPlaceholder = convNueva('AGSISTPLACEHOLDER');
+wabot_agente_ejecutar('anotar_sistema', ['problema' => 'controlar stock', 'usuarios' => '4 personas'], $cPlaceholder, $cfg);
+$r = wabot_agente_ejecutar('guardar_sistema', [
+    'problema' => 'controlar stock', 'usuarios' => '4 personas', 'metodo_actual' => 'No especificado',
+], $cPlaceholder, $cfg);
+caso('un placeholder tipo "no especificado" no cuenta como dato real: guardar_sistema lo rechaza',
+    empty($r['terminal']) && !empty($r['error']) && $cPlaceholder['fase'] !== 'derivado');
+@unlink(WABOT_DATA . '/conv/AGSISTPLACEHOLDER.json');
 
 $pasosSistema = [
     ['acciones'=>['rubro_sistema'],'info_keys'=>[],'descripcion'=>null,'colores'=>null],

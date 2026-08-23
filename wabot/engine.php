@@ -289,8 +289,8 @@ function wabot_pidio_demo_explicita($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
     return (bool)preg_match(
-        '/\b(quiero (mi|la|una) demo|demo gratis (para|de) mi|quiero ver (mi|la|una) demo'
-        . '|me interesa la demo|armame (la|una) demo|haganme (la|una) demo|quiero la demo)\b/u', $t);
+        '/\b(quiero (mi|la|una) (demo|muestra)|(demo|muestra) gratis (para|de) mi|quiero ver (mi|la|una) (demo|muestra)'
+        . '|me interesa (la|esa) (demo|muestra)|armame (la|una) (demo|muestra)|haganme (la|una) (demo|muestra)|quiero (la|esa) (demo|muestra))\b/u', $t);
 }
 
 /**
@@ -1455,6 +1455,7 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(formulari\w*|formulaio\w*|encuesta\w*|encuenta\w*|encusta\w*|cuestionario\w*|planillas? para (llenar|completar))\b/u', $t)) return 'formularios';
     if (preg_match('/\b(migracion|migrar|migran|pasar (mis|los) (contenidos?|textos?|datos)|traspasar (el )?contenido|mudar (la|mi) (web|pagina))\b/u', $t)) return 'migracion';
     if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
+    if (preg_match('/\b(exclusiv\w*|diseno unico|copian y pegan|copian el diseno|mismo diseno|le copian|reciclan el diseno|plantilla repetida)\b/u', $t)) return 'exclusividad';
     // "¿Tienen alguna web para ver de dentista?" pide ejemplos, no el portfolio
     // general de que_hacemos: exige el verbo de mostrar junto al sustantivo.
     if (preg_match('/\b(ejemplos?|muestras? de trabajo|portfolio|porfolio|trabajos (que |ya )?(hicieron|realizados|hechos)|casos? de exito)\b/u', $t)

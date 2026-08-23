@@ -364,6 +364,9 @@ function wabot_config_ventas(&$cfg) {
             $cfg['tipos'][$tipo]['sena'] = $cambio['a'];
         }
     }
+    if (trim((string)($cfg['info']['ejemplos'] ?? '')) === 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales; si me decís de qué rubro sos, te oriento con el que más se parezca.') {
+        $cfg['info']['ejemplos'] = 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.';
+    }
     if (trim((string)($cfg['msg_pitch'] ?? '')) === '') {
         $cfg['msg_pitch'] = "Buenísimo. Para lo tuyo va {desc}.
 
@@ -544,6 +547,8 @@ function wabot_config_ventas(&$cfg) {
         'pago' => [
             'Se puede abonar por transferencia o con tarjeta, hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.'
                 => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
+            'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.'
+                => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
         ],
         'mantenimiento' => [
             'El mantenimiento es opcional: cubre actualizaciones, cambios mensuales, soporte y más. Sale {precio} por mes y acá lo podés ver en detalle: {link}'
@@ -618,7 +623,8 @@ function wabot_config_ventas(&$cfg) {
         /* Preguntas comerciales normales que caían en "eso te lo confirma el
          * desarrollador" (chats reales del 21 y 22-ago). Derivarlas hacía
          * parecer que el bot no sabe nada de lo que vende. */
-        'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales; si me decís de qué rubro sos, te oriento con el que más se parezca.',
+        'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
+        'exclusividad' => 'Sí, es exclusivo: cada web se diseña a medida para tu negocio, así que no reciclamos el mismo diseño con otro cliente.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
         'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
         'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',

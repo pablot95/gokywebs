@@ -365,13 +365,13 @@ function wabot_agente_historial($conv, $mensaje) {
 function wabot_agente_tools($cerrada = false, $postdemo = false) {
     $consultar = [
         'name' => 'consultar_info',
-        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "me estafaron" es confianza.',
+        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza).',
         'parameters' => [
             'type' => 'object',
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -721,6 +721,10 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             // La respuesta oficial a "es caro": no promete ningún plan de cuotas
             // sin interés, así el modelo no inventa montos dividiendo el precio.
             if ($clave === 'objecion_precio') {
+                if (empty($conv['tipo']) || empty($conv['precio_dado'])) {
+                    return ['error' => 'Todavía no le diste un precio a este cliente: esta respuesta habla de "el link del presupuesto" y de pagar en cuotas sobre un precio que nunca vio.',
+                            'nota' => 'Primero clasificá qué tipo de web necesita y llamá a dar_precio con lo que ya sabés. Recién cuando ya tenga un precio y siga discutiendo el costo, volvé a llamar a consultar_info(objecion_precio).'];
+                }
                 return wabot_agente_agregar_cta([
                     'texto' => wabot_objecion_texto('caro', $cfg['caro'], $conv, $cfg),
                     'nota' => 'Contestá con esto tal cual. No inventes ningún plan de cuotas ni descuento, y no agregues números que no estén acá.',
@@ -1023,6 +1027,13 @@ function wabot_agente_handoff_causa(&$conv, $args) {
 }
 
 /** Acumula el brief estructurado de un sistema sin pisar datos con vacío. */
+function wabot_agente_placeholder_vacio($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    return in_array($t, ['no especificado', 'no especifico', 'sin especificar', 'no aplica',
+        'no dijo', 'no lo dijo', 'no menciono', 'sin dato', 'sin datos', 'desconocido',
+        'no informado', 'pendiente', 'a confirmar', 'no indicado', 'ninguno', 'n a'], true);
+}
+
 function wabot_agente_anotar_sistema($args, &$conv) {
     $mapa = [
         'problema' => 'sistema_problema',
@@ -1031,7 +1042,7 @@ function wabot_agente_anotar_sistema($args, &$conv) {
     ];
     foreach ($mapa as $entrada => $estado) {
         $v = trim((string)($args[$entrada] ?? ''));
-        if ($v !== '') $conv[$estado] = $v;
+        if ($v !== '' && !wabot_agente_placeholder_vacio($v)) $conv[$estado] = $v;
     }
 }
 
@@ -1179,6 +1190,7 @@ SISTEMAS DE GESTIÓN A MEDIDA
 - **Máximo DOS preguntas, y solo si hacen falta.** Si el cliente ya explicó el sistema con varias funciones concretas (por ejemplo "registro de socios, cobro por Mercado Pago, panel de estados y avisos por mail"), NO le preguntes nada más: resumile con tus palabras lo que entendiste y cerrá con guardar_sistema. Interrogar a alguien que ya contó todo se siente como un formulario y espanta.
 - Si de verdad falta información, preguntá primero qué problema necesita resolver y, si hace falta una segunda, cuántas personas o qué roles lo usarían. El "cómo lo maneja hoy" es opcional: preguntalo solo si la charla fluye y todavía no está claro el alcance.
 - Cada dato se guarda en el mismo turno con anotar_sistema, aunque después cierres en ese mismo mensaje.
+- Si el cliente contesta otra cosa distinta de lo que le preguntaste (por ejemplo le pediste cómo lo maneja hoy y te contestó cuántas personas lo usan), guardá lo que sí contestó y volvé a preguntar lo que quedó sin responder. NUNCA completes un dato con "no especificado", "sin dato" o algo parecido para poder cerrar: eso no cuenta como dato real y guardar_sistema lo va a rechazar igual.
 - Al cerrar con guardar_sistema, antes resumí en una línea lo que entendiste y aclarale que al ser a medida hay que cotizarlo según esas funciones. Esa herramienta crea el brief y deja la propuesta con el desarrollador.
 - En Instagram guardar_sistema puede pedir el WhatsApp antes de cerrar. En ese caso hacé esa pregunta y no anuncies el cierre todavía; el código valida el número en el mensaje siguiente.
 
@@ -1227,6 +1239,7 @@ Si el cliente ya te había pasado el nombre del negocio o una referencia antes d
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.
+- "Sos un bot?" seguido de "quiero hablar con una persona real" son DOS cosas, no una: contestá con consultar_info('soy_bot') Y ADEMÁS llamá a derivar con causa pide_humano en el mismo turno. No dejes el pedido de persona sin resolver solo porque ya le contestaste la pregunta de si sos un bot.
 - Una frase corta o ambigua como "para mates" NO se deriva: se pregunta si quiere vender online o solo mostrar/contacto.
 - Ante ambigüedad, la primera llamada a derivar será rechazada y te obliga a preguntar. Hacen falta dos respuestas posteriores distintas que sigan sin aclarar para habilitar el handoff. No repitas la tool dos veces en la misma vuelta.
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.

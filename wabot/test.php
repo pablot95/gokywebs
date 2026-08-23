@@ -3014,6 +3014,16 @@ wabot_config_ventas($cargaVieja);
 caso('el texto viejo migra al nuevo en un bot-config.json existente',
     $cargaVieja['info']['carga'] === $cfg['info']['carga']);
 
+caso('info.ejemplos ya no repregunta el rubro: puede estar respondiendo a alguien que ya lo dijo',
+    stripos($cfg['info']['ejemplos'], 'si me decís de qué rubro') === false);
+
+caso('info.pago deja explícito que se puede pagar en un solo pago, no solo en cuotas',
+    strpos($cfg['info']['pago'], 'en un pago o hasta en 12 cuotas') !== false);
+$pagoIntermedio = ['info' => ['pago' => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.']];
+wabot_config_ventas($pagoIntermedio);
+caso('y un bot-config.json que todavía tenía el texto viejo migra al nuevo',
+    $pagoIntermedio['info']['pago'] === $cfg['info']['pago']);
+
 echo "— Ni 3 pagos ni tarjeta en el precio automático: eso se contesta solo si preguntan —\n";
 
 foreach ($cfg['tipos'] as $tipo => $datosPago) {
@@ -3202,6 +3212,12 @@ caso('y aclara que para hacer la web no se pide inscripción',
     stripos($cfg['info']['inscripcion'], 'no te pedimos') !== false);
 caso('los formularios se aclaran incluidos en el precio',
     stripos($cfg['info']['formularios'], 'ya vienen en el precio') !== false);
+caso('info.exclusividad existe y contesta que sí, es a medida',
+    stripos($cfg['info']['exclusividad'], 'no reciclamos el mismo diseño') !== false);
+caso('"el diseño es exclusivo o le copian y pegan a otro cliente el mismo diseño?" → exclusividad, no confianza',
+    wabot_info_por_palabras('el diseño es exclusivo o le copian y pegan a otro cliente el mismo diseño?', 'pitch') === 'exclusividad');
+caso('pero "me estafaron" sigue yendo a confianza, no a exclusividad',
+    wabot_info_por_palabras('me estafaron con otra web antes, es confiable esto?', 'pitch') === 'confianza');
 
 echo "— \"Bueno, aguardo entonces\" no es una duda —\n";
 
@@ -3329,6 +3345,14 @@ echo "— \"Quiero mi demo gratis\" de entrada no se vuelve a preguntar (Antuz, 
 
 caso('el CTA del anuncio se detecta', wabot_pidio_demo_explicita('Hola! Quiero mi demo gratis para mi negocio.') === true);
 caso('"me pasas el precio?" no', wabot_pidio_demo_explicita('me pasas el precio?') === false);
+
+foreach ([
+    'Dale, me interesa la muestra gratis', 'quiero la muestra', 'quiero ver la muestra',
+    'armame la muestra', 'me interesa esa muestra',
+] as $frase) {
+    caso("\"$frase\" también pide la demo — \"muestra\" es sinónimo, no solo \"demo\"",
+        wabot_pidio_demo_explicita($frase) === true);
+}
 
 $cvDemo = conv_nueva();
 $cvDemo['demo_pedida_entrada'] = true; $cvDemo['chat_started_ts'] = time();
