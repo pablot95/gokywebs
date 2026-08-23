@@ -2279,10 +2279,6 @@ caso('con 20 h el recordatorio SÍ sale dentro de la ventana',
 caso('y con las 48 h viejas igual sale, porque la ventana está por cerrarse',
     wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === true);
 
-// El agujero real: entre el último mensaje del cliente y la entrega de la demo
-// suelen pasar horas. Antes eso mataba el recordatorio, porque se contaba desde
-// presentado_ts y además exigía que el cliente hubiera escrito hace <22 h:
-// quedaban 2 h útiles de margen.
 $disparo = function ($gapHoras) use ($cfg, $ahoraP) {
     $t0 = $ahoraP - 30 * 3600;
     $cv = ['presentado_ts' => $t0, 'presentado_confirmado' => false,
