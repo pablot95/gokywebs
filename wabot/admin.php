@@ -367,6 +367,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if ($porPlantilla) {
             $conv['presentado_slug'] = $slug;
             $enviado = wabot_enviar_plantilla($conv, 'demo_lista', $cfg);
+            $conv['demo_texto_pendiente'] = $enviado;
             if (!$enviado && !$forzar) {
                 echo json_encode(['error' => 'La plantilla demo_lista no se pudo enviar. Revisá el log en wabot/data/log/.']);
                 exit;
@@ -444,6 +445,15 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                 foreach (array_slice($textos, 1) as $extra) {
                     if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
                 }
+                wabot_conv_save($conv);
+                $aviso = 'reenvio_ok';
+            } else {
+                $aviso = 'reenvio_error';
+            }
+        } elseif ($slug !== '' && wabot_plantilla_config('demo_lista', $cfg) !== null) {
+            if (wabot_enviar_plantilla($conv, 'demo_lista', $cfg)) {
+                $conv['presentado_sin_aviso'] = false;
+                $conv['demo_texto_pendiente'] = true;
                 wabot_conv_save($conv);
                 $aviso = 'reenvio_ok';
             } else {

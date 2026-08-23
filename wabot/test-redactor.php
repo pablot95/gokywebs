@@ -236,5 +236,28 @@ caso('la promesa de aviso queda registrada al pasar por el redactor', (function 
     return (int)($c['aviso_prometido_ts'] ?? 0) > 0;
 })());
 
+echo "\n— Demo mandada por plantilla: la primera respuesta del cliente recibe la demo real —\n";
+
+$cfgFijo = $cfg; $cfgFijo['modo_redaccion'] = 'fijo';
+
+$convPendiente = convNueva();
+$convPendiente['demo_texto_pendiente'] = true;
+$convPendiente['presentado_slug'] = 'yfprevencion';
+$convPendiente['fase'] = 'postdemo';
+$rPendiente = wabot_responder('dale', $convPendiente, $cfgFijo);
+caso('le manda el texto real de la demo, sea lo que sea que haya contestado',
+    is_array($rPendiente) && strpos($rPendiente[0], 'gokywebs.com/demo/yfprevencion') !== false);
+caso('y el flag se apaga: no se lo vuelve a mandar en el siguiente mensaje',
+    empty($convPendiente['demo_texto_pendiente']));
+
+$convSinFlag = convNueva();
+$convSinFlag['fase'] = 'postdemo';
+$convSinFlag['tipo'] = 'landing';
+$convSinFlag['precio_dado'] = true;
+$convSinFlag['presentado_slug'] = 'yfprevencion';
+$rSinFlag = wabot_responder('dale', $convSinFlag, $cfgFijo);
+caso('sin el flag, un "dale" post-demo NO dispara el texto de la demo de nuevo',
+    strpos(implode(' ', (array)$rSinFlag), 'gokywebs.com/demo/yfprevencion') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

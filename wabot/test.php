@@ -4108,15 +4108,18 @@ caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'demo_lista', $cfg
 $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
 caso('con el nombre y el idioma correctos', $envio[1] === 'demo_lista' && $envio[2] === 'es_AR');
 caso('el nombre del cliente va como variable del cuerpo', $envio[3] === ['Yesica']);
-caso('y el slug como variable del botón', $envio[4] === ['yfprevencion']);
+caso('demo_lista no lleva botón: el link lo manda el bot cuando el cliente conteste',
+    $envio[4] === []);
 caso('queda en el transcript con las variables ya resueltas',
-    strpos($convPlant['transcript'][0]['t'] ?? '', 'Yesica') !== false
-    && strpos($convPlant['transcript'][0]['t'] ?? '', 'yfprevencion') !== false);
+    strpos($convPlant['transcript'][0]['t'] ?? '', 'Yesica') !== false);
 
+$cfgPlant72Guard = wabot_config_load();
+$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
+$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['activa'] = true;
 $sinSlug = ['tel' => '549110', 'channel_user_id' => '549110', 'canal' => 'whatsapp',
             'nombre' => 'Ana', 'presentado_slug' => '', 'transcript' => []];
-caso('sin demo presentada no manda un link roto',
-    wabot_enviar_plantilla($sinSlug, 'demo_lista', $cfgPlant) === false);
+caso('pero una plantilla que sí lleva el slug en el botón no manda un link roto sin demo presentada',
+    wabot_enviar_plantilla($sinSlug, 'seguimiento_demo_72h', $cfgPlant72Guard) === false);
 
 $igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagram',
             'nombre' => 'Ana', 'presentado_slug' => 'x', 'transcript' => []];
@@ -4173,6 +4176,14 @@ $cfgSoloUna['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
 $cfgSoloUna['plantillas']['seguimiento_demo_72h']['activa'] = true;
 caso('si falta cargar la de 7 días, el recordatorio de texto sigue activo como respaldo',
     wabot_presentado_recordatorio_corresponde($convRecordatorio, $cfgSoloUna, $ahoraP) === true);
+
+echo "\n— El texto de la demo es el que pidió Pablo, y explica que todavía no está personalizada —\n";
+
+$demoTexto = wabot_muestra_presentar_textos('yfprevencion', $cfg)[0];
+caso('arranca con "Ya tenemos lista la demo"', strpos($demoTexto, 'Ya tenemos lista la demo') === 0);
+caso('trae el link', strpos($demoTexto, 'gokywebs.com/demo/yfprevencion') !== false);
+caso('aclara que después se personaliza con contenido e imágenes propias',
+    stripos($demoTexto, 'personalizamos') !== false && stripos($demoTexto, 'imagenes') !== false || stripos($demoTexto, 'imágenes') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

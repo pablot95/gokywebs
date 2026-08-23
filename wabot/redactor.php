@@ -24,6 +24,11 @@ function wabot_responder($texto, &$conv, $cfg) {
     // el motor de reglas puede no ejecutarse nunca.
     wabot_turno_preparar($conv, $cfg, time());
 
+    if (!empty($conv['demo_texto_pendiente'])) {
+        $conv['demo_texto_pendiente'] = false;
+        return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg);
+    }
+
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.
     // Si el bot todavía no habló y el cliente no dijo nada de su negocio no hay
     // nada que razonar: dejarlo en manos de la IA solo hacía que cada cliente

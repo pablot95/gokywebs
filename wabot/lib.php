@@ -263,7 +263,7 @@ function wabot_config_ventas(&$cfg) {
          * cliente lo lee es en la oferta de videollamada. */
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
         'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
-        'muestra_presentar' => "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\nSe encuentra en este link: {link}\n\nMirala y después contame qué te parece o si hay algo que te gustaría cambiar.",
+        'muestra_presentar' => "Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
         'muestra_vigencia' => 'Esta demo va a estar disponible por 7 días, para que tengas tiempo de revisarla bien.',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
@@ -524,8 +524,8 @@ function wabot_config_ventas(&$cfg) {
     $plantillasDefault = [
         'demo_lista' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
-            'params' => ['nombre'], 'boton' => ['slug'],
-            'texto' => 'Hola {nombre}! Ya está lista la demo de tu web. Queda disponible por 7 días: gokywebs.com/demo/{slug}',
+            'params' => ['nombre'], 'boton' => [],
+            'texto' => 'Hola {nombre}! Ya tenemos lista la demo de tu web. Contestame este mensaje y te paso el link para verla.',
         ],
         'seguimiento_demo_72h' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
