@@ -2064,6 +2064,38 @@ caso('los mensajes comerciales tienen variantes naturales sin perder precio ni e
         return strpos($t, '$160.000') !== false && strpos($t, 'presupuestos/Landing') !== false;
     })) === count($variantesPrecio));
 
+echo "— El precio tras el pitch no repite la descripción que el cliente ya leyó —\n";
+
+$cSinPitch = conv_nueva();
+$txtSinPitch = wabot_msg_precio_texto('ecommerce', $cfg, $cSinPitch);
+caso('sin pitch previo, el mensaje de precio SIGUE llevando la descripción',
+    stripos($txtSinPitch, 'tienda online completa') !== false);
+
+$cConPitch = conv_nueva();
+$cConPitch['pitch_hecho'] = true;
+$cConPitch['pitch_tipo'] = 'ecommerce';
+$txtConPitch = wabot_msg_precio_texto('ecommerce', $cfg, $cConPitch);
+caso('con el mismo tipo recién pitcheado, el mensaje de precio NO repite la descripción',
+    stripos($txtConPitch, 'tienda online completa') === false);
+caso('pero sigue teniendo el precio y el link',
+    strpos($txtConPitch, '$290.000') !== false && strpos($txtConPitch, 'presupuestos/Ecommerce') !== false);
+
+$cCambioTipo = conv_nueva();
+$cCambioTipo['pitch_hecho'] = true;
+$cCambioTipo['pitch_tipo'] = 'landing';
+$txtCambioTipo = wabot_msg_precio_texto('ecommerce', $cfg, $cCambioTipo);
+caso('pero si el pitch fue de OTRO tipo (cambió de idea), sí lleva la descripción del nuevo',
+    stripos($txtCambioTipo, 'tienda online completa') !== false);
+
+$cCatalogoConPitch = conv_nueva();
+$cCatalogoConPitch['pitch_hecho'] = true;
+$cCatalogoConPitch['pitch_tipo'] = 'catalogo';
+$cCatalogoConPitch['productos_cantidad'] = 30;
+$txtCatalogoConPitch = wabot_msg_precio_texto('catalogo', $cfg, $cCatalogoConPitch);
+caso('catálogo tras su propio pitch tampoco repite la descripción',
+    stripos($txtCatalogoConPitch, 'catálogo completo') === false
+    && strpos($txtCatalogoConPitch, '30') !== false);
+
 echo "— El cierre sin presión ya no despide a un cliente que está comprando —\n";
 
 caso('"no quiero vender, solo recibir consultas" contesta un desempate, no es una despedida',

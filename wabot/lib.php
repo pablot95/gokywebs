@@ -1080,6 +1080,15 @@ function wabot_config_descs(&$cfg) {
         $cfg['msg_precio'] = "Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}.\n"
                            . "En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}";
     }
+
+    if (trim((string)($cfg['msg_precio_tras_pitch'] ?? '')) === '') {
+        $cfg['msg_precio_tras_pitch'] = "El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia.\n"
+                                       . "Acá podés ver todo lo que incluye y otros trabajos realizados: {link}";
+    }
+    if (trim((string)($cfg['msg_precio_catalogo_tras_pitch'] ?? '')) === '') {
+        $cfg['msg_precio_catalogo_tras_pitch'] = "Con {cantidad} productos queda en {total}: {base} el desarrollo de la web más {unitario} por cada producto cargado ({productos}). Se puede abonar por transferencia.\n"
+                                                . "En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}";
+    }
 }
 
 /**

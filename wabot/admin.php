@@ -231,7 +231,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','presentados_recordatorio_2','muestra_aviso'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','presentados_recordatorio_2','muestra_aviso'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -1354,6 +1354,10 @@ body.embed { min-height: 0; }
             <h2 style="margin-top:0">Precio</h2>
             <label>Plantilla del mensaje de precio ({desc}, {precio} y {link} se reemplazan)</label>
             <textarea name="msg_precio" rows="3"><?= $e($cfg['msg_precio']) ?></textarea>
+            <label>Mismo mensaje, pero cuando ya se presentó la web con el pitch (sin repetir {desc}, que el cliente ya leyó)</label>
+            <textarea name="msg_precio_tras_pitch" rows="3"><?= $e($cfg['msg_precio_tras_pitch'] ?? '') ?></textarea>
+            <label>Igual para catálogo: precio tras el pitch, sin repetir {desc}</label>
+            <textarea name="msg_precio_catalogo_tras_pitch" rows="3"><?= $e($cfg['msg_precio_catalogo_tras_pitch'] ?? '') ?></textarea>
             <label>Segundo mensaje: el ofrecimiento del prediseño (llega aparte, unos segundos después)</label>
             <textarea name="msg_prediseno_oferta" rows="2"><?= $e($cfg['msg_prediseno_oferta'] ?? '') ?></textarea>
             <?php foreach ($cfg['tipos'] as $t => $d): ?>

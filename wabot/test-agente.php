@@ -865,6 +865,30 @@ caso('el agente rechaza volver a preguntar qué vende',
 caso('pero permite preguntar el dato siguiente',
     !wabot_agente_repite_pregunta_contestada('Cuántos productos querés publicar?', $c));
 
+$cVago = convNueva();
+$cVago['session_started_ts'] = time() - 30;
+$cVago['transcript'] = [
+    ['q'=>'cliente','t'=>'Es un emprendimiento','ts'=>time()-20],
+];
+caso('"es un emprendimiento" NO cuenta como rubro ya contestado (no dice qué vende)',
+    !wabot_agente_repite_pregunta_contestada('Contame qué vendés o qué servicio ofrecés?', $cVago));
+
+$cVago2 = convNueva();
+$cVago2['session_started_ts'] = time() - 30;
+$cVago2['transcript'] = [
+    ['q'=>'cliente','t'=>'Mi negocio','ts'=>time()-20],
+];
+caso('"mi negocio" tampoco cuenta como rubro ya contestado',
+    !wabot_agente_repite_pregunta_contestada('Contame qué vendés o qué servicio ofrecés?', $cVago2));
+
+$cVago3 = convNueva();
+$cVago3['session_started_ts'] = time() - 30;
+$cVago3['transcript'] = [
+    ['q'=>'cliente','t'=>'Soy profesional','ts'=>time()-20],
+];
+caso('"soy profesional" (sin decir cuál) tampoco alcanza',
+    !wabot_agente_repite_pregunta_contestada('A qué te dedicás?', $cVago3));
+
 caso('interpreta el typo real como "qué me recomendás"',
     wabot_interpretar_typo_contextual('que me re ofendas?') === 'qué me recomendás?');
 $histTypo = wabot_agente_historial($c, 'que me re ofendas?');

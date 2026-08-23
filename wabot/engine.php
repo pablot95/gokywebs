@@ -1939,6 +1939,7 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['tipo'] = $tipo;
     $conv['fase'] = 'pitch';
     $conv['pitch_hecho'] = true;
+    $conv['pitch_tipo'] = $tipo;
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     return [wabot_pitch_texto($tipo, $conv, $cfg)];
@@ -1990,14 +1991,17 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
     $t = $cfg['tipos'][$tipo];
     $desc = trim((string)($t['desc'] ?? ''));
     if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
+    $trasPitch = is_array($conv) && (($conv['pitch_tipo'] ?? '') === $tipo);
 
     if ($tipo === 'catalogo') {
         $cantidad = (int)(is_array($conv) ? ($conv['productos_cantidad'] ?? 0) : 0);
         if ($cantidad > 0) {
             $d = wabot_catalogo_total($cantidad, $cfg);
-            $plantilla = is_array($conv)
-                ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
-                : (string)$cfg['msg_precio_catalogo'];
+            $plantilla = $trasPitch && trim((string)($cfg['msg_precio_catalogo_tras_pitch'] ?? '')) !== ''
+                ? (string)$cfg['msg_precio_catalogo_tras_pitch']
+                : (is_array($conv)
+                    ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
+                    : (string)$cfg['msg_precio_catalogo']);
             return str_replace(
                 ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}', '{sena}'],
                 [$desc, $d['cantidad'], wabot_moneda($d['total']), wabot_moneda($d['base']),
@@ -2007,9 +2011,11 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
         }
     }
 
-    $plantilla = is_array($conv)
-        ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
-        : (string)$cfg['msg_precio'];
+    $plantilla = $trasPitch && trim((string)($cfg['msg_precio_tras_pitch'] ?? '')) !== ''
+        ? (string)$cfg['msg_precio_tras_pitch']
+        : (is_array($conv)
+            ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
+            : (string)$cfg['msg_precio']);
     return str_replace(
         ['{desc}', '{precio}', '{link}', '{sena}'],
         [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? '')],
