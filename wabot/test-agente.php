@@ -1002,14 +1002,15 @@ $cP['presentado_ts'] = time(); $cP['presentado_slug'] = 'tiendaana';
 
 $r = wabot_agente_ejecutar('datos_transferencia', [], $cP, $cfg);
 caso('datos_transferencia trae seña, CBU, alias, titular y CUIT exactos',
-    strpos($r['texto'], '$80.000') !== false
+    strpos($r['texto'], $cfg['tipos']['ecommerce']['sena']) !== false
     && strpos($r['texto'], '0720071788000003618268') !== false
     && strpos($r['texto'], 'pablotravis') !== false
     && stripos($r['texto'], 'PABLO TRAVI') !== false
     && strpos($r['texto'], '20-39148294-3') !== false);
 
 $r = wabot_agente_ejecutar('link_tarjeta', [], $cP, $cfg);
-caso('link_tarjeta arma el checkout por la seña', strpos($r['texto'], 'pago?monto=80000') !== false);
+caso('link_tarjeta arma el checkout por la seña',
+    strpos($r['texto'], 'pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false);
 
 $r = wabot_agente_ejecutar('ofrecer_videollamada', [], $cP, $cfg);
 caso('ofrecer_videollamada es el único texto con el nombre de Pablo',

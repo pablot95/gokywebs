@@ -2222,11 +2222,12 @@ caso('los datos de transferencia traen seña, alias y titular',
 caso('y siempre ofrecen la tarjeta como alternativa',
     stripos(wabot_postdemo_transferencia($cPost, $cfg), 'tarjeta') !== false);
 caso('el link de tarjeta se arma con el monto de la seña, no con el total',
-    strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), 'gokywebs.com/pago?monto=80000') !== false
+    strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), 'gokywebs.com/pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false
     && strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), '290000') === false);
 
 $cLanding = conv_nueva(); $cLanding['tipo'] = 'landing';
-caso('cada tipo arma su propio link', strpos(wabot_postdemo_link_tarjeta($cLanding, $cfg), 'monto=50000') !== false);
+caso('cada tipo arma su propio link',
+    strpos(wabot_postdemo_link_tarjeta($cLanding, $cfg), 'monto=' . wabot_monto_a_numero($cfg['tipos']['landing']['sena'])) !== false);
 
 caso('"ya te transferí" se detecta', wabot_dice_que_pago('listo, ya te transferi') === true);
 caso('"te mando el comprobante" también', wabot_dice_que_pago('te mando el comprobante') === true);
@@ -2242,7 +2243,8 @@ caso('querer avanzar tras la demo devuelve los datos para transferir',
 
 clasifica(['otro']);
 $r = wabot_engine('prefiero con tarjeta', $c, $cfg);
-caso('pedir tarjeta devuelve el link armado', strpos($r[0], 'pago?monto=80000') !== false);
+caso('pedir tarjeta devuelve el link armado',
+    strpos($r[0], 'pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false);
 
 clasifica(['otro']);
 $r = wabot_engine('ya te transferi la seña', $c, $cfg);

@@ -349,6 +349,21 @@ function wabot_config_ventas(&$cfg) {
     if ((int)($cfg['tipos']['catalogo']['precio_base'] ?? 0) === 200000) {
         $cfg['tipos']['catalogo']['precio_base'] = 180000;
     }
+    $senasNuevas = [
+        'landing' => ['de' => '$50.000', 'a' => '$40.000'],
+        'catalogo' => ['de' => '$50.000', 'a' => '$40.000'],
+        'turnos' => ['de' => '$60.000', 'a' => '$40.000'],
+        'institucional' => ['de' => '$60.000', 'a' => '$40.000'],
+        'inmobiliaria' => ['de' => '$70.000', 'a' => '$60.000'],
+        'ecommerce' => ['de' => '$80.000', 'a' => '$60.000'],
+        'elearning' => ['de' => '$80.000', 'a' => '$60.000'],
+    ];
+    foreach ($senasNuevas as $tipo => $cambio) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        if (trim((string)($cfg['tipos'][$tipo]['sena'] ?? '')) === $cambio['de']) {
+            $cfg['tipos'][$tipo]['sena'] = $cambio['a'];
+        }
+    }
     if (trim((string)($cfg['msg_pitch'] ?? '')) === '') {
         $cfg['msg_pitch'] = "Buenísimo. Para lo tuyo va {desc}.
 
