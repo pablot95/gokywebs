@@ -2002,6 +2002,15 @@ $r = wabot_engine('Quiero mostrar modelos en catálogo y recibir consultas por W
 caso('la respuesta de diagnóstico recién entonces clasifica como catálogo',
     $r === [$cfg['catalogo_cantidad']] && $c['fase'] === 'catalogo_cantidad');
 
+foreach ([
+    'Quiero mostrar los trabajos que hacemos y que me consulten',
+    'mostrar el trabajo nomas',
+    'quiero que me consulten y listo',
+] as $frase) {
+    caso("\"$frase\" se reconoce como hibrido_trabajos sin depender de la IA",
+        wabot_desempate_por_palabras('desempate_hibrido', $frase) === 'hibrido_trabajos');
+}
+
 $c = conv_nueva();
 $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true; $c['cta_muestra'] = true;
 clasifica(['pensarlo']);

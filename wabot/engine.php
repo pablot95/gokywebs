@@ -1590,8 +1590,10 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'publicar', 'publicarlos', 'exhibir', 'listar', 'que se vean',
             ])) return 'hibrido_catalogo';
             if ($tiene([
-                'mostrar trabajos', 'trabajos realizados', 'portfolio', 'portafolio', 'obras', 'proyectos',
+                'mostrar trabajos', 'mostrar los trabajos', 'mostrar el trabajo', 'mostrar nuestros trabajos',
+                'trabajos realizados', 'portfolio', 'portafolio', 'obras', 'proyectos',
                 'recibir consultas', 'pedir presupuesto', 'cotizacion', 'cotizaciones', 'que me contacten',
+                'que me consulten', 'me consulten', 'que consulten', 'que pregunten',
                 'que me escriban', 'presentar la empresa', 'mostrar lo que hacemos',
             ])) return 'hibrido_trabajos';
             return null;
