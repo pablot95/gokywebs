@@ -3642,6 +3642,14 @@ caso('aclara que puede ser un cambio grande', mb_stripos($mant, 'grande') !== fa
 caso('menciona que hay planes con más cambios', mb_stripos($mant, 'planes más completos') !== false);
 caso('sin inventar un precio para esos planes',
     substr_count($mant, '$') <= 1);
+caso('y ya no promete el primer mes gratis/incluido',
+    mb_stripos($mant, 'primer mes') === false);
+
+$mantVieja = wabot_config_load();
+$mantVieja['info']['mantenimiento'] = 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}';
+wabot_config_ventas($mantVieja);
+caso('el texto viejo con "primer mes incluido" migra solo al nuevo',
+    $mantVieja['info']['mantenimiento'] === $cfg['info']['mantenimiento']);
 
 echo "— 500 productos se cotizan, no se derivan —\n";
 
