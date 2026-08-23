@@ -914,6 +914,58 @@ $cVago3['transcript'] = [
 caso('"soy profesional" (sin decir cuál) tampoco alcanza',
     !wabot_agente_repite_pregunta_contestada('A qué te dedicás?', $cVago3));
 
+caso('pide prediseno detecta el pedido real de la vuelta 28 (reabre tras "te aviso")',
+    wabot_texto_pide_prediseno('Para arrancar, me compartís el nombre del negocio, qué servicios ofrecés, los colores que te gustaría usar y alguna página de referencia que te guste?'));
+caso('pide prediseno detecta el pedido real de la vuelta 36 (referencia antes de pedirla)',
+    wabot_texto_pide_prediseno('Para armar la demo gratis de tu tienda online necesito unos datos breves. Podés mandármelos todos juntos: 1. El nombre de tu negocio o marca. 2. Los colores que te gustaría usar.'));
+caso('pide prediseno NO se activa si solo pregunta colores sin el nombre del negocio',
+    !wabot_texto_pide_prediseno('Qué colores te gustaría usar para la web?'));
+caso('pide prediseno NO se activa si solo pide el nombre sin colores',
+    !wabot_texto_pide_prediseno('Cuál es el nombre de tu negocio?'));
+caso('pide prediseno NO se activa en un mensaje sin relación',
+    !wabot_texto_pide_prediseno('Los desarrollos van desde $160.000 hasta $290.000.'));
+
+caso('paraguas_clave detecta "consultoria" en el mensaje del cliente',
+    wabot_agente_paraguas_clave('Hago consultoria') === 'consultoria');
+caso('paraguas_clave detecta "diseno" sin tilde',
+    wabot_agente_paraguas_clave('Tengo un estudio de diseño') === 'diseno');
+caso('paraguas_clave no detecta nada en un producto concreto',
+    wabot_agente_paraguas_clave('Vendo zapatillas') === null);
+
+$cParag = convNueva();
+$reemplazo = wabot_agente_empujon_paraguas('Doy clases de coaching',
+    ['Los desarrollos van desde $160.000 hasta $290.000.'], $cParag, $cfg, null);
+caso('empujon paraguas reemplaza una respuesta que no repreguntó nada',
+    $reemplazo === ['Qué tipo de coaching das: personal, ejecutivo, grupal?']);
+caso('y marca paraguas_preguntado para no repetirlo',
+    !empty($cParag['paraguas_preguntado']));
+
+$cParag2 = convNueva();
+$reemplazo2 = wabot_agente_empujon_paraguas('Hago consultoria',
+    ['Qué tipo de consultoría ofrecés?'], $cParag2, $cfg, null);
+caso('pero si el modelo ya repreguntó sobre la misma actividad, no lo toca',
+    $reemplazo2 === null);
+
+$cParag3 = convNueva();
+$cParag3['tipo'] = 'landing';
+$reemplazo3 = wabot_agente_empujon_paraguas('Hago consultoria',
+    ['Los desarrollos van desde $160.000 hasta $290.000.'], $cParag3, $cfg, 'landing');
+caso('con el tipo ya confirmado ANTES de esta vuelta, el empujon no interviene',
+    $reemplazo3 === null);
+
+$cParag3b = convNueva();
+$reemplazo3b = wabot_agente_empujon_paraguas('Tengo un estudio de diseño',
+    ['Contame qué servicios ofrecés.'], $cParag3b, $cfg, null);
+caso('aunque el modelo haya clasificado el tipo RECIÉN en esta vuelta (tool call), el empujon sí interviene',
+    $reemplazo3b === ['Qué tipo de diseño hacés?']);
+
+$cParag4 = convNueva();
+$cParag4['paraguas_preguntado'] = true;
+$reemplazo4 = wabot_agente_empujon_paraguas('Hago consultoria',
+    ['Los desarrollos van desde $160.000 hasta $290.000.'], $cParag4, $cfg, null);
+caso('una sola vez por charla: si ya se preguntó antes, no vuelve a intervenir',
+    $reemplazo4 === null);
+
 caso('interpreta el typo real como "qué me recomendás"',
     wabot_interpretar_typo_contextual('que me re ofendas?') === 'qué me recomendás?');
 $histTypo = wabot_agente_historial($c, 'que me re ofendas?');

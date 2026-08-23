@@ -256,6 +256,24 @@ function wabot_config_ventas(&$cfg) {
         'baja' => 'Listo, no te escribimos más. Gracias por avisar.',
         'precio_resumen' => "El total es {precio} por todo el desarrollo, y el detalle completo está acá: {link}",
 
+        'paraguas' => [
+            'entrenamiento' => 'Qué tipo de entrenamiento ofrecés: personal, un gimnasio con turnos, o cursos grabados?',
+            'coaching' => 'Qué tipo de coaching das: personal, ejecutivo, grupal?',
+            'salud' => 'En qué área de la salud trabajás?',
+            'belleza' => 'Qué servicio de belleza ofrecés?',
+            'educacion' => 'Qué tipo de educación, cursos o clases das?',
+            'capacitacion' => 'Qué tipo de capacitaciones dás?',
+            'capacitaciones' => 'Qué tipo de capacitaciones dás?',
+            'asesoramiento' => 'Sobre qué es el asesoramiento que ofrecés?',
+            'consultoria' => 'Qué tipo de consultoría ofrecés?',
+            'diseno' => 'Qué tipo de diseño hacés?',
+            'eventos' => 'Qué tipo de eventos organizás?',
+            'terapia' => 'Qué tipo de terapias ofrecés?',
+            'terapias' => 'Qué tipo de terapias ofrecés?',
+            'deportes' => 'Qué deporte o actividad deportiva ofrecés?',
+            'tecnologia' => 'A qué te dedicás dentro de tecnología?',
+        ],
+
         /* ── Parte 2 de la venta: después de presentar la demo ──
          * Recién acá aparecen la seña, los datos de transferencia y el link de
          * tarjeta. Antes de la demo NO se mencionan (decisión de Pablo, 22-ago).

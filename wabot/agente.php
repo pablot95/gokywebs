@@ -114,6 +114,7 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
 
     $cerrada  = ($conv['fase'] ?? '') === 'derivado';
     $postdemo = ($conv['fase'] ?? '') === 'postdemo';
+    $tipoAlEntrar = $conv['tipo'] ?? null;
     $contents = wabot_agente_historial($conv, $mensaje);
     $tools    = [['functionDeclarations' => wabot_agente_tools($cerrada, $postdemo)]];
     $sistema  = wabot_agente_sistema($conv, $cfg);
@@ -162,6 +163,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            if (empty($conv['precio_dado']) && wabot_texto_pide_prediseno($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'pide prediseno sin haber dado precio', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             // Anotación fantasma: "ya sumé el logo", "anoté la descripción" sin
             // que ninguna herramienta de anotar haya corrido. El bot confirmaba
             // haber recibido cosas que nunca llegaron (deeko y Luicho, 21-ago).
@@ -175,6 +181,8 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             if ($limpio === null) return null;
             wabot_agente_marcar_nombre_usado($limpio, $conv);
             $salida = array_merge([$limpio], wabot_agente_filtrar_aparte($limpio, $aparte));
+            $reemplazo = wabot_agente_empujon_paraguas($mensaje, $salida, $conv, $cfg, $tipoAlEntrar);
+            if ($reemplazo !== null) $salida = $reemplazo;
             $empujon = wabot_agente_empujon_postdemo($salida, $mensaje, $conv, $cfg);
             if ($empujon !== null) $salida[] = $empujon;
             return $salida;
@@ -215,7 +223,10 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         if ($terminal !== null) return [$terminal];
         // Pedir un teléfono no cierra el lead, pero también es texto operativo:
         // se manda exacto y se espera el próximo mensaje del cliente.
-        if ($exacta !== null) return [$exacta];
+        if ($exacta !== null) {
+            $reemplazoExacta = wabot_agente_empujon_paraguas($mensaje, [$exacta], $conv, $cfg, $tipoAlEntrar);
+            return $reemplazoExacta !== null ? $reemplazoExacta : [$exacta];
+        }
     }
 
     wabot_log('error', ['donde' => 'agente', 'msg' => 'demasiadas vueltas']);
@@ -279,11 +290,42 @@ function wabot_agente_empujon_postdemo($salida, $mensaje, &$conv, $cfg) {
     return $texto;
 }
 
+function wabot_agente_paraguas_clave($mensaje) {
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if ($t === '') return null;
+    if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia)\b/u', $t, $m)) {
+        return $m[1];
+    }
+    return null;
+}
+
+function wabot_agente_empujon_paraguas($mensaje, $salida, &$conv, $cfg, $tipoAlEntrar) {
+    if (!empty($tipoAlEntrar)) return null;
+    if (!empty($conv['paraguas_preguntado'])) return null;
+    $clave = wabot_agente_paraguas_clave($mensaje);
+    if ($clave === null) return null;
+    $conv['paraguas_preguntado'] = true;
+
+    $crudo  = implode(' ', (array)$salida);
+    $normal = wabot_normalizar_frase($crudo);
+    if (preg_match('/\b' . preg_quote($clave, '/') . '\b/u', $normal) && strpos($crudo, '?') !== false) return null;
+
+    $pregunta = trim((string)($cfg['paraguas'][$clave] ?? ''));
+    if ($pregunta === '') return null;
+    return [$pregunta];
+}
+
 function wabot_agente_filtrar_aparte($texto, $aparte) {
     if (!$aparte) return [];
     // \b en "demo": es corto y aparece adentro de "podemos".
     if (mb_stripos($texto, 'predise') !== false || mb_stripos($texto, 'muestra') !== false || preg_match('/\bdemo\b/iu', $texto)) return [];
     return $aparte;
+}
+
+function wabot_texto_pide_prediseno($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(preg_match('/\bcolores\b/u', $t) && preg_match('/\bnombre\b.{0,25}\b(negocio|marca)\b/u', $t));
 }
 
 /** Red de seguridad: no permite preguntar de nuevo el dato comercial básico. */
@@ -1185,7 +1227,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Antes de hacer una pregunta, revisá TODOS los hechos que el cliente ya dijo. Nunca preguntes qué vende, qué servicio ofrece ni qué necesita si eso ya aparece en la charla; confirmalo con tus palabras y avanzá al siguiente dato faltante.
 - "Soy profesional", "tengo un negocio", "es un emprendimiento", "vendo cosas" o "trabajo por mi cuenta" NO son una respuesta: no dicen QUÉ hace, vende u ofrece, por más que tengan varias palabras. No alcanzan para elegir tipo ni mucho menos para dar_precio, aunque la palabra "profesional" aparezca en la descripción de landing. Insistí con la misma pregunta reformulada hasta tener algo concreto (una profesión, un oficio, un producto).
 - En cambio, ni bien aparece algo concreto —aunque sea una sola palabra: "arroz", "medias", "velas"— eso YA alcanza para clasificar. No seas redundante pidiendo "contame qué vendés" de nuevo, y no le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp (ni con esas palabras ni parecidas, tipo "presentar servicios o vender y cobrar online"): esa pregunta está prohibida para cualquier producto, ver COMERCIOS más abajo.
-- OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
+- OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "coaching", "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
 - Cuando repreguntes eso, aprovechá la respuesta en el mensaje siguiente: si te dice "entrenamiento personal y funcional", nombralo con sus palabras al proponerle la web. Repetir el pitch genérico después de que te dio el detalle hace que se note que no lo leíste.
 - Nunca digas "ya tengo claro qué ofrecés" ni nada parecido si en realidad no te dijo nada específico: se nota que es falso y desconfía más. Confirmá con tus palabras SOLO cuando el dato que tenés es real.
 - No repitas lo que ya dijiste en la charla ni arranques siempre con "Perfecto". Alterná aperturas naturales o entrá directo en la respuesta.
