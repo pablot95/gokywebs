@@ -689,6 +689,12 @@ caso('sin nada aparte no rompe', wabot_agente_filtrar_aparte('hola', []) === [])
 echo "— El playbook manda tienda online para todo comercio —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
+caso('el playbook avisa que institucional es el que menos se cotiza',
+    stripos($sistema, 'el tipo que menos se cotiza') !== false);
+caso('y que tener una empresa no alcanza para institucional',
+    stripos($sistema, 'NO la vuelve institucional') !== false);
+caso('una empresa de limpieza o de fletes es landing, no institucional',
+    stripos($sistema, 'empresa de limpieza, de fletes') !== false);
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
 caso('y prohíbe expresamente la pregunta de carrito vs WhatsApp',
     stripos($sistema, 'Esa pregunta está prohibida') !== false);

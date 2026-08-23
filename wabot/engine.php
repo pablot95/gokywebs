@@ -718,11 +718,11 @@ function wabot_fallback_rubro_local($t) {
         return 'ecommerce';
     }
     if (preg_match('/\b(inmobiliaria|propiedades|bienes raices)\b/u', $t)) return 'inmobiliaria';
-    if (preg_match('/\b(empresa|pyme|fabrica|distribuidora|fundacion|ong|colegio|escuela|universidad|municipio|sindicato|asociacion)\b/u', $t)) {
-        return 'institucional';
-    }
-    if (preg_match('/\b(landing|abogado|contador|plomero|gasista|electricista|pintor|fletes|cerrajero|jardinero|fotografo|disenador)\b/u', $t)) {
+    if (preg_match('/\b(landing|abogado|contador|estudio juridico|plomero|gasista|electricista|pintor|fletes|mudanzas|cerrajero|jardinero|fotografo|disenador|limpieza|seguridad|vigilancia|transporte|logistica|refrigeracion|climatizacion|aire acondicionado|eventos|catering|pintura|albanil|techista|durlock|sanitarios|desagotes|fumigacion|control de plagas|herreria|soldadura|grua|remis|traslados|nineras|cuidado de|masajista|entrenador|profesor particular|traductor|community manager|marketing digital|consultora|consultoria|asesoria|gestoria|seguros|contable|arquitecto|ingeniero|topografo|escribano|martillero)\b/u', $t)) {
         return 'landing';
+    }
+    if (preg_match('/\b(fundacion|ong|colegio|escuela|universidad|instituto|municipio|sindicato|asociacion|camara|cooperativa|mutual|club|parroquia|iglesia|hospital|centro de salud)\b/u', $t)) {
+        return 'institucional';
     }
     return null;
 }

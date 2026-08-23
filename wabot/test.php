@@ -1604,6 +1604,22 @@ foreach (['autogestionable', 'autogestion', 'algo autogestionable', 'que se insc
         wabot_desempate_por_palabras('desempate_cursos', $m) === 'cursos_vender');
 }
 
+echo "\u2014 Empresa no vuelve institucional a nadie \u2014\n";
+
+foreach (['Tengo una empresa de limpieza', 'Somos una empresa familiar de fletes',
+          'Tengo una empresa de seguridad', 'Somos una empresa de refrigeracion',
+          'Tengo una empresa de transporte', 'Tengo una empresa de mudanzas',
+          'Tengo una empresa de eventos'] as $frase) {
+    caso("\"$frase\" es una landing, no institucional de 250.000",
+        wabot_fallback_rubro_local($frase) === 'landing');
+}
+foreach (['Somos un colegio secundario', 'Somos una fundacion', 'Somos una asociacion civil',
+          'Somos una cooperativa de trabajo', 'Es para el club del barrio'] as $frase) {
+    caso("\"$frase\" si es institucional", wabot_fallback_rubro_local($frase) === 'institucional');
+}
+caso('un comercio nunca cae en institucional aunque diga empresa',
+    wabot_fallback_rubro_local('Tengo una empresa de ropa') === 'ecommerce');
+
 echo "— Rubros que el fallback local no reconocía —\n";
 
 foreach ([
