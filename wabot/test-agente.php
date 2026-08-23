@@ -37,7 +37,7 @@ echo "— Herramientas —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
 caso('dar_precio(landing) → texto exacto y estado actualizado',
-    strpos($r['texto'], '$200.000') !== false
+    strpos($r['texto'], '$160.000') !== false
     && strpos($r['texto'], 'gokywebs.com/presupuestos/Landing') !== false
     && $c['tipo'] === 'landing' && $c['fase'] === 'precio');
 caso('precio y oferta quedan medidos una sola vez por sesión',
@@ -96,7 +96,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 $c = convNueva();
 $r = wabot_responder('soy plomero', $c, $cfg);
 caso('agente devuelve null → contesta el motor de reglas',
-    count($r) === 2 && strpos($r[0], '$200.000') !== false && $c['tipo'] === 'landing');
+    count($r) === 2 && strpos($r[0], '$160.000') !== false && $c['tipo'] === 'landing');
 
 $GLOBALS['WABOT_TEST_AGENTE'] = function ($m, $conv, $cfg) {
     return ['Dale, para lo tuyo va una landing. Te paso el precio y el link.'];
@@ -212,10 +212,10 @@ caso('dar_precio(catalogo) sin cantidad → NO cotiza, pregunta cuántos product
     && $c['fase'] === 'catalogo_cantidad' && empty($c['productos_cantidad']));
 
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 60], $c, $cfg);
-caso('con la cantidad → cotiza $200.000 + $500 × 60 = $230.000',
-    strpos($r['texto'], '$230.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'precio');
+caso('con la cantidad → cotiza $180.000 + $500 × 60 = $210.000',
+    strpos($r['texto'], '$210.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'precio');
 caso('y el texto lleva el desglose y el link de Catálogo',
-    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], '60 productos') !== false
+    strpos($r['texto'], '$180.000') !== false && strpos($r['texto'], '60 productos') !== false
     && strpos($r['texto'], 'presupuestos/Catalogo') !== false);
 caso('la oferta del prediseño sigue saliendo aparte', !empty($r['aparte']));
 
@@ -227,7 +227,7 @@ caso('una cantidad absurda no se toma: vuelve a preguntar',
 $c = convNueva(); $c['fase'] = 'catalogo_cantidad'; $c['tipo'] = 'catalogo';
 $r = wabot_agente_intento('mas o menos 25', $c, $cfg);
 caso('en fase catalogo_cantidad, un número se cotiza sin llamar a la IA',
-    $r !== null && strpos($r[0], '$212.500') !== false && $c['productos_cantidad'] === 25);
+    $r !== null && strpos($r[0], '$192.500') !== false && $c['productos_cantidad'] === 25);
 
 $c = convNueva(); $c['fase'] = 'catalogo_cantidad'; $c['tipo'] = 'catalogo';
 $r = wabot_agente_intento('y cuanto tardan?', $c, $cfg);
@@ -246,11 +246,11 @@ echo "— El agente resuelve el desempate sin IA si la respuesta es clara —\n"
 $c = convNueva(); $c['fase'] = 'desempate_comercio';
 $r = wabot_agente_intento('Por la web', $c, $cfg);
 caso('"Por la web" en el agente → cotiza ecommerce sin llamar a la IA',
-    $r !== null && $c['tipo'] === 'ecommerce' && strpos($r[0], '$320.000') !== false);
+    $r !== null && $c['tipo'] === 'ecommerce' && strpos($r[0], '$290.000') !== false);
 
 $c = convNueva(); $c['fase'] = 'desempate_turnos';
 $r = wabot_agente_intento('que reserven solos', $c, $cfg);
-caso('turnos: "que reserven solos" → turnos $250.000', $c['tipo'] === 'turnos');
+caso('turnos: "que reserven solos" → turnos $200.000', $c['tipo'] === 'turnos');
 
 $c = convNueva(); $c['fase'] = 'desempate_comercio';
 $r = wabot_agente_intento('mmm no se', $c, $cfg);
@@ -465,7 +465,7 @@ caso('el texto del precio no trae la oferta pegada',
     stripos($r['texto'], 'predise') === false);
 
 $GLOBALS['WABOT_TEST_AGENTE'] = function ($m, $conv, $cfg) {
-    return ['Dale, para un ecommerce sale $320.000. Mirá gokywebs.com/presupuestos/Ecommerce',
+    return ['Dale, para un ecommerce sale $290.000. Mirá gokywebs.com/presupuestos/Ecommerce',
             $cfg['msg_prediseno_oferta']];
 };
 $c = convNueva();
@@ -509,14 +509,14 @@ caso('y siguen los de antes', count(array_diff(['landing','ecommerce','inmobilia
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
-caso('dar_precio(turnos) → $250.000 y el link de Turnos',
-    strpos($r['texto'], '$250.000') !== false && strpos($r['texto'], 'presupuestos/Turnos') !== false);
+caso('dar_precio(turnos) → $200.000 y el link de Turnos',
+    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Turnos') !== false);
 caso('y el link va en su renglón', strpos($r['texto'], "\nEn este link") !== false);
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $c, $cfg);
-caso('dar_precio(institucional) → $250.000 y el link Institucional',
-    strpos($r['texto'], '$250.000') !== false && strpos($r['texto'], 'presupuestos/Institucional') !== false);
+caso('dar_precio(institucional) → $200.000 y el link Institucional',
+    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Institucional') !== false);
 
 caso('el prompt le prohíbe cotizar un rubro con turnos sin preguntar',
     strpos(wabot_agente_sistema($c, $cfg), 'NUNCA cotices uno de esos rubros sin haber hecho la pregunta') !== false);
@@ -813,7 +813,7 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero mostrar trabajos y recibir con
 $c['_mensaje_agente'] = 'Quiero mostrar trabajos y recibir consultas por WhatsApp';
 $r = wabot_agente_ejecutar('dar_precio', ['tipo'=>'landing'], $c, $cfg);
 caso('después de confirmar el objetivo sí permite cotizar',
-    !isset($r['error']) && strpos($r['texto'], '$200.000') !== false);
+    !isset($r['error']) && strpos($r['texto'], '$160.000') !== false);
 
 $c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $r = wabot_agente_intento('Por el momento estaba preguntando, más adelante me comunico', $c, $cfg);
@@ -902,7 +902,7 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero una tienda online con carrito 
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('con la venta online confirmada por el cliente, ecommerce cotiza normal',
-    empty($r['error']) && strpos((string)$r['texto'], '$320.000') !== false && $c['precio_dado'] === true);
+    empty($r['error']) && strpos((string)$r['texto'], '$290.000') !== false && $c['precio_dado'] === true);
 
 $c = convNueva('AGGUARD3');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Soy nutricionista','ts'=>time()-10];
@@ -916,14 +916,14 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Soy nutricionista, que me escriban po
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
 caso('con el "por whatsapp" dicho, la landing cotiza normal',
-    empty($r['error']) && empty($r['exacta']) && strpos((string)$r['texto'], '$200.000') !== false);
+    empty($r['error']) && empty($r['exacta']) && strpos((string)$r['texto'], '$160.000') !== false);
 
 $c = convNueva('AGGUARD5');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Tengo una veterinaria y quiero que saquen turno solos desde la pagina','ts'=>time()-10];
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
 caso('turnos con la reserva online confirmada cotiza normal',
-    empty($r['error']) && strpos((string)$r['texto'], '$250.000') !== false);
+    empty($r['error']) && strpos((string)$r['texto'], '$200.000') !== false);
 
 $c = convNueva('AGGUARD6');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Tengo una estetica','ts'=>time()-10];
@@ -941,7 +941,7 @@ caso('consultar_info(prediseno) en fase derivada contesta plazos y NO muta la fa
     $c['fase'] === 'derivado' && $r['texto'] === $cfg['info']['plazos']);
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'precio_cotizado'], $c, $cfg);
 caso('el precio ya cotizado se puede repetir en fase derivada, con el total',
-    strpos((string)$r['texto'], '$200.000') !== false);
+    strpos((string)$r['texto'], '$160.000') !== false);
 
 echo "— El prompt no filtra datos de otros clientes —\n";
 
@@ -974,14 +974,14 @@ $cP['presentado_ts'] = time(); $cP['presentado_slug'] = 'tiendaana';
 
 $r = wabot_agente_ejecutar('datos_transferencia', [], $cP, $cfg);
 caso('datos_transferencia trae seña, CBU, alias, titular y CUIT exactos',
-    strpos($r['texto'], '$90.000') !== false
+    strpos($r['texto'], '$80.000') !== false
     && strpos($r['texto'], '0720071788000003618268') !== false
     && strpos($r['texto'], 'pablotravis') !== false
     && stripos($r['texto'], 'PABLO TRAVI') !== false
     && strpos($r['texto'], '20-39148294-3') !== false);
 
 $r = wabot_agente_ejecutar('link_tarjeta', [], $cP, $cfg);
-caso('link_tarjeta arma el checkout por la seña', strpos($r['texto'], 'pago?monto=90000') !== false);
+caso('link_tarjeta arma el checkout por la seña', strpos($r['texto'], 'pago?monto=80000') !== false);
 
 $r = wabot_agente_ejecutar('ofrecer_videollamada', [], $cP, $cfg);
 caso('ofrecer_videollamada es el único texto con el nombre de Pablo',
@@ -1036,7 +1036,7 @@ $cTipo['fase'] = 'postdemo'; $cTipo['tipo'] = 'landing'; $cTipo['precio_dado'] =
 $cTipo['presentado_ts'] = time(); $cTipo['presentado_slug'] = 'plomerojuan';
 $r = wabot_agente_ejecutar('cambiar_tipo_web', ['tipo' => 'ecommerce'], $cTipo, $cfg);
 caso('cambiar_tipo_web recotiza el tipo nuevo y deja la charla con Pablo',
-    strpos($r['texto'], '$320.000') !== false && !empty($r['terminal'])
+    strpos($r['texto'], '$290.000') !== false && !empty($r['terminal'])
     && $cTipo['tipo'] === 'ecommerce' && $cTipo['fase'] === 'derivado');
 
 $cMismo = convNueva('AGPOST6');

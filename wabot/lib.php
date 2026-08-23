@@ -327,6 +327,28 @@ function wabot_config_ventas(&$cfg) {
     if (in_array(trim((string)($cfg['msg_prediseno_oferta'] ?? '')), $ofertasRetiradas, true)) {
         $cfg['msg_prediseno_oferta'] = $cfg['msg_prediseno_oferta_variantes'][0];
     }
+    $listaPrecios = [
+        'landing'       => ['de' => '$200.000', 'a' => '$160.000', 'sena_de' => '$60.000', 'sena_a' => '$50.000'],
+        'institucional' => ['de' => '$250.000', 'a' => '$200.000', 'sena_de' => '$80.000', 'sena_a' => '$60.000'],
+        'inmobiliaria'  => ['de' => '$290.000', 'a' => '$240.000', 'sena_de' => '$80.000', 'sena_a' => '$70.000'],
+        'ecommerce'     => ['de' => '$320.000', 'a' => '$290.000', 'sena_de' => '$90.000', 'sena_a' => '$80.000'],
+        'catalogo'      => ['de' => '$200.000 + $500 por producto', 'a' => '$180.000 + $500 por producto',
+                            'sena_de' => '$60.000', 'sena_a' => '$50.000'],
+        'turnos'        => ['de' => '$250.000', 'a' => '$200.000', 'sena_de' => '$80.000', 'sena_a' => '$60.000'],
+        'elearning'     => ['de' => '$320.000', 'a' => '$290.000', 'sena_de' => '$90.000', 'sena_a' => '$80.000'],
+    ];
+    foreach ($listaPrecios as $tipo => $cambio) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        if (trim((string)($cfg['tipos'][$tipo]['precio'] ?? '')) === $cambio['de']) {
+            $cfg['tipos'][$tipo]['precio'] = $cambio['a'];
+        }
+        if (trim((string)($cfg['tipos'][$tipo]['sena'] ?? '')) === $cambio['sena_de']) {
+            $cfg['tipos'][$tipo]['sena'] = $cambio['sena_a'];
+        }
+    }
+    if ((int)($cfg['tipos']['catalogo']['precio_base'] ?? 0) === 200000) {
+        $cfg['tipos']['catalogo']['precio_base'] = 180000;
+    }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;
@@ -629,7 +651,8 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     // tasa que las cuotas de tarjeta de arriba (esas sí tienen interés). Es
     // otra forma de pago aparte, para el que quiere adelantar en menos partes
     // sin pasar por tarjeta.
-    $pagos3PorTotal = [200000 => 70000, 250000 => 85000, 290000 => 100000, 320000 => 110000];
+    $pagos3PorTotal = [160000 => 56000, 180000 => 63000, 200000 => 70000, 240000 => 84000,
+                       250000 => 85000, 290000 => 100000, 320000 => 110000];
     foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
         $total = (int)preg_replace('/\D/', '', (string)($datos['precio'] ?? ''));
         // El catálogo cotiza por cantidad de productos: su total no es fijo, así
