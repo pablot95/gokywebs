@@ -263,6 +263,8 @@ function wabot_config_ventas(&$cfg) {
          * cliente lo lee es en la oferta de videollamada. */
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
         'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
+        'muestra_presentar' => "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\nSe encuentra en este link: {link}\n\nMirala y después contame qué te parece o si hay algo que te gustaría cambiar.",
+        'muestra_vigencia' => 'Esta demo va a estar disponible por 7 días, para que tengas tiempo de revisarla bien.',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
         // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
@@ -881,6 +883,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         // y el silencio fue peor que la verdad (Luicho, 21-ago).
         'soy_bot' => 'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         'pago_sin_precio' => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
+        'demo_vigencia' => 'La demo queda disponible por 7 días desde que te la mandamos, así tenés tiempo de revisarla bien. Si necesitás más tiempo, avisame y lo vemos.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
@@ -1622,6 +1625,18 @@ function wabot_descripcion_desde_contexto($conv) {
         if (mb_strlen($t) > mb_strlen($mejor)) $mejor = $t;
     }
     return $mejor;
+}
+
+function wabot_muestra_presentar_textos($slug, $cfg) {
+    $link = 'gokywebs.com/demo/' . trim((string)$slug);
+    $base = trim((string)($cfg['muestra_presentar'] ?? ''));
+    if ($base === '') {
+        $base = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\nSe encuentra en este link: {link}\n\nMirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
+    }
+    $textos = [str_replace('{link}', $link, $base)];
+    $vigencia = trim((string)($cfg['muestra_vigencia'] ?? ''));
+    if ($vigencia !== '') $textos[] = $vigencia;
+    return $textos;
 }
 
 function wabot_prediseno_faltan($conv) {

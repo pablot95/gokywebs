@@ -4068,5 +4068,25 @@ caso('el desempate de turnos ya no usa la muletilla de siempre',
 caso('la oferta de la demo habla del estilo y los colores',
     stripos((string)$cfg['msg_prediseno_oferta'], 'estilo') !== false);
 
+echo "\n— Al presentar la demo se avisa que dura 7 días —\n";
+
+$textosPresentar = wabot_muestra_presentar_textos('midemo', $cfg);
+caso('presentar manda DOS mensajes: la demo y la vigencia', count($textosPresentar) === 2);
+caso('el primero trae el link de la demo', strpos($textosPresentar[0], 'gokywebs.com/demo/midemo') !== false);
+caso('y el segundo avisa los 7 días',
+    stripos($textosPresentar[1], '7 días') !== false && stripos($textosPresentar[1], 'disponible') !== false);
+caso('el aviso va aparte, no pegado al link',
+    stripos($textosPresentar[0], '7 días') === false);
+
+caso('si preguntan hasta cuándo dura, hay respuesta',
+    trim((string)($cfg['info']['demo_vigencia'] ?? '')) !== ''
+    && stripos((string)$cfg['info']['demo_vigencia'], '7 días') !== false);
+caso('"hasta cuándo puedo ver la demo" cae en esa clave',
+    wabot_info_por_palabras('hasta cuando puedo ver la demo?', 'postdemo') === 'demo_vigencia');
+caso('"el link se vence?" también',
+    wabot_info_por_palabras('el link se vence?', 'postdemo') === 'demo_vigencia');
+caso('pero preguntar cuánto tardan en hacerla sigue siendo plazos',
+    wabot_info_por_palabras('cuanto tiempo tardan en hacerla?', 'precio') === 'plazos');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

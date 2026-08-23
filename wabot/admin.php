@@ -352,9 +352,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        $texto = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\n"
-               . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
-               . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
+        $textos = wabot_muestra_presentar_textos($slug, $cfg);
+        $texto = $textos[0];
 
         $enviado = false;
         if (!$forzar || wabot_ventana_restante($conv) > 0) {
@@ -382,7 +381,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // El aviso no salió: queda anotado para no dar por hecho que el cliente
         // tiene el link, ni acá ni en el recordatorio de las 20 h.
         $conv['presentado_sin_aviso'] = !$enviado;
-        if ($enviado) wabot_conv_transcript($conv, 'humano', $texto);
+        if ($enviado) {
+            wabot_conv_transcript($conv, 'humano', $texto);
+            foreach (array_slice($textos, 1) as $extra) {
+                if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
+            }
+        }
         if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel_presentar']);
         wabot_evento($conv, 'muestra_presentada');
         wabot_conv_save($conv);
@@ -418,12 +422,13 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $slug = trim((string)($conv['presentado_slug'] ?? ''));
         $aviso = 'reenvio_sin_slug';
         if ($slug !== '' && wabot_ventana_restante($conv) > 0) {
-            $texto = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\n"
-                   . "Se encuentra en este link: gokywebs.com/demo/$slug\n\n"
-                   . "Mirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
-            if (wabot_enviar($conv, $texto)) {
+            $textos = wabot_muestra_presentar_textos($slug, $cfg);
+            if (wabot_enviar($conv, $textos[0])) {
                 $conv['presentado_sin_aviso'] = false;
-                wabot_conv_transcript($conv, 'humano', $texto);
+                wabot_conv_transcript($conv, 'humano', $textos[0]);
+                foreach (array_slice($textos, 1) as $extra) {
+                    if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
+                }
                 wabot_conv_save($conv);
                 $aviso = 'reenvio_ok';
             } else {

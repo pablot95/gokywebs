@@ -1558,6 +1558,8 @@ function wabot_info_por_palabras($texto, $fase = null) {
     }
 
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|mantenimiento|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)) return 'mantenimiento';
+    if (preg_match('/\b(hasta cuando|por cuanto tiempo|cuanto tiempo|cuantos dias|se vence|vence|caduca|se cae|se borra|sigue disponible|va a estar disponible|expira)\b.{0,30}\b(demo|muestra|link|pagina de prueba)\b/u', $t)
+        || preg_match('/\b(demo|muestra|link)\b.{0,30}\b(hasta cuando|por cuanto tiempo|cuantos dias|se vence|vence|caduca|se borra|expira|sigue disponible|va a estar disponible)\b/u', $t)) return 'demo_vigencia';
     if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|cuanto tiempo|plazo\w*|cuando esta|cuando la tienen|cuando la entregan|tiempo de entrega|para cuando|en cuanto la|cuando estaria)/u', $t)) return 'plazos';
     if (preg_match('/\b(como se paga\w*|formas? de pago|medios? de pago|se puede pagar|transferencia\w*|mercado pago|en cuotas|senia|sena)\b/u', $t)) return 'pago';
     // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
