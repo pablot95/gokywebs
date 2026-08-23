@@ -156,6 +156,27 @@ function wabot_contexto_es_hibrido($texto) {
  * dice que solo averiguaba, que será más adelante o que hoy no tiene presupuesto,
  * se cierra bien y se bloquea el seguimiento automático.
  */
+function wabot_texto_es_elogio($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    if (preg_match('/\bno\b.{0,12}\b(me gusto|me gusta|me encanto|me convence|me convencio|termina de cerrar|esta bueno|es lo que)\b/u', $t)) return false;
+    if (preg_match('/\bno\b.{0,8}\b(quedo|esta|estan)\b.{0,12}\b(lind[oa]|buen[oa]|hermos[oa])\b/u', $t)) return false;
+    return (bool)preg_match(
+        '/\b(hermos[oa]s?|precios[oa]s?|divin[oa]s?|lind[oa]s?|buenisim[oa]s?|genial|espectacular|increible'
+        . '|excelente|impecable|barbar[oa]|joya|zarp[oa]d[oa]|tremend[oa]|perfect[oa])\b/u', $t)
+        || (bool)preg_match('/\bme (encant[oa]|encantan|gust[oa]|gustan|fascin[oa])\b/u', $t)
+        || (bool)preg_match('/\b(quedo|esta|estan|quedaron)\b.{0,12}\b(muy )?(lind[oa]s?|buen[oa]s?|hermos[oa]s?|piola|copad[oa])\b/u', $t);
+}
+
+function wabot_texto_mira_la_demo($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\b(la|lo|las|los)\s+(estoy|estamos|est[aá]bamos)\s+(viendo|mirando|revisando)\b/u', $t)
+        || (bool)preg_match(
+        '/\b(viendo|mirando|revisando)\b.{0,15}\b(la demo|la muestra|la pagina|la web|el link|la propuesta)\b/u', $t);
+}
+
 function wabot_cierre_sin_presion_tipo($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return null;
@@ -176,6 +197,7 @@ function wabot_cierre_sin_presion_tipo($texto) {
         || preg_match('/\b(recibir consultas|reciban consultas|me consulten|solo mostrar|mostrar los|mostrar mis|catalogo|whatsapp)\b/u', $t)) {
         return null;
     }
+    if (wabot_texto_es_elogio($t) || wabot_texto_mira_la_demo($t)) return null;
 
     if (preg_match('/\b(estoy|estaba|ando|andaba|estamos)\b.{0,20}\b(averiguando|consultando|preguntando|viendo|mirando|chusmeando|cotizando)\b/u', $t)
         || preg_match('/\b(solo|solamente|unicamente|por ahora|por el momento)\b.{0,25}\b(averiguo|averiguando|consultando|preguntando|viendo|mirando)\b/u', $t)
@@ -301,6 +323,14 @@ function wabot_contexto_es_mayorista($contexto) {
         '/\bmayorista\w*\b|\bal por mayor\b|\bb2b\b'
         . '|\bvend\w*\b.{0,25}\b(solo|solamente|unicamente)\b.{0,25}\b(comercios?|negocios?|kioscos?|almacenes|revendedores?|locales)\b'
         . '|\bno\b.{0,20}\bal publico\b/u', $t);
+}
+
+function wabot_contexto_es_salud($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    return (bool)preg_match(
+        '/\b(psicolog\w*|psiquiatr\w*|nutricionista|nutricion\w*|kinesiolog\w*|fonoaudiolog\w*|dermatolog\w*'
+        . '|odontolog\w*|dentista|terapeuta|terapia\w*|consultorio\w*|medic[ao]|medicina|paciente\w*|fisioterap\w*'
+        . '|psicopedagog\w*)\b/u', $t);
 }
 
 function wabot_contexto_es_alojamiento($contexto) {
@@ -1927,6 +1957,19 @@ function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
     return $variantes[$indice];
 }
 
+function wabot_tipo_variante($tipo, $campo, $conv, $cfg) {
+    $t = $cfg['tipos'][$tipo] ?? [];
+    $base = trim((string)($t[$campo] ?? ''));
+    $variantes = array_values(array_filter((array)($t[$campo . '_variantes'] ?? []), function ($v) {
+        return is_string($v) && trim($v) !== '';
+    }));
+    if (!$variantes) return $base;
+    if ((int)($conv['chat_started_ts'] ?? 0) <= 0) return $base !== '' ? $base : $variantes[0];
+    $semilla = wabot_conversation_key($conv) . '|' . (string)($conv['session_id'] ?? '') . '|' . $tipo . '|' . $campo;
+    $indice = hexdec(substr(hash('sha256', $semilla), 0, 8)) % count($variantes);
+    return $variantes[$indice];
+}
+
 /* Arma el mensaje de precio del tipo y fija la fase. */
 /**
  * Devuelve DOS mensajes: el precio con el link, y el ofrecimiento del
@@ -1986,6 +2029,7 @@ function wabot_dice_que_pago($texto) {
 function wabot_postdemo_quiere_avanzar($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
+    if (preg_match('/\bno\b.{0,12}\b(me gusto|me gusta|me encanto|me convence|me convencio|termina de cerrar)\b/u', $t)) return false;
     if (wabot_es_afirmativa($texto)) return true;
     return (bool)(
         preg_match('/\bcomo\b.{0,12}\b(sigo|seguimos|sigue|hago|hacemos|arranco|arrancamos|procedo|avanzo|avanzamos|continuo)\b/u', $t)
@@ -1993,6 +2037,7 @@ function wabot_postdemo_quiere_avanzar($texto) {
         || preg_match('/\b(quiero|queremos|vamos a|listo para)\b.{0,20}\b(avanzar|arrancar|empezar|contratar|seguir|hacerla|comprarla)\b/u', $t)
         || preg_match('/\b(me gusto|me encanto|me gusta|quedo (muy )?(bien|linda|buena|barbara)|esta (muy )?(buena|linda|barbara)|buenisima|espectacular|hermosa)\b/u', $t)
         || preg_match('/\b(dale|listo)\b.{0,20}\b(avanzamos|arrancamos|seguimos|vamos)\b/u', $t)
+        || (wabot_texto_es_elogio($texto) && !wabot_postdemo_la_va_a_mirar($texto))
     );
 }
 
@@ -2085,14 +2130,15 @@ function wabot_frase_tiene_contenido_especifico($texto) {
 }
 
 function wabot_pitch_texto($tipo, $conv, $cfg) {
-    $t = $cfg['tipos'][$tipo] ?? [];
     $contexto = wabot_contexto_cliente_texto($conv);
     $variante = null;
     if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
+    elseif ($tipo === 'turnos' && wabot_contexto_es_salud($contexto)) $variante = 'salud';
     if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
 
-    $desc = $variante !== null ? trim((string)($t['desc_' . $variante] ?? '')) : '';
-    if ($desc === '') $desc = trim((string)($t['desc'] ?? ''));
+    $campoDesc = $variante !== null ? 'desc_' . $variante : 'desc';
+    $desc = wabot_tipo_variante($tipo, $campoDesc, $conv, $cfg);
+    if ($desc === '' && $variante !== null) $desc = wabot_tipo_variante($tipo, 'desc', $conv, $cfg);
     if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
 
     $ultimoMsg = trim((string)wabot_ultimo_texto_cliente($conv));
@@ -2101,17 +2147,21 @@ function wabot_pitch_texto($tipo, $conv, $cfg) {
     $yaConto = (mb_strlen(trim((string)($conv['descripcion'] ?? ''))) >= 25
                && !wabot_descripcion_generica((string)($conv['descripcion'] ?? '')))
                || $respuestaEspecifica;
-    $clave = $yaConto ? 'pitch_pregunta_2' : 'pitch_pregunta';
-    $varianteYaContestada = $variante === 'alojamiento' && wabot_contexto_tiene_cantidad_unidades($contexto);
-    $pregunta = '';
-    if ($variante !== null) {
-        $pregunta = $varianteYaContestada
-            ? trim((string)($t['pitch_pregunta_2_' . $variante] ?? ''))
-            : trim((string)($t['pitch_pregunta_' . $variante] ?? ''));
-    }
-    if ($pregunta === '') $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
+    $sufijo = $yaConto ? '_2' : '';
 
-    $base = (string)($cfg['msg_pitch'] ?? '');
+    $campoPregunta = null;
+    if ($variante === 'alojamiento') {
+        $campoPregunta = wabot_contexto_tiene_cantidad_unidades($contexto)
+            ? 'pitch_pregunta_2_alojamiento'
+            : 'pitch_pregunta_alojamiento';
+    } elseif ($variante !== null) {
+        $campoPregunta = 'pitch_pregunta' . $sufijo . '_' . $variante;
+    }
+    $pregunta = $campoPregunta !== null ? wabot_tipo_variante($tipo, $campoPregunta, $conv, $cfg) : '';
+    if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta' . $sufijo, $conv, $cfg);
+    if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta', $conv, $cfg);
+
+    $base = wabot_plantilla_variante('msg_pitch', 'msg_pitch_variantes', $conv, $cfg);
     return trim(str_replace(['{desc}', '{pregunta}'], [$desc, $pregunta], $base));
 }
 
@@ -2201,7 +2251,9 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
     }
 
     $plantilla = $trasPitch && trim((string)($cfg['msg_precio_tras_pitch'] ?? '')) !== ''
-        ? (string)$cfg['msg_precio_tras_pitch']
+        ? (is_array($conv)
+            ? wabot_plantilla_variante('msg_precio_tras_pitch', 'msg_precio_tras_pitch_variantes', $conv, $cfg)
+            : (string)$cfg['msg_precio_tras_pitch'])
         : (is_array($conv)
             ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
             : (string)$cfg['msg_precio']);

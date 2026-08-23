@@ -262,6 +262,7 @@ function wabot_config_ventas(&$cfg) {
          * El nombre "Pablo" también se reserva para acá: la primera vez que el
          * cliente lo lee es en la oferta de videollamada. */
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
+        'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
         // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
@@ -414,6 +415,110 @@ function wabot_config_ventas(&$cfg) {
         && trim((string)($cfg['tipos']['ecommerce']['desc_mayorista'] ?? '')) === '') {
         $cfg['tipos']['ecommerce']['desc_mayorista'] = 'una tienda online pensada para mayoristas: catálogo con tus productos, cuentas exclusivas para que tus clientes revendedores compren con sus condiciones, y un panel propio para manejar todo vos';
     }
+    if (isset($cfg['tipos']['turnos']) && trim((string)($cfg['tipos']['turnos']['desc_salud'] ?? '')) === '') {
+        $cfg['tipos']['turnos']['desc_salud'] = 'Entonces podemos hacer que tus pacientes vean los horarios disponibles y reserven directo desde la web, y vos manejás todo desde un panel.';
+    }
+
+    $descVariantes = [
+        'landing' => ['desc' => [
+            'Para tu caso haría una web simple y profesional, con tus servicios, trabajos y contacto directo por WhatsApp.',
+            'En tu caso lo más práctico es una página con lo que hacés, algunos trabajos y un botón directo a tu WhatsApp.',
+            'Ahí conviene una web propia: mostrás tus servicios, quién sos, y te contactan directo por WhatsApp.',
+            'Se puede armar una página con tu actividad, tus trabajos y un contacto directo, para que no dependas solo de las redes.',
+        ]],
+        'ecommerce' => ['desc' => [
+            'En ese caso te conviene una tienda online: catálogo, carrito, pagos online y un panel para administrar los productos y los pedidos.',
+            'Ahí ya estaríamos hablando de una tienda online: catálogo, carrito y cobro, con un panel para manejar vos los productos y los pedidos.',
+            'Eso se puede hacer con ecommerce: el cliente elige, paga y te deja el pedido armado, sin que tengas que estar respondiendo uno por uno.',
+            'En ese caso podemos automatizar toda la compra desde la web: catálogo, carrito, cobro online y un panel para cargar los productos vos mismo.',
+        ]],
+        'turnos' => ['desc' => [
+            'Entonces podemos hacer que reserven el turno solos desde la web, eligiendo día y horario, y a vos te queda todo ordenado en un panel.',
+            'Ahí conviene una web con reserva de turnos: eligen día y horario ellos mismos, y vos manejás todo desde un panel sin coordinar por chat.',
+            'Se puede armar para que saquen el turno directo desde la página, y vos ves la agenda ordenada en un panel.',
+            'En ese caso arma la web con reserva online: el que te escribe ya ve los horarios libres y elige, y a vos te queda todo prolijo en un panel.',
+        ]],
+        'institucional' => ['desc' => [
+            'Ahí conviene una web institucional completa, con secciones para la historia, las autoridades, las actividades y las novedades.',
+            'En ese caso se arma una web con varias páginas: historia, equipo, novedades y todo lo que necesiten mostrar por separado.',
+            'Se puede organizar en varias secciones: historia, autoridades, novedades y la información que quieran tener siempre disponible.',
+        ]],
+        'inmobiliaria' => ['desc' => [
+            'Para una inmobiliaria haría una web donde puedas cargar las propiedades desde tu panel, y que la gente filtre por zona, precio y otras características.',
+            'Ahí conviene una web con catálogo de propiedades: cada una con su ficha, y el interesado filtra por zona y precio antes de consultarte.',
+            'Se puede armar con búsqueda y filtros, para que el interesado encuentre la propiedad que busca y te escriba ya con eso elegido.',
+        ]],
+        'elearning' => ['desc' => [
+            'En ese caso podemos armar una plataforma para que vendas los cursos desde la web y cada alumno tenga su propio acceso para ver las clases.',
+            'Ahí conviene una plataforma de cursos: subís los videos, cobrás online y cada alumno entra con su acceso propio.',
+            'Se puede armar para vender el curso una sola vez y que el alumno acceda solo, sin que tengas que mandarle nada a mano.',
+        ]],
+        'catalogo' => ['desc' => [
+            'En ese caso te conviene un catálogo online: cada producto con foto y descripción, y un botón para consultarte directo por WhatsApp.',
+            'Se puede armar con todos tus productos, cada uno con su ficha, y que te escriban por WhatsApp ya con el producto elegido.',
+            'Ahí lo mejor es un catálogo completo: el que entra recorre todo solo y te llega la consulta con el producto ya definido.',
+        ]],
+    ];
+    foreach ($descVariantes as $tipoV => $campos) {
+        if (!isset($cfg['tipos'][$tipoV])) continue;
+        foreach ($campos as $campo => $opciones) {
+            $claveVar = $campo . '_variantes';
+            if (empty($cfg['tipos'][$tipoV][$claveVar])) $cfg['tipos'][$tipoV][$claveVar] = $opciones;
+        }
+    }
+    if (isset($cfg['tipos']['turnos']) && empty($cfg['tipos']['turnos']['desc_alojamiento_variantes'])) {
+        $cfg['tipos']['turnos']['desc_alojamiento_variantes'] = [
+            (string)($cfg['tipos']['turnos']['desc_alojamiento'] ?? ''),
+            'Ahí conviene una web con reserva de estadías: eligen las fechas y ven la disponibilidad solos, y a vos te queda todo ordenado en un panel.',
+            'Se puede armar para que reserven directo desde la web, viendo qué fechas están libres, sin que tengas que ir coordinando por chat.',
+        ];
+    }
+
+    $preguntaVariantes = [
+        'landing' => [
+            'pitch_pregunta' => ['Contame qué servicios ofrecés y en qué zona trabajás?', 'Qué servicios ofrecés y en qué zona estás?'],
+            'pitch_pregunta_2' => [
+                'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?',
+                'Hoy por dónde te llegan la mayoría de las consultas?',
+                'Las consultas hoy te llegan más por WhatsApp o por Instagram?',
+            ],
+        ],
+        'ecommerce' => [
+            'pitch_pregunta' => ['Contame qué vendés exactamente, así la armamos con eso?', 'Qué es lo que vendés exactamente?'],
+            'pitch_pregunta_2' => [
+                'Y hoy cómo vendés, por Instagram, local, los dos?',
+                'Y actualmente cómo manejás las ventas?',
+                'Hoy los pedidos te llegan más por Instagram o también tenés local?',
+            ],
+        ],
+        'turnos' => [
+            'pitch_pregunta' => ['Contame qué servicios ofrecés, así armamos la agenda con eso?', 'Qué servicios ofrecés? Así armamos la agenda con eso.'],
+            'pitch_pregunta_2' => [
+                'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?',
+                'Hoy los turnos los manejás por WhatsApp o con agenda de papel?',
+            ],
+        ],
+        'institucional' => [
+            'pitch_pregunta_2' => [
+                'Y hoy tienen alguna web o redes, o arrancan de cero?',
+                'Hoy tienen algo armado ya, página o redes, o arrancarían de cero?',
+            ],
+        ],
+        'elearning' => [
+            'pitch_pregunta_2' => [
+                'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?',
+                'Hoy cómo se lo mandás a los alumnos, Drive, WhatsApp?',
+            ],
+        ],
+    ];
+    foreach ($preguntaVariantes as $tipoV => $campos) {
+        if (!isset($cfg['tipos'][$tipoV])) continue;
+        foreach ($campos as $campo => $opciones) {
+            $claveVar = $campo . '_variantes';
+            if (empty($cfg['tipos'][$tipoV][$claveVar])) $cfg['tipos'][$tipoV][$claveVar] = $opciones;
+        }
+    }
+
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -518,6 +623,9 @@ function wabot_config_ventas(&$cfg) {
     if (trim((string)($cfg['prediseno'] ?? '')) === $predisenoViejo) {
         $cfg['prediseno'] = "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.";
     }
+    if (trim((string)($cfg['prediseno'] ?? '')) === "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.") {
+        $cfg['prediseno'] = "Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual.";
+    }
 
     $migraciones2108 = [
         'caro' => [
@@ -551,16 +659,103 @@ function wabot_config_ventas(&$cfg) {
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
-                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
             'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?'
-                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
             'Y no hace falta que decidas solo con el presupuesto: te armamos primero una muestra de cómo quedaría tu web, sin costo. La ves y, si te gusta, recién ahí definís. Te la preparamos?'
-                => 'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
+                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+            'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?'
+                => 'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+        ],
+        'msg_pitch' => [
+            'Buenísimo. Para lo tuyo va {desc}.
+
+{pregunta}'
+                => '{desc}
+
+{pregunta}',
+        ],
+        'desempate_turnos' => [
+            'Perfecto. Te hago una pregunta que cambia bastante la web: querés que tus clientes puedan sacar el turno solos desde la página, eligiendo día y horario, o alcanza con que te escriban por WhatsApp y los agendás vos?'
+                => 'Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?',
+        ],
+        'desempate_turnos_alojamiento' => [
+            'Te hago una pregunta que cambia bastante la web: querés que tus huéspedes puedan reservar solos desde la página, eligiendo las fechas y viendo la disponibilidad, o alcanza con que te consulten por WhatsApp y lo coordinás vos?'
+                => 'Una cosa importante: querés que reserven las fechas solos desde la web, o preferís que te consulten por WhatsApp?',
+        ],
+        'postdemo_transferencia' => [
+            'Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.
+
+Banco Santander
+CBU: {cbu}
+Alias: {alias}
+Titular de la cuenta: {titular}
+Documento: {documento}
+
+Si preferís abonar con tarjeta avisame y te paso el link.'
+                => 'Para avanzar, la seña es de {sena} y el saldo lo abonás recién cuando la web esté terminada.
+
+Banco Santander
+CBU: {cbu}
+Alias: {alias}
+Titular: {titular}
+Documento: {documento}
+
+Si preferís pagar con tarjeta, avisame y te paso el link.',
+        ],
+        'postdemo_tarjeta' => [
+            'Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:
+{link}'
+                => 'Te paso el link para abonar la seña de {sena} con tarjeta. Podés hacerlo hasta en 12 cuotas:
+{link}',
+        ],
+        'postdemo_la_miro' => [
+            'Dale, miralo con tranquilidad. Cualquier duda que te surja escribime por acá y te la contesto al toque.'
+                => 'Dale, miralo tranquilo. Cualquier duda que te surja escribime por acá.',
+        ],
+        'postdemo_cuotas_sin_interes' => [
+            'Si te sirve para acomodarlo, lo podemos dividir en 3 cuotas sin interés, sin recargo sobre el precio. Te lo prepara Pablo directamente y te lo pasa por acá. Avanzamos así?'
+                => 'También podemos dividirlo en 3 cuotas sin interés, manteniendo el mismo precio. Si te sirve esa opción, te confirmamos por acá cómo queda cada cuota.',
+        ],
+        'postdemo_videollamada' => [
+            'Si te sirve, coordinamos una videollamada con Pablo, el desarrollador: te muestra todo en vivo y te saca las dudas de una. Te lo paso así arreglan el horario?'
+                => 'Si querés, podemos coordinar una videollamada con Pablo, el desarrollador. Te muestra la web en vivo y podés sacarte cualquier duda directamente con él. Querés que coordinen?',
+        ],
+        'postdemo_cambios' => [
+            'Perfecto, tomo nota de esos cambios. Los aplicamos apenas confirmes y la web queda como la necesitás.'
+                => 'Perfecto, anoto esos cambios para aplicarlos cuando avancemos.',
+        ],
+        'postdemo_pago_avisado' => [
+            'Buenísimo, lo verificamos y te confirmamos por acá. Cualquier cosa quedamos en contacto.'
+                => 'Perfecto, revisamos la transferencia y te confirmamos por acá.',
+        ],
+        'derivar' => [
+            'Perfecto, {nombre}. Tu consulta la sigue el desarrollador directamente: te escribe a la brevedad por acá para avanzar.'
+                => 'Dale, {nombre}. Te paso con el desarrollador para que lo sigan directamente por acá.',
+        ],
+        'seguimiento_precio' => [
+            'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?'
+                => 'Hola {nombre}, cómo estás? Quedó pendiente lo de la web. Si querés, podemos prepararte la muestra sin costo para que primero veas cómo podría quedar.',
+        ],
+        'seguimiento_datos' => [
+            'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.'
+                => 'Hola {nombre}, cómo estás? Nos habían quedado pendientes algunos datos para preparar la muestra. Cuando puedas seguimos por acá.',
+        ],
+        'ultima_llamada' => [
+            'Hola {nombre}, te escribo por lo que veníamos viendo de la web. Si te quedó alguna duda escribime y te la contesto, y si querés te dejo armada la demo gratis para que la veas sin compromiso. Te sirve?'
+                => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',
+        ],
+        'presentados_recordatorio_2' => [
+            'Hola {nombre}, no quiero robarte tiempo: si la demo no te terminó de cerrar, decime qué cambiarías y la ajustamos. Y si preferís dejarlo acá, también está perfecto, avisame nomás.'
+                => 'Hola {nombre}, te escribo una última vez por la demo. Si hubo algo que no te terminó de cerrar, decime y vemos si lo podemos ajustar. Y si preferís dejarlo por ahora, no hay problema.',
         ],
     ];
+    $lf = function ($t) { return str_replace(["\r\n", "\r"], "\n", (string)$t); };
     foreach ($migraciones2108 as $campo => $reemplazos) {
-        $actual = trim((string)($cfg[$campo] ?? ''));
-        if (isset($reemplazos[$actual])) $cfg[$campo] = $reemplazos[$actual];
+        $actual = $lf(trim((string)($cfg[$campo] ?? '')));
+        foreach ($reemplazos as $viejo => $nuevo) {
+            if ($lf($viejo) === $actual) { $cfg[$campo] = $lf($nuevo); break; }
+        }
     }
     $migracionesInfo2108 = [
         'pago' => [
@@ -827,6 +1022,26 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     if (!empty($cfg['msg_precio_catalogo'])) $cfg['msg_precio_catalogo'] = $sinCuotasCatalogo($cfg['msg_precio_catalogo']);
     if (!empty($cfg['msg_precio_catalogo_variantes']) && is_array($cfg['msg_precio_catalogo_variantes'])) {
         $cfg['msg_precio_catalogo_variantes'] = array_map($sinCuotasCatalogo, $cfg['msg_precio_catalogo_variantes']);
+    }
+
+    $sinTransferencia = function ($texto) {
+        $t = str_replace([' Se puede abonar por transferencia.', 'Se puede abonar por transferencia.'], '', (string)$texto);
+        return preg_replace('/[ \t]+\n/u', "\n", $t);
+    };
+    foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch', 'msg_precio_catalogo_tras_pitch'] as $clave) {
+        if (!empty($cfg[$clave])) $cfg[$clave] = $sinTransferencia($cfg[$clave]);
+    }
+    foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes'] as $clave) {
+        if (empty($cfg[$clave]) || !is_array($cfg[$clave])) continue;
+        $cfg[$clave] = array_map($sinTransferencia, $cfg[$clave]);
+    }
+
+    if (empty($cfg['msg_precio_tras_pitch_variantes']) || !is_array($cfg['msg_precio_tras_pitch_variantes'])) {
+        $cfg['msg_precio_tras_pitch_variantes'] = [
+            "Para una web de este tipo, el desarrollo queda en {precio}.\nAcá podés ver todo lo que incluye y algunos trabajos que hicimos: {link}",
+            "El desarrollo completo queda en {precio}.\nAcá tenés el detalle de lo que incluye y algunos trabajos: {link}",
+            "En ese caso el desarrollo sale {precio}.\nAcá está todo lo que incluye, con ejemplos de trabajos: {link}",
+        ];
     }
 
     // En la parte 1 se lo nombra por el ROL ("el desarrollador"), nunca por el
@@ -1387,6 +1602,28 @@ function wabot_descripcion_generica($descripcion) {
 }
 
 /** Qué le falta pedir para el prediseño: nunca lo que el cliente ya dio. */
+function wabot_descripcion_desde_contexto($conv) {
+    if (!function_exists('wabot_frase_tiene_contenido_especifico')) return '';
+    $inicio = (int)($conv['session_started_ts'] ?? 0);
+    $mejor = '';
+    foreach ((array)($conv['transcript'] ?? []) as $linea) {
+        if (($linea['q'] ?? '') !== 'cliente') continue;
+        if ($inicio > 0 && (int)($linea['ts'] ?? 0) < $inicio) continue;
+        $t = trim((string)($linea['t'] ?? ''));
+        if ($t === '' || mb_strlen($t) > 160) continue;
+        if (wabot_descripcion_generica($t)) continue;
+        if (!wabot_frase_tiene_contenido_especifico($t)) continue;
+        if (function_exists('wabot_es_acuse') && wabot_es_acuse($t)) continue;
+        if (function_exists('wabot_es_afirmativa') && wabot_es_afirmativa($t)) continue;
+        if (function_exists('wabot_fallback_respuesta_vacia') && wabot_fallback_respuesta_vacia($t, false)) continue;
+        $n = wabot_normalizar_busqueda($t);
+        if (preg_match('/^(hola|buenas|buen dia|buenas tardes|buenas noches|que tal|holis)\b/u', $n)) continue;
+        if (preg_match('/\b(web|pagina|paginas|sitio|demo|muestra|prediseno|precio|precios|presupuesto|cuanto|costo|cotizacion|link)\b/u', $n)) continue;
+        if (mb_strlen($t) > mb_strlen($mejor)) $mejor = $t;
+    }
+    return $mejor;
+}
+
 function wabot_prediseno_faltan($conv) {
     $items = [];
     // El nombre del perfil de WhatsApp sirve de arranque, pero muchos son
@@ -1395,8 +1632,14 @@ function wabot_prediseno_faltan($conv) {
     // el perfil no dio nada usable.
     if (wabot_nombre_usable((string)($conv['nombre'] ?? '')) === '') $items[] = 'Tu nombre';
     if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
-    if (wabot_descripcion_generica((string)($conv['descripcion'] ?? ''))) $items[] = 'Una descripción breve de lo que ofrecés';
+    if (wabot_descripcion_generica((string)($conv['descripcion'] ?? ''))
+        && wabot_descripcion_desde_contexto($conv) === '') {
+        $items[] = 'Una descripción breve de lo que ofrecés';
+    }
     if (trim((string)($conv['colores']        ?? '')) === '') $items[] = 'Los colores de tu marca';
+    if (trim((string)($conv['referencia'] ?? '')) === '' && empty($conv['referencia_preguntada'])) {
+        $items[] = 'Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)';
+    }
     return $items;
 }
 
@@ -2853,7 +3096,9 @@ function wabot_muestra_guardar($conv, $cfg, $leadOk) {
         'nombre_agenda' => wabot_nombre_agenda($conv),
         'tipo'        => $conv['tipo'] ?? '',
         'tipoLabel'   => wabot_tipo_label($conv['tipo'] ?? '', $cfg),
-        'descripcion' => (string)$conv['descripcion'],
+        'descripcion' => wabot_descripcion_generica((string)$conv['descripcion'])
+            ? (wabot_descripcion_desde_contexto($conv) ?: (string)$conv['descripcion'])
+            : (string)$conv['descripcion'],
         'brief'       => $conv['brief'] ?? null,
         'colores'     => (string)$conv['colores'],
         'colores_hex' => $conv['colores_hex'] ?? null,

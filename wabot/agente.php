@@ -174,7 +174,10 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             $limpio = wabot_validar_redaccion($texto, implode("\n", $pendientes), $cfg);
             if ($limpio === null) return null;
             wabot_agente_marcar_nombre_usado($limpio, $conv);
-            return array_merge([$limpio], wabot_agente_filtrar_aparte($limpio, $aparte));
+            $salida = array_merge([$limpio], wabot_agente_filtrar_aparte($limpio, $aparte));
+            $empujon = wabot_agente_empujon_postdemo($salida, $mensaje, $conv, $cfg);
+            if ($empujon !== null) $salida[] = $empujon;
+            return $salida;
         }
 
         // Ejecutamos lo que pidió y se lo devolvemos para que redacte.
@@ -261,6 +264,21 @@ function wabot_agente_marcar_nombre_usado($texto, &$conv) {
  * instrucción se ignora: pasó en un chat real y el cliente recibió la muestra
  * ofrecida dos veces seguidas. Esto lo garantiza el código, no el prompt.
  */
+function wabot_agente_empujon_postdemo($salida, $mensaje, &$conv, $cfg) {
+    if (($conv['fase'] ?? '') !== 'postdemo') return null;
+    if (!empty($conv['empujon_postdemo_dado'])) return null;
+    if (!wabot_texto_es_elogio((string)$mensaje)) return null;
+
+    $dicho = implode(' ', (array)$salida);
+    if (strpos($dicho, '?') !== false) return null;
+    if (preg_match('/\b(cbu|alias|se[ñn]a|link|transferencia|videollamada)\b/iu', $dicho)) return null;
+
+    $texto = trim((string)($cfg['postdemo_elogio'] ?? ''));
+    if ($texto === '') return null;
+    $conv['empujon_postdemo_dado'] = true;
+    return $texto;
+}
+
 function wabot_agente_filtrar_aparte($texto, $aparte) {
     if (!$aparte) return [];
     // \b en "demo": es corto y aparece adentro de "podemos".
@@ -713,7 +731,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 }
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);
-                return ['texto' => wabot_prediseno_texto($conv, $cfg), 'nota' => 'Pedile de a una lo que falte: nombre del negocio, descripción, colores.'];
+                return ['texto' => wabot_prediseno_texto($conv, $cfg),
+                        'nota' => 'Mandá este texto tal cual: ya lista TODO lo que falta, junto y en un solo mensaje. No lo desarmes en preguntas de a una.'];
             }
             // El mantenimiento cambia de precio y de link según lo cotizado.
             if ($clave === 'mantenimiento') {
@@ -1166,6 +1185,8 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Antes de hacer una pregunta, revisá TODOS los hechos que el cliente ya dijo. Nunca preguntes qué vende, qué servicio ofrece ni qué necesita si eso ya aparece en la charla; confirmalo con tus palabras y avanzá al siguiente dato faltante.
 - "Soy profesional", "tengo un negocio", "es un emprendimiento", "vendo cosas" o "trabajo por mi cuenta" NO son una respuesta: no dicen QUÉ hace, vende u ofrece, por más que tengan varias palabras. No alcanzan para elegir tipo ni mucho menos para dar_precio, aunque la palabra "profesional" aparezca en la descripción de landing. Insistí con la misma pregunta reformulada hasta tener algo concreto (una profesión, un oficio, un producto).
 - En cambio, ni bien aparece algo concreto —aunque sea una sola palabra: "arroz", "medias", "velas"— eso YA alcanza para clasificar. No seas redundante pidiendo "contame qué vendés" de nuevo, y no le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp (ni con esas palabras ni parecidas, tipo "presentar servicios o vender y cobrar online"): esa pregunta está prohibida para cualquier producto, ver COMERCIOS más abajo.
+- OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
+- Cuando repreguntes eso, aprovechá la respuesta en el mensaje siguiente: si te dice "entrenamiento personal y funcional", nombralo con sus palabras al proponerle la web. Repetir el pitch genérico después de que te dio el detalle hace que se note que no lo leíste.
 - Nunca digas "ya tengo claro qué ofrecés" ni nada parecido si en realidad no te dijo nada específico: se nota que es falso y desconfía más. Confirmá con tus palabras SOLO cuando el dato que tenés es real.
 - No repitas lo que ya dijiste en la charla ni arranques siempre con "Perfecto". Alterná aperturas naturales o entrá directo en la respuesta.
 - Un "sí", "dale", "ok", "listo" o "de una" pelados contestan LA ÚLTIMA PREGUNTA QUE HICISTE, no abren un tema nuevo. Si venías de ofrecer el prediseño, ese "dale" es que lo acepta: pedile la descripción, no lo derives. Derivar ahí corta la venta en el mejor momento.
@@ -1261,15 +1282,17 @@ REGLAS QUE NO PODÉS ROMPER
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
-Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio. Si muerde, pedile cuatro cosas, de a una por mensaje:
+Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio. Si muerde, necesitás cuatro cosas:
 1. El nombre de su negocio o marca.
 2. Una descripción breve de lo que ofrece.
 3. Los colores de su marca.
 4. Si tiene alguna página de referencia que le haya gustado, o algún estilo pensado. Aclarale que puede ser de cualquier rubro y que si no tiene ninguna no hay problema.
-El texto que le mandás al ofrecer el prediseño ya lista, con saltos de línea, solo lo que realmente falta (algún dato puede venir de antes en la charla). No repitas esa lista con otras palabras: mandá ese texto tal cual y después pedí el resto de a uno.
+**Pedíselas TODAS JUNTAS en un solo mensaje, como una lista corta, y aclarale que puede mandártelas todas de una.** Preguntar de a un dato por mensaje convierte esto en un interrogatorio de ocho turnos y es la parte donde más gente se cae. El texto que te devuelve la herramienta ya trae esa lista armada con saltos de línea y ya excluye lo que el cliente contó antes en la charla: mandalo tal cual, sin reescribirlo ni desarmarlo en preguntas sueltas.
+Si contesta varias cosas en un mismo mensaje, anotalas todas. Y si después de esa respuesta todavía falta algo, ahí sí pedí puntualmente lo que falte, nombrando solo eso.
 APENAS el cliente te contesta uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde y después se lo terminamos pidiendo de nuevo, que es lo peor que nos puede pasar. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.
 Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos, ni formularios.
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
+Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno ANTES de mandar el pedido de datos, así el texto sale sin ese punto y no le preguntás algo que acaba de decirte. Pedir de nuevo lo que el cliente ya contó es la queja más común que recibimos.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.
@@ -1277,6 +1300,14 @@ HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Una frase corta o ambigua como "para mates" NO se deriva: se pregunta si quiere vender online o solo mostrar/contacto.
 - Ante ambigüedad, la primera llamada a derivar será rechazada y te obliga a preguntar. Hacen falta dos respuestas posteriores distintas que sigan sin aclarar para habilitar el handoff. No repitas la tool dos veces en la misma vuelta.
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.
+
+DESPUÉS DE LA DEMO: ACÁ SE CIERRA LA VENTA
+Cuando la demo ya está presentada, tu trabajo cambia: ya no explicás ni cotizás, cerrás. Todo mensaje tuyo tiene que dejar un próximo paso concreto.
+- Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y en el MISMO mensaje seguí: preguntale si le cambiaría algo, o proponé avanzar con la seña. Contestar solo "me alegra que te guste" y quedarte ahí deja la venta muerta justo en el mejor momento: es el error más caro de toda la charla.
+- Si te pide cambios, anotalos y confirmá que quedan aplicados cuando avancen. Después seguí con el cierre.
+- Si pregunta cómo pagar, cuánto es la seña o dice que quiere avanzar, usá datos_transferencia (o link_tarjeta si prefiere tarjeta). No se lo hagas pedir dos veces.
+- Si se frena por plata, ofrecé una sola vez las 3 cuotas sin interés. Si duda o desconfía, ofrecé la videollamada. Cada una se juega una vez.
+- Nunca cierres la charla vos ni te despidas mientras el cliente siga interesado: el que decide terminar es él. Un elogio, una duda o un "lo miro y te digo" NO son una despedida.
 
 ESTILO
 - Voseo argentino, cordial y directo, como el dueño de la agencia. Formal en el registro, tuteando en la conjugación: "te preparo la demo", "contame qué necesitás", nunca "le preparo" ni "cuénteme".

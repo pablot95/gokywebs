@@ -349,7 +349,7 @@ $cPitchGiraATurnos['tipo'] = 'landing';
 $cPitchGiraATurnos['pitch_hecho'] = true;
 $r = wabot_engine('Es una peluqueria', $cPitchGiraATurnos, $cfg);
 caso('landing que en realidad es turnos (peluquería) → pregunta el desempate, no cotiza landing',
-    stripos(implode(' ', $r), 'eligiendo día y horario') !== false
+    implode(' ', $r) === $cfg['desempate_turnos']
     && $cPitchGiraATurnos['fase'] === 'desempate_turnos');
 caso('y el tipo queda indefinido hasta contestar el desempate, no se queda pegado en landing',
     ($cPitchGiraATurnos['tipo'] ?? null) === null);
@@ -2014,28 +2014,42 @@ echo "— Qué falta pedir para el prediseño —\n";
 
 $cfgPredis = wabot_config_load();
 
+$refDicha = ['referencia_preguntada' => true];
 caso('sin nada conocido, pide las tres cosas',
-    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
         'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
     ]);
 caso('y si el perfil de WhatsApp no sirve como nombre, pide cuatro',
-    wabot_prediseno_faltan(['nombre' => '.', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
+    wabot_prediseno_faltan($refDicha + ['nombre' => '.', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => '']) === [
         'Tu nombre', 'El nombre de tu negocio', 'Una descripción breve de lo que ofrecés', 'Los colores de tu marca',
     ]);
 caso('lo que ya se sabe no se vuelve a pedir',
-    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => '', 'colores' => 'marrón']) === [
         'Una descripción breve de lo que ofrecés',
     ]);
 caso('con las tres cosas ya sabidas, no falta nada',
-    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
+    wabot_prediseno_faltan($refDicha + ['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']) === []);
+
+caso('la referencia va en el MISMO pedido, no en un turno aparte',
+    in_array('Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)',
+        wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón']), true));
+caso('pero si ya se la preguntaron, no se repite',
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+        'colores' => 'marrón', 'referencia_preguntada' => true]) === []);
+caso('ni si el cliente ya la dio',
+    wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+        'colores' => 'marrón', 'referencia' => 'nike.com']) === []);
 
 $textoConFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
 caso('el texto lista lo que falta con saltos de línea reales',
     strpos($textoConFaltantes, "- El nombre de tu negocio\n- Una descripción breve de lo que ofrecés\n- Los colores de tu marca") !== false);
 
-$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates', 'colores' => 'marrón'], $cfgPredis);
+$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+    'colores' => 'marrón', 'referencia_preguntada' => true], $cfgPredis);
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
+caso('y el pedido aclara que puede mandar todo junto',
+    stripos($textoConFaltantes, 'todo junto') !== false);
 
 echo "— Regresiones comerciales reales —\n";
 
@@ -2435,8 +2449,9 @@ foreach (['0720071788000003618268' => 'el CBU', 'pablotravis' => 'el alias',
 caso('la videollamada no le pide al cliente un día ni un horario',
     !preg_match('/(qué|que) (día|dia|horario|hora)|cuándo te|decime .{0,20}(día|dia|horario)|te queda cómodo/iu',
         (string)$cfg['postdemo_videollamada']));
-caso('y deja claro que el horario lo arregla Pablo',
-    stripos((string)$cfg['postdemo_videollamada'], 'arreglan el horario') !== false);
+caso('y deja el horario en manos de ellos dos, sin proponerlo el bot',
+    stripos((string)$cfg['postdemo_videollamada'], 'coordinen') !== false
+    || stripos((string)$cfg['postdemo_videollamada'], 'arreglan el horario') !== false);
 
 caso('"es muy caro" tras la demo es objeción de plata', wabot_postdemo_objecion_plata('uh es muy caro para mi') === true);
 caso('"no tengo la plata ahora" también', wabot_postdemo_objecion_plata('no tengo la plata ahora') === true);
@@ -2447,7 +2462,8 @@ clasifica(['otro']);
 $r = wabot_engine('uh, es mucha plata para mi ahora', $c, $cfg);
 caso('la objeción de plata ofrece las 3 cuotas sin interés',
     stripos($r[0], '3 cuotas sin interés') !== false && $c['cuotas_ofrecidas'] === true);
-caso('y aclara que no hay link, que lo arma Pablo', stripos($r[0], 'pablo') !== false);
+caso('y no manda ningún link de pago para esas cuotas', stripos($r[0], 'http') === false
+    && stripos($r[0], 'gokywebs.com/pago') === false);
 clasifica(['otro']);
 $r = wabot_engine('igual sigue siendo caro', $c, $cfg);
 caso('las 3 cuotas no se repiten', stripos(implode(' ', $r), '3 cuotas sin interés') === false);
@@ -2461,7 +2477,7 @@ $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_d
 clasifica(['otro']);
 $r = wabot_engine('dale, la voy a mirar', $c, $cfg);
 caso('"la voy a mirar" recibe UNA línea sin presión, sin pedir plata',
-    count($r) === 1 && strpos($r[0], 'pablotravis') === false && stripos($r[0], 'tranquilidad') !== false);
+    count($r) === 1 && strpos($r[0], 'pablotravis') === false && stripos($r[0], 'tranquil') !== false);
 caso('y no quema la videollamada ni las cuotas',
     empty($c['videollamada_ofrecida']) && empty($c['cuotas_ofrecidas']));
 
@@ -2643,8 +2659,10 @@ caso('no se manda dos veces', wabot_ultima_llamada_corresponde($repetido, $cfgU,
 $cerrado = $baseU; $cerrado['seguimiento_bloqueado'] = true;
 caso('ni a quien pidió que no le escriban', wabot_ultima_llamada_corresponde($cerrado, $cfgU, $ahoraU) === false);
 caso('el texto no repite el precio ni presiona',
-    strpos((string)$cfg['ultima_llamada'], '$') === false
-    && stripos((string)$cfg['ultima_llamada'], 'demo') !== false);
+    strpos((string)$cfg['ultima_llamada'], '$') === false);
+caso('y tampoco le vuelve a vender la demo: ya se la ofrecieron antes',
+    stripos((string)$cfg['ultima_llamada'], 'demo gratis') === false
+    && stripos((string)$cfg['ultima_llamada'], 'muestra gratis') === false);
 
 echo "— La historia vieja de una charla ya no se tira —\n";
 
@@ -3148,8 +3166,8 @@ foreach ($cfg['tipos'] as $tipo => $datosPago) {
     caso("$tipo no menciona 3 pagos en el precio automático", strpos($texto, '3 pagos') === false);
     caso("$tipo no menciona tarjeta ni 12 cuotas en el precio automático",
         stripos($texto, 'tarjeta') === false && stripos($texto, '12 cuotas') === false);
-    caso("$tipo sigue diciendo que se puede pagar por transferencia",
-        strpos($texto, 'Se puede abonar por transferencia.') !== false);
+    caso("$tipo tampoco mete la forma de pago pegada al precio",
+        stripos($texto, 'transferencia') === false);
 }
 caso('y ningún tipo tiene un pagos3 calculado en la config: ese cálculo se retiró',
     !isset($cfg['tipos']['catalogo']['pagos3']));
@@ -3159,8 +3177,8 @@ $cfgSinTabla['tipos']['landing']['precio'] = '$275.000';
 wabot_config_ventas($cfgSinTabla);
 caso('un precio nuevo tampoco arma un pagos3: el cálculo no existe más',
     !isset($cfgSinTabla['tipos']['landing']['pagos3']));
-caso('el mensaje sigue siendo "se puede abonar por transferencia" a secas',
-    strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia.') !== false
+caso('el mensaje de precio no menciona ninguna forma de pago',
+    stripos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'transferencia') === false
     && stripos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'tarjeta') === false);
 
 $original = wabot_config_load();
@@ -3169,12 +3187,12 @@ En este link podés ver detallado todo lo que incluye junto con otros trabajos r
 $original['msg_precio_variantes'] = ['Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
 Acá podés ver todo lo que incluye y otros trabajos realizados: {link}'];
 wabot_config_ventas($original);
-caso('un bot-config.json que nunca vio esta migración termina sin tarjeta y sin 3 pagos',
-    strpos($original['msg_precio'], 'Se puede abonar por transferencia.') !== false
+caso('un bot-config.json que nunca vio esta migración termina sin forma de pago pegada al precio',
+    stripos($original['msg_precio'], 'transferencia') === false
     && stripos($original['msg_precio'], 'tarjeta') === false
     && strpos($original['msg_precio'], '3 pagos') === false);
 caso('lo mismo en cada variante de msg_precio_variantes',
-    strpos($original['msg_precio_variantes'][0], 'Se puede abonar por transferencia.') !== false
+    stripos($original['msg_precio_variantes'][0], 'transferencia') === false
     && stripos($original['msg_precio_variantes'][0], 'tarjeta') === false
     && strpos($original['msg_precio_variantes'][0], '3 pagos') === false);
 
@@ -3183,7 +3201,7 @@ $intermedio['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarroll
 En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
 wabot_config_ventas($intermedio);
 caso('y el que ya tenía la versión con 3 pagos también termina sin ella',
-    strpos($intermedio['msg_precio'], 'Se puede abonar por transferencia.') !== false
+    stripos($intermedio['msg_precio'], 'transferencia') === false
     && stripos($intermedio['msg_precio'], 'tarjeta') === false
     && strpos($intermedio['msg_precio'], '3 pagos') === false);
 
@@ -3992,6 +4010,63 @@ $pitchAlojCant = wabot_pitch_texto('turnos', $convAlojCant, $cfg);
 caso('no le pregunta de nuevo cuántas unidades', stripos($pitchAlojCant, 'cuántas cabañas o unidades') === false);
 caso('y la segunda pregunta habla de reservas, no de turnos',
     stripos($pitchAlojCant, 'reservas') !== false && stripos($pitchAlojCant, 'tomás los turnos') === false);
+
+echo "\n— Un elogio tras la demo NO es una despedida —\n";
+
+caso('"la estoy viendo, está hermoso" ya no cierra la charla',
+    wabot_cierre_sin_presion_tipo('Ay la estoy viendo esta hermoso.') === null);
+caso('ni "me encantó" ni "quedó muy linda"',
+    wabot_cierre_sin_presion_tipo('Si, si la verdad me encanto') === null
+    && wabot_cierre_sin_presion_tipo('quedo muy linda') === null);
+caso('pero "estoy viendo opciones" sigue siendo un cierre',
+    wabot_cierre_sin_presion_tipo('estoy viendo opciones nomas') === 'consulta');
+caso('y "por ahora solo estaba averiguando" también',
+    wabot_cierre_sin_presion_tipo('por ahora solo estaba averiguando precios') === 'consulta');
+
+caso('el elogio se lee como ganas de avanzar', wabot_postdemo_quiere_avanzar('esta hermoso') === true);
+caso('pero "no me gustó" NO', wabot_postdemo_quiere_avanzar('no me gusto') === false);
+caso('ni "no me convence"', wabot_postdemo_quiere_avanzar('no me convence') === false);
+caso('y un elogio con "lo miro con calma" tampoco apura el cobro',
+    wabot_postdemo_quiere_avanzar('esta lindo pero lo voy a mirar con calma') === false);
+
+echo "\n— La descripción sale de lo que el cliente ya contó —\n";
+
+$mkConv = function ($msgs) {
+    return ['transcript' => array_map(function ($m) { return ['q' => 'cliente', 't' => $m, 'ts' => time()]; }, $msgs)];
+};
+caso('si ya dijo a qué se dedica, esa es la descripción',
+    wabot_descripcion_desde_contexto($mkConv(['Soy entrenador personal y funcional', 'Dale, quiero la demo']))
+        === 'Soy entrenador personal y funcional');
+caso('un saludo o un pedido de web no cuentan como descripción',
+    wabot_descripcion_desde_contexto($mkConv(['hola', 'quiero una web'])) === ''
+    && wabot_descripcion_desde_contexto($mkConv(['hola', 'cuanto sale una pagina'])) === '');
+caso('y entonces no se le vuelve a pedir lo que ya contó',
+    !in_array('Una descripción breve de lo que ofrecés',
+        wabot_prediseno_faltan($mkConv(['Vendo plantas y macetas de diseño']) + ['nombre' => 'Ana', 'nombre_negocio' => 'X', 'colores' => 'verde']), true));
+caso('pero al que no contó nada sí se le pide',
+    in_array('Una descripción breve de lo que ofrecés',
+        wabot_prediseno_faltan($mkConv(['hola']) + ['nombre' => 'Ana', 'nombre_negocio' => 'X', 'colores' => 'verde']), true));
+
+echo "\n— El pitch y el precio varían y no repiten la misma estructura —\n";
+
+caso('msg_pitch ya no arranca siempre con "Buenísimo. Para lo tuyo va"',
+    strpos((string)$cfg['msg_pitch'], 'Buenísimo') === false
+    && strpos((string)$cfg['msg_pitch'], 'Para lo tuyo va') === false);
+foreach (['landing', 'ecommerce', 'turnos'] as $tipoVar) {
+    caso("$tipoVar tiene varias formas de presentar la web",
+        count((array)($cfg['tipos'][$tipoVar]['desc_variantes'] ?? [])) >= 3);
+}
+$convVarA = conv_nueva(); $convVarA['chat_started_ts'] = 111; $convVarA['conversation_key'] = 'AAA111';
+$convVarB = conv_nueva(); $convVarB['chat_started_ts'] = 222; $convVarB['conversation_key'] = 'BBB222';
+caso('dos conversaciones distintas no reciben siempre el mismo texto',
+    wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg) !== wabot_tipo_variante('ecommerce', 'desc', $convVarB, $cfg));
+caso('pero la misma conversación siempre recibe el mismo',
+    wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg) === wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg));
+
+caso('el desempate de turnos ya no usa la muletilla de siempre',
+    stripos((string)$cfg['desempate_turnos'], 'cambia bastante la web') === false);
+caso('la oferta de la demo habla del estilo y los colores',
+    stripos((string)$cfg['msg_prediseno_oferta'], 'estilo') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
