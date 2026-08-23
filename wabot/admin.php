@@ -256,6 +256,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // Los checkbox no viajan cuando están destildados: por eso se leen del form entero.
         $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
+        $cfg['postdemo_bot_activo'] = !empty($_POST['postdemo_bot_activo']);
         foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
@@ -1543,6 +1544,14 @@ body.embed { min-height: 0; }
             </div>
             <p class="meta" style="margin-top:6px">El audio se transcribe y el bot contesta como si lo hubieran escrito. La foto se describe (logo, captura de otra web, local, productos) y esa descripción entra a la charla. Si no se puede leer, pide que lo manden por texto.</p>
             <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Después de presentar la demo</h2>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+                <input type="checkbox" name="postdemo_bot_activo" <?= !empty($cfg['postdemo_bot_activo']) ? 'checked' : '' ?>>
+                Que el bot siga contestando después de presentar la demo
+            </label>
+            <p class="meta" style="margin-top:8px">Destildado (como está por defecto), una vez que presentás la demo el bot deja de contestar en vivo: esas charlas las seguís vos. Los mensajes del cliente igual entran al panel y aparecen en "Sin leer".<br>Los seguimientos automáticos NO se apagan con esto: el recordatorio de la demo, las plantillas de 72 h y 7 días, y el archivado por inactividad siguen funcionando igual.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>

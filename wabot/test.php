@@ -4188,5 +4188,38 @@ caso('trae el link', strpos($demoTexto, 'gokywebs.com/demo/yfprevencion') !== fa
 caso('aclara que después se personaliza con contenido e imágenes propias',
     stripos($demoTexto, 'personalizamos') !== false && stripos($demoTexto, 'imagenes') !== false || stripos($demoTexto, 'imágenes') !== false);
 
+echo "\n— Presentada la demo, el cierre lo lleva Pablo: el bot se calla pero los seguimientos siguen —\n";
+
+$ahoraPD = 2_000_000_000;
+$convPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraPD - 21 * 3600,
+           'ultimo_cliente_ts' => $ahoraPD - 7 * 3600, 'transcript' => []];
+
+caso('por defecto el bot NO contesta después de presentar la demo',
+    wabot_postdemo_lo_lleva_humano($convPD, $cfg) === true);
+caso('y tampoco le muestra "escribiendo…"', wabot_avisar_al_recibir($convPD, $cfg) === false);
+
+$cfgBotOn = wabot_config_load();
+$cfgBotOn['postdemo_bot_activo'] = true;
+caso('con el interruptor del panel prendido, vuelve a contestar como antes',
+    wabot_postdemo_lo_lleva_humano($convPD, $cfgBotOn) === false);
+
+caso('antes de presentar la demo el bot sigue trabajando normal',
+    wabot_postdemo_lo_lleva_humano(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === false);
+caso('y una fase postdemo sin demo presentada tampoco lo calla',
+    wabot_postdemo_lo_lleva_humano(['fase' => 'postdemo', 'tipo' => 'landing'], $cfg) === false);
+
+caso('el recordatorio de la demo se sigue mandando igual',
+    wabot_presentado_recordatorio_corresponde($convPD, $cfg, $ahoraPD) === true);
+caso('el archivado por inactividad también',
+    wabot_presentado_archivar_corresponde(['presentado_ts' => $ahoraPD - 200 * 3600], $cfg, $ahoraPD) === true);
+
+$cfgPlantPD = wabot_config_load();
+$cfgPlantPD['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
+$cfgPlantPD['plantillas']['seguimiento_demo_72h']['activa'] = true;
+caso('y las plantillas de seguimiento fuera de la ventana, también',
+    wabot_presentado_plantilla_corresponde(
+        ['fase' => 'postdemo', 'presentado_ts' => $ahoraPD - 73 * 3600, 'ultimo_cliente_ts' => $ahoraPD - 73 * 3600],
+        $cfgPlantPD, 'seguimiento_demo_72h', 72, $ahoraPD) === true);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -548,6 +548,7 @@ function wabot_config_ventas(&$cfg) {
         }
     }
 
+    if (!isset($cfg['postdemo_bot_activo'])) $cfg['postdemo_bot_activo'] = false;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -2729,7 +2730,14 @@ function wabot_silencio_asegurado($conv, $cfg) {
  * así que el "escribiendo..." no se manda al recibir: se manda recién cuando ya
  * sabemos que hay respuesta. Prometer y no cumplir es lo que parecía un cuelgue.
  */
+function wabot_postdemo_lo_lleva_humano($conv, $cfg) {
+    if (!empty($cfg['postdemo_bot_activo'])) return false;
+    if (($conv['fase'] ?? '') !== 'postdemo') return false;
+    return !empty($conv['presentado_ts']);
+}
+
 function wabot_avisar_al_recibir($conv, $cfg) {
+    if (wabot_postdemo_lo_lleva_humano($conv, $cfg)) return false;
     return !wabot_silencio_asegurado($conv, $cfg) && ($conv['fase'] ?? '') !== 'derivado';
 }
 

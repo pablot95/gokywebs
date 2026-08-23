@@ -29,6 +29,11 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg);
     }
 
+    if (wabot_postdemo_lo_lleva_humano($conv, $cfg)) {
+        wabot_evento_sesion($conv, 'postdemo_silencio_humano');
+        return [];
+    }
+
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.
     // Si el bot todavía no habló y el cliente no dijo nada de su negocio no hay
     // nada que razonar: dejarlo en manos de la IA solo hacía que cada cliente
