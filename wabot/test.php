@@ -699,14 +699,19 @@ caso('NO dice cuánto es la seña', strpos($r[0], '$') === false);
 // La pregunta por la plata sigue siendo otra, y esa sí da números.
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('cuanto es la seña?', $c, $cfg);
-caso('preguntar por la seña sí devuelve los montos', strpos($r[0], '$60.000') !== false);
+caso('preguntar por la seña sí devuelve los montos',
+    strpos($r[0], $cfg['tipos']['landing']['sena']) !== false);
+caso('y con el tipo ya sabido da SOLO la seña de ese tipo, no la lista de los 7',
+    strpos($r[0], $cfg['tipos']['ecommerce']['sena']) === false
+    && stripos($r[0], 'en landing,') === false);
 
 // Y si pregunta las dos cosas, van las dos.
 clasifica(['pregunta_info'], ['info_keys' => ['proceso', 'pago']]);
 $r = wabot_engine('como trabajan y como se paga?', $c, $cfg);
 caso('las dos preguntas juntas → las dos respuestas en bullets',
     count($r) === 1 && strpos($r[0], '- ') === 0
-    && stripos($r[0], 'demo gratis') !== false && strpos($r[0], '$60.000') !== false);
+    && stripos($r[0], 'demo gratis') !== false
+    && strpos($r[0], $cfg['tipos']['landing']['sena']) !== false);
 
 // También se contesta con la charla ya cerrada.
 $c2 = conv_nueva(); $c2['fase'] = 'derivado'; $c2['cierre'] = 'prediseno'; $c2['espera_avisada'] = true;
@@ -1880,8 +1885,16 @@ caso('sin tipo cotizado, la genérica no inventa montos de cuota',
     strpos(wabot_texto_pago(['tipo' => null], $cfg), 'cuotas de $') === false);
 caso('la respuesta de pago del tipo cotizado arranca con el precio total',
     strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), '$160.000') !== false);
-caso('con tipo puesto pero SIN precio dado (catálogo preguntando cantidad), la seña es la genérica',
-    wabot_texto_pago(['tipo' => 'catalogo'], $cfg) === wabot_texto_pago_generico($cfg));
+caso('con tipo puesto pero SIN precio dado, la seña es la de ESE tipo, sin el total que todavía no vio',
+    strpos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), $cfg['tipos']['catalogo']['sena']) !== false
+    && strpos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), $cfg['tipos']['catalogo']['precio']) === false);
+caso('y esa respuesta no contradice a la de ecommerce cotizado (el bug de los $90.000)',
+    strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), $cfg['tipos']['ecommerce']['sena']) !== false
+    && strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), '$90.000') === false);
+caso('sin tipo todavía, ahí sí va la lista completa de señas',
+    wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
+caso('"en un pago" se contesta también antes de tener precio',
+    stripos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), 'en un pago') !== false);
 caso('el pago del catálogo cotizado usa el total calculado, no las cuotas de la base',
     strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$230.000') !== false
     && strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$32.000') === false);
@@ -3835,6 +3848,79 @@ caso('sin dejar el placeholder', mb_strpos($cierreConFotos, '{imagenes}') === fa
 
 caso('los dos textos siguen prometiendo el día concreto',
     strpos($cierreSinFotos, '{entrega}') !== false && strpos($cierreConFotos, '{entrega}') !== false);
+
+echo "\n— Una ONG que da capacitaciones no es una plataforma de cursos —\n";
+
+caso('ONG que da capacitación laboral → landing, no cursos',
+    wabot_fallback_rubro_local('Hola, somos una ONG que da capacitacion laboral a jovenes') === 'landing');
+caso('fundación que da talleres tampoco dispara el desempate de cursos',
+    wabot_fallback_rubro_local('somos una fundacion que da talleres a chicos') === 'landing');
+caso('asociación civil con capacitaciones, igual',
+    wabot_fallback_rubro_local('somos una asociacion civil que hace capacitaciones') === 'landing');
+caso('pero si la ONG dice que los cobra, ahí sí son cursos',
+    wabot_fallback_rubro_local('somos una ong que cobra una matricula por los cursos') === 'cursos');
+caso('y si dice que quiere venderlos online, también',
+    wabot_fallback_rubro_local('somos una fundacion y queremos vender cursos online') === 'cursos');
+caso('un instituto comercial que da cursos sigue siendo cursos',
+    wabot_fallback_rubro_local('tengo un instituto de idiomas, doy cursos') === 'cursos');
+caso('"vender cursos online" ya no se lee como ecommerce',
+    wabot_fallback_rubro_local('quiero vender mis cursos online') === 'cursos');
+caso('pero vender productos online sigue siendo ecommerce',
+    wabot_fallback_rubro_local('quiero vender ropa online') === 'ecommerce'
+    && wabot_fallback_rubro_local('tengo una tienda online de zapatillas') === 'ecommerce');
+
+echo "\n— No se repregunta un dato que el cliente ya dio —\n";
+
+caso('detecta la cantidad de unidades ya dicha',
+    wabot_contexto_tiene_cantidad_unidades('Tenemos un hostel en Bariloche, 12 habitaciones')
+    && wabot_contexto_tiene_cantidad_unidades('tengo 4 cabañas')
+    && wabot_contexto_tiene_cantidad_unidades('son 6 departamentos'));
+caso('y no la inventa donde no está',
+    !wabot_contexto_tiene_cantidad_unidades('Tenemos un complejo de cabañas en Villa La Angostura')
+    && !wabot_contexto_tiene_cantidad_unidades('tengo un hostel'));
+
+$convHostel = conv_nueva();
+$convHostel['transcript'] = [['q'=>'cliente','t'=>'Tenemos un hostel en Bariloche, 12 habitaciones','ts'=>time()]];
+$pitchHostel = wabot_pitch_texto('turnos', $convHostel, $cfg);
+caso('el hostel que ya dijo cuántas habitaciones tiene no recibe la misma pregunta',
+    stripos($pitchHostel, 'cuántas cabañas o unidades') === false);
+caso('pero sigue siendo el pitch de alojamiento, no el de turnos comunes',
+    stripos($pitchHostel, 'huéspedes') !== false);
+
+caso('institucional ya no repite la pregunta por las secciones',
+    $cfg['tipos']['institucional']['pitch_pregunta_2'] !== $cfg['tipos']['institucional']['pitch_pregunta']
+    && stripos($cfg['tipos']['institucional']['pitch_pregunta_2'], 'secciones') === false);
+
+$convUni = conv_nueva();
+$convUni['descripcion'] = 'Somos una universidad privada y necesitamos una web completa con varias secciones: historia, autoridades, carreras y novedades';
+$convUni['transcript'] = [['q'=>'cliente','t'=>$convUni['descripcion'],'ts'=>time()]];
+caso('la universidad que ya listó sus secciones no recibe "qué secciones no pueden faltar"',
+    stripos(wabot_pitch_texto('institucional', $convUni, $cfg), 'qué secciones no pueden faltar') === false);
+
+echo "\n— Una pregunta contestada no se sigue con el saludo de bienvenida —\n";
+
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
+    return ['acciones' => ['pregunta_info'], 'info_keys' => ['precio_sin_rubro']];
+};
+$cPrecioSolo = conv_nueva();
+$cPrecioSolo['fase'] = 'nuevo';
+$rPrecioSolo = wabot_engine('precio', $cPrecioSolo, $cfg);
+caso('"precio" como primer mensaje devuelve UN mensaje, no la respuesta + el saludo',
+    count($rPrecioSolo) === 1);
+caso('y el que sale es la respuesta, no el saludo genérico',
+    strpos($rPrecioSolo[0], $cfg['menu']) === false);
+caso('la respuesta que NO devuelve la pelota sí sigue sumando la apertura',
+    wabot_salida_ya_pregunta([$cfg['info']['pago']]) === false);
+caso('y la que ya pide algo, no',
+    wabot_salida_ya_pregunta([$cfg['info']['precio_sin_rubro']]) === true
+    && wabot_salida_ya_pregunta(['Y hoy cómo vendés, por Instagram?']) === true);
+
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return ['acciones' => ['saludo']]; };
+$cSaludo = conv_nueva();
+$cSaludo['fase'] = 'nuevo';
+$rSaludo = wabot_engine('hola', $cSaludo, $cfg);
+caso('un saludo pelado sí sigue recibiendo la apertura', count($rSaludo) === 1 && $rSaludo[0] === $cfg['menu']);
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

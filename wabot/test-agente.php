@@ -585,6 +585,7 @@ caso('dar_precio(turnos) → $200.000 y el link de Turnos',
 caso('y el link va en su renglón', strpos($r['texto'], "\nEn este link") !== false);
 
 $c = convNueva();
+$c['transcript'][] = ['q' => 'cliente', 't' => 'queremos algo mas completo, con varias paginas', 'ts' => time()];
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $c, $cfg);
 caso('dar_precio(institucional) → $200.000 y el link Institucional',
     strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Institucional') !== false);
@@ -1272,6 +1273,33 @@ wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cOtra, $cfg, 'acep
 caso('el comodín del agente también deja la duda pendiente para Pablo',
     $cOtra['handoff_pendiente'] === true);
 caso('sin cambiar la fase', $cOtra['fase'] === 'precio');
+
+echo "\n— Institucional no se puede cotizar sin que el cliente la pida —\n";
+
+$convInst = function ($msg) {
+    return ['fase' => 'nuevo', 'tipo' => null,
+            'transcript' => [['q' => 'cliente', 't' => $msg, 'ts' => time()]]];
+};
+
+$cOng = $convInst('Hola, somos una ONG que da capacitacion laboral a jovenes');
+$rOng = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cOng, $cfg);
+caso('una ONG que no pidió nada especial NO puede cotizarse como institucional',
+    isset($rOng['error']));
+caso('y la nota le dice que vaya a landing', stripos($rOng['nota'] ?? '', 'landing') !== false);
+
+$cUni = $convInst('Somos una universidad privada y necesitamos una web completa con varias secciones: historia, autoridades, carreras y novedades');
+$rUni = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cUni, $cfg);
+caso('pero si pide varias secciones, institucional pasa', !isset($rUni['error']));
+
+$cOngLanding = $convInst('Hola, somos una ONG que da capacitacion laboral a jovenes');
+caso('y la misma ONG cotizada como landing pasa sin problema',
+    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $cOngLanding, $cfg)['error']));
+
+$cYaInst = $convInst('quiero algo mas completo, con varias paginas');
+$cYaInst['tipo'] = 'institucional';
+$cYaInst['precio_dado'] = true;
+caso('a quien ya está cotizado como institucional no se le bloquea repetir el precio',
+    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cYaInst, $cfg)['error']));
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

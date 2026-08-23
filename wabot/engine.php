@@ -310,6 +310,34 @@ function wabot_contexto_es_alojamiento($contexto) {
         . '|airbnb|booking|departamentos?\s+(en\s+)?alquiler|alquilo?\s+departamentos?)\b/u', $t);
 }
 
+function wabot_pidio_institucional_explicito($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    return (bool)(
+        preg_match('/\b(varias paginas|multiples paginas|mas paginas|varias secciones|multiples secciones)\b/u', $t)
+        || preg_match('/\bsecciones? para\b.{0,30}\b(historia|autoridades|equipo|novedades)\b/u', $t)
+        || preg_match('/\balgo mas completo\b.{0,30}\bpaginas?\b/u', $t)
+        || preg_match('/\b(con|con las|con la)\b.{0,20}\bsecciones\b.{0,40}\b(historia|autoridades|carreras|novedades|equipo)\b/u', $t)
+    );
+}
+
+function wabot_salida_ya_pregunta($out) {
+    foreach ((array)$out as $texto) {
+        if (strpos((string)$texto, '?') !== false) return true;
+        if (preg_match('/\b(contame|contanos|decime|decinos|pasame|pasanos|mandame|mandanos|escribime|avisame)\b/u',
+                       wabot_normalizar_frase((string)$texto))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function wabot_contexto_tiene_cantidad_unidades($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    return (bool)preg_match(
+        '/\b\d+\s*(habitacion\w*|cabana\w*|unidad\w*|departamento\w*|dormis|camas?|suites?|bungalow\w*'
+        . '|casas?|cuartos?|plazas?)\b/u', $t);
+}
+
 /**
  * Qué texto usar para el desempate de turnos. A un complejo de cabañas no se
  * le pregunta por "sacar el turno eligiendo día y horario": el rubro habla de
@@ -743,18 +771,20 @@ function wabot_fallback_rubro_local($t) {
         && preg_match('/\b(stock|ventas|clientes|gestion|facturacion|turnos|control|interno|procesos|tareas)\b/u', $t)) {
         return 'sistema_pendiente';
     }
-    if (preg_match('/\b(varias paginas|multiples paginas|mas paginas|varias secciones|multiples secciones)\b/u', $t)
-        || preg_match('/\bsecciones? para\b.{0,30}\b(historia|autoridades|equipo|novedades)\b/u', $t)
-        || preg_match('/\balgo mas completo\b.{0,30}\bpaginas?\b/u', $t)) {
-        return 'institucional';
-    }
-    if (preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online)\b/u', $t)
-        || preg_match('/\bvender\b.{0,30}\b(online|por internet|desde la web|por la web)\b/u', $t)) {
+    if (wabot_pidio_institucional_explicito($t)) return 'institucional';
+    $mencionaCursos = (bool)preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases|taller|talleres)\b/u', $t);
+    if (!$mencionaCursos
+        && (preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online)\b/u', $t)
+            || preg_match('/\bvender\b.{0,30}\b(online|por internet|desde la web|por la web)\b/u', $t))) {
         return 'ecommerce';
     }
     if (wabot_contexto_es_hibrido($t)) return 'hibrido_pendiente';
     if (preg_match('/\b(peluqueria|barberia|estetica|esteticista|spa|masajes|unas|manicura|depilacion|tatuajes|consultorio|odontologia|psicologia|nutricionista|kinesiologo|kinesiologa|kinesiologia|fonoaudiologia|fonoaudiologa|dermatologia|dermatologa|dermatologo|cosmiatra|podologia|podologa|veterinaria|gimnasio|pilates|yoga|canchas|cabanas|hotel|taller mecanico)\b/u', $t)) {
         return 'turnos_pendiente';
+    }
+    if (preg_match('/\b(ong|fundacion|asociacion civil|sin fines de lucro)\b/u', $t)
+        && !preg_match('/\b(vender|vendemos|vendo|cobrar|cobramos|arancel|aranceles|matricula|pagas?|pagos)\b/u', $t)) {
+        return 'landing';
     }
     if (preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases online)\b/u', $t)
         || preg_match('/\b(doy|dicto|damos|dictamos)\b.{0,15}\btaller(es)?\b/u', $t)) return 'cursos';
@@ -1035,8 +1065,8 @@ function wabot_engine($texto, &$conv, $cfg) {
             elseif ($r !== null)            { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif ($has('pregunta_tipos')) { $conv['fase'] = 'menu'; $out[] = $cfg['def_tipos']; }
             elseif ($has('algo_diferente')) { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
-            elseif ($has('quiere_prediseno')) { $conv['fase'] = 'menu'; $out[] = wabot_apertura($conv, $cfg); }
-            else { $conv['fase'] = 'menu'; $out[] = wabot_apertura($conv, $cfg); } // saludo, otro o pregunta ya contestada
+            elseif ($has('quiere_prediseno')) { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out[] = wabot_apertura($conv, $cfg); }
+            else { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out[] = wabot_apertura($conv, $cfg); } // saludo, otro o pregunta ya contestada
             break;
 
         case 'menu':
@@ -1828,10 +1858,15 @@ function wabot_texto_pago($conv, $cfg) {
     $tipo = $conv['tipo'] ?? '';
     $datosTipo = $cfg['tipos'][$tipo] ?? [];
     $sena = $datosTipo['sena'] ?? '';
-    if ($sena === '' || empty($conv['precio_dado'])) {
+    if ($sena === '') {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
         return 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña y el saldo al entregar la web.';
+    }
+    if (empty($conv['precio_dado'])) {
+        $sinPrecio = trim((string)($cfg['info']['pago_sin_precio'] ?? ''));
+        if ($sinPrecio === '') return wabot_texto_pago_generico($cfg);
+        return str_replace('{sena}', $sena, $sinPrecio);
     }
     if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) > 0) {
         $d = wabot_catalogo_total((int)$conv['productos_cantidad'], $cfg);
@@ -2037,7 +2072,9 @@ function wabot_pitch_texto($tipo, $conv, $cfg) {
                && !wabot_descripcion_generica((string)($conv['descripcion'] ?? '')))
                || $respuestaEspecifica;
     $clave = $yaConto ? 'pitch_pregunta_2' : 'pitch_pregunta';
-    $pregunta = $variante !== null ? trim((string)($t['pitch_pregunta_' . $variante] ?? '')) : '';
+    $varianteYaContestada = $variante === 'alojamiento' && wabot_contexto_tiene_cantidad_unidades($contexto);
+    $pregunta = ($variante !== null && !$varianteYaContestada)
+        ? trim((string)($t['pitch_pregunta_' . $variante] ?? '')) : '';
     if ($pregunta === '') $pregunta = trim((string)($t[$clave] ?? $t['pitch_pregunta'] ?? ''));
 
     $base = (string)($cfg['msg_pitch'] ?? '');

@@ -377,7 +377,7 @@ function wabot_config_ventas(&$cfg) {
         'turnos'        => ['Contame qué servicios ofrecés, así armamos la agenda con eso?',
                             'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?'],
         'institucional' => ['Contame un poco de la institución: qué secciones no pueden faltar?',
-                            'Y qué secciones no pueden faltar en la web?'],
+                            'Y hoy tienen alguna web o redes, o arrancan de cero?'],
         'inmobiliaria'  => ['Más o menos cuántas propiedades tenés publicadas hoy?',
                             'Más o menos cuántas propiedades tenés publicadas hoy?'],
         'ecommerce'     => ['Contame qué vendés exactamente, así la armamos con eso?',
@@ -385,6 +385,9 @@ function wabot_config_ventas(&$cfg) {
         'elearning'     => ['Contame qué cursos das y cómo los entregás hoy?',
                             'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?'],
     ];
+    if (trim((string)($cfg['tipos']['institucional']['pitch_pregunta_2'] ?? '')) === 'Y qué secciones no pueden faltar en la web?') {
+        $cfg['tipos']['institucional']['pitch_pregunta_2'] = 'Y hoy tienen alguna web o redes, o arrancan de cero?';
+    }
     foreach ($pitchPreguntas as $tipoPitch => $preguntas) {
         if (!isset($cfg['tipos'][$tipoPitch])) continue;
         if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta'] ?? '')) === '') {
@@ -677,6 +680,7 @@ function wabot_config_ventas(&$cfg) {
         // Mentir acá se paga caro: un cliente preguntó "sos una persona o robot"
         // y el silencio fue peor que la verdad (Luicho, 21-ago).
         'soy_bot' => 'Sí, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
+        'pago_sin_precio' => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
