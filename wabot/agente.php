@@ -142,11 +142,8 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             // El modelo contestó y no pidió nada más.
             if ($terminal !== null) return [$terminal];
 
-            // Promesa colgada: anuncia que va a pasar algo y no llamó a ninguna
-            // herramienta, así que el mensaje termina en la nada. Pasó de verdad
-            // ("Te paso el precio y el link de presupuesto:" y ahí cortaba).
-            if (preg_match('/[:：]\s*$/u', trim($texto))) {
-                wabot_log('error', ['donde' => 'agente', 'msg' => 'promesa sin herramienta', 'texto' => mb_substr($texto, -80)]);
+            if (wabot_texto_promete_info_sin_entregar($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'promesa sin herramienta', 'texto' => mb_substr($texto, -120)]);
                 return null;
             }
 
@@ -220,6 +217,12 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
 
     wabot_log('error', ['donde' => 'agente', 'msg' => 'demasiadas vueltas']);
     return null;
+}
+
+function wabot_texto_promete_info_sin_entregar($texto) {
+    if (preg_match('/[:：]\s*$/u', trim($texto))) return true;
+    if (preg_match('/\$\d|gokywebs\.com/u', $texto)) return false;
+    return (bool)preg_match('/\b(te paso|te muestro|te comparto|te env[ií]o|te dejo|aca va|aca tenes|aca esta)\b.{0,40}\b(precio|detalle|informacion|el link|todo lo que incluye|presupuesto|el valor)\b/u', wabot_normalizar_frase($texto));
 }
 
 /**
@@ -472,7 +475,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     'tipo' => [
                         'type' => 'string',
                         'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
-                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace, nunca uses esta herramienta con eso solo. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: SOLO instituciones de verdad (colegio, universidad, fundación, ONG, club, cámara, sindicato, municipio, cooperativa). Decir "tengo una empresa" no alcanza: una empresa de servicios u oficio va landing. Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
+                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace, nunca uses esta herramienta con eso solo. También es el default para instituciones, colegios, ONGs, fundaciones o clubes que no pidieron nada especial: institucional NO se ofrece de entrada. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: NUNCA la ofrezcas vos solo porque es un colegio, ONG, fundación o club — esos van a landing. Usala SOLO si el cliente pidió explícitamente algo más completo, con varias páginas o secciones (historia, autoridades, novedades). Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos.',
                     ],
                     'productos' => [
                         'type' => 'integer',
@@ -719,6 +722,10 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     'nota' => 'Contestá con toda esta información. Si el importe futuro no está fijado, no lo inventes: explicá la renovación anual y que se confirma antes del vencimiento.',
                 ], $conv, $cfg);
             }
+            if ($clave === 'rangos') {
+                return ['texto' => wabot_texto_rangos($cfg),
+                        'nota' => 'Contestá con esto tal cual, los montos son los reales. Después preguntale a qué se dedica para confirmarle el precio exacto.'];
+            }
             // La respuesta oficial a "es caro": no promete ningún plan de cuotas
             // sin interés, así el modelo no inventa montos dividiendo el precio.
             if ($clave === 'objecion_precio') {
@@ -958,6 +965,7 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
             $claveTexto .= '_2';
         }
         $conv['fase'] = $fase;
+        $conv['tipo'] = null;
         wabot_handoff_aclaracion_resuelta($conv);
         return ['texto' => (string)$cfg[$claveTexto], 'exacta' => true,
                 'nota' => 'Falta un desempate obligatorio antes de cotizar. Hacé esta pregunta tal cual y esperá la respuesta.'];
@@ -1152,8 +1160,8 @@ ERRORES DE ESCRITURA Y AUTOCORRECTOR
 LOS TIPOS DE WEB
 - Landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp. Plomero, gasista, electricista, pintor, fletes, cerrajero, jardinero, contador, abogado, fotógrafo. Es la web más básica: presenta y contacta.
 - Web con turnos: un servicio que atiende con día y horario y quiere que el cliente reserve solo desde la página.
-- Web institucional: SOLO una institución de verdad: colegio, escuela, universidad, instituto, fundación, ONG, club, cámara, sindicato, mutual, cooperativa, municipio, parroquia, hospital. Necesita varias secciones porque tiene historia, autoridades y áreas que mostrar.
-  Que diga "tengo una empresa" NO la vuelve institucional: la palabra la usa cualquiera para nombrar su negocio. Una empresa de limpieza, de fletes, de seguridad, de transporte o una consultora es una LANDING. Institucional es el tipo que menos se cotiza, no el default de todo lo que suene grande.
+- Web institucional: varias secciones (historia, autoridades, novedades). NO se ofrece de entrada, ni siquiera a un colegio, ONG, fundación o club de verdad: esos van a landing igual que cualquier otro. Institucional solo se cotiza si el cliente pide explícitamente algo más completo, con varias páginas o secciones — nunca por iniciativa tuya.
+  Que diga "tengo una empresa" tampoco alcanza para nada más grande: la palabra la usa cualquiera para nombrar su negocio. Una empresa de limpieza, de fletes, de seguridad, de transporte o una consultora es una LANDING.
 - Web con catálogo: vende productos pero NO quiere cobrar online. Quiere mostrar su catálogo completo y que le consulten por WhatsApp. Se cotiza según la cantidad de productos que va a publicar (la herramienta calcula el total), así que ANTES de cotizar necesitás ese número.
 - Ecommerce: quiere vender productos físicos o digitales DESDE la web, con catálogo, carrito y cobro online. Revender marcas como Just, Essen o Avon también puede ser ecommerce, pero solo si confirmó esa modalidad.
 - Inmobiliaria: publica propiedades.
@@ -1185,7 +1193,8 @@ Esto es distinto de vender productos y cursos EN LA MISMA web (ese caso sigue ye
 Si llega al prediseño y pide uno para cada web, avanzá con el primero como siempre; para el segundo llamá a derivar aclarando que hay una segunda web pendiente de cotizar — un solo prediseño automático es por conversación, el resto lo coordina Pablo directo.
 
 EMPRESA O INSTITUCIÓN
-Si te dice que es una institución, colegio, fundación u ONG, o una empresa que claramente quiere presentar su historia, equipo y servicios, eso NO es una landing: es una web institucional. La palabra "empresa" o "fábrica" sola no habilita a cotizar cuando el negocio produce o vende cosas que podrían necesitar catálogo, ecommerce o muestra de trabajos: en esos casos hacé el desempate correspondiente.
+Aunque te diga que es una institución, colegio, fundación u ONG, cotizala como landing: es una sola página, presenta el negocio y contacta, y alcanza para la gran mayoría. NO ofrezcas institucional por tu cuenta solo porque el tipo de organización lo sugiere. Institucional existe y la podés cotizar, pero solo si el cliente la pide explícitamente diciendo que quiere algo más completo, con varias páginas o secciones (historia, autoridades, novedades) — ahí sí, dar_precio con institucional.
+La palabra "empresa" o "fábrica" sola no habilita a cotizar landing directo cuando el negocio produce o vende cosas que podrían necesitar catálogo, ecommerce o muestra de trabajos: en esos casos hacé el desempate correspondiente.
 
 SISTEMAS DE GESTIÓN A MEDIDA
 - También hacemos sistemas, apps internas y paneles a medida para stock, ventas, turnos, clientes, operaciones o procesos propios.

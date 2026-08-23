@@ -328,6 +328,17 @@ caso('Gemini caído en plena fase pitch (ya se mostró) → da el precio, no rep
     strpos(implode(' ', $r), '$') !== false && strpos(implode(' ', $r), 'presupuestos/Turnos') !== false
     && stripos(implode(' ', $r), 'contame un poco más') === false);
 
+$cPitchGiraATurnos = conv_nueva();
+$cPitchGiraATurnos['fase'] = 'pitch';
+$cPitchGiraATurnos['tipo'] = 'landing';
+$cPitchGiraATurnos['pitch_hecho'] = true;
+$r = wabot_engine('Es una peluqueria', $cPitchGiraATurnos, $cfg);
+caso('landing que en realidad es turnos (peluquería) → pregunta el desempate, no cotiza landing',
+    stripos(implode(' ', $r), 'eligiendo día y horario') !== false
+    && $cPitchGiraATurnos['fase'] === 'desempate_turnos');
+caso('y el tipo queda indefinido hasta contestar el desempate, no se queda pegado en landing',
+    ($cPitchGiraATurnos['tipo'] ?? null) === null);
+
 $cPitchCatalogo = conv_nueva();
 $cPitchCatalogo['fase'] = 'pitch';
 $cPitchCatalogo['tipo'] = 'catalogo';
@@ -971,6 +982,8 @@ foreach (['la segunda', 'que me escriban', 'la otra', 'sin carrito', 'no quiero 
 }
 caso('turnos: "la primera" → turnos', wabot_desempate_por_palabras('desempate_turnos', 'la primera') === 'turnos_si');
 caso('turnos: "sin turnos" → landing (la negación gana)', wabot_desempate_por_palabras('desempate_turnos', 'sin turnos') === 'turnos_no');
+caso('turnos: "Reservas" (plural, respuesta de una palabra) → turnos también',
+    wabot_desempate_por_palabras('desempate_turnos', 'Reservas') === 'turnos_si');
 caso('cursos: "la segunda" → mostrar', wabot_desempate_por_palabras('desempate_cursos', 'la segunda') === 'cursos_mostrar');
 
 echo "— Si no entiende, reformula: nunca repite la misma pregunta textual —\n";
@@ -1699,12 +1712,21 @@ foreach (['Tengo una empresa de limpieza', 'Somos una empresa familiar de fletes
     caso("\"$frase\" es una landing, no institucional de 250.000",
         wabot_fallback_rubro_local($frase) === 'landing');
 }
+echo "— Institucional ya no se ofrece de entrada, ni a instituciones reales: van a landing salvo pedido explícito —\n";
+
 foreach (['Somos un colegio secundario', 'Somos una fundacion', 'Somos una asociacion civil',
           'Somos una cooperativa de trabajo', 'Es para el club del barrio'] as $frase) {
-    caso("\"$frase\" si es institucional", wabot_fallback_rubro_local($frase) === 'institucional');
+    caso("\"$frase\" va a landing, institucional no se ofrece solo", wabot_fallback_rubro_local($frase) === 'landing');
 }
 caso('un comercio nunca cae en institucional aunque diga empresa',
     wabot_fallback_rubro_local('Tengo una empresa de ropa') === 'ecommerce');
+
+foreach (['Somos un colegio y queremos una web con varias paginas',
+          'Necesitamos secciones para historia, autoridades y novedades',
+          'Queremos algo mas completo con multiples secciones'] as $frase) {
+    caso("\"$frase\" SÍ es institucional (lo pidió explícito)",
+        wabot_fallback_rubro_local($frase) === 'institucional');
+}
 
 echo "— Rubros que el fallback local no reconocía —\n";
 
@@ -3061,6 +3083,22 @@ $pagoIntermedio = ['info' => ['pago' => 'El desarrollo completo es {precio}. Se 
 wabot_config_ventas($pagoIntermedio);
 caso('y un bot-config.json que todavía tenía el texto viejo migra al nuevo',
     $pagoIntermedio['info']['pago'] === $cfg['info']['pago']);
+
+echo "— info.rangos se calcula en vivo desde los precios actuales, no queda un texto fijo desactualizado —\n";
+
+$rangos = wabot_texto_rangos($cfg);
+caso('el rango arranca en el precio mínimo real (landing, $160.000 tras la baja de precios)',
+    strpos($rangos, '$160.000') !== false && stripos($rangos, 'landing') !== false);
+caso('y llega hasta el máximo real ($290.000), no el viejo $320.000',
+    strpos($rangos, '$290.000') !== false && strpos($rangos, '$320.000') === false
+    && strpos($rangos, '$200.000') === false);
+caso('cuando dos tipos empatan en el máximo (ecommerce y elearning), menciona los dos',
+    stripos($rangos, 'ecommerce') !== false && stripos($rangos, 'plataforma de cursos') !== false);
+
+$cfgPrecioNuevo = wabot_config_load();
+$cfgPrecioNuevo['tipos']['landing']['precio'] = '$99.000';
+caso('si el precio de un tipo cambia, el rango lo refleja al toque (sin migración manual)',
+    strpos(wabot_texto_rangos($cfgPrecioNuevo), '$99.000') !== false);
 
 echo "— Ni 3 pagos ni tarjeta en el precio automático: eso se contesta solo si preguntan —\n";
 

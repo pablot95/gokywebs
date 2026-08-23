@@ -486,6 +486,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($infoFase === 'mantenimiento') return [wabot_texto_mantenimiento($conv, $cfg)];
             if ($infoFase === 'pago') return [wabot_texto_pago($conv, $cfg)];
             if ($infoFase === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
+            if ($infoFase === 'rangos') return [wabot_texto_rangos($cfg)];
             return [(string)($cfg['info'][$infoFase] ?? $cfg['info']['otra'])];
         }
     }
@@ -557,6 +558,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                 if ($infoLocal === 'mantenimiento') return [wabot_texto_mantenimiento($conv, $cfg)];
                 if ($infoLocal === 'pago') return [wabot_texto_pago($conv, $cfg)];
                 if ($infoLocal === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
+                if ($infoLocal === 'rangos') return [wabot_texto_rangos($cfg)];
                 return [(string)($cfg['info'][$infoLocal] ?? $cfg['info']['otra'])];
             }
             $conv['fase'] = 'algo_diferente';
@@ -626,6 +628,19 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($conv['tipo'] === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
                 $cantFallback = wabot_extraer_cantidad_productos($texto);
                 if ($cantFallback !== null) $conv['productos_cantidad'] = $cantFallback;
+            }
+            $rNuevoFallback = wabot_fallback_rubro_local($texto);
+            if ($rNuevoFallback !== null && $rNuevoFallback !== $conv['tipo']) {
+                $desempateFallback = wabot_desempate_de($rNuevoFallback);
+                if ($desempateFallback !== null) {
+                    $conv['tipo'] = null;
+                    $conv['fase'] = $desempateFallback[0];
+                    wabot_handoff_aclaracion_resuelta($conv);
+                    $claveTextoFallback = $desempateFallback[0] === 'desempate_turnos'
+                        ? wabot_clave_desempate_turnos($texto, $cfg) : $desempateFallback[1];
+                    return [$cfg[$claveTextoFallback]];
+                }
+                $conv['tipo'] = $rNuevoFallback;
             }
             return wabot_precio((string)$conv['tipo'], $conv, $cfg);
         case 'precio':
@@ -728,6 +743,11 @@ function wabot_fallback_rubro_local($t) {
         && preg_match('/\b(stock|ventas|clientes|gestion|facturacion|turnos|control|interno|procesos|tareas)\b/u', $t)) {
         return 'sistema_pendiente';
     }
+    if (preg_match('/\b(varias paginas|multiples paginas|mas paginas|varias secciones|multiples secciones)\b/u', $t)
+        || preg_match('/\bsecciones? para\b.{0,30}\b(historia|autoridades|equipo|novedades)\b/u', $t)
+        || preg_match('/\balgo mas completo\b.{0,30}\bpaginas?\b/u', $t)) {
+        return 'institucional';
+    }
     if (preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online)\b/u', $t)
         || preg_match('/\bvender\b.{0,30}\b(online|por internet|desde la web|por la web)\b/u', $t)) {
         return 'ecommerce';
@@ -746,7 +766,7 @@ function wabot_fallback_rubro_local($t) {
         return 'landing';
     }
     if (preg_match('/\b(fundacion|ong|colegio|escuela|universidad|instituto|municipio|sindicato|asociacion|camara|cooperativa|mutual|club|parroquia|iglesia|hospital|centro de salud)\b/u', $t)) {
-        return 'institucional';
+        return 'landing';
     }
     return null;
 }
@@ -882,6 +902,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($infoCerrado === 'mantenimiento') return [wabot_texto_mantenimiento($conv, $cfg)];
             if ($infoCerrado === 'pago') return [wabot_texto_pago($conv, $cfg)];
             if ($infoCerrado === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
+            if ($infoCerrado === 'rangos') return [wabot_texto_rangos($cfg)];
             return [(string)($cfg['info'][$infoCerrado] ?? $cfg['info']['otra'])];
         }
         $tCerrado = wabot_normalizar_frase($texto);
@@ -987,7 +1008,8 @@ function wabot_engine($texto, &$conv, $cfg) {
             if (!isset($cfg['info'][$k])) continue;
             $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
-                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : wabot_texto_info($k, $cfg)));
+                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
+                : ($k === 'rangos' ? wabot_texto_rangos($cfg) : wabot_texto_info($k, $cfg))));
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
         // "Ese detalle te lo confirma Pablo" es una promesa: si sale, la duda
@@ -1270,8 +1292,16 @@ function wabot_engine($texto, &$conv, $cfg) {
                 if ($cant !== null) $conv['productos_cantidad'] = $cant;
             }
             $rNuevoPitch = wabot_rubro_de($acc);
-            if ($rNuevoPitch !== null && wabot_desempate_de($rNuevoPitch) === null
-                && $rNuevoPitch !== ($conv['tipo'] ?? '')) {
+            if ($rNuevoPitch !== null && $rNuevoPitch !== ($conv['tipo'] ?? '')) {
+                $desempateNuevo = wabot_desempate_de($rNuevoPitch);
+                if ($desempateNuevo !== null) {
+                    $conv['tipo'] = null;
+                    $conv['fase'] = $desempateNuevo[0];
+                    wabot_handoff_aclaracion_resuelta($conv);
+                    $claveTexto = $desempateNuevo[0] === 'desempate_turnos'
+                        ? wabot_clave_desempate_turnos($texto, $cfg) : $desempateNuevo[1];
+                    return array_merge($out, [$cfg[$claveTexto]]);
+                }
                 $conv['tipo'] = $rNuevoPitch;
             }
             return array_merge($out, wabot_precio((string)$conv['tipo'], $conv, $cfg));
@@ -1622,7 +1652,7 @@ function wabot_desempate_por_palabras($fase, $texto) {
         case 'desempate_turnos':
             if ($tiene(array_merge($primera, [
                 'solos', 'online', 'desde la web', 'desde la pagina', 'por la web', 'por la pagina', 'en la web',
-                'reserven', 'reservar', 'reserva', 'saquen', 'sacar turno', 'saquen turno', 'agenda', 'calendario',
+                'reserven', 'reservar', 'reserva', 'reservas', 'saquen', 'sacar turno', 'saquen turno', 'agenda', 'calendario',
                 'sistema de turnos', 'con turnos', 'que elijan', 'elijan', 'automatico', 'la completa',
             ]))) return 'turnos_si';
             if ($tiene(array_merge($segunda, [
@@ -1739,6 +1769,24 @@ function wabot_texto_info($clave, $cfg) {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
     return $texto;
+}
+
+function wabot_texto_rangos($cfg) {
+    $precios = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
+        if (!preg_match('/\$[\d.]+/u', (string)($d['precio'] ?? ''), $m)) continue;
+        $monto = wabot_monto_a_numero($m[0]);
+        if ($monto <= 0) continue;
+        $precios[] = ['monto' => $monto, 'texto' => $m[0], 'label' => mb_strtolower((string)($d['label'] ?? $tipo))];
+    }
+    if (!$precios) return trim((string)($cfg['info']['rangos'] ?? $cfg['info']['otra'] ?? ''));
+    usort($precios, function ($a, $b) { return $a['monto'] <=> $b['monto']; });
+    $min = $precios[0];
+    $max = end($precios);
+    $labelsMax = array_unique(array_map(function ($p) { return $p['label']; },
+        array_filter($precios, function ($p) use ($max) { return $p['monto'] === $max['monto']; })));
+    return "Los desarrollos van desde {$min['texto']} ({$min['label']}) hasta {$max['texto']} ("
+        . implode(' o ', $labelsMax) . "), según lo que necesites. Contame a qué te dedicás y te confirmo el precio exacto en un mensaje.";
 }
 
 /** Hosting: responde también qué pasa al terminar el primer año incluido. */
@@ -1908,7 +1956,7 @@ function wabot_prefiere_tarjeta($texto) {
 function wabot_precio_resumen($conv, $cfg) {
     $tipo = (string)($conv['tipo'] ?? '');
     if ($tipo === '' || empty($conv['precio_dado']) || !isset($cfg['tipos'][$tipo])) {
-        return (string)($cfg['info']['rangos'] ?? $cfg['info']['otra']);
+        return wabot_texto_rangos($cfg);
     }
     $t = $cfg['tipos'][$tipo];
     $precio = (string)($t['precio'] ?? '');
@@ -2115,6 +2163,7 @@ function wabot_cerrada($texto, &$conv, $cfg) {
             elseif ($infoOffline === 'mantenimiento') $out[] = wabot_texto_mantenimiento($conv, $cfg);
             elseif ($infoOffline === 'pago') $out[] = wabot_texto_pago($conv, $cfg);
             elseif ($infoOffline === 'hosting') $out[] = wabot_texto_hosting($conv, $cfg);
+            elseif ($infoOffline === 'rangos') $out[] = wabot_texto_rangos($cfg);
             else $out[] = (string)($cfg['info'][$infoOffline] ?? $cfg['info']['otra']);
         }
     }
@@ -2144,7 +2193,8 @@ function wabot_cerrada($texto, &$conv, $cfg) {
                 if (!isset($cfg['info'][$k])) continue;
                 $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
-                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg) : $cfg['info'][$k]));
+                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
+                : ($k === 'rangos' ? wabot_texto_rangos($cfg) : $cfg['info'][$k])));
             }
             if (!$lineas) $lineas[] = $cfg['info']['otra'];
             $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];

@@ -185,6 +185,27 @@ foreach ([
     caso('oferta u ofrecimiento normal (no promete un cierre ya hecho) → pasa: "' . mb_substr($t, 0, 40) . '…"',
         wabot_texto_promete_cierre($t) === false);
 }
+
+foreach ([
+    'Perfecto. Para armar una página de abogado orientada a que te contacten por WhatsApp, te paso todo lo que incluye.',
+    'Te paso el precio y el link de presupuesto:',
+    'Dale, te muestro el detalle de lo que incluye.',
+    'Te comparto la información del plan de mantenimiento.',
+] as $t) {
+    caso('promete pasar info y no la pasa (chat real "abogadi") → se detecta: "' . mb_substr($t, 0, 40) . '…"',
+        wabot_texto_promete_info_sin_entregar($t) === true);
+}
+foreach ([
+    'Sí, hacemos webs para profesionales como vos.',
+    'Contame qué servicios ofrecés y en qué zona trabajás?',
+    'El desarrollo completo es $160.000. Se puede abonar por transferencia.',
+    'Dale, te dejo el link para que lo revises: gokywebs.com/presupuestos/Landing',
+    'Cualquier cosa que necesites me avisás.',
+] as $t) {
+    caso('respuesta normal que sí entrega el dato o no promete nada → pasa: "' . mb_substr($t, 0, 40) . '…"',
+        wabot_texto_promete_info_sin_entregar($t) === false);
+}
+
 caso('el agente respeta el modo de prueba sin red',
     wabot_agente_llamar([], [], 'prueba') === null);
 caso('el redactor también respeta el modo de prueba sin red',
@@ -760,10 +781,11 @@ caso('sin nada aparte no rompe', wabot_agente_filtrar_aparte('hola', []) === [])
 echo "— El playbook manda tienda online para todo comercio —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
-caso('el playbook avisa que institucional es el que menos se cotiza',
-    stripos($sistema, 'el tipo que menos se cotiza') !== false);
-caso('y que tener una empresa no alcanza para institucional',
-    stripos($sistema, 'NO la vuelve institucional') !== false);
+caso('el playbook avisa que institucional no se ofrece de entrada, ni a instituciones reales',
+    stripos($sistema, 'NO se ofrece de entrada') !== false
+    && stripos($sistema, 'nunca por iniciativa tuya') !== false);
+caso('y que solo se cotiza si el cliente pide explícitamente algo con varias páginas',
+    stripos($sistema, 'algo más completo, con varias páginas') !== false);
 caso('una empresa de limpieza o de fletes es landing, no institucional',
     stripos($sistema, 'empresa de limpieza, de fletes') !== false);
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
@@ -932,6 +954,11 @@ $r = wabot_agente_ejecutar('consultar_info', ['clave'=>'hosting'], $c, $cfg);
 caso('hosting responde qué pasa después del primer año',
     stripos($r['texto'], 'una vez al año') !== false && stripos($r['texto'], 'antes del vencimiento') !== false);
 caso('si la demo ya fue ofrecida, la duda de hosting no agrega otro CTA', empty($r['aparte']));
+
+$cRangos = convNueva();
+$rRangos = wabot_agente_ejecutar('consultar_info', ['clave' => 'rangos'], $cRangos, $cfg);
+caso('consultar_info(rangos) devuelve los precios reales, no un texto fijo desactualizado',
+    strpos($rRangos['texto'], '$160.000') !== false && strpos($rRangos['texto'], '$320.000') === false);
 caso('un chat anterior a la corrección reconstruye el CTA usado desde el transcript', !empty($c['cta_muestra']));
 
 $c['session_started_ts'] = time() - 10;
