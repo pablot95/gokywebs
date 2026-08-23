@@ -615,9 +615,13 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             return wabot_precio((string)$conv['tipo'], $conv, $cfg);
         case 'precio':
-            if (wabot_es_afirmativa($texto) && !empty($conv['cta_muestra'])) {
+            if (!empty($conv['cta_muestra'])
+                && (wabot_es_afirmativa($texto) || wabot_aporta_descripcion($texto))) {
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'fallback']);
+                if (empty($conv['descripcion']) && wabot_aporta_descripcion($texto)) {
+                    $conv['descripcion'] = trim($texto);
+                }
                 return [wabot_prediseno_texto($conv, $cfg)];
             }
             if (empty($conv['cta_muestra'])) {
@@ -1517,7 +1521,7 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(publicidad|marketing|pauta|anuncios|posteos|redes sociales|(hacen|manejan|llevan) (las )?redes|community)\b/u', $t)) return 'marketing';
     if (preg_match('/\b(de donde son|donde estan|donde quedan|en que (ciudad|provincia|zona|localidad)|son de (aca|argentina)|tienen (oficina|local|sucursal)|puedo ir|nos podemos ver|donde los ubico|de que (ciudad|provincia|pais))\b/u', $t)) return 'ubicacion';
     if (preg_match('/\b(reunion|videollamada|llamada|nos juntamos|zoom|meet)\b/u', $t)) return 'reuniones';
-    if (preg_match('/\b(wordpress|wix|tiendanube|shopify|con que lo hacen|que tecnologia|codigo)\b/u', $t)) return 'tecnologia';
+    if (preg_match('/\b(wordpress|con que lo hacen|que tecnologia|codigo)\b/u', $t)) return 'tecnologia';
     if (preg_match('/\b(como (se )?manejan|como trabajan|como es el proceso|como sigue|como funciona el trabajo)\b/u', $t)) return 'proceso';
 
     return null;
@@ -2004,14 +2008,9 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
     $plantilla = is_array($conv)
         ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
         : (string)$cfg['msg_precio'];
-    $pagos3 = trim((string)($t['pagos3'] ?? ''));
-    // Sin un monto de 3 pagos definido para este precio, se saca la frase
-    // entera: mejor "se puede abonar por transferencia" a secas que un
-    // "{pagos3}" roto en el chat con un cliente real.
-    if ($pagos3 === '') $plantilla = str_replace(' en 3 pagos de {pagos3}', '', $plantilla);
     return str_replace(
-        ['{desc}', '{precio}', '{link}', '{sena}', '{pagos3}'],
-        [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? ''), $pagos3],
+        ['{desc}', '{precio}', '{link}', '{sena}'],
+        [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? '')],
         $plantilla
     );
 }

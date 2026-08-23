@@ -337,6 +337,16 @@ $r = wabot_engine('unos 45 mas o menos', $cPitchCatalogo, $cfg);
 caso('y en catálogo, con la IA caída, todavía puede sacar la cantidad con regex propia',
     (int)$cPitchCatalogo['productos_cantidad'] === 45 && strpos(implode(' ', $r), '$202.500') !== false);
 
+$cPrecioDatos = conv_nueva();
+$cPrecioDatos['fase'] = 'precio';
+$cPrecioDatos['tipo'] = 'landing';
+$cPrecioDatos['cta_muestra'] = true;
+$r = wabot_engine('Somos GasFix, celeste y blanco, no tengo pagina de referencia', $cPrecioDatos, $cfg);
+caso('Gemini caído justo cuando el cliente pasa los datos del prediseño sin decir "sí" antes: no se pierden',
+    $cPrecioDatos['fase'] === 'prediseno'
+    && $cPrecioDatos['descripcion'] === 'Somos GasFix, celeste y blanco, no tengo pagina de referencia'
+    && stripos(implode(' ', $r), 'contestar el desarrollador') === false);
+
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $c['ultimo_ts'] = time() - 10 * 86400; // hace 10 días
 clasifica(['saludo']);
@@ -2595,6 +2605,15 @@ caso('"usan wordpress?" sigue siendo una pregunta de tecnología', wabot_info_po
 caso('"cuando vence el dominio?" sigue siendo hosting', wabot_info_por_palabras('cuando vence el dominio?') === 'hosting');
 caso('"eso incluye el hosting?" también', wabot_info_por_palabras('eso incluye el hosting?') === 'hosting');
 
+foreach ([
+    'por que no uso tiendanube que es gratis',
+    'hacen con wix?',
+    'y con shopify no seria mas facil',
+] as $frase) {
+    caso("\"$frase\" NO cae en tecnologia: es objeción de plataforma, no pregunta técnica",
+        wabot_info_por_palabras($frase) !== 'tecnologia');
+}
+
 foreach (['accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue'] as $clave) {
     caso("la respuesta de \"$clave\" existe y no quedó vacía", trim((string)($cfg['info'][$clave] ?? '')) !== '');
 }
@@ -2995,34 +3014,26 @@ wabot_config_ventas($cargaVieja);
 caso('el texto viejo migra al nuevo en un bot-config.json existente',
     $cargaVieja['info']['carga'] === $cfg['info']['carga']);
 
-echo "— 3 pagos por transferencia, sin mencionar tarjeta ni 12 cuotas salvo que pregunten —\n";
+echo "— Ni 3 pagos ni tarjeta en el precio automático: eso se contesta solo si preguntan —\n";
 
 foreach ($cfg['tipos'] as $tipo => $datosPago) {
-    if (empty($datosPago['pagos3'])) continue;
-    $monto = $datosPago['pagos3'];
-    $texto = wabot_msg_precio_texto($tipo, $cfg);
-    caso("$tipo ofrece 3 pagos de $monto", strpos($texto, "en 3 pagos de $monto.") !== false);
+    $texto = $tipo === 'catalogo' ? $cfg['msg_precio_catalogo'] : wabot_msg_precio_texto($tipo, $cfg);
+    caso("$tipo no menciona 3 pagos en el precio automático", strpos($texto, '3 pagos') === false);
     caso("$tipo no menciona tarjeta ni 12 cuotas en el precio automático",
         stripos($texto, 'tarjeta') === false && stripos($texto, '12 cuotas') === false);
+    caso("$tipo sigue diciendo que se puede pagar por transferencia",
+        strpos($texto, 'Se puede abonar por transferencia.') !== false);
 }
-
-caso('catálogo no menciona 3 pagos: cotiza por cantidad, no tiene un total fijo',
-    strpos($cfg['msg_precio_catalogo'], '3 pagos') === false);
-caso('catálogo tampoco menciona tarjeta ni 12 cuotas',
-    stripos($cfg['msg_precio_catalogo'], 'tarjeta') === false && stripos($cfg['msg_precio_catalogo'], '12 cuotas') === false);
-caso('pero sigue diciendo que se puede pagar por transferencia',
-    strpos($cfg['msg_precio_catalogo'], 'Se puede abonar por transferencia.') !== false);
-caso('y no tiene un pagos3 calculado en la config',
+caso('y ningún tipo tiene un pagos3 calculado en la config: ese cálculo se retiró',
     !isset($cfg['tipos']['catalogo']['pagos3']));
 
 $cfgSinTabla = wabot_config_load();
 $cfgSinTabla['tipos']['landing']['precio'] = '$275.000';
 wabot_config_ventas($cfgSinTabla);
-caso('un precio que no está en la tabla de 3 pagos no arma un monto inventado',
+caso('un precio nuevo tampoco arma un pagos3: el cálculo no existe más',
     !isset($cfgSinTabla['tipos']['landing']['pagos3']));
-caso('y el mensaje cae a "se puede abonar por transferencia" a secas, sin un {pagos3} roto ni mencionar tarjeta',
-    strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), '{pagos3}') === false
-    && strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia.') !== false
+caso('el mensaje sigue siendo "se puede abonar por transferencia" a secas',
+    strpos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'Se puede abonar por transferencia.') !== false
     && stripos(wabot_msg_precio_texto('landing', $cfgSinTabla), 'tarjeta') === false);
 
 $original = wabot_config_load();
@@ -3031,22 +3042,36 @@ En este link podés ver detallado todo lo que incluye junto con otros trabajos r
 $original['msg_precio_variantes'] = ['Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.
 Acá podés ver todo lo que incluye y otros trabajos realizados: {link}'];
 wabot_config_ventas($original);
-caso('un bot-config.json que nunca vio esta migración termina sin tarjeta, con 3 pagos',
-    strpos($original['msg_precio'], 'en 3 pagos de {pagos3}.') !== false
-    && stripos($original['msg_precio'], 'tarjeta') === false);
+caso('un bot-config.json que nunca vio esta migración termina sin tarjeta y sin 3 pagos',
+    strpos($original['msg_precio'], 'Se puede abonar por transferencia.') !== false
+    && stripos($original['msg_precio'], 'tarjeta') === false
+    && strpos($original['msg_precio'], '3 pagos') === false);
 caso('lo mismo en cada variante de msg_precio_variantes',
-    strpos($original['msg_precio_variantes'][0], 'en 3 pagos de {pagos3}.') !== false
-    && stripos($original['msg_precio_variantes'][0], 'tarjeta') === false);
+    strpos($original['msg_precio_variantes'][0], 'Se puede abonar por transferencia.') !== false
+    && stripos($original['msg_precio_variantes'][0], 'tarjeta') === false
+    && strpos($original['msg_precio_variantes'][0], '3 pagos') === false);
 
-// Estado intermedio: el que ya había recibido la primera versión de 3 pagos
-// (la que todavía mencionaba "o con tarjeta hasta en 12 cuotas" al lado).
 $intermedio = wabot_config_load();
 $intermedio['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.
 En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
 wabot_config_ventas($intermedio);
-caso('y el que ya tenía la versión intermedia (con tarjeta) también termina sin ella',
-    strpos($intermedio['msg_precio'], 'en 3 pagos de {pagos3}.') !== false
-    && stripos($intermedio['msg_precio'], 'tarjeta') === false);
+caso('y el que ya tenía la versión con 3 pagos también termina sin ella',
+    strpos($intermedio['msg_precio'], 'Se puede abonar por transferencia.') !== false
+    && stripos($intermedio['msg_precio'], 'tarjeta') === false
+    && strpos($intermedio['msg_precio'], '3 pagos') === false);
+
+$soloTresPagos = wabot_config_load();
+$soloTresPagos['msg_precio'] = 'Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia en 3 pagos de {pagos3}.
+En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}';
+wabot_config_ventas($soloTresPagos);
+caso('y el que tenía 3 pagos solo (sin tarjeta al lado) también converge',
+    $soloTresPagos['msg_precio'] === $original['msg_precio']);
+
+caso('ningún tipo carga un pagos3 en la config: ese cálculo ya no existe',
+    (function () use ($cfg) {
+        foreach ($cfg['tipos'] as $t) if (isset($t['pagos3'])) return false;
+        return true;
+    })());
 
 echo "— wabot_conv_existe: si ya hay conversación, sin crearla ni tocarla —\n";
 

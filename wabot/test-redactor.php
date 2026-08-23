@@ -87,18 +87,14 @@ function convNueva() {
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
-// Sin la seña: en la parte 1 de la venta no se menciona (desde el 22-ago), y el
-// validador rechaza cualquier monto que no esté en el texto base. Desde que el
-// precio también ofrece 3 pagos (22-ago), el base tiene DOS montos ($200.000 y
-// $70.000) y la redacción libre tiene que traer los dos o cae al texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va una Landing: \$160.000 por todo el desarrollo, o en 3 pagos de \$56.000. Todo el detalle está acá: gokywebs.com/presupuestos/Landing y te hacemos un prediseño gratis antes de que decidas.";
+    return "Mirá, para lo tuyo va una Landing: \$160.000 por todo el desarrollo. Todo el detalle está acá: gokywebs.com/presupuestos/Landing y te hacemos un prediseño gratis antes de que decidas.";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
-    && strpos($r[0], '$160.000') !== false && strpos($r[0], '$56.000') !== false);
+    && strpos($r[0], '$160.000') !== false);
 caso('la oferta del prediseño va aparte y NO se reescribe', $r[1] === $cfg['msg_prediseno_oferta']);
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
@@ -135,13 +131,13 @@ caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'Perfecto, para lo tuyo va una tienda online completa') === 0
     && strpos($r[0], '$290.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
-    wabot_validar_redaccion('Sale $320.000 por todo, con seña de $90.000, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
-caso('si la redacción libre omite el monto de 3 pagos que sí está en el base, se rechaza',
-    wabot_validar_redaccion('Sale $320.000 por todo, mirá gokywebs.com/presupuestos/Ecommerce',
+caso('tampoco puede colar 3 pagos: ya no está en el base',
+    wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
 caso('el link va en su propio renglón, no pegado a la frase del precio',
     substr_count($r[0], "\n") === 1 && strpos($r[0], "\nEn este link") !== false);
@@ -201,13 +197,13 @@ echo "— Dos artículos pegados: \"iría un una página\" (salió así en produ
 
 $basePrecio = wabot_msg_precio_texto('landing', $cfg);
 caso('"un una" se rechaza y cae al texto fijo',
-    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $160.000, en 3 pagos de $56.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
 caso('"la un" también',
-    wabot_validar_redaccion('Te queda la un página a medida: $160.000, en 3 pagos de $56.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Te queda la un página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $160.000, o en 3 pagos de $56.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $160.000, en 3 pagos de $56.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
 
 echo "— Tras un cierre sin presión, el acuse recibe silencio (caso 👍 si, 21-ago) —\n";
 

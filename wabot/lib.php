@@ -693,26 +693,16 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     // devolvió el checkout real. El de 12 está verificado contra ese checkout;
     // los de 3 y 6 salen de la misma tasa.
     $factores = ['12' => 0.125841, '6' => 0.209734, '3' => 0.380983];
-    // 3 pagos por transferencia: montos fijos que definió Pablo, no la misma
-    // tasa que las cuotas de tarjeta de arriba (esas sí tienen interés). Es
-    // otra forma de pago aparte, para el que quiere adelantar en menos partes
-    // sin pasar por tarjeta.
-    $pagos3PorTotal = [160000 => 56000, 180000 => 63000, 200000 => 70000, 240000 => 84000,
-                       250000 => 85000, 290000 => 100000, 320000 => 110000];
     foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
+        unset($cfg['tipos'][$tipo]['pagos3']);
         $total = (int)preg_replace('/\D/', '', (string)($datos['precio'] ?? ''));
         // El catálogo cotiza por cantidad de productos: su total no es fijo, así
         // que no puede tener cuotas de lista (ver info.pago_catalogo). Se le
         // sacan para que nadie lea montos que no corresponden a lo cotizado.
-        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas'], $cfg['tipos'][$tipo]['pagos3']); continue; }
+        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas']); continue; }
         if ($total <= 0) continue;
         foreach ($factores as $n => $factor) {
             $cfg['tipos'][$tipo]['cuotas'][$n] = wabot_moneda((int)round($total * $factor));
-        }
-        if (isset($pagos3PorTotal[$total])) {
-            $cfg['tipos'][$tipo]['pagos3'] = wabot_moneda($pagos3PorTotal[$total]);
-        } else {
-            unset($cfg['tipos'][$tipo]['pagos3']);
         }
     }
 
@@ -772,32 +762,18 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         }, $cfg['msg_prediseno_oferta_variantes']);
     }
 
-    // Agrega la opción de 3 pagos por transferencia al mensaje de precio —
-    // solo en los que tienen un total fijo (catálogo no entra, cotiza por
-    // cantidad). {pagos3} lo resuelve wabot_msg_precio_texto() con el monto
-    // real de cada tipo; si no hay un monto definido para ese precio, la misma
-    // función saca la frase entera en vez de dejarla rota.
-    //
-    // "Hasta en 12 cuotas" NO va acá: el precio automático no menciona tarjeta,
-    // eso se contesta solo si el cliente pregunta cómo se paga (info.pago, que
-    // ya existe para eso). Dos pasadas porque hay configs en dos estados: las
-    // que nunca vieron esta migración (texto original, sin 3 pagos) y las que
-    // ya habían recibido una versión anterior que sí mencionaba la tarjeta acá.
-    $conPagos3 = function ($texto) {
-        $t = str_replace(
-            'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
-            'Se puede abonar por transferencia en 3 pagos de {pagos3}.',
+    $sinFormaDePago = function ($texto) {
+        return str_replace(
+            ['Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
+             'Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.',
+             'Se puede abonar por transferencia en 3 pagos de {pagos3}.'],
+            'Se puede abonar por transferencia.',
             (string)$texto
         );
-        return str_replace(
-            'Se puede abonar por transferencia en 3 pagos de {pagos3}, o con tarjeta hasta en 12 cuotas.',
-            'Se puede abonar por transferencia en 3 pagos de {pagos3}.',
-            $t
-        );
     };
-    if (!empty($cfg['msg_precio'])) $cfg['msg_precio'] = $conPagos3($cfg['msg_precio']);
+    if (!empty($cfg['msg_precio'])) $cfg['msg_precio'] = $sinFormaDePago($cfg['msg_precio']);
     if (!empty($cfg['msg_precio_variantes']) && is_array($cfg['msg_precio_variantes'])) {
-        $cfg['msg_precio_variantes'] = array_map($conPagos3, $cfg['msg_precio_variantes']);
+        $cfg['msg_precio_variantes'] = array_map($sinFormaDePago, $cfg['msg_precio_variantes']);
     }
 
     // El catálogo no tiene 3 pagos (total variable): se le saca la mención a

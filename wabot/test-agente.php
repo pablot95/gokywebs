@@ -44,6 +44,24 @@ caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
     && ($c['eventos_emitidos_sesion']['muestra_ofrecida'] ?? '') === $c['session_id']);
 
+echo "— Un args vacío se re-empaqueta como objeto, no como array (Gemini lo rechaza) —\n";
+
+$partesConVacio = [['functionCall' => ['name' => 'datos_transferencia', 'args' => []]]];
+$normalizadas = wabot_agente_partes_normalizar($partesConVacio);
+caso('args vacío pasa a ser un stdClass', $normalizadas[0]['functionCall']['args'] instanceof stdClass);
+caso('y json_encode lo escribe como {}, no como []',
+    json_encode($normalizadas[0]['functionCall']['args']) === '{}');
+caso('la codificación completa del content ya no tiene el "args":[] que Gemini rechaza',
+    strpos(json_encode(['role' => 'model', 'parts' => $normalizadas]), '"args":[]') === false);
+
+$partesConDatos = [['functionCall' => ['name' => 'dar_precio', 'args' => ['tipo' => 'landing']]]];
+$normalizadasConDatos = wabot_agente_partes_normalizar($partesConDatos);
+caso('un args con datos de verdad no se toca', $normalizadasConDatos[0]['functionCall']['args'] === ['tipo' => 'landing']);
+
+$partesTexto = [['text' => 'un mensaje sin ninguna herramienta']];
+caso('una parte de solo texto (sin functionCall) pasa sin romperse',
+    wabot_agente_partes_normalizar($partesTexto) === $partesTexto);
+
 echo "— El agente también pasa por el pitch antes del precio —\n";
 
 $cPitch = convNueva('AGPITCH1');
