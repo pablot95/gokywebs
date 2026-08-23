@@ -561,6 +561,10 @@ function wabot_config_ventas(&$cfg) {
             'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.'
                 => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
         ],
+        'pago_generico' => [
+            'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña ($60.000 en landing o catálogo, $80.000 en turnos, institucional e inmobiliaria, $90.000 en ecommerce y plataforma de cursos) y el saldo al entregar la web.'
+                => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña ($60.000 en landing o catálogo, $80.000 en turnos, institucional e inmobiliaria, $90.000 en ecommerce y plataforma de cursos) y el saldo al entregar la web.',
+        ],
         'mantenimiento' => [
             'El mantenimiento es opcional: cubre actualizaciones, cambios mensuales, soporte y más. Sale {precio} por mes y acá lo podés ver en detalle: {link}'
                 => 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. El primer mes va incluido con el desarrollo; después sale {precio} por mes y acá lo podés ver en detalle: {link}',

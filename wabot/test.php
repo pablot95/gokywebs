@@ -66,8 +66,23 @@ $c = conv_nueva();
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('se puede pagar en cuotas?', $c, $cfg);
 caso('pregunta de info en el primer mensaje → responde y suma el menú',
-    count($r) === 2 && $r[0] === $cfg['info']['pago_generico'] && $r[1] === $cfg['menu'] && $c['fase'] === 'menu');
-caso('sin tipo cotizado, la seña sale genérica: menciona los 3 montos', strpos($r[0], '$60.000') !== false && strpos($r[0], '$90.000') !== false);
+    count($r) === 2 && $r[0] === wabot_texto_pago_generico($cfg) && $r[1] === $cfg['menu'] && $c['fase'] === 'menu');
+caso('sin tipo cotizado, la seña sale genérica: menciona los montos reales de cada grupo',
+    strpos($r[0], '$40.000') !== false && strpos($r[0], '$60.000') !== false);
+
+echo "— pago_generico se calcula en vivo (agrupado por seña real), no queda un texto fijo con montos viejos —\n";
+
+$pagoGenerico = wabot_texto_pago_generico($cfg);
+caso('ya no cita los montos viejos $60.000/$80.000/$90.000 como si fueran actuales',
+    strpos($pagoGenerico, '$80.000') === false && strpos($pagoGenerico, '$90.000') === false);
+caso('deja explícito que se puede pagar en un solo pago', strpos($pagoGenerico, 'en un pago o hasta en 12 cuotas') !== false);
+caso('agrupa landing/catálogo/turnos/institucional en $40.000', stripos($pagoGenerico, '$40.000 en landing') !== false);
+caso('y agrupa inmobiliaria/ecommerce/elearning en $60.000', stripos($pagoGenerico, '$60.000 en web inmobiliaria') !== false);
+
+$cfgSenaNueva = wabot_config_load();
+$cfgSenaNueva['tipos']['landing']['sena'] = '$55.000';
+caso('si una seña cambia, el texto genérico lo refleja al toque',
+    strpos(wabot_texto_pago_generico($cfgSenaNueva), '$55.000') !== false);
 
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['elige_ecommerce']);
@@ -984,6 +999,14 @@ caso('turnos: "la primera" → turnos', wabot_desempate_por_palabras('desempate_
 caso('turnos: "sin turnos" → landing (la negación gana)', wabot_desempate_por_palabras('desempate_turnos', 'sin turnos') === 'turnos_no');
 caso('turnos: "Reservas" (plural, respuesta de una palabra) → turnos también',
     wabot_desempate_por_palabras('desempate_turnos', 'Reservas') === 'turnos_si');
+caso('turnos: "no quiero que reserven solos" → landing, no turnos (chat real, 23-ago)',
+    wabot_desempate_por_palabras('desempate_turnos', 'Prefiero que me escriban por whatsapp, no quiero que reserven solos') === 'turnos_no');
+caso('turnos: "no quiero reservas online" también es negación',
+    wabot_desempate_por_palabras('desempate_turnos', 'No quiero reservas online, prefiero coordinar yo') === 'turnos_no');
+caso('turnos: "no hace falta que reserven solos" también',
+    wabot_desempate_por_palabras('desempate_turnos', 'no hace falta que reserven solos, les escribo yo') === 'turnos_no');
+caso('pero "no sé, pero prefiero que reserven solos" sigue siendo afirmativo (el "no" no niega el verbo de querer)',
+    wabot_desempate_por_palabras('desempate_turnos', 'no se, pero prefiero que reserven solos') === 'turnos_si');
 caso('cursos: "la segunda" → mostrar', wabot_desempate_por_palabras('desempate_cursos', 'la segunda') === 'cursos_mostrar');
 
 echo "— Si no entiende, reformula: nunca repite la misma pregunta textual —\n";
@@ -1321,7 +1344,7 @@ $c = conv_nueva(); $c['fase'] = 'desempate_cursos';
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('como seria el pago?', $c, $cfg);
 caso('una duda en pleno desempate se contesta y la pregunta sigue en pie',
-    $r === [$cfg['info']['pago_generico']] && $c['fase'] === 'desempate_cursos');
+    $r === [wabot_texto_pago_generico($cfg)] && $c['fase'] === 'desempate_cursos');
 
 $c = conv_nueva(); $c['fase'] = 'desempate_turnos';
 clasifica(['otro']);
@@ -1821,13 +1844,14 @@ foreach (array_keys($cfg['tipos']) as $tipo) {
     // en número con la seña de este (ej. turnos cotiza 6 cuotas de $60.000,
     // que es justo la seña de landing) sin que sea el dato equivocado.
     caso("$tipo cotizado → la seña dice $sena y ninguna otra", strpos($texto, 'seña de ' . $sena) !== false);
-    $otras = array_diff(['$60.000', '$80.000', '$90.000'], [$sena]);
+    $todasLasSenas = array_unique(array_map(function ($d) { return (string)($d['sena'] ?? ''); }, $cfg['tipos']));
+    $otras = array_diff($todasLasSenas, [$sena, '']);
     foreach ($otras as $otraSena) {
         caso("$tipo cotizado → NO menciona la seña de otro tipo ($otraSena)", strpos($texto, 'seña de ' . $otraSena) === false);
     }
 }
-caso('sin tipo cotizado todavía, la seña es la genérica con los 3 montos',
-    wabot_texto_pago(['tipo' => null], $cfg) === $cfg['info']['pago_generico']);
+caso('sin tipo cotizado todavía, la seña es la genérica con los montos reales',
+    wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
 
 echo "— Las cuotas que se dicen son las del tipo ya cotizado —\n";
 
@@ -1857,7 +1881,7 @@ caso('sin tipo cotizado, la genérica no inventa montos de cuota',
 caso('la respuesta de pago del tipo cotizado arranca con el precio total',
     strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), '$160.000') !== false);
 caso('con tipo puesto pero SIN precio dado (catálogo preguntando cantidad), la seña es la genérica',
-    wabot_texto_pago(['tipo' => 'catalogo'], $cfg) === $cfg['info']['pago_generico']);
+    wabot_texto_pago(['tipo' => 'catalogo'], $cfg) === wabot_texto_pago_generico($cfg));
 caso('el pago del catálogo cotizado usa el total calculado, no las cuotas de la base',
     strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$230.000') !== false
     && strpos(wabot_texto_pago(['tipo' => 'catalogo', 'precio_dado' => true, 'productos_cantidad' => 100], $cfg), '$32.000') === false);
@@ -3448,6 +3472,10 @@ $pitchNormal = wabot_pitch_texto('ecommerce', $convEcommerceNormal, $cfg);
 caso('pero un ecommerce común sigue con "carrito y cobro online", no cuentas exclusivas',
     stripos($pitchNormal, 'carrito y cobro online') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
 caso('"vendo al por mayor" también detecta mayorista', wabot_contexto_es_mayorista('vendo al por mayor articulos de limpieza') === true);
+caso('"vendemos solo a locales y comercios, no al publico" también (chat real, 23-ago)',
+    wabot_contexto_es_mayorista('Somos una distribuidora de indumentaria, vendemos solo a locales y comercios, no al publico final') === true);
+caso('pero un ecommerce común que vende al público no es mayorista',
+    wabot_contexto_es_mayorista('tenemos un local de ropa, vendemos al publico en general') === false);
 
 echo "— El pitch no repite \"qué vendés\" si la respuesta corta ya lo dijo —\n";
 

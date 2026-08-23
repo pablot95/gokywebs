@@ -298,8 +298,8 @@ function wabot_contexto_es_mayorista($contexto) {
     $t = wabot_normalizar_frase($contexto);
     return (bool)preg_match(
         '/\bmayorista\w*\b|\bal por mayor\b|\bb2b\b'
-        . '|\bvendo\w*\b.{0,20}\b(solo|solamente|unicamente)\b.{0,20}\b(comercios?|negocios?|kioscos?|almacenes|revendedores?)\b'
-        . '|\bno\b.{0,15}\b(vendo|vendemos)\b.{0,15}\bal publico\b/u', $t);
+        . '|\bvend\w*\b.{0,25}\b(solo|solamente|unicamente)\b.{0,25}\b(comercios?|negocios?|kioscos?|almacenes|revendedores?|locales)\b'
+        . '|\bno\b.{0,20}\bal publico\b/u', $t);
 }
 
 function wabot_contexto_es_alojamiento($contexto) {
@@ -1599,6 +1599,12 @@ function wabot_desempate_por_palabras($fase, $texto) {
         if ($fase === 'desempate_turnos')   return 'turnos_no';
         if ($fase === 'desempate_cursos')   return 'cursos_mostrar';
     }
+    if ($fase === 'desempate_turnos' && (bool)(
+        preg_match('/\bno\b\s+(quiero|queremos|quiere|queres|quieren|hace falta)\b.{0,15}\bque\b.{0,20}\b(reserven|reserve|reserva|reservas|saquen|elijan|elijas)\b/u', $t)
+        || preg_match('/\bno\b\s+(quiero|queremos|quiere|queres|quieren)\b.{0,20}\b(reserven|reserva|reservas|reservar|solos|online)\b/u', $t)
+    )) {
+        return 'turnos_no';
+    }
 
     switch ($fase) {
         case 'desempate_comercio':
@@ -1789,6 +1795,26 @@ function wabot_texto_rangos($cfg) {
         . implode(' o ', $labelsMax) . "), según lo que necesites. Contame a qué te dedicás y te confirmo el precio exacto en un mensaje.";
 }
 
+function wabot_texto_pago_generico($cfg) {
+    $grupos = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
+        $sena = trim((string)($d['sena'] ?? ''));
+        if ($sena === '') continue;
+        $grupos[$sena][] = mb_strtolower((string)($d['label'] ?? $tipo));
+    }
+    if (!$grupos) return trim((string)($cfg['info']['pago_generico'] ?? ''));
+    uksort($grupos, function ($a, $b) { return wabot_monto_a_numero($a) <=> wabot_monto_a_numero($b); });
+    $partes = [];
+    foreach ($grupos as $sena => $labels) {
+        $lista = count($labels) > 1
+            ? implode(', ', array_slice($labels, 0, -1)) . ' y ' . end($labels)
+            : $labels[0];
+        $partes[] = "$sena en $lista";
+    }
+    return 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña ('
+        . implode(', ', $partes) . ') y el saldo al entregar la web.';
+}
+
 /** Hosting: responde también qué pasa al terminar el primer año incluido. */
 function wabot_texto_hosting($conv, $cfg) {
     $base = trim((string)($cfg['info']['hosting'] ?? ''));
@@ -1803,7 +1829,7 @@ function wabot_texto_pago($conv, $cfg) {
     $datosTipo = $cfg['tipos'][$tipo] ?? [];
     $sena = $datosTipo['sena'] ?? '';
     if ($sena === '' || empty($conv['precio_dado'])) {
-        $generico = trim((string)($cfg['info']['pago_generico'] ?? ''));
+        $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
         return 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña y el saldo al entregar la web.';
     }
@@ -1858,7 +1884,7 @@ function wabot_sena_de($conv, $cfg) {
 
 function wabot_postdemo_transferencia($conv, $cfg) {
     $sena = wabot_sena_de($conv, $cfg);
-    if ($sena === '') return (string)($cfg['info']['pago_generico'] ?? '');
+    if ($sena === '') return wabot_texto_pago_generico($cfg);
     return str_replace(
         ['{sena}', '{cbu}', '{alias}', '{titular}', '{documento}'],
         [$sena, (string)($cfg['pago_cbu'] ?? ''), (string)($cfg['pago_alias'] ?? ''),
