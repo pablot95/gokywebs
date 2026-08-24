@@ -251,7 +251,9 @@ function wabot_config_ventas(&$cfg) {
         'muestra_aviso' => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
         'form_agradecimiento' => 'Hola {nombre}, gracias por completar el formulario! Ya arrancamos con tu demo. Cualquier cosa que quieras sumar, contámela por acá.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
+        // Se usa solo cuando no hay link de formulario disponible (Instagram: sin teléfono).
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
+        'prediseno_link' => "Antes que nada, para armar tu muestra necesito un par de datos. Completalos en esta página, no lleva ni un minuto: {link}",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
         'confirma_cambio_2' => 'Decime nomás: es para el mismo proyecto que veníamos viendo (respondé "mismo") o es otra web aparte (respondé "otra")?',
         'confirma_cambio_mismo' => 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?',
@@ -354,6 +356,16 @@ function wabot_config_ventas(&$cfg) {
     }
     if (in_array(trim((string)($cfg['msg_prediseno_oferta'] ?? '')), $ofertasRetiradas, true)) {
         $cfg['msg_prediseno_oferta'] = $cfg['msg_prediseno_oferta_variantes'][0];
+    }
+    // Siempre arranca con "Antes que nada" (pedido explícito de Pablo, 23-ago):
+    // en WhatsApp el bot ya no pide los datos del prediseño por chat, da el link directo.
+    if (empty($cfg['prediseno_link_variantes']) || !is_array($cfg['prediseno_link_variantes'])) {
+        $cfg['prediseno_link_variantes'] = [
+            'Antes que nada, para armar tu muestra necesito un par de datos. Completalos en esta página, no lleva ni un minuto: {link}',
+            'Antes que nada, te dejo esta página para cargar los datos de tu muestra, es rapidísimo: {link}',
+            'Antes que nada, completá estos datos acá y arrancamos con tu muestra: {link}',
+            'Antes que nada, dejame estos datos en esta página para preparar tu muestra sin cargo: {link}',
+        ];
     }
     $listaPrecios = [
         'landing'       => ['de' => '$200.000', 'a' => '$160.000', 'sena_de' => '$60.000', 'sena_a' => '$50.000'],
@@ -1808,7 +1820,7 @@ function wabot_form_link($conv, $cfg) {
     return 'https://gokywebs.com/form/?' . http_build_query($qs);
 }
 
-function wabot_prediseno_faltan($conv) {
+function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
     $items = [];
     if (wabot_nombre_confirmado_de($conv) === '') $items[] = 'Tu nombre';
     if (trim((string)($conv['nombre_negocio'] ?? '')) === '') $items[] = 'El nombre de tu negocio';
@@ -1817,40 +1829,37 @@ function wabot_prediseno_faltan($conv) {
         $items[] = 'Una descripción breve de lo que ofrecés';
     }
     if (trim((string)($conv['colores']        ?? '')) === '') $items[] = 'Los colores de tu marca';
-    if (trim((string)($conv['referencia'] ?? '')) === '' && empty($conv['referencia_preguntada'])) {
+    if ($incluirReferencia && trim((string)($conv['referencia'] ?? '')) === '' && empty($conv['referencia_preguntada'])) {
         $items[] = 'Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)';
     }
     return $items;
 }
 
 /**
- * El ofrecimiento del prediseño, con la lista de lo que realmente falta —
- * saltos de línea de verdad, no a criterio del modelo. Si ya se sabe todo
- * (nombre detectado antes en la charla, por ejemplo), no hay nada que listar.
+ * El ofrecimiento del prediseño. En WhatsApp el bot ya no pide los datos por
+ * chat (pedido de Pablo, 23-ago): si falta algo que el formulario cubre
+ * (nombre, negocio, descripción, colores — la referencia no la pide el
+ * formulario, se sigue preguntando por chat aparte), va directo el link.
+ * Solo en Instagram (sin link posible, wabot_form_link() da vacío) o si ya
+ * se sabe todo, se mantiene el texto por chat.
  */
 function wabot_prediseno_texto($conv, $cfg) {
     $faltan = wabot_prediseno_faltan($conv);
     if (!$faltan) {
         return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
     }
-    $lista = implode("\n", array_map(function ($i) { return "- $i"; }, $faltan));
-    $base  = (string)($cfg['prediseno'] ?? '');
-    $texto = strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 
-    $link = wabot_form_link($conv, $cfg);
-    if ($link !== '') {
-        $yaOfrecido = false;
-        foreach ((array)($conv['transcript'] ?? []) as $fila) {
-            if (($fila['q'] ?? '') === 'bot' && strpos((string)($fila['t'] ?? ''), 'gokywebs.com/form/') !== false) {
-                $yaOfrecido = true;
-                break;
-            }
-        }
-        if (!$yaOfrecido) {
-            $texto .= "\n\nSi preferís, también podés cargarlos en esta página en vez de escribirlos acá: {$link}";
+    if (wabot_prediseno_faltan($conv, false)) {
+        $link = wabot_form_link($conv, $cfg);
+        if ($link !== '') {
+            $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
+            return str_replace('{link}', $link, $texto);
         }
     }
-    return $texto;
+
+    $lista = implode("\n", array_map(function ($i) { return "- $i"; }, $faltan));
+    $base  = (string)($cfg['prediseno'] ?? '');
+    return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 }
 
 function wabot_conv_existe($clave) {
@@ -4134,7 +4143,7 @@ function wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora = null) {
     if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
     if (wabot_ultimo_cliente_ts($cv) >= (int)$cv['form_completado_ts']) return false;
-    $minutos = (float)($cfg['form_agradecimiento_minutos'] ?? 20);
+    $minutos = (float)($cfg['form_agradecimiento_minutos'] ?? 10);
     return $ahora - (int)$cv['form_completado_ts'] >= $minutos * 60;
 }
 

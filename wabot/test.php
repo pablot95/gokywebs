@@ -3641,8 +3641,9 @@ $cvDemo = conv_nueva();
 $cvDemo['demo_pedida_entrada'] = true; $cvDemo['chat_started_ts'] = time();
 clasifica(['rubro_landing']);
 $rDemo = wabot_precio('landing', $cvDemo, $cfg);
-caso('tras el precio va directo a los datos, sin re-ofrecer',
-    count($rDemo) === 2 && mb_stripos($rDemo[1], 'Necesito') !== false && mb_stripos($rDemo[1], 'Querés que') === false);
+caso('tras el precio va directo al link del form, sin re-ofrecer',
+    count($rDemo) === 2 && mb_stripos($rDemo[1], 'Antes que nada') === 0
+    && strpos($rDemo[1], 'gokywebs.com/form/') !== false && mb_stripos($rDemo[1], 'Querés que') === false);
 caso('y la fase queda en prediseño', $cvDemo['fase'] === 'prediseno');
 
 $cvNormal = conv_nueva();
