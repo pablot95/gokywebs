@@ -1799,9 +1799,6 @@ body.no-scroll .floats {
   .hero-content h1 {
     font-size: clamp(1.9rem, 8vw, 2.6rem);
   }
-  .curtain-panel {
-    display: none;
-  }
   .filtros {
     flex-direction: column;
   }
