@@ -152,9 +152,7 @@ const _codigoBot = (_paramsInicial.get('c') || '').trim().slice(0, 8);
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
     } else if (_codigoBot) {
-        // Con el código no sabemos el número para mostrarlo, y tampoco hace
-        // falta: es el mismo del que nos escribió.
-        telefonoAviso.textContent = 'Te vamos a escribir al WhatsApp desde el que nos escribiste. ¿Preferís otro número? ';
+        telefonoAviso.textContent = '¿No es tu número? ';
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
     }
@@ -189,7 +187,6 @@ function validateForm() {
         { id: 'nombre', msg: 'Contanos tu nombre.' },
         { id: 'nombre_negocio', msg: 'Contanos el nombre de tu negocio o marca.' },
         { id: 'resumen', msg: 'Contanos brevemente qué ofrecés.' },
-        { id: 'colores', msg: 'Contanos los colores de tu identidad.' },
     ].forEach(({ id, msg }) => {
         const el = document.getElementById(id);
         if (!el.value.trim()) {
@@ -234,12 +231,22 @@ function clearErrors() {
 
 function buildPayload() {
     const get = id => (document.getElementById(id)?.value ?? '').trim();
+
+    // Los color pickers (type="color") siempre traen un valor, no hace falta
+    // validarlos: se combinan en un solo texto para el mismo campo "colores"
+    // que ya espera el bot.
+    const colores = [
+        `Color principal: ${get('color_principal')}`,
+        `Color secundario: ${get('color_secundario')}`,
+        `Fondos: ${get('color_fondos')}`,
+    ].join(' · ');
+
     const payload = {
         t: get('telefono'),
         nombre: get('nombre'),
         nombre_negocio: get('nombre_negocio'),
         resumen: get('resumen'),
-        colores: get('colores'),
+        colores,
     };
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
@@ -274,7 +281,7 @@ async function enviarFormulario() {
 }
 
 function mensajeFormWsp(nombre, nombreNegocio) {
-    const lineas = [`Hola! Acabo de completar el formulario de la muestra gratis.`, ''];
+    const lineas = [`Hola! Acabo de completar el formulario de la demo gratis.`, ''];
     lineas.push(`🙋 Nombre: ${nombre || 'sin nombre'}`);
     lineas.push(`🏢 Negocio: ${nombreNegocio || 'sin nombre'}`);
     lineas.push('', 'Quedo atento/a!');
@@ -289,7 +296,7 @@ function showSuccess(nombre, nombreNegocio) {
         <div class="success-screen">
             <div class="success-icon">✅</div>
             <h2 class="success-title">¡Listo, recibimos tus datos!</h2>
-            <span class="success-badge">⏱️ De 24 a 48hs tendremos tu muestra</span>
+            <span class="success-badge">⏱️ De 24 a 48hs tendremos tu demo</span>
             <p class="success-desc">
                 Te estamos abriendo WhatsApp para coordinar los próximos pasos. Si no se abrió solo, tocá el botón de acá abajo.
             </p>
@@ -311,7 +318,8 @@ document.querySelectorAll('textarea.autosize').forEach(ta => {
 });
 
 const DRAFT_KEY = 'gky_form_draft';
-const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'colores', 'telefono'];
+const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
+    'color_principal', 'color_secundario', 'color_fondos'];
 
 function saveDraft() {
     try {

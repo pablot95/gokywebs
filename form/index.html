@@ -27,7 +27,7 @@
         <section class="hero-text" aria-labelledby="formHeroTitle">
             <p class="hero-eyebrow">Tu web, antes de contratarla</p>
             <h1 class="hero-title" id="formHeroTitle">La primera entrega es GRATIS</h1>
-            <button class="btn-que-es-muestra" id="btnQueEsMuestra">
+            <button class="btn-que-es-demo" id="btnQueEsDemo">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Ver qué incluye y cómo funciona
             </button>
@@ -41,7 +41,7 @@
 
                     <div class="step-header">
                         <h2 class="step-header-title">Contanos sobre tu negocio</h2>
-                        <p class="step-header-desc">Con esto alcanza para armar tu muestra. Lleva menos de un minuto.</p>
+                        <p class="step-header-desc">Con esto alcanza para armar tu demo. Lleva menos de un minuto.</p>
                     </div>
 
                     <div class="field-group">
@@ -61,17 +61,29 @@
                     <div class="field-group">
                         <label class="field-label" for="resumen">
                             Breve resumen de lo que ofrecés <span class="req">*</span>
-                            <span class="field-hint">A qué te dedicás, tus principales productos o servicios.</span>
                         </label>
                         <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required></textarea>
                     </div>
 
                     <div class="field-group">
-                        <label class="field-label" for="colores">
+                        <label class="field-label">
                             Colores de identidad <span class="req">*</span>
-                            <span class="field-hint">Los colores de tu marca, o los que te gustaría usar.</span>
+                            <span class="field-hint">¿Tenés colores de marca?</span>
                         </label>
-                        <input type="text" id="colores" name="colores" class="field-input" placeholder="Ej: azul y blanco" required>
+                        <div class="color-fields-grid">
+                            <div class="field-group color-field-group">
+                                <label class="field-label small-label" for="color_principal">Color principal</label>
+                                <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
+                            </div>
+                            <div class="field-group color-field-group">
+                                <label class="field-label small-label" for="color_secundario">Color secundario</label>
+                                <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
+                            </div>
+                            <div class="field-group color-field-group">
+                                <label class="field-label small-label" for="color_fondos">Color de fondos</label>
+                                <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
+                            </div>
+                        </div>
                     </div>
 
                     <div class="field-group" id="telefonoGroup">
@@ -79,7 +91,7 @@
                             Teléfono / WhatsApp <span class="req">*</span>
                         </label>
                         <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
-                        <p class="field-hint" id="telefonoConfirmado" hidden>Te vamos a escribir a este número. ¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
+                        <p class="field-hint" id="telefonoConfirmado" hidden>¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
                     </div>
 
                 </div>
@@ -88,7 +100,7 @@
 
                 <div class="submit-row">
                     <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
-                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu muestra.</p>
+                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu demo.</p>
                 </div>
             </form>
         </div>
@@ -110,7 +122,7 @@
             <div class="que-es-body">
 
                 <p class="que-es-intro">
-                    Una muestra es un <strong>diseño real de tu sitio web</strong>, hecho 100% a medida según tu marca, rubro y estilo — <strong>sin costo y sin compromiso</strong>. No es un template genérico: es tu web, antes de contratarla.
+                    Una demo es un <strong>diseño real de tu sitio web</strong>, hecho 100% a medida según tu marca, rubro y estilo — <strong>sin costo y sin compromiso</strong>. No es un template genérico: es tu web, antes de contratarla.
                 </p>
 
                 <div class="que-es-block">
@@ -127,7 +139,7 @@
                             <div class="que-es-item-icon">✅</div>
                             <div class="que-es-item-text">
                                 <strong>Cero riesgo</strong>
-                                Si la muestra no te convence, no hay cargo. Si te gusta, ahí sí avanzamos.
+                                Si la demo no te convence, no hay cargo. Si te gusta, ahí sí avanzamos.
                             </div>
                         </div>
                         <div class="que-es-item">
@@ -155,7 +167,7 @@
                             <div class="que-es-step-line"></div>
                             <div class="que-es-step-num">2</div>
                             <div class="que-es-step-text">
-                                <strong>Nuestro equipo diseña tu muestra</strong>
+                                <strong>Nuestro equipo diseña tu demo</strong>
                                 Armamos una sección real de tu sitio, personalizada para vos.
                             </div>
                         </div>
@@ -164,7 +176,7 @@
                             <div class="que-es-step-num">3</div>
                             <div class="que-es-step-text">
                                 <strong>Te la enviamos en 24 a 48 horas</strong>
-                                Recibís la muestra por WhatsApp para verla y comentar.
+                                Recibís la demo por WhatsApp para verla y comentar.
                             </div>
                         </div>
                         <div class="que-es-step">
@@ -191,7 +203,7 @@
 
     <script>
         const _qeOverlay = document.getElementById('queEsOverlay');
-        document.getElementById('btnQueEsMuestra').addEventListener('click', () => {
+        document.getElementById('btnQueEsDemo').addEventListener('click', () => {
             _qeOverlay.classList.add('open');
             document.body.style.overflow = 'hidden';
         });
