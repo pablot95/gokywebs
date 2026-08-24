@@ -23,7 +23,7 @@ define('WABOT_APP_SECRET', '');
 define('WABOT_VERIFY_TOKEN', 'COMPLETAR');
 define('WABOT_GRAPH_VERSION', 'v21.0');
 define('WABOT_GEMINI_KEY', 'COMPLETAR');
-define('WABOT_GEMINI_MODEL', 'gemini-3.5-flash-lite');
+/* El modelo se elige desde el panel del bot (Textos -> Modelo de IA), no aca. */
 define('WABOT_FIREBASE_API_KEY', 'COMPLETAR');
 define('WABOT_FIREBASE_PROJECT', 'COMPLETAR');
 define('WABOT_ADMIN_PASS', 'COMPLETAR');

@@ -69,7 +69,7 @@ unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 caso('la primera llamada devuelve la presentación, no el precio',
     !empty($r['exacta']) && strpos($r['texto'], '$') === false
-    && stripos($r['texto'], 'carrito') !== false
+    && stripos($r['texto'], 'tienda online') !== false
     && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']));
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 caso('la segunda llamada, con el pitch ya hecho, sí da el precio',

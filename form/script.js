@@ -123,6 +123,10 @@ telefonoInput.addEventListener('input', () => {
     telefonoInput.value = telefonoInput.value.replace(/[^\d+\s()-]/g, '').slice(0, 18);
 });
 
+// El bot manda un código corto (?c=) en vez del teléfono: el link queda corto
+// y el número no viaja a la vista. El backend lo resuelve contra su índice.
+const _codigoBot = (_paramsInicial.get('c') || '').trim().slice(0, 8);
+
 (function _prellenarDesdeBot() {
     const mapa = { t: 'telefono', neg: 'nombre_negocio' };
     let precargados = 0;
@@ -145,6 +149,12 @@ telefonoInput.addEventListener('input', () => {
         telefonoAviso.textContent = 'Te vamos a escribir a este número: ';
         telefonoAviso.appendChild(num);
         telefonoAviso.append('. ¿No es el tuyo? ');
+        telefonoAviso.appendChild(telefonoCorregir);
+        ocultarTelefono();
+    } else if (_codigoBot) {
+        // Con el código no sabemos el número para mostrarlo, y tampoco hace
+        // falta: es el mismo del que nos escribió.
+        telefonoAviso.textContent = 'Te vamos a escribir al WhatsApp desde el que nos escribiste. ¿Preferís otro número? ';
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
     }
@@ -224,13 +234,15 @@ function clearErrors() {
 
 function buildPayload() {
     const get = id => (document.getElementById(id)?.value ?? '').trim();
-    return {
+    const payload = {
         t: get('telefono'),
         nombre: get('nombre'),
         nombre_negocio: get('nombre_negocio'),
         resumen: get('resumen'),
         colores: get('colores'),
     };
+    if (_codigoBot) payload.c = _codigoBot;
+    return payload;
 }
 
 async function enviarFormulario() {

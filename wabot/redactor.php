@@ -180,7 +180,7 @@ EOT;
     $prompt .= "MENSAJE BASE A REESCRIBIR:\n\"\"\"\n$base\n\"\"\"\n\n";
     $prompt .= "Devolvé SOLO el mensaje reescrito, sin comillas ni explicaciones.";
 
-    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
     $body = json_encode([
         'contents' => [['parts' => [['text' => $prompt]]]],
         'generationConfig' => ['temperature' => 0.7, 'maxOutputTokens' => 400],

@@ -314,7 +314,7 @@ function wabot_agente_paraguas_clave($mensaje) {
     // de eventos — eso descarta lo demás que el cliente ya dijo. Un mensaje
     // largo ya tiene contexto de sobra; el paraguas es solo para el vacío.
     if (count(explode(' ', $t)) > 12) return null;
-    if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia)\b/u', $t, $m)) {
+    if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia|distribucion|distribuidora|mayorista|importacion|logistica)\b/u', $t, $m)) {
         return $m[1];
     }
     return null;
@@ -1524,7 +1524,7 @@ function wabot_agente_llamar($contents, $tools, $sistema) {
         return null;
     }
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
 
     $body = json_encode([
         'systemInstruction' => ['parts' => [['text' => $sistema]]],

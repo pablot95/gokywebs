@@ -66,6 +66,53 @@ function wabot_firma_valida($cuerpo, $firma) {
     return false;
 }
 
+/**
+ * Los modelos disponibles, del mas barato al mas capaz. La clave es lo que
+ * viaja en la URL de la API; el valor es como se lee en el panel.
+ */
+function wabot_gemini_modelos() {
+    return [
+        'gemini-3.5-flash-lite' => 'Flash Lite (el mas barato y rapido)',
+        'gemini-3.5-flash'      => 'Flash (mejor criterio, un poco mas caro)',
+        'gemini-3.5-pro'        => 'Pro (el mas capaz, bastante mas caro)',
+    ];
+}
+
+/**
+ * El default pasa a ser Flash: Flash Lite venia clasificando mal los rubros y
+ * sacando conclusiones de mensajes de dos palabras. La constante vieja
+ * WABOT_GEMINI_MODEL del config del servidor YA NO se lee -- si siguiera
+ * mandando, el server quedaria clavado en Flash Lite y el selector del panel
+ * no serviria para nada.
+ */
+function wabot_gemini_modelo_default() {
+    return 'gemini-3.5-flash';
+}
+
+/**
+ * Que modelo usar. Sale del panel (bot-config.json) para poder cambiarlo sin
+ * tocar el archivo de config del servidor, que esta fuera del repo. Si lo que
+ * quedo guardado no es un modelo conocido, se ignora: un typo en el panel
+ * dejaria al bot entero sin IA.
+ *
+ * Varios de los que llaman a Gemini (media, colores, el agente) no tienen el
+ * $cfg a mano, asi que sin argumento se lee el json una sola vez por request.
+ */
+function wabot_gemini_modelo($cfg = null) {
+    static $cache = null;
+    $conocidos = wabot_gemini_modelos();
+    if (is_array($cfg)) {
+        $elegido = trim((string)($cfg['gemini_modelo'] ?? ''));
+        return isset($conocidos[$elegido]) ? $elegido : wabot_gemini_modelo_default();
+    }
+    if ($cache !== null) return $cache;
+    $raw = @file_get_contents(WABOT_DIR . '/bot-config.json');
+    $guardado = $raw ? json_decode($raw, true) : null;
+    $elegido = is_array($guardado) ? trim((string)($guardado['gemini_modelo'] ?? '')) : '';
+    $cache = isset($conocidos[$elegido]) ? $elegido : wabot_gemini_modelo_default();
+    return $cache;
+}
+
 function wabot_config_load() {
     wabot_ensure_dirs();
     // Las primeras versiones de Instagram leían `ig{IGSID}.json` pero guardaban
@@ -82,6 +129,9 @@ function wabot_config_load() {
     if (!isset($cfg['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = 20;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
         $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.';
+    }
+    if (trim((string)($cfg['gemini_modelo'] ?? '')) === '') {
+        $cfg['gemini_modelo'] = wabot_gemini_modelo_default();
     }
     if (!isset($cfg['demora_por_longitud']))   $cfg['demora_por_longitud']   = true;
     if (!isset($cfg['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = 16;
@@ -283,6 +333,15 @@ function wabot_config_ventas(&$cfg) {
             'terapias' => 'Qué tipo de terapias ofrecés?',
             'deportes' => 'Qué deporte o actividad deportiva ofrecés?',
             'tecnologia' => 'A qué te dedicás dentro de tecnología?',
+            // Solo palabras que solas no dicen NADA del rubro. Nada de "negocio",
+            // "estudio" o "taller": aparecen pegadas al rubro real ("estudio de
+            // diseño", "taller mecánico") y la pregunta terminaría pidiendo algo
+            // que el cliente acaba de decir.
+            'distribucion' => 'Qué distribuís, y a quién: a comercios o al público?',
+            'distribuidora' => 'Qué distribuís, y a quién: a comercios o al público?',
+            'mayorista' => 'Qué vendés, y a quién: a comercios o al público?',
+            'importacion' => 'Qué importás, y lo vendés a comercios o al público?',
+            'logistica' => 'Qué parte de la logística cubrís: reparto, depósito, las dos?',
         ],
 
         /* ── Parte 2 de la venta: después de presentar la demo ──
@@ -415,7 +474,15 @@ function wabot_config_ventas(&$cfg) {
         $cfg['info']['ejemplos'] = 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.';
     }
     if (trim((string)($cfg['msg_pitch'] ?? '')) === '') {
-        $cfg['msg_pitch'] = "Buenísimo. Para lo tuyo va {desc}.
+        $cfg['msg_pitch'] = "Buenísimo, lo ideal sería {desc}.
+
+{pregunta}";
+    }
+    // El pitch viejo arrancaba con "Para lo tuyo va", que sonaba a formulario.
+    if (trim((string)($cfg['msg_pitch'] ?? '')) === "Buenísimo. Para lo tuyo va {desc}.
+
+{pregunta}") {
+        $cfg['msg_pitch'] = "Buenísimo, lo ideal sería {desc}.
 
 {pregunta}";
     }
@@ -470,63 +537,39 @@ function wabot_config_ventas(&$cfg) {
 
     $descVariantes = [
         'landing' => ['desc' => [
-            'Para tu caso haría una web simple y profesional, con tus servicios, trabajos y contacto directo por WhatsApp.',
-            'En tu caso lo más práctico es una página con lo que hacés, algunos trabajos y un botón directo a tu WhatsApp.',
-            'Ahí conviene una web propia: mostrás tus servicios, quién sos, y te contactan directo por WhatsApp.',
-            'Se puede armar una página con tu actividad, tus trabajos y un contacto directo, para que no dependas solo de las redes.',
-            'Con lo que contás alcanza con una landing: tus servicios, algo de tu trabajo y un botón directo a WhatsApp.',
-            'Se puede hacer una página simple que te presente, muestre lo que hacés y lleve directo a tu WhatsApp.',
-            'Para eso funciona bien una web propia: contás quién sos, qué ofrecés, y de ahí te escriben directo.',
+            'una web profesional para mostrar lo que hacés, generar confianza a los clientes y que puedan contactarte directamente por WhatsApp',
+            'una web profesional para mostrar tus servicios, dar confianza a quien te busca y que te escriban directo por WhatsApp',
+            'una web profesional para presentar tus trabajos, que se vea serio lo que hacés y que te contacten directo por WhatsApp',
         ]],
         'ecommerce' => ['desc' => [
-            'En ese caso te conviene una tienda online: catálogo, carrito, pagos online y un panel para administrar los productos y los pedidos.',
-            'Ahí ya estaríamos hablando de una tienda online: catálogo, carrito y cobro, con un panel para manejar vos los productos y los pedidos.',
-            'Eso se puede hacer con ecommerce: el cliente arma su carrito, paga y te deja el pedido armado, sin que tengas que estar respondiendo uno por uno.',
-            'En ese caso podemos automatizar toda la compra desde la web: catálogo, carrito, cobro online y un panel para cargar los productos vos mismo.',
-            'Para vender así conviene una tienda online, con catálogo y carrito: el que compra elige, paga y te llega el pedido armado.',
-            'Se puede montar una tienda con catálogo, carrito y cobro online, para que dejes de cerrar ventas una por una por chat.',
-            'Con eso funciona una tienda online completa: catálogo, carrito y pago, todo desde la web.',
+            'una tienda online para mostrar tus productos y que tus clientes puedan comprar y pagar directamente desde la web. Además, tendrías un panel administrativo para gestionar productos, precios, stock y pedidos',
+            'una tienda online para que tus clientes vean todo el catálogo y compren y paguen desde la web. Además, tendrías un panel administrativo para manejar productos, precios, stock y pedidos',
+            'una tienda online donde tus clientes eligen, compran y pagan sin escribirte. Además, tendrías un panel administrativo para cargar productos, precios, stock y ver los pedidos',
         ]],
         'turnos' => ['desc' => [
-            'Entonces podemos hacer que reserven el turno solos desde la web, eligiendo día y horario, y a vos te queda todo ordenado en un panel.',
-            'Ahí conviene una web con reserva de turnos: eligen día y horario ellos mismos, y vos manejás todo desde un panel sin coordinar por chat.',
-            'Se puede armar para que saquen el turno directo desde la página, y vos ves la agenda ordenada en un panel.',
-            'En ese caso arma la web con reserva online: el que te escribe ya ve los horarios libres y elige, y a vos te queda todo prolijo en un panel.',
-            'Para eso conviene una web con reserva online: eligen turno solos y a vos te queda todo prolijo en un panel.',
-            'Se puede hacer que reserven directo desde la página, sin ida y vuelta por WhatsApp, y vos manejás la agenda desde un panel.',
-            'Con turnos online alcanza: el que te escribe ya ve los horarios libres y elige el suyo.',
+            'una web con reserva de turnos para que tus clientes elijan día y horario solos desde la página. Además, tendrías un panel para manejar la agenda, los servicios y los horarios',
+            'una web con turnos online para que reserven solos sin ida y vuelta por WhatsApp. Además, tendrías un panel para ver la agenda y configurar tus horarios',
+            'una web donde tus clientes ven los horarios libres y sacan el turno ellos mismos. Además, tendrías un panel para manejar la agenda y los servicios',
         ]],
         'institucional' => ['desc' => [
-            'Ahí conviene una web institucional completa, con secciones para la historia, las autoridades, las actividades y las novedades.',
-            'En ese caso se arma una web con varias páginas: historia, equipo, novedades y todo lo que necesiten mostrar por separado.',
-            'Se puede organizar en varias secciones: historia, autoridades, novedades y la información que quieran tener siempre disponible.',
-            'Para organizar todo eso conviene una web institucional, con secciones separadas para cada cosa.',
-            'Se puede armar con varias secciones bien diferenciadas: historia, autoridades, novedades y lo que necesiten mostrar.',
-            'Con eso funciona mejor una web institucional completa, en vez de todo apretado en una sola página.',
+            'una web institucional con secciones para la historia, las autoridades, las actividades y las novedades. Además, tendrías un panel para actualizar los contenidos cuando haga falta',
+            'una web institucional con varias páginas para ordenar la historia, el equipo, las actividades y las novedades. Además, tendrías un panel para ir actualizando todo',
+            'una web institucional que ordene en secciones propias la historia, las autoridades y las novedades. Además, tendrías un panel para cargar las actualizaciones',
         ]],
         'inmobiliaria' => ['desc' => [
-            'Para una inmobiliaria haría una web donde puedas cargar las propiedades desde tu panel, y que la gente filtre por zona, precio y otras características.',
-            'Ahí conviene una web con catálogo de propiedades: cada una con su ficha, y el interesado filtra por zona y precio antes de consultarte.',
-            'Se puede armar con búsqueda y filtros, para que el interesado encuentre la propiedad que busca y te escriba ya con eso elegido.',
-            'Para publicar propiedades conviene un catálogo con filtros: el interesado busca por zona y precio antes de escribirte.',
-            'Se puede armar con ficha propia para cada propiedad, y que filtren por lo que buscan antes de consultarte.',
-            'Con eso funciona bien una web inmobiliaria: cargás las propiedades vos y el interesado filtra solo.',
+            'una web con catálogo de propiedades para que el interesado filtre por zona y precio y te consulte con la propiedad ya elegida. Además, tendrías un panel para cargar, editar y dar de baja las publicaciones',
+            'una web donde cada propiedad tiene su ficha y el interesado filtra por zona, precio y características antes de escribirte. Además, tendrías un panel para manejar las publicaciones',
+            'una web inmobiliaria con buscador y filtros, para que lleguen ya sabiendo qué propiedad quieren ver. Además, tendrías un panel para cargar y actualizar las propiedades',
         ]],
         'elearning' => ['desc' => [
-            'En ese caso podemos armar una plataforma para que vendas los cursos desde la web y cada alumno tenga su propio acceso para ver las clases.',
-            'Ahí conviene una plataforma de cursos: subís los videos, cobrás online y cada alumno entra con su acceso propio.',
-            'Se puede armar para vender el curso una sola vez y que el alumno acceda solo, sin que tengas que mandarle nada a mano.',
-            'Para vender así conviene una plataforma de cursos: subís los videos y cada alumno entra con su acceso propio.',
-            'Se puede armar para que compren el curso y accedan solos, sin que tengas que mandarles nada a mano.',
-            'Con eso funciona una plataforma propia: cobrás online y el alumno ve las clases desde su cuenta.',
+            'una plataforma para vender tus cursos desde la web y que cada alumno entre con su propio acceso a las clases. Además, tendrías un panel para cargar los cursos, los videos y ver los alumnos',
+            'una plataforma de cursos donde cobrás online y cada alumno accede solo a sus clases. Además, tendrías un panel para subir los videos y seguir a los alumnos',
+            'una plataforma propia para vender los cursos y que el alumno vea las clases desde su cuenta. Además, tendrías un panel para cargar contenido y ver quién se inscribió',
         ]],
         'catalogo' => ['desc' => [
-            'En ese caso te conviene un catálogo online: cada producto con foto y descripción, y un botón para consultarte directo por WhatsApp.',
-            'Se puede armar con todos tus productos, cada uno con su ficha, y que te escriban por WhatsApp ya con el producto elegido.',
-            'Ahí lo mejor es un catálogo completo: el que entra recorre todo solo y te llega la consulta con el producto ya definido.',
-            'Para mostrar así conviene un catálogo online: cada producto con su ficha, y te escriben ya con el pedido elegido.',
-            'Se puede armar con todo tu catálogo cargado, para que el que entra recorra solo y te consulte por WhatsApp.',
-            'Con eso funciona bien un catálogo completo: mostrás todo y la consulta te llega ya definida.',
+            'un catálogo online para mostrar todos tus productos con foto y precio, y que te consulten por WhatsApp con el producto ya elegido. Además, tendrías un panel para cargar y actualizar el catálogo',
+            'un catálogo online donde el que entra recorre todo solo y te escribe por WhatsApp ya con el producto definido. Además, tendrías un panel para manejar los productos y los precios',
+            'un catálogo online con la ficha de cada producto y contacto directo por WhatsApp. Además, tendrías un panel para cargar productos y cambiar precios cuando quieras',
         ]],
     ];
     foreach ($descVariantes as $tipoV => $campos) {
@@ -1817,14 +1860,129 @@ function wabot_muestra_presentar_textos($slug, $cfg) {
     return $textos;
 }
 
-function wabot_form_link($conv, $cfg) {
+/**
+ * El alfabeto del codigo corto: sin 0/O ni 1/I/L, que son las que se leen mal
+ * cuando alguien tiene que dictarlo o tipearlo. Quedan 31 simbolos, o sea
+ * 29.791 combinaciones de 3 caracteres: de sobra, y el link queda corto.
+ */
+function wabot_codigo_alfabeto() {
+    return '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+}
+
+function wabot_codigo_indice_path() {
+    return WABOT_DATA . '/codigos.json';
+}
+
+function wabot_codigo_indice_leer() {
+    $raw = @file_get_contents(wabot_codigo_indice_path());
+    $idx = $raw ? json_decode($raw, true) : null;
+    return is_array($idx) ? $idx : [];
+}
+
+/** codigo -> clave de conversacion. Devuelve '' si ese codigo no existe. */
+function wabot_codigo_buscar($codigo) {
+    $codigo = wabot_codigo_normalizar($codigo);
+    if ($codigo === '') return '';
+    $idx = wabot_codigo_indice_leer();
+    return (string)($idx[$codigo] ?? '');
+}
+
+/**
+ * Normaliza lo tipeado: mayusculas y afuera todo lo que no sea del alfabeto.
+ *
+ * A proposito NO se "corrigen" los caracteres ambiguos (0, O, 1, I, L): como
+ * ninguno esta en el alfabeto, mapearlos a su parecido daria un codigo VALIDO
+ * pero de otro cliente, que es peor que no encontrar nada.
+ */
+function wabot_codigo_normalizar($codigo) {
+    $c = strtoupper(trim((string)$codigo));
+    return preg_replace('/[^' . wabot_codigo_alfabeto() . ']/', '', $c);
+}
+
+/**
+ * Asigna (o devuelve) el codigo corto de una conversacion. Se guarda en un
+ * indice aparte porque hay que garantizar que no se repita entre clientes, y
+ * recorrer todos los .json de conv en cada alta no escala.
+ *
+ * El indice se toca bajo lock: dos webhooks simultaneos podrian sacar el mismo
+ * codigo y el segundo pisaria al primero en el indice, dejando a un cliente
+ * apuntando al chat de otro.
+ */
+function wabot_codigo_asignar(&$conv) {
+    $ya = wabot_codigo_normalizar($conv['codigo'] ?? '');
+    if ($ya !== '') return $ya;
+
+    $clave = wabot_conversation_key($conv);
+    if ($clave === '') return '';
+
+    // Las conversaciones de prueba no tocan el indice real: sacan un codigo
+    // derivado de la clave, estable entre corridas y sin escribir nada.
+    if (stripos($clave, 'TEST') !== false || !empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        $alfabeto = wabot_codigo_alfabeto();
+        $hash = md5($clave);
+        $codigo = '';
+        for ($i = 0; $i < 3; $i++) {
+            $codigo .= $alfabeto[hexdec(substr($hash, $i * 2, 2)) % strlen($alfabeto)];
+        }
+        $conv['codigo'] = $codigo;
+        return $codigo;
+    }
+
+    $lock = wabot_lock_tomar('CODIGOSIDX');
+    if (!$lock) {
+        // Sin lock no se inventa un codigo: mejor no tenerlo que tener uno
+        // duplicado apuntando a otro cliente.
+        return '';
+    }
+    try {
+        $idx = wabot_codigo_indice_leer();
+        // Si esta conversacion ya figuraba en el indice, se reusa ese codigo.
+        $existente = array_search($clave, $idx, true);
+        if ($existente !== false) {
+            $conv['codigo'] = (string)$existente;
+            return (string)$existente;
+        }
+
+        $alfabeto = wabot_codigo_alfabeto();
+        $largo = strlen($alfabeto);
+        $codigo = '';
+        for ($intento = 0; $intento < 200; $intento++) {
+            $cand = '';
+            for ($i = 0; $i < 3; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
+            if (!isset($idx[$cand])) { $codigo = $cand; break; }
+        }
+        // Agotadas las combinaciones de 3, se pasa a 4 en vez de quedarse sin.
+        if ($codigo === '') {
+            do {
+                $cand = '';
+                for ($i = 0; $i < 4; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
+            } while (isset($idx[$cand]));
+            $codigo = $cand;
+        }
+
+        $idx[$codigo] = $clave;
+        wabot_json_guardar_atomico(wabot_codigo_indice_path(), $idx);
+        $conv['codigo'] = $codigo;
+        return $codigo;
+    } finally {
+        wabot_lock_soltar($lock);
+    }
+}
+
+/**
+ * El link al formulario. Va con el codigo corto en vez del telefono: un link
+ * con el numero entero adentro sale larguisimo y genera desconfianza justo
+ * cuando le estas pidiendo los datos.
+ *
+ * Toma $conv por referencia porque el codigo se asigna en el momento en que
+ * hace falta el link, y hay que guardarlo en la conversacion.
+ */
+function wabot_form_link(&$conv, $cfg) {
     if (wabot_canal($conv) !== 'whatsapp') return '';
-    $tel = wabot_channel_user_id($conv);
-    if ($tel === '') return '';
-    $neg = trim((string)($conv['nombre_negocio'] ?? ''));
-    $qs  = ['origen' => 'whatsapp', 't' => $tel];
-    if ($neg !== '') $qs['neg'] = $neg;
-    return 'https://gokywebs.com/form/?' . http_build_query($qs);
+    if (wabot_channel_user_id($conv) === '') return '';
+    $codigo = wabot_codigo_asignar($conv);
+    if ($codigo === '') return '';
+    return 'https://gokywebs.com/form/?c=' . $codigo;
 }
 
 function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
@@ -1850,7 +2008,7 @@ function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
  * Solo en Instagram (sin link posible, wabot_form_link() da vacío) o si ya
  * se sabe todo, se mantiene el texto por chat.
  */
-function wabot_prediseno_texto($conv, $cfg) {
+function wabot_prediseno_texto(&$conv, $cfg) {
     $faltan = wabot_prediseno_faltan($conv);
     if (!$faltan) {
         return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
@@ -2000,6 +2158,7 @@ function wabot_conv_load($clave) {
         'origen_prediseno'            => null,
         'form_completado_ts'          => 0,
         'form_agradecimiento_enviado' => false,
+        'codigo'                      => '',
         'form_link_enviado'           => false,
         'form_link_ts'                => 0,
         'sistema_lead_creado' => false,
@@ -2413,6 +2572,7 @@ function wabot_lista_items() {
             'nombre' => $cv['nombre'] ?? '',
             'nombre_negocio' => $cv['nombre_negocio'] ?? '',
             'nombre_agenda' => wabot_nombre_agenda($cv),
+            'codigo' => (string)($cv['codigo'] ?? ''),
             'telefono_wsp' => $cv['telefono_wsp'] ?? '',
             'foto'   => wabot_ultima_foto_cliente($cv),
             'fase'   => $cv['fase'],
@@ -3270,7 +3430,7 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
         }
     }
 
-    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
     $body = json_encode([
         'contents' => [['parts' => [
             ['text' => $prompt],
@@ -3431,7 +3591,7 @@ EOT;
     if ($indicaciones !== '') $prompt .= "INDICACIONES ADICIONALES DEL DUEÑO (respetalas):\n$indicaciones\n\n";
     $prompt .= "MENSAJE DEL CLIENTE:\n\"$texto\"";
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
     $body = json_encode([
         'contents' => [['parts' => [['text' => $prompt]]]],
         'generationConfig' => [
@@ -3557,7 +3717,7 @@ function wabot_colores_a_hex($texto) {
             . "- Si pidió algo oscuro, en modo noche o sobre fondo negro, el fondo TIENE que ser oscuro (por ejemplo #111318). "
             . "Si no dijo nada sobre el fondo, poné un neutro muy claro. Nunca pongas un fondo claro cuando pidió un diseño oscuro.";
 
-        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
         $body = json_encode([
             'contents' => [['parts' => [['text' => $prompt]]]],
             'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json'],
@@ -3652,7 +3812,7 @@ function wabot_resumen_negocio($conv, $cfg) {
         if ($tipoLabel !== '') $prompt .= "\n\nEl bot ya le cotizó: $tipoLabel.";
         $prompt .= "\n\nCONVERSACIÓN:\n$charla";
 
-        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . WABOT_GEMINI_MODEL . ':generateContent?key=' . WABOT_GEMINI_KEY;
+        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
         $body = json_encode([
             'contents' => [['parts' => [['text' => $prompt]]]],
             'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 700],
@@ -4643,7 +4803,16 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
 }
 
 function wabot_form_lead_validar($payload) {
+    // El link que manda el bot trae el codigo corto (?c=), no el telefono: se
+    // resuelve contra el indice para saber de que conversacion se trata. El
+    // formulario abierto a mano sigue mandando el telefono tipeado (?t=).
+    $codigo = wabot_codigo_normalizar($payload['c'] ?? '');
     $tel = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
+    // Un telefono tipeado gana sobre el codigo: si el cliente toco "Corregir"
+    // es porque el numero del que le escribimos NO es el suyo.
+    if ($codigo !== '' && (strlen($tel) < 10 || strlen($tel) > 15)) {
+        $tel = preg_replace('/\D+/', '', wabot_codigo_buscar($codigo));
+    }
     $nombre = trim((string)($payload['nombre'] ?? ''));
     $nombreNegocio = trim((string)($payload['nombre_negocio'] ?? ''));
     $resumen = trim((string)($payload['resumen'] ?? ''));

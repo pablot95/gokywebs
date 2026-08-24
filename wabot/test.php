@@ -531,7 +531,7 @@ $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
 caso('el primer mensaje NO lleva el precio', count($rP) === 1 && strpos($rP[0], '$') === false);
 caso('ni el link del presupuesto', strpos($rP[0], 'presupuestos/') === false);
 caso('pero sí presenta la tienda online con sus beneficios',
-    stripos($rP[0], 'carrito') !== false);
+    stripos($rP[0], 'tienda online') !== false && stripos($rP[0], 'panel') !== false);
 caso('y termina en una pregunta', mb_substr(trim($rP[0]), -1) === '?');
 caso('la fase queda esperando la respuesta', $cP['fase'] === 'pitch' && $cP['tipo'] === 'ecommerce');
 caso('todavía no se marcó el precio como dado', empty($cP['precio_dado']));
@@ -2059,12 +2059,14 @@ caso('ni si el cliente ya la dio',
     wabot_prediseno_faltan(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
         'colores' => 'marrón', 'referencia' => 'nike.com']) === []);
 
-$textoConFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''], $cfgPredis);
+$convFaltantes = ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''];
+$textoConFaltantes = wabot_prediseno_texto($convFaltantes, $cfgPredis);
 caso('el texto lista lo que falta con saltos de línea reales',
     strpos($textoConFaltantes, "- El nombre de tu negocio\n- Una descripción breve de lo que ofrecés\n- Los colores de tu marca") !== false);
 
-$textoSinFaltantes = wabot_prediseno_texto(['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
-    'colores' => 'marrón', 'referencia_preguntada' => true], $cfgPredis);
+$convSinFaltantes = ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, 'nombre_negocio' => 'Mate Sur', 'descripcion' => 'mates',
+    'colores' => 'marrón', 'referencia_preguntada' => true];
+$textoSinFaltantes = wabot_prediseno_texto($convSinFaltantes, $cfgPredis);
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
 caso('y el pedido aclara que puede mandar todo junto',
@@ -3581,8 +3583,8 @@ caso('distribuidora mayorista → el pitch menciona cuentas exclusivas',
 $convEcommerceNormal = conv_nueva();
 $convEcommerceNormal['transcript'] = [['q'=>'cliente','t'=>'vendo velas aromaticas','ts'=>time()]];
 $pitchNormal = wabot_pitch_texto('ecommerce', $convEcommerceNormal, $cfg);
-caso('pero un ecommerce común sigue con "carrito", no "cuentas exclusivas"',
-    stripos($pitchNormal, 'carrito') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
+caso('pero un ecommerce común sigue con el pitch de tienda, no "cuentas exclusivas"',
+    stripos($pitchNormal, 'tienda online') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
 caso('ninguna variante normal de ecommerce habla de cuentas exclusivas', (function () use ($cfg) {
     foreach ((array)($cfg['tipos']['ecommerce']['desc_variantes'] ?? []) as $v) {
         if (stripos($v, 'cuentas exclusivas') !== false) return false;
@@ -4168,8 +4170,8 @@ caso('pero al que no contó nada sí se le pide',
 
 echo "\n— El pitch y el precio varían y no repiten la misma estructura —\n";
 
-caso('msg_pitch ya no arranca siempre con "Buenísimo. Para lo tuyo va"',
-    strpos((string)$cfg['msg_pitch'], 'Buenísimo') === false
+caso('msg_pitch abre con la frase que pidió Pablo y ya no con "Para lo tuyo va"',
+    strpos((string)$cfg['msg_pitch'], 'Buenísimo, lo ideal sería') === 0
     && strpos((string)$cfg['msg_pitch'], 'Para lo tuyo va') === false);
 foreach (['landing', 'ecommerce', 'turnos'] as $tipoVar) {
     caso("$tipoVar tiene varias formas de presentar la web",

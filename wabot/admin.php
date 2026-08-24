@@ -275,6 +275,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
         $cfg['postdemo_bot_activo'] = !empty($_POST['postdemo_bot_activo']);
+        if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
+            $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
+        }
         foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
@@ -957,6 +960,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     font-weight:800; letter-spacing:.04em; vertical-align:middle; background:var(--card-2); color:var(--dim); }
 .estado-tag--de { background:var(--info-tenue); color:var(--info); }
 .estado-tag--d { background:var(--warn-tenue); color:var(--warn); }
+.estado-tag--cod { background:rgba(255,255,255,.07); color:var(--dim); letter-spacing:.06em; }
 .conv-item-globo { min-width:19px; height:19px; padding:0 6px; border-radius:99px; background:var(--info);
     color:#0b1424; font-size:11px; font-weight:800; display:inline-flex; align-items:center;
     justify-content:center; flex-shrink:0; }
@@ -1626,6 +1630,16 @@ body.embed { min-height: 0; }
             <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
         </div>
         <div class="card">
+            <h2 style="margin-top:0">Modelo de IA</h2>
+            <p class="meta" style="margin-top:0">El que usa el bot para entender, clasificar y redactar. Los de más abajo entienden mejor los mensajes confusos y se equivocan menos al clasificar el rubro, pero cuestan más por mensaje.</p>
+            <select name="gemini_modelo" style="margin-top:10px;max-width:420px">
+                <?php $modeloActual = wabot_gemini_modelo($cfg); ?>
+                <?php foreach (wabot_gemini_modelos() as $claveModelo => $labelModelo): ?>
+                    <option value="<?= $e($claveModelo) ?>" <?= $claveModelo === $modeloActual ? 'selected' : '' ?>><?= $e($labelModelo) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>
             <label style="display:flex;align-items:center;gap:8px;margin:0">
                 <input type="checkbox" name="postdemo_bot_activo" <?= !empty($cfg['postdemo_bot_activo']) ? 'checked' : '' ?>>
@@ -1770,7 +1784,7 @@ body.embed { min-height: 0; }
             <aside class="conv-list" id="convLista">
                 <div class="conv-filtros">
                     <div class="conv-busqueda-fila">
-                        <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número o proyecto">
+                        <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número, código o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número, código o proyecto">
                         <button type="button" class="conv-fecha-toggle" id="convFechaToggle" aria-expanded="false" aria-controls="convFechaPanel">Fecha <span class="conv-fecha-cuenta" id="convFechaCuenta" hidden>0</span></button>
                     </div>
                     <div class="conv-fecha-panel" id="convFechaPanel" hidden>
@@ -2031,7 +2045,7 @@ body.embed { min-height: 0; }
             if (!q) return true;
             const texto = normalizarBusqueda([
                 it.nombre_agenda, it.nombre_negocio, it.nombre,
-                it.tel, it.channel_user_id, it.telefono_wsp,
+                it.tel, it.channel_user_id, it.telefono_wsp, it.codigo,
             ].join(' '));
             if (texto.includes(q)) return true;
             const digitos = String(termino).replace(/\D/g, '');
@@ -2186,6 +2200,13 @@ body.embed { min-height: 0; }
                     tag.textContent = etiqueta.txt;
                     tag.title = etiqueta.tit;
                     nombreBox.appendChild(tag);
+                }
+                if (it.codigo) {
+                    const cod = document.createElement('span');
+                    cod.className = 'estado-tag estado-tag--cod';
+                    cod.textContent = it.codigo;
+                    cod.title = 'Código del cliente: el que va en el link del formulario. Se puede buscar acá arriba.';
+                    nombreBox.appendChild(cod);
                 }
                 const derecha = document.createElement('span');
                 derecha.className = 'conv-item-derecha';

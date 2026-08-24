@@ -21,12 +21,37 @@ $cfg = wabot_config_load();
 
 echo "— wabot_form_link() —\n";
 
-$convWsp = ['tel' => '5491122334455', 'channel_user_id' => '5491122334455', 'canal' => 'whatsapp', 'nombre_negocio' => 'Panadería Sur'];
+$convWsp = ['tel' => '5491122334455TEST', 'channel_user_id' => '5491122334455TEST', 'canal' => 'whatsapp', 'nombre_negocio' => 'Panadería Sur'];
 $link = wabot_form_link($convWsp, $cfg);
-caso('arma la URL con el teléfono en ?t=', strpos($link, 't=5491122334455') !== false);
-caso('y el nombre del negocio en ?neg=', strpos($link, 'neg=') !== false);
-caso('nunca se ofrece en Instagram', wabot_form_link(['tel' => 'IG1', 'channel_user_id' => 'IG1', 'canal' => 'instagram'], $cfg) === '');
-caso('ni sin teléfono', wabot_form_link(['tel' => '', 'channel_user_id' => '', 'canal' => 'whatsapp'], $cfg) === '');
+// El link va con el código corto: el teléfono adentro lo hacía larguísimo.
+caso('arma la URL con el código corto en ?c=', (bool)preg_match('~^https://gokywebs\.com/form/\?c=[A-Z0-9]{3}$~', $link));
+caso('y el teléfono NO viaja en el link', strpos($link, '5491122334455') === false);
+caso('el código queda guardado en la conversación', ($convWsp['codigo'] ?? '') !== ''
+    && strpos($link, $convWsp['codigo']) !== false);
+caso('y es estable: pedirlo de nuevo devuelve el mismo', wabot_form_link($convWsp, $cfg) === $link);
+
+echo "— Código corto —
+";
+
+caso('normalizar saca lo que no es del alfabeto y pasa a mayúsculas',
+    wabot_codigo_normalizar(' a-b c ') === 'ABC');
+caso('los caracteres ambiguos NO se remapean a otro código válido',
+    wabot_codigo_normalizar('0O1IL') === '');
+caso('buscar con un código ilegible no devuelve ninguna conversación',
+    wabot_codigo_buscar('0O1IL') === '' && wabot_codigo_buscar('') === '');
+caso('dos conversaciones distintas no comparten código',
+    (function () {
+        $a = ['tel' => 'TESTCOD1', 'channel_user_id' => 'TESTCOD1', 'canal' => 'whatsapp'];
+        $b = ['tel' => 'TESTCOD2', 'channel_user_id' => 'TESTCOD2', 'canal' => 'whatsapp'];
+        return wabot_codigo_asignar($a) !== wabot_codigo_asignar($b);
+    })());
+caso('el link del form acepta el código y resuelve el teléfono del cliente',
+    wabot_form_lead_validar(['c' => 'ZZZ', 'nombre' => 'A', 'nombre_negocio' => 'B',
+        'resumen' => 'C', 'colores' => 'D']) === null);
+$convIg = ['tel' => 'IG1', 'channel_user_id' => 'IG1', 'canal' => 'instagram'];
+caso('nunca se ofrece en Instagram', wabot_form_link($convIg, $cfg) === '');
+$convSinTel = ['tel' => '', 'channel_user_id' => '', 'canal' => 'whatsapp'];
+caso('ni sin teléfono', wabot_form_link($convSinTel, $cfg) === '');
 
 echo "— wabot_form_lead_procesar(): validación —\n";
 
