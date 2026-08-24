@@ -288,6 +288,13 @@ body {
     line-height: 1.5;
 }
 
+/* display:block de arriba pisa el display:none nativo de [hidden]: sin esto,
+   el aviso "¿No es el tuyo?" se ve siempre, tenga o no el link un teléfono
+   para prellenar. */
+.field-hint[hidden] {
+    display: none;
+}
+
 .small-label {
     font-size: 0.78rem;
     color: var(--text-muted);
