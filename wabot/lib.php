@@ -211,8 +211,15 @@ function wabot_config_ventas(&$cfg) {
     $defaults = [
         'menu'              => 'Hola, cómo estás? Contame un poco en qué te puedo ayudar',
         'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
+        // Si la demo ya se ofreció por otra objeción antes en la misma charla
+        // (pensarlo → socio → ya_tengo_web es un combo real), estas variantes
+        // "sin_muestra" contestan la objeción sin volver a pedirle que la
+        // acepte: repetir la misma pregunta tres veces suena a bot atascado.
+        'pensarlo_sin_muestra' => 'Perfecto, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.',
         'socio'             => 'Perfecto, consultalo con tranquilidad. Si querés, les preparo la demo gratis para que lo evalúen viendo algo concreto. Se las armo?',
+        'socio_sin_muestra' => 'Perfecto, consultalo con tranquilidad. Cualquier duda que les surja, escribime.',
         'ya_tengo_web'      => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.',
+        'ya_tengo_web_sin_muestra' => 'Perfecto, pasame el link de tu página actual así la reviso y te confirmo cómo la mejoraríamos.',
         'cta_muestra'       => 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.',
         'cierre_suave'      => 'Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá.',
         // Se pega al cierre solo si ya hay un tipo cotizado: al que se va le

@@ -1069,8 +1069,15 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     .burb-editar { opacity:.75; }
 }
 @media (max-width: 900px) {
-    /* Una columna: o las listas, o el chat — como WhatsApp en el celular. */
-    .conv-split { grid-template-columns:1fr; grid-template-rows:auto minmax(0,1fr); }
+    /* Una columna: o las listas, o el chat — como WhatsApp en el celular.
+       Solo se ve uno de los dos por vez (el otro queda display:none más
+       abajo), así que los dos comparten la MISMA fila en vez de una fila
+       "auto" para la lista y otra 1fr para el chat: con "auto" la lista
+       se achicaba al alto de la barra de búsqueda/chips y #listaItems (que
+       adentro es flex:1) quedaba con 0px reales, aunque el HTML de los
+       chats sí estuviera — se veían los filtros y nada más abajo. */
+    .conv-split { grid-template-columns:1fr; grid-template-rows: minmax(0,1fr); }
+    .conv-split > .conv-list, .conv-split > .conv-main { grid-row: 1; grid-column: 1; }
     /* En horizontal los títulos de bloque no funcionan: quedan como columnas de
        texto vertical entre los botones. Se ocultan y su lugar lo toma un
        separador fino, que agrupa igual sin ocupar ancho. Los botones pasan a

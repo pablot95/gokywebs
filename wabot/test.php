@@ -1928,10 +1928,27 @@ $c2 = conv_nueva(); $c2['fase'] = 'precio'; $c2['tipo'] = 'landing';
 clasifica(['objecion_caro']);
 $rc1 = wabot_engine('me parece caro', $c2, $cfg);
 caso('objecion_caro también lleva el completo la primera vez', $rc1[0] === $cfg['caro']);
+caso('y esa duda caliente ya deja la demo ofrecida', $c2['cta_muestra'] === true);
 clasifica(['objecion_pensarlo']);
 $rp1 = wabot_engine('lo tengo que pensar', $c2, $cfg);
-caso('una objeción DISTINTA en la misma charla no se ve afectada por el guard de la otra',
-    $rp1 === [$cfg['pensarlo']]);
+caso('una objeción DISTINTA no repite la demo si otra ya la ofreció antes en la misma charla',
+    $rp1 === [$cfg['pensarlo_sin_muestra']]);
+
+$c3 = conv_nueva(); $c3['fase'] = 'precio'; $c3['tipo'] = 'landing';
+clasifica(['objecion_pensarlo']);
+$rp3 = wabot_engine('lo tengo que pensar', $c3, $cfg);
+caso('pero si es la primera objeción de la charla, sí lleva el discurso completo con la demo',
+    $rp3 === [$cfg['pensarlo']]);
+
+$c4 = conv_nueva(); $c4['fase'] = 'precio'; $c4['tipo'] = 'landing'; $c4['cta_muestra'] = true;
+clasifica(['objecion_socio']);
+$rs4 = wabot_engine('lo tengo que hablar con mi socio', $c4, $cfg);
+caso('"socio" tampoco repite la demo si ya se ofreció antes', $rs4 === [$cfg['socio_sin_muestra']]);
+
+$c5 = conv_nueva(); $c5['fase'] = 'precio'; $c5['tipo'] = 'landing'; $c5['cta_muestra'] = true;
+clasifica(['objecion_ya_tiene_web']);
+$rw5 = wabot_engine('ya tengo una página', $c5, $cfg);
+caso('ni "ya tiene web"', $rw5 === [$cfg['ya_tengo_web_sin_muestra']]);
 
 echo "— Nunca se cierra un prediseño sin haber dado un precio antes —\n";
 

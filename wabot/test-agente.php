@@ -763,6 +763,15 @@ caso('la comparación con plataformas termina en muestra, en otro globo',
     $r['texto'] === $cfg['plataformas'] && ($r['aparte'] ?? '') === $cfg['cta_muestra']
     && $c['cta_muestra'] === true);
 
+$c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['cta_muestra'] = true;
+$r = wabot_agente_ejecutar('manejar_objecion', ['tipo'=>'socio'], $c, $cfg);
+caso('si otra objeción ya ofreció la demo antes, "socio" no la vuelve a pitchear',
+    $r['texto'] === $cfg['socio_sin_muestra']);
+
+$c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['cta_muestra'] = true;
+$r = wabot_agente_ejecutar('manejar_objecion', ['tipo'=>'ya_tiene_web'], $c, $cfg);
+caso('ni "ya tiene web"', $r['texto'] === $cfg['ya_tengo_web_sin_muestra']);
+
 $c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $r1 = wabot_agente_ejecutar('consultar_info', ['clave'=>'plazos'], $c, $cfg);
 $r2 = wabot_agente_ejecutar('consultar_info', ['clave'=>'pago'], $c, $cfg);

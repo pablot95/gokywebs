@@ -1072,9 +1072,25 @@ function wabot_engine($texto, &$conv, $cfg) {
 
     /* ── Objeciones y preguntas de info (se responden en la fase que sea) ── */
     if ($has('objecion_caro'))      $out[] = wabot_objecion_texto('caro', $cfg['caro'], $conv, $cfg);
-    if ($has('objecion_pensarlo'))  $out[] = wabot_objecion_texto('pensarlo', $cfg['pensarlo'], $conv, $cfg);
-    if ($has('objecion_socio'))     $out[] = wabot_objecion_texto('socio', $cfg['socio'], $conv, $cfg);
-    if ($has('objecion_ya_tiene_web')) $out[] = wabot_objecion_texto('ya_tiene_web', $cfg['ya_tengo_web'], $conv, $cfg);
+    // pensarlo/socio/ya_tiene_web traen la oferta de demo pegada adentro del
+    // texto: si ya se ofreció antes por otra objeción en la misma charla, se
+    // usa la variante sin esa oferta para no repetirla (mismo criterio que
+    // manejar_objecion en agente.php).
+    if ($has('objecion_pensarlo')) {
+        $txt = (!empty($conv['cta_muestra']) && !empty($cfg['pensarlo_sin_muestra'])) ? $cfg['pensarlo_sin_muestra'] : $cfg['pensarlo'];
+        $out[] = wabot_objecion_texto('pensarlo', $txt, $conv, $cfg);
+        $conv['cta_muestra'] = true;
+    }
+    if ($has('objecion_socio')) {
+        $txt = (!empty($conv['cta_muestra']) && !empty($cfg['socio_sin_muestra'])) ? $cfg['socio_sin_muestra'] : $cfg['socio'];
+        $out[] = wabot_objecion_texto('socio', $txt, $conv, $cfg);
+        $conv['cta_muestra'] = true;
+    }
+    if ($has('objecion_ya_tiene_web')) {
+        $txt = (!empty($conv['cta_muestra']) && !empty($cfg['ya_tengo_web_sin_muestra'])) ? $cfg['ya_tengo_web_sin_muestra'] : $cfg['ya_tengo_web'];
+        $out[] = wabot_objecion_texto('ya_tiene_web', $txt, $conv, $cfg);
+        $conv['cta_muestra'] = true;
+    }
     if ($has('menciona_plataforma')) $out[] = wabot_objecion_texto('plataforma', $cfg['plataformas'], $conv, $cfg);
     // Respaldo local SOLO cuando el clasificador no etiquetó nada útil: si ya
     // reconoció otra acción real (datos_prediseno, un rubro, una objeción), esa
