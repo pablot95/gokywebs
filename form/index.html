@@ -9,8 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260804-brand-row1">
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <link rel="stylesheet" href="styles.css?v=20260823-onepage">
 </head>
 <body>
 
@@ -34,146 +33,63 @@
             </button>
         </section>
 
-
         <!-- Card -->
         <div class="form-card" id="formCard">
 
-            <!-- Indicador de pasos -->
-            <div class="steps-indicator" id="stepsIndicator">
-                <div class="step-dot active" data-s="1">
-                    <div class="step-dot-circle">1</div>
-                    <div class="step-dot-label">Tu negocio</div>
-                </div>
-                <div class="step-connector"></div>
-                <div class="step-dot" data-s="2">
-                    <div class="step-dot-circle">2</div>
-                    <div class="step-dot-label">Estilo + Logo</div>
-                </div>
-            </div>
-
             <form id="propuestaForm" novalidate autocomplete="off">
+                <div class="form-section">
 
-                <!-- ─── PASO 1: Tu negocio ─── -->
-                <div class="form-step" data-step="1">
-                    <div class="form-section">
-
-                        <div class="step-header">
-                            <span class="step-header-badge">Paso 1 de 2</span>
-                            <h2 class="step-header-title">Tu negocio</h2>
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label" for="nombre_negocio">
-                                Nombre del negocio o marca
-                            </label>
-                            <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="">
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label" for="rubro">
-                                Contanos sobre tu negocio y qué querés lograr con la web <span class="req">*</span>
-                                <span class="field-hint">Decinos a qué te dedicás, cuáles son tus principales productos o servicios y qué te gustaría que haga la gente al entrar.</span>
-                            </label>
-                            <textarea id="rubro" name="rubro" class="field-input field-textarea autosize" rows="1" placeholder="" required></textarea>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label" for="telefono">
-                                Teléfono / WhatsApp <span class="req">*</span>
-                            </label>
-                            <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
-                        </div>
-
+                    <div class="step-header">
+                        <h2 class="step-header-title">Contanos sobre tu negocio</h2>
+                        <p class="step-header-desc">Con esto alcanza para armar tu muestra. Lleva menos de un minuto.</p>
                     </div>
 
-                    <div class="step-nav">
-                        <div></div>
-                        <button type="button" class="btn-step btn-step-next" data-next="2">Continuar <span class="btn-step-arrow">→</span></button>
+                    <div class="field-group">
+                        <label class="field-label" for="nombre">
+                            Tu nombre <span class="req">*</span>
+                        </label>
+                        <input type="text" id="nombre" name="nombre" class="field-input" placeholder="" required>
                     </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="nombre_negocio">
+                            Nombre de tu negocio o marca <span class="req">*</span>
+                        </label>
+                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="resumen">
+                            Breve resumen de lo que ofrecés <span class="req">*</span>
+                            <span class="field-hint">A qué te dedicás, tus principales productos o servicios.</span>
+                        </label>
+                        <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required></textarea>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label" for="colores">
+                            Colores de identidad <span class="req">*</span>
+                            <span class="field-hint">Los colores de tu marca, o los que te gustaría usar.</span>
+                        </label>
+                        <input type="text" id="colores" name="colores" class="field-input" placeholder="Ej: azul y blanco" required>
+                    </div>
+
+                    <div class="field-group" id="telefonoGroup">
+                        <label class="field-label" for="telefono">
+                            Teléfono / WhatsApp <span class="req">*</span>
+                        </label>
+                        <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
+                        <p class="field-hint" id="telefonoConfirmado" hidden>Te vamos a escribir a este número. ¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
+                    </div>
+
                 </div>
 
-                <!-- ─── PASO 2: Estilo + Logo ─── -->
-                <div class="form-step" data-step="2" hidden>
-                    <div class="form-section">
+                <div class="divider"></div>
 
-                        <div class="step-header">
-                            <span class="step-header-badge">Paso 2 de 2</span>
-                            <p class="step-header-desc">Todo este paso es opcional. Completalo para que podamos personalizar mejor tu muestra.</p>
-                        </div>
-
-                        <!-- Cantidad de cursos (solo e-learning, se muestra según ?tipo=) -->
-                        <div class="field-group" id="elearningField" style="display:none">
-                            <label class="field-label" for="cant_cursos">
-                                ¿Cuántos cursos vas a ofrecer, aprox?
-                                <span class="field-hint">Para dimensionar la plataforma de cursos.</span>
-                            </label>
-                            <select id="cant_cursos" name="cant_cursos" class="field-input">
-                                <option value="">Elegí una opción</option>
-                                <option value="1 curso">1 curso</option>
-                                <option value="Entre 2 y 5">Entre 2 y 5</option>
-                                <option value="Entre 6 y 15">Entre 6 y 15</option>
-                                <option value="Más de 15">Más de 15</option>
-                            </select>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">
-                                Colores
-                                <span class="field-hint">¿Tenés colores de marca?</span>
-                            </label>
-                            <div class="color-fields-grid">
-                                <div class="field-group color-field-group">
-                                    <label class="field-label small-label" for="color_principal">Color principal</label>
-                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
-                                </div>
-                                <div class="field-group color-field-group">
-                                    <label class="field-label small-label" for="color_secundario">Color secundario</label>
-                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
-                                </div>
-                                <div class="field-group color-field-group">
-                                    <label class="field-label small-label" for="color_fondos">Color de fondos</label>
-                                    <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="brand-assets-row">
-                            <div class="field-group brand-assets-field brand-fonts-field">
-                                <label class="field-label" for="tipografias">
-                                    Tipografías
-                                </label>
-                                <textarea id="tipografias" name="tipografias" class="field-input field-textarea autosize" rows="1" placeholder="Ej: algo moderno y limpio / me gusta Inter o Montserrat"></textarea>
-                            </div>
-
-                            <div class="field-group brand-assets-field brand-logo-field">
-                                <label class="field-label">
-                                    Logo de tu marca
-                                </label>
-                                <div class="logo-dropzone" id="logoDropzone">
-                                    <input type="file" id="logoInput" accept="image/*,.svg,.ai,.eps,.pdf">
-                                    <span class="logo-dropzone-icon">🖼️</span>
-                                    <p class="logo-dropzone-text"><strong>Hacé clic para elegirlo</strong></p>
-                                    <p class="logo-dropzone-subtext">PNG, JPG, SVG, AI, EPS, PDF · Máx. 10 MB</p>
-                                </div>
-                                <div class="logo-preview" id="logoPreview" style="display:none">
-                                    <img id="logoPreviewImg" class="logo-preview-img" src="" alt="Vista previa del logo">
-                                    <span class="logo-preview-name" id="logoPreviewName"></span>
-                                    <button type="button" class="logo-preview-remove" id="logoRemoveBtn" title="Quitar logo">✕</button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <div class="divider"></div>
-
-                    <div class="submit-row">
-                        <div class="step-nav step-nav-submit">
-                            <button type="button" class="btn-step btn-step-prev" data-prev="1">← Anterior</button>
-                            <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
-                        </div>
-                        <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu muestra.</p>
-                    </div>
+                <div class="submit-row">
+                    <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
+                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu muestra.</p>
                 </div>
-
             </form>
         </div>
 
@@ -232,7 +148,7 @@
                             <div class="que-es-step-num">1</div>
                             <div class="que-es-step-text">
                                 <strong>Completás este formulario</strong>
-                                Solo lleva 2 minutos. Nos contás tu negocio, colores y estilo.
+                                Solo lleva un minuto. Nos contás tu negocio y tus colores.
                             </div>
                         </div>
                         <div class="que-es-step">
@@ -265,7 +181,7 @@
                     <div class="que-es-cta-icon">🚀</div>
                     <div class="que-es-cta-text">
                         <strong>Ya lo sabés todo — ahora es el momento</strong>
-                        Completá el formulario, en menos de 2 minutos estás listo.
+                        Completá el formulario, en menos de un minuto estás listo.
                     </div>
                 </div>
 
@@ -274,7 +190,6 @@
     </div>
 
     <script>
-        /* ── Modal "¿Qué es una muestra?" ── */
         const _qeOverlay = document.getElementById('queEsOverlay');
         document.getElementById('btnQueEsMuestra').addEventListener('click', () => {
             _qeOverlay.classList.add('open');
@@ -296,7 +211,6 @@
                 document.body.style.overflow = '';
             }
         });
-        /* La navegación de pasos y la validación viven en script.js (única fuente). */
     </script>
 
     <script type="module" src="script.js"></script>
