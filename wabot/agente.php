@@ -449,7 +449,7 @@ function wabot_agente_historial($conv, $mensaje) {
 function wabot_agente_tools($cerrada = false, $postdemo = false) {
     $consultar = [
         'name' => 'consultar_info',
-        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza).',
+        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "que es desarrollo web?" también es que_hacemos (no es una pregunta sin respuesta: explicá qué es y de paso qué hacemos, nunca la derives al desarrollador sin probar esto primero), "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza).',
         'parameters' => [
             'type' => 'object',
             'properties' => [

@@ -798,6 +798,13 @@ function wabot_config_ventas(&$cfg) {
     if (trim((string)($cfg['info']['proceso'] ?? '')) === $procesoViejo) {
         $cfg['info']['proceso'] = 'Primero te armamos una demo gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.';
     }
+    // "Sí." presupone una pregunta de sí/no ("¿hacen páginas web?"), pero esta
+    // misma clave también contesta "¿qué es desarrollo web?" — ahí "Sí." al
+    // arranque queda sin sentido. Sacarlo deja la respuesta válida para las dos.
+    $queHacemosViejo = 'Sí. En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.';
+    if (trim((string)($cfg['info']['que_hacemos'] ?? '')) === $queHacemosViejo) {
+        $cfg['info']['que_hacemos'] = 'En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.';
+    }
 
     // Ahora también pedimos el nombre del negocio: el texto viejo (sin
     // {faltan}) se pisa por el nuevo para que la lista de lo que falta entre.

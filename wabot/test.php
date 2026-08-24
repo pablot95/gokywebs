@@ -1785,6 +1785,13 @@ foreach ([
     ['como se paga?', 'pago'],
     ['el dominio lo incluyen?', 'hosting'],
     ['como se manejan ustedes?', 'proceso'],
+    // Bug real (24-ago): esta duda básica caía en "otra" y el bot derivaba al
+    // desarrollador algo que ya tenía respuesta armada.
+    ['Que es desarrollo web?', 'que_hacemos'],
+    ['que es una pagina web', 'que_hacemos'],
+    ['que es un sitio web?', 'que_hacemos'],
+    ['en que consiste el desarrollo web', 'que_hacemos'],
+    ['hacen paginas web?', 'que_hacemos'],
 ] as $par) {
     caso("\"{$par[0]}\" → info: {$par[1]}", wabot_info_por_palabras($par[0]) === $par[1]);
 }
