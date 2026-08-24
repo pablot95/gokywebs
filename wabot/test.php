@@ -4191,15 +4191,15 @@ caso('el desempate de turnos ya no usa la muletilla de siempre',
 caso('la oferta de la demo sigue terminando en pregunta',
     strpos((string)$cfg['msg_prediseno_oferta'], '?') !== false);
 
-echo "\n— Al presentar la demo se avisa que dura 7 días —\n";
+echo "\n— Al presentar la demo ya no se avisa que dura 7 días (retirado 24-ago) —\n";
 
 $textosPresentar = wabot_muestra_presentar_textos('midemo', $cfg);
-caso('presentar manda DOS mensajes: la demo y la vigencia', count($textosPresentar) === 2);
-caso('el primero trae el link de la demo', strpos($textosPresentar[0], 'gokywebs.com/demo/midemo') !== false);
-caso('y el segundo avisa los 7 días',
-    stripos($textosPresentar[1], '7 días') !== false && stripos($textosPresentar[1], 'disponible') !== false);
-caso('el aviso va aparte, no pegado al link',
+caso('presentar manda UN solo mensaje: la demo, sin el aviso de vigencia', count($textosPresentar) === 1);
+caso('el mensaje trae el link de la demo', strpos($textosPresentar[0], 'gokywebs.com/demo/midemo') !== false);
+caso('no menciona los 7 días en ningún lado',
     stripos($textosPresentar[0], '7 días') === false);
+caso('muestra_vigencia queda vacío aunque el config lo trajera cargado',
+    trim((string)($cfg['muestra_vigencia'] ?? '')) === '');
 
 caso('si preguntan hasta cuándo dura, hay respuesta',
     trim((string)($cfg['info']['demo_vigencia'] ?? '')) !== ''

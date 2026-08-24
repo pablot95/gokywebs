@@ -352,7 +352,6 @@ function wabot_config_ventas(&$cfg) {
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
         'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
         'muestra_presentar' => "Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
-        'muestra_vigencia' => 'Esta demo va a estar disponible por 7 días, para que tengas tiempo de revisarla bien.',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
         // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
@@ -378,6 +377,11 @@ function wabot_config_ventas(&$cfg) {
     foreach ($defaults as $k => $v) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
     }
+
+    // Retirado (24-ago): ya no se avisa la vigencia de 7 dias al presentar la
+    // demo. Se fuerza vacio incluso si un config viejo lo tenia guardado, sin
+    // panel que lo edite no hay nada que preservar.
+    $cfg['muestra_vigencia'] = '';
 
     if (empty($cfg['msg_precio_variantes']) || !is_array($cfg['msg_precio_variantes'])) {
         $cfg['msg_precio_variantes'] = [
