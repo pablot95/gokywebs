@@ -1798,13 +1798,13 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
                         <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
                         <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
+                        <button type="button" class="conv-chip" data-grupo="interesado" title="Vieron precio: siguen hablando pero todavía no pasaron los datos de la demo.">VP</button>
+                        <button type="button" class="conv-chip" data-grupo="chat" title="Todas las demás conversaciones: el resto que no entra en ninguna de las anteriores.">T</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
-                                <button type="button" class="conv-chip-item" data-grupo="interesado">Vieron precio</button>
-                                <button type="button" class="conv-chip-item" data-grupo="chat">Todas las charlas</button>
                                 <button type="button" class="conv-chip-item" data-grupo="archivado">Archivados</button>
                             </div>
                         </div>
