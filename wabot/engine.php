@@ -1027,7 +1027,10 @@ function wabot_engine($texto, &$conv, $cfg) {
     // "Ok dale" es que lo acepta. El clasificador lo leía como "quiere
     // contratar" y la charla se derivaba justo cuando el cliente decía que sí
     // a la muestra gratis: la venta se cortaba sola en el mejor momento.
-    if ($conv['fase'] === 'precio' && wabot_es_afirmativa($texto)
+    // Vale también en fase 'prediseno': el precio y el link de la muestra
+    // salen juntos en el mismo turno (ver wabot_precio()), así que la fase ya
+    // es 'prediseno' desde el mensaje del precio, no recién cuando confirma.
+    if (in_array($conv['fase'], ['precio', 'prediseno'], true) && wabot_es_afirmativa($texto)
         && !in_array('no_interesa', $acc, true) && !in_array('datos_prediseno', $acc, true)) {
         $acc = array_values(array_diff($acc, ['quiere_avanzar', 'pide_humano', 'otro', 'saludo']));
         if (!in_array('quiere_prediseno', $acc, true)) $acc[] = 'quiere_prediseno';
@@ -1652,7 +1655,11 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // palabra suelta pidiendo el valor (con hasta dos letras de yapa) cuenta.
     if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)
         || preg_match('/\bprecio\w{0,2}\s*$/u', $t)) {
-        if (in_array($fase, ['precio', 'confirma_cambio', 'derivado', 'postdemo'], true)) return 'precio_actual';
+        // 'prediseno'/'prediseno_ref'/'prediseno_wsp' entran acá también: el
+        // precio y la propuesta del prediseño salen juntos en el mismo turno
+        // (wabot_precio()), así que la fase ya pasó a prediseno desde el
+        // mensaje del precio, no recién cuando el cliente confirma.
+        if (in_array($fase, ['precio', 'prediseno', 'prediseno_ref', 'prediseno_wsp', 'confirma_cambio', 'derivado', 'postdemo'], true)) return 'precio_actual';
         // Sin saber qué tipo de web necesita no hay precio exacto: se le pregunta
         // en vez de escaparse con "eso te lo confirma el equipo" (caso Abel).
         if (in_array($fase, ['nuevo', 'menu', 'algo_diferente'], true)) return 'precio_sin_rubro';
@@ -2216,21 +2223,22 @@ function wabot_precio($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
     $out = [wabot_msg_precio_texto($tipo, $cfg, $conv)];
-    // El que entró diciendo "quiero mi demo gratis" ya contestó que sí:
-    // preguntarle de nuevo es no haberlo escuchado. Directo a los datos.
-    if (!empty($conv['demo_pedida_entrada'])) {
-        $conv['fase'] = 'prediseno';
-        $conv['cta_muestra'] = true;
-        wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'pedida_de_entrada']);
-        $out[] = wabot_prediseno_texto($conv, $cfg);
-        return $out;
-    }
-    $oferta = trim(wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg));
-    if ($oferta !== '') {
-        $out[] = $oferta;
-        $conv['cta_muestra'] = true;
-        wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
-    }
+    // El precio y la propuesta de la demo van JUNTOS, en el mismo turno: antes
+    // se mandaba un "querés la muestra?" sin el link, y el link recién salía
+    // en un mensaje aparte si el cliente contestaba que sí. Pablo lo pidió
+    // explícito: el link tiene que ir en ESTE mensaje, no despues. Con
+    // wabot_prediseno_texto() ya resuelto (da el link directo en WhatsApp, o
+    // pide los datos por chat en Instagram) no hace falta esperar la
+    // confirmación para mostrarlo.
+    $conv['fase'] = 'prediseno';
+    $conv['cta_muestra'] = true;
+    // "Ofrecida", no "aceptada": todavía no sabemos si el cliente la quiere,
+    // recién se la estamos por mandar. "Aceptada" se sigue marcando aparte,
+    // cuando de verdad hay una señal de que la quiere (completa el form,
+    // contesta con sus datos, dice que sí).
+    $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
+    wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
+    $out[] = wabot_prediseno_texto($conv, $cfg);
     return $out;
 }
 

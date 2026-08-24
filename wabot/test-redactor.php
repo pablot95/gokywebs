@@ -95,8 +95,8 @@ $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
     && strpos($r[0], '$160.000') !== false);
-caso('la oferta del prediseño va aparte y NO se reescribe',
-    in_array($r[1], $cfg['msg_prediseno_oferta_variantes'], true));
+caso('la propuesta del prediseño va aparte, CON el link, y NO se reescribe',
+    stripos($r[1], 'Antes que nada') === 0 && strpos($r[1], 'gokywebs.com/form/') !== false);
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };

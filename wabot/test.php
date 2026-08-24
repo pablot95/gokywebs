@@ -56,11 +56,13 @@ clasifica(['rubro_landing']);
 $r = wabot_engine('soy abogado', $c, $cfg);
 caso('rubro en el primer mensaje → precio directo sin menú',
     strpos($r[0], '$160.000') !== false && strpos($r[0], 'presupuestos/Landing') !== false
-    && $c['fase'] === 'precio' && $c['tipo'] === 'landing');
-caso('el precio llega en DOS mensajes: primero el precio, después la oferta',
-    count($r) === 2 && in_array($r[1], $cfg['msg_prediseno_oferta_variantes'], true));
+    && $c['fase'] === 'prediseno' && $c['tipo'] === 'landing');
+caso('el precio llega en DOS mensajes: primero el precio, después la propuesta CON el link',
+    count($r) === 2 && stripos($r[1], 'Antes que nada') === 0 && strpos($r[1], 'gokywebs.com/form/') !== false);
 caso('el mensaje del precio ya no trae pegada la oferta del prediseño',
     stripos($r[0], 'predise') === false);
+caso('y el link no queda para después: va en el mismo mensaje de la propuesta',
+    stripos($r[1], 'demo') !== false || stripos($r[1], 'muestra') !== false);
 
 $c = conv_nueva();
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
@@ -332,7 +334,7 @@ caso('Gemini caído en el primer mensaje → menú igual', $r === [$cfg['menu']]
 $r = wabot_engine('soy abogado', $c, $cfg);
 caso('Gemini caído después → reconoce un rubro claro y vende sin derivar',
     count($r) === 2 && strpos($r[0], '$160.000') !== false
-    && $c['fase'] === 'precio' && $c['tipo'] === 'landing' && empty($c['handoff_pendiente']));
+    && $c['fase'] === 'prediseno' && $c['tipo'] === 'landing' && empty($c['handoff_pendiente']));
 
 $cPitchCaido = conv_nueva();
 $cPitchCaido['fase'] = 'pitch';
@@ -539,7 +541,7 @@ caso('todavía no se marcó el precio como dado', empty($cP['precio_dado']));
 clasifica(['otro']);
 $rP2 = wabot_engine('Ropa de mujer, vestidos y jeans, tengo local en Salta', $cP, $cfg);
 caso('recién al contestar llega el precio',
-    strpos(implode(' ', $rP2), '$290.000') !== false && $cP['fase'] === 'precio');
+    strpos(implode(' ', $rP2), '$290.000') !== false && $cP['fase'] === 'prediseno');
 caso('y con el link que corresponde',
     strpos(implode(' ', $rP2), 'presupuestos/Ecommerce') !== false);
 caso('lo que contó queda guardado para el prediseño',
@@ -619,7 +621,7 @@ clasifica(['rubro_institucional']);
 $r = wabot_engine('somos una fábrica de aberturas', $c, $cfg);
 caso('empresa → $200.000 institucional, sin preguntar nada',
     strpos($r[0], '$200.000') !== false && strpos($r[0], 'presupuestos/Institucional') !== false
-    && $c['tipo'] === 'institucional' && $c['fase'] === 'precio');
+    && $c['tipo'] === 'institucional' && $c['fase'] === 'prediseno');
 
 $c = conv_nueva();
 clasifica(['rubro_institucional']);
@@ -789,7 +791,7 @@ caso('elegir "mostrar" NO cotiza todavía: primero pregunta cuántos productos',
 caso('y el tipo ya quedó marcado como catálogo', $c['tipo'] === 'catalogo');
 
 $r = wabot_engine('unos 40', $c, $cfg);
-caso('con la cantidad, cotiza y pasa a precio', $c['fase'] === 'precio' && $c['productos_cantidad'] === 40);
+caso('con la cantidad, cotiza y pasa al prediseño', $c['fase'] === 'prediseno' && $c['productos_cantidad'] === 40);
 caso('el total es $180.000 + $500 × 40 = $200.000', strpos($r[0], '$200.000') !== false);
 caso('y muestra el desglose completo, no solo el total',
     strpos($r[0], '$180.000') !== false && strpos($r[0], '$500') !== false
@@ -825,7 +827,7 @@ caso('sin número, repregunta reformulado (no repite la misma frase)',
     $r1[0] === $cfg['catalogo_cantidad_2'] && $r1[0] !== $cfg['catalogo_cantidad']);
 caso('y sigue esperando la cantidad', $c['fase'] === 'catalogo_cantidad');
 $r2 = wabot_engine('a ojo unos 80', $c, $cfg);
-caso('cuando finalmente lo dice, cotiza', $c['fase'] === 'precio' && strpos($r2[0], '$220.000') !== false);
+caso('cuando finalmente lo dice, cotiza', $c['fase'] === 'prediseno' && strpos($r2[0], '$220.000') !== false);
 
 $c = conv_nueva(); $c['fase'] = 'catalogo_cantidad'; $c['tipo'] = 'catalogo';
 $vueltas = 0;

@@ -39,7 +39,7 @@ $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
 caso('dar_precio(landing) → texto exacto y estado actualizado',
     strpos($r['texto'], '$160.000') !== false
     && strpos($r['texto'], 'gokywebs.com/presupuestos/Landing') !== false
-    && $c['tipo'] === 'landing' && $c['fase'] === 'precio');
+    && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
 caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
     && ($c['eventos_emitidos_sesion']['muestra_ofrecida'] ?? '') === $c['session_id']);
@@ -92,7 +92,7 @@ caso('y tampoco repite la descripción del catálogo, ya la vio en el pitch',
 
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('segundo precio distinto → no recotiza ni deriva sin aclarar',
-    isset($r['error']) && empty($r['terminal']) && $c['tipo'] === 'landing' && $c['fase'] === 'precio');
+    isset($r['error']) && empty($r['terminal']) && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'inventado'], $c, $cfg);
@@ -284,7 +284,7 @@ caso('dar_precio(catalogo) sin cantidad → NO cotiza, pregunta cuántos product
 
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 60], $c, $cfg);
 caso('con la cantidad → cotiza $180.000 + $500 × 60 = $210.000',
-    strpos($r['texto'], '$210.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'precio');
+    strpos($r['texto'], '$210.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'prediseno');
 caso('y el texto lleva el desglose y el link de Catálogo',
     strpos($r['texto'], '$180.000') !== false && strpos($r['texto'], '60 productos') !== false
     && strpos($r['texto'], 'presupuestos/Catalogo') !== false);
@@ -528,8 +528,9 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('dar_precio devuelve la oferta como mensaje aparte',
-    in_array($r['aparte'] ?? '', $cfg['msg_prediseno_oferta_variantes'], true) && ($r['aparte'] ?? '') !== '');
+caso('dar_precio devuelve la propuesta como mensaje aparte, con el link adentro',
+    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'Antes que nada') === 0
+    && strpos($r['aparte'], 'gokywebs.com/form/') !== false);
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);
 caso('el texto del precio no trae la oferta pegada',

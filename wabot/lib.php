@@ -310,7 +310,7 @@ function wabot_config_ventas(&$cfg) {
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         // Se usa solo cuando no hay link de formulario disponible (Instagram: sin teléfono).
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
-        'prediseno_link' => "Antes que nada, para armar tu muestra necesito un par de datos. Completalos en esta página, no lleva ni un minuto: {link}",
+        'prediseno_link' => "Antes que nada te preparamos una demo sin cargo, para que previsualices tu web. Solo tenés que llenar este formulario, toma 1 min: {link}",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
         'confirma_cambio_2' => 'Decime nomás: es para el mismo proyecto que veníamos viendo (respondé "mismo") o es otra web aparte (respondé "otra")?',
         'confirma_cambio_mismo' => 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?',
@@ -427,10 +427,32 @@ function wabot_config_ventas(&$cfg) {
     // en WhatsApp el bot ya no pide los datos del prediseño por chat, da el link directo.
     if (empty($cfg['prediseno_link_variantes']) || !is_array($cfg['prediseno_link_variantes'])) {
         $cfg['prediseno_link_variantes'] = [
-            'Antes que nada, para armar tu muestra necesito un par de datos. Completalos en esta página, no lleva ni un minuto: {link}',
-            'Antes que nada, te dejo esta página para cargar los datos de tu muestra, es rapidísimo: {link}',
-            'Antes que nada, completá estos datos acá y arrancamos con tu muestra: {link}',
-            'Antes que nada, dejame estos datos en esta página para preparar tu muestra sin cargo: {link}',
+            'Antes que nada te preparamos una demo sin cargo, para que previsualices tu web. Solo tenés que llenar este formulario, toma 1 min: {link}',
+            'Antes que nada, te preparamos sin cargo una demo de tu web. Solo tenés que completar este formulario, no lleva más de 1 minuto: {link}',
+            'Antes que nada, arrancamos con una demo sin cargo para que veas cómo quedaría tu web. Completá este formulario, toma 1 minuto: {link}',
+            'Antes que nada, te armamos sin cargo una demo para que previsualices tu web. Este formulario te lleva 1 minuto: {link}',
+        ];
+    }
+    // Reemplaza lo que haya quedado guardado con la redacción vieja (pedía
+    // "un par de datos" en vez de ofrecer la demo con el link adentro).
+    $prediseñoLinkViejas = [
+        'Antes que nada, para armar tu muestra necesito un par de datos. Completalos en esta página, no lleva ni un minuto: {link}',
+        'Antes que nada, te dejo esta página para cargar los datos de tu muestra, es rapidísimo: {link}',
+        'Antes que nada, completá estos datos acá y arrancamos con tu muestra: {link}',
+        'Antes que nada, dejame estos datos en esta página para preparar tu muestra sin cargo: {link}',
+    ];
+    if (in_array(trim((string)($cfg['prediseno_link'] ?? '')), $prediseñoLinkViejas, true)) {
+        $cfg['prediseno_link'] = $cfg['prediseno_link_variantes'][0];
+    }
+    if (!empty($cfg['prediseno_link_variantes']) && is_array($cfg['prediseno_link_variantes'])) {
+        $limpiasLink = array_values(array_filter($cfg['prediseno_link_variantes'], function ($v) use ($prediseñoLinkViejas) {
+            return !in_array(trim((string)$v), $prediseñoLinkViejas, true);
+        }));
+        $cfg['prediseno_link_variantes'] = $limpiasLink ?: [
+            'Antes que nada te preparamos una demo sin cargo, para que previsualices tu web. Solo tenés que llenar este formulario, toma 1 min: {link}',
+            'Antes que nada, te preparamos sin cargo una demo de tu web. Solo tenés que completar este formulario, no lleva más de 1 minuto: {link}',
+            'Antes que nada, arrancamos con una demo sin cargo para que veas cómo quedaría tu web. Completá este formulario, toma 1 minuto: {link}',
+            'Antes que nada, te armamos sin cargo una demo para que previsualices tu web. Este formulario te lleva 1 minuto: {link}',
         ];
     }
     $listaPrecios = [
