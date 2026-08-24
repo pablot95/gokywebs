@@ -56,7 +56,12 @@ foreach (($cfg['ejemplos'] ?? []) as $ej) {
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'media') {
     $clave   = preg_replace('/[^0-9A-Za-z]/', '', (string)($_GET['tel'] ?? ''));
     $archivo = (string)($_GET['archivo'] ?? '');
-    if ($clave === '' || !preg_match('/^\d{8}-\d{6}-[0-9a-f]{8}\.(jpg|png|webp|gif|ogg|mp3|m4a|amr|bin)$/', $archivo)) {
+    // Las extensiones válidas salen de la MISMA tabla con la que se guardan
+    // (wabot_media_extensiones), así no vuelve a pasar que se guarde un .pdf y
+    // acá se rechace por no estar en una lista escrita a mano aparte.
+    $extensionesOk = array_unique(array_merge(array_values(wabot_media_extensiones()), ['bin']));
+    $patron = '/^\d{8}-\d{6}-[0-9a-f]{8}\.(' . implode('|', array_map('preg_quote', $extensionesOk)) . ')$/';
+    if ($clave === '' || !preg_match($patron, $archivo)) {
         http_response_code(400);
         exit('archivo invalido');
     }
@@ -65,16 +70,24 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
         http_response_code(404);
         exit('no encontrado');
     }
-    $mimes = ['jpg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif',
-              'ogg' => 'audio/ogg', 'mp3' => 'audio/mpeg', 'm4a' => 'audio/mp4', 'amr' => 'audio/amr', 'bin' => 'application/octet-stream'];
+    $mimes = array_flip(wabot_media_extensiones());
     $ext = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
-    // modo=ver: para <img>/<audio> y el clic de "ver completa" — se muestra
-    // inline en vez de forzar la descarga. Sin ese parámetro, el link de
-    // "Descargar" sigue bajando el archivo como siempre.
-    $disposicion = ($_GET['modo'] ?? '') === 'ver' ? 'inline' : 'attachment';
+    // modo=ver: para <img>/<audio>/<video> y el clic de "ver completa" — se
+    // muestra inline en vez de forzar la descarga. Sin ese parámetro, el link
+    // de "Descargar" sigue bajando el archivo como siempre. Solo se abre
+    // inline lo que el navegador sabe mostrar sin ejecutar nada: un .docx o un
+    // .zip servido inline no aporta y abre superficie al pedo.
+    $inlineOk = ['jpg','png','webp','gif','ogg','mp3','m4a','amr','wav','aac','mp4','3gp','mov','webm','pdf','txt'];
+    $disposicion = (($_GET['modo'] ?? '') === 'ver' && in_array($ext, $inlineOk, true)) ? 'inline' : 'attachment';
+    // El nombre real que le puso el cliente al archivo se guarda en el
+    // transcript, no en disco: acá el archivo se llama por su timestamp.
+    $nombreDescarga = trim((string)($_GET['nombre'] ?? ''));
+    $nombreDescarga = preg_replace('/[^\w .\-()]+/u', '', $nombreDescarga);
+    if ($nombreDescarga === '' || strlen($nombreDescarga) > 120) $nombreDescarga = $clave . '-' . $archivo;
     header('Content-Type: ' . ($mimes[$ext] ?? 'application/octet-stream'));
+    header('X-Content-Type-Options: nosniff');
     header('Content-Length: ' . filesize($ruta));
-    header('Content-Disposition: ' . $disposicion . '; filename="' . $clave . '-' . $archivo . '"');
+    header('Content-Disposition: ' . $disposicion . '; filename="' . $nombreDescarga . '"');
     header('Cache-Control: private, max-age=0, no-store');
     readfile($ruta);
     exit;
@@ -816,6 +829,8 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .burb.bot .media-box, .burb.humano .media-box { align-items:flex-end; }
 .media-img { display:block; max-width:220px; max-height:220px; border-radius:8px; cursor:zoom-in; object-fit:cover; }
 .media-audio { max-width:260px; height:36px; }
+.media-video { display:block; max-width:260px; max-height:260px; border-radius:8px; }
+.media-nombre { font-size:12.5px; color:var(--dim); word-break:break-all; }
 .media-dl { display:block; font-size:12.5px; font-weight:600; color:var(--ac); text-decoration:underline; }
 .grabando { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:9px; padding:9px 12px; background:var(--bad-tenue); border:1px solid var(--bad); border-radius:10px; }
 /* Sin esto la caja de grabación se ve SIEMPRE: el atributo hidden del HTML se
@@ -2464,10 +2479,22 @@ body.embed { min-height: 0; }
                         audio.preload = 'none';
                         audio.src = base + '&modo=ver';
                         caja.appendChild(audio);
+                    } else if (t.media.clase === 'video') {
+                        const video = document.createElement('video');
+                        video.className = 'media-video';
+                        video.controls = true;
+                        video.preload = 'metadata';
+                        video.src = base + '&modo=ver';
+                        caja.appendChild(video);
+                    } else if (t.media.nombre) {
+                        const nom = document.createElement('span');
+                        nom.className = 'media-nombre';
+                        nom.textContent = t.media.nombre;
+                        caja.appendChild(nom);
                     }
                     const a = document.createElement('a');
                     a.className = 'media-dl';
-                    a.href = base;
+                    a.href = base + (t.media.nombre ? '&nombre=' + encodeURIComponent(t.media.nombre) : '');
                     a.textContent = 'Descargar' + (t.media.bytes ? ' (' + Math.max(1, Math.round(t.media.bytes / 1024)) + ' KB)' : '');
                     a.target = '_blank'; a.rel = 'noopener';
                     caja.appendChild(a);

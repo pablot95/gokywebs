@@ -2071,6 +2071,12 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $resetDias = max(1, (int)($cfg['reset_dias'] ?? 7));
     $ultimo = (int)($conv['ultimo_ts'] ?? 0);
     if ($ultimo <= 0 || ($ahora - $ultimo) <= $resetDias * 86400) return false;
+    // A quien ya recibió su demo NO se le reinicia el embudo: el reset dejaba
+    // fase='nuevo' y presentado_ts=0, así que el silencio post-demo (que lo
+    // lleva Pablo, no el bot) se vencía solo a los 7 días y el bot volvía a
+    // venderle desde cero a alguien que ya tenía la web armada. Si Pablo
+    // quiere reabrirla, está el botón Resetear del panel.
+    if (!empty($conv['presentado_ts'])) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad'] as $k) {
@@ -2226,20 +2232,109 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null) {
  * Vive fuera del webroot público — data/.htaccess deniega todo acceso
  * directo — y se sirve solo a través del endpoint autenticado del admin.
  */
-function wabot_media_guardar($clave, $bytes, $mime, $clase) {
+function wabot_media_guardar($clave, $bytes, $mime, $clase, $nombreOriginal = '') {
     if (!$bytes) return null;
     wabot_ensure_dirs();
     $carpeta = WABOT_DATA . '/media/' . preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if (!is_dir($carpeta) && !@mkdir($carpeta, 0755, true)) return null;
 
-    $ext = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp',
-            'image/gif' => 'gif', 'audio/ogg' => 'ogg', 'audio/mpeg' => 'mp3',
-            'audio/mp4' => 'm4a', 'audio/amr' => 'amr'][trim(explode(';', (string)$mime)[0])] ?? 'bin';
+    $limpio = trim(explode(';', (string)$mime)[0]);
+    $ext = wabot_media_extensiones()[$limpio] ?? '';
+    // Meta a veces manda application/octet-stream para documentos: la extensión
+    // real viene en el filename, y sin ella el archivo baja como .bin y no lo
+    // abre nada.
+    if ($ext === '' && $nombreOriginal !== '') {
+        $deNombre = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+        if (preg_match('/^[a-z0-9]{1,5}$/', $deNombre)
+            && in_array($deNombre, wabot_media_extensiones(), true)) {
+            $ext = $deNombre;
+        }
+    }
+    if ($ext === '') $ext = 'bin';
     $nombre = date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8) . '.' . $ext;
     $ruta = $carpeta . '/' . $nombre;
 
     if (@file_put_contents($ruta, $bytes) === false) return null;
-    return ['clase' => $clase, 'mime' => $mime, 'archivo' => $nombre, 'bytes' => strlen($bytes)];
+    $meta = ['clase' => $clase, 'mime' => $mime, 'archivo' => $nombre, 'bytes' => strlen($bytes)];
+    if ($nombreOriginal !== '') $meta['nombre'] = mb_substr($nombreOriginal, 0, 120);
+    return $meta;
+}
+
+/**
+ * Normaliza el adjunto de WhatsApp: {clase, ref, caption, nombre} o null.
+ *
+ * `ref` es el media id que hace falta para bajarlo: sin eso el archivo se
+ * pierde para siempre, porque Meta solo lo guarda unos días. Documentos,
+ * videos y stickers caían antes en el return genérico del final, que dejaba
+ * `ref` vacío — por eso en el panel figuraban como "[document]" sin nada que
+ * descargar.
+ */
+function wabot_wa_adjunto($msg, $tipo) {
+    if ($tipo === 'image') {
+        return ['clase' => 'imagen', 'ref' => $msg['image']['id'] ?? '',
+                'caption' => trim((string)($msg['image']['caption'] ?? ''))];
+    }
+    if ($tipo === 'audio') {
+        return ['clase' => 'audio', 'ref' => $msg['audio']['id'] ?? '', 'caption' => ''];
+    }
+    if ($tipo === 'voice') {
+        return ['clase' => 'audio', 'ref' => $msg['voice']['id'] ?? '', 'caption' => ''];
+    }
+    if ($tipo === 'document') {
+        return ['clase' => 'documento', 'ref' => $msg['document']['id'] ?? '',
+                'caption' => trim((string)($msg['document']['caption'] ?? '')),
+                'nombre' => trim((string)($msg['document']['filename'] ?? ''))];
+    }
+    if ($tipo === 'video') {
+        return ['clase' => 'video', 'ref' => $msg['video']['id'] ?? '',
+                'caption' => trim((string)($msg['video']['caption'] ?? ''))];
+    }
+    if ($tipo === 'sticker') {
+        return ['clase' => 'sticker', 'ref' => $msg['sticker']['id'] ?? '', 'caption' => ''];
+    }
+    if ($tipo === 'reaction') {
+        return ['clase' => 'reaccion', 'ref' => '',
+                'caption' => trim((string)($msg['reaction']['emoji'] ?? ''))];
+    }
+    return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
+}
+
+/** Idem para Instagram, que manda los adjuntos como URL directa. */
+function wabot_ig_adjunto($adjuntos) {
+    foreach ((array)$adjuntos as $a) {
+        $t = $a['type'] ?? '';
+        $url = $a['payload']['url'] ?? '';
+        if ($t === 'image') return ['clase' => 'imagen', 'ref' => $url, 'caption' => ''];
+        if ($t === 'audio') return ['clase' => 'audio',  'ref' => $url, 'caption' => ''];
+        if ($t === 'video') return ['clase' => 'video',  'ref' => $url, 'caption' => ''];
+        if ($t === 'file')  return ['clase' => 'documento', 'ref' => $url, 'caption' => ''];
+        // share, story_mention, reel: no se leen, pero se registran como tales.
+        return ['clase' => $t ?: 'adjunto', 'ref' => '', 'caption' => ''];
+    }
+    return null;
+}
+
+/**
+ * mime → extensión, compartido por el guardado y por el endpoint del panel que
+ * los sirve: si los dos listados se desincronizan, el archivo se guarda pero
+ * después el panel lo rechaza por "archivo invalido".
+ */
+function wabot_media_extensiones() {
+    return [
+        'image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif',
+        'audio/ogg' => 'ogg', 'audio/mpeg' => 'mp3', 'audio/mp4' => 'm4a', 'audio/amr' => 'amr',
+        'audio/wav' => 'wav', 'audio/aac' => 'aac',
+        'video/mp4' => 'mp4', 'video/3gpp' => '3gp', 'video/quicktime' => 'mov', 'video/webm' => 'webm',
+        'application/pdf' => 'pdf',
+        'application/msword' => 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+        'application/vnd.ms-excel' => 'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        'application/vnd.ms-powerpoint' => 'ppt',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+        'text/plain' => 'txt', 'text/csv' => 'csv',
+        'application/zip' => 'zip', 'application/rar' => 'rar', 'application/vnd.rar' => 'rar',
+    ];
 }
 
 /**

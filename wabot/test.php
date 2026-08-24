@@ -4323,6 +4323,23 @@ caso('antes de presentar la demo el bot sigue trabajando normal',
 caso('y una fase postdemo sin demo presentada tampoco lo calla',
     wabot_postdemo_lo_lleva_humano(['fase' => 'postdemo', 'tipo' => 'landing'], $cfg) === false);
 
+// El reset por inactividad vencía el silencio post-demo: a los 7 días dejaba
+// fase='nuevo' y presentado_ts=0, y el bot volvía a venderle desde cero a
+// alguien que ya tenía su demo entregada.
+$convViejaPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraPD - 30 * 86400,
+                'ultimo_ts' => $ahoraPD - 30 * 86400];
+caso('una charla con demo entregada NO se reinicia por vieja que sea',
+    wabot_conv_reset_si_vieja($convViejaPD, $cfg, $ahoraPD) === false
+    && $convViejaPD['fase'] === 'postdemo' && !empty($convViejaPD['presentado_ts']));
+caso('y por lo tanto el bot le sigue sin contestar',
+    wabot_postdemo_lo_lleva_humano($convViejaPD, $cfg) === true);
+
+$convViejaSinDemo = ['fase' => 'precio', 'tipo' => 'landing', 'presentado_ts' => 0,
+                     'ultimo_ts' => $ahoraPD - 30 * 86400];
+caso('pero una charla vieja SIN demo entregada se reinicia como siempre',
+    wabot_conv_reset_si_vieja($convViejaSinDemo, $cfg, $ahoraPD) === true
+    && $convViejaSinDemo['fase'] === 'nuevo');
+
 caso('el recordatorio de la demo se sigue mandando igual',
     wabot_presentado_recordatorio_corresponde($convPD, $cfg, $ahoraPD) === true);
 caso('el archivado por inactividad también',

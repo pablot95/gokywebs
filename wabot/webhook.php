@@ -129,6 +129,16 @@ function wabot_procesar_entrante($ev, $cfg) {
                 if ($trans !== null) { $texto = $trans; $marcaMedia = '[audio] '; }
             }
         }
+    } elseif ($media && in_array($media['clase'], ['documento', 'video', 'sticker'], true)) {
+        // No se leen con IA, pero se guardan igual: lo que el cliente manda
+        // (un PDF con su logo, el video de su local) tiene que quedar
+        // descargable en el panel, no como un "[documento]" muerto.
+        $bin = wabot_bajar_media($canal, $media);
+        if ($bin) {
+            $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], $media['clase'],
+                (string)($media['nombre'] ?? ''));
+        }
+        if ($media['caption'] !== '') $texto = $media['caption'];
     }
 
     // Una reacción o un mensaje de solo emojis igual dice algo: un pulgar arriba
@@ -144,7 +154,12 @@ function wabot_procesar_entrante($ev, $cfg) {
         elseif ($util === '') { $texto = ''; }
     }
 
-    $etiqueta = $texto !== '' ? $marcaMedia . $texto : '[' . ($media['clase'] ?? 'sin texto') . ']';
+    // El nombre del archivo dice muchísimo más que "[documento]" a secas.
+    $etiquetaMedia = (string)($media['clase'] ?? 'sin texto');
+    if ($etiquetaMedia === 'documento' && !empty($mediaGuardada['nombre'])) {
+        $etiquetaMedia = 'documento: ' . $mediaGuardada['nombre'];
+    }
+    $etiqueta = $texto !== '' ? $marcaMedia . $texto : '[' . $etiquetaMedia . ']';
     wabot_cola_encolar($clave, $etiqueta, $texto, $nombreEntrante, $mediaGuardada);
 
     // Un solo proceso contesta por conversación. Si el candado ya está tomado,
@@ -288,35 +303,6 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
     }
     wabot_conv_save($conv);
-}
-
-/** Normaliza el adjunto de WhatsApp: {clase, ref, caption} o null. */
-function wabot_wa_adjunto($msg, $tipo) {
-    if ($tipo === 'image') {
-        return ['clase' => 'imagen', 'ref' => $msg['image']['id'] ?? '',
-                'caption' => trim((string)($msg['image']['caption'] ?? ''))];
-    }
-    if ($tipo === 'audio') {
-        return ['clase' => 'audio', 'ref' => $msg['audio']['id'] ?? '', 'caption' => ''];
-    }
-    if ($tipo === 'reaction') {
-        return ['clase' => 'reaccion', 'ref' => '',
-                'caption' => trim((string)($msg['reaction']['emoji'] ?? ''))];
-    }
-    return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
-}
-
-/** Idem para Instagram, que manda los adjuntos como URL directa. */
-function wabot_ig_adjunto($adjuntos) {
-    foreach ((array)$adjuntos as $a) {
-        $t = $a['type'] ?? '';
-        $url = $a['payload']['url'] ?? '';
-        if ($t === 'image') return ['clase' => 'imagen', 'ref' => $url, 'caption' => ''];
-        if ($t === 'audio') return ['clase' => 'audio',  'ref' => $url, 'caption' => ''];
-        // share, story_mention, reel: no se leen, pero se registran como tales.
-        return ['clase' => $t ?: 'adjunto', 'ref' => '', 'caption' => ''];
-    }
-    return null;
 }
 
 /** Baja la media por donde corresponda: WhatsApp en dos pasos, Instagram directo. */
