@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260816">
+<link rel="stylesheet" href="../style.css?v=20260824">
 </head>
 <body>
 
@@ -53,6 +53,26 @@
                 <div><div class="et">Seña</div><div class="val">$60.000</div></div>
                 <div><div class="et">Saldo</div><div class="val saldo">$230.000</div></div>
                 <div><div class="et">Entrega</div><div class="val">7 días</div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pago-section" id="carga-productos">
+        <p class="pago-section-eyebrow">Opcional</p>
+        <h2 class="pago-section-title">También podemos cargarte los productos</h2>
+        <p class="pago-section-desc">Nos pasás tus productos como los tengas —una planilla, un catálogo de WhatsApp, fotos sueltas— y los dejamos cargados con foto, descripción y precio, a <strong>$500 por producto</strong>. ¿Cuántos son?</p>
+        <div class="carga-calc-form">
+            <div class="carga-calc-field">
+                <label for="cantProductosInput">Cantidad de productos</label>
+                <input type="number" id="cantProductosInput" min="1" step="1" inputmode="numeric" placeholder="Ej: 50">
+            </div>
+            <button type="button" class="btn-addon-toggle" id="btnCalcularCarga">Calcular</button>
+        </div>
+        <div class="plan-pago" id="resultadoCarga" hidden>
+            <div class="plan-pago-stats">
+                <div><div class="et">Desarrollo</div><div class="val">$290.000</div></div>
+                <div><div class="et"><span id="cantProductosEt">0</span> productos</div><div class="val" id="valCarga">$0</div></div>
+                <div><div class="et">Total</div><div class="val saldo" id="valTotalCarga">$290.000</div></div>
             </div>
         </div>
     </section>
@@ -152,6 +172,41 @@
 <footer class="pres-footer">
     &copy; 2026 Gokywebs · <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">gokywebs.com</a>
 </footer>
+
+<script>
+(function () {
+    var BASE = 290000;
+    var POR_PRODUCTO = 500;
+    var input = document.getElementById('cantProductosInput');
+    var btn = document.getElementById('btnCalcularCarga');
+    var resultado = document.getElementById('resultadoCarga');
+    var etCant = document.getElementById('cantProductosEt');
+    var valCarga = document.getElementById('valCarga');
+    var valTotal = document.getElementById('valTotalCarga');
+
+    function formatear(n) {
+        return '$' + Math.round(n).toLocaleString('es-AR');
+    }
+
+    function calcular() {
+        var cant = parseInt(input.value, 10);
+        if (!cant || cant < 1) {
+            input.focus();
+            return;
+        }
+        var costoProductos = cant * POR_PRODUCTO;
+        etCant.textContent = cant;
+        valCarga.textContent = formatear(costoProductos);
+        valTotal.textContent = formatear(BASE + costoProductos);
+        resultado.hidden = false;
+    }
+
+    btn.addEventListener('click', calcular);
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') calcular();
+    });
+})();
+</script>
 
 </body>
 </html>
