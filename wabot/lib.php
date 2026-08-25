@@ -2305,6 +2305,12 @@ function wabot_conv_load($clave) {
         'form_completado_ts'          => 0,
         'form_agradecimiento_enviado' => false,
         'codigo'                      => '',
+        // Atribucion del anuncio: de que clic vino esta conversacion.
+        'ctwa_clid'                   => '',
+        'ctwa_clid_ts'                => 0,
+        'anuncio_id'                  => '',
+        'anuncio_titular'             => '',
+        'capi_eventos'                => [],
         'form_link_enviado'           => false,
         'form_link_ts'                => 0,
         'sistema_lead_creado' => false,
@@ -2602,6 +2608,90 @@ function wabot_wa_adjunto($msg, $tipo) {
                 'caption' => trim((string)($msg['reaction']['emoji'] ?? ''))];
     }
     return $tipo && $tipo !== 'text' ? ['clase' => $tipo, 'ref' => '', 'caption' => ''] : null;
+}
+
+/**
+ * Le avisa a Meta que un clic de anuncio termino en algo (un lead, una demo
+ * entregada). Es la API de conversiones para mensajeria.
+ *
+ * Sin esto Meta solo ve el clic y nunca sabe si sirvio: optimiza hacia un
+ * evento que jamas observa y termina repartiendo el anuncio a cualquiera.
+ *
+ * Queda INERTE mientras no esten cargados el dataset y el token en el panel:
+ * asi no rompe nada en instalaciones que todavia no lo configuraron.
+ */
+function wabot_capi_evento(&$conv, $evento, $cfg) {
+    $dataset = trim((string)($cfg['capi_dataset_id'] ?? ''));
+    $token   = trim((string)($cfg['capi_token'] ?? ''));
+    if ($dataset === '' || $token === '') return false;
+
+    $clid = trim((string)($conv['ctwa_clid'] ?? ''));
+    if ($clid === '') return false;   // no vino de un anuncio: no hay nada que atribuir
+
+    // Cada evento se manda UNA sola vez por conversacion: si el cron reintenta
+    // o Pablo reabre el chat, Meta contaria la misma conversion dos veces y la
+    // optimizacion se ensucia con datos inflados.
+    $ya = (array)($conv['capi_eventos'] ?? []);
+    if (in_array($evento, $ya, true)) return false;
+
+    $clave = wabot_conversation_key($conv);
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) {
+        $GLOBALS['WABOT_TEST_CAPI'][] = [$clave, $evento];
+        $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
+        return true;
+    }
+
+    $body = json_encode(['data' => [[
+        'event_name'        => $evento,
+        'event_time'        => time(),
+        'action_source'     => 'business_messaging',
+        'messaging_channel' => 'whatsapp',
+        'user_data'         => ['ctwa_clid' => $clid],
+    ]]], JSON_UNESCAPED_UNICODE);
+
+    $ch = curl_init('https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . $dataset . '/events?access_token=' . urlencode($token));
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        wabot_log('error', ['donde' => 'capi', 'evento' => $evento, 'http' => $code,
+                            'res' => mb_substr((string)$res, 0, 300)]);
+        return false;
+    }
+    $conv['capi_eventos'] = array_values(array_unique(array_merge($ya, [$evento])));
+    wabot_log('capi_enviado', ['tel' => $conv['tel'] ?? '', 'evento' => $evento]);
+    return true;
+}
+
+/**
+ * El "referral" que Meta adjunta al PRIMER mensaje de alguien que llego desde
+ * un anuncio de clic-a-WhatsApp.
+ *
+ * El dato que importa es ctwa_clid: es el identificador del clic, y es lo
+ * UNICO que despues permite decirle a Meta "este clic termino en un lead".
+ * Sin guardarlo, Meta nunca se entera de que el anuncio funciono y termina
+ * optimizando a ciegas (por eso la campania mostraba 0 resultados con cientos
+ * de miles de pesos gastados).
+ */
+function wabot_wa_referral($msg) {
+    $r = $msg['referral'] ?? null;
+    if (!is_array($r)) return null;
+    $clid = trim((string)($r['ctwa_clid'] ?? ''));
+    if ($clid === '') return null;
+    return [
+        'ctwa_clid' => $clid,
+        'anuncio_id' => trim((string)($r['source_id'] ?? '')),
+        'anuncio_tipo' => trim((string)($r['source_type'] ?? '')),
+        'anuncio_titular' => mb_substr(trim((string)($r['headline'] ?? '')), 0, 200),
+    ];
 }
 
 /** Idem para Instagram, que manda los adjuntos como URL directa. */
@@ -5016,6 +5106,8 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if (empty($conv['lead_creado'])) {
         $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
         wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
+        // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta.
+        wabot_capi_evento($conv, 'Lead', $cfg);
     }
     wabot_handoff_marcar($conv, 'prediseno');
 

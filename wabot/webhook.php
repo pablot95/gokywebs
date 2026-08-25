@@ -96,6 +96,18 @@ function wabot_procesar_entrante($ev, $cfg) {
     $nombreEntrante = trim((string)($ev['nombre'] ?? ''));
     if ($nombreEntrante === '') $nombreEntrante = trim((string)($conv['nombre'] ?? ''));
 
+    // De que anuncio vino. Solo llega en el PRIMER mensaje tras el clic, asi
+    // que si no se guarda ahora se pierde para siempre y esa conversacion ya
+    // no se puede atribuir.
+    $ref = $ev['referral'] ?? null;
+    if (is_array($ref) && !empty($ref['ctwa_clid'])) {
+        $conv['ctwa_clid']       = $ref['ctwa_clid'];
+        $conv['ctwa_clid_ts']    = time();
+        $conv['anuncio_id']      = (string)($ref['anuncio_id'] ?? '');
+        $conv['anuncio_titular'] = (string)($ref['anuncio_titular'] ?? '');
+        wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id']]);
+    }
+
     $arranque = microtime(true);
     $primerContacto = empty($conv['lead_recibido_evento']);
     $avisado = false;
@@ -469,6 +481,7 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 'texto'            => $tipo === 'text' ? trim((string)($msg['text']['body'] ?? '')) : '',
                 'nombre'           => $nombresPerfil[$clave] ?? '',
                 'media'            => wabot_wa_adjunto($msg, $tipo),
+                'referral'         => wabot_wa_referral($msg),
             ], $cfg);
         }
     }

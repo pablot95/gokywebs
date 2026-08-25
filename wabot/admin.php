@@ -278,6 +278,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
             $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
         }
+        if (isset($_POST['capi_dataset_id'])) $cfg['capi_dataset_id'] = preg_replace('/\D+/', '', (string)$_POST['capi_dataset_id']);
+        // El token solo se pisa si escribieron uno nuevo: el campo se muestra
+        // vacío a propósito para no dejar la credencial a la vista en el HTML.
+        if (trim((string)($_POST['capi_token'] ?? '')) !== '') $cfg['capi_token'] = trim((string)$_POST['capi_token']);
         foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
@@ -427,6 +431,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel_presentar']);
         wabot_evento($conv, 'muestra_presentada');
+        wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug, 'enviado' => $enviado]);
 
@@ -451,6 +456,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['presentado_sin_aviso'] = true;
         wabot_evento($conv, 'muestra_presentada');
+        wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
@@ -1638,6 +1644,20 @@ body.embed { min-height: 0; }
                     <option value="<?= $e($claveModelo) ?>" <?= $claveModelo === $modeloActual ? 'selected' : '' ?>><?= $e($labelModelo) ?></option>
                 <?php endforeach; ?>
             </select>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Atribución de anuncios (API de conversiones)</h2>
+            <p class="meta" style="margin-top:0">Le avisa a Meta cuándo un clic en un anuncio terminó en algo real: un boceto cerrado o una demo entregada. Sin esto Meta no sabe qué clic sirvió, optimiza hacia un evento que nunca ve y termina mostrando el anuncio a cualquiera — es lo que hacía que la campaña marcara 0 resultados con todo el presupuesto gastado.</p>
+            <p class="meta">Los dos datos salen de <strong>Meta Events Manager → tu conjunto de datos → Configuración</strong>. Mientras estén vacíos, no se manda nada.</p>
+            <div class="fila" style="margin-top:12px;gap:14px;flex-wrap:wrap">
+                <label style="flex:1 1 220px">Identificador del conjunto de datos
+                    <input type="text" name="capi_dataset_id" value="<?= $e($cfg['capi_dataset_id'] ?? '') ?>" placeholder="Solo números">
+                </label>
+                <label style="flex:1 1 260px">Token de acceso
+                    <input type="password" name="capi_token" value="" placeholder="<?= trim((string)($cfg['capi_token'] ?? '')) !== '' ? 'Ya cargado — escribí uno nuevo para cambiarlo' : 'Pegá el token acá' ?>" autocomplete="off">
+                </label>
+            </div>
+            <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '') ? 'activo' : 'sin configurar (no se manda nada)' ?></strong></p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>

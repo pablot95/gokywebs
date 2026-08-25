@@ -914,6 +914,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if (empty($conv['lead_creado'])) {
                 $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
                 wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
+                // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta.
+                wabot_capi_evento($conv, 'Lead', $cfg);
             }
             wabot_handoff_marcar($conv, 'prediseno');
             return ['texto' => wabot_texto_prediseno_completo($conv, $cfg), 'terminal' => true];

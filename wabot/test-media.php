@@ -169,5 +169,45 @@ caso('y si no se reconoce ni por mime ni por nombre, cae en .bin sin romper',
 foreach (glob(WABOT_DATA . '/media/MEDIATEST/*') ?: [] as $f) @unlink($f);
 @rmdir(WABOT_DATA . '/media/MEDIATEST');
 
+echo "— Atribucion de anuncios: referral y API de conversiones —\n";
+
+// Sin esto el ctwa_clid se perdia en cada mensaje que venia de un anuncio, y
+// Meta nunca se enteraba de que el clic habia servido.
+$refOk = wabot_wa_referral(['referral' => [
+    'ctwa_clid' => 'ARAbc123', 'source_id' => '52543764396818',
+    'source_type' => 'ad', 'headline' => 'Hacemos las mejores web',
+]]);
+caso('se captura el ctwa_clid del anuncio', ($refOk['ctwa_clid'] ?? '') === 'ARAbc123');
+caso('y el id del anuncio', ($refOk['anuncio_id'] ?? '') === '52543764396818');
+caso('un mensaje sin referral no inventa atribucion', wabot_wa_referral(['text' => ['body' => 'hola']]) === null);
+caso('un referral sin ctwa_clid tampoco sirve para atribuir',
+    wabot_wa_referral(['referral' => ['source_id' => '123']]) === null);
+
+$cfgCapi = wabot_config_load();
+$cfgCapi['capi_dataset_id'] = '1234567890';
+$cfgCapi['capi_token'] = 'TOKEN';
+
+$GLOBALS['WABOT_TEST_CAPI'] = [];
+$convCapi = ['tel' => 'TESTCAPI1', 'conversation_key' => 'TESTCAPI1', 'canal' => 'whatsapp',
+             'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
+caso('con clic de anuncio y config cargada, se manda el evento',
+    wabot_capi_evento($convCapi, 'Lead', $cfgCapi) === true);
+caso('y queda anotado para no repetirlo', in_array('Lead', $convCapi['capi_eventos'], true));
+caso('el mismo evento NO se manda dos veces (inflaria las conversiones de Meta)',
+    wabot_capi_evento($convCapi, 'Lead', $cfgCapi) === false);
+caso('pero otro evento distinto si',
+    wabot_capi_evento($convCapi, 'Schedule', $cfgCapi) === true);
+
+$convSinClid = ['tel' => 'TESTCAPI2', 'conversation_key' => 'TESTCAPI2', 'canal' => 'whatsapp',
+                'ctwa_clid' => '', 'capi_eventos' => []];
+caso('quien NO vino de un anuncio no genera evento', wabot_capi_evento($convSinClid, 'Lead', $cfgCapi) === false);
+
+$cfgVacio = wabot_config_load();
+$cfgVacio['capi_dataset_id'] = ''; $cfgVacio['capi_token'] = '';
+$convInerte = ['tel' => 'TESTCAPI3', 'conversation_key' => 'TESTCAPI3', 'canal' => 'whatsapp',
+               'ctwa_clid' => 'ARAbc123', 'capi_eventos' => []];
+caso('sin configurar el dataset y el token, queda inerte',
+    wabot_capi_evento($convInerte, 'Lead', $cfgVacio) === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
