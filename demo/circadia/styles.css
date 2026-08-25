@@ -268,7 +268,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 .producto-grid--inv .producto-visual { order: 2; }
 .producto-grid--inv .producto-pasos { order: 1; }
 
-.producto-visual { position: relative; }
+.producto-visual { position: relative; align-self: stretch; }
 .visual-frame {
   position: sticky; top: clamp(90px, 12vh, 140px);
   aspect-ratio: 3/4; max-height: 60svh; min-height: 420px;
@@ -448,7 +448,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   .concepto-visual { order: -1; }
   .producto-grid, .producto-grid--inv { grid-template-columns: 1fr; }
   .producto-grid--inv .producto-visual, .producto-grid--inv .producto-pasos { order: initial; }
-  .visual-frame { position: sticky; top: 10px; aspect-ratio: 3/4; max-height: 40svh; min-height: 280px; }
+  .visual-frame { position: relative; aspect-ratio: 3/4; max-height: 40svh; min-height: 280px; }
   .paso { min-height: 40svh; }
   .beneficios-grid { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; gap: 2rem; }
