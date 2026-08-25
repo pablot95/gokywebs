@@ -87,16 +87,39 @@ function initStickyChapter(pasosId, frameId) {
   if (!container || !frame) return;
   const pasos = container.querySelectorAll('.paso');
   const layers = frame.querySelectorAll('.visual-layer');
-  if (!pasos.length || !('IntersectionObserver' in window) || reduceMotion) return;
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const step = entry.target.dataset.step;
-      pasos.forEach(p => p.classList.toggle('is-on', p === entry.target));
-      layers.forEach(l => l.classList.toggle('is-on', l.dataset.step === step));
+  if (!pasos.length) return;
+
+  const setActive = step => {
+    pasos.forEach(p => p.classList.toggle('is-on', p.dataset.step === step));
+    layers.forEach(l => l.classList.toggle('is-on', l.dataset.step === step));
+  };
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) setActive(entry.target.dataset.step);
+      });
+    }, { threshold: 0, rootMargin: '-45% 0px -45% 0px' });
+    pasos.forEach(p => io.observe(p));
+  }
+
+  // Red de seguridad geométrica: corrige el paso activo aunque el observer no dispare
+  // (posición dentro de un ancestro position:sticky, scroll rápido, etc.)
+  const updateByGeometry = () => {
+    const vh = window.innerHeight;
+    const bandTop = vh * 0.4, bandBottom = vh * 0.6;
+    let active = null;
+    pasos.forEach(p => {
+      const r = p.getBoundingClientRect();
+      if (r.bottom > bandTop && r.top < bandBottom) active = p.dataset.step;
     });
-  }, { threshold: 0, rootMargin: '-45% 0px -45% 0px' });
-  pasos.forEach(p => io.observe(p));
+    if (active !== null) setActive(active);
+  };
+  let queued = false;
+  const queueUpdate = () => { if (!queued) { queued = true; requestAnimationFrame(() => { queued = false; updateByGeometry(); }); } };
+  window.addEventListener('scroll', queueUpdate, { passive: true });
+  window.addEventListener('resize', queueUpdate, { passive: true });
+  window.addEventListener('load', queueUpdate);
 }
 
 function initArcoPuente() {

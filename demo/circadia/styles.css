@@ -287,6 +287,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   opacity: .3; transition: opacity .5s var(--ease-out);
 }
 .paso.is-on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .paso, .visual-layer { transition: none; } }
 .paso-kicker { font-weight: 600; color: var(--color-text); margin-bottom: .3em; }
 .modo-uso { margin-top: 1.1em; color: var(--color-text-body); }
 .modo-uso strong { color: var(--color-text); }
