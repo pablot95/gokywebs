@@ -145,22 +145,16 @@
       <h2 data-animate style="transform:translateY(24px);opacity:0">Para cada tipo de obstrucción, el equipo correcto</h2>
 
       <div class="servicio-grid" data-animate-stagger>
-        <article class="servicio-item servicio-item--foto" data-animate style="transform:translateY(24px);opacity:0">
-          <div class="servicio-foto"><img src="images/cano-empalme-detalle-1600x1000.webp" alt="Detalle de un empalme de cañería con llaves de paso" width="1600" height="1000"></div>
-          <div class="servicio-copy">
-            <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h6l2-3 2 6 2-3h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <h3>Destapación de cañerías</h3>
-            <p>Pluvial, fluvial, cloacal y domiciliaria.</p>
-          </div>
+        <article class="servicio-item" data-animate style="transform:translateY(24px);opacity:0">
+          <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h6l2-3 2 6 2-3h4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3>Destapación de cañerías</h3>
+          <p>Pluvial, fluvial, cloacal y domiciliaria.</p>
         </article>
 
-        <article class="servicio-item servicio-item--foto" data-animate style="transform:translateY(24px);opacity:0">
-          <div class="servicio-foto"><img src="images/rejilla-desague-1400x1400.webp" alt="Rejilla de desagüe en la vía pública" width="1400" height="1400"></div>
-          <div class="servicio-copy">
-            <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 18h16M6 18v-4h12v4M8 14V9a4 4 0 0 1 8 0v5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <h3>Limpieza de rejillas de grasa</h3>
-            <p>Eliminación de obstrucciones.</p>
-          </div>
+        <article class="servicio-item" data-animate style="transform:translateY(24px);opacity:0">
+          <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 18h16M6 18v-4h12v4M8 14V9a4 4 0 0 1 8 0v5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <h3>Limpieza de rejillas de grasa</h3>
+          <p>Eliminación de obstrucciones.</p>
         </article>
 
         <article class="servicio-item servicio-item--destacado" data-animate style="transform:translateY(24px);opacity:0">
@@ -187,13 +181,10 @@
           <p>Prevención y mantenimiento.</p>
         </article>
 
-        <article class="servicio-item servicio-item--foto" data-animate style="transform:translateY(24px);opacity:0">
-          <div class="servicio-foto"><img src="images/boca-registro-pozo-1400x1400.webp" alt="Boca de registro de un pozo en la vía pública" width="1400" height="1400"></div>
-          <div class="servicio-copy">
-            <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
-            <h3>Pozos ciegos</h3>
-            <p>Recuperación y mantenimiento con equipos especializados.</p>
-          </div>
+        <article class="servicio-item" data-animate style="transform:translateY(24px);opacity:0">
+          <svg class="servicio-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>
+          <h3>Pozos ciegos</h3>
+          <p>Recuperación y mantenimiento con equipos especializados.</p>
         </article>
       </div>
     </div>
@@ -240,7 +231,29 @@
 
   <section class="hidrojet-destacado">
     <div class="container hidrojet-grid">
-      <div class="hidrojet-foto"><img src="images/limpieza-alta-presion-escalera-1200x1600.webp" alt="Limpieza a alta presión, chorro de agua sobre superficie" width="1200" height="1600" loading="lazy"></div>
+      <div class="hidrojet-foto" aria-hidden="true">
+        <svg class="hidrojet-svg" viewBox="0 0 300 400" fill="none">
+          <circle cx="150" cy="180" r="120" stroke="#fff" stroke-opacity=".15" stroke-width="2"/>
+          <circle cx="150" cy="180" r="86" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="4 8"/>
+          <g class="hidrojet-jets" stroke="var(--color-secondary)" stroke-width="3" stroke-linecap="round">
+            <path d="M150 140 L150 58"/>
+            <path d="M150 140 L93 84"/>
+            <path d="M150 140 L207 84"/>
+            <path d="M150 140 L56 150"/>
+            <path d="M150 140 L244 150"/>
+          </g>
+          <g class="hidrojet-jets" fill="var(--color-secondary)">
+            <circle cx="150" cy="52" r="5"/>
+            <circle cx="86" cy="77" r="4"/>
+            <circle cx="214" cy="77" r="4"/>
+            <circle cx="48" cy="150" r="4"/>
+            <circle cx="252" cy="150" r="4"/>
+          </g>
+          <rect x="132" y="150" width="36" height="60" rx="14" fill="#0a0a0a" stroke="#fff" stroke-opacity=".4" stroke-width="2"/>
+          <circle cx="150" cy="150" r="9" fill="var(--color-secondary)"/>
+          <text x="150" y="336" text-anchor="middle" font-family="Anton, sans-serif" font-size="22" fill="#fff" letter-spacing="2">ALTA PRESIÓN</text>
+        </svg>
+      </div>
       <div class="hidrojet-copy">
         <p class="eyebrow" data-animate style="transform:translateY(16px);opacity:0">EL DIFERENCIAL</p>
         <h2 data-animate style="transform:translateY(24px);opacity:0">Hidrojet: la potencia que una sonda no tiene</h2>
@@ -256,8 +269,7 @@
   </section>
 
   <section class="tagline-banda">
-    <img src="images/pared-roja-cano-1920x700.webp" alt="" width="1920" height="700" loading="lazy">
-    <div class="tagline-scrim"></div>
+    <div class="tagline-textura" aria-hidden="true"></div>
     <p data-animate style="transform:translateY(20px);opacity:0">LA SOLUCIÓN PROFESIONAL<br>PARA TODO TIPO DE OBSTRUCCIONES</p>
   </section>
 

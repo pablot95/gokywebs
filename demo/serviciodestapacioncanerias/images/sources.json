@@ -1,9 +1,4 @@
 [
-  { "file": "plomero-destapando-caneria-1920x1080.webp", "origen": "Pexels", "id": "35290675", "url": "https://www.pexels.com/photo/35290675/", "uso": "Hero" },
-  { "file": "tecnico-herramienta-caneria-1200x1600.webp", "origen": "Pexels", "id": "8486978", "url": "https://www.pexels.com/photo/8486978/", "uso": "Por qué elegirnos / confianza" },
-  { "file": "boca-registro-pozo-1400x1400.webp", "origen": "Pexels", "id": "18110389", "url": "https://www.pexels.com/photo/18110389/", "uso": "Servicio: pozos ciegos" },
-  { "file": "rejilla-desague-1400x1400.webp", "origen": "Pexels", "id": "6240578", "url": "https://www.pexels.com/photo/6240578/", "uso": "Servicio: rejillas y sumideros" },
-  { "file": "cano-empalme-detalle-1600x1000.webp", "origen": "Pexels", "id": "8488035", "url": "https://www.pexels.com/photo/8488035/", "uso": "Servicio: cañerías / detalle" },
-  { "file": "limpieza-alta-presion-escalera-1200x1600.webp", "origen": "Pexels", "id": "14965464", "url": "https://www.pexels.com/photo/14965464/", "uso": "Hidrojet / alta presión" },
-  { "file": "pared-roja-cano-1920x700.webp", "origen": "Pexels", "id": "25907259", "url": "https://www.pexels.com/photo/25907259/", "uso": "Banda decorativa / divisor de sección" }
+  { "file": "tecnico-herramienta-caneria-1200x1600.webp", "origen": "Pexels", "id": "8486978", "url": "https://www.pexels.com/photo/8486978/", "uso": "Hero" },
+  { "file": "plomero-destapando-caneria-1920x1080.webp", "origen": "Pexels", "id": "35290675", "url": "https://www.pexels.com/photo/35290675/", "uso": "Por qué elegirnos" }
 ]

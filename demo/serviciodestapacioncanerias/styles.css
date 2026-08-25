@@ -197,11 +197,6 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 .servicio-item { background: var(--color-bg); padding: 2rem; display: flex; flex-direction: column; gap: .5rem; }
 .servicio-item--destacado { background: var(--color-bg-alt); box-shadow: inset 0 0 0 1px rgba(255,0,0,.4); }
 .servicio-icon { width: 32px; height: 32px; color: var(--color-secondary); margin-bottom: .3rem; }
-.servicio-item--foto { padding: 0; }
-.servicio-foto { aspect-ratio: 16/9; max-height: 38svh; overflow: hidden; }
-.servicio-foto img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease-out); }
-.servicio-item--foto:hover .servicio-foto img { transform: scale(1.05); }
-.servicio-copy { padding: 1.5rem 1.75rem 2rem; display: flex; flex-direction: column; gap: .5rem; }
 .sello-costura {
   position: absolute; bottom: -18px; right: 6%; z-index: 2;
   background: var(--color-secondary); color: #000; font-weight: 800; font-size: .78rem; letter-spacing: .04em;
@@ -221,16 +216,27 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 
 /* ============ HIDROJET DESTACADO ============ */
 .hidrojet-grid { display: grid; grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: clamp(2rem,5vw,4.5rem); align-items: center; }
-.hidrojet-foto { position: relative; z-index: 2; aspect-ratio: 3/4; max-height: 64svh; border-radius: var(--radius); overflow: hidden; margin-top: -60px; box-shadow: 0 30px 70px -25px rgba(0,0,0,.7); }
-.hidrojet-foto img { width: 100%; height: 100%; object-fit: cover; }
+.hidrojet-foto {
+  position: relative; z-index: 2; aspect-ratio: 3/4; max-height: 64svh; margin-top: -60px;
+  border-radius: var(--radius); overflow: hidden; box-shadow: 0 30px 70px -25px rgba(0,0,0,.7);
+  background: radial-gradient(circle at 50% 45%, rgba(255,0,0,.1), transparent 60%), var(--color-bg-alt);
+  border: 1px solid rgba(255,0,0,.25); display: grid; place-items: center;
+}
+.hidrojet-svg { width: 78%; height: 78%; }
+.hidrojet-jets { animation: hidrojet-pulse 1.6s ease-in-out infinite; }
+@keyframes hidrojet-pulse { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hidrojet-jets { animation: none; } }
 .check-list { display: flex; flex-direction: column; gap: .6rem; margin: 1.2rem 0; }
 .check-list li { padding-left: 1.7em; position: relative; }
 .check-list li::before { content: '✓'; position: absolute; left: 0; color: var(--color-secondary); font-weight: 800; }
 
 /* ============ TAGLINE BANDA ============ */
-.tagline-banda { position: relative; height: min(34svh, 280px); padding: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-.tagline-banda img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.tagline-scrim { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.75), rgba(0,0,0,.55)); }
+.tagline-banda { position: relative; height: min(34svh, 280px); padding: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--color-bg-alt); }
+.tagline-textura {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(135deg, rgba(255,0,0,.16) 0 26px, transparent 26px 52px);
+}
+.tagline-textura::after { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, transparent 30%, #000 105%); }
 .tagline-banda p {
   position: relative; z-index: 2; font-family: var(--font-display); text-transform: uppercase;
   font-size: clamp(1.4rem, 3.4vw, 2.4rem); line-height: 1.25; text-align: center; color: var(--color-text); margin: 0;
