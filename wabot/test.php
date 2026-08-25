@@ -1602,53 +1602,10 @@ caso('también reinicia una charla vieja que el agente dejó en fase nuevo',
     && !$nuevaPeroVieja['lead_recibido_evento']
     && $nuevaPeroVieja['session_id'] !== 'sesion-vieja-sin-tools');
 
-echo "— Muestras presentadas: recordatorio a las 48h, archivo a la semana —\n";
+echo "— Muestras presentadas: archivo a la semana sin confirmar —\n";
 
 $ahoraPres = time();
-$cfgPres = $cfg; $cfgPres['presentados_recordatorio_horas'] = 48; $cfgPres['presentados_archivar_horas'] = 168;
-$cfgPres['presentados_recordatorio'] = 'Hola {nombre}, viste la demo? {demo}';
-
-$presEspera = conv_nueva();
-$presEspera['nombre'] = 'Marcos';
-$presEspera['nombre_confirmado'] = true;
-$presEspera['presentado_ts'] = $ahoraPres - 49 * 3600;
-$presEspera['presentado_slug'] = 'negociodemarcos';
-$presEspera['ultimo_cliente_ts'] = $ahoraPres - 8 * 3600;
-caso('a las 49h sin confirmar, con la ventana abierta y el cliente callado, corresponde el recordatorio',
-    wabot_presentado_recordatorio_corresponde($presEspera, $cfgPres, $ahoraPres) === true);
-$presCharlando = $presEspera; $presCharlando['ultimo_cliente_ts'] = $ahoraPres - 1 * 3600;
-caso('pero si el cliente escribió recién, la charla la lleva el bot y no se le encaja el recordatorio',
-    !wabot_presentado_recordatorio_corresponde($presCharlando, $cfgPres, $ahoraPres));
-caso('el recordatorio lleva el link de la muestra y el nombre',
-    strpos(wabot_personalizar(wabot_presentado_recordatorio_texto($presEspera, $cfgPres), $presEspera), 'gokywebs.com/demo/negociodemarcos') !== false
-    && strpos(wabot_personalizar(wabot_presentado_recordatorio_texto($presEspera, $cfgPres), $presEspera), 'Marcos') !== false);
-
-$presTemprano = $presEspera; $presTemprano['presentado_ts'] = $ahoraPres - 10 * 3600;
-caso('antes de las 48h no corresponde', !wabot_presentado_recordatorio_corresponde($presTemprano, $cfgPres, $ahoraPres));
-
-$presConfirmado = $presEspera; $presConfirmado['presentado_confirmado'] = true;
-caso('si Pablo ya marcó que confirmó, no se le insiste', !wabot_presentado_recordatorio_corresponde($presConfirmado, $cfgPres, $ahoraPres));
-
-$presYaEnviado = $presEspera;
-$presYaEnviado['presentado_recordatorios_enviados'] = (int)($cfgPres['presentados_recordatorio_max'] ?? 2);
-caso('llegado al techo de insistencia, no se manda más',
-    !wabot_presentado_recordatorio_corresponde($presYaEnviado, $cfgPres, $ahoraPres));
-$presReciente = $presEspera;
-$presReciente['presentado_recordatorios_enviados'] = 1;
-$presReciente['presentado_recordatorio_ts'] = $ahoraPres - 2 * 3600;
-caso('y no se encadenan dos seguidos: hay un espacio mínimo entre uno y otro',
-    !wabot_presentado_recordatorio_corresponde($presReciente, $cfgPres, $ahoraPres));
-caso('el bool viejo de las charlas anteriores al contador cuenta como uno',
-    wabot_presentado_recordatorios_hechos(['presentado_recordatorio_enviado' => true]) === 1
-    && wabot_presentado_recordatorios_hechos([]) === 0);
-caso('el segundo recordatorio NO repite el texto del primero',
-    trim(wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 1], $cfg)) !== ''
-    && wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 1], $cfg)
-       !== wabot_presentado_recordatorio_texto(['presentado_recordatorios_enviados' => 0], $cfg));
-
-$presSilencioLargo = $presEspera; $presSilencioLargo['ultimo_cliente_ts'] = $ahoraPres - 30 * 3600;
-caso('si el cliente lleva más de 22h sin escribir, no manda texto libre fuera de ventana',
-    !wabot_presentado_recordatorio_corresponde($presSilencioLargo, $cfgPres, $ahoraPres));
+$cfgPres = $cfg; $cfgPres['presentados_archivar_horas'] = 168;
 
 $presArchivar = conv_nueva();
 $presArchivar['presentado_ts'] = $ahoraPres - 169 * 3600;
@@ -1661,61 +1618,34 @@ $presArchivarConfirmado = $presArchivar; $presArchivarConfirmado['presentado_con
 caso('si ya confirmó, nunca se archiva solo por inactividad',
     !wabot_presentado_archivar_corresponde($presArchivarConfirmado, $cfgPres, $ahoraPres));
 
-echo "— Aviso antes de que cierre la ventana de la muestra —\n";
+echo "— Confirmación de la demo a las 48 h: el único automático que queda —\n";
 
-$cfgAviso = $cfg; $cfgAviso['muestra_aviso_activo'] = true; $cfgAviso['muestra_aviso'] = 'Hola {nombre}, tu muestra va a estar lista hoy.';
+$cfgConf = $cfg; $cfgConf['activo'] = true; $cfgConf['confirmacion_demo_horas'] = 48;
+$ahoraConf = time();
 
-$clienteManana = gmmktime(11, 0, 0, 8, 19, 2026); // 8:00 hora AR
-$limiteManana = $clienteManana + 24 * 3600;
-$candManana = wabot_muestra_aviso_hora_candidata($clienteManana, $limiteManana);
-caso('si escribió justo a las 8, el aviso se adelanta contra el cierre (las 8 de hoy ya pasaron y las de mañana no entran)',
-    $candManana === $limiteManana - 90 * 60);
-// El margen tiene que superar al intervalo del cron (30 min) o el único
-// momento válido puede caer entre dos corridas y el aviso no sale nunca.
-caso('y ese margen le da al cron más de una corrida para agarrarlo',
-    ($limiteManana - $candManana) >= 3 * 30 * 60);
+$confBase = conv_nueva();
+$confBase['presentado_ts'] = $ahoraConf - 49 * 3600;
+caso('a las 49h de presentada, sin confirmación mandada, corresponde',
+    wabot_confirmacion_demo_corresponde($confBase, $cfgConf, $ahoraConf) === true);
 
-$clienteTarde = gmmktime(18, 0, 0, 8, 19, 2026); // 15:00 hora AR
-$limiteTarde = $clienteTarde + 24 * 3600;
-$candTarde = wabot_muestra_aviso_hora_candidata($clienteTarde, $limiteTarde);
-caso('si escribió a la tarde, el aviso cae a las 8am del día siguiente (con margen de sobra antes del cierre)',
-    $candTarde === $limiteTarde - 7 * 3600 && $candTarde < $limiteTarde - 30 * 60);
+$confTemprano = $confBase; $confTemprano['presentado_ts'] = $ahoraConf - 10 * 3600;
+caso('antes de las 48h no corresponde', !wabot_confirmacion_demo_corresponde($confTemprano, $cfgConf, $ahoraConf));
 
-$clienteMadrugada = gmmktime(5, 0, 0, 8, 19, 2026); // 2:00 hora AR
-$limiteMadrugada = $clienteMadrugada + 24 * 3600;
-$candMadrugada = wabot_muestra_aviso_hora_candidata($clienteMadrugada, $limiteMadrugada);
-caso('si escribió de madrugada, nunca manda el aviso después de que cierra la ventana',
-    $candMadrugada < $limiteMadrugada);
+$confYaEnviada = $confBase; $confYaEnviada['confirmacion_demo_enviada'] = true;
+caso('ya mandada, no se repite', !wabot_confirmacion_demo_corresponde($confYaEnviada, $cfgConf, $ahoraConf));
 
-$ahoraAv = $limiteManana - 20 * 60; // 20 min antes del cierre: ya pasó el candidato (30 min antes)
-$avEnVentana = conv_nueva();
-$avEnVentana['fase'] = 'derivado';
-$avEnVentana['lead_creado'] = true;
-$avEnVentana['ultimo_cliente_ts'] = $clienteManana;
-caso('con la ventana por cerrarse y todavía sin avisar, corresponde mandar el aviso',
-    wabot_muestra_aviso_corresponde($avEnVentana, $cfgAviso, $ahoraAv) === true);
+$confArchivada = $confBase; $confArchivada['archivado'] = true;
+caso('archivada, no corresponde', !wabot_confirmacion_demo_corresponde($confArchivada, $cfgConf, $ahoraConf));
 
-$avTemprano = $avEnVentana;
-caso('mucho antes del horario elegido, todavía no corresponde',
-    !wabot_muestra_aviso_corresponde($avTemprano, $cfgAviso, $clienteManana + 3600));
+$confBotOff = $confBase; $confBotOff['bot_off'] = true;
+caso('con el bot apagado en esa charla, no corresponde', !wabot_confirmacion_demo_corresponde($confBotOff, $cfgConf, $ahoraConf));
 
-$avYaEnviado = $avEnVentana; $avYaEnviado['muestra_aviso_enviado'] = true;
-caso('el aviso se manda una sola vez', !wabot_muestra_aviso_corresponde($avYaEnviado, $cfgAviso, $ahoraAv));
+$confPausada = $confBase; $confPausada['pausado_hasta'] = $ahoraConf + 3600;
+caso('pausada, no corresponde', !wabot_confirmacion_demo_corresponde($confPausada, $cfgConf, $ahoraConf));
 
-$avYaPresentada = $avEnVentana; $avYaPresentada['presentado_ts'] = $ahoraAv;
-caso('si ya se presentó la muestra, no hace falta el aviso previo',
-    !wabot_muestra_aviso_corresponde($avYaPresentada, $cfgAviso, $ahoraAv));
-
-$avSinLead = $avEnVentana; $avSinLead['lead_creado'] = false;
-caso('sin lead creado (no pidió muestra todavía) no corresponde',
-    !wabot_muestra_aviso_corresponde($avSinLead, $cfgAviso, $ahoraAv));
-
-$avOtraFase = $avEnVentana; $avOtraFase['fase'] = 'precio';
-caso('fuera de la fase derivado no corresponde', !wabot_muestra_aviso_corresponde($avOtraFase, $cfgAviso, $ahoraAv));
-
-$avVentanaCerrada = $avEnVentana;
-caso('con la ventana ya cerrada, no tiene sentido mandarlo',
-    !wabot_muestra_aviso_corresponde($avVentanaCerrada, $cfgAviso, $limiteManana + 3600));
+$confSinPresentar = conv_nueva();
+caso('sin presentado_ts no hay nada que confirmar',
+    !wabot_confirmacion_demo_corresponde($confSinPresentar, $cfgConf, $ahoraConf));
 
 echo "— Emojis y reacciones dicen algo, no se pierden —\n";
 
@@ -2526,41 +2456,6 @@ caso('a las 10 h todavía no se enfría', wabot_conv_grupo($reciente) === 'prese
 $confirmada = $fria; $confirmada['presentado_confirmado'] = true;
 caso('una demo ya confirmada nunca cae ahí', wabot_conv_grupo($confirmada) !== 'presentadas_48');
 
-echo "— El recordatorio entra en la ventana de 24 h de Meta —\n";
-
-caso('el recordatorio se manda a las 20 h, no a las 48', (float)$cfg['presentados_recordatorio_horas'] <= 22);
-$cfgViejo = $cfg; $cfgViejo['presentados_recordatorio_horas'] = 48;
-$cvRec = ['presentado_ts' => $ahoraP - 21 * 3600, 'presentado_confirmado' => false,
-          'presentado_recordatorio_enviado' => false, 'ultimo_cliente_ts' => $ahoraP - 21 * 3600,
-          'bot_off' => false, 'archivado' => false, 'pausado_hasta' => 0,
-          'transcript' => [['q' => 'cliente', 't' => 'dale', 'ts' => $ahoraP - 21 * 3600]]];
-caso('con 20 h el recordatorio SÍ sale dentro de la ventana',
-    wabot_presentado_recordatorio_corresponde($cvRec, $cfg, $ahoraP) === true);
-caso('y con las 48 h viejas igual sale, porque la ventana está por cerrarse',
-    wabot_presentado_recordatorio_corresponde($cvRec, $cfgViejo, $ahoraP) === true);
-
-$disparo = function ($gapHoras) use ($cfg, $ahoraP) {
-    $t0 = $ahoraP - 30 * 3600;
-    $cv = ['presentado_ts' => $t0, 'presentado_confirmado' => false,
-           'ultimo_cliente_ts' => $t0 - (int)($gapHoras * 3600),
-           'bot_off' => false, 'archivado' => false, 'pausado_hasta' => 0];
-    for ($m = 0; $m <= 60; $m++) {
-        $t = $t0 + (int)($m * 1800);
-        if (wabot_presentado_recordatorio_corresponde($cv, $cfg, $t)) return ($t - $t0) / 3600;
-    }
-    return null;
-};
-caso('demo entregada 5 h después del último mensaje: antes NO salía, ahora sí',
-    $disparo(5) !== null && $disparo(5) < 24);
-caso('entregada 10 h después: sale antes de que cierre la ventana',
-    $disparo(10) !== null && $disparo(10) <= 14);
-caso('entregada 18 h después: sale sobre la hora, no se pierde',
-    $disparo(18) !== null && $disparo(18) <= 6);
-caso('cuanto más tardó la entrega, antes sale el recordatorio',
-    $disparo(2) > $disparo(10) && $disparo(10) > $disparo(18));
-caso('con la ventana ya vencida al presentar, no se inventa un envío que rebotaría',
-    $disparo(25) === null);
-
 echo "— Revisión de chats reales del 22-ago —\n";
 
 // Black Automotores: un perfil de WhatsApp llamado "." hacía que el bot
@@ -2647,16 +2542,6 @@ clasifica(['otro']);
 $r2 = wabot_engine('pero lo otro, lo que te comente antes', $c, $cfg);
 caso('y a la segunda lo pasa a Pablo, no sigue dando vueltas',
     $r2 === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
-
-echo "— El recordatorio no vuelve a mandar el link de la demo —\n";
-
-caso('el recordatorio de las 20 h ya no lleva {demo}',
-    strpos((string)$cfg['presentados_recordatorio'], '{demo}') === false);
-caso('pero sigue preguntando qué le pareció',
-    stripos((string)$cfg['presentados_recordatorio'], 'qué te pareció') !== false);
-$cRec = ['presentado_slug' => 'demoana', 'nombre' => 'Ana'];
-caso('y el texto armado no tiene ningún link de demo',
-    strpos(wabot_presentado_recordatorio_texto($cRec, $cfg), 'gokywebs.com/demo') === false);
 
 echo "— Pestaña \"Pagó\" —\n";
 
@@ -2838,28 +2723,8 @@ caso('escribió hace 20 h → quedan 4',
     abs(wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 20 * 3600]) - 4 * 3600) < 5);
 caso('escribió hace 25 h → la ventana está cerrada',
     wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 25 * 3600]) === 0);
-// El aviso de la mañana lo manda el bot y NO reabre nada: el boceto figuraba
-// con horas de sobra cuando en realidad ya no se le podía escribir.
-caso('un aviso del bot reciente no reabre la ventana de un cliente callado hace 25 h',
-    wabot_ventana_restante(['ultimo_cliente_ts' => $ahoraV - 25 * 3600, 'muestra_aviso_ts' => $ahoraV - 3600]) === 0);
 caso('sin ningún mensaje del cliente la ventana está cerrada',
     wabot_ventana_restante([]) === 0);
-
-echo "— El aviso de la mañana no promete un horario que puede no cumplirse —\n";
-
-caso('el aviso de la mañana no dice "más tarde"', stripos($cfg['muestra_aviso'], 'más tarde') === false);
-caso('el aviso de la mañana no dice "en preparación"', stripos($cfg['muestra_aviso'], 'en preparación') === false);
-caso('el aviso de la mañana dice "hoy", sin comprometer un horario', stripos($cfg['muestra_aviso'], 'hoy') !== false);
-
-foreach ([
-    'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.',
-    'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.',
-] as $viejo) {
-    $cMigrar = ['muestra_aviso' => $viejo];
-    wabot_config_ventas($cMigrar);
-    caso('migra "' . mb_substr($viejo, 34, 30) . '…" al texto sin horario',
-        $cMigrar['muestra_aviso'] === $cfg['muestra_aviso']);
-}
 
 echo "— El logo que manda el cliente se suma al boceto —\n";
 
@@ -2997,11 +2862,8 @@ caso('antes de marcarla está en la cola de diseño', wabot_conv_grupo($entregad
 
 $entregada['presentado_ts'] = time();
 $entregada['fase'] = 'postdemo';
-$entregada['presentado_sin_aviso'] = true;
 caso('marcada como entregada sale de la cola y pasa a Demo entregada',
     wabot_conv_grupo($entregada) === 'presentados');
-caso('queda anotado que el aviso no salió por el bot',
-    !empty($entregada['presentado_sin_aviso']));
 
 @unlink(WABOT_DATA . '/conv/TESTNOLEIDO.json');
 @unlink(WABOT_DATA . '/conv/TESTNOLEIDO2.json');
@@ -3133,62 +2995,6 @@ caso('un perfil que ya es el nombre del local no se escribe dos veces',
 caso('con nombre de persona de verdad, se agenda con los dos',
     wabot_nombre_agenda(['nombre' => 'Sofi', 'nombre_negocio' => 'Lucero Estudio']) === 'Sofi - Lucero Estudio');
 
-echo "— El aviso de la mañana sale a las 8, o antes de que venzan las 24 h —\n";
-
-// Barrido de las 24 horas del día: escriba cuando escriba, el aviso tiene que
-// salir a horario decente y SIEMPRE antes de que la ventana de Meta cierre.
-$aOcho = 0;
-$horaMala = [];
-$fueraDeVentana = [];
-$margenCorto = [];
-for ($h = 0; $h < 24; $h++) {
-    $tsCli = gmmktime($h + 3, 0, 0, 8, 18, 2026);   // hora AR $h del 18-ago
-    $limH  = $tsCli + 24 * 3600;
-    $cand  = wabot_muestra_aviso_hora_candidata($tsCli, $limH);
-    $horaAR = (int)gmdate('H', $cand - 3 * 3600);
-
-    if ($cand >= $limH || $cand <= $tsCli) $fueraDeVentana[] = $h;
-    if ($limH - $cand < 3 * 30 * 60) $margenCorto[] = $h;
-    if ($horaAR === 8) $aOcho++;
-    elseif ($horaAR < 6 || $horaAR > 21) $horaMala[] = "{$h}h→{$horaAR}h";
-}
-caso('escriba a la hora que escriba, el aviso cae dentro de la ventana', $fueraDeVentana === []);
-caso('y nunca en horario de madrugada', $horaMala === []);
-caso('la enorme mayoría sale exactamente a las 8 AM', $aOcho >= 22);
-caso('y siempre con margen para varias corridas del cron', $margenCorto === []);
-
-// El que escribe de madrugada tiene las 8 de ESA mañana a pocas horas: usarlas
-// en vez de las del día siguiente, que ya no entran en la ventana.
-$madrugada = gmmktime(5, 0, 0, 8, 18, 2026);         // 02:00 AR
-$candMadru = wabot_muestra_aviso_hora_candidata($madrugada, $madrugada + 24 * 3600);
-caso('el que escribe a las 2 AM recibe el aviso a las 8 de esa misma mañana',
-    gmdate('d H:i', $candMadru - 3 * 3600) === '18 08:00');
-
-$tarde = gmmktime(18, 0, 0, 8, 18, 2026);            // 15:00 AR
-$candTardeDia = wabot_muestra_aviso_hora_candidata($tarde, $tarde + 24 * 3600);
-caso('el que escribe a la tarde lo recibe a las 8 del día siguiente',
-    gmdate('d H:i', $candTardeDia - 3 * 3600) === '19 08:00');
-
-// La condición que pidió Pablo chequear: si la demo ya se presentó, no sale.
-$cfgSale = $cfg; $cfgSale['activo'] = true; $cfgSale['muestra_aviso_activo'] = true;
-$ahoraAv = gmmktime(12, 0, 0, 8, 19, 2026);          // 09:00 AR del día siguiente
-$avBase = ['lead_creado' => true, 'fase' => 'derivado', 'presentado_ts' => 0,
-           'muestra_aviso_enviado' => false, 'archivado' => false, 'bot_off' => false,
-           'pausado_hasta' => 0, 'ultimo_cliente_ts' => gmmktime(18, 0, 0, 8, 18, 2026)];
-
-caso('con la demo sin presentar, el aviso sale', wabot_muestra_aviso_corresponde($avBase, $cfgSale, $ahoraAv) === true);
-caso('con la demo YA presentada, no sale',
-    wabot_muestra_aviso_corresponde(array_merge($avBase, ['presentado_ts' => $ahoraAv - 7200]), $cfgSale, $ahoraAv) === false);
-caso('marcada a mano con "Ya la entregué", tampoco sale',
-    wabot_muestra_aviso_corresponde(array_merge($avBase, ['presentado_ts' => $ahoraAv - 7200, 'fase' => 'postdemo']), $cfgSale, $ahoraAv) === false);
-caso('y no se manda dos veces',
-    wabot_muestra_aviso_corresponde(array_merge($avBase, ['muestra_aviso_enviado' => true]), $cfgSale, $ahoraAv) === false);
-caso('si contestaste vos y quedó pausada, no sale',
-    wabot_muestra_aviso_corresponde(array_merge($avBase, ['pausado_hasta' => $ahoraAv + 3600]), $cfgSale, $ahoraAv) === false);
-caso('si la ventana ya cerró, no sale tarde',
-    wabot_muestra_aviso_corresponde(array_merge($avBase, ['ultimo_cliente_ts' => $ahoraAv - 25 * 3600]), $cfgSale, $ahoraAv) === false);
-caso('antes de la hora candidata todavía no sale',
-    wabot_muestra_aviso_corresponde($avBase, $cfgSale, gmmktime(9, 0, 0, 8, 19, 2026)) === false);
 
 echo "— Quién carga los productos del ecommerce (chat real de Bruana Indumentaria, 21-ago) —\n";
 
@@ -3756,12 +3562,20 @@ $cierreViejo['cierre_suave'] = 'Gracias por consultar. Cuando sea el momento, es
 wabot_config_ventas($cierreViejo);
 caso('el cierre suave viejo de producción migra solo', $cierreViejo['cierre_suave'] === $cfg['cierre_suave']);
 
-caso('el saludo inicial ahora pregunta en qué puede ayudar, no por la web puntualmente',
-    stripos($cfg['menu'], 'en qué te puedo ayudar') !== false);
+caso('el saludo inicial pregunta el rubro con la redacción corregida',
+    stripos($cfg['menu'], 'para qué rubro necesitás la web') !== false);
 $menuViejo = wabot_config_load();
 $menuViejo['menu'] = 'Hola, cómo estás? Contame un poco para qué necesitarías la web';
 wabot_config_ventas($menuViejo);
 caso('el saludo viejo de producción migra solo', $menuViejo['menu'] === $cfg['menu']);
+$menuIntermedio = wabot_config_load();
+$menuIntermedio['menu'] = 'Hola, cómo estás? Contame un poco en qué te puedo ayudar';
+wabot_config_ventas($menuIntermedio);
+caso('el saludo intermedio también migra al nuevo', $menuIntermedio['menu'] === $cfg['menu']);
+$menuConErrores = wabot_config_load();
+$menuConErrores['menu'] = 'Hola 👋 , para asesorarte mejor porfavor contanos para que rubro necesitarias la web';
+wabot_config_ventas($menuConErrores);
+caso('el saludo con errores de redacción también migra al nuevo', $menuConErrores['menu'] === $cfg['menu']);
 
 caso('soy_bot ya no arranca contestando "Sí" a "sos una persona?"',
     mb_stripos($cfg['info']['soy_bot'], 'No, soy el asistente') === 0);
@@ -3881,6 +3695,25 @@ wabot_config_ventas($mantVieja);
 caso('el texto viejo con "primer mes incluido" migra solo al nuevo',
     $mantVieja['info']['mantenimiento'] === $cfg['info']['mantenimiento']);
 
+echo "— Mantenimiento sin tipo cotizado: un precio y un link por plan, no mezclados —\n";
+
+// Antes de saber el tipo ya no se arma "$10.000 (landing) o $15.000 (el resto)"
+// con el link de UN solo plan (bug real: Fede recibió el precio de landing
+// pero el link de la página de $15.000, gokywebs.com/mantenimientoweb).
+$mantSinTipo = wabot_texto_mantenimiento(['tipo' => null], $cfg);
+caso('trae el precio de landing', strpos($mantSinTipo, $cfg['mantenimiento_planes']['landing']['precio']) !== false);
+caso('trae el link de landing', strpos($mantSinTipo, $cfg['mantenimiento_planes']['landing']['link']) !== false);
+caso('trae el precio de los demás tipos', strpos($mantSinTipo, $cfg['mantenimiento_planes']['otros']['precio']) !== false);
+caso('trae el link de los demás tipos', strpos($mantSinTipo, $cfg['mantenimiento_planes']['otros']['link']) !== false);
+caso('nunca cuelga el link de un plan al lado del precio del otro',
+    strpos($mantSinTipo, $cfg['mantenimiento_planes']['landing']['precio'] . ' (landing) o ' . $cfg['mantenimiento_planes']['otros']['precio']) === false);
+
+$mantAmbosVacio = wabot_config_load();
+$mantAmbosVacio['info']['mantenimiento_ambos'] = '';
+wabot_config_ventas($mantAmbosVacio);
+caso('mantenimiento_ambos se rellena solo si quedó vacío',
+    trim((string)$mantAmbosVacio['info']['mantenimiento_ambos']) !== '');
+
 echo "— 500 productos se cotizan, no se derivan —\n";
 
 $d500 = wabot_catalogo_total(500, $cfg);
@@ -3928,15 +3761,10 @@ caso('y pide fotos del rubro que corresponde, no genéricas',
     mb_stripos($cierreEcom, 'fotos de tus productos') !== false);
 caso('la línea de espera NO repite esa misma pregunta', mb_stripos($cfg['espera_prediseno'], 'destacar') === false);
 caso('pero sí recuerda cuándo llega la demo', mb_strpos($cfg['espera_prediseno'], '{entrega}') !== false);
-caso('el aviso de la mañana termina en pregunta', mb_strpos($cfg['muestra_aviso'], '?') !== false);
-caso('y es binaria, que es la de menor fricción',
-    mb_stripos($cfg['muestra_aviso'], ' o más ') !== false);
-caso('sigue diciendo que la demo sale hoy', mb_stripos($cfg['muestra_aviso'], 'hoy') !== false);
 
 foreach ([
     'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.' => 'espera_prediseno',
     'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.' => 'prediseno_completo',
-    'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.' => 'muestra_aviso',
     'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.' => 'prediseno_completo',
 ] as $textoViejo => $clave) {
     $cvMig = [$clave => $textoViejo];
@@ -4266,108 +4094,56 @@ caso('pero preguntar cuánto tardan en hacerla sigue siendo plazos',
 
 echo "\n— Plantillas de Meta: lo único que sale con la ventana cerrada —\n";
 
-caso('las tres plantillas vienen definidas pero apagadas hasta cargar el nombre real',
-    isset($cfg['plantillas']['demo_lista'], $cfg['plantillas']['seguimiento_demo_72h'], $cfg['plantillas']['seguimiento_demo_7d'])
-    && empty($cfg['plantillas']['demo_lista']['activa']));
+caso('la plantilla de confirmación viene definida pero apagada hasta cargar el nombre real',
+    isset($cfg['plantillas']['confirmacion_demo_48h'])
+    && empty($cfg['plantillas']['confirmacion_demo_48h']['activa']));
 caso('una plantilla sin nombre cargado no se puede usar',
-    wabot_plantilla_config('demo_lista', $cfg) === null);
+    wabot_plantilla_config('confirmacion_demo_48h', $cfg) === null);
 
 $cfgPlant = wabot_config_load();
-$cfgPlant['plantillas']['demo_lista']['nombre'] = 'demo_lista';
-$cfgPlant['plantillas']['demo_lista']['activa'] = true;
-caso('con nombre y activa, ya se puede usar', wabot_plantilla_config('demo_lista', $cfgPlant) !== null);
+$cfgPlant['plantillas']['confirmacion_demo_48h']['nombre'] = 'confirmacion_demo_48h';
+$cfgPlant['plantillas']['confirmacion_demo_48h']['activa'] = true;
+caso('con nombre y activa, ya se puede usar', wabot_plantilla_config('confirmacion_demo_48h', $cfgPlant) !== null);
 
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $convPlant = ['tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
               'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion', 'transcript' => []];
-caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'demo_lista', $cfgPlant) === true);
+caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'confirmacion_demo_48h', $cfgPlant) === true);
 $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
-caso('con el nombre y el idioma correctos', $envio[1] === 'demo_lista' && $envio[2] === 'es_AR');
-caso('demo_lista es texto fijo: sin variables de nombre ni botón',
+caso('con el nombre y el idioma correctos', $envio[1] === 'confirmacion_demo_48h' && $envio[2] === 'es_AR');
+caso('confirmacion_demo_48h es texto fijo: sin variables de nombre ni botón',
     $envio[3] === [] && $envio[4] === []);
 caso('queda en el transcript el texto de referencia',
-    strpos($convPlant['transcript'][0]['t'] ?? '', 'Ya tenemos lista la demo') !== false);
+    strpos($convPlant['transcript'][0]['t'] ?? '', 'pudiste recibir el demo') !== false);
 
-// Las plantillas reales ya no llevan botón (Meta las aprobó sin parámetros),
+// Las plantillas reales no llevan botón (Meta las aprueba sin parámetros),
 // pero el guard que evita mandar un link roto sigue vivo para cualquier
 // plantilla que sí lo lleve: se arma una a propósito en vez de colgarse de la
 // config de una real, que puede cambiar.
-$cfgPlant72Guard = wabot_config_load();
-$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
-$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['activa'] = true;
-$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['boton']  = ['slug'];
+$cfgPlantBotonGuard = wabot_config_load();
+$cfgPlantBotonGuard['plantillas']['plantilla_test_boton'] = [
+    'nombre' => 'plantilla_test_boton', 'idioma' => 'es_AR', 'activa' => true,
+    'params' => [], 'boton' => ['slug'], 'texto' => 'Mirá tu demo: {slug}',
+];
 $sinSlug = ['tel' => '549110', 'channel_user_id' => '549110', 'canal' => 'whatsapp',
             'nombre' => 'Ana', 'presentado_slug' => '', 'transcript' => []];
 caso('una plantilla que sí lleva el slug en el botón no manda un link roto sin demo presentada',
-    wabot_enviar_plantilla($sinSlug, 'seguimiento_demo_72h', $cfgPlant72Guard) === false);
+    wabot_enviar_plantilla($sinSlug, 'plantilla_test_boton', $cfgPlantBotonGuard) === false);
 
 // El bug real: Meta rechazaba TODOS los envíos porque el codigo mandaba un
 // parametro y la plantilla aprobada no lleva ninguno.
 $cfgSinParams = wabot_config_load();
-foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clPl) {
-    caso("$clPl se manda sin parametros de cuerpo",
-        ($cfgSinParams['plantillas'][$clPl]['params'] ?? null) === []);
-    caso("$clPl se manda sin parametros de boton",
-        ($cfgSinParams['plantillas'][$clPl]['boton'] ?? null) === []);
-    caso("$clPl no deja un {nombre} sin reemplazar en el transcript",
-        strpos((string)($cfgSinParams['plantillas'][$clPl]['texto'] ?? ''), '{nombre}') === false);
-}
+caso('confirmacion_demo_48h se manda sin parametros de cuerpo',
+    ($cfgSinParams['plantillas']['confirmacion_demo_48h']['params'] ?? null) === []);
+caso('confirmacion_demo_48h se manda sin parametros de boton',
+    ($cfgSinParams['plantillas']['confirmacion_demo_48h']['boton'] ?? null) === []);
+caso('confirmacion_demo_48h no deja un {nombre} sin reemplazar en el transcript',
+    strpos((string)($cfgSinParams['plantillas']['confirmacion_demo_48h']['texto'] ?? ''), '{nombre}') === false);
 
 $igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagram',
             'nombre' => 'Ana', 'presentado_slug' => 'x', 'transcript' => []];
 caso('y por Instagram no se usan plantillas',
-    wabot_enviar_plantilla($igPlant, 'demo_lista', $cfgPlant) === false);
-
-echo "\n— Seguimiento de la demo por plantilla a las 72 h y a los 7 días —\n";
-
-$cfgPlant72 = wabot_config_load();
-$cfgPlant72['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
-$cfgPlant72['plantillas']['seguimiento_demo_72h']['activa'] = true;
-$ahoraP = 2_000_000_000;
-
-$basePlant = function ($extra = []) use ($ahoraP) {
-    return array_merge([
-        'tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
-        'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion',
-        'presentado_ts' => $ahoraP - 73 * 3600, 'ultimo_cliente_ts' => $ahoraP - 73 * 3600,
-        'transcript' => [],
-    ], $extra);
-};
-
-caso('a las 73 h sin contestar, con la ventana cerrada, corresponde la plantilla de 72 h',
-    wabot_presentado_plantilla_corresponde($basePlant(), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === true);
-caso('a las 10 h todavía no', wabot_presentado_plantilla_corresponde(
-    $basePlant(['presentado_ts' => $ahoraP - 10 * 3600]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
-caso('si ya confirmó que avanza, no',
-    wabot_presentado_plantilla_corresponde($basePlant(['presentado_confirmado' => true]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
-caso('si ya se la mandamos, no se repite',
-    wabot_presentado_plantilla_corresponde($basePlant(['plantilla_seguimiento_demo_72h_enviada' => true]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
-caso('si la ventana todavía está abierta, la manda el recordatorio de texto, no la plantilla',
-    wabot_presentado_plantilla_corresponde($basePlant(['ultimo_cliente_ts' => $ahoraP - 2 * 3600]), $cfgPlant72, 'seguimiento_demo_72h', 72, $ahoraP) === false);
-caso('sin la plantilla activa, no corresponde',
-    wabot_presentado_plantilla_corresponde($basePlant(), wabot_config_load(), 'seguimiento_demo_72h', 72, $ahoraP) === false);
-
-echo "\n— Con las dos plantillas de demo activas, se apaga el recordatorio de texto post-demo —\n";
-
-$cfgAmbas = wabot_config_load();
-$cfgAmbas['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
-$cfgAmbas['plantillas']['seguimiento_demo_72h']['activa'] = true;
-$cfgAmbas['plantillas']['seguimiento_demo_7d']['nombre'] = 'x7d';
-$cfgAmbas['plantillas']['seguimiento_demo_7d']['activa'] = true;
-
-$convRecordatorio = [
-    'presentado_ts' => $ahoraP - 20 * 3600, 'ultimo_cliente_ts' => $ahoraP - 20 * 3600,
-];
-caso('sin las plantillas cargadas, el recordatorio de texto de siempre sigue andando',
-    wabot_presentado_recordatorio_corresponde($convRecordatorio, wabot_config_load(), $ahoraP) === true);
-caso('con las dos plantillas activas, ese recordatorio de texto se apaga: lo reemplazan',
-    wabot_presentado_recordatorio_corresponde($convRecordatorio, $cfgAmbas, $ahoraP) === false);
-
-$cfgSoloUna = wabot_config_load();
-$cfgSoloUna['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
-$cfgSoloUna['plantillas']['seguimiento_demo_72h']['activa'] = true;
-caso('si falta cargar la de 7 días, el recordatorio de texto sigue activo como respaldo',
-    wabot_presentado_recordatorio_corresponde($convRecordatorio, $cfgSoloUna, $ahoraP) === true);
+    wabot_enviar_plantilla($igPlant, 'confirmacion_demo_48h', $cfgPlant) === false);
 
 echo "\n— El texto de la demo es el que pidió Pablo, y explica que todavía no está personalizada —\n";
 
@@ -4414,18 +4190,10 @@ caso('pero una charla vieja SIN demo entregada se reinicia como siempre',
     wabot_conv_reset_si_vieja($convViejaSinDemo, $cfg, $ahoraPD) === true
     && $convViejaSinDemo['fase'] === 'nuevo');
 
-caso('el recordatorio de la demo se sigue mandando igual',
-    wabot_presentado_recordatorio_corresponde($convPD, $cfg, $ahoraPD) === true);
-caso('el archivado por inactividad también',
+caso('el archivado por inactividad sigue andando aunque el bot esté callado',
     wabot_presentado_archivar_corresponde(['presentado_ts' => $ahoraPD - 200 * 3600], $cfg, $ahoraPD) === true);
-
-$cfgPlantPD = wabot_config_load();
-$cfgPlantPD['plantillas']['seguimiento_demo_72h']['nombre'] = 'x72';
-$cfgPlantPD['plantillas']['seguimiento_demo_72h']['activa'] = true;
-caso('y las plantillas de seguimiento fuera de la ventana, también',
-    wabot_presentado_plantilla_corresponde(
-        ['fase' => 'postdemo', 'presentado_ts' => $ahoraPD - 73 * 3600, 'ultimo_cliente_ts' => $ahoraPD - 73 * 3600],
-        $cfgPlantPD, 'seguimiento_demo_72h', 72, $ahoraPD) === true);
+caso('y la confirmación a las 48 h también',
+    wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600], $cfg, $ahoraPD) === true);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

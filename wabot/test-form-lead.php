@@ -65,9 +65,18 @@ caso('rechaza un resumen absurdamente largo',
 echo "— wabot_form_lead_procesar(): sin chat previo, el brief refleja lo tipeado —\n";
 
 @unlink(WABOT_DATA . '/conv/5493810002001.json');
+$GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $r = wabot_form_lead_procesar(['t' => '5493810002001', 'nombre' => 'Carla', 'nombre_negocio' => 'Carla Deco',
     'resumen' => 'Vendo objetos de decoración hechos a mano', 'colores' => 'Beige y dorado'], $cfg);
 caso('el envío se acepta', $r['ok'] === true);
+caso('avisa a Pablo por WhatsApp con el nombre y el negocio del lead',
+    (function () {
+        foreach ($GLOBALS['WABOT_TEST_ENVIADOS'] ?? [] as $env) {
+            if (($env[0] ?? '') === '5491125068578'
+                && strpos($env[1] ?? '', 'Carla') !== false && strpos($env[1] ?? '', 'Carla Deco') !== false) return true;
+        }
+        return false;
+    })());
 $conv = wabot_conv_load('5493810002001');
 caso('el nombre de la persona queda confirmado', $conv['nombre'] === 'Carla' && !empty($conv['nombre_confirmado']));
 caso('el nombre del negocio queda anotado', $conv['nombre_negocio'] === 'Carla Deco');
@@ -83,11 +92,13 @@ caso('esa línea es de sistema, no de cliente (no debe contar como que "el clien
 
 echo "— Reenviar el mismo form no duplica nada —\n";
 
+$GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $r2 = wabot_form_lead_procesar(['t' => '5493810002001', 'nombre' => 'Carla', 'nombre_negocio' => 'Carla Deco',
     'resumen' => 'Vendo objetos de decoración hechos a mano', 'colores' => 'Beige y dorado'], $cfg);
 $conv2 = wabot_conv_load('5493810002001');
 caso('sigue aceptando el reenvío', $r2['ok'] === true);
 caso('no duplica la línea del transcript', count($conv2['transcript']) === 1);
+caso('el reenvío no vuelve a avisarle a Pablo', ($GLOBALS['WABOT_TEST_ENVIADOS'] ?? []) === []);
 @unlink(WABOT_DATA . '/conv/5493810002001.json');
 
 echo "— Con chat real previo, el brief no se pisa —\n";
@@ -102,39 +113,5 @@ wabot_form_lead_procesar(['t' => '5493810002002', 'nombre' => 'Marta', 'nombre_n
 $convDespues = wabot_conv_load('5493810002002');
 caso('el brief queda vacío para que corra wabot_resumen_negocio() como siempre', empty($convDespues['brief']));
 @unlink(WABOT_DATA . '/conv/5493810002002.json');
-
-echo "— wabot_form_agradecimiento_corresponde() —\n";
-
-function fijarActivo($cfg) { $cfg['activo'] = true; return $cfg; }
-$cfgAct = fijarActivo($cfg);
-$ahoraF = time();
-
-$reciente = ['form_completado_ts' => $ahoraF - 5 * 60, 'ultimo_cliente_ts' => 0];
-caso('recién completado (5 min) no corresponde todavía',
-    wabot_form_agradecimiento_corresponde($reciente, $cfgAct, $ahoraF) === false);
-
-$viejoSinRespuesta = ['form_completado_ts' => $ahoraF - 25 * 60, 'ultimo_cliente_ts' => 0];
-caso('25 min sin que el cliente escriba nada → corresponde',
-    wabot_form_agradecimiento_corresponde($viejoSinRespuesta, $cfgAct, $ahoraF) === true);
-
-$viejoConRespuesta = ['form_completado_ts' => $ahoraF - 25 * 60, 'ultimo_cliente_ts' => $ahoraF - 10 * 60];
-caso('pero si el cliente ya escribió algo después de completar el form, no corresponde',
-    wabot_form_agradecimiento_corresponde($viejoConRespuesta, $cfgAct, $ahoraF) === false);
-
-$yaEnviado = ['form_completado_ts' => $ahoraF - 25 * 60, 'ultimo_cliente_ts' => 0, 'form_agradecimiento_enviado' => true];
-caso('si ya se mandó una vez, no se repite',
-    wabot_form_agradecimiento_corresponde($yaEnviado, $cfgAct, $ahoraF) === false);
-
-$pausado = ['form_completado_ts' => $ahoraF - 25 * 60, 'ultimo_cliente_ts' => 0, 'pausado_hasta' => $ahoraF + 3600];
-caso('con el bot pausado para esa conversación, no corresponde',
-    wabot_form_agradecimiento_corresponde($pausado, $cfgAct, $ahoraF) === false);
-
-$archivado = ['form_completado_ts' => $ahoraF - 25 * 60, 'ultimo_cliente_ts' => 0, 'archivado' => true];
-caso('archivada, tampoco',
-    wabot_form_agradecimiento_corresponde($archivado, $cfgAct, $ahoraF) === false);
-
-$sinCompletar = ['form_completado_ts' => 0, 'ultimo_cliente_ts' => 0];
-caso('sin form_completado_ts no hay nada que agradecer',
-    wabot_form_agradecimiento_corresponde($sinCompletar, $cfgAct, $ahoraF) === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";

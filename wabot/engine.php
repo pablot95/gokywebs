@@ -1865,8 +1865,14 @@ function wabot_desempate_desvio($acc, $out, $texto, &$conv, $cfg) {
 /**
  * El plan de mantenimiento que le corresponde según el tipo cotizado.
  * Landing tiene su propio precio y su propio link; todo lo demás va al plan
- * completo. Si todavía no cotizamos nada, se dicen los dos: prometer $10.000
- * y cotizarle después una web que paga $15.000 es regalar un reclamo.
+ * completo. Si todavía no cotizamos nada, se dicen los dos —prometer $10.000
+ * y cotizarle después una web que paga $15.000 es regalar un reclamo— pero
+ * con un precio Y un link por plan: antes se armaba la frase metiendo los dos
+ * precios adentro del texto de UN plan y siempre mandaba el link de 'otros',
+ * así que a un cliente de landing (tipo aún sin cotizar) le llegaba el precio
+ * de landing pero el link de la página de $15.000. 'mantenimiento_ambos' es
+ * un texto propio con cuatro placeholders para eso, sale de mantenimiento_planes
+ * igual que el otro: no hay dos fuentes, solo dos textos según se sepa el tipo.
  */
 function wabot_texto_mantenimiento($conv, $cfg) {
     $planes = $cfg['mantenimiento_planes'] ?? [];
@@ -1875,9 +1881,13 @@ function wabot_texto_mantenimiento($conv, $cfg) {
     if (empty($conv['tipo'])) {
         $l = $planes['landing'] ?? null;
         $o = $planes['otros'] ?? null;
-        if ($l && $o) {
-            return str_replace(['{precio}', '{link}'],
-                [$l['precio'] . ' (landing) o ' . $o['precio'] . ' (el resto de las webs)', $o['link']], $base);
+        $ambos = trim((string)($cfg['info']['mantenimiento_ambos'] ?? ''));
+        if ($l && $o && $ambos !== '') {
+            return str_replace(
+                ['{precio_landing}', '{link_landing}', '{precio_otros}', '{link_otros}'],
+                [$l['precio'], $l['link'], $o['precio'], $o['link']],
+                $ambos
+            );
         }
     }
 

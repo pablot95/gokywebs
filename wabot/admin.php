@@ -249,7 +249,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion','presentados_recordatorio','presentados_recordatorio_2','muestra_aviso'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -282,7 +282,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // El token solo se pisa si escribieron uno nuevo: el campo se muestra
         // vacío a propósito para no dejar la credencial a la vista en el HTML.
         if (trim((string)($_POST['capi_token'] ?? '')) !== '') $cfg['capi_token'] = trim((string)$_POST['capi_token']);
-        foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -299,10 +299,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         if (isset($_POST['seguimiento_hora_hasta'])) {
             $cfg['seguimiento_hora_hasta'] = max(0, min(23, (int)$_POST['seguimiento_hora_hasta']));
-        }
-        $cfg['muestra_aviso_activo'] = !empty($_POST['muestra_aviso_activo']);
-        if (isset($_POST['presentados_recordatorio_horas'])) {
-            $cfg['presentados_recordatorio_horas'] = max(1, min(168, (float)$_POST['presentados_recordatorio_horas']));
         }
         if (isset($_POST['presentados_archivar_horas'])) {
             $cfg['presentados_archivar_horas'] = max(24, min(720, (float)$_POST['presentados_archivar_horas']));
@@ -360,51 +356,22 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['ok' => true, 'pausado_hasta' => $conv['pausado_hasta']]);
         exit;
     }
-    // Botón "Presentar" del admin: le manda al cliente el link de la muestra
-    // por el mismo número del bot, apenas el boceto pasa a Seguimiento.
+    // Botón "Presentar" del admin: ya NO le manda nada al cliente (Pablo avisa
+    // la demo a mano, desde su número personal). Solo registra el estado, igual
+    // que "marcar_entregada".
     if ($a === 'presentar_muestra' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $negocio = trim((string)($_POST['negocio'] ?? ''));
         $slug = $negocio !== '' ? wabot_slug_demo($negocio) : '';
         if ($slug === '') { echo json_encode(['error' => 'No se pudo armar el link de la demo: falta el nombre del negocio.']); exit; }
 
-        $forzar = !empty($_POST['forzar']);
-
         $clave = wabot_conv_resolver($_POST['tel'], $motivo);
         if ($clave === null) {
-            wabot_log('presentar_muestra_sin_chat', ['tel' => (string)$_POST['tel'], 'motivo' => $motivo, 'slug' => $slug, 'forzar' => $forzar]);
-            if (!$forzar) { echo json_encode(['error' => wabot_error_sin_chat($_POST['tel'], $motivo), 'sin_chat' => true]); exit; }
+            wabot_log('presentar_muestra_sin_chat', ['tel' => (string)$_POST['tel'], 'motivo' => $motivo, 'slug' => $slug]);
             echo json_encode(['ok' => true, 'enviado' => false, 'sin_chat' => true, 'slug' => $slug]);
             exit;
         }
         $conv = wabot_conv_load($clave);
-
-        $ventanaAbierta = wabot_ventana_restante($conv) > 0;
-        $porPlantilla = !$ventanaAbierta && wabot_plantilla_config('demo_lista', $cfg) !== null;
-        if (!$forzar && !$ventanaAbierta && !$porPlantilla) {
-            echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja mandarle texto libre hasta que el cliente vuelva a escribir. Avisale a mano.']);
-            exit;
-        }
-
-        $textos = wabot_muestra_presentar_textos($slug, $cfg);
-        $texto = $textos[0];
-
-        $enviado = false;
-        if ($porPlantilla) {
-            $conv['presentado_slug'] = $slug;
-            $enviado = wabot_enviar_plantilla($conv, 'demo_lista', $cfg);
-            $conv['demo_texto_pendiente'] = $enviado;
-            if (!$enviado && !$forzar) {
-                echo json_encode(['error' => 'La plantilla demo_lista no se pudo enviar. Revisá el log en wabot/data/log/.']);
-                exit;
-            }
-        } elseif (!$forzar || $ventanaAbierta) {
-            $enviado = wabot_enviar($conv, $texto);
-            if (!$enviado && !$forzar) {
-                echo json_encode(['error' => (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp') . ' rechazó el envío. Revisá el log en wabot/data/log/.']);
-                exit;
-            }
-        }
 
         // NO se pausa el bot: presentar la demo abre la parte 2 de la venta, y
         // ahí el bot sigue trabajando (aclara dudas, pasa la seña, ofrece la
@@ -420,22 +387,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
-        // El aviso no salió: queda anotado para no dar por hecho que el cliente
-        // tiene el link, ni acá ni en el recordatorio de las 20 h.
-        $conv['presentado_sin_aviso'] = !$enviado;
-        if ($enviado && !$porPlantilla) {
-            wabot_conv_transcript($conv, 'humano', $texto);
-            foreach (array_slice($textos, 1) as $extra) {
-                if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
-            }
-        }
-        if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel_presentar']);
         wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
-        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug, 'enviado' => $enviado]);
+        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug]);
 
-        echo json_encode(['ok' => true, 'enviado' => $enviado, 'slug' => $slug]);
+        echo json_encode(['ok' => true, 'enviado' => false, 'slug' => $slug]);
         exit;
     }
     // La entregaste por fuera del bot (a mano, por mail, en persona): se marca
@@ -454,44 +411,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_confirmado'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
-        $conv['presentado_sin_aviso'] = true;
         wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
-    }
-    if ($a === 'reenviar_demo' && !empty($_POST['tel'])) {
-        $conv = wabot_conv_load($_POST['tel']);
-        $slug = trim((string)($conv['presentado_slug'] ?? ''));
-        $aviso = 'reenvio_sin_slug';
-        if ($slug !== '' && wabot_ventana_restante($conv) > 0) {
-            $textos = wabot_muestra_presentar_textos($slug, $cfg);
-            if (wabot_enviar($conv, $textos[0])) {
-                $conv['presentado_sin_aviso'] = false;
-                wabot_conv_transcript($conv, 'humano', $textos[0]);
-                foreach (array_slice($textos, 1) as $extra) {
-                    if (wabot_enviar($conv, $extra)) wabot_conv_transcript($conv, 'humano', $extra);
-                }
-                wabot_conv_save($conv);
-                $aviso = 'reenvio_ok';
-            } else {
-                $aviso = 'reenvio_error';
-            }
-        } elseif ($slug !== '' && wabot_plantilla_config('demo_lista', $cfg) !== null) {
-            if (wabot_enviar_plantilla($conv, 'demo_lista', $cfg)) {
-                $conv['presentado_sin_aviso'] = false;
-                $conv['demo_texto_pendiente'] = true;
-                wabot_conv_save($conv);
-                $aviso = 'reenvio_ok';
-            } else {
-                $aviso = 'reenvio_error';
-            }
-        } elseif ($slug !== '') {
-            $aviso = 'reenvio_ventana';
-        }
-        wabot_log('reenviar_demo', ['tel' => $conv['tel'], 'slug' => $slug, 'resultado' => $aviso]);
-        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel']) . '&' . $aviso . '=1'); exit;
     }
     if ($a === 'presentado_confirmar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
@@ -1555,37 +1479,21 @@ body.embed { min-height: 0; }
             <label>Seguimiento cuando faltan datos</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
         </div>
         <div class="card">
-            <h2 style="margin-top:0">Aviso antes de la demo</h2>
-            <p class="meta" style="margin-bottom:8px">El prediseño tarda 24 a 48 h y Meta solo deja mandar texto libre dentro de las 24 h desde el último mensaje del cliente. Esto manda un aviso corto antes de que esa ventana se cierre (a las 8:00 del día siguiente, o un rato antes de que cierre si eso ya es tarde) para que el cliente conteste algo y quede lugar para mandarle la demo real ese mismo día.</p>
-            <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
-                <input type="checkbox" name="muestra_aviso_activo" value="1" <?= !empty($cfg['muestra_aviso_activo']) ? 'checked' : '' ?> style="width:auto">
-                Mandar el aviso previo
-            </label>
-            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento y las demos presentadas (<code>wabot/seguimiento.php</code>).</p>
-            <label>Mensaje del aviso</label><textarea name="muestra_aviso" rows="2"><?= $e($cfg['muestra_aviso'] ?? '') ?></textarea>
-        </div>
-        <div class="card">
             <h2 style="margin-top:0">Demos presentadas</h2>
-            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, el bot le manda al cliente el link de la demo. Si no confirma nada, esto pasa después.</p>
+            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, ya no se le manda nada al cliente: eso lo hacés vos a mano. El único automático que queda es la confirmación por plantilla a las 48 h (ver "Plantillas de WhatsApp" más abajo). Esto solo controla cuánto tiempo sin confirmar archiva la charla.</p>
             <div class="fila" style="gap:18px;align-items:flex-end">
-                <div>
-                    <label>Horas sin confirmar para reinsistir</label>
-                    <input type="number" name="presentados_recordatorio_horas" min="1" max="168" step="1" value="<?= $e((string)($cfg['presentados_recordatorio_horas'] ?? 48)) ?>" style="width:110px">
-                </div>
                 <div>
                     <label>Horas sin confirmar para archivar</label>
                     <input type="number" name="presentados_archivar_horas" min="24" max="720" step="1" value="<?= $e((string)($cfg['presentados_archivar_horas'] ?? 168)) ?>" style="width:110px">
                 </div>
             </div>
-            <p class="meta" style="margin-top:8px">Se manda hasta <?= $e((string)($cfg['presentados_recordatorio_max'] ?? 2)) ?> veces, siempre dentro de la ventana de 24 h que permite Meta: por tiempo cumplido, o antes si la ventana está por cerrarse y todavía no contestó. Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
-            <label>Mensaje de recordatorio</label><textarea name="presentados_recordatorio" rows="3"><?= $e($cfg['presentados_recordatorio'] ?? '') ?></textarea>
-            <label>Segundo recordatorio (última chance antes de que cierre la ventana)</label><textarea name="presentados_recordatorio_2" rows="3"><?= $e($cfg['presentados_recordatorio_2'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:4px"><code>{demo}</code> se reemplaza por el link de la demo ya presentada.</p>
+            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Info fija (respuestas a preguntas)</h2>
             <?php foreach ($cfg['info'] as $k => $v): ?>
-                <label><?= $e($k) ?><?= $k === 'mantenimiento' ? ' — {precio} y {link} salen del plan de abajo, según el tipo cotizado' : '' ?></label>
+                <label><?= $e($k) ?><?= $k === 'mantenimiento' ? ' — {precio} y {link} salen del plan de abajo, según el tipo cotizado'
+                    : ($k === 'mantenimiento_ambos' ? ' — se usa SOLO si todavía no se cotizó ningún tipo; {precio_landing}/{link_landing}/{precio_otros}/{link_otros} salen del plan de abajo' : '') ?></label>
                 <textarea name="info_<?= $e($k) ?>" rows="2"><?= $e($v) ?></textarea>
             <?php endforeach; ?>
             <label>Renovación después del primer año de hosting y dominio</label>
@@ -1665,15 +1573,13 @@ body.embed { min-height: 0; }
                 <input type="checkbox" name="postdemo_bot_activo" <?= !empty($cfg['postdemo_bot_activo']) ? 'checked' : '' ?>>
                 Que el bot siga contestando después de presentar la demo
             </label>
-            <p class="meta" style="margin-top:8px">Destildado (como está por defecto), una vez que presentás la demo el bot deja de contestar en vivo: esas charlas las seguís vos. Los mensajes del cliente igual entran al panel y aparecen en "Sin leer".<br>Los seguimientos automáticos NO se apagan con esto: el recordatorio de la demo, las plantillas de 72 h y 7 días, y el archivado por inactividad siguen funcionando igual.</p>
+            <p class="meta" style="margin-top:8px">Destildado (como está por defecto), una vez que presentás la demo el bot deja de contestar en vivo: esas charlas las seguís vos. Los mensajes del cliente igual entran al panel y aparecen en "Sin leer".<br>Los únicos automáticos que siguen funcionando con esto son el archivado por inactividad y la confirmación por plantilla a las 48 h (ver "Plantillas de WhatsApp" más abajo).</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
             <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas.</p>
             <?php $plantillasLabels = [
-                'demo_lista'           => 'Demo lista (para entregarla fuera de la ventana de 24 h)',
-                'seguimiento_demo_72h' => 'Seguimiento a las 72 h de presentada, sin contestar',
-                'seguimiento_demo_7d'  => 'Seguimiento a los 7 días de presentada, sin contestar',
+                'confirmacion_demo_48h' => 'Confirmación a las 48 h de presentar la demo (el único mensaje automático que queda)',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = $cfg['plantillas'][$clavePlant] ?? []; ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -1688,7 +1594,6 @@ body.embed { min-height: 0; }
                     </label>
                 </div>
             <?php endforeach; ?>
-            <p class="meta" style="margin-top:10px">Con las dos de seguimiento (72 h y 7 días) activas, el recordatorio de texto que hoy sale dentro de las primeras 24 h se apaga solo: lo reemplazan estas dos.</p>
         </div>
         <button>Guardar textos</button>
         </form>
@@ -1781,7 +1686,14 @@ body.embed { min-height: 0; }
     <?php elseif ($tab === 'conversaciones'): ?>
         <?php
         $ver   = $_GET['ver'] ?? '';
-        $conv     = $ver !== '' ? wabot_conv_load($ver) : null;
+        // El link "Ver chat" de un boceto manda el teléfono tal como está en
+        // Firestore (con o sin +54/9), que no siempre coincide con la clave real
+        // del archivo (el wa_id que manda Meta). wabot_conv_resolver hace el
+        // mismo match difuso que ya usa "Presentar": si no encuentra nada,
+        // sigue cayendo en el $ver crudo como antes.
+        $verMotivo = null;
+        $verResuelto = $ver !== '' ? wabot_conv_resolver($ver, $verMotivo) : null;
+        $conv     = $ver !== '' ? wabot_conv_load($verResuelto ?? $ver) : null;
         // Abrir el chat lo marca leído antes de armar la lista, para que el
         // contador de Demos/Presentados ya salga descontado en esta misma carga.
         if ($conv) {
@@ -1843,9 +1755,6 @@ body.embed { min-height: 0; }
                         <?php if (!empty($conv['bot_off'])): ?><span class="pill off">bot apagado acá</span><?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?><span class="pill pausa">pausado hasta <?= date('d/m H:i', (int)$conv['pausado_hasta']) ?></span><?php endif; ?>
                         <?php if (!empty($conv['handoff_pendiente'])): ?><span class="pill pausa" id="handoffPill">Pablo pendiente</span><?php endif; ?>
-                        <?php if (!empty($conv['presentado_ts']) && !empty($conv['presentado_sin_aviso'])): ?>
-                            <span class="pill off" title="Se marcó como presentada pero el mensaje con la demo nunca salió.">falta mandarle el link<?= !empty($conv['presentado_slug']) ? ' · gokywebs.com/demo/' . $e($conv['presentado_slug']) : '' ?></span>
-                        <?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -1879,12 +1788,6 @@ body.embed { min-height: 0; }
                         <form method="post" onsubmit="return confirm('Marcar la demo como entregada?\n\nNo se le manda ningún mensaje al cliente: es para las que ya entregaste por otro medio. Sale de \'Demos por diseñar\' y pasa a \'Demo entregada\'.')">
                             <input type="hidden" name="accion" value="marcar_entregada"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Ya la entregué</button></form>
-                        <?php endif; ?>
-                        <?php
-                        if (!empty($conv['presentado_ts']) && !empty($conv['presentado_sin_aviso'])): ?>
-                        <form method="post" onsubmit="return confirm('Reintentar el envío del link de la demo al cliente?')">
-                            <input type="hidden" name="accion" value="reenviar_demo"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
-                            <button style="border-color:var(--warn);color:var(--warn)">Reintentar envío</button></form>
                         <?php endif; ?>
                         <?php if (!empty($conv['presentado_ts']) && empty($conv['presentado_confirmado'])): ?>
                         <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -2263,13 +2166,6 @@ body.embed { min-height: 0; }
                     p1.className = 'pill ' + (it.estado === 'apagado' ? 'off' : 'pausa');
                     p1.textContent = it.estado === 'apagado' ? 'bot apagado' : 'lo seguís vos';
                     pills.appendChild(p1);
-                }
-                if (it.sin_aviso) {
-                    const ps = document.createElement('span');
-                    ps.className = 'pill off';
-                    ps.textContent = 'falta mandarle el link';
-                    ps.title = 'Quedó marcada como presentada pero el mensaje con la demo nunca salió. Mandáselo vos.';
-                    pills.appendChild(ps);
                 }
                 if (it.handoff_pendiente || it.espera) {
                     const pe = document.createElement('span');

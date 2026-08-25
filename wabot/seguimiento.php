@@ -1,7 +1,8 @@
 <?php
 /**
- * wabot/seguimiento.php — dispara el seguimiento comercial y el de muestras
- * presentadas sin confirmar. Lo llama un cron.
+ * wabot/seguimiento.php — dispara el seguimiento comercial, el archivado de
+ * demos presentadas sin confirmar y la confirmación por plantilla a las 48 h.
+ * Lo llama un cron.
  *
  * Desde Hostinger (hPanel → Avanzado → Cron Jobs), cada 30 minutos:
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
@@ -9,8 +10,7 @@
  *   https://gokywebs.com/wabot/seguimiento.php?clave=VERIFY_TOKEN
  *
  * Correrlo de más no duplica nada: cada conversación recibe un solo
- * seguimiento (y un solo recordatorio de muestra) en su vida, y solo dentro
- * de la ventana de 24 h de Meta.
+ * seguimiento y una sola confirmación de demo en su vida.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -30,11 +30,9 @@ if (php_sapi_name() !== 'cli') {
 
 $cfg = wabot_config_load();
 $res = wabot_seguimiento_correr($cfg);
-$aviso = wabot_muestra_aviso_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
-$plantillas = wabot_presentados_plantillas_correr($cfg);
+$confirmacionDemo = wabot_confirmacion_demo_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
-$formAgradecimiento = wabot_form_agradecimiento_correr($cfg);
 
 echo json_encode([
     'revisadas' => $res['revisadas'],
@@ -46,25 +44,14 @@ echo json_encode([
         'enviados'  => $ultima['enviados'],
         'detalle'   => $ultima['detalle'],
     ],
-    'muestra_aviso' => [
-        'revisadas' => $aviso['revisadas'],
-        'enviados'  => $aviso['enviados'],
-        'detalle'   => $aviso['detalle'],
-    ],
     'presentados' => [
-        'revisadas'     => $presentados['revisadas'],
-        'recordatorios' => $presentados['recordatorios'],
-        'archivados'    => $presentados['archivados'],
-        'detalle'       => $presentados['detalle'],
+        'revisadas'  => $presentados['revisadas'],
+        'archivados' => $presentados['archivados'],
+        'detalle'    => $presentados['detalle'],
     ],
-    'plantillas_seguimiento' => [
-        'revisadas' => $plantillas['revisadas'],
-        'enviadas'  => $plantillas['enviadas'],
-        'detalle'   => $plantillas['detalle'],
-    ],
-    'form_agradecimiento' => [
-        'revisadas' => $formAgradecimiento['revisadas'],
-        'enviados'  => $formAgradecimiento['enviados'],
-        'detalle'   => $formAgradecimiento['detalle'],
+    'confirmacion_demo' => [
+        'revisadas' => $confirmacionDemo['revisadas'],
+        'enviados'  => $confirmacionDemo['enviados'],
+        'detalle'   => $confirmacionDemo['detalle'],
     ],
 ], JSON_UNESCAPED_UNICODE) . "\n";

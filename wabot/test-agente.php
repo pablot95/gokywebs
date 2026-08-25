@@ -790,6 +790,18 @@ caso('si el modelo NO la mencionó, el globo aparte sale normal',
     wabot_agente_filtrar_aparte('Perfecto, eso tendría un valor de $320.000 para todo el desarrollo.', $oferta) === $oferta);
 caso('sin nada aparte no rompe', wabot_agente_filtrar_aparte('hola', []) === []);
 
+echo "— Y tampoco si pide lo mismo con otras palabras (caso real: construcción, formulario duplicado) —\n";
+
+$aparteForm = ['Antes que nada te preparamos una demo sin cargo: gokywebs.com/form/AB12'];
+caso('si el texto ya pide "completá el formulario", el aparte se descarta aunque no diga demo/predise/muestra',
+    wabot_agente_filtrar_aparte('Perfecto. Para avanzar necesito que completes el formulario con tus datos.', $aparteForm) === []);
+caso('lo mismo con "llenar" o "estos datos"',
+    wabot_agente_filtrar_aparte('Pasame estos datos así lo armamos.', $aparteForm) === []);
+caso('y si el texto ya trae el mismo link que el aparte, también se descarta',
+    wabot_agente_filtrar_aparte('Te dejo el link para que cargues los datos: gokywebs.com/form/AB12', $aparteForm) === []);
+caso('un texto sin ninguna de esas señales sigue mostrando el aparte normal',
+    wabot_agente_filtrar_aparte('Sale $320.000 para todo el desarrollo.', $aparteForm) === $aparteForm);
+
 echo "— El playbook manda tienda online para todo comercio —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
@@ -884,8 +896,8 @@ caso('avisa cuándo llega la muestra, sin prometer plazos vagos',
     && stripos($cfg['prediseno_completo'], '24 a 48') === false);
 caso('y la línea de espera sí aclara que llega por acá',
     stripos($cfg['espera_prediseno'], 'por acá') !== false);
-caso('la bienvenida es la pregunta abierta, ya no el menú de opciones',
-    strpos($cfg['menu'], 'Contame un poco') !== false && stripos($cfg['menu'], 'Landing (') === false);
+caso('la bienvenida pregunta el rubro, ya no el menú de opciones',
+    stripos($cfg['menu'], 'rubro') !== false && stripos($cfg['menu'], 'Landing (') === false);
 
 echo "— Regresiones de conversaciones reales —\n";
 

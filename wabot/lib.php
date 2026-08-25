@@ -259,7 +259,7 @@ function wabot_migrar_conversaciones_instagram() {
  */
 function wabot_config_ventas(&$cfg) {
     $defaults = [
-        'menu'              => 'Hola, cómo estás? Contame un poco en qué te puedo ayudar',
+        'menu'              => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
         'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
         // Si la demo ya se ofreció por otra objeción antes en la misma charla
         // (pensarlo → socio → ya_tengo_web es un combo real), estas variantes
@@ -297,16 +297,6 @@ function wabot_config_ventas(&$cfg) {
         'desempate_cursos_2'   => 'Te lo simplifico: querés vender los cursos desde la web con los videos y acceso para cada alumno (respondé "vender"), o solo mostrarlos y que te escriban (respondé "mostrar")?',
         'menu_vuelve'       => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
         'sistema_cierre'    => 'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.',
-        // Sin el link: ya se lo mandamos al presentar la demo, y repetirlo suena
-        // a que el bot no se acuerda de lo que ya hizo.
-        'presentados_recordatorio' => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-        'presentados_recordatorio_2' => 'Hola {nombre}, no quiero robarte tiempo: si la demo no te terminó de cerrar, decime qué cambiarías y la ajustamos. Y si preferís dejarlo acá, también está perfecto, avisame nomás.',
-        // Este mensaje existe para que el cliente CONTESTE: su respuesta es lo
-        // único que reabre la ventana de 24 h de Meta y permite mandarle la
-        // demo después. Por eso termina en una pregunta binaria, que es la de
-        // menor fricción, y encima sirve para diseñar.
-        'muestra_aviso' => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
-        'form_agradecimiento' => 'Hola {nombre}, gracias por completar el formulario! Ya arrancamos con tu demo. Cualquier cosa que quieras sumar, contámela por acá.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         // Se usa solo cuando no hay link de formulario disponible (Instagram: sin teléfono).
         'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
@@ -771,30 +761,17 @@ function wabot_config_ventas(&$cfg) {
     }
 
     $plantillasDefault = [
-        'demo_lista' => [
+        // Único automatismo que queda después de que Pablo pasó a mandar todo a
+        // mano: ver wabot_confirmacion_demo_correr().
+        'confirmacion_demo_48h' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
             'params' => [], 'boton' => [],
-            'texto' => 'Ya tenemos lista la demo de tu web. Avisame si te la puedo enviar por acá.',
-        ],
-        // Las plantillas aprobadas por Meta NO llevan parámetros. Mandar uno
-        // hacía que Meta rechazara TODOS los envíos con
-        // "(#132000) number of localizable_params (1) does not match the
-        // expected number of params (0)", y como el cron reintenta cada 30
-        // minutos, ningún seguimiento de 72 h ni de 7 días llegó nunca.
-        'seguimiento_demo_72h' => [
-            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
-            'params' => [], 'boton' => [],
-            'texto' => 'Te escribo por la demo que te preparamos: pudiste verla? Contame qué te pareció o si hay algo que quieras cambiar.',
-        ],
-        'seguimiento_demo_7d' => [
-            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
-            'params' => [], 'boton' => [],
-            'texto' => 'Retomo por última vez por la demo de tu web. Si te quedó alguna duda escribime y seguimos.',
+            'texto' => 'Hola! Solo para confirmar, pudiste recibir el demo? Te lo mando el desarrollador desde el número 1125068578',
         ],
     ];
     // Lo ya guardado en producción no se pisa con los defaults de arriba (el
     // merge de abajo solo rellena lo que falta), asi que se fuerza acá.
-    foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePl) {
+    foreach (['confirmacion_demo_48h'] as $clavePl) {
         if (!isset($cfg['plantillas'][$clavePl]) || !is_array($cfg['plantillas'][$clavePl])) continue;
         $cfg['plantillas'][$clavePl]['params'] = [];
         $cfg['plantillas'][$clavePl]['boton']  = [];
@@ -819,24 +796,25 @@ function wabot_config_ventas(&$cfg) {
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;
     if (!isset($cfg['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = 20;
-    // 20 h, no 48: Meta solo deja escribir texto libre dentro de las 24 h desde
-    // el último mensaje del cliente. Con 48 el recordatorio caía SIEMPRE fuera
-    // de la ventana y no se mandaba nunca (verificado el 22-ago). Los que igual
-    // no contestan quedan a la vista en la pestaña "Presentadas 48hs" del panel.
-    if (!isset($cfg['presentados_recordatorio_horas'])) $cfg['presentados_recordatorio_horas'] = 20;
-    if ((float)$cfg['presentados_recordatorio_horas'] > 22) $cfg['presentados_recordatorio_horas'] = 20;
-    if (!isset($cfg['presentados_recordatorio_margen_horas'])) $cfg['presentados_recordatorio_margen_horas'] = 3;
-    if (!isset($cfg['presentados_recordatorio_min_horas']))    $cfg['presentados_recordatorio_min_horas']    = 3;
-    if (!isset($cfg['presentados_recordatorio_max']))          $cfg['presentados_recordatorio_max']          = 2;
-    if (!isset($cfg['presentados_recordatorio_espacio_horas'])) $cfg['presentados_recordatorio_espacio_horas'] = 10;
-    if (!isset($cfg['presentados_recordatorio_silencio_horas'])) $cfg['presentados_recordatorio_silencio_horas'] = 6;
     if (!isset($cfg['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = 48;
     if (!isset($cfg['ultima_llamada_activa'])) $cfg['ultima_llamada_activa'] = true;
     if (!isset($cfg['ultima_llamada_horas']))  $cfg['ultima_llamada_horas']  = 23;
     // Editable desde Textos: el adicional por dejar la web en dos idiomas.
     if (trim((string)($cfg['adicional_bilingue'] ?? '')) === '') $cfg['adicional_bilingue'] = '$30.000';
+    // Editable desde Textos, junto al resto de 'info': lo que contesta
+    // wabot_texto_mantenimiento() cuando todavía no hay tipo cotizado. Antes esa
+    // rama armaba la frase a mano combinando los dos planes en el texto de
+    // 'mantenimiento' (pensado para UN solo plan) y siempre mandaba el link de
+    // 'otros', así que un cliente de landing recibía el precio de landing pero
+    // el link del plan de $15.000. Ahora sale de este texto propio, con un
+    // precio y un link por plan, sin tocar mantenimiento_planes.
+    if (trim((string)($cfg['info']['mantenimiento_ambos'] ?? '')) === '') {
+        $cfg['info']['mantenimiento_ambos'] = 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Según el tipo de web: en landing sale {precio_landing} por mes, acá el detalle: {link_landing}. En el resto de los tipos sale {precio_otros} por mes, acá el detalle: {link_otros}.';
+    }
     if (!isset($cfg['presentados_archivar_horas']))     $cfg['presentados_archivar_horas']     = 168;
-    if (!isset($cfg['muestra_aviso_activo'])) $cfg['muestra_aviso_activo'] = true;
+    // Único automático que queda después de presentar: la confirmación por
+    // plantilla a las 48 h (ver wabot_confirmacion_demo_correr).
+    if (!isset($cfg['confirmacion_demo_horas'])) $cfg['confirmacion_demo_horas'] = 48;
 
     if (in_array(trim((string)($cfg['derivar'] ?? '')), [
         'Listo, te paso con una persona del equipo que sigue la charla desde acá.',
@@ -896,12 +874,6 @@ function wabot_config_ventas(&$cfg) {
             'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la muestra gratis así ves cómo quedaría antes de definir nada. La armamos?'
                 => 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
         ],
-        'presentados_recordatorio' => [
-            'Hola {nombre}, te quería consultar si pudiste ver la muestra que te preparamos: {muestra}. Contame qué te pareció o si hay algo que te gustaría cambiar.'
-                => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-            'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos: {demo}. Contame qué te pareció o si hay algo que te gustaría cambiar.'
-                => 'Hola {nombre}, te quería consultar si pudiste ver la demo que te preparamos. Contame qué te pareció o si hay algo que te gustaría cambiar.',
-        ],
     ];
     foreach ($migracionesDemo as $campo => $reemplazos) {
         $actual = trim((string)($cfg[$campo] ?? ''));
@@ -932,7 +904,12 @@ function wabot_config_ventas(&$cfg) {
     $migraciones2108 = [
         'menu' => [
             'Hola, cómo estás? Contame un poco para qué necesitarías la web'
-                => 'Hola, cómo estás? Contame un poco en qué te puedo ayudar',
+                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+            'Hola, cómo estás? Contame un poco en qué te puedo ayudar'
+                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+            // Texto con errores de redacción que llegó a estar guardado en producción.
+            'Hola 👋 , para asesorarte mejor porfavor contanos para que rubro necesitarias la web'
+                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
         ],
         'caro' => [
             'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, te lo podemos dividir en 3 cuotas sin interés para que no lo sientas de una. En el link del presupuesto tenés el detalle de todo lo que incluye.'
@@ -951,17 +928,6 @@ function wabot_config_ventas(&$cfg) {
         'hosting_renovacion' => [
             'Después del primer año, el hosting y el dominio se renuevan una vez al año: hoy la renovación ronda los $50.000 anuales en total, y antes del vencimiento te confirmamos el importe actualizado.'
                 => 'Después del primer año, el hosting y el dominio se renuevan una vez al año: hoy la renovación ronda los $50.000 anuales en total, y antes del vencimiento te confirmamos el importe actualizado. Si tenés el plan de mantenimiento activo, no la pagás: el hosting y el dominio ya están incluidos.',
-        ],
-        'muestra_aviso' => [
-            // "más tarde" y "en preparación" son textos que tuvo este mismo mensaje
-            // antes: ninguno de los dos debe sobrevivir, "más tarde" porque promete
-            // un horario que el prediseño no siempre cumple.
-            'Hola {nombre}, buen día! Tu demo va a estar lista hoy más tarde. Te la mando por acá apenas esté.'
-                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
-            'Hola {nombre}, buen día! Tu demo ya está en preparación: te la mando por acá apenas esté lista.'
-                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
-            'Hola {nombre}, buen día! Tu demo va a estar lista hoy. Te la mando por acá apenas esté.'
-                => 'Hola {nombre}, buen día! Hoy te mando tu demo. Antes de terminarla: la preferís más sobria y elegante, o más colorida y llamativa?',
         ],
         'msg_prediseno_oferta' => [
             'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?'
@@ -1056,10 +1022,6 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         'ultima_llamada' => [
             'Hola {nombre}, te escribo por lo que veníamos viendo de la web. Si te quedó alguna duda escribime y te la contesto, y si querés te dejo armada la demo gratis para que la veas sin compromiso. Te sirve?'
                 => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',
-        ],
-        'presentados_recordatorio_2' => [
-            'Hola {nombre}, no quiero robarte tiempo: si la demo no te terminó de cerrar, decime qué cambiarías y la ajustamos. Y si preferís dejarlo acá, también está perfecto, avisame nomás.'
-                => 'Hola {nombre}, te escribo una última vez por la demo. Si hubo algo que no te terminó de cerrar, decime y vemos si lo podemos ajustar. Y si preferís dejarlo por ahora, no hay problema.',
         ],
     ];
     $lf = function ($t) { return str_replace(["\r\n", "\r"], "\n", (string)$t); };
@@ -2270,8 +2232,9 @@ function wabot_conv_load($clave) {
         'presentado_confirmado'  => false,
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
-        // Se pasó a presentada sin que saliera el aviso: el link lo mandó Pablo.
-        'presentado_sin_aviso'   => false,
+        // Único mensaje automático que queda después de presentar: la
+        // confirmación por plantilla a las 48 h. Ver wabot_confirmacion_demo_correr().
+        'confirmacion_demo_enviada' => false,
         // Parte 2 de la venta (después de presentar la demo).
         'videollamada_ofrecida'  => false,
         'cambios_pedidos'        => null,
@@ -2288,10 +2251,6 @@ function wabot_conv_load($clave) {
         // a pedir los datos.
         'demo_pedida_entrada'    => false,
         'cliente_id'             => null,
-        // Aviso mandado antes de que se cierre la ventana de 24h de Meta,
-        // mientras se espera para presentar la muestra: ver wabot_muestra_aviso_correr().
-        'muestra_aviso_enviado' => false,
-        'muestra_aviso_ts'      => 0,
         'espera_avisada'   => false,
         'no_texto_avisado' => false,
         'bot_off'          => false,
@@ -2303,7 +2262,6 @@ function wabot_conv_load($clave) {
         'logo_sincronizado'=> null,
         'origen_prediseno'            => null,
         'form_completado_ts'          => 0,
-        'form_agradecimiento_enviado' => false,
         'codigo'                      => '',
         // Atribucion del anuncio: de que clic vino esta conversacion.
         'ctwa_clid'                   => '',
@@ -2409,7 +2367,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_confirmado'] = false;
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
-    $conv['presentado_sin_aviso'] = false;
+    $conv['confirmacion_demo_enviada'] = false;
     $conv['videollamada_ofrecida'] = false;
     $conv['cambios_pedidos'] = null;
     $conv['pago_avisado_ts'] = 0;
@@ -2419,8 +2377,6 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['aviso_prometido_ts'] = 0;
     $conv['demo_pedida_entrada'] = false;
     $conv['cliente_id'] = null;
-    $conv['muestra_aviso_enviado'] = false;
-    $conv['muestra_aviso_ts'] = 0;
     $conv['espera_avisada'] = false;
     $conv['no_texto_avisado'] = false;
     $conv['lead_creado'] = false;
@@ -2822,7 +2778,6 @@ function wabot_lista_items() {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
-            'sin_aviso' => !empty($cv['presentado_ts']) && !empty($cv['presentado_sin_aviso']),
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
             // automático posterior (el recordatorio de 20 h, la última llamada,
@@ -4537,158 +4492,13 @@ function wabot_seguimiento_estado_cron() {
     return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'enviados' => 0, 'fallidos' => 0];
 }
 
-/* ───────────────────── Aviso previo a la muestra ─────────────────────
- *
- * El prediseño tarda 24 a 48 h, y Meta solo deja mandar texto libre dentro
- * de las 24 h desde el último mensaje del cliente. Si el cliente escribió y
- * no vuelve a escribir, para cuando la muestra está lista la ventana ya
- * cerró y "Presentar" no puede avisarle.
- *
- * Este módulo manda, una sola vez, un aviso corto antes de que esa ventana
- * se cierre — con suerte el cliente contesta algo y la ventana se renueva,
- * dejando lugar para el mensaje real de la muestra más tarde ese mismo día.
- * Elige el horario así: preferentemente a las 8:00 del día siguiente a que
- * escribió, pero si eso ya cae muy cerca (o después) del cierre de la
- * ventana, lo manda un rato antes de que cierre en vez de esperar.
- */
-
-function wabot_muestra_aviso_hora_candidata($ultimoClienteTs, $limite) {
-    // Argentina no tiene horario de verano: UTC-3 fijo. Todo se calcula a
-    // mano en el "reloj local" corrido -3h, sin depender de la zona horaria
-    // que tenga configurada el servidor (strtotime() sí dependería de eso).
-    // El margen tiene que dar para varias corridas del cron (cada 30 min): si
-    // fuera más corto que el intervalo, el único momento válido podía caer
-    // justo entre dos corridas y el aviso no salía nunca.
-    $margenSeguridad = 90 * 60;
-    $limiteConMargen = $limite - $margenSeguridad;
-
-    $localTs = $ultimoClienteTs - 3 * 3600;
-    $medianocheLocal = $localTs - ($localTs % 86400);
-
-    // Las 8 de la mañana SIGUIENTES al mensaje: las de hoy si todavía no
-    // pasaron, las de mañana si ya pasaron. Antes se tomaban siempre las del
-    // día siguiente, así que el que escribía de madrugada se quedaba sin las
-    // 8 de esa misma mañana —que estaban a horas de distancia y adentro de la
-    // ventana— y el aviso le caía a la 1 AM del otro día, contra el límite.
-    $ochoAMLocal = $medianocheLocal + 8 * 3600;
-    if ($ochoAMLocal <= $localTs) $ochoAMLocal += 86400;
-
-    // En una ventana de 24 h hay exactamente unas 8 AM, así que no hay que
-    // elegir entre varias: o entran, o el aviso se adelanta contra el límite.
-    return min($ochoAMLocal + 3 * 3600, $limiteConMargen);
-}
-
-function wabot_muestra_aviso_corresponde($cv, $cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    if (empty($cfg['activo']) || empty($cfg['muestra_aviso_activo'])) return false;
-    if (empty($cv['lead_creado']) || ($cv['fase'] ?? '') !== 'derivado') return false;
-    if (!empty($cv['presentado_ts']) || !empty($cv['muestra_aviso_enviado'])) return false;
-    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
-
-    $ultimoCliente = (int)($cv['ultimo_cliente_ts'] ?? 0);
-    if ($ultimoCliente <= 0) return false;
-    $limite = $ultimoCliente + 24 * 3600;
-    if ($ahora >= $limite) return false; // la ventana ya cerró, no hay nada que avisar
-
-    $candidato = wabot_muestra_aviso_hora_candidata($ultimoCliente, $limite);
-    return $ahora >= $candidato;
-}
-
-/** Recorre las conversaciones que piden avisar antes de que cierre la ventana. */
-function wabot_muestra_aviso_correr($cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
-
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
-        $clave = basename($f, '.json');
-        if (stripos($clave, 'TEST') !== false) continue;
-        $cv = wabot_conv_load($clave);
-        if (($cv['fase'] ?? '') !== 'derivado' || empty($cv['lead_creado'])) continue;
-        $res['revisadas']++;
-
-        if (!wabot_muestra_aviso_corresponde($cv, $cfg, $ahora)) continue;
-        $lock = wabot_lock_tomar($clave);
-        if (!$lock) continue;
-        try {
-            $cv = wabot_conv_load($clave);
-            if (!wabot_muestra_aviso_corresponde($cv, $cfg, $ahora)) continue;
-
-            $texto = trim(wabot_personalizar($cfg['muestra_aviso'] ?? '', $cv));
-            if ($texto === '') continue;
-            $cv['muestra_aviso_ts'] = $ahora;
-            $ok = wabot_enviar($cv, $texto);
-            if ($ok) {
-                $cv['muestra_aviso_enviado'] = true;
-                wabot_conv_transcript($cv, 'bot', $texto);
-                wabot_evento($cv, 'muestra_aviso_enviado');
-                $res['enviados']++;
-                $res['detalle'][] = $clave;
-            }
-            wabot_conv_save($cv);
-            wabot_log('muestra_aviso', ['tel' => $cv['tel'], 'ok' => $ok]);
-        } finally {
-            wabot_lock_soltar($lock);
-        }
-    }
-    return $res;
-}
-
-function wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    if (empty($cfg['activo'])) return false;
-    if (empty($cv['form_completado_ts']) || !empty($cv['form_agradecimiento_enviado'])) return false;
-    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
-    if (wabot_ultimo_cliente_ts($cv) >= (int)$cv['form_completado_ts']) return false;
-    $minutos = (float)($cfg['form_agradecimiento_minutos'] ?? 10);
-    return $ahora - (int)$cv['form_completado_ts'] >= $minutos * 60;
-}
-
-function wabot_form_agradecimiento_correr($cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
-
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
-        $clave = basename($f, '.json');
-        if (stripos($clave, 'TEST') !== false) continue;
-        $cv = wabot_conv_load($clave);
-        if (empty($cv['form_completado_ts'])) continue;
-        $res['revisadas']++;
-
-        if (!wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora)) continue;
-        $lock = wabot_lock_tomar($clave);
-        if (!$lock) continue;
-        try {
-            $cv = wabot_conv_load($clave);
-            if (!wabot_form_agradecimiento_corresponde($cv, $cfg, $ahora)) continue;
-
-            $texto = trim(wabot_personalizar($cfg['form_agradecimiento'] ?? '', $cv));
-            if ($texto === '') continue;
-            $ok = wabot_enviar($cv, $texto);
-            if ($ok) {
-                $cv['form_agradecimiento_enviado'] = true;
-                wabot_conv_transcript($cv, 'bot', $texto);
-                wabot_evento($cv, 'form_agradecimiento_enviado');
-                $res['enviados']++;
-                $res['detalle'][] = $clave;
-            }
-            wabot_conv_save($cv);
-            wabot_log('form_agradecimiento', ['tel' => $cv['tel'], 'ok' => $ok]);
-        } finally {
-            wabot_lock_soltar($lock);
-        }
-    }
-    return $res;
-}
-
 /* ──────────────────────── Muestras presentadas ────────────────────────
  *
  * Al apretar "Presentar" en un boceto del admin (wabot/admin.php, acción
- * presentar_muestra) el cliente recibe el link de la muestra y la conversación
- * queda marcada con presentado_ts. Si no confirma nada, este módulo —corrido
- * por el mismo cron que el seguimiento comercial— reinsiste una vez a las N
- * horas y, si sigue en silencio, archiva la charla más adelante.
+ * presentar_muestra) la conversación queda marcada con presentado_ts, pero ya
+ * no se le manda nada al cliente: eso lo hace Pablo a mano, desde su número
+ * personal. Este módulo —corrido por el mismo cron que el seguimiento
+ * comercial— solo archiva la charla si queda mucho tiempo sin confirmar.
  */
 
 function wabot_presentado_archivar_corresponde($cv, $cfg, $ahora = null) {
@@ -4698,107 +4508,10 @@ function wabot_presentado_archivar_corresponde($cv, $cfg, $ahora = null) {
     return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
 }
 
-function wabot_presentado_recordatorios_hechos($cv) {
-    if (isset($cv['presentado_recordatorios_enviados'])) {
-        return (int)$cv['presentado_recordatorios_enviados'];
-    }
-    return !empty($cv['presentado_recordatorio_enviado']) ? 1 : 0;
-}
-
-function wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    if (empty($cfg['activo'])) return false;
-    if (empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado'])) return false;
-    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
-    if (wabot_plantilla_config('seguimiento_demo_72h', $cfg) !== null
-        && wabot_plantilla_config('seguimiento_demo_7d', $cfg) !== null) {
-        return false;
-    }
-
-    $hechos = wabot_presentado_recordatorios_hechos($cv);
-    if ($hechos >= (int)($cfg['presentados_recordatorio_max'] ?? 2)) return false;
-
-    $ultimo = (int)($cv['presentado_recordatorio_ts'] ?? 0);
-    $espacio = (float)($cfg['presentados_recordatorio_espacio_horas'] ?? 10);
-    if ($ultimo > 0 && $ahora - $ultimo < $espacio * 3600) return false;
-
-    $restante = wabot_ventana_restante($cv, $ahora);
-    if ($restante <= 0) return false;
-
-    $minimo = (float)($cfg['presentados_recordatorio_min_horas'] ?? 3);
-    if ($ahora - (int)$cv['presentado_ts'] < $minimo * 3600) return false;
-
-    $vivo = (float)($cfg['presentados_recordatorio_silencio_horas'] ?? 6);
-    if ($ahora - wabot_ultimo_cliente_ts($cv) < $vivo * 3600) return false;
-
-    $margen = (float)($cfg['presentados_recordatorio_margen_horas'] ?? 3);
-    if ($restante <= $margen * 3600) return true;
-
-    $horas = (float)($cfg['presentados_recordatorio_horas'] ?? 20);
-    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
-}
-
-function wabot_presentado_plantilla_corresponde($cv, $cfg, $clave, $horas, $ahora = null) {
-    $ahora = $ahora ?? time();
-    if (empty($cfg['activo']) || empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado'])) return false;
-    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
-    if (!empty($cv["plantilla_{$clave}_enviada"])) return false;
-    if (wabot_ventana_restante($cv, $ahora) > 0) return false;
-    if (wabot_plantilla_config($clave, $cfg) === null) return false;
-    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
-}
-
-function wabot_presentados_plantillas_correr($cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    $res = ['revisadas' => 0, 'enviadas' => 0, 'detalle' => []];
-    $horizontes = ['seguimiento_demo_72h' => 72, 'seguimiento_demo_7d' => 24 * 7];
-
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
-        $clave = basename($f, '.json');
-        if (stripos($clave, 'TEST') !== false) continue;
-        $cv = wabot_conv_load($clave);
-        if (empty($cv['presentado_ts'])) continue;
-        $res['revisadas']++;
-
-        foreach ($horizontes as $clavePlantilla => $horas) {
-            if (!wabot_presentado_plantilla_corresponde($cv, $cfg, $clavePlantilla, $horas, $ahora)) continue;
-            $lock = wabot_lock_tomar($clave);
-            if (!$lock) continue;
-            try {
-                $cv = wabot_conv_load($clave);
-                if (!wabot_presentado_plantilla_corresponde($cv, $cfg, $clavePlantilla, $horas, $ahora)) continue;
-                if (wabot_enviar_plantilla($cv, $clavePlantilla, $cfg)) {
-                    $cv["plantilla_{$clavePlantilla}_enviada"] = true;
-                    wabot_evento($cv, 'plantilla_seguimiento_enviada', ['plantilla' => $clavePlantilla]);
-                    wabot_conv_save($cv);
-                    $res['enviadas']++;
-                    $res['detalle'][] = "$clave:$clavePlantilla";
-                }
-            } finally {
-                wabot_lock_soltar($lock);
-            }
-        }
-    }
-    return $res;
-}
-
-function wabot_presentado_recordatorio_texto($cv, $cfg) {
-    $clave = wabot_presentado_recordatorios_hechos($cv) >= 1
-        ? 'presentados_recordatorio_2'
-        : 'presentados_recordatorio';
-    $base = trim((string)($cfg[$clave] ?? ''));
-    if ($base === '') $base = trim((string)($cfg['presentados_recordatorio'] ?? ''));
-    $slug = trim((string)($cv['presentado_slug'] ?? ''));
-    $link = $slug !== '' ? 'gokywebs.com/demo/' . $slug : '';
-    return str_replace('{demo}', $link, $base);
-}
-
-/** Recorre las conversaciones con muestra presentada: reinsiste o archiva. */
+/** Recorre las conversaciones con muestra presentada: archiva las que llevan mucho sin confirmar. */
 function wabot_presentados_correr($cfg, $ahora = null) {
     $ahora = $ahora ?? time();
-    $res = ['revisadas' => 0, 'recordatorios' => 0, 'archivados' => 0, 'detalle' => []];
+    $res = ['revisadas' => 0, 'archivados' => 0, 'detalle' => []];
 
     foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
         $clave = basename($f, '.json');
@@ -4807,45 +4520,19 @@ function wabot_presentados_correr($cfg, $ahora = null) {
         if (empty($cv['presentado_ts'])) continue;
         $res['revisadas']++;
 
-        if (wabot_presentado_archivar_corresponde($cv, $cfg, $ahora)) {
-            $lock = wabot_lock_tomar($clave);
-            if (!$lock) continue;
-            try {
-                $cv = wabot_conv_load($clave);
-                if (wabot_presentado_archivar_corresponde($cv, $cfg, $ahora)) {
-                    $cv['archivado'] = true;
-                    wabot_evento($cv, 'presentado_archivado_inactividad');
-                    wabot_conv_save($cv);
-                    wabot_log('presentado_archivado', ['tel' => $cv['tel']]);
-                    $res['archivados']++;
-                }
-            } finally {
-                wabot_lock_soltar($lock);
-            }
-            continue; // ya archivada: no le manda encima un recordatorio
-        }
-
-        if (!wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora)) continue;
+        if (!wabot_presentado_archivar_corresponde($cv, $cfg, $ahora)) continue;
         $lock = wabot_lock_tomar($clave);
         if (!$lock) continue;
         try {
             $cv = wabot_conv_load($clave);
-            if (!wabot_presentado_recordatorio_corresponde($cv, $cfg, $ahora)) continue;
-
-            $texto = trim(wabot_personalizar(wabot_presentado_recordatorio_texto($cv, $cfg), $cv));
-            if ($texto === '') continue;
-            $cv['presentado_recordatorio_ts'] = $ahora;
-            $ok = wabot_enviar($cv, $texto);
-            if ($ok) {
-                $cv['presentado_recordatorios_enviados'] = wabot_presentado_recordatorios_hechos($cv) + 1;
-                $cv['presentado_recordatorio_enviado'] = true;
-                wabot_conv_transcript($cv, 'bot', $texto);
-                wabot_evento($cv, 'presentado_recordatorio_enviado');
-                $res['recordatorios']++;
+            if (wabot_presentado_archivar_corresponde($cv, $cfg, $ahora)) {
+                $cv['archivado'] = true;
+                wabot_evento($cv, 'presentado_archivado_inactividad');
+                wabot_conv_save($cv);
+                wabot_log('presentado_archivado', ['tel' => $cv['tel']]);
+                $res['archivados']++;
                 $res['detalle'][] = $clave;
             }
-            wabot_conv_save($cv);
-            wabot_log('presentado_recordatorio', ['tel' => $cv['tel'], 'ok' => $ok]);
         } finally {
             wabot_lock_soltar($lock);
         }
@@ -4854,7 +4541,6 @@ function wabot_presentados_correr($cfg, $ahora = null) {
     wabot_json_guardar_atomico(WABOT_DATA . '/presentados-estado.json', [
         'ultimo_run_ts' => $ahora,
         'revisadas'     => $res['revisadas'],
-        'recordatorios' => $res['recordatorios'],
         'archivados'    => $res['archivados'],
     ]);
     return $res;
@@ -4862,7 +4548,57 @@ function wabot_presentados_correr($cfg, $ahora = null) {
 
 function wabot_presentados_estado_cron() {
     $j = json_decode((string)@file_get_contents(WABOT_DATA . '/presentados-estado.json'), true);
-    return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'recordatorios' => 0, 'archivados' => 0];
+    return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'archivados' => 0];
+}
+
+/* ─────────────────── Confirmación de la demo a las 48 h ───────────────────
+ *
+ * Único automatismo que queda después de presentar: a las 48 h de apretar
+ * "Presentar" (presentado_ts), manda una sola vez, por plantilla aprobada de
+ * Meta, la pregunta de si el cliente pudo recibir la demo que le mandó Pablo
+ * a mano. Va siempre por plantilla, sin importar si la ventana de 24 h de
+ * Meta está abierta o cerrada: Pablo no manda texto libre desde acá.
+ */
+
+function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo'])) return false;
+    if (empty($cv['presentado_ts']) || !empty($cv['confirmacion_demo_enviada'])) return false;
+    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
+    $horas = (float)($cfg['confirmacion_demo_horas'] ?? 48);
+    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
+}
+
+function wabot_confirmacion_demo_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        if (!wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora)) continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            if (!wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora)) continue;
+            if (wabot_enviar_plantilla($cv, 'confirmacion_demo_48h', $cfg)) {
+                $cv['confirmacion_demo_enviada'] = true;
+                wabot_evento($cv, 'confirmacion_demo_enviada');
+                $res['enviados']++;
+                $res['detalle'][] = $clave;
+            }
+            wabot_conv_save($cv);
+            wabot_log('confirmacion_demo', ['tel' => $cv['tel'], 'clave' => $clave]);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
 }
 
 /* ─────────────────── Lead a Firestore (colección propuestas) ─────────── */
@@ -5092,6 +4828,15 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if (empty($conv['form_completado_ts'])) {
         wabot_conv_transcript($conv, 'sistema',
             "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}");
+        // Aviso a Pablo de que entró un formulario nuevo, para que lo pueda ver
+        // sin tener que estar mirando el panel. Fire-and-forget: si Meta lo
+        // rechaza (por ejemplo porque ese número no le escribió al bot en las
+        // últimas 24h) queda solo logueado, nunca frena el guardado del lead.
+        $avisoNombre  = $conv['nombre'] !== null && $conv['nombre'] !== '' ? $conv['nombre'] : $nombre;
+        $avisoNegocio = $conv['nombre_negocio'] !== null && $conv['nombre_negocio'] !== '' ? $conv['nombre_negocio'] : $nombreNegocio;
+        $avisoTexto = "Nuevo lead por formulario: {$avisoNombre} — {$avisoNegocio}. Tel: {$clave}.";
+        $avisoOk = wabot_wa_send_text('5491125068578', $avisoTexto);
+        wabot_log('form_lead_aviso_pablo', ['ok' => $avisoOk, 'tel' => $clave]);
     }
     $conv['form_completado_ts'] = time();
     $conv['origen_prediseno'] = $conv['origen_prediseno'] ?: 'form';

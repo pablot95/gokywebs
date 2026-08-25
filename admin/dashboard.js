@@ -2157,6 +2157,7 @@ function renderPropuestas() {
                 <td class="prop-col-contacto">
                     <div>${escapeHtml(p.nombre || p.contacto_nombre || "—")}</div>
                     ${(p.telefono || p.contacto_cel) ? `<span class="phone-copy" data-phone-copy="${escapeHtml(p.telefono || p.contacto_cel)}" title="Copiar número" style="cursor:pointer;font-size:12px;display:block">${escapeHtml(p.telefono || p.contacto_cel)}</span>` : ""}
+                    ${(p.telefono || p.contacto_cel) ? `<a href="../wabot/admin.php?tab=conversaciones&ver=${encodeURIComponent(p.telefono || p.contacto_cel)}" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir la conversación de WhatsApp/Instagram de este número en el panel del bot">Ver chat ↗</a>` : ""}
                     ${p.email ? `<div class="muted prop-contact-email" title="${escapeHtml(p.email)}">${escapeHtml(p.email)}</div>` : ""}
                 </td>
                 <td class="prop-col-tipo">
@@ -3021,11 +3022,12 @@ async function togglePropuestaFlag(id, field, btn) {
 }
 
 // --- Presentar (propuesta → cliente en Seguimiento 1) ---
-// Al presentar, además de mover la propuesta, el bot le manda al cliente el
-// link de la muestra por el mismo número: ver wabot/admin.php (presentar_muestra).
-// clienteId viaja para que wabot pueda avisarle después al admin (recordatorio
-// enviado / chat archivado) sobre este mismo cliente: ver sincronizarPresentados().
-async function enviarMuestraWhatsapp(p, clienteId, { forzar = false } = {}) {
+// Al presentar, wabot solo registra el estado (fase, timestamps, CRM): ya NO
+// le manda nada al cliente, eso lo hacés vos a mano por tu número personal.
+// Ver wabot/admin.php (presentar_muestra). clienteId viaja para que wabot
+// pueda avisarle después al admin (chat archivado) sobre este mismo cliente:
+// ver sincronizarPresentados().
+async function enviarMuestraWhatsapp(p, clienteId) {
     const telefono = p.telefono || p.contacto_cel || "";
     const negocio  = p.nombre_negocio || p.rubro || "";
     if (!telefono || !negocio) return { error: "Falta teléfono o nombre del negocio: avisale la muestra a mano." };
@@ -3033,7 +3035,6 @@ async function enviarMuestraWhatsapp(p, clienteId, { forzar = false } = {}) {
     try {
         await wabotAuthHandshake();
         const cuerpo = { accion: "presentar_muestra", tel: telefono, negocio, cliente_id: clienteId || "" };
-        if (forzar) cuerpo.forzar = "1";
         const res = await fetch("../wabot/admin.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -3063,35 +3064,22 @@ async function presentarPropuesta(propId) {
     // instagram, ciudad, cant_cursos…) que antes no se copiaban de a uno.
     const { id: _omitId, ...propuestaSnapshot } = p;
 
-    // El id se genera antes de escribir para poder pasárselo a wabot: así el
-    // recordatorio a las 48h y el archivo a la semana saben a qué cliente avisarle.
+    // El id se genera antes de escribir para poder pasárselo a wabot: así la
+    // confirmación a las 48h y el archivo por inactividad saben a qué cliente avisarle.
     const clienteRef = doc(collection(db, "clientes"));
 
-    // Si el aviso no sale (ventana de Meta cerrada, sin teléfono, Meta lo rechaza),
-    // el servidor no toca nada: se pregunta antes de pasarla igual, en vez de
-    // avisar cuando el movimiento ya está hecho y no hay vuelta atrás.
-    let envio = await enviarMuestraWhatsapp(p, clienteRef.id);
+    const envio = await enviarMuestraWhatsapp(p, clienteRef.id);
     if (envio?.error) {
-        const igual = confirm(
-            "OJO: NO se le pudo mandar el link por WhatsApp.\n\n" + envio.error +
-            "\n\n¿Pasarla a presentada igual?\n" +
-            "Si aceptás, el cliente NO recibe nada: el link se lo tenés que mandar vos a mano."
-        );
-        if (!igual) return;
-        envio = await enviarMuestraWhatsapp(p, clienteRef.id, { forzar: true });
-        if (envio?.error) {
-            alert("Tampoco se pudo marcar como presentada en el bot: " + envio.error +
-                  "\n\nNo se movió nada. Probá de nuevo.");
-            return;
-        }
+        alert("No se pudo marcar como presentada en el bot: " + envio.error + "\n\nNo se movió nada. Probá de nuevo.");
+        return;
     }
-    if (envio && envio.enviado === false) {
+    if (envio) {
         const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
-        alert("Quedó en Seguimiento, PERO el cliente no recibió nada.\n\n"
-            + "Mandale vos el link por WhatsApp" + (link ? ":\n" + link : ".")
+        alert("Quedó en Seguimiento. Mandale vos el link por WhatsApp desde tu número"
+            + (link ? ":\n" + link : ".")
             + (envio.sin_chat
                 ? "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta."
-                : "\n\nEn el panel del bot le vas a ver el cartel \"falta mandarle el link\"."));
+                : ""));
     }
 
     try {
