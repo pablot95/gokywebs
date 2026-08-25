@@ -4288,13 +4288,30 @@ caso('demo_lista es texto fijo: sin variables de nombre ni botón',
 caso('queda en el transcript el texto de referencia',
     strpos($convPlant['transcript'][0]['t'] ?? '', 'Ya tenemos lista la demo') !== false);
 
+// Las plantillas reales ya no llevan botón (Meta las aprobó sin parámetros),
+// pero el guard que evita mandar un link roto sigue vivo para cualquier
+// plantilla que sí lo lleve: se arma una a propósito en vez de colgarse de la
+// config de una real, que puede cambiar.
 $cfgPlant72Guard = wabot_config_load();
 $cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['nombre'] = 'seguimiento_demo_72h';
 $cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['activa'] = true;
+$cfgPlant72Guard['plantillas']['seguimiento_demo_72h']['boton']  = ['slug'];
 $sinSlug = ['tel' => '549110', 'channel_user_id' => '549110', 'canal' => 'whatsapp',
             'nombre' => 'Ana', 'presentado_slug' => '', 'transcript' => []];
-caso('pero una plantilla que sí lleva el slug en el botón no manda un link roto sin demo presentada',
+caso('una plantilla que sí lleva el slug en el botón no manda un link roto sin demo presentada',
     wabot_enviar_plantilla($sinSlug, 'seguimiento_demo_72h', $cfgPlant72Guard) === false);
+
+// El bug real: Meta rechazaba TODOS los envíos porque el codigo mandaba un
+// parametro y la plantilla aprobada no lleva ninguno.
+$cfgSinParams = wabot_config_load();
+foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clPl) {
+    caso("$clPl se manda sin parametros de cuerpo",
+        ($cfgSinParams['plantillas'][$clPl]['params'] ?? null) === []);
+    caso("$clPl se manda sin parametros de boton",
+        ($cfgSinParams['plantillas'][$clPl]['boton'] ?? null) === []);
+    caso("$clPl no deja un {nombre} sin reemplazar en el transcript",
+        strpos((string)($cfgSinParams['plantillas'][$clPl]['texto'] ?? ''), '{nombre}') === false);
+}
 
 $igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagram',
             'nombre' => 'Ana', 'presentado_slug' => 'x', 'transcript' => []];

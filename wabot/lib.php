@@ -776,17 +776,33 @@ function wabot_config_ventas(&$cfg) {
             'params' => [], 'boton' => [],
             'texto' => 'Ya tenemos lista la demo de tu web. Avisame si te la puedo enviar por acá.',
         ],
+        // Las plantillas aprobadas por Meta NO llevan parámetros. Mandar uno
+        // hacía que Meta rechazara TODOS los envíos con
+        // "(#132000) number of localizable_params (1) does not match the
+        // expected number of params (0)", y como el cron reintenta cada 30
+        // minutos, ningún seguimiento de 72 h ni de 7 días llegó nunca.
         'seguimiento_demo_72h' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
-            'params' => ['nombre'], 'boton' => ['slug'],
-            'texto' => 'Hola {nombre}! Te escribo por la demo que te preparamos: pudiste verla? Contame qué te pareció o si hay algo que quieras cambiar.',
+            'params' => [], 'boton' => [],
+            'texto' => 'Te escribo por la demo que te preparamos: pudiste verla? Contame qué te pareció o si hay algo que quieras cambiar.',
         ],
         'seguimiento_demo_7d' => [
             'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
-            'params' => ['nombre'], 'boton' => ['slug'],
-            'texto' => 'Hola {nombre}! Retomo por última vez por la demo de tu web. Si te quedó alguna duda escribime y seguimos.',
+            'params' => [], 'boton' => [],
+            'texto' => 'Retomo por última vez por la demo de tu web. Si te quedó alguna duda escribime y seguimos.',
         ],
     ];
+    // Lo ya guardado en producción no se pisa con los defaults de arriba (el
+    // merge de abajo solo rellena lo que falta), asi que se fuerza acá.
+    foreach (['demo_lista', 'seguimiento_demo_72h', 'seguimiento_demo_7d'] as $clavePl) {
+        if (!isset($cfg['plantillas'][$clavePl]) || !is_array($cfg['plantillas'][$clavePl])) continue;
+        $cfg['plantillas'][$clavePl]['params'] = [];
+        $cfg['plantillas'][$clavePl]['boton']  = [];
+        $txtPl = (string)($cfg['plantillas'][$clavePl]['texto'] ?? '');
+        if (strpos($txtPl, '{nombre}') !== false) {
+            $cfg['plantillas'][$clavePl]['texto'] = trim(str_replace(['Hola {nombre}!', '{nombre}'], '', $txtPl));
+        }
+    }
     foreach ($plantillasDefault as $clave => $datos) {
         if (!isset($cfg['plantillas'][$clave]) || !is_array($cfg['plantillas'][$clave])) {
             $cfg['plantillas'][$clave] = $datos;
