@@ -529,7 +529,7 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('dar_precio devuelve la propuesta como mensaje aparte, con el link adentro',
-    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'Antes que nada') === 0
+    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'calidad del trabajo') !== false
     && strpos($r['aparte'], 'gokywebs.com/form/') !== false);
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);

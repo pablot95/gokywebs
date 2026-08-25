@@ -58,7 +58,7 @@ caso('rubro en el primer mensaje → precio directo sin menú',
     strpos($r[0], '$160.000') !== false && strpos($r[0], 'presupuestos/Landing') !== false
     && $c['fase'] === 'prediseno' && $c['tipo'] === 'landing');
 caso('el precio llega en DOS mensajes: primero el precio, después la propuesta CON el link',
-    count($r) === 2 && stripos($r[1], 'Antes que nada') === 0 && strpos($r[1], 'gokywebs.com/form/') !== false);
+    count($r) === 2 && stripos($r[1], 'calidad del trabajo') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
 caso('el mensaje del precio ya no trae pegada la oferta del prediseño',
     stripos($r[0], 'predise') === false);
 caso('y el link no queda para después: va en el mismo mensaje de la propuesta',
@@ -1403,13 +1403,17 @@ caso('velocidad en cero no divide por cero', wabot_demora_tipeo($medio, $roto) =
 $alReves = array_merge($t, ['demora_minima' => 5, 'demora_maxima' => 2]);
 caso('piso mayor que el techo no rompe', wabot_demora_tipeo($corto, $alReves) === 5.0);
 
-// Los dos mensajes del precio tienen que tardar distinto entre sí.
+// Los dos mensajes del precio tienen que tardar distinto entre sí. Sin techo,
+// para no toparse con el clamp de $t y que dos mensajes largos den lo mismo.
 $c = conv_nueva();
 clasifica(['rubro_ecommerce']);
 $r = wabot_engine('vendo mates', $c, $cfg);
+$sinTecho = array_merge($t, ['demora_maxima' => 999]);
+$d0Real = wabot_demora_tipeo($r[0], $sinTecho);
+$d1Real = wabot_demora_tipeo($r[1], $sinTecho);
+caso('el precio y la oferta no tardan lo mismo, porque no miden lo mismo', $d0Real !== $d1Real);
 $d0 = wabot_demora_tipeo($r[0], $t);
 $d1 = wabot_demora_tipeo($r[1], $t);
-caso('el precio y la oferta no tardan lo mismo, porque no miden lo mismo', $d0 !== $d1);
 caso('las dos demoras caen entre el piso y el techo',
     $d0 >= 1.2 && $d0 <= 7 && $d1 >= 1.2 && $d1 <= 7);
 
@@ -3476,7 +3480,7 @@ $cvDemo['demo_pedida_entrada'] = true; $cvDemo['chat_started_ts'] = time();
 clasifica(['rubro_landing']);
 $rDemo = wabot_precio('landing', $cvDemo, $cfg);
 caso('tras el precio va directo al link del form, sin re-ofrecer',
-    count($rDemo) === 2 && mb_stripos($rDemo[1], 'Antes que nada') === 0
+    count($rDemo) === 2 && mb_stripos($rDemo[1], 'calidad del trabajo') !== false
     && strpos($rDemo[1], 'gokywebs.com/form/') !== false && mb_stripos($rDemo[1], 'Querés que') === false);
 caso('y la fase queda en prediseño', $cvDemo['fase'] === 'prediseno');
 
