@@ -3637,7 +3637,7 @@ $convLocalSolo = conv_nueva();
 $convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
 $pitchLocalSolo = wabot_pitch_texto('ecommerce', $convLocalSolo, $cfg);
 caso('pero "Tengo un local" solo sigue preguntando qué vende (no sabemos el producto)',
-    stripos($pitchLocalSolo, 'qué vendés exactamente') !== false);
+    stripos($pitchLocalSolo, 'vendés') !== false);
 
 echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
 
@@ -4039,8 +4039,54 @@ caso('pero sigue siendo el pitch de alojamiento, no el de turnos comunes',
     stripos($pitchHostel, 'fechas') !== false || stripos($pitchHostel, 'estadías') !== false
     || stripos($pitchHostel, 'huéspedes') !== false);
 
-caso('institucional ya no repite la pregunta por las secciones',
-    $cfg['tipos']['institucional']['pitch_pregunta_2'] !== $cfg['tipos']['institucional']['pitch_pregunta']
+echo "— La pregunta de tanteo del pitch (antes del precio) —
+";
+
+// Las viejas preguntaban "y hoy cómo lo hacés" (por WhatsApp, agenda de papel,
+// Instagram): la respuesta no cambiaba ni el precio ni la web, así que era
+// relleno antes del número. Ahora todas comparten una misma forma, con el
+// sustantivo del rubro.
+$retiradasTanteo = ['por WhatsApp, Instagram', 'agenda de papel', 'por Instagram, local',
+    'Drive, WhatsApp', 'alguna web o redes', 'en qué zona'];
+foreach (['landing', 'ecommerce', 'turnos', 'institucional', 'inmobiliaria', 'elearning'] as $tipoTanteo) {
+    $todas = array_merge(
+        [(string)($cfg['tipos'][$tipoTanteo]['pitch_pregunta'] ?? ''),
+         (string)($cfg['tipos'][$tipoTanteo]['pitch_pregunta_2'] ?? '')],
+        (array)($cfg['tipos'][$tipoTanteo]['pitch_pregunta_variantes'] ?? []),
+        (array)($cfg['tipos'][$tipoTanteo]['pitch_pregunta_2_variantes'] ?? [])
+    );
+    $limpio = true;
+    foreach ($todas as $q) {
+        foreach ($retiradasTanteo as $muerta) {
+            if (stripos((string)$q, $muerta) !== false) { $limpio = false; break 2; }
+        }
+    }
+    caso("$tipoTanteo ya no pregunta \"cómo lo hacés hoy\" en ninguna variante", $limpio);
+    caso("$tipoTanteo siempre termina preguntando algo", (function () use ($todas) {
+        foreach ($todas as $q) { if (trim((string)$q) === '' || strpos((string)$q, '?') === false) return false; }
+        return count($todas) > 0;
+    })());
+}
+
+// Catálogo es la excepción a propósito: ahí la cantidad SÍ define el precio.
+caso('catálogo mantiene la pregunta por la cantidad de productos',
+    stripos((string)$cfg['tipos']['catalogo']['pitch_pregunta'], 'cuántos productos') !== false);
+
+// La forma nueva nombra lo que vende/ofrece cada uno, no un canal.
+foreach ([
+    ['ecommerce', 'producto'],
+    ['elearning', 'curso'],
+    ['inmobiliaria', 'propiedad'],
+] as $par) {
+    caso("la pregunta de {$par[0]} nombra \"{$par[1]}\"",
+        stripos((string)$cfg['tipos'][$par[0]]['pitch_pregunta'], $par[1]) !== false);
+}
+
+// La pregunta genérica de "qué se destaca" reemplazó a la vieja (que sí
+// repetía "secciones" entre el primer pedido y el segundo): ahora es la
+// MISMA pregunta a propósito, así que ya no hay nada que repetir.
+caso('institucional ya no pregunta por las secciones (esa la reemplazó la genérica)',
+    stripos($cfg['tipos']['institucional']['pitch_pregunta'], 'secciones') === false
     && stripos($cfg['tipos']['institucional']['pitch_pregunta_2'], 'secciones') === false);
 
 $convUni = conv_nueva();

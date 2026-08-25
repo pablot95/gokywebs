@@ -512,22 +512,76 @@ function wabot_config_ventas(&$cfg) {
 
 {pregunta}";
     }
+    // Una sola forma de pregunta para todos los rubros, con el sustantivo que
+    // corresponda ("producto", "servicios", "curso"). Las viejas preguntaban
+    // "y hoy cómo lo hacés" (por WhatsApp, agenda de papel, Instagram): la
+    // respuesta no cambiaba ni el precio ni la web, y se notaba que era relleno
+    // antes del número. Esta devuelve algo que sí sirve — lo que conteste es lo
+    // que va adelante en la demo — y de paso, al no ser específica del rubro,
+    // no queda fuera de lugar si el tipo se clasificó mal.
+    // Excepción: catálogo mantiene la de cantidad, que ahí SÍ define el precio.
     $pitchPreguntas = [
-        'landing'       => ['Contame qué servicios ofrecés y en qué zona trabajás?',
-                            'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?'],
+        'landing'       => ['Qué es lo que más se destaca de tus servicios?',
+                            'Qué es lo que más se destaca de tus servicios?'],
         'catalogo'      => ['Más o menos cuántos productos irían en el catálogo?',
                             'Más o menos cuántos productos irían en el catálogo?'],
-        'turnos'        => ['Contame qué servicios ofrecés, así armamos la agenda con eso?',
-                            'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?'],
-        'institucional' => ['Contame un poco de la institución: qué secciones no pueden faltar?',
-                            'Y hoy tienen alguna web o redes, o arrancan de cero?'],
-        'inmobiliaria'  => ['Más o menos cuántas propiedades tenés publicadas hoy?',
-                            'Más o menos cuántas propiedades tenés publicadas hoy?'],
-        'ecommerce'     => ['Contame qué vendés exactamente, así la armamos con eso?',
-                            'Y hoy cómo vendés, por Instagram, local, los dos?'],
-        'elearning'     => ['Contame qué cursos das y cómo los entregás hoy?',
-                            'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?'],
+        'turnos'        => ['Cuál es el servicio que más te piden?',
+                            'Cuál es el servicio que más te piden?'],
+        'institucional' => ['Qué es lo que más se destaca de lo que hacen?',
+                            'Qué es lo que más se destaca de lo que hacen?'],
+        'inmobiliaria'  => ['Qué tipo de propiedades manejás más?',
+                            'Qué tipo de propiedades manejás más?'],
+        'ecommerce'     => ['Cuál es el producto que más vendés?',
+                            'Cuál es el producto que más vendés?'],
+        'elearning'     => ['Cuál es el curso que más te piden?',
+                            'Cuál es el curso que más te piden?'],
     ];
+    // Lo que ya está guardado en producción no se pisa con los defaults de
+    // arriba (solo rellenan si está vacío): hay que retirarlas explícitamente.
+    $pitchPreguntasRetiradas = [
+        'Contame qué servicios ofrecés y en qué zona trabajás?',
+        'Qué servicios ofrecés y en qué zona estás?',
+        'Contame un poco más qué hacés y dónde trabajás?',
+        'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?',
+        'Hoy por dónde te llegan la mayoría de las consultas?',
+        'Las consultas hoy te llegan más por WhatsApp o por Instagram?',
+        'Y hoy la gente te encuentra más por recomendación, redes, o de las dos formas?',
+        'Contame qué vendés exactamente, así la armamos con eso?',
+        'Qué es lo que vendés exactamente?',
+        'Contame bien qué productos vendés?',
+        'Y hoy cómo vendés, por Instagram, local, los dos?',
+        'Y actualmente cómo manejás las ventas?',
+        'Hoy los pedidos te llegan más por Instagram o también tenés local?',
+        'Y ahora mismo por dónde te compran más, redes o boca a boca?',
+        'Contame qué servicios ofrecés, así armamos la agenda con eso?',
+        'Qué servicios ofrecés? Así armamos la agenda con eso.',
+        'Contame qué servicios das, para armar bien la agenda?',
+        'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?',
+        'Hoy los turnos los manejás por WhatsApp o con agenda de papel?',
+        'Y ahora cómo coordinás los horarios, por WhatsApp o a mano?',
+        'Contame un poco de la institución: qué secciones no pueden faltar?',
+        'Y hoy tienen alguna web o redes, o arrancan de cero?',
+        'Hoy tienen algo armado ya, página o redes, o arrancarían de cero?',
+        'Contame qué cursos das y cómo los entregás hoy?',
+        'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?',
+        'Hoy cómo se lo mandás a los alumnos, Drive, WhatsApp?',
+        'Más o menos cuántas propiedades tenés publicadas hoy?',
+    ];
+    foreach (array_keys($pitchPreguntas) as $tipoRet) {
+        if (!isset($cfg['tipos'][$tipoRet])) continue;
+        foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $campoRet) {
+            if (in_array(trim((string)($cfg['tipos'][$tipoRet][$campoRet] ?? '')), $pitchPreguntasRetiradas, true)) {
+                $cfg['tipos'][$tipoRet][$campoRet] = '';
+            }
+        }
+        foreach (['pitch_pregunta_variantes', 'pitch_pregunta_2_variantes'] as $campoRet) {
+            if (empty($cfg['tipos'][$tipoRet][$campoRet]) || !is_array($cfg['tipos'][$tipoRet][$campoRet])) continue;
+            $quedan = array_values(array_filter($cfg['tipos'][$tipoRet][$campoRet], function ($v) use ($pitchPreguntasRetiradas) {
+                return !in_array(trim((string)$v), $pitchPreguntasRetiradas, true);
+            }));
+            $cfg['tipos'][$tipoRet][$campoRet] = $quedan;
+        }
+    }
     if (trim((string)($cfg['tipos']['institucional']['pitch_pregunta_2'] ?? '')) === 'Y qué secciones no pueden faltar en la web?') {
         $cfg['tipos']['institucional']['pitch_pregunta_2'] = 'Y hoy tienen alguna web o redes, o arrancan de cero?';
     }
@@ -538,6 +592,49 @@ function wabot_config_ventas(&$cfg) {
         }
         if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] ?? '')) === '') {
             $cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] = $preguntas[1];
+        }
+    }
+    // Variantes para que no salga siempre la misma frase (catálogo queda
+    // afuera a propósito: su pregunta es de cantidad, no de destacado).
+    $pitchPreguntaVariantesDefault = [
+        'landing' => [
+            'Qué es lo que más se destaca de tus servicios?',
+            'Qué es lo que más te diferencia en tus servicios?',
+            'De tus servicios, cuál es el que más pedís que destaque?',
+        ],
+        'ecommerce' => [
+            'Cuál es el producto que más vendés?',
+            'De tus productos, cuál es el que más sale?',
+            'Cuál es tu producto estrella?',
+        ],
+        'turnos' => [
+            'Cuál es el servicio que más te piden?',
+            'De tus servicios, cuál es el que más pedís que destaque?',
+            'Cuál es el servicio más solicitado?',
+        ],
+        'institucional' => [
+            'Qué es lo que más se destaca de lo que hacen?',
+            'Qué es lo que más quieren que se vea de la institución?',
+            'Cuál es la actividad que más quieren destacar?',
+        ],
+        'inmobiliaria' => [
+            'Qué tipo de propiedades manejás más?',
+            'Cuál es el tipo de propiedad que más publicás?',
+            'Trabajás más con ventas, alquileres, o las dos cosas?',
+        ],
+        'elearning' => [
+            'Cuál es el curso que más te piden?',
+            'De tus cursos, cuál es el que más se vende?',
+            'Cuál es tu curso más elegido?',
+        ],
+    ];
+    foreach ($pitchPreguntaVariantesDefault as $tipoPV => $opciones) {
+        if (!isset($cfg['tipos'][$tipoPV])) continue;
+        if (empty($cfg['tipos'][$tipoPV]['pitch_pregunta_variantes'])) {
+            $cfg['tipos'][$tipoPV]['pitch_pregunta_variantes'] = $opciones;
+        }
+        if (empty($cfg['tipos'][$tipoPV]['pitch_pregunta_2_variantes'])) {
+            $cfg['tipos'][$tipoPV]['pitch_pregunta_2_variantes'] = $opciones;
         }
     }
     if (isset($cfg['tipos']['turnos'])) {

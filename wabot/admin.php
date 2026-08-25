@@ -1798,8 +1798,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
                         <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
                         <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
-                        <button type="button" class="conv-chip" data-grupo="interesado" title="Vieron precio: siguen hablando pero todavía no pasaron los datos de la demo.">VP</button>
-                        <button type="button" class="conv-chip" data-grupo="chat" title="Todas las demás conversaciones: el resto que no entra en ninguna de las anteriores.">T</button>
+                        <button type="button" class="conv-chip" data-grupo="interesado_chat" title="Vieron precio + todas las demás conversaciones: la charla que todavía no llegó a nada concreto.">VP · T</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -2063,6 +2062,13 @@ body.embed { min-height: 0; }
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'dei') return esDEI(it);
             if (filtro === 'presentados') return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !it.con_interes;
+            // VP (vieron precio) y T (el resto de las charlas) van juntas en un
+            // solo chip: para Pablo son la misma categoría de trabajo, la charla
+            // que todavía no llegó a nada concreto.
+            if (filtro === 'interesado_chat') {
+                const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
+                return g === 'interesado' || g === 'chat';
+            }
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
