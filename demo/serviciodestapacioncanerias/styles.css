@@ -144,20 +144,25 @@ body.no-scroll { overflow: hidden; }
 body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 
 /* ============ HERO ============ */
-.hero { min-height: 100svh; display: flex; align-items: flex-end; overflow: hidden; padding-block: 3rem 3.5rem; }
-.hero-media { position: absolute; inset: 0; z-index: 0; }
-.hero-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 12%; }
-.hero-scrim {
-  position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,.6) 0%, rgba(0,0,0,.4) 38%, rgba(0,0,0,.92) 100%),
-              linear-gradient(90deg, rgba(0,0,0,.8) 0%, rgba(0,0,0,.1) 65%);
+.hero { min-height: 92svh; display: flex; align-items: center; padding-block: clamp(6.5rem, 12vw, 5rem) 3rem; }
+.hero-inner {
+  width: min(100% - 3rem, var(--container)); margin-inline: auto;
+  display: grid; grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr);
+  gap: clamp(2rem, 5vw, 4rem); align-items: center;
 }
+.hero-content { max-width: 46rem; }
+.hero-photo-wrap { position: relative; }
+.hero-photo {
+  position: relative; z-index: 2; aspect-ratio: 3/4; max-height: 66svh;
+  border-radius: var(--radius); overflow: hidden;
+  box-shadow: 0 30px 70px -25px rgba(0,0,0,.7);
+}
+.hero-photo img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
 .hero-stripe {
-  position: absolute; top: -14%; right: -6%; width: 260px; height: 260px; z-index: 1; pointer-events: none;
-  background: repeating-linear-gradient(45deg, var(--color-secondary) 0 20px, #000 20px 40px);
-  clip-path: polygon(100% 0, 100% 100%, 0 0); opacity: .92;
+  position: absolute; top: -22px; right: -22px; width: 130px; height: 130px; z-index: 1; pointer-events: none;
+  background: repeating-linear-gradient(45deg, var(--color-secondary) 0 14px, #000 14px 28px);
+  clip-path: polygon(100% 0, 100% 100%, 0 0); opacity: .92; border-radius: 0 var(--radius) 0 0;
 }
-.hero-content { position: relative; z-index: 2; width: min(100% - 3rem, var(--container)); margin-inline: auto; max-width: 46rem; }
 .hero-badge {
   display: inline-flex; align-items: center; gap: .6em; font-weight: 700; font-size: .82rem; letter-spacing: .05em;
   text-transform: uppercase; color: var(--color-text); background: rgba(255,255,255,.07);
@@ -168,7 +173,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 @keyframes pulse-ring { 0% { transform: scale(.6); opacity: .8; } 100% { transform: scale(2); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .pulse-dot::before { animation: none; } }
 
-#heroTitle { font-size: clamp(2.6rem, 7.6vw, 5.6rem); line-height: .96; margin: 0 0 .6em; }
+#heroTitle { font-size: clamp(2.4rem, 5.6vw, 4.6rem); line-height: .98; margin: 0 0 .6em; }
 .reveal-line { display: block; overflow: hidden; }
 .reveal-line > span { display: block; transform: translateY(112%); transition: transform 1s var(--ease-dramatic); }
 .reveal-line.in > span { transform: none; }
@@ -277,7 +282,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 
 /* ============ CIERRE FINAL ============ */
 .cierre-final { background: var(--color-bg-alt); text-align: center; }
-.hero-stripe--cierre { top: auto; bottom: -36px; left: -6%; right: auto; opacity: .5; }
+.hero-stripe--cierre { top: auto; bottom: -36px; left: -6%; right: auto; width: 260px; height: 260px; opacity: .5; }
 .cierre-inner { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
 .cierre-inner h2 { max-width: 18ch; margin-bottom: .6rem; }
 .cierre-inner > p { max-width: 42ch; margin-bottom: 1.8rem; }
@@ -314,6 +319,9 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 /* ============ RESPONSIVE ============ */
 @media (max-width: 960px) {
   .header-cta span { display: none; }
+  .hero { min-height: auto; }
+  .hero-inner { grid-template-columns: 1fr; }
+  .hero-photo { aspect-ratio: 16/10; max-height: 38svh; margin-top: 1.8rem; }
   .servicio-grid { grid-template-columns: 1fr; }
   .proceso-stage { grid-template-columns: 1fr; }
   .proceso-visual { position: sticky; top: 10px; }
@@ -332,5 +340,5 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   .header-inner { min-height: 60px; }
   .brand-sub { display: none; }
   #heroTitle { font-size: clamp(2.4rem, 12vw, 3.4rem); }
-  .hero-stripe { width: 160px; height: 160px; }
+  .hero-photo-wrap .hero-stripe { width: 90px; height: 90px; top: -14px; right: -14px; }
 }
