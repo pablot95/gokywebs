@@ -1,0 +1,11 @@
+Material ya presente en el proyecto:
+- logo.jpg — logo aportado por el cliente.
+- calle-residencial.png
+- grupo-frente-al-quiosco.png
+- jovenes-con-pancarta.png
+- reunion-en-parque.png
+
+Imágenes externas de ambientación — Pexels (descargadas el 26/08/2026):
+- equipo-investigacion.jpg — https://www.pexels.com/photo/photo-of-people-discussing-7413862/
+- documentos-planes.jpg — https://www.pexels.com/photo/pen-on-documents-19357343/
+- mesa-trabajo.jpg — https://www.pexels.com/photo/people-discussing-on-documents-8730179/
