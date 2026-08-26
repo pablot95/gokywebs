@@ -108,7 +108,12 @@ section { padding-block: var(--section-pad-y); }
   padding-block: 14px; overflow: visible;
 }
 .brand { display: inline-flex; z-index: 100; overflow: visible; }
-.brand img { width: 72px; height: 72px; border-radius: 50%; box-shadow: var(--shadow-sm); }
+.brand img { width: 104px; height: 104px; border-radius: 50%; box-shadow: var(--shadow-sm); }
+.hero-brand { width: 132px; height: 132px; border-radius: 50%; box-shadow: var(--shadow-md); margin-bottom: 1.2rem; }
+@media (max-width: 480px) {
+  .brand img { width: 76px; height: 76px; }
+  .hero-brand { width: 104px; height: 104px; }
+}
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .icon-btn {
   position: relative; display: grid; place-items: center; width: 46px; height: 46px;
@@ -266,7 +271,7 @@ body.no-scroll .floats { opacity: 0; pointer-events: none; }
 .editorial-media img { width: 100%; height: 100%; object-fit: cover; object-position: top center; transition: transform .6s var(--ease-out); }
 .editorial-media:hover img { transform: scale(1.04); }
 .editorial-copy p { color: var(--color-text-muted); margin-bottom: 1rem; }
-.editorial-badge { width: 64px; height: 64px; border-radius: 50%; margin-top: 1rem; box-shadow: var(--shadow-sm); }
+.editorial-badge { width: 92px; height: 92px; border-radius: 50%; margin-top: 1rem; box-shadow: var(--shadow-sm); }
 @media (max-width: 780px) { .editorial-grid { grid-template-columns: 1fr; } .editorial-media { aspect-ratio: 16/10; max-height: 46svh; } }
 
 /* ===== POR QUE VDA (sticky chapters) ===== */
@@ -389,7 +394,7 @@ body.no-scroll .floats { opacity: 0; pointer-events: none; }
 /* ===== FOOTER ===== */
 .site-footer { background: var(--color-navy); color: rgba(255,255,255,.82); padding-top: clamp(3rem, 6vw, 4.5rem); }
 .footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 2.4rem; padding-bottom: 2.4rem; border-bottom: 1px solid rgba(255,255,255,.12); }
-.footer-brand img { width: 76px; height: 76px; border-radius: 50%; margin-bottom: 1rem; }
+.footer-brand img { width: 108px; height: 108px; border-radius: 50%; margin-bottom: 1rem; }
 .footer-brand p { color: rgba(255,255,255,.6); font-size: .9rem; }
 .footer-col { display: flex; flex-direction: column; gap: .65rem; }
 .footer-col h3 { font-family: var(--font-body); font-weight: 800; text-transform: uppercase; font-size: .85rem; letter-spacing: .04em; color: #fff; margin-bottom: .3rem; }
