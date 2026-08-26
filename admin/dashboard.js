@@ -157,6 +157,37 @@ async function abrirWabot() {
     f.src = "../wabot/admin.php?embed=1";
 }
 
+/* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
+   de la pestaña. Mismo panel embebido que la pestaña WhatsApp (mismo iframe,
+   mismo handshake de sesión), pero apuntado directo a esa conversación y
+   sobre un modal en vez de navegar a otra pestaña o abrir otra ventana. */
+const chatModal = document.getElementById("chatModal");
+const chatModalFrame = document.getElementById("chatModalFrame");
+
+async function abrirChatModal(tel) {
+    if (!tel) return;
+    document.getElementById("chatModalTitle").textContent = tel;
+    document.getElementById("chatModalAparte").href = "../wabot/admin.php?tab=conversaciones&ver=" + encodeURIComponent(tel);
+    chatModal.hidden = false;
+    chatModalFrame.src = "about:blank";
+
+    try { await wabotAuthHandshake(); } catch (e) {
+        console.warn("No se pudo abrir sesión automática en el panel del bot:", e);
+    }
+    // Si mientras esperaba el handshake Pablo ya cerró el modal, no cargar nada.
+    if (chatModal.hidden) return;
+    chatModalFrame.src = "../wabot/admin.php?tab=conversaciones&ver=" + encodeURIComponent(tel) + "&embed=1";
+}
+
+function cerrarChatModal() {
+    chatModal.hidden = true;
+    // Corta el polling/refresco propio del panel embebido apenas se cierra.
+    chatModalFrame.src = "about:blank";
+}
+document.getElementById("closeChatModalBtn").addEventListener("click", cerrarChatModal);
+chatModal.addEventListener("click", (e) => { if (e.target === chatModal) cerrarChatModal(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !chatModal.hidden) cerrarChatModal(); });
+
 /* ── Sincronización con "Presentados" del bot ──
    El bot corre por cron: manda el recordatorio a las 48h sin confirmar y
    archiva el chat a la semana. Esto refleja esos dos hechos en Firestore
@@ -2157,7 +2188,7 @@ function renderPropuestas() {
                 <td class="prop-col-contacto">
                     <div>${escapeHtml(p.nombre || p.contacto_nombre || "—")}</div>
                     ${(p.telefono || p.contacto_cel) ? `<span class="phone-copy" data-phone-copy="${escapeHtml(p.telefono || p.contacto_cel)}" title="Copiar número" style="cursor:pointer;font-size:12px;display:block">${escapeHtml(p.telefono || p.contacto_cel)}</span>` : ""}
-                    ${(p.telefono || p.contacto_cel) ? `<a href="../wabot/admin.php?tab=conversaciones&ver=${encodeURIComponent(p.telefono || p.contacto_cel)}" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir la conversación de WhatsApp/Instagram de este número en el panel del bot">Ver chat ↗</a>` : ""}
+                    ${(p.telefono || p.contacto_cel) ? `<button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(p.telefono || p.contacto_cel)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este número sin salir de Bocetos">Ver chat</button>` : ""}
                     ${p.email ? `<div class="muted prop-contact-email" title="${escapeHtml(p.email)}">${escapeHtml(p.email)}</div>` : ""}
                 </td>
                 <td class="prop-col-tipo">
@@ -2272,6 +2303,9 @@ function renderPropuestas() {
                 alert("No se pudo copiar el número.");
             }
         });
+    });
+    tbody.querySelectorAll("[data-chat-tel]").forEach(btn => {
+        btn.addEventListener("click", () => abrirChatModal(btn.dataset.chatTel));
     });
     tbody.querySelectorAll("[data-business-copy]").forEach(el => {
         el.addEventListener("click", async () => {

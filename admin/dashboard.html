@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260818-sticky">
+    <link rel="stylesheet" href="styles.css?v=20260826-verchat">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -756,6 +756,22 @@
         </div>
     </div>
 
+    <!-- Modal: chat de WhatsApp/Instagram (panel del bot embebido) -->
+    <div id="chatModal" class="modal-backdrop" hidden>
+        <div class="modal modal-chat">
+            <div class="modal-header">
+                <h2 id="chatModalTitle">Chat</h2>
+                <div style="display:flex;align-items:center;gap:4px">
+                    <a id="chatModalAparte" href="#" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:12px;text-decoration:none">Abrir aparte ↗</a>
+                    <button class="modal-close" id="closeChatModalBtn" aria-label="Cerrar">&times;</button>
+                </div>
+            </div>
+            <div class="modal-chat-body">
+                <iframe id="chatModalFrame" title="Chat de WhatsApp/Instagram" src="about:blank"></iframe>
+            </div>
+        </div>
+    </div>
+
     <div id="facturaModal" class="modal-backdrop" hidden>
         <div class="modal">
             <div class="modal-header">
@@ -786,6 +802,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260818-sticky"></script>
+    <script type="module" src="dashboard.js?v=20260826-verchat"></script>
 </body>
 </html>

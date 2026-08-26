@@ -2454,3 +2454,53 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
     .factura-resumen { grid-template-columns: 1fr; }
     #facturaModal .modal-actions { flex-wrap: wrap; }
 }
+
+/* Modal: chat de WhatsApp/Instagram (el panel del bot, embebido en un iframe).
+   Al final del archivo a propósito: tiene que ganarle a las reglas ".modal"
+   genéricas de más arriba (incluida la de mobile), y con la misma
+   especificidad (una sola clase) gana la que está declarada después. */
+.modal-chat {
+    max-width: 1180px;
+    width: 96vw;
+    height: calc(100vh - 64px);
+    max-height: calc(100vh - 64px);
+    padding: 16px 16px 0;
+}
+
+.modal-chat .modal-header {
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.modal-chat-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #0f1220;
+    border: 1px solid var(--border);
+    margin: 0 -16px;
+}
+
+#chatModalFrame {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: #0f1220;
+}
+
+@media (max-width: 768px) {
+    #chatModal.modal-backdrop { padding: 0; align-items: stretch; }
+    .modal-chat {
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        max-width: 100vw;
+        border-radius: 0;
+        padding: 12px 12px 0;
+    }
+    .modal-chat-body { margin: 0 -12px; border-radius: 0; border-left: 0; border-right: 0; }
+}
