@@ -36,9 +36,9 @@ echo "— Herramientas —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
-caso('dar_precio(landing) → texto exacto y estado actualizado',
+caso('dar_precio(landing) → texto exacto y estado actualizado, sin forzar el link',
     strpos($r['texto'], '$160.000') !== false
-    && strpos($r['texto'], 'gokywebs.com/presupuestos/Landing') !== false
+    && strpos($r['texto'], 'presupuestos/') === false
     && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
 caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
@@ -67,13 +67,16 @@ echo "— El agente también pasa por el pitch antes del precio —\n";
 $cPitch = convNueva('AGPITCH1');
 unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-caso('la primera llamada devuelve la presentación, no el precio',
-    !empty($r['exacta']) && strpos($r['texto'], '$') === false
-    && stripos($r['texto'], 'tienda online') !== false
-    && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']));
+caso('la primera llamada ya da el precio (texto fijo), con la pregunta del pitch aparte',
+    !empty($r['exacta']) && strpos($r['texto'], '$290.000') !== false
+    && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/') === false
+    && !empty($r['aparte']) && mb_substr(trim($r['aparte']), -1) === '?'
+    && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-caso('la segunda llamada, con el pitch ya hecho, sí da el precio',
-    empty($r2['exacta']) && strpos($r2['texto'], '$290.000') !== false);
+caso('la segunda llamada, con el pitch ya contestado, NO repite el precio: solo ofrece la demo aparte',
+    empty($r2['exacta']) && empty($r2['texto'])
+    && !empty($r2['aparte']) && strpos((string)$r2['aparte'], '$290.000') === false
+    && $cPitch['fase'] === 'prediseno' && $cPitch['cta_muestra'] === true);
 @unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
 $cCatPitch = convNueva('AGPITCH2');
@@ -285,9 +288,9 @@ caso('dar_precio(catalogo) sin cantidad → NO cotiza, pregunta cuántos product
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 60], $c, $cfg);
 caso('con la cantidad → cotiza $180.000 + $500 × 60 = $210.000',
     strpos($r['texto'], '$210.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'prediseno');
-caso('y el texto lleva el desglose y el link de Catálogo',
+caso('y el texto lleva el desglose, sin forzar el link de Catálogo',
     strpos($r['texto'], '$180.000') !== false && strpos($r['texto'], '60 productos') !== false
-    && strpos($r['texto'], 'presupuestos/Catalogo') !== false);
+    && strpos($r['texto'], 'presupuestos/') === false);
 caso('la oferta del prediseño sigue saliendo aparte', !empty($r['aparte']));
 
 $c = convNueva();
@@ -581,16 +584,14 @@ caso('y siguen los de antes', count(array_diff(['landing','ecommerce','inmobilia
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
-caso('dar_precio(turnos) → $200.000 y el link de Turnos',
-    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Turnos') !== false);
-caso('y el link va en su renglón',
-    preg_match('/\n[^\n]*gokywebs\.com/u', $r['texto']) === 1);
+caso('dar_precio(turnos) → $200.000, sin forzar el link de Turnos',
+    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/') === false);
 
 $c = convNueva();
 $c['transcript'][] = ['q' => 'cliente', 't' => 'queremos algo mas completo, con varias paginas', 'ts' => time()];
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $c, $cfg);
-caso('dar_precio(institucional) → $200.000 y el link Institucional',
-    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/Institucional') !== false);
+caso('dar_precio(institucional) → $200.000, sin forzar el link Institucional',
+    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/') === false);
 
 caso('el prompt le prohíbe cotizar un rubro con turnos sin preguntar',
     strpos(wabot_agente_sistema($c, $cfg), 'NUNCA cotices uno de esos rubros sin haber hecho la pregunta') !== false);

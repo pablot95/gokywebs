@@ -30,6 +30,10 @@ caso('el código queda guardado en la conversación', ($convWsp['codigo'] ?? '')
     && strpos($link, $convWsp['codigo']) !== false);
 caso('y es estable: pedirlo de nuevo devuelve el mismo', wabot_form_link($convWsp, $cfg) === $link);
 
+$cfgFormOff = $cfg; $cfgFormOff['form_activo'] = false;
+$convWspOff = ['tel' => '5491122334466TEST', 'channel_user_id' => '5491122334466TEST', 'canal' => 'whatsapp', 'nombre_negocio' => 'Panadería Sur'];
+caso('con el form apagado, no da link ni en WhatsApp', wabot_form_link($convWspOff, $cfgFormOff) === '');
+
 echo "— Código corto —
 ";
 

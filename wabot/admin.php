@@ -275,6 +275,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
         $cfg['postdemo_bot_activo'] = !empty($_POST['postdemo_bot_activo']);
+        $cfg['form_activo'] = !empty($_POST['form_activo']);
         if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
             $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
         }
@@ -1566,6 +1567,14 @@ body.embed { min-height: 0; }
                 </label>
             </div>
             <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '') ? 'activo' : 'sin configurar (no se manda nada)' ?></strong></p>
+        </div>
+        <div class="card">
+            <h2 style="margin-top:0">Formulario para pedir los datos del prediseño</h2>
+            <label style="display:flex;align-items:center;gap:8px;margin:0">
+                <input type="checkbox" name="form_activo" <?= !empty($cfg['form_activo']) ? 'checked' : '' ?>>
+                Dar el link a /form/ en WhatsApp
+            </label>
+            <p class="meta" style="margin-top:8px">Prendido (por defecto), en WhatsApp el bot manda directo el link al formulario para cargar nombre, negocio, descripción y colores. Apagado, el bot vuelve a pedir esos mismos datos por chat, en un solo mensaje con viñetas — el mecanismo que ya se usa siempre en Instagram, que nunca tiene link posible. Pensado para cuando el form esté momentáneamente fuera de servicio.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>

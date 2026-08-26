@@ -237,7 +237,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         // se manda exacto y se espera el próximo mensaje del cliente.
         if ($exacta !== null) {
             $reemplazoExacta = wabot_agente_empujon_paraguas($mensaje, [$exacta], $conv, $cfg, $tipoAlEntrar);
-            return $reemplazoExacta !== null ? $reemplazoExacta : [$exacta];
+            $salidaExacta = $reemplazoExacta !== null ? $reemplazoExacta : [$exacta];
+            // El precio+pitch del turno A también trae su globo aparte (la
+            // pregunta del pitch, unos segundos después): antes se perdía acá,
+            // porque este camino no pasaba por wabot_agente_filtrar_aparte.
+            return $aparte ? array_merge($salidaExacta, $aparte) : $salidaExacta;
         }
     }
 
@@ -560,7 +564,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
     return [
         [
             'name' => 'dar_precio',
-            'description' => 'Devuelve el precio y el link de presupuesto de un tipo de web. Usala SOLO cuando ya sabés con certeza qué tipo necesita el cliente. El texto que devuelve hay que incluirlo tal cual en la respuesta.',
+            'description' => 'Devuelve el precio de un tipo de web. Usala SOLO cuando ya sabés con certeza qué tipo necesita el cliente. El texto que devuelve hay que incluirlo tal cual en la respuesta.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -742,16 +746,31 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             }
 
             $eraPitch = wabot_pitch_corresponde($tipo, $conv, $cfg);
+            // El precio ya salió en el turno del pitch (más abajo): esto detecta
+            // el turno SIGUIENTE, cuando el cliente ya contestó esa pregunta y
+            // solo falta ofrecer la demo, sin repetir el precio. Catálogo queda
+            // afuera: nunca pasa por acá con precio_dado sin cta_muestra, porque
+            // su pitch (la cantidad) no fija el precio hasta cotizar.
+            $soloFaltaDemo = !$eraPitch && $tipo !== 'catalogo' && !empty($conv['precio_dado'])
+                && ($conv['tipo'] ?? '') === $tipo && empty($conv['cta_muestra']);
             $precio = wabot_precio($tipo, $conv, $cfg);
             if ($eraPitch) {
                 return [
                     'texto' => $precio[0], 'exacta' => true,
-                    'nota'  => 'Todavía NO se da el precio. Mandá este texto tal cual: presenta el tipo de web y termina en una pregunta. Esperá la respuesta del cliente y recién en el turno siguiente volvés a llamar a dar_precio para el monto.',
+                    'nota'  => 'Mandá este texto tal cual: es el precio con la descripción de la web. La pregunta que sigue sale sola, en un mensaje aparte, unos segundos después: no la repitas ni la hagas vos, y esperá su respuesta antes de ofrecer la demo.',
+                    'aparte' => $precio[1] ?? '',
+                ];
+            }
+            if ($soloFaltaDemo) {
+                return [
+                    'ok' => true,
+                    'aparte' => $precio[0],
+                    'nota'   => 'El precio ya se lo diste en el mensaje anterior: no lo repitas. Con lo que acaba de contestar sobre el pitch, reconocelo en una frase corta y natural. La propuesta de la demo sale sola, en un mensaje aparte: no la escribas vos.',
                 ];
             }
             return [
                 'texto' => $precio[0],
-                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo, con el precio y el link idénticos, y respetando el salto de línea: la frase del link arranca en un renglón nuevo. NO le agregues introducciones ni frases de beneficio. NO menciones el prediseño gratis: sale solo, en un mensaje aparte, unos segundos después. Si lo escribís vos queda repetido.',
+                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo, con el precio idéntico y respetando el salto de línea si lo tiene. NO le agregues introducciones ni frases de beneficio. NO menciones el prediseño gratis: sale solo, en un mensaje aparte, unos segundos después. Si lo escribís vos queda repetido.',
                 'aparte' => $precio[1] ?? '',
             ];
 
@@ -1352,13 +1371,13 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 - Tratalo como SISTEMAS DE GESTIÓN A MEDIDA: llamá a anotar_sistema apenas lo detectes, con el problema anotado como el panel de contenido que necesita ("necesita publicar noticias/contenido seguido con un panel propio"), y seguí el mismo flujo (problema, usuarios, método actual) hasta cerrar con guardar_sistema. NUNCA lo cotices con dar_precio como landing ni institucional, y no lo hagas encajar a la fuerza en el árbol de tipos de web de arriba solo porque el rubro se parece a alguno de esos casos.
 - No inventes un precio para esto: como cualquier sistema a medida, no tiene precio de lista y lo cotiza el desarrollador con el brief que dejaste anotado.
 
-PRIMERO SE PRESENTA LA WEB, EL PRECIO VA DESPUÉS
-Cuando ya sabés qué tipo de web necesita, llamá a dar_precio igual: la primera vez te va a devolver una PRESENTACIÓN (qué incluye esa web y para qué le sirve) que termina en una pregunta, sin ningún monto. Mandá ese texto tal cual y esperá que conteste.
-Cuando conteste, volvés a llamar a dar_precio y recién ahí viene el monto con el link.
-No te adelantes: no menciones precios, ni "te paso el presupuesto", ni el link, en el turno de la presentación.
+PRIMERO SE PRESENTA LA WEB CON EL PRECIO, LA DEMO VA DESPUÉS
+Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya con la descripción de lo que incluye esa web. Mandá ese texto tal cual, exacto como te lo indica la herramienta. La pregunta que sigue (el diferenciador del rubro: qué servicio o producto destacar) sale sola, en un mensaje aparte, unos segundos después — no la repitas vos ni la adelantes en tu mensaje, y esperá su respuesta antes de seguir.
+Cuando conteste esa pregunta, volvés a llamar a dar_precio con el mismo tipo: el precio NO se repite, ya se lo diste. Ahí solo reconocés en una frase corta lo que acaba de contestar; la propuesta de la demo llega sola, aparte, unos segundos después — tampoco la escribas vos.
+No te adelantes: no ofrezcas la demo ni menciones el prediseño en el turno de la presentación, eso recién sale en el turno siguiente.
 
 REGLAS QUE NO PODÉS ROMPER
-- Los precios y los links los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes.
+- Los precios los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes. Ya no se manda el link del presupuesto de entrada: si lo pide explícitamente, usá consultar_info('precio_cotizado').
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
@@ -1391,11 +1410,13 @@ REGLAS QUE NO PODÉS ROMPER
 
 EL PREDISEÑO
 Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio.
-Si muerde, llamá a la herramienta que corresponda (consultar_info('prediseno') o guardar_prediseno según el caso) y mandá el texto que te devuelve TAL CUAL, sin reescribirlo ni agregarle nada: por WhatsApp, ese texto directamente le da un link a una página donde carga sus datos (nombre, negocio, descripción, colores) — NO le pidas vos esos datos por chat, el link ya lo resuelve. Solo en Instagram (no hay link posible ahí, no tiene teléfono) el texto trae la lista de lo que falta para pedirla por chat en su lugar.
+Si muerde, llamá a la herramienta que corresponda (consultar_info('prediseno') o guardar_prediseno según el caso) y mandá el texto que te devuelve TAL CUAL, sin reescribirlo ni agregarle nada: según el caso te devuelve un link a una página donde carga sus datos (nombre, negocio, descripción, colores), o la lista de esos mismos datos para pedirlos por chat — NO le pidas vos esos datos por chat si ya te dio un link, y no asumas cuál de los dos te va a tocar: mandá el que te devuelva la herramienta.
+No vuelvas a llamar a consultar_info('prediseno') ni repitas ese texto (link o lista) si ya lo mandaste antes en la charla y el cliente todavía no contestó con datos reales: un "ok", "dale", "genial" o cualquier acuse sin información nueva significa que lo vio y lo va a hacer, no que haya que insistirle de nuevo. Quedate en silencio o contestá una línea corta esperando los datos.
 Si el cliente igual te contesta con esos datos por chat en vez de completar el link (pasa seguido, no está mal), anotalos igual: APENAS te dice uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.
 Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), sea porque las contestó por chat o porque completó el formulario, llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos.
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno.
+Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale $X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso, el monto que le diste antes es por el desarrollo completo de la web, no por la demo. Nunca derives esta duda al desarrollador, ya la sabés.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.

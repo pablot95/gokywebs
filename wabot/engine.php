@@ -2005,11 +2005,12 @@ function wabot_tipo_variante($tipo, $campo, $conv, $cfg) {
     return $variantes[$indice];
 }
 
-/* Arma el mensaje de precio del tipo y fija la fase. */
 /**
- * Devuelve DOS mensajes: el precio con el link, y el ofrecimiento del
- * prediseño. Van separados a propósito, con una pausa en el medio, porque el
- * precio necesita su momento antes de que llegue la oferta.
+ * Arma el mensaje de precio del tipo y fija la fase. Según en qué punto de la
+ * charla esté, devuelve UN mensaje (el precio+pregunta del pitch, o solo la
+ * oferta de la demo si el precio ya salió antes) o DOS —precio y demo
+ * juntos— cuando el pitch nunca corrió para este tipo. Ver wabot_pitch() para
+ * el detalle de cada camino.
  */
 /* ───────────────────── Parte 2: después de la demo ─────────────────────
  *
@@ -2164,17 +2165,13 @@ function wabot_frase_tiene_contenido_especifico($texto) {
     return count($palabras) > 0;
 }
 
-function wabot_pitch_texto($tipo, $conv, $cfg) {
+/** Solo la pregunta diferenciadora del pitch (variante según contexto/tipo). */
+function wabot_pitch_pregunta_texto($tipo, $conv, $cfg) {
     $contexto = wabot_contexto_cliente_texto($conv);
     $variante = null;
     if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
     elseif ($tipo === 'turnos' && wabot_contexto_es_salud($contexto)) $variante = 'salud';
     if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
-
-    $campoDesc = $variante !== null ? 'desc_' . $variante : 'desc';
-    $desc = wabot_tipo_variante($tipo, $campoDesc, $conv, $cfg);
-    if ($desc === '' && $variante !== null) $desc = wabot_tipo_variante($tipo, 'desc', $conv, $cfg);
-    if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
 
     $ultimoMsg = trim((string)wabot_ultimo_texto_cliente($conv));
     $respuestaEspecifica = !wabot_es_acuse($ultimoMsg) && !wabot_es_negativa($ultimoMsg)
@@ -2195,9 +2192,47 @@ function wabot_pitch_texto($tipo, $conv, $cfg) {
     $pregunta = $campoPregunta !== null ? wabot_tipo_variante($tipo, $campoPregunta, $conv, $cfg) : '';
     if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta' . $sufijo, $conv, $cfg);
     if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta', $conv, $cfg);
+    return trim($pregunta);
+}
+
+/**
+ * El desc + la pregunta juntos en un solo texto, vía {desc}/{pregunta} de
+ * msg_pitch. Solo lo sigue usando catálogo: ahí la "pregunta del pitch" ES la
+ * cantidad de productos, y sin ese dato no hay precio que dar todavía, así
+ * que no puede separarse en precio+pregunta como el resto de los tipos.
+ */
+function wabot_pitch_texto($tipo, $conv, $cfg) {
+    $contexto = wabot_contexto_cliente_texto($conv);
+    $variante = null;
+    if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
+    elseif ($tipo === 'turnos' && wabot_contexto_es_salud($contexto)) $variante = 'salud';
+    if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
+
+    $campoDesc = $variante !== null ? 'desc_' . $variante : 'desc';
+    $desc = wabot_tipo_variante($tipo, $campoDesc, $conv, $cfg);
+    if ($desc === '' && $variante !== null) $desc = wabot_tipo_variante($tipo, 'desc', $conv, $cfg);
+    if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
+
+    $pregunta = wabot_pitch_pregunta_texto($tipo, $conv, $cfg);
 
     $base = wabot_plantilla_variante('msg_pitch', 'msg_pitch_variantes', $conv, $cfg);
     return trim(str_replace(['{desc}', '{pregunta}'], [$desc, $pregunta], $base));
+}
+
+/**
+ * El precio+desc del turno del pitch. Si el tipo tiene un texto fijo dictado
+ * por Pablo (precio_ideal), es ese con {precio} resuelto; si no —institucional,
+ * que no tiene copy fijo— es la plantilla dinámica de siempre. Se llama ANTES
+ * de fijar pitch_tipo, a propósito: necesita el {desc} completo (msg_precio),
+ * no la variante sin desc que usa msg_precio_tras_pitch para cuando el pitch
+ * ya se dio en un turno ANTERIOR.
+ */
+function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
+    $fijo = trim((string)($cfg['tipos'][$tipo]['precio_ideal'] ?? ''));
+    if ($fijo !== '') {
+        return str_replace('{precio}', (string)($cfg['tipos'][$tipo]['precio'] ?? ''), $fijo);
+    }
+    return wabot_msg_precio_texto($tipo, $cfg, $conv);
 }
 
 function wabot_pitch_corresponde($tipo, $conv, $cfg) {
@@ -2209,14 +2244,39 @@ function wabot_pitch_corresponde($tipo, $conv, $cfg) {
     return trim((string)($cfg['tipos'][$tipo]['pitch_pregunta'] ?? '')) !== '';
 }
 
+/**
+ * Catálogo sigue con la pregunta sola (sin precio: depende de la cantidad).
+ * El resto de los tipos ya tiene un precio fijo que no depende de nada, así
+ * que sale en este mismo turno junto con la pregunta del pitch —dos mensajes
+ * separados, el segundo llega aparte unos segundos después (ver 'aparte' en
+ * agente.php)— en vez de esperar a que conteste para recién ahí cotizar.
+ */
 function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['tipo'] = $tipo;
-    $conv['fase'] = 'pitch';
+    wabot_handoff_aclaracion_resuelta($conv);
+
+    if ($tipo === 'catalogo') {
+        $conv['fase'] = 'pitch';
+        $conv['pitch_hecho'] = true;
+        $conv['pitch_tipo'] = $tipo;
+        wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
+        return [wabot_pitch_texto($tipo, $conv, $cfg)];
+    }
+
+    $precioTexto = wabot_pitch_precio_texto($tipo, $cfg, $conv);
     $conv['pitch_hecho'] = true;
     $conv['pitch_tipo'] = $tipo;
-    wabot_handoff_aclaracion_resuelta($conv);
+    $conv['precio_dado'] = true;
+    // Fase 'pitch', no 'precio': lo que falta es la respuesta a la pregunta
+    // del pitch, y esa respuesta la termina de procesar el case 'pitch' del
+    // switch de wabot_engine() (llama a wabot_precio() de nuevo, que ya sabe
+    // que acá solo falta ofrecer la demo). 'precio' es una fase distinta, con
+    // su propio manejo de objeciones/dudas — no la de esperar el pitch.
+    $conv['fase'] = 'pitch';
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
-    return [wabot_pitch_texto($tipo, $conv, $cfg)];
+    wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
+    $pregunta = wabot_pitch_pregunta_texto($tipo, $conv, $cfg);
+    return [$precioTexto, $pregunta];
 }
 
 function wabot_precio($tipo, &$conv, $cfg) {
@@ -2229,6 +2289,16 @@ function wabot_precio($tipo, &$conv, $cfg) {
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && !empty($conv['cta_muestra'])) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
+    // El precio ya salió en el turno del pitch (wabot_pitch(), arriba), en su
+    // propio mensaje: acá solo falta ofrecer la demo, sin repetirlo.
+    if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && empty($conv['cta_muestra'])) {
+        $conv['fase'] = 'prediseno';
+        $conv['cta_muestra'] = true;
+        wabot_handoff_aclaracion_resuelta($conv);
+        $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
+        wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
+        return [wabot_prediseno_texto($conv, $cfg)];
+    }
 
     $conv['tipo'] = $tipo;
     $conv['fase'] = 'precio';
@@ -2236,14 +2306,10 @@ function wabot_precio($tipo, &$conv, $cfg) {
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
+    // Esto solo se llega a pisar cuando el pitch nunca corrió para este tipo
+    // (pidió el precio directo, o pitch_activo está apagado): ahí el precio y
+    // la propuesta de la demo van juntos en el mismo turno, como siempre.
     $out = [wabot_msg_precio_texto($tipo, $cfg, $conv)];
-    // El precio y la propuesta de la demo van JUNTOS, en el mismo turno: antes
-    // se mandaba un "querés la muestra?" sin el link, y el link recién salía
-    // en un mensaje aparte si el cliente contestaba que sí. Pablo lo pidió
-    // explícito: el link tiene que ir en ESTE mensaje, no despues. Con
-    // wabot_prediseno_texto() ya resuelto (da el link directo en WhatsApp, o
-    // pide los datos por chat en Instagram) no hace falta esperar la
-    // confirmación para mostrarlo.
     $conv['fase'] = 'prediseno';
     $conv['cta_muestra'] = true;
     // "Ofrecida", no "aceptada": todavía no sabemos si el cliente la quiere,

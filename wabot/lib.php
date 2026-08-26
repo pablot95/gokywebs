@@ -375,20 +375,20 @@ function wabot_config_ventas(&$cfg) {
 
     if (empty($cfg['msg_precio_variantes']) || !is_array($cfg['msg_precio_variantes'])) {
         $cfg['msg_precio_variantes'] = [
-            "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién cuando la web está terminada, o con tarjeta hasta en 12 cuotas.\nAcá podés ver todo lo que incluye y otros trabajos realizados: {link}",
-            "En este caso iría con {desc}. Todo el desarrollo tendría un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle completo y ejemplos de trabajos acá: {link}",
-            "La opción que mejor encaja es {desc}. El valor por el desarrollo completo es de {precio}: se reserva con una seña de {sena} y el saldo se abona al entregar la web, o con tarjeta hasta en 12 cuotas.\nEn este link está detallado lo que incluye: {link}",
-            "Para ese objetivo, lo adecuado sería {desc}. El desarrollo completo queda en {precio}. Arrancás con una seña de {sena} y el resto lo pagás recién con la web entregada, o con tarjeta hasta en 12 cuotas.\nPodés revisar el alcance y otros trabajos en: {link}",
-            "Con esa modalidad necesitarías {desc}. El valor total del desarrollo es de {precio}: seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.\nAcá tenés el presupuesto detallado: {link}",
+            "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién cuando la web está terminada, o con tarjeta hasta en 12 cuotas.",
+            "En este caso iría con {desc}. Todo el desarrollo tendría un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.",
+            "La opción que mejor encaja es {desc}. El valor por el desarrollo completo es de {precio}: se reserva con una seña de {sena} y el saldo se abona al entregar la web, o con tarjeta hasta en 12 cuotas.",
+            "Para ese objetivo, lo adecuado sería {desc}. El desarrollo completo queda en {precio}. Arrancás con una seña de {sena} y el resto lo pagás recién con la web entregada, o con tarjeta hasta en 12 cuotas.",
+            "Con esa modalidad necesitarías {desc}. El valor total del desarrollo es de {precio}: seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.",
         ];
     }
     if (empty($cfg['msg_precio_catalogo_variantes']) || !is_array($cfg['msg_precio_catalogo_variantes'])) {
         $cfg['msg_precio_catalogo_variantes'] = [
-            "Para tu caso iría {desc}. Con {cantidad} productos queda en {total}: {base} por el desarrollo más {unitario} por cada producto cargado ({productos}). Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.\nAcá podés ver el detalle completo: {link}",
-            "Con {cantidad} productos queda en un total de {total}: {base} de desarrollo y {productos} por la carga, a {unitario} cada uno. Es {desc}. Se reserva con una seña de {sena} y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el presupuesto detallado: {link}",
-            "La opción que encaja es {desc}. Para {cantidad} productos, el total es {total}, compuesto por {base} de desarrollo más {productos} de carga ({unitario} por producto). Arrancás con una seña de {sena} y el resto al entregar, o con tarjeta hasta en 12 cuotas.\nPodés revisar todo lo incluido acá: {link}",
-            "Para mostrar esos {cantidad} productos necesitarías {desc}. El desarrollo queda en {total}: {base} más {unitario} por cada producto cargado ({productos}). Seña de {sena} para arrancar y el saldo con la web entregada, o con tarjeta hasta en 12 cuotas.\nAcá está el alcance completo: {link}",
-            "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.\nTe dejo el detalle: {link}",
+            "Para tu caso iría {desc}. Con {cantidad} productos queda en {total}: {base} por el desarrollo más {unitario} por cada producto cargado ({productos}). Se arranca con una seña de {sena} y el saldo recién con la web terminada, o con tarjeta hasta en 12 cuotas.",
+            "Con {cantidad} productos queda en un total de {total}: {base} de desarrollo y {productos} por la carga, a {unitario} cada uno. Es {desc}. Se reserva con una seña de {sena} y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas.",
+            "La opción que encaja es {desc}. Para {cantidad} productos, el total es {total}, compuesto por {base} de desarrollo más {productos} de carga ({unitario} por producto). Arrancás con una seña de {sena} y el resto al entregar, o con tarjeta hasta en 12 cuotas.",
+            "Para mostrar esos {cantidad} productos necesitarías {desc}. El desarrollo queda en {total}: {base} más {unitario} por cada producto cargado ({productos}). Seña de {sena} para arrancar y el saldo con la web entregada, o con tarjeta hasta en 12 cuotas.",
+            "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.",
         ];
     }
     $ofertaVariantesDefault = [
@@ -700,6 +700,24 @@ function wabot_config_ventas(&$cfg) {
         ];
     }
 
+    // Texto fijo del turno del pitch (25-ago, pedido de Pablo): precio+desc
+    // dictados tal cual, con {precio} como único reemplazo. institucional y
+    // catálogo quedan afuera a propósito —no dictó copy para esos dos— y
+    // siguen con la plantilla dinámica de {desc} (ver wabot_pitch_precio_texto).
+    $precioIdealPorTipo = [
+        'landing' => 'Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}, pago único.',
+        'ecommerce' => 'Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}, en un único pago',
+        'turnos' => 'Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}, pago único.',
+        'inmobiliaria' => 'Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}, pago único.',
+        'elearning' => 'Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}, pago único.',
+    ];
+    foreach ($precioIdealPorTipo as $tipoPI => $textoPI) {
+        if (!isset($cfg['tipos'][$tipoPI])) continue;
+        if (trim((string)($cfg['tipos'][$tipoPI]['precio_ideal'] ?? '')) === '') {
+            $cfg['tipos'][$tipoPI]['precio_ideal'] = $textoPI;
+        }
+    }
+
     $preguntaVariantes = [
         'landing' => [
             'pitch_pregunta' => [
@@ -791,6 +809,7 @@ function wabot_config_ventas(&$cfg) {
     }
 
     if (!isset($cfg['postdemo_bot_activo'])) $cfg['postdemo_bot_activo'] = false;
+    if (!isset($cfg['form_activo'])) $cfg['form_activo'] = true;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
@@ -1321,10 +1340,29 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
 
     if (empty($cfg['msg_precio_tras_pitch_variantes']) || !is_array($cfg['msg_precio_tras_pitch_variantes'])) {
         $cfg['msg_precio_tras_pitch_variantes'] = [
-            "Para una web de este tipo, el desarrollo queda en {precio}.\nAcá podés ver todo lo que incluye y algunos trabajos que hicimos: {link}",
-            "El desarrollo completo queda en {precio}.\nAcá tenés el detalle de lo que incluye y algunos trabajos: {link}",
-            "En ese caso el desarrollo sale {precio}.\nAcá está todo lo que incluye, con ejemplos de trabajos: {link}",
+            "Para una web de este tipo, el desarrollo queda en {precio}.",
+            "El desarrollo completo queda en {precio}.",
+            "En ese caso el desarrollo sale {precio}.",
         ];
+    }
+
+    // Pablo, 25-ago: no se fuerza más el link del presupuesto en el mensaje de
+    // precio ("al menos no forzadamente"). Se saca la línea que lo menciona de
+    // lo que ya esté guardado en producción, sea cual sea su redacción exacta
+    // —hay demasiadas variantes históricas para migrar una por una— en vez de
+    // tocar el campo 'link' en sí, que sigue existiendo por si se necesita a
+    // pedido (ver wabot_precio_resumen, que sí lo sigue dando).
+    $sinLinkPrecio = function ($texto) {
+        $lineas = preg_split('/\r?\n/', (string)$texto);
+        $lineas = array_filter($lineas, function ($l) { return strpos($l, '{link}') === false; });
+        return trim(implode("\n", $lineas));
+    };
+    foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch', 'msg_precio_catalogo_tras_pitch'] as $clave) {
+        if (!empty($cfg[$clave])) $cfg[$clave] = $sinLinkPrecio($cfg[$clave]);
+    }
+    foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes', 'msg_precio_tras_pitch_variantes'] as $clave) {
+        if (empty($cfg[$clave]) || !is_array($cfg[$clave])) continue;
+        $cfg[$clave] = array_map($sinLinkPrecio, $cfg[$clave]);
     }
 
     // En la parte 1 se lo nombra por el ROL ("el desarrollador"), nunca por el
@@ -1617,12 +1655,10 @@ function wabot_config_descs(&$cfg) {
     }
 
     if (trim((string)($cfg['msg_precio_tras_pitch'] ?? '')) === '') {
-        $cfg['msg_precio_tras_pitch'] = "El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia.\n"
-                                       . "Acá podés ver todo lo que incluye y otros trabajos realizados: {link}";
+        $cfg['msg_precio_tras_pitch'] = "El desarrollo completo tiene un valor de {precio}. Se puede abonar por transferencia.";
     }
     if (trim((string)($cfg['msg_precio_catalogo_tras_pitch'] ?? '')) === '') {
-        $cfg['msg_precio_catalogo_tras_pitch'] = "Con {cantidad} productos queda en {total}: {base} el desarrollo de la web más {unitario} por cada producto cargado ({productos}). Se puede abonar por transferencia.\n"
-                                                . "En este link podés ver detallado todo lo que incluye junto con otros trabajos realizados: {link}";
+        $cfg['msg_precio_catalogo_tras_pitch'] = "Con {cantidad} productos queda en {total}: {base} el desarrollo de la web más {unitario} por cada producto cargado ({productos}). Se puede abonar por transferencia.";
     }
 }
 
@@ -2086,6 +2122,9 @@ function wabot_codigo_asignar(&$conv) {
  * hace falta el link, y hay que guardarlo en la conversacion.
  */
 function wabot_form_link(&$conv, $cfg) {
+    // Pablo, 25-ago: momentáneamente sin el form, para volver al pedido de
+    // datos por chat (el mismo mecanismo que ya usa Instagram sin link).
+    if (empty($cfg['form_activo'])) return '';
     if (wabot_canal($conv) !== 'whatsapp') return '';
     if (wabot_channel_user_id($conv) === '') return '';
     $codigo = wabot_codigo_asignar($conv);
@@ -4335,8 +4374,13 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
 
     // Solo etapas calientes: ya recibió precio/muestra o está completando la
     // muestra. Nunca se persigue una charla que apenas estaba calificándose.
+    // 'pitch' entra SOLO si ya se dio el precio (25-ago: precio+pitch salen
+    // juntos, así que esperar la respuesta del pitch ya es una etapa caliente).
+    // En catálogo 'pitch' sigue siendo la pregunta de cantidad SIN precio
+    // todavía —esa sí sigue sin perseguirse— por eso se exige precio_dado.
     $fases = ['precio', 'prediseno', 'prediseno_ref', 'prediseno_wsp'];
-    if (!in_array($cv['fase'] ?? '', $fases, true)) return false;
+    $pitchConPrecio = ($cv['fase'] ?? '') === 'pitch' && !empty($cv['precio_dado']);
+    if (!in_array($cv['fase'] ?? '', $fases, true) && !$pitchConPrecio) return false;
 
     // El último tiene que haber sido el bot, y hace rato.
     $t = $cv['transcript'] ?? [];
@@ -4359,7 +4403,9 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
 }
 
 function wabot_seguimiento_texto($cv, $cfg) {
-    $clave = ($cv['fase'] ?? '') === 'precio' ? 'seguimiento_precio' : 'seguimiento_datos';
+    $esPrecio = ($cv['fase'] ?? '') === 'precio'
+        || (($cv['fase'] ?? '') === 'pitch' && !empty($cv['precio_dado']));
+    $clave = $esPrecio ? 'seguimiento_precio' : 'seguimiento_datos';
     return (string)($cfg[$clave] ?? '');
 }
 

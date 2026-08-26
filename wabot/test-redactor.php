@@ -103,7 +103,7 @@ $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 2 && strpos($r[0], 'gokywebs.com/presupuestos/Landing') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 2 && strpos($r[0], '$160.000') !== false && strpos($r[0], 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
@@ -140,8 +140,8 @@ caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
 caso('tampoco puede colar 3 pagos: ya no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/Ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
-caso('el link va en su propio renglón, no pegado a la frase del precio',
-    substr_count($r[0], "\n") === 1 && preg_match('/\n[^\n]*gokywebs\.com/u', $r[0]) === 1);
+caso('el precio ya no viene con el link del presupuesto pegado ni forzado',
+    strpos($r[0], 'presupuestos/') === false);
 
 echo "— El salto de línea se garantiza aunque la IA lo aplaste —\n";
 
