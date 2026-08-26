@@ -1,4 +1,4 @@
-const WHATSAPP_NUMBER = '542615954811';
+const WHATSAPP_NUMBER = '5492615954811';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
