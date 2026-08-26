@@ -763,9 +763,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             }
             if ($soloFaltaDemo) {
                 return [
-                    'ok' => true,
-                    'aparte' => $precio[0],
-                    'nota'   => 'El precio ya se lo diste en el mensaje anterior: no lo repitas. Con lo que acaba de contestar sobre el pitch, reconocelo en una frase corta y natural. La propuesta de la demo sale sola, en un mensaje aparte: no la escribas vos.',
+                    'texto' => $precio[0], 'exacta' => true,
+                    'nota'  => 'El precio ya se lo diste en el mensaje anterior: no lo repitas y no agregues nada antes. Esto es solo la OFERTA de la demo, todavía no le pidas ningún dato: si confirma que la quiere, volvés a llamar a consultar_info(\'prediseno\') recién en el turno siguiente para pedirle el listado.',
                 ];
             }
             return [
@@ -1373,7 +1372,7 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 
 PRIMERO SE PRESENTA LA WEB CON EL PRECIO, LA DEMO VA DESPUÉS
 Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya con la descripción de lo que incluye esa web. Mandá ese texto tal cual, exacto como te lo indica la herramienta. La pregunta que sigue (el diferenciador del rubro: qué servicio o producto destacar) sale sola, en un mensaje aparte, unos segundos después — no la repitas vos ni la adelantes en tu mensaje, y esperá su respuesta antes de seguir.
-Cuando conteste esa pregunta, volvés a llamar a dar_precio con el mismo tipo: el precio NO se repite, ya se lo diste. Ahí solo reconocés en una frase corta lo que acaba de contestar; la propuesta de la demo llega sola, aparte, unos segundos después — tampoco la escribas vos.
+Cuando conteste esa pregunta, volvés a llamar a dar_precio con el mismo tipo: el precio NO se repite, ya se lo diste. Ahí te devuelve la OFERTA de la demo (todavía no el pedido de datos) — mandala tal cual, sin agregar nada antes ni reconocer lo que acaba de contestar. Recién si confirma que la quiere, en el turno siguiente, llamás a consultar_info('prediseno') para pedirle el listado.
 No te adelantes: no ofrezcas la demo ni menciones el prediseño en el turno de la presentación, eso recién sale en el turno siguiente.
 
 REGLAS QUE NO PODÉS ROMPER
@@ -1409,8 +1408,8 @@ REGLAS QUE NO PODÉS ROMPER
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
-Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Ofrecelo siempre junto al precio.
-Si muerde, llamá a la herramienta que corresponda (consultar_info('prediseno') o guardar_prediseno según el caso) y mandá el texto que te devuelve TAL CUAL, sin reescribirlo ni agregarle nada: según el caso te devuelve un link a una página donde carga sus datos (nombre, negocio, descripción, colores), o la lista de esos mismos datos para pedirlos por chat — NO le pidas vos esos datos por chat si ya te dio un link, y no asumas cuál de los dos te va a tocar: mandá el que te devuelva la herramienta.
+Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. La oferta ("querés que te preparemos una demo?") sale sola, en su propio turno, la segunda vez que llamás a dar_precio para el mismo tipo (ver PRIMERO SE PRESENTA LA WEB CON EL PRECIO más arriba) — no la adelantes vos junto al precio ni junto a la pregunta del pitch.
+Si confirma que la quiere, llamá a la herramienta que corresponda (consultar_info('prediseno') o guardar_prediseno según el caso) y mandá el texto que te devuelve TAL CUAL, sin reescribirlo ni agregarle nada: según el caso te devuelve un link a una página donde carga sus datos (nombre, negocio, descripción, colores), o la lista de esos mismos datos para pedirlos por chat — NO le pidas vos esos datos por chat si ya te dio un link, y no asumas cuál de los dos te va a tocar: mandá el que te devuelva la herramienta.
 No vuelvas a llamar a consultar_info('prediseno') ni repitas ese texto (link o lista) si ya lo mandaste antes en la charla y el cliente todavía no contestó con datos reales: un "ok", "dale", "genial" o cualquier acuse sin información nueva significa que lo vio y lo va a hacer, no que haya que insistirle de nuevo. Quedate en silencio o contestá una línea corta esperando los datos.
 Si el cliente igual te contesta con esos datos por chat en vez de completar el link (pasa seguido, no está mal), anotalos igual: APENAS te dice uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.
 Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), sea porque las contestó por chat o porque completó el formulario, llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos.

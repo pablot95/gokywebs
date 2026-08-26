@@ -76,10 +76,17 @@ caso('la primera llamada ya da el precio (texto fijo), con la pregunta del pitch
     && !empty($r['aparte']) && mb_substr(trim($r['aparte']), -1) === '?'
     && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-caso('la segunda llamada, con el pitch ya contestado, NO repite el precio: solo ofrece la demo aparte',
-    empty($r2['exacta']) && empty($r2['texto'])
-    && !empty($r2['aparte']) && strpos((string)$r2['aparte'], '$290.000') === false
+caso('la segunda llamada, con el pitch ya contestado, NO repite el precio: solo OFRECE la demo (sin pedir datos)',
+    !empty($r2['exacta']) && !empty($r2['texto']) && strpos((string)$r2['texto'], '$290.000') === false
+    && empty($r2['aparte'])
     && $cPitch['fase'] === 'prediseno' && $cPitch['cta_muestra'] === true);
+
+// Recién si confirma que la quiere (llamando a consultar_info('prediseno'),
+// como indica el prompt) le llega el pedido de datos — no antes. Con el form
+// activo (como el resto de esta suite), ese pedido es el link.
+$r3 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cPitch, $cfg);
+caso('confirmada la demo, ahí sí llega el pedido de datos (el link del form)',
+    strpos((string)$r3['texto'], 'gokywebs.com/form/') !== false && $cPitch['fase'] === 'prediseno');
 @unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
 $cCatPitch = convNueva('AGPITCH2');

@@ -547,9 +547,10 @@ caso('el precio ya quedó dado, pero la fase espera la respuesta del pitch antes
 
 clasifica(['otro']);
 $rP2 = wabot_engine('Ropa de mujer, vestidos y jeans, tengo local en Salta', $cP, $cfg);
-caso('al contestar el pitch, recién ahí llega la demo, SIN repetir el precio',
+caso('al contestar el pitch, recién ahí se OFRECE la demo (sin pedir datos todavía), SIN repetir el precio',
     count($rP2) === 1 && strpos(implode(' ', $rP2), '$290.000') === false
-    && (stripos(implode(' ', $rP2), 'predise') !== false || stripos(implode(' ', $rP2), 'demo') !== false || stripos(implode(' ', $rP2), 'nombre') !== false)
+    && (stripos(implode(' ', $rP2), 'predise') !== false || stripos(implode(' ', $rP2), 'demo') !== false
+        || stripos(implode(' ', $rP2), 'muestra') !== false || stripos(implode(' ', $rP2), 'nombre') !== false)
     && $cP['fase'] === 'prediseno' && $cP['cta_muestra'] === true);
 caso('lo que contó queda guardado para el prediseño',
     stripos((string)$cP['descripcion'], 'vestidos') !== false);

@@ -2290,14 +2290,19 @@ function wabot_precio($tipo, &$conv, $cfg) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
     // El precio ya salió en el turno del pitch (wabot_pitch(), arriba), en su
-    // propio mensaje: acá solo falta ofrecer la demo, sin repetirlo.
+    // propio mensaje: acá solo falta OFRECER la demo, sin repetir el precio y
+    // sin pedir los datos todavía (Pablo, 25-ago: primero se ofrece, y solo si
+    // confirma se le pide el listado — antes se saltaba directo al pedido de
+    // datos, dando por hecho un sí que nunca se preguntó). Si contesta que sí
+    // (o cualquier cosa que no sea otra cosa clasificable), case 'prediseno'
+    // ya sabe mandar wabot_prediseno_texto() en el turno siguiente.
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && empty($conv['cta_muestra'])) {
         $conv['fase'] = 'prediseno';
         $conv['cta_muestra'] = true;
         wabot_handoff_aclaracion_resuelta($conv);
         $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
         wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-        return [wabot_prediseno_texto($conv, $cfg)];
+        return [wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg)];
     }
 
     $conv['tipo'] = $tipo;
