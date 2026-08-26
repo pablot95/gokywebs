@@ -2209,9 +2209,7 @@ function renderPropuestas() {
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
-                    ${p.confirmoMuestra === true
-                        ? `<div style="margin-top:5px"><span style="background:rgba(74,222,128,.15);color:#4ade80;border:1px solid rgba(74,222,128,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap">✓ Quiere la muestra</span></div>`
-                        : p.confirmoMuestra === false
+                    ${p.confirmoMuestra === false
                         ? `<div style="margin-top:5px"><span style="background:rgba(245,158,11,.13);color:#F59E0B;border:1px solid rgba(245,158,11,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Vio el precio pero no confirmó — priorizá los verdes">Solo vio precio</span></div>`
                         : ""}
                     ${Number(p.imagenes_recibidas || 0) > 0
@@ -2663,7 +2661,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         const slug = slugNegocio(nombreNegocio) || "[definir-nombre-del-negocio]";
         prefijo = [
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
-            `Creá la carpeta del proyecto en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
+            `La carpeta del proyecto está en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
             esComercioOCatalogo
                 ? "Buscá en internet un máximo de 10 imágenes coherentes con el negocio; 6 de esas 10 tienen que ser fotos de productos específicos."
                 : "Buscá en internet un máximo de 10 imágenes coherentes con el negocio.",
@@ -4209,7 +4207,7 @@ function nbTipoKey(base, reservas) {
             precio_sena:         sena.toLocaleString("es-AR"),
             precio_saldo:        saldo.toLocaleString("es-AR"),
             notas:               $("nbNotas").value.trim(),
-            confirmoMuestra:     true,   // vino por WhatsApp y aceptó la muestra → ya calificado (badge verde)
+            confirmoMuestra:     true,   // vino por WhatsApp y aceptó la muestra → ya calificado
             origen:              "whatsapp-admin",
             fecha:               new Date().toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" }),
             createdAt:           serverTimestamp(),
