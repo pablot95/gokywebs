@@ -920,6 +920,7 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal && !window
 // --- Estado ---
 let clients = [];
 let propuestas = [];
+let propuestasListaVisible = [];  // lo que renderPropuestas() dejó filtrado; lo usa "Copiar carpetas"
 let presupuestos = [];
 let leads = [];
 let completados = [];
@@ -1998,6 +1999,33 @@ window.downloadImageFromUrl = downloadImageFromUrl;
 propuestaModal.addEventListener("click", (e) => { if (e.target === propuestaModal && !window.getSelection().toString().length) tryClosePropuestaModal(); });
 searchPropuestasInput.addEventListener("input", renderPropuestas);
 
+/* ── "Copiar carpetas": arma el prompt para crear, a mano o con un agente,
+   una carpeta de imágenes por cada boceto que está visible en la lista
+   (respeta la búsqueda y las fechas marcadas). Los nombres van slugificados
+   con slugNegocio(), el mismo criterio que ya usa el link "Ver demo". */
+document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) => {
+    const btn = e.currentTarget;
+    const nombres = [...new Set(
+        propuestasListaVisible
+            .map(p => slugNegocio(getPropuestaNegocioFields(p).nombreNegocio))
+            .filter(Boolean)
+    )];
+    if (!nombres.length) {
+        alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
+        return;
+    }
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada uno de estos nombres, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}`;
+    try {
+        await writeTextToClipboard(texto);
+        const prev = btn.textContent;
+        btn.textContent = "✓ Copiado";
+        setTimeout(() => { btn.textContent = prev; }, 1500);
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo copiar el prompt.");
+    }
+});
+
 function getPropuestaTipoWeb(p) {
     if (!p) return "";
     if (Object.prototype.hasOwnProperty.call(p, "tipo_web")) {
@@ -2146,6 +2174,11 @@ function renderPropuestas() {
             (p.telefono            || "").toLowerCase().includes(term) ||
             (termPhone && cleanArgPhone(p.telefono || p.contacto_cel).includes(termPhone)))
         : baseList;
+
+    // La usa el botón "Copiar carpetas": arma la lista sobre lo que está
+    // filtrado ahora mismo (búsqueda + fechas marcadas), no sobre todos los
+    // bocetos que existen.
+    propuestasListaVisible = list;
 
     if (list.length === 0) {
         const motivo = fechasSeleccionadas.size && term ? " para esa búsqueda en las fechas marcadas"
