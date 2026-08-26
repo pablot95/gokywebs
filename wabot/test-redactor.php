@@ -12,6 +12,9 @@ $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 
 $cfg = wabot_config_load();
 $cfg['modo_redaccion'] = 'natural';
+// El form queda apagado por defecto (momentáneamente); esta suite ejercita
+// el mecanismo con el link activo, como el resto de las pruebas del motor.
+$cfg['form_activo'] = true;
 
 $fallas = 0; $total = 0;
 function caso($nombre, $ok) {

@@ -1574,7 +1574,7 @@ body.embed { min-height: 0; }
                 <input type="checkbox" name="form_activo" <?= !empty($cfg['form_activo']) ? 'checked' : '' ?>>
                 Dar el link a /form/ en WhatsApp
             </label>
-            <p class="meta" style="margin-top:8px">Prendido (por defecto), en WhatsApp el bot manda directo el link al formulario para cargar nombre, negocio, descripción y colores. Apagado, el bot vuelve a pedir esos mismos datos por chat, en un solo mensaje con viñetas — el mecanismo que ya se usa siempre en Instagram, que nunca tiene link posible. Pensado para cuando el form esté momentáneamente fuera de servicio.</p>
+            <p class="meta" style="margin-top:8px">Apagado (por defecto, momentáneamente), el bot pide esos mismos datos por chat, en un solo mensaje con viñetas — el mecanismo que ya se usa siempre en Instagram, que nunca tiene link posible. Prendido, en WhatsApp el bot vuelve a mandar directo el link al formulario para cargar nombre, negocio, descripción y colores.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>

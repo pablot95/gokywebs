@@ -18,6 +18,10 @@ function caso($nombre, $ok) {
 }
 
 $cfg = wabot_config_load();
+// El form queda apagado por defecto (momentáneamente, pedido de Pablo
+// 25-ago): estos tests ejercitan el mecanismo del link en sí, así que lo
+// prenden a propósito. El caso apagado se prueba aparte, explícito, abajo.
+$cfg['form_activo'] = true;
 
 echo "— wabot_form_link() —\n";
 

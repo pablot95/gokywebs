@@ -11,6 +11,10 @@ require_once __DIR__ . '/engine.php';
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 
 $cfg = wabot_config_load();
+// El resto de esta suite asume el link del form activo (mecanismo por
+// defecto): el caso apagado (momentáneamente, pedido de Pablo 25-ago) se
+// prueba aparte, explícito, con su propia copia de $cfg.
+$cfg['form_activo'] = true;
 $fallas = 0;
 $total  = 0;
 
@@ -2053,17 +2057,19 @@ caso('si ya se sabe todo, el texto no lista nada',
 caso('y el pedido aclara que puede mandar todo junto',
     stripos($textoConFaltantes, 'todo junto') !== false);
 
+$cfgPredisFormOn = $cfgPredis; $cfgPredisFormOn['form_activo'] = true;
 $convWspConTel = ['tel' => '5491100000000TEST', 'channel_user_id' => '5491100000000TEST', 'canal' => 'whatsapp',
     'nombre' => '', 'nombre_confirmado' => false, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''];
-$textoConFormActivo = wabot_prediseno_texto($convWspConTel, $cfgPredis);
+$textoConFormActivo = wabot_prediseno_texto($convWspConTel, $cfgPredisFormOn);
 caso('con el form activo, WhatsApp con teléfono recibe el link, no el checklist',
     strpos($textoConFormActivo, 'gokywebs.com/form/') !== false && strpos($textoConFormActivo, '- Tu nombre') === false);
 
-$cfgPredisFormOff = $cfgPredis; $cfgPredisFormOff['form_activo'] = false;
+// Apagado por defecto (momentáneamente, pedido de Pablo 25-ago): sin tocar
+// nada de config, WhatsApp con teléfono ya cae al checklist por chat.
 $convWspFormOff = ['tel' => '5491100000001TEST', 'channel_user_id' => '5491100000001TEST', 'canal' => 'whatsapp',
     'nombre' => '', 'nombre_confirmado' => false, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''];
-$textoConFormOff = wabot_prediseno_texto($convWspFormOff, $cfgPredisFormOff);
-caso('con el form apagado, WhatsApp con teléfono cae al mismo checklist por chat que usa Instagram',
+$textoConFormOff = wabot_prediseno_texto($convWspFormOff, $cfgPredis);
+caso('con el form apagado (default), WhatsApp con teléfono cae al mismo checklist por chat que usa Instagram',
     strpos($textoConFormOff, 'gokywebs.com/form/') === false && strpos($textoConFormOff, '- Tu nombre') !== false);
 
 echo "— Regresiones comerciales reales —\n";

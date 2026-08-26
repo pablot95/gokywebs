@@ -809,7 +809,8 @@ function wabot_config_ventas(&$cfg) {
     }
 
     if (!isset($cfg['postdemo_bot_activo'])) $cfg['postdemo_bot_activo'] = false;
-    if (!isset($cfg['form_activo'])) $cfg['form_activo'] = true;
+    // Pablo, 25-ago: apagado por defecto — momentáneamente no se usa el form.
+    if (!isset($cfg['form_activo'])) $cfg['form_activo'] = false;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
