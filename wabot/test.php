@@ -4257,5 +4257,131 @@ caso('el archivado por inactividad sigue andando aunque el bot esté callado',
 caso('y la confirmación a las 48 h también',
     wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600], $cfg, $ahoraPD) === true);
 
+echo "\n— El logo que el cliente ya mandó no se vuelve a pedir (26-ago) —\n";
+
+$fotoCliente = function ($texto, $archivo) {
+    return ['q' => 'cliente', 't' => $texto, 'ts' => time(),
+            'media' => ['clase' => 'imagen', 'archivo' => $archivo]];
+};
+
+$convSoloLogo = ['tipo' => 'ecommerce', 'imagenes_recibidas' => 1, 'transcript' => [
+    $fotoCliente('[foto] Mandó el logo de su marca, con las siglas VDA', 'a.jpg'),
+]];
+$textoSoloLogo = wabot_texto_prediseno_completo($convSoloLogo, $cfg);
+caso('si mandó solo el logo, no se le vuelve a pedir el logo',
+    !preg_match('/\bmandame\b[^.]{0,40}\blogo\b/iu', $textoSoloLogo)
+    && !preg_match('/\bel logo y\b/iu', $textoSoloLogo));
+caso('se le reconoce que ya lo tenemos', stripos($textoSoloLogo, 'logo ya lo tengo') !== false);
+caso('y se le piden las fotos que sí faltan',
+    stripos($textoSoloLogo, 'fotos de tus productos') !== false);
+caso('sin dejar el placeholder sin resolver', strpos($textoSoloLogo, '{imagenes}') === false);
+
+$convConFotos = ['tipo' => 'ecommerce', 'imagenes_recibidas' => 3, 'transcript' => [
+    $fotoCliente('[foto] Mandó el logo de su marca', 'a.jpg'),
+    $fotoCliente('[foto] Mandó una foto de un conjunto deportivo azul', 'b.jpg'),
+    $fotoCliente('[foto] Mandó una foto de un buzo canguro', 'c.jpg'),
+]];
+caso('si además mandó fotos de productos, se le agradece todo junto',
+    wabot_texto_prediseno_completo($convConFotos, $cfg) === $cfg['prediseno_completo_con_fotos']);
+
+// Si mandó muchas fotos y la descripción automática nombró el logo en todas,
+// no se asume "solo el logo": ahí ya hay material de sobra.
+$convMuchasConLogo = ['tipo' => 'ecommerce', 'imagenes_recibidas' => 4, 'transcript' => [
+    $fotoCliente('[foto] un buzo con el logo del club', 'a.jpg'),
+    $fotoCliente('[foto] una campera con el logo bordado', 'b.jpg'),
+    $fotoCliente('[foto] un conjunto con el logo al frente', 'c.jpg'),
+    $fotoCliente('[foto] otra prenda con el logo', 'd.jpg'),
+]];
+caso('cuatro fotos que nombran el logo no se leen como "solo el logo"',
+    wabot_texto_prediseno_completo($convMuchasConLogo, $cfg) === $cfg['prediseno_completo_con_fotos']);
+
+caso('y si no mandó nada, se le sigue pidiendo el logo y las fotos',
+    stripos(wabot_texto_prediseno_completo(['tipo' => 'ecommerce', 'imagenes_recibidas' => 0, 'transcript' => []], $cfg), 'el logo') !== false);
+
+caso('el pedido sin logo de landing queda bien redactado',
+    wabot_imagenes_a_pedir_sin_logo(['tipo' => 'landing'], $cfg) === '3 o 4 fotos de tus trabajos, tu local o tu equipo');
+caso('y el de institucional también, aunque diga "el logo o escudo"',
+    wabot_imagenes_a_pedir_sin_logo(['tipo' => 'institucional'], $cfg) === 'algunas fotos del lugar o de las actividades');
+
+// El bug de raíz: el contador vivía en el $conv de antes del candado, que el
+// webhook descarta al recargar la conversación. Ahora se suma al drenar la cola.
+$convContador = ['imagenes_recibidas' => 0];
+caso('una imagen entrante suma al contador',
+    wabot_imagenes_contar($convContador, ['clase' => 'imagen', 'archivo' => 'x.jpg']) === true
+    && $convContador['imagenes_recibidas'] === 1);
+caso('un audio no', wabot_imagenes_contar($convContador, ['clase' => 'audio']) === false
+    && $convContador['imagenes_recibidas'] === 1);
+caso('y un mensaje sin media tampoco',
+    wabot_imagenes_contar($convContador, null) === false && $convContador['imagenes_recibidas'] === 1);
+caso('el webhook cuenta las imágenes con el $conv que sí guarda',
+    strpos(file_get_contents(__DIR__ . '/webhook.php'), 'wabot_imagenes_contar($conv, $item[\'media\'] ?? null)') !== false);
+
+echo "\n— Lo que el cliente dice y no es una duda (26-ago) —\n";
+
+caso('"Este es mi face" es material, no consulta',
+    wabot_texto_no_es_consulta('Este es mi face') === 'material');
+caso('"Te paso el link" también', wabot_texto_no_es_consulta('Te paso el link de mi instagram') === 'material');
+caso('"Que lo haga vía wasap" es una indicación',
+    wabot_texto_no_es_consulta('Que lo haga vía wasap') === 'indicacion');
+caso('"prefiero que me llamen" también',
+    wabot_texto_no_es_consulta('prefiero que me llamen') === 'indicacion');
+caso('una pregunta con signo nunca cae acá',
+    wabot_texto_no_es_consulta('Este es mi face, lo pueden usar?') === null);
+caso('ni una pregunta sin signo', wabot_texto_no_es_consulta('que incluye el precio') === null);
+caso('ni un mensaje largo contando el negocio',
+    wabot_texto_no_es_consulta('Este es mi emprendimiento de carteles publicitarios para comercios de la zona sur') === null);
+
+caso('"me lo repetís?" pide que se repita', wabot_pide_repetir('me lo repetís?') === true);
+caso('"no me llegó" también', wabot_pide_repetir('no me llegó el mensaje') === true);
+caso('un "dale" no', wabot_pide_repetir('Dale') === false);
+caso('un 👍 tampoco', wabot_pide_repetir('👍 si') === false);
+
+echo "\n— Un portal de noticias no es una landing (26-ago) —\n";
+
+caso('"solo que sea para las noticias locales" es un portal de contenido',
+    wabot_contexto_es_portal_contenido('Solo que sea para las noticias locales.') === true);
+caso('"cargar noticias y novedades seguido" también',
+    wabot_contexto_es_portal_contenido('quiero poder cargar noticias y novedades seguido') === true);
+caso('"autoadministrable" también',
+    wabot_contexto_es_portal_contenido('la quiero autoadministrable') === true);
+caso('una landing común no', wabot_contexto_es_portal_contenido('Soy abogada, quiero mostrar mis servicios') === false);
+caso('un club que quiere mostrar sus novedades tampoco',
+    wabot_contexto_es_portal_contenido('Tengo un club y quiero mostrar las novedades del equipo') === false);
+
+echo "\n— La pregunta del pitch tiene que estar bien construida (26-ago) —\n";
+
+$rota = 'De tus servicios, cuál es el que más pedís que destaque?';
+$preguntasPitch = [];
+foreach (($cfg['tipos'] ?? []) as $t) {
+    foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $k) {
+        if (trim((string)($t[$k] ?? '')) !== '') $preguntasPitch[] = trim((string)$t[$k]);
+    }
+    foreach (['pitch_pregunta_variantes', 'pitch_pregunta_2_variantes'] as $k) {
+        foreach ((array)($t[$k] ?? []) as $v) $preguntasPitch[] = trim((string)$v);
+    }
+}
+caso('la pregunta mal construida ya no está en ninguna variante',
+    !in_array($rota, $preguntasPitch, true));
+// Y el config que Pablo ya tiene guardado en producción también la pierde:
+// los defaults solo rellenan lo vacío, así que hay que retirarla explícitamente.
+$cfgGuardado = ['tipos' => ['landing' => [
+    'label' => 'Landing', 'precio' => '$200.000',
+    'pitch_pregunta' => $rota,
+    'pitch_pregunta_variantes' => ['Qué es lo que más se destaca de tus servicios?', $rota],
+]]];
+wabot_config_ventas($cfgGuardado);
+caso('y un config que la tenía guardada la pierde al cargar',
+    $cfgGuardado['tipos']['landing']['pitch_pregunta'] !== $rota
+    && !in_array($rota, (array)$cfgGuardado['tipos']['landing']['pitch_pregunta_variantes'], true));
+
+echo "\n— Portugués filtrado en la redacción (26-ago) —\n";
+
+require_once __DIR__ . '/redactor.php';
+caso('"si não tenés" se corrige a "si no tenés"',
+    wabot_castellanizar('y si não tenés no pasa nada') === 'y si no tenés no pasa nada');
+caso('respeta la mayúscula inicial', wabot_castellanizar('Não hay problema') === 'No hay problema');
+caso('un texto en español correcto no se toca',
+    wabot_castellanizar('Contame los colores de tu marca y armamos la demo.') === 'Contame los colores de tu marca y armamos la demo.');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

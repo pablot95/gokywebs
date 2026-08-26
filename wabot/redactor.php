@@ -209,6 +209,48 @@ EOT;
 }
 
 /**
+ * Palabras en portugués que se le escapan al modelo al reescribir en español.
+ *
+ * Un "si não tenés no pasa nada" llegó tal cual a una clienta el 26-ago: el
+ * texto base decía "si no tenés", y el modelo lo retipeó con el "não" de al
+ * lado. Se corrige en vez de rechazar la redacción entera: por una palabra no
+ * vale la pena tirar abajo el mensaje y caer al motor de reglas.
+ *
+ * La lista es corta y solo tiene palabras que NO existen en español, para que
+ * no pueda romper un texto correcto. Respeta mayúscula inicial.
+ */
+function wabot_castellanizar($texto) {
+    // Nada de "com", "seu" o "para": existen o se parecen demasiado a palabras
+    // españolas y un reemplazo a ciegas rompería un texto correcto.
+    $mapa = [
+        'não'      => 'no',
+        'você'     => 'vos',
+        'vocês'    => 'ustedes',
+        'também'   => 'también',
+        'então'    => 'entonces',
+        'obrigado' => 'gracias',
+        'obrigada' => 'gracias',
+        'muito'    => 'muy',
+        'agora'    => 'ahora',
+        'preço'    => 'precio',
+        'preços'   => 'precios',
+        'são'      => 'son',
+    ];
+
+    foreach ($mapa as $pt => $es) {
+        $texto = preg_replace_callback('/\b' . preg_quote($pt, '/') . '\b/ui', function ($m) use ($es) {
+            $orig = $m[0];
+            if (mb_strtoupper($orig) === $orig) return mb_strtoupper($es);
+            if (mb_substr($orig, 0, 1) === mb_strtoupper(mb_substr($orig, 0, 1))) {
+                return mb_strtoupper(mb_substr($es, 0, 1)) . mb_substr($es, 1);
+            }
+            return $es;
+        }, $texto);
+    }
+    return $texto;
+}
+
+/**
  * Controles sobre lo que devolvió el modelo. Devuelve el texto limpio, o null
  * si falla algo importante (y entonces se usa el texto fijo del motor).
  */
@@ -222,6 +264,7 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
     // Reglas de estilo duras: se limpian, no se rechazan.
     $s = preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2190}-\x{21FF}\x{2B00}-\x{2BFF}\x{FE0F}\x{2122}\x{2139}\x{3030}]/u', '', $s);
     $s = str_replace(['¿', '¡'], '', $s);
+    $s = wabot_castellanizar($s);
     $s = preg_replace("/\n{3,}/", "\n\n", $s);
     $s = trim(preg_replace('/[ \t]+/', ' ', $s));
     if ($s === '') return null;

@@ -277,6 +277,10 @@ function wabot_config_ventas(&$cfg) {
         // Si ya mandó fotos durante la charla, pedírselas de nuevo delata
         // que el bot no vio lo que le mandaron.
         'prediseno_completo_con_fotos' => 'Listo {nombre}, con eso ya lo preparamos. Con las fotos que me pasaste te la dejo lista {entrega} y te la mando por acá.',
+        // Y si mandó SOLO el logo, se le agradece el logo y se le piden nada
+        // más las fotos que faltan: volver a pedirle el logo que acaba de
+        // mandar es el error que más delata al bot (Jorge y Gabriel, 26-ago).
+        'prediseno_completo_solo_logo' => 'Perfecto {nombre}, el logo ya lo tengo. Mandame {imagenes} y con eso te la dejo lista {entrega}.',
         'cierre_memoria'    => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
         'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
@@ -556,6 +560,8 @@ function wabot_config_ventas(&$cfg) {
         'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?',
         'Hoy cómo se lo mandás a los alumnos, Drive, WhatsApp?',
         'Más o menos cuántas propiedades tenés publicadas hoy?',
+        // Mal construida: ni "el que más te piden" ni "el que querés destacar".
+        'De tus servicios, cuál es el que más pedís que destaque?',
     ];
     foreach (array_keys($pitchPreguntas) as $tipoRet) {
         if (!isset($cfg['tipos'][$tipoRet])) continue;
@@ -590,7 +596,12 @@ function wabot_config_ventas(&$cfg) {
         'landing' => [
             'Qué es lo que más se destaca de tus servicios?',
             'Qué es lo que más te diferencia en tus servicios?',
-            'De tus servicios, cuál es el que más pedís que destaque?',
+            // La que estaba acá ("cuál es el que más pedís que destaque?") está
+            // mal construida: mezcla "el que más te piden" con "el que querés
+            // destacar" y no significa ninguna de las dos. Le salió a Ulises,
+            // que vende carteles, el 26-ago. Esta sirve igual para servicios y
+            // para productos, que es lo que la landing tiene que cubrir.
+            'Qué es lo que más querés destacar en la web?',
         ],
         'ecommerce' => [
             'Cuál es el producto que más vendés?',
@@ -599,7 +610,7 @@ function wabot_config_ventas(&$cfg) {
         ],
         'turnos' => [
             'Cuál es el servicio que más te piden?',
-            'De tus servicios, cuál es el que más pedís que destaque?',
+            'Cuál es el servicio que más querés destacar en la web?',
             'Cuál es el servicio más solicitado?',
         ],
         'institucional' => [
@@ -1566,15 +1577,80 @@ function wabot_imagenes_a_pedir($conv, $cfg) {
 }
 
 /**
+ * El mismo pedido, sin la parte del logo: se usa cuando el cliente ya lo mandó.
+ * Los pedidos de cada tipo arrancan todos igual ("el logo y ...", "el logo o
+ * escudo y ..."), así que alcanza con sacar esa cabeza. Si el texto es uno
+ * propio de Pablo que no habla de logo, vuelve tal cual.
+ */
+function wabot_imagenes_a_pedir_sin_logo($conv, $cfg) {
+    $pedido = wabot_imagenes_a_pedir($conv, $cfg);
+    $sinLogo = preg_replace('/^\s*el logo\b[^,]{0,20}?\s+y\s+/iu', '', $pedido);
+    $sinLogo = trim((string)$sinLogo);
+    return $sinLogo !== '' ? $sinLogo : $pedido;
+}
+
+/**
+ * ¿Cuántas de las imágenes que mandó NO son el logo?
+ *
+ * wabot_logo_cliente() elige como logo la última foto con "logo" en el texto o
+ * el pie; si el cliente solo mandó eso, todavía faltan las fotos del negocio y
+ * hay que pedirlas SIN volver a pedir el logo (caso Gabriel, 26-ago: mandó su
+ * logo y el bot le contestó "mandame el logo y fotos de tus productos").
+ */
+function wabot_imagenes_sin_logo_cuenta($conv) {
+    $total = 0;
+    $conLogo = 0;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (($fila['media']['clase'] ?? '') !== 'imagen') continue;
+        $total++;
+        if (preg_match('/\blogos?\b/iu', (string)($fila['t'] ?? ''))) $conLogo++;
+    }
+    // Sin transcript (motor de reglas en tests, o conversación recortada) se
+    // cae al contador plano, que es lo que había antes.
+    if ($total === 0) return (int)($conv['imagenes_recibidas'] ?? 0);
+    return max(0, $total - $conLogo);
+}
+
+/** ¿Mandó algo que dijo que era su logo? */
+function wabot_logo_ya_recibido($conv) {
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (($fila['media']['clase'] ?? '') !== 'imagen') continue;
+        if (preg_match('/\blogos?\b/iu', (string)($fila['t'] ?? ''))) return true;
+    }
+    return false;
+}
+
+/** Suma la imagen de un mensaje entrante al contador de la conversación. */
+function wabot_imagenes_contar(&$conv, $media) {
+    if (($media['clase'] ?? '') !== 'imagen') return false;
+    $conv['imagenes_recibidas'] = (int)($conv['imagenes_recibidas'] ?? 0) + 1;
+    return true;
+}
+
+/**
  * El texto que cierra la recolección, con {imagenes} ya resuelto según el
  * rubro. Se resuelve acá y no en wabot_personalizar() porque hace falta $cfg.
- * Si el cliente YA mandó fotos, no se le vuelven a pedir.
+ * Si el cliente YA mandó fotos, no se le vuelven a pedir; y si mandó SOLO el
+ * logo, se le piden las fotos que faltan sin volver a pedirle el logo.
  */
 function wabot_texto_prediseno_completo($conv, $cfg) {
     $texto = (string)($cfg['prediseno_completo'] ?? '');
     if (strpos($texto, '{imagenes}') === false) return $texto;
 
     if ((int)($conv['imagenes_recibidas'] ?? 0) > 0) {
+        // El tope de 2 es a propósito: la descripción automática de una foto de
+        // producto puede nombrar un logo de pasada ("un buzo con el logo de la
+        // marca"), y con muchas fotos eso haría creer que solo mandó el logo.
+        // Con una o dos imágenes el riesgo no existe, y ese es el caso real.
+        if ((int)$conv['imagenes_recibidas'] <= 2
+            && wabot_logo_ya_recibido($conv) && wabot_imagenes_sin_logo_cuenta($conv) === 0) {
+            $soloLogo = trim((string)($cfg['prediseno_completo_solo_logo'] ?? ''));
+            if ($soloLogo !== '') {
+                return str_replace('{imagenes}', wabot_imagenes_a_pedir_sin_logo($conv, $cfg), $soloLogo);
+            }
+        }
         $yaMando = trim((string)($cfg['prediseno_completo_con_fotos'] ?? ''));
         if ($yaMando !== '') return $yaMando;
     }
@@ -2159,8 +2235,15 @@ function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
 function wabot_prediseno_texto(&$conv, $cfg) {
     $faltan = wabot_prediseno_faltan($conv);
     if (!$faltan) {
+        $conv['prediseno_pedido'] = [];
         return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
     }
+
+    // Queda anotado QUÉ se le pidió, no solo que se le pidió algo: mientras la
+    // lista no cambie, el cliente no mandó nada y no hay nada nuevo que pedir.
+    // Es lo que deja al agente distinguir un "dale, ya te mando" de un pedido
+    // real de que se lo repita (ver el guard de consultar_info('prediseno')).
+    $conv['prediseno_pedido'] = $faltan;
 
     if (wabot_prediseno_faltan($conv, false)) {
         $link = wabot_form_link($conv, $cfg);
@@ -2256,6 +2339,7 @@ function wabot_conv_load($clave) {
         'referencia'       => null,
         'productos_cantidad' => null,
         'imagenes_recibidas' => 0,
+        'prediseno_pedido'   => [],
         'precio_dado'      => false,
         'objecion_dicha'   => [],
         'referencia_preguntada' => false,
@@ -2393,6 +2477,12 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     }
     $conv['fase'] = 'nuevo';
     $conv['imagenes_recibidas'] = 0;
+    $conv['prediseno_pedido'] = [];
+    // Sin esto, el que vuelve a los 15 días con un rubro paraguas ya no se
+    // lleva la repregunta: el flag se seteó en la charla anterior y no se
+    // limpiaba nunca.
+    $conv['paraguas_preguntado'] = false;
+    $conv['logo_avisado'] = false;
     $conv['precio_dado'] = false;
     $conv['objecion_dicha'] = [];
     $conv['referencia_preguntada'] = false;

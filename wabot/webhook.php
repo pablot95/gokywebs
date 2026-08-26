@@ -122,8 +122,15 @@ function wabot_procesar_entrante($ev, $cfg) {
     if ($media && $media['clase'] === 'imagen') {
         $bin = wabot_bajar_media($canal, $media);
         if ($bin) {
+            // OJO: acá NO se cuenta la imagen. Este $conv es el de antes del
+            // candado y se descarta entero unas líneas más abajo
+            // (wabot_conv_load() de nuevo, ya con el lock tomado), así que el
+            // contador se perdía siempre y wabot_texto_prediseno_completo()
+            // veía 0 imágenes aunque el cliente acabara de mandar el logo: el
+            // bot le pedía el logo que tenía adelante (casos Jorge y Gabriel,
+            // 26-ago). Se cuenta al drenar la cola, con el $conv que sí se
+            // guarda.
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], 'imagen');
-            $conv['imagenes_recibidas'] = (int)($conv['imagenes_recibidas'] ?? 0) + 1;
             if (!empty($cfg['leer_imagenes'])) {
                 $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'imagen', $media['caption']);
                 if ($desc !== null) {
@@ -204,6 +211,7 @@ function wabot_procesar_entrante($ev, $cfg) {
             $primerContacto = empty($conv['lead_recibido_evento']);
             foreach ($tanda as $item) {
                 wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+                wabot_imagenes_contar($conv, $item['media'] ?? null);
                 if (trim((string)($item['u'] ?? '')) !== '') {
                     $usables[] = $item['u'];
                     wabot_nombre_negocio_actualizar($conv, $item['u']);
@@ -298,6 +306,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
     $usables = [];
     foreach ($tanda as $item) {
         wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+        wabot_imagenes_contar($conv, $item['media'] ?? null);
         if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
         if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
     }

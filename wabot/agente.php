@@ -195,6 +195,8 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             $salida = array_merge([$limpio], wabot_agente_filtrar_aparte($limpio, $aparte));
             $reemplazo = wabot_agente_empujon_paraguas($mensaje, $salida, $conv, $cfg, $tipoAlEntrar);
             if ($reemplazo !== null) $salida = $reemplazo;
+            $logo = wabot_agente_empujon_logo($mensaje, $salida, $conv, $cfg);
+            if ($logo !== null) $salida[] = $logo;
             $empujon = wabot_agente_empujon_postdemo($salida, $mensaje, $conv, $cfg);
             if ($empujon !== null) $salida[] = $empujon;
             return $salida;
@@ -241,7 +243,13 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             // El precio+pitch del turno A también trae su globo aparte (la
             // pregunta del pitch, unos segundos después): antes se perdía acá,
             // porque este camino no pasaba por wabot_agente_filtrar_aparte.
-            return $aparte ? array_merge($salidaExacta, $aparte) : $salidaExacta;
+            if ($aparte) $salidaExacta = array_merge($salidaExacta, $aparte);
+            // Y este es JUSTO el camino por el que se fue la consulta de Sofía:
+            // el pitch sale exacto, sin pasar por el texto libre del modelo, así
+            // que si lo que preguntó no entra acá, no lo contesta nadie.
+            $logoExacta = wabot_agente_empujon_logo($mensaje, $salidaExacta, $conv, $cfg);
+            if ($logoExacta !== null) $salidaExacta[] = $logoExacta;
+            return $salidaExacta;
         }
     }
 
@@ -319,9 +327,42 @@ function wabot_agente_paraguas_clave($mensaje) {
     // largo ya tiene contexto de sobra; el paraguas es solo para el vacío.
     if (count(explode(' ', $t)) > 12) return null;
     if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia|distribucion|distribuidora|mayorista|importacion|logistica)\b/u', $t, $m)) {
+        // El que PIDE no ofrece: ver wabot_texto_pide_el_servicio().
+        if (wabot_texto_pide_el_servicio($t, $m[1])) return null;
         return $m[1];
     }
     return null;
+}
+
+/**
+ * ¿El cliente nos está PIDIENDO eso, en vez de contárnoslo como su rubro?
+ *
+ * "Necesito el mejor asesoramiento, costo y forma de pago" no dice a qué se
+ * dedica: nos lo está pidiendo a nosotros. El paraguas lo leía como actividad
+ * propia y contestaba "sobre qué es el asesoramiento que ofrecés?", dando
+ * vuelta quién asesora a quién (caso Jorge, 26-ago). Pasa igual con "quiero un
+ * diseño lindo" o "busco una consultoría": son palabras que nombran tanto lo
+ * que el cliente vende como lo que nos viene a comprar.
+ *
+ * Recibe el texto YA normalizado (wabot_normalizar_frase) y la palabra paraguas
+ * tal como quedó en él.
+ */
+function wabot_texto_pide_el_servicio($normalizado, $clave) {
+    $t = (string)$normalizado;
+    $pos = mb_strpos($t, (string)$clave);
+    if ($pos === false) return false;
+    $antes = mb_substr($t, 0, $pos);
+
+    // "mi asesoramiento", "nuestra consultoría": es suyo, no nos lo pide.
+    if (preg_match('/\b(mi|mis|nuestro|nuestra|nuestros|nuestras|de|del)\s*$/u', $antes)) return false;
+    // Y si en cualquier parte del mensaje dice que lo ofrece él, gana eso.
+    if (preg_match('/\b(ofrezco|ofrecemos|hago|hacemos|brindo|brindamos|doy|damos|dicto|dictamos|vendo|vendemos|realizo|realizamos|me dedico|nos dedicamos|tengo un|tengo una|tenemos un|tenemos una)\b/u', $t)) return false;
+
+    return (bool)(
+        preg_match('/\b(necesito|necesitaria|necesitamos|quiero|queremos|quisiera|busco|buscamos|preciso|precisamos|requiero|me gustaria|me pueden|pueden darme|me dan|me brindan|me brinden)\b/u', $antes)
+        || preg_match('/\b(me|nos)\s+(asesoren|asesoran|asesores|asesoras|orienten|orientan|recomienden|recomiendan|aconsejen|aconsejan|ayuden|ayudan)\b/u', $t)
+        || preg_match('/\b(asesorame|asesorenme|asesoreme|orientame|recomendame|aconsejame)\b/u', $t)
+    );
 }
 
 function wabot_agente_empujon_paraguas($mensaje, $salida, &$conv, $cfg, $tipoAlEntrar) {
@@ -338,6 +379,41 @@ function wabot_agente_empujon_paraguas($mensaje, $salida, &$conv, $cfg, $tipoAlE
     $pregunta = trim((string)($cfg['paraguas'][$clave] ?? ''));
     if ($pregunta === '') return null;
     return [$pregunta];
+}
+
+/**
+ * ¿Está preguntando si le hacemos el logo o la identidad de marca?
+ *
+ * No confundir con el que lo está MANDANDO ("te paso el logo"): ese ya lo
+ * tiene. Acá interesa el que lo pide como parte del trabajo.
+ */
+function wabot_texto_pregunta_por_logo($mensaje) {
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if ($t === '') return false;
+    if (preg_match('/\b(te (paso|mando|envio)|ahi va|este es|adjunto|te lo mando)\b/u', $t)) return false;
+    return (bool)preg_match('/\b(logos?|logotipos?|isologos?|isologotipos?|identidad (visual|de marca|grafica|corporativa)|imagen de marca|branding)\b/u', $t);
+}
+
+/**
+ * Una necesidad que el cliente nombró y el bot no contestó es una venta que se
+ * pierde y una pregunta que queda colgando. Sofía pidió la página Y el logo /
+ * la identidad para promocionarse; el modelo contestó solo la landing y no dijo
+ * una palabra de lo otro (26-ago). El prompt ya pedía contestarlo: hace falta la
+ * red de código, como con el paraguas y el link del formulario.
+ *
+ * Se agrega como globo aparte, una sola vez por charla, y solo si el modelo no
+ * lo tocó por su cuenta.
+ */
+function wabot_agente_empujon_logo($mensaje, $salida, &$conv, $cfg) {
+    if (!empty($conv['logo_avisado'])) return null;
+    if (!wabot_texto_pregunta_por_logo($mensaje)) return null;
+    $conv['logo_avisado'] = true;
+
+    $dicho = wabot_normalizar_frase(implode(' ', (array)$salida));
+    if (preg_match('/\b(logo|logotipo|isologo|identidad|tipografiado|tipografia)\b/u', $dicho)) return null;
+
+    $texto = trim((string)($cfg['info']['logo'] ?? ''));
+    return $texto !== '' ? $texto : null;
 }
 
 function wabot_agente_filtrar_aparte($texto, $aparte) {
@@ -693,6 +769,19 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 return ['error' => 'Tipo desconocido.'];
             }
             $contextoCliente = wabot_contexto_cliente_texto($conv);
+            // Un portal de noticias no se cotiza con la lista de tipos de web.
+            // Va antes que todo lo demás: si el cliente necesita publicar
+            // contenido nuevo todo el tiempo, ningún desempate entre landing y
+            // catálogo tiene sentido. Se libera en cuanto arranca el flujo de
+            // sistemas (sistema_problema anotado), que es adonde tiene que ir.
+            if (in_array($tipo, ['landing', 'institucional', 'catalogo'], true)
+                && trim((string)($conv['sistema_problema'] ?? '')) === ''
+                && wabot_contexto_es_portal_contenido($contextoCliente)) {
+                return [
+                    'error' => 'Este cliente necesita publicar contenido nuevo todo el tiempo (noticias, novedades, entrevistas): eso no es una landing ni una institucional.',
+                    'nota'  => 'Es un desarrollo a medida con panel propio para publicar. NO lo cotices con dar_precio y no le des ningún precio de la lista de tipos de web. Llamá a anotar_sistema AHORA, con el problema anotado como "necesita publicar noticias y contenido seguido con un panel propio", y seguí ese flujo (problema, usuarios, cómo lo maneja hoy) hasta guardar_sistema.',
+                ];
+            }
             if (wabot_contexto_es_hibrido($contextoCliente)) {
                 $objetivoHibrido = wabot_desempate_por_palabras('desempate_hibrido', $contextoCliente);
                 if ($objetivoHibrido === null) {
@@ -787,6 +876,19 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 if (wabot_es_acuse($mensaje)) {
                     return ['error' => 'Eso no es una pregunta, es un acuse de recibo. No uses consultar_info: contestá una sola línea cordial, o nada si la charla ya está cerrada.'];
                 }
+                // Tampoco es una duda el que te pasa material ("este es mi
+                // face") ni el que te indica cómo quiere que lo contacten
+                // ("que lo haga vía wasap"): los dos se llevaron el comodín
+                // del desarrollador en la misma charla (Jorge, 26-ago).
+                $noConsulta = wabot_texto_no_es_consulta($mensaje);
+                if ($noConsulta === 'material') {
+                    return ['error' => 'Eso no es una duda: el cliente te está pasando material suyo (un link, una red, un dato).',
+                            'nota'  => 'No uses consultar_info. Contestá UNA línea corta diciendo que lo tomaste, nombrando lo que te pasó, y nada más.'];
+                }
+                if ($noConsulta === 'indicacion') {
+                    return ['error' => 'Eso no es una duda: el cliente te está indicando cómo quiere que sigamos o que lo contactemos.',
+                            'nota'  => 'No uses consultar_info. Confirmáselo en UNA línea corta, sin agregar información que no pidió.'];
+                }
                 $rescatada = wabot_info_por_palabras($mensaje, $conv['fase'] ?? null);
                 // precio_actual no es una clave de info: la contesta el resumen
                 // de lo ya cotizado, que acá se llama precio_cotizado.
@@ -820,6 +922,17 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 if (($conv['fase'] ?? '') === 'derivado') {
                     return ['texto' => (string)($cfg['info']['plazos'] ?? $cfg['info']['otra']),
                             'nota' => 'La demo ya quedó pedida: contestá con los plazos y nada más. No le pidas ningún dato ni reabras la charla.'];
+                }
+                // Ya se lo pediste y todavía no mandó ninguno: un "ok", un
+                // "dale" o un 👍 son la confirmación de que lo va a mandar, no
+                // el pedido de que se lo repitas. Volver a pegar el listado
+                // entero es lo que le pasó a Daniela y a Gabriel el 26-ago.
+                $faltanAhora = wabot_prediseno_faltan($conv);
+                $pedidoAntes = (array)($conv['prediseno_pedido'] ?? []);
+                if ($faltanAhora && $pedidoAntes && $faltanAhora === $pedidoAntes
+                    && !wabot_pide_repetir($mensaje)) {
+                    return ['error' => 'Ya le pediste exactamente estos mismos datos y todavía no mandó ninguno.',
+                            'nota'  => 'No repitas el listado: repetirlo hace parecer que no leíste lo que contestó. Si dijo que sí o que los va a mandar, contestá UNA línea corta del tipo "cuando los tengas me avisás por acá" y esperá. El listado se vuelve a mandar solo si te pide que se lo repitas.'];
                 }
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);
@@ -1294,6 +1407,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Si desconfía, menciona estafas o pide referencias, usá consultar_info('confianza'): el mejor argumento es que acá no paga nada hasta ver su web armada.
 - Un cliente que insulta o dice que el bot no entiende nada NO es lo mismo que uno que desconfía de pagar: no le contestes con consultar_info('confianza') ni le ofrezcas la demo en ese mensaje, que suena todavía más automático. Reconocé el enojo en UNA línea corta y ofrecele pasarlo directo con el desarrollador.
 - Derivar la duda al desarrollador ("esa duda te la va a poder contestar el desarrollador") es el ÚLTIMO recurso: antes pensá si alguna clave de consultar_info responde la INTENCIÓN de la pregunta, aunque esté escrita con otras palabras, con errores de tipeo o de forma confusa. Y nunca lo uses para contestar un mensaje social ("no hay apuro", "gracias", "dale"): eso se contesta con una línea cordial y nada más.
+- Ese comodín es la respuesta a UNA DUDA. Si el mensaje no pregunta nada, no corresponde, aunque no sea un simple "gracias". Dos ejemplos que pasaron en la misma charla: "Este es mi face" (te está pasando material suyo: agradecelo en una línea y decile que lo tomaste) y "Que lo haga vía wasap" (te está indicando cómo quiere que lo contacten: confirmáselo en una línea). Contestar cualquiera de los dos con "esa duda te la va a poder contestar el desarrollador" es lo que hace evidente que del otro lado hay un bot que no entendió.
 - Si manda un video, un archivo o algo que no pudiste ver, decilo con honestidad y pedí el dato por texto. Nunca respondas como si lo hubieras visto.
 - Apuntá a dar el precio rápido, sin interrogatorios. Si con lo que te dijeron ya sabés qué tipo es, dalo.
 - Pero si el rubro no alcanza para saber qué tipo de web necesita, preguntá lo que haga falta (de a una) antes de cotizar. Cotizar mal por no preguntar es el peor error: después no se puede dar otro precio.
@@ -1302,6 +1416,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - En cambio, ni bien aparece algo concreto —aunque sea una sola palabra: "arroz", "medias", "velas"— eso YA alcanza para clasificar. No seas redundante pidiendo "contame qué vendés" de nuevo, y no le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp (ni con esas palabras ni parecidas, tipo "presentar servicios o vender y cobrar online"): esa pregunta está prohibida para cualquier producto, ver COMERCIOS más abajo.
 - OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "coaching", "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas SOLA, sin nada más, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
 - Esto NO aplica si la palabra paraguas aparece mezclada en un mensaje que ya cuenta otras actividades concretas (ej.: "tengo un almacén, doy clases de guitarra y alquilo el patio para eventos"). Ahí la palabra paraguas es solo un detalle más entre varios negocios, no el tema del mensaje: no le preguntes específicamente por esa palabra ignorando el resto. Tratalo como MÁS DE UN NEGOCIO (ver esa sección) y preguntale cuál quiere resolver primero con la web.
+- Y tampoco aplica cuando el cliente te está PIDIENDO eso a vos en vez de contarte que lo ofrece él. "Necesito el mejor asesoramiento, costo y forma de pago" o "quiero que me asesoren sobre lo que me conviene" no dicen a qué se dedica: te están pidiendo consejo. Preguntarle "sobre qué es el asesoramiento que ofrecés?" da vuelta quién asesora a quién y es de los errores que peor quedan. Lo mismo con "quiero un diseño lindo" o "busco una consultoría". Cuando te piden asesoramiento, asesorá: proponé el tipo de web que le conviene con lo que ya sabés de su negocio, decile por qué, y dale el precio y la forma de pago si los pidió.
 - Cuando repreguntes eso, aprovechá la respuesta en el mensaje siguiente: si te dice "entrenamiento personal y funcional", nombralo con sus palabras al proponerle la web. Repetir el pitch genérico después de que te dio el detalle hace que se note que no lo leíste.
 - Nunca digas "ya tengo claro qué ofrecés" ni nada parecido si en realidad no te dijo nada específico: se nota que es falso y desconfía más. Confirmá con tus palabras SOLO cuando el dato que tenés es real.
 - No repitas lo que ya dijiste en la charla ni arranques siempre con "Perfecto". Alterná aperturas naturales o entrá directo en la respuesta.
@@ -1384,6 +1499,7 @@ REGLAS QUE NO PODÉS ROMPER
 - 'otra' es el ÚLTIMO recurso, no el primero: decir que la duda la contesta el desarrollador cuando la respuesta existe hace parecer que no conocés lo que vendés. Antes de usarla, fijate si entra en alguna clave de arriba. Y si el mensaje no es una pregunta —un 'dale', un 'gracias', un 'bueno, aguardo entonces'— no llames a consultar_info: contestá una línea corta o nada. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
 - Nunca derives al desarrollador ("esa duda te la va a poder contestar el desarrollador") una pregunta de precio que vos mismo podés contestar: si ya tenés o podés tener el tipo de web (aunque sea con consultar_info('rangos') sin tipo confirmado, o con dar_precio si ya lo sabés), la respuesta real va antes que cualquier derivación. Derivar un precio que dos mensajes después vos mismo terminás dando es una contradicción que se nota y resta confianza.
 - Si el cliente menciona, aunque sea de pasada y sin preguntarlo como duda, que también quiere mejorar, armar o llevarle las redes sociales (Instagram, Facebook, etc.) o hacer publicidad/marketing, no lo ignores para saltar directo al precio: contestá esa parte con el texto de consultar_info('marketing') (no hacemos eso, solo diseño y desarrollo) y recién ahí seguí con la web.
+- Lo mismo si menciona el logo o la identidad de marca ("no sé si el logo o la identidad", "quiero armar la marca"): contestalo con consultar_info('logo') antes o después del pitch, pero contestalo. Dejar una necesidad que el cliente nombró sin ninguna respuesta es peor que decirle que no lo hacemos.
 - Si te pregunta el precio ANTES de decirte qué tipo de web necesita ("cuánto sale?", "qué precio tiene?"), NO te escapes con una respuesta de relleno ni le tires todos los rangos: usá consultar_info('precio_sin_rubro'), que le pregunta para qué la necesita. Sin el rubro no hay precio exacto, pero la pregunta la hacés vos.
 - Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la demo gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
@@ -1415,6 +1531,7 @@ Si el cliente igual te contesta con esos datos por chat en vez de completar el l
 Cuando tengas las cuatro respuestas (la de referencia puede ser "no tengo"), sea porque las contestó por chat o porque completó el formulario, llamá a guardar_prediseno. No pidas ningún otro dato: ni mail, ni cantidad de productos.
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno.
+Si el cliente ya te mandó una foto diciendo que es su logo, NO se lo vuelvas a pedir: reconocelo ("el logo ya lo tengo") y pedile solo las fotos que faltan. Pedirle lo que acaba de mandar es lo que más hace parecer que no estás viendo las imágenes ni recordando la charla. El texto que devuelve la herramienta ya viene resuelto así: mandalo tal cual y no le agregues por tu cuenta un pedido de logo.
 Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale $X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso, el monto que le diste antes es por el desarrollo completo de la web, no por la demo. Nunca derives esta duda al desarrollador, ya la sabés.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO

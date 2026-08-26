@@ -1395,5 +1395,93 @@ $cYaInst['precio_dado'] = true;
 caso('a quien ya está cotizado como institucional no se le bloquea repetir el precio',
     !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cYaInst, $cfg)['error']));
 
+echo "\n— Revisión de las 17 charlas del 26-ago —\n";
+
+// 1. El que PIDE asesoramiento no lo ofrece (caso Jorge).
+caso('"necesito el mejor asesoramiento" ya no dispara el paraguas',
+    wabot_agente_paraguas_clave('Necesito el mejor asesoramiento, costo y forma de pago.') === null);
+caso('"que ustedes me asesoren" tampoco',
+    wabot_agente_paraguas_clave('Lo que necesito es que Ustedes me asesoren sobre lo que me conviene') === null);
+caso('"quiero un diseño lindo" tampoco',
+    wabot_agente_paraguas_clave('Quiero un diseño lindo para la web') === null);
+caso('pero el que SÍ ofrece asesoramiento sigue recibiendo la repregunta',
+    wabot_agente_paraguas_clave('Hago asesoramiento contable') === 'asesoramiento');
+caso('y "necesito una web para mi consultoría" también: la consultoría es suya',
+    wabot_agente_paraguas_clave('Necesito una web para mi consultoria') === 'consultoria');
+caso('el paraguas de un rubro dicho solo no se toca',
+    wabot_agente_paraguas_clave('doy clases de coaching') === 'coaching');
+
+// 2. Un portal de noticias no se cotiza como landing (caso Jorge).
+$cNoticias = ['fase' => 'nuevo', 'tipo' => null, 'sistema_problema' => null, 'transcript' => [
+    ['q' => 'cliente', 't' => 'Difundir actividades de una localidad. Con videos entrevista también', 'ts' => time()],
+    ['q' => 'cliente', 't' => 'Solo que sea para las noticias locales.', 'ts' => time()],
+]];
+$rNoticias = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $cNoticias, $cfg);
+caso('el que quiere publicar noticias locales no se cotiza como landing', isset($rNoticias['error']));
+caso('y la nota lo manda al flujo de sistemas',
+    stripos($rNoticias['nota'] ?? '', 'anotar_sistema') !== false);
+caso('tampoco como institucional',
+    isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cNoticias, $cfg)['error']));
+$cNoticiasSis = $cNoticias;
+$cNoticiasSis['sistema_problema'] = 'necesita publicar noticias con panel propio';
+caso('una vez arrancado el flujo de sistemas, deja de bloquear',
+    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $cNoticiasSis, $cfg)['error']));
+$cNormal = ['fase' => 'nuevo', 'tipo' => null, 'transcript' => [
+    ['q' => 'cliente', 't' => 'Soy abogada y quiero mostrar mis servicios', 'ts' => time()],
+]];
+caso('y una landing común sigue pasando',
+    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $cNormal, $cfg)['error']));
+
+// 4. El comodín del desarrollador es la respuesta a una duda (caso Jorge).
+$cFace = convNueva('TFACE');
+$cFace['fase'] = 'derivado';
+$rFace = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cFace, $cfg, 'Este es mi face');
+caso('"Este es mi face" no se lleva el comodín del desarrollador', isset($rFace['error']));
+caso('y no queda como duda pendiente para Pablo', empty($cFace['handoff_pendiente']));
+$cWsp = convNueva('TWSP');
+$cWsp['fase'] = 'derivado';
+$rWsp = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cWsp, $cfg, 'Que lo haga vía wasap');
+caso('"Que lo haga vía wasap" tampoco', isset($rWsp['error']));
+$cRadio = convNueva('TRADIO');
+$cRadio['fase'] = 'derivado';
+$rRadio = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cRadio, $cfg,
+    'Una última consulta, a la página le voy a poder poner una radio on line?');
+caso('pero una duda real sigue llegando al comodín',
+    !isset($rRadio['error']) && trim((string)($rRadio['texto'] ?? '')) !== '');
+
+// 5 y 6. El listado del prediseño no se repite (casos Daniela y Gabriel).
+$cForm = convNueva('TFORM');
+$cForm['tipo'] = 'landing';
+$cForm['precio_dado'] = true;
+$r1 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cForm, $cfg, 'Ok');
+caso('la primera vez se manda el listado', trim((string)($r1['texto'] ?? '')) !== '');
+caso('y queda anotado qué se pidió', !empty($cForm['prediseno_pedido']));
+$r2 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cForm, $cfg, 'Dale');
+caso('un "Dale" después no lo vuelve a pegar', isset($r2['error']));
+caso('y la nota le dice que espere los datos',
+    stripos($r2['nota'] ?? '', 'esperá') !== false || stripos($r2['nota'] ?? '', 'avisás') !== false);
+$r3 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cForm, $cfg, 'me lo repetís?');
+caso('pero si pide que se lo repitan, sale de nuevo', trim((string)($r3['texto'] ?? '')) !== '');
+$cForm2 = $cForm;
+$cForm2['colores'] = 'azul y blanco';
+caso('y si mandó un dato nuevo, el listado actualizado también sale',
+    trim((string)(wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cForm2, $cfg, 'listo')['texto'] ?? '')) !== '');
+
+// 8. La consulta por el logo no se puede quedar sin respuesta (caso Sofía).
+$cSofia = convNueva('TSOFIA');
+$mSofia = 'Me recibí de abogada, quería tener una página y no sé si el logo o la identidad, así puedo promocionar mis servicios';
+caso('se detecta que preguntó por el logo/la identidad', wabot_texto_pregunta_por_logo($mSofia));
+$empujonLogo = wabot_agente_empujon_logo($mSofia, ['Lo ideal sería una landing profesional. Tiene un precio de $200.000.'], $cSofia, $cfg);
+caso('y si el pitch no lo contesta, se agrega la respuesta del logo',
+    $empujonLogo === $cfg['info']['logo']);
+$cSofia2 = convNueva('TSOFIA2');
+caso('si el modelo ya lo contestó, no se duplica',
+    wabot_agente_empujon_logo($mSofia, ['El logo no lo hacemos, pero trabajamos tu nombre tipografiado.'], $cSofia2, $cfg) === null);
+caso('y no se repite dos veces en la misma charla',
+    wabot_agente_empujon_logo($mSofia, ['Otra cosa cualquiera.'], $cSofia, $cfg) === null);
+$cPasa = convNueva('TPASA');
+caso('el que MANDA el logo no dispara el empujón',
+    wabot_agente_empujon_logo('Te paso el logo para que lo definas', ['Listo, lo tomo.'], $cPasa, $cfg) === null);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

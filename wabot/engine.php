@@ -305,6 +305,58 @@ function wabot_es_acuse($texto) {
 }
 
 /**
+ * ¿Está pidiendo que le repitan lo último? Es la única razón para volver a
+ * mandar un texto que ya se mandó: sin esto, el guard que impide repetir el
+ * listado del prediseño dejaría colgado al que de verdad lo perdió.
+ */
+function wabot_pide_repetir($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(repet[ií]\w*|repetime|de nuevo|otra vez|nuevamente)\b/u', $t)
+        || preg_match('/\bno me (lleg\w+|aparec\w+|carg\w+)\b/u', $t)
+        || preg_match('/\b(que|cuales|cual)\b.{0,15}\b(eran|era|es|son)\b.{0,20}\b(datos|cosas|informacion)\b/u', $t)
+        || preg_match('/\bme (lo|los|la|las) (pas[aá]s|mand[aá]s|reenvi[aá]s|volv[eé]s a (pasar|mandar))\b/u', $t)
+        || preg_match('/\bvolv[eé]me? a (pasar|mandar|decir)\b/u', $t)
+    );
+}
+
+/**
+ * ¿El mensaje NO es una duda, aunque tampoco sea un acuse de recibo?
+ *
+ * "Este es mi face" (está pasando material) y "Que lo haga vía wasap" (está
+ * indicando cómo quiere que lo contacten) no preguntan nada, y sin embargo los
+ * dos se llevaron el comodín "esa duda te la va a poder contestar el
+ * desarrollador" (caso Jorge, 26-ago). Ese texto es la respuesta a una duda:
+ * sin duda no corresponde.
+ *
+ * Devuelve el TIPO de mensaje ('material' | 'indicacion') o null si no está
+ * seguro. A propósito reconoce poco: solo dos formas muy marcadas. Un
+ * detector amplio de "esto no es pregunta" se comería preguntas reales
+ * escritas sin signo, que son la mayoría en WhatsApp.
+ */
+function wabot_texto_no_es_consulta($texto) {
+    $crudo = (string)$texto;
+    if (strpos($crudo, '?') !== false) return null;
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '') return null;
+    if (count(explode(' ', $t)) > 12) return null;
+
+    // "Este es mi face", "te paso el link", "ahí va mi instagram".
+    if (preg_match('/^(este|esta|ese|esa|aca|ahi|aqui)\s+(es|va|te|esta)\b/u', $t)
+        || preg_match('/^(te|les|le)\s+(paso|mando|envio|dejo|comparto|adjunto)\b/u', $t)
+        || preg_match('/^ahi\s+(te|le|les)\s+(paso|mando|envio|dejo|comparto)\b/u', $t)) {
+        return 'material';
+    }
+    // "Que lo haga vía wasap", "que me escriba por acá", "que me llame".
+    if (preg_match('/^que\s+(me|nos|lo|la|le|les|te)\s+\p{L}+/u', $t)
+        || preg_match('/\b(prefiero|preferiria|mejor)\s+que\s+(me|nos)\s+\p{L}+/u', $t)) {
+        return 'indicacion';
+    }
+    return null;
+}
+
+/**
  * ¿Pidió la demo explícitamente? El CTA del anuncio dice "Quiero mi demo
  * gratis": volver a preguntarle "¿querés que la preparemos?" a quien entró
  * diciendo eso es no haberlo escuchado (caso Antuz, 21-ago).
@@ -339,6 +391,28 @@ function wabot_contexto_es_alojamiento($contexto) {
         '/\b(cabana\w*|hotel\w*|hosteria\w*|hostal\w*|hostel\w*|posada\w*|complejo\w*|glamping|camping'
         . '|alquiler\w* temporar\w*|apart\b|apart hotel|casa de campo|quinta\w*|estadia\w*|huespedes'
         . '|airbnb|booking|departamentos?\s+(en\s+)?alquiler|alquilo?\s+departamentos?)\b/u', $t);
+}
+
+/**
+ * Un medio, un portal o cualquier web cuyo contenido cambia todo el tiempo
+ * (noticias, novedades, entrevistas) NO es una landing: necesita panel propio
+ * para publicar, y eso se cotiza como sistema a medida. El prompt del agente ya
+ * lo decía con todas las letras y el modelo igual le vendió una landing a quien
+ * acababa de decir "solo que sea para las noticias locales" (caso Jorge,
+ * 26-ago) — otra vez, una regla que tiene que estar garantizada necesita red de
+ * código, no solo prompt.
+ */
+function wabot_contexto_es_portal_contenido($contexto) {
+    $t = wabot_normalizar_frase($contexto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(portal|sitio|pagina|web|revista|agencia|blog)\s+de\s+noticias\b/u', $t)
+        || preg_match('/\b(diario|periodico|noticiero)\s+(digital|online|local|de la (zona|ciudad|localidad))\b/u', $t)
+        || preg_match('/\b(medio de (prensa|comunicacion)|periodistic\w+|revista (digital|online))\b/u', $t)
+        || preg_match('/\b(publicar|subir|cargar|actualizar|redactar|escribir|difundir)\b.{0,40}\b(noticias?|notas?|articulos?|novedades|entrevistas?|cronicas?)\b/u', $t)
+        || preg_match('/\b(noticias?|novedades|entrevistas?)\b.{0,30}\b(locales|del? la (zona|localidad|ciudad|region)|del (pueblo|barrio|departamento|municipio))\b/u', $t)
+        || preg_match('/\bautoadministrable\b/u', $t)
+    );
 }
 
 function wabot_pidio_institucional_explicito($contexto) {
