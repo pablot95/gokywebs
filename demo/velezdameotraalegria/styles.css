@@ -269,50 +269,25 @@ body.no-scroll .floats { opacity: 0; pointer-events: none; }
 .editorial-badge { width: 64px; height: 64px; border-radius: 50%; margin-top: 1rem; box-shadow: var(--shadow-sm); }
 @media (max-width: 780px) { .editorial-grid { grid-template-columns: 1fr; } .editorial-media { aspect-ratio: 16/10; max-height: 46svh; } }
 
-/* ===== CAPITULO: EL CONJUNTO QUE SE ARMA ===== */
-.armado { background: var(--color-navy); color: #fff; position: relative; z-index: 2; overflow: clip; }
-.armado-grid { display: grid; grid-template-columns: .85fr 1.15fr; gap: clamp(2rem, 5vw, 4rem); align-items: center; }
-.armado .eyebrow { color: var(--color-primary-bright); }
-.armado h2 { margin-bottom: 1.4rem; }
-.armado-pasos { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.8rem; }
-.armado-pasos li {
-  font: 600 1.02rem/1.4 var(--font-body); color: rgba(255,255,255,.42); padding-left: 1.4rem; position: relative;
-  transition: color .35s var(--ease-out);
+/* ===== POR QUE VDA (sticky chapters) ===== */
+.porque { background: var(--color-bg); position: relative; z-index: 2; }
+.porque-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(2rem, 5vw, 4rem); align-items: start; }
+.porque-visual {
+  position: sticky; top: 90px; aspect-ratio: 4/5; max-height: 64svh; border-radius: var(--radius);
+  overflow: hidden; box-shadow: var(--shadow-lg); background: var(--color-navy);
 }
-.armado-pasos li::before { content: ''; position: absolute; left: 0; top: .55em; width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); transition: background .35s; }
-.armado-pasos li.is-on { color: #fff; }
-.armado-pasos li.is-on::before { background: var(--color-gold); }
+.porque-visual img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s var(--ease-out); }
+.porque-visual img.is-on { opacity: 1; }
+.porque-pasos { display: flex; flex-direction: column; gap: 28svh; padding-block: 8svh 4svh; }
+.porque-paso { opacity: .3; transition: opacity .4s var(--ease-out); }
+.porque-paso.is-on { opacity: 1; }
+.porque-paso h2 { margin-bottom: .8rem; }
+.porque-paso p { color: var(--color-text-muted); max-width: 42ch; }
 
-.armado-visual { position: relative; height: 440px; }
-.armado-piece { position: absolute; }
-.armado-campera {
-  width: 46%; aspect-ratio: 1/1.05; left: 27%; top: 6%;
-  background: linear-gradient(135deg, var(--color-primary) 0 42%, var(--color-navy-soft) 42% 58%, var(--color-primary) 58% 100%);
-  clip-path: polygon(22% 0%, 78% 0%, 100% 16%, 84% 24%, 84% 100%, 16% 100%, 16% 24%, 0% 16%);
-  box-shadow: var(--shadow-lg);
-}
-.armado-pantalon {
-  width: 40%; aspect-ratio: 1/1.1; left: 30%; top: 52%;
-  background: var(--color-navy-soft);
-  clip-path: polygon(16% 0%, 84% 0%, 84% 100%, 58% 100%, 52% 38%, 48% 38%, 42% 100%, 16% 100%);
-  box-shadow: var(--shadow-lg);
-}
-.armado-gorra {
-  width: 30%; aspect-ratio: 1.6/1; left: 35%; top: -4%;
-  background: var(--color-primary);
-  border-radius: 50% 50% 8% 8% / 100% 100% 12% 12%;
-  box-shadow: var(--shadow-lg);
-}
-.armado-star {
-  position: absolute; left: 50%; top: 40%; translate: -50% -50%; font-size: 2.4rem; color: var(--color-gold);
-  opacity: 0; scale: .4; text-shadow: 0 0 22px rgba(212,167,44,.7);
-}
 @media (max-width: 780px) {
-  .armado-grid { grid-template-columns: 1fr; }
-  .armado-visual { height: 320px; }
-  .armado.is-sticky-mobile .armado-grid { display: block; min-height: 230svh; }
-  .armado.is-sticky-mobile .armado-copy { margin-bottom: 0; }
-  .armado.is-sticky-mobile .armado-visual { position: sticky; top: 16px; }
+  .porque-grid { grid-template-columns: 1fr; }
+  .porque-visual { position: sticky; top: 16px; height: 40vh; max-height: 40vh; aspect-ratio: auto; }
+  .porque-pasos { gap: 20svh; padding-block: 4svh 2svh; }
 }
 
 /* ===== CATALOGO / TIENDA ===== */

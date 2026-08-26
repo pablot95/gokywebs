@@ -694,56 +694,22 @@
     }
   });
 
-  /* ================= CAPITULO: EL CONJUNTO QUE SE ARMA ================= */
-  function initArmado() {
-    const section = document.querySelector('.armado');
-    const visual = document.getElementById('armadoVisual');
-    if (!section || !visual) return;
-    const campera = visual.querySelector('.armado-campera');
-    const pantalon = visual.querySelector('.armado-pantalon');
-    const gorra = visual.querySelector('.armado-gorra');
-    const star = document.getElementById('armadoStar');
-    const pasos = document.querySelectorAll('#armadoPasos li');
-
-    function setProgress(p) {
-      const easeOut = v => 1 - Math.pow(1 - Math.min(1, Math.max(0, v)), 3);
-      const cE = easeOut(p / 0.6);
-      const pE = easeOut((p - 0.14) / 0.6);
-      const gE = easeOut((p - 0.3) / 0.6);
-      campera.style.opacity = String(Math.min(1, Math.max(0, p / 0.6)));
-      campera.style.transform = `translate(${(1 - cE) * -70}%, ${(1 - cE) * -24}%) rotate(${(1 - cE) * -16}deg)`;
-      pantalon.style.opacity = String(Math.min(1, Math.max(0, (p - 0.14) / 0.6)));
-      pantalon.style.transform = `translate(${(1 - pE) * 22}%, ${(1 - pE) * 70}%) rotate(${(1 - pE) * 10}deg)`;
-      gorra.style.opacity = String(Math.min(1, Math.max(0, (p - 0.3) / 0.6)));
-      gorra.style.transform = `translate(${(1 - gE) * 80}%, ${(1 - gE) * -60}%) rotate(${(1 - gE) * 20}deg)`;
-      const starP = Math.min(1, Math.max(0, (p - 0.86) / 0.14));
-      star.style.opacity = String(starP);
-      star.style.transform = `translate(-50%,-50%) scale(${0.3 + starP})`;
-      const stepIndex = Math.min(pasos.length - 1, Math.floor(p * pasos.length));
-      pasos.forEach((li, i) => li.classList.toggle('is-on', i === stepIndex));
-    }
-    setProgress(0);
-
-    if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
-
-    const mm = gsap.matchMedia();
-    mm.add('(prefers-reduced-motion: reduce)', () => { setProgress(1); });
-    mm.add('(min-width: 781px) and (prefers-reduced-motion: no-preference)', () => {
-      const st = ScrollTrigger.create({
-        trigger: section, start: 'top top', end: '+=140%', pin: true, scrub: 0.6,
-        onUpdate: self => setProgress(self.progress),
+  /* ================= POR QUE VDA (sticky chapters) ================= */
+  function initPorque() {
+    const pasos = document.querySelectorAll('[data-porque-paso]');
+    const imgs = document.querySelectorAll('[data-porque-img]');
+    if (!pasos.length || !imgs.length) return;
+    const activate = i => {
+      pasos.forEach((el, idx) => el.classList.toggle('is-on', idx === i));
+      imgs.forEach((el, idx) => el.classList.toggle('is-on', idx === i));
+    };
+    if (!('IntersectionObserver' in window)) { activate(0); return; }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) activate(Number(entry.target.dataset.porquePaso));
       });
-      return () => st.kill();
-    });
-    mm.add('(max-width: 780px) and (prefers-reduced-motion: no-preference)', () => {
-      section.classList.add('is-sticky-mobile');
-      const st = ScrollTrigger.create({
-        trigger: section.querySelector('.armado-grid'), start: 'top top', end: 'bottom bottom',
-        scrub: 0.6, invalidateOnRefresh: true, onUpdate: self => setProgress(self.progress),
-      });
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-      return () => { st.kill(); section.classList.remove('is-sticky-mobile'); };
-    });
+    }, { threshold: 0.6 });
+    pasos.forEach(el => io.observe(el));
   }
 
   /* ================= HERO: zoom sutil de la foto ================= */
@@ -776,7 +742,7 @@
     initRailArrows();
     initFloats();
     initHeroPhotoZoom();
-    initArmado();
+    initPorque();
     updateCartBadge();
     checkDeepLink();
     const anioEl = document.getElementById('anioActual');
