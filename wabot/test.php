@@ -2356,8 +2356,20 @@ caso('tampoco dice el monto de cada cuota',
 caso('el resumen de precio tampoco adelanta la seña',
     strpos((string)$cfg['precio_resumen'], '{sena}') === false);
 
-foreach (['derivar', 'espera', 'espera_prediseno', 'sistema_whatsapp', 'sistema_cierre'] as $clave) {
+// derivar y espera SÍ lo nombran desde el 27-ago: son los dos textos que
+// anuncian el traspaso, y ahora tienen que avisar además que el mensaje va a
+// llegar desde otro número. Decir "te escribe el desarrollador, por acá" era
+// mentira dos veces: ni sigue en este chat, ni el cliente sabe de quién es el
+// número que le aparece.
+foreach (['espera_prediseno', 'sistema_whatsapp', 'sistema_cierre'] as $clave) {
     caso("el texto \"$clave\" de la parte 1 no nombra a Pablo", stripos((string)$cfg[$clave], 'pablo') === false);
+}
+foreach (['derivar', 'espera'] as $clave) {
+    caso("el traspaso \"$clave\" nombra a Pablo y avisa el cambio de número",
+        stripos((string)$cfg[$clave], 'pablo') !== false
+        && stripos((string)$cfg[$clave], 'número de proyectos') !== false);
+    caso("y \"$clave\" ya no promete la respuesta \"por acá\"",
+        stripos((string)$cfg[$clave], 'por acá') === false);
 }
 foreach (['otra', 'reuniones'] as $clave) {
     caso("info.$clave no nombra a Pablo", stripos((string)$cfg['info'][$clave], 'pablo') === false);
@@ -2373,7 +2385,7 @@ foreach (['otra', 'reuniones'] as $clave) {
 caso('la respuesta de último recurso ahora manda la duda al desarrollador',
     stripos((string)$cfg['info']['otra'], 'el desarrollador') !== false);
 caso('y la derivación también', stripos((string)$cfg['derivar'], 'el desarrollador') !== false);
-caso('el único texto que nombra a Pablo es la videollamada de la parte 2',
+caso('la videollamada de la parte 2 sigue nombrando a Pablo',
     stripos((string)$cfg['postdemo_videollamada'], 'pablo') !== false);
 
 // Si el cliente pregunta explícitamente cómo se paga, ahí sí va todo.
@@ -3520,8 +3532,16 @@ $cierreViejo['cierre_suave'] = 'Gracias por consultar. Cuando sea el momento, es
 wabot_config_ventas($cierreViejo);
 caso('el cierre suave viejo de producción migra solo', $cierreViejo['cierre_suave'] === $cfg['cierre_suave']);
 
-caso('el saludo inicial pregunta el rubro con la redacción corregida',
-    stripos($cfg['menu'], 'para qué rubro necesitás la web') !== false);
+// 27-ago: 14 de 32 charlas del día murieron en el saludo, sin una sola
+// respuesta. "Para qué rubro necesitás la web" obliga a traducir el propio
+// negocio a la palabra "rubro"; preguntar qué vende se contesta solo.
+caso('el saludo inicial pregunta qué vende, no el "rubro"',
+    stripos($cfg['menu'], 'qué vendés o qué servicio ofrecés') !== false
+    && stripos($cfg['menu'], 'rubro') === false);
+$menuRubro = wabot_config_load();
+$menuRubro['menu'] = 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.';
+wabot_config_ventas($menuRubro);
+caso('el saludo del "rubro" migra solo al nuevo', $menuRubro['menu'] === $cfg['menu']);
 $menuViejo = wabot_config_load();
 $menuViejo['menu'] = 'Hola, cómo estás? Contame un poco para qué necesitarías la web';
 wabot_config_ventas($menuViejo);
@@ -4284,6 +4304,362 @@ wabot_config_ventas($cfgGuardado);
 caso('y un config que la tenía guardada la pierde al cargar',
     $cfgGuardado['tipos']['landing']['pitch_pregunta'] !== $rota
     && !in_array($rota, (array)$cfgGuardado['tipos']['landing']['pitch_pregunta_variantes'], true));
+
+echo "\n— Charla cerrada: no se manda el comodín pegado al aviso de espera (27-ago) —\n";
+
+// Una foto (o cualquier mensaje que el clasificador etiquete con alguna
+// acción sin ser saludo/rechazo) justo cuando se cierra la charla mandaba DOS
+// mensajes contradictorios: el aviso de espera ("escribime lo que sea, te
+// contesto") y, pegado, el comodín ("eso no te lo puedo contestar"). Caso
+// real: Denise (BJR Best Job Review), 27-ago, con la foto del logo.
+$cCerrCierre = conv_nueva();
+$cCerrCierre['fase'] = 'derivado'; $cCerrCierre['cierre'] = 'prediseno'; $cCerrCierre['lead_creado'] = true;
+$cCerrCierre['espera_avisada'] = false;
+clasifica(['otro']);
+$rCerrCierre = wabot_cerrada('Mandó el logo de su marca con sus distintas versiones y variaciones de color sobre un fondo claro. El diseño utiliza principalmente azul oscuro y negro.', $cCerrCierre, $cfg);
+caso('la primera vez que escribe tras el cierre, un mensaje ambiguo NO suma el comodín',
+    $rCerrCierre === [wabot_texto_espera($cCerrCierre, $cfg)]);
+caso('un solo mensaje, no dos', count($rCerrCierre) === 1);
+
+// Pero si YA se avisó la espera y sigue mandando cosas ambiguas, el comodín
+// vuelve a valer: ahí no hay mensaje de espera con el que contradecirse.
+$cCerrOtra = conv_nueva();
+$cCerrOtra['fase'] = 'derivado'; $cCerrOtra['cierre'] = 'prediseno'; $cCerrOtra['lead_creado'] = true;
+$cCerrOtra['espera_avisada'] = true;
+clasifica(['otro']);
+$rCerrOtra = wabot_cerrada('otra cosa ambigua', $cCerrOtra, $cfg);
+caso('con la espera ya avisada, el comodín se sigue mandando como antes',
+    $rCerrOtra === [$cfg['info']['otra']]);
+
+// Y una pregunta real (pregunta_info) se sigue contestando siempre, sea la
+// primera vez o no: eso nunca se tocó.
+$cCerrPregunta = conv_nueva();
+$cCerrPregunta['fase'] = 'derivado'; $cCerrPregunta['cierre'] = 'prediseno'; $cCerrPregunta['lead_creado'] = true;
+$cCerrPregunta['espera_avisada'] = false;
+clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
+$rCerrPregunta = wabot_cerrada('en cuanto tiempo la tienen?', $cCerrPregunta, $cfg);
+caso('una pregunta real sigue contestándose aunque sea la primera vez tras el cierre',
+    in_array($cfg['info']['plazos'], $rCerrPregunta, true));
+
+echo "\n— Proveedor que nos vende A NOSOTROS: silencio, no es un lead (27-ago) —\n";
+
+// DevZeppelin mandó su propia promo de webs y el bot le preguntó el rubro y le
+// contestó "no hacemos logos" (la palabra estaba en SU listado).
+$volanteDev = "Promo de web profesional + pack de diseño por \$199.000.\n\nIncluye:\n"
+    . "✅ Página web moderna ultra rápida\n✅ Dominio .com.ar gratis por 1 año\n✅ Hosting gratis\n"
+    . "✅ Optimización para búsquedas (Google e IA)\n✅ Pack de diseño para redes (Flyers, Logo, Historias destacadas)\n"
+    . "✅ Un reel promocional incluído!\n\nNuestras web son anexalinks.ar y devzeppelin.ar, para que veas calidad y velocidad!";
+caso('el volante de otra agencia se detecta como proveedor', wabot_texto_es_proveedor($volanteDev) === true);
+caso('una agencia que pide precio con "consultanos" también',
+    wabot_texto_es_proveedor('Somos una agencia de marketing digital, hacemos paginas web y redes sociales. Consultanos por nuestros planes: 15000 por mes.') === true);
+
+// Los falsos positivos son mucho más caros que los falsos negativos: ignorar a
+// un cliente real es perder la venta entera. Estos cinco tienen que pasar.
+foreach ([
+    'agencia que quiere SU web' => 'Hola, somos una agencia de marketing digital y necesitamos una pagina web propia para mostrar nuestros casos de exito y que nos contacten los clientes.',
+    'cliente que ofrece su servicio' => 'Hola! Ofrecemos servicio de fumigacion y control de plagas en todo el conurbano, queria una pagina web para el negocio',
+    'cliente que vio nuestra promo' => 'Hola, vi la promo de la pagina web por $199.000 en instagram y me interesa para mi local de ropa, me pasas mas informacion?',
+    'cliente que pregunta qué incluye' => 'Queria saber si el presupuesto de $290.000 incluye el hosting y el dominio o se paga aparte, y si el diseño web es a medida o con plantilla',
+    'cliente que muestra sus servicios' => 'Buenas, necesito una pagina web para mostrar nuestros servicios de contabilidad y que nos escriban por whatsapp los clientes nuevos',
+] as $que => $mensaje) {
+    caso("un $que NO se confunde con proveedor", wabot_texto_es_proveedor($mensaje) === false);
+}
+
+$cProveedor = conv_nueva();
+$rProveedor = wabot_cerrar_proveedor($cProveedor);
+caso('al proveedor no se le contesta nada', $rProveedor === []);
+caso('y queda fuera de los seguimientos automáticos',
+    !empty($cProveedor['seguimiento_bloqueado']) && $cProveedor['cierre'] === 'proveedor');
+
+echo "\n— \"Costos?\" en medio de un desempate: los dos precios, no el rango (27-ago) —\n";
+
+// Pediatría ya había dicho el rubro y estaba contestando la pregunta de turnos.
+// Preguntó "Costos?" y el bot volvió al rango genérico rematando con "contame a
+// qué te dedicás": tiró a la basura todo lo que ya sabía.
+$dosTurnos = wabot_desempate_precios_texto('desempate_turnos', $cfg);
+caso('el desempate de turnos contesta con los dos precios reales',
+    strpos($dosTurnos, (string)$cfg['tipos']['landing']['precio']) !== false
+    && strpos($dosTurnos, (string)$cfg['tipos']['turnos']['precio']) !== false);
+caso('y NO vuelve a pedir el rubro',
+    stripos($dosTurnos, 'a qué te dedicás') === false && stripos($dosTurnos, 'rubro') === false);
+caso('el de comercio hace lo mismo con catálogo y ecommerce',
+    strpos(wabot_desempate_precios_texto('desempate_comercio', $cfg), (string)$cfg['tipos']['ecommerce']['precio']) !== false
+    && strpos(wabot_desempate_precios_texto('desempate_comercio', $cfg), (string)$cfg['tipos']['catalogo']['precio']) !== false);
+caso('el de cursos, con landing y plataforma',
+    strpos(wabot_desempate_precios_texto('desempate_cursos', $cfg), (string)$cfg['tipos']['elearning']['precio']) !== false);
+caso('fuera de un desempate no aplica', wabot_desempate_precios_texto('precio', $cfg) === null);
+
+$cPedi = conv_nueva(); $cPedi['fase'] = 'desempate_turnos';
+clasifica(['pregunta_info'], ['info_keys' => ['rangos']]);
+$rPedi = wabot_engine('Costos?', $cPedi, $cfg);
+caso('de punta a punta: preguntar el costo en el desempate trae las dos opciones',
+    strpos($rPedi[0], (string)$cfg['tipos']['landing']['precio']) !== false
+    && strpos($rPedi[0], (string)$cfg['tipos']['turnos']['precio']) !== false
+    && stripos($rPedi[0], 'a qué te dedicás') === false);
+
+echo "\n— El listado de datos se pide una vez; después, silencio (27-ago) —\n";
+
+// Una clienta de cosméticos contestó "Ok", "Listo gracias" y "🫶 si" y se llevó
+// tres mensajes distintos diciéndole lo mismo.
+$cDatos = ['fase' => 'prediseno', 'prediseno_pedido' => ['Tu nombre', 'El nombre de tu negocio']];
+foreach (['Ok', 'Listo gracias', 'dale', 'si', '🫶 si'] as $acuse) {
+    caso("\"$acuse\" tras el listado es solo un acuse", wabot_prediseno_acuse($acuse, $cDatos) === true);
+}
+caso('pero un dato real no lo es', wabot_prediseno_acuse('Denise, BJR Best Job Review', $cDatos) === false);
+caso('ni pedir que lo repitan', wabot_prediseno_acuse('me lo repetís?', $cDatos) === false);
+caso('y antes de pedir el listado, tampoco aplica',
+    wabot_prediseno_acuse('Ok', ['fase' => 'prediseno', 'prediseno_pedido' => []]) === false);
+caso('ni en otra fase', wabot_prediseno_acuse('Ok', ['fase' => 'precio', 'prediseno_pedido' => ['x']]) === false);
+
+echo "\n— Necesidades mixtas: se nombra lo que pidió antes de derivar (27-ago) —\n";
+
+// Valeria explicó terapias + cursos + productos y el bot contestó "te paso con
+// el desarrollador" sin nombrar una sola de las tres.
+$ejesValeria = wabot_ejes_mixtos('Soy Valeria Terapeuta holistica, queria una página donde ofrecer mis servicios online '
+    . '(lecturas de cartas, cursos de diversas mancias, terapias de sanacion) y ademas vender productos, sahumerios y cascadas de humo.');
+caso('los tres ejes de Valeria se detectan',
+    $ejesValeria !== null && count($ejesValeria) === 3);
+$textoValeria = wabot_texto_mixto($ejesValeria, $cfg);
+caso('y el texto nombra las tres cosas antes de derivar',
+    stripos($textoValeria, 'servicios') !== false && stripos($textoValeria, 'cursos') !== false
+    && stripos($textoValeria, 'productos') !== false);
+caso('sin inventar un precio para el combinado', preg_match('/\$\s?\d/u', $textoValeria) === 0);
+
+$ejesPsico = wabot_ejes_mixtos('Psicología, quiero ofrecer sesiones, grupos y cuadernillos');
+caso('sesiones + cuadernillos también es mixto', $ejesPsico !== null && count($ejesPsico) === 2);
+
+// Un rubro simple NO puede caer acá: dispararía el aviso de mixto a cualquiera.
+foreach ([
+    'ferretería' => 'Rubro ferretería especializada en herrajes',
+    'streetwear' => 'necesito un tienda sobre ropa estilo streetwear que me permita cargar la mercadería con talles',
+    'traslados'  => 'Quisiera una página web para una agencia de traslados, en Puerto Iguazú',
+    'pediatría'  => 'Pediatría',
+] as $que => $mensaje) {
+    caso("$que es un rubro simple, no mixto", wabot_ejes_mixtos($mensaje) === null);
+}
+
+echo "\n— Una sola pregunta por tanda (27-ago) —\n";
+
+// A la clienta de cosméticos le llegaron dos preguntas seguidas y
+// contradictorias: el desempate del rubro y la del pitch, en el mismo turno.
+$dosPreguntas = wabot_una_sola_pregunta([
+    'Qué servicio de belleza ofrecés?',
+    'Cuál es el producto que más vendés?',
+]);
+caso('de dos preguntas seguidas queda solo la primera',
+    $dosPreguntas === ['Qué servicio de belleza ofrecés?']);
+caso('el precio + la pregunta del pitch siguen saliendo juntos (una sola "?")',
+    count(wabot_una_sola_pregunta([
+        wabot_msg_precio_texto('ecommerce', $cfg),
+        'Cuál es el producto que más vendés?',
+    ])) === 2);
+caso('y una tanda sin preguntas no se toca',
+    wabot_una_sola_pregunta(['Listo, anotado.', 'La demo te llega mañana.']) === ['Listo, anotado.', 'La demo te llega mañana.']);
+
+echo "\n— Las dudas de BJR que se llevaron el comodín (27-ago) —\n";
+
+caso('"Es para una página de reseñas" es el rubro, no una duda',
+    wabot_texto_no_es_consulta('Es para una página de reseñas') === 'rubro');
+caso('"necesito una pagina web para mi estudio" también',
+    wabot_texto_no_es_consulta('necesito una pagina web para mi estudio') === 'rubro');
+caso('pero con signo de pregunta sigue siendo una consulta',
+    wabot_texto_no_es_consulta('Es para una pagina de reseñas, cuanto sale?') === null);
+
+caso('"No quiero llevarlos a WhatsApp" tiene respuesta propia',
+    wabot_info_por_palabras('No quiero llevarlos a WhatsApp') === 'sin_whatsapp');
+caso('y ofrece formulario o mail como alternativa',
+    stripos((string)$cfg['info']['sin_whatsapp'], 'formulario') !== false
+    && stripos((string)$cfg['info']['sin_whatsapp'], 'mail') !== false);
+caso('querer WhatsApp no dispara esa respuesta',
+    wabot_info_por_palabras('quiero que me contacten por whatsapp') !== 'sin_whatsapp');
+
+caso('"Cómo me comunico con el desarrollador?" tiene respuesta propia',
+    wabot_info_por_palabras('Cómo me comunico con el desarrollador?') === 'contacto_desarrollador');
+caso('y avisa que escribe él, desde el número de proyectos',
+    stripos((string)$cfg['info']['contacto_desarrollador'], 'número de proyectos') !== false);
+
+echo "\n— Facturación: solo Factura C (27-ago) —\n";
+
+// Una SRL responsable inscripto pregunto "nos hacen factura A?" y el bot le
+// contesto las formas de pago, que no era la pregunta: se fue sin saber si
+// podia deducir el IVA.
+caso('"nos hacen factura A?" tiene respuesta propia',
+    wabot_info_por_palabras('Nos hacen factura A? Somos responsables inscriptos') === 'facturacion');
+caso('"qué tipo de factura hacen?" también',
+    wabot_info_por_palabras('que tipo de factura hacen?') === 'facturacion');
+caso('la respuesta dice Factura C y que no hay A ni B',
+    stripos((string)$cfg['info']['facturacion'], 'factura c') !== false
+    && stripos((string)$cfg['info']['facturacion'], 'no emitimos factura a') !== false);
+// "¿Tengo que estar inscripto?" es OTRA pregunta y no se la puede comer.
+caso('preguntar si el cliente debe estar inscripto sigue yendo a inscripcion',
+    wabot_info_por_palabras('tengo que estar inscripto en afip?') === 'inscripcion');
+
+echo "\n— Apps: sí las hacemos, pero se cotizan aparte (27-ago) —\n";
+
+// "Necesito una app para celular" termino en el flujo de sistemas sin que
+// nadie le confirmara siquiera que las hacemos.
+caso('pedir una app para celular se reconoce',
+    wabot_info_por_palabras('necesito una app para celular, para pedidos') === 'apps');
+caso('y "para descargar del Play Store" también',
+    wabot_info_por_palabras('app app, para descargar del Play Store') === 'apps');
+caso('la respuesta confirma que las hacemos y que se cotizan aparte',
+    stripos((string)$cfg['info']['apps'], 'sí, también desarrollamos aplicaciones') !== false
+    && stripos((string)$cfg['info']['apps'], 'se cotizan aparte') !== false);
+caso('y la app de celular habilita el handoff, porque no tiene precio de lista',
+    wabot_handoff_causa_explicita('necesito una app para celular, para pedidos') === 'app_movil');
+// Un sistema interno NO es una app de celular: tiene su propio flujo, que
+// junta el brief antes de derivar.
+caso('"quiero una app para stock" sigue siendo un sistema, no un handoff pelado',
+    wabot_handoff_causa_explicita('quiero una app para stock') === null);
+caso('y "por la app de WhatsApp" no pide ninguna app',
+    wabot_handoff_causa_explicita('te escribo por la app de whatsapp') === null);
+
+echo "\n— \"Las dos cosas\": el ecommerce ya trae las dos (27-ago) —\n";
+
+// "Las dos cosas, que puedan comprar online y tambien consultarme por
+// WhatsApp" recibio la oferta de la demo, sin confirmarle que no hay que
+// elegir. El tipo (ecommerce) ya estaba bien: lo que faltaba era decirlo.
+$lasDos = 'Las dos cosas, que puedan comprar online y tambien consultarme por WhatsApp';
+caso('fuera del desempate, "las dos cosas" se confirma',
+    wabot_info_por_palabras($lasDos, 'pitch') === 'las_dos_formas');
+caso('y el texto aclara que no hay que elegir',
+    stripos((string)$cfg['info']['las_dos_formas'], 'no hay que elegir') !== false
+    && stripos((string)$cfg['info']['las_dos_formas'], 'whatsapp') !== false);
+// Dentro del desempate NO se toca: ahí "las dos" es la respuesta, y la
+// resuelve el desempate cotizando ecommerce, que es el tipo que cubre ambas.
+caso('dentro del desempate sigue resolviéndolo el desempate',
+    wabot_info_por_palabras($lasDos, 'desempate_comercio') === null);
+caso('y ese desempate lo cotiza como ecommerce',
+    wabot_desempate_por_palabras('desempate_comercio', $lasDos) === 'comercio_vender');
+
+echo "\n— El aviso de mixto va en el embudo de precio, no se puede esquivar (27-ago) —\n";
+
+// El guard vivía solo en dar_precio y la respuesta a un desempate toma un
+// atajo determinista que llama a wabot_precio() directo, sin pasar por la
+// herramienta: psicoeducación pidió "sesiones, grupos y cuadernillos",
+// contestó "Reservar" y se llevó turnos de $200.000 con los cuadernillos
+// afuera. Acá se prueba por ese mismo atajo.
+$cMixPrecio = conv_nueva();
+$cMixPrecio['fase'] = 'desempate_turnos';
+$cMixPrecio['transcript'] = [['q' => 'cliente', 't' => 'Psicologia, quiero ofrecer sesiones, grupos y cuadernillos', 'ts' => time() - 20]];
+$cMixPrecio['session_started_ts'] = time() - 60;
+$rMixPrecio = wabot_precio('turnos', $cMixPrecio, $cfg);
+caso('cotizar tras un desempate mixto avisa en vez de cotizar',
+    count($rMixPrecio) === 2 && stripos($rMixPrecio[0], 'integre') !== false);
+caso('y pregunta si lo quiere todo junto o arranca por una parte',
+    $rMixPrecio[1] === (string)$cfg['mixto_pregunta']);
+caso('sin dar el precio de turnos como si cubriera todo',
+    strpos($rMixPrecio[0], (string)$cfg['tipos']['turnos']['precio']) === false
+    && empty($cMixPrecio['precio_dado']));
+caso('queda marcado para no repetirlo', !empty($cMixPrecio['mixto_avisado']));
+// Ya avisado, la segunda vez cotiza normal: el aviso no puede trabar la venta.
+$rMixPrecio2 = wabot_precio('turnos', $cMixPrecio, $cfg);
+caso('la segunda vez ya cotiza normal',
+    strpos(implode(' ', $rMixPrecio2), (string)$cfg['tipos']['turnos']['precio']) !== false);
+// Un rubro simple nunca pasa por acá.
+$cSimplePrecio = conv_nueva();
+$cSimplePrecio['transcript'] = [['q' => 'cliente', 't' => 'Tengo una ferreteria de herrajes', 'ts' => time() - 20]];
+$cSimplePrecio['session_started_ts'] = time() - 60;
+caso('un rubro simple cotiza directo, sin aviso de mixto',
+    strpos(implode(' ', wabot_precio('ecommerce', $cSimplePrecio, $cfg)), (string)$cfg['tipos']['ecommerce']['precio']) !== false);
+
+echo "\n— \"Quiero vender mis diseños\" no es un callejón sin salida (27-ago) —\n";
+
+// Sin esto el bot no reconocía nada y preguntaba el rubro DOS veces con
+// distinta redacción ("qué vendés o qué servicio ofrecés?" y después "a qué
+// rubro te dedicás?") a alguien que ya había contestado. Pasó dos veces el
+// mismo día: BJR y el ebook de diseños.
+caso('"quiero vender mis diseños" cae en el desempate de comercio',
+    wabot_fallback_rubro_local('quiero vender mis disenos') === 'hibrido_pendiente');
+caso('"vendo cuadros pintados a mano" también',
+    wabot_fallback_rubro_local('vendo cuadros pintados a mano') === 'hibrido_pendiente');
+// El catch-all va ÚLTIMO: no puede pisar los rubros que ya se reconocían.
+foreach ([
+    'vendo ropa'                => 'ecommerce',
+    'vender online con carrito' => 'ecommerce',
+    'soy plomero'               => 'landing',
+    'tengo una peluqueria'      => 'turnos_pendiente',
+    'doy cursos de ingles'      => 'cursos',
+    'tengo una inmobiliaria'    => 'inmobiliaria',
+] as $mensaje => $esperado) {
+    caso("\"$mensaje\" sigue resolviendo a $esperado",
+        wabot_fallback_rubro_local($mensaje) === $esperado);
+}
+caso('y lo que no habla de vender sigue sin resolver',
+    wabot_fallback_rubro_local('hola') === null);
+
+echo "\n— Contenido cargado por usuarios es desarrollo a medida (27-ago) —\n";
+
+// BJR: "es para una página de reseñas" no matcheaba ningún rubro, así que el
+// bot preguntó "qué vendés o qué servicio ofrecés?", el cliente contestó
+// "reseñas laborales", y volvió a preguntar "a qué rubro te dedicás". Dos
+// veces la misma pregunta con distinta redacción, y la charla no avanzó nunca.
+// Un sitio donde el contenido lo cargan los usuarios necesita cuentas,
+// moderación y panel: es a medida, no una landing.
+foreach ([
+    'página de reseñas'        => 'Es para una pagina de resenas',
+    'reseñas laborales'        => 'Resenas laborales, los usuarios dejan opiniones de sus empleos',
+    'foro'                     => 'quiero un foro para mi comunidad',
+    'bolsa de trabajo'         => 'una bolsa de trabajo para mi rubro',
+    'avisos de usuarios'       => 'quiero que los usuarios publiquen sus avisos',
+] as $que => $mensaje) {
+    caso("$que va al flujo de sistemas, no a un tipo de la lista",
+        wabot_contexto_es_portal_contenido($mensaje) === true);
+}
+// El portal de noticias, que ya estaba, sigue andando.
+caso('el portal de noticias sigue detectándose',
+    wabot_contexto_es_portal_contenido('un portal de noticias locales') === true);
+// Y los rubros normales NO pueden caer acá: los mandaría a todos a "a medida".
+foreach ([
+    'ferretería'           => 'tengo una ferreteria y vendo herrajes',
+    'plomero'              => 'soy plomero, quiero mostrar mis trabajos',
+    'ecommerce'            => 'vendo indumentaria online con carrito',
+    'reseñas de Google'    => 'quiero mostrar las resenas de Google en mi web',
+] as $que => $mensaje) {
+    caso("$que sigue siendo un tipo normal", wabot_contexto_es_portal_contenido($mensaje) === false);
+}
+
+echo "\n— \"No sé qué me conviene\" no elige el tipo más caro (27-ago) —\n";
+
+// Germán nombró las dos opciones ("una tienda o canal de ventas de whatsapp")
+// y dijo que no sabía cuál le convenía. La palabra "tienda" alcanzaba para
+// devolver 'vender' y se le cotizó el tipo más caro sin preguntarle nada:
+// $290.000 en vez de los $180.000 del catálogo, sin que él eligiera.
+caso('mencionar las dos opciones y dudar no elige ninguna',
+    wabot_desempate_por_palabras('desempate_comercio',
+        'Para hacer una tienda o canal de ventas de whasaap o no se q me conviene') === null);
+caso('"no se q me conviene" con la q de WhatsApp también cuenta',
+    wabot_desempate_por_palabras('desempate_comercio', 'no se q me conviene') === null);
+caso('"qué me recomendás?" tampoco decide solo',
+    wabot_desempate_por_palabras('desempate_turnos', 'que me recomendas?') === null);
+// Pero el que YA eligió se respeta: la duda no puede tragarse una respuesta.
+caso('el que eligió vender online sigue eligiendo',
+    wabot_desempate_por_palabras('desempate_comercio', 'quiero vender online con carrito') === 'comercio_vender');
+caso('y el que eligió WhatsApp también',
+    wabot_desempate_por_palabras('desempate_comercio', 'que me escriban por whatsapp nomas') === 'comercio_mostrar');
+caso('un "reservar" pelado sigue siendo turnos',
+    wabot_desempate_por_palabras('desempate_turnos', 'reservar') === 'turnos_si');
+
+echo "\n— \"Armala con ejemplos\" pide relleno, no el portfolio (27-ago) —\n";
+
+// silfer herrajes: "armala con ejemplos, no es necesario que te envíe nada por
+// el momento" = usá contenido de relleno mientras junto el material. El
+// matcher lo leía como "mostrame trabajos que hicieron" y le habría contestado
+// con el link del portfolio, que no es lo que pidió.
+caso('"armala con ejemplos" no pide el portfolio',
+    wabot_info_por_palabras('armala con ejemplos, no es necesario que te envie por el momento') === null);
+caso('"hacela con fotos de ejemplo" tampoco',
+    wabot_info_por_palabras('hacela con fotos de ejemplo') === null);
+caso('"ponele datos de ejemplo por ahora" tampoco',
+    wabot_info_por_palabras('ponele datos de ejemplo por ahora') === null);
+caso('pero pedir ejemplos de trabajos sigue andando',
+    wabot_info_por_palabras('tenes ejemplos de trabajos que hayan hecho?') === 'ejemplos');
+caso('y pedir una web de muestra también',
+    wabot_info_por_palabras('me pasas algun ejemplo de web que hicieron?') === 'ejemplos');
+caso('"De todo tenés alguna para ver" ahora sí se reconoce',
+    wabot_info_por_palabras('De todo tenes alguna para ver') === 'ejemplos');
+caso('sin comerse otras preguntas con "alguna"',
+    wabot_info_por_palabras('tenes alguna forma de pago') === 'pago');
 
 echo "\n— Portugués filtrado en la redacción (26-ago) —\n";
 

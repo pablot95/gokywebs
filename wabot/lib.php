@@ -259,7 +259,12 @@ function wabot_migrar_conversaciones_instagram() {
  */
 function wabot_config_ventas(&$cfg) {
     $defaults = [
-        'menu'              => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+        // "Para qué rubro necesitás la web" hace pensar antes de contestar: hay
+        // que traducir lo que uno hace a la palabra "rubro". El 27-ago, 14 de 32
+        // charlas (43%) murieron justo acá, sin una sola respuesta. Preguntar
+        // qué vende o qué servicio ofrece se contesta solo ("soy abogado",
+        // "vendo ropa"), y además promete algo a cambio de contestar.
+        'menu'              => 'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
         'pensarlo'          => 'Perfecto, tomate el tiempo que necesites. Si te sirve, mientras lo pensás te preparo la demo gratis: es más fácil decidir viendo tu web terminada que mirando un presupuesto. Te la armo?',
         // Si la demo ya se ofreció por otra objeción antes en la misma charla
         // (pensarlo → socio → ya_tengo_web es un combo real), estas variantes
@@ -343,6 +348,17 @@ function wabot_config_ventas(&$cfg) {
          * tarjeta. Antes de la demo NO se mencionan (decisión de Pablo, 22-ago).
          * El nombre "Pablo" también se reserva para acá: la primera vez que el
          * cliente lo lee es en la oferta de videollamada. */
+        // Necesidad mixta: se nombra lo que pidió ANTES de derivar, para que
+        // el traspaso no parezca que no lo leímos (ver wabot_ejes_mixtos).
+        // No lleva precio: una web que junta varias cosas se cotiza a mano.
+        'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
+        // Va aparte, en su propio globo: es la pregunta que decide si se
+        // cotiza el combinado (lo arma Pablo) o una sola parte (sale de la lista).
+        'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',
+        // La ÚNICA respuesta a un "ok" después de pedirle los datos de la demo.
+        // Sale una sola vez por charla: al segundo acuse ya no se contesta nada
+        // (ver wabot_prediseno_acuse y wabot_responder).
+        'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando los tengas mandámelos por acá y arrancamos con la demo.',
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
         'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
         'muestra_presentar' => "Hola! Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
@@ -940,12 +956,16 @@ function wabot_config_ventas(&$cfg) {
     $migraciones2108 = [
         'menu' => [
             'Hola, cómo estás? Contame un poco para qué necesitarías la web'
-                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+                => 'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
             'Hola, cómo estás? Contame un poco en qué te puedo ayudar'
-                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+                => 'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
             // Texto con errores de redacción que llegó a estar guardado en producción.
             'Hola 👋 , para asesorarte mejor porfavor contanos para que rubro necesitarias la web'
-                => 'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.',
+                => 'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
+            // Retirado 27-ago: pedía traducir el negocio propio a "rubro" y era
+            // donde se caía el 43% de las charlas del día.
+            'Hola 👋 Para asesorarte mejor, contanos para qué rubro necesitás la web.'
+                => 'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
         ],
         'caro' => [
             'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Si te sirve, te lo podemos dividir en 3 cuotas sin interés para que no lo sientas de una. En el link del presupuesto tenés el detalle de todo lo que incluye.'
@@ -1043,9 +1063,14 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
             'Buenísimo, lo verificamos y te confirmamos por acá. Cualquier cosa quedamos en contacto.'
                 => 'Perfecto, revisamos la transferencia y te confirmamos por acá.',
         ],
+        // "Por acá" quedó mentiroso cuando Pablo pasó a escribir desde su
+        // número de proyectos (27-ago): el cliente esperaba la respuesta en
+        // este chat y le llegaba de un número desconocido. Se avisa el cambio.
         'derivar' => [
             'Perfecto, {nombre}. Tu consulta la sigue el desarrollador directamente: te escribe a la brevedad por acá para avanzar.'
-                => 'Dale, {nombre}. Te paso con el desarrollador para que lo sigan directamente por acá.',
+                => 'Perfecto, {nombre}. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.',
+            'Dale, {nombre}. Te paso con el desarrollador para que lo sigan directamente por acá.'
+                => 'Perfecto, {nombre}. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.',
         ],
         'seguimiento_precio' => [
             'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?'
@@ -1146,6 +1171,41 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         // la venta (caso Abel, 22-ago). Se le pregunta.
         'precio_sin_rubro' => 'Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
+
+        /* Solo Factura C (monotributo). Una SRL responsable inscripto preguntó
+         * por la A el 27-ago y el bot le contestó las formas de pago, que no
+         * era la pregunta: se fue sin saber si podía deducir el IVA. */
+        'facturacion' => 'Facturamos con Factura C. No emitimos Factura A ni B, así que no lleva IVA discriminado.',
+
+        /* Sí hacemos apps, pero no salen de la lista de precios: cada una se
+         * cotiza aparte. El 27-ago un pedido de app para pedidos terminó en el
+         * flujo de sistemas sin que nadie le dijera que sí las hacemos. */
+        'apps' => 'Sí, también desarrollamos aplicaciones para celular. No entran en la lista de precios de las webs: se cotizan aparte según lo que necesite hacer la app.',
+
+        /* El ecommerce ya trae las dos formas de contacto. Ante "las dos
+         * cosas" el bot ofreció la demo sin confirmarlo (27-ago), dejando al
+         * cliente sin saber si tenía que elegir. */
+        'las_dos_formas' => 'Van las dos juntas, no hay que elegir: la tienda tiene el carrito con pago online y además el botón de WhatsApp, así el que prefiere consultarte antes de comprar te escribe directo.',
+
+        /* "Landing" es jerga nuestra, no del cliente. Denise preguntó qué era
+         * (27-ago) y le contestaron "una página de una sola sección", que
+         * suena a media web y además es falso: es UNA página con VARIAS
+         * secciones. En la batería del mismo día la pregunta ni siquiera se
+         * contestó — el bot le ofreció la demo en su lugar. */
+        'que_es_landing' => 'Es una web de una sola página, que se recorre bajando: arriba te presentás, después van tus servicios, tus trabajos, las preguntas frecuentes y el contacto. Tiene todas las secciones que haga falta, solo que en una página en vez de repartidas en varias.',
+
+        /* "Cómo me comunico con el desarrollador?" se contestaba con el texto
+         * de reuniones ("se coordinan al avanzar el proyecto"), que no responde
+         * nada: la clienta preguntó cómo llegar a él y se quedó igual
+         * (Denise, 27-ago). Además ahora Pablo escribe desde otro número, así
+         * que hace falta avisarlo o el mensaje llega de un desconocido. */
+        'contacto_desarrollador' => 'No tenés que hacer nada: te escribe él directamente por WhatsApp, desde nuestro número de proyectos. Si preferís escribirle vos primero, decímelo y le paso tu mensaje.',
+
+        /* Una landing lleva a WhatsApp por default, pero no es obligatorio: al
+         * que dice "no quiero llevarlos a WhatsApp" hay que contestarle la
+         * alternativa, no seguir de largo con el precio como si no lo hubiera
+         * dicho (Denise, 27-ago, y era su única condición). */
+        'sin_whatsapp' => 'No hay problema, el WhatsApp no es obligatorio. En vez del botón podemos poner un formulario de contacto —las consultas te llegan por mail—, o dejar solo el mail y tus redes. Vos decidís por dónde querés que te escriban.',
 
         /* Las 13 preguntas de traspaso que hizo un cliente el 20-ago de una
          * sola vez, con las respuestas que le dio Pablo. Son las dudas de
@@ -1398,13 +1458,17 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         ],
         'espera' => [
             'Pablo ya tiene tu consulta y te escribe a la brevedad por acá.'
-                => 'El desarrollador ya tiene tu consulta y te escribe a la brevedad por acá.',
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
             'El equipo ya tiene tu consulta y te escribe a la brevedad por acá.'
-                => 'El desarrollador ya tiene tu consulta y te escribe a la brevedad por acá.',
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
             'Pablo ya tiene tu consulta y te escribe en un rato por acá.'
-                => 'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.',
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
             'El equipo ya tiene tu consulta y te escribe en un rato por acá.'
-                => 'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.',
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
+            'El desarrollador ya tiene tu consulta y te escribe a la brevedad por acá.'
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
+            'El desarrollador ya tiene tu consulta y te escribe en un rato por acá.'
+                => 'Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
         ],
         // Los tres cierres viejos eran afirmaciones: no dejaban nada que
         // contestar y la charla se enfriaba justo cuando más falta hace que
@@ -3546,6 +3610,31 @@ function wabot_sin_repetidos_consecutivos($mensajes) {
     $out = [];
     foreach ((array)$mensajes as $m) {
         if (end($out) !== $m) $out[] = $m;
+    }
+    return $out;
+}
+
+/**
+ * Una tanda de mensajes puede llevar UNA sola pregunta.
+ *
+ * A una clienta de cosméticos le llegaron dos seguidas y contradictorias —"Qué
+ * servicio de belleza ofrecés?" y "Cuál es el producto que más vendés?"— porque
+ * dos ramas distintas (el desempate del rubro y la pregunta del pitch)
+ * emitieron en el mismo turno (27-ago). No hay forma de contestar las dos, así
+ * que el cliente contesta una y el bot queda esperando la otra.
+ *
+ * Se conserva la PRIMERA: es la que decide el tipo de web, y sin esa respuesta
+ * el resto no se puede cotizar. La del pitch es opcional y puede volver a
+ * hacerse más adelante.
+ */
+function wabot_una_sola_pregunta($mensajes) {
+    $out = [];
+    $yaHayPregunta = false;
+    foreach ((array)$mensajes as $m) {
+        $esPregunta = strpos((string)$m, '?') !== false;
+        if ($esPregunta && $yaHayPregunta) continue;
+        if ($esPregunta) $yaHayPregunta = true;
+        $out[] = $m;
     }
     return $out;
 }

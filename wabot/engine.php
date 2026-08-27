@@ -121,6 +121,51 @@ function wabot_contexto_cliente_texto($conv, $max = 18) {
     return trim(implode(' ', wabot_contexto_cliente_sesion($conv, $max)));
 }
 
+/**
+ * ¿El cliente nombró DOS O MÁS cosas distintas que vender/ofrecer?
+ *
+ * Valeria (27-ago) explicó en un solo mensaje que quería ofrecer terapias y
+ * lecturas, vender cursos de mancias Y vender sahumerios. El bot contestó "te
+ * paso con el desarrollador" sin nombrar una sola de las tres: parece que no
+ * la leyó. Una consulta de psicoeducación dijo "sesiones, grupos y
+ * cuadernillos" y el bot la encajó en turnos, dejando los cuadernillos
+ * afuera; recién apareció el problema después de cotizar.
+ *
+ * Devuelve las etiquetas de los ejes detectados (al menos dos) o null. Es
+ * deliberadamente cortita: cada eje pide palabras del propio cliente, no
+ * inferencias, porque de acá sale un texto que se lo va a repetir.
+ */
+function wabot_ejes_mixtos($texto) {
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$texto));
+    if ($t === '') return null;
+
+    $ejes = [];
+    if (preg_match('/\b(sesion\w*|terapia\w*|consulta\w*|tratamiento\w*|atencion|turno\w*|lectura\w*|sanacion\w*'
+        . '|masaje\w*|clase\w* particular\w*|asesoria\w*|acompanamiento\w*)\b/u', $t)) $ejes['servicios'] = 'tus servicios';
+    if (preg_match('/\b(curso\w*|taller\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
+        . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)) $ejes['cursos'] = 'los cursos o materiales';
+    if (preg_match('/\b(producto\w*|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
+        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
+    if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
+
+    return count($ejes) >= 2 ? $ejes : null;
+}
+
+/**
+ * La frase que demuestra que se entendió antes de derivar. Sin esto, el
+ * traspaso a Pablo llega como una puerta cerrada; con esto, el cliente ve que
+ * lo escuchamos y que lo que pide se puede hacer, solo que hay que cotizarlo.
+ */
+function wabot_texto_mixto($ejes, $cfg) {
+    $ejes = array_values((array)$ejes);
+    if (count($ejes) < 2) return null;
+    $ultimo = array_pop($ejes);
+    $lista = implode(', ', $ejes) . ' y ' . $ultimo;
+    $plantilla = trim((string)($cfg['mixto'] ?? ''));
+    if ($plantilla === '') return null;
+    return str_replace('{lista}', $lista, $plantilla);
+}
+
 /** Reconstruye el CTA usado en chats viejos mirando solo lo dicho por el bot. */
 function wabot_cta_muestra_ya_ofrecida($conv) {
     $inicio = (int)($conv['session_started_ts'] ?? 0);
@@ -269,6 +314,87 @@ function wabot_cierre_con_memoria($conv, $cfg) {
 }
 
 /**
+ * ¿Esto es otro proveedor ofreciéndonos SU servicio, no un cliente?
+ *
+ * DevZeppelin nos mandó su propia promo de páginas web con precios y dominios
+ * (27-ago) y el bot le contestó "para qué rubro necesitás la web" y encima "no
+ * hacemos logos", porque la palabra apareció en el listado del competidor. Es
+ * un lead que nunca va a comprar y una respuesta que nos deja mal parados.
+ *
+ * Se pide la conjunción de dos señales, no una sola: que ofrezca (no que pida)
+ * Y que hable de lo mismo que vendemos nosotros. Un cliente que dice "quiero
+ * una web" no ofrece nada, y uno que ofrece empanadas no nombra desarrollo
+ * web: hacen falta las dos para confundirse, y eso ya es un competidor.
+ */
+function wabot_texto_es_proveedor($texto) {
+    $crudo = (string)$texto;
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $crudo));
+    if ($t === '') return false;
+    // Un mensaje corto no es un volante: los volantes vienen con la lista de
+    // lo que incluyen. Este piso evita comerse un "hago paginas web" de
+    // alguien que en realidad quiere una para su estudio de diseño.
+    if (mb_strlen($t) < 90) return false;
+
+    // Nuestro propio rubro. Sin esto no hay confusión posible: el que ofrece
+    // empanadas es un cliente raro, no un competidor.
+    $mismoRubro = preg_match('/\b(pagina web|paginas web|sitio web|sitios web|desarrollo web|diseno web|landing|ecommerce|e commerce'
+        . '|tienda online|hosting|dominio|posicionamiento|seo|community manager|marketing digital|redes sociales)\b/u', $t);
+    if (!$mismoRubro) return false;
+
+    /* Solo frases que un cliente prácticamente NUNCA escribe. Se descartaron a
+     * propósito varias que parecían servir y no sirven, porque el costo de
+     * equivocarse es ignorar a un cliente de verdad:
+     *   "ofrecemos"          → "Ofrecemos fumigación... quería una página web".
+     *   "nuestros servicios" → "quiero una web para mostrar nuestros servicios".
+     *   "promo"              → "vi la promo de la página web, me interesa".
+     *   "incluye"            → "el presupuesto incluye hosting y dominio?".
+     *   "somos una agencia"  → una agencia que quiere SU propia web.
+     * Lo que queda o nos interpela como comprador, o exhibe la cartera propia. */
+    return (bool)preg_match(
+        '/\b(consultanos|contactanos|escribinos'
+        . '|te ofrezco|les ofrezco|te ofrecemos|les ofrecemos'
+        . '|nuestras? (webs?|paginas?|sitios?) (son|serian)'
+        . '|(conoce|mira|visita) nuestr[oa]s?'
+        . '|nuestros? (planes?|precios?) (son|arrancan|empiezan|van) )\b/u', $t);
+}
+
+/**
+ * Ya se le pidió el listado de datos para la demo y contesta un "ok".
+ *
+ * A esta altura "ok", "listo gracias", "dale" o un "si" pelado no aportan
+ * nada: está confirmando que los va a mandar, no pidiendo otra cosa. El
+ * 27-ago una clienta de cosméticos contestó "Ok", "Listo gracias" y "🫶 si", y
+ * se llevó tres mensajes distintos diciéndole lo mismo ("cuando los tengas me
+ * avisás"). Eso es un bot insistiendo, y encima sin avanzar.
+ *
+ * Un "si" pelado se acepta acá —y no en wabot_es_acuse(), que es general—
+ * porque en esta fase la pregunta ya fue contestada: el listado salió, no hay
+ * ninguna pregunta abierta que un "si" pueda estar respondiendo.
+ */
+function wabot_prediseno_acuse($texto, $conv) {
+    if (!in_array(($conv['fase'] ?? ''), ['prediseno', 'prediseno_ref', 'prediseno_wsp'], true)) return false;
+    if (!(array)($conv['prediseno_pedido'] ?? [])) return false;   // todavía no se pidió nada
+    if (wabot_pide_repetir($texto)) return false;                  // "me lo repetís?" sí se contesta
+    if (wabot_es_acuse($texto)) return true;
+    // "si", "dale si", "👍 si": afirmativas peladas, nada más.
+    return wabot_es_afirmativa($texto) && mb_strlen(wabot_normalizar_frase((string)$texto)) <= 12;
+}
+
+/**
+ * Un proveedor no recibe respuesta: contestarle es darle conversación a quien
+ * nos está vendiendo a nosotros. Queda anotado para que Pablo lo vea en el
+ * panel y no entra a ningún seguimiento automático.
+ */
+function wabot_cerrar_proveedor(&$conv) {
+    $conv['seguimiento_bloqueado'] = true;
+    $conv['seguimiento_estado'] = 'bloqueado';
+    $conv['cierre'] = 'proveedor';
+    $conv['espera_avisada'] = true;
+    wabot_evento_sesion($conv, 'proveedor_detectado');
+    return [];
+}
+
+/**
  * ¿Es un acuse de recibo y nada más? "Ok", "gracias", "dale", "igualmente", 👍.
  *
  * Con la charla ya cerrada, esto NO merece respuesta: el cliente está cerrando
@@ -353,6 +479,13 @@ function wabot_texto_no_es_consulta($texto) {
         || preg_match('/\b(prefiero|preferiria|mejor)\s+que\s+(me|nos)\s+\p{L}+/u', $t)) {
         return 'indicacion';
     }
+    // "Es para una página de reseñas": está diciendo PARA QUÉ es la web, o sea
+    // el rubro — la respuesta a la primera pregunta del bot. Se llevó el
+    // comodín del desarrollador sin haber preguntado nada (Denise, 27-ago).
+    if (preg_match('/^(es|seria|va a ser|sera)\s+(para|un|una|de)\b/u', $t)
+        || preg_match('/^(necesito|quiero|busco|queria|estoy buscando)\s+(una?\s+)?(pagina|web|sitio|landing|tienda)\b/u', $t)) {
+        return 'rubro';
+    }
     return null;
 }
 
@@ -412,6 +545,17 @@ function wabot_contexto_es_portal_contenido($contexto) {
         || preg_match('/\b(publicar|subir|cargar|actualizar|redactar|escribir|difundir)\b.{0,40}\b(noticias?|notas?|articulos?|novedades|entrevistas?|cronicas?)\b/u', $t)
         || preg_match('/\b(noticias?|novedades|entrevistas?)\b.{0,30}\b(locales|del? la (zona|localidad|ciudad|region)|del (pueblo|barrio|departamento|municipio))\b/u', $t)
         || preg_match('/\bautoadministrable\b/u', $t)
+        /* Contenido que cargan los USUARIOS, no el dueño: reseñas, opiniones,
+         * foros, clasificados, directorios. Necesita cuentas, moderación y
+         * panel, o sea un desarrollo a medida — nunca una landing. Sin esto,
+         * "es para una página de reseñas" no matcheaba ningún rubro y el bot
+         * se quedaba preguntando "a qué rubro te dedicás" una y otra vez
+         * (caso BJR Best Job Review, 27-ago: se lo preguntó dos veces
+         * seguidas con distinta redacción y la charla no avanzó nunca). */
+        || preg_match('/\b(pagina|sitio|web|portal|plataforma|app)\b.{0,15}\bde\b.{0,10}\b(resenas?|reviews?|opiniones|calificaciones|valoraciones|puntajes)\b/u', $t)
+        || preg_match('/\b(resenas?|reviews?|opiniones|comentarios|calificaciones)\b.{0,25}\b(laborales|de empresas|de usuarios|de clientes|de empleos|de trabajos)\b/u', $t)
+        || preg_match('/\b(los )?(usuarios|la gente|las personas)\b.{0,30}\b(publiquen|suban|carguen|dejen|escriban|opinen|comenten|califiquen|puntuen)\b/u', $t)
+        || preg_match('/\b(foro|clasificados|directorio de (empresas|profesionales|comercios)|red social|marketplace|bolsa de (trabajo|empleo))\b/u', $t)
     );
 }
 
@@ -556,6 +700,22 @@ function wabot_handoff_causa_explicita($texto) {
            || preg_match('/\btaller(es)?\s+(online|virtual(es)?|de capacitacion)\b/u', $t);
     $productos = preg_match('/\b(vendo|vendemos|productos|tienda|local|ropa|mates?|velas|articulos|mercaderia)\b/u', $t);
     if ($cursos && $productos) return 'productos_y_cursos';
+
+    /* Una app de celular sí la hacemos, pero se cotiza aparte: no hay precio
+     * de lista que darle, así que la charla tiene que llegar a Pablo. Sin esta
+     * causa el handoff quedaba sin autorizar y el pedido terminaba en el flujo
+     * de sistemas, sin que nadie le confirmara siquiera que las hacemos
+     * (27-ago).
+     *
+     * Se exige la marca de que es para el CELULAR, o la pregunta directa de si
+     * las hacemos. Un "quiero una app para stock" queda afuera a propósito:
+     * eso es un sistema de gestión interno y tiene su propio flujo, que junta
+     * el problema y los usuarios antes de derivar — mucho más útil para Pablo
+     * que un handoff pelado. Y "por la app de WhatsApp" no pide ninguna. */
+    if (preg_match('/\b(app|aplicacion|aplicaciones|apk)\b.{0,30}\b(celular|movil|telefono|android|ios|play store|app store|descargar)\b/u', $t)
+        || preg_match('/\b(hacen|desarrollan|arman|programan)\b.{0,20}\b(apps?|aplicaciones?)\b/u', $t)) {
+        return 'app_movil';
+    }
 
     return null;
 }
@@ -927,6 +1087,17 @@ function wabot_fallback_rubro_local($t) {
     if (preg_match('/\b(fundacion|ong|colegio|escuela|universidad|instituto|municipio|sindicato|asociacion|camara|cooperativa|mutual|club|parroquia|iglesia|hospital|centro de salud)\b/u', $t)) {
         return 'landing';
     }
+    /* Último recurso: dice que VENDE algo pero ese algo no está en ninguna
+     * lista de arriba ("quiero vender mis diseños", "vendo cuadros", "vendo
+     * plantines"). Vender es comercio, y ahí la única duda real es si cobra
+     * online o le consultan por WhatsApp: eso es el desempate, no un callejón
+     * sin salida. Sin esto el bot no reconocía nada y preguntaba el rubro dos
+     * veces con distinta redacción —"qué vendés o qué servicio ofrecés?" y
+     * después "a qué rubro te dedicás?"— a alguien que YA había contestado.
+     * Pasó dos veces el mismo día (BJR y el ebook de diseños, 27-ago). */
+    if (preg_match('/\b(vendo|vender|venderia|venta de|comercializo|comercializar|revendo|revender)\b/u', $t)) {
+        return 'hibrido_pendiente';
+    }
     return null;
 }
 
@@ -1180,9 +1351,19 @@ function wabot_engine($texto, &$conv, $cfg) {
         $keys = $c['info_keys'] ?: [];
         if ($infoLocal !== null && !in_array($infoLocal, $keys, true)) array_unshift($keys, $infoLocal);
         if (!$keys) $keys = ['otra'];
+        // En un desempate el precio ya está acotado a dos opciones: se dicen las
+        // dos en vez del rango genérico, que además remata pidiendo el rubro
+        // que el cliente acaba de decir (caso pediatría, 27-ago).
+        $preciosDesempate = (in_array('rangos', $keys, true) || in_array('precio_sin_rubro', $keys, true))
+            ? wabot_desempate_precios_texto($conv['fase'], $cfg) : null;
+
         $lineas = [];
         foreach ($keys as $k) {
             if ($k === 'precio_actual') { $lineas[] = wabot_precio_resumen($conv, $cfg); continue; }
+            if ($preciosDesempate !== null && in_array($k, ['rangos', 'precio_sin_rubro'], true)) {
+                $lineas[] = $preciosDesempate;
+                continue;
+            }
             if (!isset($cfg['info'][$k])) continue;
             $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
@@ -1632,13 +1813,52 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(sos (un |una )?(bot|robot|ia|inteligencia artificial|maquina)|eres (un |una )?(bot|robot|ia)|hablo con (un )?(bot|robot|una maquina)|esto es (un )?(bot|automatico)|sos (una )?persona)\b/u', $t)) return 'soy_bot';
     // "encuentas" y "formulaios" son typos reales de producción: se toleran las
     // variantes con una letra cambiada de las dos palabras clave.
+    /* "Las dos cosas, que puedan comprar online y también consultarme por
+     * WhatsApp": no hay que elegir, el ecommerce trae las dos. El bot le
+     * ofreció la demo sin confirmarlo y el cliente quedó sin saberlo (27-ago).
+     *
+     * Solo fuera de un desempate: ahí adentro "las dos cosas" es la RESPUESTA
+     * a la pregunta y la resuelve wabot_desempate_por_palabras() cotizando
+     * ecommerce, que es el tipo que cubre ambas. */
+    if (!in_array((string)$fase, ['desempate_comercio', 'desempate_turnos', 'desempate_cursos', 'desempate_hibrido'], true)
+        && preg_match('/\b(las dos|ambas|los dos|las dos cosas|de las dos formas|ambos)\b/u', $t)
+        && preg_match('/\b(comprar|compren|carrito|online|pagar|paguen|vender)\b/u', $t)
+        && preg_match('/\bwh?ats?app\b|\bconsultar\w*\b|\bconsulten\b|\bescriban\b/u', $t)) return 'las_dos_formas';
+
+    // "No quiero llevarlos a WhatsApp" va ANTES de formularios: la alternativa
+    // que hay que ofrecerle incluye el formulario, pero la pregunta no es por
+    // el formulario — es por sacar el WhatsApp, que es lo que él pidió.
+    if (preg_match('/\b(no quiero|no me sirve|sin|prefiero no|no me gusta|evitar|no uso)\b.{0,30}\bwh?ats?app\b/u', $t)
+        || preg_match('/\bwh?ats?app\b.{0,25}\bno (quiero|me sirve|uso|va)\b/u', $t)) return 'sin_whatsapp';
+    if (preg_match('/\b(como (me )?(comunico|contacto|hablo|escribo)|como (lo|le) (contacto|ubico|encuentro)|tiene (otro )?numero'
+        . '|me pasas (su|el) (numero|contacto)|cuando me escribe)\b.{0,25}\b(desarrollador|programador|pablo|el)\b/u', $t)
+        || preg_match('/\b(desarrollador|programador)\b.{0,25}\b(como (me )?(comunico|contacto)|que numero|me escribe)\b/u', $t)) return 'contacto_desarrollador';
     if (preg_match('/\b(formulari\w*|formulaio\w*|encuesta\w*|encuenta\w*|encusta\w*|cuestionario\w*|planillas? para (llenar|completar))\b/u', $t)) return 'formularios';
     if (preg_match('/\b(migracion|migrar|migran|pasar (mis|los) (contenidos?|textos?|datos)|traspasar (el )?contenido|mudar (la|mi) (web|pagina))\b/u', $t)) return 'migracion';
+    // Qué factura emitimos (solo C) va ANTES de 'inscripcion', que contesta si
+    // el CLIENTE tiene que estar inscripto: son dos preguntas distintas y la
+    // palabra "factura" aparece en las dos.
+    if (preg_match('/\b(hacen|emiten|dan|manejan|trabajan con|me hacen|nos hacen|puedo tener|dan de)\b.{0,20}\bfactura\b/u', $t)
+        || preg_match('/\bfactura\s*[abc]\b/u', $t)
+        || preg_match('/\b(que tipo de factura|iva discriminado|responsable inscripto)\b/u', $t)) return 'facturacion';
     if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
+    // Sí hacemos apps, pero se cotizan aparte: no se contesta con una web.
+    if (preg_match('/\b(app|aplicacion|aplicaciones|apk)\b.{0,30}\b(celular|movil|telefono|android|ios|play store|app store|descargar)\b/u', $t)
+        || preg_match('/\b(play store|app store)\b/u', $t)
+        || preg_match('/\b(hacen|desarrollan|arman|programan)\b.{0,15}\b(apps?|aplicaciones?)\b/u', $t)) return 'apps';
     if (preg_match('/\b(exclusiv\w*|diseno unico|copian y pegan|copian el diseno|mismo diseno|le copian|reciclan el diseno|plantilla repetida)\b/u', $t)) return 'exclusividad';
     if (preg_match('/\b(cuantas?|cuantos)\b.{0,15}\b(fotos?|imagenes?|videos?)\b.{0,20}\bpropiedad/u', $t)
         || preg_match('/\bpropiedad\w*\b.{0,20}\b(cuantas?|cuantos)\b.{0,15}\b(fotos?|imagenes?|videos?)\b/u', $t)) return 'fotos_propiedad';
     if (preg_match('/\bimpuestos? de importacion|aranceles? de importacion|impuestos? aduaner\w*|calcula\w* (los )?impuestos\b/u', $t)) return 'impuestos_importacion';
+    /* "Armala con ejemplos, no es necesario que te envíe nada por el momento"
+     * NO pide el portfolio: pide que la demo se arme con contenido de relleno
+     * mientras él junta el material (caso silfer herrajes, 27-ago). Contestarle
+     * con el link de trabajos hechos es no haberlo leído. Se excluye antes de
+     * la clave 'ejemplos' porque ahí "ejemplos" a secas alcanza para matchear. */
+    if (preg_match('/\b(con|de|sin)\s+(datos|fotos|imagenes|productos|contenido|textos|informacion)?\s*ejemplos?\b/u', $t)
+        && !preg_match('/\b(tenes|tienen|tienes|hay|puedo ver|me (pasas|mandas|mostras)|mostrarme|ver algun)\b/u', $t)) {
+        return null;
+    }
     // "¿Tienen alguna web para ver de dentista?" pide ejemplos, no el portfolio
     // general de que_hacemos: exige el verbo de mostrar junto al sustantivo.
     if (preg_match('/\b(ejemplos?|muestras? de trabajo|portfolio|porfolio|trabajos (que |ya )?(hicieron|realizados|hechos)|casos? de exito)\b/u', $t)
@@ -1646,7 +1866,10 @@ function wabot_info_por_palabras($texto, $fase = null) {
         // "¿Tenés alguna para ver de algún cirujano?" — el sustantivo se elide
         // porque la web ES el tema de toda la charla: alcanza con pedir ver
         // alguna "de" un rubro (caso Oscar, 21-ago).
-        || preg_match('/\b(tenes|tienes|tienen|hay|me mostras|puedo ver)\b.{0,12}\b(alguna|alguno|algunas?)\b.{0,15}\b(para ver|ver)\b.{0,15}\bde\b/u', $t)) return 'ejemplos';
+        || preg_match('/\b(tenes|tienes|tienen|hay|me mostras|puedo ver)\b.{0,12}\b(alguna|alguno|algunas?)\b.{0,15}\b(para ver|ver)\b.{0,15}\bde\b/u', $t)
+        // "De todo tenés alguna para ver" (inmobiliaria, 27-ago): el "de" va
+        // adelante, no detrás, así que la variante de arriba no lo tomaba.
+        || preg_match('/\b(tenes|tienes|tienen)\b.{0,15}\b(alguna|alguno|algo)\b.{0,12}\bpara ver\b/u', $t)) return 'ejemplos';
     if (preg_match('/\b(lleva|llevan|tiene|tienen|incluye|incluyen|van)\b.{0,20}\b(imagen|imagenes|foto|fotos)\b/u', $t)) return 'imagenes_web';
     if (preg_match('/\b(correos? corporativos?|casillas? de correo|mail corporativo|mails? corporativos?|cuentas? de (correo|mail)|arroba mi dominio|outlook|configurar el mail)\b/u', $t)) return 'emails';
     if (preg_match('/\b(licencias?|plugins?|sdk|plantillas? compradas?|temas? comprados?)\b/u', $t)) return 'licencias';
@@ -1680,6 +1903,10 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // significa el término: es la misma respuesta (explica qué es y de paso
     // qué hacemos), pero sin esto caía en "otra" y derivaba una duda básica al
     // desarrollador (caso real, 24-ago).
+    // "Landing" es jerga nuestra: el que la pregunta quiere la definición, no
+    // el portfolio. Va ANTES de que_hacemos, que matchea "que es una web".
+    if (preg_match('/\b(que es|que seria|que significa|a que le dicen|me explicas que es)\b.{0,12}\b(una |la |el |un )?landing\b/u', $t)
+        || preg_match('/\blanding\b.{0,10}\bque es\b/u', $t)) return 'que_es_landing';
     if (preg_match('/\b(hacen paginas?|crean paginas?|hacen webs?|hacen sitios|disenan paginas?|hacen las paginas|que es (el )?desarrollo web|que es una pagina web|que es un sitio web|que es (una )?web|en que consiste (el )?desarrollo web|que significa desarrollo web)\b/u', $t)) return 'que_hacemos';
     if (preg_match('/\b(sin internet|se corta (el )?internet|sin conexion|funciona offline|no tengo internet|sin senal|sin wifi)\b/u', $t)) return 'internet';
     if (preg_match('/\b(estafa\w*|es seguro esto|son confiables|es confiable|quiero referencias|garantia de que)\b|desconfi/u', $t)) return 'confianza';
@@ -1733,6 +1960,24 @@ function wabot_desempate_por_palabras($fase, $texto) {
     // tres preguntas, la PRIMERA opción es la web completa y la SEGUNDA la simple.
     $primera = ['la primera', 'la primer', 'lo primero', 'la 1', 'opcion 1', 'la primera opcion', 'el primero', 'la uno', 'la a'];
     $segunda = ['la segunda', 'lo segundo', 'la 2', 'opcion 2', 'la segunda opcion', 'el segundo', 'la dos', 'la b', 'la otra'];
+
+    /* "Para hacer una tienda o canal de ventas de whatsapp o no sé qué me
+     * conviene" (Germán, 27-ago): nombró las DOS opciones y dijo explícitamente
+     * que no sabe. La palabra "tienda" alcanzaba para devolver 'vender' y el
+     * bot le cotizó el tipo MÁS CARO ($290.000) sin preguntar nada. Pedir que
+     * elija no es burocracia: es la diferencia entre $180.000 y $290.000.
+     *
+     * Solo cuenta si además NO se decidió por ninguna: quien dice "no sé si
+     * conviene, pero quiero vender online" ya eligió y se respeta. */
+    // "q"/"k"/"qe" son la forma en que se escribe "qué" en WhatsApp: el texto
+    // real decía "no se q me conviene" y sin esto no matcheaba nada.
+    $que = '(que|q|k|qe|cual|cuales)';
+    $dudaExplicita = (bool)preg_match(
+        '/\bno se\b.{0,20}\b' . $que . '\b.{0,15}\b(me conviene|conviene|es mejor|elegir|va mejor)\b'
+        . '|\b' . $que . '\b.{0,12}\b(me conviene|me recomendas|me recomendes|me sugeris|conviene mas|es mejor para mi)\b'
+        . '|\bno se\b.{0,10}\b(bien|cual|que hacer|que necesito)\b'
+        . '|\bvos que\b.{0,10}\b(decis|opinas|recomendas)\b/u', $t);
+    if ($dudaExplicita) return null;
 
     // Las negaciones ganan: "sin carrito" no es "carrito", "no quiero vender" no es "vender".
     $niega = $tiene(['sin carrito', 'sin cobro', 'sin tienda', 'sin venta', 'sin turnos', 'sin plataforma',
@@ -1877,6 +2122,106 @@ function wabot_extraer_cantidad_productos($texto) {
     if (!$plausibles) return null;
 
     return max($plausibles);
+}
+
+/**
+ * "Costos?" en medio de un desempate.
+ *
+ * El bot contestaba el rango genérico y remataba con "contame a qué te
+ * dedicás" — a alguien que ya había dicho "Pediatría" y estaba contestando la
+ * pregunta de turnos (27-ago). Tira a la basura todo lo que ya sabe y obliga
+ * al cliente a repetirse: la charla murió ahí.
+ *
+ * Acá las dos opciones del desempate YA definen dos precios exactos, así que
+ * se dicen los dos y la pregunta se responde sola. Los montos salen de
+ * $cfg['tipos'], nunca escritos a mano, para que no se desfasen.
+ */
+function wabot_desempate_precios_texto($fase, $cfg) {
+    $opciones = [
+        'desempate_turnos'   => ['landing'   => 'si te escriben por WhatsApp y los agendás vos',
+                                 'turnos'    => 'si preferís que los reserven solos desde la web, eligiendo día y horario'],
+        'desempate_comercio' => ['catalogo'  => 'si mostrás los productos y te consultan por WhatsApp',
+                                 'ecommerce' => 'si querés carrito y cobro online desde la web'],
+        'desempate_cursos'   => ['landing'   => 'si solo mostrás los cursos y te contactan por WhatsApp',
+                                 'elearning' => 'si querés venderlos desde la web, con acceso propio para cada alumno'],
+    ];
+    if (!isset($opciones[$fase])) return null;
+
+    $lineas = [];
+    foreach ($opciones[$fase] as $tipo => $condicion) {
+        $precio = trim((string)($cfg['tipos'][$tipo]['precio'] ?? ''));
+        if ($precio === '') return null;   // sin los dos precios no se dice ninguno
+        $lineas[] = ucfirst($condicion) . ', ' . $precio . '.';
+    }
+    return implode("\n", $lineas) . "\n\nCuál de las dos te sirve más?";
+}
+
+/**
+ * ¿Pregunta si el precio cambia sin el carrito (ecommerce) o sin la reserva
+ * automática (turnos)? Devuelve el tipo YA COTIZADO al que se refiere
+ * ('ecommerce' | 'turnos'), o null. A propósito exige las dos partes —la
+ * palabra del tipo Y una palabra de precio/comparación— para no confundirse
+ * con un "tiene carrito?" suelto, que va por otro lado.
+ */
+function wabot_texto_pregunta_comparacion_tipo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+    $comparaPrecio = '/\b(lo mismo|igual|mismo precio|diferencia|mas barato|menos|sale|cuesta|vale|precio)\b/u';
+    if (preg_match('/\bcarrito\b/u', $t) && preg_match($comparaPrecio, $t)) return 'ecommerce';
+    if (preg_match('/\b(agend[oa]\w* yo|coordin[oa]\w* yo|lo hago yo|sin reserva|sin que reserven|sin agendar)\b/u', $t)
+        && preg_match($comparaPrecio, $t)) return 'turnos';
+    return null;
+}
+
+/**
+ * No pregunta el precio de la otra modalidad: DICE que quiere la otra.
+ *
+ * "Che, pensándolo bien mejor sin carrito, que me escriban por WhatsApp" tras
+ * cotizar ecommerce. El modelo le ofreció la demo sin recotizar, y al turno
+ * siguiente ("cuánto queda entonces?") preguntó si era para el mismo proyecto
+ * o para otra web: el cliente nunca recibió el precio nuevo (27-ago).
+ *
+ * Devuelve el tipo AL QUE HAY QUE PASAR, o null. Exige una marca de decisión
+ * ("mejor", "prefiero", "pensándolo bien", "en realidad") además de la
+ * negación: sin eso, "no entiendo lo del carrito" recotizaría solo.
+ */
+function wabot_texto_cambia_modalidad($texto, $tipoActual) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+    if (strpos($t, '?') !== false) return null;   // una pregunta se contesta, no se recotiza
+    $decide = '/\b(mejor|prefiero|preferiria|pensandolo bien|en realidad|finalmente|al final|mas que nada|me quedo con)\b/u';
+    if (!preg_match($decide, $t)) return null;
+
+    if ($tipoActual === 'ecommerce'
+        && preg_match('/\b(sin carrito|sin cobro online|sin pagos online|sin vender online|nada de carrito)\b/u', $t)) {
+        return 'catalogo';
+    }
+    if ($tipoActual === 'catalogo'
+        && preg_match('/\b(con carrito|cobro online|pagos online|vender online|que compren)\b/u', $t)) {
+        return 'ecommerce';
+    }
+    if ($tipoActual === 'turnos'
+        && preg_match('/\b(sin reserva|sin turnos online|lo agendo yo|los agendo yo|coordino yo|sin que reserven)\b/u', $t)) {
+        return 'landing';
+    }
+    return null;
+}
+
+/** El texto de la comparación real: la modalidad sin la función y la que ya tiene cotizada. */
+function wabot_comparacion_tipo_texto($alterno, $conv, $cfg) {
+    if ($alterno === 'ecommerce' && isset($cfg['tipos']['catalogo']) && isset($cfg['tipos']['ecommerce'])) {
+        $c = wabot_catalogo_config($cfg);
+        return 'Sin carrito sería la modalidad catálogo: ' . wabot_moneda($c['base'])
+            . ' de desarrollo más ' . wabot_moneda($c['por_producto'])
+            . ' por cada producto que cargues, y el cliente cierra la compra por WhatsApp en vez de pagar en la web.'
+            . "\n\nCon carrito y pagos online es lo que ya tenés cotizado: " . (string)($cfg['tipos']['ecommerce']['precio'] ?? '');
+    }
+    if ($alterno === 'turnos' && isset($cfg['tipos']['landing']) && isset($cfg['tipos']['turnos'])) {
+        return 'Sin reserva automática sería una landing común, donde te escriben por WhatsApp y coordinás vos: '
+            . (string)($cfg['tipos']['landing']['precio'] ?? '')
+            . '.' . "\n\nCon reserva automática es lo que ya tenés cotizado: " . (string)($cfg['tipos']['turnos']['precio'] ?? '');
+    }
+    return null;
 }
 
 function wabot_desempate_desvio($acc, $out, $texto, &$conv, $cfg) {
@@ -2310,6 +2655,28 @@ function wabot_pitch($tipo, &$conv, $cfg) {
 }
 
 function wabot_precio($tipo, &$conv, $cfg) {
+    /* Nadie cotiza UN tipo a quien pidió DOS cosas distintas sin avisarle.
+     *
+     * El guard vivía en dar_precio (agente.php) y no alcanzaba: la respuesta a
+     * un desempate toma un atajo determinista que llama acá directamente, sin
+     * pasar por la herramienta. Una consulta de psicoeducación pidió "sesiones,
+     * grupos y cuadernillos", contestó "Reservar" y se llevó una web de turnos
+     * de $200.000 con los cuadernillos afuera (27-ago). Este es el embudo
+     * único por donde pasan todas las cotizaciones — engine, atajo y agente —
+     * así que es el único lugar donde el guard no se puede esquivar.
+     *
+     * Sale UNA vez: si después el cliente elige quedarse con una sola parte,
+     * se cotiza normal. institucional queda afuera porque ya es la que junta
+     * varias secciones. */
+    if (empty($conv['mixto_avisado']) && $tipo !== 'institucional') {
+        $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));
+        $textoMixto = $ejes !== null ? wabot_texto_mixto($ejes, $cfg) : null;
+        if ($textoMixto !== null) {
+            $conv['mixto_avisado'] = true;
+            wabot_evento_sesion($conv, 'necesidad_mixta', ['ejes' => implode('+', array_keys($ejes))]);
+            return [$textoMixto, (string)$cfg['mixto_pregunta']];
+        }
+    }
     if (wabot_pitch_corresponde($tipo, $conv, $cfg)) {
         return wabot_pitch($tipo, $conv, $cfg);
     }
@@ -2500,10 +2867,16 @@ function wabot_cerrada($texto, &$conv, $cfg) {
             $out[] = $cfg['caro'];
         } elseif ($has('menciona_plataforma')) {
             $out[] = $cfg['plataformas'];
-        } elseif ($acc && !$has('saludo') && !$has('no_interesa')) {
+        } elseif ($acc && !$has('saludo') && !$has('no_interesa') && $conv['espera_avisada']) {
             // Cualquier otra cosa —incluso "y si mejor hago una landing?"— se
             // contesta con el escape al equipo. Callarse ahí parece un cuelgue;
             // el único silencio válido es ante un saludo o un agradecimiento.
+            // OJO: la PRIMERA vez que escribe tras el cierre no entra acá —le
+            // llega el aviso de espera de más abajo, y mandar los dos juntos es
+            // contradictorio: uno dice "escribime lo que sea, te contesto" y el
+            // otro "eso no te lo puedo contestar". Pasó con una foto del logo
+            // que el clasificador etiquetó como acción sin ser pregunta (caso
+            // Denise, 27-ago): el cliente recibió ambos mensajes seguidos.
             $out[] = $cfg['info']['otra'];
         }
     }

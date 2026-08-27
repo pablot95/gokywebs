@@ -907,8 +907,9 @@ caso('avisa cuándo llega la muestra, sin prometer plazos vagos',
     && stripos($cfg['prediseno_completo'], '24 a 48') === false);
 caso('y la línea de espera sí aclara que llega por acá',
     stripos($cfg['espera_prediseno'], 'por acá') !== false);
-caso('la bienvenida pregunta el rubro, ya no el menú de opciones',
-    stripos($cfg['menu'], 'rubro') !== false && stripos($cfg['menu'], 'Landing (') === false);
+caso('la bienvenida pregunta qué vende, ya no el menú de opciones ni el "rubro"',
+    stripos($cfg['menu'], 'qué vendés o qué servicio ofrecés') !== false
+    && stripos($cfg['menu'], 'Landing (') === false);
 
 echo "— Regresiones de conversaciones reales —\n";
 
@@ -1450,9 +1451,12 @@ caso('pero una duda real sigue llegando al comodín',
     !isset($rRadio['error']) && trim((string)($rRadio['texto'] ?? '')) !== '');
 
 // 5 y 6. El listado del prediseño no se repite (casos Daniela y Gabriel).
+// cta_muestra: la demo YA se le ofreció, que es lo que pasó en esas dos
+// charlas — sin eso, un "Ok" no es aceptar nada (ver el caso de más abajo).
 $cForm = convNueva('TFORM');
 $cForm['tipo'] = 'landing';
 $cForm['precio_dado'] = true;
+$cForm['cta_muestra'] = true;
 $r1 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cForm, $cfg, 'Ok');
 caso('la primera vez se manda el listado', trim((string)($r1['texto'] ?? '')) !== '');
 caso('y queda anotado qué se pidió', !empty($cForm['prediseno_pedido']));
@@ -1482,6 +1486,249 @@ caso('y no se repite dos veces en la misma charla',
 $cPasa = convNueva('TPASA');
 caso('el que MANDA el logo no dispara el empujón',
     wabot_agente_empujon_logo('Te paso el logo para que lo definas', ['Listo, lo tomo.'], $cPasa, $cfg) === null);
+
+echo "\n— Logo: un mensaje larguísimo no dispara el empujón por casualidad (27-ago) —\n";
+
+// Otra agencia mandó su propio volante promocional, que de paso menciona
+// "Logo" en una lista de lo que INCLUYE su pack. El bot le contestaba "no
+// hacemos logos" como si el cliente lo hubiera pedido. Caso real: DevZeppelin.
+$mVolante = 'Promo de web profesional + pack de diseno por $199.000. Incluye: Pagina web moderna ultra rapida, '
+    . 'Dominio .com.ar gratis por 1 ano, Hosting gratis, Optimizacion para busquedas (Google e IA), '
+    . 'Pack de diseno para redes (Flyers, Logo, Historias destacadas), Un reel promocional incluido. '
+    . 'Nuestras web son anexalinks.ar y devzeppelin.ar, para que veas calidad, velocidad y experiencia de usuario!';
+caso('un volante largo con "logo" de paso no dispara el empujón', wabot_texto_pregunta_por_logo($mVolante) === false);
+caso('pero un pedido corto y real sigue andando',
+    wabot_texto_pregunta_por_logo('no se si el logo o la identidad, para promocionar mis servicios') === true);
+
+echo "\n— Impuestos de importación: decir el rubro no es preguntar por eso (27-ago) —\n";
+
+// "Nos dedicamos a importaciones" es el RUBRO. El modelo agarraba la palabra
+// suelta y usaba consultar_info(impuestos_importacion), contestando "no
+// calculamos impuestos" a quien solo dijo a qué se dedica.
+$cImportacion = convNueva('TIMPORT1');
+$rImportacion = wabot_agente_ejecutar('consultar_info', ['clave' => 'impuestos_importacion'], $cImportacion, $cfg,
+    'Hola, nos dedicamos en importaciones.');
+caso('decir el rubro no dispara la respuesta de impuestos de importación', !empty($rImportacion['error']));
+caso('y la nota manda a seguir con el rubro, no a rendirse',
+    stripos($rImportacion['nota'] ?? '', 'rubro') !== false);
+$cImportacion2 = convNueva('TIMPORT2');
+$rImportacion2 = wabot_agente_ejecutar('consultar_info', ['clave' => 'impuestos_importacion'], $cImportacion2, $cfg,
+    'la web calcula los impuestos de importacion?');
+caso('pero la pregunta real sí se contesta',
+    trim((string)($rImportacion2['texto'] ?? '')) !== '' && empty($rImportacion2['error']));
+
+echo "\n— Comparación de precio con/sin la función, en vez del comodín (27-ago) —\n";
+
+// Nicolas Andretta preguntó "sale lo mismo con carrito?" tras cotizar
+// ecommerce, y una consulta de psicología "si lo agendo yo cuál es la
+// diferencia" tras cotizar turnos: las dos se llevaron el comodín del
+// desarrollador (una hora y diez minutos de espera real en el mismo día) cuando
+// el precio de la alternativa ya lo sabe el bot solo (catálogo y landing).
+caso('"sale lo mismo con carrito" se detecta como comparación de ecommerce',
+    wabot_texto_pregunta_comparacion_tipo('Sale lo mismo con carrito?') === 'ecommerce');
+caso('"si lo agendo yo cual es la diferencia" se detecta como comparación de turnos',
+    wabot_texto_pregunta_comparacion_tipo('Y si lo agendo yo cual es la diferencia') === 'turnos');
+caso('un "tiene carrito?" suelto, sin comparar precio, no dispara nada',
+    wabot_texto_pregunta_comparacion_tipo('tiene carrito la pagina?') === null);
+
+$cCarrito = convNueva('TCARRITO'); $cCarrito['tipo'] = 'ecommerce'; $cCarrito['precio_dado'] = true;
+$rCarrito = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cCarrito, $cfg, 'Sale lo mismo con carrito?');
+caso('la comparación de ecommerce trae el precio del catálogo y el ya cotizado',
+    stripos((string)($rCarrito['texto'] ?? ''), 'catálogo') !== false
+    && strpos((string)($rCarrito['texto'] ?? ''), (string)$cfg['tipos']['ecommerce']['precio']) !== false
+    && empty($rCarrito['error']));
+
+$cTurnos = convNueva('TTURNOS'); $cTurnos['tipo'] = 'turnos'; $cTurnos['precio_dado'] = true;
+$rTurnos = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cTurnos, $cfg, 'Y si lo agendo yo cual es la diferencia');
+caso('la comparación de turnos trae el precio de la landing y el ya cotizado',
+    stripos((string)($rTurnos['texto'] ?? ''), 'landing') !== false
+    && strpos((string)($rTurnos['texto'] ?? ''), (string)$cfg['tipos']['landing']['precio']) !== false
+    && strpos((string)($rTurnos['texto'] ?? ''), (string)$cfg['tipos']['turnos']['precio']) !== false
+    && empty($rTurnos['error']));
+
+// Sin precio_dado (nunca se cotizó nada), la comparación no dispara: no hay
+// nada con qué comparar, y ahí sí puede ser cualquier otra cosa.
+$cSinCotizar = convNueva('TSINCOT'); $cSinCotizar['tipo'] = 'ecommerce'; $cSinCotizar['precio_dado'] = false;
+$rSinCotizar = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cSinCotizar, $cfg, 'Sale lo mismo con carrito?');
+caso('sin precio cotizado todavía, no arma la comparación (cae al comodín de siempre)',
+    ($rSinCotizar['texto'] ?? '') === $cfg['info']['otra']);
+
+echo "\n— Referencias: el portfolio sí, los datos de un cliente no (27-ago) —\n";
+
+// Ante "me pasas el contacto de algun cliente suyo?", el bot contesto que en
+// gokywebs.com podia "contactar a cualquiera de esos clientes". Eso NO es una
+// invencion: sale del texto oficial de confianza y es cierto, porque las webs
+// entregadas son publicas y cada negocio tiene su propio contacto. Lo que no
+// puede pasar es que el bot pase el, un telefono o un nombre de contacto.
+$promptRef = wabot_agente_sistema(convNueva('TREF'), $cfg);
+caso('el prompt manda las referencias a consultar_info(confianza)',
+    stripos($promptRef, "consultar_info('confianza')") !== false);
+caso('y prohíbe pasar datos de contacto o inventar testimonios',
+    stripos($promptRef, 'NUNCA podés hacer es pasarle vos un teléfono') !== false
+    && stripos($promptRef, 'inventar testimonios') !== false);
+caso('el texto oficial de confianza sigue apuntando al portfolio público',
+    stripos((string)$cfg['info']['confianza'], 'gokywebs.com') !== false);
+
+echo "\n— El saludo del prompt sale de la config, no hardcodeado (27-ago) —\n";
+
+// El prompt tenia el saludo viejo escrito a mano, asi que el modelo seguia
+// mandando "para que rubro necesitas la web" aunque la config ya tuviera el
+// nuevo. En la bateria del 27-ago salio el texto viejo, palabra por palabra.
+$promptSaludo = wabot_agente_sistema(convNueva('TSALUDO'), $cfg);
+caso('el prompt dicta el saludo que tiene la config',
+    strpos($promptSaludo, (string)$cfg['menu']) !== false);
+caso('y ya no queda el saludo viejo del rubro',
+    stripos($promptSaludo, 'para qué rubro necesitás la web') === false);
+caso('además le aclara que no salude así al que ya dijo a qué se dedica',
+    stripos($promptSaludo, 'El saludo es para el que llega sin decir nada') !== false);
+
+echo "\n— No se despide a quien no se está yendo (27-ago) —\n";
+
+// "No quiero empezar de cero, solo que la actualicen" (un estudio de
+// arquitectura con una web vieja de WordPress) se llevo un "Dale, sin apuro.
+// Cuando quieras avanzar, aca estoy": el modelo llamo a cerrar_sin_presion.
+// El cliente estaba PIDIENDO el trabajo; lo unico que negaba era rehacerla
+// desde cero. Despedirlo es irreversible dentro de la charla.
+$mkCierre = function ($msg) {
+    $c = convNueva('TCIERRE');
+    $c['fase'] = 'pitch'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
+    $c['_mensaje_agente'] = $msg;
+    $c['transcript'][] = ['q' => 'cliente', 't' => $msg, 'ts' => time()];
+    return $c;
+};
+foreach ([
+    'No quiero empezar de cero, solo que la actualicen',
+    'No quiero llevarlos a WhatsApp',
+    // "Mi sobrino estudia programacion y me dijo que me la hace gratis":
+    // en la bateria del 27-ago el bot lo despidio con cierre=sin_interes.
+    // Es la objecion de otra persona (el prompt lo dice explicitamente), no
+    // una despedida: el cliente sigue en la charla y todavia no decidio nada.
+    'Mi sobrino estudia programacion y me dijo que me la hace gratis',
+] as $condicion) {
+    $cCond = $mkCierre($condicion);
+    $rCond = wabot_agente_ejecutar('cerrar_sin_presion', ['motivo' => 'solo_averiguando'], $cCond, $cfg, $condicion);
+    caso("\"$condicion\" NO despide al cliente", !empty($rCond['error']));
+}
+caso('y la nota explica que negar una condición no es irse',
+    stripos(wabot_agente_ejecutar('cerrar_sin_presion', ['motivo' => 'solo_averiguando'],
+        $cCond, $cfg, 'No quiero empezar de cero')['nota'] ?? '', 'condición') !== false);
+
+// El que SÍ se va se sigue despidiendo igual que antes.
+foreach ([
+    'no me interesa, gracias',
+    'por ahora estoy averiguando nomas',
+    'mas adelante lo veo',
+] as $despedida) {
+    $cDesp = $mkCierre($despedida);
+    $rDesp = wabot_agente_ejecutar('cerrar_sin_presion', ['motivo' => 'solo_averiguando'], $cDesp, $cfg, $despedida);
+    caso("\"$despedida\" sí cierra sin presión",
+        empty($rDesp['error']) && !empty($rDesp['terminal']));
+}
+
+echo "\n— La oferta de la demo NO es una respuesta a una pregunta (27-ago) —\n";
+
+// Despues del pitch, dar_precio devuelve la oferta de la demo, y el modelo la
+// usaba como respuesta a cualquier cosa. En la bateria del 27-ago se comio
+// tres preguntas distintas: "Que es landing?", "tenes alguna para ver?" y
+// "si lo agendo yo cual es la diferencia?" — a las tres les contesto
+// "te armamos una muestra gratis, la preparamos?" sin contestar nada.
+$mkPitch = function ($tipo) {
+    $c = convNueva('TDEMOQ' . strtoupper($tipo));
+    $c['fase'] = 'pitch'; $c['tipo'] = $tipo; $c['precio_dado'] = true;
+    $c['pitch_hecho'] = true; $c['pitch_tipo'] = $tipo;
+    return $c;
+};
+foreach ([
+    ['Que es landing ?',              'landing',      'que_es_landing'],
+    ['De todo, tenes alguna para ver', 'inmobiliaria', 'ejemplos'],
+    ['cuanto tardan?',                'landing',      'plazos'],
+    ['quien carga los productos?',    'ecommerce',    'carga'],
+] as [$pregunta, $tipoQ, $claveEsperada]) {
+    $cQ = $mkPitch($tipoQ);
+    $rQ = wabot_agente_ejecutar('dar_precio', ['tipo' => $tipoQ], $cQ, $cfg, $pregunta);
+    caso("\"$pregunta\" no se contesta con la oferta de la demo", !empty($rQ['error']));
+    caso("y la nota lo manda a consultar_info('$claveEsperada')",
+        strpos($rQ['nota'] ?? '', "consultar_info('$claveEsperada')") !== false);
+}
+// Pero la respuesta al pitch (que no es una pregunta) sigue pasando derecho.
+$cPitchOk = $mkPitch('ecommerce');
+$rPitchOk = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitchOk, $cfg, 'Buzos baggy');
+caso('contestar el pitch sí llega a la oferta de la demo',
+    empty($rPitchOk['error']) && trim((string)($rPitchOk['texto'] ?? '')) !== '');
+
+caso('"Qué es landing?" tiene su propia respuesta',
+    wabot_info_por_palabras('Que es landing ?') === 'que_es_landing');
+caso('y la definición NO dice "una sola sección"',
+    stripos((string)$cfg['info']['que_es_landing'], 'una sola seccion') === false
+    && stripos((string)$cfg['info']['que_es_landing'], 'una sola sección') === false);
+caso('sino que aclara que tiene todas las secciones en una página',
+    stripos((string)$cfg['info']['que_es_landing'], 'secciones') !== false);
+
+echo "\n— Un acuse no acepta una demo que nunca se ofreció (27-ago) —\n";
+
+// Una inmobiliaria dijo "Dale ahora miro" por los ejemplos del sitio y después
+// "Dale perfecto": se llevó el listado de datos de una demo de la que nadie
+// había hablado. cta_muestra marca si la oferta llegó a salir.
+$cDale = convNueva('TDALE');
+$cDale['tipo'] = 'inmobiliaria'; $cDale['precio_dado'] = true;   // sin cta_muestra
+$rDale = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cDale, $cfg, 'Dale perfecto');
+caso('un "Dale perfecto" sin oferta previa no pide los datos', !empty($rDale['error']));
+caso('y la fase no se mueve a prediseno', ($cDale['fase'] ?? '') !== 'prediseno');
+caso('la nota le dice que ofrezca primero',
+    stripos($rDale['nota'] ?? '', 'ofrecela primero') !== false);
+
+// Con la demo ya ofrecida, el mismo "dale" sí vale como aceptación.
+$cDaleOk = convNueva('TDALEOK');
+$cDaleOk['tipo'] = 'inmobiliaria'; $cDaleOk['precio_dado'] = true; $cDaleOk['cta_muestra'] = true;
+$rDaleOk = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cDaleOk, $cfg, 'Dale perfecto');
+caso('pero con la demo ya ofrecida, ese mismo "dale" sí pide los datos',
+    trim((string)($rDaleOk['texto'] ?? '')) !== '' && $cDaleOk['fase'] === 'prediseno');
+
+echo "\n— Necesidad mixta: no se encaja en un solo tipo ni se deriva a secas (27-ago) —\n";
+
+// Psicoeducación pidió sesiones + grupos + cuadernillos y se llevó una web de
+// turnos; los cuadernillos aparecieron recién después de cotizar.
+$cMix = convNueva('TMIX');
+$cMix['transcript'][] = ['q' => 'cliente', 't' => 'Psicología, quiero ofrecer sesiones, grupos y cuadernillos', 'ts' => time() - 10];
+$cMix['session_started_ts'] = time() - 60;
+$rMix = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $cMix, $cfg);
+caso('no cotiza turnos dejando los cuadernillos afuera', !empty($rMix['error']));
+caso('y la nota le pide nombrar lo que entendió y preguntar',
+    stripos($rMix['nota'] ?? '', 'preguntale') !== false);
+caso('queda marcado para no repetirlo en cada turno', !empty($cMix['mixto_avisado']));
+
+// Valeria: derivar a secas sin nombrar nada de lo que pidió.
+$cVal = convNueva('TVAL');
+$cVal['transcript'][] = ['q' => 'cliente', 't' => 'Soy Valeria, terapeuta holistica. Queria una pagina para ofrecer '
+    . 'mis servicios online (lecturas de cartas, cursos de mancias, terapias de sanacion) y ademas vender productos, '
+    . 'sahumerios y cascadas de humo.', 'ts' => time() - 10];
+$cVal['session_started_ts'] = time() - 60;
+$cVal['_mensaje_agente'] = 'quiero hablar con una persona';
+$rVal = wabot_agente_ejecutar('derivar', ['motivo' => 'pide_humano'], $cVal, $cfg, 'quiero hablar con una persona');
+caso('la derivación nombra las tres cosas antes de pasar a Pablo',
+    stripos($rVal['texto'] ?? '', 'servicios') !== false
+    && stripos($rVal['texto'] ?? '', 'cursos') !== false
+    && stripos($rVal['texto'] ?? '', 'productos') !== false);
+caso('y sigue derivando de verdad',
+    !empty($rVal['terminal']) && strpos((string)$rVal['texto'], (string)$cfg['derivar']) !== false);
+
+// Un rubro simple deriva como siempre, sin el párrafo de mixto.
+$cSimple = convNueva('TSIMPLE');
+$cSimple['transcript'][] = ['q' => 'cliente', 't' => 'Tengo una ferreteria de herrajes', 'ts' => time() - 10];
+$cSimple['session_started_ts'] = time() - 60;
+// El handoff se autoriza mirando _mensaje_agente, no el 5.º parámetro.
+$cSimple['_mensaje_agente'] = 'quiero hablar con una persona';
+$rSimple = wabot_agente_ejecutar('derivar', ['motivo' => 'pide_humano'], $cSimple, $cfg, 'quiero hablar con una persona');
+caso('un rubro simple deriva con el texto de siempre, sin párrafo extra',
+    ($rSimple['texto'] ?? '') === $cfg['derivar']);
+
+echo "\n— El rubro dicho como respuesta no es una duda (27-ago) —\n";
+
+$cResenas = convNueva('TRESENAS');
+$rResenas = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cResenas, $cfg, 'Es para una página de reseñas');
+caso('"Es para una página de reseñas" no se lleva el comodín', !empty($rResenas['error']));
+caso('y la nota manda a seguir el flujo con ese rubro',
+    stripos($rResenas['nota'] ?? '', 'rubro') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

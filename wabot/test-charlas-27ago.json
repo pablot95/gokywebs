@@ -1,0 +1,410 @@
+[
+  {
+    "id": "R01",
+    "titulo": "REGRESION: sale lo mismo con carrito (caso Nicolas Andretta)",
+    "nombre": "Nicolas",
+    "turnos": [
+      "Hola, necesito una tienda de ropa streetwear que me permita cargar mercaderia con talles y aplicar cupones de descuento. Tambien que hable de la marca y tenga pagos online",
+      "Buzos baggy",
+      "Sale lo mismo con carrito?"
+    ],
+    "esperado": "El bot contesta SOLO los dos precios (catalogo $180.000+$500 por producto vs ecommerce $290.000). NO deriva al desarrollador ni dice 'esa duda te la va a contestar'."
+  },
+  {
+    "id": "R02",
+    "titulo": "REGRESION: si lo agendo yo cual es la diferencia (caso psicoeducacion)",
+    "nombre": "Sin nombre",
+    "turnos": [
+      "Rubro salud, psicoeducacion. Psicologia, quiero ofrecer sesiones",
+      "Reservar",
+      "Y si lo agendo yo cual es la diferencia"
+    ],
+    "esperado": "Contesta la diferencia real y los dos precios (landing $160.000 vs turnos $200.000). NO deriva."
+  },
+  {
+    "id": "R03",
+    "titulo": "REGRESION: importaciones es el rubro, no una pregunta de impuestos",
+    "nombre": "Sin nombre",
+    "turnos": [
+      "Hola, nos dedicamos en importaciones.",
+      "Queremos tener una pagina para nuestros productos. Me podrias pasar precio"
+    ],
+    "esperado": "NUNCA menciona impuestos de importacion: nadie pregunto por eso. Pregunta que importa y a quien vende, o cotiza ecommerce."
+  },
+  {
+    "id": "R04",
+    "titulo": "REGRESION: pagina de resenas es el rubro, no una duda (caso BJR)",
+    "nombre": "Denise",
+    "turnos": [
+      "Es para una pagina de resenas",
+      "Resenas laborales"
+    ],
+    "esperado": "NO contesta 'esa duda te la va a poder contestar el desarrollador': el cliente esta diciendo su rubro. Y NO le vuelve a preguntar que vende o que servicio ofrece, que ya lo dijo."
+  },
+  {
+    "id": "R05",
+    "titulo": "REGRESION: no quiero llevarlos a WhatsApp (caso BJR)",
+    "nombre": "Denise",
+    "turnos": [
+      "Tengo un sitio de resenas laborales, quiero una web para presentarlo",
+      "Que es landing ?",
+      "No quiero llevarlos a WhatsApp"
+    ],
+    "esperado": "Define landing como UNA pagina con VARIAS secciones (nunca 'una sola seccion'). Ante el rechazo del WhatsApp ofrece formulario de contacto o mail: NO sigue de largo repitiendo el precio."
+  },
+  {
+    "id": "R06",
+    "titulo": "REGRESION: como me comunico con el desarrollador",
+    "nombre": "Denise",
+    "turnos": [
+      "Soy contadora, quiero una web para mi estudio",
+      "Como me comunico con el desarrollador ?"
+    ],
+    "esperado": "Explica que le escribe el directamente desde el numero de proyectos. NO contesta con 'las reuniones se coordinan al avanzar el proyecto', que no responde nada."
+  },
+  {
+    "id": "R07",
+    "titulo": "REGRESION: loop pidiendo datos de la demo (caso cosmeticos)",
+    "nombre": "Sin nombre",
+    "turnos": [
+      "Voy a empezar a vender maquillaje al por mayor",
+      "Dale, armame la demo",
+      "Ok",
+      "Listo gracias",
+      "si"
+    ],
+    "esperado": "El listado de datos sale UNA sola vez. Al primer 'Ok' contesta una linea corta; a 'Listo gracias' y 'si' NO contesta nada. Nunca repite el listado ni insiste tres veces."
+  },
+  {
+    "id": "R08",
+    "titulo": "REGRESION: dale perfecto no acepta una demo que nadie ofrecio (caso inmobiliaria)",
+    "nombre": "Ele",
+    "turnos": [
+      "Tenemos una inmobiliaria",
+      "De todo, tenes alguna para ver",
+      "Dale ahora miro",
+      "Dale perfecto"
+    ],
+    "esperado": "NO pide nombre/negocio/colores para una demo que nunca ofrecio. Si quiere ofrecerla, la ofrece primero como pregunta y espera respuesta."
+  },
+  {
+    "id": "R09",
+    "titulo": "REGRESION: necesidad mixta servicios+cursos+productos (caso Valeria)",
+    "nombre": "Valeria",
+    "turnos": [
+      "Hola gusto saludarte, soy Valeria, terapeuta holistica. Queria saber para tener una pagina donde pueda ofrecer mis servicios online (lecturas de cartas, cursos de diversas mancias, terapias de sanacion) y ademas ofrecer productos, sahumerios, cascadas de humo, etc."
+    ],
+    "esperado": "Nombra las TRES cosas que pidio (servicios, cursos, productos) antes de derivar o de preguntar. NO deriva a secas con 'te paso con el desarrollador' sin demostrar que la leyo."
+  },
+  {
+    "id": "R10",
+    "titulo": "REGRESION: necesidad mixta sesiones+grupos+cuadernillos",
+    "nombre": "Sin nombre",
+    "turnos": [
+      "Psicologia, quiero ofrecer sesiones, grupos y cuadernillos",
+      "Reservar"
+    ],
+    "esperado": "No encaja todo en una web de turnos dejando los cuadernillos afuera. Nombra las dos cosas y pregunta si quiere todo integrado o arranca por una."
+  },
+  {
+    "id": "R11",
+    "titulo": "REGRESION: Costos? en medio del desempate (caso pediatria)",
+    "nombre": "Sin nombre",
+    "turnos": [
+      "Pediatria",
+      "Costos?"
+    ],
+    "esperado": "Contesta los DOS precios concretos ($160.000 por WhatsApp / $200.000 con reserva). NO vuelve al rango generico ni repregunta 'contame a que te dedicas', que ya lo dijo."
+  },
+  {
+    "id": "R12",
+    "titulo": "REGRESION: ebook con disenos no es plataforma de cursos",
+    "nombre": "Teresa",
+    "turnos": [
+      "Hacer un ebook con disenos en blanco y negro, con su explicacion",
+      "Quiero vender mis disenos, ademas tengo un blog y me gustaria pasarlo a pdf"
+    ],
+    "esperado": "NO pregunta si quiere 'vender los cursos con los videos subidos y acceso para cada alumno': nunca hablo de cursos ni videos ni alumnos. Aclara que quiere vender (ebook como producto, disenos sueltos, o solo mostrarlos)."
+  },
+  {
+    "id": "R13",
+    "titulo": "REGRESION: proveedor mandando su propia promo (caso DevZeppelin)",
+    "nombre": "DevZeppelin",
+    "turnos": [
+      "Promo de web profesional + pack de diseno por $199.000.\n\nIncluye:\nPagina web moderna ultra rapida\nDominio .com.ar gratis por 1 ano\nHosting gratis\nOptimizacion para busquedas (Google e IA)\nPack de diseno para redes (Flyers, Logo, Historias destacadas)\nUn reel promocional incluido!\n\nNuestras web son anexalinks.ar y devzeppelin.ar, para que veas calidad, velocidad y experiencia de usuario!"
+    ],
+    "esperado": "SILENCIO total. No es un cliente: es otra agencia vendiendonos. No pregunta el rubro ni contesta 'no hacemos logos'."
+  },
+  {
+    "id": "R14",
+    "titulo": "REGRESION: dos preguntas contradictorias en el mismo turno (caso cosmeticos)",
+    "nombre": "Zoe",
+    "turnos": [
+      "Buen dia, para cosmeticos o productos de belleza"
+    ],
+    "esperado": "UNA sola pregunta. Nunca 'que servicio de belleza ofreces?' y 'cual es el producto que mas vendes?' juntas: son contradictorias y no se pueden contestar las dos."
+  },
+  {
+    "id": "N15",
+    "titulo": "NUEVO: dos negocios distintos en la misma charla",
+    "nombre": "Marcelo",
+    "turnos": [
+      "Hola, tengo una veterinaria y tambien un local de indumentaria, queria webs para los dos",
+      "Empecemos por la veterinaria"
+    ],
+    "esperado": "No mezcla los dos negocios en una sola cotizacion ni se confunde de rubro al avanzar. Cotiza lo que el cliente eligio."
+  },
+  {
+    "id": "N16",
+    "titulo": "NUEVO: cambia de opinion a mitad de camino",
+    "nombre": "Sofia",
+    "turnos": [
+      "Vendo indumentaria, quiero vender online con carrito",
+      "Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp",
+      "Cuanto queda entonces?"
+    ],
+    "esperado": "Acepta el cambio sin pelearlo, recotiza catalogo y da el precio nuevo. No repite el precio viejo de ecommerce ni se confunde."
+  },
+  {
+    "id": "N17",
+    "titulo": "NUEVO: pregunta por publicidad y Google Ads (fuera de alcance)",
+    "nombre": "Diego",
+    "turnos": [
+      "Soy gasista matriculado, quiero la web",
+      "Uds tambien manejan las campanas de Google Ads y las redes?"
+    ],
+    "esperado": "Contesta con claridad que hace y que no, sin prometer servicios que no existen. No inventa precios de publicidad."
+  },
+  {
+    "id": "N18",
+    "titulo": "NUEVO: quiere una app movil, no una web",
+    "nombre": "Ramiro",
+    "turnos": [
+      "Hola, necesito una app para celular, para pedidos de mi rotiseria",
+      "No, app app, para descargar del Play Store"
+    ],
+    "esperado": "No cotiza una web como si fuera una app. Aclara la diferencia o deriva, pero nunca le vende landing haciendole creer que es una app."
+  },
+  {
+    "id": "N19",
+    "titulo": "NUEVO: ya tiene web y quiere solo rediseno",
+    "nombre": "Carla",
+    "turnos": [
+      "Tengo una web hecha en WordPress hace 5 anos para mi estudio de arquitectura, esta viejisima",
+      "No quiero empezar de cero, solo que la actualicen"
+    ],
+    "esperado": "No ignora que ya tiene web. Explica que se rehace a medida y el precio, o deriva si el rediseno sobre lo existente no esta en la lista."
+  },
+  {
+    "id": "N20",
+    "titulo": "NUEVO: pregunta por factura A y condicion fiscal",
+    "nombre": "Estudio Marino",
+    "turnos": [
+      "Buenas, somos una SRL, necesitamos una web institucional con varias secciones",
+      "Nos hacen factura A? Somos responsables inscriptos"
+    ],
+    "esperado": "Contesta sobre facturacion sin inventar datos fiscales. Si no lo sabe, deriva; nunca afirma algo falso sobre IVA o tipo de factura."
+  },
+  {
+    "id": "N21",
+    "titulo": "NUEVO: escribe todo en mayusculas y con muchos errores",
+    "nombre": "Hector",
+    "turnos": [
+      "OLA KERIA SAVER PRESIO D UNA PAJINA WEB P MI TALLR MECANIKO",
+      "SI DALE ARMAME LA MUESTRA"
+    ],
+    "esperado": "Entiende el mensaje pese a los errores, no lo trata distinto ni le pide que escriba mejor. Cotiza landing y ofrece la demo."
+  },
+  {
+    "id": "N22",
+    "titulo": "NUEVO: pide hablar con clientes anteriores como referencia",
+    "nombre": "Laura",
+    "turnos": [
+      "Hola, tengo un centro de estetica y quiero la web con turnos online",
+      "Me podes pasar el contacto de algun cliente suyo para preguntarle como les fue?"
+    ],
+    "esperado": "No inventa nombres ni telefonos de clientes. Ofrece el portfolio del sitio o deriva, pero NUNCA fabrica referencias."
+  },
+  {
+    "id": "N23",
+    "titulo": "NUEVO: cliente del exterior pregunta en dolares",
+    "nombre": "Andres",
+    "turnos": [
+      "Hola, escribo desde Uruguay, tengo una tienda de vinos y quiero vender online",
+      "Cuanto seria en dolares? Y pueden facturar al exterior?"
+    ],
+    "esperado": "No inventa una cotizacion en dolares ni un tipo de cambio. Deriva o aclara que el precio es en pesos argentinos."
+  },
+  {
+    "id": "N24",
+    "titulo": "NUEVO: plazo imposible, la necesita para manana",
+    "nombre": "Fede",
+    "turnos": [
+      "Necesito una landing para mi productora de eventos",
+      "La necesito lista para manana a la manana si o si, se puede?"
+    ],
+    "esperado": "Dice el plazo real (7 dias desde la sena y el contenido) sin prometer algo imposible para quedar bien."
+  },
+  {
+    "id": "N25",
+    "titulo": "NUEVO: pregunta por cuotas ANTES de ver la demo",
+    "nombre": "Vane",
+    "turnos": [
+      "Vendo productos de limpieza, quiero tienda online",
+      "Se puede pagar en cuotas? Cuanto seria cada cuota?"
+    ],
+    "esperado": "Contesta las formas de pago sin calcular el monto de cada cuota (lo calcula la tarjeta) y sin adelantar la sena si no se la preguntaron."
+  },
+  {
+    "id": "N26",
+    "titulo": "NUEVO: web bilingue",
+    "nombre": "Ines",
+    "turnos": [
+      "Tengo una cabana en Bariloche y recibo turistas extranjeros",
+      "Necesito que este en ingles tambien, se puede? cuanto mas sale?"
+    ],
+    "esperado": "Contesta el adicional de bilingue con el precio real de config, sin inventar un numero."
+  },
+  {
+    "id": "N27",
+    "titulo": "NUEVO: turnos con sena online (dos funciones combinadas)",
+    "nombre": "Nico",
+    "turnos": [
+      "Tengo canchas de padel, quiero que reserven online",
+      "Y que paguen una sena al reservar, se puede?"
+    ],
+    "esperado": "No promete la sena online como incluida si no lo esta. Si es un extra o requiere evaluacion, lo dice o deriva; nunca afirma que viene en el precio sin saberlo."
+  },
+  {
+    "id": "N28",
+    "titulo": "NUEVO: un familiar se la hace gratis",
+    "nombre": "Ruben",
+    "turnos": [
+      "Cuanto sale una web para mi ferreteria",
+      "Mi sobrino estudia programacion y me dijo que me la hace gratis"
+    ],
+    "esperado": "No denigra al sobrino ni inventa razones tecnicas falsas. Es la objecion de otra persona (no plataforma): contesta con naturalidad y ofrece la demo gratis."
+  },
+  {
+    "id": "N29",
+    "titulo": "NUEVO: pregunta cuantas fotos y productos entran",
+    "nombre": "Meli",
+    "turnos": [
+      "Tengo una tienda de deco para el hogar, quiero vender online",
+      "Cuantos productos puedo cargar? Tengo como 400"
+    ],
+    "esperado": "Contesta quien carga que (10 los cargamos nosotros, el resto el cliente desde el panel) sin inventar un limite que no existe."
+  },
+  {
+    "id": "N30",
+    "titulo": "NUEVO: contesta el desempate con LAS DOS opciones",
+    "nombre": "Pato",
+    "turnos": [
+      "Tengo una casa de repuestos de moto",
+      "Las dos cosas, que puedan comprar online y tambien consultarme por WhatsApp"
+    ],
+    "esperado": "Acepta la respuesta como valida y completa: confirma que se integran las dos y avanza. NUNCA repite el mismo either/or para que elija una sola."
+  },
+  {
+    "id": "N31",
+    "titulo": "NUEVO: pregunta si es un bot",
+    "nombre": "Juli",
+    "turnos": [
+      "Hola, vendo velas artesanales y quiero una tienda",
+      "Perdon, estoy hablando con una persona o es un bot?"
+    ],
+    "esperado": "Contesta con la respuesta oficial de la config, sin mentir diciendo que es una persona y sin cortar la venta."
+  },
+  {
+    "id": "N32",
+    "titulo": "NUEVO: restaurante con menu y pedidos",
+    "nombre": "Gonza",
+    "turnos": [
+      "Tengo una parrilla, quiero una web con el menu",
+      "Y que puedan hacer el pedido desde ahi y pagarlo"
+    ],
+    "esperado": "Reconoce que pedir y pagar online es ecommerce, no una landing con el menu. Cotiza el tipo correcto."
+  },
+  {
+    "id": "N33",
+    "titulo": "NUEVO: gimnasio con membresias mensuales",
+    "nombre": "Seba",
+    "turnos": [
+      "Tengo un gimnasio, quiero una web donde se anoten a las clases",
+      "Y que paguen la cuota mensual todos los meses automaticamente"
+    ],
+    "esperado": "El cobro recurrente automatico no es un tipo de la lista: no lo promete como incluido. Deriva o lo trata como desarrollo a medida."
+  },
+  {
+    "id": "N34",
+    "titulo": "NUEVO: cliente enojado por la demora de una respuesta",
+    "nombre": "Marta",
+    "turnos": [
+      "Hace dos dias que espero respuesta, es una verguenza",
+      "Bueno, queria una web para mi kiosco pero asi no da"
+    ],
+    "esperado": "Reconoce la molestia en una linea, sin excusas largas ni sobreactuacion, y ofrece seguir. No la ignora ni pasa directo a vender."
+  },
+  {
+    "id": "N35",
+    "titulo": "NUEVO: quiere un sistema de gestion, no una web",
+    "nombre": "Ale",
+    "turnos": [
+      "Necesito un sistema para controlar el stock y las ventas de mis tres locales, con usuarios por sucursal",
+      "No, no es una pagina web, es para uso interno del negocio"
+    ],
+    "esperado": "Entra al flujo de sistemas (problema, usuarios), NO cotiza ecommerce ni landing con un precio de la lista."
+  },
+  {
+    "id": "N36",
+    "titulo": "NUEVO: ya tiene dominio comprado",
+    "nombre": "Flor",
+    "turnos": [
+      "Soy nutricionista, quiero una web con turnos",
+      "Ya tengo el dominio comprado hace un ano en Nic.ar, sirve?"
+    ],
+    "esperado": "Contesta que se puede usar el dominio propio, sin cobrarle de nuevo por algo que ya tiene ni contradecir lo del hosting incluido."
+  },
+  {
+    "id": "N37",
+    "titulo": "NUEVO: pide descuento tres veces seguidas",
+    "nombre": "Oscar",
+    "turnos": [
+      "Soy electricista, cuanto sale la web",
+      "Y no me haces un precio? dejamelo en 100 lucas",
+      "Dale, 120 y cerramos ahora mismo"
+    ],
+    "esperado": "No baja el precio ni inventa descuentos. Al regateo insistente responde la objecion de precio o deriva por pago explicito: NUNCA lo despide como si no le interesara."
+  },
+  {
+    "id": "N38",
+    "titulo": "NUEVO: manda material sin preguntar nada",
+    "nombre": "Pame",
+    "turnos": [
+      "Hola! Tengo una tienda de ropa infantil, quiero vender online",
+      "Te paso mi instagram asi ves las fotos: @modakids.ok"
+    ],
+    "esperado": "Reconoce el material en una linea corta y sigue. NO contesta 'esa duda te la va a poder contestar el desarrollador' a alguien que esta pasando material."
+  },
+  {
+    "id": "N39",
+    "titulo": "NUEVO: se va sin cerrar y vuelve mas adelante",
+    "nombre": "Leo",
+    "turnos": [
+      "Impresiones 3D, cuanto sale una tienda",
+      "Cuando tenga el monto te vuelvo a escribir",
+      "Hola, volvi. Sigue el mismo precio?"
+    ],
+    "esperado": "Cierra sin presion cuando se va, y al volver recuerda que era ecommerce sin hacerle explicar todo de nuevo."
+  },
+  {
+    "id": "N40",
+    "titulo": "NUEVO: pregunta el precio antes de decir el rubro",
+    "nombre": "Leonardo",
+    "turnos": [
+      "Y precio?",
+      "Venta de remeras estampadas y zapatillas"
+    ],
+    "esperado": "Da el rango y pide el rubro; cuando se lo dice, cotiza ecommerce. No repite el rango una segunda vez ni pierde el rubro que ya recibio."
+  }
+]

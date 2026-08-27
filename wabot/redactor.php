@@ -38,6 +38,62 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_derivar_postdemo($conv, $cfg);
     }
 
+    /* "Sale lo mismo con carrito?" / "si lo agendo yo cuál es la diferencia":
+     * la respuesta son dos precios que el bot ya tiene, y se contesta sin
+     * pasar por el modelo. En la batería del 27-ago el agente falló las dos
+     * veces de formas distintas —en una contestó el detalle de cuotas, en la
+     * otra ofreció la demo sin contestar nada— y las dos preguntas habían
+     * costado, en producción, una hora y diez minutos de espera hasta que
+     * Pablo las contestó a mano. Es determinista: no puede depender del
+     * modelo. Vale en los tres modos de redacción. */
+    if (!empty($conv['precio_dado'])) {
+        $tipoAlterno = wabot_texto_pregunta_comparacion_tipo($texto);
+        if ($tipoAlterno !== null && ($conv['tipo'] ?? '') === $tipoAlterno) {
+            $comparacion = wabot_comparacion_tipo_texto($tipoAlterno, $conv, $cfg);
+            if ($comparacion !== null) {
+                wabot_evento_sesion($conv, 'comparacion_tipo_respondida', ['tipo' => $tipoAlterno]);
+                return [$comparacion];
+            }
+        }
+    }
+
+    /* "Mejor sin carrito, que me escriban por WhatsApp" después de cotizar
+     * ecommerce: cambió de modalidad y hay que recotizar. El modelo le ofreció
+     * la demo y al turno siguiente le preguntó si era para el mismo proyecto;
+     * el precio nuevo nunca llegó (27-ago). Es una decisión explícita del
+     * cliente, no una duda: la cotización nueva es determinista. */
+    if (!empty($conv['precio_dado'])) {
+        $tipoNuevo = wabot_texto_cambia_modalidad($texto, (string)($conv['tipo'] ?? ''));
+        if ($tipoNuevo !== null && isset($cfg['tipos'][$tipoNuevo])) {
+            wabot_evento_sesion($conv, 'cambio_modalidad', ['de' => (string)$conv['tipo'], 'a' => $tipoNuevo]);
+            // Se limpian las marcas del tipo viejo para que wabot_precio()
+            // cotice el nuevo de verdad en vez de devolver el resumen del que
+            // ya estaba dado.
+            $conv['precio_dado'] = false;
+            $conv['cta_muestra'] = false;
+            $conv['pitch_hecho'] = true;   // el pitch ya se hizo con el tipo viejo
+            return wabot_precio($tipoNuevo, $conv, $cfg);
+        }
+    }
+
+    // El listado de datos se pide UNA vez. Después, a un "ok" / "listo
+    // gracias" / "si" se le contesta una sola línea corta y, si sigue
+    // acusando recibo, silencio: repetirle tres veces "cuando los tengas me
+    // avisás" es lo que hizo el bot con una clienta de cosméticos el 27-ago.
+    if (wabot_prediseno_acuse($texto, $conv)) {
+        if (!empty($conv['prediseno_acuse_respondido'])) return [];
+        $conv['prediseno_acuse_respondido'] = true;
+        return [(string)$cfg['prediseno_espera_datos']];
+    }
+
+    // Otro proveedor mandando SU promo no es un lead: no se le contesta nada,
+    // en ningún modo. Va antes de la apertura porque el volante suele llegar
+    // como primer mensaje, justo donde el bot saludaba y preguntaba el rubro.
+    if (wabot_texto_es_proveedor($texto)) {
+        wabot_log('proveedor_ignorado', ['tel' => $conv['tel'] ?? '', 'msg' => mb_substr((string)$texto, 0, 90)]);
+        return wabot_cerrar_proveedor($conv);
+    }
+
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.
     // Si el bot todavía no habló y el cliente no dijo nada de su negocio no hay
     // nada que razonar: dejarlo en manos de la IA solo hacía que cada cliente

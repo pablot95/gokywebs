@@ -284,5 +284,115 @@ $convDemoPend['demo_texto_pendiente'] = true;
 caso('pero la demo que quedó debiendo por plantilla SÍ sale, aunque el bot esté callado',
     strpos(implode(' ', (array)wabot_responder('dale', $convDemoPend, $cfgPD)), 'gokywebs.com/demo/midemo') !== false);
 
+echo "\n— Cambiar de modalidad recotiza, no ofrece la demo (27-ago) —\n";
+
+// "Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp" tras
+// cotizar ecommerce: el modelo le ofrecio la demo sin recotizar, y al turno
+// siguiente ("cuanto queda entonces?") le pregunto si era para el mismo
+// proyecto o para otra web. El precio nuevo nunca llego.
+$cfgCambio = $cfg; $cfgCambio['modo_redaccion'] = 'fijo';
+$convCambio = convNueva();
+$convCambio['fase'] = 'pitch'; $convCambio['tipo'] = 'ecommerce';
+$convCambio['precio_dado'] = true; $convCambio['pitch_hecho'] = true; $convCambio['pitch_tipo'] = 'ecommerce';
+$rCambio = wabot_responder('Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp', $convCambio, $cfgCambio);
+caso('el cambio de modalidad pasa el tipo a catálogo', ($convCambio['tipo'] ?? '') === 'catalogo');
+caso('y no contesta con la oferta de la demo',
+    stripos(implode(' ', $rCambio), 'muestra') === false && stripos(implode(' ', $rCambio), 'demo') === false);
+
+// Una PREGUNTA sobre la otra modalidad se contesta, no recotiza sola.
+caso('"sale lo mismo sin carrito?" no cambia el tipo por su cuenta',
+    wabot_texto_cambia_modalidad('sale lo mismo sin carrito?', 'ecommerce') === null);
+caso('ni una duda sin decisión', wabot_texto_cambia_modalidad('no entiendo lo del carrito', 'ecommerce') === null);
+caso('el cambio de turnos a landing también se detecta',
+    wabot_texto_cambia_modalidad('mejor lo agendo yo, sin reserva online', 'turnos') === 'landing');
+
+echo "\n— La comparación de precio se contesta sin pasar por el modelo (27-ago) —\n";
+
+// En la bateria del 27-ago el agente fallo las dos preguntas de formas
+// distintas: a "sale lo mismo con carrito?" contesto el detalle de cuotas, y a
+// "si lo agendo yo cual es la diferencia" le ofrecio la demo sin contestar
+// nada. Las dos habian costado, en produccion, hasta una hora de espera. Por
+// eso el corte es deterministico y va antes del agente, en los tres modos.
+foreach (['fijo', 'natural', 'agente'] as $modoCmp) {
+    $cfgCmp = $cfg; $cfgCmp['modo_redaccion'] = $modoCmp;
+
+    $convCarrito = convNueva();
+    $convCarrito['fase'] = 'prediseno'; $convCarrito['tipo'] = 'ecommerce';
+    $convCarrito['precio_dado'] = true; $convCarrito['cta_muestra'] = true;
+    $rCarrito = wabot_responder('Sale lo mismo con carrito?', $convCarrito, $cfgCmp);
+    caso("modo $modoCmp: \"sale lo mismo con carrito\" trae los dos precios",
+        count($rCarrito) === 1
+        && strpos($rCarrito[0], (string)$cfgCmp['tipos']['ecommerce']['precio']) !== false
+        && stripos($rCarrito[0], 'catálogo') !== false);
+    caso("modo $modoCmp: y no contesta con el detalle de cuotas",
+        stripos($rCarrito[0], 'cuotas de') === false && stripos($rCarrito[0], 'seña') === false);
+
+    $convAgendo = convNueva();
+    $convAgendo['fase'] = 'prediseno'; $convAgendo['tipo'] = 'turnos';
+    $convAgendo['precio_dado'] = true; $convAgendo['cta_muestra'] = true;
+    $rAgendo = wabot_responder('Y si lo agendo yo cual es la diferencia', $convAgendo, $cfgCmp);
+    caso("modo $modoCmp: \"si lo agendo yo\" trae landing y turnos",
+        count($rAgendo) === 1
+        && strpos($rAgendo[0], (string)$cfgCmp['tipos']['landing']['precio']) !== false
+        && strpos($rAgendo[0], (string)$cfgCmp['tipos']['turnos']['precio']) !== false);
+    caso("modo $modoCmp: y no le ofrece la demo en vez de contestar",
+        stripos($rAgendo[0], 'muestra') === false && stripos($rAgendo[0], 'demo') === false);
+}
+
+// Sin precio cotizado no hay con qué comparar: sigue el flujo normal.
+$convSinPrecio = convNueva();
+$convSinPrecio['tipo'] = 'ecommerce'; $convSinPrecio['precio_dado'] = false;
+$cfgSinPrecio = $cfg; $cfgSinPrecio['modo_redaccion'] = 'fijo';
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
+    return ['acciones' => ['otro'], 'info_keys' => [], 'descripcion' => null, 'colores' => null];
+};
+$rSinPrecio = wabot_responder('Sale lo mismo con carrito?', $convSinPrecio, $cfgSinPrecio);
+caso('sin precio cotizado, la comparación no se dispara',
+    !isset($rSinPrecio[0]) || stripos($rSinPrecio[0], 'Sin carrito sería') === false);
+
+echo "\n— El proveedor no recibe respuesta, en ningún modo (27-ago) —\n";
+
+$volante = "Promo de web profesional + pack de diseño por \$199.000.\n\nIncluye:\n"
+    . "✅ Página web moderna ultra rápida\n✅ Dominio .com.ar gratis por 1 año\n✅ Hosting gratis\n"
+    . "✅ Un reel promocional incluído!\n\nNuestras web son anexalinks.ar y devzeppelin.ar, para que veas la calidad!";
+foreach (['fijo', 'natural', 'agente'] as $modoProv) {
+    $cfgProv = $cfg; $cfgProv['modo_redaccion'] = $modoProv;
+    $convProv = convNueva();
+    caso("modo $modoProv: al proveedor no se le contesta nada",
+        wabot_responder($volante, $convProv, $cfgProv) === []);
+    caso("modo $modoProv: y queda fuera de los seguimientos",
+        !empty($convProv['seguimiento_bloqueado']) && ($convProv['cierre'] ?? '') === 'proveedor');
+}
+
+echo "\n— El listado de datos se pide una vez: después, una línea y silencio (27-ago) —\n";
+
+$cfgAcuse = $cfg; $cfgAcuse['modo_redaccion'] = 'fijo';
+$convAcuse = convNueva();
+$convAcuse['fase'] = 'prediseno';
+$convAcuse['tipo'] = 'landing';
+$convAcuse['precio_dado'] = true;
+$convAcuse['prediseno_pedido'] = ['Tu nombre', 'El nombre de tu negocio'];
+
+$r1Acuse = wabot_responder('Ok', $convAcuse, $cfgAcuse);
+caso('el primer "Ok" recibe UNA línea corta', $r1Acuse === [(string)$cfgAcuse['prediseno_espera_datos']]);
+caso('y no vuelve a pegar el listado', strpos($r1Acuse[0], 'Los colores de tu marca') === false);
+
+$r2Acuse = wabot_responder('Listo gracias', $convAcuse, $cfgAcuse);
+caso('el segundo acuse ya no recibe nada', $r2Acuse === []);
+$r3Acuse = wabot_responder('🫶 si', $convAcuse, $cfgAcuse);
+caso('y el tercero tampoco', $r3Acuse === []);
+
+// El que manda los datos de verdad sigue avanzando como siempre.
+$convDatos = convNueva();
+$convDatos['fase'] = 'prediseno';
+$convDatos['tipo'] = 'landing';
+$convDatos['precio_dado'] = true;
+$convDatos['prediseno_pedido'] = ['Tu nombre', 'El nombre de tu negocio'];
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
+    return ['acciones' => ['datos_prediseno'], 'info_keys' => [], 'descripcion' => null, 'colores' => null];
+};
+caso('pero mandar los datos reales sí avanza',
+    wabot_responder('Denise, BJR Best Job Review, colores azul y negro', $convDatos, $cfgAcuse) !== []);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
