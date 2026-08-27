@@ -388,24 +388,50 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
 
-        // Si falla el envío (por ejemplo, la ventana de 24 h de Meta ya cerró),
-        // Pablo la manda por otro medio: la charla igual queda marcada como
-        // presentada, pero SIN presentado_via_bot — así el recordatorio
-        // automático de 48 h (que solo vale para lo que mandó el bot) no se
-        // dispara sobre un mensaje que en realidad nunca salió por acá.
-        $enviado = true;
-        foreach (wabot_muestra_presentar_textos($slug, $cfg) as $texto) {
-            if (!wabot_enviar($conv, $texto)) { $enviado = false; break; }
+        /* Se manda mensaje por mensaje y se mira CADA uno por separado.
+         *
+         * Antes era todo o nada: si el primero salía y el segundo no, se
+         * reportaba fracaso total y el panel le decía a Pablo que la mandara a
+         * mano — o sea, mandarle al cliente el link dos veces. Pasó de verdad:
+         * "se envió bien el mensaje pero el aviso decía que no se pudo".
+         *
+         * El PRIMERO es el que lleva el link: ese es el que define si la demo
+         * llegó, y por lo tanto si corresponde el recordatorio de 48 h. El
+         * segundo (el pedido de feedback) es un extra; que falle no cambia que
+         * el cliente ya tiene la demo.
+         *
+         * Ojo con leer un false como "no llegó": wabot_wa_send_text() corta a
+         * los 20 s, así que un timeout con Meta lenta devuelve false igual con
+         * el mensaje entregado. Por eso el panel avisa que hay que mirar el
+         * chat antes de reenviar, en vez de mandar a reenviar de una. */
+        $textos = wabot_muestra_presentar_textos($slug, $cfg);
+        $enviados = 0;
+        foreach ($textos as $i => $texto) {
+            // Un respiro entre los dos: mandarlos pegados hace que Meta a veces
+            // los entregue al revés, y el segundo no tiene sentido antes del link.
+            if ($i > 0) sleep(1);
+            if (!wabot_enviar($conv, $texto)) continue;
             wabot_conv_transcript($conv, 'bot', $texto);
+            $enviados++;
+            if ($i === 0) $conv['presentado_via_bot'] = true;
         }
-        if ($enviado) $conv['presentado_via_bot'] = true;
+        $total   = count($textos);
+        $enviado = $enviados === $total;
 
         wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
-        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug, 'enviado' => $enviado]);
+        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
+                                        'enviados' => $enviados, 'total' => $total]);
 
-        echo json_encode(['ok' => true, 'enviado' => $enviado, 'slug' => $slug]);
+        echo json_encode([
+            'ok'       => true,
+            'enviado'  => $enviado,
+            'enviados' => $enviados,
+            'total'    => $total,
+            'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
+            'slug'     => $slug,
+        ]);
         exit;
     }
     // La entregaste por fuera del bot (a mano, por mail, en persona): se marca

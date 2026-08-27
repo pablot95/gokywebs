@@ -3148,11 +3148,21 @@ async function presentarPropuesta(propId) {
                 + "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta.");
         } else if (envio.enviado) {
             alert("Quedó en Seguimiento. El bot ya le mandó la demo por WhatsApp, no hace falta que le escribas vos.");
+        } else if (envio.demo_ok) {
+            // El mensaje con el link SÍ salió; falló el segundo, que solo pide
+            // el feedback. Mandar la demo de nuevo sería duplicarla.
+            alert("Quedó en Seguimiento. El link de la demo SÍ le llegó, así que no se la vuelvas a mandar."
+                + "\n\nLo que no salió fue el segundo mensaje, el que le pide que te cuente qué le pareció."
+                + " Si querés, escribíselo vos por el chat del bot.");
         } else {
-            alert("Quedó en Seguimiento, pero el bot NO pudo mandarle la demo por WhatsApp (probablemente la ventana de 24h ya cerró)."
-                + " Mandásela vos a mano desde tu número"
+            // Ojo: el envío corta a los 20 s, así que un timeout con Meta lenta
+            // se ve igual que un fallo real aunque el mensaje haya salido. Por
+            // eso primero se mira el chat y recién después se reenvía.
+            alert("Quedó en Seguimiento, pero el bot no pudo confirmar el envío de la demo"
+                + " (puede ser que la ventana de 24h ya cerró, o que Meta tardó en responder)."
+                + "\n\nFijate en el chat del bot si el mensaje llegó. Si no está, mandásela vos desde tu número"
                 + (link ? ":\n" + link : ".")
-                + "\n\nAsí no se le manda la plantilla de seguimiento de las 48h por las dudas.");
+                + "\n\nMientras no conste como enviada por el bot, tampoco se le manda la plantilla de seguimiento de las 48h.");
         }
     }
 
