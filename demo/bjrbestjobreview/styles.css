@@ -232,8 +232,9 @@ button.ficha:active{transform:translateY(-1px)}
 .ficha-cita{display:block;font-size:.93rem;color:var(--color-text-muted);line-height:1.55}
 .ficha-firma{display:block;font-size:var(--fs-micro);letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)}
 .ficha-hero{
-  position:absolute;left:0;right:0;bottom:-38px;z-index:4;transition-delay:.94s;
-  width:min(100% - var(--gutter)*2,440px);margin-inline:auto;
+  position:relative;z-index:4;transition-delay:.94s;
+  width:min(100% - var(--gutter)*2,440px);
+  margin:clamp(2rem,4vw,2.75rem) auto calc(-1 * (var(--section-pad-y) + 34px));
   box-shadow:0 12px 30px rgba(15,23,42,.07);
 }
 .ficha-seam{position:absolute;right:var(--gutter);bottom:-42px;z-index:4;width:min(300px,72vw);box-shadow:0 12px 30px rgba(15,23,42,.07)}
@@ -540,7 +541,7 @@ body.no-scroll .float-cta{opacity:0;pointer-events:none}
   .buscador-hero{flex-wrap:wrap;border-radius:var(--radius);padding:.75rem}
   .buscador-hero input{flex:1 1 60%}
   .buscador-hero .btn{flex:1 1 100%;margin-top:.3rem}
-  .ficha-hero{bottom:-26px}
+  .ficha-hero{margin-bottom:calc(-1 * (var(--section-pad-y) + 22px))}
   .problema{padding-top:calc(var(--section-pad-y) + 34px)}
   .fichas{grid-template-columns:minmax(0,1fr)}
   .rubros-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
