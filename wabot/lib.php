@@ -345,7 +345,13 @@ function wabot_config_ventas(&$cfg) {
          * cliente lo lee es en la oferta de videollamada. */
         'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
         'postdemo_elogio' => 'Le cambiarías algo, o avanzamos para dejarla lista?',
-        'muestra_presentar' => "Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
+        'muestra_presentar' => "Hola! Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
+        // Segundo mensaje, aparte, tras presentar la demo (ver wabot_muestra_presentar_textos).
+        'muestra_presentar_seguimiento' => 'Cuando puedas mirala y contame qué te pareció. Si te gusta la propuesta, te explico cómo seguimos para avanzar con el proyecto.',
+        // Único mensaje del bot en la parte 2: ante cualquier respuesta del
+        // cliente tras la demo (duda, pedido de cambios, que la va a mirar, lo
+        // que sea) se manda esto una sola vez y la charla queda con Pablo.
+        'postdemo_derivar' => 'A partir de ahora el desarrollo completo lo va a continuar el desarrollador, Pablo, te va a escribir desde otro número.',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
         // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
@@ -793,9 +799,9 @@ function wabot_config_ventas(&$cfg) {
         // Único automatismo que queda después de que Pablo pasó a mandar todo a
         // mano: ver wabot_confirmacion_demo_correr().
         'confirmacion_demo_48h' => [
-            'nombre' => '', 'idioma' => 'es_AR', 'activa' => false,
+            'nombre' => 'seguimiento_demo_72h', 'idioma' => 'es_AR', 'activa' => true,
             'params' => [], 'boton' => [],
-            'texto' => 'Hola! Solo para confirmar, pudiste recibir el demo? Te lo mando el desarrollador desde el número 1125068578',
+            'texto' => 'Hola! Te escribo para saber si pudiste ver la demo que te enviamos. Si hay algo que quieras cambiar, lo podemos ajustar. Cuando puedas, contame qué te pareció',
         ],
     ];
     // Lo ya guardado en producción no se pisa con los defaults de arriba (el
@@ -819,7 +825,6 @@ function wabot_config_ventas(&$cfg) {
         }
     }
 
-    if (!isset($cfg['postdemo_bot_activo'])) $cfg['postdemo_bot_activo'] = false;
     // Pablo, 25-ago: apagado por defecto — momentáneamente no se usa el form.
     if (!isset($cfg['form_activo'])) $cfg['form_activo'] = false;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
@@ -2076,8 +2081,9 @@ function wabot_muestra_presentar_textos($slug, $cfg) {
         $base = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\nSe encuentra en este link: {link}\n\nMirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
     }
     $textos = [str_replace('{link}', $link, $base)];
-    $vigencia = trim((string)($cfg['muestra_vigencia'] ?? ''));
-    if ($vigencia !== '') $textos[] = $vigencia;
+    // Segundo mensaje, aparte, pidiendo el feedback.
+    $seguimiento = trim((string)($cfg['muestra_presentar_seguimiento'] ?? ''));
+    if ($seguimiento !== '') $textos[] = $seguimiento;
     return $textos;
 }
 
@@ -3452,19 +3458,7 @@ function wabot_silencio_asegurado($conv, $cfg) {
     return (int)($conv['pausado_hasta'] ?? 0) > time();
 }
 
-/**
- * Con la charla cerrada el bot puede contestar o no, según lo que le escriban,
- * así que el "escribiendo..." no se manda al recibir: se manda recién cuando ya
- * sabemos que hay respuesta. Prometer y no cumplir es lo que parecía un cuelgue.
- */
-function wabot_postdemo_lo_lleva_humano($conv, $cfg) {
-    if (!empty($cfg['postdemo_bot_activo'])) return false;
-    if (($conv['fase'] ?? '') !== 'postdemo') return false;
-    return !empty($conv['presentado_ts']);
-}
-
 function wabot_avisar_al_recibir($conv, $cfg) {
-    if (wabot_postdemo_lo_lleva_humano($conv, $cfg)) return false;
     return !wabot_silencio_asegurado($conv, $cfg) && ($conv['fase'] ?? '') !== 'derivado';
 }
 
@@ -4701,6 +4695,13 @@ function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo'])) return false;
     if (empty($cv['presentado_ts']) || !empty($cv['confirmacion_demo_enviada'])) return false;
+    // Solo para lo que el bot mandó de verdad: si Pablo la presentó por otro
+    // medio (marcar_entregada, o el envío del bot falló por la ventana de 24 h
+    // de Meta) no hay recordatorio automático que valga.
+    if (empty($cv['presentado_via_bot'])) return false;
+    // Y solo si nunca contestó nada: cualquier respuesta ya deriva a Pablo
+    // (ver wabot_responder) y marca presentado_confirmado.
+    if (!empty($cv['presentado_confirmado'])) return false;
     if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
     if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
     $horas = (float)($cfg['confirmacion_demo_horas'] ?? 48);

@@ -1348,58 +1348,14 @@ function wabot_engine($texto, &$conv, $cfg) {
             return array_merge($out, wabot_sistema_completo($conv, $cfg));
 
         case 'postdemo':
-            // Parte 2: se cierra la venta. No se recotiza ni se reabre nada.
-            if (wabot_dice_que_pago($texto)) {
-                $conv['presentado_confirmado'] = true;
-                $conv['pago_avisado_ts'] = time();
-                wabot_evento_sesion($conv, 'pago_avisado');
-                $out[] = (string)$cfg['postdemo_pago_avisado'];
-                return array_merge($out, wabot_derivar($conv, $cfg, 'pago_explicito'));
-            }
-            if (wabot_prefiere_tarjeta($texto)) {
-                $link = wabot_postdemo_link_tarjeta($conv, $cfg);
-                if ($link !== '') { $out[] = $link; break; }
-            }
-            if ($out || $has('saludo')) break;
-            if (wabot_postdemo_quiere_avanzar($texto) || wabot_handoff_causa_explicita($texto) !== null) {
-                $out[] = wabot_postdemo_transferencia($conv, $cfg);
-                break;
-            }
-            // Objeción de plata: las 3 cuotas sin interés. No hay link para eso,
-            // las arma Pablo, así que la charla queda con él.
-            if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
-                $conv['cuotas_ofrecidas'] = true;
-                wabot_evento_sesion($conv, 'cuotas_sin_interes_ofrecidas');
-                $out[] = (string)$cfg['postdemo_cuotas_sin_interes'];
-                break;
-            }
-            // "Dale, la voy a mirar": no se empuja. Se responde corto y se deja
-            // el seguimiento automático para más tarde.
-            if (wabot_postdemo_la_va_a_mirar($texto)) {
-                $out[] = (string)$cfg['postdemo_la_miro'];
-                break;
-            }
-            // La videollamada es la carta que destraba una venta frenada, y es el
-            // único texto donde aparece el nombre de Pablo. Se juega una sola vez
-            // y solo ante una duda real, no ante cualquier mensaje.
-            if (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
-                $conv['videollamada_ofrecida'] = true;
-                wabot_evento_sesion($conv, 'videollamada_ofrecida');
-                $out[] = (string)$cfg['postdemo_videollamada'];
-                break;
-            }
-            // Salvaguarda: en el cierre no se puede quedar dando vueltas. Pregunta
-            // UNA vez y, si el segundo mensaje sigue sin entenderse, lo pasa a
-            // Pablo — que es quien puede resolver un pedido raro a esta altura.
-            // Contador propio y no wabot_handoff_ambiguedad() porque esa escala
-            // recién al tercer mensaje, y acá eso ya es un bot dando vueltas.
-            $conv['postdemo_sin_entender'] = (int)($conv['postdemo_sin_entender'] ?? 0) + 1;
-            if ((int)$conv['postdemo_sin_entender'] >= 2) {
-                $conv['postdemo_sin_entender'] = 0;
-                return array_merge($out, wabot_derivar($conv, $cfg, 'ambiguedad'));
-            }
-            $out[] = (string)$cfg['postdemo_apertura'];
-            break;
+            // Salvaguarda: en el uso normal esta fase nunca llega hasta acá,
+            // wabot_responder() (redactor.php) corta antes con el mensaje fijo
+            // de derivación. Si por lo que sea llega, se comporta igual: UN
+            // solo mensaje, ignorando lo que se haya acumulado en $out más
+            // arriba (por ejemplo, una respuesta de precio ante una palabra
+            // suelta de pago).
+            $conv['presentado_confirmado'] = true;
+            return wabot_derivar_postdemo($conv, $cfg);
 
         case 'confirma_cambio':
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -2461,6 +2417,13 @@ function wabot_catalogo_cotizar($cantidad, &$conv, $cfg) {
 function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
     wabot_handoff_marcar($conv, $causa);
     return [$cfg['derivar']];
+}
+
+/* Igual que wabot_derivar(), pero con el mensaje fijo de la parte 2 (después
+ * de presentar la demo): "el desarrollo lo sigue Pablo", no el genérico. */
+function wabot_derivar_postdemo(&$conv, $cfg) {
+    wabot_handoff_marcar($conv, 'postdemo_respuesta');
+    return [(string)$cfg['postdemo_derivar']];
 }
 
 /**

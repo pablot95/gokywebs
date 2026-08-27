@@ -1672,6 +1672,7 @@ $ahoraConf = time();
 
 $confBase = conv_nueva();
 $confBase['presentado_ts'] = $ahoraConf - 49 * 3600;
+$confBase['presentado_via_bot'] = true;
 caso('a las 49h de presentada, sin confirmación mandada, corresponde',
     wabot_confirmacion_demo_corresponde($confBase, $cfgConf, $ahoraConf) === true);
 
@@ -2383,125 +2384,34 @@ caso('preguntar por la seña sí la responde, con el monto y las cuotas reales',
     strpos($r[0], $cfg['tipos']['landing']['sena']) !== false
     && strpos($r[0], $cfg['tipos']['landing']['cuotas']['12']) !== false);
 
-echo "— Parte 2: la demo presentada reactiva el bot para cerrar —\n";
+echo "— Parte 2: cualquier respuesta tras la demo deriva con un único mensaje fijo —\n";
 
-$cPost = conv_nueva();
-$cPost['fase'] = 'postdemo'; $cPost['tipo'] = 'ecommerce'; $cPost['precio_dado'] = true;
-$cPost['presentado_ts'] = time(); $cPost['presentado_slug'] = 'tiendaana';
-
-caso('los datos de transferencia traen seña, alias y titular',
-    strpos(wabot_postdemo_transferencia($cPost, $cfg), $cfg['tipos']['ecommerce']['sena']) !== false
-    && strpos(wabot_postdemo_transferencia($cPost, $cfg), 'pablotravis') !== false
-    && stripos(wabot_postdemo_transferencia($cPost, $cfg), 'PABLO TRAVI') !== false);
-caso('y siempre ofrecen la tarjeta como alternativa',
-    stripos(wabot_postdemo_transferencia($cPost, $cfg), 'tarjeta') !== false);
-caso('el link de tarjeta se arma con el monto de la seña, no con el total',
-    strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), 'gokywebs.com/pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false
-    && strpos(wabot_postdemo_link_tarjeta($cPost, $cfg), '290000') === false);
-
-$cLanding = conv_nueva(); $cLanding['tipo'] = 'landing';
-caso('cada tipo arma su propio link',
-    strpos(wabot_postdemo_link_tarjeta($cLanding, $cfg), 'monto=' . wabot_monto_a_numero($cfg['tipos']['landing']['sena'])) !== false);
-
-caso('"ya te transferí" se detecta', wabot_dice_que_pago('listo, ya te transferi') === true);
-caso('"te mando el comprobante" también', wabot_dice_que_pago('te mando el comprobante') === true);
-caso('"cuando transfiero?" NO es un aviso de pago', wabot_dice_que_pago('cuando tengo que transferir?') === false);
-caso('"prefiero con tarjeta" se detecta', wabot_prefiere_tarjeta('prefiero pagar con tarjeta') === true);
-caso('"pasame el link" también', wabot_prefiere_tarjeta('pasame el link de pago') === true);
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r = wabot_engine('me gusto mucho, como sigo?', $c, $cfg);
-caso('querer avanzar tras la demo devuelve los datos para transferir',
-    strpos($r[0], 'pablotravis') !== false && $c['fase'] === 'postdemo');
-
-clasifica(['otro']);
-$r = wabot_engine('prefiero con tarjeta', $c, $cfg);
-caso('pedir tarjeta devuelve el link armado',
-    strpos($r[0], 'pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false);
-
-clasifica(['otro']);
-$r = wabot_engine('ya te transferi la seña', $c, $cfg);
-caso('avisar el pago cierra y deriva para verificar',
-    $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && $c['presentado_confirmado'] === true);
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r = wabot_engine('mmm no se, lo tengo que pensar bien', $c, $cfg);
-caso('ante la duda ofrece la videollamada con Pablo',
-    stripos($r[0], 'pablo') !== false && stripos($r[0], 'videollamada') !== false
-    && $c['videollamada_ofrecida'] === true);
-
-clasifica(['otro']);
-$r = wabot_engine('mmm sigo sin estar seguro', $c, $cfg);
-caso('no repite la videollamada dos veces', stripos(implode(' ', $r), 'videollamada') === false);
-
-caso('"como sigo?" tras la demo es querer avanzar', wabot_postdemo_quiere_avanzar('me gusto mucho, como sigo?') === true);
-caso('"quiero avanzar" también', wabot_postdemo_quiere_avanzar('listo, quiero avanzar') === true);
-caso('"lo tengo que pensar" NO es querer avanzar', wabot_postdemo_quiere_avanzar('lo tengo que pensar') === false);
-caso('"lo tengo que pensar" sí es duda', wabot_postdemo_duda('lo tengo que pensar') === true);
-caso('"y si no me gusta como queda?" es duda', wabot_postdemo_duda('y si no me gusta como queda?') === true);
-caso('"me encanto" no es duda', wabot_postdemo_duda('me encanto la demo') === false);
-
-// Un mensaje neutro no dispara la videollamada: solo pregunta qué le pareció.
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-clasifica(['saludo']);
-$r = wabot_engine('hola', $c, $cfg);
-caso('un saludo tras la demo no quema la videollamada', empty($c['videollamada_ofrecida']));
+// El dispatch de wabot_engine() para 'postdemo' es solo la salvaguarda (el
+// corte real está en wabot_responder(), ver el bloque de más abajo); acá se
+// prueba que, aunque se lo llame directo, se comporta igual: sin importar el
+// contenido del mensaje, deriva una sola vez con wabot_derivar_postdemo().
+foreach ([
+    'me gusto mucho, como sigo?',
+    'prefiero con tarjeta',
+    'ya te transferi la seña',
+    'mmm no se, lo tengo que pensar bien',
+    'uh, es mucha plata para mi ahora',
+    'dale, la voy a mirar',
+    'hola',
+] as $msjPostdemo) {
+    $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
+    clasifica(['otro']);
+    $r = wabot_engine($msjPostdemo, $c, $cfg);
+    caso("\"$msjPostdemo\" tras la demo deriva con el mensaje fijo",
+        $r === [(string)$cfg['postdemo_derivar']]
+        && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && $c['presentado_confirmado'] === true);
+}
 
 // La demo presentada NO deja mudo al bot: esa era la razón por la que la parte 2
 // no existía (presentar pausaba el chat 24 h).
 $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $c['pausado_hasta'] = 0;
 caso('tras presentar la demo el bot queda activo, no pausado', (int)$c['pausado_hasta'] === 0);
-
-echo "— Parte 2: datos bancarios completos, cuotas sin interés y \"la voy a mirar\" —\n";
-
-$cPost = conv_nueva(); $cPost['fase'] = 'postdemo'; $cPost['tipo'] = 'ecommerce'; $cPost['precio_dado'] = true;
-$transfer = wabot_postdemo_transferencia($cPost, $cfg);
-foreach (['0720071788000003618268' => 'el CBU', 'pablotravis' => 'el alias',
-          'PABLO TRAVI' => 'el titular', '20-39148294-3' => 'el CUIT',
-          'Santander' => 'el banco',
-          (string)$cfg['tipos']['ecommerce']['sena'] => 'la seña'] as $dato => $que) {
-    caso("los datos de transferencia traen $que", strpos($transfer, $dato) !== false);
-}
-
-// El bot ofrece la videollamada, pero el horario lo arregla Pablo: no pregunta
-// día ni hora, porque después no tiene con qué confirmarlos.
-caso('la videollamada no le pide al cliente un día ni un horario',
-    !preg_match('/(qué|que) (día|dia|horario|hora)|cuándo te|decime .{0,20}(día|dia|horario)|te queda cómodo/iu',
-        (string)$cfg['postdemo_videollamada']));
-caso('y deja el horario en manos de ellos dos, sin proponerlo el bot',
-    stripos((string)$cfg['postdemo_videollamada'], 'coordinen') !== false
-    || stripos((string)$cfg['postdemo_videollamada'], 'arreglan el horario') !== false);
-
-caso('"es muy caro" tras la demo es objeción de plata', wabot_postdemo_objecion_plata('uh es muy caro para mi') === true);
-caso('"no tengo la plata ahora" también', wabot_postdemo_objecion_plata('no tengo la plata ahora') === true);
-caso('"me encanto" no lo es', wabot_postdemo_objecion_plata('me encanto') === false);
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r = wabot_engine('uh, es mucha plata para mi ahora', $c, $cfg);
-caso('la objeción de plata ofrece las 3 cuotas sin interés',
-    stripos($r[0], '3 cuotas sin interés') !== false && $c['cuotas_ofrecidas'] === true);
-caso('y no manda ningún link de pago para esas cuotas', stripos($r[0], 'http') === false
-    && stripos($r[0], 'gokywebs.com/pago') === false);
-clasifica(['otro']);
-$r = wabot_engine('igual sigue siendo caro', $c, $cfg);
-caso('las 3 cuotas no se repiten', stripos(implode(' ', $r), '3 cuotas sin interés') === false);
-
-caso('"dale, la voy a mirar" se detecta', wabot_postdemo_la_va_a_mirar('dale, la voy a mirar') === true);
-caso('"ahora la miro y te digo" también', wabot_postdemo_la_va_a_mirar('ahora la miro y te digo') === true);
-caso('"dejame que la vea tranquilo" también', wabot_postdemo_la_va_a_mirar('dejame que la vea tranquilo') === true);
-caso('"ya la mire, me gusto" NO es eso', wabot_postdemo_la_va_a_mirar('ya la mire, me gusto') === false);
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r = wabot_engine('dale, la voy a mirar', $c, $cfg);
-caso('"la voy a mirar" recibe UNA línea sin presión, sin pedir plata',
-    count($r) === 1 && strpos($r[0], 'pablotravis') === false && stripos($r[0], 'tranquil') !== false);
-caso('y no quema la videollamada ni las cuotas',
-    empty($c['videollamada_ofrecida']) && empty($c['cuotas_ofrecidas']));
 
 echo "— Presentadas 48hs: las que se enfriaron salen de la cola normal —\n";
 
@@ -2594,29 +2504,15 @@ caso('un chat larguísimo se recorta y conserva el final',
     mb_strlen(wabot_transcript_texto($cLargo)) <= 12100
     && strpos(wabot_transcript_texto($cLargo), 'charla recortada') !== false);
 
-echo "— Parte 2: si no entiende, deriva en vez de dar vueltas —\n";
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r1 = wabot_engine('che y aquello que hablamos como viene', $c, $cfg);
-caso('ante lo que no entiende, primero pregunta', $r1 === [$cfg['postdemo_apertura']] && $c['fase'] === 'postdemo');
-clasifica(['otro']);
-$r2 = wabot_engine('pero lo otro, lo que te comente antes', $c, $cfg);
-caso('y a la segunda lo pasa a Pablo, no sigue dando vueltas',
-    $r2 === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
-
 echo "— Pestaña \"Pagó\" —\n";
 
+// El detector de "ya pagué" ya no dispara desde el dispatch (ver arriba: en
+// postdemo cualquier respuesta deriva directo), pero la columna del panel
+// sigue existiendo para cuando se marca a mano.
 $cPago = ['pago_avisado_ts' => time(), 'presentado_ts' => time() - 7200, 'presentado_confirmado' => true,
           'transcript' => [['q' => 'cliente', 't' => 'ya te transferi', 'ts' => time()]]];
 caso('el que avisó que pagó tiene su propia columna', wabot_conv_grupo($cPago) === 'pago');
 caso('y gana sobre Presentados', wabot_conv_grupo($cPago) !== 'presentados');
-
-$c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
-clasifica(['otro']);
-$r = wabot_engine('listo, ya te transferi la seña', $c, $cfg);
-caso('avisar el pago deja la marca de tiempo', (int)$c['pago_avisado_ts'] > 0);
-caso('y la conversación cae en la columna Pagó', wabot_conv_grupo($c) === 'pago');
 
 echo "— Interesados: vio el precio y no pidió la demo —\n";
 
@@ -4137,7 +4033,8 @@ caso('la oferta de la demo sigue terminando en pregunta',
 echo "\n— Al presentar la demo ya no se avisa que dura 7 días (retirado 24-ago) —\n";
 
 $textosPresentar = wabot_muestra_presentar_textos('midemo', $cfg);
-caso('presentar manda UN solo mensaje: la demo, sin el aviso de vigencia', count($textosPresentar) === 1);
+caso('presentar manda dos mensajes: la demo y, aparte, el pedido de feedback (sin el aviso de vigencia)',
+    count($textosPresentar) === 2);
 caso('el mensaje trae el link de la demo', strpos($textosPresentar[0], 'gokywebs.com/demo/midemo') !== false);
 caso('no menciona los 7 días en ningún lado',
     stripos($textosPresentar[0], '7 días') === false);
@@ -4156,27 +4053,29 @@ caso('pero preguntar cuánto tardan en hacerla sigue siendo plazos',
 
 echo "\n— Plantillas de Meta: lo único que sale con la ventana cerrada —\n";
 
-caso('la plantilla de confirmación viene definida pero apagada hasta cargar el nombre real',
+caso('la plantilla de confirmación viene activa de fábrica, con el nombre ya aprobado en Meta',
     isset($cfg['plantillas']['confirmacion_demo_48h'])
-    && empty($cfg['plantillas']['confirmacion_demo_48h']['activa']));
-caso('una plantilla sin nombre cargado no se puede usar',
-    wabot_plantilla_config('confirmacion_demo_48h', $cfg) === null);
+    && $cfg['plantillas']['confirmacion_demo_48h']['nombre'] === 'seguimiento_demo_72h'
+    && !empty($cfg['plantillas']['confirmacion_demo_48h']['activa']));
+caso('y por eso ya se puede usar sin cargar nada más',
+    wabot_plantilla_config('confirmacion_demo_48h', $cfg) !== null);
 
 $cfgPlant = wabot_config_load();
-$cfgPlant['plantillas']['confirmacion_demo_48h']['nombre'] = 'confirmacion_demo_48h';
+$cfgPlant['plantillas']['confirmacion_demo_48h']['activa'] = false;
+caso('apagada, no se puede usar', wabot_plantilla_config('confirmacion_demo_48h', $cfgPlant) === null);
 $cfgPlant['plantillas']['confirmacion_demo_48h']['activa'] = true;
-caso('con nombre y activa, ya se puede usar', wabot_plantilla_config('confirmacion_demo_48h', $cfgPlant) !== null);
+caso('reactivada, vuelve a andar', wabot_plantilla_config('confirmacion_demo_48h', $cfgPlant) !== null);
 
 $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $convPlant = ['tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
               'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion', 'transcript' => []];
 caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'confirmacion_demo_48h', $cfgPlant) === true);
 $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
-caso('con el nombre y el idioma correctos', $envio[1] === 'confirmacion_demo_48h' && $envio[2] === 'es_AR');
+caso('con el nombre y el idioma correctos', $envio[1] === 'seguimiento_demo_72h' && $envio[2] === 'es_AR');
 caso('confirmacion_demo_48h es texto fijo: sin variables de nombre ni botón',
     $envio[3] === [] && $envio[4] === []);
 caso('queda en el transcript el texto de referencia',
-    strpos($convPlant['transcript'][0]['t'] ?? '', 'pudiste recibir el demo') !== false);
+    strpos($convPlant['transcript'][0]['t'] ?? '', 'pudiste ver la demo') !== false);
 
 // Las plantillas reales no llevan botón (Meta las aprueba sin parámetros),
 // pero el guard que evita mandar un link roto sigue vivo para cualquier
@@ -4209,31 +4108,41 @@ caso('y por Instagram no se usan plantillas',
 
 echo "\n— El texto de la demo es el que pidió Pablo, y explica que todavía no está personalizada —\n";
 
-$demoTexto = wabot_muestra_presentar_textos('yfprevencion', $cfg)[0];
-caso('arranca con "Ya tenemos lista la demo"', strpos($demoTexto, 'Ya tenemos lista la demo') === 0);
-caso('trae el link', strpos($demoTexto, 'gokywebs.com/demo/yfprevencion') !== false);
+$demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg);
+caso('arranca con "Hola! Ya tenemos lista la demo"', strpos($demoTextos[0], 'Hola! Ya tenemos lista la demo') === 0);
+caso('trae el link', strpos($demoTextos[0], 'gokywebs.com/demo/yfprevencion') !== false);
 caso('aclara que después se personaliza con contenido e imágenes propias',
-    stripos($demoTexto, 'personalizamos') !== false && stripos($demoTexto, 'imagenes') !== false || stripos($demoTexto, 'imágenes') !== false);
+    stripos($demoTextos[0], 'personalizamos') !== false && (stripos($demoTextos[0], 'imagenes') !== false || stripos($demoTextos[0], 'imágenes') !== false));
+caso('son dos mensajes: la demo y, aparte, el pedido de feedback',
+    count($demoTextos) === 2 && stripos($demoTextos[1], 'qué te pareció') !== false);
 
-echo "\n— Presentada la demo, el cierre lo lleva Pablo: el bot se calla pero los seguimientos siguen —\n";
+echo "\n— Presentada la demo, el cierre lo lleva Pablo: cualquier respuesta deriva con un único mensaje fijo —\n";
 
 $ahoraPD = 2_000_000_000;
 $convPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraPD - 21 * 3600,
            'ultimo_cliente_ts' => $ahoraPD - 7 * 3600, 'transcript' => []];
 
-caso('por defecto el bot NO contesta después de presentar la demo',
-    wabot_postdemo_lo_lleva_humano($convPD, $cfg) === true);
-caso('y tampoco le muestra "escribiendo…"', wabot_avisar_al_recibir($convPD, $cfg) === false);
+caso('en postdemo el bot muestra "escribiendo…" como en cualquier fase activa',
+    wabot_avisar_al_recibir($convPD, $cfg) === true);
 
-$cfgBotOn = wabot_config_load();
-$cfgBotOn['postdemo_bot_activo'] = true;
-caso('con el interruptor del panel prendido, vuelve a contestar como antes',
-    wabot_postdemo_lo_lleva_humano($convPD, $cfgBotOn) === false);
+// El corte real (sin pasar por el motor ni por el agente) se prueba en
+// test-redactor.php, que sí tiene cargado wabot_responder() a esta altura.
+$convResp = $convPD;
+clasifica(['otro']);
+$r = wabot_engine('me gusto mucho, como sigo?', $convResp, $cfg);
+caso('cualquier respuesta tras la demo deriva con el mensaje fijo de Pablo',
+    $r === [(string)$cfg['postdemo_derivar']]
+    && $convResp['fase'] === 'derivado' && !empty($convResp['handoff_pendiente'])
+    && $convResp['presentado_confirmado'] === true);
+
+$convRespDuda = $convPD;
+clasifica(['otro']);
+$r2 = wabot_engine('mmm no se, lo tengo que pensar', $convRespDuda, $cfg);
+caso('también ante una duda, sin importar el contenido del mensaje',
+    $r2 === [(string)$cfg['postdemo_derivar']] && $convRespDuda['fase'] === 'derivado');
 
 caso('antes de presentar la demo el bot sigue trabajando normal',
-    wabot_postdemo_lo_lleva_humano(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === false);
-caso('y una fase postdemo sin demo presentada tampoco lo calla',
-    wabot_postdemo_lo_lleva_humano(['fase' => 'postdemo', 'tipo' => 'landing'], $cfg) === false);
+    wabot_avisar_al_recibir(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === true);
 
 // El reset por inactividad vencía el silencio post-demo: a los 7 días dejaba
 // fase='nuevo' y presentado_ts=0, y el bot volvía a venderle desde cero a
@@ -4243,8 +4152,6 @@ $convViejaPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $a
 caso('una charla con demo entregada NO se reinicia por vieja que sea',
     wabot_conv_reset_si_vieja($convViejaPD, $cfg, $ahoraPD) === false
     && $convViejaPD['fase'] === 'postdemo' && !empty($convViejaPD['presentado_ts']));
-caso('y por lo tanto el bot le sigue sin contestar',
-    wabot_postdemo_lo_lleva_humano($convViejaPD, $cfg) === true);
 
 $convViejaSinDemo = ['fase' => 'precio', 'tipo' => 'landing', 'presentado_ts' => 0,
                      'ultimo_ts' => $ahoraPD - 30 * 86400];
@@ -4252,10 +4159,14 @@ caso('pero una charla vieja SIN demo entregada se reinicia como siempre',
     wabot_conv_reset_si_vieja($convViejaSinDemo, $cfg, $ahoraPD) === true
     && $convViejaSinDemo['fase'] === 'nuevo');
 
-caso('el archivado por inactividad sigue andando aunque el bot esté callado',
+caso('el archivado por inactividad sigue andando',
     wabot_presentado_archivar_corresponde(['presentado_ts' => $ahoraPD - 200 * 3600], $cfg, $ahoraPD) === true);
-caso('y la confirmación a las 48 h también',
-    wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600], $cfg, $ahoraPD) === true);
+caso('la confirmación a las 48 h corre si el bot mandó la demo y nunca contestó nada',
+    wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600, 'presentado_via_bot' => true], $cfg, $ahoraPD) === true);
+caso('pero NO si la demo se presentó por otro medio (sin presentado_via_bot)',
+    wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600, 'presentado_via_bot' => false], $cfg, $ahoraPD) === false);
+caso('ni si el cliente ya contestó algo (presentado_confirmado)',
+    wabot_confirmacion_demo_corresponde(['presentado_ts' => $ahoraPD - 49 * 3600, 'presentado_via_bot' => true, 'presentado_confirmado' => true], $cfg, $ahoraPD) === false);
 
 echo "\n— El logo que el cliente ya mandó no se vuelve a pedir (26-ago) —\n";
 

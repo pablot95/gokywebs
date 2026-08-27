@@ -274,7 +274,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         // Los checkbox no viajan cuando están destildados: por eso se leen del form entero.
         $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
         $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
-        $cfg['postdemo_bot_activo'] = !empty($_POST['postdemo_bot_activo']);
         $cfg['form_activo'] = !empty($_POST['form_activo']);
         if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
             $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
@@ -357,9 +356,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['ok' => true, 'pausado_hasta' => $conv['pausado_hasta']]);
         exit;
     }
-    // Botón "Presentar" del admin: ya NO le manda nada al cliente (Pablo avisa
-    // la demo a mano, desde su número personal). Solo registra el estado, igual
-    // que "marcar_entregada".
+    // Botón "Presentar" del admin: le manda al cliente los dos mensajes de la
+    // demo (link + pedido de feedback) desde el bot.
     if ($a === 'presentar_muestra' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $negocio = trim((string)($_POST['negocio'] ?? ''));
@@ -385,15 +383,29 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $slug;
         $conv['presentado_confirmado'] = false;
+        $conv['presentado_via_bot'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
+
+        // Si falla el envío (por ejemplo, la ventana de 24 h de Meta ya cerró),
+        // Pablo la manda por otro medio: la charla igual queda marcada como
+        // presentada, pero SIN presentado_via_bot — así el recordatorio
+        // automático de 48 h (que solo vale para lo que mandó el bot) no se
+        // dispara sobre un mensaje que en realidad nunca salió por acá.
+        $enviado = true;
+        foreach (wabot_muestra_presentar_textos($slug, $cfg) as $texto) {
+            if (!wabot_enviar($conv, $texto)) { $enviado = false; break; }
+            wabot_conv_transcript($conv, 'bot', $texto);
+        }
+        if ($enviado) $conv['presentado_via_bot'] = true;
+
         wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
-        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug]);
+        wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug, 'enviado' => $enviado]);
 
-        echo json_encode(['ok' => true, 'enviado' => false, 'slug' => $slug]);
+        echo json_encode(['ok' => true, 'enviado' => $enviado, 'slug' => $slug]);
         exit;
     }
     // La entregaste por fuera del bot (a mano, por mail, en persona): se marca
@@ -410,6 +422,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $negocio !== '' ? wabot_slug_demo($negocio) : '';
         $conv['presentado_confirmado'] = false;
+        // Entregada por fuera del bot: nunca dispara el recordatorio de 48 h.
+        $conv['presentado_via_bot'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
         wabot_evento($conv, 'muestra_presentada');
@@ -1481,7 +1495,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Demos presentadas</h2>
-            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, ya no se le manda nada al cliente: eso lo hacés vos a mano. El único automático que queda es la confirmación por plantilla a las 48 h (ver "Plantillas de WhatsApp" más abajo). Esto solo controla cuánto tiempo sin confirmar archiva la charla.</p>
+            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, el bot le manda al cliente el link de la demo y el pedido de feedback. Esto controla cuánto tiempo sin confirmar archiva la charla (ver también "Después de presentar la demo" y "Plantillas de WhatsApp" más abajo).</p>
             <div class="fila" style="gap:18px;align-items:flex-end">
                 <div>
                     <label>Horas sin confirmar para archivar</label>
@@ -1578,17 +1592,13 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>
-            <label style="display:flex;align-items:center;gap:8px;margin:0">
-                <input type="checkbox" name="postdemo_bot_activo" <?= !empty($cfg['postdemo_bot_activo']) ? 'checked' : '' ?>>
-                Que el bot siga contestando después de presentar la demo
-            </label>
-            <p class="meta" style="margin-top:8px">Destildado (como está por defecto), una vez que presentás la demo el bot deja de contestar en vivo: esas charlas las seguís vos. Los mensajes del cliente igual entran al panel y aparecen en "Sin leer".<br>Los únicos automáticos que siguen funcionando con esto son el archivado por inactividad y la confirmación por plantilla a las 48 h (ver "Plantillas de WhatsApp" más abajo).</p>
+            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Cualquier respuesta del cliente después de eso —duda, pedido de cambios, que la va a mirar, lo que sea— dispara un único mensaje fijo avisando que el desarrollo lo sigue Pablo, y la charla queda con vos. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
             <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas.</p>
             <?php $plantillasLabels = [
-                'confirmacion_demo_48h' => 'Confirmación a las 48 h de presentar la demo (el único mensaje automático que queda)',
+                'confirmacion_demo_48h' => 'Seguimiento a las 48 h de presentar la demo, si el cliente nunca contestó',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = $cfg['plantillas'][$clavePlant] ?? []; ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">

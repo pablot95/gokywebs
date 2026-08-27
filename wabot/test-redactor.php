@@ -263,7 +263,7 @@ $rSinFlag = wabot_responder('dale', $convSinFlag, $cfgFijo);
 caso('sin el flag, un "dale" post-demo NO dispara el texto de la demo de nuevo',
     strpos(implode(' ', (array)$rSinFlag), 'gokywebs.com/demo/yfprevencion') === false);
 
-echo "\n— Post-demo lo lleva Pablo: wabot_responder no devuelve nada —\n";
+echo "\n— Post-demo lo lleva Pablo: cualquier respuesta deriva con el mensaje fijo —\n";
 
 $cfgPD = $cfg; $cfgPD['modo_redaccion'] = 'fijo';
 $convPD = convNueva();
@@ -272,19 +272,9 @@ $convPD['tipo'] = 'landing';
 $convPD['precio_dado'] = true;
 $convPD['presentado_ts'] = time() - 3600;
 $convPD['presentado_slug'] = 'midemo';
-caso('un "cómo pago?" post-demo no recibe respuesta del bot',
-    wabot_responder('Me encantó! cómo hago para pagar?', $convPD, $cfgPD) === []);
-
-$convPDon = convNueva();
-$convPDon['fase'] = 'postdemo';
-$convPDon['tipo'] = 'landing';
-$convPDon['precio_dado'] = true;
-$convPDon['presentado_ts'] = time() - 3600;
-$convPDon['presentado_slug'] = 'midemo';
-$cfgPDon = $cfgPD; $cfgPDon['postdemo_bot_activo'] = true;
-$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return ['acciones' => ['otro'], 'info_keys' => [], 'descripcion' => null, 'colores' => null]; };
-caso('con el interruptor prendido, el bot vuelve a contestar',
-    wabot_responder('Me encantó! cómo hago para pagar?', $convPDon, $cfgPDon) !== []);
+caso('un "cómo pago?" post-demo deriva con el mensaje fijo, no lo contesta el bot',
+    wabot_responder('Me encantó! cómo hago para pagar?', $convPD, $cfgPD) === [(string)$cfgPD['postdemo_derivar']]
+    && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 
 $convDemoPend = convNueva();
 $convDemoPend['fase'] = 'postdemo';

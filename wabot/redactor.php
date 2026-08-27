@@ -29,9 +29,13 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg);
     }
 
-    if (wabot_postdemo_lo_lleva_humano($conv, $cfg)) {
-        wabot_evento_sesion($conv, 'postdemo_silencio_humano');
-        return [];
+    // Parte 2 de la venta: la lleva Pablo. Cualquier respuesta del cliente
+    // después de presentar la demo —duda, pedido de cambios, que la va a
+    // mirar, lo que sea— deriva con un único mensaje fijo, sin pasar por el
+    // motor de reglas ni por el agente. Vale en los tres modos de redacción.
+    if (($conv['fase'] ?? '') === 'postdemo' && !empty($conv['presentado_ts'])) {
+        $conv['presentado_confirmado'] = true;
+        return wabot_derivar_postdemo($conv, $cfg);
     }
 
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.

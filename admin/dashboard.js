@@ -3087,8 +3087,10 @@ async function togglePropuestaFlag(id, field, btn) {
 }
 
 // --- Presentar (propuesta → cliente en Seguimiento 1) ---
-// Al presentar, wabot solo registra el estado (fase, timestamps, CRM): ya NO
-// le manda nada al cliente, eso lo hacés vos a mano por tu número personal.
+// Al presentar, wabot manda por WhatsApp los dos mensajes de la demo (link +
+// pedido de feedback) y registra el estado (fase, timestamps, CRM). Si el
+// envío falla (p. ej. la ventana de 24h de Meta ya cerró), la respuesta trae
+// enviado:false y hay que mandarla vos a mano por tu número personal.
 // Ver wabot/admin.php (presentar_muestra). clienteId viaja para que wabot
 // pueda avisarle después al admin (chat archivado) sobre este mismo cliente:
 // ver sincronizarPresentados().
@@ -3140,11 +3142,18 @@ async function presentarPropuesta(propId) {
     }
     if (envio) {
         const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
-        alert("Quedó en Seguimiento. Mandale vos el link por WhatsApp desde tu número"
-            + (link ? ":\n" + link : ".")
-            + (envio.sin_chat
-                ? "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta."
-                : ""));
+        if (envio.sin_chat) {
+            alert("Quedó en Seguimiento. Mandale vos el link por WhatsApp desde tu número"
+                + (link ? ":\n" + link : ".")
+                + "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta.");
+        } else if (envio.enviado) {
+            alert("Quedó en Seguimiento. El bot ya le mandó la demo por WhatsApp, no hace falta que le escribas vos.");
+        } else {
+            alert("Quedó en Seguimiento, pero el bot NO pudo mandarle la demo por WhatsApp (probablemente la ventana de 24h ya cerró)."
+                + " Mandásela vos a mano desde tu número"
+                + (link ? ":\n" + link : ".")
+                + "\n\nAsí no se le manda la plantilla de seguimiento de las 48h por las dudas.");
+        }
     }
 
     try {
