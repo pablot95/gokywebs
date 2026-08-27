@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CardioAcademia: plataforma educativa de cursos médicos online con acceso organizado a clases, materiales y seguimiento del aprendizaje.">
+  <meta name="theme-color" content="#1e40af">
+  <title>CardioAcademia | Formación médica online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="site-header" id="inicio">
+    <a class="brand" href="#inicio" aria-label="CardioAcademia, inicio"><img src="images/logo-redondo.jpg" alt="CardioAcademia"></a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Abrir menú"><span></span><span></span></button>
+    <nav class="site-nav" id="site-nav" aria-label="Navegación principal">
+      <a href="#cursos">Cursos</a>
+      <a href="#experiencia">La plataforma</a>
+      <a href="#docencia">Docencia</a>
+      <a href="#preguntas">Preguntas</a>
+      <a class="login-link" href="#campus">Ingresar</a>
+      <a class="nav-cta" href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20consultar%20por%20los%20cursos" target="_blank" rel="noopener">Consultar <span>↗</span></a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="pulse-line" aria-hidden="true"><span></span></div>
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><span>●</span> Educación médica online</p>
+          <h1 id="hero-title">Formación médica<br>que <em>late con vos.</em></h1>
+          <p class="hero-lead">Una plataforma educativa para acceder a cursos, organizar tu aprendizaje y seguir avanzando desde cualquier lugar.</p>
+          <div class="hero-actions">
+            <a class="button button-white" href="#cursos">Explorar cursos <span>↓</span></a>
+            <a class="button button-outline" href="#campus">Ver el campus <span>↗</span></a>
+          </div>
+          <div class="hero-features"><span>Contenido organizado</span><i></i><span>Acceso online</span><i></i><span>Progreso visible</span></div>
+        </div>
+
+        <div class="campus-preview" id="campus" aria-label="Vista demostrativa del campus virtual">
+          <aside class="preview-sidebar">
+            <img src="images/logo-redondo.jpg" alt="">
+            <span class="side-dot is-active"></span><span class="side-dot"></span><span class="side-dot"></span><span class="side-dot"></span>
+            <b>DC</b>
+          </aside>
+          <div class="preview-main">
+            <div class="preview-top"><div><small>Buen día</small><strong>Mi aprendizaje</strong></div><button type="button" aria-label="Notificaciones">●</button></div>
+            <div class="continue-card">
+              <div class="continue-copy"><small>CONTINUAR CURSO</small><h2>Fundamentos de electrocardiografía</h2><div class="mini-progress"><span></span></div><p>7 de 12 módulos</p><a href="#cursos">Continuar <span>→</span></a></div>
+              <img src="images/monitor-ecg.jpg" alt="Monitor con registro electrocardiográfico">
+            </div>
+            <div class="preview-row"><strong>Mis cursos</strong><span>Contenido de muestra</span></div>
+            <div class="mini-courses">
+              <article><img src="images/modelo-corazon.jpg" alt="Modelo anatómico de corazón"><div><small>Cardiología</small><strong>Anatomía y función cardíaca</strong></div></article>
+              <article><img src="images/medica-plataforma.jpg" alt="Profesional médica estudiando online"><div><small>Actualización</small><strong>Práctica clínica basada en casos</strong></div></article>
+            </div>
+          </div>
+          <span class="demo-tag">Vista demostrativa</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="value-strip" aria-label="Ventajas de la plataforma">
+      <article><span>01</span><div><strong>Aprendé a tu ritmo</strong><p>Ingresá cuando quieras y retomá donde dejaste.</p></div></article>
+      <article><span>02</span><div><strong>Todo en un solo lugar</strong><p>Clases, recursos y actividades bien organizados.</p></div></article>
+      <article><span>03</span><div><strong>Seguí tu avance</strong><p>Visualizá tu recorrido dentro de cada curso.</p></div></article>
+    </section>
+
+    <section class="section courses-section" id="cursos" aria-labelledby="courses-title">
+      <div class="section-heading reveal">
+        <div><p class="kicker">Catálogo académico</p><h2 id="courses-title">Cursos para seguir<br><em>creciendo.</em></h2></div>
+        <p>Una propuesta pensada para presentar la formación disponible de manera clara, profesional y fácil de recorrer.</p>
+      </div>
+      <div class="filter-bar reveal" role="group" aria-label="Filtrar cursos demostrativos">
+        <button class="filter-button is-active" type="button" data-filter="all">Todos</button>
+        <button class="filter-button" type="button" data-filter="cardiologia">Cardiología</button>
+        <button class="filter-button" type="button" data-filter="clinica">Clínica</button>
+        <button class="filter-button" type="button" data-filter="practica">Práctica</button>
+        <span>Contenido demostrativo</span>
+      </div>
+      <div class="course-grid">
+        <article class="course-card reveal" data-category="cardiologia">
+          <div class="course-image"><img src="images/monitor-ecg.jpg" alt="Monitor médico con registro electrocardiográfico"><span>Cardiología</span></div>
+          <div class="course-body"><p>Curso de ejemplo</p><h3>Fundamentos de electrocardiografía</h3><div class="course-meta"><span>Acceso online</span><span>Por módulos</span></div><a href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20informaci%C3%B3n%20sobre%20sus%20cursos" target="_blank" rel="noopener">Consultar <b>↗</b></a></div>
+        </article>
+        <article class="course-card reveal" data-category="clinica">
+          <div class="course-image"><img src="images/modelo-corazon.jpg" alt="Modelo anatómico de corazón humano"><span>Clínica</span></div>
+          <div class="course-body"><p>Curso de ejemplo</p><h3>Anatomía y función cardíaca</h3><div class="course-meta"><span>Acceso online</span><span>Por módulos</span></div><a href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20informaci%C3%B3n%20sobre%20sus%20cursos" target="_blank" rel="noopener">Consultar <b>↗</b></a></div>
+        </article>
+        <article class="course-card reveal" data-category="practica">
+          <div class="course-image"><img src="images/formacion-practica.jpg" alt="Estudiantes de medicina en una práctica con simulador"><span>Práctica</span></div>
+          <div class="course-body"><p>Curso de ejemplo</p><h3>Práctica clínica basada en casos</h3><div class="course-meta"><span>Acceso online</span><span>Por módulos</span></div><a href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20informaci%C3%B3n%20sobre%20sus%20cursos" target="_blank" rel="noopener">Consultar <b>↗</b></a></div>
+        </article>
+      </div>
+      <p class="demo-note reveal">Los nombres y contenidos de los cursos de esta demostración son ilustrativos y pueden reemplazarse por la oferta académica real de CardioAcademia.</p>
+    </section>
+
+    <section class="platform-section" id="experiencia" aria-labelledby="platform-title">
+      <div class="platform-inner">
+        <div class="platform-copy reveal">
+          <p class="kicker kicker-light">Campus virtual</p>
+          <h2 id="platform-title">Una experiencia clara.<br><em>De principio a fin.</em></h2>
+          <p>La plataforma puede organizarse en Moodle para que cada alumno encuentre sus cursos, módulos, materiales y actividades sin perderse.</p>
+          <ul class="feature-list">
+            <li><span>01</span><div><strong>Acceso personal</strong><p>Cada alumno ingresa con su propio usuario.</p></div></li>
+            <li><span>02</span><div><strong>Contenido por módulos</strong><p>Videos, documentos y recursos en orden.</p></div></li>
+            <li><span>03</span><div><strong>Actividades y avance</strong><p>Evaluaciones y seguimiento dentro del campus.</p></div></li>
+          </ul>
+          <a class="text-link" href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20conocer%20m%C3%A1s%20sobre%20el%20campus%20virtual" target="_blank" rel="noopener">Consultar sobre la plataforma <span>↗</span></a>
+        </div>
+        <div class="platform-visual reveal" aria-label="Ejemplo de una clase dentro del campus">
+          <div class="lesson-window">
+            <div class="window-bar"><i></i><i></i><i></i><span>campus.cardioacademia</span></div>
+            <div class="lesson-layout">
+              <aside><strong>Electrocardiografía</strong><small>Tu progreso</small><div class="lesson-progress"><span></span></div><nav><b class="done">✓</b> Introducción</nav><nav><b class="done">✓</b> Bases eléctricas</nav><nav class="current"><b>03</b> Derivaciones</nav><nav><b>04</b> Casos</nav></aside>
+              <div class="lesson-content"><div class="video-frame"><img src="images/medica-plataforma.jpg" alt="Profesional médica trabajando frente a una computadora"><span class="play">▶</span></div><small>MÓDULO 03 · CLASE DEMOSTRATIVA</small><h3>Lectura sistemática del trazado</h3><p>Material audiovisual, documentos complementarios y actividades reunidos en un mismo espacio.</p><div class="lesson-actions"><span>Material de la clase</span><button type="button">Siguiente →</button></div></div>
+            </div>
+          </div>
+          <span class="floating-card"><b>58%</b><small>PROGRESO DEL CURSO</small></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section journey-section" aria-labelledby="journey-title">
+      <div class="journey-heading reveal"><p class="kicker">Tu recorrido</p><h2 id="journey-title">Simple para aprender.<br><em>Simple para avanzar.</em></h2></div>
+      <div class="journey-grid">
+        <article class="reveal"><span>01</span><i>→</i><h3>Creá tu cuenta</h3><p>Ingresá al campus con tus datos personales.</p></article>
+        <article class="reveal"><span>02</span><i>→</i><h3>Elegí tu curso</h3><p>Encontrá la propuesta que acompaña tu formación.</p></article>
+        <article class="reveal"><span>03</span><i>→</i><h3>Aprendé a tu ritmo</h3><p>Avanzá por las clases desde donde estés.</p></article>
+        <article class="reveal"><span>04</span><h3>Seguí tu progreso</h3><p>Retomá el contenido y visualizá tu recorrido.</p></article>
+      </div>
+    </section>
+
+    <section class="teaching-section" id="docencia" aria-labelledby="teaching-title">
+      <div class="teaching-image reveal"><img src="images/docentedandocurso.jpg" alt="Docente de CardioAcademia dando una clase médica"><span>Imagen aportada por CardioAcademia</span></div>
+      <div class="teaching-copy reveal"><p class="kicker">Experiencia docente</p><h2 id="teaching-title">Conocimiento que nace de la <em>práctica real.</em></h2><p>Una identidad académica cercana, rigurosa y enfocada en acompañar a profesionales de la salud durante todo el proceso de aprendizaje.</p><blockquote>“La tecnología al servicio de una formación médica clara, accesible y bien organizada.”</blockquote><a class="button button-blue" href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20conocer%20la%20propuesta%20acad%C3%A9mica" target="_blank" rel="noopener">Conocer la propuesta <span>↗</span></a></div>
+    </section>
+
+    <section class="gallery-section" aria-label="Formación médica">
+      <div class="gallery-copy reveal"><p class="kicker kicker-light">Aprendizaje activo</p><h2>Teoría, práctica<br>y <em>comunidad.</em></h2><p>Un espacio digital pensado para enriquecer cada instancia de formación.</p></div>
+      <figure class="gallery-main reveal"><img src="images/formacion-practica.jpg" alt="Grupo de estudiantes realizando una práctica médica"></figure>
+      <figure class="gallery-small reveal"><img src="images/clase-medica.jpg" alt="Profesional médico dando una clase"><figcaption>Formación continua</figcaption></figure>
+      <figure class="gallery-small reveal"><img src="images/equipo-medico.jpg" alt="Equipo médico trabajando con una computadora"><figcaption>Aprendizaje colaborativo</figcaption></figure>
+    </section>
+
+    <section class="section faq-section" id="preguntas" aria-labelledby="faq-title">
+      <div class="faq-intro reveal"><p class="kicker">Preguntas frecuentes</p><h2 id="faq-title">Antes de<br><em>empezar.</em></h2><p>Información útil sobre la experiencia de formación y la plataforma.</p><a href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20tengo%20una%20consulta" target="_blank" rel="noopener">Hacer otra consulta ↗</a></div>
+      <div class="faq-list reveal">
+        <article class="faq-item is-open"><button type="button" aria-expanded="true"><span>¿Cómo se accede a los cursos?</span><b>−</b></button><div class="faq-answer"><p>Cada alumno puede ingresar al campus con su propio usuario y acceder al contenido habilitado desde computadora, tablet o celular.</p></div></article>
+        <article class="faq-item"><button type="button" aria-expanded="false"><span>¿Qué se puede subir a Moodle?</span><b>+</b></button><div class="faq-answer"><p>La plataforma permite organizar clases, videos, documentos, recursos descargables, actividades y evaluaciones dentro de cada curso.</p></div></article>
+        <article class="faq-item"><button type="button" aria-expanded="false"><span>¿Se puede usar el dominio y hosting existentes?</span><b>+</b></button><div class="faq-answer"><p>Sí, la implementación final puede contemplar los recursos que CardioAcademia ya posee. Antes se revisan la configuración y compatibilidad técnica del hosting y el dominio.</p></div></article>
+        <article class="faq-item"><button type="button" aria-expanded="false"><span>¿Dónde consulto por la oferta académica?</span><b>+</b></button><div class="faq-answer"><p>Podés escribir directamente por WhatsApp para recibir información sobre cursos, modalidades y próximas propuestas.</p></div></article>
+      </div>
+    </section>
+
+    <section class="final-cta">
+      <div class="cta-line" aria-hidden="true">⌁</div>
+      <div class="final-cta-inner reveal"><img src="images/logo-redondo.jpg" alt="Logo de CardioAcademia"><p>Tu próxima formación puede empezar hoy.</p><h2>Seguí aprendiendo.<br><em>Seguí avanzando.</em></h2><a class="button button-white" href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20recibir%20informaci%C3%B3n" target="_blank" rel="noopener">Escribir por WhatsApp <span>↗</span></a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div><img src="images/logo-redondo.jpg" alt="CardioAcademia"><p>Educación médica online</p></div><div class="footer-links"><a href="#cursos">Cursos</a><a href="#experiencia">La plataforma</a><a href="#docencia">Docencia</a><a href="#preguntas">Preguntas</a></div><p>© <span id="year"></span> CardioAcademia</p></footer>
+  <a class="whatsapp-float" href="https://wa.me/5491132154213?text=Hola%20CardioAcademia%2C%20quisiera%20m%C3%A1s%20informaci%C3%B3n" target="_blank" rel="noopener" aria-label="Escribir a CardioAcademia por WhatsApp"><span>WhatsApp</span><b>↗</b></a>
+
+  <script src="script.js"></script>
+</body>
+</html>
