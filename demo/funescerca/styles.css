@@ -22,7 +22,7 @@ img { display: block; max-width: 100%; }
 .site-header { position: absolute; z-index: 10; inset: 0 0 auto; color: #fff; }
 .header-inner { min-height: 92px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.24); }
 .brand { display: flex; align-items: center; gap: 13px; }
-.brand img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; filter: brightness(0) invert(1); mix-blend-mode: screen; }
+.brand img { width: 58px; height: 58px; padding: 2px; border: 1px solid rgba(255,255,255,.5); border-radius: 50%; object-fit: cover; background: #fff; }
 .brand > span { display: grid; font: 800 17px/1.1 "Manrope", sans-serif; letter-spacing: -.02em; }
 .brand small { margin-top: 3px; font: 500 8px/1 "DM Sans", sans-serif; text-transform: uppercase; letter-spacing: .13em; opacity: .72; }
 .site-nav { display: flex; align-items: center; gap: 30px; font-size: 12px; font-weight: 600; }
