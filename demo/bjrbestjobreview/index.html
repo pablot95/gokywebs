@@ -12,13 +12,15 @@
 <meta property="og:title" content="BJR Best Job Review — Reseñas laborales anónimas">
 <meta property="og:description" content="Lo que no te cuentan en la entrevista, contado por quienes ya trabajaron ahí.">
 <meta property="og:url" content="https://gokywebs.com/demo/bjrbestjobreview/">
-<meta property="og:image" content="https://gokywebs.com/demo/bjrbestjobreview/images/hero-buscando.webp">
+<meta property="og:image" content="https://gokywebs.com/demo/bjrbestjobreview/images/entrevista.webp">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E40AF'/%3E%3Ctext x='32' y='42' font-family='Helvetica,Arial,sans-serif' font-weight='700' font-size='25' letter-spacing='-1' fill='%23F8FAFC' text-anchor='middle'%3EBJR%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B%5D=cabinet-grotesk@700&display=swap">
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B%5D=general-sans@400,500,600&display=swap">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&display=swap">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B%5D=general-sans@400,600&display=swap">
+<link rel="stylesheet" href="styles.css?v=2">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
 <script type="application/ld+json">
 {
@@ -103,11 +105,14 @@
         <a class="btn btn-ghost" href="#sumate">Escribir mi reseña</a>
         <a class="link-arrow" href="#anonimato">Ver cómo cuidamos tu anonimato</a>
       </div>
-    </div>
 
-    <figure class="hero-media" data-animate="zoom" style="opacity:0;transform:scale(1.05)">
-      <span class="media-frame"><img src="images/hero-buscando.webp" alt="Persona revisando información sobre una empresa en su computadora" width="1200" height="1500"></span>
-    </figure>
+      <aside class="banner" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <p class="banner-eyebrow">Estamos abriendo</p>
+        <h2 class="banner-titulo">Arrancamos por seis rubros</h2>
+        <p class="banner-texto">Logística, comercio, gastronomía, salud, oficina y atención al cliente. Si el tuyo todavía no está, dejanos tu correo y te avisamos apenas abra.</p>
+        <a class="btn btn-solid btn-lg" href="#sumate">Avisame cuando abra <span aria-hidden="true">→</span></a>
+      </aside>
+    </div>
 
     <article class="ficha ficha-hero" data-animate="up" style="opacity:0;transform:translateY(22px)">
       <div class="ficha-head">
@@ -242,6 +247,43 @@
           </li>
         </ol>
       </div>
+    </div>
+  </section>
+
+  <section class="puntajes" id="puntajes">
+    <div class="shell">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate="fade" style="opacity:0;transform:translateY(10px)">Qué se puntúa</p>
+        <h2 data-animate="mask" style="opacity:0;clip-path:inset(0 0 108% 0)">Cinco cosas, siempre las mismas</h2>
+        <p class="sec-lead" data-animate="up" style="opacity:0;transform:translateY(18px)">Nadie escribe una carta libre. Todas las reseñas puntúan los mismos cinco aspectos, así dos empresas se pueden comparar de verdad.</p>
+      </header>
+    </div>
+    <div class="shell-w puntajes-grid" data-animate-stagger>
+      <article class="pcard" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <span class="pcard-emo" aria-hidden="true">💵</span>
+        <h3>Sueldo</h3>
+        <p>Cuánto se paga para el puesto y, sobre todo, si se paga en fecha.</p>
+      </article>
+      <article class="pcard" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <span class="pcard-emo" aria-hidden="true">🕒</span>
+        <h3>Horarios</h3>
+        <p>Los reales, no los del contrato. Turnos, francos y cuánto se estira la salida.</p>
+      </article>
+      <article class="pcard" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <span class="pcard-emo" aria-hidden="true">🧭</span>
+        <h3>Jefatura</h3>
+        <p>Si te dan margen, si te escuchan y si sabés qué esperan de vos.</p>
+      </article>
+      <article class="pcard" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <span class="pcard-emo" aria-hidden="true">📈</span>
+        <h3>Crecimiento</h3>
+        <p>Si hay a dónde ir después del primer año o el techo llega enseguida.</p>
+      </article>
+      <article class="pcard" data-animate="up" style="opacity:0;transform:translateY(20px)">
+        <span class="pcard-emo" aria-hidden="true">🤝</span>
+        <h3>Clima</h3>
+        <p>Cómo se trata la gente entre sí cuando el día viene torcido.</p>
+      </article>
     </div>
   </section>
 
@@ -440,6 +482,7 @@
     <nav class="footer-nav" aria-label="Secciones">
       <a href="#buscar">Buscar empresas</a>
       <a href="#anonimato">Cómo funciona</a>
+      <a href="#puntajes">Qué se puntúa</a>
       <a href="#rubros">Rubros</a>
       <a href="#reglas">Reglas</a>
       <a href="#empresas">Para empresas</a>
