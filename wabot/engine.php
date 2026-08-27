@@ -140,11 +140,25 @@ function wabot_ejes_mixtos($texto) {
     if ($t === '') return null;
 
     $ejes = [];
-    if (preg_match('/\b(sesion\w*|terapia\w*|consulta\w*|tratamiento\w*|atencion|turno\w*|lectura\w*|sanacion\w*'
+    // terap\w*, no terapia\w*: así entra también "terapeuta", que es como se
+    // presenta la mayoría ("soy terapeuta y además vendo...").
+    if (preg_match('/\b(sesion\w*|terap\w*|consulta\w*|tratamiento\w*|atencion|turno\w*|lectura\w*|sanacion\w*'
         . '|masaje\w*|clase\w* particular\w*|asesoria\w*|acompanamiento\w*)\b/u', $t)) $ejes['servicios'] = 'tus servicios';
-    if (preg_match('/\b(curso\w*|taller\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
-        . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)) $ejes['cursos'] = 'los cursos o materiales';
-    if (preg_match('/\b(producto\w*|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
+    /* "Taller" solo NO es un curso: un taller de manualidades, uno mecánico o
+     * uno de costura son el LUGAR donde trabaja, no algo que enseñe. Se le
+     * cobró caro a una clienta de macramé y bijouterie el 27-ago: ya tenía su
+     * ecommerce cotizado en $290.000 y el aviso de mixto le sacó el precio de
+     * la mesa por la palabra "taller". Hace falta el verbo de dictar o la
+     * marca de que el taller ES la clase — el mismo criterio que ya usa
+     * wabot_fallback_rubro_local(). */
+    $dictaTalleres = preg_match('/\b(doy|dicto|damos|dictamos|dando|dictando|enseno|ensenamos)\b.{0,15}\btaller(es)?\b/u', $t)
+        || preg_match('/\btaller(es)?\s+(online|virtual\w*|grabad\w*|de capacitacion|para aprender)\b/u', $t);
+    if (preg_match('/\b(curso\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
+            . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)
+        || $dictaTalleres) $ejes['cursos'] = 'los cursos o materiales';
+    // "vendo" / "vendemos" faltaban y son la forma más común de decirlo:
+    // "vendo los kits", "vendo lana" no caían en ningún eje.
+    if (preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
         . '|sahumerio\w*|indumentaria|ropa|accesorio\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
     if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
 
@@ -2850,7 +2864,13 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * Sale UNA vez: si después el cliente elige quedarse con una sola parte,
      * se cotiza normal. institucional queda afuera porque ya es la que junta
      * varias secciones. */
-    if (empty($conv['mixto_avisado']) && $tipo !== 'institucional') {
+    /* Y solo ANTES de cotizar. Con el precio ya dado, el contexto acumulado
+     * hace que cualquier mención vieja dispare el aviso tarde, y entonces le
+     * sacamos al cliente un número que ya tenía: "el precio no sale de la
+     * lista" después de haberle dicho $290.000 es peor que no avisar nada.
+     * Le pasó a la clienta de macramé el 27-ago. Si de verdad pide algo nuevo
+     * que cambie el tipo, eso ya tiene su propio camino (cambia_tipo). */
+    if (empty($conv['mixto_avisado']) && empty($conv['precio_dado']) && $tipo !== 'institucional') {
         $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));
         $textoMixto = $ejes !== null ? wabot_texto_mixto($ejes, $cfg) : null;
         if ($textoMixto !== null) {

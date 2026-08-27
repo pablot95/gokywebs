@@ -800,7 +800,10 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
              * cuando ya tenía el precio, 27-ago). Se avisa una sola vez: si
              * después el cliente elige quedarse con una sola parte, se cotiza
              * normal. */
-            if (empty($conv['mixto_avisado']) && !in_array($tipo, ['institucional'], true)) {
+            // Igual que en wabot_precio(): solo ANTES de cotizar. Con el precio
+            // ya dado, sacarle el número que tenía es peor que no avisar.
+            if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])
+                && !in_array($tipo, ['institucional'], true)) {
                 $ejesMixtos = wabot_ejes_mixtos($contextoCliente);
                 if ($ejesMixtos !== null) {
                     $conv['mixto_avisado'] = true;

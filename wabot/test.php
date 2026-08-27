@@ -4439,6 +4439,31 @@ caso('sin inventar un precio para el combinado', preg_match('/\$\s?\d/u', $texto
 $ejesPsico = wabot_ejes_mixtos('Psicología, quiero ofrecer sesiones, grupos y cuadernillos');
 caso('sesiones + cuadernillos también es mixto', $ejesPsico !== null && count($ejesPsico) === 2);
 
+// "Taller" solo NO es un curso: un taller de manualidades, uno mecánico o uno
+// de costura son el LUGAR donde trabaja. Se le cobró caro a una clienta de
+// macramé y bijouterie el 27-ago: ya tenía su ecommerce cotizado en $290.000 y
+// el aviso de mixto le sacó el precio de la mesa por esa sola palabra.
+foreach ([
+    'taller de manualidades' => 'Yo tengo un taller de manualidades. Basicamente macrame y bijouterie',
+    'taller mecánico'        => 'tengo un taller mecanico y vendo repuestos',
+    'taller de costura'      => 'taller de costura, vendo telas',
+] as $que => $mensaje) {
+    caso("un $que es el lugar, no un curso", wabot_ejes_mixtos($mensaje) === null);
+}
+// Pero el que DICTA talleres sí los vende como curso.
+caso('"doy talleres y vendo los kits" sí es mixto',
+    ($e = wabot_ejes_mixtos('doy talleres de macrame y ademas vendo los kits')) !== null
+    && array_keys($e) === ['cursos', 'productos']);
+caso('"talleres online" también',
+    wabot_ejes_mixtos('talleres online de tejido y vendo lana') !== null);
+// "vendo" faltaba en el eje de productos y es la forma más común de decirlo.
+caso('"vendo los libros" cuenta como venta de productos',
+    wabot_ejes_mixtos('doy cursos de ingles y vendo los libros') !== null);
+// "terapeuta" no matcheaba "terapia": así se presenta la mayoría.
+caso('"soy terapeuta" cuenta como servicio',
+    ($e2 = wabot_ejes_mixtos('soy terapeuta, doy cursos y vendo sahumerios')) !== null
+    && count($e2) === 3);
+
 // Un rubro simple NO puede caer acá: dispararía el aviso de mixto a cualquiera.
 foreach ([
     'ferretería' => 'Rubro ferretería especializada en herrajes',
@@ -4722,6 +4747,20 @@ caso('sin dar el precio de turnos como si cubriera todo',
     strpos($rMixPrecio[0], (string)$cfg['tipos']['turnos']['precio']) === false
     && empty($cMixPrecio['precio_dado']));
 caso('queda marcado para no repetirlo', !empty($cMixPrecio['mixto_avisado']));
+
+/* Con el precio YA dado el aviso no sale, aunque el contexto lo dispare: le
+ * sacaríamos al cliente un número que ya tenía. "El precio no sale de la
+ * lista" después de haberle dicho $290.000 es peor que no avisar nada — le
+ * pasó a la clienta de macramé el 27-ago. */
+$cYaCotizado = conv_nueva();
+$cYaCotizado['fase'] = 'pitch'; $cYaCotizado['tipo'] = 'ecommerce';
+$cYaCotizado['precio_dado'] = true; $cYaCotizado['pitch_hecho'] = true;
+$cYaCotizado['transcript'] = [['q' => 'cliente', 't' => 'doy talleres y vendo los kits', 'ts' => time() - 20]];
+$cYaCotizado['session_started_ts'] = time() - 60;
+$rYaCotizado = wabot_precio('ecommerce', $cYaCotizado, $cfg);
+caso('con el precio ya dado, el aviso de mixto NO sale',
+    stripos(implode(' ', $rYaCotizado), 'integre') === false);
+caso('y el precio que ya tenía sigue en pie', empty($cYaCotizado['mixto_avisado']));
 // Ya avisado, la segunda vez cotiza normal: el aviso no puede trabar la venta.
 $rMixPrecio2 = wabot_precio('turnos', $cMixPrecio, $cfg);
 caso('la segunda vez ya cotiza normal',
