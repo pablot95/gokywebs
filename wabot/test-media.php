@@ -209,6 +209,44 @@ $convInerte = ['tel' => 'TESTCAPI3', 'conversation_key' => 'TESTCAPI3', 'canal' 
 caso('sin configurar el dataset y el token, queda inerte',
     wabot_capi_evento($convInerte, 'Lead', $cfgVacio) === false);
 
+echo "\n— Notas de voz: WhatsApp valida contenedor Y codec (27-ago) —\n";
+
+// Las notas de voz del panel no salían nunca. El código pedía "audio/mp4" a
+// secas y Chrome devuelve "audio/mp4;codecs=opus" — Opus metido en un MP4,
+// que WhatsApp no acepta. Pero el mime se recortaba en el ";" antes de
+// validarlo, así que quedaba en "audio/mp4", pasaba el guard y recién fallaba
+// en Meta. Verificado en Chrome 148: pedir 'audio/mp4' da mimeType
+// 'audio/mp4;codecs=opus'; pidiendo mp4a.40.2 sale un MP4 con AAC de verdad.
+caso('MP4 con Opus se rechaza: es EL bug de las notas de voz',
+    wabot_audio_mime_valido('audio/mp4;codecs=opus') === false);
+caso('y el motivo lo explica en castellano',
+    stripos(wabot_audio_mime_motivo('audio/mp4;codecs=opus'), 'AAC') !== false);
+
+caso('MP4 con AAC (lo que graban Chrome y Safari ahora) se acepta',
+    wabot_audio_mime_valido('audio/mp4;codecs=mp4a.40.2') === true);
+caso('OGG con Opus (Firefox) se acepta',
+    wabot_audio_mime_valido('audio/ogg;codecs=opus') === true);
+caso('OGG sin Opus se rechaza: el contenedor solo no alcanza',
+    wabot_audio_mime_valido('audio/ogg;codecs=vorbis') === false);
+caso('WebM se rechaza en cualquier codec',
+    wabot_audio_mime_valido('audio/webm;codecs=opus') === false);
+
+// Sin codec declarado se confía en el contenedor: es lo que mandan los
+// clientes de WhatsApp reales y ahí el codec ya viene bien.
+caso('"audio/mp4" sin codec sigue aceptándose', wabot_audio_mime_valido('audio/mp4') === true);
+caso('"audio/ogg" sin codec también', wabot_audio_mime_valido('audio/ogg') === true);
+caso('aac y mp3 sueltos siguen andando',
+    wabot_audio_mime_valido('audio/aac') && wabot_audio_mime_valido('audio/mpeg'));
+caso('un formato que no está en la lista se rechaza con su motivo',
+    wabot_audio_mime_valido('audio/flac') === false
+    && stripos(wabot_audio_mime_motivo('audio/flac'), 'no lo acepta') !== false);
+caso('y un mime vacío también', wabot_audio_mime_valido('') === false);
+
+// La extensión sale del mime base, no del completo: sin esto el archivo
+// subido a Meta se llamaría "nota-de-voz." y sin extensión.
+caso('la extensión se saca aunque venga el codec pegado',
+    wabot_audio_extension('audio/mp4;codecs=mp4a.40.2') === 'm4a');
+
 echo "\n— Tipos de archivo que se guardaban como .bin (27-ago) —\n";
 
 // Lo que no está en la tabla se guarda como .bin: baja igual pero no lo abre

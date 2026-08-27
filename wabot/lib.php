@@ -3483,8 +3483,45 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
 define('WABOT_AUDIO_MIMES_OK', ['audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/amr']);
 define('WABOT_AUDIO_MAX_BYTES', 16 * 1024 * 1024);
 
+/**
+ * WhatsApp valida el CONTENEDOR y el CODEC, no solo el contenedor.
+ *
+ * Un MP4 con Opus adentro tiene mime "audio/mp4;codecs=opus": recortando en el
+ * ";" queda "audio/mp4", que está en la lista, así que pasaba el guard y
+ * fallaba recién en Meta sin decir por qué. Era el motivo real de que las
+ * notas de voz no salieran: Chrome, al pedirle "audio/mp4" a secas, entrega
+ * justamente eso (verificado en Chrome 148).
+ *
+ * MP4 va con AAC. OGG va con Opus. Al revés no lo acepta ninguno de los dos.
+ */
 function wabot_audio_mime_valido($mime) {
-    return in_array(trim(explode(';', (string)$mime)[0]), WABOT_AUDIO_MIMES_OK, true);
+    $completo = strtolower(trim((string)$mime));
+    $base = trim(explode(';', $completo)[0]);
+    if (!in_array($base, WABOT_AUDIO_MIMES_OK, true)) return false;
+
+    $codec = '';
+    if (preg_match('/codecs\s*=\s*"?([^";]+)"?/i', $completo, $m)) $codec = trim($m[1]);
+    if ($codec === '') return true;   // sin codec declarado se confía en el contenedor
+
+    if ($base === 'audio/mp4')  return stripos($codec, 'opus') === false;
+    if ($base === 'audio/ogg')  return stripos($codec, 'opus') !== false;
+    return true;
+}
+
+/** Por qué se rechazó, para poder decírselo a quien graba en vez de "formato inválido". */
+function wabot_audio_mime_motivo($mime) {
+    $completo = strtolower(trim((string)$mime));
+    $base = trim(explode(';', $completo)[0]);
+    if (!in_array($base, WABOT_AUDIO_MIMES_OK, true)) {
+        return 'Ese formato de audio (' . ($base ?: 'desconocido') . ') no lo acepta WhatsApp.';
+    }
+    if ($base === 'audio/mp4' && stripos($completo, 'opus') !== false) {
+        return 'El navegador grabó un MP4 con Opus adentro, y WhatsApp solo acepta MP4 con AAC.';
+    }
+    if ($base === 'audio/ogg' && stripos($completo, 'codecs') !== false && stripos($completo, 'opus') === false) {
+        return 'El navegador grabó un OGG sin Opus, y WhatsApp solo acepta OGG con Opus.';
+    }
+    return 'Ese audio no lo acepta WhatsApp.';
 }
 
 function wabot_audio_extension($mime) {

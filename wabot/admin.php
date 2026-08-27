@@ -487,9 +487,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        $mime = trim(explode(';', (string)($_POST['mime'] ?? $subida['type'] ?? ''))[0]);
-        if (!wabot_audio_mime_valido($mime)) {
-            echo json_encode(['error' => 'Ese formato de audio (' . ($mime ?: 'desconocido') . ') no lo acepta WhatsApp. Probá desde otro navegador.']);
+        /* El mime se valida ENTERO, con el codec: recortarlo en el ";" antes de
+         * mirarlo era la otra mitad del bug de las notas de voz. Un
+         * "audio/mp4;codecs=opus" quedaba en "audio/mp4", pasaba el guard y
+         * fallaba recién en Meta. A Meta se le manda el mime base, que es lo
+         * que espera en el upload. */
+        $mimeCompleto = trim((string)($_POST['mime'] ?? $subida['type'] ?? ''));
+        $mime = trim(explode(';', $mimeCompleto)[0]);
+        if (!wabot_audio_mime_valido($mimeCompleto)) {
+            echo json_encode(['error' => wabot_audio_mime_motivo($mimeCompleto) . ' Probá con Chrome o Safari actualizados.']);
+            wabot_log('audio_formato_rechazado', ['tel' => $conv['tel'], 'mime' => $mimeCompleto]);
             exit;
         }
 
@@ -2646,13 +2653,27 @@ body.embed { min-height: 0; }
         }
 
         /* ── Notas de voz ──
-           WhatsApp solo acepta ogg/opus, mp4, mpeg, aac y amr. El navegador
-           graba en lo que quiere, así que se le pide explícitamente el primer
-           formato de esta lista que soporte: mp4 lo tienen Safari y el Chrome
-           moderno, ogg lo tiene Firefox. webm (el default de Chrome) queda
-           afuera a propósito: WhatsApp lo rechaza, y mandarlo sería prometer
-           un envío que falla. */
-        const FORMATOS_WSP = ['audio/mp4', 'audio/ogg;codecs=opus', 'audio/aac', 'audio/mpeg'];
+           WhatsApp acepta el CONTENEDOR y el CODEC, no solo el contenedor:
+           mp4 tiene que llevar AAC adentro, y ogg tiene que llevar Opus. No
+           es lo mismo.
+
+           Acá estaba el bug por el que las notas de voz no salían: se pedía
+           "audio/mp4" a secas y Chrome devuelve "audio/mp4;codecs=opus", o sea
+           Opus metido en un MP4. Eso no lo acepta WhatsApp, pero el mime
+           recortado sigue diciendo "audio/mp4", así que pasaba la validación
+           del servidor y recién fallaba en Meta, sin decir por qué.
+           Verificado en Chrome 148: pedir 'audio/mp4' → rec.mimeType queda en
+           'audio/mp4;codecs=opus'; pidiendo AAC explícito sale un MP4 real.
+
+           Por eso el codec va SIEMPRE explícito. mp4a.40.2 es AAC-LC, que
+           soportan Chrome y Safari; ogg/opus lo tiene Firefox. webm queda
+           afuera a propósito: WhatsApp lo rechaza en cualquier codec. */
+        const FORMATOS_WSP = [
+            'audio/mp4;codecs=mp4a.40.2',   // AAC-LC en MP4 — Chrome y Safari
+            'audio/ogg;codecs=opus',        // Firefox
+            'audio/aac',
+            'audio/mpeg',
+        ];
 
         function formatoGrabable() {
             if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return null;
@@ -2734,6 +2755,10 @@ body.embed { min-height: 0; }
                 est.style.color = 'var(--bad)';
                 return;
             }
+            // El mime REAL que terminó usando el navegador, no el que pedimos:
+            // pueden diferir en el codec, y el codec es justo lo que decide si
+            // WhatsApp lo acepta. Mandar el pedido escondía el problema.
+            if (rec.mimeType) recMime = rec.mimeType;
             rec.ondataavailable = ev => { if (ev.data && ev.data.size) trozos.push(ev.data); };
             rec.onstop = () => {
                 const partes = trozos.slice();
@@ -2761,7 +2786,10 @@ body.embed { min-height: 0; }
                 const fd = new FormData();
                 fd.append('accion', 'responder_audio');
                 fd.append('tel', TEL);
-                fd.append('mime', (recMime || blob.type || '').split(';')[0]);
+                // Entero, CON el codec: el servidor necesita verlo para saber
+                // si WhatsApp lo va a aceptar. Recortarlo acá era lo que hacía
+                // que un mp4/opus pasara todos los controles y muriera en Meta.
+                fd.append('mime', recMime || blob.type || '');
                 fd.append('audio', blob, 'nota-de-voz');
                 const r = await fetch('admin.php', { method: 'POST', body: fd });
                 const j = await r.json();
