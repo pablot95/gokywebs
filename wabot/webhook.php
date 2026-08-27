@@ -281,8 +281,15 @@ function wabot_procesar_entrante($ev, $cfg) {
             if ($vinoDeMedia) $conv['_texto_de_media'] = true;
 
             $entrada    = implode("\n", $usables);
+            /* Orden: primero se completa el texto (la aclaración de que la demo
+             * es gratis), después se filtran repetidos y la pregunta de más, y
+             * al final el anti-repetición — que compara el texto YA final, si
+             * no la misma oferta con y sin la aclaración contarían como dos
+             * mensajes distintos y el guard no la vería. */
             $respuestas = wabot_anti_repeticion(
-                wabot_una_sola_pregunta(wabot_sin_repetidos_consecutivos(wabot_responder($entrada, $conv, $cfg))),
+                wabot_una_sola_pregunta(wabot_sin_repetidos_consecutivos(
+                    wabot_demo_siempre_gratis(wabot_responder($entrada, $conv, $cfg), $cfg)
+                )),
                 $conv, $cfg
             );
             unset($conv['_texto_de_media']);

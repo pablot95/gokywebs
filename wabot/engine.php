@@ -381,6 +381,43 @@ function wabot_prediseno_acuse($texto, $conv) {
 }
 
 /**
+ * La demo se ofrece SIEMPRE diciendo que es gratis.
+ *
+ * Los cinco textos de config lo dicen. El problema es que el modelo la ofrece
+ * con palabras propias y se le cae la palabra: "Qué te parece si te armamos
+ * una versión de tu web para que la veas antes de decidir?" (27-ago, óptica).
+ * El cliente contestó "eso tiene algún fee mensual??" — o sea, entendió que
+ * podía costar. Es lo único que hace que acepte: si no se dice, la oferta
+ * deja de ser una oferta.
+ *
+ * Se agrega la aclaración al final del mensaje que ofrece, sin tocar el resto:
+ * reemplazarlo entero perdería lo que el modelo haya sumado del contexto.
+ */
+function wabot_demo_siempre_gratis($mensajes, $cfg) {
+    $mensajes = array_values((array)$mensajes);
+    $gratis = '/\b(gratis|gratuit[ao]|sin costo|sin cargo|sin pagar|no te cuesta|no tiene costo|sin compromiso)\b/iu';
+    foreach ($mensajes as $i => $m) {
+        $t = wabot_normalizar_frase((string)$m);
+        if ($t === '' || !wabot_texto_ofrece_demo($t)) continue;
+        if (preg_match($gratis, (string)$m)) continue;
+        $aclaracion = trim((string)($cfg['demo_es_gratis'] ?? ''));
+        if ($aclaracion === '') continue;
+        $mensajes[$i] = rtrim((string)$m) . ' ' . $aclaracion;
+    }
+    return $mensajes;
+}
+
+/** ¿El mensaje está OFRECIENDO armar la demo? (no hablando de ella de pasada) */
+function wabot_texto_ofrece_demo($t) {
+    $t = wabot_normalizar_frase((string)$t);
+    if ($t === '') return false;
+    // Tiene que haber una propuesta de ARMARLA, no una mención cualquiera.
+    return (bool)(preg_match('/\b(armamos|armarte|armo|preparamos|prepararte|preparo|mostramos|hacemos)\b'
+            . '.{0,40}\b(demo|muestra|prediseno|version de tu (web|pagina)|version de la (web|pagina))\b/u', $t)
+        || preg_match('/\b(demo|muestra|prediseno)\b.{0,30}\b(te la armo|te la armamos|te la preparo|la armamos|la preparamos)\b/u', $t));
+}
+
+/**
  * El bot NUNCA manda dos veces seguidas el mismo texto.
  *
  * El 27-ago cuatro clientes reales recibieron la misma pregunta una y otra

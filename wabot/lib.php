@@ -355,6 +355,12 @@ function wabot_config_ventas(&$cfg) {
         // Va aparte, en su propio globo: es la pregunta que decide si se
         // cotiza el combinado (lo arma Pablo) o una sola parte (sale de la lista).
         'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',
+        /* Se pega al final de cualquier ofrecimiento de la demo que no diga
+         * que es gratis. Ver wabot_demo_siempre_gratis(): los textos de config
+         * lo dicen, pero el modelo la ofrece con palabras propias y se le cae
+         * justo la palabra que hace que el cliente acepte. */
+        'demo_es_gratis' => 'Es gratis y sin compromiso.',
+
         /* Los dos avisos de archivo, que NO son lo mismo:
          *  - no_texto: no llegó nada utilizable y tampoco quedó archivo.
          *  - media_recibida: el archivo llegó y está guardado en el panel, lo

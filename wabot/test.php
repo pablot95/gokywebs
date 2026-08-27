@@ -4489,6 +4489,43 @@ caso('"Cómo me comunico con el desarrollador?" tiene respuesta propia',
 caso('y avisa que escribe él, desde el número de proyectos',
     stripos((string)$cfg['info']['contacto_desarrollador'], 'número de proyectos') !== false);
 
+echo "\n— La demo se ofrece SIEMPRE diciendo que es gratis (27-ago) —\n";
+
+// A una óptica el modelo le ofreció la demo con palabras propias y se le cayó
+// la palabra: "Qué te parece si te armamos una versión de tu web para que la
+// veas antes de decidir?". El cliente contestó "eso tiene algún fee mensual??",
+// o sea entendió que podía costarle. Sin "gratis" la oferta deja de serlo.
+$ofertaPelada = 'Que te parece si te armamos una version de tu web para que la veas antes de decidir?';
+$rGratis = wabot_demo_siempre_gratis([$ofertaPelada], $cfg);
+caso('una oferta sin "gratis" recibe la aclaración',
+    $rGratis[0] === $ofertaPelada . ' ' . $cfg['demo_es_gratis']);
+caso('y la aclaración dice gratis con todas las letras',
+    stripos((string)$cfg['demo_es_gratis'], 'gratis') !== false);
+
+// Las que ya lo dicen no se tocan: agregarlo de nuevo sonaría a bot.
+foreach (array_merge([$cfg['msg_prediseno_oferta']], (array)($cfg['msg_prediseno_oferta_variantes'] ?? [])) as $i => $oficial) {
+    caso("la variante oficial $i ya dice que es gratis y no se toca",
+        wabot_demo_siempre_gratis([$oficial], $cfg) === [$oficial]);
+}
+
+// Y lo que no ofrece la demo no se toca nunca: sin esto, el precio y las
+// preguntas del pitch terminarían con un "es gratis" que no viene a cuento.
+foreach ([
+    'el precio'      => wabot_msg_precio_texto('ecommerce', $cfg),
+    'el pitch'       => 'Cuál es tu producto estrella?',
+    'un comentario'  => 'Excelente, los lentes de sol y recetados van muy bien en la tienda online.',
+    'la derivación'  => (string)$cfg['derivar'],
+] as $que => $texto) {
+    caso("$que no recibe la aclaración de gratis",
+        wabot_demo_siempre_gratis([$texto], $cfg) === [$texto]);
+}
+
+// El detector distingue OFRECER de mencionar de pasada.
+caso('"te armamos una versión de tu web" es ofrecer',
+    wabot_texto_ofrece_demo('que te parece si te armamos una version de tu web') === true);
+caso('"la demo te llega mañana" no es ofrecer',
+    wabot_texto_ofrece_demo('listo, la demo te llega manana') === false);
+
 echo "\n— El bot no manda dos veces el mismo texto (27-ago, 4 chats reales) —\n";
 
 // "Alquiler de pantallas led" recibió "Contame un poco más, qué vendés o qué
