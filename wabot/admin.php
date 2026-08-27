@@ -249,7 +249,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         header('Location: admin.php'); exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -1476,7 +1476,9 @@ body.embed { min-height: 0; }
             <label>Cierre sin presión (solo averiguaba / más adelante / sin presupuesto)</label><textarea name="cierre_suave" rows="2"><?= $e($cfg['cierre_suave'] ?? '') ?></textarea>
             <label>Nombra Tienda Nube o similar</label><textarea name="plataformas" rows="2"><?= $e($cfg['plataformas']) ?></textarea>
             <label>No le interesa</label><textarea name="no_interesa" rows="2"><?= $e($cfg['no_interesa']) ?></textarea>
-            <label>Mandó audio/imagen</label><textarea name="no_texto" rows="2"><?= $e($cfg['no_texto']) ?></textarea>
+            <label>Mandó algo y no llegó nada (no se pudo bajar el archivo)</label><textarea name="no_texto" rows="2"><?= $e($cfg['no_texto']) ?></textarea>
+            <label>Mandó un archivo que sí se guardó pero no se pudo leer</label><textarea name="media_recibida" rows="2"><?= $e($cfg['media_recibida']) ?></textarea>
+            <p class="meta" style="margin-top:6px">El segundo es el que sale cuando el archivo quedó descargable en la conversación (un video, un .docx, o una foto con la IA caída): ahí no corresponde decirle que no se pudo abrir, porque lo tenés en el panel.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Sistemas de gestión</h2>

@@ -149,15 +149,30 @@ function wabot_procesar_entrante($ev, $cfg) {
             }
         }
     } elseif ($media && in_array($media['clase'], ['documento', 'video', 'sticker'], true)) {
-        // No se leen con IA, pero se guardan igual: lo que el cliente manda
-        // (un PDF con su logo, el video de su local) tiene que quedar
-        // descargable en el panel, no como un "[documento]" muerto.
+        // Se guardan siempre: lo que el cliente manda (un PDF con su logo, el
+        // video de su local) tiene que quedar descargable en el panel, no como
+        // un "[documento]" muerto.
         $bin = wabot_bajar_media($canal, $media);
         if ($bin) {
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], $media['clase'],
                 (string)($media['nombre'] ?? ''));
+            /* Y si es un documento que se puede leer, se lee: el brief, la
+             * lista de precios o el catálogo en PDF son justo lo que sirve
+             * para armar la demo, y hasta el 27-ago eran lo único que el bot
+             * tiraba a la basura ("no pude abrir eso que me mandaste"). Solo
+             * los formatos que Gemini entiende de verdad: un .docx o un .zip
+             * mandados así vuelven basura y gastan cuota al pedo. */
+            $mimeDoc = trim(explode(';', (string)$bin['mime'])[0]);
+            $leibles = ['application/pdf', 'text/plain', 'text/csv', 'text/markdown', 'text/html', 'application/json'];
+            if ($media['clase'] === 'documento' && !empty($cfg['leer_imagenes']) && in_array($mimeDoc, $leibles, true)) {
+                $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'documento', $media['caption']);
+                if ($desc !== null) {
+                    $texto = $media['caption'] !== '' ? $media['caption'] . "\n($desc)" : $desc;
+                    $marcaMedia = '[archivo] ';
+                }
+            }
         }
-        if ($media['caption'] !== '') $texto = $media['caption'];
+        if ($texto === '' && $media['caption'] !== '') $texto = $media['caption'];
     }
 
     // Una reacción o un mensaje de solo emojis igual dice algo: un pulgar arriba
@@ -233,10 +248,26 @@ function wabot_procesar_entrante($ev, $cfg) {
             }
 
             if (!$usables) {
+                /* "No pude abrir eso que me mandaste" era mentira cuando el
+                 * archivo SÍ se había guardado: queda descargable en el panel
+                 * y Pablo lo ve, pero al cliente le decíamos que se perdió y
+                 * que lo contara por texto. Un cliente de catering mandó el
+                 * logo de su marca y se llevó esa respuesta (27-ago).
+                 *
+                 * Lo que no se pudo es LEERLO —un video, un .docx, una foto
+                 * cuando la IA está caída—, que no es lo mismo que no
+                 * recibirlo. Si quedó guardado, se acusa recibo. */
+                $seGuardoAlgo = false;
+                foreach ($tanda as $item) {
+                    if (!empty($item['media']['archivo'])) { $seGuardoAlgo = true; break; }
+                }
+                $aviso = $seGuardoAlgo
+                    ? (string)($cfg['media_recibida'] ?? $cfg['no_texto'])
+                    : (string)$cfg['no_texto'];
                 if (!$conv['no_texto_avisado'] && $conv['fase'] !== 'derivado') {
                     $conv['no_texto_avisado'] = true;
-                    wabot_enviar($conv, $cfg['no_texto']);
-                    wabot_conv_transcript($conv, 'bot', $cfg['no_texto']);
+                    wabot_enviar($conv, $aviso);
+                    wabot_conv_transcript($conv, 'bot', $aviso);
                 }
                 wabot_conv_save($conv);
                 break;

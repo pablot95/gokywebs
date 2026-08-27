@@ -209,5 +209,79 @@ $convInerte = ['tel' => 'TESTCAPI3', 'conversation_key' => 'TESTCAPI3', 'canal' 
 caso('sin configurar el dataset y el token, queda inerte',
     wabot_capi_evento($convInerte, 'Lead', $cfgVacio) === false);
 
+echo "\n— Tipos de archivo que se guardaban como .bin (27-ago) —\n";
+
+// Lo que no está en la tabla se guarda como .bin: baja igual pero no lo abre
+// nada, y en el panel queda un archivo muerto. Estos son los que más manda la
+// gente y no estaban.
+$extensiones = wabot_media_extensiones();
+foreach ([
+    'image/heic'                              => 'heic',   // foto de iPhone
+    'image/heif'                              => 'heif',
+    'text/vcard'                              => 'vcf',    // tarjeta de contacto
+    'text/x-vcard'                            => 'vcf',
+    'audio/opus'                              => 'opus',   // nota de voz suelta
+    'image/bmp'                               => 'bmp',
+    'image/vnd.adobe.photoshop'               => 'psd',    // el logo en editable
+    'application/x-7z-compressed'             => '7z',
+    'application/x-rar-compressed'            => 'rar',
+    'video/x-msvideo'                         => 'avi',
+    'application/vnd.oasis.opendocument.text' => 'odt',
+    'image/svg+xml'                           => 'svg',
+    'application/x-zip-compressed'            => 'zip',
+] as $mime => $extEsperada) {
+    caso("$mime se guarda como .$extEsperada", ($extensiones[$mime] ?? 'bin') === $extEsperada);
+}
+// Los que ya andaban no se pueden haber roto.
+foreach (['image/jpeg' => 'jpg', 'audio/ogg' => 'ogg', 'application/pdf' => 'pdf',
+          'video/mp4' => 'mp4', 'text/plain' => 'txt'] as $mime => $extEsperada) {
+    caso("$mime sigue en .$extEsperada", ($extensiones[$mime] ?? '') === $extEsperada);
+}
+
+// El endpoint de descarga valida contra ESTA misma tabla, así que todo lo que
+// se guarda tiene que poder bajarse: si divergen, el archivo queda preso.
+$extensionesOk = array_unique(array_merge(array_values($extensiones), ['bin']));
+$patron = '/^\d{8}-\d{6}-[0-9a-f]{8}\.(' . implode('|', array_map('preg_quote', $extensionesOk)) . ')$/';
+foreach (['heic', 'vcf', 'psd', '7z', 'odt', 'avi', 'jpg', 'pdf', 'bin'] as $ext) {
+    caso("un archivo .$ext pasa el validador de descarga del panel",
+        preg_match($patron, '20260827-181500-a1b2c3d4.' . $ext) === 1);
+}
+caso('pero una extensión inventada no', preg_match($patron, '20260827-181500-a1b2c3d4.exe') === 0);
+
+echo "\n— Los documentos ahora se leen, no se tiran (27-ago) —\n";
+
+// El brief, la lista de precios o el catálogo en PDF eran justo lo que más
+// sirve para armar la demo, y eran lo único que el bot tiraba a la basura
+// contestando "no pude abrir eso que me mandaste".
+$GLOBALS['WABOT_TEST_MEDIA'] = function ($bytes, $mime, $tipo, $caption) {
+    return $tipo === 'documento' ? 'Mandó una lista de 40 productos de ferretería con precios.' : null;
+};
+caso('un PDF se lee y devuelve su resumen',
+    wabot_media_a_texto('bytes', 'application/pdf', 'documento') === 'Mandó una lista de 40 productos de ferretería con precios.');
+unset($GLOBALS['WABOT_TEST_MEDIA']);
+
+// SIN_DOC es la señal de "no aporta nada" y no puede llegar al cliente como
+// si fuera la descripción del archivo.
+$GLOBALS['WABOT_TEST_MEDIA'] = function () { return null; };
+caso('si el documento no aporta nada, no se inventa una descripción',
+    wabot_media_a_texto('bytes', 'application/pdf', 'documento') === null);
+unset($GLOBALS['WABOT_TEST_MEDIA']);
+
+echo "\n— Archivo guardado ≠ archivo perdido (27-ago) —\n";
+
+// Un cliente de catering mandó el logo de su marca y se llevó "No pude abrir
+// eso que me mandaste": el archivo estaba guardado y descargable en el panel.
+$cfgAvisos = wabot_config_load();
+caso('existe un aviso propio para el archivo que sí llegó',
+    trim((string)($cfgAvisos['media_recibida'] ?? '')) !== ''
+    && $cfgAvisos['media_recibida'] !== $cfgAvisos['no_texto']);
+caso('y no le dice al cliente que no se pudo abrir',
+    stripos((string)$cfgAvisos['media_recibida'], 'no pude abrir') === false);
+caso('sino que le confirma que quedó guardado',
+    stripos((string)$cfgAvisos['media_recibida'], 'llegó') !== false
+    || stripos((string)$cfgAvisos['media_recibida'], 'guardado') !== false);
+caso('el aviso de "no llegó nada" sigue existiendo aparte',
+    stripos((string)$cfgAvisos['no_texto'], 'no pude abrir') !== false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
