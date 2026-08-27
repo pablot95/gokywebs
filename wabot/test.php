@@ -119,10 +119,21 @@ clasifica(['rubro_inmobiliaria']);
 $r = wabot_engine('tengo una inmobiliaria', $c, $cfg);
 caso('inmobiliaria desde algo diferente → precio propio', strpos($r[0], '$240.000') !== false && $c['tipo'] === 'inmobiliaria');
 
+// 27-ago: cuando el clasificador no reconoce el rubro, ahora se relee el texto
+// con el matcher local antes de repreguntar. "Una app para stock" es un sistema
+// de gestión y arranca ese flujo en vez de pedirle que cuente más — que era lo
+// que dejaba trabadas las charlas de destapaciones, netbooks y pantallas LED.
 $c = conv_nueva(); $c['fase'] = 'algo_diferente';
 clasifica(['otro']);
 $r = wabot_engine('quiero una app para stock', $c, $cfg);
-caso('si el clasificador no entiende, repregunta reformulado antes de derivar',
+caso('lo que el clasificador no entiende se rescata por palabras',
+    $c['fase'] === 'sistema_problema' && empty($c['handoff_pendiente']));
+
+// Y si de verdad no hay rubro reconocible por ningún lado, ahí sí repregunta.
+$c = conv_nueva(); $c['fase'] = 'algo_diferente';
+clasifica(['otro']);
+$r = wabot_engine('mmm no se, es complicado de explicar', $c, $cfg);
+caso('si no hay nada reconocible, repregunta reformulado antes de derivar',
     $r === [$cfg['contame_2']] && $c['fase'] === 'algo_diferente' && empty($c['handoff_pendiente']));
 
 echo "— Cursos —\n";
@@ -4477,6 +4488,128 @@ caso('"Cómo me comunico con el desarrollador?" tiene respuesta propia',
     wabot_info_por_palabras('Cómo me comunico con el desarrollador?') === 'contacto_desarrollador');
 caso('y avisa que escribe él, desde el número de proyectos',
     stripos((string)$cfg['info']['contacto_desarrollador'], 'número de proyectos') !== false);
+
+echo "\n— El bot no manda dos veces el mismo texto (27-ago, 4 chats reales) —\n";
+
+// "Alquiler de pantallas led" recibió "Contame un poco más, qué vendés o qué
+// servicio ofrecés?" SIETE veces, incluso después de que el cliente
+// contestara, avisara que no tenía nada más para contar y escribiera "???".
+// Lo mismo con destapaciones, netbooks y catering el mismo día.
+$cRep = conv_nueva(); $cRep['fase'] = 'algo_diferente';
+$r1Rep = wabot_anti_repeticion([$cfg['contame']], $cRep, $cfg);
+caso('la primera vez la pregunta sale tal cual', $r1Rep === [$cfg['contame']]);
+$r2Rep = wabot_anti_repeticion([$cfg['contame']], $cRep, $cfg);
+caso('la segunda sale reformulada, no repetida', $r2Rep === [$cfg['contame_2']]);
+$r3Rep = wabot_anti_repeticion([$cfg['contame']], $cRep, $cfg);
+caso('la tercera deriva: dos formas de preguntar no alcanzaron',
+    $r3Rep === [$cfg['derivar']] && $cRep['fase'] === 'derivado' && !empty($cRep['handoff_pendiente']));
+
+// Sin historial (mirando solo el último mensaje) el bot alternaba entre la
+// pregunta y su reformulación para siempre: el mismo pozo con dos textos.
+$cAlt = conv_nueva(); $cAlt['fase'] = 'algo_diferente';
+wabot_anti_repeticion([$cfg['contame']], $cAlt, $cfg);
+wabot_anti_repeticion([$cfg['contame']], $cAlt, $cfg);          // → contame_2
+$rAlt = wabot_anti_repeticion([$cfg['contame_2']], $cAlt, $cfg); // ya se usó
+caso('volver a la reformulación tampoco reabre el loop', $rAlt === [$cfg['derivar']]);
+
+// Una respuesta distinta pasa derecho y reinicia el contador: el guard no
+// puede trabar una charla que avanza.
+$cOk = conv_nueva();
+wabot_anti_repeticion([$cfg['contame']], $cOk, $cfg);
+$precioTxt = wabot_msg_precio_texto('landing', $cfg);
+caso('un mensaje distinto pasa sin tocar', wabot_anti_repeticion([$precioTxt], $cOk, $cfg) === [$precioTxt]);
+caso('y el contador queda en cero', (int)($cOk['repeticiones_seguidas'] ?? -1) === 0);
+caso('una tanda vacía no rompe nada', wabot_anti_repeticion([], $cOk, $cfg) === []);
+
+echo "\n— Los rubros que el bot no reconocía (27-ago, 4 chats reales) —\n";
+
+foreach ([
+    'para destapaciones'                                    => 'landing',
+    'Alquiler de pantallas led'                             => 'landing',
+    'Tenemos sonido e iluminacion pero nos especializamos en pantallas led' => 'landing',
+    'Tengo un emprendimiento de servicios de catering'      => 'landing',
+    'Para Netbooks'                                         => 'ecommerce',
+    'Y celulares todo usados'                               => 'ecommerce',
+] as $mensaje => $esperado) {
+    caso("\"" . mb_substr($mensaje, 0, 38) . "\" se reconoce como $esperado",
+        wabot_fallback_rubro_local($mensaje) === $esperado);
+}
+
+echo "\n— De punta a punta: los 4 chats trabados ya cotizan en el 1er mensaje —\n";
+
+// Las tres fases de entrada miraban SOLO lo que etiquetó el clasificador, y
+// cuando este no reconocía nada salía "contame un poco más" aunque el cliente
+// hubiera dicho su rubro con todas las letras. Acá se fuerza al clasificador a
+// no reconocer nada (['otro']), que es justo lo que pasaba en producción.
+foreach ([
+    'Alquiler de pantallas led'                        => 'landing',
+    'para destapaciones'                               => 'landing',
+    'Tengo un emprendimiento de servicios de catering'  => 'landing',
+    'Para Netbooks'                                     => 'ecommerce',
+] as $mensajeReal => $tipoEsperado) {
+    $cReal = conv_nueva(); $cReal['fase'] = 'menu';
+    clasifica(['otro']);
+    $rReal = wabot_engine($mensajeReal, $cReal, $cfg);
+    caso("\"" . mb_substr($mensajeReal, 0, 34) . "\" cotiza $tipoEsperado, no repregunta",
+        ($cReal['tipo'] ?? '') === $tipoEsperado
+        && !empty($cReal['precio_dado'])
+        && strpos(implode(' ', $rReal), (string)$cfg['contame']) === false);
+}
+// El rubro que trae el clasificador sigue ganando: vio la charla entera, no
+// una sola frase.
+$cGana = conv_nueva(); $cGana['fase'] = 'menu';
+clasifica(['rubro_inmobiliaria']);
+wabot_engine('tengo un local y también propiedades', $cGana, $cfg);
+caso('si el clasificador trae rubro, ese gana sobre el matcher local',
+    ($cGana['tipo'] ?? '') === 'inmobiliaria');
+
+echo "\n— Pedir un agente es pedir un humano (27-ago) —\n";
+
+// "Se puede hablar con un agente" quedó sin reconocer y el bot siguió
+// pidiéndole los colores de la marca. Ignorar un pedido de humano es la falla
+// más cara que puede tener el bot.
+foreach ([
+    'Se puede hablar con un agente',
+    'quiero un operador',
+    'hablar con un representante',
+    'necesito una persona',
+    'quiero hablar con una persona',
+] as $pedido) {
+    caso("\"$pedido\" deriva", wabot_handoff_causa_explicita($pedido) === 'pide_humano');
+}
+// Pero el que describe SU negocio no pide un humano: con el verbo elidido no
+// hay forma de distinguirlo, así que ahí no valen vendedor ni asesor.
+foreach ([
+    'necesito un vendedor para mi local',
+    'necesito un asesor de seguros para mi empresa',
+    'tengo un local de ropa',
+] as $rubroPropio) {
+    caso("\"" . mb_substr($rubroPropio, 0, 34) . "\" NO se confunde con pedir humano",
+        wabot_handoff_causa_explicita($rubroPropio) === null);
+}
+
+echo "\n— Nombrar el logo no es preguntar por el logo (27-ago) —\n";
+
+// Un cliente de catering mandó la foto de su logo, dijo "Es el logo del
+// emprendimiento" y se llevó "no hacemos logos"; después dijo "No necesito
+// logo" y se lo llevó otra vez.
+foreach ([
+    'Es el logo del emprendimiento',
+    'No necesito logo',
+    'ya tengo logo',
+    'te paso el logo',
+] as $noEsConsulta) {
+    caso("\"$noEsConsulta\" no dispara la respuesta del logo",
+        wabot_info_por_palabras($noEsConsulta) !== 'logo');
+}
+foreach ([
+    'hacen el logo?',
+    'me incluyen logo',
+    'no se si el logo o la identidad',
+] as $siEsConsulta) {
+    caso("\"$siEsConsulta\" sí la dispara",
+        wabot_info_por_palabras($siEsConsulta) === 'logo');
+}
 
 echo "\n— Facturación: solo Factura C (27-ago) —\n";
 

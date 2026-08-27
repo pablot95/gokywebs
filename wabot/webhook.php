@@ -250,7 +250,10 @@ function wabot_procesar_entrante($ev, $cfg) {
             if ($vinoDeMedia) $conv['_texto_de_media'] = true;
 
             $entrada    = implode("\n", $usables);
-            $respuestas = wabot_una_sola_pregunta(wabot_sin_repetidos_consecutivos(wabot_responder($entrada, $conv, $cfg)));
+            $respuestas = wabot_anti_repeticion(
+                wabot_una_sola_pregunta(wabot_sin_repetidos_consecutivos(wabot_responder($entrada, $conv, $cfg))),
+                $conv, $cfg
+            );
             unset($conv['_texto_de_media']);
 
             // Cada texto va como un mensaje aparte y tarda lo que tardaría en

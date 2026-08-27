@@ -381,6 +381,86 @@ function wabot_prediseno_acuse($texto, $conv) {
 }
 
 /**
+ * El bot NUNCA manda dos veces seguidas el mismo texto.
+ *
+ * El 27-ago cuatro clientes reales recibieron la misma pregunta una y otra
+ * vez. El peor: "Alquiler de pantallas led" → "Contame un poco más, qué
+ * vendés o qué servicio ofrecés?" SIETE veces, incluso después de que el
+ * cliente contestara ("tenemos sonido e iluminación pero nos especializamos
+ * en pantallas led"), de que avisara que no tenía nada más para contar, y de
+ * que escribiera "???". Lo mismo con destapaciones, netbooks y catering.
+ *
+ * La causa de fondo es que el rubro no se reconoce, y eso se arregla aparte
+ * ampliando el vocabulario — pero el vocabulario nunca va a estar completo.
+ * Esto es la red que garantiza que, se reconozca o no, la charla avance:
+ *
+ *   1ª repetición → la misma pregunta REFORMULADA (contame_2 y sus pares).
+ *   2ª repetición → se deriva. Si dos formas distintas de preguntar no
+ *                   alcanzaron, seguir preguntando no lo va a arreglar.
+ *
+ * Se compara la tanda entera normalizada: dos tandas iguales son la misma
+ * respuesta, aunque el modelo haya cambiado una tilde.
+ */
+function wabot_anti_repeticion($mensajes, &$conv, $cfg) {
+    $mensajes = array_values(array_filter((array)$mensajes, function ($m) { return trim((string)$m) !== ''; }));
+    if (!$mensajes) return $mensajes;
+
+    /* Historial corto, no solo el último mensaje: mirando uno solo, el bot
+     * alternaba entre la pregunta y su reformulación para siempre (contame,
+     * contame_2, contame, contame_2...), que es el mismo pozo con dos textos. */
+    $huella = wabot_normalizar_frase(implode(' ', $mensajes));
+    $historial = array_values((array)($conv['tandas_bot'] ?? []));
+    if ($huella === '' || !in_array($huella, $historial, true)) {
+        $historial[] = $huella;
+        $conv['tandas_bot'] = array_slice($historial, -4);
+        $conv['repeticiones_seguidas'] = 0;
+        return $mensajes;
+    }
+
+    $veces = (int)($conv['repeticiones_seguidas'] ?? 0) + 1;
+    $conv['repeticiones_seguidas'] = $veces;
+    wabot_evento_sesion($conv, 'repeticion_evitada', ['veces' => $veces]);
+
+    if ($veces === 1) {
+        $reformulado = wabot_texto_reformulado($mensajes, $cfg);
+        $huellaRef = $reformulado !== null ? wabot_normalizar_frase($reformulado) : '';
+        if ($reformulado !== null && !in_array($huellaRef, $historial, true)) {
+            $historial[] = $huellaRef;
+            $conv['tandas_bot'] = array_slice($historial, -4);
+            return [$reformulado];
+        }
+    }
+
+    // Segunda vuelta, o ya se probó la reformulación: lo toma Pablo. Si dos
+    // formas distintas de preguntar no alcanzaron, una tercera tampoco.
+    wabot_handoff_marcar($conv, 'repeticion');
+    $conv['repeticiones_seguidas'] = 0;
+    $conv['tandas_bot'] = [wabot_normalizar_frase((string)$cfg['derivar'])];
+    return [(string)$cfg['derivar']];
+}
+
+/**
+ * La versión "de otra forma" de un texto que ya se mandó. Solo hay para las
+ * preguntas abiertas, que son las que se traban: para un precio o una
+ * respuesta de info no existe reformulación, y ahí conviene derivar directo.
+ */
+function wabot_texto_reformulado($mensajes, $cfg) {
+    if (count($mensajes) !== 1) return null;
+    $uno = wabot_normalizar_frase((string)$mensajes[0]);
+    $pares = [
+        'contame'           => 'contame_2',
+        'desempate_turnos'  => 'desempate_turnos_2',
+        'desempate_comercio' => 'desempate_comercio_2',
+        'desempate_cursos'  => 'desempate_cursos_2',
+    ];
+    foreach ($pares as $original => $alterno) {
+        if (trim((string)($cfg[$original] ?? '')) === '' || trim((string)($cfg[$alterno] ?? '')) === '') continue;
+        if (wabot_normalizar_frase((string)$cfg[$original]) === $uno) return (string)$cfg[$alterno];
+    }
+    return null;
+}
+
+/**
  * Un proveedor no recibe respuesta: contestarle es darle conversación a quien
  * nos está vendiendo a nosotros. Queda anotado para que Pablo lo vea en el
  * panel y no entra a ningún seguimiento automático.
@@ -681,11 +761,26 @@ function wabot_handoff_causa_explicita($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return null;
 
-    if (preg_match('/\b(quiero|queria|quisiera|necesito|puedo|podria|podrias|podes|quiero que me)\b.{0,35}\b(hablar|comunicar|atender|llamar|pasar)\b.{0,35}\b(persona|humano|asesor|alguien|pablo|vendedor)\b/u', $t)
-        || preg_match('/\b(pasame|derivame|comunicate)\b.{0,25}\b(persona|humano|asesor|alguien|pablo)\b/u', $t)
-        || preg_match('/\bme\s+(pasas|derivas|comunicas)\b.{0,25}\b(persona|humano|asesor|alguien|pablo)\b/u', $t)
-        || preg_match('/\b(hablar|comunicarme|contactarme)\s+con\s+(una\s+)?(persona|humano|asesor|alguien|pablo|vendedor)\b/u', $t)
-        || preg_match('/\bque\s+me\s+(atienda|llame|contacte|escriba)\s+(pablo|una persona|alguien|un asesor)\b/u', $t)) {
+    /* "agente", "operador", "representante" y "encargado" son las palabras que
+     * usa el que quiere dejar de hablar con el bot, tanto como "persona".
+     * Faltaban: "Se puede hablar con un agente" quedó sin reconocer y el bot
+     * siguió pidiéndole los colores de la marca (27-ago). Ignorar un pedido de
+     * humano es la falla más cara que puede tener el bot. */
+    $humano = '(persona|humano|asesor|alguien|pablo|vendedor|agente|operador|representante|encargado|responsable|desarrollador)';
+    if (preg_match('/\b(quiero|queria|quisiera|necesito|puedo|podria|podrias|podes|se puede|quiero que me)\b.{0,35}\b(hablar|comunicar|atender|llamar|pasar)\b.{0,35}\b' . $humano . '\b/u', $t)
+        || preg_match('/\b(pasame|derivame|comunicate)\b.{0,25}\b' . $humano . '\b/u', $t)
+        || preg_match('/\bme\s+(pasas|derivas|comunicas)\b.{0,25}\b' . $humano . '\b/u', $t)
+        || preg_match('/\b(hablar|comunicarme|contactarme)\s+con\s+(un[ao]?\s+)?' . $humano . '\b/u', $t)
+        || preg_match('/\bque\s+me\s+(atienda|llame|contacte|escriba)\s+(pablo|una persona|alguien|un asesor|un agente)\b/u', $t)
+        /* "Quiero un operador", "necesito una persona": el verbo de hablar se
+         * elide porque se da por obvio. Acá NO valen "vendedor", "asesor" ni
+         * "desarrollador": el cliente puede estar contando que necesita uno
+         * para SU negocio ("necesito un vendedor para mi local"), y con el
+         * verbo elidido no hay forma de distinguirlo. Se pide además que el
+         * mensaje sea corto: el que pide humano lo pide y punto, no lo mete
+         * adentro de un párrafo sobre su empresa. */
+        || (mb_strlen($t) <= 42
+            && preg_match('/\b(quiero|necesito|dame|paseme|pasame)\s+(un|una|con un|con una)\s+(persona|humano|agente|operador|representante|encargado)\b/u', $t))) {
         return 'pide_humano';
     }
 
@@ -1077,11 +1172,20 @@ function wabot_fallback_rubro_local($t) {
     }
     if (preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases online)\b/u', $t)
         || preg_match('/\b(doy|dicto|damos|dictamos)\b.{0,15}\btaller(es)?\b/u', $t)) return 'cursos';
-    if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|local|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|fabricamos|indumentaria|marroquineria|cosmetica|perfumeria)\b/u', $t)) {
+    // netbooks, notebooks, celulares y consolas salieron el 27-ago ("Para
+    // Netbooks", "Y celulares todo usados") y ninguna estaba en la lista: el
+    // cliente contestó dos veces y recibió la misma pregunta las dos.
+    if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|local|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|fabricamos|indumentaria|marroquineria|cosmetica|perfumeria'
+        . '|netbooks?|notebooks?|celulares?|computadoras?|compu|tablets?|consolas?|electrodomesticos?|electronica|informatica|tecnologia usada|usados)\b/u', $t)) {
         return 'ecommerce';
     }
     if (preg_match('/\b(inmobiliaria|propiedades|bienes raices)\b/u', $t)) return 'inmobiliaria';
-    if (preg_match('/\b(landing|abogado|contador|estudio juridico|plomero|gasista|electricista|pintor|fletes|mudanzas|cerrajero|jardinero|fotografo|disenador|limpieza|seguridad|vigilancia|transporte|logistica|refrigeracion|climatizacion|aire acondicionado|eventos|catering|pintura|albanil|techista|durlock|sanitarios|desagotes|fumigacion|control de plagas|herreria|soldadura|grua|remis|traslados|nineras|cuidado de|masajista|entrenador|profesor particular|traductor|community manager|marketing digital|consultora|consultoria|asesoria|gestoria|seguros|contable|arquitecto|ingeniero|topografo|escribano|martillero)\b/u', $t)) {
+    // destapaciones, sonido, iluminación y alquiler de equipos salieron el
+    // 27-ago y ninguno estaba: "para destapaciones" y "alquiler de pantallas
+    // led" se llevaron la misma repregunta una y otra vez.
+    if (preg_match('/\b(landing|abogado|contador|estudio juridico|plomero|gasista|electricista|pintor|fletes|mudanzas|cerrajero|jardinero|fotografo|disenador|limpieza|seguridad|vigilancia|transporte|logistica|refrigeracion|climatizacion|aire acondicionado|eventos|catering|pintura|albanil|techista|durlock|sanitarios|desagotes|fumigacion|control de plagas|herreria|soldadura|grua|remis|traslados|nineras|cuidado de|masajista|entrenador|profesor particular|traductor|community manager|marketing digital|consultora|consultoria|asesoria|gestoria|seguros|contable|arquitecto|ingeniero|topografo|escribano|martillero'
+        . '|destapacion\w*|destapo\w*|desagote\w*|cloacas?|sonido|iluminacion|pantallas? led|djs?|animacion|salon de fiestas|carpas?|gazebos?'
+        . '|alquiler de (equipos?|maquinas?|herramientas?|sonido|pantallas?|autos?|vehiculos?)|alquilamos)\b/u', $t)) {
         return 'landing';
     }
     if (preg_match('/\b(fundacion|ong|colegio|escuela|universidad|instituto|municipio|sindicato|asociacion|camara|cooperativa|mutual|club|parroquia|iglesia|hospital|centro de salud)\b/u', $t)) {
@@ -1382,6 +1486,36 @@ function wabot_engine($texto, &$conv, $cfg) {
             wabot_evento_sesion($conv, 'duda_sin_respuesta');
         }
         $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
+    }
+
+    /* Respaldo determinista del rubro, igual que ya se hace en los desempates.
+     *
+     * Las tres fases de abajo solo miraban lo que etiquetó el clasificador, y
+     * cuando este no reconocía nada el cliente se llevaba "contame un poco
+     * más" — aunque hubiera dicho su rubro con todas las letras. El 27-ago
+     * pasó con "para destapaciones", "Para Netbooks", "Alquiler de pantallas
+     * led" y "servicios de catering": cuatro charlas distintas trabadas en la
+     * misma repregunta. El matcher local no depende de que la IA acierte.
+     *
+     * Solo se usa cuando el clasificador NO trajo rubro: si trajo uno, gana él,
+     * que vio la charla entera y no una sola frase. */
+    if (in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true)
+        && wabot_rubro_de($acc) === null) {
+        $rubroLocal = wabot_fallback_rubro_local($texto);
+        if ($rubroLocal !== null) {
+            $etiquetas = [
+                'cursos' => 'rubro_cursos', 'turnos_pendiente' => 'servicio_con_turnos',
+                'hibrido_pendiente' => 'rubro_hibrido', 'sistema_pendiente' => 'rubro_sistema',
+                'institucional' => 'rubro_institucional', 'landing' => 'rubro_landing',
+                'ecommerce' => 'rubro_ecommerce', 'inmobiliaria' => 'rubro_inmobiliaria',
+            ];
+            if (isset($etiquetas[$rubroLocal])) {
+                wabot_log('rubro_rescatado', ['de' => 'clasificador', 'a' => $rubroLocal, 'msg' => mb_substr((string)$texto, 0, 90)]);
+                $acc[] = $etiquetas[$rubroLocal];
+                $acc = array_values(array_diff($acc, ['algo_diferente', 'otro']));
+                $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
+            }
+        }
     }
 
     /* ── Flujo por fase ── */
@@ -1934,6 +2068,17 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(wordpress|woocommerce)\b/u', $t)
         && !preg_match('/\b(que tecnologia|con que (lo|la) hacen|usan|trabajan con)\b/u', $t)) return 'ya_tiene_plataforma';
     if (preg_match('/\b(ya tengo (una |mi )?(pagina|web|sitio)|tengo (una |mi )?(pagina|web|sitio) (hecha|armada|actual|vieja)|mi (pagina|web) actual)\b/u', $t)) return 'ya_tiene_plataforma';
+    /* Nombrar el logo no es preguntar por el logo. Dos mensajes seguidos de un
+     * cliente de catering (27-ago) se llevaron "no hacemos logos": primero
+     * "Es el logo del emprendimiento" —estaba diciendo qué era la foto que
+     * acababa de mandar— y después "No necesito logo", que es exactamente lo
+     * contrario de una consulta. Contestar eso dos veces al que ya lo tiene
+     * hace parecer que el bot no lee. */
+    if (preg_match('/^(es|este es|ese es|ahi va|aca va|te (paso|mando|envio|dejo)|adjunto)\b.{0,20}\blogo\b/u', $t)
+        || preg_match('/\bno (necesito|quiero|hace falta|preciso)\b.{0,15}\blogo\b/u', $t)
+        || preg_match('/\b(ya )?(tengo|tenemos)\b.{0,12}\b(el |mi |un )?logo\b/u', $t)) {
+        return null;
+    }
     // Palabras completas: "catálogo" contiene "logo" como substring y no es
     // una consulta sobre identidad visual.
     if (preg_match('/(?:^|\s)(?:logo|isotipo|identidad|marca grafica)(?:\s|$)/u', $t)) return 'logo';
