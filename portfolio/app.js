@@ -75,14 +75,22 @@
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     }
 
+    /* Una web puede ser de dos tipos a la vez (Kare vende productos y además
+       cursos): el tipo se normaliza a array una sola vez y de acá en adelante
+       se filtra y se etiqueta siempre contra _tipos, nunca contra t.tipo. */
+    function etiquetaTipo(id) {
+        return LABEL_TIPO[id] || id;
+    }
+
     /* El índice de búsqueda mezcla todo lo que el visitante podría tipear:
        nombre, profesión, zona, tags, el tipo y el rubro en castellano, y el dominio. */
     trabajos.forEach(function (t) {
+        t._tipos = Array.isArray(t.tipo) ? t.tipo : [t.tipo];
         t._buscable = normalizar([
             t.nombre, t.que, t.zona, t.tags,
-            LABEL_TIPO[t.tipo] || t.tipo,
+            t._tipos.map(etiquetaTipo).join(' '),
             LABEL_RUBRO[t.rubro] || t.rubro,
-            t.tipo, t.rubro,
+            t._tipos.join(' '), t.rubro,
             dominio(t.url).replace(/[.-]/g, ' ')
         ].join(' '));
     });
@@ -106,7 +114,7 @@
     function filtrar() {
         var terminos = estado.q ? normalizar(estado.q).split(' ').filter(Boolean) : [];
         return trabajos.filter(function (t) {
-            if (estado.tipo !== 'all' && t.tipo !== estado.tipo) return false;
+            if (estado.tipo !== 'all' && t._tipos.indexOf(estado.tipo) === -1) return false;
             if (estado.rubro !== 'all' && t.rubro !== estado.rubro) return false;
             for (var i = 0; i < terminos.length; i++) {
                 if (t._buscable.indexOf(terminos[i]) === -1) return false;
@@ -120,9 +128,11 @@
     function contar(campo, valor) {
         var terminos = estado.q ? normalizar(estado.q).split(' ').filter(Boolean) : [];
         return trabajos.filter(function (t) {
-            if (campo !== 'tipo' && estado.tipo !== 'all' && t.tipo !== estado.tipo) return false;
+            if (campo !== 'tipo' && estado.tipo !== 'all' && t._tipos.indexOf(estado.tipo) === -1) return false;
             if (campo !== 'rubro' && estado.rubro !== 'all' && t.rubro !== estado.rubro) return false;
-            if (valor !== 'all' && t[campo] !== valor) return false;
+            if (valor !== 'all') {
+                if (campo === 'tipo' ? t._tipos.indexOf(valor) === -1 : t[campo] !== valor) return false;
+            }
             for (var i = 0; i < terminos.length; i++) {
                 if (t._buscable.indexOf(terminos[i]) === -1) return false;
             }
@@ -162,7 +172,9 @@
     function tarjeta(t) {
         var art = document.createElement('article');
         art.className = 'work-card';
-        var etiquetas = '<span class="tag">' + esc(LABEL_TIPO[t.tipo] || t.tipo) + '</span>' +
+        var etiquetas = t._tipos.map(function (id) {
+                return '<span class="tag">' + esc(etiquetaTipo(id)) + '</span>';
+            }).join('') +
             '<span class="tag tag-rubro">' + esc(LABEL_RUBRO[t.rubro] || t.rubro) + '</span>' +
             (t.estado === 'demo' ? '<span class="tag tag-demo">Muestra propia</span>' : '');
         art.innerHTML =

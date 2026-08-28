@@ -75,15 +75,6 @@ img { display: block; max-width: 100%; }
 }
 .btn-back:hover { color: var(--text); }
 .btn-back svg { width: 16px; height: 16px; }
-.btn-wsp {
-    display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.55rem 1rem; border-radius: 999px;
-    background: var(--blue-text); color: #fff;
-    font-size: 0.8rem; font-weight: 700; white-space: nowrap;
-    transition: background 0.2s var(--ease), transform 0.2s var(--ease);
-}
-.btn-wsp:hover { background: var(--blue); transform: translateY(-1px); }
-.btn-wsp svg { width: 15px; height: 15px; }
 
 /* ── Buscador y filtros ──
    Sin título ni bajada: la página abre directo en el buscador, así que el
@@ -252,17 +243,11 @@ img { display: block; max-width: 100%; }
     font-size: 0.95rem; font-weight: 800; letter-spacing: -0.01em; cursor: pointer;
     transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
+/* El display:flex de arriba le gana al [hidden] del navegador, asi que sin
+   esta linea el boton seguia visible con la lista entera cargada y decia
+   "Ver mas trabajos (0)". */
+.btn-mas[hidden] { display: none; }
 .btn-mas:hover { background: var(--blue-text); color: #fff; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.18); }
-
-/* ── Cierre ── */
-.pf-cierre {
-    margin-top: 3.5rem; padding: 2rem 1.5rem; text-align: center;
-    background: var(--bg-card); border: 1px solid var(--border);
-    border-radius: var(--radius-lg); box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
-}
-.pf-cierre h2 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
-.pf-cierre p { margin: 0.5rem auto 1.2rem; max-width: 42ch; font-size: 0.9rem; color: var(--text-muted); line-height: 1.6; }
-.pf-cierre .btn-wsp { padding: 0.85rem 1.6rem; font-size: 0.92rem; }
 
 .pf-footer {
     text-align: center; padding: 2rem 1.5rem;

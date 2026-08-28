@@ -7,6 +7,9 @@
      url     web pública (se abre en pestaña nueva)
      tipo    tipo de web → ecommerce | landing | institucional |
              inmobiliaria | elearning | noticias
+             Si la web es de dos tipos a la vez (una tienda que además
+             vende cursos), va el array: tipo: ['ecommerce', 'elearning'].
+             Sale en los dos filtros, con una sola tarjeta.
      rubro   rubro del negocio (ver RUBROS más abajo)
      que     profesión / actividad concreta del cliente
      zona    ciudad o provincia, si la web la declara
@@ -61,8 +64,8 @@ const GW_TRABAJOS = [
       que: 'Despensa gourmet y saludable', zona: 'La Plata', tags: 'almacén saludable dietética gourmet sin tacc', estado: 'online' },
     { id: 'sparrow', nombre: 'Sparrow', url: 'https://www.sparrow.com.ar/', tipo: 'ecommerce', rubro: 'moda',
       que: 'Zapatillas y medias de estilo urbano', zona: '', tags: 'calzado sneakers urbano medias', estado: 'online' },
-    { id: 'kare', nombre: 'Kare', url: 'https://kare.com.ar/', tipo: 'ecommerce', rubro: 'belleza',
-      que: 'Productos, servicios y cursos de estética', zona: '', tags: 'estética cosmética cursos productos', estado: 'online' },
+    { id: 'kare', nombre: 'Kare', url: 'https://kare.com.ar/', tipo: ['ecommerce', 'elearning'], rubro: 'belleza',
+      que: 'Productos, servicios y cursos de estética', zona: '', tags: 'estética cosmética cursos productos capacitaciones alumnos campus', estado: 'online' },
     { id: 'distririogrande', nombre: 'Distribuidora Río Grande', url: 'https://distririogrande.com.ar/', tipo: 'ecommerce', rubro: 'belleza',
       que: 'Cosmética premium', zona: 'Tierra del Fuego', tags: 'cosmética perfumería maquillaje distribuidora', estado: 'online' },
     { id: 'spstoreandservice', nombre: 'SP Store and Service', url: 'https://spstoreandservice.com.ar/', tipo: 'ecommerce', rubro: 'tecnologia',
