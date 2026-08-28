@@ -1,0 +1,110 @@
+[
+  {
+    "id": "V01",
+    "titulo": "Bucle de rubro no reconocido (estilo Pantallas LED, con sonido e iluminacion)",
+    "esperado": "No puede repetir la misma pregunta de rubro mas de 2 veces con distintas palabras. A la tercera, deriva.",
+    "nombre": "Ruben",
+    "turnos": [
+      "Hola, alquilamos sonido e iluminacion para eventos",
+      "Ya te dije, alquiler de sonido e iluminacion para fiestas y eventos",
+      "No tengo mas nada que agregar, es alquiler de equipos"
+    ]
+  },
+  {
+    "id": "V02",
+    "titulo": "Pedido de agente ignorado en medio del prediseno",
+    "esperado": "Ante 'me pasas con un asesor' en medio del prediseno, tiene que derivar, no seguir pidiendo colores.",
+    "nombre": "Carla",
+    "turnos": [
+      "Hola, tengo una tienda de plantas y macetas",
+      "Si, quiero la demo gratis",
+      "Me pasas con un asesor porfa"
+    ]
+  },
+  {
+    "id": "V03",
+    "titulo": "Web bilingue pedida en un rubro distinto (turismo)",
+    "esperado": "Tiene que contestar sobre el adicional de web bilingue, no solo presentar el tipo y preguntar otra cosa.",
+    "nombre": "Julian",
+    "turnos": [
+      "Hola, tengo cabanas para turistas y necesito la web en espanol e ingles porque me llegan muchos extranjeros"
+    ]
+  },
+  {
+    "id": "V04",
+    "titulo": "Derivacion anunciada con otras palabras (no debe seguir vendiendo)",
+    "esperado": "Si el bot dice algo como 'esto lo ve directamente Pablo' o similar, la fase tiene que quedar en derivado en ese turno.",
+    "nombre": "Fernanda",
+    "turnos": [
+      "Hola, necesito un sistema de gestion de stock a medida para mi deposito, es bastante especifico",
+      "Es complicado de explicar por texto, prefiero que me llame alguien"
+    ]
+  },
+  {
+    "id": "V05",
+    "titulo": "Upgrade de tipo: turnos cotizado, pregunta por venta online",
+    "esperado": "Tiene que contestar con el precio de ecommerce y aclarar que no es un adicional sobre turnos, sin repreguntar el proyecto.",
+    "nombre": "Diego",
+    "turnos": [
+      "Hola, tengo un centro de estetica y quiero que las clientas reserven turno desde la web",
+      "Reservas online",
+      "Y si ademas quiero vender productos de skincare con cobro online, cuanto sale sumar eso?"
+    ]
+  },
+  {
+    "id": "V06",
+    "titulo": "Otra plataforma (Wix) en vez de armar la propia",
+    "esperado": "Tiene que decir claramente que sobre Wix no trabajan antes de dar el argumento de pago unico.",
+    "nombre": "Sole",
+    "turnos": [
+      "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"
+    ]
+  },
+  {
+    "id": "V07",
+    "titulo": "Cliente insiste en que ya paso los datos (variante sin 'te mande')",
+    "esperado": "Si tras releer siguen faltando datos, no puede insistir pidiendo lo mismo: tiene que derivar con lo que hay.",
+    "nombre": "Nico",
+    "turnos": [
+      "Hola, tengo un gimnasio y quiero que se puedan anotar a las clases desde la web",
+      "Clases grupales",
+      "Si dale, armenla",
+      "ya esta todo arriba, fijate"
+    ]
+  },
+  {
+    "id": "V08",
+    "titulo": "Listado del prediseno contestado con guiones en vez de barras",
+    "esperado": "Los datos separados por guion en una sola linea se tienen que leer igual que separados por barra. No puede decir que faltan datos ya dados.",
+    "nombre": "Male",
+    "turnos": [
+      "Hola, tengo una marca de indumentaria femenina y quiero vender online",
+      "Vestidos y conjuntos",
+      "Si, quiero la muestra gratis",
+      "Malena - IndumentariaMale - negro y dorado"
+    ]
+  },
+  {
+    "id": "V09",
+    "titulo": "Cierre sin presion: nada puede salir despues en el mismo turno",
+    "esperado": "Ante 'lo voy a charlar con mi pareja y despues te escribo' cierra en UN globo. No puede aparecer despues el precio ni el link.",
+    "nombre": "Agustin",
+    "turnos": [
+      "Hola, tengo una veterinaria y quiero mostrar mis servicios con turnos",
+      "Consultas y vacunacion",
+      "Lo voy a charlar con mi pareja y despues te escribo, gracias"
+    ]
+  },
+  {
+    "id": "V10",
+    "titulo": "Objecion de precio + acuse ambiguo (no debe reabrir la demo)",
+    "esperado": "Tras el rechazo por precio, un 'dale' o 'ok' corto no puede disparar el formulario de datos de vuelta.",
+    "nombre": "Yesica",
+    "turnos": [
+      "Hola, vendo productos de limpieza a granel y quiero vender por la web",
+      "Detergentes y suavizantes",
+      "Uh esta caro para mi ahora, no puedo pagar eso",
+      "Ok"
+    ]
+  }
+]

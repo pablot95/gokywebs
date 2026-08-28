@@ -1,0 +1,29 @@
+[
+  {
+    "id": "W1",
+    "titulo": "Wix repeticion 1",
+    "esperado": "Tiene que decir claramente que sobre Wix no trabajan antes de dar el argumento de pago unico.",
+    "nombre": "Sole",
+    "turnos": [
+      "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"
+    ]
+  },
+  {
+    "id": "W2",
+    "titulo": "Wix repeticion 2",
+    "esperado": "Tiene que decir claramente que sobre Wix no trabajan antes de dar el argumento de pago unico.",
+    "nombre": "Sole",
+    "turnos": [
+      "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"
+    ]
+  },
+  {
+    "id": "W3",
+    "titulo": "Wix repeticion 3, sin rubro adicional",
+    "esperado": "Tiene que decir claramente que sobre Wix no trabajan.",
+    "nombre": "Sole",
+    "turnos": [
+      "Me pueden armar la pagina en Wix?"
+    ]
+  }
+]

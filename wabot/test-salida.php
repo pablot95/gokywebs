@@ -383,6 +383,41 @@ $c = conv_de('pitch', ['tipo' => 'ecommerce', 'bilingue_avisado' => true]);
 caso('una sola vez por charla',
     wabot_agente_empujon_bilingue('La quiero bilingüe', ['Otra cosa.'], $c, $cfg) === null);
 
+echo "\n— El listado con guiones se lee igual que con barras (verificación 28-ago) —\n";
+
+$pedido3 = ['Tu nombre', 'El nombre de tu negocio', 'Los colores de tu marca'];
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido3]);
+$ok = wabot_prediseno_lista_posicional('Malena - IndumentariaMale - negro y dorado', $c);
+caso('los tres datos con guion se leen en orden',
+    $ok && $c['nombre'] === 'Malena' && $c['nombre_negocio'] === 'IndumentariaMale'
+        && $c['colores'] === 'negro y dorado');
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido3]);
+caso('un guion pegado a la palabra (sin espacios) NO separa nada',
+    !wabot_prediseno_lista_posicional('e-commerce de indumentaria', $c));
+
+echo "\n— El pedido de armar la web en otra plataforma no puede depender del modelo (verificación 28-ago) —\n";
+
+caso('"me pueden hacer una página en Wix" se reconoce',
+    wabot_texto_pide_armar_en_plataforma('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?'));
+caso('"me pueden armar la página en Wix" también',
+    wabot_texto_pide_armar_en_plataforma('Me pueden armar la pagina en Wix?'));
+caso('"necesito una tienda en Tiendanube" también',
+    wabot_texto_pide_armar_en_plataforma('Necesito una tienda en Tiendanube'));
+caso('"ya tengo mi tienda en Wix" NO es esto (es ya_tiene_plataforma, otro texto)',
+    !wabot_texto_pide_armar_en_plataforma('Ya tengo mi tienda en Wix, la pueden revisar?'));
+caso('"no quiero nada con Tiendanube" NO dispara la objeción (ya está de acuerdo)',
+    !wabot_texto_pide_armar_en_plataforma('No quiero nada con Tiendanube, prefiero algo propio'));
+caso('un mensaje sin ninguna plataforma no dispara nada',
+    !wabot_texto_pide_armar_en_plataforma('Hola, tengo una veterinaria'));
+
+$c = conv_de('menu');
+$r = wabot_responder('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', $c, $cfg);
+caso('en el flujo completo, el mensaje se contesta con la objeción de plataforma sin pasar por el agente',
+    is_array($r) && count($r) === 1 && mb_stripos($r[0], 'wix') !== false && strpos($r[0], '{') === false);
+caso('y la fase no avanza a un tipo cotizado: el pedido de plataforma se contestó, no se ignoró',
+    empty($c['tipo']));
+
 echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube) —\n";
 
 caso('el texto abre diciendo que sobre esas plataformas no se trabaja',

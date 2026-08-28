@@ -102,6 +102,17 @@ function wabot_responder($texto, &$conv, $cfg) {
         return [(string)$cfg['prediseno_espera_datos']];
     }
 
+    /* "Me pueden hacer una página en Wix?" — la objeción de plataforma no
+     * puede depender de que el modelo la reconozca, sobre todo cuando viene
+     * junto con el rubro en el mismo mensaje (ver wabot_texto_pide_armar_en_
+     * plataforma). No corre en derivado/postdemo: esas fases ya tienen su
+     * propio manejo cerrado y este atajo las pisaría. */
+    if (!in_array(($conv['fase'] ?? ''), ['derivado', 'postdemo'], true)
+        && wabot_texto_pide_armar_en_plataforma($texto)) {
+        wabot_evento_sesion($conv, 'objecion_plataforma_forzada');
+        return [wabot_objecion_texto('plataforma', (string)$cfg['plataformas'], $conv, $cfg)];
+    }
+
     // Otro proveedor mandando SU promo no es un lead: no se le contesta nada,
     // en ningún modo. Va antes de la apertura porque el volante suele llegar
     // como primer mensaje, justo donde el bot saludaba y preguntaba el rubro.

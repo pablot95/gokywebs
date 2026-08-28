@@ -2391,7 +2391,13 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
     $crudo = trim((string)$texto);
     if ($crudo === '' || mb_strpos($crudo, '?') !== false) return false;
 
-    $partes = preg_split('#\s*(?:/|\||\n|;)\s*#u', $crudo);
+    /* El guion CON espacios a los dos lados también separa ("Malena -
+     * IndumentariaMale - negro y dorado", verificado en vivo el 28-ago: sin
+     * esto el parser no lo tomaba y quedó en manos del agente, que acertó
+     * pero no está garantizado). Va como alternativa aparte y exige espacio
+     * de los dos lados a propósito: un guion pegado ("e-commerce") no separa
+     * nada, es parte de la palabra. */
+    $partes = preg_split('#\s+-\s+|\s*(?:/|\||\n|;)\s*#u', $crudo);
     $partes = array_values(array_filter(array_map(function ($p) {
         // "1. Alejandra", "- Alejandra", "2) Whitesoul"
         return trim(preg_replace('/^\s*(?:\d+\s*[.)\-]|[-*•])\s*/u', '', (string)$p));

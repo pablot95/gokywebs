@@ -2828,6 +2828,43 @@ function wabot_upgrade_texto($destino, $conv, $cfg) {
     return $texto;
 }
 
+/**
+ * "Me pueden hacer una página en Wix/Tiendanube/Shopify?" — el pedido de
+ * ARMAR la web sobre otra plataforma, no de comparar precios con ella.
+ *
+ * Encontrado el 28-ago corriendo una batería de verificación en vivo, tres
+ * repeticiones del mismo mensaje ("una página en Wix para mi negocio de
+ * tortas"): 1 de 3 veces el agente saltó directo al pitch de ecommerce sin
+ * mencionar Wix para nada — cuando el pedido de plataforma viene junto con
+ * info del rubro en el mismo mensaje, el modelo prioriza el rubro y se olvida
+ * de contestar la plataforma. La objeción de plataforma (wabot_objecion_texto
+ * más abajo) ya tenía su texto migrado (ver Tiendanube, 27-ago) pero eso no
+ * garantiza que se DISPARE — un guard sobre el TEXTO no sirve si el problema
+ * es que la HERRAMIENTA no se llama. Mismo patrón que el resto de esta lista:
+ * lo que tiene que estar garantizado no puede depender del modelo.
+ *
+ * Se excluye a propósito la plataforma que el cliente YA tiene ("tengo mi
+ * tienda en Wix"): eso es ya_tiene_plataforma (se ofrece revisarla), un texto
+ * distinto — acá es específicamente el pedido de que se la armemos ahí. Y se
+ * excluye la negación ("no quiero nada con Tiendanube"): mandarle la objeción
+ * a alguien que ya está de acuerdo suena a que el bot no lee.
+ */
+function wabot_texto_pide_armar_en_plataforma($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+
+    if (preg_match('/\b(tengo|tenia|ya tengo|ya tenia)\b/u', $t)) return false;
+    if (preg_match('/\bno\s+(quiero|necesito|busco)\b/u', $t)) return false;
+
+    $plataforma = '(tiendanube|tienda nube|wix|shopify|jimdo|mercado shops|mercadoshops|weebly)';
+    $verbo = '(arman|armar|arma|hacen|hacer|hace|crean|crear|crea|monten|montar|monta'
+            . '|desarrollan|desarrollar|desarrolla|construyen|construir|construye'
+            . '|quiero|necesito|busco|querria|podrian|pueden)';
+
+    return (bool)preg_match(
+        '/\b' . $verbo . '\b.{0,45}\b(en|con)\b\s*(la plataforma\s*)?' . $plataforma . '\b/u', $t);
+}
+
 function wabot_desempate_desvio($acc, $out, $texto, &$conv, $cfg) {
     $r = wabot_rubro_de($acc);
     $d = wabot_desempate_de($r);
