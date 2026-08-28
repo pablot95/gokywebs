@@ -279,6 +279,48 @@ wabot_prediseno_lista_posicional('Alejandra / Pasteles / no tengo', $c);
 caso('"no tengo" en la referencia se guarda como vacío, no como texto',
     trim((string)$c['referencia']) === '' && !empty($c['referencia_preguntada']));
 
+echo "\n— La charla no avanza aunque la pregunta cambie de palabras —\n";
+
+// Caso del marketplace en la bateria en vivo: tres preguntas distintas sobre lo
+// mismo, sin que nada del estado cambiara. wabot_anti_repeticion no lo ve
+// porque compara el texto.
+$c = conv_de('sistema_usuarios');
+$r1 = wabot_salida_preparar(['Cuántos vendedores estimás que usarían la plataforma?'], $c, $cfg);
+$primeraOk = count($r1) === 1 && ($c['fase'] ?? '') !== 'derivado';
+$r2 = wabot_salida_preparar(['Aproximadamente cuántas personas usarían el sistema?'], $c, $cfg);
+$segundaOk = count($r2) === 1 && ($c['fase'] ?? '') !== 'derivado';
+$r3 = wabot_salida_preparar(['Me dirías cuántos vendedores o usuarios estimás?'], $c, $cfg);
+
+caso('las dos primeras salen normales', $primeraOk && $segundaOk);
+caso('a la tercera lo toma Pablo, aunque las tres preguntas sean distintas',
+    $r3 === [$cfg['derivar']] && ($c['fase'] ?? '') === 'derivado');
+
+// Y no puede dispararse cuando la charla SÍ avanza.
+$c = conv_de('prediseno', ['nombre_negocio' => '']);
+wabot_salida_preparar(['Cómo se llama tu negocio?'], $c, $cfg);
+$c['nombre_negocio'] = 'Whitesoul';
+wabot_salida_preparar(['Y los colores de tu marca?'], $c, $cfg);
+$c['colores'] = 'Pasteles';
+$r = wabot_salida_preparar(['Tenés alguna web de referencia?'], $c, $cfg);
+caso('juntar los datos de a uno NO cuenta como estar trabado',
+    $r === ['Tenés alguna web de referencia?'] && ($c['fase'] ?? '') !== 'derivado');
+
+$c = conv_de('precio', ['tipo' => 'landing', 'precio_dado' => true]);
+wabot_salida_preparar(['El desarrollo sale $160.000.'], $c, $cfg);
+wabot_salida_preparar(['Se puede pagar por transferencia.'], $c, $cfg);
+$r = wabot_salida_preparar(['El hosting va aparte.'], $c, $cfg);
+caso('contestar sin preguntar nada tampoco cuenta',
+    count($r) === 1 && ($c['fase'] ?? '') !== 'derivado');
+
+echo "\n— Pedir una persona con el pronombre pegado al verbo —\n";
+
+caso('"prefiero hablarlo con alguien técnico" es pedir un humano',
+    wabot_handoff_causa_explicita('Es algo complejo, prefiero hablarlo con alguien técnico') === 'pide_humano');
+caso('"quiero hablar con una persona" sigue funcionando',
+    wabot_handoff_causa_explicita('quiero hablar con una persona') === 'pide_humano');
+caso('"prefiero hablarlo con mi socio" NO deriva (es su socio, no el nuestro)',
+    wabot_handoff_causa_explicita('prefiero hablarlo con mi socio') !== 'pide_humano');
+
 echo "\n— El cliente insiste en que ya mandó los datos (Clínica de Mar) —\n";
 
 caso('"Está todo en lo que te mandé" se reconoce',

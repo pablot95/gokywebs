@@ -1,0 +1,77 @@
+[
+  {
+    "id": "F01",
+    "titulo": "Leoo: el bot anuncia la derivacion y la charla tiene que quedar derivada",
+    "esperado": "Si en algun momento dice que lo comunica con el desarrollador, la fase tiene que quedar en 'derivado' en ESE mismo turno. Nunca puede seguir vendiendo despues.",
+    "nombre": "Leo",
+    "turnos": [
+      "Hola, quiero armar un marketplace donde varios vendedores publiquen sus productos",
+      "Es algo complejo, prefiero hablarlo con alguien tecnico",
+      "Dale, quedo esperando"
+    ]
+  },
+  {
+    "id": "F02",
+    "titulo": "Icover: 'igualmente' despues de rechazar el precio no es aceptar la demo",
+    "esperado": "Tras el rechazo por precio el bot cierra cordial. El 'igualmente' NO puede disparar el formulario de datos: silencio o una linea corta.",
+    "nombre": "Vanina",
+    "turnos": [
+      "Hola, vendo fundas y accesorios para celular, quiero una tienda online",
+      "Fundas de silicona",
+      "Uh, 290 mil es demasiado para mi ahora, no lo puedo pagar",
+      "Igualmente"
+    ]
+  },
+  {
+    "id": "F03",
+    "titulo": "Papeleria: nada sale despues de la despedida en el mismo turno",
+    "esperado": "Ante 'dejame pensarlo' cierra sin presion, en UN solo globo. No puede salir despues el precio ni el link del presupuesto.",
+    "nombre": "Romina",
+    "turnos": [
+      "Hola, tengo una papeleria creativa y vendo articulos de libreria y regalos",
+      "Cuadernos y agendas artesanales",
+      "Dejame pensarlo y despues te aviso, gracias"
+    ]
+  },
+  {
+    "id": "F04",
+    "titulo": "Whitesoul: los tres datos en una linea se leen enteros",
+    "esperado": "Tras contestar 'Alejandra / Whitesoul.nordelta / Pasteles' el bot NO puede decir que le faltan los colores. Ya tiene nombre, negocio y colores.",
+    "nombre": "Alejandra",
+    "turnos": [
+      "Hola, hago tortas y pasteleria artesanal por encargo",
+      "Tortas decoradas y mesas dulces",
+      "Si, quiero la demo gratis",
+      "Alejandra / Whitesoul.nordelta / Pasteles"
+    ]
+  },
+  {
+    "id": "F05",
+    "titulo": "Marcco: el pedido de web bilingue no puede quedar sin contestar",
+    "esperado": "En el primer turno tiene que aparecer la respuesta sobre la web bilingue (con su adicional). No alcanza con presentar el ecommerce y preguntar el producto estrella.",
+    "nombre": "Marco",
+    "turnos": [
+      "Hola, tengo una marroquineria y necesito un ecommerce internacional, en espanol e ingles, con precios en pesos y en dolares para vender al exterior"
+    ]
+  },
+  {
+    "id": "F06",
+    "titulo": "Aberturas: cuanto sale agregar venta online con una landing cotizada",
+    "esperado": "Tiene que contestar el precio del ecommerce ($290.000) y aclarar que no es un adicional sobre la landing. NO puede repetir el precio de la landing ni preguntar si es el mismo proyecto.",
+    "nombre": "Hernan",
+    "turnos": [
+      "Hola, fabrico y coloco aberturas de aluminio a medida",
+      "Ventanas y puertas de aluminio",
+      "Cuanto cuesta agregarle venta y cobro online?"
+    ]
+  },
+  {
+    "id": "F07",
+    "titulo": "Tiendanube: contestar si se puede o no antes de argumentar",
+    "esperado": "Tiene que decir claramente que sobre Tiendanube no trabajan, y recien despues el argumento del pago unico. Nunca argumentar sin contestar.",
+    "nombre": "Luciana",
+    "turnos": [
+      "Hola, me pueden armar una tienda en Tiendanube?"
+    ]
+  }
+]

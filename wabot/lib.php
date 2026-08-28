@@ -2397,9 +2397,25 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
         return trim(preg_replace('/^\s*(?:\d+\s*[.)\-]|[-*•])\s*/u', '', (string)$p));
     }, (array)$partes), function ($p) { return $p !== ''; }));
 
-    if (count($partes) !== count($pedido)) return false;
     foreach ($partes as $p) {
         if (mb_strlen($p) > 120) return false;   // eso es prosa, no un item
+    }
+
+    /* La web de referencia se pide diciendo "y si no tenés no pasa nada", así
+     * que lo normal es que conteste los obligatorios y se saltee ese. Exigir
+     * coincidencia exacta con la lista entera dejaba afuera justo el caso real:
+     * Alejandra mandó tres datos sobre un listado de cuatro y no se mapeó nada.
+     * Se prueba la lista completa y, si no da, la lista sin la referencia. */
+    $sinReferencia = array_values(array_filter($pedido, function ($l) {
+        return strpos(wabot_normalizar_frase((string)$l), 'si tenes alguna web') !== 0;
+    }));
+
+    if (count($partes) === count($pedido)) {
+        // la lista tal cual
+    } elseif (count($partes) === count($sinReferencia) && count($sinReferencia) >= 2) {
+        $pedido = $sinReferencia;
+    } else {
+        return false;
     }
 
     // Cada etiqueta del listado, al campo que le corresponde.

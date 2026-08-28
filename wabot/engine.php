@@ -558,8 +558,63 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
 
     if ($modo === 'turno') {
         $mensajes = wabot_anti_repeticion($mensajes, $conv, $cfg);
+        $mensajes = wabot_salida_sin_avance($mensajes, $conv, $cfg);
     }
     return array_values($mensajes);
+}
+
+/**
+ * LA CHARLA NO AVANZA.
+ *
+ * wabot_anti_repeticion() compara el TEXTO, así que solo caza al bot que manda
+ * dos veces la misma frase. En modo agente el modelo reformula, y entonces el
+ * pozo es invisible: en la batería del 27-ago un marketplace recibió tres
+ * veces la misma pregunta con tres redacciones distintas —"cuántos vendedores
+ * estimás", "cuántas personas usarían el sistema", "cuántos vendedores o
+ * usuarios estimás"— y hasta un "prefiero hablarlo con alguien técnico" en el
+ * medio no lo sacó del loop.
+ *
+ * Por eso este mira el ESTADO y no las palabras: si el bot vuelve a preguntar
+ * y nada de lo que hace progresar la venta cambió desde el turno anterior, la
+ * charla está trabada por más que la pregunta suene distinta. A la tercera la
+ * toma Pablo, la misma convención que ya usaban los desempates.
+ *
+ * El sello incluye los datos que se van juntando (descripción, colores, nombre
+ * del negocio, cantidad de productos), no solo la fase: si no, pedir los datos
+ * del prediseño de a partes contaría como estar trabado.
+ */
+function wabot_salida_sin_avance($mensajes, &$conv, $cfg) {
+    if (!$mensajes) return $mensajes;
+    if (($conv['fase'] ?? '') === 'derivado') return $mensajes;
+
+    $hayPregunta = false;
+    foreach ($mensajes as $m) {
+        if (mb_strpos((string)$m, '?') !== false) { $hayPregunta = true; break; }
+    }
+
+    $campos = ['fase', 'tipo', 'cierre', 'nombre_negocio', 'descripcion', 'colores',
+               'referencia', 'productos_cantidad', 'sistema_problema', 'sistema_usuarios'];
+    $partes = [];
+    foreach ($campos as $c) $partes[] = trim((string)($conv[$c] ?? ''));
+    foreach (['precio_dado', 'lead_creado', 'pitch_hecho', 'nombre_confirmado'] as $f) {
+        $partes[] = (int)!empty($conv[$f]);
+    }
+    $sello = md5(implode('|', $partes));
+
+    if (!$hayPregunta || $sello !== (string)($conv['avance_sello'] ?? '')) {
+        $conv['avance_sello'] = $sello;
+        $conv['turnos_sin_avance'] = 0;
+        return $mensajes;
+    }
+
+    $veces = (int)($conv['turnos_sin_avance'] ?? 0) + 1;
+    $conv['turnos_sin_avance'] = $veces;
+    if ($veces < 2) return $mensajes;
+
+    wabot_evento_sesion($conv, 'sin_avance_derivado', ['turnos' => $veces]);
+    wabot_handoff_marcar($conv, 'sin_avance');
+    $conv['turnos_sin_avance'] = 0;
+    return [(string)$cfg['derivar']];
 }
 
 /**
@@ -1086,10 +1141,15 @@ function wabot_handoff_causa_explicita($texto) {
      * siguió pidiéndole los colores de la marca (27-ago). Ignorar un pedido de
      * humano es la falla más cara que puede tener el bot. */
     $humano = '(persona|humano|asesor|alguien|pablo|vendedor|agente|operador|representante|encargado|responsable|desarrollador)';
-    if (preg_match('/\b(quiero|queria|quisiera|necesito|puedo|podria|podrias|podes|se puede|quiero que me)\b.{0,35}\b(hablar|comunicar|atender|llamar|pasar)\b.{0,35}\b' . $humano . '\b/u', $t)
+    /* "prefiero" y el pronombre pegado al verbo ("hablarLO con alguien") son de
+     * la batería del 27-ago: "Es algo complejo, prefiero hablarlo con alguien
+     * técnico" no matcheaba ninguna de estas y el bot siguió preguntando el
+     * rubro. Ni "prefiero" estaba entre los verbos de intención, ni "hablarlo"
+     * entra en un \bhablar\b. */
+    if (preg_match('/\b(quiero|queria|quisiera|necesito|prefiero|preferiria|puedo|podria|podrias|podes|se puede|quiero que me)\b.{0,35}\b(hablar|hablarlo|hablarla|comunicar|atender|llamar|pasar)\b.{0,35}\b' . $humano . '\b/u', $t)
         || preg_match('/\b(pasame|derivame|comunicate)\b.{0,25}\b' . $humano . '\b/u', $t)
         || preg_match('/\bme\s+(pasas|derivas|comunicas)\b.{0,25}\b' . $humano . '\b/u', $t)
-        || preg_match('/\b(hablar|comunicarme|contactarme)\s+con\s+(un[ao]?\s+)?' . $humano . '\b/u', $t)
+        || preg_match('/\b(hablar|hablarlo|hablarla|comunicarme|contactarme|charlar)\s+con\s+(un[ao]?\s+)?' . $humano . '\b/u', $t)
         || preg_match('/\bque\s+me\s+(atienda|llame|contacte|escriba)\s+(pablo|una persona|alguien|un asesor|un agente)\b/u', $t)
         /* "Quiero un operador", "necesito una persona": el verbo de hablar se
          * elide porque se da por obvio. Acá NO valen "vendedor", "asesor" ni
