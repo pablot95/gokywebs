@@ -2888,6 +2888,10 @@ const SIN_IDENTIFICAR = 99;
 // inicial del select: el admin siempre puede corregirlo.
 const CONDICION_IVA_SUGERIDA = { 96: 5, 80: 1, 86: 5 };
 
+// La mayoria de las facturas salen a consumidor final, asi que ese es el modo
+// que abre por defecto; la otra pestaña pide los datos fiscales del receptor.
+let facturaModo = "final";
+
 function campoFactura(id) {
     return document.getElementById("factura" + id);
 }
@@ -2908,15 +2912,20 @@ function llenarSelect(select, opciones, seleccionado) {
     if (seleccionado !== undefined && seleccionado !== null) select.value = String(seleccionado);
 }
 
+function elegirModoFactura(modo) {
+    facturaModo = modo;
+    const identificado = modo === "identificado";
+    campoFactura("ModoFinal").classList.toggle("active", !identificado);
+    campoFactura("ModoFinal").setAttribute("aria-selected", String(!identificado));
+    campoFactura("ModoIdentificado").classList.toggle("active", identificado);
+    campoFactura("ModoIdentificado").setAttribute("aria-selected", String(identificado));
+    campoFactura("PanelFinal").hidden = identificado;
+    campoFactura("PanelIdentificado").hidden = !identificado;
+}
+
 function sincronizarCamposReceptor() {
-    const tipo = Number(campoFactura("TipoDoc").value);
-    const identificado = tipo !== SIN_IDENTIFICAR;
-    campoFactura("IdentificadoCampos").hidden = !identificado;
-    const numero = campoFactura("Documento");
-    numero.disabled = !identificado;
-    numero.placeholder = identificado ? "Solo numeros" : "Sin identificar";
-    if (!identificado) numero.value = "";
-    numero.maxLength = tipo === 96 ? 10 : 13;
+    // El DNI son 8 digitos; CUIT y CUIL, 11 (mas los guiones que se pegan).
+    campoFactura("Documento").maxLength = campoFactura("TipoDoc").value === "96" ? 10 : 13;
 }
 
 function sincronizarCamposPeriodo() {
@@ -3019,10 +3028,10 @@ async function abrirFacturaModal(cliente, opts = {}) {
     campoFactura("Descripcion").value = "";
     campoFactura("Documento").value = "";
     campoFactura("Nombre").value = "";
-    campoFactura("Domicilio").value = "";
-    llenarSelect(campoFactura("TipoDoc"), [{ valor: SIN_IDENTIFICAR, texto: "Sin identificar (consumidor final)" }]);
+    llenarSelect(campoFactura("TipoDoc"), [{ valor: 80, texto: "CUIT" }]);
     llenarSelect(campoFactura("CondicionVenta"), [{ valor: "Contado", texto: "Contado" }]);
     llenarSelect(campoFactura("CondicionIva"), []);
+    elegirModoFactura("final");
     sincronizarCamposPeriodo();
     sincronizarCamposReceptor();
 
@@ -3037,10 +3046,13 @@ async function abrirFacturaModal(cliente, opts = {}) {
         campoFactura("Comprobante").textContent = numeroComprobante(datos.puntoVenta, datos.proximoNumero);
         campoFactura("EmitirBtn").disabled = false;
 
+        // "Sin identificar" es la otra pestaña, no una opcion del select.
         llenarSelect(
             campoFactura("TipoDoc"),
-            Object.entries(datos.tiposDocumento || {}).map(([valor, texto]) => ({ valor, texto })),
-            SIN_IDENTIFICAR
+            Object.entries(datos.tiposDocumento || {})
+                .filter(([valor]) => Number(valor) !== SIN_IDENTIFICAR)
+                .map(([valor, texto]) => ({ valor, texto })),
+            80
         );
         llenarSelect(
             campoFactura("CondicionVenta"),
@@ -3054,14 +3066,15 @@ async function abrirFacturaModal(cliente, opts = {}) {
 
         campoFactura("Descripcion").value = datos.descripcionSugerida || "";
 
-        // Datos fiscales de la ultima factura de este cliente: se recargan solos.
+        // Si a este cliente ya se le facturo con datos fiscales, se reabre en esa
+        // pestaña con todo cargado; si no, queda en consumidor final.
         const previo = datos.ultimoReceptor;
-        if (previo) {
+        if (previo && previo.tipoDocumento !== SIN_IDENTIFICAR) {
             campoFactura("TipoDoc").value = String(previo.tipoDocumento);
-            campoFactura("Documento").value = previo.tipoDocumento === SIN_IDENTIFICAR ? "" : previo.numeroDocumento;
+            campoFactura("Documento").value = previo.numeroDocumento;
             campoFactura("CondicionIva").value = String(previo.condicionIvaId);
             campoFactura("Nombre").value = previo.nombre || "";
-            campoFactura("Domicilio").value = previo.domicilio || "";
+            elegirModoFactura("identificado");
         } else {
             campoFactura("Nombre").value = cliente.nombre || "";
         }
@@ -3079,6 +3092,8 @@ async function abrirFacturaModal(cliente, opts = {}) {
     }
 }
 
+campoFactura("ModoFinal")?.addEventListener("click", () => elegirModoFactura("final"));
+campoFactura("ModoIdentificado")?.addEventListener("click", () => elegirModoFactura("identificado"));
 campoFactura("Concepto")?.addEventListener("change", sincronizarCamposPeriodo);
 campoFactura("TipoDoc")?.addEventListener("change", () => {
     sincronizarCamposReceptor();
@@ -3116,11 +3131,14 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
             servicioDesde: campoFactura("Desde").value,
             servicioHasta: campoFactura("Hasta").value,
             vencimientoPago: campoFactura("Vencimiento").value,
-            tipoDocumento: Number(campoFactura("TipoDoc").value),
-            documento: campoFactura("Documento").value,
-            condicionIva: Number(campoFactura("CondicionIva").value),
-            nombre: campoFactura("Nombre").value,
-            domicilio: campoFactura("Domicilio").value
+            ...(facturaModo === "identificado"
+                ? {
+                    tipoDocumento: Number(campoFactura("TipoDoc").value),
+                    documento: campoFactura("Documento").value,
+                    condicionIva: Number(campoFactura("CondicionIva").value),
+                    nombre: campoFactura("Nombre").value
+                }
+                : { tipoDocumento: SIN_IDENTIFICAR, documento: "" })
         });
         const f = datos.factura;
         if (!facturaEsAdhoc) await completarCliente(cliente.id, f);

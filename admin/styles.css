@@ -2468,6 +2468,19 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
     -webkit-overflow-scrolling: touch;
 }
 
+.factura-modos {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin: 10px 0 16px;
+}
+
+.factura-modos .tab-btn {
+    flex: 1;
+    padding: 9px 12px;
+    font-size: 13.5px;
+}
+
 .factura-subtitulo {
     font-size: 13px;
     text-transform: uppercase;

@@ -132,7 +132,6 @@ function receptor_normalizar(array $entrada, $idsPermitidos = null)
     }
 
     $nombre = trim(preg_replace('/\s+/u', ' ', (string) ($entrada['nombre'] ?? '')));
-    $domicilio = trim(preg_replace('/\s+/u', ' ', (string) ($entrada['domicilio'] ?? '')));
 
     // Sin CUIT/CUIL/DNI no hay a quien atribuir el comprobante: la razon social
     // solo es obligatoria cuando el receptor esta identificado.
@@ -147,7 +146,6 @@ function receptor_normalizar(array $entrada, $idsPermitidos = null)
         'condicionIvaId' => $condicionId,
         'condicionIva' => receptor_condicion_descripcion($condicionId),
         'nombre' => mb_substr($nombre, 0, 120),
-        'domicilio' => mb_substr($domicilio, 0, 120),
     ];
 }
 
@@ -209,7 +207,6 @@ function receptor_desde_factura($factura)
             'valor' => $tipo === 99 ? '' : receptor_documento_lindo($tipo, $r['numeroDocumento'] ?? ''),
             'condicion' => $condicion !== '' ? $condicion : receptor_condicion_descripcion($r['condicionIvaId'] ?? 5),
             'nombre' => (string) ($r['nombre'] ?? ''),
-            'domicilio' => (string) ($r['domicilio'] ?? ''),
         ];
     }
 
@@ -222,6 +219,5 @@ function receptor_desde_factura($factura)
         'valor' => $tipo === 99 ? '' : receptor_documento_lindo($tipo, $numero),
         'condicion' => receptor_condicion_descripcion($condicionId),
         'nombre' => $tipo === 99 ? '' : trim((string) ($factura['cliente'] ?? '')),
-        'domicilio' => '',
     ];
 }

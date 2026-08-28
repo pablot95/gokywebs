@@ -85,9 +85,7 @@ function comprobante_pdf($config, $factura)
     }
 
     $y += $altoCab;
-    // Bloque del receptor: crece con las filas que haya (el domicilio es opcional).
-    $filasDatos = 3 + ($receptor['domicilio'] !== '' ? 1 : 0);
-    $altoDatos = 13 + $filasDatos * 15;
+    $altoDatos = 13 + 3 * 15;
     $pdf->rectangulo($izq, $y, $ancho, $altoDatos, 1.2);
 
     $campoDatos = function ($x, $yd, $etiqueta, $valor, $tope) use ($pdf) {
@@ -101,10 +99,6 @@ function comprobante_pdf($config, $factura)
     $campoDatos($medio + 10, $yd, 'Condición frente al IVA: ', $receptor['condicion'], $der - 12);
     $yd += 15;
     $campoDatos($izq + 12, $yd, 'Apellido y Nombre / Razón Social: ', $receptor['nombre'] !== '' ? $receptor['nombre'] : '-', $der - 12);
-    if ($receptor['domicilio'] !== '') {
-        $yd += 15;
-        $campoDatos($izq + 12, $yd, 'Domicilio: ', $receptor['domicilio'], $der - 12);
-    }
     $yd += 15;
     $campoDatos($izq + 12, $yd, 'Condición de venta: ', comprobante_condicion_venta($factura), $der - 12);
 
@@ -331,9 +325,6 @@ function comprobante_html($config, $factura)
         <div><b><?= $e($receptor['etiqueta']) ?>:</b> <?= $receptor['valor'] !== '' ? $e($receptor['valor']) : '—' ?></div>
         <div><b>Condición frente al IVA:</b> <?= $e($receptor['condicion']) ?></div>
         <div class="ancho-total"><b>Apellido y Nombre / Razón Social:</b> <?= $receptor['nombre'] !== '' ? $e($receptor['nombre']) : '—' ?></div>
-        <?php if ($receptor['domicilio'] !== ''): ?>
-        <div class="ancho-total"><b>Domicilio:</b> <?= $e($receptor['domicilio']) ?></div>
-        <?php endif; ?>
         <div class="ancho-total"><b>Condición de venta:</b> <?= $e(comprobante_condicion_venta($factura)) ?></div>
     </div>
 
