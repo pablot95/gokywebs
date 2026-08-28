@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/redactor.php';
+require_once __DIR__ . '/push.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -249,6 +250,29 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['activo'] = empty($cfg['activo']);
         wabot_config_save($cfg);
         header('Location: admin.php'); exit;
+    }
+    /* Alta del dispositivo para las notificaciones push. El token lo genera el
+     * navegador de Pablo (Firebase) y hay que guardarlo para poder mandarle
+     * algo cuando el panel está cerrado. Se refresca en cada carga: Firebase
+     * los rota, y uno viejo deja de recibir. */
+    if ($a === 'push_token' && !empty($_POST['token'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $ok = wabot_push_token_guardar($_POST['token'], (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        echo json_encode(['ok' => $ok, 'dispositivos' => count(wabot_push_tokens())]);
+        exit;
+    }
+    /* El botón "Probar" de la pestaña Estado: manda una notificación de prueba
+     * a todos los dispositivos registrados. */
+    if ($a === 'push_probar') {
+        header('Content-Type: application/json; charset=utf-8');
+        if (!wabot_push_configurado()) {
+            echo json_encode(['ok' => false, 'error' => 'Falta config/service-account.json en el server.']);
+            exit;
+        }
+        $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, las notificaciones andan.',
+                               ['tel' => 'prueba', 'link' => 'https://www.gokywebs.com/wabot/admin.php']);
+        echo json_encode(['ok' => $n > 0, 'dispositivos' => $n]);
+        exit;
     }
     if ($a === 'guardar_textos') {
         foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
@@ -1367,6 +1391,25 @@ body.embed { min-height: 0; }
         <div class="card">
             <div class="fila" style="justify-content:space-between">
                 <div>
+                    <strong>Notificaciones</strong>
+                    <p class="meta" id="pushEstado">Te avisan al celular y a la compu cuando entra un mensaje que tenés que contestar vos (los SL), aunque tengas el panel cerrado.</p>
+                </div>
+                <div class="fila" style="gap:.5rem">
+                    <button type="button" class="sec" id="pushActivar">Activar acá</button>
+                    <button type="button" class="sec" id="pushProbar">Probar</button>
+                </div>
+            </div>
+            <?php if (!wabot_push_configurado()): ?>
+                <p class="meta" style="color:#b45309">Falta subir <code>config/service-account.json</code> al server.</p>
+            <?php elseif (wabot_push_vapid() === ''): ?>
+                <p class="meta" style="color:#b45309">Falta <code>WABOT_FCM_VAPID</code> en <code>config/wabot-config.php</code>: Firebase → Configuración del proyecto → Cloud Messaging → Certificados push web.</p>
+            <?php else: ?>
+                <p class="meta"><?= count(wabot_push_tokens()) ?> dispositivo(s) registrado(s). Hay que activarlo una vez en cada uno.</p>
+            <?php endif; ?>
+        </div>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between">
+                <div>
                     <strong>Exportar chats</strong>
                     <p class="meta">Descarga un .txt con todas las conversaciones que tuvieron actividad en los últimos días, charla completa.</p>
                 </div>
@@ -1922,10 +1965,12 @@ body.embed { min-height: 0; }
             - Que no lo hayas abierto desde ese mensaje. */
         const GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
         function esNoLeido(it) {
+            // La regla la resuelve el server (wabot_conv_es_sl): es la MISMA
+            // que dispara la notificación push, y con dos copias terminaban
+            // diciendo cosas distintas. El cálculo viejo queda de respaldo por
+            // si llega un item de una versión anterior sin el campo.
+            if (typeof it.sl === 'boolean') return it.sl;
             if (it.grupo === 'archivado') return false;
-            // O está en la parte 2, o el bot se calló en esta charla: apagado,
-            // pausado, o porque te derivó la consulta. Una derivación tiene que
-            // verse SÍ o SÍ — el bot le prometió al cliente que contestás vos.
             if (!GRUPOS_SIN_LEER.includes(it.grupo) && !it.espera && !it.handoff_pendiente) return false;
             return !!it.no_leido;
         }
@@ -2939,6 +2984,87 @@ body.embed { min-height: 0; }
     document.addEventListener('click', function () { setTimeout(avisar, 60); });
     avisar();
 })();
+</script>
+<script type="module">
+/* Notificaciones push del panel.
+ *
+ * El navegador pide permiso una sola vez por dispositivo y devuelve un token
+ * que hay que guardar en el server: es la dirección a la que FCM entrega. Los
+ * tokens rotan, así que se refresca en cada carga del panel.
+ *
+ * Todo esto es opcional: si falta la clave VAPID o el usuario dice que no, el
+ * panel sigue funcionando igual y no se rompe nada. */
+const VAPID = <?= json_encode(wabot_push_vapid()) ?>;
+const estado = document.getElementById('pushEstado');
+const btnActivar = document.getElementById('pushActivar');
+const btnProbar  = document.getElementById('pushProbar');
+if (btnActivar) {
+
+    const decir = (t) => { if (estado) estado.textContent = t; };
+
+    async function registrar(pedirPermiso) {
+        if (!VAPID) return decir('Falta la clave VAPID en la config del server.');
+        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+            return decir('Este navegador no soporta notificaciones.');
+        }
+        if (Notification.permission === 'denied') {
+            return decir('Las notificaciones están bloqueadas para este sitio: habilitalas desde el candado de la barra de direcciones.');
+        }
+        if (Notification.permission !== 'granted') {
+            if (!pedirPermiso) return;   // en la carga automática no se molesta
+            if (await Notification.requestPermission() !== 'granted') {
+                return decir('No se dio permiso, así que no te van a llegar.');
+            }
+        }
+        try {
+            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+            const { getMessaging, getToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
+            const app = initializeApp({
+                apiKey: 'AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ',
+                authDomain: 'gokywebs-967cd.firebaseapp.com',
+                projectId: 'gokywebs-967cd',
+                messagingSenderId: '50030976147',
+                appId: '1:50030976147:web:9f07245b536a75833a4166'
+            });
+            // El service worker vive en la raíz: desde /wabot/ no podría abrir
+            // el panel al tocar la notificación.
+            const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+            const token = await getToken(getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: sw });
+            if (!token) return decir('Firebase no devolvió un token. Probá recargar.');
+
+            const r = await fetch('admin.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ accion: 'push_token', token }),
+                credentials: 'same-origin'
+            }).then(x => x.json());
+            decir(r.ok ? 'Listo: este dispositivo va a recibir los avisos. (' + r.dispositivos + ' en total)'
+                       : 'No se pudo guardar el dispositivo en el server.');
+        } catch (e) {
+            decir('No se pudo activar: ' + e.message);
+        }
+    }
+
+    btnActivar.addEventListener('click', () => registrar(true));
+    // Si ya dio permiso antes, se refresca solo el token, sin molestarlo.
+    registrar(false);
+
+    btnProbar?.addEventListener('click', async () => {
+        decir('Mandando…');
+        try {
+            const r = await fetch('admin.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ accion: 'push_probar' }),
+                credentials: 'same-origin'
+            }).then(x => x.json());
+            decir(r.ok ? 'Salió a ' + r.dispositivos + ' dispositivo(s). Fijate si te llegó.'
+                       : (r.error || 'No hay ningún dispositivo registrado todavía.'));
+        } catch (e) {
+            decir('Falló la prueba: ' + e.message);
+        }
+    });
+}
 </script>
 <?php endif; ?>
 </body>

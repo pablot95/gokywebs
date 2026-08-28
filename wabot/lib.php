@@ -3634,6 +3634,9 @@ function wabot_lista_items() {
             'no_leido' => wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0),
             'sin_leer_cuenta' => wabot_conv_sin_leer_cuenta($cv),
             'con_interes' => wabot_presentada_con_interes($cv),
+            // Resuelto en el server: el chip y la notificación push tienen
+            // que estar de acuerdo siempre (ver wabot_conv_es_sl).
+            'sl' => wabot_conv_es_sl($cv),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -3747,6 +3750,27 @@ function wabot_presentada_con_interes($cv) {
         if (($linea['q'] ?? '') === 'cliente') return true;
     }
     return false;
+}
+
+/**
+ * ¿Es un "SL"? El cliente escribió algo que Pablo todavía no abrió, Y la charla
+ * está en un punto donde el bot ya no la lleva: le entregó la demo, se la
+ * derivó, está pausado o apagado. Un chat que el bot atiende solo NO es un SL.
+ *
+ * Vive acá y no en el JavaScript del panel porque la usan los dos: el chip de
+ * la lista y la notificación push (ver wabot/push.php). Escrita dos veces
+ * terminaban diciendo cosas distintas.
+ */
+function wabot_conv_es_sl($cv) {
+    $grupo = wabot_conv_grupo($cv);
+    if ($grupo === 'archivado') return false;
+
+    $leTocaAPablo = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
+        || wabot_conv_espera_respuesta($cv)
+        || !empty($cv['handoff_pendiente']);
+    if (!$leTocaAPablo) return false;
+
+    return wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0);
 }
 
 function wabot_conv_sin_leer_cuenta($cv) {

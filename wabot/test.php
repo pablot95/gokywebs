@@ -5129,5 +5129,68 @@ $convSi['precio_dado'] = true;
 caso('el que dice que sí sigue el camino de siempre',
     wabot_pitch_encaje_rechazado('si, era eso', $convSi, $cfg) === null);
 
+echo "\n— SL: cuando suena el celular (28-ago) —\n";
+
+require_once __DIR__ . '/push.php';
+
+/* Pablo, 28-ago: "quiero notificaciones para cuando llega un mensaje en wabot
+ * que tengo que responder yo, SL". La regla es la misma del chip del panel: el
+ * cliente escribio algo que Pablo no abrio, Y la charla esta en un punto donde
+ * el bot ya no la lleva. Un chat que el bot atiende solo NO es un SL: si no,
+ * suena el telefono con cada mensaje del embudo. */
+$ahoraSL2 = time();
+$slBase = [
+    'canal' => 'whatsapp', 'tel' => '5491100000001', 'conversation_key' => '5491100000001',
+    'panel_visto_ts' => $ahoraSL2 - 7200, 'lead_creado' => true,
+    'descripcion' => 'tarot', 'colores' => 'violeta',
+    'transcript' => [['q' => 'cliente', 't' => 'Pero le falta lo de registros akashicos', 'ts' => $ahoraSL2]],
+];
+
+// Demo entregada y el cliente escribiendo: el caso de Silvana, donde el bot ya
+// se callo y contesta Pablo.
+$slDemo = $slBase;
+$slDemo['presentado_ts'] = $ahoraSL2 - 3600;
+$slDemo['postdemo_avisado'] = true;
+caso('demo entregada + el cliente escribe → SL', wabot_conv_es_sl($slDemo) === true);
+
+// Derivado a mano: el bot le prometio que contesta Pablo.
+$slDerivado = $slBase;
+$slDerivado['fase'] = 'derivado';
+$slDerivado['handoff_pendiente'] = true;
+caso('una consulta derivada → SL', wabot_conv_es_sl($slDerivado) === true);
+
+// Prediseño cerrado, esperando que le armen la demo.
+caso('prediseño cerrado con el cliente escribiendo → SL', wabot_conv_es_sl($slBase) === true);
+
+// Ya lo abrio: deja de estar sin leer.
+$slVisto = $slDemo;
+$slVisto['panel_visto_ts'] = $ahoraSL2 + 1;
+caso('si ya abrio el chat, deja de ser SL', wabot_conv_es_sl($slVisto) === false);
+
+// El bot la esta llevando solo: no hay nada que contestar.
+$slCharla = [
+    'canal' => 'whatsapp', 'tel' => '5491100000002', 'fase' => 'menu',
+    'panel_visto_ts' => 0,
+    'transcript' => [['q' => 'cliente', 't' => 'hola, cuanto sale una web?', 'ts' => $ahoraSL2]],
+];
+caso('una charla que lleva el bot NO es SL', wabot_conv_es_sl($slCharla) === false);
+
+// Archivado a mano: Pablo lo saco de la vista de trabajo.
+$slArchivado = $slDemo;
+$slArchivado['archivado'] = true;
+caso('un chat archivado nunca es SL', wabot_conv_es_sl($slArchivado) === false);
+
+// Avisó que pagó: lo mas urgente del panel.
+$slPago = $slDemo;
+$slPago['pago_avisado_ts'] = $ahoraSL2;
+caso('el que aviso que pago tambien es SL', wabot_conv_es_sl($slPago) === true);
+
+// Sin la cuenta de servicio no se manda nada, y no rompe.
+caso('sin config de push no se intenta mandar nada',
+    wabot_push_configurado() === false || wabot_push_configurado() === true);
+caso('un chat que no es SL nunca dispara notificacion',
+    wabot_push_si_sl($slCharla, $cfg) === false);
+caso('y uno archivado tampoco', wabot_push_si_sl($slArchivado, $cfg) === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
