@@ -1291,6 +1291,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($infoFase === 'pago') return [wabot_texto_pago($conv, $cfg)];
             if ($infoFase === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
             if ($infoFase === 'rangos') return [wabot_texto_rangos($cfg)];
+            if ($infoFase === 'plazos') return [wabot_texto_plazos($conv, $cfg)];
             return [(string)($cfg['info'][$infoFase] ?? $cfg['info']['otra'])];
         }
     }
@@ -1363,6 +1364,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                 if ($infoLocal === 'pago') return [wabot_texto_pago($conv, $cfg)];
                 if ($infoLocal === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
                 if ($infoLocal === 'rangos') return [wabot_texto_rangos($cfg)];
+            if ($infoLocal === 'plazos') return [wabot_texto_plazos($conv, $cfg)];
                 return [(string)($cfg['info'][$infoLocal] ?? $cfg['info']['otra'])];
             }
             $conv['fase'] = 'algo_diferente';
@@ -1674,7 +1676,7 @@ function wabot_handoff_intentar($texto, &$conv, $cfg, $causaSugerida = null, $po
         }
         return [wabot_texto_aclaracion($conv, $cfg)];
     }
-    return wabot_derivar($conv, $cfg, $causa);
+    return wabot_derivar_contestando($texto, $conv, $cfg, $causa);
 }
 
 function wabot_evento_o_diferir(&$conv, $evento, $datos = []) {
@@ -1715,6 +1717,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($infoCerrado === 'pago') return [wabot_texto_pago($conv, $cfg)];
             if ($infoCerrado === 'hosting') return [wabot_texto_hosting($conv, $cfg)];
             if ($infoCerrado === 'rangos') return [wabot_texto_rangos($cfg)];
+            if ($infoCerrado === 'plazos') return [wabot_texto_plazos($conv, $cfg)];
             return [(string)($cfg['info'][$infoCerrado] ?? $cfg['info']['otra'])];
         }
         $tCerrado = wabot_normalizar_frase($texto);
@@ -1850,7 +1853,8 @@ function wabot_engine($texto, &$conv, $cfg) {
             $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
                 : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
-                : ($k === 'rangos' ? wabot_texto_rangos($cfg) : wabot_texto_info($k, $cfg))));
+                : ($k === 'rangos' ? wabot_texto_rangos($cfg)
+                : ($k === 'plazos' ? wabot_texto_plazos($conv, $cfg) : wabot_texto_info($k, $cfg)))));
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
         // "Ese detalle te lo confirma Pablo" es una promesa: si sale, la duda
@@ -2302,7 +2306,16 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|mantenimiento|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)) return 'mantenimiento';
     if (preg_match('/\b(hasta cuando|por cuanto tiempo|cuanto tiempo|cuantos dias|se vence|vence|caduca|se cae|se borra|sigue disponible|va a estar disponible|expira)\b.{0,30}\b(demo|muestra|link|pagina de prueba)\b/u', $t)
         || preg_match('/\b(demo|muestra|link)\b.{0,30}\b(hasta cuando|por cuanto tiempo|cuantos dias|se vence|vence|caduca|se borra|expira|sigue disponible|va a estar disponible)\b/u', $t)) return 'demo_vigencia';
-    if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|cuanto tiempo|plazo\w*|cuando esta|cuando la tienen|cuando la entregan|tiempo de entrega|para cuando|en cuanto la|cuando estaria)/u', $t)) return 'plazos';
+    // "en q horario más o menos va a estar listo?" no matcheaba ninguna de
+    // estas y se iba sin respuesta (caso Lara, 28-ago): preguntar por la HORA
+    // es preguntar por el plazo igual que preguntar cuánto tarda.
+    if (preg_match('/\b(cuanto tarda\w*|cuanto demora\w*|cuanto tiempo|plazo\w*|cuando esta|cuando la tienen|cuando la entregan|tiempo de entrega|para cuando|en cuanto la|cuando estaria)/u', $t)
+        || preg_match('/\b(que|q|cual) horario\b/u', $t)
+        || preg_match('/\ba que hora\b|\bpara que hora\b|\ben que momento\b/u', $t)
+        || preg_match('/\b(va a estar|estara|va a quedar|queda|la tengo|la tenes|lo tenes)\b.{0,14}\b(list[oa]|pronta|terminad[oa])\b/u', $t)
+        || preg_match('/\b(cuando|cuándo)\b.{0,18}\b(list[oa]|lista|me la mandas|me la manda|la mandan|la tenes)\b/u', $t)) {
+        return 'plazos';
+    }
     if (preg_match('/\b(como se paga\w*|formas? de pago|medios? de pago|se puede pagar|transferencia\w*|mercado pago|en cuotas|senia|sena)\b/u', $t)) return 'pago';
     // Estas van ANTES de hosting a proposito: la palabra 'dominio' aparece en
     // varias de ellas y, si no, todas caian en la respuesta de hosting.
@@ -3497,6 +3510,33 @@ function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
 }
 
 /**
+ * Derivar sin quedarse mudo.
+ *
+ * Pablo, 28-ago: el traspaso a él va SIEMPRE —eso no se discute— pero el aviso
+ * solo, sin contestar lo que el cliente acababa de preguntar, se lee como que
+ * el bot lo esquivó. Si la pregunta es de las que el bot sabe contestar
+ * (precio, plazos, pago, hosting, mantenimiento), la respuesta va primero y el
+ * aviso atrás. Si no tiene nada que decir, sale el aviso solo, como antes.
+ */
+function wabot_derivar_contestando($texto, &$conv, $cfg, $causa = 'derivacion') {
+    $previa = wabot_respuesta_antes_de_derivar($texto, $conv, $cfg);
+    $aviso  = wabot_derivar($conv, $cfg, $causa);
+    return $previa === '' ? $aviso : array_merge([$previa], $aviso);
+}
+
+/** Lo que el bot puede contestar de un tirón antes de pasarle la charla a Pablo. */
+function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
+    $clave = wabot_info_por_palabras($texto, 'derivado');
+    if ($clave === null) return '';
+    if ($clave === 'precio_actual')  return wabot_precio_resumen($conv, $cfg);
+    if ($clave === 'mantenimiento')  return wabot_texto_mantenimiento($conv, $cfg);
+    if ($clave === 'pago')           return wabot_texto_pago($conv, $cfg);
+    if ($clave === 'hosting')        return wabot_texto_hosting($conv, $cfg);
+    if ($clave === 'rangos')         return wabot_texto_rangos($cfg);
+    return wabot_texto_info($clave, $cfg);
+}
+
+/**
  * Qué contesta el bot cuando el cliente responde a la demo ya presentada.
  *
  * Pablo, 28-ago: "siempre se manda el mismo mensaje repetido; que el mensaje
@@ -3592,6 +3632,10 @@ function wabot_cerrada($texto, &$conv, $cfg) {
             elseif ($infoOffline === 'pago') $out[] = wabot_texto_pago($conv, $cfg);
             elseif ($infoOffline === 'hosting') $out[] = wabot_texto_hosting($conv, $cfg);
             elseif ($infoOffline === 'rangos') $out[] = wabot_texto_rangos($cfg);
+            elseif ($infoOffline === 'plazos') {
+                $out[] = wabot_texto_plazos($conv, $cfg);
+                if (wabot_esperando_demo($conv)) $conv['espera_avisada'] = true;
+            }
             else $out[] = (string)($cfg['info'][$infoOffline] ?? $cfg['info']['otra']);
         }
     }
@@ -3622,9 +3666,16 @@ function wabot_cerrada($texto, &$conv, $cfg) {
                 $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
                 : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
                 : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
-                : ($k === 'rangos' ? wabot_texto_rangos($cfg) : $cfg['info'][$k])));
+                : ($k === 'rangos' ? wabot_texto_rangos($cfg)
+                : ($k === 'plazos' ? wabot_texto_plazos($conv, $cfg) : $cfg['info'][$k]))));
             }
             if (!$lineas) $lineas[] = $cfg['info']['otra'];
+            // Si ya se le contestó por el plazo de la demo, ese texto ES el
+            // aviso de espera: volver a pegarlo abajo lo repite palabra por
+            // palabra en el mismo turno.
+            if (in_array('plazos', $keysCerrada, true) && wabot_esperando_demo($conv)) {
+                $conv['espera_avisada'] = true;
+            }
             $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
         } elseif ($has('quiere_avanzar') || $has('pide_humano')) {
             // Quiere cerrar. No se deriva de nuevo —ya está derivado— pero es el
@@ -3668,8 +3719,25 @@ function wabot_cerrada($texto, &$conv, $cfg) {
  * Son dos situaciones distintas y no se dicen igual: si cerró el prediseño, ya
  * sabe que le escribe Pablo desde tal número; si lo derivamos a mano, no.
  */
+/**
+ * Cuánto falta. Si el prediseño ya está cerrado y la demo todavía no salió, lo
+ * que el cliente está esperando es LA DEMO: contestarle los 7 días de la web
+ * es contestarle otra cosa (caso Lara, 28-ago: preguntó a qué hora estaría
+ * lista y ni siquiera eso, se llevó el aviso de derivación pelado).
+ */
+function wabot_esperando_demo($conv) {
+    return ((($conv['cierre'] ?? '') === 'prediseno') || !empty($conv['lead_creado']))
+           && empty($conv['presentado_ts']);
+}
+
+function wabot_texto_plazos($conv, $cfg) {
+    return wabot_esperando_demo($conv) ? wabot_texto_espera($conv, $cfg) : wabot_texto_info('plazos', $cfg);
+}
+
 function wabot_texto_espera($conv, $cfg) {
-    if (($conv['cierre'] ?? '') === 'prediseno' || !empty($conv['lead_creado'])) {
+    // El texto del prediseño promete la demo ("te llega hoy"): solo vale
+    // mientras la demo NO haya salido. Después promete algo que ya pasó.
+    if (wabot_esperando_demo($conv)) {
         $t = trim((string)($cfg['espera_prediseno'] ?? ''));
         if ($t !== '') return $t;
     }

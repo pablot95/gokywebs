@@ -239,7 +239,10 @@ caso('ni un pulgar arriba solo', wabot_engine('👍', $c, $cfg) === []);
 // Acá está el pedido: la charla quedó cerrada pero el bot sigue contestando.
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('en cuanto tiempo estaria?', $c, $cfg);
-caso('con la charla cerrada igual contesta una duda', $r === [$cfg['info']['plazos']]);
+caso('con la charla cerrada igual contesta una duda',
+    $r === [wabot_texto_plazos($c, $cfg)]);
+caso('y esperando la demo le contesta por la demo, no por los 7 días de la web',
+    $r === [$cfg['espera_prediseno']] && $r !== [$cfg['info']['plazos']]);
 
 clasifica(['pregunta_info'], ['info_keys' => ['pago', 'hosting']]);
 $r = wabot_engine('como se paga y el hosting?', $c, $cfg);
@@ -831,8 +834,12 @@ foreach (['dale', 'ok', 'si', 'listo', 'de una', 'joya', 'me sirve', 'buenisimo'
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['quiere_avanzar']);
 $r = wabot_engine('dale, mandame el CBU asi te transfiero la seña', $c, $cfg);
+// Pablo, 28-ago: el traspaso va igual, pero ya no sale solo — antes contesta
+// lo que el cliente acaba de preguntar ("mandame el CBU" = cómo se paga).
 caso('un pedido con contenido propio sí deriva',
-    $r === [$cfg['derivar']] && $c['fase'] === 'derivado');
+    end($r) === $cfg['derivar'] && $c['fase'] === 'derivado');
+caso('y no deriva mudo: primero le contesta cómo se paga',
+    count($r) === 2 && $r[0] === wabot_texto_pago($c, $cfg));
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['pide_humano']);
@@ -4394,7 +4401,9 @@ $cCerrPregunta['espera_avisada'] = false;
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $rCerrPregunta = wabot_cerrada('en cuanto tiempo la tienen?', $cCerrPregunta, $cfg);
 caso('una pregunta real sigue contestándose aunque sea la primera vez tras el cierre',
-    in_array($cfg['info']['plazos'], $rCerrPregunta, true));
+    in_array(wabot_texto_plazos($cCerrPregunta, $cfg), $rCerrPregunta, true));
+caso('y no se le repite dos veces la misma línea',
+    count($rCerrPregunta) === count(array_unique($rCerrPregunta)));
 
 echo "\n— Proveedor que nos vende A NOSOTROS: silencio, no es un lead (27-ago) —\n";
 
