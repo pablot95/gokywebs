@@ -178,7 +178,7 @@ function wabot_config_load() {
     if (!isset($cfg['demora_segundos']))       $cfg['demora_segundos']       = 10;
     if (!isset($cfg['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = 20;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
-        $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.';
+        $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.';
     }
     if (trim((string)($cfg['gemini_modelo'] ?? '')) === '') {
         $cfg['gemini_modelo'] = wabot_gemini_modelo_default();
@@ -1550,14 +1550,20 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
         // contestar y la charla se enfriaba justo cuando más falta hace que
         // siga viva (hay que poder mandarle la demo dentro de las 24 h de Meta).
         'espera_prediseno' => [
+            // Pablo, 28-ago: la demo la manda ÉL, por este chat si no pasaron
+            // las 24 h de Meta y desde el número de proyectos si pasaron. El
+            // texto viejo prometía "escribime por acá" a secas, y al que le
+            // llegaba desde el otro número lo dejaba sin entender de quién era.
+            'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.'
+                => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma Pablo cuando te escriba.'
-                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+                => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirman cuando te escriban.'
-                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+                => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
             'Listo, ya quedó todo anotado. Si te queda alguna duda escribime y te la contesto, y el resto te lo confirma el desarrollador cuando te escriba.'
-                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+                => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
             'Listo, ya quedó todo anotado. Una sola cosa más mientras la preparamos: qué es lo que más te interesa destacar de tu negocio? Eso lo dejamos arriba de todo en la web.'
-                => 'Listo, ya quedó todo anotado. Cualquier duda que te surja escribime por acá, y la demo te llega {entrega}.',
+                => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
         ],
         'sistema_whatsapp' => [
             'Última cosa: pasame tu número de WhatsApp así Pablo te envía por ahí la propuesta del sistema.'

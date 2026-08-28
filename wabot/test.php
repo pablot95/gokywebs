@@ -2395,9 +2395,20 @@ caso('el resumen de precio tampoco adelanta la seña',
 // llegar desde otro número. Decir "te escribe el desarrollador, por acá" era
 // mentira dos veces: ni sigue en este chat, ni el cliente sabe de quién es el
 // número que le aparece.
-foreach (['espera_prediseno', 'sistema_whatsapp', 'sistema_cierre'] as $clave) {
+foreach (['sistema_whatsapp', 'sistema_cierre'] as $clave) {
     caso("el texto \"$clave\" de la parte 1 no nombra a Pablo", stripos((string)$cfg[$clave], 'pablo') === false);
 }
+// espera_prediseno SÍ lo nombra desde el 28-ago, y es la excepción correcta:
+// la demo no la manda el bot, la manda Pablo — por este mismo chat si no
+// pasaron las 24 h de Meta, y desde el número de proyectos si pasaron. Tiene
+// que decir las dos cosas o el que la recibe del otro número no sabe de quién
+// es (fue el reclamo de Pablo el 28-ago).
+caso('espera_prediseno nombra a Pablo, que es quien manda la demo',
+    stripos((string)$cfg['espera_prediseno'], 'pablo') !== false);
+caso('avisa que puede llegar por acá o desde el otro número',
+    stripos((string)$cfg['espera_prediseno'], 'por acá') !== false
+    && stripos((string)$cfg['espera_prediseno'], 'otro número') !== false);
+caso('y sigue diciendo cuándo llega', strpos((string)$cfg['espera_prediseno'], '{entrega}') !== false);
 foreach (['derivar', 'espera'] as $clave) {
     caso("el traspaso \"$clave\" nombra a Pablo y avisa el cambio de número",
         stripos((string)$cfg[$clave], 'pablo') !== false
