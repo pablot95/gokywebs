@@ -1219,10 +1219,35 @@ $presentadaSinConfirmar = $base;
 $presentadaSinConfirmar['presentado_ts'] = time();
 caso('una muestra ya presentada sin confirmar va a Presentados, no a Muestras',
     wabot_conv_grupo($presentadaSinConfirmar) === 'presentados');
+/* Y cuando el cliente contesta NO vuelve a Muestras: pasa a ser DEI.
+ *
+ * Antes sí volvía —presentado_confirmado se enciende con la primera respuesta y
+ * la condición del grupo se rompía— así que toda demo entregada con el cliente
+ * contestando reaparecía en D, "Con demo por presentar", y DEI no se alcanzaba
+ * nunca porque su filtro exige el grupo presentados (Pablo, 28-ago: "todas las
+ * demos se quedan en D"). */
 $presentadaConfirmada = $presentadaSinConfirmar;
 $presentadaConfirmada['presentado_confirmado'] = true;
-caso('una vez que confirmó, vuelve a Muestras (queda como cola de trabajo)',
-    wabot_conv_grupo($presentadaConfirmada) === 'muestra');
+$presentadaConfirmada['transcript'][] = ['q' => 'cliente', 't' => 'La primer mirada me gustó', 'ts' => time()];
+caso('cuando contesta NO vuelve a Muestras: sigue en Presentados',
+    wabot_conv_grupo($presentadaConfirmada) === 'presentados');
+caso('y ahí es donde el panel lo marca DEI',
+    wabot_presentada_con_interes($presentadaConfirmada) === true);
+caso('mientras no conteste sigue siendo DE, no DEI',
+    wabot_presentada_con_interes($presentadaSinConfirmar) === false);
+
+// Ni siquiera después de 48 h de silencio: se enfría, pero no es trabajo de
+// diseño pendiente.
+$presentadaFria = $presentadaSinConfirmar;
+$presentadaFria['presentado_ts'] = time() - 72 * 3600;
+caso('a las 72 h sin respuesta se enfría, pero tampoco vuelve a Muestras',
+    wabot_conv_grupo($presentadaFria) === 'presentadas_48');
+
+// Y el aviso de pago le sigue ganando a todo.
+$presentadaPago = $presentadaConfirmada;
+$presentadaPago['pago_avisado_ts'] = time();
+caso('el que avisó que pagó gana sobre DE y DEI',
+    wabot_conv_grupo($presentadaPago) === 'pago');
 
 // El caso de Pablo: contesta él, el cliente responde y queda último.
 $base['transcript'][] = ['q'=>'humano','t'=>'Te mando la muestra mañana','ts'=>2];

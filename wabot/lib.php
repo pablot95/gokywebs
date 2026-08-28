@@ -3664,7 +3664,19 @@ function wabot_conv_grupo($cv) {
     // transferencia y arrancar. Gana sobre cualquier otra columna.
     if (!empty($cv['pago_avisado_ts'])) return 'pago';
 
-    if (!empty($cv['presentado_ts']) && empty($cv['presentado_confirmado'])) {
+    /* Entregada la demo, la conversación NO vuelve nunca a la cola de diseño.
+     *
+     * Antes esta rama pedía además que presentado_confirmado estuviera vacío, y
+     * ese flag se enciende con la PRIMERA respuesta del cliente. O sea que justo
+     * cuando la demo pasaba a ser interesante, la condición se rompía, caía en
+     * el $esMuestra de abajo (lead_creado sigue en true para siempre) y volvía a
+     * D — "Con demo por presentar" — una demo que ya estaba entregada y con el
+     * cliente contestando. Por eso se quedaban todas en D y DEI no se alcanzaba
+     * nunca: el filtro exige grupo presentados (Pablo, 28-ago).
+     *
+     * DE (presentados) y DEI son el mismo grupo: los separa con_interes, que
+     * mira si el cliente escribió algo después de la entrega. */
+    if (!empty($cv['presentado_ts'])) {
         // Pasadas 48 h sin que conteste una sola vez, sale de la cola normal y va
         // a su propia columna: son los que hay que salir a buscar a mano, porque
         // la ventana de 24 h de Meta ya no deja escribirles sin plantilla.
