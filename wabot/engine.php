@@ -3552,6 +3552,10 @@ function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
  */
 function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $conv['presentado_confirmado'] = true;
+    /* Se contesta UNA vez y listo. Después de esto el bot se calla: lo que siga
+     * mandando el cliente queda en el panel para Pablo, pero sin respuesta.
+     * Ver el corte de wabot_responder() en redactor.php. */
+    $conv['postdemo_avisado'] = true;
 
     /* El cliente avisa que ya pagó. No es vender: es acusar recibo de algo que
      * ya pasó, y quedarse callado ahí sería peor. */

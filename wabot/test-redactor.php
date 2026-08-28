@@ -416,5 +416,62 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 caso('pero mandar los datos reales sí avanza',
     wabot_responder('Denise, BJR Best Job Review, colores azul y negro', $convDatos, $cfgAcuse) !== []);
 
+echo "\n— Post-demo: se contesta UNA vez y despues silencio (28-ago) —\n";
+
+/* Charla de Silvana, tal cual paso: contesto la demo y el bot le fue
+ * respondiendo mensaje por mensaje, siempre alguna version de "Pablo te escribe
+ * a la brevedad". Cinco veces. Y la ultima le contesto las formas de pago de
+ * Gokywebs a una pregunta sobre las formas de pago de SU pagina.
+ *
+ * Pablo, 28-ago: "malisimo que sea tan reiterativo, que lo diga una vez y ya
+ * deje de contestar para el resto de las cosas". */
+$cfgSil = $cfg; $cfgSil['modo_redaccion'] = 'fijo';
+$convSil = convNueva();
+$convSil['fase'] = 'postdemo';
+$convSil['tipo'] = 'landing';
+$convSil['precio_dado'] = true;
+$convSil['presentado_ts'] = time() - 600;
+$convSil['presentado_slug'] = 'silvanatarot';
+$convSil['lead_creado'] = true;
+
+$primera = wabot_responder('Recien paro. Me gusta. Yo le pondria mas color .', $convSil, $cfgSil);
+caso('la primera respuesta tras la demo si sale', count((array)$primera) > 0);
+caso('y deja marcado que ya se aviso', !empty($convSil['postdemo_avisado']));
+
+$siguientes = [
+    'Si ....los colores. Quisiera alguna imagen mia por ahi',
+    '[foto] Mando una pieza grafica con su foto',
+    'Entre violetas y dorados',
+    'Y mi imagen',
+    'Gracias',
+    'Pero le falta lo de registros akashicos',
+    'Y las formas de pago para exterior del pais y para el pais',
+];
+$contestados = 0;
+foreach ($siguientes as $msjSil) {
+    if (count((array)wabot_responder($msjSil, $convSil, $cfgSil)) > 0) $contestados++;
+}
+caso('y de ahi en mas el bot no contesta nada mas', $contestados === 0);
+
+// El que pregunta por las formas de pago de SU web no se lleva las de Gokywebs.
+$convPagoSil = convNueva();
+$convPagoSil['fase'] = 'postdemo';
+$convPagoSil['tipo'] = 'landing';
+$convPagoSil['precio_dado'] = true;
+$convPagoSil['presentado_ts'] = time() - 600;
+wabot_responder('Me gusto mucho', $convPagoSil, $cfgSil);
+$rPagoSil = implode(' ', (array)wabot_responder(
+    'Y las formas de pago para exterior del pais y para el pais', $convPagoSil, $cfgSil));
+caso('la pregunta por las formas de pago de SU web no recibe las nuestras',
+    mb_stripos($rPagoSil, 'transferencia') === false
+    && mb_stripos($rPagoSil, 'cuotas') === false);
+
+// El silencio no se vence solo: el reset por inactividad no toca una demo entregada.
+$convViejaSil = $convSil;
+$convViejaSil['ultimo_ts'] = time() - 30 * 86400;
+caso('a los 30 dias el silencio sigue en pie',
+    wabot_conv_reset_si_vieja($convViejaSil, $cfgSil) === false
+    && !empty($convViejaSil['postdemo_avisado']));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

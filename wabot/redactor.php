@@ -40,6 +40,23 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_postdemo_responder($texto, $conv, $cfg);
     }
 
+    /* Y de ahí en más, silencio.
+     *
+     * El corte de arriba solo valía mientras la fase era 'postdemo', y la
+     * primera respuesta la pasa a 'derivado': todo lo que el cliente mandaba
+     * después caía en el agente o en wabot_cerrada() y volvía a recibir alguna
+     * versión de "Pablo te escribe a la brevedad", una y otra vez. En la charla
+     * de Silvana salió cinco veces seguidas, y la última encima contestó las
+     * formas de pago de Gokywebs a una pregunta sobre las formas de pago de SU
+     * página (Pablo, 28-ago: "malísimo que sea tan reiterativo, que lo diga una
+     * vez y ya deje de contestar para el resto de las cosas").
+     *
+     * Lo que sigue mandando —fotos, cambios, preguntas— se guarda igual en el
+     * transcript y le aparece a Pablo sin leer en el panel. Solo no se contesta. */
+    if (!empty($conv['presentado_ts']) && !empty($conv['postdemo_avisado'])) {
+        return [];
+    }
+
     /* "Sale lo mismo con carrito?" / "si lo agendo yo cuál es la diferencia":
      * la respuesta son dos precios que el bot ya tiene, y se contesta sin
      * pasar por el modelo. En la batería del 27-ago el agente falló las dos

@@ -2932,6 +2932,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_ts'] = 0;
     $conv['presentado_slug'] = null;
     $conv['presentado_confirmado'] = false;
+    $conv['postdemo_avisado'] = false;
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
     $conv['confirmacion_demo_enviada'] = false;
