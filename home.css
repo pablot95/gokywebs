@@ -276,6 +276,7 @@ img { max-width: 100%; display: block; }
 .pf-cat:hover { color: var(--text); }
 .pf-cat.active { color: var(--text); }
 .pf-cat.active::after { transform: scaleX(1); }
+.pf-todos { display: flex; justify-content: center; margin-top: clamp(28px, 4vw, 44px); }
 .pf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(18px, 2vw, 28px) clamp(12px, 1.3vw, 18px); }
 .pf-card { position: relative; display: flex; flex-direction: column; }
 .pf-card.pf-hidden { display: none; }

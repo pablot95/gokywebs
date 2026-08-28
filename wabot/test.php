@@ -608,6 +608,10 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
     // desempate) — eso ya lo cubren los bloques de arriba y de test-agente.php.
     $rFijo = wabot_pitch($tipoFijo, $cFijo, $cfg);
     $esperado = str_replace('{precio}', (string)$cfg['tipos'][$tipoFijo]['precio'], $plantillaFija);
+    // Desde el 28-ago le sigue la línea del portfolio prefiltrado por el tipo
+    // (ver wabot_config_portfolio): el texto de Pablo va igual, arriba.
+    $esperado .= "\nY acá podés ver " . $cfg['tipos'][$tipoFijo]['portfolio_texto']
+               . ': ' . $cfg['tipos'][$tipoFijo]['portfolio'];
     caso("$tipoFijo: el texto fijo de Pablo sale tal cual, con {precio} resuelto", $rFijo[0] === $esperado);
     caso("$tipoFijo: el texto fijo no lleva el link del presupuesto", strpos($rFijo[0], 'presupuestos/') === false);
     caso("$tipoFijo: la pregunta del pitch llega en el segundo mensaje", count($rFijo) === 2 && mb_substr(trim($rFijo[1]), -1) === '?');
@@ -4878,6 +4882,76 @@ caso('"si não tenés" se corrige a "si no tenés"',
 caso('respeta la mayúscula inicial', wabot_castellanizar('Não hay problema') === 'No hay problema');
 caso('un texto en español correcto no se toca',
     wabot_castellanizar('Contame los colores de tu marca y armamos la demo.') === 'Contame los colores de tu marca y armamos la demo.');
+
+echo "\n— El precio manda el portfolio prefiltrado (28-ago) —\n";
+
+// Pablo, 28-ago: con el precio va gokywebs.com/portfolio/ ya filtrado por el
+// tipo cotizado. Al de ecommerce le tienen que aparecer tiendas, no landings.
+// Catálogo y turnos ya no son una categoría del portfolio (sus trabajos están
+// dentro de ecommerce y de landing): el link sigue igual, pero el texto nombra
+// lo que el cliente va a ver.
+foreach ([
+    'ecommerce'     => 'tiendas online',
+    'landing'       => 'landings',
+    'inmobiliaria'  => 'inmobiliarias',
+    'elearning'     => 'plataformas de cursos',
+    'turnos'        => 'otras webs que ya entregamos',
+    'catalogo'      => 'tiendas online',
+    'institucional' => 'institucionales',
+] as $tipo => $comoSeLlaman) {
+    $msg = wabot_msg_precio_texto($tipo, $cfg);
+    caso("el precio de $tipo lleva el portfolio filtrado por $tipo",
+        strpos($msg, 'gokywebs.com/portfolio/?tipo=' . $tipo) !== false);
+    caso("y lo nombra como \"$comoSeLlaman\"", strpos($msg, $comoSeLlaman) !== false);
+}
+
+$convCat = conv_nueva();
+$convCat['tipo'] = 'catalogo';
+$convCat['productos_cantidad'] = 30;
+caso('el precio del catálogo también lo lleva',
+    strpos(wabot_msg_precio_texto('catalogo', $cfg, $convCat),
+           'gokywebs.com/portfolio/?tipo=catalogo') !== false);
+
+caso('y el resumen del precio también',
+    strpos(wabot_precio_resumen(['tipo' => 'ecommerce', 'precio_dado' => true], $cfg),
+           'gokywebs.com/portfolio/?tipo=ecommerce') !== false);
+
+caso('ninguna variante del precio se queda sin portfolio',
+    count(array_filter((array)$cfg['msg_precio_variantes'], function ($v) {
+        return strpos($v, '{portfolio}') === false;
+    })) === 0);
+
+// El "?" de la query string no es una pregunta: si contara como tal,
+// wabot_una_sola_pregunta() se comería la pregunta del pitch que va atrás.
+caso('el "?" del link no hace pasar el precio por pregunta',
+    strpos(wabot_texto_sin_links('mirá gokywebs.com/portfolio/?tipo=ecommerce'), '?') === false);
+caso('pero una pregunta de verdad sigue teniendo su "?"',
+    strpos(wabot_texto_sin_links('Cuál es el producto que más vendés?'), '?') !== false);
+caso('el precio + la pregunta del pitch siguen saliendo los dos',
+    count(wabot_una_sola_pregunta([
+        wabot_msg_precio_texto('ecommerce', $cfg),
+        'Cuál es el producto que más vendés?',
+    ])) === 2);
+
+// El camino normal manda el precio con precio_ideal (el texto fijo del turno
+// del pitch), no con msg_precio: si el portfolio no entra ahí, no entra nunca.
+foreach (['landing', 'ecommerce', 'turnos', 'inmobiliaria', 'elearning'] as $tipo) {
+    caso("el precio_ideal de $tipo lleva el portfolio",
+        strpos(wabot_pitch_precio_texto($tipo, $cfg, conv_nueva()),
+               'gokywebs.com/portfolio/?tipo=' . $tipo) !== false);
+}
+
+// El turno del pitch tal como sale: precio con el link, y la pregunta aparte.
+// El "?" de la query string no puede comerse el segundo mensaje.
+$convPitch = conv_sin_pitch();
+$salidaPitch = (array)wabot_pitch('ecommerce', $convPitch, $cfg);
+caso('el turno del pitch manda el precio con el portfolio Y la pregunta',
+    count($salidaPitch) === 2
+    && strpos($salidaPitch[0], 'gokywebs.com/portfolio/?tipo=ecommerce') !== false
+    && strpos($salidaPitch[1], '?') !== false);
+caso('la línea del portfolio va última, después del precio',
+    substr(trim($salidaPitch[0]), -strlen('gokywebs.com/portfolio/?tipo=ecommerce'))
+        === 'gokywebs.com/portfolio/?tipo=ecommerce');
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

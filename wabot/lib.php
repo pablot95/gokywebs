@@ -190,6 +190,9 @@ function wabot_config_load() {
     wabot_config_partir_precio($cfg);
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
+    // Último: las funciones de arriba reescriben plantillas de precio buscando
+    // textos exactos, y la línea del portfolio las dejaría sin match.
+    wabot_config_portfolio($cfg);
 
     return $cfg;
 }
@@ -1796,6 +1799,82 @@ function wabot_texto_prediseno_completo($conv, $cfg) {
         if ($yaMando !== '') return $yaMando;
     }
     return str_replace('{imagenes}', wabot_imagenes_a_pedir($conv, $cfg), $texto);
+}
+
+/**
+ * El link del portfolio, prefiltrado por el tipo que se está cotizando.
+ *
+ * Pablo, 28-ago-2026: con el precio el cliente tiene que poder ver trabajos DE
+ * SU RUBRO, no el portfolio entero — /portfolio/?tipo=ecommerce le abre la
+ * página ya filtrada en tiendas online, y así con landing, inmobiliaria y
+ * plataforma de cursos. Se completa acá (y no solo en bot-config.json) para
+ * que también lo tengan los configs que el panel ya reescribió: si la
+ * plantilla de precio todavía no nombra el portfolio, se le suma la línea al
+ * final sin tocar el resto del texto.
+ */
+function wabot_config_portfolio(&$cfg) {
+    $base = trim((string)($cfg['portfolio_link_base'] ?? ''));
+    if ($base === '') {
+        $base = 'gokywebs.com/portfolio/?tipo=';
+        $cfg['portfolio_link_base'] = $base;
+    }
+
+    // Catálogo y turnos ya no son una categoría propia del portfolio: sus
+    // trabajos quedaron dentro de ecommerce y de landing. El link sigue siendo
+    // ?tipo=catalogo / ?tipo=turnos —el portfolio los redirige— pero el texto
+    // tiene que nombrar lo que el cliente va a ver, no lo que cotizó.
+    $textos = [
+        'landing'       => 'otras landings que ya entregamos',
+        'catalogo'      => 'otras tiendas online que ya entregamos',
+        'turnos'        => 'otras webs que ya entregamos',
+        'institucional' => 'otras webs institucionales que ya entregamos',
+        'inmobiliaria'  => 'otras webs de inmobiliarias que ya entregamos',
+        'ecommerce'     => 'otras tiendas online que ya entregamos',
+        'elearning'     => 'otras plataformas de cursos que ya entregamos',
+    ];
+    foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
+        if (trim((string)($datos['portfolio'] ?? '')) === '') {
+            $cfg['tipos'][$tipo]['portfolio'] = $base . rawurlencode($tipo);
+        }
+        if (trim((string)($datos['portfolio_texto'] ?? '')) === '') {
+            $cfg['tipos'][$tipo]['portfolio_texto'] = $textos[$tipo] ?? 'otros trabajos que ya entregamos';
+        }
+    }
+
+    $sumar = function ($texto) {
+        $t = (string)$texto;
+        if (trim($t) === '' || strpos($t, '{portfolio}') !== false) return $t;
+        return rtrim($t) . "\nY acá podés ver {portfolio_texto}: {portfolio}";
+    };
+
+    // precio_ideal es EL mensaje de precio del camino normal (el turno del
+    // pitch, wabot_pitch_precio_texto): si no se lo suma acá, el portfolio solo
+    // aparecería en los caminos secundarios.
+    foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
+        if (trim((string)($datos['precio_ideal'] ?? '')) === '') continue;
+        $cfg['tipos'][$tipo]['precio_ideal'] = $sumar($datos['precio_ideal']);
+    }
+    foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch',
+              'msg_precio_catalogo_tras_pitch', 'precio_resumen'] as $k) {
+        if (isset($cfg[$k]) && is_string($cfg[$k])) $cfg[$k] = $sumar($cfg[$k]);
+    }
+    foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes',
+              'msg_precio_tras_pitch_variantes'] as $k) {
+        if (!empty($cfg[$k]) && is_array($cfg[$k])) $cfg[$k] = array_map($sumar, $cfg[$k]);
+    }
+
+    // "Tienen ejemplos?" y la respuesta a la desconfianza mandaban a la home,
+    // donde el portfolio es una sección más. Ahora tiene página propia: el que
+    // pregunta por trabajos entra directo a los trabajos.
+    foreach (['ejemplos', 'confianza'] as $k) {
+        $t = (string)($cfg['info'][$k] ?? '');
+        if ($t === '' || strpos($t, 'gokywebs.com/portfolio') !== false) continue;
+        $cfg['info'][$k] = str_replace(
+            ['en gokywebs.com podés ver', 'En gokywebs.com podés ver'],
+            ['en gokywebs.com/portfolio podés ver', 'En gokywebs.com/portfolio podés ver'],
+            $t
+        );
+    }
 }
 
 /**
@@ -3866,11 +3945,26 @@ function wabot_sin_repetidos_consecutivos($mensajes) {
  * el resto no se puede cotizar. La del pitch es opcional y puede volver a
  * hacerse más adelante.
  */
+/**
+ * El texto sin los links, para poder preguntarle si tiene un "?" de verdad.
+ * Desde que el mensaje del precio lleva gokywebs.com/portfolio/?tipo=ecommerce,
+ * el "?" de la query string hacía pasar por pregunta a un mensaje que no
+ * pregunta nada — y wabot_una_sola_pregunta() se comía la pregunta del pitch
+ * que venía atrás.
+ */
+function wabot_texto_sin_links($texto) {
+    return preg_replace(
+        '~(https?://)?[a-z0-9][a-z0-9\-]*(\.[a-z0-9\-]+)*'
+        . '\.(com|net|org|ar|app|club|shop|studio|info|io|co|me)(\.[a-z]{2,3})?'
+        . '(/[^\s]*)?~iu',
+        ' ', (string)$texto);
+}
+
 function wabot_una_sola_pregunta($mensajes) {
     $out = [];
     $yaHayPregunta = false;
     foreach ((array)$mensajes as $m) {
-        $esPregunta = strpos((string)$m, '?') !== false;
+        $esPregunta = strpos(wabot_texto_sin_links($m), '?') !== false;
         if ($esPregunta && $yaHayPregunta) continue;
         if ($esPregunta) $yaHayPregunta = true;
         $out[] = $m;

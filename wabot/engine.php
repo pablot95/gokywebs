@@ -602,7 +602,7 @@ function wabot_salida_sin_avance($mensajes, &$conv, $cfg) {
 
     $hayPregunta = false;
     foreach ($mensajes as $m) {
-        if (mb_strpos((string)$m, '?') !== false) { $hayPregunta = true; break; }
+        if (mb_strpos(wabot_texto_sin_links($m), '?') !== false) { $hayPregunta = true; break; }
     }
 
     $campos = ['fase', 'tipo', 'cierre', 'nombre_negocio', 'descripcion', 'colores',
@@ -1038,7 +1038,7 @@ function wabot_pidio_institucional_explicito($contexto) {
 
 function wabot_salida_ya_pregunta($out) {
     foreach ((array)$out as $texto) {
-        if (strpos((string)$texto, '?') !== false) return true;
+        if (strpos(wabot_texto_sin_links($texto), '?') !== false) return true;
         if (preg_match('/\b(contame|contanos|decime|decinos|pasame|pasanos|mandame|mandanos|escribime|avisame)\b/u',
                        wabot_normalizar_frase((string)$texto))) {
             return true;
@@ -3154,8 +3154,9 @@ function wabot_precio_resumen($conv, $cfg) {
     }
     $plantilla = (string)($cfg['precio_resumen']
         ?? "El total es {precio} por todo el desarrollo, con una seña de {sena} para arrancar y el saldo al entregar la web.\nEl detalle completo está acá: {link}");
-    return str_replace(['{precio}', '{sena}', '{link}'],
-        [$precio, (string)($t['sena'] ?? ''), (string)($t['link'] ?? '')], $plantilla);
+    return str_replace(['{precio}', '{sena}', '{link}', '{portfolio}', '{portfolio_texto}'],
+        [$precio, (string)($t['sena'] ?? ''), (string)($t['link'] ?? ''),
+          (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')], $plantilla);
 }
 
 function wabot_aporta_descripcion($texto) {
@@ -3246,7 +3247,12 @@ function wabot_pitch_texto($tipo, $conv, $cfg) {
 function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
     $fijo = trim((string)($cfg['tipos'][$tipo]['precio_ideal'] ?? ''));
     if ($fijo !== '') {
-        return str_replace('{precio}', (string)($cfg['tipos'][$tipo]['precio'] ?? ''), $fijo);
+        $t = $cfg['tipos'][$tipo];
+        return str_replace(
+            ['{precio}', '{portfolio}', '{portfolio_texto}'],
+            [(string)($t['precio'] ?? ''), (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
+            $fijo
+        );
     }
     return wabot_msg_precio_texto($tipo, $cfg, $conv);
 }
@@ -3393,9 +3399,11 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
                     ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
                     : (string)$cfg['msg_precio_catalogo']);
             return str_replace(
-                ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}', '{sena}'],
+                ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}', '{sena}',
+                  '{portfolio}', '{portfolio_texto}'],
                 [$desc, $d['cantidad'], wabot_moneda($d['total']), wabot_moneda($d['base']),
-                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link'], (string)($t['sena'] ?? '')],
+                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link'], (string)($t['sena'] ?? ''),
+                  (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
                 $plantilla
             );
         }
@@ -3409,8 +3417,9 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
             ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
             : (string)$cfg['msg_precio']);
     return str_replace(
-        ['{desc}', '{precio}', '{link}', '{sena}'],
-        [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? '')],
+        ['{desc}', '{precio}', '{link}', '{sena}', '{portfolio}', '{portfolio_texto}'],
+        [$desc, $t['precio'], $t['link'], (string)($t['sena'] ?? ''),
+          (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
         $plantilla
     );
 }

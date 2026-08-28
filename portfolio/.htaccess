@@ -1,0 +1,15 @@
+# Las capturas del portfolio no cambian salvo que se rehaga la del sitio: se
+# cachean un año. El HTML/CSS/JS quedan cortos para poder corregir el listado.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/webp "access plus 1 year"
+</IfModule>
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.webp$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(html|css|js)$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+</IfModule>
