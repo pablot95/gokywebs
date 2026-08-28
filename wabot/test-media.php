@@ -321,5 +321,52 @@ caso('sino que le confirma que quedó guardado',
 caso('el aviso de "no llegó nada" sigue existiendo aparte',
     stripos((string)$cfgAvisos['no_texto'], 'no pude abrir') !== false);
 
+echo "\n— El .bin era el cartel de \"no supe qué formato era\" (28-ago) —\n";
+
+// Pablo, 28-ago: "el formato bin falla". Meta manda application/octet-stream
+// para muchos documentos; si además el adjunto venía sin nombre, el archivo se
+// guardaba como .bin y no lo abría nada. La firma de los bytes no miente.
+$firmas = [
+    'docx' => "PK\x03\x04" . str_repeat("\x00", 26) . 'word/document.xml',
+    'xlsx' => "PK\x03\x04" . str_repeat("\x00", 26) . 'xl/workbook.xml',
+    'pptx' => "PK\x03\x04" . str_repeat("\x00", 26) . 'ppt/presentation.xml',
+    'zip'  => "PK\x03\x04" . str_repeat("\x00", 26) . 'fotos/1.jpg',
+    'pdf'  => "%PDF-1.7\n",
+    'jpg'  => "\xFF\xD8\xFF\xE0\x00\x10JFIF\x00",
+    'png'  => "\x89PNG\r\n\x1a\n",
+    'webp' => "RIFF\x00\x00\x00\x00WEBPVP8 ",
+    'wav'  => "RIFF\x00\x00\x00\x00WAVEfmt ",
+    'mp4'  => "\x00\x00\x00\x18ftypmp42",
+    'ogg'  => "OggS\x00\x02",
+    'rar'  => "Rar!\x1a\x07\x00",
+];
+foreach ($firmas as $esperada => $bytes) {
+    caso("un $esperada sin MIME se reconoce por su firma",
+        wabot_media_ext_por_contenido($bytes) === $esperada);
+}
+caso('y lo que no se reconoce sigue cayendo en bin',
+    wabot_media_ext_por_contenido('esto no es ningun formato') === '');
+
+// Guardado de punta a punta: octet-stream + sin nombre ya no da .bin.
+$guardado = wabot_media_guardar('TESTBIN', "%PDF-1.7\nfalso", 'application/octet-stream', 'documento');
+caso('un PDF mandado como octet-stream y sin nombre se guarda .pdf',
+    $guardado !== null && substr($guardado['archivo'], -4) === '.pdf');
+
+// El nombre del cliente manda aunque la extensión no esté en la tabla: un .cdr
+// no lo lee nadie, pero tiene que poder descargarse con su extensión.
+$guardadoCdr = wabot_media_guardar('TESTBIN', 'CDRXvrsn', 'application/octet-stream', 'documento', 'logo.cdr');
+caso('un .cdr conserva su extensión aunque el bot no sepa leerlo',
+    $guardadoCdr !== null && substr($guardadoCdr['archivo'], -4) === '.cdr');
+
+// Pero nada ejecutable, venga como venga.
+$guardadoPhp = wabot_media_guardar('TESTBIN', '<?php echo 1;', 'application/octet-stream', 'documento', 'shell.php');
+caso('un .php nunca se guarda con esa extensión',
+    $guardadoPhp !== null && substr($guardadoPhp['archivo'], -4) === '.bin');
+caso('y la lista de prohibidas cubre las variantes', wabot_media_ext_prohibida('phtml') === true
+    && wabot_media_ext_prohibida('PHP5') === true && wabot_media_ext_prohibida('pdf') === false);
+
+foreach (glob(WABOT_DATA . '/media/TESTBIN/*') as $f) @unlink($f);
+@rmdir(WABOT_DATA . '/media/TESTBIN');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

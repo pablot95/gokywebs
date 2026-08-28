@@ -1083,14 +1083,38 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     return ['error' => 'Ya le pediste exactamente estos mismos datos y todavía no mandó ninguno.',
                             'nota'  => 'No repitas el listado: repetirlo hace parecer que no leíste lo que contestó. Si dijo que sí o que los va a mandar, contestá UNA línea corta del tipo "cuando los tengas me avisás por acá" y esperá. El listado se vuelve a mandar solo si te pide que se lo repitas.'];
                 }
-                // Un "dale" o un "perfecto" NO son aceptar una demo que nunca
-                // se ofreció. Una inmobiliaria dijo "Dale ahora miro" por los
-                // ejemplos del sitio y después "Dale perfecto", y se llevó el
-                // listado de datos de una demo de la que nadie había hablado
-                // (27-ago). cta_muestra marca si la oferta llegó a salir.
-                if (empty($conv['cta_muestra']) && wabot_es_acuse($mensaje)) {
-                    return ['error' => 'Todavía no le ofreciste la demo y eso fue un simple acuse de recibo ("dale", "perfecto", "ok"), no un pedido.',
-                            'nota'  => 'No le pidas los datos: nadie habló todavía de armarle una demo. Si querés ofrecérsela, ofrecela primero con una pregunta y esperá que conteste. Si el acuse cerraba otro tema, contestá UNA línea corta o seguí con lo que estaba pendiente.'];
+                /* Nadie acepta una demo que nunca se le ofreció. cta_muestra
+                 * marca si la oferta llegó a salir, y mientras esté vacío el
+                 * listado de datos NO sale, conteste lo que conteste.
+                 *
+                 * Antes esta guarda solo miraba wabot_es_acuse(): un "Sii"
+                 * contestando la pregunta del pitch no es un acuse —es una
+                 * afirmativa— así que se colaba entera y la clienta recibió el
+                 * listado de datos sin que nadie le hubiera hablado de una demo
+                 * (Pablo, 28-ago: "nunca le ofreció la demo, solo pidió los
+                 * datos"). La condición correcta es la de cta_muestra, no la
+                 * forma del mensaje. */
+                if (empty($conv['cta_muestra']) && empty($conv['demo_pedida_entrada'])
+                    && !wabot_texto_pide_prediseno($mensaje)) {
+
+                    /* Viene de contestar la pregunta del pitch ("buscabas algo
+                     * así?"): lo que falta es justamente OFRECERLE la demo, así
+                     * que se le devuelve la oferta en vez de un error y el turno
+                     * avanza como corresponde. */
+                    if (($conv['fase'] ?? '') === 'pitch' && !empty($conv['precio_dado'])
+                        && !wabot_pitch_dice_otra_idea($mensaje)) {
+                        $conv['fase'] = 'prediseno';
+                        $conv['cta_muestra'] = true;
+                        wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'guard_agente']);
+                        return ['texto' => wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg),
+                                'nota'  => 'Todavía no le habías ofrecido la demo. Esto es SOLO la oferta: mandala tal cual y no le pidas ningún dato. Si confirma que la quiere, recién en el turno siguiente volvés a llamar a consultar_info(\'prediseno\') para pedirle el listado.'];
+                    }
+
+                    /* Fuera del pitch, un "dale" suele estar cerrando otro tema.
+                     * Una inmobiliaria dijo "Dale ahora miro" por los ejemplos
+                     * del sitio y se llevó el listado de datos (27-ago). */
+                    return ['error' => 'Todavía no le ofreciste la demo: nadie habló de armarle una.',
+                            'nota'  => 'No le pidas los datos. Si querés ofrecérsela, ofrecela primero con una pregunta y esperá que conteste. Si lo que dijo cerraba otro tema, contestá UNA línea corta o seguí con lo que estaba pendiente.'];
                 }
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);

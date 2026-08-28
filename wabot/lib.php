@@ -3010,19 +3010,27 @@ function wabot_media_guardar($clave, $bytes, $mime, $clase, $nombreOriginal = ''
     $carpeta = WABOT_DATA . '/media/' . preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if (!is_dir($carpeta) && !@mkdir($carpeta, 0755, true)) return null;
 
+    /* La extensión se busca en tres pasadas, de la fuente más confiable a la
+     * menos: el MIME que declaró Meta, el nombre con que el cliente mandó el
+     * archivo, y —si las dos fallan— la firma de los propios bytes. El '.bin'
+     * quedó como último recurso de verdad: antes se llegaba ahí apenas el MIME
+     * era application/octet-stream y el adjunto venía sin nombre, y el archivo
+     * bajaba imposible de abrir (Pablo, 28-ago: "el formato bin falla"). */
     $limpio = trim(explode(';', (string)$mime)[0]);
     $ext = wabot_media_extensiones()[$limpio] ?? '';
-    // Meta a veces manda application/octet-stream para documentos: la extensión
-    // real viene en el filename, y sin ella el archivo baja como .bin y no lo
-    // abre nada.
+
     if ($ext === '' && $nombreOriginal !== '') {
         $deNombre = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
-        if (preg_match('/^[a-z0-9]{1,5}$/', $deNombre)
-            && in_array($deNombre, wabot_media_extensiones(), true)) {
+        // Ya no se exige que esté en la tabla: un .cdr o un .dwg son válidos
+        // para guardar y descargar aunque el bot no sepa leerlos. Lo único que
+        // no entra es lo ejecutable.
+        if (preg_match('/^[a-z0-9]{1,5}$/', $deNombre) && !wabot_media_ext_prohibida($deNombre)) {
             $ext = $deNombre;
         }
     }
-    if ($ext === '') $ext = 'bin';
+
+    if ($ext === '') $ext = wabot_media_ext_por_contenido($bytes);
+    if ($ext === '' || wabot_media_ext_prohibida($ext)) $ext = 'bin';
     $nombre = date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8) . '.' . $ext;
     $ruta = $carpeta . '/' . $nombre;
 
@@ -3188,6 +3196,86 @@ function wabot_ig_adjunto($adjuntos) {
  * capturas en bmp/tiff, y los formatos de diseño que manda quien ya tiene
  * identidad armada (psd, ai, eps, svg) o el logo en varios tamaños (7z, rar).
  */
+/**
+ * La extensión leída de los primeros bytes del archivo.
+ *
+ * Cuando Meta manda `application/octet-stream` y el adjunto viene sin nombre
+ * —o con uno sin extensión— el archivo se guardaba como `.bin` y no lo abría
+ * nada: ni Pablo desde el panel ni el cliente si se lo reenviaba (Pablo,
+ * 28-ago: "el formato bin falla"). La firma del archivo no miente, así que se
+ * lee de ahí. Sin fileinfo a propósito: la extensión no está instalada en esta
+ * máquina y no hay garantía de que esté en el server.
+ *
+ * Devuelve '' si no reconoce la firma.
+ */
+function wabot_media_ext_por_contenido($bytes) {
+    $b = (string)$bytes;
+    if (strlen($b) < 4) return '';
+
+    // Los ZIP hay que abrirlos un poco: docx, xlsx y pptx son todos "PK".
+    if (substr($b, 0, 4) === "PK\x03\x04") {
+        $cabeza = substr($b, 0, 4096);
+        if (strpos($cabeza, 'word/') !== false)  return 'docx';
+        if (strpos($cabeza, 'xl/') !== false)    return 'xlsx';
+        if (strpos($cabeza, 'ppt/') !== false)   return 'pptx';
+        if (strpos($cabeza, 'mimetypeapplication/vnd.oasis.opendocument.text') !== false) return 'odt';
+        if (strpos($cabeza, 'mimetypeapplication/vnd.oasis.opendocument.spreadsheet') !== false) return 'ods';
+        return 'zip';
+    }
+
+    $firmas = [
+        '%PDF'             => 'pdf',
+        "\xFF\xD8\xFF"     => 'jpg',
+        "\x89PNG\r\n\x1a\n"=> 'png',
+        'GIF87a'           => 'gif',
+        'GIF89a'           => 'gif',
+        'OggS'             => 'ogg',
+        'ID3'              => 'mp3',
+        "\xFF\xFB"         => 'mp3',
+        "\xFF\xF3"         => 'mp3',
+        'Rar!'             => 'rar',
+        "7z\xBC\xAF\x27\x1C" => '7z',
+        "\x1F\x8B"         => 'gz',
+        '{\\rtf'           => 'rtf',
+        "\xD0\xCF\x11\xE0" => 'doc',   // OLE viejo: doc/xls/ppt comparten firma
+        '%!PS'             => 'ai',
+        "\x00\x00\x01\xBA" => 'mpeg',
+        "\x1A\x45\xDF\xA3" => 'webm',  // Matroska: webm y mkv
+        'BM'               => 'bmp',
+        '#!AMR'            => 'amr',
+        'fLaC'             => 'flac',
+    ];
+    foreach ($firmas as $firma => $ext) {
+        if (strncmp($b, $firma, strlen($firma)) === 0) return $ext;
+    }
+
+    // RIFF: el tipo real está en los bytes 8..11 (WEBP, WAVE, AVI ).
+    if (substr($b, 0, 4) === 'RIFF') {
+        $marca = substr($b, 8, 4);
+        if ($marca === 'WEBP') return 'webp';
+        if ($marca === 'WAVE') return 'wav';
+        if ($marca === 'AVI ') return 'avi';
+    }
+    // ISO base media (mp4/m4a/mov/3gp): "ftyp" en el byte 4 y la marca atrás.
+    if (substr($b, 4, 4) === 'ftyp') {
+        $marca = substr($b, 8, 4);
+        if ($marca === 'qt  ') return 'mov';
+        if (strncmp($marca, '3g', 2) === 0) return '3gp';
+        if (strncmp($marca, 'M4A', 3) === 0) return 'm4a';
+        return 'mp4';
+    }
+    return '';
+}
+
+/** Extensiones que no se guardan nunca, aunque el cliente las mande así. */
+function wabot_media_ext_prohibida($ext) {
+    return in_array(strtolower((string)$ext), [
+        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phps', 'phar',
+        'cgi', 'pl', 'py', 'rb', 'sh', 'bash', 'exe', 'bat', 'cmd', 'com',
+        'scr', 'msi', 'dll', 'so', 'jar', 'vbs', 'ps1', 'htaccess',
+    ], true);
+}
+
 function wabot_media_extensiones() {
     return [
         // Imágenes

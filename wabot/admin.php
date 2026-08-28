@@ -56,12 +56,14 @@ foreach (($cfg['ejemplos'] ?? []) as $ej) {
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'media') {
     $clave   = preg_replace('/[^0-9A-Za-z]/', '', (string)($_GET['tel'] ?? ''));
     $archivo = (string)($_GET['archivo'] ?? '');
-    // Las extensiones válidas salen de la MISMA tabla con la que se guardan
-    // (wabot_media_extensiones), así no vuelve a pasar que se guarde un .pdf y
-    // acá se rechace por no estar en una lista escrita a mano aparte.
-    $extensionesOk = array_unique(array_merge(array_values(wabot_media_extensiones()), ['bin']));
-    $patron = '/^\d{8}-\d{6}-[0-9a-f]{8}\.(' . implode('|', array_map('preg_quote', $extensionesOk)) . ')$/';
-    if ($clave === '' || !preg_match($patron, $archivo)) {
+    /* El nombre en disco lo generamos nosotros (timestamp + hex + extensión),
+     * así que alcanza con exigir ESE formato: no hay forma de salirse de la
+     * carpeta ni de pedir otra cosa. La extensión se acepta abierta porque
+     * desde el 28-ago se guarda la que traía el archivo del cliente —un .cdr o
+     * un .dwg son válidos para descargar aunque el bot no sepa leerlos— y
+     * wabot_media_guardar() ya bloquea lo ejecutable antes de escribir. */
+    $patron = '/^\d{8}-\d{6}-[0-9a-f]{8}\.[a-z0-9]{1,5}$/';
+    if ($clave === '' || !preg_match($patron, $archivo) || wabot_media_ext_prohibida(pathinfo($archivo, PATHINFO_EXTENSION))) {
         http_response_code(400);
         exit('archivo invalido');
     }

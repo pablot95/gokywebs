@@ -1684,6 +1684,41 @@ $rDaleOk = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cD
 caso('pero con la demo ya ofrecida, ese mismo "dale" sí pide los datos',
     trim((string)($rDaleOk['texto'] ?? '')) !== '' && $cDaleOk['fase'] === 'prediseno');
 
+echo "\n— \"Sii\" a la pregunta del pitch se lleva la OFERTA, no el listado (28-ago) —\n";
+
+// La guarda de arriba solo miraba wabot_es_acuse(). "Sii" no es un acuse —es
+// una afirmativa— así que se colaba entera: la clienta contestó "Sii" a "va
+// por ahí lo que buscabas?" y recibió el listado de datos de una demo que
+// nadie le había ofrecido. Pablo, 28-ago: "nunca le ofreció la demo, solo
+// pidió los datos".
+caso('"Sii" NO es un acuse, por eso la guarda vieja lo dejaba pasar',
+    wabot_es_acuse('Sii') === false && wabot_es_afirmativa('Sii') === true);
+
+foreach (['Sii', 'si', 'me sirve', 'si era eso'] as $siPitch) {
+    $cSii = convNueva('TSII');
+    $cSii['fase'] = 'pitch'; $cSii['tipo'] = 'turnos'; $cSii['precio_dado'] = true;
+    $cSii['pitch_hecho'] = true; $cSii['pitch_tipo'] = 'turnos';
+    $cSii['cta_muestra'] = false;
+    $rSii = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cSii, $cfg, $siPitch);
+    $txt = (string)($rSii['texto'] ?? '');
+    caso("\"$siPitch\" recibe la oferta de la demo, no el listado de datos",
+        $txt !== '' && stripos($txt, 'gokywebs.com/form/') === false
+        && stripos($txt, 'colores de tu marca') === false
+        && mb_substr(trim($txt), -1) === '?');
+    caso("y queda marcado que la oferta salió", !empty($cSii['cta_muestra']));
+    @unlink(WABOT_DATA . '/conv/TSII.json');
+}
+
+// Y si contestó que NO encajaba, tampoco se le ofrece nada: se le pregunta qué
+// tenía en mente (eso lo resuelve el motor, acá solo importa que no salga el
+// listado).
+$cNoPitch = convNueva('TNOPITCH');
+$cNoPitch['fase'] = 'pitch'; $cNoPitch['tipo'] = 'turnos'; $cNoPitch['precio_dado'] = true;
+$cNoPitch['cta_muestra'] = false;
+$rNoPitch = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cNoPitch, $cfg, 'no, tenia otra idea');
+caso('un "no, tenía otra idea" no se lleva ni la oferta ni el listado', !empty($rNoPitch['error']));
+@unlink(WABOT_DATA . '/conv/TNOPITCH.json');
+
 echo "\n— Necesidad mixta: no se encaja en un solo tipo ni se deriva a secas (27-ago) —\n";
 
 // Psicoeducación pidió sesiones + grupos + cuadernillos y se llevó una web de
