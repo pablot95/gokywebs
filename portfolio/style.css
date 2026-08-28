@@ -167,9 +167,12 @@ img { display: block; max-width: 100%; }
     background: var(--bg-card); border: 1px solid var(--border);
     box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
     transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
-    animation: cardIn 0.35s var(--ease) both;
 }
-@keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+/* La entrada la pone el JS (clase .entra) y SOLO en las tarjetas que recién
+   aparecen. Si estuviera en .work-card a secas, volvería a correr en cada
+   render, o sea con cada tecla del buscador. */
+.work-card.entra { animation: cardIn 0.42s var(--ease) both; }
+@keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .work-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12); }
 .work-view {
     display: block; position: relative;
@@ -188,6 +191,11 @@ img { display: block; max-width: 100%; }
     background: rgba(15, 23, 42, 0.62); color: #fff;
     font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
     pointer-events: none;
+    transition: opacity 0.25s var(--ease);
+}
+/* Con el mouse encima la captura se recorre sola: el "Deslizá" sobra. */
+@media (hover: hover) and (pointer: fine) {
+    .work-card:hover .work-scroll-hint { opacity: 0; }
 }
 /* Solo se muestra si la captura no cargó: el hueco queda con el dominio. */
 .work-dominio { display: none; }
@@ -270,6 +278,6 @@ img { display: block; max-width: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
-    .work-card { animation: none; }
+    .work-card.entra { animation: none; }
     * { transition-duration: 0.01ms !important; }
 }

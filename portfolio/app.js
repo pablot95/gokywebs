@@ -99,6 +99,12 @@
     var estado = { q: '', tipo: 'all', rubro: 'all' };
     var visibles = LOTE;
 
+    /* Un solo interruptor para todo el movimiento: si el visitante pidió menos
+       animaciones, la grilla se reordena de golpe y el preview no se mueve. */
+    var quietito = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var coreografiaOk = !quietito;
+    var autoPan = !quietito && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
     var $grid = document.getElementById('pfGrid');
     var $input = document.getElementById('buscador');
     var $limpiar = document.getElementById('limpiarBusqueda');
@@ -172,6 +178,7 @@
     function tarjeta(t) {
         var art = document.createElement('article');
         art.className = 'work-card';
+        art.dataset.id = t.id;
         var etiquetas = t._tipos.map(function (id) {
                 return '<span class="tag">' + esc(etiquetaTipo(id)) + '</span>';
             }).join('') +
@@ -194,16 +201,118 @@
             '<p class="work-que">' + esc(t.que) +
                 (t.zona ? ' <span class="work-zona">· ' + esc(t.zona) + '</span>' : '') +
             '</p>';
+
+        /* La tarjeta guarda la captura entera del sitio (hasta 3900px de alto).
+           En desktop se recorre sola al pasar el mouse, así el visitante ve el
+           sitio sin tener que arrastrar. Si la mueve a mano, manda él. */
+        if (autoPan) {
+            var vista = art.querySelector('.work-view');
+            art.addEventListener('mouseenter', function () {
+                panear(vista, vista.scrollHeight - vista.clientHeight, 300);
+            });
+            art.addEventListener('mouseleave', function () {
+                panear(vista, 0, 900);
+            });
+            ['wheel', 'pointerdown', 'touchstart'].forEach(function (ev) {
+                vista.addEventListener(ev, function () { frenarPan(vista); }, { passive: true });
+            });
+        }
         return art;
+    }
+
+    /* ── Auto-pan del preview ── */
+    function frenarPan(vista) {
+        if (vista._raf) cancelAnimationFrame(vista._raf);
+        vista._raf = 0;
+    }
+
+    function panear(vista, hasta, pxPorSegundo) {
+        frenarPan(vista);
+        var desde = vista.scrollTop;
+        var dist = hasta - desde;
+        if (Math.abs(dist) < 4) return;
+        var dur = Math.min(Math.max(Math.abs(dist) / pxPorSegundo * 1000, 240), 9000);
+        var t0 = performance.now();
+        vista._raf = requestAnimationFrame(function paso(ahora) {
+            var p = Math.min((ahora - t0) / dur, 1);
+            /* Arranca y frena suave, pero el tramo del medio es casi parejo:
+               es un recorrido, no un rebote. */
+            var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+            vista.scrollTop = desde + dist * e;
+            if (p < 1) vista._raf = requestAnimationFrame(paso);
+            else vista._raf = 0;
+        });
+    }
+
+    /* Las tarjetas se reusan entre renders: la que ya estaba en pantalla no se
+       vuelve a crear, se mueve. Eso es lo que permite el FLIP y, sobre todo, lo
+       que evita que la grilla entera re-animara con CADA tecla del buscador
+       (antes render() la borraba y la volvía a construir de cero). */
+    var nodos = {};
+
+    function nodoDe(t) {
+        if (!nodos[t.id]) nodos[t.id] = tarjeta(t);
+        return nodos[t.id];
+    }
+
+    function medir() {
+        var m = {};
+        [].forEach.call($grid.children, function (el) {
+            m[el.dataset.id] = el.getBoundingClientRect();
+        });
+        return m;
+    }
+
+    /* FLIP: lo que ya estaba se desliza desde donde estaba hasta su lugar
+       nuevo; lo que recién aparece entra escalonado. */
+    function coreografiar(elementos, antes) {
+        var despues = medir();
+        var nuevas = 0;
+        elementos.forEach(function (el) {
+            var a = antes[el.dataset.id], d = despues[el.dataset.id];
+            if (a && d) {
+                var dx = a.left - d.left, dy = a.top - d.top;
+                if (!dx && !dy) return;
+                el.style.transition = 'none';
+                el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+                el.getBoundingClientRect();               // fuerza el reflow
+                requestAnimationFrame(function () {
+                    el.style.transition = 'transform 0.42s cubic-bezier(0.4, 0, 0.2, 1)';
+                    el.style.transform = '';
+                });
+                el.addEventListener('transitionend', function limpiar(e) {
+                    if (e.propertyName !== 'transform') return;
+                    el.style.transition = '';
+                    el.style.transform = '';
+                    el.removeEventListener('transitionend', limpiar);
+                });
+            } else {
+                el.classList.remove('entra');
+                el.getBoundingClientRect();
+                el.style.animationDelay = Math.min(nuevas++, 8) * 45 + 'ms';
+                el.classList.add('entra');
+                el.addEventListener('animationend', function fin() {
+                    el.classList.remove('entra');
+                    el.style.animationDelay = '';
+                    el.removeEventListener('animationend', fin);
+                });
+            }
+        });
     }
 
     function render() {
         var res = filtrar();
-        $grid.textContent = '';
         var tanda = res.slice(0, visibles);
-        var frag = document.createDocumentFragment();
-        tanda.forEach(function (t) { frag.appendChild(tarjeta(t)); });
-        $grid.appendChild(frag);
+        var antes = coreografiaOk ? medir() : {};
+
+        var deseados = tanda.map(nodoDe);
+        [].slice.call($grid.children).forEach(function (el) {
+            if (deseados.indexOf(el) === -1) $grid.removeChild(el);
+        });
+        deseados.forEach(function (el, i) {
+            if ($grid.children[i] !== el) $grid.insertBefore(el, $grid.children[i] || null);
+        });
+        if (coreografiaOk) coreografiar(deseados, antes);
 
         $vacio.hidden = res.length > 0;
         $mas.hidden = res.length <= visibles;
