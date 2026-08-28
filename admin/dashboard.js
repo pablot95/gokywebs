@@ -2866,35 +2866,13 @@ async function completarCliente(id, factura) {
 
     const { id: _id, ...clientData } = c;
     const completadoRef = doc(collection(db, "completados"));
-    const tareaRef = doc(collection(db, "tareas"));
     const clienteRef = doc(db, "clientes", id);
-    const fechaMantenimiento = new Date();
-    fechaMantenimiento.setDate(fechaMantenimiento.getDate() + 30);
-    const fechaMantenimientoKey = [
-        fechaMantenimiento.getFullYear(),
-        String(fechaMantenimiento.getMonth() + 1).padStart(2, "0"),
-        String(fechaMantenimiento.getDate()).padStart(2, "0")
-    ].join("-");
-    const negocio = String(c.proyecto || c.nombre || "cliente").trim();
-    const telefono = String(c.telefono || "").trim();
-    const referenciaMantenimiento = [negocio, telefono].filter(Boolean).join(" · ");
     const batch = writeBatch(db);
 
     batch.set(completadoRef, {
         ...clientData,
         completadoAt: serverTimestamp(),
         ...(factura ? { factura } : {})
-    });
-    batch.set(tareaRef, {
-        fecha: fechaMantenimientoKey,
-        texto: `Empieza el mantenimiento de ${referenciaMantenimiento}`,
-        hora: "",
-        importancia: 1,
-        contexto: c.nombre || negocio,
-        origen: "cliente-completado",
-        clienteOrigenId: id,
-        completadoId: completadoRef.id,
-        createdAt: serverTimestamp()
     });
     batch.delete(clienteRef);
     await batch.commit();
