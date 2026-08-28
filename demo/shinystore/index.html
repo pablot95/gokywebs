@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShinyStore — Cartas TCG selladas y coleccionables</title>
+<meta name="description" content="Tienda de TCG y juguetes coleccionables. Sobres y booster box sellados, cartas sueltas protegidas, accesorios y figuras. Envíos a todo el país y entrega en CABA.">
+<link rel="canonical" href="https://gokywebs.com/demo/shinystore/">
+<meta name="theme-color" content="#000000">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="ShinyStore">
+<meta property="og:title" content="ShinyStore — Cartas TCG selladas y coleccionables">
+<meta property="og:description" content="Sobres y booster box sellados, cartas sueltas protegidas, accesorios y figuras. Envíos a todo el país.">
+<meta property="og:image" content="https://gokywebs.com/demo/shinystore/images/hero-cartas.webp">
+<meta property="og:url" content="https://gokywebs.com/demo/shinystore/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23000'/%3E%3Crect x='19' y='16' width='24' height='32' rx='3' fill='none' stroke='%23D4AF37' stroke-width='3.5'/%3E%3Ccircle cx='31' cy='34' r='7' fill='%23D4AF37'/%3E%3Cpath d='M44 12l2.2 5.8L52 20l-5.8 2.2L44 28l-2.2-5.8L36 20l5.8-2.2z' fill='%23D4AF37'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Manrope:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2">
+<noscript><style>[data-animate],[data-hero]{opacity:1!important;transform:none!important;clip-path:none!important}.pasos-sobre{position:relative;min-height:0;display:grid;gap:1.4rem}.paso-sobre{position:relative;inset:auto;opacity:1;transform:none}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<div class="topbar">
+  <div class="shell topbar-inner">
+    <p><span class="destello" aria-hidden="true"></span> Tienda nueva · stock sellado y original</p>
+    <p class="topbar-envio">Envíos a todo el país · Entrega en CABA</p>
+  </div>
+</div>
+
+<header class="barra" id="top">
+  <div class="shell barra-inner">
+    <a class="brand" href="#top" aria-label="ShinyStore — inicio">
+      <img src="images/logo.webp" alt="ShinyStore" width="1000" height="612">
+    </a>
+
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#categorias">Categorías</a>
+      <a href="#tienda" data-cat="sellado">Sellado</a>
+      <a href="#tienda" data-cat="cartas">Cartas</a>
+      <a href="#tienda" data-cat="accesorios">Accesorios</a>
+      <a href="#tienda" data-cat="coleccionables">Coleccionables</a>
+      <a href="#tienda-todo">Ver todo</a>
+    </nav>
+
+    <div class="barra-acciones">
+      <button type="button" class="icon-btn" id="buscarToggle" aria-label="Buscar productos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="cartHeader" aria-label="Abrir el carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span class="badge" data-cart-count hidden>0</span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <section class="hero" id="hero">
+    <div class="hero-fondo" aria-hidden="true">
+      <img src="images/hero-cartas.webp" alt="" width="1920" height="1200" fetchpriority="high" decoding="async">
+      <span class="hero-scrim"></span>
+    </div>
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow eyebrow-oro" data-hero="1" style="opacity:0;transform:translateY(16px)">TCG &amp; coleccionables · Buenos Aires</p>
+        <img class="hero-logo" src="images/logo.webp" alt="ShinyStore" width="1000" height="612" data-hero="2" style="opacity:0;transform:translateY(22px)">
+        <h1 class="hero-title" data-hero="3" style="opacity:0;transform:translateY(22px)">Sobres y cajas selladas, cartas protegidas y figuras</h1>
+        <p class="hero-sub" data-hero="4" style="opacity:0;transform:translateY(18px)">Producto original, sellado de fábrica y guardado como corresponde. Envíos a todo el país y entrega en mano en CABA.</p>
+        <div class="hero-actions" data-hero="5" style="opacity:0;transform:translateY(18px)">
+          <a class="btn btn-cta" href="#tienda"><span class="btn-t">Ver el catálogo</span></a>
+          <a class="btn btn-ghost" href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20quiero%20consultar%20por%20stock." target="_blank" rel="noopener"><span class="btn-t">Consultar stock</span></a>
+        </div>
+      </div>
+
+      <div class="hero-escena">
+        <figure class="hero-pack" data-hero="6" style="opacity:0;transform:translateY(26px) rotate(-5deg)">
+          <img src="images/pack-sobres-x3.webp" alt="Tres sobres sellados de Pokémon TCG Surging Sparks sostenidos en la mano" width="1200" height="1200">
+        </figure>
+        <div class="hero-ficha" data-hero="7" style="opacity:0;transform:translateY(20px)">
+          <span class="hf-tag">Sellado</span>
+          <p class="hf-nombre">Booster Box · 36 sobres</p>
+          <p class="hf-precio">$349.000</p>
+        </div>
+        <span class="destello destello-xl" data-hero="8" style="opacity:0" aria-hidden="true"></span>
+      </div>
+    </div>
+    <span class="sello-hero" aria-hidden="true">
+      <img src="images/isotipo.webp" alt="" width="600" height="600">
+    </span>
+  </section>
+
+  <section class="categorias" id="categorias" aria-labelledby="cat-title">
+    <div class="shell">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">01 — Categorías</p>
+          <h2 class="h2" id="cat-title" data-animate="up" style="transform:translateY(22px);opacity:0">Elegí por dónde arrancar</h2>
+        </div>
+        <p class="sec-sub" data-animate="up" style="transform:translateY(22px);opacity:0">Cada categoría te lleva al catálogo ya filtrado.</p>
+      </div>
+      <ul class="cat-grid" id="catGrid" data-animate-stagger></ul>
+    </div>
+  </section>
+
+  <section class="buscados" aria-labelledby="busc-title">
+    <div class="shell rail-head">
+      <div>
+        <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">02 — Los más buscados</p>
+        <h2 class="h2" id="busc-title" data-animate="up" style="transform:translateY(22px);opacity:0">Lo que primero se agota</h2>
+      </div>
+      <div class="rail-tools">
+        <a class="ver-todo" href="#tienda-todo">Ver todo el catálogo
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </a>
+        <div class="rail-arrows">
+          <button type="button" class="rail-arrow" id="railPrev" aria-label="Ver anteriores" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+          </button>
+          <button type="button" class="rail-arrow" id="railNext" aria-label="Ver siguientes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="rail-vp" id="railVp">
+      <ul class="rail-track" id="railTrack"></ul>
+    </div>
+  </section>
+
+  <section class="trust" aria-label="Cómo compramos y entregamos">
+    <div class="shell trust-grid" data-animate-stagger>
+      <div class="tr" data-animate="up" style="transform:translateY(20px);opacity:0">
+        <span class="tr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 3 4 6.5v6C4 17.5 12 21 12 21s8-3.5 8-8.5v-6z" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <h3>Sellado y original</h3>
+        <p>Todo el producto llega precintado de fábrica y se guarda sin abrir.</p>
+      </div>
+      <div class="tr" data-animate="up" style="transform:translateY(20px);opacity:0">
+        <span class="tr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h13v10H3zM16 10h3.2l1.8 3v4h-5" stroke-linejoin="round"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></span>
+        <h3>Envíos a todo el país</h3>
+        <p>Coordinamos el envío por WhatsApp según a dónde va el pedido.</p>
+      </div>
+      <div class="tr" data-animate="up" style="transform:translateY(20px);opacity:0">
+        <span class="tr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 12h6M12 9v6" stroke-linecap="round"/></svg></span>
+        <h3>Entrega en mano</h3>
+        <p>Si estás en CABA coordinamos punto de encuentro y lo revisás ahí mismo.</p>
+      </div>
+      <div class="tr" data-animate="up" style="transform:translateY(20px);opacity:0">
+        <span class="tr-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 2.5 14.6 9H21l-5.2 4 2 6.6L12 15.8 6.2 19.6l2-6.6L3 9h6.4z" stroke-linejoin="round"/></svg></span>
+        <h3>¿No lo ves? Lo buscamos</h3>
+        <p>Pedinos el set o la figura que buscás y te confirmamos si podemos conseguirlo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="tienda-sobre" id="sobre" aria-labelledby="sobre-title">
+    <div class="shell sobre-grid">
+      <div class="sobre-copy">
+        <p class="eyebrow eyebrow-oro" data-animate="up" style="transform:translateY(18px);opacity:0">03 — La tienda</p>
+        <h2 class="h2" id="sobre-title" data-animate="up" style="transform:translateY(22px);opacity:0">Arrancamos con lo que nos gusta comprar</h2>
+        <p data-animate="up" style="transform:translateY(22px);opacity:0">ShinyStore es una tienda nueva. Empezamos por lo que nosotros buscábamos y no encontrábamos: producto sellado en serio, cartas guardadas como corresponde y alguien del otro lado que conteste.</p>
+        <p data-animate="up" style="transform:translateY(22px);opacity:0">Cada pedido sale con protección extra y foto antes de despachar. Si algo no llega como corresponde, lo resolvemos.</p>
+        <a class="link-flecha" href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" data-animate="up" style="transform:translateY(22px);opacity:0">Escribinos por WhatsApp
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <figure class="sobre-media" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+        <img src="images/editorial-cajas.webp" alt="Tres booster box de Pokémon TCG apiladas y selladas" width="1600" height="1100" decoding="async">
+      </figure>
+    </div>
+  </section>
+
+  <section class="banda" aria-label="Abrir un sobre">
+    <figure class="banda-fig" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+      <span class="banda-media" data-parallax="0.08">
+        <img src="images/mano-cartas.webp" alt="Una mano sostiene un abanico de cartas de Pokémon TCG recién abiertas" width="1600" height="1200" decoding="async">
+      </span>
+      <span class="banda-scrim" aria-hidden="true"></span>
+      <figcaption><span class="destello" aria-hidden="true"></span> Diez cartas por sobre. Nunca sabés cuál sale.</figcaption>
+    </figure>
+  </section>
+
+  <section class="apertura" id="apertura" aria-labelledby="ap-title">
+    <div class="shell ap-head">
+      <p class="eyebrow eyebrow-oro" data-animate="up" style="transform:translateY(18px);opacity:0">04 — Por qué un sobre</p>
+      <h2 class="h2" id="ap-title" data-animate="up" style="transform:translateY(22px);opacity:0">Diez cartas. Una puede cambiar todo.</h2>
+      <p class="ap-sub" data-animate="up" style="transform:translateY(22px);opacity:0">Scrolleá y abrilo.</p>
+    </div>
+
+    <div class="stage" id="stage">
+      <div class="shell stage-grid" id="stageGrid">
+        <div class="stage-visual" id="stageVisual">
+          <svg class="sobre-svg" id="sobreSvg" viewBox="0 0 620 460" role="img" aria-label="Ilustración de la apertura de un sobre de cartas: el sobre sellado, el sello que se rompe, las cartas que salen, se abren en abanico y la última que gira y brilla">
+            <defs>
+              <linearGradient id="oro" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#E9CC6A"/>
+                <stop offset="50%" stop-color="#D4AF37"/>
+                <stop offset="100%" stop-color="#A8862A"/>
+              </linearGradient>
+              <linearGradient id="brillo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#FFF3C4"/>
+                <stop offset="45%" stop-color="#D4AF37"/>
+                <stop offset="100%" stop-color="#8A6B1F"/>
+              </linearGradient>
+            </defs>
+
+            <g class="cartas" id="cartasGrupo">
+              <g class="carta" data-c="1"><rect x="272" y="120" width="76" height="106" rx="6"/><rect class="carta-in" x="280" y="130" width="60" height="60" rx="3"/></g>
+              <g class="carta" data-c="2"><rect x="272" y="120" width="76" height="106" rx="6"/><rect class="carta-in" x="280" y="130" width="60" height="60" rx="3"/></g>
+              <g class="carta" data-c="3"><rect x="272" y="120" width="76" height="106" rx="6"/><rect class="carta-in" x="280" y="130" width="60" height="60" rx="3"/></g>
+              <g class="carta" data-c="4"><rect x="272" y="120" width="76" height="106" rx="6"/><rect class="carta-in" x="280" y="130" width="60" height="60" rx="3"/></g>
+              <g class="carta carta-rara" id="cartaRara">
+                <rect x="272" y="120" width="76" height="106" rx="6"/>
+                <rect class="carta-in rara-in" x="280" y="130" width="60" height="60" rx="3"/>
+                <path class="rara-brillo" d="M310 152l5.6 14.4L330 172l-14.4 5.6L310 192l-5.6-14.4L290 172l14.4-5.6z"/>
+              </g>
+            </g>
+
+            <g class="sobre" id="sobreGrupo">
+              <rect class="sobre-cuerpo" x="238" y="150" width="144" height="200" rx="8"/>
+              <rect class="sobre-brillo" x="238" y="150" width="144" height="200" rx="8"/>
+              <path class="sobre-linea" d="M254 196h112M254 214h84"/>
+              <g class="sobre-marca" transform="translate(310 268)">
+                <rect x="-26" y="-30" width="52" height="66" rx="5"/>
+                <circle cx="0" cy="6" r="13"/>
+              </g>
+            </g>
+            <g class="sobre-tapa" id="sobreTapa">
+              <rect x="238" y="150" width="144" height="26" rx="8"/>
+              <path class="tapa-dientes" d="M238 176h144"/>
+            </g>
+
+            <g class="destellos-svg" id="destellosSvg">
+              <path d="M150 110l6.4 16.4L173 133l-16.6 6.4L150 156l-6.4-16.6L127 133l16.6-6.6z"/>
+              <path d="M470 300l5.2 13.4L489 319l-13.8 5.2L470 338l-5.2-13.8L451 319l13.8-5.6z"/>
+              <path d="M462 118l4.4 11.4L478 134l-11.6 4.4L462 150l-4.4-11.6L446 134l11.6-4.6z"/>
+            </g>
+          </svg>
+          <p class="ap-pie" aria-hidden="true">10 cartas por sobre</p>
+        </div>
+
+        <div class="stage-side">
+          <ol class="pasos-sobre" id="pasosSobre">
+            <li class="paso-sobre is-on"><span class="ps-num">01</span><h3>El sobre, sellado</h3><p>Así te llega: precintado de fábrica, sin abrir, sin tocar. Nosotros no lo pesamos ni lo elegimos.</p></li>
+            <li class="paso-sobre"><span class="ps-num">02</span><h3>Se rompe el sello</h3><p>El momento que se filma. A partir de acá ya no hay vuelta atrás y esa es medio la gracia.</p></li>
+            <li class="paso-sobre"><span class="ps-num">03</span><h3>Salen las cartas</h3><p>Diez por sobre. Comunes, poco comunes y una que puede ser cualquier cosa.</p></li>
+            <li class="paso-sobre"><span class="ps-num">04</span><h3>Se abren en abanico</h3><p>Todo el mundo las abre igual: rápido las primeras, despacio la última.</p></li>
+            <li class="paso-sobre"><span class="ps-num">05</span><h3>Y a veces brilla</h3><p>Ahí está el shiny. Por eso la tienda se llama así y por eso vendemos sellado, no elegido.</p></li>
+          </ol>
+          <div class="stage-hud" aria-hidden="true">
+            <span class="hud-count"><b id="hudNow">01</b> / 05</span>
+            <span class="hud-rail"><span class="hud-fill" id="hudFill"></span></span>
+            <span class="hud-label" id="hudLabel">El sobre, sellado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tienda" id="tienda" aria-labelledby="tienda-title">
+    <div class="shell">
+      <div class="sec-head" id="tienda-todo">
+        <div>
+          <p class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">05 — Catálogo</p>
+          <h2 class="h2" id="tienda-title" data-animate="up" style="transform:translateY(22px);opacity:0">Todo el stock disponible</h2>
+        </div>
+        <p class="sec-sub" data-animate="up" style="transform:translateY(22px);opacity:0">Buscá por nombre o filtrá por categoría, precio y disponibilidad.</p>
+      </div>
+
+      <div class="filtros">
+        <div class="buscador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg>
+          <label class="sr-only" for="q">Buscar en el catálogo</label>
+          <input type="search" id="q" placeholder="Buscá sobres, cartas, figuras…" autocomplete="off">
+          <button type="button" class="q-clear" id="qClear" aria-label="Borrar la búsqueda" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <button type="button" class="filtros-toggle" id="filtrosToggle" aria-expanded="false" aria-controls="filtrosPanel">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" stroke-linecap="round"/></svg>
+          Filtros <span class="ft-n" id="filtrosN" hidden>0</span>
+        </button>
+      </div>
+
+      <div class="filtros-panel" id="filtrosPanel" hidden>
+        <div class="fp-grupo">
+          <p class="fp-label">Categoría</p>
+          <div class="fp-chips" id="chipsCategoria"></div>
+        </div>
+        <div class="fp-grupo">
+          <p class="fp-label">Disponibilidad</p>
+          <div class="fp-chips" id="chipsDisp"></div>
+        </div>
+        <div class="fp-grupo fp-precio">
+          <p class="fp-label">Precio hasta <b id="precioVal"></b></p>
+          <input type="range" id="precioMax" min="0" max="100" step="1" value="100" aria-label="Precio máximo">
+        </div>
+        <button type="button" class="fp-limpiar" id="fpLimpiar">Limpiar filtros</button>
+      </div>
+
+      <p class="resultados" id="resultados" aria-live="polite"></p>
+      <ul class="catalogo-grid" id="catalogo"></ul>
+
+      <div class="vacio" id="vacio" hidden>
+        <span class="vacio-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/></svg></span>
+        <h3>No tenemos eso en stock</h3>
+        <p>Probá con otra palabra o sacá algún filtro. Si buscás algo puntual, pedilo y lo conseguimos.</p>
+        <button type="button" class="btn btn-ghost" id="vacioLimpiar"><span class="btn-t">Limpiar todo</span></button>
+      </div>
+
+      <button type="button" class="btn btn-ghost ver-mas" id="verMas" hidden><span class="btn-t">Ver más</span></button>
+    </div>
+  </section>
+
+  <section class="cierre" id="contacto" aria-labelledby="cierre-title">
+    <div class="shell cierre-inner">
+      <img class="cierre-logo" src="images/logo.webp" alt="ShinyStore" width="1000" height="612" data-animate="depth" style="transform:scale(.94);opacity:0">
+      <h2 class="h2 cierre-title" id="cierre-title" data-animate="up" style="transform:translateY(22px);opacity:0">¿Buscás algo que no está en la lista?</h2>
+      <p data-animate="up" style="transform:translateY(22px);opacity:0">Decinos qué set, qué carta o qué figura estás buscando y te confirmamos si lo conseguimos y a qué precio.</p>
+      <div data-animate="up" style="transform:translateY(22px);opacity:0">
+        <a class="btn btn-cta btn-lg" href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20estoy%20buscando%20un%20producto%20puntual.%20%C2%BFLo%20consiguen%3F" target="_blank" rel="noopener"><span class="btn-t">Pedilo por WhatsApp</span></a>
+      </div>
+      <p class="cierre-tel" data-animate="up" style="transform:translateY(22px);opacity:0">
+        <a href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 11 6848-6863</a>
+      </p>
+    </div>
+    <span class="sello-cierre" aria-hidden="true">
+      <img src="images/isotipo.webp" alt="" width="600" height="600">
+    </span>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div class="footer-brand">
+      <img src="images/logo.webp" alt="ShinyStore" width="1000" height="612">
+      <p>Cartas TCG selladas, cartas sueltas protegidas, accesorios y figuras coleccionables. Buenos Aires, Argentina.</p>
+    </div>
+    <nav class="footer-nav" aria-label="Categorías">
+      <p class="footer-h">Catálogo</p>
+      <a href="#tienda" data-cat="sellado">Sellado TCG</a>
+      <a href="#tienda" data-cat="cartas">Cartas sueltas</a>
+      <a href="#tienda" data-cat="accesorios">Accesorios</a>
+      <a href="#tienda" data-cat="coleccionables">Coleccionables</a>
+    </nav>
+    <div class="footer-contacto">
+      <p class="footer-h">Contacto</p>
+      <a href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 11 6848-6863</a>
+      <a href="mailto:hola@shinystore.com">hola@shinystore.com</a>
+      <a href="https://instagram.com/" target="_blank" rel="noopener">@shinystore</a>
+      <p class="footer-loc">Envíos a todo el país · Entrega en mano en CABA</p>
+    </div>
+  </div>
+  <div class="shell footer-bottom">
+    <p>© <span id="year">2026</span> ShinyStore. Todos los derechos reservados.</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5491168486863?text=Hola%20ShinyStore%2C%20quiero%20hacer%20una%20consulta%20sobre%20un%20producto." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+  <header class="drawer-head">
+    <h2 id="drawer-title">Tu carrito</h2>
+    <button type="button" class="icon-btn" id="drawerClose" aria-label="Cerrar el carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </header>
+  <div class="drawer-body" id="drawerBody"></div>
+  <footer class="drawer-foot" id="drawerFoot" hidden>
+    <dl class="dtotales" id="dTotales"></dl>
+    <button type="button" class="btn btn-cta btn-block" id="finalizar"><span class="btn-t">Finalizar compra</span></button>
+    <a class="drawer-wsp" id="drawerWsp" href="https://wa.me/5491168486863" target="_blank" rel="noopener">O mandanos el pedido por WhatsApp</a>
+  </footer>
+</aside>
+
+<div class="modal-backdrop" id="modalBackdrop" hidden></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Detalle del producto" hidden>
+  <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="modal-body" id="modalBody"></div>
+</div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="script.js?v=2" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
