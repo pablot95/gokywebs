@@ -2,6 +2,7 @@
 
 require __DIR__ . '/auth-admin.php';
 require __DIR__ . '/../../config/arca/arca.php';
+require __DIR__ . '/../../config/arca/receptor.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -18,6 +19,49 @@ if (!verifyAdminToken()) {
 
 $config = require __DIR__ . '/../../config/arca/arca-config.php';
 
+function leerRegistro($config)
+{
+    $registro = is_readable($config['registro'])
+        ? json_decode(file_get_contents($config['registro']), true)
+        : [];
+    return is_array($registro) ? $registro : [];
+}
+
+function condicionesIvaCacheadas($config)
+{
+    $cache = $config['condicionesIva'];
+    if (is_readable($cache)) {
+        $guardadas = json_decode(file_get_contents($cache), true);
+        if (is_array($guardadas) && $guardadas) return $guardadas;
+    }
+    return receptor_condiciones_respaldo();
+}
+
+// La tabla de condiciones frente al IVA la define ARCA. La pedimos una vez cada
+// 30 dias y la cacheamos: si el servicio esta caido igual queremos que el modal abra.
+function condicionesIvaDisponibles(Arca $arca, $config)
+{
+    $cache = $config['condicionesIva'];
+    if (is_readable($cache) && time() - filemtime($cache) < 30 * 86400) {
+        return condicionesIvaCacheadas($config);
+    }
+
+    try {
+        $lista = [];
+        foreach ($arca->condicionesIvaReceptor('C') as $condicion) {
+            $lista[] = ['id' => $condicion['id'], 'descripcion' => $condicion['descripcion']];
+        }
+        if ($lista) {
+            @file_put_contents($cache, json_encode($lista, JSON_UNESCAPED_UNICODE), LOCK_EX);
+            return $lista;
+        }
+    } catch (Exception $e) {
+        // Sin conexion con el padron: seguimos con la tabla de respaldo.
+    }
+
+    return receptor_condiciones_respaldo();
+}
+
 try {
     $arca = new Arca($config);
 } catch (Exception $e) {
@@ -28,15 +72,37 @@ $accion = $_GET['accion'] ?? 'emitir';
 
 if ($accion === 'proximo') {
     try {
-        responder([
-            'ok' => true,
-            'entorno' => $config['entorno'],
-            'puntoVenta' => $config['puntoVenta'],
-            'proximoNumero' => $arca->ultimoComprobante($config['puntoVenta'], 11) + 1,
-        ]);
+        $proximo = $arca->ultimoComprobante($config['puntoVenta'], 11) + 1;
     } catch (Exception $e) {
         responder(['ok' => false, 'error' => $e->getMessage()], 502);
     }
+
+    // Ultimo receptor facturado a este cliente, para no recargar los datos fiscales
+    // cada vez que se le emite una factura.
+    $ultimoReceptor = null;
+    $clienteId = trim((string) ($_GET['clienteId'] ?? ''));
+    if ($clienteId !== '') {
+        $masReciente = '';
+        foreach (leerRegistro($config) as $emitida) {
+            if (($emitida['clienteId'] ?? null) !== $clienteId) continue;
+            if (empty($emitida['receptor'])) continue;
+            if (($emitida['emitidaEl'] ?? '') < $masReciente) continue;
+            $masReciente = $emitida['emitidaEl'] ?? '';
+            $ultimoReceptor = $emitida['receptor'];
+        }
+    }
+
+    responder([
+        'ok' => true,
+        'entorno' => $config['entorno'],
+        'puntoVenta' => $config['puntoVenta'],
+        'proximoNumero' => $proximo,
+        'condicionesIva' => condicionesIvaDisponibles($arca, $config),
+        'tiposDocumento' => receptor_tipos_documento(),
+        'condicionesVenta' => receptor_condiciones_venta(),
+        'descripcionSugerida' => receptor_descripcion_por_defecto(),
+        'ultimoReceptor' => $ultimoReceptor,
+    ]);
 }
 
 $entrada = json_decode(file_get_contents('php://input'), true);
@@ -47,45 +113,35 @@ if (!is_array($entrada)) {
 $requestId = trim((string) ($entrada['requestId'] ?? ''));
 $clienteId = trim((string) ($entrada['clienteId'] ?? ''));
 $total = round((float) ($entrada['total'] ?? 0), 2);
-$documento = preg_replace('/\D/', '', (string) ($entrada['documento'] ?? ''));
 
 if ($requestId === '') responder(['ok' => false, 'error' => 'Falta el identificador del pedido'], 400);
 if ($clienteId === '') responder(['ok' => false, 'error' => 'Falta el identificador del cliente'], 400);
 if ($total <= 0) responder(['ok' => false, 'error' => 'El importe tiene que ser mayor a cero'], 400);
 
-$registro = is_readable($config['registro'])
-    ? json_decode(file_get_contents($config['registro']), true)
-    : [];
-if (!is_array($registro)) $registro = [];
+$registro = leerRegistro($config);
 
 if (isset($registro[$requestId])) {
     responder(['ok' => true, 'yaEmitida' => true, 'factura' => $registro[$requestId]]);
 }
 
-if ($documento === '') {
-    $tipoDocumento = 99;
-    $numeroDocumento = 0;
-    $condicionIva = 5;
-} elseif (strlen($documento) === 11) {
-    $tipoDocumento = 80;
-    $numeroDocumento = $documento;
-    $condicionIva = (int) ($entrada['condicionIva'] ?? 6);
-} else {
-    $tipoDocumento = 96;
-    $numeroDocumento = $documento;
-    $condicionIva = 5;
+try {
+    $receptor = receptor_normalizar($entrada, array_column(condicionesIvaCacheadas($config), 'id'));
+    $comprobante = receptor_normalizar_comprobante($entrada);
+} catch (InvalidArgumentException $e) {
+    responder(['ok' => false, 'error' => $e->getMessage()], 400);
 }
 
 try {
     $factura = $arca->emitirFacturaC([
         'puntoVenta' => $config['puntoVenta'],
         'total' => $total,
-        'tipoDocumento' => $tipoDocumento,
-        'numeroDocumento' => $numeroDocumento,
-        'condicionIvaReceptor' => $condicionIva,
-        'servicioDesde' => date('Ymd', strtotime('-30 days')),
-        'servicioHasta' => date('Ymd'),
-        'vencimientoPago' => date('Ymd'),
+        'concepto' => $comprobante['concepto'],
+        'tipoDocumento' => $receptor['tipoDocumento'],
+        'numeroDocumento' => $receptor['numeroDocumento'],
+        'condicionIvaReceptor' => $receptor['condicionIvaId'],
+        'servicioDesde' => $comprobante['servicioDesde'],
+        'servicioHasta' => $comprobante['servicioHasta'],
+        'vencimientoPago' => $comprobante['vencimientoPago'],
     ]);
 } catch (ArcaError $e) {
     responder(['ok' => false, 'error' => $e->getMessage()], 502);
@@ -94,8 +150,13 @@ try {
 }
 
 $factura['entorno'] = $config['entorno'];
-$factura['cliente'] = trim((string) ($entrada['cliente'] ?? ''));
+$factura['cliente'] = $receptor['nombre'] !== ''
+    ? $receptor['nombre']
+    : trim((string) ($entrada['cliente'] ?? ''));
 $factura['clienteId'] = $clienteId;
+$factura['receptor'] = $receptor;
+$factura['descripcion'] = $comprobante['descripcion'];
+$factura['condicionVenta'] = $comprobante['condicionVenta'];
 $factura['emitidaEl'] = date('c');
 
 $registro[$requestId] = $factura;

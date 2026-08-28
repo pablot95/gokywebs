@@ -2883,6 +2883,47 @@ let clienteAFacturar = null;
 let facturaEsAdhoc = false;
 let facturaRequestId = null;
 
+const SIN_IDENTIFICAR = 99;
+// Condicion frente al IVA que se propone segun el documento. Es solo el valor
+// inicial del select: el admin siempre puede corregirlo.
+const CONDICION_IVA_SUGERIDA = { 96: 5, 80: 1, 86: 5 };
+
+function campoFactura(id) {
+    return document.getElementById("factura" + id);
+}
+
+function fechaInput(desplazamientoDias = 0) {
+    const d = new Date();
+    d.setDate(d.getDate() + desplazamientoDias);
+    return d.toISOString().slice(0, 10);
+}
+
+function llenarSelect(select, opciones, seleccionado) {
+    select.replaceChildren(...opciones.map(o => {
+        const option = document.createElement("option");
+        option.value = String(o.valor);
+        option.textContent = o.texto;
+        return option;
+    }));
+    if (seleccionado !== undefined && seleccionado !== null) select.value = String(seleccionado);
+}
+
+function sincronizarCamposReceptor() {
+    const tipo = Number(campoFactura("TipoDoc").value);
+    const identificado = tipo !== SIN_IDENTIFICAR;
+    campoFactura("IdentificadoCampos").hidden = !identificado;
+    const numero = campoFactura("Documento");
+    numero.disabled = !identificado;
+    numero.placeholder = identificado ? "Solo numeros" : "Sin identificar";
+    if (!identificado) numero.value = "";
+    numero.maxLength = tipo === 96 ? 10 : 13;
+}
+
+function sincronizarCamposPeriodo() {
+    // Concepto 1 (productos) va sin periodo facturado ni vencimiento de pago.
+    campoFactura("PeriodoCampos").hidden = campoFactura("Concepto").value === "1";
+}
+
 function generarRequestId() {
     return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
 }
@@ -2910,7 +2951,7 @@ function cerrarFacturaModal() {
     facturaRequestId = null;
 }
 
-async function llamarFacturacion(accion, cuerpo) {
+async function llamarFacturacion(accion, cuerpo, extra = {}) {
     const token = currentUser ? await currentUser.getIdToken() : "";
     const opciones = { headers: { "Authorization": "Bearer " + token } };
     if (cuerpo) {
@@ -2918,7 +2959,8 @@ async function llamarFacturacion(accion, cuerpo) {
         opciones.headers["Content-Type"] = "application/json";
         opciones.body = JSON.stringify(cuerpo);
     }
-    const res = await fetch("/admin/api/facturar.php?accion=" + accion, opciones);
+    const params = new URLSearchParams({ accion, ...extra });
+    const res = await fetch("/admin/api/facturar.php?" + params, opciones);
     const datos = await res.json().catch(() => null);
     if (!datos) throw new Error(`El servidor no respondió JSON (HTTP ${res.status})`);
     if (!datos.ok) throw new Error(datos.error || `HTTP ${res.status}`);
@@ -2963,35 +3005,89 @@ async function abrirFacturaModal(cliente, opts = {}) {
 
     document.getElementById("facturaModalTitulo").textContent =
         facturaEsAdhoc ? "Emitir factura" : "Emitir factura y completar";
-    document.getElementById("facturaCliente").textContent =
-        etiquetaCliente(cliente);
-    document.getElementById("facturaTotal").value = facturaEsAdhoc ? "" : Number(cliente.valorTotal || 0);
-    document.getElementById("facturaDocumento").value = "";
-    document.getElementById("facturaComprobante").textContent = "Consultando a ARCA…";
-    document.getElementById("facturaEntornoAviso").hidden = true;
-    document.getElementById("facturaEmitirBtn").disabled = true;
-    document.getElementById("facturaSinFacturarBtn").hidden = facturaEsAdhoc;
+    document.getElementById("facturaCliente").textContent = etiquetaCliente(cliente);
+    campoFactura("Total").value = facturaEsAdhoc ? "" : Number(cliente.valorTotal || 0);
+    campoFactura("Comprobante").textContent = "Consultando a ARCA…";
+    campoFactura("EntornoAviso").hidden = true;
+    campoFactura("EmitirBtn").disabled = true;
+    campoFactura("SinFacturarBtn").hidden = facturaEsAdhoc;
+
+    campoFactura("Concepto").value = "2";
+    campoFactura("Desde").value = fechaInput(-30);
+    campoFactura("Hasta").value = fechaInput();
+    campoFactura("Vencimiento").value = fechaInput();
+    campoFactura("Descripcion").value = "";
+    campoFactura("Documento").value = "";
+    campoFactura("Nombre").value = "";
+    campoFactura("Domicilio").value = "";
+    llenarSelect(campoFactura("TipoDoc"), [{ valor: SIN_IDENTIFICAR, texto: "Sin identificar (consumidor final)" }]);
+    llenarSelect(campoFactura("CondicionVenta"), [{ valor: "Contado", texto: "Contado" }]);
+    llenarSelect(campoFactura("CondicionIva"), []);
+    sincronizarCamposPeriodo();
+    sincronizarCamposReceptor();
+
     mostrarErrorFactura("");
     facturaModal.hidden = false;
-    if (facturaEsAdhoc) document.getElementById("facturaTotal").focus();
+    if (facturaEsAdhoc) campoFactura("Total").focus();
 
     try {
-        const datos = await llamarFacturacion("proximo");
+        const datos = await llamarFacturacion("proximo", null, { clienteId: cliente.id });
         if (!clienteAFacturar || clienteAFacturar.id !== cliente.id) return;
-        document.getElementById("facturaComprobante").textContent =
-            numeroComprobante(datos.puntoVenta, datos.proximoNumero);
-        document.getElementById("facturaEmitirBtn").disabled = false;
+
+        campoFactura("Comprobante").textContent = numeroComprobante(datos.puntoVenta, datos.proximoNumero);
+        campoFactura("EmitirBtn").disabled = false;
+
+        llenarSelect(
+            campoFactura("TipoDoc"),
+            Object.entries(datos.tiposDocumento || {}).map(([valor, texto]) => ({ valor, texto })),
+            SIN_IDENTIFICAR
+        );
+        llenarSelect(
+            campoFactura("CondicionVenta"),
+            (datos.condicionesVenta || ["Contado"]).map(c => ({ valor: c, texto: c })),
+            "Contado"
+        );
+        llenarSelect(
+            campoFactura("CondicionIva"),
+            (datos.condicionesIva || []).map(c => ({ valor: c.id, texto: c.descripcion }))
+        );
+
+        campoFactura("Descripcion").value = datos.descripcionSugerida || "";
+
+        // Datos fiscales de la ultima factura de este cliente: se recargan solos.
+        const previo = datos.ultimoReceptor;
+        if (previo) {
+            campoFactura("TipoDoc").value = String(previo.tipoDocumento);
+            campoFactura("Documento").value = previo.tipoDocumento === SIN_IDENTIFICAR ? "" : previo.numeroDocumento;
+            campoFactura("CondicionIva").value = String(previo.condicionIvaId);
+            campoFactura("Nombre").value = previo.nombre || "";
+            campoFactura("Domicilio").value = previo.domicilio || "";
+        } else {
+            campoFactura("Nombre").value = cliente.nombre || "";
+        }
+        sincronizarCamposReceptor();
+
         if (datos.entorno !== "produccion") {
-            const aviso = document.getElementById("facturaEntornoAviso");
+            const aviso = campoFactura("EntornoAviso");
             aviso.textContent = "Entorno de prueba (homologación): la factura NO tiene validez fiscal.";
             aviso.hidden = false;
         }
     } catch (err) {
         if (!clienteAFacturar || clienteAFacturar.id !== cliente.id) return;
-        document.getElementById("facturaComprobante").textContent = "—";
+        campoFactura("Comprobante").textContent = "—";
         mostrarErrorFactura("No se pudo consultar el próximo número: " + err.message);
     }
 }
+
+campoFactura("Concepto")?.addEventListener("change", sincronizarCamposPeriodo);
+campoFactura("TipoDoc")?.addEventListener("change", () => {
+    sincronizarCamposReceptor();
+    const sugerida = CONDICION_IVA_SUGERIDA[campoFactura("TipoDoc").value];
+    const select = campoFactura("CondicionIva");
+    if (sugerida && [...select.options].some(o => o.value === String(sugerida))) {
+        select.value = String(sugerida);
+    }
+});
 
 document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () => {
     if (!clienteAFacturar) return;
@@ -3014,7 +3110,17 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
             clienteId: cliente.id,
             cliente: etiquetaCliente(cliente),
             total,
-            documento: document.getElementById("facturaDocumento").value
+            concepto: Number(campoFactura("Concepto").value),
+            descripcion: campoFactura("Descripcion").value,
+            condicionVenta: campoFactura("CondicionVenta").value,
+            servicioDesde: campoFactura("Desde").value,
+            servicioHasta: campoFactura("Hasta").value,
+            vencimientoPago: campoFactura("Vencimiento").value,
+            tipoDocumento: Number(campoFactura("TipoDoc").value),
+            documento: campoFactura("Documento").value,
+            condicionIva: Number(campoFactura("CondicionIva").value),
+            nombre: campoFactura("Nombre").value,
+            domicilio: campoFactura("Domicilio").value
         });
         const f = datos.factura;
         if (!facturaEsAdhoc) await completarCliente(cliente.id, f);

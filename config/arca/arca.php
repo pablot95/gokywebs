@@ -138,11 +138,17 @@ class Arca
         $numero = $this->ultimoComprobante($puntoVenta, 11) + 1;
         $total = round((float) $factura['total'], 2);
         $fecha = isset($factura['fecha']) ? $factura['fecha'] : date('Ymd');
+        $concepto = isset($factura['concepto']) ? (int) $factura['concepto'] : 2;
+        if (!in_array($concepto, [1, 2, 3], true)) $concepto = 2;
+
+        // Concepto 1 (solo productos) no lleva periodo ni vencimiento: ARCA rechaza el
+        // comprobante si se mandan esas fechas.
+        $llevaPeriodo = $concepto !== 1;
         $desde = isset($factura['servicioDesde']) ? $factura['servicioDesde'] : $fecha;
         $hasta = isset($factura['servicioHasta']) ? $factura['servicioHasta'] : $fecha;
         $vence = isset($factura['vencimientoPago']) ? $factura['vencimientoPago'] : $fecha;
 
-        $detalle = '<ar:Concepto>2</ar:Concepto>'
+        $detalle = '<ar:Concepto>' . $concepto . '</ar:Concepto>'
             . '<ar:DocTipo>' . (int) $factura['tipoDocumento'] . '</ar:DocTipo>'
             . '<ar:DocNro>' . (int) $factura['numeroDocumento'] . '</ar:DocNro>'
             . '<ar:CbteDesde>' . $numero . '</ar:CbteDesde>'
@@ -154,9 +160,11 @@ class Arca
             . '<ar:ImpOpEx>0</ar:ImpOpEx>'
             . '<ar:ImpTrib>0</ar:ImpTrib>'
             . '<ar:ImpIVA>0</ar:ImpIVA>'
-            . '<ar:FchServDesde>' . $desde . '</ar:FchServDesde>'
-            . '<ar:FchServHasta>' . $hasta . '</ar:FchServHasta>'
-            . '<ar:FchVtoPago>' . $vence . '</ar:FchVtoPago>'
+            . ($llevaPeriodo
+                ? '<ar:FchServDesde>' . $desde . '</ar:FchServDesde>'
+                    . '<ar:FchServHasta>' . $hasta . '</ar:FchServHasta>'
+                    . '<ar:FchVtoPago>' . $vence . '</ar:FchVtoPago>'
+                : '')
             . '<ar:MonId>PES</ar:MonId>'
             . '<ar:MonCotiz>1</ar:MonCotiz>'
             . '<ar:CondicionIVAReceptorId>' . (int) $factura['condicionIvaReceptor'] . '</ar:CondicionIVAReceptorId>';
@@ -183,10 +191,13 @@ class Arca
             'numero' => $numero,
             'fecha' => $fecha,
             'total' => $total,
+            'concepto' => $concepto,
             'tipoDocumento' => (int) $factura['tipoDocumento'],
             'numeroDocumento' => (string) $factura['numeroDocumento'],
-            'servicioDesde' => $desde,
-            'servicioHasta' => $hasta,
+            'condicionIvaReceptor' => (int) $factura['condicionIvaReceptor'],
+            'servicioDesde' => $llevaPeriodo ? $desde : '',
+            'servicioHasta' => $llevaPeriodo ? $hasta : '',
+            'vencimientoPago' => $llevaPeriodo ? $vence : '',
             'cae' => $this->valorDe($respuesta, 'CAE'),
             'caeVence' => $this->valorDe($respuesta, 'CAEFchVto'),
             'observaciones' => $this->observaciones($respuesta),

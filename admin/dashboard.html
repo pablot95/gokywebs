@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260826-sinbadgemuestra">
+    <link rel="stylesheet" href="styles.css?v=20260828-facturacompleta">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -787,11 +787,70 @@
                 <div><span>Comprobante</span><strong id="facturaComprobante">—</strong></div>
             </div>
 
-            <label for="facturaTotal">Importe a facturar</label>
-            <input type="number" id="facturaTotal" min="0" step="0.01">
+            <div class="factura-form">
+                <div class="grid-2">
+                    <div>
+                        <label for="facturaTotal">Importe a facturar</label>
+                        <input type="number" id="facturaTotal" min="0" step="0.01">
+                    </div>
+                    <div>
+                        <label for="facturaCondicionVenta">Condición de venta</label>
+                        <select id="facturaCondicionVenta"></select>
+                    </div>
+                </div>
 
-            <label for="facturaDocumento">DNI o CUIT del cliente <span class="muted">(opcional — vacío emite a consumidor final)</span></label>
-            <input type="text" id="facturaDocumento" maxlength="13" placeholder="Sin identificar">
+                <label for="facturaDescripcion">Descripción del servicio</label>
+                <input type="text" id="facturaDescripcion" maxlength="300" placeholder="Diseño y desarrollo web">
+
+                <label for="facturaConcepto">Concepto</label>
+                <select id="facturaConcepto">
+                    <option value="2">Servicios</option>
+                    <option value="1">Productos</option>
+                    <option value="3">Productos y servicios</option>
+                </select>
+
+                <div id="facturaPeriodoCampos">
+                    <div class="grid-3">
+                        <div>
+                            <label for="facturaDesde">Período desde</label>
+                            <input type="date" id="facturaDesde">
+                        </div>
+                        <div>
+                            <label for="facturaHasta">Período hasta</label>
+                            <input type="date" id="facturaHasta">
+                        </div>
+                        <div>
+                            <label for="facturaVencimiento">Vto. del pago</label>
+                            <input type="date" id="facturaVencimiento">
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="factura-subtitulo">Datos del cliente</h3>
+                <p class="factura-nota">Si dejás el tipo de documento en «Sin identificar», la factura sale a consumidor final.</p>
+
+                <div class="grid-2">
+                    <div>
+                        <label for="facturaTipoDoc">Tipo de documento</label>
+                        <select id="facturaTipoDoc"></select>
+                    </div>
+                    <div>
+                        <label for="facturaDocumento">Número</label>
+                        <input type="text" id="facturaDocumento" maxlength="13" inputmode="numeric" placeholder="Sin identificar">
+                    </div>
+                </div>
+
+                <div id="facturaIdentificadoCampos" hidden>
+                    <label for="facturaCondicionIva">Condición frente al IVA</label>
+                    <select id="facturaCondicionIva"></select>
+
+                    <label for="facturaNombre">Apellido y nombre / Razón social</label>
+                    <input type="text" id="facturaNombre" maxlength="120">
+
+                    <label for="facturaDomicilio">Domicilio <span class="muted">(opcional)</span></label>
+                    <input type="text" id="facturaDomicilio" maxlength="120" placeholder="Calle, número, localidad">
+                </div>
+            </div>
 
             <div id="facturaError" class="factura-error" hidden></div>
 
@@ -803,6 +862,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260826-sinbadgemuestra"></script>
+    <script type="module" src="dashboard.js?v=20260828-facturacompleta"></script>
 </body>
 </html>

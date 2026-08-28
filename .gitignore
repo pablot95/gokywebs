@@ -11,3 +11,6 @@ service-account.json
 demo/*
 !demo/track.js
 !demo/track.php
+
+# Config local de Claude Code (rutas absolutas de esta máquina, no del proyecto)
+.claude/

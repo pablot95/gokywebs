@@ -26,5 +26,10 @@ return array_merge($porEntorno[$entorno], [
         'domicilio' => 'Río Negro 787 1D, General Pacheco',
         'condicionIva' => 'Responsable Monotributo',
         'inicioActividades' => '12/2025',
+        // Monotributo: el número de Ingresos Brutos del Régimen Simplificado es el CUIT.
+        // Si algún día hay un número propio de IIBB, va acá.
+        'ingresosBrutos' => '',
     ],
+    // Cache de la tabla de condiciones frente al IVA del receptor (FEParamGetCondicionIvaReceptor).
+    'condicionesIva' => __DIR__ . '/condiciones-iva-C.json',
 ]);

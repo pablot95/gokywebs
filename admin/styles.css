@@ -1324,6 +1324,7 @@ body.modal-open { overflow: hidden; }
 }
 
 #clientForm,
+.factura-form,
 #dayModalBody,
 #propuestaForm,
 #presupuestoModalBody,
@@ -1396,6 +1397,12 @@ body.modal-open { overflow: hidden; }
 .grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 14px;
 }
 
@@ -2455,8 +2462,32 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
     overflow-wrap: anywhere;
 }
 
+.factura-form {
+    padding-right: 4px;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.factura-subtitulo {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--text-muted);
+    margin: 22px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.factura-nota {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 6px 0 4px;
+}
+
 @media (max-width: 480px) {
     .factura-resumen { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
     #facturaModal .modal-actions { flex-wrap: wrap; }
 }
 

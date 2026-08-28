@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/qrcode.php';
 require_once __DIR__ . '/pdf.php';
+require_once __DIR__ . '/receptor.php';
 
 function comprobante_nombre_archivo($factura)
 {
@@ -12,7 +13,7 @@ function comprobante_nombre_archivo($factura)
 function comprobante_pdf($config, $factura)
 {
     $emisor = $config['emisor'];
-    $receptor = comprobante_receptor($factura);
+    $receptor = receptor_desde_factura($factura);
     $pdf = new Pdf();
 
     $izq = 40;
@@ -38,8 +39,18 @@ function comprobante_pdf($config, $factura)
     $xDomicilio = $xIzq + Pdf::ancho($etiquetaDomicilio, 'F2', 8);
     $lineasDomicilio = Pdf::envolver($domicilio, 'F1', 8, $topeIzq - $xDomicilio);
 
+    $cuitLindo = preg_replace('/^(\d{2})(\d{8})(\d)$/', '$1-$2-$3', $config['cuit']);
+    $iibb = ($emisor['ingresosBrutos'] ?? '') !== '' ? $emisor['ingresosBrutos'] : $cuitLindo;
+    $paresDer = [
+        ['Punto de Venta: ', str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT) . '     Comp. Nro: ' . str_pad($factura['numero'], 8, '0', STR_PAD_LEFT)],
+        ['Fecha de Emisión: ', comprobante_fecha($factura['fecha'])],
+        ['CUIT: ', $cuitLindo],
+        ['Ingresos Brutos: ', $iibb],
+        ['Inicio de Actividades: ', $inicio],
+    ];
+
     $contenidoCab = 51 + count($lineasDomicilio) * 11 + 2;
-    $altoCab = max(96, $contenidoCab + 26);
+    $altoCab = max(96, $contenidoCab + 26, 38 + count($paresDer) * 13 + 6);
 
     $pdf->rectangulo($izq, $y, $ancho, $altoCab, 1.2);
     $pdf->linea($medio - 26, $y, $medio - 26, $y + $altoCab, 1.2);
@@ -68,40 +79,41 @@ function comprobante_pdf($config, $factura)
     $yr = $y + 20;
     $pdf->texto($xr, $yr, 'FACTURA', 'F2', 15);
     $yr += 18;
-    $cuitLindo = preg_replace('/^(\d{2})(\d{8})(\d)$/', '$1-$2-$3', $config['cuit']);
-    foreach ([
-        ['Punto de Venta: ', str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT) . '     Comp. Nro: ' . str_pad($factura['numero'], 8, '0', STR_PAD_LEFT)],
-        ['Fecha de Emisión: ', comprobante_fecha($factura['fecha'])],
-        ['CUIT: ', $cuitLindo],
-        ['Inicio de Actividades: ', $inicio],
-    ] as $par) {
+    foreach ($paresDer as $par) {
         $pdf->texto($xr, $yr, $par[0], 'F2', 8)->texto($xr + Pdf::ancho($par[0], 'F2', 8), $yr, $par[1], 'F1', 8);
         $yr += 13;
     }
 
     $y += $altoCab;
-    $altoDatos = 58;
+    // Bloque del receptor: crece con las filas que haya (el domicilio es opcional).
+    $filasDatos = 3 + ($receptor['domicilio'] !== '' ? 1 : 0);
+    $altoDatos = 13 + $filasDatos * 15;
     $pdf->rectangulo($izq, $y, $ancho, $altoDatos, 1.2);
+
+    $campoDatos = function ($x, $yd, $etiqueta, $valor, $tope) use ($pdf) {
+        $anchoEtiqueta = Pdf::ancho($etiqueta, 'F2', 8);
+        $pdf->texto($x, $yd, $etiqueta, 'F2', 8)
+            ->texto($x + $anchoEtiqueta, $yd, Pdf::recortar($valor, 'F1', 8, $tope - $x - $anchoEtiqueta), 'F1', 8);
+    };
+
     $yd = $y + 16;
-    $pdf->texto($izq + 12, $yd, $receptor['etiqueta'] . ': ', 'F2', 8)
-        ->texto($izq + 12 + Pdf::ancho($receptor['etiqueta'] . ': ', 'F2', 8), $yd, $receptor['valor'] !== '' ? $receptor['valor'] : '-', 'F1', 8);
-    $pdf->texto($medio + 10, $yd, 'Condición frente al IVA: ', 'F2', 8)
-        ->texto($medio + 10 + Pdf::ancho('Condición frente al IVA: ', 'F2', 8), $yd, $receptor['condicion'], 'F1', 8);
+    $campoDatos($izq + 12, $yd, $receptor['etiqueta'] . ': ', $receptor['valor'] !== '' ? $receptor['valor'] : '-', $medio);
+    $campoDatos($medio + 10, $yd, 'Condición frente al IVA: ', $receptor['condicion'], $der - 12);
     $yd += 15;
-    $nombreReceptor = comprobante_nombre_receptor($factura);
-    $xNombre = $izq + 12 + Pdf::ancho('Apellido y Nombre / Razón Social: ', 'F2', 8);
-    $pdf->texto($izq + 12, $yd, 'Apellido y Nombre / Razón Social: ', 'F2', 8)
-        ->texto($xNombre, $yd, Pdf::recortar($nombreReceptor, 'F1', 8, $der - 12 - $xNombre), 'F1', 8);
+    $campoDatos($izq + 12, $yd, 'Apellido y Nombre / Razón Social: ', $receptor['nombre'] !== '' ? $receptor['nombre'] : '-', $der - 12);
+    if ($receptor['domicilio'] !== '') {
+        $yd += 15;
+        $campoDatos($izq + 12, $yd, 'Domicilio: ', $receptor['domicilio'], $der - 12);
+    }
     $yd += 15;
-    $pdf->texto($izq + 12, $yd, 'Condición de venta: ', 'F2', 8)
-        ->texto($izq + 12 + Pdf::ancho('Condición de venta: ', 'F2', 8), $yd, 'Contado', 'F1', 8);
+    $campoDatos($izq + 12, $yd, 'Condición de venta: ', comprobante_condicion_venta($factura), $der - 12);
 
     $y += $altoDatos;
     if (!empty($factura['servicioDesde'])) {
         $pdf->rectangulo($izq, $y, $ancho, 20, 1.2);
         $texto = 'Período Facturado Desde: ' . comprobante_fecha($factura['servicioDesde'])
             . '     Hasta: ' . comprobante_fecha($factura['servicioHasta'])
-            . '     Fecha de Vto. para el pago: ' . comprobante_fecha($factura['fecha']);
+            . '     Fecha de Vto. para el pago: ' . comprobante_fecha(comprobante_vencimiento($factura));
         $pdf->texto($izq + 12, $y + 14, $texto, 'F1', 8);
         $y += 20;
     }
@@ -116,12 +128,17 @@ function comprobante_pdf($config, $factura)
     $pdf->textoDerecha($der - 8, $y + 12.5, 'Subtotal', 'F2', 8.5);
     $y += 18;
 
-    $pdf->rectangulo($izq, $y, $ancho, 24, 0.8);
-    $pdf->texto($izq + 8, $y + 16, comprobante_descripcion_item(), 'F1', 8.5);
+    $lineasDetalle = Pdf::envolver(comprobante_descripcion_item($factura), 'F1', 8.5, $colUnit - 70 - ($izq + 8));
+    $lineasDetalle = array_slice($lineasDetalle, 0, 4);
+    $altoItem = max(24, 10 + count($lineasDetalle) * 12);
+    $pdf->rectangulo($izq, $y, $ancho, $altoItem, 0.8);
+    foreach ($lineasDetalle as $i => $linea) {
+        $pdf->texto($izq + 8, $y + 16 + $i * 12, $linea, 'F1', 8.5);
+    }
     $pdf->textoDerecha($colUnit - 10, $y + 16, '1,00', 'F1', 8.5);
     $pdf->textoDerecha($der - 90, $y + 16, comprobante_pesos($factura['total']), 'F1', 8.5);
     $pdf->textoDerecha($der - 8, $y + 16, comprobante_pesos($factura['total']), 'F1', 8.5);
-    $y += 24;
+    $y += $altoItem;
 
     $y += 18;
     $anchoTot = 220;
@@ -209,39 +226,37 @@ function comprobante_pesos($n)
     return '$ ' . number_format((float) $n, 2, ',', '.');
 }
 
-function comprobante_receptor($factura)
+function comprobante_descripcion_item($factura)
 {
-    $tipo = (int) ($factura['tipoDocumento'] ?? 99);
-    $nro = (string) ($factura['numeroDocumento'] ?? '0');
-    if ($tipo === 80) return ['etiqueta' => 'CUIT', 'valor' => $nro, 'condicion' => 'Responsable Monotributo'];
-    if ($tipo === 96) return ['etiqueta' => 'DNI', 'valor' => $nro, 'condicion' => 'Consumidor Final'];
-    return ['etiqueta' => 'DNI', 'valor' => '', 'condicion' => 'Consumidor Final'];
+    $detalle = trim((string) ($factura['descripcion'] ?? ''));
+    return $detalle !== '' ? $detalle : receptor_descripcion_por_defecto();
 }
 
-function comprobante_nombre_receptor($factura)
+function comprobante_condicion_venta($factura)
 {
-    $tipo = (int) ($factura['tipoDocumento'] ?? 99);
-    if ($tipo === 99) return '';
-    return trim((string) ($factura['cliente'] ?? ''));
+    $condicion = trim((string) ($factura['condicionVenta'] ?? ''));
+    return $condicion !== '' ? $condicion : 'Contado';
 }
 
-function comprobante_descripcion_item()
+// Las facturas viejas no guardaban el vencimiento: ahi vale la fecha de emisión.
+function comprobante_vencimiento($factura)
 {
-    return 'Diseño y desarrollo web';
+    $vence = (string) ($factura['vencimientoPago'] ?? '');
+    return $vence !== '' ? $vence : $factura['fecha'];
 }
 
 function comprobante_html($config, $factura)
 {
     $e = function ($s) { return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8'); };
     $emisor = $config['emisor'];
-    $receptor = comprobante_receptor($factura);
+    $receptor = receptor_desde_factura($factura);
     $numero = str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT) . '-' . str_pad($factura['numero'], 8, '0', STR_PAD_LEFT);
     $qr = comprobante_qr_svg(comprobante_payload_qr($config['cuit'], $factura));
     $cuitLindo = preg_replace('/^(\d{2})(\d{8})(\d)$/', '$1-$2-$3', $config['cuit']);
+    $iibb = ($emisor['ingresosBrutos'] ?? '') !== '' ? $emisor['ingresosBrutos'] : $cuitLindo;
     $prueba = $config['entorno'] !== 'produccion';
 
-    $nombreReceptor = comprobante_nombre_receptor($factura);
-    $detalle = comprobante_descripcion_item();
+    $detalle = comprobante_descripcion_item($factura);
 
     ob_start(); ?>
 <!DOCTYPE html>
@@ -266,6 +281,7 @@ function comprobante_html($config, $factura)
     .campo{margin-top:3px}
     .campo b{font-weight:700}
     .datos{border:1.5px solid #000;border-top:0;padding:10px 16px;display:grid;grid-template-columns:1fr 1fr;gap:2px 20px}
+    .datos .ancho-total{grid-column:1 / -1}
     .periodo{border:1.5px solid #000;border-top:0;padding:8px 16px;display:flex;gap:26px;font-size:12.5px}
     table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12.5px}
     th{background:#e4e4e4;border:1px solid #000;padding:7px 8px;text-align:left;font-weight:700}
@@ -306,7 +322,7 @@ function comprobante_html($config, $factura)
             <div class="campo"><b>Punto de Venta:</b> <?= str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT) ?> &nbsp; <b>Comp. Nro:</b> <?= str_pad($factura['numero'], 8, '0', STR_PAD_LEFT) ?></div>
             <div class="campo"><b>Fecha de Emisión:</b> <?= $e(comprobante_fecha($factura['fecha'])) ?></div>
             <div class="campo"><b>CUIT:</b> <?= $e($cuitLindo) ?></div>
-            <div class="campo"><b>Ingresos Brutos:</b> <?= $e($config['cuit']) ?></div>
+            <div class="campo"><b>Ingresos Brutos:</b> <?= $e($iibb) ?></div>
             <div class="campo"><b>Inicio de Actividades:</b> <?= $emisor['inicioActividades'] !== '' ? $e($emisor['inicioActividades']) : '<span class="falta">[completar]</span>' ?></div>
         </div>
     </div>
@@ -314,15 +330,18 @@ function comprobante_html($config, $factura)
     <div class="datos">
         <div><b><?= $e($receptor['etiqueta']) ?>:</b> <?= $receptor['valor'] !== '' ? $e($receptor['valor']) : '—' ?></div>
         <div><b>Condición frente al IVA:</b> <?= $e($receptor['condicion']) ?></div>
-        <div><b>Apellido y Nombre / Razón Social:</b> <?= $nombreReceptor !== '' ? $e($nombreReceptor) : '—' ?></div>
-        <div><b>Condición de venta:</b> Contado</div>
+        <div class="ancho-total"><b>Apellido y Nombre / Razón Social:</b> <?= $receptor['nombre'] !== '' ? $e($receptor['nombre']) : '—' ?></div>
+        <?php if ($receptor['domicilio'] !== ''): ?>
+        <div class="ancho-total"><b>Domicilio:</b> <?= $e($receptor['domicilio']) ?></div>
+        <?php endif; ?>
+        <div class="ancho-total"><b>Condición de venta:</b> <?= $e(comprobante_condicion_venta($factura)) ?></div>
     </div>
 
     <?php if (!empty($factura['servicioDesde'])): ?>
     <div class="periodo">
         <span><b>Período Facturado Desde:</b> <?= $e(comprobante_fecha($factura['servicioDesde'])) ?></span>
         <span><b>Hasta:</b> <?= $e(comprobante_fecha($factura['servicioHasta'])) ?></span>
-        <span><b>Fecha de Vto. para el pago:</b> <?= $e(comprobante_fecha($factura['fecha'])) ?></span>
+        <span><b>Fecha de Vto. para el pago:</b> <?= $e(comprobante_fecha(comprobante_vencimiento($factura))) ?></span>
     </div>
     <?php endif; ?>
 
@@ -337,7 +356,7 @@ function comprobante_html($config, $factura)
         </thead>
         <tbody>
             <tr>
-                <td><?= $e($detalle) ?></td>
+                <td><?= nl2br($e($detalle)) ?></td>
                 <td class="num">1,00</td>
                 <td class="num"><?= $e(comprobante_pesos($factura['total'])) ?></td>
                 <td class="num"><?= $e(comprobante_pesos($factura['total'])) ?></td>
