@@ -131,7 +131,9 @@ function wabot_procesar_entrante($ev, $cfg) {
             // 26-ago). Se cuenta al drenar la cola, con el $conv que sí se
             // guarda.
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], 'imagen');
-            if (!empty($cfg['leer_imagenes'])) {
+            // El tope de LEER no es el de guardar: lo que no entra en el
+            // pedido a Gemini igual queda descargable en el panel.
+            if (!empty($cfg['leer_imagenes']) && strlen((string)$bin['bytes']) <= WABOT_MEDIA_MAX_LEER) {
                 $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'imagen', $media['caption']);
                 if ($desc !== null) {
                     $texto = $media['caption'] !== '' ? $media['caption'] . "\n($desc)" : $desc;
@@ -143,7 +145,7 @@ function wabot_procesar_entrante($ev, $cfg) {
         $bin = wabot_bajar_media($canal, $media);
         if ($bin) {
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], 'audio');
-            if (!empty($cfg['escuchar_audios'])) {
+            if (!empty($cfg['escuchar_audios']) && strlen((string)$bin['bytes']) <= WABOT_MEDIA_MAX_LEER) {
                 $trans = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'audio');
                 if ($trans !== null) { $texto = $trans; $marcaMedia = '[audio] '; }
             }
@@ -157,15 +159,27 @@ function wabot_procesar_entrante($ev, $cfg) {
             $mediaGuardada = wabot_media_guardar($clave, $bin['bytes'], $bin['mime'], $media['clase'],
                 (string)($media['nombre'] ?? ''));
             /* Y si es un documento que se puede leer, se lee: el brief, la
-             * lista de precios o el catálogo en PDF son justo lo que sirve
-             * para armar la demo, y hasta el 27-ago eran lo único que el bot
-             * tiraba a la basura ("no pude abrir eso que me mandaste"). Solo
-             * los formatos que Gemini entiende de verdad: un .docx o un .zip
-             * mandados así vuelven basura y gastan cuota al pedo. */
+             * lista de precios o el catálogo son justo lo que sirve para armar
+             * la demo, y hasta el 27-ago eran lo único que el bot tiraba a la
+             * basura ("no pude abrir eso que me mandaste").
+             *
+             * Word, Excel y PowerPoint no se le pueden pasar a Gemini tal cual
+             * —no los procesa y gasta cuota al pedo— pero son ZIP con XML
+             * adentro: se les saca el texto acá y se le manda ESO, que además
+             * pesa una fracción (Pablo, 28-ago). Lo demás va como viene, solo
+             * en los formatos que Gemini entiende de verdad. */
             $mimeDoc = trim(explode(';', (string)$bin['mime'])[0]);
             $leibles = ['application/pdf', 'text/plain', 'text/csv', 'text/markdown', 'text/html', 'application/json'];
-            if ($media['clase'] === 'documento' && !empty($cfg['leer_imagenes']) && in_array($mimeDoc, $leibles, true)) {
-                $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'documento', $media['caption']);
+            $extDoc  = strtolower(pathinfo((string)($mediaGuardada['archivo'] ?? ''), PATHINFO_EXTENSION));
+            if ($media['clase'] === 'documento' && !empty($cfg['leer_imagenes'])) {
+                $desc = null;
+                $office = wabot_office_a_texto($bin['bytes'], $extDoc);
+                if ($office !== '') {
+                    $desc = wabot_media_a_texto($office, 'text/plain', 'documento', $media['caption']);
+                } elseif (in_array($mimeDoc, $leibles, true)
+                          && strlen((string)$bin['bytes']) <= WABOT_MEDIA_MAX_LEER) {
+                    $desc = wabot_media_a_texto($bin['bytes'], $bin['mime'], 'documento', $media['caption']);
+                }
                 if ($desc !== null) {
                     $texto = $media['caption'] !== '' ? $media['caption'] . "\n($desc)" : $desc;
                     $marcaMedia = '[archivo] ';

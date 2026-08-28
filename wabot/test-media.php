@@ -368,5 +368,76 @@ caso('y la lista de prohibidas cubre las variantes', wabot_media_ext_prohibida('
 foreach (glob(WABOT_DATA . '/media/TESTBIN/*') as $f) @unlink($f);
 @rmdir(WABOT_DATA . '/media/TESTBIN');
 
+echo "\n— Word, Excel y PowerPoint se leen (28-ago) —\n";
+
+/* Un ZIP armado a mano, con una sola entrada deflateada: alcanza para probar
+ * el lector sin depender de la extensión zip, que NO está en la máquina de
+ * desarrollo (sí en el server) — por eso el lector se escribió a mano. */
+function zip_de_prueba(array $entradas) {
+    $local = ''; $central = ''; $desplaz = 0;
+    foreach ($entradas as $nombre => $contenido) {
+        $comp = gzdeflate($contenido);
+        $crc  = crc32($contenido);
+        $cab  = pack('VvvvvvVVVvv', 0x04034b50, 20, 0, 8, 0, 0, $crc,
+                     strlen($comp), strlen($contenido), strlen($nombre), 0) . $nombre;
+        $local .= $cab . $comp;
+        $central .= pack('VvvvvvvVVVvvvvvVV', 0x02014b50, 20, 20, 0, 8, 0, 0, $crc,
+                         strlen($comp), strlen($contenido), strlen($nombre), 0, 0, 0, 0, 0, $desplaz) . $nombre;
+        $desplaz += strlen($cab) + strlen($comp);
+    }
+    return $local . $central
+         . pack('VvvvvVVv', 0x06054b50, 0, 0, count($entradas), count($entradas),
+                strlen($central), $desplaz, 0);
+}
+
+$docx = zip_de_prueba([
+    '[Content_Types].xml' => '<x/>',
+    'word/document.xml'   => '<w:document><w:body>'
+        . '<w:p><w:r><w:t>Estudio Jur&#237;dico Paredes</w:t></w:r></w:p>'
+        . '<w:p><w:r><w:t>Sucesiones y divorcios</w:t></w:r></w:p>'
+        . '</w:body></w:document>',
+]);
+$textoDocx = wabot_office_a_texto($docx, 'docx');
+caso('un .docx entrega su texto', mb_stripos($textoDocx, 'Estudio Jurídico Paredes') !== false);
+caso('y respeta los párrafos', mb_stripos($textoDocx, "Paredes\nSucesiones") !== false);
+caso('sin dejar ni una etiqueta XML', strpos($textoDocx, '<') === false);
+
+$xlsx = zip_de_prueba([
+    'xl/sharedStrings.xml'    => '<sst><si><t>Torta de chocolate</t></si><si><t>Docena de facturas</t></si></sst>',
+    'xl/worksheets/sheet1.xml' => '<worksheet><sheetData><row><c><v>8500</v></c></row></sheetData></worksheet>',
+]);
+$textoXlsx = wabot_office_a_texto($xlsx, 'xlsx');
+caso('un .xlsx entrega la tabla de textos', mb_stripos($textoXlsx, 'Torta de chocolate') !== false);
+caso('con cada celda en su renglón, no todas pegadas',
+    mb_stripos($textoXlsx, "chocolate\nDocena") !== false);
+caso('y también los números de las hojas', strpos($textoXlsx, '8500') !== false);
+
+$pptx = zip_de_prueba([
+    'ppt/slides/slide1.xml' => '<p:sld><a:p><a:r><a:t>Nuestros servicios</a:t></a:r></a:p></p:sld>',
+]);
+caso('un .pptx entrega el texto de las diapositivas',
+    mb_stripos(wabot_office_a_texto($pptx, 'pptx'), 'Nuestros servicios') !== false);
+
+caso('lo que no es Office devuelve vacío', wabot_office_a_texto($docx, 'pdf') === '');
+caso('y un ZIP común de fotos tampoco inventa texto',
+    wabot_office_a_texto(zip_de_prueba(['fotos/1.jpg' => 'binario']), 'zip') === '');
+
+// El lector suelto, que es lo que sostiene todo lo de arriba.
+caso('el lector de ZIP saca una entrada por nombre',
+    wabot_zip_entrada($docx, 'word/document.xml') !== '');
+caso('y lista las entradas', wabot_zip_listar($docx) === ['[Content_Types].xml', 'word/document.xml']);
+caso('una entrada que no existe devuelve vacío', wabot_zip_entrada($docx, 'no/existe.xml') === '');
+caso('y algo que no es un ZIP tampoco rompe', wabot_zip_entrada('no soy un zip', 'x') === '');
+
+echo "\n— Los dos topes son distintos: guardar no es leer (28-ago) —\n";
+
+caso('el tope de guardar es mucho más alto que el de leer',
+    WABOT_MEDIA_MAX_GUARDAR > WABOT_MEDIA_MAX_LEER);
+caso('guardar llega a los 100 MB, que es el máximo que deja WhatsApp',
+    WABOT_MEDIA_MAX_GUARDAR === 100 * 1024 * 1024);
+caso('y leer se queda en 12 MB, que en base64 entran en el pedido a Gemini',
+    WABOT_MEDIA_MAX_LEER === 12 * 1024 * 1024
+    && WABOT_MEDIA_MAX_LEER * 4 / 3 < 20 * 1024 * 1024);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -3196,6 +3196,164 @@ function wabot_ig_adjunto($adjuntos) {
  * capturas en bmp/tiff, y los formatos de diseño que manda quien ya tiene
  * identidad armada (psd, ai, eps, svg) o el logo en varios tamaños (7z, rar).
  */
+/* Dos topes distintos, que antes eran uno solo de 12 MB y descartaba el
+ * archivo ENTERO: si no entraba en el pedido a Gemini, tampoco se bajaba, y
+ * Pablo se quedaba sin poder abrirlo desde el panel.
+ *
+ * GUARDAR es lo que se baja y queda en la conversación: 100 MB, que es el
+ * máximo que WhatsApp deja mandar como documento (las fotos las limita a 5 MB
+ * y los videos y audios a 16 MB, así que esos entran siempre). El server tiene
+ * memory_limit 1536M, hay lugar de sobra.
+ *
+ * LEER es lo que se le manda a Gemini para que lo entienda. El pedido va con
+ * el archivo en base64, que infla un 33%: 12 MB de archivo son 16 MB de
+ * request y el tope de la API es 20 MB. Un archivo entre los dos topes se
+ * guarda igual y el cliente recibe el aviso de "me llegó y quedó guardado". */
+define('WABOT_MEDIA_MAX_GUARDAR', 100 * 1024 * 1024);
+define('WABOT_MEDIA_MAX_LEER', 12 * 1024 * 1024);
+
+/**
+ * Un archivo de adentro de un ZIP, sin usar la extensión zip.
+ *
+ * Se lee a mano —central directory, header local y gzinflate— porque la
+ * extensión `zip` está en el server pero NO en la máquina de desarrollo, y un
+ * lector que no se puede probar acá no sirve. zlib está en las dos.
+ *
+ * Devuelve el contenido descomprimido, o '' si la entrada no existe o usa un
+ * método de compresión que no sea "guardado" o "deflate".
+ */
+function wabot_zip_entrada($bytes, $nombre) {
+    $b = (string)$bytes;
+    $len = strlen($b);
+    if ($len < 22) return '';
+
+    // El "end of central directory" está al final, después de un comentario
+    // que puede medir hasta 64 KB: se busca la firma para atrás.
+    $eocd = -1;
+    $desde = max(0, $len - 22 - 65535);
+    for ($i = $len - 22; $i >= $desde; $i--) {
+        if (substr($b, $i, 4) === "PK\x05\x06") { $eocd = $i; break; }
+    }
+    if ($eocd < 0) return '';
+
+    $cab = unpack('ventradas/Vtam/Vdesplaz', substr($b, $eocd + 10, 10));
+    $pos = (int)$cab['desplaz'];
+    $entradas = (int)$cab['entradas'];
+
+    /* Los campos se leen de a uno por su posición absoluta dentro del registro.
+     * Con un solo unpack de varios campos las posiciones quedan relativas al
+     * substring y es facilísimo equivocarse: pasó. */
+    $u = function ($formato, $desde, $largo) use ($b, $len) {
+        if ($desde + $largo > $len) return 0;
+        $r = @unpack($formato, substr($b, $desde, $largo));
+        return $r ? (int)$r[1] : 0;
+    };
+
+    for ($n = 0; $n < $entradas; $n++) {
+        if ($pos + 46 > $len || substr($b, $pos, 4) !== "PK\x01\x02") return '';
+        $metodo = $u('v', $pos + 10, 2);
+        $comp   = $u('V', $pos + 20, 4);
+        $nomLen = $u('v', $pos + 28, 2);
+        $extLen = $u('v', $pos + 30, 2);
+        $comLen = $u('v', $pos + 32, 2);
+        $local  = $u('V', $pos + 42, 4);
+
+        $nombreEntrada = substr($b, $pos + 46, $nomLen);
+        $pos += 46 + $nomLen + $extLen + $comLen;
+        if ($nombreEntrada !== $nombre) continue;
+
+        // El header local repite el nombre y los "extra", y pueden medir
+        // distinto que en el directorio: hay que leerlos de ahí.
+        if ($local + 30 > $len || substr($b, $local, 4) !== "PK\x03\x04") return '';
+        $datos = substr($b, $local + 30 + $u('v', $local + 26, 2) + $u('v', $local + 28, 2), $comp);
+        if ($metodo === 0) return $datos;                   // guardado sin comprimir
+        if ($metodo === 8) return (string)@gzinflate($datos); // deflate
+        return '';
+    }
+    return '';
+}
+
+/** Los nombres de las entradas de un ZIP que empiezan con un prefijo. */
+function wabot_zip_listar($bytes, $prefijo = '') {
+    $b = (string)$bytes;
+    $len = strlen($b);
+    if ($len < 22) return [];
+    $eocd = -1;
+    $desde = max(0, $len - 22 - 65535);
+    for ($i = $len - 22; $i >= $desde; $i--) {
+        if (substr($b, $i, 4) === "PK\x05\x06") { $eocd = $i; break; }
+    }
+    if ($eocd < 0) return [];
+    $cab = unpack('ventradas/Vtam/Vdesplaz', substr($b, $eocd + 10, 10));
+    $pos = (int)$cab['desplaz'];
+    $out = [];
+    for ($n = 0; $n < (int)$cab['entradas']; $n++) {
+        if ($pos + 46 > $len || substr($b, $pos, 4) !== "PK\x01\x02") break;
+        $e = unpack('vnom/vextra/vcoment', substr($b, $pos + 28, 6));
+        $nombre = substr($b, $pos + 46, (int)$e['nom']);
+        if ($prefijo === '' || strncmp($nombre, $prefijo, strlen($prefijo)) === 0) $out[] = $nombre;
+        $pos += 46 + (int)$e['nom'] + (int)$e['extra'] + (int)$e['coment'];
+    }
+    return $out;
+}
+
+/**
+ * El texto de un Word, un Excel o un PowerPoint.
+ *
+ * Son todos ZIP con XML adentro, así que el texto sale sin depender de nada
+ * externo. Hasta el 28-ago estos tres eran el agujero más grande: el cliente
+ * mandaba el brief en Word o la lista de precios en Excel —justo lo que sirve
+ * para armar la demo— y el bot los guardaba sin poder leerlos.
+ *
+ * Devuelve '' si no es un Office o si no se pudo sacar nada.
+ */
+function wabot_office_a_texto($bytes, $ext) {
+    $ext = strtolower((string)$ext);
+    $partes = [];
+
+    if ($ext === 'docx') {
+        $partes[] = wabot_zip_entrada($bytes, 'word/document.xml');
+    } elseif ($ext === 'xlsx') {
+        // Las celdas de texto viven en la tabla compartida; los números, en
+        // las hojas. Con las dos alcanza para entender una lista de precios.
+        $partes[] = wabot_zip_entrada($bytes, 'xl/sharedStrings.xml');
+        foreach (wabot_zip_listar($bytes, 'xl/worksheets/sheet') as $hoja) {
+            $partes[] = wabot_zip_entrada($bytes, $hoja);
+            if (count($partes) > 6) break;   // un Excel enorme no aporta más
+        }
+    } elseif ($ext === 'pptx') {
+        foreach (wabot_zip_listar($bytes, 'ppt/slides/slide') as $slide) {
+            if (substr($slide, -4) !== '.xml') continue;
+            $partes[] = wabot_zip_entrada($bytes, $slide);
+            if (count($partes) > 30) break;
+        }
+    } elseif ($ext === 'odt' || $ext === 'ods' || $ext === 'odp') {
+        $partes[] = wabot_zip_entrada($bytes, 'content.xml');
+    } else {
+        return '';
+    }
+
+    $texto = '';
+    foreach ($partes as $xml) {
+        if ($xml === '') continue;
+        // Los cortes de párrafo y de celda se conservan como saltos de línea:
+        // sin eso una lista de precios queda como un chorizo ilegible.
+        // <si> es cada texto de la tabla compartida del Excel: sin cortar ahí,
+        // una lista de precios sale como una sola palabra kilométrica.
+        $xml = preg_replace('~</(w:p|a:p|text:p|text:h|si|c|row)>~u', "\n", $xml);
+        $xml = preg_replace('~<(w:tab|w:br|a:br)\s*/?>~u', ' ', $xml);
+        $plano = strip_tags($xml);
+        $texto .= html_entity_decode($plano, ENT_QUOTES | ENT_XML1, 'UTF-8') . "\n";
+    }
+
+    $texto = preg_replace('/[ \t\x{00A0}]+/u', ' ', $texto);
+    $texto = preg_replace('/\n{3,}/', "\n\n", $texto);
+    $texto = trim($texto);
+    // Un Excel de mil filas no entra ni hace falta: con el arranque se entiende
+    // de qué se trata, que es lo único que el bot necesita.
+    return mb_substr($texto, 0, 20000);
+}
+
 /**
  * La extensión leída de los primeros bytes del archivo.
  *
@@ -4261,8 +4419,11 @@ function wabot_wa_media_bajar($mediaId) {
     $peso = (int)($meta['file_size'] ?? 0);
     if (!$url) return null;
 
-    // Tope de seguridad: un archivo enorme no entra en el pedido a Gemini.
-    if ($peso > 12 * 1024 * 1024) {
+    /* El tope de acá es el de GUARDAR, no el de leer: antes era uno solo de
+     * 12 MB y un video del local o un catálogo pesado se descartaba entero, sin
+     * quedar siquiera descargable desde el panel. Lo que no entra en el pedido
+     * a Gemini se decide después, con WABOT_MEDIA_MAX_LEER. */
+    if ($peso > WABOT_MEDIA_MAX_GUARDAR) {
         wabot_log('error', ['donde' => 'media_bajar', 'msg' => 'archivo muy grande', 'bytes' => $peso]);
         return null;
     }
