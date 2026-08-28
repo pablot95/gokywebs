@@ -57,6 +57,22 @@ function wabot_responder($texto, &$conv, $cfg) {
         }
     }
 
+    /* "Cuánto cuesta agregar venta y cobro online?" con una landing ya
+     * cotizada: la respuesta son dos precios que el bot ya tiene. A Aberturas
+     * le preguntó si era el mismo proyecto y le repitió el precio de la
+     * landing (27-ago) — le contestó el producto anterior. Determinista, igual
+     * que la comparación de arriba: no puede depender del modelo. */
+    if (!empty($conv['precio_dado'])) {
+        $destino = wabot_texto_pregunta_upgrade($texto, (string)($conv['tipo'] ?? ''));
+        if ($destino !== null) {
+            $upgrade = wabot_upgrade_texto($destino, $conv, $cfg);
+            if ($upgrade !== null) {
+                wabot_evento_sesion($conv, 'upgrade_consultado', ['de' => (string)$conv['tipo'], 'a' => $destino]);
+                return [$upgrade];
+            }
+        }
+    }
+
     /* "Mejor sin carrito, que me escriban por WhatsApp" después de cotizar
      * ecommerce: cambió de modalidad y hay que recotizar. El modelo le ofreció
      * la demo y al turno siguiente le preguntó si era para el mismo proyecto;

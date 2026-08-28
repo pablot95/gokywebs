@@ -13,7 +13,10 @@
  * seguimiento y una sola confirmación de demo en su vida.
  */
 
-require_once __DIR__ . '/lib.php';
+// engine.php, no lib.php: los textos de los crons también pasan por el punto
+// único de salida (wabot_salida_emisor_texto), que vive en engine. Con solo
+// lib.php cargado la función no existe y el cron moría con un fatal.
+require_once __DIR__ . '/engine.php';
 
 if (php_sapi_name() !== 'cli') {
     $auth = (string)($_SERVER['HTTP_AUTHORIZATION'] ?? '');

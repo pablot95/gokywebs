@@ -46,7 +46,13 @@ foreach ($escenarios as $esc) {
         wabot_conv_transcript($conv, 'cliente', $msj);
         $conv['ultimo_cliente_ts'] = time();
         try {
-            $r = wabot_responder($msj, $conv, $cfg);
+            /* Mismo pipeline que webhook.php. Antes esto llamaba a
+             * wabot_responder() pelado, así que la batería medía algo distinto
+             * de lo que recibía el cliente: los cuatro filtros de salida no
+             * corrían, y un bug que ellos tapan (o que ellos causan) no se
+             * veía acá. Una batería que no reproduce producción no sirve para
+             * decidir si un fix funciona. */
+            $r = wabot_salida_preparar(wabot_responder($msj, $conv, $cfg), $conv, $cfg);
         } catch (Throwable $e) {
             echo "!!! EXCEPCION: " . $e->getMessage() . "\n";
             $r = null;

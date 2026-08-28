@@ -1396,6 +1396,19 @@ body.embed { min-height: 0; }
         </div>
         <?php endif; ?>
         <div class="card">
+            <h2 style="margin-top:0">Qué código está corriendo</h2>
+            <label>Sello de versión</label>
+            <code><?= $e(wabot_version()) ?></code>
+            <p class="meta" style="margin-top:6px">
+                Es un hash del contenido del motor. Cambia solo cada vez que se publica algo.
+                Para saber si el servidor tiene lo último, comparalo con el de tu máquina:
+                <code>php -r "require 'wabot/lib.php'; echo wabot_version();"</code>
+                — si los dos números coinciden, producción está al día.
+            </p>
+            <p class="meta">También queda anotado en cada línea del log, así que se puede saber
+            qué código atendió una conversación puntual sin tener que acordarse de qué se subió ese día.</p>
+        </div>
+        <div class="card">
             <h2 style="margin-top:0">Datos para configurar el webhook en Meta</h2>
             <label>Callback URL</label>
             <code>https://gokywebs.com/wabot/webhook.php</code>

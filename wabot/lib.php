@@ -31,11 +31,61 @@ function wabot_ensure_dirs() {
     }
 }
 
+/**
+ * Qué código está atendiendo, en 10 caracteres.
+ *
+ * Nació de una pregunta que no se podía contestar: revisando los 16 errores
+ * del 27-ago hubo que comparar tamaños de archivo contra el server para saber
+ * si los fixes de esa misma tarde estaban publicados o no. Con esto se mira el
+ * panel y listo.
+ *
+ * Es un hash del CONTENIDO de los archivos del motor, no un número de versión
+ * que haya que acordarse de subir: si alguien edita cualquiera de ellos, el
+ * sello cambia solo. Se cachea contra tamaño+mtime, así el hash completo se
+ * calcula una sola vez por publicación y no en cada mensaje entrante.
+ *
+ * Los finales de línea se normalizan a propósito: los archivos locales están
+ * en CRLF y en el server quedan en LF, así que sin esto el mismo código daría
+ * dos sellos distintos y el dato no serviría justo para lo que existe.
+ */
+function wabot_version() {
+    static $cache = null;
+    if ($cache !== null) return $cache;
+
+    $archivos = ['lib.php', 'engine.php', 'agente.php', 'redactor.php', 'webhook.php'];
+
+    $sello = '';
+    foreach ($archivos as $a) {
+        $p = WABOT_DIR . '/' . $a;
+        $sello .= $a . ':' . (int)@filesize($p) . ':' . (int)@filemtime($p) . '|';
+    }
+    $clave = md5($sello);
+
+    $cacheFile = WABOT_DATA . '/version.json';
+    $guardado = json_decode((string)@file_get_contents($cacheFile), true);
+    if (is_array($guardado) && ($guardado['clave'] ?? '') === $clave && !empty($guardado['version'])) {
+        return $cache = (string)$guardado['version'];
+    }
+
+    $contenido = '';
+    foreach ($archivos as $a) {
+        $contenido .= (string)@file_get_contents(WABOT_DIR . '/' . $a);
+    }
+    $version = substr(md5(str_replace("\r\n", "\n", $contenido)), 0, 10);
+
+    wabot_ensure_dirs();
+    @file_put_contents($cacheFile, json_encode(['clave' => $clave, 'version' => $version, 'ts' => time()]));
+    return $cache = $version;
+}
+
 function wabot_log($tipo, $datos) {
     // Las suites tienen sus propias aserciones; no deben ensuciar el diagnóstico
     // productivo ni ocultar errores reales entre cientos de leads simulados.
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) && empty($GLOBALS['WABOT_TEST_LOGS'])) return;
     wabot_ensure_dirs();
+    // El sello va en cada línea: un chat problemático queda atado al código que
+    // lo atendió, sin depender de acordarse de qué se publicó ese día.
+    if (!isset($datos['v'])) $datos['v'] = wabot_version();
     // `tipo` identifica la clase de log. Si el detalle trae el tipo de web, se
     // conserva aparte; antes pisaba "lead"/"error" y volvía inútil el filtro.
     if (array_key_exists('tipo', $datos)) {
@@ -992,9 +1042,16 @@ function wabot_config_ventas(&$cfg) {
             'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría renovada, sin compromiso, para que compares.'
                 => 'Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría hecha de nuevo a medida, sin compromiso, para que compares.',
         ],
+        /* El texto argumentaba sin contestar. Un cliente preguntó derecho si le
+         * podían armar la tienda EN Tiendanube y se llevó los tres motivos por
+         * los que esas plataformas son un alquiler, pero nunca un sí o un no
+         * (27-ago). La pregunta concreta se contesta primero y el argumento va
+         * después: al revés parece esquivar el tema. */
         'plataformas' => [
             'Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya. Lo nuestro es pago único, con web y dominio propios, sin comisiones por venta.'
-                => 'Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya. Lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).',
+                => 'Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia tienda, a medida. Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya; lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).',
+            'Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya. Lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).'
+                => 'Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia tienda, a medida. Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya; lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).',
         ],
         'hosting_renovacion' => [
             'Después del primer año, el hosting y el dominio se renuevan una vez al año: hoy la renovación ronda los $50.000 anuales en total, y antes del vencimiento te confirmamos el importe actualizado.'
@@ -4739,6 +4796,7 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
             $cv = wabot_conv_load($clave);
             if (!wabot_ultima_llamada_corresponde($cv, $cfg, $ahora)) continue;
             $texto = trim(wabot_personalizar((string)($cfg['ultima_llamada'] ?? ''), $cv));
+            $texto = wabot_salida_emisor_texto($texto, $cv, $cfg);
             if ($texto === '') continue;
             $cv['ultima_llamada_ts'] = $ahora;
             if (wabot_enviar($cv, $texto)) {
@@ -4778,6 +4836,7 @@ function wabot_seguimiento_correr($cfg, $ahora = null) {
             if (!wabot_seguimiento_corresponde($cv, $cfg, $ahora)) continue;
 
             $texto = trim(wabot_personalizar(wabot_seguimiento_texto($cv, $cfg), $cv));
+            $texto = wabot_salida_emisor_texto($texto, $cv, $cfg);
             if ($texto === '') continue;
             $cv['seguimiento_intentos'] = (int)($cv['seguimiento_intentos'] ?? 0) + 1;
             $cv['seguimiento_ultimo_intento_ts'] = $ahora;

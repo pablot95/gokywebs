@@ -511,6 +511,274 @@ function wabot_texto_reformulado($mensajes, $cfg) {
     return null;
 }
 
+/* ===================================================================
+ * PUNTO ÚNICO DE SALIDA
+ * ===================================================================
+ *
+ * Antes de esto había CUATRO caminos distintos hacia el cliente y cada uno
+ * aplicaba un subconjunto distinto de filtros:
+ *
+ *   webhook principal  → gratis + sin_repetidos + una_pregunta + anti_repeticion
+ *   webhook reintento  → sin_repetidos y nada más
+ *   crons              → nada
+ *   batería de QA      → nada (llamaba wabot_responder() pelado)
+ *
+ * O sea: cada filtro nuevo nacía cubriendo un camino de cuatro, que es el
+ * mismo error que ya se cometió con el empujón del logo y con el guard del
+ * pitch —"enganchado en un solo camino"— y además la batería medía algo que
+ * no era lo que recibía el cliente, así que un bug podía pasar los tests y
+ * salir igual por WhatsApp.
+ *
+ * Ahora todos pasan por acá. El modo distingue los dos usos reales:
+ *
+ *   'turno'  → el bot está contestando un mensaje. Pipeline completo.
+ *   'emisor' → un cron manda un texto fijo suyo (seguimiento, última llamada,
+ *              confirmación). No corresponde el anti-repetición —su texto no
+ *              es una repetición de la charla— pero sí la limpieza y la
+ *              coherencia de estado.
+ */
+function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
+    $mensajes = array_values(array_filter((array)$mensajes, function ($m) {
+        return trim((string)$m) !== '';
+    }));
+    if (!$mensajes) return $mensajes;
+
+    $mensajes = wabot_salida_limpiar($mensajes);
+    $mensajes = wabot_salida_sin_promesas($mensajes, $cfg);
+
+    if ($modo === 'turno') {
+        $mensajes = wabot_demo_siempre_gratis($mensajes, $cfg);
+        $mensajes = wabot_sin_repetidos_consecutivos($mensajes);
+        $mensajes = wabot_una_sola_pregunta($mensajes);
+    }
+
+    // Va después de los filtros de texto (para leer el mensaje final) y antes
+    // del anti-repetición (que puede reemplazar la tanda por la derivación).
+    $mensajes = wabot_salida_coherencia($mensajes, $conv, $cfg);
+
+    if ($modo === 'turno') {
+        $mensajes = wabot_anti_repeticion($mensajes, $conv, $cfg);
+    }
+    return array_values($mensajes);
+}
+
+/**
+ * La versión de un solo texto, para los crons.
+ *
+ * Devuelve el texto listo para enviar, o cadena vacía si no corresponde
+ * mandarlo. Los emisores automáticos llaman a esto antes de wabot_enviar():
+ * un seguimiento no puede salir con una promesa que el bot no puede hacer, ni
+ * dejar la conversación anunciando una derivación que nunca ocurre.
+ */
+function wabot_salida_emisor_texto($texto, &$conv, $cfg) {
+    $r = wabot_salida_preparar([$texto], $conv, $cfg, 'emisor');
+    return $r ? trim((string)$r[0]) : '';
+}
+
+/**
+ * Texto interno que se escapa al cliente.
+ *
+ * A Multiservice Ya le llegó literalmente `waited` antes de la respuesta
+ * (27-ago). No sale de ningún texto nuestro: es andamiaje del modelo que se
+ * cuela como si fuera parte del mensaje.
+ *
+ * La lista es corta y solo tiene tokens que NUNCA son un mensaje válido en
+ * castellano, por el mismo criterio que wabot_castellanizar(): un detector
+ * amplio de "esto parece técnico" se comería texto legítimo.
+ */
+function wabot_salida_limpiar($mensajes) {
+    $basura = ['waited', 'null', 'undefined', 'nan', 'true', 'false',
+               '[object object]', 'functionresponse', 'functioncall',
+               'tool_code', 'tool_outputs', 'tool_call', 'assistant', 'model'];
+    $out = [];
+    foreach ((array)$mensajes as $m) {
+        $lineas = preg_split('/\R/u', (string)$m);
+        $limpias = [];
+        foreach ($lineas as $l) {
+            $n = mb_strtolower(trim($l, " \t.:;-*`\"'"));
+            if ($n !== '' && in_array($n, $basura, true)) continue;
+            $limpias[] = $l;
+        }
+        $t = trim(implode("\n", $limpias));
+        if ($t !== '') $out[] = $t;
+    }
+    return $out;
+}
+
+/**
+ * Promesas comerciales que el bot no tiene autoridad para hacer.
+ *
+ * A Cien Colores le dijo "nos ajustamos a tu presupuesto" sin que la clienta
+ * hubiera dicho cuál era su presupuesto y sin que existiera un precio acordado
+ * para lo que pedía (27-ago). El guard de regateo que ya había vive en
+ * wabot_validar_redaccion() y busca montos y porcentajes, así que una promesa
+ * sin ningún número al lado le pasaba por al lado.
+ *
+ * Se saca la oración, no el mensaje entero: el resto suele estar bien. Si al
+ * sacarla no queda nada, contesta el texto oficial de la objeción de precio.
+ */
+function wabot_salida_sin_promesas($mensajes, $cfg) {
+    $prohibido = '/\b(nos ajustamos|me ajusto|lo ajustamos|nos acomodamos|me acomodo|nos adaptamos|me adapto)\b'
+               . '[^.!?\n]{0,40}\b(presupuesto|bolsillo|posibilidades|lo que puedas)\b'
+               . '|\b(hacemos|hago|vemos|arreglamos|conseguimos) un (precio|arreglo|descuento) (especial|mejor|aparte)\b'
+               . '|\b(algo|todo) se puede (arreglar|acomodar|negociar) con el (precio|valor|monto)\b/iu';
+
+    $out = [];
+    foreach ((array)$mensajes as $m) {
+        $texto = (string)$m;
+        if (!preg_match($prohibido, $texto)) { $out[] = $texto; continue; }
+
+        // Se parte en oraciones conservando el signo final de cada una.
+        $partes = preg_split('/(?<=[.!?\n])\s*/u', $texto, -1, PREG_SPLIT_NO_EMPTY);
+        $quedan = [];
+        foreach ($partes as $parte) {
+            if (preg_match($prohibido, $parte)) continue;
+            $quedan[] = trim($parte);
+        }
+        $limpio = trim(implode(' ', $quedan));
+        if ($limpio !== '') { $out[] = $limpio; continue; }
+
+        $oficial = trim((string)($cfg['caro'] ?? ''));
+        if ($oficial !== '') $out[] = $oficial;
+    }
+    return $out;
+}
+
+/**
+ * EL TEXTO PROMETE, EL ESTADO TIENE QUE CAMBIAR.
+ *
+ * Es la falla que más se repite en modo agente y la causa común de cinco de
+ * los errores del 27-ago: el modelo ESCRIBE la derivación o la despedida pero
+ * no llama la herramienta, así que el mensaje sale por WhatsApp y la
+ * conversación queda en la fase de antes, viva y vendiendo.
+ *
+ *   Leoo      → "te comunico directamente con el desarrollador", fase `menu`.
+ *   Whitesoul → "te paso con el desarrollador" y al turno siguiente vuelve a
+ *               tomar la gestión él mismo: "te la dejo lista mañana".
+ *   Cien Col. → "te paso directamente con él", el cliente dice "Okok" y el bot
+ *               vuelve al formulario de la demo.
+ *   Papelería → se despide bien y en el MISMO turno dispara otro globo con el
+ *               precio y el link.
+ *   Icover    → se despide tras el "no puedo pagarlo", pero sin cierre marcado
+ *               el "igualmente" se lee como aceptación y sale el formulario.
+ *
+ * Ya existía el guard equivalente para el precio (wabot_texto_pide_prediseno,
+ * "anunció y no llamó la herramienta"); para la derivación y el cierre la
+ * regla estaba solo en el prompt, que es justo lo que este proyecto ya
+ * aprendió que no alcanza.
+ *
+ * No se reescribe el mensaje: el texto del modelo ya dice lo correcto, lo que
+ * falta es el estado. Y nada va DESPUÉS de una despedida o una derivación en
+ * el mismo turno — ese fue exactamente el segundo globo de Papelería.
+ */
+function wabot_salida_coherencia($mensajes, &$conv, $cfg) {
+    if (!$mensajes) return $mensajes;
+    if (($conv['fase'] ?? '') === 'derivado') return $mensajes;
+
+    foreach ($mensajes as $i => $m) {
+        $texto = (string)$m;
+
+        // Los textos oficiales que HABLAN de la derivación sin prometerla acá
+        // y ahora (info.soy_bot dice "cuando hace falta algo más te paso con
+        // el desarrollador") no son un anuncio: son una descripción.
+        if (wabot_salida_es_texto_de_config($texto, $cfg)) continue;
+
+        if (wabot_texto_anuncia_handoff($texto)) {
+            wabot_handoff_marcar($conv, 'anuncio_sin_transicion');
+            wabot_evento_sesion($conv, 'handoff_por_anuncio');
+            return array_slice($mensajes, 0, $i + 1);
+        }
+
+        if (wabot_texto_se_despide($texto)) {
+            if (empty($conv['cierre'])) {
+                $conv['cierre'] = 'despedida';
+                $conv['seguimiento_bloqueado'] = true;
+                $conv['seguimiento_estado'] = 'bloqueado';
+                $conv['cta_muestra'] = true;
+                wabot_evento_sesion($conv, 'cierre_por_despedida');
+            }
+            return array_slice($mensajes, 0, $i + 1);
+        }
+    }
+    return $mensajes;
+}
+
+/** ¿El texto es, tal cual, uno de los textos oficiales de la config? */
+function wabot_salida_es_texto_de_config($texto, $cfg) {
+    $n = wabot_normalizar_frase((string)$texto);
+    if ($n === '') return false;
+    foreach ((array)($cfg['info'] ?? []) as $oficial) {
+        if (!is_string($oficial) || trim($oficial) === '') continue;
+        $o = wabot_normalizar_frase($oficial);
+        if ($o !== '' && ($o === $n || mb_strpos($n, $o) !== false)) return true;
+    }
+    return false;
+}
+
+/**
+ * ¿El mensaje anuncia que la charla pasa a una persona, acá y ahora?
+ *
+ * Tiene que ser un compromiso del turno, no una descripción general de cómo
+ * trabajamos ("si hace falta algo más te paso con el desarrollador"), por eso
+ * se descarta cuando viene detrás de un condicional.
+ */
+function wabot_texto_anuncia_handoff($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+
+    /* Lista corta y explícita, NO la palabra "si" a secas: wabot_normalizar_frase
+     * deja "sí" y "si" idénticos, así que un "Sí, te paso con el desarrollador"
+     * —que es un anuncio de verdad— se habría descartado como condicional. */
+    $condicional = '/\b(cuando|si|por si) (hace falta|hiciera falta|necesitas|necesitaras|queres)\b.{0,50}$/u';
+    $patrones = [
+        '/\b(te|lo|la) (paso|comunico|derivo|conecto|pongo en contacto)\b.{0,30}\b(con|directamente)\b/u',
+        '/\bte (va a escribir|escribe|contacta|va a contactar)\b.{0,30}\b(el desarrollador|pablo)\b/u',
+        '/\b(el desarrollador|pablo)\b.{0,30}\b(te (va a escribir|escribe|contacta)|sigue|toma|continua)\b/u',
+        '/\b(paso|derivo|pasamos) (tu|el) (consulta|caso|tema|pedido)\b/u',
+        '/\bhablas directamente con\b/u',
+    ];
+
+    foreach ($patrones as $p) {
+        if (!preg_match($p, $t, $m, PREG_OFFSET_CAPTURE)) continue;
+        // PREG_OFFSET_CAPTURE devuelve el offset en BYTES, y el arranque de un
+        // match siempre cae en borde de carácter: substr() da el prefijo válido.
+        $antes = substr($t, 0, $m[0][1]);
+        if (preg_match($condicional, $antes)) continue;   // "cuando hace falta…"
+        return true;
+    }
+    return false;
+}
+
+/**
+ * ¿El mensaje cierra la charla?
+ *
+ * Deliberadamente ANGOSTO. Marcar un cierre que no existe deja al bot mudo
+ * ante los acuses y frena todos los seguimientos, que es peor que el bug que
+ * arregla: por eso hace falta una fórmula de despedida completa Y que no haya
+ * ninguna pregunta abierta en el mensaje. Un "cualquier duda escribime" al pie
+ * de una respuesta normal no cierra nada.
+ */
+function wabot_texto_se_despide($texto) {
+    $crudo = (string)$texto;
+    if (mb_strpos($crudo, '?') !== false) return false;
+
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '') return false;
+
+    $despedidas = [
+        '/\bgracias por (escribirnos|consultar|tu consulta|contactarnos)\b/u',
+        '/\bsi mas adelante lo necesitas\b/u',
+        '/\bcuando sea el momento\b[^.]{0,40}\bescribinos\b/u',
+        '/\b(exitos|mucha suerte|que te vaya (muy )?bien)\b/u',
+        '/\bno te escribimos mas\b/u',
+        '/\bquedamos a disposicion\b/u',
+    ];
+    foreach ($despedidas as $p) {
+        if (preg_match($p, $t)) return true;
+    }
+    return false;
+}
+
 /**
  * Un proveedor no recibe respuesta: contestarle es darle conversación a quien
  * nos está vendiendo a nosotros. Queda anotado para que Pablo lo vea en el
@@ -2418,6 +2686,73 @@ function wabot_comparacion_tipo_texto($alterno, $conv, $cfg) {
             . '.' . "\n\nCon reserva automática es lo que ya tenés cotizado: " . (string)($cfg['tipos']['turnos']['precio'] ?? '');
     }
     return null;
+}
+
+/**
+ * "Cuánto cuesta agregarle venta y cobro online?"
+ *
+ * El caso Aberturas (27-ago): tenía una landing cotizada en $160.000, preguntó
+ * el precio de sumar venta online, y el bot preguntó si era el mismo proyecto y
+ * le volvió a cotizar la landing. Le contestó el producto anterior a una
+ * consulta sobre otro.
+ *
+ * No lo cubría wabot_texto_cambia_modalidad() por dos motivos, los dos de
+ * fondo: descarta las preguntas (ahí es una decisión, acá es una consulta de
+ * precio) y no contemplaba el salto landing → ecommerce, solo los desempates
+ * de a pares que ya existían.
+ *
+ * Devuelve el tipo destino, o null.
+ */
+function wabot_texto_pregunta_upgrade($texto, $tipoActual) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+
+    // Solo tiene sentido desde un tipo que todavía NO cobra online.
+    if (!in_array((string)$tipoActual, ['landing', 'turnos', 'institucional', 'inmobiliaria'], true)) return null;
+
+    /* Hace falta el verbo de sumar algo: un "cuánto sale" pelado ya tiene su
+     * propio camino y no puede terminar recotizando otro tipo por su cuenta.
+     *
+     * Las formas van escritas una por una en vez de con comodines: un `met\w+`
+     * se comía "método de pago online" y convertía una pregunta sobre formas de
+     * pago en una recotización. */
+    $suma = '/\b(agregar|agregarle|agrego|agregas|agregamos|agregara|'
+          . 'sumar|sumarle|sumo|sumas|sumamos|sumara|'
+          . 'incluir|incluirle|incluyo|incluye|incluyendo|'
+          . 'incorporar|incorporo|'
+          . 'poner|ponerle|pongo|ponemos|'
+          . 'anadir|anadirle|anado|'
+          . 'habilitar|habilito|activar|activo|'
+          . 'tener|tuviera|tuviese|llevar)\b/u';
+    if (!preg_match($suma, $t)) return null;
+
+    $vender = '/\b(venta|ventas|vender|carrito|cobro|cobrar|cobros|pago online|pagos online|pagar online|comprar online|tienda online|ecommerce|e commerce)\b/u';
+    if (!preg_match($vender, $t)) return null;
+
+    return 'ecommerce';
+}
+
+/**
+ * La respuesta: el precio del tipo que SÍ vende online, dicho como lo que es
+ * —la web completa— y no como un adicional sobre lo ya cotizado, que sería
+ * inventar una condición comercial que no existe.
+ */
+function wabot_upgrade_texto($destino, $conv, $cfg) {
+    $actual = (string)($conv['tipo'] ?? '');
+    if ($actual === '' || !isset($cfg['tipos'][$destino]) || !isset($cfg['tipos'][$actual])) return null;
+
+    $precioNuevo = trim((string)($cfg['tipos'][$destino]['precio'] ?? ''));
+    $precioViejo = trim((string)($cfg['tipos'][$actual]['precio'] ?? ''));
+    if ($precioNuevo === '') return null;
+
+    $labelActual = mb_strtolower(wabot_tipo_label($actual, $cfg));
+
+    $texto = 'Con venta y cobro online ya sería una tienda online: ' . $precioNuevo . ' por todo el desarrollo.';
+    if ($precioViejo !== '' && $labelActual !== '') {
+        $texto .= ' No es un adicional sobre ' . $precioViejo . ': en vez de la ' . $labelActual
+                . ' te queda la web completa, con el carrito y los pagos integrados.';
+    }
+    return $texto;
 }
 
 function wabot_desempate_desvio($acc, $out, $texto, &$conv, $cfg) {
