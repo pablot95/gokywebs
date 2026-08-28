@@ -1202,26 +1202,8 @@ function _updateClientCounters() {
     // "$0 pendiente" que se lee igual que "ya pagó todo".
     const clientesConPrecio = clientesActivos.filter(c => !c.sinPrecio);
     const totalPendiente = clientesConPrecio.reduce((sum, c) => sum + pendienteDe(c), 0);
-    const mesActual = _ymActual();
-    const mesAnterior = _ymSumarMeses(mesActual, -1);
-    const pendienteMes = clientesConPrecio
-        .filter(c => {
-            const fecha = _clientSketchDate(c);
-            return fecha && _ymDeFecha(fecha) === mesActual;
-        })
-        .reduce((sum, c) => sum + pendienteDe(c), 0);
-    const pendienteMesAnterior = clientesConPrecio
-        .filter(c => {
-            const fecha = _clientSketchDate(c);
-            return fecha && _ymDeFecha(fecha) === mesAnterior;
-        })
-        .reduce((sum, c) => sum + pendienteDe(c), 0);
 
     document.getElementById("totalPendiente").textContent = fmtMoney(totalPendiente);
-    const pendienteMesEl = document.getElementById("totalPendienteMes");
-    if (pendienteMesEl) pendienteMesEl.textContent = fmtMoney(pendienteMes);
-    const pendienteMesAnteriorEl = document.getElementById("totalPendienteMesAnterior");
-    if (pendienteMesAnteriorEl) pendienteMesAnteriorEl.textContent = fmtMoney(pendienteMesAnterior);
 }
 
 function _bindTableListeners(tbodyEl) {
