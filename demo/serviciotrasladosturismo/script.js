@@ -430,27 +430,48 @@ function initRailDrag(vp) {
 
 /* ---------------- pasos (sticky chapters) ---------------- */
 function initPasos() {
+  const seccion = document.getElementById('itinerario');
   const pasos = Array.from(document.querySelectorAll('.paso'));
   const imgs = Array.from(document.querySelectorAll('.paso-visual img'));
   const chip = document.getElementById('pasoChip');
-  if (!pasos.length || !imgs.length) return;
+  if (!seccion || !pasos.length || !imgs.length) return;
   const titulos = ['01 · Reservás', '02 · Te esperamos', '03 · Viajás'];
 
+  let actual = -1;
   const activar = i => {
+    if (i === actual) return;
+    actual = i;
     pasos.forEach((p, k) => p.classList.toggle('is-on', k === i));
     imgs.forEach((im, k) => im.classList.toggle('is-on', k === i));
     if (chip) chip.textContent = titulos[i] || titulos[0];
   };
 
-  if (!('IntersectionObserver' in window)) { activar(0); return; }
-  const io = new IntersectionObserver(entries => {
-    const visibles = entries.filter(en => en.isIntersecting);
-    if (!visibles.length) return;
-    const idx = pasos.indexOf(visibles[visibles.length - 1].target);
-    if (idx >= 0) activar(idx);
-  }, { threshold: 0, rootMargin: '-42% 0px -42% 0px' });
-  pasos.forEach(p => io.observe(p));
+  const grid = document.getElementById('pasosGrid');
+
+  const elegir = () => {
+    const s = seccion.getBoundingClientRect();
+    if (s.bottom < 0 || s.top > window.innerHeight) return;
+    const apilado = grid ? window.getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length === 1 : false;
+    const centro = window.innerHeight * (apilado ? 0.68 : 0.5);
+    let mejor = 0, dist = Infinity;
+    pasos.forEach((p, i) => {
+      const r = p.getBoundingClientRect();
+      const d = Math.abs(r.top + r.height / 2 - centro);
+      if (d < dist) { dist = d; mejor = i; }
+    });
+    activar(mejor);
+  };
+
   activar(0);
+  let queued = false;
+  const onScroll = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => { queued = false; elegir(); });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  elegir();
 }
 
 /* ---------------- reveals ---------------- */

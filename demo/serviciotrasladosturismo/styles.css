@@ -452,7 +452,7 @@ h3 { font-size: var(--fs-h3); letter-spacing: -.01em; }
 .pasos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.4rem, 4vw, 3.4rem); align-items: start; }
 .paso-visual {
   position: sticky; top: 96px;
-  height: min(62svh, 520px);
+  height: min(50svh, 420px);
   border-radius: calc(var(--radius) + 2px); overflow: hidden;
   background: var(--color-bg-alt);
 }
@@ -468,10 +468,10 @@ h3 { font-size: var(--fs-h3); letter-spacing: -.01em; }
   background: rgba(7, 26, 51, .82); color: #fff;
   font-size: .78rem; letter-spacing: .1em; text-transform: uppercase;
 }
-.pasos-lista { display: grid; gap: 1.5rem; }
+.pasos-lista { display: grid; gap: 1.6rem; }
 .paso {
   position: relative; display: grid; align-content: center;
-  min-height: 190px; padding: 1.5rem 1.5rem 1.5rem 3.9rem;
+  min-height: 220px; padding: 1.5rem 1.5rem 1.5rem 3.9rem;
   border: 1px solid var(--color-line); border-radius: calc(var(--radius) + 2px);
   background: #fff;
   transition: border-color .4s var(--ease-out), box-shadow .4s var(--ease-out), transform .4s var(--ease-out);
@@ -787,7 +787,7 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 
 @media (max-width: 900px) {
   .pasos-grid { grid-template-columns: 1fr; }
-  .paso-visual { position: relative; top: auto; height: 44svh; min-height: 250px; }
+  .paso-visual { top: 12px; height: 34svh; min-height: 210px; z-index: 2; }
   .nodo-lbl { font-size: .72rem; }
 }
 
