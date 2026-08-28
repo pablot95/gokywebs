@@ -2678,15 +2678,50 @@ function wabot_conv_resolver($tel, &$motivo = null) {
     $abonados = wabot_tel_abonados($clave);
     if (!$abonados) { $motivo = 'corto'; return null; }
 
-    $coinciden = [];
+    $coinciden = [];   // conversaciones de WhatsApp: la clave ES el teléfono
+    $porWsp    = [];   // Instagram: la clave es el IGSID, hay que ir por dentro
+
     foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
         $otra = basename($f, '.json');
-        if (!ctype_digit($otra)) continue;
-        if (array_intersect($abonados, wabot_tel_abonados($otra))) $coinciden[] = $otra;
+        if (ctype_digit($otra)) {
+            if (array_intersect($abonados, wabot_tel_abonados($otra))) $coinciden[] = $otra;
+            continue;
+        }
+        /* Instagram. La conversación se guarda como ig<IGSID>, así que buscarla
+         * por número no la encuentra NUNCA: hasta el 28-ago este foreach las
+         * salteaba con un ctype_digit y presentar una demo a un lead de
+         * Instagram avisaba "este cliente no tiene conversación con el bot" y no
+         * mandaba nada, aunque la charla estuviera abierta y dentro de las 24 h.
+         *
+         * El puente es telefono_wsp: el número que el propio cliente dejó en el
+         * prediseño, que es también el que Pablo tiene cargado en el panel. Se
+         * lee con una expresión regular en vez de decodificar el JSON entero
+         * porque acá se recorren TODAS las conversaciones. */
+        $wsp = wabot_conv_wsp_crudo($f);
+        if ($wsp !== '' && array_intersect($abonados, wabot_tel_abonados($wsp))) $porWsp[] = $otra;
     }
+
     if (count($coinciden) === 1) return $coinciden[0];
-    $motivo = $coinciden ? 'ambiguo' : 'sin_chat';
+    // WhatsApp tiene prioridad: si el cliente escribió por los dos lados, la
+    // demo va por donde ya venía la conversación de venta.
+    if (!$coinciden && count($porWsp) === 1) return $porWsp[0];
+
+    $motivo = ($coinciden || $porWsp) ? 'ambiguo' : 'sin_chat';
     return null;
+}
+
+/**
+ * El telefono_wsp de una conversación, leído del archivo sin decodificarlo.
+ *
+ * wabot_conv_resolver() recorre todas las conversaciones y hacer json_decode de
+ * cada una para leer un solo campo es tirar trabajo a la basura. El campo es de
+ * primer nivel y su nombre no se repite adentro.
+ */
+function wabot_conv_wsp_crudo($ruta) {
+    $raw = @file_get_contents($ruta);
+    if ($raw === false) return '';
+    if (!preg_match('/"telefono_wsp"\s*:\s*"([0-9+\- ()]{6,25})"/', $raw, $m)) return '';
+    return preg_replace('/\D/', '', $m[1]);
 }
 
 function wabot_conv_load($clave) {

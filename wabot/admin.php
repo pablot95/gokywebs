@@ -433,6 +433,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'total'    => $total,
             'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
             'slug'     => $slug,
+            // Por dónde salió: el panel decía "por WhatsApp" siempre, y desde
+            // que los leads de Instagram se resuelven también, eso puede ser
+            // mentira (28-ago).
+            'canal'    => wabot_canal($conv),
         ]);
         exit;
     }

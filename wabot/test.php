@@ -3181,6 +3181,38 @@ caso('pero con la clave completa sí, aunque haya otro parecido',
 
 caso('teléfono vacío → null sin tocar el disco', wabot_conv_resolver('', $m) === null && $m === 'vacio');
 caso('número demasiado corto para ser un teléfono', wabot_conv_resolver('1234', $m) === null && $m === 'corto');
+
+/* Instagram: la conversación se guarda como ig<IGSID>, así que buscarla por
+ * teléfono no la encontraba nunca — el foreach salteaba con ctype_digit todo lo
+ * que no fuera un número. Presentarle una demo a un lead de Instagram avisaba
+ * "este cliente no tiene conversación con el bot" y no mandaba nada, con la
+ * charla abierta y dentro de las 24 h (Pablo, 28-ago). El puente es el
+ * telefono_wsp que el propio cliente dejó en el prediseño. */
+$claveIg  = 'ig1784140' . substr((string)getmypid() . '00000000', 0, 8);
+$wspDeIg  = '11' . substr((string)getmypid() . '50007777', 0, 8);
+@unlink(WABOT_DATA . '/conv/' . $claveIg . '.json');
+$convIg = wabot_conv_load($claveIg);
+$convIg['telefono_wsp'] = $wspDeIg;
+wabot_conv_save($convIg);
+
+caso('un lead de Instagram se encuentra por el WhatsApp que dejó',
+    wabot_conv_resolver($wspDeIg, $m) === $claveIg && $m === null);
+caso('y también con el número formateado como lo manda el panel',
+    wabot_conv_resolver('+54 9 ' . substr($wspDeIg, 0, 2) . ' ' . substr($wspDeIg, 2), $m) === $claveIg);
+caso('el canal queda en instagram, así la demo sale por DM y no por WhatsApp',
+    wabot_conv_load($claveIg)['canal'] === 'instagram');
+caso('un número que no dejó nadie sigue dando sin_chat',
+    wabot_conv_resolver('1149998888', $m) === null && $m === 'sin_chat');
+
+// Y si el mismo número está en un chat de WhatsApp Y en uno de Instagram, gana
+// WhatsApp: es donde venía la conversación de venta.
+$claveWaMismo = '549' . $wspDeIg;
+@unlink(WABOT_DATA . '/conv/' . $claveWaMismo . '.json');
+wabot_conv_save(wabot_conv_load($claveWaMismo));
+caso('con chat en los dos lados, la demo va por WhatsApp',
+    wabot_conv_resolver($wspDeIg, $m) === $claveWaMismo);
+@unlink(WABOT_DATA . '/conv/' . $claveWaMismo . '.json');
+@unlink(WABOT_DATA . '/conv/' . $claveIg . '.json');
 caso('el error de "nunca escribió" nombra el número', strpos(wabot_error_sin_chat('387 311-5008', 'sin_chat'), '387 311-5008') !== false);
 caso('el error ambiguo manda a abrirlo a mano', stripos(wabot_error_sin_chat('3115008', 'ambiguo'), 'panel del bot') !== false);
 @unlink(WABOT_DATA . '/conv/' . $claveReal . '.json');

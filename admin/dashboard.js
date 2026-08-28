@@ -3249,7 +3249,11 @@ async function presentarPropuesta(propId) {
                 + (link ? ":\n" + link : ".")
                 + "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta.");
         } else if (envio.enviado) {
-            alert("Quedó en Seguimiento. El bot ya le mandó la demo por WhatsApp, no hace falta que le escribas vos.");
+            // Los leads de Instagram reciben la demo por DM, no por WhatsApp:
+            // decir siempre "por WhatsApp" mandaba a Pablo a mirar el chat
+            // equivocado (28-ago).
+            const porDonde = envio.canal === "instagram" ? "por Instagram" : "por WhatsApp";
+            alert("Quedó en Seguimiento. El bot ya le mandó la demo " + porDonde + ", no hace falta que le escribas vos.");
         } else if (envio.demo_ok) {
             // El mensaje con el link SÍ salió; falló el segundo, que solo pide
             // el feedback. Mandar la demo de nuevo sería duplicarla.
