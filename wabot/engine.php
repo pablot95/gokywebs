@@ -560,6 +560,19 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
         $mensajes = wabot_anti_repeticion($mensajes, $conv, $cfg);
         $mensajes = wabot_salida_sin_avance($mensajes, $conv, $cfg);
     }
+
+    /* La personalización vivía SOLO en wabot_enviar(), que la batería no llama:
+     * por eso un "Perfecto, {nombre}." se veía crudo al revisar los escenarios
+     * y no había forma de saber si era un bug real o del arnés. Acá la ve
+     * cualquiera que mire la salida. Sigue además en wabot_enviar() como última
+     * red —ahí es donde tiene que estar, para lo que se mande desde donde sea—
+     * y aplicarla dos veces no cambia nada: sin marcadores no hay qué
+     * reemplazar, y la muletilla no se vuelve a rotar porque ya dejó de
+     * coincidir con la anterior. */
+    foreach ($mensajes as $i => $m) {
+        $mensajes[$i] = wabot_variar_muletilla(wabot_personalizar((string)$m, $conv), $conv);
+    }
+
     return array_values($mensajes);
 }
 

@@ -197,6 +197,22 @@ $c = conv_de('menu');
 caso('emisor: wabot_salida_emisor_texto devuelve string, no array',
     is_string(wabot_salida_emisor_texto('Te quedó alguna duda?', $c, $cfg)));
 
+echo "\n— Ningún marcador sale crudo por ninguno de los cuatro caminos —\n";
+
+$c = conv_de('derivado', ['nombre' => 'Leonardo', 'nombre_confirmado' => true]);
+$r = wabot_salida_preparar(['Perfecto, {nombre}. A partir de acá sigue Pablo.'], $c, $cfg);
+caso('turno: {nombre} se reemplaza antes de salir',
+    count($r) === 1 && strpos($r[0], '{nombre}') === false && strpos($r[0], 'Leonardo') !== false);
+
+$c = conv_de('precio', ['nombre' => 'Leonardo', 'nombre_confirmado' => true]);
+caso('emisor: también',
+    strpos(wabot_salida_emisor_texto('Hola {nombre}, te quedó alguna duda?', $c, $cfg), '{nombre}') === false);
+
+$c = conv_de('menu');
+$r = wabot_salida_preparar(['Perfecto, {nombre}. Contame más.'], $c, $cfg);
+caso('sin nombre confirmado el marcador se saca limpio, no queda un hueco raro',
+    count($r) === 1 && strpos($r[0], '{nombre}') === false && strpos($r[0], '  ') === false);
+
 echo "\n— Preguntas de precio que el bot ya sabe contestar (Aberturas) —\n";
 
 caso('"cuánto cuesta agregar venta y cobro online" con una landing cotizada → ecommerce',
@@ -292,8 +308,12 @@ $segundaOk = count($r2) === 1 && ($c['fase'] ?? '') !== 'derivado';
 $r3 = wabot_salida_preparar(['Me dirías cuántos vendedores o usuarios estimás?'], $c, $cfg);
 
 caso('las dos primeras salen normales', $primeraOk && $segundaOk);
+// La comparación va contra el texto YA personalizado: wabot_salida_preparar()
+// reemplaza {nombre} antes de devolver, así que el crudo de la config no coincide.
 caso('a la tercera lo toma Pablo, aunque las tres preguntas sean distintas',
-    $r3 === [$cfg['derivar']] && ($c['fase'] ?? '') === 'derivado');
+    count($r3) === 1 && ($c['fase'] ?? '') === 'derivado'
+    && strpos($r3[0], '{nombre}') === false
+    && wabot_normalizar_frase($r3[0]) === wabot_normalizar_frase(wabot_personalizar((string)$cfg['derivar'], $c)));
 
 // Y no puede dispararse cuando la charla SÍ avanza.
 $c = conv_de('prediseno', ['nombre_negocio' => '']);
