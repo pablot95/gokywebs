@@ -1,0 +1,701 @@
+Bateria conversacional wabot — 40 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO R01 — REGRESION: sale lo mismo con carrito (caso Nicolas Andretta)
+ESPERADO: El bot contesta SOLO los dos precios (catalogo $180.000+$500 por producto vs ecommerce $290.000). NO deriva al desarrollador ni dice 'esa duda te la va a contestar'.
+>>> CLIENTE: Hola, necesito una tienda de ropa streetwear que me permita cargar mercaderia con talles y aplicar cupones de descuento. Tambien que hable de la marca y tenga pagos online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Buzos baggy
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sale lo mismo con carrito?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [254c]: El desarrollo completo es $290.000. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de $36.494, 6 de $60.823 o 3 de $110.485. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R02 — REGRESION: si lo agendo yo cual es la diferencia (caso psicoeducacion)
+ESPERADO: Contesta la diferencia real y los dos precios (landing $160.000 vs turnos $200.000). NO deriva.
+>>> CLIENTE: Rubro salud, psicoeducacion. Psicologia, quiero ofrecer sesiones
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [33c]: En qué área de la salud trabajás?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Reservar
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [35c]: Cuál es el servicio más solicitado?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y si lo agendo yo cual es la diferencia
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R03 — REGRESION: importaciones es el rubro, no una pregunta de impuestos
+ESPERADO: NUNCA menciona impuestos de importacion: nadie pregunto por eso. Pregunta que importa y a quien vende, o cotiza ecommerce.
+>>> CLIENTE: Hola, nos dedicamos en importaciones.
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Queremos tener una pagina para nuestros productos. Me podrias pasar precio
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R04 — REGRESION: pagina de resenas es el rubro, no una duda (caso BJR)
+ESPERADO: NO contesta 'esa duda te la va a poder contestar el desarrollador': el cliente esta diciendo su rubro. Y NO le vuelve a preguntar que vende o que servicio ofrece, que ya lo dijo.
+>>> CLIENTE: Es para una pagina de resenas
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=algo_diferente tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Resenas laborales
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [153c]: Te lo pregunto de otra forma: a qué rubro te dedicás (por ejemplo indumentaria, gastronomía, construcción, salud) o qué es lo que ofrecés en una palabra?
+    [fase=algo_diferente tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R05 — REGRESION: no quiero llevarlos a WhatsApp (caso BJR)
+ESPERADO: Define landing como UNA pagina con VARIAS secciones (nunca 'una sola seccion'). Ante el rechazo del WhatsApp ofrece formulario de contacto o mail: NO sigue de largo repitiendo el precio.
+>>> CLIENTE: Tengo un sitio de resenas laborales, quiero una web para presentarlo
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [49c]: Qué es lo que más te diferencia en tus servicios?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Que es landing ?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No quiero llevarlos a WhatsApp
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [220c]: No hay problema, el WhatsApp no es obligatorio. En vez del botón podemos poner un formulario de contacto —las consultas te llegan por mail—, o dejar solo el mail y tus redes. Vos decidís por dónde querés que te escriban.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R06 — REGRESION: como me comunico con el desarrollador
+ESPERADO: Explica que le escribe el directamente desde el numero de proyectos. NO contesta con 'las reuniones se coordinan al avanzar el proyecto', que no responde nada.
+>>> CLIENTE: Soy contadora, quiero una web para mi estudio
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [46c]: Qué es lo que más se destaca de tus servicios?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Como me comunico con el desarrollador ?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [167c]: No tenés que hacer nada: te escribe él directamente por WhatsApp, desde nuestro número de proyectos. Si preferís escribirle vos primero, decímelo y le paso tu mensaje.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R07 — REGRESION: loop pidiendo datos de la demo (caso cosmeticos)
+ESPERADO: El listado de datos sale UNA sola vez. Al primer 'Ok' contesta una linea corta; a 'Listo gracias' y 'si' NO contesta nada. Nunca repite el listado ni insiste tres veces.
+>>> CLIENTE: Voy a empezar a vender maquillaje al por mayor
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, armame la demo
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ok
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [324c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Listo gracias
+<<< BOT [86c]: Perfecto, quedo atento. Cuando los tengas mandámelos por acá y arrancamos con la demo.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si
+<<< BOT: (silencio)
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R08 — REGRESION: dale perfecto no acepta una demo que nadie ofrecio (caso inmobiliaria)
+ESPERADO: NO pide nombre/negocio/colores para una demo que nunca ofrecio. Si quiere ofrecerla, la ofrece primero como pregunta y espera respuesta.
+>>> CLIENTE: Tenemos una inmobiliaria
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [247c]: Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de $240.000, pago único.
+<<< BOT [46c]: Cuál es el tipo de propiedad que más publicás?
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: De todo, tenes alguna para ver
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale ahora miro
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [324c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale perfecto
+<<< BOT [86c]: Perfecto, quedo atento. Cuando los tengas mandámelos por acá y arrancamos con la demo.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R09 — REGRESION: necesidad mixta servicios+cursos+productos (caso Valeria)
+ESPERADO: Nombra las TRES cosas que pidio (servicios, cursos, productos) antes de derivar o de preguntar. NO deriva a secas con 'te paso con el desarrollador' sin demostrar que la leyo.
+>>> CLIENTE: Hola gusto saludarte, soy Valeria, terapeuta holistica. Queria saber para tener una pagina donde pueda ofrecer mis servicios online (lecturas de cartas, cursos de diversas mancias, terapias de sanacion) y ademas ofrecer productos, sahumerios, cascadas de humo, etc.
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [453c]: Por lo que me contás necesitarías una web que integre tus servicios, los cursos o materiales y la venta de productos en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.
+           
+           Perfecto, {nombre}. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO R10 — REGRESION: necesidad mixta sesiones+grupos+cuadernillos
+ESPERADO: No encaja todo en una web de turnos dejando los cuadernillos afuera. Nombra las dos cosas y pregunta si quiere todo integrado o arranca por una.
+>>> CLIENTE: Psicologia, quiero ofrecer sesiones, grupos y cuadernillos
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Reservar
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [35c]: Cuál es el servicio más solicitado?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R11 — REGRESION: Costos? en medio del desempate (caso pediatria)
+ESPERADO: Contesta los DOS precios concretos ($160.000 por WhatsApp / $200.000 con reserva). NO vuelve al rango generico ni repregunta 'contame a que te dedicas', que ya lo dijo.
+>>> CLIENTE: Pediatria
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Costos?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [171c]: Si te escriben por WhatsApp y los agendás vos, $160.000.
+           Si preferís que los reserven solos desde la web, eligiendo día y horario, $200.000.
+           
+           Cuál de las dos te sirve más?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R12 — REGRESION: ebook con disenos no es plataforma de cursos
+ESPERADO: NO pregunta si quiere 'vender los cursos con los videos subidos y acceso para cada alumno': nunca hablo de cursos ni videos ni alumnos. Aclara que quiere vender (ebook como producto, disenos sueltos, o solo mostrarlos).
+>>> CLIENTE: Hacer un ebook con disenos en blanco y negro, con su explicacion
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=algo_diferente tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Quiero vender mis disenos, ademas tengo un blog y me gustaria pasarlo a pdf
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [153c]: Te lo pregunto de otra forma: a qué rubro te dedicás (por ejemplo indumentaria, gastronomía, construcción, salud) o qué es lo que ofrecés en una palabra?
+    [fase=algo_diferente tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO R13 — REGRESION: proveedor mandando su propia promo (caso DevZeppelin)
+ESPERADO: SILENCIO total. No es un cliente: es otra agencia vendiendonos. No pregunta el rubro ni contesta 'no hacemos logos'.
+>>> CLIENTE: Promo de web profesional + pack de diseno por $199.000.
+
+Incluye:
+Pagina web moderna ultra rapida
+Dominio .com.ar gratis por 1 ano
+Hosting gratis
+Optimizacion para busquedas (Google e IA)
+Pack de diseno para redes (Flyers, Logo, Historias destacadas)
+Un reel promocional incluido!
+
+Nuestras web son anexalinks.ar y devzeppelin.ar, para que veas calidad, velocidad y experiencia de usuario!
+<<< BOT: (silencio)
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=proveedor]
+
+########## ESCENARIO R14 — REGRESION: dos preguntas contradictorias en el mismo turno (caso cosmeticos)
+ESPERADO: UNA sola pregunta. Nunca 'que servicio de belleza ofreces?' y 'cual es el producto que mas vendes?' juntas: son contradictorias y no se pueden contestar las dos.
+>>> CLIENTE: Buen dia, para cosmeticos o productos de belleza
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N15 — NUEVO: dos negocios distintos en la misma charla
+ESPERADO: No mezcla los dos negocios en una sola cotizacion ni se confunde de rubro al avanzar. Cotiza lo que el cliente eligio.
+>>> CLIENTE: Hola, tengo una veterinaria y tambien un local de indumentaria, queria webs para los dos
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Empecemos por la veterinaria
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [212c]: Buenísimo, arranquemos con la veterinaria entonces. 
+           
+           Para el tema de los turnos, preferís que los clientes puedan reservar día y horario directamente desde la web, o que te contacten por WhatsApp para coordinar?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N16 — NUEVO: cambia de opinion a mitad de camino
+ESPERADO: Acepta el cambio sin pelearlo, recotiza catalogo y da el precio nuevo. No repite el precio viejo de ecommerce ni se confunde.
+>>> CLIENTE: Vendo indumentaria, quiero vender online con carrito
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuanto queda entonces?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [95c]: Este precio sería para el mismo proyecto de indumentaria o estás pensando en otra web distinta?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N17 — NUEVO: pregunta por publicidad y Google Ads (fuera de alcance)
+ESPERADO: Contesta con claridad que hace y que no, sin prometer servicios que no existen. No inventa precios de publicidad.
+>>> CLIENTE: Soy gasista matriculado, quiero la web
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [46c]: Qué es lo que más se destaca de tus servicios?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Uds tambien manejan las campanas de Google Ads y las redes?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [118c]: No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N18 — NUEVO: quiere una app movil, no una web
+ESPERADO: No cotiza una web como si fuera una app. Aclara la diferencia o deriva, pero nunca le vende landing haciendole creer que es una app.
+>>> CLIENTE: Hola, necesito una app para celular, para pedidos de mi rotiseria
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [121c]: Sí, también desarrollamos sistemas de gestión a medida. Contame qué necesitás que resuelva y qué problema querés ordenar.
+    [fase=sistema_problema tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No, app app, para descargar del Play Store
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [62c]: Perfecto. Aproximadamente cuántas personas usarían el sistema?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N19 — NUEVO: ya tiene web y quiere solo rediseno
+ESPERADO: No ignora que ya tiene web. Explica que se rehace a medida y el precio, o deriva si el rediseno sobre lo existente no esta en la lista.
+>>> CLIENTE: Tengo una web hecha en WordPress hace 5 anos para mi estudio de arquitectura, esta viejisima
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [170c]: Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría hecha de nuevo a medida, sin compromiso, para que compares.
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [46c]: Qué es lo que más se destaca de tus servicios?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No quiero empezar de cero, solo que la actualicen
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [51c]: Dale, sin apuro. Cuando quieras avanzar, acá estoy.
+<<< BOT [110c]: El total es $160.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Landing
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N20 — NUEVO: pregunta por factura A y condicion fiscal
+ESPERADO: Contesta sobre facturacion sin inventar datos fiscales. Si no lo sabe, deriva; nunca afirma algo falso sobre IVA o tipo de factura.
+>>> CLIENTE: Buenas, somos una SRL, necesitamos una web institucional con varias secciones
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [69c]: Hola Para asesorarte mejor, contanos para qué rubro necesitás la web.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Nos hacen factura A? Somos responsables inscriptos
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [293c]: Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña ($40.000 en landing, web con catálogo, web con turnos y web institucional, $60.000 en web inmobiliaria, ecommerce y plataforma de cursos) y el saldo al entregar la web.
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N21 — NUEVO: escribe todo en mayusculas y con muchos errores
+ESPERADO: Entiende el mensaje pese a los errores, no lo trata distinto ni le pide que escriba mejor. Cotiza landing y ofrece la demo.
+>>> CLIENTE: OLA KERIA SAVER PRESIO D UNA PAJINA WEB P MI TALLR MECANIKO
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: SI DALE ARMAME LA MUESTRA
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [173c]: Te lo simplifico: querés que tus clientes reserven el turno solos desde la web (respondé "reservar"), o que te escriban por WhatsApp y los agendás vos (respondé "whatsapp")?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N22 — NUEVO: pide hablar con clientes anteriores como referencia
+ESPERADO: No inventa nombres ni telefonos de clientes. Ofrece el portfolio del sitio o deriva, pero NUNCA fabrica referencias.
+>>> CLIENTE: Hola, tengo un centro de estetica y quiero la web con turnos online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [35c]: Cuál es el servicio más solicitado?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me podes pasar el contacto de algun cliente suyo para preguntarle como les fue?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [340c]: Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com podés ver los proyectos entregados y contactar a cualquiera de esos clientes.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N23 — NUEVO: cliente del exterior pregunta en dolares
+ESPERADO: No inventa una cotizacion en dolares ni un tipo de cambio. Deriva o aclara que el precio es en pesos argentinos.
+>>> CLIENTE: Hola, escribo desde Uruguay, tengo una tienda de vinos y quiero vender online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuanto seria en dolares? Y pueden facturar al exterior?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [330c]: - El desarrollo completo es $290.000. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de $36.494, 6 de $60.823 o 3 de $110.485. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+           - Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+<<< BOT [118c]: El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=-]
+
+########## ESCENARIO N24 — NUEVO: plazo imposible, la necesita para manana
+ESPERADO: Dice el plazo real (7 dias desde la sena y el contenido) sin prometer algo imposible para quedar bien.
+>>> CLIENTE: Necesito una landing para mi productora de eventos
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [44c]: Qué es lo que más querés destacar en la web?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: La necesito lista para manana a la manana si o si, se puede?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [285c]: Para mañana a la mañana es imposible llegar. El desarrollo de una web profesional lleva su tiempo: la entrega final se hace en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis, que es la primera demo para que veas cómo queda, lo tenemos listo en 24 a 48 horas.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N25 — NUEVO: pregunta por cuotas ANTES de ver la demo
+ESPERADO: Contesta las formas de pago sin calcular el monto de cada cuota (lo calcula la tarjeta) y sin adelantar la sena si no se la preguntaron.
+>>> CLIENTE: Vendo productos de limpieza, quiero tienda online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Se puede pagar en cuotas? Cuanto seria cada cuota?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [254c]: El desarrollo completo es $290.000. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de $36.494, 6 de $60.823 o 3 de $110.485. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N26 — NUEVO: web bilingue
+ESPERADO: Contesta el adicional de bilingue con el precio real de config, sin inventar un numero.
+>>> CLIENTE: Tengo una cabana en Bariloche y recibo turistas extranjeros
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Necesito que este en ingles tambien, se puede? cuanto mas sale?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [86c]: Sí, la podemos hacer bilingüe. Tiene un adicional de $30.000 sobre el valor de la web.
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N27 — NUEVO: turnos con sena online (dos funciones combinadas)
+ESPERADO: No promete la sena online como incluida si no lo esta. Si es un extra o requiere evaluacion, lo dice o deriva; nunca afirma que viene en el precio sin saberlo.
+>>> CLIENTE: Tengo canchas de padel, quiero que reserven online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [37c]: Cuál es el servicio que más te piden?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y que paguen una sena al reservar, se puede?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N28 — NUEVO: un familiar se la hace gratis
+ESPERADO: No denigra al sobrino ni inventa razones tecnicas falsas. Es la objecion de otra persona (no plataforma): contesta con naturalidad y ofrece la demo gratis.
+>>> CLIENTE: Cuanto sale una web para mi ferreteria
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [263c]: Para ese objetivo, lo adecuado sería una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando. El desarrollo completo queda en $290.000.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Mi sobrino estudia programacion y me dijo que me la hace gratis
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [163c]: Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá. Ya queda anotado que lo tuyo sería ecommerce, así que no vas a tener que explicar todo otra vez.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=sin_interes]
+
+########## ESCENARIO N29 — NUEVO: pregunta cuantas fotos y productos entran
+ESPERADO: Contesta quien carga que (10 los cargamos nosotros, el resto el cliente desde el panel) sin inventar un limite que no existe.
+>>> CLIENTE: Tengo una tienda de deco para el hogar, quiero vender online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuantos productos puedo cargar? Tengo como 400
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [539c]: Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N30 — NUEVO: contesta el desempate con LAS DOS opciones
+ESPERADO: Acepta la respuesta como valida y completa: confirma que se integran las dos y avanza. NUNCA repite el mismo either/or para que elija una sola.
+>>> CLIENTE: Tengo una casa de repuestos de moto
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Las dos cosas, que puedan comprar online y tambien consultarme por WhatsApp
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N31 — NUEVO: pregunta si es un bot
+ESPERADO: Contesta con la respuesta oficial de la config, sin mentir diciendo que es una persona y sin cortar la venta.
+>>> CLIENTE: Hola, vendo velas artesanales y quiero una tienda
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Perdon, estoy hablando con una persona o es un bot?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [173c]: No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N32 — NUEVO: restaurante con menu y pedidos
+ESPERADO: Reconoce que pedir y pagar online es ecommerce, no una landing con el menu. Cotiza el tipo correcto.
+>>> CLIENTE: Tengo una parrilla, quiero una web con el menu
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y que puedan hacer el pedido desde ahi y pagarlo
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N33 — NUEVO: gimnasio con membresias mensuales
+ESPERADO: El cobro recurrente automatico no es un tipo de la lista: no lo promete como incluido. Deriva o lo trata como desarrollo a medida.
+>>> CLIENTE: Tengo un gimnasio, quiero una web donde se anoten a las clases
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y que paguen la cuota mensual todos los meses automaticamente
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [37c]: Cuál es el servicio que más te piden?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N34 — NUEVO: cliente enojado por la demora de una respuesta
+ESPERADO: Reconoce la molestia en una linea, sin excusas largas ni sobreactuacion, y ofrece seguir. No la ignora ni pasa directo a vender.
+>>> CLIENTE: Hace dos dias que espero respuesta, es una verguenza
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [87c]: Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Bueno, queria una web para mi kiosco pero asi no da
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [66c]: Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=sin_interes]
+
+########## ESCENARIO N35 — NUEVO: quiere un sistema de gestion, no una web
+ESPERADO: Entra al flujo de sistemas (problema, usuarios), NO cotiza ecommerce ni landing con un precio de la lista.
+>>> CLIENTE: Necesito un sistema para controlar el stock y las ventas de mis tres locales, con usuarios por sucursal
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [101c]: De acuerdo, ya lo anoté. Cómo lo están manejando actualmente, usan Excel, papel o algún otro sistema?
+    [fase=sistema_actual tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No, no es una pagina web, es para uso interno del negocio
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [149c]: Entendido, queda claro que es una plataforma de uso interno para el negocio. 
+           
+           Y hoy en día cómo llevan ese control de stock y ventas en los locales?
+    [fase=sistema_actual tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N36 — NUEVO: ya tiene dominio comprado
+ESPERADO: Contesta que se puede usar el dominio propio, sin cobrarle de nuevo por algo que ya tiene ni contradecir lo del hosting incluido.
+>>> CLIENTE: Soy nutricionista, quiero una web con turnos
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [37c]: Cuál es el servicio que más te piden?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ya tengo el dominio comprado hace un ano en Nic.ar, sirve?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [411c]: Hosting y dominio están incluidos en el precio, con el primer año cubierto. El detalle está en el link del presupuesto.
+           Después del primer año, el hosting y el dominio se renuevan una vez al año: hoy la renovación ronda los $50.000 anuales en total, y antes del vencimiento te confirmamos el importe actualizado. Si tenés el plan de mantenimiento activo, no la pagás: el hosting y el dominio ya están incluidos.
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N37 — NUEVO: pide descuento tres veces seguidas
+ESPERADO: No baja el precio ni inventa descuentos. Al regateo insistente responde la objecion de precio o deriva por pago explicito: NUNCA lo despide como si no le interesara.
+>>> CLIENTE: Soy electricista, cuanto sale la web
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [282c]: Para ese objetivo, lo adecuado sería una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico. El desarrollo completo queda en $160.000.
+<<< BOT [366c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Una descripción breve de lo que ofrecés
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y no me haces un precio? dejamelo en 100 lucas
+<<< BOT [226c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, 120 y cerramos ahora mismo
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [51c]: Dale, sin apuro. Cuando quieras avanzar, acá estoy.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N38 — NUEVO: manda material sin preguntar nada
+ESPERADO: Reconoce el material en una linea corta y sigue. NO contesta 'esa duda te la va a poder contestar el desarrollador' a alguien que esta pasando material.
+>>> CLIENTE: Hola! Tengo una tienda de ropa infantil, quiero vender online
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Te paso mi instagram asi ves las fotos: @modakids.ok
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N39 — NUEVO: se va sin cerrar y vuelve mas adelante
+ESPERADO: Cierra sin presion cuando se va, y al volver recuerda que era ecommerce sin hacerle explicar todo de nuevo.
+>>> CLIENTE: Impresiones 3D, cuanto sale una tienda
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [269c]: Por lo que me contás, te conviene una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando. El desarrollo completo tiene un valor de $290.000.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuando tenga el monto te vuelvo a escribir
+<<< BOT [172c]: Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá. Ya queda anotado que lo tuyo sería ecommerce, así que no vas a tener que explicar todo otra vez.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+>>> CLIENTE: Hola, volvi. Sigue el mismo precio?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [112c]: El total es $290.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+
+########## ESCENARIO N40 — NUEVO: pregunta el precio antes de decir el rubro
+ESPERADO: Da el rango y pide el rubro; cuando se lo dice, cotiza ecommerce. No repite el rango una segunda vez ni pierde el rubro que ya recibio.
+>>> CLIENTE: Y precio?
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [69c]: Hola Para asesorarte mejor, contanos para qué rubro necesitás la web.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Venta de remeras estampadas y zapatillas
+PHP Warning:  Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+
+Warning: Undefined variable $X in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\agente.php on line 1660
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

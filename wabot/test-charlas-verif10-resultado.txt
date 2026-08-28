@@ -1,0 +1,142 @@
+Bateria conversacional wabot — 10 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO V01 — Bucle de rubro no reconocido (estilo Pantallas LED, con sonido e iluminacion)
+ESPERADO: No puede repetir la misma pregunta de rubro mas de 2 veces con distintas palabras. A la tercera, deriva.
+>>> CLIENTE: Hola, alquilamos sonido e iluminacion para eventos
+<<< BOT [30c]: Qué tipo de eventos organizás?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ya te dije, alquiler de sonido e iluminacion para fiestas y eventos
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No tengo mas nada que agregar, es alquiler de equipos
+<<< BOT [397c]: Disculpame por la insistencia, tenés razón.
+           
+           Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual. Es gratis y sin compromiso.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V02 — Pedido de agente ignorado en medio del prediseno
+ESPERADO: Ante 'me pasas con un asesor' en medio del prediseno, tiene que derivar, no seguir pidiendo colores.
+>>> CLIENTE: Hola, tengo una tienda de plantas y macetas
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si, quiero la demo gratis
+<<< BOT [118c]: El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me pasas con un asesor porfa
+<<< BOT [138c]: Perfecto. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO V03 — Web bilingue pedida en un rubro distinto (turismo)
+ESPERADO: Tiene que contestar sobre el adicional de web bilingue, no solo presentar el tipo y preguntar otra cosa.
+>>> CLIENTE: Hola, tengo cabanas para turistas y necesito la web en espanol e ingles porque me llegan muchos extranjeros
+<<< BOT [86c]: Sí, la podemos hacer bilingüe. Tiene un adicional de $30.000 sobre el valor de la web.
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V04 — Derivacion anunciada con otras palabras (no debe seguir vendiendo)
+ESPERADO: Si el bot dice algo como 'esto lo ve directamente Pablo' o similar, la fase tiene que quedar en derivado en ese turno.
+>>> CLIENTE: Hola, necesito un sistema de gestion de stock a medida para mi deposito, es bastante especifico
+<<< BOT [119c]: Excelente, se puede armar totalmente a medida. Contame, cuantas personas o que roles usarian el sistema en el deposito?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Es complicado de explicar por texto, prefiero que me llame alguien
+<<< BOT [138c]: Perfecto. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO V05 — Upgrade de tipo: turnos cotizado, pregunta por venta online
+ESPERADO: Tiene que contestar con el precio de ecommerce y aclarar que no es un adicional sobre turnos, sin repreguntar el proyecto.
+>>> CLIENTE: Hola, tengo un centro de estetica y quiero que las clientas reserven turno desde la web
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [54c]: Cuál es el servicio que más querés destacar en la web?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Reservas online
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y si ademas quiero vender productos de skincare con cobro online, cuanto sale sumar eso?
+<<< BOT [213c]: Con venta y cobro online ya sería una tienda online: $290.000 por todo el desarrollo. No es un adicional sobre $200.000: en vez de la web con turnos te queda la web completa, con el carrito y los pagos integrados.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V06 — Otra plataforma (Wix) en vez de armar la propia
+ESPERADO: Tiene que decir claramente que sobre Wix no trabajan antes de dar el argumento de pago unico.
+>>> CLIENTE: Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [79c]: Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V07 — Cliente insiste en que ya paso los datos (variante sin 'te mande')
+ESPERADO: Si tras releer siguen faltando datos, no puede insistir pidiendo lo mismo: tiene que derivar con lo que hay.
+>>> CLIENTE: Hola, tengo un gimnasio y quiero que se puedan anotar a las clases desde la web
+<<< BOT [237c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000, pago único.
+<<< BOT [35c]: Cuál es el servicio más solicitado?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Clases grupales
+<<< BOT [127c]: Primero te mostramos una muestra de tu web, sin costo. Si querés avanzar, ahí te pido los datos que hacen falta. Te la armamos?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si dale, armenla
+<<< BOT [352c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual. Es gratis y sin compromiso.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: ya esta todo arriba, fijate
+<<< BOT [134c]: Dale. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO V08 — Listado del prediseno contestado con guiones en vez de barras
+ESPERADO: Los datos separados por guion en una sola linea se tienen que leer igual que separados por barra. No puede decir que faltan datos ya dados.
+>>> CLIENTE: Hola, tengo una marca de indumentaria femenina y quiero vender online
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [35c]: Cuál es el producto que más vendés?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Vestidos y conjuntos
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si, quiero la muestra gratis
+<<< BOT [352c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual. Es gratis y sin compromiso.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Malena - IndumentariaMale - negro y dorado
+<<< BOT [138c]: Excelente Malena. Tenés alguna web de referencia que te guste o algún estilo en mente? Si no tenés no te preocupes, la diseñamos nosotros.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V09 — Cierre sin presion: nada puede salir despues en el mismo turno
+ESPERADO: Ante 'lo voy a charlar con mi pareja y despues te escribo' cierra en UN globo. No puede aparecer despues el precio ni el link.
+>>> CLIENTE: Hola, tengo una veterinaria y quiero mostrar mis servicios con turnos
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Consultas y vacunacion
+<<< BOT [163c]: Excelente. Para las consultas y vacunacion, preferis que la gente reserve su dia y horario directamente desde la web o que te escriban por WhatsApp para coordinar?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Lo voy a charlar con mi pareja y despues te escribo, gracias
+<<< BOT [138c]: Perfecto. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO V10 — Objecion de precio + acuse ambiguo (no debe reabrir la demo)
+ESPERADO: Tras el rechazo por precio, un 'dale' o 'ok' corto no puede disparar el formulario de datos de vuelta.
+>>> CLIENTE: Hola, vendo productos de limpieza a granel y quiero vender por la web
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [29c]: Cuál es tu producto estrella?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Detergentes y suavizantes
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Uh esta caro para mi ahora, no puedo pagar eso
+<<< BOT [172c]: Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá. Ya queda anotado que lo tuyo sería ecommerce, así que no vas a tener que explicar todo otra vez.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+>>> CLIENTE: Ok
+<<< BOT: (silencio)
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

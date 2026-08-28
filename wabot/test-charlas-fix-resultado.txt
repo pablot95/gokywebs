@@ -1,0 +1,93 @@
+Bateria conversacional wabot — 7 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO F01 — Leoo: el bot anuncia la derivacion y la charla tiene que quedar derivada
+ESPERADO: Si en algun momento dice que lo comunica con el desarrollador, la fase tiene que quedar en 'derivado' en ESE mismo turno. Nunca puede seguir vendiendo despues.
+>>> CLIENTE: Hola, quiero armar un marketplace donde varios vendedores publiquen sus productos
+<<< BOT [106c]: Perfecto. Para dimensionar el proyecto, cuántos vendedores estimás que usarían la plataforma en principio?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Es algo complejo, prefiero hablarlo con alguien tecnico
+<<< BOT [62c]: Perfecto. Aproximadamente cuántas personas usarían el sistema?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, quedo esperando
+<<< BOT [158c]: Para que el desarrollador pueda revisar tu caso y asesorarte mejor, me dirías aproximadamente cuántos vendedores o usuarios estimás que tendría la plataforma?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F02 — Icover: 'igualmente' despues de rechazar el precio no es aceptar la demo
+ESPERADO: Tras el rechazo por precio el bot cierra cordial. El 'igualmente' NO puede disparar el formulario de datos: silencio o una linea corta.
+>>> CLIENTE: Hola, vendo fundas y accesorios para celular, quiero una tienda online
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Fundas de silicona
+<<< BOT [112c]: Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Uh, 290 mil es demasiado para mi ahora, no lo puedo pagar
+<<< BOT [226c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Igualmente
+<<< BOT [51c]: Dale, sin apuro. Cuando quieras avanzar, acá estoy.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F03 — Papeleria: nada sale despues de la despedida en el mismo turno
+ESPERADO: Ante 'dejame pensarlo' cierra sin presion, en UN solo globo. No puede salir despues el precio ni el link del presupuesto.
+>>> CLIENTE: Hola, tengo una papeleria creativa y vendo articulos de libreria y regalos
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [42c]: De tus productos, cuál es el que más sale?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuadernos y agendas artesanales
+<<< BOT [118c]: El primer paso es una muestra de tu web, totalmente gratis. Si te gusta, seguimos con algunos datos tuyos. La armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dejame pensarlo y despues te aviso, gracias
+<<< BOT [96c]: Perfecto, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F04 — Whitesoul: los tres datos en una linea se leen enteros
+ESPERADO: Tras contestar 'Alejandra / Whitesoul.nordelta / Pasteles' el bot NO puede decir que le faltan los colores. Ya tiene nombre, negocio y colores.
+>>> CLIENTE: Hola, hago tortas y pasteleria artesanal por encargo
+<<< BOT [180c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000, pago único.
+<<< BOT [46c]: Qué es lo que más se destaca de tus servicios?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Tortas decoradas y mesas dulces
+<<< BOT [126c]: Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si, quiero la demo gratis
+<<< BOT [352c]: Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual. Es gratis y sin compromiso.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Alejandra / Whitesoul.nordelta / Pasteles
+<<< BOT [71c]: Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F05 — Marcco: el pedido de web bilingue no puede quedar sin contestar
+ESPERADO: En el primer turno tiene que aparecer la respuesta sobre la web bilingue (con su adicional). No alcanza con presentar el ecommerce y preguntar el producto estrella.
+>>> CLIENTE: Hola, tengo una marroquineria y necesito un ecommerce internacional, en espanol e ingles, con precios en pesos y en dolares para vender al exterior
+<<< BOT [252c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000, en un único pago
+<<< BOT [35c]: Cuál es el producto que más vendés?
+<<< BOT [86c]: Sí, la podemos hacer bilingüe. Tiene un adicional de $30.000 sobre el valor de la web.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F06 — Aberturas: cuanto sale agregar venta online con una landing cotizada
+ESPERADO: Tiene que contestar el precio del ecommerce ($290.000) y aclarar que no es un adicional sobre la landing. NO puede repetir el precio de la landing ni preguntar si es el mismo proyecto.
+>>> CLIENTE: Hola, fabrico y coloco aberturas de aluminio a medida
+<<< BOT [229c]: Para el tema de las aberturas de aluminio, la web sería para mostrar tus trabajos y recibir consultas, para exhibir los modelos en un catálogo con contacto por WhatsApp, o para vender y cobrar online directamente desde la página?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ventanas y puertas de aluminio
+<<< BOT [218c]: Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?
+    [fase=desempate_hibrido tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuanto cuesta agregarle venta y cobro online?
+<<< BOT [263c]: Para ese objetivo, lo adecuado sería una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando. El desarrollo completo queda en $290.000.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO F07 — Tiendanube: contestar si se puede o no antes de argumentar
+ESPERADO: Tiene que decir claramente que sobre Tiendanube no trabajan, y recien despues el argumento del pago unico. Nunca argumentar sin contestar.
+>>> CLIENTE: Hola, me pueden armar una tienda en Tiendanube?
+<<< BOT [318c]: Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia tienda, a medida. Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya; lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).
+<<< BOT [79c]: Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar
