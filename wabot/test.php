@@ -2450,11 +2450,11 @@ echo "— Parte 2: la respuesta tras la demo depende de lo que dijo el cliente �
 // test-redactor.php); acá se prueba la salvaguarda del motor, que usa la misma
 // cadena de detectores.
 $esperadoPostdemo = [
-    'me gusto mucho, como sigo?'          => 'Banco Santander',      // quiere avanzar
-    'prefiero con tarjeta'                => 'pago?monto=',          // link de tarjeta
+    'me gusto mucho, como sigo?'          => 'lo sigue Pablo',       // quiere avanzar → derivar
+    'prefiero con tarjeta'                => 'lo sigue Pablo',       // tampoco: lo arregla Pablo
     'ya te transferi la seña'             => 'revisamos la transferencia',
     'mmm no se, lo tengo que pensar bien' => 'videollamada',         // duda
-    'uh, es mucha plata para mi ahora'    => 'cuotas sin inter',     // objeción de plata
+    'uh, es mucha plata para mi ahora'    => 'lo sigue Pablo',       // no se ofrecen cuotas
     'dale, la voy a mirar'                => 'miralo tranquilo',
     'se puede cambiar el color?'          => 'anoto esos cambios',
     'no me gusto la verdad'               => 'no te cerró',
@@ -2484,8 +2484,32 @@ foreach (array_keys($esperadoPostdemo) as $msjPostdemo) {
     clasifica(['otro']);
     $textosPostdemo[] = implode(' ', wabot_engine($msjPostdemo, $cVar, $cfg));
 }
-caso('ocho mensajes distintos reciben ocho respuestas distintas',
-    count(array_unique($textosPostdemo)) === count($textosPostdemo));
+caso('siguen siendo respuestas distintas según lo que dijo el cliente',
+    count(array_unique($textosPostdemo)) >= 5);
+
+/* Pablo, 28-ago: "el bot NO PUEDE PEDIR SEÑA, NO TIENE QUE VENDER, solo me
+ * tiene que derivar a mí a los interesados". A una clienta que contestó "la
+ * primer mirada me gustó" le llegó el CBU con el alias y el CUIT de una. */
+foreach ([
+    'La primer mirada me gustó',
+    'me gusto mucho, como sigo?',
+    'prefiero con tarjeta',
+    'cuanto es la seña?',
+    'uh, es mucha plata para mi ahora',
+    'mandame el cbu asi te transfiero',
+    'quiero avanzar',
+] as $msjPlata) {
+    $cPlata = conv_nueva(); $cPlata['fase'] = 'postdemo'; $cPlata['tipo'] = 'ecommerce';
+    $cPlata['precio_dado'] = true;
+    clasifica(['otro']);
+    $saliP = implode(' ', wabot_engine($msjPlata, $cPlata, $cfg));
+    caso("\"$msjPlata\" no se lleva ningún dato de pago",
+        strpos($saliP, '0720071788000003618268') === false
+        && mb_stripos($saliP, 'Banco Santander') === false
+        && mb_stripos($saliP, 'pablotravis') === false
+        && strpos($saliP, 'pago?monto=') === false
+        && mb_stripos($saliP, 'cuotas sin inter') === false);
+}
 
 // La demo presentada NO deja mudo al bot: esa era la razón por la que la parte 2
 // no existía (presentar pausaba el chat 24 h).
@@ -4252,9 +4276,9 @@ caso('en postdemo el bot muestra "escribiendo…" como en cualquier fase activa'
 $convResp = $convPD;
 clasifica(['otro']);
 $r = wabot_engine('me gusto mucho, como sigo?', $convResp, $cfg);
-caso('el que quiere avanzar recibe los datos para señar, no el aviso pelado',
-    mb_stripos(implode(' ', $r), 'Banco Santander') !== false
-    && $r !== [(string)$cfg['postdemo_derivar']]
+caso('el que quiere avanzar NO recibe los datos para señar: lo toma Pablo',
+    mb_stripos(implode(' ', $r), 'Banco Santander') === false
+    && mb_stripos(implode(' ', $r), 'Pablo') !== false
     && $convResp['fase'] === 'derivado' && !empty($convResp['handoff_pendiente'])
     && $convResp['presentado_confirmado'] === true);
 

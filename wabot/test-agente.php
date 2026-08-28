@@ -1174,29 +1174,37 @@ echo "— Parte 2: herramientas de cierre después de la demo —\n";
 $nombresPost = array_map(function ($t) { return $t['name']; }, wabot_agente_tools(false, true));
 caso('en postdemo NO puede recotizar: dar_precio no está', !in_array('dar_precio', $nombresPost, true));
 caso('ni reabrir el prediseño: guardar_prediseno tampoco', !in_array('guardar_prediseno', $nombresPost, true));
-caso('sí tiene las herramientas del cobro',
-    in_array('datos_transferencia', $nombresPost, true) && in_array('link_tarjeta', $nombresPost, true)
-    && in_array('ofrecer_videollamada', $nombresPost, true) && in_array('confirmar_pago', $nombresPost, true));
+// Pablo, 28-ago: "el bot NO PUEDE PEDIR SEÑA, NO TIENE QUE VENDER, solo me
+// tiene que derivar a mí a los interesados". Las herramientas del cobro se
+// retiraron: ni siquiera están cargadas, así que el modelo no puede llamarlas.
+caso('NO tiene ninguna herramienta que mande plata',
+    !in_array('datos_transferencia', $nombresPost, true)
+    && !in_array('link_tarjeta', $nombresPost, true)
+    && !in_array('cuotas_sin_interes', $nombresPost, true));
+caso('pero sí las que sirven para derivar y anotar',
+    in_array('ofrecer_videollamada', $nombresPost, true) && in_array('confirmar_pago', $nombresPost, true));
 caso('y las de cambios y cierre',
     in_array('anotar_cambios', $nombresPost, true) && in_array('cerrar_sin_presion', $nombresPost, true));
-caso('antes de la demo esas herramientas NO existen',
+caso('y antes de la demo tampoco existían',
     !in_array('datos_transferencia', array_map(function ($t) { return $t['name']; }, wabot_agente_tools()), true));
 
 $cP = convNueva('AGPOST1');
 $cP['fase'] = 'postdemo'; $cP['tipo'] = 'ecommerce'; $cP['precio_dado'] = true;
 $cP['presentado_ts'] = time(); $cP['presentado_slug'] = 'tiendaana';
 
-$r = wabot_agente_ejecutar('datos_transferencia', [], $cP, $cfg);
-caso('datos_transferencia trae seña, CBU, alias, titular y CUIT exactos',
-    strpos($r['texto'], $cfg['tipos']['ecommerce']['sena']) !== false
-    && strpos($r['texto'], '0720071788000003618268') !== false
-    && strpos($r['texto'], 'pablotravis') !== false
-    && stripos($r['texto'], 'PABLO TRAVI') !== false
-    && strpos($r['texto'], '20-39148294-3') !== false);
-
-$r = wabot_agente_ejecutar('link_tarjeta', [], $cP, $cfg);
-caso('link_tarjeta arma el checkout por la seña',
-    strpos($r['texto'], 'pago?monto=' . wabot_monto_a_numero($cfg['tipos']['ecommerce']['sena'])) !== false);
+// Y si el modelo igual las nombra —quedaron en su memoria y en charlas
+// viejas— la llamada no ejecuta nada y le recuerda que derive.
+foreach (['datos_transferencia', 'link_tarjeta', 'cuotas_sin_interes'] as $herramientaVieja) {
+    $rVieja = wabot_agente_ejecutar($herramientaVieja, [], $cP, $cfg);
+    caso("$herramientaVieja no manda nada y avisa que ya no existe",
+        !empty($rVieja['error']) && empty($rVieja['texto'])
+        && stripos($rVieja['nota'] ?? '', 'derivá') !== false);
+}
+caso('ninguna de las tres deja escapar el CBU',
+    strpos(json_encode([
+        wabot_agente_ejecutar('datos_transferencia', [], $cP, $cfg),
+        wabot_agente_ejecutar('link_tarjeta', [], $cP, $cfg),
+    ]), '0720071788000003618268') === false);
 
 $r = wabot_agente_ejecutar('ofrecer_videollamada', [], $cP, $cfg);
 caso('ofrecer_videollamada es el único texto con el nombre de Pablo',
@@ -1235,16 +1243,15 @@ caso('en la parte 1 el playbook prohíbe nombrar a Pablo',
 caso('y prohíbe adelantar la seña y el link de pago',
     strpos(wabot_agente_sistema($cSinDemo, $cfg), 'NO existen antes de presentar la demo') !== false);
 
-echo "— Parte 2: cuotas sin interés, cambio de tipo y \"la voy a mirar\" —\n";
+echo "— Parte 2: cambio de tipo y \"la voy a mirar\" —\n";
 
 $cCuot = convNueva('AGPOST4');
 $cCuot['fase'] = 'postdemo'; $cCuot['tipo'] = 'landing'; $cCuot['precio_dado'] = true; $cCuot['presentado_ts'] = time();
+// Las 3 cuotas sin interés eran lo único que se ofrecía por plata. Desde el
+// 28-ago tampoco: negociar la forma de pago es venta, y eso lo hace Pablo.
 $r = wabot_agente_ejecutar('cuotas_sin_interes', [], $cCuot, $cfg);
-caso('cuotas_sin_interes ofrece las 3 sin interés y no calcula montos',
-    stripos($r['texto'], '3 cuotas sin interés') !== false && $cCuot['cuotas_ofrecidas'] === true
-    && stripos($r['nota'], 'no calcules') !== false);
-$r2 = wabot_agente_ejecutar('cuotas_sin_interes', [], $cCuot, $cfg);
-caso('y no se pueden ofrecer dos veces', !empty($r2['error']));
+caso('las cuotas sin interés ya no se ofrecen: eso lo arregla Pablo',
+    !empty($r['error']) && empty($r['texto']) && empty($cCuot['cuotas_ofrecidas']));
 
 $cTipo = convNueva('AGPOST5');
 $cTipo['fase'] = 'postdemo'; $cTipo['tipo'] = 'landing'; $cTipo['precio_dado'] = true;
@@ -1266,8 +1273,12 @@ caso('cambiar a catálogo sin cantidad pregunta cuántos productos, no cotiza',
     !empty($r['exacta']) && empty($r['terminal']) && strpos($r['texto'], 'cuántos productos') !== false);
 
 $promptCierre = wabot_agente_sistema($cCuot, $cfg);
-caso('el playbook manda la objeción de plata a cuotas_sin_interes',
-    strpos($promptCierre, 'cuotas_sin_interes') !== false);
+caso('el playbook le prohíbe mandar datos de pago',
+    strpos($promptCierre, 'NUNCA mandes el CBU') !== false
+    && strpos($promptCierre, 'cuotas_sin_interes') === false);
+caso('y la objeción de plata también termina derivando',
+    stripos($promptCierre, 'dice que es caro') !== false
+    && stripos($promptCierre, 'derivá') !== false);
 caso('le prohíbe coordinar horarios de la videollamada',
     strpos($promptCierre, 'NO COORDINÁS HORARIOS') !== false);
 caso('y le dice cómo contestar el "la voy a mirar"',

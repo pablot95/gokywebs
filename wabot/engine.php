@@ -3553,35 +3553,43 @@ function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
 function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $conv['presentado_confirmado'] = true;
 
+    /* El cliente avisa que ya pagó. No es vender: es acusar recibo de algo que
+     * ya pasó, y quedarse callado ahí sería peor. */
     if (wabot_dice_que_pago($texto)) {
         $conv['pago_avisado_ts'] = time();
         return array_merge([(string)$cfg['postdemo_pago_avisado']],
                            wabot_derivar($conv, $cfg, 'pago_explicito'));
     }
-    if (wabot_prefiere_tarjeta($texto)) {
-        $link = wabot_postdemo_link_tarjeta($conv, $cfg);
-        if ($link !== '') {
-            wabot_handoff_marcar($conv, 'postdemo_respuesta');
-            return [$link];
-        }
-    }
-    if (wabot_postdemo_quiere_avanzar($texto)) {
-        wabot_handoff_marcar($conv, 'postdemo_respuesta');
-        return [wabot_postdemo_transferencia($conv, $cfg)];
-    }
 
-    // De lo más accionable a lo más vago: un "no me gusta el color, se puede
-    // cambiar?" es un pedido de cambio, no un rechazo.
+    /* De lo más concreto a lo más vago. El orden importa: "no me gusta el color,
+     * se puede cambiar?" es un pedido de cambio, no un rechazo. */
     $especifico = '';
-    if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
-        $conv['cuotas_ofrecidas'] = true;
-        $especifico = (string)($cfg['postdemo_cuotas_sin_interes'] ?? '');
-    }
-    elseif (wabot_postdemo_pide_cambios($texto))  $especifico = (string)($cfg['postdemo_cambios'] ?? '');
-    elseif (wabot_postdemo_no_gusto($texto))      $especifico = (string)($cfg['postdemo_no_gusto'] ?? '');
-    elseif (wabot_postdemo_elogio($texto))        $especifico = (string)($cfg['postdemo_elogio'] ?? '');
-    elseif (wabot_postdemo_la_va_a_mirar($texto)) $especifico = (string)($cfg['postdemo_la_miro'] ?? '');
-    elseif (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
+    $yaAvisa    = false;   // el texto ya dice que sigue Pablo: no repetirlo
+
+    if (wabot_postdemo_pide_cambios($texto)) {
+        $especifico = (string)($cfg['postdemo_cambios'] ?? '');
+    } elseif (wabot_postdemo_no_gusto($texto)) {
+        $especifico = (string)($cfg['postdemo_no_gusto'] ?? '');
+    } elseif (wabot_postdemo_la_va_a_mirar($texto)) {
+        $especifico = (string)($cfg['postdemo_la_miro'] ?? '');
+    } elseif (wabot_postdemo_avance_explicito($texto)
+              || wabot_prefiere_tarjeta($texto)
+              || wabot_postdemo_objecion_plata($texto)) {
+        /* Quiere avanzar, pide el link de tarjeta o dice que es caro: TODO eso
+         * lo arregla Pablo. El bot no pide la seña, no manda el CBU, no pasa
+         * links de pago y no ofrece cuotas.
+         *
+         * Pablo, 28-ago: "el bot NO PUEDE PEDIR SEÑA, NO TIENE QUE VENDER, solo
+         * me tiene que derivar a mí a los interesados". A una clienta que
+         * contestó "la primer mirada me gustó" le llegó el CBU con el alias y
+         * el CUIT de una. */
+        $especifico = (string)($cfg['postdemo_avanzar'] ?? '');
+        $yaAvisa    = true;
+    } elseif (wabot_postdemo_elogio($texto) || wabot_postdemo_quiere_avanzar($texto)) {
+        // Un elogio es la mejor señal que hay: se le contesta y se deriva.
+        $especifico = (string)($cfg['postdemo_elogio'] ?? '');
+    } elseif (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
+        // La videollamada tampoco es vender: es pasárselo a Pablo en persona.
         $conv['videollamada_ofrecida'] = true;
         $especifico = (string)($cfg['postdemo_videollamada'] ?? '');
     }
@@ -3589,8 +3597,32 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
     wabot_handoff_marcar($conv, 'postdemo_respuesta');
     $aviso = (string)($cfg['postdemo_derivar'] ?? '');
     if (trim($especifico) === '') return [$aviso];
-    if ($aviso === '' || strpos($especifico, '?') !== false) return [$especifico];
+    // El aviso va aparte salvo que el texto ya lo diga, o que deje una pregunta
+    // abierta (ahí la contesta Pablo y el aviso sobra).
+    if ($yaAvisa || $aviso === '' || strpos($especifico, '?') !== false) return [$especifico];
     return [$especifico, $aviso];
+}
+
+/**
+ * Pide avanzar con todas las letras: "cómo sigo", "quiero contratar".
+ *
+ * wabot_postdemo_quiere_avanzar() también da true con un elogio suelto —es una
+ * decisión vieja, con test propio— y eso servía cuando el bot cerraba la venta.
+ * Ahora que no la cierra, un "me gustó" merece que le contesten algo mejor que
+ * "te paso con Pablo", así que el avance explícito se detecta aparte.
+ */
+function wabot_postdemo_avance_explicito($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\bcomo\b.{0,12}\b(sigo|seguimos|sigue|hago|hacemos|arranco|arrancamos|procedo|avanzo|avanzamos|continuo)\b/u', $t)
+        || preg_match('/\b(que|cual)\b.{0,15}\b(paso|pasos|siguiente|sigue ahora)\b/u', $t)
+        || preg_match('/\b(quiero|queremos|vamos a|listo para)\b.{0,20}\b(avanzar|arrancar|empezar|contratar|seguir|hacerla|comprarla)\b/u', $t)
+        || preg_match('/\b(dale|listo|ok|perfecto)\b.{0,20}\b(avanzamos|arrancamos|seguimos|vamos|avancemos)\b/u', $t)
+        || preg_match('/\b(como|donde|cuando)\b.{0,15}\b(pago|abono|deposito|transfiero|se paga)\b/u', $t)
+        || preg_match('/\b(cuanto|cual)\b.{0,12}\b(senia|sena|deposito|anticipo)\b/u', $t)
+        || preg_match('/\b(mandame|pasame|necesito)\b.{0,15}\b(el cbu|los datos|el alias|el link de pago)\b/u', $t)
+    );
 }
 
 /* Igual que wabot_derivar(), pero con el mensaje fijo de la parte 2 (después

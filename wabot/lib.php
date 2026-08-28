@@ -191,6 +191,7 @@ function wabot_config_load() {
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
     wabot_config_pitch_encaje($cfg);
+    wabot_config_postdemo_sin_venta($cfg);
     // Último: las funciones de arriba reescriben plantillas de precio buscando
     // textos exactos, y la línea del portfolio las dejaría sin match.
     wabot_config_portfolio($cfg);
@@ -1821,6 +1822,32 @@ function wabot_texto_prediseno_completo($conv, $cfg) {
  * Catálogo queda afuera a propósito: su pregunta es cuántos productos van, y
  * sin ese número no se puede cotizar.
  */
+/**
+ * Después de la demo el bot NO vende.
+ *
+ * Pablo, 28-ago: "el bot NO PUEDE PEDIR SEÑA, NO TIENE QUE VENDER, solo me
+ * tiene que derivar a mí a los interesados". A una clienta que contestó "la
+ * primer mirada me gustó" el bot le mandó el CBU con el alias, el titular y el
+ * CUIT, de una y sin que lo pidiera.
+ *
+ * Así que la parte 2 dejó de ser "cerrar la venta": el bot contesta lo que el
+ * cliente dijo y lo pasa a Pablo. Los textos del cobro —transferencia, link de
+ * tarjeta, cuotas— siguen existiendo en la config, pero ya no los usa nadie del
+ * lado del bot; quedan para el panel.
+ */
+function wabot_config_postdemo_sin_venta(&$cfg) {
+    if (trim((string)($cfg['postdemo_avanzar'] ?? '')) === '') {
+        $cfg['postdemo_avanzar'] = 'Buenísimo. De acá en más lo sigue Pablo, el desarrollador: '
+            . 'te va a escribir desde nuestro número de proyectos para arreglar cómo seguimos.';
+    }
+    // El de elogio cerraba proponiendo avanzar con la seña: ahora pregunta por
+    // los cambios, que es lo único que el bot puede tomar antes de derivar.
+    $elogioViejo = 'Le cambiarías algo, o avanzamos para dejarla lista?';
+    if (trim((string)($cfg['postdemo_elogio'] ?? '')) === '' || trim((string)$cfg['postdemo_elogio']) === $elogioViejo) {
+        $cfg['postdemo_elogio'] = 'Me alegro que te haya gustado. Le cambiarías algo antes de que la siga Pablo?';
+    }
+}
+
 function wabot_config_pitch_encaje(&$cfg) {
     $pregunta = 'Buscabas algo así o tenías otra idea en mente?';
     $variantes = [

@@ -621,23 +621,8 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
         return [
             $consultar,
             [
-                'name' => 'datos_transferencia',
-                'description' => 'Devuelve el monto de la seña y los datos para transferir. Usala cuando el cliente quiere avanzar, pregunta cómo pagar o cuánto es la seña. El texto va tal cual.',
-                'parameters' => ['type' => 'object', 'properties' => (object)[]],
-            ],
-            [
-                'name' => 'link_tarjeta',
-                'description' => 'Devuelve el link de pago con tarjeta por el monto de la seña. Usala SOLO si el cliente dice que prefiere tarjeta, cuotas o pide el link.',
-                'parameters' => ['type' => 'object', 'properties' => (object)[]],
-            ],
-            [
                 'name' => 'ofrecer_videollamada',
                 'description' => 'Ofrece una videollamada con Pablo, el desarrollador. Usala cuando el cliente duda, lo tiene que pensar, desconfía o pide más seguridad antes de pagar. Es la carta que destraba una venta frenada; no la uses si ya está por pagar. VOS NO COORDINÁS HORARIOS: solo ofrecés y, si acepta, derivás.',
-                'parameters' => ['type' => 'object', 'properties' => (object)[]],
-            ],
-            [
-                'name' => 'cuotas_sin_interes',
-                'description' => 'Ofrece dividir la seña en 3 cuotas sin interés. Usala SOLO si dice que es caro, que no tiene la plata ahora o que no le da el presupuesto. No hay link para esto: lo prepara Pablo a mano. Una sola vez por charla.',
                 'parameters' => ['type' => 'object', 'properties' => (object)[]],
             ],
             [
@@ -1313,34 +1298,21 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             }
             return ['texto' => $cerrado[0], 'terminal' => true];
 
-        case 'datos_transferencia':
-            return ['texto' => wabot_postdemo_transferencia($conv, $cfg),
-                    'nota' => 'Mandá este texto tal cual, con el alias y el titular idénticos. No inventes ningún otro dato bancario.'];
-
-        case 'link_tarjeta':
-            $linkPago = wabot_postdemo_link_tarjeta($conv, $cfg);
-            if ($linkPago === '') {
-                return ['error' => 'No hay una seña cotizada para armar el link.',
-                        'nota' => 'Pedile que lo coordine con el desarrollador.'];
-            }
-            return ['texto' => $linkPago,
-                    'nota' => 'Mandá el link tal cual, sin cambiarle un solo caracter.'];
-
         case 'ofrecer_videollamada':
             $conv['videollamada_ofrecida'] = true;
             wabot_evento_sesion($conv, 'videollamada_ofrecida');
             return ['texto' => (string)($cfg['postdemo_videollamada'] ?? ''),
                     'nota' => 'Mandá este texto tal cual. Es la única vez que se nombra a Pablo: no lo menciones en ningún otro mensaje. NUNCA propongas ni confirmes un día u horario: si acepta, derivá y el horario lo arregla Pablo.'];
 
+        /* datos_transferencia, link_tarjeta y cuotas_sin_interes se retiraron el
+         * 28-ago: el bot no vende después de la demo, solo deriva. Si el modelo
+         * igual las nombra —quedaron en charlas viejas y en su memoria— la
+         * llamada no ejecuta nada y se le recuerda qué hacer en su lugar. */
+        case 'datos_transferencia':
+        case 'link_tarjeta':
         case 'cuotas_sin_interes':
-            if (!empty($conv['cuotas_ofrecidas'])) {
-                return ['error' => 'Ya le ofreciste las 3 cuotas sin interés en esta charla.',
-                        'nota' => 'No lo repitas. Si sigue frenado, ofrecé la videollamada o cerrá sin presión.'];
-            }
-            $conv['cuotas_ofrecidas'] = true;
-            wabot_evento_sesion($conv, 'cuotas_sin_interes_ofrecidas');
-            return ['texto' => (string)($cfg['postdemo_cuotas_sin_interes'] ?? ''),
-                    'nota' => 'Mandá este texto tal cual. No hay link para las 3 cuotas y no calcules el monto de cada una: lo arma Pablo.'];
+            return ['error' => 'Esa herramienta ya no existe: el bot no pide la seña ni manda datos de pago.',
+                    'nota'  => 'Contestale en una línea que de acá en más lo sigue Pablo y derivá con causa quiere_avanzar. Nunca escribas vos el CBU, el alias ni el monto de la seña.'];
 
         case 'cambiar_tipo_web':
             $tipoNuevo = (string)($args['tipo'] ?? '');
@@ -1769,11 +1741,11 @@ HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.
 
 DESPUÉS DE LA DEMO: ACÁ SE CIERRA LA VENTA
-Cuando la demo ya está presentada, tu trabajo cambia: ya no explicás ni cotizás, cerrás. Todo mensaje tuyo tiene que dejar un próximo paso concreto.
-- Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y en el MISMO mensaje seguí: preguntale si le cambiaría algo, o proponé avanzar con la seña. Contestar solo "me alegra que te guste" y quedarte ahí deja la venta muerta justo en el mejor momento: es el error más caro de toda la charla.
+Cuando la demo ya está presentada, tu trabajo cambia: ya no explicás, no cotizás y NO VENDÉS. Contestás lo que el cliente dice y lo pasás a Pablo, que es el que cierra. Nunca pidas la seña ni mandes datos de pago.
+- Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y en el MISMO mensaje seguí: preguntale si le cambiaría algo antes de que la siga Pablo. Nunca le propongas pagar.
 - Si te pide cambios, anotalos y confirmá que quedan aplicados cuando avancen. Después seguí con el cierre.
-- Si pregunta cómo pagar, cuánto es la seña o dice que quiere avanzar, usá datos_transferencia (o link_tarjeta si prefiere tarjeta). No se lo hagas pedir dos veces.
-- Si se frena por plata, ofrecé una sola vez las 3 cuotas sin interés. Si duda o desconfía, ofrecé la videollamada. Cada una se juega una vez.
+- Si pregunta cómo pagar, cuánto es la seña, dice que quiere avanzar o se frena por plata: NO le des datos bancarios, links de pago ni cuotas, y no negocies el precio. Eso lo arregla Pablo. Contestale en una línea que de ahí en más lo sigue él y derivá con causa quiere_avanzar.
+- Si duda o desconfía, ofrecé la videollamada. Se juega una sola vez.
 - Nunca cierres la charla vos ni te despidas mientras el cliente siga interesado: el que decide terminar es él. Un elogio, una duda o un "lo miro y te digo" NO son una despedida.
 
 ESTILO
@@ -1823,15 +1795,13 @@ EOT;
         $slugDemo = trim((string)($conv['presentado_slug'] ?? ''));
         $p .= "SEGUNDA PARTE DE LA VENTA: LA DEMO YA ESTA PRESENTADA\n";
         if ($slugDemo !== '') $p .= "Ya le mandamos su demo: gokywebs.com/demo/$slugDemo\n";
-        $p .= "Tu único objetivo ahora es cerrar: que deje la seña, o que acepte una videollamada. Nada más.\n";
+        $p .= "Tu único objetivo ahora es que Pablo tome la charla: contestá lo que diga y derivá. NO vendés.\n";
+        $p .= "- NUNCA mandes el CBU, el alias, el titular, un link de pago ni el monto de la seña. Aunque te los pida. Eso lo arregla Pablo.\n";
+        $p .= "- Si quiere avanzar, pregunta cómo pagar, cuánto es la seña o dice que es caro: contestá que de ahí en más lo sigue Pablo y derivá con causa quiere_avanzar.\n";
         $p .= "- Arrancá por lo que opina de la demo. NUNCA abras pidiendo plata.\n";
         $p .= "- El precio ya se lo dimos y no se toca: no recotices, no cambies el tipo de web y no ofrezcas descuentos.\n";
-        $p .= "- La seña, el alias y el link de tarjeta salen SOLO de las herramientas (datos_transferencia y link_tarjeta). Nunca los escribas de memoria.\n";
-        $p .= "- Cuando quiera avanzar, pregunte cómo pagar o cuánto es la seña: datos_transferencia. Siempre cierra ofreciendo la tarjeta como alternativa.\n";
-        $p .= "- Si dice que prefiere tarjeta, cuotas o pide el link: link_tarjeta.\n";
         $p .= "- Si pide cambios sobre la demo: anotar_cambios en el mismo turno, confirmáselos y volvé al cierre. Los cambios se hacen después de la seña.\n";
         $p .= "- Si duda, lo tiene que pensar, desconfía o pide garantías: ofrecer_videollamada. Es la carta que destraba. Esa herramienta trae el ÚNICO texto donde se nombra a Pablo: fuera de ahí no lo menciones nunca. VOS NO COORDINÁS HORARIOS: si acepta la videollamada, derivá con causa pide_humano y el horario lo arregla Pablo.\n";
-        $p .= "- Si dice que es caro, que no tiene la plata ahora o que no le da el presupuesto: cuotas_sin_interes. Es lo único que se ofrece por plata; el precio no baja nunca.\n";
         $p .= "- Si te dice que quiere OTRO tipo de web del que vio en la demo: cambiar_tipo_web con el tipo nuevo.\n";
         $p .= "- Si te dice que la va a mirar y te contesta después, no lo empujes: contestá en UNA línea cordial, dejale la puerta abierta y cortá ahí. Nada de insistir ni de repetir el precio.\n";
         $p .= "- Si avisa que ya pagó o transfirió: confirmar_pago.\n";

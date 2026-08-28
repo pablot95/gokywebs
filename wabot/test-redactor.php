@@ -275,10 +275,16 @@ $convPD['presentado_slug'] = 'midemo';
 // Pablo, 28-ago: el corte sigue existiendo (la parte 2 la lleva él), pero el
 // texto contesta lo que el cliente dijo en vez de leerle el mismo aviso a
 // todos. El que pregunta cómo pagar recibe los datos para señar.
+// Pablo, 28-ago: el bot NO pide la seña ni manda datos de pago. Al que
+// pregunta cómo pagar se le contesta que de ahí en más lo sigue Pablo.
 $rPagoPD = wabot_responder('Me encantó! cómo hago para pagar?', $convPD, $cfgPD);
-caso('un "cómo pago?" post-demo recibe los datos, no el aviso pelado',
-    mb_stripos(implode(' ', (array)$rPagoPD), 'Banco Santander') !== false
-    && $rPagoPD !== [(string)$cfgPD['postdemo_derivar']]
+$textoPagoPD = implode(' ', (array)$rPagoPD);
+caso('un "cómo pago?" post-demo NO recibe el CBU ni el alias',
+    mb_stripos($textoPagoPD, 'Banco Santander') === false
+    && strpos($textoPagoPD, '0720071788000003618268') === false
+    && mb_stripos($textoPagoPD, 'pablotravis') === false);
+caso('se le contesta que lo sigue Pablo, y queda derivado',
+    mb_stripos($textoPagoPD, 'Pablo') !== false
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 
 // Y el que dice algo que el bot no sabe leer sigue recibiendo el aviso.
