@@ -158,6 +158,24 @@ function wabot_responder($texto, &$conv, $cfg) {
         if (strpos($ultimaDelBot, '?') === false) return [];
     }
 
+    /* El listado de datos lo armó el bot, así que leer la respuesta que sigue
+     * ese formato no puede depender del modelo (caso Whitesoul, 27-ago). Anota
+     * y NO contesta: el flujo sigue igual, pero ya con la ficha completa. */
+    wabot_prediseno_lista_posicional($texto, $conv);
+
+    /* "Está todo en lo que te mandé". El cliente sostiene que ya pasó los
+     * datos y el bot se los sigue pidiendo por partes (Clínica de Mar,
+     * 27-ago). Si después de releer lo que hay todavía faltan, el bot ya
+     * demostró que no los puede sacar solo: insistir es la fricción que
+     * costó esa charla. Lo toma Pablo con todo lo que el cliente escribió,
+     * que es lo único que no pierde la venta. */
+    if (in_array(($conv['fase'] ?? ''), ['prediseno', 'prediseno_ref'], true)
+        && wabot_apunta_a_lo_ya_dicho($texto)
+        && wabot_prediseno_faltan($conv, false)) {
+        wabot_evento_sesion($conv, 'prediseno_datos_no_extraibles');
+        return wabot_derivar($conv, $cfg, 'datos_ya_dados');
+    }
+
     // Modo agente: Gemini lleva la charla con herramientas. Si falla por lo que
     // sea, seguimos abajo con el motor de reglas, que nunca deja al cliente sin
     // respuesta. Ojo: la conversación puede haber quedado ya derivada por una

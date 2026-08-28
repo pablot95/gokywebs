@@ -197,6 +197,8 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             if ($reemplazo !== null) $salida = $reemplazo;
             $logo = wabot_agente_empujon_logo($mensaje, $salida, $conv, $cfg);
             if ($logo !== null) $salida[] = $logo;
+            $idioma = wabot_agente_empujon_bilingue($mensaje, $salida, $conv, $cfg);
+            if ($idioma !== null) $salida[] = $idioma;
             $empujon = wabot_agente_empujon_postdemo($salida, $mensaje, $conv, $cfg);
             if ($empujon !== null) $salida[] = $empujon;
             return $salida;
@@ -249,6 +251,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             // que si lo que preguntó no entra acá, no lo contesta nadie.
             $logoExacta = wabot_agente_empujon_logo($mensaje, $salidaExacta, $conv, $cfg);
             if ($logoExacta !== null) $salidaExacta[] = $logoExacta;
+            // Y por acá salió justo el caso Marcco: el pitch de ecommerce se
+            // manda exacto, sin pasar por el texto libre, así que el pedido de
+            // web bilingüe no lo contestaba nadie.
+            $idiomaExacta = wabot_agente_empujon_bilingue($mensaje, $salidaExacta, $conv, $cfg);
+            if ($idiomaExacta !== null) $salidaExacta[] = $idiomaExacta;
             return $salidaExacta;
         }
     }
@@ -419,6 +426,49 @@ function wabot_agente_empujon_logo($mensaje, $salida, &$conv, $cfg) {
     if (preg_match('/\b(logo|logotipo|isologo|identidad|tipografiado|tipografia)\b/u', $dicho)) return null;
 
     $texto = trim((string)($cfg['info']['logo'] ?? ''));
+    return $texto !== '' ? $texto : null;
+}
+
+/**
+ * ¿El cliente puso el idioma sobre la mesa?
+ *
+ * Marcco Cueros dijo que necesitaba ecommerce internacional, español/inglés,
+ * precios en ARS y USD y ventas al exterior, y el bot contestó la presentación
+ * genérica de ecommerce y le preguntó cuál era su producto estrella (27-ago).
+ * El texto oficial existía —info.bilingue, con su adicional— y no se usó.
+ *
+ * El detector de wabot_info_por_palabras() no lo agarraba: exige "en inglés"
+ * como frase, y "español/inglés" normaliza a "espanol ingles", donde no hay
+ * ningún "en" suelto.
+ */
+function wabot_texto_pide_otro_idioma($mensaje) {
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if ($t === '' || mb_strlen($t) > 400) return false;
+    // Quien está MANDANDO material no está preguntando por el idioma.
+    if (preg_match('/\b(te (paso|mando|envio)|ahi va|adjunto)\b/u', $t)) return false;
+    return (bool)preg_match(
+        '/\b(bilingue|biling[uü]es|dos idiomas|varios idiomas|multi ?idioma|idiomas|'
+      . 'ingles|english|traducida|traduccion|espanol e ingles|espanol ingles)\b/u', $t);
+}
+
+/**
+ * Una necesidad nombrada que queda sin contestar es una venta que se pierde.
+ * Mismo patrón que el empujón del logo, y por el mismo motivo: la regla ya
+ * estaba en el prompt y no alcanzó.
+ *
+ * Solo cubre el IDIOMA, que es lo que tiene respuesta oficial. Vender al
+ * exterior o cotizar en dólares no tiene texto propio y no se inventa acá:
+ * eso lo confirma Pablo, como cualquier funcionalidad fuera de la lista.
+ */
+function wabot_agente_empujon_bilingue($mensaje, $salida, &$conv, $cfg) {
+    if (!empty($conv['bilingue_avisado'])) return null;
+    if (!wabot_texto_pide_otro_idioma($mensaje)) return null;
+    $conv['bilingue_avisado'] = true;
+
+    $dicho = wabot_normalizar_frase(implode(' ', (array)$salida));
+    if (preg_match('/\b(bilingue|idioma|idiomas|ingles|traducc?ion|traducida)\b/u', $dicho)) return null;
+
+    $texto = trim(wabot_texto_info('bilingue', $cfg));
     return $texto !== '' ? $texto : null;
 }
 

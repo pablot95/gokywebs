@@ -3462,7 +3462,14 @@ function wabot_apunta_a_lo_ya_dicho($texto) {
                 'la de arriba', 'el de arriba', 'la anterior', 'el anterior',
                 'ya la mande', 'ya lo mande', 'ya la pase', 'ya lo pase',
                 'esa misma', 'la misma', 'la que dije', 'mas arriba', 'fijate arriba',
-                'en el chat', 'al principio', 'ya esta arriba'];
+                'en el chat', 'al principio', 'ya esta arriba',
+                // Clínica de Mar (27-ago): "Está todo en lo que te mandé" no
+                // matcheaba ninguna de las de arriba —tienen el pronombre
+                // pegado al verbo ("te LO mandé")— y el bot siguió pidiendo
+                // los datos por partes.
+                'esta todo en lo que te mande', 'en lo que te mande',
+                'esta todo ahi', 'esta todo arriba', 'ya esta todo',
+                'te pase todo', 'ya te pase todo', 'te mande todo', 'ya te mande todo'];
     foreach ($apuntes as $f) {
         if (strpos($t, $f) !== false) return true;
     }

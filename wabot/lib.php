@@ -2367,6 +2367,80 @@ function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
 }
 
 /**
+ * El cliente contesta el listado con el formato exacto que se le pidió.
+ *
+ * Alejandra mandó "Alejandra / Whitesoul.nordelta / Pasteles" —nombre, negocio
+ * y colores, los tres items en orden— y el bot contestó "me faltan solo los
+ * colores de tu marca" (27-ago). El listado lo había armado él mismo, así que
+ * leer la respuesta no debería depender de que el modelo acierte: es el mismo
+ * criterio que ya se aplicó a las respuestas de una palabra en los desempates.
+ *
+ * ANOTA, NO CONTESTA: devuelve true si guardó algo y deja seguir el flujo
+ * normal, que con la ficha ya completa hace lo que corresponde. Si contestara
+ * él, habría que duplicar acá toda la lógica de cierre del prediseño.
+ *
+ * Condiciones duras para no escribir basura en el lead: tiene que haber
+ * exactamente tantos segmentos como items pendientes, con separador real, sin
+ * signo de pregunta, y ningún segmento puede ser un párrafo. Ante la menor
+ * duda no toca nada y decide el modelo, como hasta ahora.
+ */
+function wabot_prediseno_lista_posicional($texto, &$conv) {
+    $pedido = array_values(array_filter((array)($conv['prediseno_pedido'] ?? [])));
+    if (count($pedido) < 2) return false;
+
+    $crudo = trim((string)$texto);
+    if ($crudo === '' || mb_strpos($crudo, '?') !== false) return false;
+
+    $partes = preg_split('#\s*(?:/|\||\n|;)\s*#u', $crudo);
+    $partes = array_values(array_filter(array_map(function ($p) {
+        // "1. Alejandra", "- Alejandra", "2) Whitesoul"
+        return trim(preg_replace('/^\s*(?:\d+\s*[.)\-]|[-*•])\s*/u', '', (string)$p));
+    }, (array)$partes), function ($p) { return $p !== ''; }));
+
+    if (count($partes) !== count($pedido)) return false;
+    foreach ($partes as $p) {
+        if (mb_strlen($p) > 120) return false;   // eso es prosa, no un item
+    }
+
+    // Cada etiqueta del listado, al campo que le corresponde.
+    $campoDe = function ($label) {
+        $l = wabot_normalizar_frase((string)$label);
+        if (strpos($l, 'tu nombre') === 0)            return 'nombre';
+        if (strpos($l, 'el nombre de tu negocio') === 0) return 'nombre_negocio';
+        if (strpos($l, 'una descripcion') === 0)      return 'descripcion';
+        if (strpos($l, 'los colores') === 0)          return 'colores';
+        if (strpos($l, 'si tenes alguna web') === 0)  return 'referencia';
+        return null;
+    };
+
+    $guardo = false;
+    foreach ($pedido as $i => $label) {
+        $campo = $campoDe($label);
+        if ($campo === null || !isset($partes[$i])) continue;
+        $valor = $partes[$i];
+
+        // La referencia tiene su propio criterio de "no tengo".
+        if ($campo === 'referencia' && function_exists('wabot_es_negativa') && wabot_es_negativa($valor)) {
+            $conv['referencia'] = '';
+            $conv['referencia_preguntada'] = true;
+            $guardo = true;
+            continue;
+        }
+        if (trim((string)($conv[$campo] ?? '')) !== '') continue;   // nunca pisa lo ya sabido
+
+        $conv[$campo] = $valor;
+        if ($campo === 'nombre') $conv['nombre_confirmado'] = true;
+        $guardo = true;
+    }
+
+    if ($guardo) {
+        $conv['prediseno_pedido'] = [];
+        wabot_evento_sesion($conv, 'prediseno_lista_leida', ['items' => count($partes)]);
+    }
+    return $guardo;
+}
+
+/**
  * El ofrecimiento del prediseño. En WhatsApp el bot ya no pide los datos por
  * chat (pedido de Pablo, 23-ago): si falta algo que el formulario cubre
  * (nombre, negocio, descripción, colores — la referencia no la pide el

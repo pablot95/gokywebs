@@ -14,6 +14,9 @@
 if (php_sapi_name() !== 'cli') { http_response_code(404); exit; }
 
 require_once __DIR__ . '/redactor.php';
+// redactor.php solo carga agente.php cuando el modo es 'agente'; acá se
+// prueban los empujones del agente sin llamar a Gemini, así que va explícito.
+require_once __DIR__ . '/agente.php';
 
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 
@@ -223,6 +226,100 @@ caso('Aberturas: la consulta se contesta con el precio del ecommerce, sin repreg
     is_array($r) && count($r) === 1
     && strpos($r[0], (string)$cfg['tipos']['ecommerce']['precio']) !== false
     && strpos($r[0], (string)$cfg['tipos']['landing']['precio']) !== false);
+
+echo "\n— El listado del prediseño contestado en orden (Whitesoul) —\n";
+
+$pedido = ['Tu nombre', 'El nombre de tu negocio', 'Los colores de tu marca'];
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+$ok = wabot_prediseno_lista_posicional('Alejandra / Whitesoul.nordelta / Pasteles', $c);
+caso('Whitesoul: los tres datos se leen en orden',
+    $ok && $c['nombre'] === 'Alejandra' && $c['nombre_negocio'] === 'Whitesoul.nordelta'
+        && $c['colores'] === 'Pasteles');
+caso('Whitesoul: el nombre queda confirmado (lo dijo el cliente, no el perfil)',
+    !empty($c['nombre_confirmado']));
+// Ninguno de los tres que se le pidieron sigue pendiente, y la marca de
+// "esto es lo que le pedí" queda limpia para que no se le repita el listado.
+$faltanAhora = wabot_prediseno_faltan($c, false);
+caso('Whitesoul: ninguno de los tres pedidos sigue faltando',
+    !array_intersect($pedido, $faltanAhora) && ($c['prediseno_pedido'] ?? null) === []);
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+caso('con salto de línea en vez de barra también',
+    wabot_prediseno_lista_posicional("Alejandra\nWhitesoul.nordelta\nPasteles", $c)
+    && $c['colores'] === 'Pasteles');
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+caso('numerado ("1. …") también',
+    wabot_prediseno_lista_posicional("1. Alejandra\n2. Whitesoul\n3. Pasteles", $c)
+    && $c['nombre'] === 'Alejandra' && $c['colores'] === 'Pasteles');
+
+// Los cortes que evitan escribir basura en el lead.
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+caso('si mandó menos datos que los pedidos → no se mapea nada',
+    !wabot_prediseno_lista_posicional('Alejandra / Whitesoul', $c) && empty($c['nombre']));
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+caso('un mensaje sin separadores no es una lista',
+    !wabot_prediseno_lista_posicional('Alejandra', $c));
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido]);
+caso('una pregunta nunca se lee como lista',
+    !wabot_prediseno_lista_posicional('Alejandra / Whitesoul / qué colores me recomendás?', $c));
+
+$c = conv_de('prediseno', ['prediseno_pedido' => $pedido, 'nombre' => 'Ale', 'nombre_confirmado' => true]);
+wabot_prediseno_lista_posicional('Alejandra / Whitesoul.nordelta / Pasteles', $c);
+caso('nunca pisa un dato que ya estaba',
+    $c['nombre'] === 'Ale' && $c['colores'] === 'Pasteles');
+
+$c = conv_de('prediseno', ['prediseno_pedido' => [
+    'Tu nombre', 'Los colores de tu marca',
+    'Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)']]);
+wabot_prediseno_lista_posicional('Alejandra / Pasteles / no tengo', $c);
+caso('"no tengo" en la referencia se guarda como vacío, no como texto',
+    trim((string)$c['referencia']) === '' && !empty($c['referencia_preguntada']));
+
+echo "\n— El cliente insiste en que ya mandó los datos (Clínica de Mar) —\n";
+
+caso('"Está todo en lo que te mandé" se reconoce',
+    wabot_apunta_a_lo_ya_dicho('Está todo en lo que te mandé'));
+caso('"ya te pasé todo" también',
+    wabot_apunta_a_lo_ya_dicho('ya te pasé todo'));
+caso('un mensaje con datos de verdad NO se confunde con un reclamo',
+    !wabot_apunta_a_lo_ya_dicho('Alejandra, la marca es Whitesoul'));
+
+$c = conv_de('prediseno', ['prediseno_pedido' => ['Tu nombre', 'Los colores de tu marca']]);
+$r = wabot_responder('Está todo en lo que te mandé', $c, $cfg);
+caso('Clínica de Mar: en vez de volver a pedirlos, lo toma Pablo',
+    $r === [$cfg['derivar']] && ($c['fase'] ?? '') === 'derivado');
+
+echo "\n— Una necesidad nombrada no puede quedar sin respuesta (Marcco Cueros) —\n";
+
+caso('"español/inglés" se reconoce como pedido de idioma',
+    wabot_texto_pide_otro_idioma('Necesito ecommerce internacional, español/inglés, con precios en ARS y USD'));
+caso('"bilingüe" también',
+    wabot_texto_pide_otro_idioma('La web tiene que ser bilingüe'));
+caso('quien MANDA material no está preguntando por el idioma',
+    !wabot_texto_pide_otro_idioma('Te paso el logo en inglés'));
+
+$c = conv_de('pitch', ['tipo' => 'ecommerce']);
+$idioma = wabot_agente_empujon_bilingue(
+    'Necesito ecommerce internacional, español/inglés, con ventas al extranjero',
+    ['Lo ideal sería un ecommerce. Cuál es tu producto estrella?'], $c, $cfg);
+caso('Marcco: el pedido de idioma se contesta con el texto oficial',
+    is_string($idioma) && mb_stripos($idioma, 'bilingüe') !== false
+    && strpos($idioma, '{precio}') === false);
+caso('y trae el adicional real, no un placeholder',
+    is_string($idioma) && strpos($idioma, (string)$cfg['adicional_bilingue']) !== false);
+
+$c = conv_de('pitch', ['tipo' => 'ecommerce']);
+caso('si el modelo YA lo contestó, no se duplica',
+    wabot_agente_empujon_bilingue('La quiero bilingüe',
+        ['Sí, la podemos hacer bilingüe sin problema.'], $c, $cfg) === null);
+
+$c = conv_de('pitch', ['tipo' => 'ecommerce', 'bilingue_avisado' => true]);
+caso('una sola vez por charla',
+    wabot_agente_empujon_bilingue('La quiero bilingüe', ['Otra cosa.'], $c, $cfg) === null);
 
 echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube) —\n";
 
