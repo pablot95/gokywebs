@@ -30,12 +30,14 @@ function wabot_responder($texto, &$conv, $cfg) {
     }
 
     // Parte 2 de la venta: la lleva Pablo. Cualquier respuesta del cliente
-    // después de presentar la demo —duda, pedido de cambios, que la va a
-    // mirar, lo que sea— deriva con un único mensaje fijo, sin pasar por el
-    // motor de reglas ni por el agente. Vale en los tres modos de redacción.
+    // después de presentar la demo deriva, sin pasar por el motor de reglas ni
+    // por el agente. Vale en los tres modos de redacción. Lo que NO es fijo es
+    // el texto: wabot_postdemo_responder() contesta lo que el cliente dijo
+    // —elogio, pedido de cambio, "no me cerró", que la va a mirar— antes de
+    // avisar que sigue Pablo (Pablo, 28-ago: "que el mensaje dependa de lo que
+    // envía el cliente").
     if (($conv['fase'] ?? '') === 'postdemo' && !empty($conv['presentado_ts'])) {
-        $conv['presentado_confirmado'] = true;
-        return wabot_derivar_postdemo($conv, $cfg);
+        return wabot_postdemo_responder($texto, $conv, $cfg);
     }
 
     /* "Sale lo mismo con carrito?" / "si lo agendo yo cuál es la diferencia":

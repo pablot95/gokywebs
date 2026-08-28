@@ -538,6 +538,18 @@ caso('si no contesta la pregunta de turnos, la REFORMULA (no la repite) antes de
 
 echo "— El precio (texto fijo) y la pregunta del pitch salen juntos; la demo recién cuando contesta —\n";
 
+/**
+ * La pregunta que va detrás del precio desde el 28-ago: valida si lo cotizado
+ * encaja ("buscabas algo así o tenías otra idea en mente?"), en cualquiera de
+ * sus variantes. Todas dicen "tenías" + qué tenía pensado.
+ */
+function pregunta_es_de_encaje($texto) {
+    foreach (['tenías otra idea', 'tenías pensado', 'tenías pensada'] as $marca) {
+        if (mb_stripos((string)$texto, $marca) !== false) return true;
+    }
+    return false;
+}
+
 function conv_sin_pitch() {
     $c = conv_nueva();
     unset($c['pitch_hecho']);
@@ -2411,28 +2423,51 @@ caso('preguntar por la seña sí la responde, con el monto y las cuotas reales',
     strpos($r[0], $cfg['tipos']['landing']['sena']) !== false
     && strpos($r[0], $cfg['tipos']['landing']['cuotas']['12']) !== false);
 
-echo "— Parte 2: cualquier respuesta tras la demo deriva con un único mensaje fijo —\n";
+echo "— Parte 2: la respuesta tras la demo depende de lo que dijo el cliente —\n";
 
-// El dispatch de wabot_engine() para 'postdemo' es solo la salvaguarda (el
-// corte real está en wabot_responder(), ver el bloque de más abajo); acá se
-// prueba que, aunque se lo llame directo, se comporta igual: sin importar el
-// contenido del mensaje, deriva una sola vez con wabot_derivar_postdemo().
-foreach ([
-    'me gusto mucho, como sigo?',
-    'prefiero con tarjeta',
-    'ya te transferi la seña',
-    'mmm no se, lo tengo que pensar bien',
-    'uh, es mucha plata para mi ahora',
-    'dale, la voy a mirar',
-    'hola',
-] as $msjPostdemo) {
+// Pablo, 28-ago: "siempre se manda el mismo mensaje repetido; que el mensaje
+// dependa de lo que envía el cliente". El handoff se marca igual en todos los
+// casos —la parte 2 la sigue llevando Pablo— pero el texto ya no es el mismo
+// aviso para todos. El corte real está en wabot_responder() (ver
+// test-redactor.php); acá se prueba la salvaguarda del motor, que usa la misma
+// cadena de detectores.
+$esperadoPostdemo = [
+    'me gusto mucho, como sigo?'          => 'Banco Santander',      // quiere avanzar
+    'prefiero con tarjeta'                => 'pago?monto=',          // link de tarjeta
+    'ya te transferi la seña'             => 'revisamos la transferencia',
+    'mmm no se, lo tengo que pensar bien' => 'videollamada',         // duda
+    'uh, es mucha plata para mi ahora'    => 'cuotas sin inter',     // objeción de plata
+    'dale, la voy a mirar'                => 'miralo tranquilo',
+    'se puede cambiar el color?'          => 'anoto esos cambios',
+    'no me gusto la verdad'               => 'no te cerró',
+];
+foreach ($esperadoPostdemo as $msjPostdemo => $fragmento) {
     $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
     clasifica(['otro']);
     $r = wabot_engine($msjPostdemo, $c, $cfg);
-    caso("\"$msjPostdemo\" tras la demo deriva con el mensaje fijo",
-        $r === [(string)$cfg['postdemo_derivar']]
+    $junto = implode(' ', $r);
+    caso("\"$msjPostdemo\" tras la demo se contesta con lo suyo, no con el aviso pelado",
+        $r !== [(string)$cfg['postdemo_derivar']]
+        && mb_stripos($junto, $fragmento) !== false
         && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && $c['presentado_confirmado'] === true);
 }
+
+// Lo que no encaja en ninguna sigue derivando con el aviso, una sola vez.
+$cPDOtro = conv_nueva(); $cPDOtro['fase'] = 'postdemo'; $cPDOtro['tipo'] = 'ecommerce'; $cPDOtro['precio_dado'] = true;
+clasifica(['otro']);
+caso('un mensaje que no dice nada sigue derivando con el aviso fijo',
+    wabot_engine('hola', $cPDOtro, $cfg) === [(string)$cfg['postdemo_derivar']]
+    && $cPDOtro['fase'] === 'derivado' && !empty($cPDOtro['handoff_pendiente']));
+
+// Ninguno contesta lo mismo que otro: ese era exactamente el reclamo.
+$textosPostdemo = [];
+foreach (array_keys($esperadoPostdemo) as $msjPostdemo) {
+    $cVar = conv_nueva(); $cVar['fase'] = 'postdemo'; $cVar['tipo'] = 'ecommerce'; $cVar['precio_dado'] = true;
+    clasifica(['otro']);
+    $textosPostdemo[] = implode(' ', wabot_engine($msjPostdemo, $cVar, $cfg));
+}
+caso('ocho mensajes distintos reciben ocho respuestas distintas',
+    count(array_unique($textosPostdemo)) === count($textosPostdemo));
 
 // La demo presentada NO deja mudo al bot: esa era la razón por la que la parte 2
 // no existía (presentar pausaba el chat 24 h).
@@ -3351,8 +3386,8 @@ $convAloj['transcript'] = [['q'=>'cliente','t'=>'Tenemos un complejo de cabañas
 $pitchAloj = wabot_pitch_texto('turnos', $convAloj, $cfg);
 caso('cabañas → el pitch habla de fechas, no de día y horario',
     stripos($pitchAloj, 'fechas') !== false && stripos($pitchAloj, 'día y horario') === false);
-caso('y pregunta por unidades, no por "qué servicios ofrecés"',
-    stripos($pitchAloj, 'cuántas unidades') !== false);
+caso('y la pregunta ya no indaga el negocio: valida el encaje',
+    pregunta_es_de_encaje($pitchAloj) && stripos($pitchAloj, 'cuántas unidades') === false);
 caso('ninguna variante de alojamiento vuelve a hablar de día y horario', (function () use ($cfg) {
     foreach ((array)($cfg['tipos']['turnos']['desc_alojamiento_variantes'] ?? []) as $v) {
         if (stripos($v, 'día y horario') !== false) return false;
@@ -3427,8 +3462,8 @@ caso('sino que pasa a la segunda pregunta (cómo vendés hoy)', (function () use
 $convLocalSolo = conv_nueva();
 $convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
 $pitchLocalSolo = wabot_pitch_texto('ecommerce', $convLocalSolo, $cfg);
-caso('pero "Tengo un local" solo sigue preguntando qué vende (no sabemos el producto)',
-    stripos($pitchLocalSolo, 'vendés') !== false);
+caso('y "Tengo un local" recibe la misma pregunta de encaje, no un interrogatorio',
+    pregunta_es_de_encaje($pitchLocalSolo));
 
 echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
 
@@ -3893,14 +3928,14 @@ foreach (['landing', 'ecommerce', 'turnos', 'institucional', 'inmobiliaria', 'el
 caso('catálogo mantiene la pregunta por la cantidad de productos',
     stripos((string)$cfg['tipos']['catalogo']['pitch_pregunta'], 'cuántos productos') !== false);
 
-// La forma nueva nombra lo que vende/ofrece cada uno, no un canal.
-foreach ([
-    ['ecommerce', 'producto'],
-    ['elearning', 'curso'],
-    ['inmobiliaria', 'propiedad'],
-] as $par) {
-    caso("la pregunta de {$par[0]} nombra \"{$par[1]}\"",
-        stripos((string)$cfg['tipos'][$par[0]]['pitch_pregunta'], $par[1]) !== false);
+// Pablo, 28-ago: la pregunta ya no indaga el negocio (producto, curso,
+// propiedad). Valida el encaje de lo cotizado, igual para todos los tipos:
+// así la demo no sale regalada al turno siguiente.
+foreach (['ecommerce', 'elearning', 'inmobiliaria', 'landing', 'institucional', 'turnos'] as $tipoEnc) {
+    if (!isset($cfg['tipos'][$tipoEnc])) continue;
+    caso("la pregunta de $tipoEnc pregunta si encaja, no por el negocio",
+        pregunta_es_de_encaje((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta'])
+        && pregunta_es_de_encaje((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta_2']));
 }
 
 // La pregunta genérica de "qué se destaca" reemplazó a la vieja (que sí
@@ -4005,8 +4040,10 @@ $convAlojCant = conv_nueva();
 $convAlojCant['transcript'] = [['q'=>'cliente','t'=>'Tengo un complejo de 6 cabañas en Merlo','ts'=>time()]];
 $pitchAlojCant = wabot_pitch_texto('turnos', $convAlojCant, $cfg);
 caso('no le pregunta de nuevo cuántas unidades', stripos($pitchAlojCant, 'cuántas cabañas o unidades') === false);
-caso('y la segunda pregunta habla de reservas, no de turnos',
-    stripos($pitchAlojCant, 'reservas') !== false && stripos($pitchAlojCant, 'tomás los turnos') === false);
+caso('la descripción sigue hablando de reservar, no de turnos',
+    stripos($pitchAlojCant, 'reserva') !== false && stripos($pitchAlojCant, 'turnos') === false);
+caso('y la pregunta es la de encaje, igual que para el resto',
+    pregunta_es_de_encaje($pitchAlojCant));
 
 echo "\n— Un elogio tras la demo NO es una despedida —\n";
 
@@ -4165,16 +4202,19 @@ caso('en postdemo el bot muestra "escribiendo…" como en cualquier fase activa'
 $convResp = $convPD;
 clasifica(['otro']);
 $r = wabot_engine('me gusto mucho, como sigo?', $convResp, $cfg);
-caso('cualquier respuesta tras la demo deriva con el mensaje fijo de Pablo',
-    $r === [(string)$cfg['postdemo_derivar']]
+caso('el que quiere avanzar recibe los datos para señar, no el aviso pelado',
+    mb_stripos(implode(' ', $r), 'Banco Santander') !== false
+    && $r !== [(string)$cfg['postdemo_derivar']]
     && $convResp['fase'] === 'derivado' && !empty($convResp['handoff_pendiente'])
     && $convResp['presentado_confirmado'] === true);
 
 $convRespDuda = $convPD;
 clasifica(['otro']);
 $r2 = wabot_engine('mmm no se, lo tengo que pensar', $convRespDuda, $cfg);
-caso('también ante una duda, sin importar el contenido del mensaje',
-    $r2 === [(string)$cfg['postdemo_derivar']] && $convRespDuda['fase'] === 'derivado');
+caso('y el que duda recibe la videollamada, que es otra cosa',
+    mb_stripos(implode(' ', $r2), 'videollamada') !== false
+    && implode(' ', $r2) !== implode(' ', $r)
+    && $convRespDuda['fase'] === 'derivado');
 
 caso('antes de presentar la demo el bot sigue trabajando normal',
     wabot_avisar_al_recibir(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === true);
@@ -4952,6 +4992,41 @@ caso('el turno del pitch manda el precio con el portfolio Y la pregunta',
 caso('la línea del portfolio va última, después del precio',
     substr(trim($salidaPitch[0]), -strlen('gokywebs.com/portfolio/?tipo=ecommerce'))
         === 'gokywebs.com/portfolio/?tipo=ecommerce');
+
+echo "\n— La demo ya no sale regalada al turno siguiente (28-ago) —\n";
+
+// Pablo, 28-ago: "no quiero que el wabot dé tan fácil el demo". Antes, después
+// del precio, contestara lo que contestara el cliente venía la oferta de la
+// demo. Ahora la pregunta valida el encaje y un "no" corta ese camino.
+foreach (['no', 'no, tenia otra idea', 'no era lo que buscaba', 'pensaba en otra cosa'] as $noEncaja) {
+    caso("\"$noEncaja\" se lee como que el tipo no encaja",
+        wabot_pitch_dice_otra_idea($noEncaja) === true);
+}
+foreach (['si, era eso', 'dale', 'si me sirve', 'me gusta la idea'] as $siEncaja) {
+    caso("\"$siEncaja\" NO se lee como rechazo", wabot_pitch_dice_otra_idea($siEncaja) === false);
+}
+
+$convNo = conv_nueva();
+$convNo['fase'] = 'pitch';
+$convNo['tipo'] = 'ecommerce';
+$convNo['pitch_hecho'] = true;
+$convNo['pitch_tipo'] = 'ecommerce';
+$convNo['precio_dado'] = true;
+$rNo = wabot_pitch_encaje_rechazado('no, tenia otra idea', $convNo, $cfg);
+caso('el que dice que no NO recibe la oferta de la demo',
+    is_array($rNo) && count($rNo) === 1
+    && mb_stripos($rNo[0], 'demo') === false && mb_stripos($rNo[0], 'muestra') === false);
+caso('se le pregunta qué tenía en mente', mb_stripos($rNo[0], 'tenías') !== false || mb_stripos($rNo[0], 'pensado') !== false);
+caso('y la fase queda en pitch, para recotizar con lo que conteste', $convNo['fase'] === 'pitch');
+caso('no se le vuelve a preguntar lo mismo dos veces',
+    wabot_pitch_encaje_rechazado('no, tampoco', $convNo, $cfg) === null);
+
+$convSi = conv_nueva();
+$convSi['fase'] = 'pitch';
+$convSi['tipo'] = 'ecommerce';
+$convSi['precio_dado'] = true;
+caso('el que dice que sí sigue el camino de siempre',
+    wabot_pitch_encaje_rechazado('si, era eso', $convSi, $cfg) === null);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -190,6 +190,7 @@ function wabot_config_load() {
     wabot_config_partir_precio($cfg);
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
+    wabot_config_pitch_encaje($cfg);
     // Último: las funciones de arriba reescriben plantillas de precio buscando
     // textos exactos, y la línea del portfolio las dejaría sin match.
     wabot_config_portfolio($cfg);
@@ -1799,6 +1800,57 @@ function wabot_texto_prediseno_completo($conv, $cfg) {
         if ($yaMando !== '') return $yaMando;
     }
     return str_replace('{imagenes}', wabot_imagenes_a_pedir($conv, $cfg), $texto);
+}
+
+/**
+ * La pregunta que va detrás del precio.
+ *
+ * Pablo, 28-ago: "no quiero que el wabot dé tan fácil el demo". La pregunta
+ * que había —"cuál es el producto que más vendés?", una por tipo— sacaba datos
+ * del negocio y después ofrecía la demo contestara lo que contestara: la demo
+ * salía regalada en el segundo turno. Ahora la pregunta valida el encaje
+ * ("buscabas algo así o tenías otra idea en mente?") y la demo se ofrece solo
+ * si el cliente no dice que no — ver wabot_pitch_encaje_rechazado().
+ *
+ * Catálogo queda afuera a propósito: su pregunta es cuántos productos van, y
+ * sin ese número no se puede cotizar.
+ */
+function wabot_config_pitch_encaje(&$cfg) {
+    $pregunta = 'Buscabas algo así o tenías otra idea en mente?';
+    $variantes = [
+        'Buscabas algo así o tenías otra idea en mente?',
+        'Era más o menos lo que tenías pensado, o buscabas otra cosa?',
+        'Encaja con lo que estabas buscando, o tenías otra idea?',
+        'Va por ahí lo que buscabas, o tenías pensada otra cosa?',
+    ];
+    foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tipo) {
+        if ($tipo === 'catalogo') continue;
+        foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $campo) {
+            $cfg['tipos'][$tipo][$campo] = $pregunta;
+            $cfg['tipos'][$tipo][$campo . '_variantes'] = $variantes;
+        }
+        // Las variantes por contexto preguntaban por el negocio (cuántas
+        // unidades, qué servicio): con la pregunta de encaje ya no aplican.
+        foreach (['alojamiento', 'salud', 'mayorista'] as $ctx) {
+            unset(
+                $cfg['tipos'][$tipo]['pitch_pregunta_' . $ctx],
+                $cfg['tipos'][$tipo]['pitch_pregunta_2_' . $ctx],
+                $cfg['tipos'][$tipo]['pitch_pregunta_' . $ctx . '_variantes'],
+                $cfg['tipos'][$tipo]['pitch_pregunta_2_' . $ctx . '_variantes']
+            );
+        }
+    }
+
+    if (trim((string)($cfg['pitch_otra_idea'] ?? '')) === '') {
+        $cfg['pitch_otra_idea'] = 'Contame qué tenías en mente y lo vemos.';
+    }
+    if (empty($cfg['pitch_otra_idea_variantes']) || !is_array($cfg['pitch_otra_idea_variantes'])) {
+        $cfg['pitch_otra_idea_variantes'] = [
+            'Contame qué tenías en mente y lo vemos.',
+            'Decime qué habías pensado y lo ajustamos.',
+            'Contame qué idea tenías y vemos cómo encararlo.',
+        ];
+    }
 }
 
 /**

@@ -1446,6 +1446,8 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                 }
                 $conv['tipo'] = $rNuevoFallback;
             }
+            $otraIdeaFallback = wabot_pitch_encaje_rechazado($texto, $conv, $cfg);
+            if ($otraIdeaFallback !== null) return $otraIdeaFallback;
             return wabot_precio((string)$conv['tipo'], $conv, $cfg);
         case 'precio':
             if (!empty($conv['cta_muestra'])
@@ -1500,26 +1502,10 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             return [$pedido];
         case 'postdemo':
-            if (wabot_dice_que_pago($texto)) {
-                $conv['presentado_confirmado'] = true;
-                $conv['pago_avisado_ts'] = time();
-                return array_merge([(string)$cfg['postdemo_pago_avisado']], wabot_derivar($conv, $cfg, 'pago_explicito'));
-            }
-            if (wabot_prefiere_tarjeta($texto)) {
-                $link = wabot_postdemo_link_tarjeta($conv, $cfg);
-                if ($link !== '') return [$link];
-            }
-            if (wabot_postdemo_quiere_avanzar($texto)) return [wabot_postdemo_transferencia($conv, $cfg)];
-            if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
-                $conv['cuotas_ofrecidas'] = true;
-                return [(string)$cfg['postdemo_cuotas_sin_interes']];
-            }
-            if (wabot_postdemo_la_va_a_mirar($texto)) return [(string)$cfg['postdemo_la_miro']];
-            if (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
-                $conv['videollamada_ofrecida'] = true;
-                return [(string)$cfg['postdemo_videollamada']];
-            }
-            return [(string)$cfg['postdemo_apertura']];
+            // Una sola cadena de detectores para los tres caminos (motor,
+            // agente y el corte de redactor.php): si divergen, el cliente
+            // recibe cosas distintas segun por donde entro su mensaje.
+            return wabot_postdemo_responder($texto, $conv, $cfg);
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
                 $conv['referencia'] = wabot_referencia_utilizable($texto) ? trim($texto) : '';
@@ -2056,13 +2042,11 @@ function wabot_engine($texto, &$conv, $cfg) {
 
         case 'postdemo':
             // Salvaguarda: en el uso normal esta fase nunca llega hasta acá,
-            // wabot_responder() (redactor.php) corta antes con el mensaje fijo
-            // de derivación. Si por lo que sea llega, se comporta igual: UN
-            // solo mensaje, ignorando lo que se haya acumulado en $out más
-            // arriba (por ejemplo, una respuesta de precio ante una palabra
-            // suelta de pago).
-            $conv['presentado_confirmado'] = true;
-            return wabot_derivar_postdemo($conv, $cfg);
+            // wabot_responder() (redactor.php) corta antes. Si por lo que sea
+            // llega, se comporta igual —misma cadena de detectores— ignorando
+            // lo que se haya acumulado en $out más arriba (por ejemplo, una
+            // respuesta de precio ante una palabra suelta de pago).
+            return wabot_postdemo_responder($texto, $conv, $cfg);
 
         case 'confirma_cambio':
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -2145,6 +2129,8 @@ function wabot_engine($texto, &$conv, $cfg) {
                 }
                 $conv['tipo'] = $rNuevoPitch;
             }
+            $otraIdea = wabot_pitch_encaje_rechazado($texto, $conv, $cfg);
+            if ($otraIdea !== null) return array_merge($out, $otraIdea);
             return array_merge($out, wabot_precio((string)$conv['tipo'], $conv, $cfg));
 
         case 'prediseno':
@@ -3116,10 +3102,46 @@ function wabot_postdemo_objecion_plata($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
     return (bool)(
-        preg_match('/\b(es caro|muy caro|carisimo|es mucha plata|es mucho|se me va de presupuesto|no me da el presupuesto)\b/u', $t)
+        preg_match('/\b(es caro|esta caro|muy caro|carisimo|medio caro|un poco caro|me parece caro|es mucha plata|es mucho|se me va de presupuesto|no me da el presupuesto)\b/u', $t)
         || preg_match('/\b(no tengo|no cuento con)\b.{0,20}\b(plata|dinero|presupuesto|fondos)\b/u', $t)
         || preg_match('/\bno puedo\b.{0,20}\b(pagar|afrontar|de una)\b/u', $t)
         || preg_match('/\b(junto|reuno|consigo)\b.{0,15}\b(la plata|el dinero)\b/u', $t)
+    );
+}
+
+/** Celebra la demo: "me encanta", "quedó bárbara". Es la señal de interés. */
+function wabot_postdemo_elogio($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    // "no me gusta" tiene las mismas palabras que "me gusta": el no manda.
+    if (preg_match('/\bno\b.{0,15}\b(me gusta|me gusto|me convence|me convencio|me cierra)\b/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(me encanta|me encanto|me gusta|me gusto|me fascina|me copa|me re gusta)\b/u', $t)
+        || preg_match('/\b(quedo|quedaron|esta|estan|es)\b.{0,18}\b(genial|barbara|barbaro|hermosa|hermoso|divina|divino|espectacular|increible|impecable|buenisima|buenisimo|excelente|perfecta|perfecto|preciosa|lindisima|zarpada)\b/u', $t)
+        || preg_match('/\b(muy linda|muy lindo|re linda|re lindo|muy buena|muy bueno|quedo muy bien|quedo re bien|quedo joya)\b/u', $t)
+        || preg_match('/^(genial|excelente|hermosa|hermoso|barbaro|barbara|increible|wow|guau|joya|tremenda)\b/u', $t)
+    );
+}
+
+/** Pide tocar algo concreto de la demo: un color, una foto, un texto. */
+function wabot_postdemo_pide_cambios($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(cambiar|cambiarle|cambiaria|cambiarias|modificar|modificarle|ajustar|corregir|sacarle|agregarle|sumarle|reemplazar)\b/u', $t)
+        || preg_match('/\b(se puede|se podria|podrias|podrian|habria forma de|hay forma de)\b.{0,30}\b(cambiar|poner|sacar|agregar|modificar|mover)\b/u', $t)
+        || preg_match('/\b(me gustaria que|preferiria que|estaria bueno que|faltaria|le falta|le faltaria)\b/u', $t)
+    );
+}
+
+/** No le gustó y no dice qué: hay que preguntarle qué falló, no insistir. */
+function wabot_postdemo_no_gusto($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\bno\b.{0,15}\b(me gusta|me gusto|me convence|me convencio|me cierra|me cerro|me representa)\b/u', $t)
+        || preg_match('/\bno\b.{0,25}\b(es lo que|era lo que|esperaba|imaginaba|tenia en mente)\b/u', $t)
+        || preg_match('/\b(no tiene nada que ver|esta feo|esta fea|quedo feo|quedo fea)\b/u', $t)
     );
 }
 
@@ -3255,6 +3277,38 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
         );
     }
     return wabot_msg_precio_texto($tipo, $cfg, $conv);
+}
+
+/**
+ * La respuesta a "¿buscabas algo así o tenías otra idea en mente?" dice que NO.
+ *
+ * Un "no" pelado a esa pregunta significa que el tipo cotizado no encaja, así
+ * que no hay que ofrecerle la demo: primero hay que saber qué tenía en mente.
+ */
+function wabot_pitch_dice_otra_idea($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    if (preg_match('/\b(otra idea|otra cosa|algo distinto|algo diferente|otra opcion|no era eso|no es eso)\b/u', $t)) return true;
+    if (preg_match('/\bno\b.{0,20}\b(es lo que|era lo que|buscaba|buscando|tenia pensado|tenia en mente|me sirve|me servia)\b/u', $t)) return true;
+    if (preg_match('/\b(tenia|tengo|pensaba en|buscaba)\b.{0,12}\b(otra|otro)\b/u', $t)) return true;
+    return wabot_es_negativa($t);
+}
+
+/**
+ * El turno siguiente al pitch: si el cliente dice que no era eso, la demo no
+ * se ofrece. Se le pregunta qué tenía en mente y la fase queda en 'pitch',
+ * así el clasificador puede recotizar con lo que conteste.
+ *
+ * Devuelve null cuando la respuesta no es un "no" y el turno sigue su curso
+ * normal (ahí sí entra la oferta de la demo, como siempre).
+ */
+function wabot_pitch_encaje_rechazado($texto, &$conv, $cfg) {
+    if (!empty($conv['pitch_otra_idea_dicha'])) return null;
+    if (!wabot_pitch_dice_otra_idea($texto)) return null;
+    $conv['pitch_otra_idea_dicha'] = true;
+    $conv['fase'] = 'pitch';
+    wabot_evento_sesion($conv, 'pitch_otra_idea', ['tipo' => (string)($conv['tipo'] ?? '')]);
+    return [wabot_plantilla_variante('pitch_otra_idea', 'pitch_otra_idea_variantes', $conv, $cfg)];
 }
 
 function wabot_pitch_corresponde($tipo, $conv, $cfg) {
@@ -3440,6 +3494,63 @@ function wabot_catalogo_cotizar($cantidad, &$conv, $cfg) {
 function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
     wabot_handoff_marcar($conv, $causa);
     return [$cfg['derivar']];
+}
+
+/**
+ * Qué contesta el bot cuando el cliente responde a la demo ya presentada.
+ *
+ * Pablo, 28-ago: "siempre se manda el mismo mensaje repetido; que el mensaje
+ * dependa de lo que envía el cliente". Al que escribía "me encanta", al que
+ * pedía un cambio de color y al que decía que no le cerró les llegaba el
+ * mismo aviso de derivación, palabra por palabra.
+ *
+ * La parte 2 la sigue llevando Pablo: el handoff se marca igual, pase lo que
+ * pase. Lo que cambia es el texto con el que se corta — primero se contesta lo
+ * que el cliente dijo, y el aviso de que sigue Pablo va como segundo mensaje
+ * solo cuando la respuesta no deja una pregunta abierta (si la deja, la
+ * contesta él y el aviso sobra).
+ */
+function wabot_postdemo_responder($texto, &$conv, $cfg) {
+    $conv['presentado_confirmado'] = true;
+
+    if (wabot_dice_que_pago($texto)) {
+        $conv['pago_avisado_ts'] = time();
+        return array_merge([(string)$cfg['postdemo_pago_avisado']],
+                           wabot_derivar($conv, $cfg, 'pago_explicito'));
+    }
+    if (wabot_prefiere_tarjeta($texto)) {
+        $link = wabot_postdemo_link_tarjeta($conv, $cfg);
+        if ($link !== '') {
+            wabot_handoff_marcar($conv, 'postdemo_respuesta');
+            return [$link];
+        }
+    }
+    if (wabot_postdemo_quiere_avanzar($texto)) {
+        wabot_handoff_marcar($conv, 'postdemo_respuesta');
+        return [wabot_postdemo_transferencia($conv, $cfg)];
+    }
+
+    // De lo más accionable a lo más vago: un "no me gusta el color, se puede
+    // cambiar?" es un pedido de cambio, no un rechazo.
+    $especifico = '';
+    if (wabot_postdemo_objecion_plata($texto) && empty($conv['cuotas_ofrecidas'])) {
+        $conv['cuotas_ofrecidas'] = true;
+        $especifico = (string)($cfg['postdemo_cuotas_sin_interes'] ?? '');
+    }
+    elseif (wabot_postdemo_pide_cambios($texto))  $especifico = (string)($cfg['postdemo_cambios'] ?? '');
+    elseif (wabot_postdemo_no_gusto($texto))      $especifico = (string)($cfg['postdemo_no_gusto'] ?? '');
+    elseif (wabot_postdemo_elogio($texto))        $especifico = (string)($cfg['postdemo_elogio'] ?? '');
+    elseif (wabot_postdemo_la_va_a_mirar($texto)) $especifico = (string)($cfg['postdemo_la_miro'] ?? '');
+    elseif (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
+        $conv['videollamada_ofrecida'] = true;
+        $especifico = (string)($cfg['postdemo_videollamada'] ?? '');
+    }
+
+    wabot_handoff_marcar($conv, 'postdemo_respuesta');
+    $aviso = (string)($cfg['postdemo_derivar'] ?? '');
+    if (trim($especifico) === '') return [$aviso];
+    if ($aviso === '' || strpos($especifico, '?') !== false) return [$especifico];
+    return [$especifico, $aviso];
 }
 
 /* Igual que wabot_derivar(), pero con el mensaje fijo de la parte 2 (después

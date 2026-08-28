@@ -272,9 +272,25 @@ $convPD['tipo'] = 'landing';
 $convPD['precio_dado'] = true;
 $convPD['presentado_ts'] = time() - 3600;
 $convPD['presentado_slug'] = 'midemo';
-caso('un "cómo pago?" post-demo deriva con el mensaje fijo, no lo contesta el bot',
-    wabot_responder('Me encantó! cómo hago para pagar?', $convPD, $cfgPD) === [(string)$cfgPD['postdemo_derivar']]
+// Pablo, 28-ago: el corte sigue existiendo (la parte 2 la lleva él), pero el
+// texto contesta lo que el cliente dijo en vez de leerle el mismo aviso a
+// todos. El que pregunta cómo pagar recibe los datos para señar.
+$rPagoPD = wabot_responder('Me encantó! cómo hago para pagar?', $convPD, $cfgPD);
+caso('un "cómo pago?" post-demo recibe los datos, no el aviso pelado',
+    mb_stripos(implode(' ', (array)$rPagoPD), 'Banco Santander') !== false
+    && $rPagoPD !== [(string)$cfgPD['postdemo_derivar']]
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
+
+// Y el que dice algo que el bot no sabe leer sigue recibiendo el aviso.
+$convPDOtro = convNueva();
+$convPDOtro['fase'] = 'postdemo';
+$convPDOtro['tipo'] = 'landing';
+$convPDOtro['precio_dado'] = true;
+$convPDOtro['presentado_ts'] = time() - 3600;
+$convPDOtro['presentado_slug'] = 'midemo';
+caso('y un mensaje que no dice nada sigue derivando con el aviso fijo',
+    wabot_responder('buenas', $convPDOtro, $cfgPD) === [(string)$cfgPD['postdemo_derivar']]
+    && $convPDOtro['fase'] === 'derivado' && $convPDOtro['presentado_confirmado'] === true);
 
 $convDemoPend = convNueva();
 $convDemoPend['fase'] = 'postdemo';
