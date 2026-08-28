@@ -1,5 +1,24 @@
 Options -Indexes
 
+# Solo los .php de esta carpeta son puntos de entrada (webhook, admin, auth,
+# form-lead, seguimiento). Todo lo demás son DATOS y no se sirve por HTTP.
+#
+# bot-config.json estaba descargándose desde gokywebs.com/wabot/bot-config.json
+# sin ninguna protección: adentro van el CBU, el alias, el titular, el CUIT y
+# el token de la Conversions API de Meta, más todo el guion de venta con los
+# precios. Los test-charlas*.json y sus .txt son transcripciones de prueba.
+# (Detectado el 28-ago-2026. El .htaccess de data/ ya bloqueaba esa carpeta,
+# pero estos archivos viven en la raíz de wabot/ y quedaban afuera.)
+<FilesMatch "\.(json|md|txt|jsonl|log|sql|bak|ini|yml|yaml)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 # Los tests son solo para CLI/desarrollo. Exponerlos por HTTP permitía ejecutar
 # suites que antes consumían la misma cuota de Gemini que usa el bot real.
 <FilesMatch "^test(?:-[A-Za-z0-9_-]+)?\.php$">
