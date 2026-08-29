@@ -15,7 +15,11 @@ define('WABOT_FIREBASE_ADMIN_EMAIL', 'pablo.travi95@gmail.com');
 session_set_cookie_params([
     'lifetime' => 30 * 24 * 3600,
     'path'     => '/',
-    'secure'   => !empty($_SERVER['HTTPS']),
+    // Detrás del proxy de Hostinger $_SERVER['HTTPS'] puede venir vacío aunque
+    // el cliente esté en HTTPS: sin esto la cookie de sesión perdía el flag
+    // Secure y podía viajar en claro.
+    'secure'   => !empty($_SERVER['HTTPS'])
+                  || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
     'httponly' => true,
     'samesite' => 'Lax',
 ]);
@@ -56,6 +60,10 @@ if ($code !== 200 || !$user || strtolower($user['email'] ?? '') !== strtolower(W
     echo json_encode(['error' => 'no autorizado']);
     exit;
 }
+
+// El id de sesión se renueva al entrar: si alguien logró fijar uno antes del
+// login (un link con el id, una sesión vieja compartida), acá deja de servir.
+session_regenerate_id(true);
 
 $_SESSION['wabot']       = true;
 $_SESSION['wabot_embed'] = true;

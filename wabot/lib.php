@@ -546,43 +546,20 @@ function wabot_config_ventas(&$cfg) {
         }));
         $cfg['prediseno_link_variantes'] = $limpiasLink ?: $prediseñoLinkVariantesDefault;
     }
-    $listaPrecios = [
-        'landing'       => ['de' => '$200.000', 'a' => '$160.000', 'sena_de' => '$60.000', 'sena_a' => '$50.000'],
-        'institucional' => ['de' => '$250.000', 'a' => '$200.000', 'sena_de' => '$80.000', 'sena_a' => '$60.000'],
-        'inmobiliaria'  => ['de' => '$290.000', 'a' => '$240.000', 'sena_de' => '$80.000', 'sena_a' => '$70.000'],
-        'ecommerce'     => ['de' => '$320.000', 'a' => '$290.000', 'sena_de' => '$90.000', 'sena_a' => '$80.000'],
-        'catalogo'      => ['de' => '$200.000 + $500 por producto', 'a' => '$180.000 + $500 por producto',
-                            'sena_de' => '$60.000', 'sena_a' => '$50.000'],
-        'turnos'        => ['de' => '$250.000', 'a' => '$200.000', 'sena_de' => '$80.000', 'sena_a' => '$60.000'],
-        'elearning'     => ['de' => '$320.000', 'a' => '$290.000', 'sena_de' => '$90.000', 'sena_a' => '$80.000'],
-    ];
-    foreach ($listaPrecios as $tipo => $cambio) {
-        if (!isset($cfg['tipos'][$tipo])) continue;
-        if (trim((string)($cfg['tipos'][$tipo]['precio'] ?? '')) === $cambio['de']) {
-            $cfg['tipos'][$tipo]['precio'] = $cambio['a'];
-        }
-        if (trim((string)($cfg['tipos'][$tipo]['sena'] ?? '')) === $cambio['sena_de']) {
-            $cfg['tipos'][$tipo]['sena'] = $cambio['sena_a'];
-        }
-    }
-    if ((int)($cfg['tipos']['catalogo']['precio_base'] ?? 0) === 200000) {
-        $cfg['tipos']['catalogo']['precio_base'] = 180000;
-    }
-    $senasNuevas = [
-        'landing' => ['de' => '$50.000', 'a' => '$40.000'],
-        'catalogo' => ['de' => '$50.000', 'a' => '$40.000'],
-        'turnos' => ['de' => '$60.000', 'a' => '$40.000'],
-        'institucional' => ['de' => '$60.000', 'a' => '$40.000'],
-        'inmobiliaria' => ['de' => '$70.000', 'a' => '$60.000'],
-        'ecommerce' => ['de' => '$80.000', 'a' => '$60.000'],
-        'elearning' => ['de' => '$80.000', 'a' => '$60.000'],
-    ];
-    foreach ($senasNuevas as $tipo => $cambio) {
-        if (!isset($cfg['tipos'][$tipo])) continue;
-        if (trim((string)($cfg['tipos'][$tipo]['sena'] ?? '')) === $cambio['de']) {
-            $cfg['tipos'][$tipo]['sena'] = $cambio['a'];
-        }
-    }
+    /* RETIRADAS LAS BAJAS DE PRECIO AUTOMÁTICAS (29-ago-2026).
+     *
+     * Acá vivían dos tablas de migración por coincidencia exacta que corrían en
+     * CADA carga de la config: landing $200.000 → $160.000, seña $60.000 →
+     * $50.000 → $40.000, y así con los siete tipos. Sirvieron una vez, cuando
+     * se bajó la lista; producción hace rato tiene los valores nuevos guardados.
+     *
+     * Pero mientras siguieran acá eran una trampa: **Pablo no podía volver a
+     * subir un precio a su valor viejo**. Si ponía la landing en $200.000 desde
+     * el panel, el próximo mensaje la volvía a bajar a $160.000 solo, sin
+     * decirle nada; lo mismo con cada seña. Lo encontró una auditoría externa.
+     *
+     * La lista de precios ES el bot-config.json y nada más. Si hay que cambiar
+     * precios, se cambian en el panel. Ninguna migración vuelve a tocarlos. */
     if (trim((string)($cfg['info']['ejemplos'] ?? '')) === 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales; si me decís de qué rubro sos, te oriento con el que más se parezca.') {
         $cfg['info']['ejemplos'] = 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.';
     }
@@ -1391,6 +1368,17 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         'pago_sin_precio' => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
         'demo_vigencia' => 'La demo queda disponible por 7 días desde que te la mandamos, así tenés tiempo de revisarla bien. Si necesitás más tiempo, avisame y lo vemos.',
+        /* Estas cuatro existían solo como migración por coincidencia exacta, y
+         * una migración así no sirve cuando la clave directamente NO está: en
+         * el config de producción las cuatro estaban vacías, o sea que
+         * "¿ustedes hacen páginas web?", "¿funciona sin internet?", "¿le puedo
+         * poner el pixel?" y "¿cómo sé que no me estafan?" se contestaban con
+         * el comodín del desarrollador. Cada una había nacido de una venta
+         * frenada (21-ago) y habían vuelto a quedar sin respuesta. */
+        'que_hacemos' => 'En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.',
+        'internet' => 'La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web sigue funcionando normalmente (y el panel también, si tu plan lo incluye).',
+        'pixel' => 'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas. Google Analytics y Search Console te los podemos vincular nosotros.',
+        'confianza' => 'Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com/portfolio podés ver los proyectos entregados: son negocios reales y públicos, así que podés escribirles por tu cuenta.',
     ];
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
@@ -5282,6 +5270,54 @@ function wabot_referencia_final($conv, $brief) {
  *
  * Devuelve pares [cliente, pablo], del más nuevo al más viejo.
  */
+/**
+ * Le saca a un ejemplo la identidad del cliente del que salió.
+ *
+ * Los ejemplos de esta función se le muestran a OTROS clientes dentro del
+ * prompt. Hasta el 29-ago solo se enmascaraban teléfonos y mails: el nombre, el
+ * negocio y el link de la demo de un cliente podían aparecer mientras el bot
+ * hablaba con otro. Se reemplazan por marcas neutras, y de paso el ejemplo
+ * sigue sirviendo igual: lo que enseña es el TONO, no de quién se hablaba.
+ *
+ * Agresivo a propósito: reemplazar de más solo hace el ejemplo más vago;
+ * reemplazar de menos filtra el dato de una persona real.
+ */
+function wabot_aprendizaje_anonimizar($texto, $cv) {
+    $t = (string)$texto;
+    foreach ([[trim((string)($cv['nombre_negocio'] ?? '')), '[negocio]'],
+              [trim((string)($cv['nombre'] ?? '')), '[nombre]']] as $par) {
+        list($valor, $marca) = $par;
+        if ($valor === '' || mb_strlen($valor) < 3) continue;
+        $t = str_ireplace($valor, $marca, $t);
+        foreach (preg_split('/\s+/u', $valor) as $palabra) {
+            if (mb_strlen($palabra) < 4) continue;
+            $t = preg_replace('/\b' . preg_quote($palabra, '/') . '\b/iu', $marca, $t);
+        }
+    }
+    $slug = trim((string)($cv['presentado_slug'] ?? ''));
+    if ($slug !== '') $t = str_ireplace($slug, '[demo]', $t);
+    return $t;
+}
+
+/**
+ * ¿Este par se puede mostrar en el prompt de otro cliente?
+ *
+ * Se mira el texto CRUDO, antes de enmascarar nada: si trae un link, una
+ * dirección o un número largo (documento, CBU, expediente), no hay
+ * anonimización que lo deje seguro y el ejemplo simplemente se descarta. Hay
+ * cuarenta charlas de donde sacar otros.
+ */
+function wabot_aprendizaje_par_publicable($cliente, $pablo) {
+    $junto = $cliente . ' ' . $pablo;
+    if (preg_match('#\bhttps?://#i', $junto))                                  return false;
+    if (preg_match('#\bgokywebs\.com/(demo|form)/#i', $junto))                  return false;
+    if (preg_match('#\b[a-z0-9-]+\.(com|ar|net|org|io|app)\b#i', $junto))       return false;
+    if (preg_match('/\b(calle|avenida|\bav\b|ruta|barrio|manzana|lote|piso|depto|departamento|localidad)\b/iu', $junto)) return false;
+    if (preg_match('/\b\d{7,}\b/u', $junto))                                    return false;
+    if (preg_match('/@[\w.]+/u', $junto))                                       return false;
+    return true;
+}
+
 function wabot_aprendizaje_humano($limite = 12) {
     // Sin caché estático a propósito: se llama una vez por mensaje y leer 40
     // archivos chicos no se nota, pero un caché que no se entera de que Pablo
@@ -5305,12 +5341,16 @@ function wabot_aprendizaje_humano($limite = 12) {
             if ($quien !== 'humano')  continue;
             if ($ultimoCliente === '') continue;
 
+            $cli = mb_substr($ultimoCliente, 0, 220);
+            $pab = mb_substr($texto, 0, 320);
+            $ultimoCliente = '';
+            // Este par lo va a leer el modelo mientras atiende a OTRO cliente.
+            if (!wabot_aprendizaje_par_publicable($cli, $pab)) continue;
             $pares[] = [
-                'cliente' => mb_substr($ultimoCliente, 0, 220),
-                'pablo'   => mb_substr($texto, 0, 320),
+                'cliente' => wabot_aprendizaje_anonimizar($cli, $cv),
+                'pablo'   => wabot_aprendizaje_anonimizar($pab, $cv),
                 'ts'      => (int)($t['ts'] ?? 0),
             ];
-            $ultimoCliente = '';
         }
     }
 

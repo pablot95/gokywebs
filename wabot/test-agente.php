@@ -1835,5 +1835,32 @@ caso('el prompt le exige contestar TODAS las preguntas de un audio largo',
 caso('y tiene la clave para "¿trabajan con emprendimientos chicos?"',
     stripos(wabot_agente_sistema(convNueva('AGAUD'), $cfg), 'emprendimientos') !== false);
 @unlink(WABOT_DATA . '/conv/AGAUD.json');
+
+echo "\n— Auditoría externa del 29-ago (agente) —\n";
+
+caso('una clave del enum se distingue de una inventada por el modelo',
+    wabot_info_clave_del_enum('confianza') === true && wabot_info_clave_del_enum('cualquier_cosa') === false);
+
+$cVacia = convNueva('AGVACIA');
+$cfgVacia = $cfg; $cfgVacia['info']['confianza'] = '';
+$rVacia = wabot_agente_ejecutar('consultar_info', ['clave' => 'confianza'], $cVacia, $cfgVacia, 'como se que no me estafan?');
+caso('una clave del enum sin texto no manda un mensaje vacío ni el comodín',
+    !empty($rVacia['error']) && empty($rVacia['texto']));
+@unlink(WABOT_DATA . '/conv/AGVACIA.json');
+
+// Los ejemplos de Pablo viajan al prompt de OTROS clientes: sin links ni @.
+caso('el enmascarado tapa links además de teléfonos y mails',
+    strpos(wabot_agente_texto_seguro('mira instagram.com/juanperez'), '[link]') !== false);
+caso('y tapa los usuarios de redes',
+    strpos(wabot_agente_texto_seguro('escribime a @juanperez'), '[usuario]') !== false);
+
+// El prompt no puede decir dos cosas opuestas sobre lo mismo.
+$sistemaProd = wabot_agente_sistema(convNueva('AGPROMPT'), $cfg);
+caso('el prompt ya no manda a repreguntar por "para mates"',
+    stripos($sistemaProd, 'se pregunta si quiere vender online o solo mostrar') === false);
+caso('y sobre apps dice una sola cosa: que sí se hacen y se cotizan aparte',
+    stripos($sistemaProd, 'no apps nativas') === false
+    && stripos($sistemaProd, "consultar_info('apps')") !== false);
+@unlink(WABOT_DATA . '/conv/AGPROMPT.json');
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

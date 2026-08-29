@@ -18,7 +18,11 @@ ini_set('error_log', WABOT_DATA . '/log/php-errors.log');
 session_set_cookie_params([
     'lifetime' => 30 * 24 * 3600,
     'path'     => '/',
-    'secure'   => !empty($_SERVER['HTTPS']),
+    // Detrás del proxy de Hostinger $_SERVER['HTTPS'] puede venir vacío aunque
+    // el cliente esté en HTTPS: sin esto la cookie de sesión perdía el flag
+    // Secure y podía viajar en claro.
+    'secure'   => !empty($_SERVER['HTTPS'])
+                  || strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https',
     'httponly' => true,
     'samesite' => 'Lax',
 ]);
@@ -218,7 +222,27 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     exit;
 }
 
-/* ── Acciones POST (solo logueado) ── */
+/* ── Acciones POST (solo logueado) ──
+ *
+ * Contra CSRF la defensa principal ya es la cookie SameSite=Lax de arriba: un
+ * POST desde otro sitio no lleva la sesión. Esto es la segunda capa, y no pide
+ * ningún cambio en los formularios: si el navegador manda Origin (lo hace en
+ * todo POST moderno) tiene que ser el nuestro. Un pedido armado a mano puede
+ * omitir el header, pero ése ya no tiene la cookie. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $origen = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    if ($origen !== '') {
+        $hostOrigen = parse_url($origen, PHP_URL_HOST);
+        $hostPropio = preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? ''));
+        if ($hostOrigen === null || strcasecmp((string)$hostOrigen, $hostPropio) !== 0) {
+            wabot_log('csrf_origen', ['origen' => mb_substr($origen, 0, 120), 'accion' => (string)($_POST['accion'] ?? '')]);
+            http_response_code(403);
+            echo 'Origen no permitido.';
+            exit;
+        }
+    }
+}
+
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'])) {
     $a = $_POST['accion'];
 

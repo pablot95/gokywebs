@@ -1377,6 +1377,12 @@ function wabot_texto_pide_retomar_en($texto) {
         if ($d >= 7 && $d <= 365) return $d;
     }
     if (preg_match('/\b(un mes y medio|mes y medio)\b/u', $t))            return 45;
+    if (preg_match('/\b(una|1)\s*semana\b/u', $t)
+        || preg_match('/\b(la|proxima|que viene)\s*semana\b/u', $t)
+        || preg_match('/\bsemana\s*que viene\b/u', $t))                   return 7;
+    if (preg_match('/\b(dos|2)\s*semanas\b/u', $t))                       return 14;
+    if (preg_match('/\b(quince dias|15 dias|una quincena)\b/u', $t))      return 15;
+    if (preg_match('/\b(tres|3)\s*semanas\b/u', $t))                      return 21;
     if (preg_match('/\b(un|1)\s*mes\b/u', $t))                            return 30;
     if (preg_match('/\b(dos|2)\s*meses\b/u', $t))                         return 60;
     if (preg_match('/\b(tres|3)\s*meses\b/u', $t))                        return 90;
@@ -1387,6 +1393,9 @@ function wabot_texto_pide_retomar_en($texto) {
 /** "30 días" dicho como lo diría una persona. */
 function wabot_plazo_humano($dias) {
     $dias = (int)$dias;
+    if ($dias === 7)  return 'una semana';
+    if ($dias === 14) return 'dos semanas';
+    if ($dias === 21) return 'tres semanas';
     if ($dias === 30) return 'un mes';
     if ($dias === 45) return 'un mes y medio';
     if ($dias === 60) return 'dos meses';
@@ -3455,6 +3464,31 @@ function wabot_texto_hosting($conv, $cfg) {
     return trim($base . "\n" . $renovacion);
 }
 
+/**
+ * El monto de la seña no puede faltar, escriba lo que escriba el panel.
+ *
+ * En producción el texto de `info.pago` había quedado en una sola línea —"Se
+ * puede abonar por transferencia o con tarjeta hasta en 12 cuotas con
+ * interés"— sin la seña, sin el saldo y sin los {marcadores}. O sea que a
+ * "¿cómo se paga?" el bot contestaba sin decir cuánto hay que poner para
+ * arrancar. **Ahí nació el 50/50 del 29-ago**: la herramienta le devolvió al
+ * modelo un texto sin ningún monto, y el modelo lo completó inventando "una
+ * seña del 50% y el 50% restante al terminar".
+ *
+ * El texto del panel decide el TONO; los números los pone el código.
+ */
+function wabot_pago_asegurar_sena($texto, $sena) {
+    $t = trim((string)$texto);
+    $sena = trim((string)$sena);
+    if ($sena === '') return $t;
+    if (mb_stripos($t, $sena) !== false) return $t;   // ya lo dice
+
+    $frase = 'Para arrancar se deja una seña de ' . $sena . ' y el saldo al entregar la web.';
+    if ($t === '') return $frase;
+    if (!preg_match('/[.!?]$/u', $t)) $t .= '.';
+    return $t . ' ' . $frase;
+}
+
 function wabot_texto_pago($conv, $cfg) {
     $tipo = $conv['tipo'] ?? '';
     $datosTipo = $cfg['tipos'][$tipo] ?? [];
@@ -3467,20 +3501,21 @@ function wabot_texto_pago($conv, $cfg) {
     if (empty($conv['precio_dado'])) {
         $sinPrecio = trim((string)($cfg['info']['pago_sin_precio'] ?? ''));
         if ($sinPrecio === '') return wabot_texto_pago_generico($cfg);
-        return str_replace('{sena}', $sena, $sinPrecio);
+        return wabot_pago_asegurar_sena(str_replace('{sena}', $sena, $sinPrecio), $sena);
     }
     if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) > 0) {
         $d = wabot_catalogo_total((int)$conv['productos_cantidad'], $cfg);
         $plantillaCat = (string)($cfg['info']['pago_catalogo']
             ?? "El total cotizado es {precio}. Se abona por transferencia, con una seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.");
-        return str_replace(['{precio}', '{sena}'], [wabot_moneda($d['total']), $sena], $plantillaCat);
+        return wabot_pago_asegurar_sena(
+            str_replace(['{precio}', '{sena}'], [wabot_moneda($d['total']), $sena], $plantillaCat), $sena);
     }
     $cuotas = $datosTipo['cuotas'] ?? [];
-    return str_replace(
+    return wabot_pago_asegurar_sena(str_replace(
         ['{precio}', '{sena}', '{cuotas_12}', '{cuotas_6}', '{cuotas_3}'],
         [(string)($datosTipo['precio'] ?? ''), $sena, $cuotas['12'] ?? '', $cuotas['6'] ?? '', $cuotas['3'] ?? ''],
         (string)($cfg['info']['pago'] ?? '')
-    );
+    ), $sena);
 }
 
 /** Elige una variante estable por conversación; precios y links siguen exactos. */

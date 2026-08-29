@@ -830,7 +830,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     'tipo' => [
                         'type' => 'string',
                         'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
-                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace, nunca uses esta herramienta con eso solo. También es el default para instituciones, colegios, ONGs, fundaciones o clubes que no pidieron nada especial: institucional NO se ofrece de entrada. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: NUNCA la ofrezcas vos solo porque es un colegio, ONG, fundación o club — esos van a landing. Usala SOLO si el cliente pidió explícitamente algo más completo, con varias páginas o secciones (historia, autoridades, novedades). Cortinas, toldos, aberturas, muebles y otros trabajos/productos a medida requieren confirmar antes si quiere mostrar trabajos, catálogo o venta online. "Distribución" o "distribuidora" sola, sin decir qué distribuye, es AMBIGUA entre landing (reparto/logística como servicio) y ecommerce (revende productos a comercios o al público): preguntá primero qué distribuye y a quién antes de elegir, igual que con "soy profesional". ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos, COBRANDO por ellos. Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos NO la vuelve elearning: si no dijo que los cobra ni que quiere venderlos online, es landing.',
+                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace, nunca uses esta herramienta con eso solo. También es el default para instituciones, colegios, ONGs, fundaciones o clubes que no pidieron nada especial: institucional NO se ofrece de entrada. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: NUNCA la ofrezcas vos solo porque es un colegio, ONG, fundación o club — esos van a landing. Usala SOLO si el cliente pidió explícitamente algo más completo, con varias páginas o secciones (historia, autoridades, novedades). Cortinas, toldos, aberturas o muebles A MEDIDA —fabricados por pedido, con las medidas del cliente— no son stock: ahí sí preguntá si quiere mostrar los trabajos o vender online. Pero si vende esos mismos productos ya hechos, es un comercio y va ecommerce sin preguntar nada. "Distribución" o "distribuidora" sola, sin decir qué distribuye, es AMBIGUA entre landing (reparto/logística como servicio) y ecommerce (revende productos a comercios o al público): preguntá primero qué distribuye y a quién antes de elegir, igual que con "soy profesional". ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos, COBRANDO por ellos. Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos NO la vuelve elearning: si no dijo que los cobra ni que quiere venderlos online, es landing.',
                     ],
                     'productos' => [
                         'type' => 'integer',
@@ -940,6 +940,28 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             ],
         ],
     ];
+}
+
+/**
+ * ¿Es una clave que el bot PROMETE saber contestar?
+ *
+ * Se lee del enum de la propia herramienta, así no hay dos listas que puedan
+ * divergir. Sirve para distinguir dos cosas que se veían iguales: una clave
+ * inventada por el modelo (ahí el comodín está bien) de una clave del enum que
+ * quedó sin texto en la config (ahí el comodín es un bug, y en producción
+ * estaban así que_hacemos, internet, pixel y confianza).
+ */
+function wabot_info_clave_del_enum($clave) {
+    static $enum = null;
+    if ($enum === null) {
+        $enum = [];
+        foreach (wabot_agente_tools() as $decl) {
+            if (($decl['name'] ?? '') !== 'consultar_info') continue;
+            $enum = (array)($decl['parameters']['properties']['clave']['enum'] ?? []);
+            break;
+        }
+    }
+    return in_array((string)$clave, $enum, true);
 }
 
 /** Ejecuta una herramienta y devuelve lo que ve el modelo. */
@@ -1310,7 +1332,17 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     'nota' => 'Contestá con esto tal cual. No inventes ningún plan de cuotas ni descuento, y no agregues números que no estén acá.',
                 ], $conv, $cfg);
             }
-            $txt = $cfg['info'][$clave] ?? $cfg['info']['otra'];
+            /* Una clave sin texto en la config no puede salir como un mensaje
+             * vacío ni caer de callada en el comodín del desarrollador: eso es
+             * justo lo que hace parecer que el bot no sabe lo que vende. Queda
+             * en el log con el nombre de la clave, para poder cargarla. */
+            $txt = trim((string)($cfg['info'][$clave] ?? ''));
+            if ($txt === '' && wabot_info_clave_del_enum($clave)) {
+                wabot_log('info_sin_texto', ['clave' => $clave, 'tel' => $conv['tel'] ?? '']);
+                return ['error' => 'La clave "' . $clave . '" no tiene ningún texto cargado en la configuración.',
+                        'nota'  => 'No mandes un mensaje vacío. Si otra clave contesta lo que preguntó, usá esa. Si no la hay, decile que ese detalle se lo confirma el desarrollador cuando le escriba, en UNA línea.'];
+            }
+            if ($txt === '') $txt = (string)($cfg['info']['otra'] ?? '');
             return wabot_agente_agregar_cta([
                 'texto' => $txt,
                 'nota' => 'Contestá con esta información y nada más.',
@@ -1885,7 +1917,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica que primero va la demo gratis, después la seña para el desarrollo y el saldo al entregar. **No digas el monto de la seña ahí**: si quiere el número, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
 - No prometas secciones ni funcionalidades puntuales (blog, reservas, idiomas, integraciones) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma Pablo.
-- Si pide explícitamente una APP nativa para Android o iPhone (no una web), aclará que hacemos páginas y sistemas web, no apps nativas, y que una web funciona bien desde el celular; si insiste en que tiene que ser una app, decí que eso lo confirma el desarrollador. No seguas el desempate ni cotices como si la app ya fuera parte del servicio.
+- Si pide explícitamente una APP para Android o iPhone (no una web), contestá con consultar_info('apps') y derivá en el mismo turno, como dice la regla de arriba: la app SÍ la hacemos, pero se cotiza aparte según lo que tenga que hacer. No sigas el desempate de la web, no cotices una web como si fuera la app, y nunca inventes un precio de app.
 - Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual ni el adicional por web bilingüe: si el cliente no pregunta, no existen. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó.
 - "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices ecommerce o turnos solo porque pidió "la más completa": eso exige la confirmación del desempate igual.
 - Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el total, nunca las cuotas solas.
@@ -1926,7 +1958,7 @@ Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.
 - "Sos un bot?" seguido de "quiero hablar con una persona real" son DOS cosas, no una: contestá con consultar_info('soy_bot') Y ADEMÁS llamá a derivar con causa pide_humano en el mismo turno. No dejes el pedido de persona sin resolver solo porque ya le contestaste la pregunta de si sos un bot.
-- Una frase corta o ambigua como "para mates" NO se deriva: se pregunta si quiere vender online o solo mostrar/contacto.
+- Una frase corta como "para mates" NO se deriva y TAMPOCO se repregunta: alcanza para cotizar. Es un comercio, así que va tienda online (ver COMERCIOS: SIEMPRE TIENDA ONLINE más arriba, que es la regla que manda).
 - Ante ambigüedad, la primera llamada a derivar será rechazada y te obliga a preguntar. Hacen falta dos respuestas posteriores distintas que sigan sin aclarar para habilitar el handoff. No repitas la tool dos veces en la misma vuelta.
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.
 
@@ -2063,6 +2095,11 @@ function wabot_agente_texto_seguro($texto) {
     $t = trim(preg_replace('/\s+/u', ' ', (string)$texto));
     $t = preg_replace('/\+?\d[\d\s.\-()]{7,}\d/', '[número]', $t);
     $t = preg_replace('/[\w.+\-]+@[\w.\-]+\.\w{2,}/u', '[mail]', $t);
+    // Un link identifica al cliente del que salió el ejemplo tanto como su
+    // teléfono: la demo de otro, su Instagram, su web actual.
+    $t = preg_replace('#\b(?:https?://|www\.)\S+#iu', '[link]', $t);
+    $t = preg_replace('#\b[a-z0-9][a-z0-9\-]*\.(?:com|net|org|ar|io|app|co|es|shop|store|online)(?:\.[a-z]{2,3})?(?:/\S*)?#iu', '[link]', $t);
+    $t = preg_replace('/(?<![\w.])@[\w.]{2,}/u', '[usuario]', $t);
     return json_encode($t, JSON_UNESCAPED_UNICODE);
 }
 

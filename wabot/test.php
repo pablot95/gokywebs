@@ -5593,5 +5593,70 @@ caso('el texto de precio ya no dice "pago único"',
     stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'pago único') === false);
 caso('y sí aclara que no hay abono mensual',
     stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'sin abono mensual') !== false);
+
+echo "— Auditoría externa del 29-ago: lo que resultó real —\n";
+
+/* La seña la garantiza el CÓDIGO, no el texto del panel. En producción
+ * info.pago había quedado en una línea sin la seña, sin el saldo y sin los
+ * marcadores: ahí nació el 50/50 que inventó el modelo. */
+$cfgPagoPelado = $cfg;
+$cfgPagoPelado['info']['pago'] = 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés';
+$pagoPelado = wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfgPagoPelado);
+caso('aunque el texto del panel se quede sin la seña, la respuesta la trae igual',
+    strpos($pagoPelado, 'seña de ' . $cfg['tipos']['landing']['sena']) !== false);
+caso('y no la repite si el texto ya la decía',
+    substr_count(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), 'seña de ') === 1);
+
+/* Las bajas de precio automáticas se retiraron: impedían volver a subir un
+ * precio desde el panel. */
+$cfgSubido = ['tipos' => ['landing' => ['label' => 'Landing', 'precio' => '$200.000', 'sena' => '$60.000']]];
+wabot_config_ventas($cfgSubido);
+caso('subir la landing a $200.000 desde el panel ya no se revierte solo',
+    $cfgSubido['tipos']['landing']['precio'] === '$200.000');
+caso('y la seña de $60.000 tampoco',
+    $cfgSubido['tipos']['landing']['sena'] === '$60.000');
+
+/* Cuatro claves que el bot promete contestar estaban vacías en producción y
+ * caían en el comodín del desarrollador. */
+foreach (['que_hacemos', 'internet', 'pixel', 'confianza'] as $claveInfo) {
+    caso("info.$claveInfo tiene texto propio, no el comodín",
+        trim((string)($cfg['info'][$claveInfo] ?? '')) !== ''
+        && $cfg['info'][$claveInfo] !== $cfg['info']['otra']);
+}
+
+/* Los ejemplos de Pablo se le muestran a OTROS clientes: no pueden llevar el
+ * nombre, el negocio ni la demo del cliente del que salieron. */
+$cvFuente = ['nombre' => 'Dra Yesika Gascon', 'nombre_negocio' => 'Dragascon.skin',
+             'presentado_slug' => 'dragasconskin'];
+$anon = wabot_aprendizaje_anonimizar('Hola Yesika, la demo de Dragascon.skin ya está en dragasconskin', $cvFuente);
+caso('el nombre del cliente no viaja al prompt de otro',
+    stripos($anon, 'yesika') === false && stripos($anon, 'gascon') === false);
+caso('ni el nombre de su negocio ni el slug de su demo',
+    stripos($anon, 'dragascon') === false);
+caso('un par con un link no se publica como ejemplo',
+    wabot_aprendizaje_par_publicable('mi web es mimarca.com.ar', 'dale, la miro') === false);
+caso('ni uno con una dirección',
+    wabot_aprendizaje_par_publicable('estamos en la calle Mitre 340', 'perfecto') === false);
+caso('ni uno con un número largo (documento, CBU, expediente)',
+    wabot_aprendizaje_par_publicable('mi cuit es 20391482943', 'gracias') === false);
+caso('pero un par normal sí sirve de ejemplo',
+    wabot_aprendizaje_par_publicable('me parece caro', 'es pago unico, sin abono mensual') === true);
+
+/* Fechas para retomar: antes solo entendía días y meses. */
+caso('"la semana que viene" pide retomar en 7 días',
+    wabot_texto_pide_retomar_en('escribime la semana que viene') === 7);
+caso('"en dos semanas" en 14',
+    wabot_texto_pide_retomar_en('contactame en dos semanas') === 14);
+caso('y el plazo se dice como corresponde',
+    wabot_plazo_humano(7) === 'una semana' && wabot_plazo_humano(14) === 'dos semanas');
+
+/* El reset se lleva todo el estado de la sesión anterior. */
+$cViejo = ['ultimo_ts' => time() - 30 * 86400, 'retomar_ts' => time() + 40 * 86400,
+           'ininteligibles' => 2, 'pitch_otra_idea_dicha' => true,
+           'pitch_otra_idea_2_dicha' => true, 'transcript' => []];
+wabot_conv_reset_si_vieja($cViejo, $cfg);
+caso('el reset limpia retomar_ts y los contadores nuevos',
+    (int)$cViejo['retomar_ts'] === 0 && (int)$cViejo['ininteligibles'] === 0
+    && empty($cViejo['pitch_otra_idea_dicha']) && empty($cViejo['pitch_otra_idea_2_dicha']));
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

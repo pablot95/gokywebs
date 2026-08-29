@@ -281,8 +281,15 @@ function wabot_procesar_entrante($ev, $cfg) {
                     : (string)$cfg['no_texto'];
                 if (!$conv['no_texto_avisado'] && $conv['fase'] !== 'derivado') {
                     $conv['no_texto_avisado'] = true;
-                    wabot_enviar($conv, $aviso);
-                    wabot_conv_transcript($conv, 'bot', $aviso);
+                    // Al transcript SOLO si salió de verdad: si Meta lo rechaza,
+                    // anotarlo igual deja el chat diciendo que le contestamos
+                    // algo que el cliente nunca recibió.
+                    if (wabot_enviar($conv, $aviso)) {
+                        wabot_conv_transcript($conv, 'bot', $aviso);
+                    } else {
+                        $conv['no_texto_avisado'] = false;
+                        $conv['handoff_pendiente'] = true;
+                    }
                 } else {
                     /* Ya se lo avisamos una vez, así que no se repite — pero
                      * tampoco puede quedar en la nada. La Dra. Gascón mandó un
