@@ -1584,28 +1584,12 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
                 'nota' => 'Falta un desempate obligatorio antes de cotizar. Hacé esta pregunta tal cual y esperá la respuesta.'];
     };
 
-    /* PRODUCTOS: mostrar y que te escriban, o vender y cobrar desde la web.
-     *
-     * Son $180.000 contra $290.000 y hasta el 29-ago se decidía solo. Ecommerce
-     * era el único tipo sin ningún control —"Cerrajería, Herrajes" y "un
-     * emprendimiento de comida vegana" se llevaron el más caro de una— y
-     * catálogo sin evidencia se ASCENDÍA a ecommerce, o sea que la duda
-     * también terminaba en el precio más alto. Héctor lo dijo después de
-     * recibirlo: "es un lindo número, no está a mi alcance", cuando lo que
-     * quería era mostrar lo que ofrece y vincularlo a sus redes (29-ago).
-     * Vender online lo dice el cliente; no se supone por el rubro. */
-    $desdeCatalogo = false;
+    /* Si vende productos, es ecommerce y se cotiza derecho: no se le pregunta
+     * si prefiere vender o solo mostrar (Pablo, 29-ago, explícito). Catálogo
+     * solo se sostiene si el cliente DIJO que no quiere cobrar online. */
     if ($tipo === 'catalogo') {
         $evidencia = preg_match('/\b(catalogo|solo mostrar|mostrar los productos|mostrar mis productos|que me consulten|me escriban|consulten por whatsapp|sin cobro|sin carrito|no quiero cobrar|no vendo online)\b/u', wabot_normalizar_frase($ctx));
-        if ($evidencia) return null;
-        $tipo = 'ecommerce';
-        $desdeCatalogo = true;
-    }
-    if ($tipo === 'ecommerce') {
-        $evidencia = wabot_desempate_por_palabras('desempate_comercio', $ctx) === 'comercio_vender'
-            || preg_match('/\b(tienda online|tienda virtual|ecommerce|e commerce|carrito|cobro online|cobrar online|cobrar desde la web|vender online|pagos online|pagar desde la web|comprar desde la web|comprar online|mercado pago)\b/u', wabot_normalizar_frase($ctx));
-        if (!$evidencia) return $pregunta('desempate_comercio', 'desempate_comercio');
-        return $desdeCatalogo ? ['tipo' => 'ecommerce'] : null;
+        if (!$evidencia) return ['tipo' => 'ecommerce'];
     }
     if ($tipo === 'turnos') {
         $evidencia = wabot_desempate_por_palabras('desempate_turnos', $ctx) === 'turnos_si';

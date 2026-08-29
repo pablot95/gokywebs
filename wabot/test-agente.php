@@ -1132,11 +1132,8 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Tengo un negocio y quiero una pagina'
 $c['transcript'][] = ['q'=>'cliente','t'=>'vendo ropa de bebe mas que nada','ts'=>time()-10];
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-/* Desde el 29-ago vender productos NO alcanza para cotizar el tipo más caro:
- * "vendo ropa de bebé" no dice si quiere cobrar desde la web o recibir los
- * pedidos por WhatsApp, y entre las dos hay $110.000 de diferencia. */
-caso('vender ropa sin decir cómo cobra ya no cotiza tienda online: pregunta',
-    !empty($r['exacta']) && $r['texto'] === $cfg['desempate_comercio'] && $c['tipo'] === null);
+caso('vender ropa cotiza tienda online derecho, sin preguntar carrito vs WhatsApp',
+    empty($r['exacta']) && $c['tipo'] === 'ecommerce' && !empty($c['precio_dado']));
 
 $c = convNueva('AGGUARD2');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero una tienda online con carrito y cobro online para mi ropa','ts'=>time()-10];
@@ -1381,17 +1378,12 @@ echo "— Guards nuevos de los chats del 21-ago —\n";
 $cM = ['tel' => 'TM', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
 caso('"botón de pago y pedido integrado" ya es evidencia de ecommerce: no repregunta',
     wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $cM, $cfg) === null);
-// El rubro solo dice QUÉ vende, no CÓMO quiere cobrarlo: eso se pregunta.
-$cM2 = ['tel' => 'TM2', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
-$rPoll = wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM2, $cfg);
-caso('una polleria a secas no cotiza tienda online: pregunta cómo quiere vender',
-    !empty($rPoll['exacta']) && $rPoll['texto'] === $cfg['desempate_comercio']);
-$cM3 = ['tel' => 'TM3', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
-$rCat = wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM3, $cfg);
-caso('y pedir catálogo sin evidencia tampoco asciende solo al precio más caro',
-    !empty($rCat['exacta']) && $rCat['texto'] === $cfg['desempate_comercio']);
+caso('y una polleria también cotiza tienda online sin pregunta previa',
+    wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) === null);
+caso('pedir catálogo sin decir que NO quiere cobrar online cae en ecommerce',
+    wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM, $cfg) === ['tipo' => 'ecommerce']);
 caso('pero si dijo que NO quiere cobrar online, catálogo se cotiza derecho',
-    wabot_agente_desempate_pendiente('catalogo', 'quiero solo mostrar los productos y que me escriban por whatsapp', $cM3, $cfg) === null);
+    wabot_agente_desempate_pendiente('catalogo', 'quiero solo mostrar los productos y que me escriban por whatsapp', $cM, $cfg) === null);
 caso('pero si dice explícitamente que no quiere cobrar online, se respeta el catálogo',
     wabot_agente_desempate_pendiente('catalogo', 'solo mostrar los productos, que me consulten por whatsapp', $cM, $cfg) === null);
 
