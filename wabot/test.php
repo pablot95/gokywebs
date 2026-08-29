@@ -5162,10 +5162,44 @@ caso('una consulta derivada → SL', wabot_conv_es_sl($slDerivado) === true);
 // Prediseño cerrado, esperando que le armen la demo.
 caso('prediseño cerrado con el cliente escribiendo → SL', wabot_conv_es_sl($slBase) === true);
 
-// Ya lo abrio: deja de estar sin leer.
+/* Pablo, 28-ago: "si yo abro esa conversación, no contesto y la saco, se
+ * pierde. Deberían permanecer, incluso si yo contesto, que pase a otra
+ * categoría (pero que esta categoría se pueda combinar con las otras)".
+ *
+ * Abrir el chat actualiza panel_visto_ts, así que compararse contra ESE
+ * timestamp era el bug: bastaba con mirarlo, sin contestar nada, para que
+ * desapareciera de la lista de pendientes. */
 $slVisto = $slDemo;
 $slVisto['panel_visto_ts'] = $ahoraSL2 + 1;
-caso('si ya abrio el chat, deja de ser SL', wabot_conv_es_sl($slVisto) === false);
+caso('abrir el chat sin contestar NO lo saca de SL', wabot_conv_es_sl($slVisto) === true);
+
+// Contestar SÍ lo saca de SL — y ahí es donde entra RTA.
+$slRespondido = $slVisto;
+$slRespondido['transcript'][] = ['q' => 'humano', 't' => 'Dale, ya te lo agrego', 'ts' => $ahoraSL2 + 2];
+caso('pero contestar a mano sí lo saca de SL', wabot_conv_es_sl($slRespondido) === false);
+caso('y pasa a RTA: ya contestaste, espera al cliente', wabot_conv_rta($slRespondido) === true);
+
+// Si el cliente vuelve a escribir, vuelve solo a SL y deja de ser RTA.
+$slResponde2 = $slRespondido;
+$slResponde2['transcript'][] = ['q' => 'cliente', 't' => 'Genial, y el logo?', 'ts' => $ahoraSL2 + 3];
+caso('si el cliente contesta de nuevo, vuelve a SL', wabot_conv_es_sl($slResponde2) === true);
+caso('y deja de ser RTA', wabot_conv_rta($slResponde2) === false);
+
+// RTA no aplica a una charla que el bot lleva solo: ahí un mensaje humano no
+// tiene el mismo peso (no es "Pablo destrabando algo que el bot no podía").
+$slCharlaHumano = $slCharla;
+$slCharlaHumano['transcript'][] = ['q' => 'humano', 't' => 'te contesto yo esta', 'ts' => $ahoraSL2 + 1];
+caso('un chat que lleva el bot no es RTA aunque Pablo escriba algo suelto',
+    wabot_conv_rta($slCharlaHumano) === false);
+
+// Un chat archivado tampoco es RTA: Pablo ya lo sacó de la vista de trabajo.
+caso('un chat archivado nunca es RTA', wabot_conv_rta($slArchivado) === false);
+
+// El derivado también entra en RTA una vez contestado.
+$slDerivadoResp = $slDerivado;
+$slDerivadoResp['transcript'][] = ['q' => 'humano', 't' => 'Ya te explico como seguimos', 'ts' => $ahoraSL2 + 1];
+caso('una derivación contestada pasa a RTA', wabot_conv_rta($slDerivadoResp) === true);
+caso('y deja de ser SL', wabot_conv_es_sl($slDerivadoResp) === false);
 
 // El bot la esta llevando solo: no hay nada que contestar.
 $slCharla = [

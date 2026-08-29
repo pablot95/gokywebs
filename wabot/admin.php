@@ -935,11 +935,11 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     font:inherit; font-size:12px; font-weight:700; letter-spacing:.03em; cursor:pointer; }
 .conv-chip:hover { border-color:var(--line-fuerte); color:var(--tx); }
 .conv-chip.on { background:var(--info); border-color:var(--info); color:#0b1424; }
-.conv-chip--sl.on { background:var(--info); border-color:var(--info); }
+.conv-chip--sl.on, .conv-chip--rta.on { background:var(--info); border-color:var(--info); }
 .conv-chip-n { min-width:17px; padding:0 5px; border-radius:99px; background:var(--info); color:#0b1424;
     font-size:10.5px; font-weight:800; text-align:center; }
 .conv-chip.on .conv-chip-n { background:rgb(0 0 0 / .22); color:#0b1424; }
-.conv-chip--sl:not(.tiene) .conv-chip-n { background:var(--card); color:var(--tenue); }
+.conv-chip--sl:not(.tiene) .conv-chip-n, .conv-chip--rta:not(.tiene) .conv-chip-n { background:var(--card); color:var(--tenue); }
 .conv-chips-mas { position:relative; margin-left:auto; }
 .conv-chip--mas { padding:0 9px; font-size:11px; }
 .conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
@@ -968,6 +968,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     font-weight:800; letter-spacing:.04em; vertical-align:middle; background:var(--card-2); color:var(--dim); }
 .estado-tag--de { background:var(--info-tenue); color:var(--info); }
 .estado-tag--d { background:var(--warn-tenue); color:var(--warn); }
+.estado-tag--rta { background:var(--ac-tenue); color:var(--ac); }
 .estado-tag--cod { background:rgba(255,255,255,.07); color:var(--dim); letter-spacing:.06em; }
 .conv-item-globo { min-width:19px; height:19px; padding:0 6px; border-radius:99px; background:var(--info);
     color:#0b1424; font-size:11px; font-weight:800; display:inline-flex; align-items:center;
@@ -1845,6 +1846,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">SL <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
                         <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
+                        <button type="button" class="conv-chip conv-chip--rta" data-grupo="rta" title="Ya le contestaste vos a mano: queda esperando al cliente.">RTA <span class="conv-chip-n" id="cuentaRta">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
                         <button type="button" class="conv-chip" data-grupo="interesado_chat" title="Vieron precio + todas las demás conversaciones: la charla que todavía no llegó a nada concreto.">VP · T</button>
                         <div class="conv-chips-mas">
@@ -2007,6 +2009,10 @@ body.embed { min-height: 0; }
         let filtrosGuardados = [];
         try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
         const filtrosActivos = new Set(Array.isArray(filtrosGuardados) ? filtrosGuardados : []);
+        // SL y RTA son "combinables": no reemplazan un filtro de grupo (Demos,
+        // Presentados…), se le suman. Elegir "Demos" + "RTA" muestra las demos
+        // MÁS todo lo que ya respondiste, no la intersección de las dos cosas.
+        const FILTROS_COMBINABLES = new Set(['no_leidos', 'rta']);
         let itemsCache = [];
         let sincronizado = false;
         let firmaLista = '';
@@ -2024,13 +2030,13 @@ body.embed { min-height: 0; }
         }
 
         function alternarFiltro(grupo) {
-            if (grupo === 'no_leidos') {
+            if (FILTROS_COMBINABLES.has(grupo)) {
                 if (filtrosActivos.has(grupo)) filtrosActivos.delete(grupo);
                 else filtrosActivos.add(grupo);
             } else if (filtrosActivos.has(grupo)) {
                 filtrosActivos.delete(grupo);
             } else {
-                for (const f of [...filtrosActivos]) if (f !== 'no_leidos') filtrosActivos.delete(f);
+                for (const f of [...filtrosActivos]) if (!FILTROS_COMBINABLES.has(f)) filtrosActivos.delete(f);
                 filtrosActivos.add(grupo);
             }
             try { localStorage.setItem('wabotFiltros', JSON.stringify([...filtrosActivos])); } catch (e) {}
@@ -2099,6 +2105,11 @@ body.embed { min-height: 0; }
             return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !!it.con_interes;
         }
 
+        // Resuelto en el server (wabot_conv_rta): mismo criterio en todos lados.
+        function esRTA(it) {
+            return !!it.rta;
+        }
+
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'dei') return esDEI(it);
@@ -2110,14 +2121,20 @@ body.embed { min-height: 0; }
                 const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 return g === 'interesado' || g === 'chat';
             }
+            if (filtro === 'rta') return esRTA(it);
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
         function entraEnGrupoActivo(it) {
-            const grupoFiltro = [...filtrosActivos].find(f => f !== 'no_leidos');
+            const grupoFiltro = [...filtrosActivos].find(f => !FILTROS_COMBINABLES.has(f));
             const slActivo = filtrosActivos.has('no_leidos');
-            if (grupoFiltro) return cumpleFiltro(it, grupoFiltro) || (slActivo && esNoLeido(it));
-            if (slActivo) return esNoLeido(it);
+            const rtaActivo = filtrosActivos.has('rta');
+            if (grupoFiltro) {
+                return cumpleFiltro(it, grupoFiltro)
+                    || (slActivo && esNoLeido(it))
+                    || (rtaActivo && esRTA(it));
+            }
+            if (slActivo || rtaActivo) return (slActivo && esNoLeido(it)) || (rtaActivo && esRTA(it));
             return GRUPOS_POR_DEFECTO.includes(it.grupo);
         }
 
@@ -2197,7 +2214,7 @@ body.embed { min-height: 0; }
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
@@ -2205,6 +2222,7 @@ body.embed { min-height: 0; }
                 const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
+                if (esRTA(it)) cuentas.rta++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
                 if (!buscandoGeneral && fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
@@ -2247,6 +2265,13 @@ body.embed { min-height: 0; }
                     tag.textContent = etiqueta.txt;
                     tag.title = etiqueta.tit;
                     nombreBox.appendChild(tag);
+                }
+                if (esRTA(it)) {
+                    const tagRta = document.createElement('span');
+                    tagRta.className = 'estado-tag estado-tag--rta';
+                    tagRta.textContent = 'RTA';
+                    tagRta.title = 'Ya le contestaste vos a mano: queda esperando al cliente.';
+                    nombreBox.appendChild(tagRta);
                 }
                 if (it.codigo) {
                     const cod = document.createElement('span');
@@ -2322,8 +2347,11 @@ body.embed { min-height: 0; }
 
             const elSinLeer = document.getElementById('cuentaNoLeidos');
             if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
+            const elRta = document.getElementById('cuentaRta');
+            if (elRta) elRta.textContent = cuentas.rta ?? 0;
             for (const b of navBtns) {
                 if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
+                if (b.dataset.grupo === 'rta') b.classList.toggle('tiene', (cuentas.rta ?? 0) > 0);
             }
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;

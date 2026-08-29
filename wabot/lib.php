@@ -3637,6 +3637,7 @@ function wabot_lista_items() {
             // Resuelto en el server: el chip y la notificación push tienen
             // que estar de acuerdo siempre (ver wabot_conv_es_sl).
             'sl' => wabot_conv_es_sl($cv),
+            'rta' => wabot_conv_rta($cv),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -3766,11 +3767,42 @@ function wabot_conv_es_sl($cv) {
     if ($grupo === 'archivado') return false;
 
     $leTocaAPablo = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
-        || wabot_conv_espera_respuesta($cv)
+        || wabot_conv_bot_inactivo($cv)
         || !empty($cv['handoff_pendiente']);
     if (!$leTocaAPablo) return false;
 
-    return wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0);
+    /* Pablo, 28-ago: "si yo abro esa conversación, no contesto y la saco, se
+     * pierde. Deberían permanecer". El criterio correcto no es si Pablo VIO el
+     * chat (panel_visto_ts) sino si alguien —bot o humano— le CONTESTÓ al
+     * cliente: mientras el último mensaje del transcript siga siendo suyo,
+     * sigue pendiente, lo haya abierto o no.
+     */
+    $ult = end($cv['transcript']);
+    return (bool)$ult && ($ult['q'] ?? '') === 'cliente';
+}
+
+/**
+ * "RTA": Pablo ya contestó a mano y la conversación queda esperando al
+ * cliente. Es el otro lado de SL —mismo universo de "le toca a él", pero acá
+ * el último mensaje ya es una respuesta suya— así que se pueden combinar con
+ * el resto de los filtros (DE, DEI, D…) exactamente igual que SL: uno marca lo
+ * que falta contestar, el otro lo que ya se contestó y espera al cliente.
+ *
+ * Si el cliente vuelve a escribir después, el último mensaje deja de ser
+ * 'humano' y la conversación vuelve sola a SL: no hace falta ningún flag que
+ * limpiar a mano.
+ */
+function wabot_conv_rta($cv) {
+    $grupo = wabot_conv_grupo($cv);
+    if ($grupo === 'archivado') return false;
+
+    $enSuTerreno = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
+        || wabot_conv_bot_inactivo($cv)
+        || !empty($cv['handoff_pendiente']);
+    if (!$enSuTerreno) return false;
+
+    $ult = end($cv['transcript']);
+    return (bool)$ult && ($ult['q'] ?? '') === 'humano';
 }
 
 function wabot_conv_sin_leer_cuenta($cv) {
@@ -3784,13 +3816,18 @@ function wabot_conv_sin_leer_cuenta($cv) {
 }
 
 /** El cliente escribió y el bot no le va a contestar: lo tiene que tomar Pablo. */
+/** El bot dejó de llevar esta conversación: apagado, pausado, o ya derivó. */
+function wabot_conv_bot_inactivo($cv) {
+    return !empty($cv['bot_off'])
+        || (int)($cv['pausado_hasta'] ?? 0) > time()
+        || ($cv['fase'] ?? '') === 'derivado';
+}
+
 function wabot_conv_espera_respuesta($cv) {
     if (!empty($cv['handoff_pendiente'])) return true;
     $ult = end($cv['transcript']);
     if (!$ult || ($ult['q'] ?? '') !== 'cliente') return false;
-    return !empty($cv['bot_off'])
-        || (int)($cv['pausado_hasta'] ?? 0) > time()
-        || ($cv['fase'] ?? '') === 'derivado';
+    return wabot_conv_bot_inactivo($cv);
 }
 
 /**
