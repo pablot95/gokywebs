@@ -3075,6 +3075,14 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['aclaracion_ultimo_hash'] = null;
     $conv['nombre_usado'] = false;
     $conv['archivado'] = false;
+    /* Todo esto vivía más allá del reset y arrastraba la sesión vieja a la
+     * nueva. El peor era retomar_ts: el que había pedido "contactame en dos
+     * meses" y volvía a los diez días con otra consulta seguía con el
+     * seguimiento bloqueado cincuenta días más. */
+    $conv['retomar_ts'] = 0;
+    $conv['ininteligibles'] = 0;
+    $conv['pitch_otra_idea_dicha'] = false;
+    $conv['pitch_otra_idea_2_dicha'] = false;
     $conv['session_id'] = wabot_session_id_nuevo(wabot_conversation_key($conv), $ahora);
     $conv['session_started_ts'] = $ahora;
     $conv['ultimo_ts'] = 0;
