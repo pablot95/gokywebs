@@ -606,7 +606,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'envios', 'como_funciona_tienda', 'que_incluye', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -1003,6 +1003,15 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     $clave = $rescatada;
                 }
             }
+            /* Y si la clave es angosta y el cliente nunca habló del tema, no
+             * se contesta: es una pregunta que no existe. S. Marcela recibió el
+             * adicional del bilingüe sin haber preguntado por idiomas (28-ago). */
+            if (!wabot_info_clave_tiene_rastro($clave, $mensaje, $conv)) {
+                return [
+                    'error' => 'El cliente nunca preguntó por eso: la clave "' . $clave . '" no tiene ningún rastro en lo que escribió.',
+                    'nota'  => 'No contestes una pregunta que no hizo. Releé su último mensaje y contestá eso; si no pregunta nada, no uses consultar_info.',
+                ];
+            }
             // "¿El dominio viene incluido o se paga aparte?" pregunta por el
             // COSTO, no por la titularidad. El modelo confundía las dos y la
             // respuesta de "queda a tu nombre" desconcertaba al cliente (caso
@@ -1168,6 +1177,15 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             ];
             if (!isset($mapa[$tipo]) || empty($cfg[$mapa[$tipo]])) {
                 return ['error' => 'Objeción desconocida.'];
+            }
+            /* El texto de ya_tiene_web arranca pidiéndole el link de su página
+             * actual. A Overlord Magazine, que acababa de explicar en un audio
+             * que no tenía ninguna, se lo mandó igual (28-ago). */
+            if ($tipo === 'ya_tiene_web' && wabot_texto_dice_sin_web(wabot_ultimo_texto_cliente($conv))) {
+                return [
+                    'error' => 'El cliente dijo que NO tiene página: esta objeción no aplica.',
+                    'nota' => 'No le pidas el link de una página que acaba de decir que no existe. Seguí con lo que te contó del proyecto.',
+                ];
             }
             // pensarlo/socio/ya_tiene_web traen la oferta de demo pegada adentro
             // del texto: si ya se ofreció antes por otra objeción en la misma
@@ -1602,6 +1620,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Derivar la duda al desarrollador ("esa duda te la va a poder contestar el desarrollador") es el ÚLTIMO recurso: antes pensá si alguna clave de consultar_info responde la INTENCIÓN de la pregunta, aunque esté escrita con otras palabras, con errores de tipeo o de forma confusa. Y nunca lo uses para contestar un mensaje social ("no hay apuro", "gracias", "dale"): eso se contesta con una línea cordial y nada más.
 - Ese comodín es la respuesta a UNA DUDA. Si el mensaje no pregunta nada, no corresponde, aunque no sea un simple "gracias". Dos ejemplos que pasaron en la misma charla: "Este es mi face" (te está pasando material suyo: agradecelo en una línea y decile que lo tomaste) y "Que lo haga vía wasap" (te está indicando cómo quiere que lo contacten: confirmáselo en una línea). Contestar cualquiera de los dos con "esa duda te la va a poder contestar el desarrollador" es lo que hace evidente que del otro lado hay un bot que no entendió.
 - Si manda un video, un archivo o algo que no pudiste ver, decilo con honestidad y pedí el dato por texto. Nunca respondas como si lo hubieras visto.
+- Los AUDIOS son la excepción: te llegan ya transcriptos y lo que leés ES lo que dijo, palabra por palabra. Nunca le pidas que te repita o te escriba lo que mandó en un audio, ni le digas que no lo pudiste escuchar, ni le vuelvas a preguntar algo que ahí ya explicó. Un cliente que grabó dos minutos explicando su proyecto y recibe "contame qué vendés" da la charla por perdida (caso real: "creo q no entendiste el audio", 28-ago).
 - Apuntá a dar el precio rápido, sin interrogatorios. Si con lo que te dijeron ya sabés qué tipo es, dalo.
 - Pero si el rubro no alcanza para saber qué tipo de web necesita, preguntá lo que haga falta (de a una) antes de cotizar. Cotizar mal por no preguntar es el peor error: después no se puede dar otro precio.
 - Antes de hacer una pregunta, revisá TODOS los hechos que el cliente ya dijo. Nunca preguntes qué vende, qué servicio ofrece ni qué necesita si eso ya aparece en la charla; confirmalo con tus palabras y avanzá al siguiente dato faltante.
@@ -1691,7 +1710,7 @@ REGLAS QUE NO PODÉS ROMPER
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
-- Las dudas sobre cómo trabajamos, pago, plazos, hosting, mantenimiento, carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede ser bilingüe (bilingue), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
+- Las dudas sobre cómo trabajamos, pago, plazos, hosting, mantenimiento, carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede ser bilingüe (bilingue), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web), cómo se manejan los envíos y si la tienda calcula sola el costo (envios), cómo funciona la tienda de punta a punta —el cliente compra y él despacha— (como_funciona_tienda), qué más se le puede incluir a la web (que_incluye) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
 - 'otra' es el ÚLTIMO recurso, no el primero: decir que la duda la contesta el desarrollador cuando la respuesta existe hace parecer que no conocés lo que vendés. Antes de usarla, fijate si entra en alguna clave de arriba. Y si el mensaje no es una pregunta —un 'dale', un 'gracias', un 'bueno, aguardo entonces'— no llames a consultar_info: contestá una línea corta o nada. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
 - 'otra' se reserva para funciones realmente especiales (integraciones raras, sistemas a medida, algo fuera de la lista de precios). NO la uses para nada de esto, que ya sabés contestar: qué diferencia hay entre dos tipos de web, cuánto sale la otra modalidad, qué es una landing, quién carga los productos, cómo sigue el proceso, ni cuando el cliente solo está diciendo a qué se dedica. Ejemplos reales del 27-ago que NUNCA debieron llevarse el comodín, con lo que correspondía: "Sale lo mismo con carrito?" → los dos precios, ecommerce y catálogo, que ya tenés. "Si lo agendo yo cuál es la diferencia?" → los dos precios, turnos y landing. "Es para una página de reseñas" → es el rubro, seguí el flujo. Una foto del logo → no es una pregunta, agradecé en una línea. En los tres primeros casos Pablo terminó contestando a mano, hasta una hora después, algo que vos tenías disponible.
 - Nunca derives al desarrollador ("esa duda te la va a poder contestar el desarrollador") una pregunta de precio que vos mismo podés contestar: si ya tenés o podés tener el tipo de web (aunque sea con consultar_info('rangos') sin tipo confirmado, o con dar_precio si ya lo sabés), la respuesta real va antes que cualquier derivación. Derivar un precio que dos mensajes después vos mismo terminás dando es una contradicción que se nota y resta confianza.

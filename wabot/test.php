@@ -5281,6 +5281,134 @@ foreach (['que reserven desde la web', 'si, que saquen turno solos',
         wabot_desempate_por_palabras('desempate_turnos', $f) === 'turnos_si');
 }
 
+echo "— Revisión del 28-ago: audio, orden de respuesta, envíos y seguimientos —\n";
+
+/* #2 Overlord Magazine — los puntos de venta son kioscos, no vender online.
+ * Explicó en un audio que quería mostrar los números, la historia y los puntos
+ * de venta de su revista, y salió cotizado como ecommerce de $290.000. */
+foreach (['quiero mostrar los numeros de la revista y los puntos de venta',
+          'mostrar la historia, videos y los puntos de venta',
+          'que se vea donde conseguirla, los puntos de venta',
+          'los puntos de venta y las notas'] as $f) {
+    caso('comercio, "' . $f . '" → mostrar',
+        wabot_desempate_por_palabras('desempate_comercio', $f) === 'comercio_mostrar');
+}
+foreach (['quiero vender online', 'que compren desde la web', 'con carrito y mercado pago'] as $f) {
+    caso('comercio, "' . $f . '" → vender',
+        wabot_desempate_por_palabras('desempate_comercio', $f) === 'comercio_vender');
+}
+
+/* #2 — y no se le pide el link de una página que dijo que no tiene. */
+foreach (['no tengo pagina', 'no tengo web todavia', 'nunca tuve una pagina',
+          'pagina no tengo', 'todavia no tengo nada', 'quiero arrancar de cero',
+          'es la primera pagina que hago'] as $f) {
+    caso('dice que no tiene web: "' . $f . '"', wabot_texto_dice_sin_web($f) === true);
+}
+foreach (['si, tengo una pagina en wix', 'tengo mi web pero es fea', 'mi pagina es vieja'] as $f) {
+    caso('SÍ tiene web: "' . $f . '"', wabot_texto_dice_sin_web($f) === false);
+}
+
+/* #4 Romina — las dos preguntas que no tenían ninguna respuesta y terminaban
+ * en "querés que te arme una muestra?". */
+foreach (['seria una pagina donde la gente entre compre y yo envio?',
+          'o sea que la gente compra desde la pagina?',
+          'la gente compra y yo mando el producto?',
+          'como funciona la tienda?'] as $f) {
+    caso('"' . $f . '" → como_funciona_tienda',
+        wabot_info_por_palabras($f, 'precio') === 'como_funciona_tienda');
+}
+foreach (['que mas puedo incluir?', 'que mas se le puede agregar?',
+          'que otras cosas puede tener la web?', 'que incluye el precio?'] as $f) {
+    caso('"' . $f . '" → que_incluye', wabot_info_por_palabras($f, 'precio') === 'que_incluye');
+}
+// Contar cómo trabaja hoy no es preguntar cómo funciona la tienda.
+foreach (['vendo ropa, la gente elige y le mando por correo',
+          'tengo un negocio, la gente viene y compra',
+          'la gente entra al local y compra ahi'] as $f) {
+    caso('rubro, no pregunta: "' . $f . '"', wabot_info_por_palabras($f, 'precio') === null);
+}
+
+/* #7 S. Marcela — el bilingüe que nadie preguntó. */
+$convRopa = ['transcript' => [['q'=>'cliente','t'=>'hola, tengo un local de ropa'], ['q'=>'bot','t'=>'...']]];
+caso('bilingüe sin que nadie hable de idiomas → sin rastro',
+    wabot_info_clave_tiene_rastro('bilingue', 'hola, tengo un local de ropa', $convRopa) === false);
+caso('"se puede en dos idiomas?" sí tiene rastro',
+    wabot_info_clave_tiene_rastro('bilingue', 'se puede en dos idiomas?', $convRopa) === true);
+caso('"la quiero tambien en ingles" también',
+    wabot_info_clave_tiene_rastro('bilingue', 'la quiero tambien en ingles', $convRopa) === true);
+caso('preguntado un turno antes: sigue valiendo',
+    wabot_info_clave_tiene_rastro('bilingue', 'si dale',
+        ['transcript' => [['q'=>'cliente','t'=>'se puede en ingles tambien?'], ['q'=>'bot','t'=>'...']]]) === true);
+caso('una clave ancha (proceso) nunca se controla',
+    wabot_info_clave_tiene_rastro('proceso', 'hola, tengo un local de ropa', $convRopa) === true);
+caso('maps sin nada del mapa → sin rastro',
+    wabot_info_clave_tiene_rastro('maps', 'hola, tengo un local de ropa', $convRopa) === false);
+
+/* #8 Elena / Planeta Bebé — la pregunta del envío no tenía respuesta y el bot
+ * se puso a explicar por qué no trabajamos con Tiendanube. */
+foreach (['la tienda calcula el envio?', 'como se manejan los envios?',
+          'se puede integrar con andreani?', 'calcula el costo de envio automatico?',
+          'en tiendanube el envio lo calcula sola la pagina, aca se puede?',
+          'quiero saber si cotiza el envio por codigo postal',
+          'la web puede cotizar el flete?'] as $f) {
+    caso('"' . $f . '" → envios', wabot_info_por_palabras($f, 'precio') === 'envios');
+}
+foreach (['vendo productos y hago envios a domicilio', 'tengo una empresa de logistica',
+          'hago envios a todo el pais'] as $f) {
+    caso('nombrar el envío no es preguntar: "' . $f . '"',
+        wabot_info_por_palabras($f, 'nuevo') !== 'envios');
+}
+caso('la respuesta de envíos existe y dice que la tienda lo calcula',
+    stripos((string)($cfg['info']['envios'] ?? ''), 'codigo postal') !== false
+    || stripos((string)($cfg['info']['envios'] ?? ''), 'código postal') !== false);
+
+/* #9 Remax — el precio ya estaba dado y "el presupuesto" no era una forma de
+ * preguntarlo, así que se llevó el comodín del desarrollador. */
+foreach (['cuanto era el presupuesto?', 'me pasas el presupuesto?', 'cual era el presupuesto',
+          'y el presupuesto?', 'cuanto me dijiste que salia', 'que presupuesto me habias pasado',
+          'repetime el presupuesto'] as $f) {
+    caso('"' . $f . '" pide el precio ya dado',
+        wabot_info_por_palabras($f, 'derivado') === 'precio_actual');
+}
+foreach (['quiero que me pidan presupuesto desde la web',
+          'que puedan solicitar presupuesto online'] as $f) {
+    caso('presupuesto como función de SU web, no pregunta: "' . $f . '"',
+        wabot_info_por_palabras($f, 'derivado') !== 'precio_actual');
+}
+
+/* #10 Ferrari — el seguimiento retoma la pregunta que quedó sin contestar en
+ * vez de mandar "avisame si te quedó alguna duda". */
+$sgFerrari = ['fase'=>'menu','transcript'=>[
+    ['q'=>'cliente','t'=>'hola'],
+    ['q'=>'bot','t'=>'Hola! Contame, qué producto vendés?'],
+]];
+$sgTexto = wabot_seguimiento_texto($sgFerrari, $cfg);
+caso('el seguimiento repite la pregunta que quedó abierta',
+    strpos($sgTexto, 'qué producto vendés?') !== false);
+caso('y suma el gancho de la muestra si todavía no se ofreció',
+    stripos($sgTexto, 'muestra gratis') !== false);
+
+$sgOfrecida = $sgFerrari; $sgOfrecida['cta_muestra'] = true;
+caso('con la muestra ya ofrecida, no la repite',
+    stripos(wabot_seguimiento_texto($sgOfrecida, $cfg), 'muestra gratis') === false);
+
+caso('con el precio dado sigue el seguimiento de precio',
+    wabot_seguimiento_texto(['fase'=>'precio','precio_dado'=>true,
+        'transcript'=>[['q'=>'bot','t'=>'Sale $200.000']]], $cfg) === $cfg['seguimiento_precio']);
+caso('esperando los datos del prediseño, el texto de siempre',
+    wabot_seguimiento_texto(['fase'=>'prediseno',
+        'transcript'=>[['q'=>'bot','t'=>'Me pasás el nombre y los colores?']]], $cfg) === $cfg['seguimiento_datos']);
+caso('sin ninguna pregunta abierta, el texto de siempre',
+    wabot_seguimiento_texto(['fase'=>'menu',
+        'transcript'=>[['q'=>'bot','t'=>'Perfecto, quedo atento.']]], $cfg) === $cfg['seguimiento_datos']);
+caso('si el último que habló fue el cliente, no hay pregunta esperando',
+    wabot_seguimiento_pregunta_pendiente(['transcript'=>[
+        ['q'=>'bot','t'=>'Qué vendés?'], ['q'=>'cliente','t'=>'ropa']]]) === null);
+caso('una pregunta con precio o link no se repite suelta',
+    wabot_seguimiento_pregunta_pendiente(['transcript'=>[
+        ['q'=>'bot','t'=>'Sale $200.000, querés la muestra?']]]) === null);
+
+
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

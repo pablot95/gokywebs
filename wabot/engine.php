@@ -994,6 +994,72 @@ function wabot_texto_no_es_consulta($texto) {
  *
  * Una llamada NUNCA se rechaza. Se deriva a Pablo y él la coordina.
  */
+/**
+ * El cliente dijo que NO tiene página. Sirve para no pedirle el link de una
+ * web que acaba de decir que no existe: Overlord Magazine explicó en un audio
+ * que quería armar la primera y el bot le contestó "pasame el link de tu
+ * página actual" (28-ago).
+ */
+/**
+ * ¿El cliente habló alguna vez del tema de esta clave de info?
+ *
+ * S. Marcela recibió "Sí, la podemos hacer bilingüe. Tiene un adicional de
+ * $30.000" sin haber preguntado nada de idiomas (28-ago). Una respuesta a una
+ * pregunta que no existe hace pensar que el bot se confundió de conversación.
+ *
+ * Solo se controlan las claves ANGOSTAS: las que contestan una función muy
+ * puntual, donde la respuesta suelta no tiene ninguna lectura razonable. Las
+ * anchas (proceso, pago, plazos, precio, confianza) quedan afuera a propósito:
+ * ahí una respuesta de más no descoloca a nadie, y el falso rechazo costaría
+ * más que el falso positivo.
+ *
+ * Se mira el mensaje de ahora y los últimos del cliente, porque puede haber
+ * preguntado en un turno y el bot contestarle en el siguiente.
+ */
+function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
+    static $rastros = [
+        'bilingue'      => '(bilingue|biling|idioma|idiomas|ingles|english|portugues|italiano|traduc|dos lenguas|otro idioma)',
+        'emails'        => '(mail|mails|email|correo|correos|casilla|casillas|arroba|outlook|gmail)',
+        'accesos'       => '(acceso|accesos|ftp|cpanel|credencial|credenciales|panel del hosting|entrar al hosting)',
+        'licencias'     => '(licencia|licencias|plugin|plugins|sdk|libreria|librerias)',
+        'entrega_codigo'=> '(codigo|backup|respaldo|codigo fuente|repositorio|github|los archivos)',
+        'pixel'         => '(pixel|analytics|tag manager|codigo de seguimiento|conversion|conversiones|remarketing)',
+        'maps'          => '(maps|mapa|mapita|google maps|ubicacion en el mapa|como llegar)',
+        'facturacion'   => '(factura|facturas|facturacion|afip|arca|comprobante|comprobantes|iva|recibo|remito)',
+        'migracion'     => '(migra|migrar|migracion|traspas|mudar|pasar el contenido|pasar los textos|la web que tengo|mi pagina actual|mi web actual)',
+        'formularios'   => '(formulario|formularios|encuesta|encuestas|form)',
+        'inscripcion'   => '(inscripto|inscripta|inscripcion|monotributo|afip|arca|habilitacion|cuit|responsable inscripto)',
+        'fotos_propiedad'=> '(foto|fotos|imagen|imagenes|video|videos|galeria)',
+        'exclusividad'  => '(exclusiv|unico|unica|repetid|igual a otra|misma web|otro cliente del rubro|competencia)',
+        'internet'      => '(internet|conexion|offline|sin señal|sin senal|wifi|se corta)',
+    ];
+    if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
+
+    $re = '/\b' . $rastros[$clave] . '\w*/u';
+    if (preg_match($re, wabot_normalizar_frase((string)$texto))) return true;
+
+    // Puede haberlo preguntado un turno antes.
+    $vistos = 0;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        if (preg_match($re, wabot_normalizar_frase((string)($fila['t'] ?? '')))) return true;
+        if (++$vistos >= 3) break;
+    }
+    return false;
+}
+
+function wabot_texto_dice_sin_web($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    $web = '(web|pagina|paginas|sitio|pag|página)';
+    return (bool)(
+        preg_match('/\b(no|nunca)\b.{0,18}\b(tengo|tenemos|tuve|tuvimos|hay|existe|arme|armamos|hice|hicimos)\b.{0,18}\b' . $web . '\b/u', $t)
+        || preg_match('/\b' . $web . '\b.{0,14}\bno\b.{0,10}\b(tengo|tenemos|hay|tiene)\b/u', $t)
+        || preg_match('/\b(todavia|aun|aun no|por ahora)\b.{0,20}\bno\b.{0,18}\b(tengo|tenemos|hay)\b/u', $t)
+        || preg_match('/\b(desde cero|de cero|arrancar de cero|empezar de cero|es la primera|la primera ' . $web . '|nunca tuve nada|no tengo nada)\b/u', $t)
+    );
+}
+
 function wabot_pide_llamada($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
@@ -1876,6 +1942,12 @@ function wabot_engine($texto, &$conv, $cfg) {
         $out[] = wabot_objecion_texto('socio', $txt, $conv, $cfg);
         $conv['cta_muestra'] = true;
     }
+    // Pero no si acaba de decir que no tiene ninguna: el texto arranca
+    // pidiéndole el link de esa página (caso Overlord, 28-ago).
+    if ($has('objecion_ya_tiene_web') && wabot_texto_dice_sin_web($texto)) {
+        $acc = array_values(array_diff($acc, ['objecion_ya_tiene_web']));
+        $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
+    }
     if ($has('objecion_ya_tiene_web')) {
         $txt = (!empty($conv['cta_muestra']) && !empty($cfg['ya_tengo_web_sin_muestra'])) ? $cfg['ya_tengo_web_sin_muestra'] : $cfg['ya_tengo_web'];
         $out[] = wabot_objecion_texto('ya_tiene_web', $txt, $conv, $cfg);
@@ -1892,6 +1964,12 @@ function wabot_engine($texto, &$conv, $cfg) {
     if ($has('pregunta_info')) {
         $keys = $c['info_keys'] ?: [];
         if ($infoLocal !== null && !in_array($infoLocal, $keys, true)) array_unshift($keys, $infoLocal);
+        // Una clave angosta que el cliente nunca mencionó es contexto
+        // contaminado, no una respuesta (caso S. Marcela y el bilingüe que
+        // nadie preguntó, 28-ago).
+        $keys = array_values(array_filter($keys, function ($k) use ($texto, $conv) {
+            return wabot_info_clave_tiene_rastro($k, $texto, $conv);
+        }));
         if (!$keys) $keys = ['otra'];
         // En un desempate el precio ya está acotado a dos opciones: se dicen las
         // dos en vez del rango genérico, que además remata pidiendo el rubro
@@ -2494,10 +2572,44 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(estafa\w*|es seguro esto|son confiables|es confiable|quiero referencias|garantia de que)\b|desconfi/u', $t)) return 'confianza';
     if (preg_match('/\b(pixel|google analytics|analytics|codigo de seguimiento|conversiones de meta)\b/u', $t)) return 'pixel';
     if (preg_match('/\b(precios? de cada|todos los precios|lista de precios|precios? de los servicios|desde el basico|precios? de todos)\b/u', $t)) return 'rangos';
+    /* "Sería una página donde la gente entre, compre y yo envío?" es una
+     * pregunta de confirmación sobre cómo funciona la tienda, y se contesta
+     * que sí explicando el circuito. Romina la hizo y se llevó un "querés que
+     * te arme una muestra?" (28-ago).
+     *
+     * El freno de la primera persona es lo que distingue la pregunta del
+     * rubro: "vendo ropa, la gente elige y le mando por correo" cuenta cómo
+     * trabaja hoy, no pregunta nada. */
+    $cuentaSuNegocio = preg_match('/\b(vendo|vendemos|tengo|tenemos|hago|hacemos|ofrezco|ofrecemos|soy|somos|manejo|manejamos|me dedico|nos dedicamos|trabajo (de|en)|fabrico|fabricamos)\b/u', $t);
+    if (!$cuentaSuNegocio
+        && preg_match('/\b(la gente|el cliente|los clientes|la persona|uno)\b.{0,26}\b(entra|entren|compra|compre|compren|elige|elijan)\b/u', $t)
+        && preg_match('/\b(pagina|web|tienda|online|carrito|desde ahi|yo envio|yo mando|le mando|me llega|paga|pagan|paguen)\b/u', $t)) return 'como_funciona_tienda';
+    if (preg_match('/\bcomo funciona\b.{0,14}\b(la tienda|el carrito|el ecommerce|la venta online|la compra)\b/u', $t)) return 'como_funciona_tienda';
+
+    // "Qué más puedo incluir?" tampoco tenía respuesta, misma charla.
+    if (preg_match('/\bque (mas|otras cosas|otra cosa)\b.{0,26}\b(incluir|incluye|agregar|sumar|poner|tener|llevar|se puede)\b/u', $t)
+        || preg_match('/\bque\b.{0,10}\b(incluye|trae)\b.{0,14}\b(la web|la pagina|el precio|la tienda)\b/u', $t)) return 'que_incluye';
+
     // "Preciop" al final del mensaje es "precio" con el dedo resbalado: la
     // palabra suelta pidiendo el valor (con hasta dos letras de yapa) cuenta.
+    /* "Presupuesto" es como pide el precio media Argentina y no estaba en
+     * ninguna de estas formas. Remax ya tenía la landing cotizada en $160.000,
+     * volvió a preguntar "el presupuesto" y el bot le contestó que se lo iba a
+     * responder el desarrollador; un mensaje después le dio los $160.000
+     * igual (28-ago).
+     *
+     * La palabra sola no alcanza: "quiero que me pidan presupuesto desde la
+     * web" describe SU negocio, no pregunta el nuestro. Van las formas en que
+     * se pregunta, no el sustantivo suelto. */
+    $pidePresupuesto = preg_match('/\b(cuanto|cual|que)\b.{0,14}\b(es|era|seria|sale|fue)?\b.{0,6}\bel presupuesto\b/u', $t)
+        || preg_match('/\b(me pasas|pasame|mandame|me mandas|me decis|decime|repetime|me repetis)\b.{0,14}\bel presupuesto\b/u', $t)
+        || preg_match('/\bque presupuesto\b.{0,20}\b(me|habias|pasaste|diste|dijiste)\b/u', $t)
+        || preg_match('/^\s*(y\s+)?el presupuesto\s*\??\s*$/u', $t)
+        || preg_match('/\bcuanto me\b.{0,14}\b(dijiste|habias dicho|pasaste|cotizaste)\b/u', $t);
+
     if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)
-        || preg_match('/\bprecio\w{0,2}\s*$/u', $t)) {
+        || preg_match('/\bprecio\w{0,2}\s*$/u', $t)
+        || $pidePresupuesto) {
         // 'prediseno'/'prediseno_ref'/'prediseno_wsp' entran acá también: el
         // precio y la propuesta del prediseño salen juntos en el mismo turno
         // (wabot_precio()), así que la fase ya pasó a prediseno desde el
@@ -2507,6 +2619,18 @@ function wabot_info_por_palabras($texto, $fase = null) {
         // en vez de escaparse con "eso te lo confirma el equipo" (caso Abel).
         if (in_array($fase, ['nuevo', 'menu', 'algo_diferente'], true)) return 'precio_sin_rubro';
     }
+    /* El envío: cómo se cobra, si lo calcula la web, si se integra con el
+     * correo. Va antes que 'carga' y que la objeción de plataforma porque el
+     * cliente suele preguntarlo comparando con Tiendanube, y ahí el bot se
+     * enganchaba a defender la comparación en vez de contestar (caso Elena /
+     * Planeta Bebé, 28-ago). */
+    $temaEnvio = '\b(envio|envios|el flete|los fletes|despacho|logistica|andreani|oca|correo argentino|codigo postal)\b';
+    /* Nombrar el tema no alcanza: "vendo productos y hago envios a domicilio"
+     * es el RUBRO del cliente, no una duda. Tiene que preguntar algo. */
+    $preguntaEnvio = '\b(calcul\w+|cotiz\w+|integra\w*|conecta\w*|automatic\w+|se puede|puede|pueden|podes|podria|hay|tienen|incluye|sirve|funciona|es posible|se maneja|se manejan|como (se|lo|los)|que pasa con)\b';
+    if (preg_match('/' . $temaEnvio . '/u', $t) && preg_match('/' . $preguntaEnvio . '/u', $t)) return 'envios';
+    if (preg_match('/\b(la web|la pagina|la tienda|el sistema)\b.{0,20}\bcalcul\w+\b.{0,14}\b(envio|envios|flete)\b/u', $t)) return 'envios';
+
     if (preg_match('/\b(quien carga|cargan ustedes|carga de productos|subir los productos|cargar el contenido|los textos los)\b/u', $t)) return 'carga';
 
     // Ya tiene una web propia (la hizo otro, está en WordPress): se ofrece
@@ -2542,6 +2666,14 @@ function wabot_info_por_palabras($texto, $fase = null) {
 function wabot_desempate_por_palabras($fase, $texto) {
     $t = ' ' . wabot_normalizar_frase($texto) . ' ';
     if (trim($t) === '') return null;
+
+    /* Los puntos de venta son los kioscos donde se consigue el producto, no
+     * una intención de vender online — pero contienen la palabra "venta", que
+     * está en la lista de comercio_vender y se evalúa primero. Overlord
+     * Magazine explicó en un audio que quería mostrar los números, la historia
+     * y los puntos de venta de su revista, y terminó cotizado como ecommerce
+     * de $290.000 (28-ago). Se neutraliza antes de mirar nada. */
+    $t = preg_replace('/\b(puntos?|bocas?) de (venta|ventas|expendio)\b/u', ' donde se consigue ', $t);
     // Frase suelta o palabra entera. Se busca cada patrón rodeado de espacios,
     // así "web" no matchea "webcam" pero "por la web" sí.
     $tiene = function ($patrones) use ($t) {
@@ -2619,8 +2751,11 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'ambas', 'ambos', 'las dos', 'los dos', 'las 2', 'los 2', 'las dos opciones',
             ]))) return 'comercio_vender';
             if ($tiene(array_merge($segunda, [
-                'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo', 'presentacion', 'presentar', 'contacten', 'contacto',
-'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap', 'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp', 'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
+                'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo',
+                'presentacion', 'presentar', 'contacten', 'contacto',
+                'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap',
+                'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp',
+                'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
                 'escriban', 'que me hablen', 'me contacten', 'la simple', 'la basica', 'sin carrito',
                 'sin cobro', 'nomas', 'solamente mostrar', 'que muestre',
                 // "Quiero publicar los vehículos" es una respuesta clarísima que
@@ -2630,6 +2765,11 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'exhibir', 'exhibirlos', 'listar', 'subir los productos', 'subirlos',
                 'que se vean', 'para que vean', 'ver los modelos', 'los vehiculos',
                 'las propiedades', 'los productos', 'mi stock', 'el stock',
+                // Dónde conseguir el producto es justo lo contrario de venderlo
+                // por la web: manda al cliente a un local físico.
+                'donde se consigue', 'donde conseguirla', 'donde conseguirlo',
+                'donde conseguir', 'donde comprarla', 'donde comprarlo',
+                'distribuidores', 'kioscos', 'locales', 'sucursales',
             ]))) return 'comercio_mostrar';
             return null;
         case 'desempate_hibrido':

@@ -915,6 +915,12 @@ function wabot_config_ventas(&$cfg) {
     // Pablo, 25-ago: apagado por defecto — momentáneamente no se usa el form.
     if (!isset($cfg['form_activo'])) $cfg['form_activo'] = false;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
+    if (trim((string)($cfg['seguimiento_pregunta'] ?? '')) === '') {
+        $cfg['seguimiento_pregunta'] = 'Hola {nombre}, cómo estás? Quedó pendiente esto: {pregunta}';
+    }
+    if (trim((string)($cfg['seguimiento_pregunta_gancho'] ?? '')) === '') {
+        $cfg['seguimiento_pregunta_gancho'] = 'Si te sirve, con ese dato te preparo una muestra gratis para que la veas antes de decidir.';
+    }
     if (!isset($cfg['seguimiento_activo'])) $cfg['seguimiento_activo'] = true;
     if (!isset($cfg['seguimiento_horas']))  $cfg['seguimiento_horas']  = 3;
     if (!isset($cfg['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = 8;
@@ -1305,6 +1311,18 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
         'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
+        /* Elena (Planeta Bebé) preguntó si la tienda calcula el envío sola,
+         * comparándonos con Tiendanube. El bot se puso a explicar por qué no
+         * trabajamos con Tiendanube y nunca contestó la pregunta (28-ago).
+         * La tienda sí lo calcula: el motor tiene quote-shipping con las
+         * opciones por código postal y el retiro en el local. */
+        'envios' => 'Sí, la tienda calcula el envío sola: el cliente pone el código postal en el checkout y le aparecen las opciones con el costo de cada una, antes de pagar. Se conecta con el correo con el que trabajes, y también podés ofrecer retiro en el local. Si preferís algo más simple, se puede dejar un costo fijo por zona.',
+        /* Las dos preguntas de Romina (Conservas de Mar del Sur, 28-ago).
+         * No tenían respuesta en ninguna clave, así que el bot le contestó
+         * ofreciéndole la muestra: le preguntó si quería avanzar en vez de
+         * contestarle qué estaba por comprar. */
+        'como_funciona_tienda' => 'Sí, exactamente así: el cliente entra, ve el catálogo, arma el carrito y paga desde la web. El pedido te llega al panel con los datos de envío para que lo despaches, y los productos, precios y stock los manejás vos desde ahí.',
+        'que_incluye' => 'En el link del presupuesto está el detalle de todo lo que viene incluido. Si hay algo puntual que quieras sumar —una sección más, un formulario, reservas, otro idioma— decime cuál y te confirmo si entra en el precio o va aparte.',
         'imagenes_web' => 'Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.',
         'inscripcion' => 'Para hacerte la web no te pedimos ninguna inscripción ni condición fiscal: la contratás y listo. Si tu duda es si vos necesitás estar inscripto para vender, eso depende de tu situación y lo mejor es que lo confirmes con un contador.',
 
@@ -4711,7 +4729,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {
@@ -5376,11 +5394,61 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     return true;
 }
 
+/**
+ * La pregunta del bot que quedó sin contestar, si la hay.
+ *
+ * Sirve para que el seguimiento retome la charla donde se cortó en vez de
+ * mandar un "avisame si te quedó alguna duda" que no dice nada.
+ */
+function wabot_seguimiento_pregunta_pendiente($cv) {
+    $t = (array)($cv['transcript'] ?? []);
+    $ult = end($t);
+    // Si el último que habló fue el cliente, no hay pregunta esperando.
+    if (!$ult || ($ult['q'] ?? '') !== 'bot') return null;
+
+    $texto = trim((string)($ult['t'] ?? ''));
+    if ($texto === '' || mb_strpos($texto, '?') === false) return null;
+    // Un texto con precio o con link no se repite suelto: se manda entero o
+    // no se manda, y para eso ya está seguimiento_precio.
+    if (mb_strpos($texto, '$') !== false || stripos($texto, 'gokywebs.com') !== false) return null;
+
+    // La oración que trae el signo de pregunta.
+    $partes = preg_split('/(?<=[.!?\n])\s+/u', $texto) ?: [];
+    $pregunta = null;
+    foreach ($partes as $p) {
+        $p = trim($p);
+        if ($p !== '' && mb_strpos($p, '?') !== false) $pregunta = $p;
+    }
+    if ($pregunta === null || mb_strlen($pregunta) > 180) return null;
+    return $pregunta;
+}
+
 function wabot_seguimiento_texto($cv, $cfg) {
     $esPrecio = ($cv['fase'] ?? '') === 'precio'
         || (($cv['fase'] ?? '') === 'pitch' && !empty($cv['precio_dado']));
-    $clave = $esPrecio ? 'seguimiento_precio' : 'seguimiento_datos';
-    return (string)($cfg[$clave] ?? '');
+    if ($esPrecio) return (string)($cfg['seguimiento_precio'] ?? '');
+
+    /* Los datos del prediseño son lo único que de verdad "queda pendiente" del
+     * lado del cliente. Todo lo demás caía igual en ese texto: a Ferrari le
+     * llegó cuando lo único que faltaba era contestar qué producto vende
+     * (Pablo, 28-ago: "desperdicia el seguimiento"). */
+    $esDatos = in_array(($cv['fase'] ?? ''), ['prediseno', 'prediseno_ref', 'prediseno_wsp'], true);
+    if (!$esDatos) {
+        $pendiente = wabot_seguimiento_pregunta_pendiente($cv);
+        if ($pendiente !== null) {
+            $base = trim((string)($cfg['seguimiento_pregunta'] ?? ''));
+            if ($base !== '') {
+                $texto = str_replace('{pregunta}', $pendiente, $base);
+                // El gancho de la muestra solo si todavía no se ofreció.
+                $gancho = trim((string)($cfg['seguimiento_pregunta_gancho'] ?? ''));
+                if ($gancho !== '' && empty($cv['cta_muestra']) && empty($cv['precio_dado'])) {
+                    $texto = rtrim($texto) . ' ' . $gancho;
+                }
+                return $texto;
+            }
+        }
+    }
+    return (string)($cfg['seguimiento_datos'] ?? '');
 }
 
 /** Recorre todas las conversaciones y manda los seguimientos que correspondan. */

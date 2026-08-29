@@ -275,7 +275,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','pide_llamada','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','seguimiento_pregunta','seguimiento_pregunta_gancho','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -1536,6 +1536,8 @@ body.embed { min-height: 0; }
         <div class="card">
             <h2 style="margin-top:0">Derivación y objeciones</h2>
             <label>Handoff a Pablo</label><textarea name="derivar" rows="2"><?= $e($cfg['derivar']) ?></textarea>
+            <label>Handoff cuando pide una llamada</label><textarea name="pide_llamada" rows="2"><?= $e($cfg['pide_llamada'] ?? '') ?></textarea>
+            <p class="meta" style="margin-top:-6px">Pedir una llamada, o hablar con una persona, deriva siempre: el bot nunca rechaza una llamada.</p>
             <label>Si escribe de nuevo tras derivar</label><textarea name="espera" rows="2"><?= $e($cfg['espera']) ?></textarea>
             <label>Si escribe de nuevo tras cerrar el prediseño (ahí ya sabe que le escribís vos)</label><textarea name="espera_prediseno" rows="2"><?= $e($cfg['espera_prediseno'] ?? '') ?></textarea>
             <label>Dice que es caro</label><textarea name="caro" rows="2"><?= $e($cfg['caro']) ?></textarea>
@@ -1590,6 +1592,10 @@ body.embed { min-height: 0; }
             </p>
             <label>Seguimiento después de dar el precio</label><textarea name="seguimiento_precio" rows="3"><?= $e($cfg['seguimiento_precio'] ?? '') ?></textarea>
             <label>Seguimiento cuando faltan datos</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
+            <label>Seguimiento cuando quedó una pregunta sin contestar</label><textarea name="seguimiento_pregunta" rows="2"><?= $e($cfg['seguimiento_pregunta'] ?? '') ?></textarea>
+            <p class="meta" style="margin-top:-6px">{pregunta} se reemplaza por la pregunta que el bot dejó abierta. Si no quedó ninguna, sale el texto de arriba.</p>
+            <label>Gancho que se suma a ese seguimiento</label><textarea name="seguimiento_pregunta_gancho" rows="2"><?= $e($cfg['seguimiento_pregunta_gancho'] ?? '') ?></textarea>
+            <p class="meta" style="margin-top:-6px">Solo se agrega si todavía no se ofreció la muestra ni se dio el precio.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Demos presentadas</h2>
