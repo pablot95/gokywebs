@@ -21,8 +21,8 @@ if (!hasGsap) {
 if (hasST) window.addEventListener('load', () => ScrollTrigger.refresh());
 
 const CATEGORIAS = [
-  { id: 'macrame', nombre: 'Macramé', color: 'var(--c1)', img: 'tapiz-fleco.webp', pie: 'Tapices, colgantes y llaveros' },
-  { id: 'bijouterie', nombre: 'Bijouterie', color: 'var(--c2)', img: 'aros-artesanales.webp', pie: 'Aros, collares y pulseras' },
+  { id: 'macrame', nombre: 'Macramé', color: 'var(--c1)', img: 'frizo-verde-aro.webp', pie: 'Frizos, tapices y colgantes' },
+  { id: 'bijouterie', nombre: 'Bijouterie', color: 'var(--c2)', img: 'muestra-bijouterie-colores.webp', pie: 'Collares, pulseras y piezas únicas' },
   { id: 'kits', nombre: 'Kits y materiales', color: 'var(--c3)', img: 'materiales-kit.webp', pie: 'Para armar en casa' },
   { id: 'cursos', nombre: 'Cursos', color: 'var(--c4)', img: 'curso-taller.webp', pie: 'Aprendé a hacerlo vos' }
 ];
@@ -1168,7 +1168,7 @@ function initHero() {
   const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
   tl.to('[data-hero="1"]', { opacity: 1, y: 0, duration: .6 }, .1)
     .to('[data-hero="2"]', { opacity: 1, y: 0, duration: .8 }, .18)
-    .from('.hero-marca .wm-o', { scale: 0.2, duration: .7, stagger: .12, ease: 'back.out(3)' }, .38)
+    .from('.hero-marca .marca-letras i:not(.marca-espacio)', { scale: 0.2, y: 12, duration: .7, stagger: .045, ease: 'back.out(3)' }, .38)
     .to('[data-hero="3"]', { opacity: 1, y: 0, duration: .8 }, .34)
     .to('[data-hero="4"]', { opacity: 1, y: 0, duration: .7 }, .48)
     .to('[data-hero="5"]', { opacity: 1, y: 0, duration: .7 }, .58)
