@@ -192,6 +192,7 @@ function wabot_config_load() {
     wabot_config_ventas($cfg);
     wabot_config_pitch_encaje($cfg);
     wabot_config_postdemo_sin_venta($cfg);
+    wabot_config_pide_llamada($cfg);
     // Último: las funciones de arriba reescriben plantillas de precio buscando
     // textos exactos, y la línea del portfolio las dejaría sin match.
     wabot_config_portfolio($cfg);
@@ -1835,6 +1836,13 @@ function wabot_texto_prediseno_completo($conv, $cfg) {
  * tarjeta, cuotas— siguen existiendo en la config, pero ya no los usa nadie del
  * lado del bot; quedan para el panel.
  */
+function wabot_config_pide_llamada(&$cfg) {
+    if (trim((string)($cfg['pide_llamada'] ?? '')) === '') {
+        $cfg['pide_llamada'] = 'Dale, eso lo hablás directo con Pablo, el desarrollador: '
+            . 'te escribe desde nuestro número de proyectos para coordinar la llamada.';
+    }
+}
+
 function wabot_config_postdemo_sin_venta(&$cfg) {
     if (trim((string)($cfg['postdemo_avanzar'] ?? '')) === '') {
         $cfg['postdemo_avanzar'] = 'Buenísimo. De acá en más lo sigue Pablo, el desarrollador: '

@@ -132,6 +132,18 @@ function wabot_responder($texto, &$conv, $cfg) {
         return [wabot_objecion_texto('plataforma', (string)$cfg['plataformas'], $conv, $cfg)];
     }
 
+    /* Pedir una llamada, o hablar con una persona, deriva a Pablo SIEMPRE.
+     *
+     * Va acá arriba, antes del agente y del motor, porque es lo único que no se
+     * puede delegar: el bot que contesta "no solemos hacer llamadas" pierde la
+     * venta en ese mismo mensaje (caso Marcelo, 28-ago). Post-demo no aplica —
+     * ahí ya está derivado y el corte de arriba lo maneja. */
+    if (!in_array(($conv['fase'] ?? ''), ['derivado', 'postdemo'], true)
+        && wabot_pide_llamada($texto)) {
+        wabot_evento_sesion($conv, 'pidio_llamada');
+        return wabot_derivar_llamada($conv, $cfg);
+    }
+
     // Otro proveedor mandando SU promo no es un lead: no se le contesta nada,
     // en ningún modo. Va antes de la apertura porque el volante suele llegar
     // como primer mensaje, justo donde el bot saludaba y preguntaba el rubro.

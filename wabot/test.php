@@ -5226,5 +5226,61 @@ caso('un chat que no es SL nunca dispara notificacion',
     wabot_push_si_sl($slCharla, $cfg) === false);
 caso('y uno archivado tampoco', wabot_push_si_sl($slArchivado, $cfg) === false);
 
+echo "— Revisión del 28-ago: llamadas, baja, WhatsApp mal escrito y turnos —\n";
+
+/* #1 Marcelo — pedir una llamada nunca se rechaza. */
+foreach (['Llamame', 'llamame por favor', 'me podes llamar?', 'me pueden llamar',
+          'quiero hablar', 'podemos hacer una llamada?', 'prefiero hablar personalmente',
+          'quiero hablar con una persona', 'necesito hablar con alguien',
+          'prefiero hablarlo por telefono', 'se puede hacer una videollamada',
+          'podriamos tener una reunion', 'te puedo llamar?', 'hablemos por telefono mejor',
+          'me llamas asi te explico mejor'] as $f) {
+    caso('pide llamada: "' . $f . '"', wabot_pide_llamada($f) === true);
+}
+foreach (['hola quiero hablar sobre una pagina web', 'quiero hablar de precios',
+          'queria hablar sobre un ecommerce para mi negocio', 'quiero una pagina web',
+          'hola buenas noches', 'cuanto sale una landing', 'prefiero por whatsapp',
+          'lo hablamos por chat', 'no me llamen mas', 'no me llames por favor',
+          'tengo un local de ropa'] as $f) {
+    caso('NO es pedido de llamada: "' . $f . '"', wabot_pide_llamada($f) === false);
+}
+
+/* #3 Maria Laura — "No molesten más" tiene que cortar de verdad.
+ * Lo dijo dos veces y ninguna matcheaba: la lista pedía el "me" pegado. */
+foreach (['No molesten mas', 'no quiero que me molesten mas', 'no me molesten',
+          'dejen de escribirme', 'dejen de mandarme mensajes', 'paren de escribir',
+          'basta de molestar', 'no me escriban mas', 'no me contacten nunca mas',
+          'sacame de la lista', 'borren mi numero', 'quiero darme de baja',
+          'no me llamen mas'] as $f) {
+    caso('es baja: "' . $f . '"', wabot_cierre_sin_presion_tipo($f) === 'baja');
+}
+foreach (['no me manden el presupuesto por mail', 'no me escribas al otro numero, mejor por aca',
+          'no tengo logo', 'no se, mandame info', 'no me acuerdo el nombre del dominio'] as $f) {
+    caso('NO es baja: "' . $f . '"', wabot_cierre_sin_presion_tipo($f) !== 'baja');
+}
+
+/* #5 Elizabeth — WhatsApp como lo escribe la gente. Contestó "Por wasup" y el
+ * bot volvió a preguntarle lo mismo. */
+foreach (['Por wasup', 'por wasap', 'wasap', 'por whats', 'watsapp', 'por wpp',
+          'por wtsp', 'guasap', 'me escriben por wsp'] as $f) {
+    caso('turnos, "' . $f . '" → sin sistema de turnos',
+        wabot_desempate_por_palabras('desempate_turnos', $f) === 'turnos_no');
+}
+
+/* #6 Vivi — negar los turnos no puede leerse como pedirlos. Le cotizó una web
+ * CON sistema de turnos justo después de que ella lo rechazara. */
+foreach (['No necesito reserven turnos porque yo tengo un sistema',
+          'no necesito que reserven turnos', 'ya tengo un sistema de turnos propio',
+          'tengo mi propio sistema de agenda', 'no preciso reservas online'] as $f) {
+    caso('turnos, "' . $f . '" → turnos_no',
+        wabot_desempate_por_palabras('desempate_turnos', $f) === 'turnos_no');
+}
+foreach (['que reserven desde la web', 'si, que saquen turno solos',
+          'con agenda online', 'quiero que reserven los turnos ellos'] as $f) {
+    caso('turnos, "' . $f . '" → turnos_si',
+        wabot_desempate_por_palabras('desempate_turnos', $f) === 'turnos_si');
+}
+
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

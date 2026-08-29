@@ -120,8 +120,30 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 };
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Bueno dale, esperá que te atiendo yo en un rato."; };
 $c = convNueva();
-$r = wabot_responder('quiero hablar con alguien', $c, $cfg);
+$r = wabot_responder('me pasas con alguien del equipo?', $c, $cfg);
 caso('derivación → se manda el texto fijo, nunca la versión libre', $r === [$cfg['derivar']] && $c['fase'] === 'derivado');
+
+/* Pedir una llamada deriva antes de llegar al modelo. Marcelo escribió
+ * "Llamame", el bot le contestó que no suele hacer llamadas y cerró con
+ * "Entonces no me interesa" (28-ago). */
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
+    return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
+};
+$GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "No solemos hacer llamadas, es todo por acá."; };
+$c = convNueva();
+$r = wabot_responder('Llamame', $c, $cfg);
+caso('"Llamame" → deriva a Pablo, no lo contesta el modelo',
+    $r === [$cfg['pide_llamada']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
+
+$c = convNueva();
+$r = wabot_responder('prefiero hablarlo por telefono', $c, $cfg);
+caso('"prefiero hablarlo por teléfono" → también deriva', $r === [$cfg['pide_llamada']]);
+
+// Pero el lead que abre la charla NO es un pedido de llamada.
+$c = convNueva();
+$r = wabot_responder('hola, quiero hablar sobre una pagina web', $c, $cfg);
+caso('"quiero hablar sobre una página" sigue el embudo normal',
+    $r !== [$cfg['pide_llamada']] && $c['fase'] !== 'derivado');
 
 // Con el modo apagado no se toca nada.
 $cfgFijo = $cfg; $cfgFijo['modo_redaccion'] = 'fijo';

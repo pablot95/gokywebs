@@ -240,7 +240,29 @@ function wabot_cierre_sin_presion_tipo($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return null;
 
-    if (preg_match('/\b(no me escriban|no me escribas|dejen de escribir|dejenme de escribir|no quiero recibir mas|no me manden mas|borrame|borren mi numero|eliminame|eliminen mi|darme de baja|dar de baja|desuscribir|desuscribirme|bloquear|bloqueame|no me contacten|no me molesten mas)\b/u', $t)) {
+    /* Pedir que no lo contacten más. Maria Laura lo dijo dos veces —"No molesten
+     * más" y "no quiero que me molesten más"— y ninguna de las dos matcheaba:
+     * la lista exigía el "me" pegado ("no me molesten mas"). El bot le contestó
+     * pidiéndole que avisara si quería cerrar el contacto, que era exactamente
+     * lo que estaba haciendo (28-ago).
+     *
+     * Se arma con dos piezas —el verbo de rechazo y el "más"/"ya" opcional— en
+     * vez de una lista de frases exactas, que es lo que dejaba pasar cualquier
+     * variante de orden de palabras. */
+    /* Cuatro formas de pedir lo mismo, separadas a propósito: marcar la baja
+     * apaga el bot para esa conversación, así que un falso positivo mata el
+     * lead. "No me manden el presupuesto por mail" NO puede leerse como baja. */
+    $bajaMolestar = '(molesten|molestar\w*|molestes|molestame|jodan|joder|jodas)';
+    $bajaEscribir = '(escrib\w*|contact\w*|mand\w*|llamen|llamar\w*|insist\w*)';
+    if (// "dejen de escribirme", "paren de mandar mensajes": el verbo ya es final.
+        preg_match('/\b(dejen de|dejenme de|dejate de|deja de|paren de|basta de|corten con)\b.{0,20}\b' . $bajaEscribir . '\b/u', $t)
+        // Molestar no admite otra lectura, con "no" adelante alcanza.
+        || preg_match('/\b(no|dejen de|paren de|basta de)\b.{0,26}\b' . $bajaMolestar . '\b/u', $t)
+        // Escribir/contactar/mandar sí: hace falta el "más", el "nunca" o el "nada".
+        || preg_match('/\bno\b.{0,26}\b' . $bajaEscribir . '\b.{0,18}\b(mas|nunca|nada|jamas)\b/u', $t)
+        || preg_match('/\bno\b.{0,12}\b(mas|nunca|jamas)\b.{0,18}\b' . $bajaEscribir . '\b/u', $t)
+        // Y el pedido explícito de baja, que no necesita contexto.
+        || preg_match('/\b(borrame|borren mi numero|eliminame|eliminen mi|sacame de la lista|sacarme de la lista|darme de baja|dar de baja|desuscribir|desuscribirme|bloquear|bloqueame)\b/u', $t)) {
         return 'baja';
     }
 
@@ -961,6 +983,41 @@ function wabot_texto_no_es_consulta($texto) {
  * gratis": volver a preguntarle "¿querés que la preparemos?" a quien entró
  * diciendo eso es no haberlo escuchado (caso Antuz, 21-ago).
  */
+/**
+ * Pidió hablar por teléfono, o hablar con una persona.
+ *
+ * Marcelo escribió "Llamame", el bot le contestó que no suele hacer llamadas y
+ * el cliente cerró con "Entonces no me interesa" (28-ago). Ese mismo día otro
+ * cliente pidió hablar personalmente y el bot derivó bien — porque ahí el
+ * clasificador lo etiquetó pide_humano. El comportamiento correcto no puede
+ * depender de que el modelo acierte: acá se resuelve con reglas.
+ *
+ * Una llamada NUNCA se rechaza. Se deriva a Pablo y él la coordina.
+ */
+function wabot_pide_llamada($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+
+    // "no me llames", "no me llamen mas" es lo contrario: eso es una baja.
+    if (preg_match('/\bno\b.{0,14}\b(me llames|me llamen|llamar|llamen|llames)\b/u', $t)) return false;
+
+    $deseo = '(quiero|querria|queria|quisiera|me gustaria|preferiria|prefiero|necesito|podemos|podriamos|podrias|se puede|puedo|podes)';
+
+    return (bool)(
+        // Teléfono y llamada: no admiten otra lectura.
+        preg_match('/\b(llamame|llamenme|llamada|llamadas|telefonicamente|por telefono|me llamas|me llaman|me podes llamar|me pueden llamar|podes llamarme|pueden llamarme|te puedo llamar|puedo llamar|hacemos una llamada|tener una llamada)\b/u', $t)
+        || preg_match('/\b(videollamada|video llamada|google meet|whatsapp call)\b/u', $t)
+        || preg_match('/\b' . $deseo . '\b.{0,24}\b(llamar|llamada|videollamada|reunirnos|reunion|juntarnos)\b/u', $t)
+        // "Hablar" con el canal o la persona dichos: ahí sí pide salir del chat.
+        || preg_match('/\b(hablar|hablarlo|charlar|charlarlo|hablemos|charlemos|conversar)\b.{0,20}\b(personalmente|en persona|por telefono|telefonicamente|cara a cara|con alguien|con una persona|con un humano|con el desarrollador|con pablo|con vos|con usted|directamente)\b/u', $t)
+        /* "Hablar" a secas también, pero solo si no arrastra un tema: "quiero
+         * hablar" pide una charla, "quiero hablar SOBRE una página web" es un
+         * lead abriendo la conversación y derivarlo mata el embudo en el primer
+         * mensaje. */
+        || preg_match('/\b' . $deseo . '\s+(hablar|charlar|conversar)\b(?!\s*(sobre|de|del|acerca|respecto|por el tema))/u', $t)
+    );
+}
+
 function wabot_pidio_demo_explicita($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
@@ -2524,9 +2581,22 @@ function wabot_desempate_por_palabras($fase, $texto) {
         if ($fase === 'desempate_turnos')   return 'turnos_no';
         if ($fase === 'desempate_cursos')   return 'cursos_mostrar';
     }
+    /* La negación explícita de los turnos.
+     *
+     * Vivi (medicina laboral) dijo "No necesito reserven turnos porque yo tengo
+     * un sistema" y el bot le cotizó una web CON sistema de turnos por $200.000:
+     * justo la función que acababa de rechazar. La lista de verbos tenía
+     * "quiero" y "hace falta" pero no "necesito", así que la frase caía en el
+     * matcher de abajo, que ve "reserven turnos" y devuelve turnos_si (28-ago).
+     *
+     * El "ya tengo mi sistema" va aparte: no es una negación gramatical, pero
+     * dice lo mismo y es como lo dice medio mundo. */
+    $verbosNeg = '(quiero|queremos|quiere|queres|quieren|necesito|necesitamos|necesita|necesitas|necesitan|preciso|precisamos|precisa|hace falta|hacen falta|me sirve|nos sirve)';
     if ($fase === 'desempate_turnos' && (bool)(
-        preg_match('/\bno\b\s+(quiero|queremos|quiere|queres|quieren|hace falta)\b.{0,15}\bque\b.{0,20}\b(reserven|reserve|reserva|reservas|saquen|elijan|elijas)\b/u', $t)
-        || preg_match('/\bno\b\s+(quiero|queremos|quiere|queres|quieren)\b.{0,20}\b(reserven|reserva|reservas|reservar|solos|online)\b/u', $t)
+        preg_match('/\bno\b\s+' . $verbosNeg . '\b.{0,15}\bque\b.{0,20}\b(reserven|reserve|reserva|reservas|saquen|elijan|elijas)\b/u', $t)
+        || preg_match('/\bno\b\s+' . $verbosNeg . '\b.{0,20}\b(reserven|reserva|reservas|reservar|turnos|solos|online)\b/u', $t)
+        || preg_match('/\bya\b.{0,10}\b(tengo|tenemos|manejo|manejamos|uso|usamos)\b.{0,24}\b(sistema|agenda|software|programa|plataforma)\b/u', $t)
+        || preg_match('/\b(tengo|tenemos|manejo|manejamos|uso|usamos)\b.{0,12}\b(mi|nuestro|otro|un)\b.{0,10}\b(propio\s+)?(sistema|agenda|software|programa|plataforma)\b/u', $t)
     )) {
         return 'turnos_no';
     }
@@ -2550,7 +2620,7 @@ function wabot_desempate_por_palabras($fase, $texto) {
             ]))) return 'comercio_vender';
             if ($tiene(array_merge($segunda, [
                 'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo', 'presentacion', 'presentar', 'contacten', 'contacto',
-                'whatsapp', 'wsp', 'wp', 'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
+'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap', 'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp', 'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
                 'escriban', 'que me hablen', 'me contacten', 'la simple', 'la basica', 'sin carrito',
                 'sin cobro', 'nomas', 'solamente mostrar', 'que muestre',
                 // "Quiero publicar los vehículos" es una respuesta clarísima que
@@ -2592,7 +2662,8 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'sistema de turnos', 'con turnos', 'que elijan', 'elijan', 'automatico', 'la completa',
             ]))) return 'turnos_si';
             if ($tiene(array_merge($segunda, [
-                'whatsapp', 'wsp', 'wp', 'escriban', 'me escriban', 'que me escriban', 'agendo yo', 'los agendo',
+                'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap', 'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp',
+                'escriban', 'me escriban', 'que me escriban', 'agendo yo', 'los agendo',
                 'lo agendo', 'no hace falta', 'sin turnos', 'alcanza', 'me hablen', 'me contacten', 'la simple',
                 'yo los agendo', 'a mano', 'por mensaje',
             ]))) return 'turnos_no';
@@ -3504,6 +3575,16 @@ function wabot_catalogo_cotizar($cantidad, &$conv, $cfg) {
 }
 
 /* Deriva: mensaje fijo + la conversación queda muda (salvo la línea de espera). */
+/**
+ * Deriva porque pidió hablar por teléfono. Texto propio: el genérico de
+ * derivación no dice nada de la llamada, y el cliente quedaría sin saber si
+ * alguien lo va a llamar o no.
+ */
+function wabot_derivar_llamada(&$conv, $cfg) {
+    wabot_handoff_marcar($conv, 'pide_humano');
+    return [(string)($cfg['pide_llamada'] ?? 'Dale, eso lo hablás directo con Pablo, el desarrollador: te escribe desde nuestro número de proyectos para coordinar.')];
+}
+
 function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
     wabot_handoff_marcar($conv, $causa);
     return [$cfg['derivar']];
