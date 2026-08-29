@@ -283,6 +283,15 @@ function wabot_procesar_entrante($ev, $cfg) {
                     $conv['no_texto_avisado'] = true;
                     wabot_enviar($conv, $aviso);
                     wabot_conv_transcript($conv, 'bot', $aviso);
+                } else {
+                    /* Ya se lo avisamos una vez, así que no se repite — pero
+                     * tampoco puede quedar en la nada. La Dra. Gascón mandó un
+                     * video y no recibió absolutamente nada, ni el bot ni
+                     * Pablo se enteraron (29-ago). El material de un lead no
+                     * se ignora: queda marcado para que aparezca en el panel.
+                     */
+                    $conv['handoff_pendiente'] = true;
+                    wabot_log('media_sin_leer', ['tel' => $conv['tel'] ?? '', 'guardado' => $seGuardoAlgo ? 1 : 0]);
                 }
                 wabot_conv_save($conv);
                 break;

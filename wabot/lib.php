@@ -364,7 +364,7 @@ function wabot_config_ventas(&$cfg) {
         'sistema_cierre'    => 'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         // Se usa solo cuando no hay link de formulario disponible (Instagram: sin teléfono).
-        'prediseno' => "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.",
+        'prediseno' => "Para prepararte la demo necesito esto:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también.",
         'prediseno_link' => "Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
         'confirma_cambio_2' => 'Decime nomás: es para el mismo proyecto que veníamos viendo (respondé "mismo") o es otra web aparte (respondé "otra")?',
@@ -1026,8 +1026,39 @@ function wabot_config_ventas(&$cfg) {
     if (trim((string)($cfg['prediseno'] ?? '')) === $predisenoViejo) {
         $cfg['prediseno'] = "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.";
     }
+    $predisenoNuevo = "Para prepararte la demo necesito esto:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también.";
     if (trim((string)($cfg['prediseno'] ?? '')) === "El prediseño es gratis y sin compromiso: armamos una versión de tu web para que la veas antes de decidir nada. Necesito esto:\n{faltan}\nPasámelo por acá y te lo preparamos.") {
-        $cfg['prediseno'] = "Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual.";
+        $cfg['prediseno'] = $predisenoNuevo;
+    }
+    /* "puede ser todo junto en un mensaje" era una instrucción PARA EL BOT —que
+     * el pedido de datos salga en UN solo mensaje, no en varios globos— y se
+     * coló como texto que el cliente terminó leyendo. Salió así en producción
+     * (Pablo, 29-ago: "esa instrucción TE LA DI YO A VOS"). Se saca de
+     * cualquier variante guardada, no solo de la que escribimos nosotros: en el
+     * panel el texto se puede editar a mano y la comparación exacta no la
+     * alcanzaría. */
+    if (mb_stripos((string)($cfg['prediseno'] ?? ''), 'todo junto en un mensaje') !== false) {
+        $cfg['prediseno'] = $predisenoNuevo;
+    }
+
+    /* "Tiene un precio de $160.000, pago único." y tres mensajes después "se
+     * abona una seña para arrancar y el saldo al entregar". No son
+     * incompatibles —"pago único" quiere decir que no hay abono mensual— pero
+     * al cliente le suenan a contradicción (Pablo, 29-ago). Se dice lo que se
+     * quiere decir. Solo en los textos de precio de cada tipo: en 'caro' y en
+     * 'plataformas' la frase es el argumento contra el alquiler mensual y ahí
+     * sí corresponde. */
+    foreach ((array)($cfg['tipos'] ?? []) as $tipoPU => $datosPU) {
+        foreach (['precio_ideal', 'precio_ideal_variantes'] as $campoPU) {
+            if (!isset($cfg['tipos'][$tipoPU][$campoPU])) continue;
+            $valorPU = $cfg['tipos'][$tipoPU][$campoPU];
+            $arreglar = function ($txt) {
+                return preg_replace('/,?\s*(?:pago único|en un único pago)\s*\.?/iu',
+                    '. Es el valor total del desarrollo, sin abono mensual.', (string)$txt);
+            };
+            $cfg['tipos'][$tipoPU][$campoPU] = is_array($valorPU)
+                ? array_map($arreglar, $valorPU) : $arreglar($valorPU);
+        }
     }
 
     $migraciones2108 = [
@@ -1340,6 +1371,10 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
 
         /* Bajan la ansiedad del que nunca tuvo una web: ninguna de estas exige
          * que el cliente tenga algo listo antes de empezar. */
+        /* Héctor preguntó en un audio "si hacés esta clase de página o si solo
+         * atendés a grandes empresas" y nunca recibió respuesta: se llevó el
+         * precio del ecommerce y se fue (29-ago). No había clave para esto. */
+        'emprendimientos' => 'Sí, trabajamos con emprendimientos que recién arrancan y con negocios chicos: no hay un tamaño mínimo. En gokywebs.com/portfolio están los trabajos entregados y vas a ver que la mayoría son negocios chicos como el tuyo.',
         'no_se_nada' => 'No hace falta que sepas nada de eso, para eso estamos nosotros. Vos contanos de tu negocio y del resto nos encargamos: te vamos pidiendo solo la información que hace falta, en criollo.',
         'sin_logo' => 'No es un problema, se puede avanzar igual: armamos la web con el nombre de tu negocio y una identidad visual acorde al rubro. Si más adelante conseguís un logo, se cambia sin rehacer nada.',
         'sin_fotos' => 'No hace falta que tengas fotos para empezar. La primera muestra la armamos con imágenes acordes al rubro para definir la estética, y después las cambiamos por las tuyas cuando las tengas.',
@@ -1909,6 +1944,32 @@ function wabot_config_pitch_encaje(&$cfg) {
             'Decime qué habías pensado y lo ajustamos.',
             'Contame qué idea tenías y vemos cómo encararlo.',
         ];
+    }
+    /* Segunda vuelta: "Quiero otra cosa" no dice nada nuevo, y repetir la
+     * misma pregunta abierta no la va a destrabar. Acá se le da la opción
+     * concreta —el mismo recurso que ya usan los desempates_2— porque lo que
+     * define el tipo de web es qué tiene que HACER el visitante, no el rubro.
+     * Bloc Consultora contestó "Quiero otra cosa" y se llevó "esa duda te la
+     * va a poder contestar el desarrollador": la venta murió ahí (29-ago). */
+    /* Tercer intento con un mensaje que no se entiende. Después de esto el bot
+     * se calla: repreguntar una cuarta vez no lo va a destrabar y queda
+     * marcado para Pablo. Ver wabot_texto_ininteligible(). */
+    /* El cliente que pide que lo busquemos más adelante. Ver
+     * wabot_texto_pide_retomar_en(): la fecha queda anotada y el bot se
+     * compromete él, en vez de devolverle la pelota. */
+    if (trim((string)($cfg['retomar_confirmado'] ?? '')) === '') {
+        $cfg['retomar_confirmado'] = 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo. Y si antes te surge cualquier duda o querés ver la demo gratis mientras tanto, escribime cuando quieras.';
+    }
+    /* "¿Se abona antes o después?" durante la demo. Lo primero que hay que
+     * decirle es que la demo no se paga: ver wabot_texto_pregunta_cuando_se_paga(). */
+    if (trim((string)($cfg['pago_antes_o_despues'] ?? '')) === '') {
+        $cfg['pago_antes_o_despues'] = 'La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona la seña para arrancar. El saldo lo pagás al entregarte la web terminada.';
+    }
+    if (trim((string)($cfg['no_entiendo'] ?? '')) === '') {
+        $cfg['no_entiendo'] = 'No estoy pudiendo entender el mensaje. Cuando puedas, mandame en una línea a qué te dedicás y seguimos por acá.';
+    }
+    if (trim((string)($cfg['pitch_otra_idea_2'] ?? '')) === '') {
+        $cfg['pitch_otra_idea_2'] = 'Te lo pregunto más concreto, así te paso la opción justa: qué querés que pueda hacer la persona que entra a tu web? Escribirte por WhatsApp, reservar un turno, comprar online, o solo ver tu información y tus trabajos?';
     }
 }
 
@@ -2614,6 +2675,31 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
         return false;
     }
 
+    /* CONTROL DE CORDURA. El mapeo es POSICIONAL: si la cantidad de renglones
+     * coincide, cada uno cae en su campo sin mirar qué dice. El techista mandó
+     * cuatro mensajes seguidos preguntando cuándo se paga —"Pero luego xe
+     * creear" / "Se abona" / "O antez" / "Angez"— WhatsApp los juntó en un
+     * turno, dieron cuatro renglones, y quedaron guardados como negocio "Se
+     * abona", colores "O antez" y referencia "Angez" (29-ago). Con eso se
+     * arma la demo y se crea el lead.
+     *
+     * Dos controles baratos, y si alguno falla no se guarda NADA: mal mapeado,
+     * todos los campos quedan mal, no solo el que se nota.
+     *  1) ningún renglón puede ser una pregunta (el que pregunta no contesta);
+     *  2) lo que caiga en "colores" tiene que nombrar algún color. */
+    $etiquetaColores = null;
+    foreach ($pedido as $i => $label) {
+        if (strpos(wabot_normalizar_frase((string)$label), 'los colores') === 0) $etiquetaColores = $i;
+    }
+    foreach ($partes as $i => $p) {
+        if (wabot_texto_pide_precio($p) || wabot_info_por_palabras($p) !== null) return false;
+        if ($etiquetaColores !== null && $i === $etiquetaColores
+            && trim((string)($conv['colores'] ?? '')) === ''
+            && !wabot_menciona_color($p)) {
+            return false;
+        }
+    }
+
     // Cada etiqueta del listado, al campo que le corresponde.
     $campoDe = function ($label) {
         $l = wabot_normalizar_frase((string)$label);
@@ -2834,6 +2920,8 @@ function wabot_conv_load($clave) {
         // "Lo consulto y te aviso": el cliente prometió avisar él. El
         // seguimiento automático no lo persigue ese mismo día.
         'aviso_prometido_ts'     => 0,
+        // El cliente pidió que lo busquemos en X tiempo: fecha absoluta.
+        'retomar_ts'             => 0,
         // Entró pidiendo la demo: el precio no la vuelve a ofrecer, va directo
         // a pedir los datos.
         'demo_pedida_entrada'    => false,
@@ -2861,6 +2949,8 @@ function wabot_conv_load($clave) {
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
         'aclaraciones_fallidas' => 0,
+        // Mensajes seguidos que no se entienden, antes de saber el rubro.
+        'ininteligibles'   => 0,
         'desempates_preguntados' => [],
         'aclaracion_pendiente' => false,
         'aclaracion_ultimo_hash' => null,
@@ -3666,6 +3756,10 @@ function wabot_lista_items() {
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),
+            // El cliente pidió que lo busquemos en X tiempo. Fuera de la
+            // ventana de 24 h de Meta no hay forma de escribirle solo, así que
+            // la fecha viaja al panel para que la retome Pablo.
+            'retomar_ts' => (int)($cv['retomar_ts'] ?? 0),
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
             // automático posterior (el recordatorio de 20 h, la última llamada,
@@ -4391,7 +4485,41 @@ function wabot_texto_util($texto) {
     return wabot_emoji_a_texto($texto);
 }
 
+/**
+ * "En el link del presupuesto tenés el detalle de todo lo que incluye."
+ *
+ * Héctor recibió esa frase y en su charla el único link que había salido era
+ * el del portfolio: el presupuesto nunca se le mandó (29-ago). El texto está
+ * escrito para el flujo viejo, donde el precio iba con su link; hoy el pitch
+ * manda el portfolio, así que la frase quedó hablando de algo que no existe.
+ *
+ * Si el link no salió todavía, sale acá: la frase pasa a ser cierta. Y si el
+ * tipo no tiene link configurado, se saca la oración entera en vez de prometer
+ * algo que no se puede cumplir.
+ */
+function wabot_link_presupuesto_completar($texto, $conv, $cfg) {
+    $t = trim((string)$texto);
+    if ($t === '' || !preg_match('/\blink del presupuesto\b/iu', $t)) return $t;
+
+    $link = trim((string)($cfg['tipos'][(string)($conv['tipo'] ?? '')]['link'] ?? ''));
+    if ($link === '') {
+        $oraciones = preg_split('/(?<=\.)\s+/u', $t);
+        $limpias = array_filter($oraciones, function ($o) {
+            return !preg_match('/\blink del presupuesto\b/iu', $o);
+        });
+        return trim(implode(' ', $limpias));
+    }
+
+    if (mb_stripos($t, $link) !== false) return $t;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'bot') continue;
+        if (mb_stripos((string)($fila['t'] ?? ''), $link) !== false) return $t;
+    }
+    return $t . "\n" . $link;
+}
+
 function wabot_objecion_texto($clave, $textoCompleto, &$conv, $cfg) {
+    $textoCompleto = wabot_link_presupuesto_completar($textoCompleto, $conv, $cfg);
     $conv['objecion_dicha'] = (array)($conv['objecion_dicha'] ?? []);
     if (empty($conv['objecion_dicha'][$clave])) {
         $conv['objecion_dicha'][$clave] = true;
@@ -5377,6 +5505,9 @@ function wabot_seguimiento_corresponde($cv, $cfg, $ahora = null) {
     // "Lo veo con mi socia y te aviso" el mismo día = silencio: el cliente
     // tomó el control de los tiempos y perseguirlo ese día quema la venta.
     if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
+    // Y si puso fecha ("contactame en un mes y medio"), hasta esa fecha no se
+    // lo toca: perseguirlo antes es no haberlo escuchado.
+    if ((int)($cv['retomar_ts'] ?? 0) > $ahora) return false;
 
     // Solo etapas calientes: ya recibió precio/muestra o está completando la
     // muestra. Nunca se persigue una charla que apenas estaba calificándose.

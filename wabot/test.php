@@ -168,7 +168,7 @@ $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['objecion_caro']);
 $r = wabot_engine('uh que caro', $c, $cfg);
 caso('objeción caro → respuesta fija, cuotas y muestra, sin bajar precio',
-    $r === [$cfg['caro'], $cfg['cta_muestra']] && $c['fase'] === 'precio' && $c['cta_muestra'] === true);
+    $r === [wabot_link_presupuesto_completar($cfg['caro'], $c, $cfg), $cfg['cta_muestra']] && $c['fase'] === 'precio' && $c['cta_muestra'] === true);
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['pregunta_info'], ['info_keys' => ['plazos', 'hosting']]);
@@ -250,7 +250,7 @@ caso('contesta varias dudas juntas', count($r) === 1 && strpos($r[0], '- ') === 
 
 clasifica(['objecion_caro']);
 $r = wabot_engine('me parece caro igual', $c, $cfg);
-caso('la objeción se contesta sin bajar el precio', $r === [$cfg['caro']]);
+caso('la objeción se contesta sin bajar el precio', $r === [wabot_link_presupuesto_completar($cfg['caro'], $c, $cfg)]);
 
 // Lo que NO puede hacer: volver a vender.
 clasifica(['rubro_landing']);
@@ -609,11 +609,11 @@ caso('y al contestar la cantidad cotiza con el total calculado',
 echo "— Los 5 textos fijos que dictó Pablo (25-ago), con {precio} resuelto —\n";
 
 $textosFijosEsperados = [
-    'landing' => 'Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}, pago único.',
-    'ecommerce' => 'Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}, en un único pago',
-    'turnos' => 'Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}, pago único.',
-    'inmobiliaria' => 'Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}, pago único.',
-    'elearning' => 'Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}, pago único.',
+    'landing' => 'Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+    'ecommerce' => 'Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+    'turnos' => 'Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+    'inmobiliaria' => 'Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+    'elearning' => 'Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
 ];
 foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
     $cFijo = conv_sin_pitch();
@@ -807,7 +807,7 @@ caso('preguntar cómo se paga no dispara la objeción de precio', $r[0] !== $cfg
 
 clasifica(['objecion_caro']);
 $r = wabot_engine('uh, me parece caro', $c, $cfg);
-caso('decir que es caro sí dispara la respuesta oficial', $r[0] === $cfg['caro']);
+caso('decir que es caro sí dispara la respuesta oficial', $r[0] === wabot_link_presupuesto_completar($cfg['caro'], $c, $cfg));
 
 echo "— Un \"dale\" pelado acepta la muestra, no corta la venta —\n";
 
@@ -1409,7 +1409,7 @@ caso('y la pregunta NO queda guardada como referencia', empty($c['referencia']) 
 clasifica(['objecion_caro']);
 $r = wabot_engine('igual me parece caro', $c, $cfg);
 caso('objeción en prediseno_ref → tampoco cierra',
-    $r === [$cfg['caro'], $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
+    $r === [wabot_link_presupuesto_completar($cfg['caro'], $c, $cfg), $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
 
 clasifica(['saludo']);
 $r = wabot_engine('gracias!', $c, $cfg);
@@ -1973,7 +1973,7 @@ caso('la tercera vez también corto, no vuelve a repetir el completo', $r3 === [
 $c2 = conv_nueva(); $c2['fase'] = 'precio'; $c2['tipo'] = 'landing';
 clasifica(['objecion_caro']);
 $rc1 = wabot_engine('me parece caro', $c2, $cfg);
-caso('objecion_caro también lleva el completo la primera vez', $rc1[0] === $cfg['caro']);
+caso('objecion_caro también lleva el completo la primera vez', $rc1[0] === wabot_link_presupuesto_completar($cfg['caro'], $c2, $cfg));
 caso('y esa duda caliente ya deja la demo ofrecida', $c2['cta_muestra'] === true);
 clasifica(['objecion_pensarlo']);
 $rp1 = wabot_engine('lo tengo que pensar', $c2, $cfg);
@@ -2115,8 +2115,22 @@ $convSinFaltantes = ['nombre' => 'Marcos Pérez', 'nombre_confirmado' => true, '
 $textoSinFaltantes = wabot_prediseno_texto($convSinFaltantes, $cfgPredis);
 caso('si ya se sabe todo, el texto no lista nada',
     strpos($textoSinFaltantes, 'con lo que ya tengo alcanza') !== false);
-caso('y el pedido aclara que puede mandar todo junto',
-    stripos($textoConFaltantes, 'todo junto') !== false);
+/* "puede ser todo junto en un mensaje" era la instrucción de que el pedido
+ * saliera en UN mensaje, no algo para decirle al cliente. Llegó a producción
+ * como texto y Pablo lo vio en una charla real (29-ago). */
+caso('el pedido no le explica al cliente que mande todo junto',
+    stripos($textoConFaltantes, 'todo junto') === false);
+caso('y arranca con el texto que fijó Pablo',
+    strpos($textoConFaltantes, 'Para prepararte la demo necesito esto:') === 0);
+caso('el pedido de datos no se lleva la coletilla de que la demo es gratis',
+    wabot_demo_siempre_gratis([$textoConFaltantes], $cfgPredis) === [$textoConFaltantes]);
+
+// Una config con el texto viejo guardado tiene que salir migrada.
+$cfgTodoJunto = ['prediseno' => "Perfecto. Para prepararte la demo necesito esto, puede ser todo junto en un mensaje:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también. Si no, la armamos igual."];
+wabot_config_ventas($cfgTodoJunto);
+caso('y la migración lo saca de cualquier variante ya guardada',
+    stripos((string)$cfgTodoJunto['prediseno'], 'todo junto') === false
+    && strpos((string)$cfgTodoJunto['prediseno'], '{faltan}') !== false);
 
 $cfgPredisFormOn = $cfgPredis; $cfgPredisFormOn['form_activo'] = true;
 $convWspConTel = ['tel' => '5491100000000TEST', 'channel_user_id' => '5491100000000TEST', 'canal' => 'whatsapp',
@@ -2298,7 +2312,7 @@ $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dad
 clasifica(['otro']);
 $r = wabot_engine('no hay forma de que me lo dejes en 150?', $c, $cfg);
 caso('el primer regateo recibe la respuesta oficial de precio, sin bajar el monto',
-    $r === [$cfg['caro']] && $c['fase'] === 'precio');
+    $r === [wabot_link_presupuesto_completar($cfg['caro'], $c, $cfg)] && $c['fase'] === 'precio');
 $r = wabot_engine('dale, si me haces 10 por ciento de descuento cierro ya mismo', $c, $cfg);
 caso('el regateo insistente va a Pablo, nunca a la despedida',
     $r === [$cfg['derivar']] && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']));
@@ -5453,5 +5467,131 @@ caso('pero NO la que el cliente acaba de revivir',
 
 
 
+
+echo "— Revisión de las 19 charlas del 29-ago —\n";
+
+/* 2. Un link no es una pregunta. La Dra. Gascón mandó su galería de fotos y
+ * recibió la respuesta de seguridad/SSL entera, porque "https" estaba en la
+ * lista de palabras de esa clave. */
+$linkFotos = 'https://alan-uviedo.pixieset.com/yesikafinales/';
+caso('un link pelado ya no dispara la respuesta de seguridad',
+    wabot_info_por_palabras($linkFotos, 'prediseno') === null);
+caso('y se reconoce como material, no como consulta',
+    wabot_texto_no_es_consulta($linkFotos) === 'material');
+caso('el dominio no cuenta como rastro de ninguna clave angosta',
+    wabot_info_clave_tiene_rastro('emails', 'te paso esto: mimarca.com.ar/mails', []) === false);
+caso('pero preguntar de verdad por seguridad sigue funcionando',
+    wabot_info_por_palabras('la pagina es segura? tiene certificado de seguridad', 'precio') === 'seguridad');
+caso('y un link CON pregunta alrededor no se descarta como material',
+    wabot_texto_es_solo_link('mira mi web actual mimarca.com.ar, la pueden hackear?') === false);
+
+/* 3. "…sobre esto?costo" — el pegote del anuncio más la palabra suelta. */
+caso('"costo" pelado al final es una pregunta de precio',
+    wabot_info_por_palabras('Hola. ¿Puedo obtener más información sobre esto?costo', 'menu') === 'precio_sin_rubro');
+caso('y "que costo tiene" también',
+    wabot_info_por_palabras('que costo tiene', 'menu') === 'precio_sin_rubro');
+
+/* 4. El precio de OTRO tipo se contesta con el número, no con una definición. */
+$convVeg = ['tipo' => 'ecommerce', 'precio_dado' => true];
+caso('"y la página común que precio tiene?" pregunta por la landing',
+    wabot_texto_pregunta_precio_de_tipo('Y la página común que precio tiene ?', $cfg, 'ecommerce') === 'landing');
+$textoOtro = wabot_precio_de_tipo_texto('landing', $convVeg, $cfg);
+caso('y la respuesta trae el precio de la landing y el ya cotizado',
+    strpos($textoOtro, (string)$cfg['tipos']['landing']['precio']) !== false
+    && strpos($textoOtro, (string)$cfg['tipos']['ecommerce']['precio']) !== false);
+caso('preguntar por el tipo que YA tiene cotizado no dispara nada',
+    wabot_texto_pregunta_precio_de_tipo('cuanto sale la tienda online?', $cfg, 'ecommerce') === null);
+caso('y contar el rubro sin preguntar precio tampoco',
+    wabot_texto_pregunta_precio_de_tipo('vendo ropa en una tienda del centro', $cfg, 'landing') === null);
+
+/* 1. "No me gusta mucho che" → "Quiero otra cosa" → el comodín del desarrollador. */
+caso('"No me gusta mucho che" es un no a la pregunta del pitch',
+    wabot_pitch_dice_otra_idea('No me gusta mucho che') === true);
+$cPitch = ['fase' => 'pitch', 'tipo' => 'landing', 'pitch_hecho' => true, 'precio_dado' => true, 'transcript' => []];
+$r1 = wabot_pitch_encaje_rechazado('No me gusta mucho che', $cPitch, $cfg);
+$r2 = wabot_pitch_encaje_rechazado('Quiero otra cosa', $cPitch, $cfg);
+$r3 = wabot_pitch_encaje_rechazado('Quiero otra cosa', $cPitch, $cfg);
+caso('la primera vez se le pregunta qué tenía en mente', $r1 !== null);
+caso('la segunda ya va la pregunta concreta, no la misma abierta',
+    $r2 === [$cfg['pitch_otra_idea_2']] && $r2 !== $r1);
+caso('y a la tercera se deja de insistir', $r3 === null);
+
+/* 12. El teclado apretado al azar. */
+caso('"Bxjxdid" es ininteligible', wabot_texto_ininteligible('Bxjxdid') === true);
+caso('"Djdududeididurureueieies" también', wabot_texto_ininteligible('Djdududeididurureueieies') === true);
+caso('un rubro real NO es ininteligible', wabot_texto_ininteligible('Cerrajería, Herrajes') === false);
+caso('ni un nombre de negocio largo',
+    wabot_texto_ininteligible('Distribuidora Herrajes don Alfredo') === false);
+caso('ni una respuesta corta normal', wabot_texto_ininteligible('Una consultora') === false);
+
+/* BUG NUEVO (no estaba en la lista de Pablo): los cuatro mensajes del techista
+ * preguntando cuándo se paga quedaron guardados como los datos de la demo. */
+$pedidoLista = ['Tu nombre', 'El nombre de tu negocio', 'Los colores de tu marca',
+    'Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)'];
+$cTech = ['prediseno_pedido' => $pedidoLista, 'nombre' => 'techista martin',
+          'nombre_confirmado' => true, 'transcript' => []];
+caso('las preguntas del techista ya no se guardan como los datos de la demo',
+    wabot_prediseno_lista_posicional("Pero luego xe creear\nSe abona\nO antez\nAngez", $cTech) === false);
+caso('y no quedó nada escrito en la ficha',
+    empty($cTech['nombre_negocio']) && empty($cTech['colores']) && empty($cTech['referencia']));
+$cReal = ['prediseno_pedido' => $pedidoLista, 'transcript' => []];
+caso('una respuesta de verdad se sigue guardando igual',
+    wabot_prediseno_lista_posicional("Martin\nTechos del Sur\nnegro y naranja\nno tengo", $cReal) === true
+    && $cReal['nombre_negocio'] === 'Techos del Sur' && $cReal['colores'] === 'negro y naranja');
+$cHex = ['prediseno_pedido' => $pedidoLista, 'transcript' => []];
+caso('y los colores escritos con hex y adjetivos raros pasan',
+    wabot_prediseno_lista_posicional("Yesika\nDragascon.skin\nBlanco grisáceo (#F8F8F8) y tonos dorados (#Ae9060)\nno", $cHex) === true
+    && strpos((string)$cHex['colores'], '#F8F8F8') !== false);
+
+/* 11. "Se abona / O antez": preguntaba el ORDEN, no el monto. */
+caso('"pero luego se abona, o antes?" pregunta cuándo se paga',
+    wabot_texto_pregunta_cuando_se_paga('Pero luego se abona. O antes?') === true);
+caso('y "cuando se abona" también',
+    wabot_texto_pregunta_cuando_se_paga('cuando se abona') === true);
+caso('pero "como se paga" a secas sigue siendo la consulta de formas de pago',
+    wabot_texto_pregunta_cuando_se_paga('como se paga?') === false);
+
+/* 6. El link del presupuesto que nunca se mandó. */
+$cLink = ['tipo' => 'landing', 'transcript' => []];
+$caroSinLink = wabot_link_presupuesto_completar($cfg['caro'], $cLink, $cfg);
+caso('si el link del presupuesto no salió, la respuesta de "caro" lo trae',
+    strpos($caroSinLink, (string)$cfg['tipos']['landing']['link']) !== false);
+$cLink2 = ['tipo' => 'landing', 'transcript' => [
+    ['q' => 'bot', 't' => 'te dejo el detalle: ' . $cfg['tipos']['landing']['link'], 'ts' => time()]]];
+caso('y si ya se lo habíamos mandado, no se repite',
+    wabot_link_presupuesto_completar($cfg['caro'], $cLink2, $cfg) === $cfg['caro']);
+
+/* 7. "Contactarnos en un mes y medio" es un sí con fecha, no una despedida. */
+caso('"podríamos hacer un punto de 30 días" pide retomar en 30',
+    wabot_texto_pide_retomar_en('podriamos hacer un punto de 30 dias, contactarnos mas adelante') === 30);
+caso('"contactarnos en un mes y medio" pide retomar en 45',
+    wabot_texto_pide_retomar_en('contactarnos en un mes y medio') === 45);
+caso('un plazo suelto sin hablar de volver a hablar no cuenta',
+    wabot_texto_pide_retomar_en('la web la necesito en 30 dias') === null);
+caso('y el plazo se dice como lo diría una persona',
+    wabot_plazo_humano(45) === 'un mes y medio' && wabot_plazo_humano(30) === 'un mes');
+$cRet = ['fase' => 'precio', 'precio_dado' => true, 'retomar_ts' => time() + 20 * 86400,
+         'transcript' => [['q' => 'bot', 't' => 'algo', 'ts' => time() - 9999]],
+         'ultimo_cliente_ts' => time() - 100];
+caso('con fecha puesta, el seguimiento automático no lo persigue antes',
+    wabot_seguimiento_corresponde($cRet, $cfg) === false);
+
+/* 5/8. El rubro no alcanza para elegir el tipo. */
+caso('"Una consultora" no dice qué tiene que hacer el visitante',
+    wabot_texto_dice_objetivo_web('Una consultora') === false);
+caso('pero "quiero que me escriban por whatsapp" sí',
+    wabot_texto_dice_objetivo_web('quiero que me escriban por whatsapp') === true);
+
+/* 5. La pregunta que Héctor hizo y nadie contestó. */
+caso('"hacés esta clase de página o solo grandes empresas?" tiene respuesta propia',
+    wabot_info_por_palabras('hacés esta clase de página o solo atendés a grandes empresas', 'menu') === 'emprendimientos');
+caso('y la clave existe en la config',
+    trim((string)($cfg['info']['emprendimientos'] ?? '')) !== '');
+
+/* 10. "Pago único" al lado de la seña sonaba a contradicción. */
+caso('el texto de precio ya no dice "pago único"',
+    stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'pago único') === false);
+caso('y sí aclara que no hay abono mensual',
+    stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'sin abono mensual') !== false);
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

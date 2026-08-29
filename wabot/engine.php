@@ -435,12 +435,30 @@ function wabot_demo_siempre_gratis($mensajes, $cfg) {
     foreach ($mensajes as $i => $m) {
         $t = wabot_normalizar_frase((string)$m);
         if ($t === '' || !wabot_texto_ofrece_demo($t)) continue;
+        if (wabot_texto_pide_datos_prediseno($m, $cfg)) continue;
         if (preg_match($gratis, (string)$m)) continue;
         $aclaracion = trim((string)($cfg['demo_es_gratis'] ?? ''));
         if ($aclaracion === '') continue;
         $mensajes[$i] = rtrim((string)$m) . ' ' . $aclaracion;
     }
     return $mensajes;
+}
+
+/**
+ * ¿Es el pedido de datos del prediseño y no un ofrecimiento?
+ *
+ * "Para prepararte la demo necesito esto:" matchea igual que un ofrecimiento,
+ * pero acá el cliente ya dijo que sí: no hay nada que ofrecerle y la coletilla
+ * de que es gratis solo alarga un mensaje cuyo texto Pablo fijó al pie de la
+ * letra (29-ago). Se reconoce por el arranque del template de config, así que
+ * sigue funcionando si el texto se edita desde el panel.
+ */
+function wabot_texto_pide_datos_prediseno($m, $cfg) {
+    $base = trim((string)($cfg['prediseno'] ?? ''));
+    if ($base === '' || strpos($base, '{faltan}') === false) return false;
+    $arranque = trim((string)strstr($base, '{faltan}', true));
+    if ($arranque === '') return false;
+    return mb_stripos((string)$m, $arranque) !== false;
 }
 
 /** ¿El mensaje está OFRECIENDO armar la demo? (no hablando de ella de pasada) */
@@ -950,8 +968,89 @@ function wabot_pide_repetir($texto) {
  * detector amplio de "esto no es pregunta" se comería preguntas reales
  * escritas sin signo, que son la mayoría en WhatsApp.
  */
+/**
+ * El texto sin los links que traiga.
+ *
+ * Un link es MATERIAL, no una pregunta, y sus palabras no significan lo que
+ * parecen: la Dra. Gascón mandó `https://alan-uviedo.pixieset.com/yesikafinales/`
+ * para pasar sus fotos y el bot le contestó sobre el certificado SSL, el
+ * cifrado y si la pueden hackear — porque "https" estaba en la lista de
+ * palabras de la clave `seguridad` y el dominio se lo comió el matcher
+ * (29-ago). Ella tuvo que aclararle "Fotos".
+ *
+ * Cualquier matcher de INTENCIÓN tiene que mirar lo que el cliente escribió
+ * alrededor del link, no el link. La detección de links en sí (referencias,
+ * "ya tengo web") no usa esto: ahí la URL es el dato.
+ */
+function wabot_texto_sin_urls($texto) {
+    $t = preg_replace('#\b(?:https?://|www\.)\S+#iu', ' ', (string)$texto);
+    $t = preg_replace('#\b[a-z0-9][a-z0-9\-]*\.(?:com|net|org|ar|io|app|co|es|shop|store|online|me|info|biz|tv|link|site|web)(?:\.[a-z]{2,3})?(?:/\S*)?#iu', ' ', $t);
+    return trim(preg_replace('/\s+/u', ' ', $t));
+}
+
+/**
+ * ¿Esta palabra puede ser castellano? Conservador a propósito: solo dice que sí
+ * es implausible cuando hay una marca dura (sin vocales, cuatro consonantes
+ * seguidas, larguísima, o una sílaba repetida en bucle).
+ */
+function wabot_token_implausible($tok) {
+    $l = mb_strlen($tok);
+    if ($l < 3) return false;                                  // "ok", "si", "no"
+    if (!preg_match('/[aeiou]/u', $tok)) return true;           // "zzz", "hmm"
+    if (preg_match('/[^aeiou]{4,}/u', $tok)) return true;       // "bxjxd"
+    if ($l >= 11) return true;                                  // ninguna respuesta real es un chorizo
+    if (preg_match('/(..)\1{2,}/u', $tok)) return true;         // "dududu"
+    return false;
+}
+
+/**
+ * El mensaje no es texto: es el teclado apretado al azar.
+ *
+ * "Bxjxdid", "Djdududeididurureueieies". El bot les contestó tres veces la
+ * misma pregunta con otras palabras, y una de ellas fue "Parece que se te
+ * tiroteó el teclado" —que la escribió el modelo, no está en ninguna config—
+ * (29-ago). Con esto el turno no llega al modelo: la escalera de respuestas es
+ * fija y se corta sola.
+ */
+function wabot_texto_ininteligible($texto) {
+    $t = wabot_normalizar_frase(wabot_texto_sin_urls((string)$texto));
+    if ($t === '') return false;
+    if (preg_match('/\d/u', $t)) return false;                  // un número siempre puede significar algo
+    $tokens = array_values(array_filter(explode(' ', $t)));
+    if (!$tokens || count($tokens) > 4) return false;           // una frase larga se interpreta, no se descarta
+    foreach ($tokens as $tok) {
+        if (!wabot_token_implausible($tok)) return false;       // alcanza UNA palabra real
+    }
+    return true;
+}
+
+/**
+ * El mensaje no destraba nada: no dice el rubro, no pregunta y no aporta datos.
+ * Solo se usa para seguir contando después de un mensaje ininteligible, nunca
+ * para cortarle el turno a alguien que está hablando normal.
+ */
+function wabot_mensaje_no_destraba($texto) {
+    if (strpos((string)$texto, '?') !== false) return false;
+    if (wabot_aporta_descripcion($texto)) return false;
+    if (wabot_info_por_palabras($texto) !== null) return false;
+    if (wabot_fallback_rubro_local($texto) !== null) return false;
+    return true;
+}
+
+/** ¿El mensaje es solo un link (con o sin un par de palabras sueltas)? */
+function wabot_texto_es_solo_link($texto) {
+    $crudo = trim((string)$texto);
+    if ($crudo === '') return false;
+    $sin = wabot_texto_sin_urls($crudo);
+    if ($sin === $crudo) return false;                       // no traía ningún link
+    $resto = wabot_normalizar_frase($sin);
+    return $resto === '' || count(array_filter(explode(' ', $resto))) <= 2;
+}
+
 function wabot_texto_no_es_consulta($texto) {
     $crudo = (string)$texto;
+    // Un link pelado es material aunque venga con un signo de pregunta detrás.
+    if (wabot_texto_es_solo_link($crudo)) return 'material';
     if (strpos($crudo, '?') !== false) return null;
     $t = wabot_normalizar_frase($crudo);
     if ($t === '') return null;
@@ -1036,13 +1135,15 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
     if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
 
     $re = '/\b' . $rastros[$clave] . '\w*/u';
-    if (preg_match($re, wabot_normalizar_frase((string)$texto))) return true;
+    // Sin los links: el dominio de una URL no es un rastro de nada. Ver
+    // wabot_texto_sin_urls().
+    if (preg_match($re, wabot_normalizar_frase(wabot_texto_sin_urls((string)$texto)))) return true;
 
     // Puede haberlo preguntado un turno antes.
     $vistos = 0;
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
         if (($fila['q'] ?? '') !== 'cliente') continue;
-        if (preg_match($re, wabot_normalizar_frase((string)($fila['t'] ?? '')))) return true;
+        if (preg_match($re, wabot_normalizar_frase(wabot_texto_sin_urls((string)($fila['t'] ?? ''))))) return true;
         if (++$vistos >= 3) break;
     }
     return false;
@@ -1255,6 +1356,100 @@ function wabot_parece_lista_colores($texto) {
         if (!in_array($palabra, $conectores, true)) return false;
     }
     return $hayColor;
+}
+
+/**
+ * "Podríamos hacer un punto de 30 días, contactarnos en un mes y medio."
+ *
+ * Héctor no se estaba yendo: estaba pidiendo que lo busquemos más adelante,
+ * que es lo más parecido a un sí que da alguien sin plata hoy. El bot le
+ * contestó "cuando estés listo, escribime" y le devolvió toda la
+ * responsabilidad al cliente (29-ago). Devuelve los días, o null.
+ */
+function wabot_texto_pide_retomar_en($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+    // Tiene que hablar de VOLVER a hablar: un plazo suelto puede ser cualquier cosa.
+    if (!preg_match('/\b(contact\w+|escrib\w+|hablamos|hablemos|retom\w+|charlamos|me avisas|avisame|lo vemos|punto de|volver a)\b/u', $t)) return null;
+
+    if (preg_match('/\b(\d{1,3})\s*dias?\b/u', $t, $m)) {
+        $d = (int)$m[1];
+        if ($d >= 7 && $d <= 365) return $d;
+    }
+    if (preg_match('/\b(un mes y medio|mes y medio)\b/u', $t))            return 45;
+    if (preg_match('/\b(un|1)\s*mes\b/u', $t))                            return 30;
+    if (preg_match('/\b(dos|2)\s*meses\b/u', $t))                         return 60;
+    if (preg_match('/\b(tres|3)\s*meses\b/u', $t))                        return 90;
+    if (preg_match('/\b(seis|6)\s*meses\b/u', $t))                        return 180;
+    return null;
+}
+
+/** "30 días" dicho como lo diría una persona. */
+function wabot_plazo_humano($dias) {
+    $dias = (int)$dias;
+    if ($dias === 30) return 'un mes';
+    if ($dias === 45) return 'un mes y medio';
+    if ($dias === 60) return 'dos meses';
+    if ($dias === 90) return 'tres meses';
+    if ($dias === 180) return 'seis meses';
+    return $dias . ' días';
+}
+
+/**
+ * ¿El cliente ya dijo QUÉ tiene que poder hacer el que entra a su web?
+ *
+ * El rubro no alcanza para elegir el tipo: una consultora puede querer que la
+ * llamen, que le reserven una reunión o que le compren un programa. Si el
+ * cliente ya lo dijo, no se le pregunta; si solo nombró el rubro, sí.
+ */
+function wabot_texto_dice_objetivo_web($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(whatsapp|wasap|wsp|me escriban|me contacten|contactarme|me llamen|consultas'
+        . '|turno|turnos|reserva|reservar|reserven|agenda|agendar|cita|citas'
+        . '|comprar|compren|carrito|cobrar|vender|venta|ventas|pagos|pagar'
+        . '|catalogo|mostrar|muestre|exhibir|presupuesto|cotizar|inscribir|inscripcion'
+        . '|curso|cursos|clases|taller|talleres|alumnos)\b/u', $t);
+}
+
+/**
+ * "Pero luego xe creear / Se abona / O antez / Angez".
+ *
+ * El techista estaba preguntando una sola cosa: si paga antes o después de la
+ * muestra gratis. Recibió el detalle de la seña y las cuotas, que no era la
+ * duda, y encima con condiciones inventadas (29-ago). La respuesta correcta
+ * empieza por lo único que le importaba: la demo no se paga.
+ *
+ * Solo cuenta como esta pregunta si nombra el ANTES/DESPUÉS o el orden. Un
+ * "cómo se paga" pelado sigue siendo consultar_info('pago'), que ya funciona.
+ */
+function wabot_texto_pregunta_cuando_se_paga($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    $pago = '\b(se abona|se paga|abono|pago|pagar|abonar|sena)\w*\b';
+    if (!preg_match('/' . $pago . '/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(antes|antez|despues|luego|primero|después)\b/u', $t)
+        || preg_match('/\bcuando\b.{0,20}' . $pago . '/u', $t)
+        || preg_match('/' . $pago . '.{0,20}\bcuando\b/u', $t)
+        || preg_match('/\b(ya mismo|de una|en que momento)\b/u', $t)
+    );
+}
+
+/**
+ * ¿El texto nombra algún color? Más flojo que wabot_parece_lista_colores():
+ * alcanza con que aparezca UNO, o un código hex. Sirve de control de cordura
+ * donde lo que importa es descartar que el valor no tenga nada que ver —
+ * "Blanco grisáceo (#F8F8F8) y tonos dorados" tiene que pasar igual.
+ */
+function wabot_menciona_color($texto) {
+    if (preg_match('/#[0-9a-f]{3,8}\b/i', (string)$texto)) return true;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(rojo|roja|rosa|rosado|amarillo|amarilla|azul|azules|celeste|verde|verdes|violeta'
+        . '|lila|morado|purpura|naranja|beige|beis|crema|blanco|blanca|negro|negra|gris|grises|marron|bordo'
+        . '|dorado|dorada|plateado|plateada|turquesa|fucsia|coral|ocre|mostaza|terracota|nude|cobre|salmon'
+        . '|pastel|pasteles|calidos|calidas|frios|frias|neutros|neutrales|vivos|tierra|colores?)\w*\b/u', $t);
 }
 
 /** Un mensaje nuevo y explícitamente comprador vuelve a habilitar el seguimiento. */
@@ -2424,7 +2619,9 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // "artículos,modificarle" sin espacio termina con "articulosmodificarle",
     // una sola palabra que ninguna clave reconoce. Pasó en producción: esa
     // consulta se fue entera a "eso te lo confirma el desarrollador".
-    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', (string)$texto));
+    // Los links se sacan ANTES de todo: sus palabras no son intención del
+    // cliente, son un dominio. Ver wabot_texto_sin_urls().
+    $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', wabot_texto_sin_urls((string)$texto)));
     if ($t === '') return null;
 
     // Este matcher es el respaldo local para PREGUNTAS cortas. Un párrafo largo
@@ -2462,6 +2659,13 @@ function wabot_info_por_palabras($texto, $fase = null) {
         || (preg_match('/\b(celular|celulares|telefono|movil|mobile|tablet)\b/u', $t)
             && preg_match('/\b(se ve|se abre|se adapta|funciona|anda|entra|entran|sirve|queda|visualiza)\b/u', $t))) return 'responsive';
     if (preg_match('/\b(no se nada de|no entiendo nada de|no manejo|no soy de|soy (un )?desastre con)\b.{0,24}\b(paginas?|web|compu|tecnologia|sistemas|internet)\b/u', $t)) return 'no_se_nada';
+    /* "¿Hacés esta clase de página o solo atendés a grandes empresas?" — la
+     * pregunta del que recién arranca y no se anima a preguntar el precio. */
+    if (preg_match('/\b(solo|unicamente|nada mas)\b.{0,20}\b(grandes|empresas grandes|empresas|marcas grandes)\b/u', $t)
+        || preg_match('/\b(emprendimiento|emprendimientos|emprendedor|emprendedora|negocio chico|negocios chicos|recien empiezo|recien arranco|recien estoy empezando|chiquito|pequeno negocio|micro ?emprendimiento)\b.{0,40}\b(hacen|hacés|haces|trabajan|sirve|atienden|es para|tambien|también)\b/u', $t)
+        || preg_match('/\b(hacen|hacés|haces|trabajan|atienden)\b.{0,30}\b(emprendimiento|emprendimientos|emprendedores|negocios chicos|negocio chico|proyectos chicos)\b/u', $t)) {
+        return 'emprendimientos';
+    }
     if (preg_match('/\b(no tengo logo|sin logo|no cuento con logo|todavia no tengo logo|logo no tengo)\b/u', $t)) return 'sin_logo';
     if (preg_match('/\b(no tengo (buenas )?fotos|sin fotos|fotos no tengo|no tengo imagenes|no cuento con fotos|malas fotos)\b/u', $t)) return 'sin_fotos';
     if (preg_match('/\b(la muestra (ya )?es mi (pagina|web)|la demo (ya )?es (mi|la) (pagina|web)|esa (ya )?seria mi (pagina|web)|la muestra queda(ria)? (como|de) (mi|la) (pagina|web))\b/u', $t)) return 'muestra_no_es_final';
@@ -2607,8 +2811,13 @@ function wabot_info_por_palabras($texto, $fase = null) {
         || preg_match('/^\s*(y\s+)?el presupuesto\s*\??\s*$/u', $t)
         || preg_match('/\bcuanto me\b.{0,14}\b(dijiste|habias dicho|pasaste|cotizaste)\b/u', $t);
 
-    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que precio|que valor|cual (es|era) el precio|precio total|el precio final|precio tiene|valor tiene)\b/u', $t)
-        || preg_match('/\bprecio\w{0,2}\s*$/u', $t)
+    /* "costo" pelado al final del mensaje entraba por ningún lado: el anuncio
+     * mete "Hola. ¿Puedo obtener más información sobre esto?" y el cliente le
+     * pegó "costo" atrás. Nadie lo reconoció como pregunta de precio y se
+     * llevó "esa duda te la va a poder contestar el desarrollador" en el
+     * primer mensaje de la charla (29-ago). */
+    if (preg_match('/\b(cuanto (sale|cuesta|esta|vale|saldria|seria)|que (precio|valor|costo)|cual (es|era) el (precio|costo)|precio total|el precio final|(precio|valor|costo) tiene)\b/u', $t)
+        || preg_match('/\b(precio|costo|valor)\w{0,2}\s*$/u', $t)
         || $pidePresupuesto) {
         // 'prediseno'/'prediseno_ref'/'prediseno_wsp' entran acá también: el
         // precio y la propuesta del prediseño salen juntos en el mismo turno
@@ -2969,6 +3178,73 @@ function wabot_comparacion_tipo_texto($alterno, $conv, $cfg) {
             . '.' . "\n\nCon reserva automática es lo que ya tenés cotizado: " . (string)($cfg['tipos']['turnos']['precio'] ?? '');
     }
     return null;
+}
+
+/**
+ * "Y la página común qué precio tiene?" — el precio de OTRO tipo de web.
+ *
+ * El emprendimiento de comida vegana tenía cotizado el ecommerce en $290.000 y
+ * preguntó esto textual. El bot le explicó QUÉ es una landing y no le dijo
+ * cuánto sale, teniendo el número a mano: $160.000 (29-ago). Es la pregunta de
+ * compra más directa que existe y se fue sin respuesta.
+ *
+ * wabot_texto_pregunta_comparacion_tipo() no lo cubría: esa mira dos pares
+ * fijos (carrito sí/no, reserva sí/no) y acá el salto es ecommerce → landing.
+ *
+ * Devuelve la clave del tipo preguntado, o null. Exige las dos cosas —que
+ * nombre el tipo y que pregunte el precio— para que "vendo ropa en una tienda"
+ * no cotice nada solo.
+ */
+function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+
+    $preguntaPrecio = '/\b(cuanto (sale|cuesta|esta|vale|saldria|seria|es)|que (precio|valor|costo)|precio tiene|valor tiene|costo tiene|sale la|sale el|cuesta la|cuesta el)\b/u';
+    if (!preg_match($preguntaPrecio, $t) && !wabot_texto_pide_precio($t)) return null;
+
+    // De más específico a más general: "tienda online" antes que "tienda", y
+    // "plataforma de cursos" antes que "cursos".
+    $sinonimos = [
+        'elearning'     => '(plataforma de cursos|campus virtual|aula virtual|vender los cursos)',
+        'inmobiliaria'  => '(inmobiliaria|web de propiedades)',
+        'institucional' => '(institucional|web institucional)',
+        'ecommerce'     => '(ecommerce|e commerce|tienda online|tienda virtual|con carrito|carrito y pagos|vender online)',
+        'catalogo'      => '(catalogo|web con catalogo|sin carrito)',
+        'turnos'        => '(con turnos|de turnos|reserva de turnos|con reservas|agenda online)',
+        'landing'       => '(landing|pagina comun|web comun|pagina simple|web simple|pagina basica|web basica|pagina normal|web normal|la comun|la simple|la basica|la sencilla|pagina sola|solo la pagina)',
+    ];
+    foreach ($sinonimos as $tipo => $re) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        if (!preg_match('/\b' . $re . '\b/u', $t)) continue;
+        if ((string)$tipo === (string)$tipoActual) return null;   // pregunta por el que ya tiene
+        return $tipo;
+    }
+    return null;
+}
+
+/** El precio de un tipo puntual, y qué es, sin tocar el tipo ya cotizado. */
+function wabot_precio_de_tipo_texto($tipo, $conv, $cfg) {
+    $d = $cfg['tipos'][$tipo] ?? null;
+    if (!$d) return null;
+    $precio = trim((string)($d['precio'] ?? ''));
+    if ($precio === '') return null;
+
+    $label = trim((string)($d['label'] ?? $tipo));
+    $desc  = trim((string)($d['desc'] ?? ''));
+    $txt = $label . ': ' . $precio . '.';
+    if ($desc !== '') $txt .= ' Es ' . $desc . '.';
+
+    // Y se recuerda lo ya cotizado, para que la comparación quede completa y
+    // el cliente no tenga que revolver la charla para atrás.
+    $actual = (string)($conv['tipo'] ?? '');
+    if ($actual !== '' && $actual !== $tipo && !empty($conv['precio_dado'])) {
+        $precioActual = trim((string)($cfg['tipos'][$actual]['precio'] ?? ''));
+        $labelActual  = trim((string)($cfg['tipos'][$actual]['label'] ?? $actual));
+        if ($precioActual !== '') {
+            $txt .= "\n\nLo que te cotizé antes, " . $labelActual . ', queda en ' . $precioActual . '.';
+        }
+    }
+    return $txt;
 }
 
 /**
@@ -3514,6 +3790,10 @@ function wabot_pitch_dice_otra_idea($texto) {
     if ($t === '') return false;
     if (preg_match('/\b(otra idea|otra cosa|algo distinto|algo diferente|otra opcion|no era eso|no es eso)\b/u', $t)) return true;
     if (preg_match('/\bno\b.{0,20}\b(es lo que|era lo que|buscaba|buscando|tenia pensado|tenia en mente|me sirve|me servia)\b/u', $t)) return true;
+    /* "No me gusta mucho che" es un no a la pregunta del pitch, y wabot_es_negativa()
+     * no lo veía: pedía un "no" más pelado. Bloc Consultora arrancó por acá
+     * (29-ago). Vale solo en fase pitch, que es la única que llama a esto. */
+    if (preg_match('/\bno me\b.{0,12}\b(gusta|gustan|convence|convencen|cierra|cierran|copa|copan|termina de|va)\b/u', $t)) return true;
     if (preg_match('/\b(tenia|tengo|pensaba en|buscaba)\b.{0,12}\b(otra|otro)\b/u', $t)) return true;
     return wabot_es_negativa($t);
 }
@@ -3527,10 +3807,22 @@ function wabot_pitch_dice_otra_idea($texto) {
  * normal (ahí sí entra la oferta de la demo, como siempre).
  */
 function wabot_pitch_encaje_rechazado($texto, &$conv, $cfg) {
-    if (!empty($conv['pitch_otra_idea_dicha'])) return null;
     if (!wabot_pitch_dice_otra_idea($texto)) return null;
-    $conv['pitch_otra_idea_dicha'] = true;
     $conv['fase'] = 'pitch';
+
+    /* Segunda vez que dice que no sin decir qué quiere ("No me gusta mucho
+     * che" y después "Quiero otra cosa"): la pregunta abierta ya falló, así
+     * que va la concreta. Antes esto devolvía null y el turno se lo quedaba el
+     * modelo, que contestó "esa duda te la va a poder contestar el
+     * desarrollador" a alguien que estaba eligiendo qué comprar (29-ago). */
+    if (!empty($conv['pitch_otra_idea_dicha'])) {
+        if (!empty($conv['pitch_otra_idea_2_dicha'])) return null;
+        $conv['pitch_otra_idea_2_dicha'] = true;
+        wabot_evento_sesion($conv, 'pitch_otra_idea_2', ['tipo' => (string)($conv['tipo'] ?? '')]);
+        return [(string)($cfg['pitch_otra_idea_2'] ?? 'Contame qué tenías en mente y lo vemos.')];
+    }
+
+    $conv['pitch_otra_idea_dicha'] = true;
     wabot_evento_sesion($conv, 'pitch_otra_idea', ['tipo' => (string)($conv['tipo'] ?? '')]);
     return [wabot_plantilla_variante('pitch_otra_idea', 'pitch_otra_idea_variantes', $conv, $cfg)];
 }
@@ -3939,7 +4231,7 @@ function wabot_cerrada($texto, &$conv, $cfg) {
             // peor momento para quedarse callado: se le repite quién lo toma.
             $out[] = wabot_texto_espera($conv, $cfg);
         } elseif ($has('objecion_caro')) {
-            $out[] = $cfg['caro'];
+            $out[] = wabot_link_presupuesto_completar($cfg['caro'], $conv, $cfg);
         } elseif ($has('menciona_plataforma')) {
             $out[] = $cfg['plataformas'];
         } elseif ($acc && !$has('saludo') && !$has('no_interesa') && $conv['espera_avisada']) {

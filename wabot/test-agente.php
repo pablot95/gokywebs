@@ -219,6 +219,26 @@ foreach ([
         wabot_texto_promete_info_sin_entregar($t) === false);
 }
 
+/* Condiciones de pago inventadas. El caso real (29-ago) es el primero: el
+ * cliente preguntó cuándo se abona y el agente se inventó un 50/50 que no
+ * existe. La seña es un monto fijo por tipo de web, nunca un porcentaje. */
+$pagoDeHerramienta = ['Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña ($60.000 en landing o catálogo, $80.000 en turnos, institucional e inmobiliaria, $90.000 en ecommerce y plataforma de cursos) y el saldo al entregar la web.'];
+
+caso('el 50/50 que salió en producción se detecta',
+    wabot_texto_inventa_pago('Se abona una seña del 50% para arrancar y el 50% restante al terminar y entregar tu web. Y podés abonar por transferencia o con tarjeta hasta en 12 cuotas con interés', []) === true);
+caso('y sigue siendo inventado aunque la herramienta de pago haya corrido: un porcentaje no es una condición nuestra',
+    wabot_texto_inventa_pago('Se deja una seña del 50% y el saldo al entregar.', $pagoDeHerramienta) === true);
+caso('"la mitad ahora y la mitad al entregar" tampoco existe',
+    wabot_texto_inventa_pago('Se abona la mitad como seña y la otra mitad al entregar la web.', $pagoDeHerramienta) === true);
+caso('las condiciones de pago dichas de memoria, sin herramienta en el turno, se frenan',
+    wabot_texto_inventa_pago('Para arrancar se deja una seña y el saldo lo abonás al entregar la web.', []) === true);
+caso('pero si la herramienta las trajo, el modelo puede redactarlas',
+    wabot_texto_inventa_pago('Para arrancar se deja una seña de $90.000 y el saldo al entregar la web, por transferencia o en cuotas.', $pagoDeHerramienta) === false);
+caso('y un mensaje que no habla de pago no lo toca este guard',
+    wabot_texto_inventa_pago('Contame qué productos vendés y te paso el precio exacto.', []) === false);
+caso('un precio en pesos no es una condición de pago: no dispara solo',
+    wabot_texto_inventa_pago('El desarrollo completo tiene un valor de $290.000, en un único pago.', []) === false);
+
 caso('el agente respeta el modo de prueba sin red',
     wabot_agente_llamar([], [], 'prueba') === null);
 caso('el redactor también respeta el modo de prueba sin red',
@@ -630,7 +650,11 @@ caso('el prompt manda la objeción a consultar_info, no a la memoria del modelo'
 $c = convNueva(); $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'objecion_precio'], $c, $cfg);
 caso('objecion_precio devuelve el texto oficial de "caro" tal cual',
-    $r['texto'] === $cfg['caro']);
+    strpos($r['texto'], $cfg['caro']) === 0);
+// El texto habla de "el link del presupuesto": si en la charla nunca salió, va
+// ahora. Antes prometía un link que el cliente no tenía (Héctor, 29-ago).
+caso('y si el link del presupuesto todavía no salió, se lo manda',
+    strpos($r['texto'], (string)$cfg['tipos']['landing']['link']) !== false);
 caso('y ya no promete 3 cuotas sin interés', stripos($r['texto'], 'sin interés') === false);
 caso('y le prohíbe inventar un plan de cuotas o calcular el monto de cada una',
     stripos($r['nota'], 'no inventes') !== false || stripos($r['nota'], 'no calcules') !== false);
@@ -1108,8 +1132,11 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Tengo un negocio y quiero una pagina'
 $c['transcript'][] = ['q'=>'cliente','t'=>'vendo ropa de bebe mas que nada','ts'=>time()-10];
 $c['session_started_ts'] = time() - 60;
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('vender ropa cotiza tienda online derecho, sin preguntar carrito vs WhatsApp',
-    empty($r['exacta']) && $c['tipo'] === 'ecommerce' && !empty($c['precio_dado']));
+/* Desde el 29-ago vender productos NO alcanza para cotizar el tipo más caro:
+ * "vendo ropa de bebé" no dice si quiere cobrar desde la web o recibir los
+ * pedidos por WhatsApp, y entre las dos hay $110.000 de diferencia. */
+caso('vender ropa sin decir cómo cobra ya no cotiza tienda online: pregunta',
+    !empty($r['exacta']) && $r['texto'] === $cfg['desempate_comercio'] && $c['tipo'] === null);
 
 $c = convNueva('AGGUARD2');
 $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero una tienda online con carrito y cobro online para mi ropa','ts'=>time()-10];
@@ -1354,10 +1381,17 @@ echo "— Guards nuevos de los chats del 21-ago —\n";
 $cM = ['tel' => 'TM', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
 caso('"botón de pago y pedido integrado" ya es evidencia de ecommerce: no repregunta',
     wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $cM, $cfg) === null);
-caso('y una polleria también cotiza tienda online sin pregunta previa',
-    wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) === null);
-caso('pedir catálogo sin decir que NO quiere cobrar online cae en ecommerce',
-    wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM, $cfg) === ['tipo' => 'ecommerce']);
+// El rubro solo dice QUÉ vende, no CÓMO quiere cobrarlo: eso se pregunta.
+$cM2 = ['tel' => 'TM2', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
+$rPoll = wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM2, $cfg);
+caso('una polleria a secas no cotiza tienda online: pregunta cómo quiere vender',
+    !empty($rPoll['exacta']) && $rPoll['texto'] === $cfg['desempate_comercio']);
+$cM3 = ['tel' => 'TM3', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
+$rCat = wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM3, $cfg);
+caso('y pedir catálogo sin evidencia tampoco asciende solo al precio más caro',
+    !empty($rCat['exacta']) && $rCat['texto'] === $cfg['desempate_comercio']);
+caso('pero si dijo que NO quiere cobrar online, catálogo se cotiza derecho',
+    wabot_agente_desempate_pendiente('catalogo', 'quiero solo mostrar los productos y que me escriban por whatsapp', $cM3, $cfg) === null);
 caso('pero si dice explícitamente que no quiere cobrar online, se respeta el catálogo',
     wabot_agente_desempate_pendiente('catalogo', 'solo mostrar los productos, que me consulten por whatsapp', $cM, $cfg) === null);
 
@@ -1776,5 +1810,38 @@ caso('"Es para una página de reseñas" no se lleva el comodín', !empty($rResen
 caso('y la nota manda a seguir el flujo con ese rubro',
     stripos($rResenas['nota'] ?? '', 'rubro') !== false);
 
+
+echo "\n— Revisión de las 19 charlas del 29-ago (agente) —\n";
+
+/* 2. Un link pelado no es una consulta, elija la clave que elija el modelo.
+ * El guard va antes de mirar la clave: la Dra. Gascón se llevó la respuesta de
+ * seguridad porque el modelo eligió 'seguridad', no 'otra'. */
+$cLink = convNueva('AGLINK');
+$rLink = wabot_agente_ejecutar('consultar_info', ['clave' => 'seguridad'], $cLink, $cfg,
+    'https://alan-uviedo.pixieset.com/yesikafinales/');
+caso('un link pelado no se contesta con ninguna clave de info', !empty($rLink['error']));
+caso('y la nota le dice que lo tome como material, no que adivine',
+    stripos((string)($rLink['nota'] ?? ''), 'material') !== false
+    || stripos((string)($rLink['error'] ?? ''), 'material') !== false);
+$rSeg = wabot_agente_ejecutar('consultar_info', ['clave' => 'seguridad'], $cLink, $cfg,
+    'la pagina es segura? me la pueden hackear?');
+caso('pero la pregunta de seguridad de verdad se sigue contestando',
+    empty($rSeg['error']) && trim((string)($rSeg['texto'] ?? '')) !== '');
+@unlink(WABOT_DATA . '/conv/AGLINK.json');
+
+/* 14. "En breve te va a escribir" convivía con "la demo te llega mañana": tres
+ * plazos distintos en la misma charla. El guard no lo veía porque entre "en
+ * breve" y "escribir" hay un "te va a" en el medio. */
+caso('"en breve te va a escribir" es una promesa de cierre sin herramienta',
+    wabot_texto_promete_cierre('Ahora queda todo en manos del desarrollador. En breve te va a escribir por acá para mostrártela.') === true);
+caso('y un plazo concreto no lo es',
+    wabot_texto_promete_cierre('Listo, la demo te llega mañana.') === false);
+
+/* 5. El audio de Héctor: tres preguntas, una sola respuesta. */
+caso('el prompt le exige contestar TODAS las preguntas de un audio largo',
+    stripos(wabot_agente_sistema(convNueva('AGAUD'), $cfg), 'AUDIO LARGO') !== false);
+caso('y tiene la clave para "¿trabajan con emprendimientos chicos?"',
+    stripos(wabot_agente_sistema(convNueva('AGAUD'), $cfg), 'emprendimientos') !== false);
+@unlink(WABOT_DATA . '/conv/AGAUD.json');
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

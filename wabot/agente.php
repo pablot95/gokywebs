@@ -110,6 +110,92 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         }
     }
 
+    /* "Podríamos hacer un punto de 30 días" / "contactarnos en un mes y medio".
+     * No es una despedida: es un sí con fecha. El bot le contestó "cuando estés
+     * listo, escribime" y perdió el único dato accionable que le habían dado
+     * (Héctor, 29-ago). Se anota la fecha, el bot se compromete él, y los
+     * seguimientos automáticos no lo molestan hasta entonces. */
+    if (empty($conv['retomar_ts']) && ($conv['fase'] ?? '') !== 'derivado') {
+        $diasRetomar = wabot_texto_pide_retomar_en($mensaje);
+        if ($diasRetomar !== null) {
+            $conv['retomar_ts'] = time() + $diasRetomar * 86400;
+            $conv['seguimiento_bloqueado'] = true;
+            wabot_evento_sesion($conv, 'retomar_agendado', ['dias' => $diasRetomar]);
+            $texto = str_replace('{plazo}', wabot_plazo_humano($diasRetomar),
+                (string)($cfg['retomar_confirmado'] ?? 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo.'));
+            return [wabot_personalizar($texto, $conv)];
+        }
+    }
+
+    /* "¿Se abona antes o después?" antes de que la demo esté presentada. La
+     * duda es el ORDEN, no el monto: contestarle la seña y las cuotas es
+     * contestar otra cosa (el techista, 29-ago). Determinista y antes del
+     * modelo, porque acá el modelo se inventó las condiciones. */
+    if (empty($conv['presentado_ts']) && wabot_texto_pregunta_cuando_se_paga($mensaje)) {
+        wabot_evento_sesion($conv, 'pago_antes_o_despues');
+        return [(string)($cfg['pago_antes_o_despues'] ?? 'La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona la seña para arrancar. El saldo lo pagás al entregarte la web terminada.')];
+    }
+
+    /* El teclado apretado al azar. Tres veces le contestamos la misma pregunta
+     * con otras palabras —una de ellas "Parece que se te tiroteó el teclado",
+     * escrita por el modelo— y el cliente nunca dijo nada (29-ago). La escalera
+     * es fija, corta, y termina en silencio con el chat marcado para Pablo.
+     * Solo antes de saber el rubro: más adelante un mensaje raro puede ser
+     * cualquier otra cosa y lo resuelve el resto del flujo. */
+    if (in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu', 'algo_diferente'], true)
+        && empty($conv['tipo']) && trim((string)$mensaje) !== '') {
+        $yaFallo = (int)($conv['ininteligibles'] ?? 0);
+        $falla = wabot_texto_ininteligible($mensaje)
+            || ($yaFallo > 0 && wabot_mensaje_no_destraba($mensaje));
+        if ($falla) {
+            $conv['ininteligibles'] = $yaFallo + 1;
+            if ($conv['ininteligibles'] === 1) {
+                return [(string)($cfg['contame_2'] ?? $cfg['contame'] ?? '')];
+            }
+            if ($conv['ininteligibles'] === 2) {
+                $conv['handoff_pendiente'] = true;
+                wabot_evento_sesion($conv, 'mensajes_ininteligibles');
+                return [(string)($cfg['no_entiendo'] ?? 'No estoy pudiendo entender el mensaje. Cuando puedas, mandame en una línea a qué te dedicás y seguimos por acá.')];
+            }
+            return [];   // ya se lo dijimos: insistir es ruido
+        }
+        if ($yaFallo > 0) $conv['ininteligibles'] = 0;   // se destrabó, se olvida
+    }
+
+    /* "¿Buscabas algo así o tenías otra idea en mente?" y el cliente dice que
+     * no: la respuesta correcta es preguntarle qué tenía en mente, y el motor
+     * de reglas ya la tiene resuelta desde hace semanas. Lo que faltaba era
+     * ESTO: en modo agente el turno lo agarraba el modelo antes de llegar al
+     * motor, y Bloc Consultora se llevó "esa duda te la va a poder contestar
+     * el desarrollador" a un "Quiero otra cosa" (29-ago). Determinista, como
+     * los desempates de arriba: no depende de que el modelo elija bien. */
+    if (($conv['fase'] ?? '') === 'pitch' && !empty($conv['pitch_hecho'])) {
+        $rechazo = wabot_pitch_encaje_rechazado($mensaje, $conv, $cfg);
+        if ($rechazo !== null) {
+            wabot_handoff_aclaracion_resuelta($conv);
+            return $rechazo;
+        }
+    }
+
+    /* "Y la página común qué precio tiene?" con el ecommerce ya cotizado. El
+     * precio del otro tipo lo tenemos en la config: contestarlo es una línea,
+     * y el bot en cambio explicó qué es una landing sin decir cuánto sale
+     * (29-ago). Determinista, porque es la pregunta de compra más directa que
+     * hay y no puede depender de que el modelo elija la herramienta.
+     * El par carrito-sí/carrito-no sigue por su camino (la comparación con las
+     * dos modalidades es mejor respuesta que un precio suelto). */
+    if (!empty($conv['precio_dado']) && trim((string)$mensaje) !== ''
+        && wabot_texto_pregunta_comparacion_tipo($mensaje) !== ($conv['tipo'] ?? '')) {
+        $otroTipo = wabot_texto_pregunta_precio_de_tipo($mensaje, $cfg, $conv['tipo'] ?? null);
+        if ($otroTipo !== null) {
+            $textoOtro = wabot_precio_de_tipo_texto($otroTipo, $conv, $cfg);
+            if ($textoOtro !== null) {
+                wabot_evento_sesion($conv, 'precio_otro_tipo', ['tipo' => $otroTipo]);
+                return [$textoOtro];
+            }
+        }
+    }
+
     if (WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $cerrada  = ($conv['fase'] ?? '') === 'derivado';
@@ -157,6 +243,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
 
             if (wabot_texto_promete_info_sin_entregar($texto)) {
                 wabot_log('error', ['donde' => 'agente', 'msg' => 'promesa sin herramienta', 'texto' => mb_substr($texto, -120)]);
+                return null;
+            }
+
+            if (wabot_texto_inventa_pago($texto, $pendientes)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'condiciones de pago inventadas', 'texto' => mb_substr($texto, 0, 140)]);
                 return null;
             }
 
@@ -264,6 +355,49 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     return null;
 }
 
+/**
+ * Condiciones de pago que no existen.
+ *
+ * El 29-ago un cliente preguntó cuándo se abona y el agente le contestó "una
+ * seña del 50% para arrancar y el 50% restante al terminar y entregar tu web".
+ * Eso no es lo que cobramos: la seña es un MONTO FIJO por tipo de web —el que
+ * tenga cargado cada tipo en la config— y el saldo va contra entrega. Un
+ * porcentaje del total da cualquier otra cifra, y es una condición comercial
+ * que después hay que sostener o desdecir delante del cliente.
+ *
+ * Se coló porque el texto libre solo se compara contra lo que devolvieron las
+ * herramientas de ESE turno: sin llamar a consultar_info('pago') no había
+ * ningún monto que exigir, y un porcentaje no tiene formato de miles, así que
+ * el control de precios de wabot_validar_redaccion() ni lo miraba.
+ *
+ * Dos cortes, por las dos puntas:
+ *  - un porcentaje o una mitad pegados al pago no salen NUNCA, ni aunque la
+ *    herramienta haya corrido: nuestras condiciones no se expresan así;
+ *  - las condiciones de pago solo se pueden decir si una herramienta las trajo
+ *    en el mismo turno. De memoria, no.
+ */
+function wabot_texto_inventa_pago($texto, $pendientes) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+
+    // "seña" normalizado queda "sena"; el resto son las formas en que se puede
+    // nombrar cómo y cuándo se paga.
+    // "deposito" queda afuera a propósito: es el galpón de media clientela y
+    // aparece describiendo SU negocio, no una forma de pago.
+    $condiciones = '/\b(sena|senia|anticipo|adelanto|saldo|cuotas|transferencia|por adelantado|pago inicial|primer pago)\b/u';
+    if (!preg_match($condiciones, $t)) return false;
+
+    // El "%" se busca en el texto crudo: wabot_normalizar_frase() borra la
+    // puntuación, así que "50%" le llega como "50" y el patrón no lo vería.
+    if (preg_match('/\d{1,3}\s?%/u', (string)$texto)) return true;
+    if (preg_match('/\d{1,3}\s?por ?ciento\b/u', $t) || preg_match('/\bmitad\b/u', $t)) return true;
+
+    foreach ((array)$pendientes as $base) {
+        if (preg_match($condiciones, wabot_normalizar_frase((string)$base))) return false;
+    }
+    return true;
+}
+
 function wabot_texto_promete_info_sin_entregar($texto) {
     if (preg_match('/[:：]\s*$/u', trim($texto))) return true;
     if (preg_match('/\$\d|gokywebs\.com/u', $texto)) return false;
@@ -285,7 +419,11 @@ function wabot_texto_promete_cierre($texto) {
 
     if (preg_match('/' . $registro . '/u', $t) && preg_match('/' . $accion . '/u', $t)) return true;
     if (preg_match('/(pablo|el equipo|nuestro equipo).{0,45}(te escrib|te contact|se comunica|comunicando|se pone en contacto|te acerca|coordina)/u', $t)) return true;
-    if (preg_match('/(en breve|enseguida|en un rato|pronto).{0,40}(te escrib|te contact|se comunica|la muestra|la demo|el predise)/u', $t)) return true;
+    /* "En breve te va a escribir por acá para mostrártela": el mismo plazo
+     * vago, pero con el verbo perifrástico en el medio, así que "te escrib"
+     * no matcheaba. La Dra. Gascón se lo llevó entre dos mensajes que sí
+     * decían "mañana", y quedaron los tres plazos distintos (29-ago). */
+    if (preg_match('/(en breve|enseguida|en un rato|pronto|a la brevedad).{0,40}(te escrib|te va a escrib|te vamos a escrib|te contact|te va a contact|se comunica|la muestra|la demo|el predise)/u', $t)) return true;
 
     return false;
 }
@@ -606,7 +744,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'envios', 'como_funciona_tienda', 'que_incluye', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'envios', 'como_funciona_tienda', 'que_incluye', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'emprendimientos', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -946,6 +1084,17 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
 
         case 'consultar_info':
             $clave = $args['clave'] ?? 'otra';
+
+            /* Un link pelado NO es una pregunta, sea cual sea la clave que el
+             * modelo haya elegido. La Dra. Gascón mandó el link de su galería
+             * de fotos y se llevó la respuesta de seguridad/SSL entera; tuvo
+             * que contestar "Fotos" para que el bot entendiera (29-ago).
+             * El guard va acá arriba a propósito: el modelo eligió 'seguridad',
+             * no 'otra', así que el rescate de más abajo no lo miraba. */
+            if (wabot_texto_es_solo_link($mensaje)) {
+                return ['error' => 'Eso no es una pregunta: el cliente te pasó un LINK, o sea material suyo.',
+                        'nota'  => 'No uses consultar_info y no adivines qué quiso preguntar. Si en la charla estaban juntando material para la demo, tomalo como eso (fotos, su web actual, una referencia) y confirmáselo en UNA línea diciendo qué entendiste que es. Si no te queda claro para qué te lo manda, preguntáselo en una línea. Nunca contestes sobre seguridad, certificados ni hosting solo porque el link diga https.'];
+            }
 
             /* "Sale lo mismo con carrito?" y "si lo agendo yo cuál es la
              * diferencia" van ANTES de mirar la clave: en la batería del
@@ -1435,9 +1584,28 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
                 'nota' => 'Falta un desempate obligatorio antes de cotizar. Hacé esta pregunta tal cual y esperá la respuesta.'];
     };
 
+    /* PRODUCTOS: mostrar y que te escriban, o vender y cobrar desde la web.
+     *
+     * Son $180.000 contra $290.000 y hasta el 29-ago se decidía solo. Ecommerce
+     * era el único tipo sin ningún control —"Cerrajería, Herrajes" y "un
+     * emprendimiento de comida vegana" se llevaron el más caro de una— y
+     * catálogo sin evidencia se ASCENDÍA a ecommerce, o sea que la duda
+     * también terminaba en el precio más alto. Héctor lo dijo después de
+     * recibirlo: "es un lindo número, no está a mi alcance", cuando lo que
+     * quería era mostrar lo que ofrece y vincularlo a sus redes (29-ago).
+     * Vender online lo dice el cliente; no se supone por el rubro. */
+    $desdeCatalogo = false;
     if ($tipo === 'catalogo') {
         $evidencia = preg_match('/\b(catalogo|solo mostrar|mostrar los productos|mostrar mis productos|que me consulten|me escriban|consulten por whatsapp|sin cobro|sin carrito|no quiero cobrar|no vendo online)\b/u', wabot_normalizar_frase($ctx));
-        if (!$evidencia) return ['tipo' => 'ecommerce'];
+        if ($evidencia) return null;
+        $tipo = 'ecommerce';
+        $desdeCatalogo = true;
+    }
+    if ($tipo === 'ecommerce') {
+        $evidencia = wabot_desempate_por_palabras('desempate_comercio', $ctx) === 'comercio_vender'
+            || preg_match('/\b(tienda online|tienda virtual|ecommerce|e commerce|carrito|cobro online|cobrar online|cobrar desde la web|vender online|pagos online|pagar desde la web|comprar desde la web|comprar online|mercado pago)\b/u', wabot_normalizar_frase($ctx));
+        if (!$evidencia) return $pregunta('desempate_comercio', 'desempate_comercio');
+        return $desdeCatalogo ? ['tipo' => 'ecommerce'] : null;
     }
     if ($tipo === 'turnos') {
         $evidencia = wabot_desempate_por_palabras('desempate_turnos', $ctx) === 'turnos_si';
@@ -1458,6 +1626,19 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
         if ($rubroCtx === 'cursos'
             && wabot_desempate_por_palabras('desempate_cursos', $ctx) === null) {
             return $pregunta('desempate_cursos', 'desempate_cursos');
+        }
+        /* Un servicio nombrado y nada más: "Una consultora", "Espacio
+         * holístico", "Me dedico a X". Sabemos el RUBRO, no sabemos qué tiene
+         * que poder hacer el que entra a la web — y eso es lo que define el
+         * tipo. Los tres se llevaron una landing de una (29-ago), sin que
+         * nadie averiguara si dan turnos, sesiones o talleres.
+         *
+         * Solo cuando el cliente NO contó nada más: si escribió un párrafo
+         * explicando qué quiere, ya lo dijo y preguntar de nuevo es no
+         * haberlo leído. */
+        if (!wabot_texto_dice_objetivo_web($ctx) && str_word_count($ctxNorm, 0) <= 8
+            && wabot_desempate_por_palabras('desempate_turnos', $ctx) === null) {
+            return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
         }
     }
     return null;
@@ -1731,7 +1912,13 @@ REGLAS QUE NO PODÉS ROMPER
 - Si te piden referencias de otros clientes, contestá con consultar_info('confianza') y nada más. Ese texto ya explica lo que corresponde: en gokywebs.com están los trabajos entregados y esos negocios son públicos, así que puede escribirles por su cuenta. Lo que NUNCA podés hacer es pasarle vos un teléfono, un mail o un nombre de contacto de otro cliente, ni inventar testimonios, cantidades de clientes o casos de éxito: nada de eso lo tenés, y un dato de un cliente no se le da a otro.
 - NUNCA nombres a Pablo por tu cuenta. Cuando haga falta referirte a quien sigue la charla o resuelve una duda, decí "el desarrollador", nunca "el equipo" ni "nosotros como equipo": es una sola persona. Los únicos textos donde aparece su nombre salen de una herramienta (la derivación y la videollamada) y llegan ya escritos: mandalos tal cual, pero jamás escribas el nombre vos.
 - Cada vez que ofrezcas la demo tenés que decir que es GRATIS, con esa palabra o con "sin costo". Es lo único que hace que la acepte: sin eso deja de ser una oferta y pasa a ser un presupuesto más. Salió mal el 27-ago con una óptica: le escribiste "qué te parece si te armamos una versión de tu web para que la veas antes de decidir?" y el cliente contestó "eso tiene algún fee mensual??", porque entendió que podía costarle.
+- UN AUDIO LARGO TRAE VARIAS PREGUNTAS Y HAY QUE CONTESTARLAS TODAS, no solo la del precio. Llamá a todas las herramientas que hagan falta en el mismo turno y armá UN mensaje con todo. Héctor mandó un audio donde preguntó tres cosas —cuánto cuesta, si hay mantenimiento mensual, y si trabajamos con emprendimientos que recién arrancan o solo con grandes empresas— y recibió únicamente el precio del ecommerce: de las otras dos nunca supo nada y la venta se cayó ahí (29-ago). Si te queda una pregunta sin contestar, para el cliente no lo escuchaste.
+- Si pregunta si trabajamos con negocios chicos, emprendimientos o gente que recién arranca, la respuesta existe: consultar_info('emprendimientos'). Nunca la dejes pasar: la hace el que tiene miedo de que el precio no sea para él.
+- Nunca digas que recibiste algo que la herramienta no te confirmó, ni le cambies el nombre a lo que te mandaron. Si te llega una imagen, nombrala por lo que dice su descripción —una paleta de colores, un logo, una foto del local— y nada más. A la Dra. Gascón, que había mandado solo su paleta, le dijiste "con las fotos que me pasaste te la dejo lista": le confirmaste material que no teníamos (29-ago).
+- Nunca comentes CÓMO escribe el cliente ni hagas chistes con eso —el teclado, los errores de tipeo, que el audio no se entiende—. Si no entendés, pedí de nuevo lo que necesitás en una línea y listo.
 - La seña, el alias, el titular y el link de pago NO existen antes de presentar la demo. Si te preguntan cómo se paga, usá consultar_info('pago'); si te preguntan el monto de la seña, esa respuesta ya lo incluye. No lo ofrezcas por tu cuenta.
+- CUÁNDO SE PAGA es una pregunta de pago y va por consultar_info('pago') SIEMPRE, aunque el cliente lo escriba corto o con errores ("y después se abona?", "se paga antes o después?", "cómo es el pago?"). Nunca la contestes de memoria ni con lo que hayas leído más arriba en la charla: la respuesta sale de la herramienta y se manda con los montos que trae.
+- La seña NUNCA es un porcentaje. No existe "el 50%", ni "la mitad", ni ningún porcentaje del total: es un monto fijo según el tipo de web, el que te devuelve la herramienta, y el saldo se abona al entregar. Si escribís un porcentaje estás inventando una condición comercial que después hay que sostener. El 29-ago le dijiste a un cliente "una seña del 50% y el 50% restante al terminar" y eso no es lo que cobramos.
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí, y nunca calcules el monto de cada cuota.
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por una respuesta de relleno.
 - "Lo tengo que pensar" NO es lo mismo que "solo estaba averiguando", "más adelante", "ahora no tengo presupuesto" o "no me interesa". En esas cuatro salidas llamá a cerrar_sin_presion: cerrá cordialmente, no ofrezcas la demo, no hagas otra pregunta y no intentes recuperar la venta.
