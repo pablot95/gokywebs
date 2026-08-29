@@ -3083,6 +3083,20 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null) {
     if ($quien === 'cliente' && empty($conv['chat_started_ts'])) {
         $conv['chat_started_ts'] = $fila['ts'];
     }
+    /* Un cliente que vuelve a escribir desarchiva la charla.
+     *
+     * wabot_conv_grupo() devuelve 'archivado' antes que cualquier otra cosa, así
+     * que mientras la marca estuviera puesta el mensaje no aparecía en ningún
+     * grupo del embudo, no contaba como SL y no sonaba el celular. Se archiva
+     * al que dejó de contestar; el que contesta deja de serlo (Pablo, 28-ago).
+     *
+     * Va acá porque es el punto único por donde pasa "el cliente escribió": lo
+     * llaman los dos caminos del webhook. */
+    if ($quien === 'cliente' && !empty($conv['archivado'])) {
+        $conv['archivado'] = false;
+        $conv['desarchivado_ts'] = $fila['ts'];
+        wabot_evento($conv, 'desarchivado_por_mensaje');
+    }
     $conv['transcript'][] = $fila;
 }
 
@@ -5595,7 +5609,14 @@ function wabot_presentado_archivar_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cv['presentado_ts']) || !empty($cv['presentado_confirmado']) || !empty($cv['archivado'])) return false;
     $horas = (float)($cfg['presentados_archivar_horas'] ?? 168);
-    return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
+    /* Se cuenta desde el último movimiento real, no desde la entrega.
+     *
+     * Con presentado_ts pelado, una charla que el cliente revive después del
+     * plazo se volvía a archivar en la corrida siguiente del cron —seguía
+     * midiendo una entrega de hace ocho días— y desaparecía otra vez del panel.
+     * Lo que se archiva es el silencio, y si escribió no hay silencio. */
+    $desde = max((int)$cv['presentado_ts'], (int)($cv['ultimo_cliente_ts'] ?? 0));
+    return $ahora - $desde >= $horas * 3600;
 }
 
 /** Recorre las conversaciones con muestra presentada: archiva las que llevan mucho sin confirmar. */

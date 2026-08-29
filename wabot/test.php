@@ -5408,6 +5408,49 @@ caso('una pregunta con precio o link no se repite suelta',
     wabot_seguimiento_pregunta_pendiente(['transcript'=>[
         ['q'=>'bot','t'=>'Sale $200.000, querés la muestra?']]]) === null);
 
+echo "— Un chat archivado que recibe un mensaje vuelve a la vista —\n";
+
+$ahoraDes = time();
+
+// Archivado a mano: el cliente vuelve a escribir y reaparece.
+$desMano = ['tel'=>'QATESTDES1','archivado'=>true,'fase'=>'derivado',
+            'transcript'=>[['q'=>'bot','t'=>'Pablo te escribe a la brevedad']]];
+caso('archivado no aparece en ningun grupo del embudo', wabot_conv_grupo($desMano) === 'archivado');
+wabot_conv_transcript($desMano, 'cliente', 'hola, retomo lo de la web');
+caso('el mensaje del cliente lo desarchiva', empty($desMano['archivado']));
+caso('y vuelve a su grupo real', wabot_conv_grupo($desMano) !== 'archivado');
+caso('queda registrado cuando se desarchivo', !empty($desMano['desarchivado_ts']));
+
+// Solo el cliente desarchiva: ni el bot ni Pablo.
+$desBot = ['tel'=>'QATESTDES2','archivado'=>true,'transcript'=>[]];
+wabot_conv_transcript($desBot, 'bot', 'seguimiento automatico');
+caso('un mensaje del bot NO desarchiva', !empty($desBot['archivado']));
+$desHumano = ['tel'=>'QATESTDES3','archivado'=>true,'transcript'=>[]];
+wabot_conv_transcript($desHumano, 'humano', 'le escribo yo');
+caso('un mensaje de Pablo tampoco', !empty($desHumano['archivado']));
+
+// Demo entregada y archivada por el cron: al escribir vuelve, y ademas es SL.
+$desDemo = ['tel'=>'QATESTDES4','archivado'=>true,'fase'=>'postdemo','lead_creado'=>true,
+            'presentado_ts'=>$ahoraDes - 200*3600,
+            'transcript'=>[['q'=>'bot','t'=>'Te dejo la demo']]];
+caso('archivada no cuenta como SL', wabot_conv_es_sl($desDemo) === false);
+wabot_conv_transcript($desDemo, 'cliente', 'me gusto, quiero avanzar');
+$desDemo['ultimo_cliente_ts'] = $ahoraDes;
+caso('desarchivada vuelve al grupo de presentados', wabot_conv_grupo($desDemo) === 'presentados');
+caso('y pasa a ser SL, asi suena la notificacion', wabot_conv_es_sl($desDemo) === true);
+
+/* El cron no la puede volver a archivar en la corrida siguiente: medía desde
+ * presentado_ts, que sigue siendo de hace ocho días. */
+caso('el cron archiva la que lleva 200 h sin moverse',
+    wabot_presentado_archivar_corresponde(
+        ['presentado_ts'=>$ahoraDes - 200*3600, 'ultimo_cliente_ts'=>$ahoraDes - 200*3600],
+        $cfg, $ahoraDes) === true);
+caso('pero NO la que el cliente acaba de revivir',
+    wabot_presentado_archivar_corresponde(
+        ['presentado_ts'=>$ahoraDes - 200*3600, 'ultimo_cliente_ts'=>$ahoraDes - 60],
+        $cfg, $ahoraDes) === false);
+
+
 
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
