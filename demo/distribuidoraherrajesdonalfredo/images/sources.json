@@ -1,0 +1,15 @@
+{
+  "banco": "Pexels",
+  "descargadas": [
+    { "archivo": "candado-dorado-1200x1500.webp", "id": "36740854", "url": "https://www.pexels.com/photo/36740854/", "uso": "Categoría Candados / hero" },
+    { "archivo": "candado-negro-1200x1500.webp", "id": "7553830", "url": "https://www.pexels.com/photo/7553830/", "uso": "Categoría Candados (variante)" },
+    { "archivo": "manija-puerta-960x1200.webp", "id": "7641991", "url": "https://www.pexels.com/photo/7641991/", "uso": "Categoría Manijas y picaportes (recorte superior de la foto original)" },
+    { "archivo": "cerradura-cilindro-960x1200.webp", "id": "7641991", "url": "https://www.pexels.com/photo/7641991/", "uso": "Categoría Cerraduras y cilindros (recorte inferior de la misma foto)" },
+    { "archivo": "llaves-mano-1200x1500.webp", "id": "29094497", "url": "https://www.pexels.com/photo/29094497/", "uso": "Categoría Llaves y copiado" },
+    { "archivo": "herramientas-fila-1200x1500.webp", "id": "6263062", "url": "https://www.pexels.com/photo/6263062/", "uso": "Categoría Herramientas y accesorios" },
+    { "archivo": "distribuidora-deposito-1200x1600.webp", "id": "38195854", "url": "https://www.pexels.com/photo/38195854/", "uso": "Sección distribuidora / hero" },
+    { "archivo": "porton-hierro-1200x1600.webp", "id": "10529669", "url": "https://www.pexels.com/photo/10529669/", "uso": "Categoría Herrajes para portones y rejas" },
+    { "archivo": "cajas-numeradas-1200x1600.webp", "id": "17116895", "url": "https://www.pexels.com/photo/17116895/", "uso": "Textura decorativa sección seguridad" },
+    { "archivo": "artesano-taller-1200x1500.webp", "id": "3084343", "url": "https://www.pexels.com/photo/3084343/", "uso": "Editorial 'Don Alfredo' — oficio y experiencia" }
+  ]
+}
