@@ -6,7 +6,7 @@ require_once __DIR__ . '/receptor.php';
 
 function comprobante_nombre_archivo($factura)
 {
-    return 'Factura C ' . str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT)
+    return 'Factura ' . comprobante_letra($factura) . ' ' . str_pad($factura['puntoVenta'], 5, '0', STR_PAD_LEFT)
         . '-' . str_pad($factura['numero'], 8, '0', STR_PAD_LEFT) . '.pdf';
 }
 
@@ -55,7 +55,7 @@ function comprobante_pdf($config, $factura)
     $pdf->rectangulo($izq, $y, $ancho, $altoCab, 1.2);
     $pdf->linea($medio - 26, $y, $medio - 26, $y + $altoCab, 1.2);
     $pdf->linea($medio + 26, $y, $medio + 26, $y + $altoCab, 1.2);
-    $pdf->textoCentrado($medio, $y + 32, 'C', 'F2', 30);
+    $pdf->textoCentrado($medio, $y + 32, comprobante_letra($factura), 'F2', 30);
     $pdf->textoCentrado($medio, $y + 46, 'COD. ' . str_pad($factura['tipoComprobante'], 2, '0', STR_PAD_LEFT), 'F1', 7.5);
 
     $yl = $y + 20;
@@ -137,7 +137,7 @@ function comprobante_pdf($config, $factura)
     $y += 18;
     $anchoTot = 220;
     $xTot = $der - $anchoTot;
-    foreach ([['Subtotal', $factura['total']], ['Importe Otros Tributos', 0]] as $fila) {
+    foreach (comprobante_filas_totales($factura) as $fila) {
         $pdf->rectangulo($xTot, $y, $anchoTot, 18, 0.8);
         $pdf->texto($xTot + 8, $y + 12.5, $fila[0], 'F1', 8.5);
         $pdf->textoDerecha($der - 8, $y + 12.5, comprobante_pesos($fila[1]), 'F1', 8.5);
@@ -218,6 +218,48 @@ function comprobante_fecha($aaaammdd)
 function comprobante_pesos($n)
 {
     return '$ ' . number_format((float) $n, 2, ',', '.');
+}
+
+// Letra grande del comprobante: A/B discriminan IVA (Responsable Inscripto), C no
+// (Monotributo/Exento). Las facturas C de hoy no mandan nada nuevo: cae en el
+// default y sale 'C' igual que siempre.
+function comprobante_letra($factura)
+{
+    $letras = [1 => 'A', 6 => 'B', 11 => 'C'];
+    return $letras[(int) ($factura['tipoComprobante'] ?? 11)] ?? 'C';
+}
+
+// Catalogo de alicuotas de IVA de ARCA (FEParamGetAlicIva), solo para el rotulo.
+function comprobante_alicuota_pct($id)
+{
+    $pcts = [3 => '0', 4 => '10,5', 5 => '21', 6 => '27', 8 => '5', 9 => '2,5'];
+    return $pcts[(int) $id] ?? '';
+}
+
+// Filas de la caja de totales, antes del renglon final "Importe Total" (que cada
+// renderizador dibuja aparte, destacado). Sin desglose de IVA (factura C, como
+// hasta ahora) sale exactamente igual que siempre: Subtotal + Otros Tributos en 0.
+// Con desglose (factura A/B), Subtotal pasa a ser el neto y se agrega un renglon
+// de IVA por cada alicuota.
+function comprobante_filas_totales($factura)
+{
+    $importeIva = (float) ($factura['iva'] ?? 0);
+    if ($importeIva <= 0) {
+        return [['Subtotal', $factura['total']], ['Importe Otros Tributos', 0]];
+    }
+
+    $neto = isset($factura['neto']) ? (float) $factura['neto'] : ((float) $factura['total'] - $importeIva);
+    $filas = [['Subtotal', $neto]];
+    $detalle = $factura['ivaDetalle'] ?? [];
+    if ($detalle) {
+        foreach ($detalle as $item) {
+            $pct = comprobante_alicuota_pct($item['id'] ?? null);
+            $filas[] = ['IVA' . ($pct !== '' ? ' ' . $pct . '%' : ''), $item['importe']];
+        }
+    } else {
+        $filas[] = ['IVA', $importeIva];
+    }
+    return $filas;
 }
 
 function comprobante_descripcion_item($factura)
@@ -308,7 +350,7 @@ function comprobante_html($config, $factura)
             <div class="campo"><b>Condición frente al IVA:</b> <?= $e($emisor['condicionIva']) ?></div>
         </div>
         <div class="letra">
-            <b>C</b>
+            <b><?= $e(comprobante_letra($factura)) ?></b>
             <span>COD. <?= str_pad($factura['tipoComprobante'], 2, '0', STR_PAD_LEFT) ?></span>
         </div>
         <div class="cab-der">
@@ -356,8 +398,9 @@ function comprobante_html($config, $factura)
     </table>
 
     <div class="totales">
-        <div><span>Subtotal</span><span><?= $e(comprobante_pesos($factura['total'])) ?></span></div>
-        <div><span>Importe Otros Tributos</span><span><?= $e(comprobante_pesos(0)) ?></span></div>
+        <?php foreach (comprobante_filas_totales($factura) as $fila): ?>
+        <div><span><?= $e($fila[0]) ?></span><span><?= $e(comprobante_pesos($fila[1])) ?></span></div>
+        <?php endforeach; ?>
         <div><span>Importe Total</span><span><?= $e(comprobante_pesos($factura['total'])) ?></span></div>
     </div>
 

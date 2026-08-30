@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturador — Configurar ARCA</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+    <div class="container">
+        <div class="auth-brand">
+            <div class="auth-brand-mark">F</div>
+            <div class="auth-brand-name">Facturador</div>
+        </div>
+        <div class="app-header-user">
+            <a href="panel.html" class="btn-ghost" style="padding:8px 14px">← Volver al panel</a>
+        </div>
+    </div>
+</header>
+
+<main class="container container--narrow" style="max-width:640px">
+    <div class="page-head">
+        <div>
+            <h1>Configurar ARCA</h1>
+            <p>Tres pasos para poder emitir facturas con tu propio CUIT. <a href="como-activar-arca.html">Ver la guía completa</a>.</p>
+        </div>
+    </div>
+
+    <!-- Paso 1 -->
+    <div class="wizard-step" id="paso1" data-done="false">
+        <div class="wizard-num">1</div>
+        <div class="wizard-body">
+            <h3>Datos de tu empresa <span class="badge badge-pending" id="badge1">Pendiente</span></h3>
+            <p>CUIT, punto de venta y los datos que van a figurar impresos en tus facturas.</p>
+
+            <form id="formPaso1">
+                <div class="grid-2">
+                    <div>
+                        <label for="cuit">CUIT</label>
+                        <input type="text" id="cuit" inputmode="numeric" maxlength="11" placeholder="Solo números" required>
+                    </div>
+                    <div>
+                        <label for="puntoVenta">Punto de venta</label>
+                        <input type="number" id="puntoVenta" min="1" placeholder="Ej: 5" required>
+                    </div>
+                </div>
+
+                <label for="alias">Alias del certificado</label>
+                <input type="text" id="alias" maxlength="40" placeholder="Ej: mi-empresa" required>
+                <p class="field-hint">Un nombre corto, sin espacios. Lo vas a usar también en ARCA en el paso 3.</p>
+
+                <label for="condicionIva">Tu condición frente al IVA</label>
+                <select id="condicionIva" required>
+                    <option value="">Elegí una opción</option>
+                    <option value="Responsable Monotributo">Monotributo</option>
+                    <option value="Responsable Inscripto">Responsable Inscripto</option>
+                    <option value="IVA Exento">Exento</option>
+                </select>
+                <p class="field-hint">De esto depende si vas a poder emitir Factura C (Monotributo/Exento) o A y B (Responsable Inscripto).</p>
+
+                <label for="razonSocial">Razón social</label>
+                <input type="text" id="razonSocial" maxlength="120" required>
+
+                <label for="domicilio">Domicilio fiscal</label>
+                <input type="text" id="domicilio" maxlength="120" required>
+
+                <div class="grid-2">
+                    <div>
+                        <label for="inicioActividades">Inicio de actividades <span class="opt">(mes/año)</span></label>
+                        <input type="text" id="inicioActividades" maxlength="20" placeholder="Ej: 03/2022">
+                    </div>
+                    <div>
+                        <label for="ingresosBrutos">Ingresos Brutos <span class="opt">(si no tenés, dejalo vacío)</span></label>
+                        <input type="text" id="ingresosBrutos" maxlength="20">
+                    </div>
+                </div>
+
+                <div id="errorPaso1" class="auth-error" hidden style="margin-top:10px"></div>
+                <button type="submit" class="btn-primary" id="guardarPaso1Btn" style="margin-top:16px">Guardar datos</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Paso 2 -->
+    <div class="wizard-step" id="paso2" data-done="false">
+        <div class="wizard-num">2</div>
+        <div class="wizard-body">
+            <h3>Generar tu certificado <span class="badge badge-pending" id="badge2">Pendiente</span></h3>
+            <p>Un clic descarga un archivo <code>.csr</code>. No hace falta instalar nada ni usar la terminal — lo generamos nosotros por vos.</p>
+            <div id="errorPaso2" class="auth-error" hidden></div>
+            <button type="button" class="btn-primary" id="generarCsrBtn" disabled>Generar y descargar .csr</button>
+        </div>
+    </div>
+
+    <!-- Paso 3 -->
+    <div class="wizard-step" id="paso3" data-done="false">
+        <div class="wizard-num">3</div>
+        <div class="wizard-body">
+            <h3>Subir el certificado de ARCA <span class="badge badge-pending" id="badge3">Pendiente</span></h3>
+            <p>Subí acá el archivo <code>.crt</code> que descargaste de ARCA después de cargar el .csr (paso 4 de la guía).</p>
+            <div id="errorPaso3" class="auth-error" hidden></div>
+            <div id="successPaso3" class="auth-success" hidden></div>
+            <input type="file" id="certificadoInput" accept=".crt,.pem" disabled>
+            <button type="button" class="btn-primary" id="subirCertBtn" disabled style="margin-top:12px">Subir certificado</button>
+        </div>
+    </div>
+
+    <div class="banner banner-success" id="listoBanner" hidden>
+        <span>✅</span>
+        <div><strong>Todo listo.</strong> Ya podés volver al panel y facturar.</div>
+        <div class="banner-actions"><a href="panel.html" class="btn-primary" style="padding:8px 14px">Ir al panel</a></div>
+    </div>
+</main>
+
+<script type="module" src="js/arca-setup.js"></script>
+</body>
+</html>

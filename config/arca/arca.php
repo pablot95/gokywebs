@@ -204,6 +204,120 @@ class Arca
         ];
     }
 
+    /**
+     * Generalizacion de emitirFacturaC() para Responsables Inscriptos: acepta
+     * cualquier tipoComprobante (1=A, 6=B, 11=C) y, si $factura['iva'] viene
+     * poblado (array de ['alicuotaId', 'baseImponible', 'importe']), arma el
+     * bloque <Iva> con el desglose y descuenta el IVA del neto. Sin 'iva', se
+     * comporta igual que C (neto=total, sin discriminar). emitirFacturaC() no
+     * se toca: sigue siendo el camino usado hoy por el admin.
+     *
+     * Orden de campos verificado contra el WSDL real de WSFEv1 (FECAEDetRequest):
+     * Iva va despues de CondicionIVAReceptorId (CbtesAsoc/Tributos, entre medio,
+     * son opcionales y se omiten aca). AlicIva: Id, BaseImp, Importe, en ese orden.
+     */
+    public function emitirFactura(array $factura)
+    {
+        $puntoVenta = (int) $factura['puntoVenta'];
+        $tipoComprobante = (int) $factura['tipoComprobante'];
+        $numero = $this->ultimoComprobante($puntoVenta, $tipoComprobante) + 1;
+        $total = round((float) $factura['total'], 2);
+        $fecha = isset($factura['fecha']) ? $factura['fecha'] : date('Ymd');
+        $concepto = isset($factura['concepto']) ? (int) $factura['concepto'] : 2;
+        if (!in_array($concepto, [1, 2, 3], true)) $concepto = 2;
+
+        $llevaPeriodo = $concepto !== 1;
+        $desde = isset($factura['servicioDesde']) ? $factura['servicioDesde'] : $fecha;
+        $hasta = isset($factura['servicioHasta']) ? $factura['servicioHasta'] : $fecha;
+        $vence = isset($factura['vencimientoPago']) ? $factura['vencimientoPago'] : $fecha;
+
+        $ivaItems = [];
+        $importeIva = 0.0;
+        foreach (($factura['iva'] ?? []) as $item) {
+            $importe = round((float) $item['importe'], 2);
+            $ivaItems[] = [
+                'id' => (int) $item['alicuotaId'],
+                'base' => round((float) $item['baseImponible'], 2),
+                'importe' => $importe,
+            ];
+            $importeIva += $importe;
+        }
+        $importeIva = round($importeIva, 2);
+        $neto = $ivaItems ? round($total - $importeIva, 2) : $total;
+
+        $bloqueIva = '';
+        if ($ivaItems) {
+            $alicuotas = '';
+            foreach ($ivaItems as $item) {
+                $alicuotas .= '<ar:AlicIva>'
+                    . '<ar:Id>' . $item['id'] . '</ar:Id>'
+                    . '<ar:BaseImp>' . $item['base'] . '</ar:BaseImp>'
+                    . '<ar:Importe>' . $item['importe'] . '</ar:Importe>'
+                    . '</ar:AlicIva>';
+            }
+            $bloqueIva = '<ar:Iva>' . $alicuotas . '</ar:Iva>';
+        }
+
+        $detalle = '<ar:Concepto>' . $concepto . '</ar:Concepto>'
+            . '<ar:DocTipo>' . (int) $factura['tipoDocumento'] . '</ar:DocTipo>'
+            . '<ar:DocNro>' . (int) $factura['numeroDocumento'] . '</ar:DocNro>'
+            . '<ar:CbteDesde>' . $numero . '</ar:CbteDesde>'
+            . '<ar:CbteHasta>' . $numero . '</ar:CbteHasta>'
+            . '<ar:CbteFch>' . $fecha . '</ar:CbteFch>'
+            . '<ar:ImpTotal>' . $total . '</ar:ImpTotal>'
+            . '<ar:ImpTotConc>0</ar:ImpTotConc>'
+            . '<ar:ImpNeto>' . $neto . '</ar:ImpNeto>'
+            . '<ar:ImpOpEx>0</ar:ImpOpEx>'
+            . '<ar:ImpTrib>0</ar:ImpTrib>'
+            . '<ar:ImpIVA>' . $importeIva . '</ar:ImpIVA>'
+            . ($llevaPeriodo
+                ? '<ar:FchServDesde>' . $desde . '</ar:FchServDesde>'
+                    . '<ar:FchServHasta>' . $hasta . '</ar:FchServHasta>'
+                    . '<ar:FchVtoPago>' . $vence . '</ar:FchVtoPago>'
+                : '')
+            . '<ar:MonId>PES</ar:MonId>'
+            . '<ar:MonCotiz>1</ar:MonCotiz>'
+            . '<ar:CondicionIVAReceptorId>' . (int) $factura['condicionIvaReceptor'] . '</ar:CondicionIVAReceptorId>'
+            . $bloqueIva;
+
+        $cuerpo = $this->bloqueAuth()
+            . '<ar:FeCAEReq>'
+            . '<ar:FeCabReq><ar:CantReg>1</ar:CantReg>'
+            . '<ar:PtoVta>' . $puntoVenta . '</ar:PtoVta>'
+            . '<ar:CbteTipo>' . $tipoComprobante . '</ar:CbteTipo></ar:FeCabReq>'
+            . '<ar:FeDetReq><ar:FECAEDetRequest>' . $detalle . '</ar:FECAEDetRequest></ar:FeDetReq>'
+            . '</ar:FeCAEReq>';
+
+        $respuesta = $this->llamarWsfe('FECAESolicitar', $cuerpo);
+        $this->abortarSiHayErrores($respuesta);
+
+        $resultado = $this->valorDe($respuesta, 'Resultado');
+        if ($resultado !== 'A') {
+            throw new ArcaError('ARCA rechazo el comprobante (Resultado=' . $resultado . '): ' . $this->observaciones($respuesta));
+        }
+
+        return [
+            'puntoVenta' => $puntoVenta,
+            'tipoComprobante' => $tipoComprobante,
+            'numero' => $numero,
+            'fecha' => $fecha,
+            'total' => $total,
+            'neto' => $neto,
+            'iva' => $importeIva,
+            'ivaDetalle' => $ivaItems,
+            'concepto' => $concepto,
+            'tipoDocumento' => (int) $factura['tipoDocumento'],
+            'numeroDocumento' => (string) $factura['numeroDocumento'],
+            'condicionIvaReceptor' => (int) $factura['condicionIvaReceptor'],
+            'servicioDesde' => $llevaPeriodo ? $desde : '',
+            'servicioHasta' => $llevaPeriodo ? $hasta : '',
+            'vencimientoPago' => $llevaPeriodo ? $vence : '',
+            'cae' => $this->valorDe($respuesta, 'CAE'),
+            'caeVence' => $this->valorDe($respuesta, 'CAEFchVto'),
+            'observaciones' => $this->observaciones($respuesta),
+        ];
+    }
+
     private function observaciones(DOMDocument $respuesta)
     {
         $textos = [];

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturador — Tus clientes</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+    <div class="container">
+        <div class="auth-brand">
+            <div class="auth-brand-mark">F</div>
+            <div class="auth-brand-name">Facturador</div>
+        </div>
+        <div class="app-header-user">
+            <a href="arca-config.html" class="btn-ghost" style="padding:8px 14px">Configurar ARCA</a>
+            <span class="app-header-email" id="userEmail"></span>
+            <button type="button" class="btn-ghost" id="logoutBtn" style="padding:8px 14px">Salir</button>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div id="arcaBanner" class="banner banner-warning" hidden>
+        <span>⚠️</span>
+        <div>
+            <strong>Todavía no podés facturar.</strong>
+            Te falta terminar de configurar ARCA (certificado y datos de tu empresa).
+        </div>
+        <div class="banner-actions"><a href="arca-config.html" class="btn-primary" style="padding:8px 14px">Configurar ahora</a></div>
+    </div>
+
+    <div class="page-head">
+        <div>
+            <h1>Tus clientes</h1>
+            <p>Cargá el precio y la descripción una vez y facturales cada mes con un clic.</p>
+        </div>
+        <button type="button" class="btn-primary" id="addClientBtn">+ Agregar cliente</button>
+    </div>
+
+    <div id="emptyState" class="empty-state" hidden>
+        <h3>Todavía no cargaste ningún cliente</h3>
+        <p>Agregá tu primer cliente con su precio y descripción para poder facturarle en un clic, mes a mes.</p>
+        <button type="button" class="btn-primary" id="addClientBtnEmpty">+ Agregar tu primer cliente</button>
+    </div>
+
+    <div id="tableWrapper" class="table-wrapper" hidden>
+        <table class="clients-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="clientsBody"></tbody>
+        </table>
+    </div>
+</main>
+
+<!-- Modal: Agregar / Editar cliente -->
+<div id="clienteModal" class="modal-backdrop" hidden>
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="clienteModalTitulo">Agregar cliente</h2>
+            <button class="modal-close" id="closeClienteModalBtn" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="clientForm">
+                <input type="hidden" id="clienteId">
+
+                <label for="clienteNombre">Nombre / Razón social</label>
+                <input type="text" id="clienteNombre" required maxlength="120">
+
+                <label for="clienteDescripcion">Descripción del servicio <span class="opt">(se precarga al facturar)</span></label>
+                <textarea id="clienteDescripcion" maxlength="300" placeholder="Ej: Mantenimiento mensual de sitio web"></textarea>
+
+                <label for="clientePrecio">Precio <span class="opt">(se precarga al facturar)</span></label>
+                <input type="number" id="clientePrecio" min="0" step="0.01">
+
+                <div class="grid-2">
+                    <div>
+                        <label for="clienteEmail">Email <span class="opt">(opcional)</span></label>
+                        <input type="email" id="clienteEmail" maxlength="120">
+                    </div>
+                    <div>
+                        <label for="clienteTelefono">Teléfono <span class="opt">(opcional)</span></label>
+                        <input type="tel" id="clienteTelefono" maxlength="30">
+                    </div>
+                </div>
+
+                <label for="clienteDomicilio">Domicilio <span class="opt">(opcional)</span></label>
+                <input type="text" id="clienteDomicilio" maxlength="160">
+
+                <label for="clienteNotas">Notas <span class="opt">(opcional)</span></label>
+                <textarea id="clienteNotas" maxlength="500"></textarea>
+
+                <details class="optional-fields" id="clienteFiscalDetails">
+                    <summary>Datos fiscales (para facturarle identificado)</summary>
+                    <div class="grid-2">
+                        <div>
+                            <label for="clienteTipoDoc">Tipo de documento</label>
+                            <select id="clienteTipoDoc">
+                                <option value="">Sin dato</option>
+                                <option value="80">CUIT</option>
+                                <option value="96">DNI</option>
+                                <option value="86">CUIL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="clienteDocumento">Número</label>
+                            <input type="text" id="clienteDocumento" inputmode="numeric" maxlength="13" placeholder="Solo números">
+                        </div>
+                    </div>
+                    <label for="clienteCondicionIva">Condición frente al IVA</label>
+                    <select id="clienteCondicionIva"><option value="">Sin dato</option></select>
+                    <p class="field-hint">Si tu empresa es Responsable Inscripto, la condición del cliente decide si le corresponde Factura A o B.</p>
+                </details>
+
+                <div id="clienteError" class="auth-error" hidden style="margin-top:14px"></div>
+            </form>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="clienteCancelarBtn">Cancelar</button>
+            <button type="submit" form="clientForm" class="btn-primary" id="clienteGuardarBtn">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Facturar -->
+<div id="facturaModal" class="modal-backdrop" hidden>
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Emitir factura</h2>
+            <button class="modal-close" id="closeFacturaModalBtn" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="summary-card">
+                <div><span>Cliente</span><strong id="facturaCliente">—</strong></div>
+                <div><span>Comprobante</span><strong id="facturaComprobante">—</strong></div>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <label for="facturaTotal">Importe a facturar</label>
+                    <input type="number" id="facturaTotal" min="0" step="0.01">
+                </div>
+                <div>
+                    <label for="facturaCondicionVenta">Condición de venta</label>
+                    <select id="facturaCondicionVenta"></select>
+                </div>
+            </div>
+
+            <label for="facturaDescripcion">Descripción del servicio</label>
+            <input type="text" id="facturaDescripcion" maxlength="300">
+
+            <div id="facturaIvaBloque" hidden>
+                <label for="facturaAlicuota">Alícuota de IVA</label>
+                <select id="facturaAlicuota">
+                    <option value="5">21%</option>
+                    <option value="4">10,5%</option>
+                    <option value="6">27%</option>
+                </select>
+                <p class="field-hint" id="facturaIvaDetalle"></p>
+            </div>
+
+            <label for="facturaConcepto">Concepto</label>
+            <select id="facturaConcepto">
+                <option value="2">Servicios</option>
+                <option value="1">Productos</option>
+                <option value="3">Productos y servicios</option>
+            </select>
+
+            <div id="facturaPeriodoCampos">
+                <div class="grid-3">
+                    <div>
+                        <label for="facturaDesde">Período desde</label>
+                        <input type="date" id="facturaDesde">
+                    </div>
+                    <div>
+                        <label for="facturaHasta">Período hasta</label>
+                        <input type="date" id="facturaHasta">
+                    </div>
+                    <div>
+                        <label for="facturaVencimiento">Vto. del pago</label>
+                        <input type="date" id="facturaVencimiento">
+                    </div>
+                </div>
+            </div>
+
+            <div class="subtitulo">Datos del cliente</div>
+
+            <div class="tab-nav" role="tablist" id="facturaTabsNav">
+                <button type="button" class="tab-btn active" id="facturaModoFinal" role="tab" aria-selected="true">Consumidor final</button>
+                <button type="button" class="tab-btn" id="facturaModoIdentificado" role="tab" aria-selected="false">Con datos del cliente</button>
+            </div>
+
+            <div id="facturaPanelFinal">
+                <p class="nota">Sale sin identificar al receptor. No hace falta cargar nada más.</p>
+            </div>
+
+            <div id="facturaPanelIdentificado" hidden>
+                <div class="grid-2">
+                    <div>
+                        <label for="facturaTipoDoc">Tipo de documento</label>
+                        <select id="facturaTipoDoc"></select>
+                    </div>
+                    <div>
+                        <label for="facturaDocumento">Número</label>
+                        <input type="text" id="facturaDocumento" maxlength="13" inputmode="numeric" placeholder="Solo números">
+                    </div>
+                </div>
+                <label for="facturaCondicionIva">Condición frente al IVA</label>
+                <select id="facturaCondicionIva"></select>
+                <label for="facturaNombre">Apellido y nombre / Razón social</label>
+                <input type="text" id="facturaNombre" maxlength="120">
+            </div>
+
+            <div id="facturaError" class="auth-error" hidden style="margin-top:14px"></div>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-ghost" id="facturaCancelarBtn">Cancelar</button>
+            <button type="button" class="btn-primary" id="facturaEmitirBtn">Emitir factura</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

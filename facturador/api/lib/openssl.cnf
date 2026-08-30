@@ -1,0 +1,9 @@
+# Config minima para openssl_pkey_new()/openssl_csr_new() en PHP.
+# Sin esto, en hosting compartido el openssl.cnf del sistema puede no
+# encontrarse o traer campos de mas (ej. un ST="Some-State" por defecto)
+# que terminan colandose en el subject del CSR.
+[ req ]
+default_bits       = 2048
+distinguished_name = req_distinguished_name
+
+[ req_distinguished_name ]

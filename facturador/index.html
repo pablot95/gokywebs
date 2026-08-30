@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturador — Ingresá a tu cuenta</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <div class="auth-brand-mark">F</div>
+            <div class="auth-brand-name">Facturador</div>
+        </div>
+
+        <div class="auth-tabs">
+            <button type="button" class="active" data-view="login">Ingresar</button>
+            <button type="button" data-view="register">Crear cuenta</button>
+            <button type="button" data-view="reset">Recuperar</button>
+        </div>
+
+        <div id="view-login" class="auth-view active">
+            <form id="formLogin">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" required autocomplete="email">
+
+                <label for="loginPass">Contraseña</label>
+                <input type="password" id="loginPass" required autocomplete="current-password">
+
+                <div id="loginError" class="auth-error" hidden></div>
+
+                <button type="submit" class="btn-primary btn-block" id="loginBtn" style="margin-top:20px">Ingresar</button>
+            </form>
+        </div>
+
+        <div id="view-register" class="auth-view">
+            <form id="formRegister">
+                <label for="registerEmail">Email</label>
+                <input type="email" id="registerEmail" required autocomplete="email">
+
+                <label for="registerPass">Contraseña</label>
+                <input type="password" id="registerPass" required minlength="6" autocomplete="new-password">
+
+                <label for="registerPass2">Repetir contraseña</label>
+                <input type="password" id="registerPass2" required minlength="6" autocomplete="new-password">
+
+                <div id="registerError" class="auth-error" hidden></div>
+
+                <button type="submit" class="btn-primary btn-block" id="registerBtn" style="margin-top:20px">Crear cuenta</button>
+            </form>
+        </div>
+
+        <div id="view-reset" class="auth-view">
+            <form id="formReset">
+                <p style="color:var(--text-muted);font-size:var(--fs-small);margin-bottom:14px">
+                    Te mandamos un email para restablecer tu contraseña.
+                </p>
+                <label for="resetEmail">Email</label>
+                <input type="email" id="resetEmail" required autocomplete="email">
+
+                <div id="resetError" class="auth-error" hidden></div>
+                <div id="resetSuccess" class="auth-success" hidden></div>
+
+                <button type="submit" class="btn-primary btn-block" id="resetBtn" style="margin-top:20px">Enviar email</button>
+            </form>
+        </div>
+
+        <div class="auth-foot">¿Necesitás activar la facturación electrónica? <a href="como-activar-arca.html">Ver la guía</a></div>
+    </div>
+</div>
+
+<script type="module" src="js/auth.js"></script>
+</body>
+</html>
