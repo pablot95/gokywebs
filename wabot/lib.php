@@ -1942,6 +1942,14 @@ function wabot_config_pitch_encaje(&$cfg) {
     /* Tercer intento con un mensaje que no se entiende. Después de esto el bot
      * se calla: repreguntar una cuarta vez no lo va a destrabar y queda
      * marcado para Pablo. Ver wabot_texto_ininteligible(). */
+    /* No todo el que escribe viene a comprar una web. Ver
+     * wabot_contexto_consulta(): a estos dos no se les arranca el embudo. */
+    if (trim((string)($cfg['mensaje_laboral'] ?? '')) === '') {
+        $cfg['mensaje_laboral'] = 'Gracias por escribir. Las propuestas para sumarse al equipo las ve Pablo directamente: le paso tu mensaje y, si hay algo, te contesta por acá.';
+    }
+    if (trim((string)($cfg['mensaje_cliente_existente'] ?? '')) === '') {
+        $cfg['mensaje_cliente_existente'] = 'Perfecto, eso lo sigue Pablo directamente: le paso tu mensaje ahora y te escribe por acá a la brevedad.';
+    }
     /* El cliente que pide que lo busquemos más adelante. Ver
      * wabot_texto_pide_retomar_en(): la fecha queda anotada y el bot se
      * compromete él, en vez de devolverle la pelota. */
@@ -2939,6 +2947,10 @@ function wabot_conv_load($clave) {
         'aclaraciones_fallidas' => 0,
         // Mensajes seguidos que no se entienden, antes de saber el rubro.
         'ininteligibles'   => 0,
+        // Temas que el bot ya contestó por el empujón de preguntas sueltas.
+        'temas_contestados' => [],
+        // Cuando el mensaje no es una venta nueva: 'laboral', 'cliente_existente'.
+        'contexto_consulta' => null,
         'desempates_preguntados' => [],
         'aclaracion_pendiente' => false,
         'aclaracion_ultimo_hash' => null,
@@ -3069,6 +3081,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * seguimiento bloqueado cincuenta días más. */
     $conv['retomar_ts'] = 0;
     $conv['ininteligibles'] = 0;
+    $conv['temas_contestados'] = [];
+    $conv['contexto_consulta'] = null;
     $conv['pitch_otra_idea_dicha'] = false;
     $conv['pitch_otra_idea_2_dicha'] = false;
     $conv['session_id'] = wabot_session_id_nuevo(wabot_conversation_key($conv), $ahora);

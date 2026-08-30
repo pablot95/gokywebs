@@ -152,6 +152,28 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_cerrar_proveedor($conv);
     }
 
+    /* Ni todo el que escribe viene a comprar. Al que ya es cliente o al que
+     * manda un CV, arrancarle el embudo con "contame qué vendés" le confirma
+     * que no lo leyó nadie. Va acá, en el borde común de los tres modos y
+     * antes de la apertura, por el mismo motivo que el volante del proveedor:
+     * suele ser el primer mensaje. */
+    if (!empty($conv['contexto_consulta'])) {
+        // Ya se lo dijimos y lo tomó Pablo: no se le vende ni se le repite.
+        // Salvo que ahora sí pida una web, y ahí la charla se reabre normal.
+        if (!wabot_texto_pide_web($texto)) return [];
+        $conv['contexto_consulta'] = null;
+    }
+    $contextoNoVenta = wabot_contexto_consulta($texto, $conv);
+    if ($contextoNoVenta !== null) {
+        $conv['contexto_consulta'] = $contextoNoVenta;
+        $conv['handoff_pendiente'] = true;
+        $conv['seguimiento_bloqueado'] = true;
+        wabot_log('contexto_no_venta', ['tel' => $conv['tel'] ?? '', 'contexto' => $contextoNoVenta]);
+        wabot_evento_sesion($conv, 'contexto_no_venta', ['contexto' => $contextoNoVenta]);
+        $claveTexto = $contextoNoVenta === 'laboral' ? 'mensaje_laboral' : 'mensaje_cliente_existente';
+        return [(string)($cfg[$claveTexto] ?? $cfg['espera'] ?? '')];
+    }
+
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.
     // Si el bot todavía no habló y el cliente no dijo nada de su negocio no hay
     // nada que razonar: dejarlo en manos de la IA solo hacía que cada cliente

@@ -292,6 +292,10 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             if ($idioma !== null) $salida[] = $idioma;
             $empujon = wabot_agente_empujon_postdemo($salida, $mensaje, $conv, $cfg);
             if ($empujon !== null) $salida[] = $empujon;
+            // Lo último: recién con la tanda armada se puede ver qué preguntas
+            // del cliente quedaron sin contestar.
+            $sinContestar = wabot_agente_empujon_preguntas($mensaje, $salida, $conv, $cfg);
+            if ($sinContestar !== null) $salida[] = $sinContestar;
             return $salida;
         }
 
@@ -347,6 +351,10 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             // web bilingüe no lo contestaba nadie.
             $idiomaExacta = wabot_agente_empujon_bilingue($mensaje, $salidaExacta, $conv, $cfg);
             if ($idiomaExacta !== null) $salidaExacta[] = $idiomaExacta;
+            // Por acá salió el pitch de Héctor: texto exacto, sin pasar por el
+            // modelo, y sus otras tres preguntas no las contestó nadie.
+            $sinContestarExacta = wabot_agente_empujon_preguntas($mensaje, $salidaExacta, $conv, $cfg);
+            if ($sinContestarExacta !== null) $salidaExacta[] = $sinContestarExacta;
             return $salidaExacta;
         }
     }
@@ -568,6 +576,41 @@ function wabot_agente_empujon_logo($mensaje, $salida, &$conv, $cfg) {
 }
 
 /**
+ * Las preguntas del mensaje que la respuesta dejó sin contestar.
+ *
+ * Este es el caso Héctor (29-ago): un audio con tres preguntas —cuánto cuesta,
+ * si hay mantenimiento mensual, si trabajan con emprendimientos chicos— más el
+ * pedido de vincularla a sus redes, y salió solo el precio. La regla de prompt
+ * que puse esa mañana es una sugerencia; esto lo garantiza.
+ *
+ * Se activa solo cuando el mensaje trae DOS temas o más, que es el caso que
+ * falla: una pregunta sola ya la contesta bien el flujo normal, y perseguirla
+ * acá solo agregaría riesgo de duplicar. Y de los temas detectados salen los
+ * que la respuesta ni siquiera nombra, hasta tres, en un globo aparte.
+ *
+ * El logo y el idioma tienen su propio empujón desde antes: quedan afuera para
+ * no contestarlos dos veces.
+ */
+function wabot_agente_empujon_preguntas($mensaje, $salida, &$conv, $cfg) {
+    $claves = wabot_preguntas_del_mensaje($mensaje, $conv, $conv['fase'] ?? null);
+    if (count($claves) < 2) return null;
+
+    $yaDichas = (array)($conv['temas_contestados'] ?? []);
+    $claves = array_values(array_diff($claves, $yaDichas));
+    if (!$claves) return null;
+
+    $faltan = array_slice(wabot_temas_sin_contestar($claves, $salida), 0, 3);
+    if (!$faltan) return null;
+
+    $texto = wabot_info_lineas($faltan, $conv, $cfg);
+    if (trim($texto) === '') return null;
+
+    $conv['temas_contestados'] = array_values(array_unique(array_merge($yaDichas, $faltan)));
+    wabot_evento_sesion($conv, 'preguntas_sin_contestar', ['temas' => implode(',', $faltan)]);
+    return $texto;
+}
+
+/**
  * ¿El cliente puso el idioma sobre la mesa?
  *
  * Marcco Cueros dijo que necesitaba ecommerce internacional, español/inglés,
@@ -640,13 +683,48 @@ function wabot_texto_pide_prediseno($texto) {
 
 /** Red de seguridad: no permite preguntar de nuevo el dato comercial básico. */
 function wabot_agente_repite_pregunta_contestada($texto, $conv) {
-    if (wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv)) === null) return false;
     $t = wabot_normalizar_frase($texto);
-    return (bool)(
-        preg_match('/\b(que vendes|que venden|que comercializas|que productos vendes)\b/u', $t)
-        || preg_match('/\b(que servicio ofreces|que servicios ofrecen|a que te dedicas|a que se dedican)\b/u', $t)
-        || preg_match('/\bcontame\b.{0,35}\b(que vendes|que ofreces|a que te dedicas)\b/u', $t)
-    );
+    if ($t === '') return false;
+
+    if (wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv)) !== null) {
+        if (preg_match('/\b(que vendes|que venden|que comercializas|que productos vendes)\b/u', $t)
+            || preg_match('/\b(que servicio ofreces|que servicios ofrecen|a que te dedicas|a que se dedican)\b/u', $t)
+            || preg_match('/\bcontame\b.{0,35}\b(que vendes|que ofreces|a que te dedicas)\b/u', $t)) {
+            return true;
+        }
+    }
+
+    /* Y lo mismo con cualquier dato que YA ESTÉ GUARDADO en la ficha.
+     *
+     * Antes esto solo miraba el rubro, así que el bot podía volver a pedir el
+     * nombre del negocio, los colores, la referencia, la cantidad de productos
+     * o el teléfono teniéndolos anotados. Se compara contra el dato real, no
+     * contra lo que el modelo crea acordarse: si está en la ficha, la pregunta
+     * sobra. El listado del prediseño no cae acá porque wabot_prediseno_faltan()
+     * ya saca de la lista lo que se sabe.
+     */
+    $preguntaPor = [
+        'nombre_negocio'     => '/\b(como se llama (tu|el) (negocio|marca|empresa|local)|(el )?nombre de (tu|la) (negocio|marca|empresa)|como se llama tu emprendimiento)\b/u',
+        'colores'            => '/\b(que colores|cuales? (son )?(los )?colores|colores (de tu|de la) marca|con que colores)\b/u',
+        'productos_cantidad' => '/\b(cuantos productos|que cantidad de productos|cuantos articulos)\b/u',
+        'telefono_wsp'       => '/\b(pasame tu (numero|telefono|whatsapp)|cual es tu (numero|telefono|whatsapp)|tu numero de whatsapp)\b/u',
+    ];
+    foreach ($preguntaPor as $campo => $re) {
+        if (trim((string)($conv[$campo] ?? '')) === '') continue;
+        if (preg_match($re, $t)) return true;
+    }
+    // La referencia es opcional: alcanza con habérsela preguntado una vez.
+    if ((trim((string)($conv['referencia'] ?? '')) !== '' || !empty($conv['referencia_preguntada']))
+        && preg_match('/\b(alguna (web|pagina) (de referencia|que te guste)|web de referencia|pagina que te haya gustado)\b/u', $t)) {
+        return true;
+    }
+    // El nombre solo si además está confirmado: uno tomado del perfil de
+    // WhatsApp puede ser un apodo o un emoji, y ahí preguntarlo está bien.
+    if (!empty($conv['nombre_confirmado']) && trim((string)($conv['nombre'] ?? '')) !== ''
+        && preg_match('/\b(como te llamas|cual es tu nombre|decime tu nombre|tu nombre completo)\b/u', $t)) {
+        return true;
+    }
+    return false;
 }
 
 /** Correcciones de alta confianza; el original siempre queda en el transcript. */

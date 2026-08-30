@@ -5658,5 +5658,52 @@ wabot_conv_reset_si_vieja($cViejo, $cfg);
 caso('el reset limpia retomar_ts y los contadores nuevos',
     (int)$cViejo['retomar_ts'] === 0 && (int)$cViejo['ininteligibles'] === 0
     && empty($cViejo['pitch_otra_idea_dicha']) && empty($cViejo['pitch_otra_idea_2_dicha']));
+
+echo "— Memoria comercial: las tres que valían la pena —\n";
+
+/* 1. Un audio largo trae varias preguntas. El matcher de intenciones mira el
+ * mensaje entero y devuelve UNA; partido en oraciones aparecen todas. Este es
+ * el audio real de Héctor, con las tres que quedaron sin contestar. */
+$audioHector = 'Hola, cómo estás? Buen día. Mi nombre es Héctor. Estoy por hacer un emprendimiento '
+    . 'gastronómico en mi casa, y me gustaría crear una página para que el cliente pueda entrar y ver lo que '
+    . 'ofrezco y que a la vez esa página pueda estar vinculada a las redes sociales. Quería saber qué cuesta, '
+    . 'si hay un mantenimiento mensual, y si hacés esta clase de página o si solo atendés a grandes empresas, no?';
+$convH = ['tipo' => 'ecommerce', 'precio_dado' => true, 'fase' => 'pitch', 'transcript' => []];
+$temasH = wabot_preguntas_del_mensaje($audioHector, $convH, 'pitch');
+caso('el audio de Héctor trae tres temas, no uno',
+    count($temasH) === 3 && in_array('mantenimiento', $temasH, true)
+    && in_array('emprendimientos', $temasH, true) && in_array('marketing', $temasH, true));
+caso('mirando el mensaje entero se detectaba uno solo',
+    wabot_info_por_palabras($audioHector, 'pitch') !== null && count($temasH) > 1);
+
+$loQueSalio = ['Lo ideal sería un ecommerce, con carrito y cobro online. El desarrollo completo tiene un valor de $290.000'];
+caso('y los tres quedan marcados como sin contestar',
+    count(wabot_temas_sin_contestar($temasH, $loQueSalio)) === 3);
+caso('si la respuesta sí los nombra, no se persigue ninguno',
+    wabot_temas_sin_contestar(['mantenimiento'], ['El mantenimiento es opcional y sale $15.000 por mes']) === []);
+$respuestaFaltante = wabot_info_lineas(['mantenimiento', 'emprendimientos'], $convH, $cfg);
+caso('la respuesta que falta se arma con los textos oficiales, en viñetas',
+    strpos($respuestaFaltante, '- ') === 0 && stripos($respuestaFaltante, 'mantenimiento') !== false);
+
+/* 3. No todo el que escribe viene a comprar una web. */
+caso('mandar el CV no arranca el embudo de venta',
+    wabot_contexto_consulta('Hola, quiero mandarles mi CV') === 'laboral');
+caso('ni preguntar si toman gente',
+    wabot_contexto_consulta('estan tomando programadores?') === 'laboral');
+caso('"ya pagué la seña, cuándo empiezan" es un cliente, no un lead',
+    wabot_contexto_consulta('Ya pagué la seña, cuando empiezan?') === 'cliente_existente');
+caso('y "la web que me hicieron no abre" tampoco es una venta nueva',
+    wabot_contexto_consulta('La web que me hicieron no abre') === 'cliente_existente');
+/* Los dos casos que NO pueden dispararse, porque son ventas: */
+caso('"necesito una web para mi curriculum" es un lead, no un CV',
+    wabot_contexto_consulta('Necesito una web para mi curriculum, soy fotografo') === null);
+caso('y "mi página no anda, quiero hacerla de nuevo" también',
+    wabot_contexto_consulta('mi pagina no anda, quiero hacerla de nuevo') === null);
+caso('pedir una web es lo que reabre una charla que no era de venta',
+    wabot_texto_pide_web('bueno, en realidad quiero una pagina para mi negocio') === true
+    && wabot_texto_pide_web('les mando mi cv') === false);
+caso('y los textos de esas dos salidas existen',
+    trim((string)($cfg['mensaje_laboral'] ?? '')) !== ''
+    && trim((string)($cfg['mensaje_cliente_existente'] ?? '')) !== '');
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

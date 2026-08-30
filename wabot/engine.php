@@ -1359,6 +1359,145 @@ function wabot_parece_lista_colores($texto) {
 }
 
 /**
+ * NO TODO EL QUE ESCRIBE VIENE A COMPRAR UNA WEB.
+ *
+ * El bot asume que cada mensaje entrante es una venta nueva y arranca el
+ * embudo preguntando a qué se dedica. A quien escribe "ya pagué la seña,
+ * ¿cuándo empiezan?", "la web que me hicieron no abre" o "les mando mi CV",
+ * esa pregunta le confirma que del otro lado no lo leyó nadie.
+ *
+ * Devuelve 'cliente_existente', 'laboral' o null. Deliberadamente exigente:
+ * ante la duda devuelve null y sigue el flujo normal de venta, que es el caso
+ * que da plata. "Mi página no anda" SIN decir que la hicimos nosotros es un
+ * lead (lo cubre ya_tengo_web), no un reclamo.
+ */
+/** ¿Está pidiendo una web? Es lo que reabre una charla que no era de venta. */
+function wabot_texto_pide_web($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(quiero|quisiera|necesito|busco|buscaba|queria|me interesa|hacen|haces|cuanto sale|cuanto cuesta)\b'
+        . '.{0,30}\b(pagina|paginas|web|sitio|landing|tienda|ecommerce|catalogo)\b/u', $t);
+}
+
+function wabot_contexto_consulta($texto, $conv = null) {
+    $t = wabot_normalizar_frase(wabot_texto_sin_urls((string)$texto));
+    if ($t === '') return null;
+
+    /* Si en el mismo mensaje está pidiendo una web, es una venta y gana la
+     * venta. Sin esto, "necesito una web para mi curriculum, soy fotógrafo"
+     * —un lead de manual— se leía como que mandaba un CV. */
+    if (wabot_texto_pide_web($t)) return null;
+
+    // Trabajo: hay que estar MANDANDO el CV o pidiendo entrar, no solo
+    // nombrar la palabra.
+    if (preg_match('/\b(mando|mandar|mandarles|envio|enviar|enviarles|adjunto|paso|dejo|dejarles)\b.{0,24}\b(mi cv|el cv|curriculum|curriculo|hoja de vida|mi portfolio)\b/u', $t)
+        || preg_match('/\b(mi cv|curriculum|curriculo|hoja de vida)\b.{0,26}\b(para|vacante|puesto|busqueda|postul\w+)\b/u', $t)
+        || preg_match('/\b(busco|buscando|necesito)\b.{0,20}\b(trabajo|empleo|laburo)\b/u', $t)
+        || preg_match('/\b(quiero|quisiera|me gustaria)\b.{0,30}\b(trabajar (con|en|para) (ustedes|uds|vos)|sumarme al equipo|formar parte del equipo)\b/u', $t)
+        || preg_match('/\b(toman|estan tomando|buscan)\b.{0,20}\b(gente|personal|programador\w*|disenador\w*|empleados?)\b/u', $t)) {
+        return 'laboral';
+    }
+
+    // Cliente que ya compró: tiene que decir que la web es NUESTRA, o que pagó.
+    $nuestra = '\b(me la (hicieron|hiciste|hicimos)|que me (hicieron|hiciste)|ustedes me (la )?(hicieron|armaron)|la que me armaron|la web que me entregaron)\b';
+    if (preg_match('/' . $nuestra . '/u', $t)) return 'cliente_existente';
+    if (preg_match('/\b(ya (pague|abone|deposite|transferi)|hice la transferencia|ya te (pague|transferi)|mande el pago)\b/u', $t)) {
+        return 'cliente_existente';
+    }
+    return null;
+}
+
+/**
+ * UN AUDIO LARGO TRAE VARIAS PREGUNTAS Y SE CONTESTA UNA.
+ *
+ * Héctor mandó un audio donde preguntó tres cosas —cuánto cuesta, si hay
+ * mantenimiento mensual, y si trabajamos con emprendimientos que recién
+ * arrancan o solo con grandes empresas— más el pedido de vincular la web a sus
+ * redes. Recibió el precio del ecommerce y nada más: de las otras tres nunca
+ * supo nada y la venta se cayó ahí (29-ago).
+ *
+ * El matcher de intenciones mira el mensaje ENTERO y devuelve UNA clave: sobre
+ * ese audio devuelve 'mantenimiento' y se come las otras dos. Partido en
+ * oraciones aparecen las tres.
+ *
+ * La lista es corta a propósito: solo los temas donde se puede comprobar
+ * después si la respuesta los mencionó o no (ver wabot_temas_sin_contestar).
+ * Preferimos no perseguir un tema antes que duplicar una respuesta.
+ */
+function wabot_temas_perseguibles() {
+    return [
+        'mantenimiento'   => '\b(mantenimiento|abono mensual|mensualidad|cuota mensual)\w*',
+        'plazos'          => '\b(plazo|plazos|tarda|demora|entrega|dias habiles|semanas)\w*',
+        'hosting'         => '\b(hosting|dominio|alojamiento|renovacion)\w*',
+        'emprendimientos' => '\b(emprendimiento|emprendedor|negocio chico|negocios chicos|grandes empresas|recien (arranc|empie|est))\w*',
+        'carga'           => '\b(cargar|carga|subir|actualizar)\w*',
+        'marketing'       => '\b(redes|red social|instagram|facebook|publicidad|marketing|pauta)\w*',
+        'google'          => '\b(google|seo|posicionamiento|buscador)\w*',
+        'responsive'      => '\b(celular|celulares|movil|responsive|se adapta|adaptable)\w*',
+        'envios'          => '\b(envio|envios|correo|andreani|despacho|flete)\w*',
+        'formularios'     => '\b(formulario|formularios|encuesta)\w*',
+        'maps'            => '\b(mapa|maps|ubicacion)\w*',
+    ];
+}
+
+/** Las preguntas que trae un mensaje, no la primera nomás. */
+function wabot_preguntas_del_mensaje($texto, $conv, $fase = null) {
+    $crudo = trim(wabot_texto_sin_urls((string)$texto));
+    if ($crudo === '') return [];
+
+    $perseguibles = wabot_temas_perseguibles();
+    // Se corta por oración y también por los conectores con los que la gente
+    // encadena preguntas en un audio ("y si...", "también quería saber...").
+    $partes = preg_split('/[?.;!\n]+|,| y | o | si | tambien | también | ademas | además /iu', $crudo);
+
+    $claves = [];
+    foreach ((array)$partes as $parte) {
+        $parte = trim((string)$parte);
+        if ($parte === '' || mb_strlen($parte) < 6) continue;
+        $k = wabot_info_por_palabras($parte, $fase);
+        if ($k === null || !isset($perseguibles[$k])) continue;
+        if (!wabot_info_clave_tiene_rastro($k, $parte, $conv)) continue;
+        if (!in_array($k, $claves, true)) $claves[] = $k;
+        if (count($claves) >= 4) break;
+    }
+    return $claves;
+}
+
+/** De esos temas, ¿cuáles NO menciona lo que el bot está por mandar? */
+function wabot_temas_sin_contestar($claves, $mensajes) {
+    $dicho = wabot_normalizar_frase(implode(' ', (array)$mensajes));
+    $perseguibles = wabot_temas_perseguibles();
+    $faltan = [];
+    foreach ((array)$claves as $k) {
+        if (!isset($perseguibles[$k])) continue;
+        if (preg_match('/' . $perseguibles[$k] . '/u', $dicho)) continue;   // ya lo nombró
+        $faltan[] = $k;
+    }
+    return $faltan;
+}
+
+/**
+ * Arma la respuesta a varias claves de info: una sola por línea, en viñetas si
+ * hay más de una. Extraído de wabot_engine() para que el agente pueda usar la
+ * misma composición en vez de tener la suya.
+ */
+function wabot_info_lineas($keys, $conv, $cfg) {
+    $lineas = [];
+    foreach ((array)$keys as $k) {
+        if ($k === 'precio_actual') { $lineas[] = wabot_precio_resumen($conv, $cfg); continue; }
+        if (!isset($cfg['info'][$k])) continue;
+        $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
+            : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
+            : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
+            : ($k === 'rangos' ? wabot_texto_rangos($cfg)
+            : ($k === 'plazos' ? wabot_texto_plazos($conv, $cfg) : wabot_texto_info($k, $cfg)))));
+    }
+    $lineas = array_values(array_filter($lineas, function ($l) { return trim((string)$l) !== ''; }));
+    if (!$lineas) return '';
+    return count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
+}
+
+/**
  * "Podríamos hacer un punto de 30 días, contactarnos en un mes y medio."
  *
  * Héctor no se estaba yendo: estaba pidiendo que lo busquemos más adelante,
@@ -2183,17 +2322,14 @@ function wabot_engine($texto, &$conv, $cfg) {
 
         $lineas = [];
         foreach ($keys as $k) {
-            if ($k === 'precio_actual') { $lineas[] = wabot_precio_resumen($conv, $cfg); continue; }
             if ($preciosDesempate !== null && in_array($k, ['rangos', 'precio_sin_rubro'], true)) {
                 $lineas[] = $preciosDesempate;
                 continue;
             }
-            if (!isset($cfg['info'][$k])) continue;
-            $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
-                : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
-                : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
-                : ($k === 'rangos' ? wabot_texto_rangos($cfg)
-                : ($k === 'plazos' ? wabot_texto_plazos($conv, $cfg) : wabot_texto_info($k, $cfg)))));
+            // Una por una para respetar el orden y el caso del desempate; la
+            // resolución de cada clave la hace wabot_info_lineas().
+            $una = wabot_info_lineas([$k], $conv, $cfg);
+            if ($una !== '') $lineas[] = $una;
         }
         if (!$lineas) $lineas[] = $cfg['info']['otra'];
         // "Ese detalle te lo confirma Pablo" es una promesa: si sale, la duda

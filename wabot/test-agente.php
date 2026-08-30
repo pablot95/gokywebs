@@ -1862,5 +1862,31 @@ caso('y sobre apps dice una sola cosa: que sí se hacen y se cotizan aparte',
     stripos($sistemaProd, 'no apps nativas') === false
     && stripos($sistemaProd, "consultar_info('apps')") !== false);
 @unlink(WABOT_DATA . '/conv/AGPROMPT.json');
+
+echo "
+— No preguntar lo que ya está en la ficha —
+";
+
+/* 2. No preguntar algo que YA está guardado en la ficha. */
+$convDatos = ['nombre' => 'Malena', 'nombre_confirmado' => true, 'nombre_negocio' => 'IndumentariaMale',
+              'colores' => 'negro y dorado', 'productos_cantidad' => 40, 'telefono_wsp' => '5491100000000',
+              'referencia_preguntada' => true, 'transcript' => []];
+caso('con el negocio anotado, no se vuelve a preguntar cómo se llama',
+    wabot_agente_repite_pregunta_contestada('Cómo se llama tu negocio?', $convDatos) === true);
+caso('con los colores anotados, tampoco',
+    wabot_agente_repite_pregunta_contestada('Qué colores tiene tu marca?', $convDatos) === true);
+caso('ni la cantidad de productos',
+    wabot_agente_repite_pregunta_contestada('Cuántos productos vas a publicar?', $convDatos) === true);
+caso('ni el WhatsApp',
+    wabot_agente_repite_pregunta_contestada('Pasame tu número de WhatsApp', $convDatos) === true);
+caso('ni la referencia, que se pregunta una sola vez',
+    wabot_agente_repite_pregunta_contestada('Tenés alguna web de referencia que te guste?', $convDatos) === true);
+$convVacia = ['transcript' => []];
+caso('pero con la ficha vacía las preguntas son válidas',
+    wabot_agente_repite_pregunta_contestada('Cómo se llama tu negocio?', $convVacia) === false
+    && wabot_agente_repite_pregunta_contestada('Qué colores tiene tu marca?', $convVacia) === false);
+caso('y un nombre tomado del perfil, sin confirmar, se puede preguntar igual',
+    wabot_agente_repite_pregunta_contestada('Cuál es tu nombre?', ['nombre' => '.', 'transcript' => []]) === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
