@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facturador — Estadísticas</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="app-header">
+    <div class="container">
+        <div class="auth-brand">
+            <div class="auth-brand-mark">F</div>
+            <div class="auth-brand-name">Facturador</div>
+        </div>
+        <div class="app-header-user">
+            <a href="panel.html" class="btn-ghost" style="padding:8px 14px">← Volver al panel</a>
+        </div>
+    </div>
+</header>
+
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Estadísticas</h1>
+            <p>Cuánto facturaste y a quién.</p>
+        </div>
+        <div>
+            <label for="filtroMes" style="margin:0 0 6px">Período</label>
+            <select id="filtroMes"><option value="">Todo</option></select>
+        </div>
+    </div>
+
+    <div id="loadingState" class="empty-state">
+        <p>Cargando…</p>
+    </div>
+
+    <div id="emptyState" class="empty-state" hidden>
+        <h3>Todavía no facturaste nada</h3>
+        <p>Cuando emitas tu primera factura desde el panel, acá vas a ver los totales.</p>
+    </div>
+
+    <div id="statsContent" hidden>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <span class="stat-label">Total facturado</span>
+                <span class="stat-value" id="statTotal">—</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Facturas emitidas</span>
+                <span class="stat-value" id="statCantidad">—</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Promedio por factura</span>
+                <span class="stat-value" id="statPromedio">—</span>
+            </div>
+            <div class="stat-card" id="statIvaCard" hidden>
+                <span class="stat-label">IVA total del período</span>
+                <span class="stat-value" id="statIva">—</span>
+            </div>
+        </div>
+
+        <h2 style="margin:32px 0 14px">Facturado por mes</h2>
+        <div class="table-wrapper" style="padding:20px">
+            <div id="barChart" class="bar-chart"></div>
+        </div>
+
+        <div id="tipoSection" hidden>
+            <h2 style="margin:32px 0 14px">Por tipo de comprobante</h2>
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead><tr><th>Tipo</th><th class="num">Facturas</th><th class="num">Total</th></tr></thead>
+                    <tbody id="tipoBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 style="margin:32px 0 14px">Facturado por cliente</h2>
+        <div class="table-wrapper">
+            <table class="clients-table">
+                <thead><tr><th>Cliente</th><th class="num">Facturas</th><th class="num">Total</th></tr></thead>
+                <tbody id="clientesBody"></tbody>
+            </table>
+        </div>
+
+        <h2 style="margin:32px 0 14px">Últimas facturas</h2>
+        <div class="table-wrapper">
+            <table class="clients-table">
+                <thead><tr><th>Fecha</th><th>Comprobante</th><th>Cliente</th><th class="num">Total</th></tr></thead>
+                <tbody id="ultimasBody"></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script type="module" src="js/estadisticas.js"></script>
+</body>
+</html>

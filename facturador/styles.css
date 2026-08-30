@@ -74,7 +74,7 @@ a:hover { text-decoration: underline; }
 
 [hidden] { display: none !important; }
 
-.container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.container { max-width: 1600px; margin: 0 auto; padding: 0 20px; }
 .container--narrow { max-width: 460px; }
 
 /* ---------- Botones ---------- */
@@ -290,3 +290,20 @@ main.container { padding-top: 32px; padding-bottom: 64px; }
 .badge { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-tiny); font-weight: 700; padding: 3px 9px; border-radius: 20px; }
 .badge-pending { background: var(--warning-soft); color: hsl(38 90% 30%); }
 .badge-done { background: var(--success-soft); color: hsl(152 55% 24%); }
+
+/* ---------- Estadísticas ---------- */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 8px; }
+.stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 8px;
+}
+.stat-label { font-size: var(--fs-tiny); text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 700; }
+.stat-value { font-family: var(--font-display); font-size: 1.7rem; font-weight: 700; color: var(--primary); }
+
+.bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 190px; overflow-x: auto; }
+.bar-chart-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; min-width: 52px; }
+.bar-chart-bar { width: 36px; background: var(--primary); border-radius: 4px 4px 0 0; min-height: 3px; transition: var(--transition); }
+.bar-chart-col:hover .bar-chart-bar { background: var(--primary-dark); }
+.bar-chart-value { font-size: var(--fs-tiny); color: var(--text-muted); white-space: nowrap; }
+.bar-chart-label { font-size: var(--fs-tiny); color: var(--text-muted); white-space: nowrap; }
+.bar-chart-empty { color: var(--text-muted); font-size: var(--fs-small); padding: 20px 0; }

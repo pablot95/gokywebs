@@ -18,6 +18,13 @@
     .guia-cuerpo p { color: var(--text-muted); margin-bottom: 8px; }
     .guia-cuerpo p:last-child { margin-bottom: 0; }
     .intro { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 8px; box-shadow: var(--shadow-sm); }
+
+    @media print {
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .app-header { position: static; box-shadow: none; }
+        .app-header-user { display: none; }
+        .guia-paso, .intro, .banner { break-inside: avoid; }
+    }
 </style>
 </head>
 <body>
@@ -44,6 +51,7 @@
     <div class="intro">
         <strong>Antes de empezar necesitás:</strong>
         <p style="margin-top:8px">Tu CUIT (como monotributista, responsable inscripto o exento) y tu Clave Fiscal con <strong>Nivel de Seguridad 3</strong>. Si tu clave fiscal es de un nivel más bajo, podés subirla de nivel vos mismo desde la app "Mi ARCA" o yendo a una dependencia de ARCA con tu DNI.</p>
+        <p style="margin-top:8px"><strong>¿Solo tenés CUIL, no CUIT?</strong> Como persona física es el mismo número — se convierte en tu CUIT apenas te inscribís como monotributista, autónomo o responsable inscripto en ARCA. Si todavía no hiciste esa inscripción, es el primer paso antes de este instructivo.</p>
     </div>
 
     <div class="guia-paso">

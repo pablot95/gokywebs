@@ -60,6 +60,12 @@ function filaCliente(c) {
                 <textarea class="inline-edit-input" rows="2" maxlength="300" data-original="${escapeHtml(c.descripcion || '')}">${escapeHtml(c.descripcion || '')}</textarea>
             </div>
         </td>
+        <td>
+            <div class="inline-edit" data-field="notas">
+                <div class="inline-edit-label${c.notas ? '' : ' placeholder'}" tabindex="0">${c.notas ? escapeHtml(c.notas) : 'Agregar nota…'}</div>
+                <textarea class="inline-edit-input" rows="2" maxlength="500" data-original="${escapeHtml(c.notas || '')}">${escapeHtml(c.notas || '')}</textarea>
+            </div>
+        </td>
         <td class="num">
             <div class="inline-edit" data-field="precio">
                 <div class="inline-edit-label${c.precio ? '' : ' placeholder'}" tabindex="0">${c.precio ? formatPesos(c.precio) : 'Agregar precio…'}</div>
@@ -101,6 +107,7 @@ function wireInlineEditDelegation() {
         if (valorNuevo === valorOriginal) return;
 
         const label = cell.querySelector('.inline-edit-label');
+        const placeholders = { descripcion: 'Agregar descripción…', notas: 'Agregar nota…' };
         try {
             if (campo === 'precio') {
                 const num = valorNuevo === '' ? 0 : Math.max(0, parseFloat(valorNuevo) || 0);
@@ -109,8 +116,8 @@ function wireInlineEditDelegation() {
                 label.classList.toggle('placeholder', !num);
                 input.dataset.original = num || '';
             } else {
-                await updateDoc(doc(coleccionClientes(), row.dataset.id), { descripcion: valorNuevo, updatedAt: serverTimestamp() });
-                label.textContent = valorNuevo || 'Agregar descripción…';
+                await updateDoc(doc(coleccionClientes(), row.dataset.id), { [campo]: valorNuevo, updatedAt: serverTimestamp() });
+                label.textContent = valorNuevo || placeholders[campo] || '';
                 label.classList.toggle('placeholder', !valorNuevo);
                 input.dataset.original = valorNuevo;
             }

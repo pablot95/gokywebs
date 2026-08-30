@@ -12,6 +12,14 @@ export function formatPesos(n) {
     return Number(n || 0).toLocaleString('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 2 });
 }
 
+// Version corta para etiquetas chicas (ej. arriba de una barra de grafico).
+export function formatPesosCorto(n) {
+    const v = Number(n || 0);
+    if (Math.abs(v) >= 1_000_000) return '$' + (v / 1_000_000).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + 'M';
+    if (Math.abs(v) >= 1000) return '$' + (v / 1000).toLocaleString('es-AR', { maximumFractionDigits: 1 }) + 'k';
+    return formatPesos(v);
+}
+
 export function fechaInput(desplazamientoDias = 0) {
     const d = new Date();
     d.setDate(d.getDate() + desplazamientoDias);
