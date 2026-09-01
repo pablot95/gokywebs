@@ -31,9 +31,40 @@ export function initClientes() {
         toast('No se pudo cargar la lista de clientes.', 'error');
     });
 
+    cargarFacturadosEsteMes();
+    // facturacion.js avisa por acá al emitir, para no importarse mutuamente.
+    document.addEventListener('facturador:factura-emitida', render);
+
     wireModal();
     wireInlineEditDelegation();
     wireRowActionsDelegation();
+}
+
+function mesActualYYYYMM() {
+    const d = new Date();
+    return String(d.getFullYear()) + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+// De dónde sale la "marquita" de facturado: el historial real de facturas
+// (facturador/data/{uid}/emitidas.json vía api/estadisticas.php), filtrado al mes
+// calendario actual -- no un flag aparte que se pueda desincronizar, y se resetea
+// solo al empezar el mes que viene.
+async function cargarFacturadosEsteMes() {
+    try {
+        const token = await estado.user.getIdToken();
+        const res = await fetch('api/estadisticas.php', { headers: { Authorization: 'Bearer ' + token } });
+        const datos = await res.json();
+        if (!datos.ok) return;
+        const mes = mesActualYYYYMM();
+        estado.facturadosEsteMes = new Set(
+            (datos.facturas || [])
+                .filter(f => f.clienteId && f.fecha?.slice(0, 6) === mes)
+                .map(f => f.clienteId),
+        );
+        render();
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function render() {
@@ -47,12 +78,14 @@ function render() {
 function filaCliente(c) {
     const docLabel = c.documento ? `${TIPOS_DOCUMENTO_CLIENTE[c.tipoDocumento] || ''} ${escapeHtml(c.documento)}`.trim() : '';
     const puedeFacturar = arcaListoParaFacturar();
+    const facturado = estado.facturadosEsteMes.has(c.id);
     return `
     <tr data-id="${c.id}">
         <td>
             <div class="client-name-cell">
                 <strong>${escapeHtml(c.nombre)}</strong>
                 ${docLabel ? `<span>${docLabel}</span>` : ''}
+                ${facturado ? '<span class="badge badge-done">✓ Facturado este mes</span>' : ''}
             </div>
         </td>
         <td>

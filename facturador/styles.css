@@ -230,6 +230,8 @@ main.container { padding-top: 32px; padding-bottom: 64px; }
 .client-name-cell { display: flex; flex-direction: column; gap: 2px; }
 .client-name-cell strong { font-family: var(--font-display); font-size: .98rem; }
 .client-name-cell span { font-size: var(--fs-tiny); color: var(--text-muted); }
+.client-name-cell .badge { margin-top: 2px; }
+.client-name-cell .badge-done { color: hsl(152 55% 24%); }
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
 /* Edición inline (mismo patrón que admin/dashboard.js: click en label -> input, blur guarda) */

@@ -3,6 +3,7 @@
 export const estado = {
     user: null,   // objeto de Firebase Auth del usuario logueado
     arca: null,   // ultima respuesta de api/config.php: {configurado, certListo, config}
+    facturadosEsteMes: new Set(), // clienteId con al menos una factura emitida este mes calendario
 };
 
 export function arcaListoParaFacturar() {

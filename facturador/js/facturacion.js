@@ -124,6 +124,7 @@ async function abrirComprobante(factura) {
 
 async function refrescarProximo() {
     const tipo = tipoComprobanteDerivado();
+    const esPrimeraCarga = tipoComprobanteActual === null; // recien acá se sabe si hay que precargar la condición IVA guardada del cliente
     recalcularIva();
     if (tipoComprobanteActual !== null && tipo === tipoComprobanteActual) return;
 
@@ -149,7 +150,12 @@ async function refrescarProximo() {
             campoFactura('TipoDoc').value || TIPO_DOC_CUIT,
         );
         llenarSelect(campoFactura('CondicionVenta'), (datos.condicionesVenta || ['Contado']).map(c => ({ valor: c, texto: c })), campoFactura('CondicionVenta').value || 'Contado');
-        llenarSelect(campoFactura('CondicionIva'), (datos.condicionesIva || []).map(c => ({ valor: c.id, texto: c.descripcion })), campoFactura('CondicionIva').value);
+        // Primera carga del modal: precargar la condición IVA que ya tiene guardada
+        // el cliente (antes no se podía, porque este select todavía no tenía las
+        // opciones reales de ARCA). Refrescos posteriores (cambio de tipo de doc,
+        // de pestaña, o el propio select) respetan lo que el usuario ya eligió.
+        const condicionIvaPreferida = esPrimeraCarga ? (clienteAFacturar.condicionIva ?? '') : campoFactura('CondicionIva').value;
+        llenarSelect(campoFactura('CondicionIva'), (datos.condicionesIva || []).map(c => ({ valor: c.id, texto: c.descripcion })), condicionIvaPreferida);
 
         // Recien con el catalogo real cargado se puede re-derivar con precision
         // (antes del primer fetch se arranca con una suposicion basada en el cliente).
@@ -181,7 +187,7 @@ export async function abrirFacturaModal(cliente) {
     campoFactura('Alicuota').value = '5';
     llenarSelect(campoFactura('TipoDoc'), [{ valor: 80, texto: 'CUIT' }, { valor: 96, texto: 'DNI' }, { valor: 86, texto: 'CUIL' }], cliente.tipoDocumento || TIPO_DOC_CUIT);
     llenarSelect(campoFactura('CondicionVenta'), [{ valor: 'Contado', texto: 'Contado' }]);
-    llenarSelect(campoFactura('CondicionIva'), [], cliente.condicionIva || '');
+    llenarSelect(campoFactura('CondicionIva'), []); // se precarga con el catálogo real en refrescarProximo()
     sincronizarCamposPeriodo();
     sincronizarCamposReceptor();
     mostrarErrorFactura('');
@@ -269,6 +275,8 @@ $('facturaEmitirBtn').addEventListener('click', async () => {
         if (!datos.ok) throw new Error(datos.error || 'No se pudo emitir la factura');
 
         const f = datos.factura;
+        estado.facturadosEsteMes.add(cliente.id);
+        document.dispatchEvent(new CustomEvent('facturador:factura-emitida'));
         cerrarFacturaModal();
         if (f.observaciones) {
             alert(`${numeroComprobante(f.tipoComprobante, f.puntoVenta, f.numero)} emitida, pero ARCA devolvió observaciones:\n\n${f.observaciones}`);
