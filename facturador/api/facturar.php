@@ -9,10 +9,12 @@ $uid = facturador_verificar_usuario();
 if (!$uid) facturador_responder(['ok' => false, 'error' => 'No autorizado'], 401);
 
 // Responsable Inscripto emitiendo Factura A: el receptor tiene que estar
-// identificado con CUIT y ser Responsable Inscripto (id 1 en el catalogo de
-// respaldo de receptor.php) — ARCA rechaza cualquier otra combinacion para clase A.
+// identificado con CUIT y ser Responsable Inscripto o Responsable Monotributo
+// (ids 1 y 6 en el catalogo de respaldo de receptor.php) — ARCA rechaza
+// cualquier otra combinacion para clase A.
 const FACTURADOR_TIPO_DOC_CUIT = 80;
 const FACTURADOR_CONDICION_IVA_RI = 1;
+const FACTURADOR_CONDICION_IVA_MONOTRIBUTO = 6;
 
 function claseComprobante($tipoComprobante)
 {
@@ -146,12 +148,17 @@ try {
     facturador_responder(['ok' => false, 'error' => $e->getMessage()], 400);
 }
 
-// Factura A: solo a un receptor identificado con CUIT y Responsable Inscripto.
-// receptor_normalizar() no sabe nada de esto (es generico para cualquier clase),
-// asi que la regla extra se valida aca, no adentro de receptor.php.
+// Factura A: receptor identificado con CUIT, y Responsable Inscripto o
+// Responsable Monotributo (este ultimo valido segun el manual de WSFEv1 --
+// validacion 10063/10217 -- para el procedimiento de transicion al Regimen
+// General; ARCA lo acepta con una observacion, que ya se le muestra al
+// usuario mas abajo via $factura['observaciones']). receptor_normalizar() no
+// sabe nada de esto (es generico para cualquier clase), asi que la regla
+// extra se valida aca, no adentro de receptor.php.
 if ($tipoComprobante === 1) {
-    if ($receptor['tipoDocumento'] !== FACTURADOR_TIPO_DOC_CUIT || $receptor['condicionIvaId'] !== FACTURADOR_CONDICION_IVA_RI) {
-        facturador_responder(['ok' => false, 'error' => 'La Factura A solo se le puede emitir a un cliente con CUIT de Responsable Inscripto.'], 400);
+    $condicionesValidas = [FACTURADOR_CONDICION_IVA_RI, FACTURADOR_CONDICION_IVA_MONOTRIBUTO];
+    if ($receptor['tipoDocumento'] !== FACTURADOR_TIPO_DOC_CUIT || !in_array($receptor['condicionIvaId'], $condicionesValidas, true)) {
+        facturador_responder(['ok' => false, 'error' => 'La Factura A solo se le puede emitir a un cliente con CUIT de Responsable Inscripto o Responsable Monotributo.'], 400);
     }
 }
 

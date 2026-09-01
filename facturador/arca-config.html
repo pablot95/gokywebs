@@ -46,7 +46,7 @@
                     <div>
                         <label for="puntoVenta">Punto de venta</label>
                         <input type="number" id="puntoVenta" min="1" placeholder="Ej: 1" required>
-                        <p class="field-hint">Un número que vos elegís (podés usar el 1) para identificar de dónde salen tus facturas. Lo vas a dar de alta en ARCA con ese mismo número en el paso 5 de la guía.</p>
+                        <p class="field-hint">Un número que vos elegís (podés usar el 1) para identificar de dónde salen tus facturas. Lo vas a dar de alta en ARCA con ese mismo número en el paso 5 de la guía — tiene que ser <strong>uno nuevo</strong>, aunque ya factures por otro lado: no se pisa con ningún punto de venta que ya tengas.</p>
                     </div>
                 </div>
 
@@ -75,8 +75,9 @@
                         <input type="text" id="inicioActividades" maxlength="20" placeholder="Ej: 03/2022">
                     </div>
                     <div>
-                        <label for="ingresosBrutos">Ingresos Brutos <span class="opt">(si no tenés, dejalo vacío)</span></label>
+                        <label for="ingresosBrutos">Ingresos Brutos <span class="opt">(opcional)</span></label>
                         <input type="text" id="ingresosBrutos" maxlength="20">
+                        <p class="field-hint">Si lo dejás vacío, la factura va a imprimir tu CUIT en este campo (así corresponde para Monotributo bajo Convenio Multilateral en muchas provincias). Si tenés un número de Ingresos Brutos propio y distinto, cargalo acá.</p>
                     </div>
                 </div>
 
