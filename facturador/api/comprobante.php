@@ -16,6 +16,17 @@ if (!$config) {
 $entrada = json_decode(file_get_contents('php://input'), true);
 $factura = is_array($entrada) && isset($entrada['factura']) ? $entrada['factura'] : null;
 
+// Historial (facturas.html): pide una factura puntual ya emitida por su requestId,
+// la clave exacta del registro -- no hace falta reenviar el objeto completo.
+if (!$factura && is_array($entrada) && !empty($entrada['requestId'])) {
+    $registro = is_readable($config['registro'])
+        ? json_decode(file_get_contents($config['registro']), true)
+        : [];
+    if (is_array($registro) && isset($registro[$entrada['requestId']])) {
+        $factura = $registro[$entrada['requestId']];
+    }
+}
+
 if (!$factura && is_array($entrada) && !empty($entrada['clienteId'])) {
     $registro = is_readable($config['registro'])
         ? json_decode(file_get_contents($config['registro']), true)

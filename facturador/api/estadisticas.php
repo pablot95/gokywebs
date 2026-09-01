@@ -16,9 +16,10 @@ $registro = is_readable($registroPath) ? json_decode(file_get_contents($registro
 if (!is_array($registro)) $registro = [];
 
 $facturas = [];
-foreach ($registro as $f) {
+foreach ($registro as $requestId => $f) {
     if (!is_array($f) || empty($f['cae'])) continue; // por las dudas, solo lo efectivamente emitido
     $facturas[] = [
+        'requestId' => (string) $requestId,
         'numero' => (int) ($f['numero'] ?? 0),
         'puntoVenta' => (int) ($f['puntoVenta'] ?? 0),
         'tipoComprobante' => (int) ($f['tipoComprobante'] ?? 11),
