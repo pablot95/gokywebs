@@ -439,5 +439,30 @@ caso('y leer se queda en 12 MB, que en base64 entran en el pedido a Gemini',
     WABOT_MEDIA_MAX_LEER === 12 * 1024 * 1024
     && WABOT_MEDIA_MAX_LEER * 4 / 3 < 20 * 1024 * 1024);
 
+/* ── Notas de voz desde el panel: OGG/Opus mono y voice=true (1-sep) ──
+ * "Sigue sin permitir enviar audios": el audio SÍ salía, pero como archivo con
+ * botón de descarga y no como nota de voz. Lo que lo muestra como nota de voz
+ * es `voice: true` en el cuerpo del mensaje, y el formato OGG/Opus mono que se
+ * codifica en el navegador con opus-recorder. */
+echo "— Notas de voz desde el panel —\n";
+$cuerpoVoz = wabot_wa_audio_body('5491111111111', 'MEDIA_1');
+caso('el mensaje de audio va marcado como nota de voz (voice=true)',
+    $cuerpoVoz['type'] === 'audio' && $cuerpoVoz['audio']['id'] === 'MEDIA_1' && $cuerpoVoz['audio']['voice'] === true);
+caso('y se puede mandar como archivo común si hace falta',
+    wabot_wa_audio_body('5491111111111', 'MEDIA_1', false)['audio']['voice'] === false);
+caso('ogg/opus es el formato de la nota de voz y guarda con extensión .ogg',
+    wabot_audio_mime_valido('audio/ogg;codecs=opus') === true && wabot_audio_extension('audio/ogg;codecs=opus') === 'ogg');
+caso('la librería que codifica Opus está en el repo, con el worker y la licencia',
+    file_exists(__DIR__ . '/vendor/opus-recorder/recorder.min.js')
+    && filesize(__DIR__ . '/vendor/opus-recorder/encoderWorker.min.js') > 300000
+    && file_exists(__DIR__ . '/vendor/opus-recorder/LICENSE.md'));
+$adminSrc = (string)@file_get_contents(__DIR__ . '/admin.php');
+caso('el panel carga esa librería y graba con "mantener apretado"',
+    strpos($adminSrc, 'vendor/opus-recorder/recorder.min.js') !== false
+    && strpos($adminSrc, "addEventListener('pointerdown'") !== false
+    && strpos($adminSrc, 'numberOfChannels: 1') !== false);
+caso('y ya no queda el botón viejo de "Enviar nota de voz"',
+    strpos($adminSrc, 'grabarEnviar') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -4433,17 +4433,29 @@ function wabot_wa_media_subir($bytes, $mime, $nombre) {
     return $id !== '' ? $id : null;
 }
 
-function wabot_wa_send_audio($tel, $mediaId) {
+/**
+ * El cuerpo del mensaje de audio. `voice` es lo que hace que WhatsApp lo muestre
+ * como NOTA DE VOZ —foto de perfil, ícono de micrófono, se reproduce al toque—
+ * y no como un archivo de audio con botón de descarga. Sin eso, la nota grabada
+ * desde el panel llegaba al cliente como un adjunto (Pablo, 1-sep: "sigue sin
+ * permitir enviar audios"). Doc de Meta, audio-messages: "voice: set to true
+ * if sending a voice message".
+ */
+function wabot_wa_audio_body($tel, $mediaId, $voz = true) {
+    return [
+        'messaging_product' => 'whatsapp',
+        'to'    => $tel,
+        'type'  => 'audio',
+        'audio' => ['id' => $mediaId, 'voice' => (bool)$voz],
+    ];
+}
+
+function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, '[audio]']; return true; }
     if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') return false;
 
     $url = 'https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . WABOT_PHONE_NUMBER_ID . '/messages';
-    $body = json_encode([
-        'messaging_product' => 'whatsapp',
-        'to'   => $tel,
-        'type' => 'audio',
-        'audio' => ['id' => $mediaId],
-    ]);
+    $body = json_encode(wabot_wa_audio_body($tel, $mediaId, $voz));
 
     $ch = curl_init($url);
     curl_setopt_array($ch, [
@@ -4456,7 +4468,13 @@ function wabot_wa_send_audio($tel, $mediaId) {
     $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
 
     if ($code < 200 || $code >= 300) {
-        wabot_log('error', ['donde' => 'wa_send_audio', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        wabot_log('error', ['donde' => 'wa_send_audio', 'http' => $code, 'voz' => (int)$voz, 'res' => substr((string)$res, 0, 400)]);
+        /* Si la versión de la Graph API en uso no conoce `voice`, que llegue
+         * igual como archivo de audio antes que no llegar: se reintenta una
+         * sola vez sin el parámetro. */
+        if ($voz && stripos((string)$res, 'voice') !== false) {
+            return wabot_wa_send_audio($tel, $mediaId, false);
+        }
         return false;
     }
     return true;

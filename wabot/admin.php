@@ -562,7 +562,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             echo json_encode(['error' => 'WhatsApp no aceptó el audio al subirlo. Revisá el log en wabot/data/log/.']);
             exit;
         }
-        if (!wabot_wa_send_audio(wabot_channel_user_id($conv), $mediaId)) {
+        if (!wabot_wa_send_audio(wabot_channel_user_id($conv), $mediaId, true)) {
             echo json_encode(['error' => 'El audio se subió pero WhatsApp rechazó el envío. Revisá el log en wabot/data/log/.']);
             exit;
         }
@@ -900,6 +900,14 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .grabando-punto { width:10px; height:10px; border-radius:50%; background:var(--bad); flex-shrink:0; animation:latido 1.1s ease-in-out infinite; }
 .grabando #grabandoTiempo { font-variant-numeric:tabular-nums; font-weight:700; font-size:15px; }
 .grabando button { padding:7px 14px; font-size:13px; }
+.grabando-hint { flex:1 1 auto; font-size:12.5px; color:var(--dim); }
+/* Deslizó hacia la izquierda: al soltar se cancela, y la barra lo dice en rojo pleno. */
+.grabando.grabando--cancelar { background:var(--bad); }
+.grabando.grabando--cancelar .grabando-hint, .grabando.grabando--cancelar #grabandoTiempo { color:#fff; }
+/* El micrófono es "mantener apretado": sin esto el celular abre el menú de
+   copiar/seleccionar o empieza a scrollear a mitad de la nota. */
+#respGrabar { touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; }
+#respGrabar.apretado { background:var(--bad); border-color:var(--bad); color:#fff; transform:scale(1.12); }
 @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.25 } }
 @media (prefers-reduced-motion: reduce) { .grabando-punto { animation:none } }
 .meta { font-size:11px; color:var(--dim); }
@@ -1998,15 +2006,15 @@ body.embed { min-height: 0; }
                     <div class="fila">
                         <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
-                        <button id="respGrabar" class="sec" type="button" title="Grabar una nota de voz">🎤</button>
+                        <button id="respGrabar" class="sec" type="button" title="Mantené apretado para grabar una nota de voz. Soltá para enviar, deslizá a la izquierda para cancelar.">🎤</button>
                         <?php endif; ?>
                         <button id="respEnviar">Enviar</button>
                     </div>
                     <div id="grabando" class="grabando" hidden>
                         <span class="grabando-punto"></span>
                         <span id="grabandoTiempo">0:00</span>
-                        <button type="button" id="grabarEnviar">Enviar nota de voz</button>
-                        <button type="button" id="grabarCancelar" class="bad">Descartar</button>
+                        <span class="grabando-hint" id="grabandoHint">◀ Deslizá para cancelar</span>
+                        <button type="button" id="grabarCancelar" class="bad" title="Cancelar la grabación">✕</button>
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
                 </div>
@@ -2639,6 +2647,7 @@ body.embed { min-height: 0; }
         </script>
 
         <?php if ($conv): ?>
+        <script src="vendor/opus-recorder/recorder.min.js?v=8.0.5"></script>
         <script>
         const TEL = <?= json_encode($convClave) ?>;
         let ventana = <?= (int)$restante ?>;
@@ -2854,176 +2863,217 @@ body.embed { min-height: 0; }
             });
         }
 
-        /* ── Notas de voz ──
-           WhatsApp acepta el CONTENEDOR y el CODEC, no solo el contenedor:
-           mp4 tiene que llevar AAC adentro, y ogg tiene que llevar Opus. No
-           es lo mismo.
+        /* ── Notas de voz, como en WhatsApp ──
+           Mantener apretado el micrófono graba, soltar envía, deslizar a la
+           izquierda cancela. Un toque corto solo muestra la ayuda.
 
-           Acá estaba el bug por el que las notas de voz no salían: se pedía
-           "audio/mp4" a secas y Chrome devuelve "audio/mp4;codecs=opus", o sea
-           Opus metido en un MP4. Eso no lo acepta WhatsApp, pero el mime
-           recortado sigue diciendo "audio/mp4", así que pasaba la validación
-           del servidor y recién fallaba en Meta, sin decir por qué.
-           Verificado en Chrome 148: pedir 'audio/mp4' → rec.mimeType queda en
-           'audio/mp4;codecs=opus'; pidiendo AAC explícito sale un MP4 real.
+           El audio se codifica ACÁ, en el navegador, a OGG/Opus mono con
+           opus-recorder (WebAssembly). Es el único formato que WhatsApp muestra
+           como nota de voz de verdad —foto de perfil, ícono de micrófono, se
+           reproduce al toque— y no como un archivo con botón de descarga
+           (ver wabot_wa_audio_body). Y se termina la lotería de qué formato
+           sabe grabar cada navegador: Chrome, Safari, Firefox, Android e
+           iPhone salen todos por el mismo camino. MediaRecorder queda solo de
+           respaldo, para un navegador sin WebAssembly. */
+        const OPUS_WORKER = 'vendor/opus-recorder/encoderWorker.min.js?v=8.0.5';
+        const GRAB_MIN_MS = 800;        // más corto que esto es un toque, no una nota
+        const GRAB_CANCEL_PX = 70;      // cuánto hay que deslizar a la izquierda
 
-           Por eso el codec va SIEMPRE explícito. mp4a.40.2 es AAC-LC, que
-           soportan Chrome y Safari; ogg/opus lo tiene Firefox. webm queda
-           afuera a propósito: WhatsApp lo rechaza en cualquier codec. */
-        const FORMATOS_WSP = [
-            'audio/mp4;codecs=mp4a.40.2',   // AAC-LC en MP4 — Chrome y Safari
-            'audio/ogg;codecs=opus',        // Firefox
-            'audio/aac',
-            'audio/mpeg',
-        ];
-
+        /* Respaldo sin WebAssembly. WhatsApp valida el CONTENEDOR y el CODEC:
+           mp4 con AAC adentro, ogg con Opus. Por eso el codec va explícito
+           (pedir 'audio/mp4' a secas le saca a Chrome un mp4 con Opus, que
+           Meta rechaza) y webm queda afuera. */
+        const FORMATOS_WSP = ['audio/mp4;codecs=mp4a.40.2', 'audio/ogg;codecs=opus', 'audio/aac', 'audio/mpeg'];
         function formatoGrabable() {
             if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return null;
             for (const f of FORMATOS_WSP) if (MediaRecorder.isTypeSupported(f)) return f;
             return null;
         }
+        function opusDisponible() {
+            return typeof Recorder !== 'undefined' && typeof Recorder.isRecordingSupported === 'function'
+                && Recorder.isRecordingSupported() && typeof WebAssembly !== 'undefined';
+        }
 
         const btnGrabar = document.getElementById('respGrabar');
         const cajaGrab  = document.getElementById('grabando');
         const tiempoEl  = document.getElementById('grabandoTiempo');
-        const btnGrabEnviar = document.getElementById('grabarEnviar');
+        const hintEl    = document.getElementById('grabandoHint');
         const btnGrabCancel = document.getElementById('grabarCancelar');
 
-        let rec = null, micStream = null, trozos = [], recMime = '', cronometro = null, arranqueRec = 0, enviando = false;
+        let grab = null;          // la grabación en curso
+        let cronometro = null;
+        let grabX0 = 0, grabDeslizoCancelar = false;
 
+        function avisar(txt, malo) { est.textContent = txt; est.style.color = malo ? 'var(--bad)' : 'var(--dim)'; }
         function pintarTiempo() {
-            const s = Math.floor((Date.now() - arranqueRec) / 1000);
+            if (!grab) return;
+            const s = Math.floor((Date.now() - grab.arranque) / 1000);
             tiempoEl.textContent = Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
         }
-
-        /* El stream vive en su propia variable y NO colgado del MediaRecorder:
-           si la grabadora falla al construirse, el micrófono ya estaba abierto y
-           colgarlo de `rec` dejaba el stream huérfano, con el indicador del
-           celular prendido para siempre y sin nada que lo apagara. */
-        function soltarMicrofono() {
-            if (micStream) {
-                micStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
-                micStream = null;
-            }
+        function soltarStream(stream) {
+            if (stream) stream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+        }
+        function mostrarCaja(visible) {
+            cajaGrab.hidden = !visible;
+            cajaGrab.classList.remove('grabando--cancelar');
+            hintEl.textContent = '◀ Deslizá para cancelar';
+            if (btnGrabar) btnGrabar.classList.toggle('apretado', visible);
+        }
+        function errorMic(e) {
+            avisar(e && e.name === 'NotAllowedError'
+                ? 'Falta permiso del micrófono: habilitalo para este sitio y probá de nuevo.'
+                : 'No se pudo abrir el micrófono: ' + (e && e.message ? e.message : e), true);
         }
 
-        function cerrarGrabacion() {
+        function empezarGrabacion() {
+            if (grab) return;
+            // `presionado` es el momento del dedo; `arranque` el del micrófono
+            // abierto (para el cronómetro). El "toque corto" se mide con el
+            // primero: abrir el micrófono puede tardar más que el toque.
+            const g = { presionado: Date.now(), arranque: Date.now(), trozos: [], cancelado: false, inicio: null, rec: null, stream: null, mime: '' };
+            grab = g;
+
+            if (opusDisponible()) {
+                g.mime = 'audio/ogg;codecs=opus';
+                const rec = new Recorder({
+                    encoderPath: OPUS_WORKER,
+                    numberOfChannels: 1,            // WhatsApp: "mono input only"
+                    encoderSampleRate: 48000,
+                    encoderApplication: 2048,       // VOIP: optimizado para voz
+                    encoderFrameSize: 20,
+                    streamPages: false,             // el archivo entero al terminar
+                    mediaTrackConstraints: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+                });
+                g.rec = rec;
+                rec.ondataavailable = arr => { if (arr && arr.length) g.trozos.push(new Uint8Array(arr)); };
+                rec.onstop = () => terminarGrabacion(g);
+                // start() pide el micrófono: tiene que salir del gesto del usuario
+                // (el pointerdown), si no Safari lo bloquea.
+                g.inicio = rec.start().catch(e => { errorMic(e); throw e; });
+            } else {
+                const mime = formatoGrabable();
+                if (!mime) {
+                    grab = null;
+                    avisar('Este navegador no puede grabar notas de voz. Probá con Chrome o Safari actualizados.', true);
+                    return;
+                }
+                g.mime = mime;
+                g.inicio = navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                    g.stream = stream;
+                    const rec = new MediaRecorder(stream, { mimeType: mime });
+                    g.rec = rec;
+                    if (rec.mimeType) g.mime = rec.mimeType;   // el codec REAL, que es lo que decide Meta
+                    rec.ondataavailable = ev => { if (ev.data && ev.data.size) g.trozos.push(ev.data); };
+                    rec.onstop = () => terminarGrabacion(g);
+                    rec.onerror = () => { g.cancelado = true; avisar('La grabación se cortó por un error del navegador.', true); };
+                    rec.start();
+                }).catch(e => { errorMic(e); throw e; });
+            }
+
+            g.inicio.then(() => {
+                if (grab !== g) return;      // ya la soltó antes de que abriera el micrófono
+                g.arranque = Date.now();
+                pintarTiempo();
+                cronometro = setInterval(pintarTiempo, 250);
+                mostrarCaja(true);
+                avisar('Grabando… soltá para enviar, deslizá a la izquierda para cancelar.', false);
+            }).catch(() => { if (grab === g) { grab = null; mostrarCaja(false); } });
+        }
+
+        /* Soltó el botón (o canceló). Se espera a que el micrófono haya
+           abierto: en un toque corto el stop puede llegar antes que el start. */
+        async function pararGrabacion(enviar) {
+            const g = grab;
+            if (!g) return;
+            grab = null;
+            // Cuánto estuvo apretado, medido AHORA: después del await ya no se
+            // sabe (un micrófono lento convertía un toque en una nota vacía).
+            const apretadoMs = Date.now() - g.presionado;
             clearInterval(cronometro); cronometro = null;
-            if (rec && rec.state !== 'inactive') { try { rec.stop(); } catch (e) {} }
-            soltarMicrofono();
-            rec = null; trozos = [];
-            cajaGrab.hidden = true;
-            if (btnGrabar) btnGrabar.disabled = false;
+            mostrarCaja(false);
+            try { await g.inicio; } catch (e) { return; }
+            g.cancelado = !enviar;
+            if (enviar && apretadoMs < GRAB_MIN_MS) {
+                g.cancelado = true;
+                avisar('Mantené apretado el micrófono mientras hablás, y soltá para enviar.', false);
+            }
+            try {
+                if (g.rec && typeof g.rec.stop === 'function') await g.rec.stop();
+            } catch (e) { g.cancelado = true; }
         }
 
-        // Salir de la pestaña, cerrarla o navegar a otro chat también apaga el
-        // micrófono: nunca queda tomado por una página que ya no se está usando.
-        window.addEventListener('pagehide', cerrarGrabacion);
-        window.addEventListener('beforeunload', cerrarGrabacion);
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden' && rec) cerrarGrabacion();
-        });
-
-        async function empezarGrabacion() {
-            const mime = formatoGrabable();
-            if (!mime) {
-                est.textContent = 'Este navegador no puede grabar en un formato que WhatsApp acepte. Probá con Chrome o Safari actualizados.';
-                est.style.color = 'var(--bad)';
-                return;
-            }
-            soltarMicrofono();
-            try {
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (e) {
-                soltarMicrofono();
-                est.textContent = e && e.name === 'NotAllowedError'
-                    ? 'Falta permiso del micrófono: habilitalo para este sitio y probá de nuevo.'
-                    : 'No se pudo abrir el micrófono: ' + (e && e.message ? e.message : e);
-                est.style.color = 'var(--bad)';
-                return;
-            }
-
-            recMime = mime;
-            trozos = [];
-            enviando = false;
-            try {
-                rec = new MediaRecorder(micStream, { mimeType: mime });
-            } catch (e) {
-                // Sin esto el micrófono quedaba abierto: el stream ya existía y
-                // la grabadora que iba a "dueñarlo" nunca llegó a construirse.
-                soltarMicrofono();
-                rec = null;
-                est.textContent = 'Este navegador no pudo iniciar la grabación: ' + (e && e.message ? e.message : e);
-                est.style.color = 'var(--bad)';
-                return;
-            }
-            // El mime REAL que terminó usando el navegador, no el que pedimos:
-            // pueden diferir en el codec, y el codec es justo lo que decide si
-            // WhatsApp lo acepta. Mandar el pedido escondía el problema.
-            if (rec.mimeType) recMime = rec.mimeType;
-            rec.ondataavailable = ev => { if (ev.data && ev.data.size) trozos.push(ev.data); };
-            rec.onstop = () => {
-                const partes = trozos.slice();
-                const enviarlo = enviando;
-                cerrarGrabacion();
-                if (enviarlo && partes.length) subirAudio(new Blob(partes, { type: recMime }));
-            };
-            rec.onerror = () => { est.textContent = 'La grabación se cortó por un error del navegador.'; est.style.color = 'var(--bad)'; cerrarGrabacion(); };
-            rec.start();
-
-            arranqueRec = Date.now();
-            pintarTiempo();
-            cronometro = setInterval(pintarTiempo, 500);
-            cajaGrab.hidden = false;
-            if (btnGrabar) btnGrabar.disabled = true;
-            est.textContent = 'Grabando… tocá "Enviar nota de voz" cuando termines.';
-            est.style.color = 'var(--dim)';
+        function terminarGrabacion(g) {
+            // Con opus-recorder el stop ya apaga el micrófono; el respaldo lo apaga acá.
+            soltarStream(g.stream); g.stream = null;
+            if (g.rec && typeof g.rec.close === 'function') { try { g.rec.close(); } catch (e) {} }
+            if (g.cancelado) { if (!est.textContent.startsWith('Mantené')) avisar('Nota de voz descartada.', false); return; }
+            if (!g.trozos.length) { avisar('La grabación salió vacía. Probá de nuevo.', true); return; }
+            subirAudio(new Blob(g.trozos, { type: g.mime.split(';')[0] }), g.mime);
         }
 
-        async function subirAudio(blob) {
-            est.textContent = 'Enviando la nota de voz…';
-            est.style.color = 'var(--dim)';
+        async function subirAudio(blob, mime) {
+            avisar('Enviando la nota de voz…', false);
             btn.disabled = true;
             try {
                 const fd = new FormData();
                 fd.append('accion', 'responder_audio');
                 fd.append('tel', TEL);
-                // Entero, CON el codec: el servidor necesita verlo para saber
-                // si WhatsApp lo va a aceptar. Recortarlo acá era lo que hacía
-                // que un mp4/opus pasara todos los controles y muriera en Meta.
-                fd.append('mime', recMime || blob.type || '');
-                fd.append('audio', blob, 'nota-de-voz');
+                // Entero, CON el codec: el servidor lo mira para saber si
+                // WhatsApp lo va a aceptar.
+                fd.append('mime', mime || blob.type || '');
+                const ext = { 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/mpeg': 'mp3' }[(mime || '').split(';')[0]] || 'ogg';
+                fd.append('audio', blob, 'nota-de-voz.' + ext);
                 const r = await fetch('admin.php', { method: 'POST', body: fd });
                 const j = await r.json();
                 if (j.ok) {
                     document.getElementById('handoffPill')?.remove();
                     await refrescar(); await refrescarLista();
-                    est.textContent = 'Nota de voz enviada. El bot queda en silencio en este chat.';
-                    est.style.color = 'var(--dim)';
+                    avisar('Nota de voz enviada. El bot queda en silencio en este chat.', false);
                 } else {
-                    est.textContent = j.error || 'No se pudo enviar la nota de voz.';
-                    est.style.color = 'var(--bad)';
+                    avisar(j.error || 'No se pudo enviar la nota de voz.', true);
                 }
             } catch (e) {
-                est.textContent = 'Error de red al enviar el audio: ' + e;
-                est.style.color = 'var(--bad)';
+                avisar('Error de red al enviar el audio: ' + e, true);
             }
             btn.disabled = ventana <= 0;
         }
 
+        // Salir de la pestaña o cerrarla cancela lo que se estaba grabando: el
+        // micrófono nunca queda tomado por una página que ya no se usa.
+        window.addEventListener('pagehide', () => pararGrabacion(false));
+        window.addEventListener('beforeunload', () => pararGrabacion(false));
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') pararGrabacion(false); });
+
         if (btnGrabar) {
-            btnGrabar.onclick = empezarGrabacion;
-            btnGrabEnviar.onclick = () => { if (rec && rec.state !== 'inactive') { enviando = true; rec.stop(); } };
-            btnGrabCancel.onclick = () => {
-                if (rec && rec.state !== 'inactive') { enviando = false; rec.stop(); }
-                else cerrarGrabacion();
-                est.textContent = 'Nota de voz descartada.';
-                est.style.color = 'var(--dim)';
-            };
-            if (!formatoGrabable()) {
+            if (!opusDisponible() && !formatoGrabable()) {
                 btnGrabar.disabled = true;
-                btnGrabar.title = 'Este navegador no puede grabar en un formato que WhatsApp acepte';
+                btnGrabar.title = 'Este navegador no puede grabar notas de voz';
             }
+            btnGrabar.addEventListener('contextmenu', ev => ev.preventDefault());
+            btnGrabar.addEventListener('pointerdown', ev => {
+                if (ev.button !== 0 || btnGrabar.disabled) return;
+                ev.preventDefault();
+                try { btnGrabar.setPointerCapture(ev.pointerId); } catch (e) {}
+                grabX0 = ev.clientX; grabDeslizoCancelar = false;
+                empezarGrabacion();
+            });
+            btnGrabar.addEventListener('pointermove', ev => {
+                if (!grab) return;
+                const cancelar = ev.clientX - grabX0 < -GRAB_CANCEL_PX;
+                if (cancelar === grabDeslizoCancelar) return;
+                grabDeslizoCancelar = cancelar;
+                cajaGrab.classList.toggle('grabando--cancelar', cancelar);
+                hintEl.textContent = cancelar ? 'Soltá para cancelar' : '◀ Deslizá para cancelar';
+            });
+            btnGrabar.addEventListener('pointerup', ev => { if (grab) { ev.preventDefault(); pararGrabacion(!grabDeslizoCancelar); } });
+            btnGrabar.addEventListener('pointercancel', () => pararGrabacion(false));
+            // Teclado: barra o Enter apretados graban, al soltar se envía.
+            btnGrabar.addEventListener('keydown', ev => {
+                if ((ev.key === ' ' || ev.key === 'Enter') && !ev.repeat && !grab) { ev.preventDefault(); grabX0 = 0; grabDeslizoCancelar = false; empezarGrabacion(); }
+                if (ev.key === 'Escape' && grab) pararGrabacion(false);
+            });
+            btnGrabar.addEventListener('keyup', ev => { if ((ev.key === ' ' || ev.key === 'Enter') && grab) { ev.preventDefault(); pararGrabacion(true); } });
+            btnGrabCancel.onclick = () => pararGrabacion(false);
         }
         pintar(<?= json_encode(array_values($conv['transcript']), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
