@@ -1,7 +1,7 @@
 // Calendario mensual + modal con el detalle de cada día — Hola Mor
 import { db } from '../firebase-config.js';
 import {
-    collection, query, where, getDocs, doc, updateDoc, deleteField,
+    collection, query, where, getDocs, doc, getDoc, setDoc, updateDoc, deleteField,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { formatTime, escHtml, getDateKey, toast, roundSecondsToQuarterHour } from './utils.js';
 
@@ -35,6 +35,7 @@ let currentModalDateKey = null;
 let currentModalData = null;
 let editingTaskId = null; // task del resumen "por task" que se está editando con el lápiz
 let taskTypeNames = ['CP', 'PT', 'O'];
+let doneDays = {}; // dateKey -> true. Independiente de "finalized" (que se resetea con cualquier edición).
 
 // Interpreta "HH:MM:SS", "MM:SS" o minutos sueltos → segundos (null si es inválido)
 function parseTimeToSeconds(value) {
@@ -69,6 +70,30 @@ function setComboChecked(dateKey, id, checked) {
     try { localStorage.setItem(comboChecksKey(dateKey), JSON.stringify([...set])); } catch (_) {}
 }
 
+// ── "Marcar día como hecho": check chico en cada celda del calendario ──
+// A propósito separado de "finalized" (que vive en users/{uid}/days/{dateKey} y se
+// resetea con casi cualquier edición del día) — esto es un marcador simple, manual,
+// disponible en TODOS los días (tengan o no tiempo cargado), guardado en un solo doc.
+function doneDaysRef() {
+    return doc(db, 'users', uid, 'meta', 'calendarDone');
+}
+async function loadDoneDays() {
+    try {
+        const snap = await getDoc(doneDaysRef());
+        doneDays = snap.exists() ? (snap.data().days || {}) : {};
+    } catch (e) {
+        console.error(e);
+        doneDays = {};
+    }
+}
+async function toggleDayDone(dateKey, checked) {
+    if (checked) {
+        await setDoc(doneDaysRef(), { days: { [dateKey]: true } }, { merge: true });
+    } else {
+        await updateDoc(doneDaysRef(), { [`days.${dateKey}`]: deleteField() });
+    }
+}
+
 export function setCalendarTaskTypes(names = []) {
     taskTypeNames = [...new Set(names.map(name => String(name).trim()).filter(Boolean))];
     if (!taskTypeNames.length) taskTypeNames = ['CP', 'PT', 'O'];
@@ -82,7 +107,7 @@ function getDayTaskTypeNames(data) {
     ].filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
-export function initCalendar(userId) {
+export async function initCalendar(userId) {
     uid = userId;
     const now = new Date();
     viewYear = now.getFullYear();
@@ -94,6 +119,7 @@ export function initCalendar(userId) {
     $('dayModal').addEventListener('click', e => { if (e.target.id === 'dayModal') closeModal(); });
     $('dayModalExportBtn').addEventListener('click', exportDayToExcel);
 
+    await loadDoneDays();
     renderCalendar();
 }
 
@@ -165,8 +191,37 @@ async function renderCalendar() {
             el.addEventListener('click', () => openDayModal(dateKey, data));
         }
 
+        el.appendChild(buildDoneCheckbox(dateKey));
+
         grid.appendChild(el);
     }
+}
+
+// Check chico en la esquina de la celda para marcar el día como "hecho" a mano.
+// stopPropagation: la celda misma tiene su propio listener de click (abre el modal).
+function buildDoneCheckbox(dateKey) {
+    const wrap = document.createElement('label');
+    wrap.className = 'cal-day-done';
+    wrap.title = 'Marcar día como hecho';
+    wrap.addEventListener('click', e => e.stopPropagation());
+
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = !!doneDays[dateKey];
+    chk.setAttribute('aria-label', `Marcar ${dateKey} como hecho`);
+    chk.addEventListener('change', () => {
+        const checked = chk.checked;
+        if (checked) doneDays[dateKey] = true; else delete doneDays[dateKey];
+        toggleDayDone(dateKey, checked).catch(e => {
+            console.error(e);
+            if (checked) delete doneDays[dateKey]; else doneDays[dateKey] = true;
+            chk.checked = !checked;
+            toast('No se pudo guardar', 'error');
+        });
+    });
+
+    wrap.appendChild(chk);
+    return wrap;
 }
 
 async function fetchMonthData() {

@@ -1444,6 +1444,22 @@ input.clock-digital[readonly] {
     font-weight: 700;
 }
 
+.cal-day-done {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: flex;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.cal-day-done input {
+    width: 13px;
+    height: 13px;
+    accent-color: var(--amarillo-fuerte);
+    cursor: pointer;
+}
+
 /* ═══════════════════════════════════════════
    MODALES
 ═══════════════════════════════════════════ */
