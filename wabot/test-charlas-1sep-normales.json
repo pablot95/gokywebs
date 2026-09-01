@@ -1,0 +1,82 @@
+[
+  {
+    "id": "N01",
+    "titulo": "Rotiseria que quiere mostrar el menu y que le pidan por WhatsApp",
+    "esperado": "Cliente comun y colaborador. Tiene que cotizar sin dar vueltas, contestar cuanto tarda, tomar el si y cerrar el prediseno con los datos que le pasa. Sin derivar.",
+    "nombre": "Silvana",
+    "turnos": [
+      "hola buenas, queria consultar por una pagina web",
+      "tengo una rotiseria, comida casera para llevar",
+      "queria que la gente vea el menu y me haga el pedido por whatsapp",
+      "cuanto sale?",
+      "y cuanto tardan en hacerla?",
+      "dale, me interesa",
+      "Rotiseria Doña Silvana, comida casera y viandas, en Quilmes. Los colores rojo y blanco",
+      "mi numero es 11 5544 3322"
+    ]
+  },
+  {
+    "id": "N02",
+    "titulo": "Peluqueria que pregunta precio y se lo lleva a pensar con la socia",
+    "esperado": "Turnos $200.000. Dominio y hosting incluidos el primer anio. Ante 'lo hablo con mi socia' ofrece la muestra gratis y no insiste ni presiona. La charla queda abierta, sin derivar.",
+    "nombre": "Jesica",
+    "turnos": [
+      "holaa, me pasas info?",
+      "tengo una peluqueria con una socia, somos dos",
+      "queremos que las clientas saquen el turno solas asi no estamos todo el dia con el celular",
+      "cuanto nos saldria?",
+      "el dominio y todo eso esta incluido o va aparte?",
+      "buenisimo. lo hablo con mi socia y te aviso",
+      "gracias!"
+    ]
+  },
+  {
+    "id": "N03",
+    "titulo": "Electricista matriculado: landing simple con sus trabajos",
+    "esperado": "Landing $160.000. Puede mostrar fotos de sus trabajos. Pago: sena $40.000 y saldo al entregar. Toma el si y cierra el prediseno.",
+    "nombre": "Ruben",
+    "turnos": [
+      "buen dia, hacen paginas web?",
+      "soy electricista matriculado, trabajo en casas y locales",
+      "quiero algo simple, que me encuentren y me llamen",
+      "cuanto sale?",
+      "se pueden poner fotos de los trabajos que hice?",
+      "y como se paga?",
+      "listo, armame la demo",
+      "Rueda Electricidad, instalaciones y urgencias en Moron, colores azul y amarillo, 11 6677 8899"
+    ]
+  },
+  {
+    "id": "N04",
+    "titulo": "Vende ropa por Instagram: le parece caro y pide igual la demo",
+    "esperado": "Ecommerce $290.000. Ante 'es mucho para mi ahora' no baja el precio ni inventa promociones, pero puede contar que se puede arrancar mas simple. Tiene que tomar el pedido de la demo y cerrarlo.",
+    "nombre": "Micaela",
+    "turnos": [
+      "hola! como estas? queria saber precios de una tienda online",
+      "vendo ropa por instagram, ya tengo bastantes clientas",
+      "si, quiero que compren y paguen desde la pagina",
+      "uh, es bastante para mi ahora la verdad",
+      "y algo mas simple para arrancar?",
+      "mmm dale, mandame la demo asi la veo",
+      "Mica Store, ropa de mujer, tengo como 40 productos. Colores rosa y negro",
+      "11 2233 4455"
+    ]
+  },
+  {
+    "id": "N05",
+    "titulo": "Contadora que pregunta que incluye y si puede actualizarla despues",
+    "esperado": "Landing $160.000. Que incluye, si puede modificarla despues (los cambios los hacen ellos o el mantenimiento) y plazos. Cierra el prediseno con los datos.",
+    "nombre": "Laura",
+    "turnos": [
+      "buenas tardes, necesito una pagina para mi estudio contable",
+      "somos dos contadoras, atendemos monotributistas y pymes",
+      "queremos mostrar los servicios y que nos escriban",
+      "cuanto sale y que incluye?",
+      "despues la puedo ir actualizando yo?",
+      "cuanto tardan?",
+      "perfecto, avancemos",
+      "Estudio Bianchi & Asociadas, contadoras publicas en Ramos Mejia, colores verde ingles y gris",
+      "11 3131 4141"
+    ]
+  }
+]

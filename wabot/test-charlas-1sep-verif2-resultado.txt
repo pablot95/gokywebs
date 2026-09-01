@@ -1,0 +1,121 @@
+Bateria conversacional wabot — 3 escenarios, modo agente, motor 92df0209d6
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO W1 — Inmobiliaria (era E10): preguntar el precio dos veces no puede derivar
+ESPERADO: Repite $240.000 sin derivar. La senia es $60.000. Fotos por propiedad: decenas y video. Cierra con lead.
+>>> CLIENTE: buenas, tengo una inmobiliaria chica en Moreno
+<<< BOT [393c]: Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de $240.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero publicar las propiedades y que filtren por zona y precio
+<<< BOT [220c]: El total es $240.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Inmobiliaria
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [220c]: El total es $240.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Inmobiliaria
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuantas fotos puedo subir por propiedad?
+<<< BOT [302c]: Podés subir todas las fotos que necesites por propiedad, sin límite. Cada propiedad tiene su propia galería para mostrar el interior, exterior y los detalles que hagan falta.
+           
+           Te armo una versión de tu web para que la veas antes de decidir, sin costo y sin compromiso. Querés que te preparemos la demo?
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y la senia?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, mandame la demo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Nova Propiedades, venta y alquiler en Moreno, colores azul marino y gris
+<<< BOT [220c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de un par de propiedades que tengas publicadas. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: 11 7788 9900
+<<< BOT [167c]: Perfecto, ya quedó todo anotado: la demo te llega mañana. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO W2 — Gimnasio mixto (era E01): no puede cotizar el tipo base como si fuera todo
+ESPERADO: Ante turnos + planes + cursos tiene que decir que el precio combinado lo arma el desarrollador. 'cuanto sale todo eso?' NO puede contestar $200.000 de turnos.
+>>> CLIENTE: hola! tengo un gimnasio en zona oeste
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que se anoten a las clases desde la web y ademas cobrarles el plan mensual online
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y tambien tengo rutinas grabadas en video que quiero vender aparte
+<<< BOT [317c]: Perfecto. Para vender las rutinas grabadas en video con acceso para cada alumno y al mismo tiempo gestionar los turnos y cobros de las clases, vamos a conectar el sistema de turnos con una plataforma de cursos online.
+           
+           Te paso con el desarrollador para que podamos armar una propuesta a la medida de lo que necesitás.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto sale todo eso?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO W3 — Cursos (era E07): la comision por venta tiene respuesta propia
+ESPERADO: 'ustedes se quedan con una comision?' tiene que contestar que no cobran comision por venta, solo el medio de pago. No las condiciones de pago del desarrollo.
+>>> CLIENTE: hola! doy cursos de yoga y quiero venderlos grabados con acceso propio para cada alumna
+<<< BOT [217c]: Para ofrecer los cursos de yoga online con acceso para cada alumna y a la vez vender productos, se puede integrar todo en el mismo sitio. Querés armar las dos cosas juntas o preferís arrancar primero con una de ellas?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=menu tipo=- precio_dado=0 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: ustedes se quedan con una comision?
+<<< BOT [239c]: No, nosotros no cobramos ninguna comisión por venta: el desarrollo es un pago único y lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.
+    [fase=menu tipo=- precio_dado=0 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: hacen factura?
+<<< BOT [88c]: Facturamos con Factura C. No emitimos Factura A ni B, así que no lleva IVA discriminado.
+    [fase=menu tipo=- precio_dado=0 handoff=1 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar
+Bateria conversacional wabot — 2 escenarios, modo agente, motor f10bb602de
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO X1 — Gimnasio mixto (W2 de nuevo): el precio del combinado no es el del tipo base
+ESPERADO: 'cuanto sale todo eso?' NO puede contestar $200.000. Tiene que decir que al combinar varias cosas el precio lo arma el desarrollador.
+>>> CLIENTE: hola! tengo un gimnasio en zona oeste
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que se anoten a las clases desde la web y ademas cobrarles el plan mensual online
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y tambien tengo rutinas grabadas en video que quiero vender aparte
+<<< BOT [198c]: Perfecto, se puede armar una plataforma de cursos para revender los videos junto con el sistema de turnos. Te paso con el desarrollador para que lo charlen en detalle y armen una propuesta a medida.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto sale todo eso?
+<<< BOT [262c]: Por lo que me contás necesitarías una web que integre lo que venís pidiendo en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y si arranco solo con los turnos?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO X2 — Precio sin rubro: la pregunta mas basica no puede irse al comodin
+ESPERADO: 'cuanto sale una pagina?' sin rubro tiene que contestar que depende del tipo y pedir el dato, nunca 'esa duda te la contesta el desarrollador'.
+>>> CLIENTE: hola, cuanto sale una pagina web?
+<<< BOT [120c]: Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y mas o menos en que rango se mueven?
+<<< BOT [190c]: Los desarrollos van desde $160.000 (landing) hasta $290.000 (ecommerce o plataforma de cursos), según lo que necesites. Contame a qué te dedicás y te confirmo el precio exacto en un mensaje.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo un estudio de fotografia
+<<< BOT [308c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [197c]: El total es $160.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Landing
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

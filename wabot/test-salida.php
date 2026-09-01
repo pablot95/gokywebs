@@ -137,7 +137,11 @@ caso('Cien Colores: nada va DESPUÉS de la derivación en el mismo turno',
     count($r) === 1 && strpos($r[0], 'te paso directamente') !== false);
 
 // Papelería creativa: se despidió bien y disparó el precio en el mismo turno.
+// El cliente había dicho que no ("gracias pero no"): ese contexto es el que
+// habilita a la despedida del bot a marcar el cierre (gate del 1-sep, para que
+// un "de nada" de cortesía a un "gracias!" no bloquee el seguimiento).
 $c = conv_de('precio');
+$c['transcript'][] = ['q' => 'cliente', 't' => 'gracias pero no', 'ts' => time()];
 $r = wabot_salida_coherencia([
     'Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.',
     'El desarrollo sale $290.000. Mirá el detalle en gokywebs.com/presupuestos/Ecommerce',
@@ -150,6 +154,7 @@ caso('Papelería: queda el cierre marcado y el seguimiento bloqueado',
 // Icover Store: se despidió tras el "no puedo pagarlo" y el "igualmente"
 // siguiente se leyó como aceptación.
 $c = conv_de('precio', ['precio_dado' => true]);
+$c['transcript'][] = ['q' => 'cliente', 't' => 'no puedo pagarlo', 'ts' => time()];
 wabot_salida_coherencia(['Entiendo perfectamente. Gracias por escribirnos y éxitos con el negocio.'], $c, $cfg);
 caso('Icover: la despedida marca el cierre',
     !empty($c['cierre']));

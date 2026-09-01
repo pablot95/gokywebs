@@ -766,6 +766,30 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         @unlink(wabot_conv_path($_POST['tel']));
         header('Location: admin.php?tab=conversaciones'); exit;
     }
+    /* "Ya le contesté por afuera": saca el chat de SL y de RTA sin mandarle
+     * nada al cliente. Es para las respuestas que salen del otro WhatsApp, de
+     * un mail o de un llamado, que el sistema no ve y por eso dejaban la charla
+     * pendiente para siempre. Es un toggle: volver a apretarlo saca la marca.
+     * Se guarda el ts del último mensaje —no time()— para que la marca no
+     * tape un mensaje que entró mientras se apretaba el botón. */
+    if ($a === 'conv_contestado' && !empty($_POST['tel'])) {
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_conv_contestada($conv)) {
+            $conv['contestado_ts'] = 0;
+        } else {
+            $conv['contestado_ts'] = max(1, wabot_conv_ultimo_ts($conv));
+            // Marcarlo como atendido implica haberlo leído: si no, el globito
+            // de sin leer queda encendido en un chat que ya resolviste.
+            $conv['panel_visto_ts'] = max((int)$conv['panel_visto_ts'], $conv['contestado_ts']);
+        }
+        wabot_conv_save($conv);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => true, 'contestado' => wabot_conv_contestada($conv)]);
+            exit;
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
+    }
     if ($a === 'conv_archivar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['archivado'] = empty($conv['archivado']);
@@ -994,6 +1018,15 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .estado-tag--d { background:var(--warn-tenue); color:var(--warn); }
 .estado-tag--rta { background:var(--ac-tenue); color:var(--ac); }
 .estado-tag--cod { background:rgba(255,255,255,.07); color:var(--dim); letter-spacing:.06em; }
+/* Le contestaste por afuera: ni SL ni RTA. Verde apagado, que no compita con
+   los tags de trabajo pendiente. */
+.estado-tag--ok { background:rgba(52,199,89,.16); color:#4ade80; }
+/* El botón para marcarlo desde la lista, sin abrir el chat. Vive adentro del
+   <a> de la fila, así que el handler corta el click. */
+.pill-accion { border:1px solid var(--line); background:transparent; color:var(--dim); cursor:pointer;
+    padding:1px 7px; border-radius:99px; font-size:10.5px; font-weight:700; font-family:inherit; }
+.pill-accion:hover { border-color:#4ade80; color:#4ade80; }
+.pill-accion[disabled] { opacity:.5; cursor:default; }
 .conv-item-globo { min-width:19px; height:19px; padding:0 6px; border-radius:99px; background:var(--info);
     color:#0b1424; font-size:11px; font-weight:800; display:inline-flex; align-items:center;
     justify-content:center; flex-shrink:0; }
@@ -1941,6 +1974,13 @@ body.embed { min-height: 0; }
                         <form method="post"><input type="hidden" name="accion" value="presentado_confirmar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button>Confirmó la demo</button></form>
                         <?php endif; ?>
+                        <?php // Las que ya contestaste por afuera: salen de SL y de RTA sin
+                              // mandarle nada al cliente. Ver wabot_conv_contestada().
+                              $yaContestada = wabot_conv_contestada($conv); ?>
+                        <form method="post"><input type="hidden" name="accion" value="conv_contestado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec" title="<?= $yaContestada
+                                ? 'Vuelve a quedar pendiente en SL o RTA.'
+                                : 'Para cuando le contestaste desde tu otro WhatsApp: sale de SL y de RTA y no se le manda nada. Si el cliente vuelve a escribir, reaparece solo.' ?>"><?= $yaContestada ? 'Sacar la marca' : 'Ya le contesté' ?></button></form>
                         <form method="post"><input type="hidden" name="accion" value="conv_archivar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['archivado']) ? 'Desarchivar' : 'Archivar' ?></button></form>
                         <span class="conv-acciones-sep" aria-hidden="true"></span>
@@ -2140,6 +2180,30 @@ body.embed { min-height: 0; }
             return !!it.rta;
         }
 
+        /* "Ya le contesté" desde la propia fila, para las respuestas que salen
+         * del otro WhatsApp y el sistema no ve. La fila entera es un <a>, así
+         * que hay que cortar el click antes de que abra el chat. */
+        function botonContestado(it) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pill-accion';
+            b.textContent = it.contestado ? 'Sacar OK' : 'Ya le contesté';
+            b.title = it.contestado
+                ? 'Vuelve a quedar pendiente en SL o RTA.'
+                : 'Sale de SL y de RTA. No se le manda nada al cliente; si vuelve a escribir, reaparece solo.';
+            b.addEventListener('click', async ev => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                b.disabled = true;
+                try {
+                    await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'conv_contestado', tel: it.tel, ajax: '1' }) });
+                } catch (e) {}
+                await refrescarLista();
+            });
+            return b;
+        }
+
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'dei') return esDEI(it);
@@ -2303,6 +2367,13 @@ body.embed { min-height: 0; }
                     tagRta.title = 'Ya le contestaste vos a mano: queda esperando al cliente.';
                     nombreBox.appendChild(tagRta);
                 }
+                if (it.contestado) {
+                    const tagOk = document.createElement('span');
+                    tagOk.className = 'estado-tag estado-tag--ok';
+                    tagOk.textContent = 'OK';
+                    tagOk.title = 'Lo marcaste como contestado por afuera: no está ni en SL ni en RTA.';
+                    nombreBox.appendChild(tagOk);
+                }
                 if (it.codigo) {
                     const cod = document.createElement('span');
                     cod.className = 'estado-tag estado-tag--cod';
@@ -2340,7 +2411,9 @@ body.embed { min-height: 0; }
                     p1.textContent = it.estado === 'apagado' ? 'bot apagado' : 'lo seguís vos';
                     pills.appendChild(p1);
                 }
-                if (it.handoff_pendiente || it.espera) {
+                // Si lo marcaste como contestado por afuera ya no te toca a vos:
+                // dejar el pill encendido contradice la marca que acabás de poner.
+                if ((it.handoff_pendiente || it.espera) && !it.contestado) {
                     const pe = document.createElement('span');
                     pe.className = 'pill espera';
                     pe.textContent = it.handoff_pendiente ? 'te toca a vos' : 'te espera';
@@ -2351,6 +2424,13 @@ body.embed { min-height: 0; }
                     p2.className = 'pill tipo';
                     p2.textContent = it.tipo;
                     pills.appendChild(p2);
+                }
+                // Marcar "ya le contesté" sin abrir el chat: el caso de uso es
+                // barrer varias de un saque después de haber contestado por el
+                // otro WhatsApp. Solo donde tiene sentido: lo que está en SL o
+                // RTA, más lo ya marcado para poder sacarle la marca.
+                if (esNoLeido(it) || esRTA(it) || it.contestado) {
+                    pills.appendChild(botonContestado(it));
                 }
 
                 body.appendChild(top); body.appendChild(ult); body.appendChild(pills);

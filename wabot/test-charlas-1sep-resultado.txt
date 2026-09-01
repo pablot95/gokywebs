@@ -1,0 +1,393 @@
+
+Warning: Array to string conversion in C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\wabot\lib.php on line 465
+Bateria conversacional wabot — 10 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO C01 — Barberia con turnos: precio, pago, plazos, hosting y cierre de prediseno
+ESPERADO: Desempate a turnos. Precio $200.000. Al preguntar como se paga tiene que salir la sena de $40.000 y el saldo al entregar (NUNCA 50/50 inventado) y las cuotas reales. Plazos 7 dias. Hosting y dominio incluidos el primer anio. Cierra el prediseno con los datos y no vuelve a pedir lo mismo.
+>>> CLIENTE: hola! me pasan info de las paginas web?
+<<< BOT [250c]: En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo una barberia en zona sur, somos 3 barberos
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: lo que mas me rompe la cabeza es que me escriben todo el dia por whatsapp para sacar turno
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, eso es justo lo que necesito. cuanto sale?
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y como se paga eso? tienen cuotas?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $40.000 y el saldo al entregar la web.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto tardan en tenerla lista?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: el hosting y el dominio los tengo que pagar aparte?
+<<< BOT [209c]: Hosting y dominio están incluidos en el precio, con el primer año cubierto. Después del primer año, se renuevan una vez por año y ronda los $60.000. Si elegís el mantenimiento, la renovación ya viene incluida.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, me interesa. como seguimos?
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: se llama Barberia Kaiser, hacemos cortes, barba y color. los colores negro y dorado
+<<< BOT [120c]: Perfecto. Me falta solo saber tu nombre y si tenés alguna web de referencia que te guste (si no tenés, no te preocupes).
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: mi whatsapp es 11 4567 8912
+<<< BOT [219c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y algunas fotos del local o de los trabajos que hacés. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO C02 — Ecommerce de ropa con objecion de precio, Tiendanube y Wix
+ESPERADO: Ecommerce $290.000. Ante es caro no baja el precio ni inventa descuentos. Ante Tiendanube y Wix tiene que decir claramente que no trabajan sobre esas plataformas, y recien despues el argumento del pago unico. Mantenimiento opcional. Ante lo voy a pensar ofrece la muestra gratis y no insiste.
+>>> CLIENTE: buenas! queria armar una tienda online de ropa
+<<< BOT [382c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: vendo ropa de mujer, tengo instagram con 8 mil seguidores y vendo todo por dm
+<<< BOT [230c]: Qué bueno tener ya esa comunidad armada en Instagram, te va a servir muchísimo para derivar a la tienda y ordenar las ventas.
+           
+           Querés que te preparemos una demo gratis y sin compromiso para que veas cómo quedaría tu tienda online?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, quiero que compren y paguen desde la pagina sin que yo tenga que contestar
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: uf, la verdad que es bastante caro
+<<< BOT [262c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+           gokywebs.com/presupuestos/Ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: en tiendanube me sale como 30 lucas por mes nada mas
+<<< BOT [423c]: Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia tienda, a medida. Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya; lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).
+           
+           Querés que te preparemos una demo gratis y sin compromiso para que veas cómo quedaría tu tienda online?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si me la hacen en wix? un conocido me dijo que es mas barato
+<<< BOT [51c]: Dale, sin apuro. Cuando quieras avanzar, acá estoy.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: ese precio que me pasaste es por anio o es una sola vez?
+<<< BOT [82c]: Es un pago único por el desarrollo completo. No tenés abonos mensuales por la web.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y despues tengo que pagarles mantenimiento todos los meses?
+<<< BOT [184c]: La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona la seña para arrancar. El saldo lo pagás al entregarte la web terminada.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: mira, lo voy a pensar y te aviso
+<<< BOT [96c]: Perfecto, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: igual mandame la demo asi la veo tranquila
+<<< BOT [47c]: Buenísimo, cuando los tengas me avisás por acá.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO C03 — Conservas artesanales: MOSTRAR y no vender (trampa del matcher rubro vs pregunta)
+ESPERADO: El cliente CUENTA su negocio con palabras trampa (vendo, envios a domicilio, la gente consigue). No puede cotizar ecommerce ni contestar preguntas que el cliente no hizo (calculo de envio, si compran desde la pagina). Tiene que ir a catalogo. Con 20 productos el total es 180.000 + 500 x 20 = 190.000.
+>>> CLIENTE: hola, tengo una marca de conservas artesanales
+<<< BOT [382c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no vendo online, la gente las consigue en dieteticas y en ferias. quiero una pagina que muestre los productos y donde se consiguen
+<<< BOT [188c]: Perfecto, entonces una web con catálogo es lo ideal para mostrar tus conservas artesanales y los puntos de venta. Para calcularte el valor exacto, cuántos productos tenés pensado publicar?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: son como 20 productos entre mermeladas y encurtidos
+<<< BOT [137c]: Bárbaro. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: hago envios a domicilio tambien pero eso lo arreglo por whatsapp con cada uno
+<<< BOT [144c]: Perfecto, eso lo coordinan directamente por WhatsApp con cada cliente, tal cual me contás. Pablo te va a escribir por ahí para avanzar con todo.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto me sale eso?
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y si mas adelante quiero vender online, se puede sumar?
+<<< BOT [193c]: Sí, y muchas veces es lo que recomendamos: arrancar con lo que necesitás hoy y sumar funciones cuando el negocio las pida. La web queda preparada para ampliarse sin tener que rehacerla de cero.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: las fotos las tengo que poner yo?
+<<< BOT [157c]: Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: no tengo logo, solo el nombre
+<<< BOT [188c]: No es un problema, se puede avanzar igual: armamos la web con el nombre de tu negocio y una identidad visual acorde al rubro. Si más adelante conseguís un logo, se cambia sin rehacer nada.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: dale, armame la demo
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: se llama Conservas del Sur, colores verde oliva y beige, mi numero es 341 345 6789
+<<< BOT [137c]: Perfecto, ya tomé todos los datos. Te armamos el prediseño y te avisamos ni bien esté listo para que lo veas. Es gratis y sin compromiso.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO C04 — Cliente que no aporta datos: charla sin avance y sos un bot
+ESPERADO: El cliente da vueltas sin definir nada. El bot no puede repreguntar lo mismo mas de dos veces con otras palabras: a la tercera tiene que derivar (fase derivado). Ante sos un bot contesta con info.soy_bot sin negarlo. No puede inventar un tipo de web ni un precio que el cliente no eligio.
+>>> CLIENTE: hola
+<<< BOT [87c]: Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: queria consultar por una pagina
+<<< BOT [80c]: Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: alquilo andamios
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y tambien vendo algunos materiales sueltos
+<<< BOT [269c]: Bárbaro, podemos integrar las dos cosas: que puedan ver el catálogo de andamios y materiales con consulta directa por WhatsApp, o sumar un carrito de compras si preferís que te paguen online. Prefirieras que te contacten por WhatsApp o vender directamente desde la web?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no se, lo que sea mejor
+<<< BOT [138c]: Perfecto. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: eso mismo, lo que me convenga a mi
+<<< BOT [139c]: Bárbaro, ya le avisé a Pablo para que se ponga en contacto con vos y armen lo que mejor se adapte al alquiler de andamios y los materiales.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: sos un bot o una persona?
+<<< BOT [173c]: No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y no me podes decir vos cual me conviene?
+<<< BOT [273c]: Para un negocio como el tuyo, que alquila andamios y además vende materiales sueltos, lo más práctico es una web con catálogo para mostrar todos los productos y que los clientes te consulten directo por WhatsApp. Así ya ven los precios y los modelos disponibles de entrada.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: bueno pero yo que se, decime vos
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO C05 — Sistema de gestion a medida: derivacion y coherencia despues de derivar
+ESPERADO: Un sistema a medida no tiene precio de lista: junta problema, como lo maneja hoy y cuantos usuarios, y deriva. Cuando anuncia que lo toma el desarrollador la fase TIENE que quedar en derivado en ese mismo turno y no puede seguir vendiendo ni mandar nada mas despues. Si despues pregunta por la web institucional, no puede reabrir la venta como si nada.
+>>> CLIENTE: hola, necesito un sistema para administrar mi deposito
+<<< BOT [58c]: Perfecto. Cuántas personas o qué roles usarían el sistema?
+    [fase=sistema_usuarios tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: es para controlar stock, remitos y que los vendedores carguen pedidos desde el celular
+<<< BOT [53c]: Cómo lo manejan hoy, con papel, Excel u otro sistema?
+    [fase=sistema_actual tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: hoy lo llevo en excel y en planillas de google, un desastre
+<<< BOT [177c]: Perfecto, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: seriamos unos 8 usuarios entre deposito y vendedores
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: cuanto puede salir algo asi?
+<<< BOT [167c]: Esa duda sobre el precio exacto te la va a poder contestar el desarrollador cuando te escriba, ya que al ser un sistema a medida depende de cada función que charlamos.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: prefiero que me llame alguien y lo charlamos bien
+<<< BOT [71c]: Las reuniones se coordinan con el desarrollador al avanzar el proyecto.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: gracias
+<<< BOT: (silencio)
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: una ultima cosa, hacen tambien la pagina web de la empresa?
+<<< BOT [161c]: Sí, también diseñamos y desarrollamos páginas web para empresas, además de los sistemas a medida. Si querés, cuando te contacte el desarrollador lo charlan bien.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+>>> CLIENTE: ok, que me escriba entonces
+<<< BOT [42c]: Perfecto, ya le aviso para que te escriba.
+    [fase=derivado tipo=sistema precio_dado=0 handoff=1 lead=0 cierre=sistema]
+
+########## ESCENARIO C06 — Inmobiliaria: precio, panel, fotos por propiedad, bilingue y sena
+ESPERADO: Inmobiliaria 240.000 y sena 60.000 (NO 40.000). Fotos por propiedad: decenas y video. Bilingue: adicional con el monto que sale del config, no inventado. Cierra el prediseno con nombre, descripcion, colores y whatsapp sin repetir preguntas ya contestadas.
+>>> CLIENTE: buenas tardes, tengo una inmobiliaria en Villa Carlos Paz
+<<< BOT [393c]: Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de $240.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero publicar las propiedades con fotos y que la gente filtre por zona y por precio
+<<< BOT [195c]: Los filtros por zona y precio ya vienen incluidos dentro de la web inmobiliaria. 
+           
+           Qué te parece si te armamos una versión de tu web para que la veas antes de decidir? Es gratis y sin compromiso.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: las propiedades las puedo cargar yo despues o dependo de ustedes?
+<<< BOT [539c]: Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: cuantas fotos puedo subir por propiedad?
+<<< BOT [60c]: Podés subir decenas de fotos por propiedad, y también video.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: me llegan bastantes consultas de extranjeros, se puede hacer en ingles tambien?
+<<< BOT [86c]: Sí, la podemos hacer bilingüe. Tiene un adicional de $30.000 sobre el valor de la web.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: y la senia cuanto seria?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: listo, quiero avanzar con la demo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: Zaguir Propiedades, alquileres y ventas en Carlos Paz, colores azul y blanco
+<<< BOT [159c]: Perfecto. Tenés alguna web de referencia que te guste, de inmobiliaria o de cualquier otro rubro? Y si querés mandame también el logo o fotos que quieras usar.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=-]
+>>> CLIENTE: 3541 22 3344
+<<< BOT [220c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de un par de propiedades que tengas publicadas. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO C07 — Cursos grabados que despues suma venta de productos (upgrade a mixto) + facturacion
+ESPERADO: Plataforma de cursos 290.000. Cuando suma vender productos tiene que resolverlo como proyecto mixto y NO cobrarlo como un adicional inventado ni repreguntar el proyecto de cero. Factura C, no A ni B. No pide inscripcion fiscal. La demo tarda 24 a 48 hs.
+>>> CLIENTE: hola! doy cursos de reposteria
+<<< BOT [165c]: Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?
+    [fase=desempate_cursos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero venderlos grabados, que cada alumna tenga su acceso y vea las clases cuando quiera
+<<< BOT [288c]: Por lo que me contás necesitarías una web que integre los cursos o materiales y la venta de productos en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.
+<<< BOT [104c]: Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?
+    [fase=desempate_cursos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale una plataforma asi?
+<<< BOT [332c]: Para ese objetivo, lo adecuado sería una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo. El desarrollo completo queda en $290.000.
+           Y acá podés ver otras plataformas de cursos que ya entregamos: gokywebs.com/portfolio/?tipo=elearning
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si ademas quiero vender los moldes y utensilios en la misma pagina? cuanto me sumaria?
+<<< BOT [111c]: Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: hacen factura A?
+<<< BOT [88c]: Facturamos con Factura C. No emitimos Factura A ni B, así que no lleva IVA discriminado.
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: necesito estar inscripta en algo para contratarlos?
+<<< BOT [232c]: Para hacerte la web no te pedimos ninguna inscripción ni condición fiscal: la contratás y listo. Si tu duda es si vos necesitás estar inscripto para vender, eso depende de tu situación y lo mejor es que lo confirmes con un contador.
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: los videos donde se suben, en youtube?
+<<< BOT [168c]: Los videos se pueden subir de forma privada a YouTube, Vimeo o la plataforma que prefieras, y de ahí se incrustan en la web para que las alumnas los vean con su acceso.
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto tarda la demo?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, quiero la demo
+<<< BOT [68c]: Perfecto. Cuando tengas los datos me los pasás por acá y lo armamos.
+    [fase=confirma_cambio tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dulce Carolina, cursos de tortas y macarons, colores rosa viejo y dorado, 11 5678 1234
+<<< BOT [225c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y alguna foto tuya dando clase o del material de los cursos. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=elearning precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO C08 — Catalogo grande: cuenta de precio por producto y quien carga los productos
+ESPERADO: Catalogo: 180.000 + 500 por producto. Con 450 productos son 405.000 y con 100 son 230.000: las dos cuentas tienen que dar bien. No puede prometer que cargan 450 productos gratis. Ante el socio ofrece la muestra sin presionar.
+>>> CLIENTE: hola, tengo una distribuidora de repuestos de moto
+<<< BOT [382c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp
+<<< BOT [278c]: Perfecto, entiendo perfectamente. Para eso te conviene una web con catálogo de productos, donde tus clientes pueden ver todo lo que ofrecés y escribirte directo por WhatsApp para consultarte o coordinar la compra.
+           
+           Cuántos repuestos de moto estimás que vas a publicar en la web?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo como 450 productos cargados en un excel
+<<< BOT [136c]: Genial. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto queda entonces?
+<<< BOT [207c]: El total es $290.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Ecommerce
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: los productos los cargan ustedes?
+<<< BOT [539c]: Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: el excel que tengo les sirve o hay que pasarlo a otro formato?
+<<< BOT [539c]: Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: es mucha plata, no hay algo mas barato?
+<<< BOT [226c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y si pongo solo 100 productos para arrancar, cuanto seria?
+<<< BOT [51c]: Dale, sin apuro. Cuando quieras avanzar, acá estoy.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: dejame verlo con mi socio
+<<< BOT [92c]: Perfecto, charlalo tranquilo con tu socio. Cuando lo analicen, me avisás y seguimos por acá.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: dale igual mandame la muestra asi se la muestro
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO C09 — Cliente desconfiado: codigo, dominio, hosting, oficina, garantia y mails
+ESPERADO: Contesta con los textos reales: entregan el codigo, el dominio se registra a nombre del cliente, el hosting es de ellos con acceso, son de Tigre sin oficina y trabajan remoto. No puede inventar garantias, contratos ni devoluciones. Landing 160.000. Ante pago todo al final sostiene la sena. Las casillas de mail NO estan incluidas.
+>>> CLIENTE: hola, quiero hacer una web pero ya me clavaron una vez con un chico que desaparecio a la mitad
+<<< BOT [467c]: Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com/portfolio podés ver los proyectos entregados: son negocios reales y públicos, así que podés escribirles por tu cuenta.
+           
+           Contame a qué te dedicás o qué querés ofrecer y te digo qué tipo de web te conviene.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: me entregan el codigo de la pagina?
+<<< BOT [13c]: opaulosegundo
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: el dominio queda a mi nombre?
+<<< BOT [285c]: El dominio se puede registrar directamente a tu nombre, así queda tuyo desde el primer día. El hosting es el nuestro y viene incluido; si lo querés a tu nombre, lo contratás vos y subimos la web ahí.
+           
+           Contame a qué te dedicás o qué querés ofrecer y te digo qué tipo de web te conviene.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si el dia de maniana me quiero llevar todo a otro hosting?
+<<< BOT [310c]: Hosting y dominio están incluidos en el precio, con el primer año cubierto. Después del primer año, se renuevan una vez por año y ronda los $60.000, o podés tener la renovación ya incluida si elegís el mantenimiento mensual.
+           
+           Contame a qué te dedicás o qué querés ofrecer y te digo qué tipo de web te conviene.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tienen oficina donde pueda ir a hablar en persona?
+<<< BOT [128c]: Dale, eso lo hablás directo con Pablo, el desarrollador: te escribe desde nuestro número de proyectos para coordinar la llamada.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: quien me garantiza a mi que la terminan?
+<<< BOT [381c]: Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com/portfolio podés ver los proyectos entregados: son negocios reales y públicos, así que podés escribirles por tu cuenta.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: es un estudio contable, quiero mostrar los servicios y que me contacten
+<<< BOT [308c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: puedo pagar todo al final cuando este terminada?
+<<< BOT [184c]: La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona la seña para arrancar. El saldo lo pagás al entregarte la web terminada.
+    [fase=pitch tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: necesito casillas de mail con mi dominio, eso entra?
+<<< BOT [271c]: Este plan no incluye casillas de correo corporativas. Se pueden sumar, pero no son transferibles: los accesos te los damos sin problema y si querés que queden a tu nombre las tenés que contratar vos. La configuración en Outlook, Gmail o el celular no la hacemos nosotros.
+    [fase=pitch tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: ok, mandame la demo asi la veo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO C10 — Gimnasio mixto y limites de alcance: app, redes, logo, no se nada
+ESPERADO: Turnos + venta de planes + cursos grabados es un proyecto mixto: no puede elegir uno solo por su cuenta ni sumar precios inventados. Apps: se cotizan aparte. NO hacen marketing ni redes ni recomiendan proveedores. NO hacen logos. Contesta que necesitan del cliente, que la demo es una primera version y que dura 7 dias.
+>>> CLIENTE: hola! tengo un gimnasio en zona oeste
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que se anoten a las clases desde la web y ademas vender los planes mensuales online
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tambien tengo rutinas grabadas en video que quiero vender aparte
+<<< BOT [236c]: Perfecto, podemos integrar el sistema de turnos y la venta online de los planes. Para los videos de las rutinas, querés que los alumnos entren a una plataforma de cursos con acceso propio para verlos, o preferís venderlos de otra forma?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: hacen tambien la app para el celular?
+<<< BOT [427c]: Sí, también desarrollamos aplicaciones para celular. No entran en la lista de precios de las webs: se cotizan aparte según lo que necesite hacer la app.
+           
+           Como estás combinando el sistema de turnos, la venta de planes y clases, la plataforma de cursos y además el desarrollo de una aplicación, te paso directamente con el desarrollador para que lo charlen en detalle y te arme una propuesta a medida. Te escribe en unos minutos.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y me manejan las redes sociales? instagram sobre todo
+<<< BOT [301c]: No hacemos gestión de redes sociales ni publicidad, nos enfocamos exclusivamente en el diseño y desarrollo de páginas web y sistemas. 
+           
+           Como combinamos la web de turnos, la tienda online y los cursos, te paso directo con el desarrollador para que coordinen todo en detalle. Te escribe en unos minutos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: necesito un logo nuevo, eso lo hacen ustedes?
+<<< BOT [226c]: No hacemos logos; si tenés uno se usa, y si no, se trabaja tu nombre bien tipografiado.
+           
+           Como ya te comentaba, para coordinar todo este proyecto en detalle te paso directamente con el desarrollador. Te escribe en unos minutos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: la verdad que no entiendo nada de esto
+<<< BOT [184c]: No hace falta que sepas nada de eso, para eso estamos nosotros. Vos contanos de tu negocio y del resto nos encargamos: te vamos pidiendo solo la información que hace falta, en criollo.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: que necesitan de mi para arrancar?
+<<< BOT [181c]: Poco: el nombre del negocio, una descripción breve de lo que ofrecés, los colores que te gustan y tus datos de contacto. Si tenés logo y fotos los usamos, y si no, arrancamos igual.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y si no me gusta la demo que pasa?
+<<< BOT [207c]: No, la muestra es una primera versión para que veas el diseño y la idea general. Si te gusta y avanzamos, sobre esa base hacemos el desarrollo completo con tu contenido real y todas las funciones terminadas.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: la demo hasta cuando me dura?
+<<< BOT [142c]: La demo queda disponible por 7 días desde que te la mandamos, así tenés tiempo de revisarla bien. Si necesitás más tiempo, avisame y lo vemos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

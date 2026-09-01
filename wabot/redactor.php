@@ -29,6 +29,22 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg);
     }
 
+    /* Baja pedida: no se le escribe más, en ningún modo de redacción. El motor
+     * ya lo respetaba, pero en modo agente el modelo agarraba el turno primero
+     * y a un "sacame de la lista" le contestó una derivación con promesa de
+     * contacto (D09, 1-sep) — lo contrario exacto de lo pedido. Pedir una web
+     * de nuevo sí la reabre: la baja es del contacto comercial, no del cliente. */
+    if (($conv['cierre'] ?? '') === 'baja') {
+        if (wabot_reabre_consulta($texto) || wabot_texto_pide_web($texto)) {
+            $conv['cierre'] = null;
+            $conv['seguimiento_bloqueado'] = false;
+            $conv['seguimiento_estado'] = null;
+            $conv['bot_off'] = false;
+        } else {
+            return [];
+        }
+    }
+
     // Parte 2 de la venta: la lleva Pablo. Cualquier respuesta del cliente
     // después de presentar la demo deriva, sin pasar por el motor de reglas ni
     // por el agente. Vale en los tres modos de redacción. Lo que NO es fijo es
@@ -54,6 +70,28 @@ function wabot_responder($texto, &$conv, $cfg) {
      * Lo que sigue mandando —fotos, cambios, preguntas— se guarda igual en el
      * transcript y le aparece a Pablo sin leer en el panel. Solo no se contesta. */
     if (!empty($conv['presentado_ts']) && !empty($conv['postdemo_avisado'])) {
+        /* El silencio no puede tragarse el AVISO DE PAGO. "Ya te transferí la
+         * seña" durante esta etapa quedaba sin marcar: pago_avisado_ts en 0, el
+         * chat nunca entraba a la columna "Pagaron" —la más urgente del panel—
+         * y sin push (D01, 1-sep). Acusar recibo de un pago no es vender: es lo
+         * mismo que ya hace wabot_postdemo_responder() cuando la fase sigue en
+         * postdemo. Una sola vez; si ya está marcado, silencio como siempre. */
+        if (empty($conv['pago_avisado_ts']) && wabot_dice_que_pago($texto)) {
+            $conv['pago_avisado_ts'] = time();
+            $conv['presentado_confirmado'] = true;
+            wabot_evento_sesion($conv, 'pago_avisado', ['origen' => 'postdemo_silencio']);
+            return [(string)($cfg['postdemo_pago_avisado'] ?? '')];
+        }
+        /* Y un pedido de cambios se ANOTA aunque no se conteste: Pablo tiene
+         * que verlo junto al boceto, no perdido en el transcript. */
+        if (wabot_postdemo_pide_cambios($texto)) {
+            $previos = trim((string)($conv['cambios_pedidos'] ?? ''));
+            $nuevo = trim((string)$texto);
+            if ($nuevo !== '' && mb_strpos($previos, $nuevo) === false) {
+                $conv['cambios_pedidos'] = $previos === '' ? $nuevo : $previos . ' | ' . $nuevo;
+                wabot_evento_sesion($conv, 'cambios_pedidos', ['origen' => 'postdemo_silencio']);
+            }
+        }
         return [];
     }
 

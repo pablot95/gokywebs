@@ -196,6 +196,95 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         }
     }
 
+    /* ── Atajos deterministas nuevos (1-sep): lo que no puede depender del
+     * modelo porque ya falló en producción o en la batería. Todos ANTES de
+     * wabot_agente_llamar(), junto a los desempates y catalogo_cantidad. ── */
+
+    $faseAtajo = (string)($conv['fase'] ?? '');
+    $enVenta = in_array($faseAtajo, ['pitch', 'precio', 'prediseno'], true);
+
+    /* Bajada a catálogo con evidencia explícita. El modelo escribía "te
+     * conviene un catálogo" y el tipo quedaba en ecommerce: la cuenta por
+     * producto no existía y la cotización salía $290.000 (C08: correspondía
+     * $405.000). El texto lo decía, el estado no cambiaba. */
+    if ($enVenta && ($conv['tipo'] ?? '') === 'ecommerce' && empty($conv['lead_creado'])
+        && wabot_texto_solo_mostrar($mensaje)) {
+        $conv['tipo'] = 'catalogo';
+        wabot_handoff_aclaracion_resuelta($conv);
+        wabot_evento_sesion($conv, 'bajada_a_catalogo', ['origen' => 'atajo']);
+        $cantBajada = wabot_extraer_cantidad_productos($mensaje);
+        if ($cantBajada === null) $cantBajada = (int)($conv['productos_cantidad'] ?? 0) ?: null;
+        if ($cantBajada !== null) return wabot_catalogo_cotizar($cantBajada, $conv, $cfg);
+        $conv['fase'] = 'catalogo_cantidad';
+        return [(string)($cfg['catalogo_cantidad'] ?? 'Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?')];
+    }
+
+    /* Subida a institucional: pide historia + autoridades + novedades y quedó
+     * cotizado como landing (D08: una escuela primaria a $160.000). */
+    if ($enVenta && ($conv['tipo'] ?? '') === 'landing' && empty($conv['lead_creado'])
+        && wabot_pidio_institucional_explicito($mensaje)) {
+        wabot_handoff_aclaracion_resuelta($conv);
+        wabot_evento_sesion($conv, 'subida_a_institucional', ['origen' => 'atajo']);
+        return wabot_precio('institucional', $conv, $cfg);
+    }
+
+    /* "¿Cuánto sale?" con el precio ya dado: se repite el resumen, siempre.
+     * Era el bug más consistente de la batería (C01, C06, D03, D05, N01, N02):
+     * el modelo contestaba "esa duda te la va a poder contestar el
+     * desarrollador" con el precio dicho dos mensajes antes. */
+    if (!empty($conv['precio_dado']) && !empty($conv['tipo']) && $faseAtajo !== 'derivado'
+        && wabot_info_por_palabras($mensaje, $faseAtajo) === 'precio_actual'
+        && !preg_match('/\b(sumar|sumaria|agregar|agregando|anadir|añadir|ademas|tambien|adicional|aparte|extra|otra web|otro proyecto|bilingue|ingles|mantenimiento|app\b)/iu', wabot_normalizar_frase($mensaje))
+        /* "cuánto sale TODO eso" con varias cosas pedidas es el precio del
+         * proyecto combinado, que no sale de la lista: repetir el del tipo base
+         * es cotizar de menos (E01: un gimnasio con turnos + planes + cursos se
+         * llevó los $200.000 de turnos a secas). */
+        && !preg_match('/\b(todo eso|todo junto|todo completo|las dos cosas|las tres cosas|el combo|todo en total)\b/u', wabot_normalizar_frase($mensaje))) {
+        return [wabot_precio_resumen($conv, $cfg)];
+    }
+
+    /* El precio del proyecto combinado lo arma el desarrollador, no la lista. */
+    if (!empty($conv['precio_dado']) && wabot_texto_pregunta_precio_combinado($mensaje)) {
+        $mixtoTxt = trim((string)($cfg['mixto'] ?? ''));
+        if ($mixtoTxt !== '') return [str_replace('{lista}', 'lo que venís pidiendo', $mixtoTxt)];
+    }
+
+    /* "¿Cuánto sale?" sin rubro todavía: la pregunta más básica de todas se
+     * llevaba "esa duda te la va a poder contestar el desarrollador" cuando el
+     * modelo no fijaba el tipo (W3, 1-sep). El texto oficial la contesta y
+     * pide el dato que falta, en vez de escaparse por el comodín. */
+    if (empty($conv['precio_dado']) && empty($conv['tipo'])
+        && in_array($faseAtajo, ['nuevo', 'menu', 'algo_diferente'], true)
+        && wabot_info_por_palabras($mensaje, $faseAtajo) === 'precio_sin_rubro') {
+        return [wabot_texto_info('precio_sin_rubro', $cfg)];
+    }
+
+    /* Quién carga y actualiza el contenido: el texto oficial, nunca el modelo.
+     * A una contadora le prometió "un panel autoadministrable muy sencillo" en
+     * una landing — lo contrario exacto de info.carga (N05). */
+    if (wabot_info_por_palabras($mensaje, $faseAtajo) === 'carga') {
+        return [wabot_texto_info('carga', $cfg)];
+    }
+
+    /* Pide la demo con todas las letras: se toma, no se charla. "Igual mandame
+     * la demo así la veo tranquila" se llevó "cuando los tengas me avisás"
+     * (C02, C07, C08). Si ya está en prediseño, se le repite qué falta. */
+    if ($enVenta && empty($conv['lead_creado']) && wabot_pidio_demo_explicita($mensaje)) {
+        $conv['fase'] = 'prediseno';
+        $conv['cta_muestra'] = true;
+        wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'atajo_pide_demo']);
+        return [wabot_prediseno_texto($conv, $cfg)];
+    }
+
+    /* Objeción de precio sin la palabra "caro" ("es bastante para mí ahora"):
+     * el argumento del pago único, no "tomate el tiempo que necesites" (N04). */
+    if (!empty($conv['precio_dado']) && wabot_texto_objecion_precio_suave($mensaje)) {
+        $dichasSuave = (array)($conv['objecion_dicha'] ?? []);
+        if (empty($dichasSuave['caro']) && !in_array('caro', $dichasSuave, true)) {
+            return [wabot_objecion_texto('caro', $cfg['caro'], $conv, $cfg)];
+        }
+    }
+
     if (WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $cerrada  = ($conv['fase'] ?? '') === 'derivado';
@@ -241,7 +330,21 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             // El modelo contestó y no pidió nada más.
             if ($terminal !== null) return [$terminal];
 
-            if (wabot_texto_promete_info_sin_entregar($texto)) {
+            /* Jerga del andamiaje o una palabra suelta sin sentido: eso no es
+             * un mensaje. "opaulosegundo" y "Desactivada la invitación a la
+             * demo en globo aparte" salieron al cliente el 1-sep. Acá el
+             * rechazo cae al motor de reglas, que contesta algo de verdad. */
+            if (wabot_texto_parece_interno($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'texto interno del modelo', 'texto' => mb_substr($texto, 0, 120)]);
+                return null;
+            }
+
+            /* Un texto oficial de la config no es una promesa: info.que_hacemos
+             * termina en "te paso el precio exacto de una" y cada consulta de
+             * qué hacen descartaba el turno del agente y ensuciaba el log con
+             * un error falso (visto el 1-sep, 3 veces en 25 charlas). */
+            if (wabot_texto_promete_info_sin_entregar($texto)
+                && !wabot_salida_es_texto_de_config($texto, $cfg)) {
                 wabot_log('error', ['donde' => 'agente', 'msg' => 'promesa sin herramienta', 'texto' => mb_substr($texto, -120)]);
                 return null;
             }
@@ -422,16 +525,33 @@ function wabot_texto_promete_cierre($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
 
-    $registro = '(registr|anot|guardam|guardad|tomad nota|tomo nota|quedo todo|quedo registrad|ya tengo todo|con esto ya|pasamos el pedido|derivad|paso tu consulta|ya esta todo|pasarlo con|lo paso con|voy a pasar|lo derivo|paso el caso|lo comento con)';
+    $registro = '(registr|anot|guardam|guardad|tomad nota|tomo nota|ya tome|tome (todos )?los datos|quedo todo|quedo registrad|ya tengo todo|con esto ya|pasamos el pedido|tomamos el pedido|tomo el pedido|derivad|paso tu consulta|ya esta todo|pasarlo con|lo paso con|voy a pasar|lo derivo|paso el caso|lo comento con)';
     $accion   = '(prepara|armamos|arma|disen|muestra|\bdemo\b|predise|boceto|equipo|pablo|te escrib|te contact|se comunica|comunicamos|coordinar|confirmen|analicen|revisen|24 a 48|24 y 48)';
 
     if (preg_match('/' . $registro . '/u', $t) && preg_match('/' . $accion . '/u', $t)) return true;
-    if (preg_match('/(pablo|el equipo|nuestro equipo).{0,45}(te escrib|te contact|se comunica|comunicando|se pone en contacto|te acerca|coordina)/u', $t)) return true;
+    /* "Pablo te va a escribir con la demo lista": el perifrástico "te va a
+     * escribir" no matcheaba y la promesa salió con lead=0 (D08, 1-sep). */
+    if (preg_match('/(pablo|el equipo|nuestro equipo).{0,45}(te escrib|te va a escrib|te vamos a escrib|te van a escrib|te contact|te va a contact|se comunica|comunicando|se pone en contacto|te acerca|coordina)/u', $t)) return true;
     /* "En breve te va a escribir por acá para mostrártela": el mismo plazo
      * vago, pero con el verbo perifrástico en el medio, así que "te escrib"
      * no matcheaba. La Dra. Gascón se lo llevó entre dos mensajes que sí
      * decían "mañana", y quedaron los tres plazos distintos (29-ago). */
     if (preg_match('/(en breve|enseguida|en un rato|pronto|a la brevedad).{0,40}(te escrib|te va a escrib|te vamos a escrib|te contact|te va a contact|se comunica|la muestra|la demo|el predise)/u', $t)) return true;
+    /* "En las próximas 24 a 48 horas te armamos el prediseño": promete la
+     * entrega sin haber llamado guardar_prediseno, así que no hay boceto que
+     * armar (E01 y E10, 1-sep — las dos terminaron con lead=0).
+     *
+     * Solo sobre las oraciones AFIRMATIVAS: "El prediseño tarda 24 a 48 horas
+     * y es sin cargo. Te lo armamos?" es la oferta de siempre, no un cierre.
+     * Y el plazo tiene que ir con la preposición del compromiso ("EN 24 a 48
+     * horas te lo armamos"), no describiendo cuánto tarda. */
+    foreach (preg_split('/(?<=[.!?\n])\s*/u', (string)$texto, -1, PREG_SPLIT_NO_EMPTY) as $oracion) {
+        if (mb_strpos($oracion, '?') !== false) continue;
+        $o = wabot_normalizar_frase($oracion);
+        if ($o === '') continue;
+        if (preg_match('/\b(en|dentro de|para)\b.{0,18}(24 a 48|24 y 48|proximas horas|manana).{0,30}(te arma|armamos|te prepara|preparamos|te mandamos|te enviamos|te escribimos)/u', $o)) return true;
+        if (preg_match('/\b(ya mismo|ahora mismo|enseguida)\b.{0,30}(tomamos|tomo|arma|prepara)/u', $o)) return true;
+    }
 
     return false;
 }
@@ -1759,6 +1879,19 @@ function wabot_agente_handoff_causa(&$conv, $args) {
     $actual = trim((string)($conv['_mensaje_agente'] ?? ''));
     if ($actual === '') $actual = wabot_ultimo_texto_cliente($conv);
     $causa = wabot_handoff_causa_explicita($actual);
+
+    /* Un mensaje que aporta un DATO DURO — una cantidad de productos, unos
+     * colores — no es una ambigüedad, por más que el modelo quiera derivar.
+     * En C03 y C08 el bot preguntó "¿cuántos productos?" y al número de
+     * respuesta lo despachó con "a partir de acá sigue Pablo": dos ventas
+     * cortadas justo cuando el cliente colaboraba. Solo datos inequívocos:
+     * wabot_aporta_descripcion() acá no sirve, da true con "no sé, algo
+     * lindo", que es exactamente la no-respuesta que SÍ tiene que contar. */
+    if ($causa === null && $actual !== ''
+        && (wabot_extraer_cantidad_productos($actual) !== null
+            || wabot_menciona_color($actual))) {
+        return null;
+    }
 
     if ($causa === null && ($args['causa'] ?? '') === 'productos_y_cursos') {
         $reciente = '';

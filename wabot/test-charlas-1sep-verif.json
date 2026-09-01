@@ -1,0 +1,109 @@
+[
+  {
+    "id": "V1",
+    "titulo": "Conservas (era C03): solo mostrar baja a catalogo y cotiza 190.000",
+    "esperado": "Al decir que no vende online tiene que pasar a catalogo y preguntar cantidad. Con 20 productos: 190.000. Sin derivar.",
+    "nombre": "Vale",
+    "turnos": [
+      "hola, tengo una marca de conservas artesanales",
+      "no vendo online, la gente las consigue en dieteticas y en ferias. quiero una pagina que muestre los productos y donde se consiguen",
+      "son como 20 productos entre mermeladas y encurtidos",
+      "cuanto me sale eso?"
+    ]
+  },
+  {
+    "id": "V2",
+    "titulo": "Repuestos moto (era C08): 450 productos = 405.000 y repite el precio",
+    "esperado": "Baja a catalogo, con 450 productos cotiza 405.000 (180.000 + 450x500). 'cuanto queda entonces?' repite el numero, no deriva.",
+    "nombre": "Sergio",
+    "turnos": [
+      "hola, tengo una distribuidora de repuestos de moto",
+      "no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp",
+      "tengo como 450 productos cargados en un excel",
+      "cuanto queda entonces?"
+    ]
+  },
+  {
+    "id": "V3",
+    "titulo": "Rotiseria (era N01): menu + pedido por whatsapp = catalogo, sin texto interno",
+    "esperado": "Con 'vea el menu y pedido por whatsapp' baja a catalogo. 'dale me interesa' NO puede sacar jerga interna. 'cuanto sale' repite el precio.",
+    "nombre": "Silvana",
+    "turnos": [
+      "hola buenas, tengo una rotiseria, comida casera para llevar",
+      "queria que la gente vea el menu y me haga el pedido por whatsapp",
+      "seran unos 25 platos",
+      "cuanto sale?",
+      "dale, me interesa"
+    ]
+  },
+  {
+    "id": "V4",
+    "titulo": "Peluqueria (era N02): precio repetido y gracias sin matar el seguimiento",
+    "esperado": "'cuanto nos saldria' repite 200.000. Tras 'gracias!' el cierre NO queda en despedida ni el seguimiento bloqueado.",
+    "nombre": "Jesica",
+    "turnos": [
+      "hola, tengo una peluqueria y queremos que las clientas saquen el turno solas desde la pagina",
+      "si, que reserven online",
+      "cuanto nos saldria?",
+      "buenisimo. lo hablo con mi socia y te aviso",
+      "gracias!"
+    ]
+  },
+  {
+    "id": "V5",
+    "titulo": "Ropa por IG (era N04): objecion suave y demo aceptada",
+    "esperado": "'es bastante para mi ahora' recibe el argumento del pago unico (texto caro). 'mandame la demo' arranca el prediseno.",
+    "nombre": "Micaela",
+    "turnos": [
+      "hola! vendo ropa por instagram y quiero que compren y paguen desde la pagina",
+      "uh, es bastante para mi ahora la verdad",
+      "mmm dale, mandame la demo asi la veo"
+    ]
+  },
+  {
+    "id": "V6",
+    "titulo": "Escuela (era D08): historia+autoridades+novedades = institucional",
+    "esperado": "Con el pedido de historia, autoridades, novedades y actos tiene que cotizar institucional 200.000, no landing.",
+    "nombre": "Marta",
+    "turnos": [
+      "buenas tardes, soy la secretaria de una escuela primaria",
+      "necesitamos una pagina con la historia, las autoridades, las novedades y los actos",
+      "cuanto sale?"
+    ]
+  },
+  {
+    "id": "V7",
+    "titulo": "Cabanas (era D04): la respuesta del desempate cotiza, no deriva",
+    "esperado": "'que vean las fechas libres y reserve' es la respuesta del desempate: cotiza turnos 200.000 con el texto de alojamiento. Nada de 'sigue Pablo'.",
+    "nombre": "Ariel",
+    "turnos": [
+      "buenas, tengo 4 cabanas en Villa General Belgrano",
+      "quiero que la gente vea las fechas libres y reserve sin llamarme",
+      "cuanto sale?"
+    ]
+  },
+  {
+    "id": "V8",
+    "titulo": "Postdemo (era D01): el aviso de pago no se pierde en el silencio",
+    "esperado": "Primer mensaje: respuesta postdemo + derivacion (disenio actual). 'ya te transferi' tiene que contestar el acuse de pago y marcar pago_avisado. Lo demas, silencio.",
+    "nombre": "Vanina",
+    "estado": {
+      "fase": "postdemo",
+      "tipo": "turnos",
+      "precio_dado": true,
+      "lead_creado": true,
+      "pitch_hecho": true,
+      "nombre_negocio": "Estudio Vanina",
+      "descripcion": "estudio de pilates",
+      "colores": "verde salvia y crudo",
+      "presentado_ts": "@ahora",
+      "presentado_slug": "estudiovanina"
+    },
+    "turnos": [
+      "holaa! recien la vi, me encanto como quedo",
+      "le cambiaria la foto de portada",
+      "listo, ya te transferi la senia recien",
+      "gracias!"
+    ]
+  }
+]

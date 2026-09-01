@@ -1,0 +1,186 @@
+[
+  {
+    "id": "E01",
+    "titulo": "Gimnasio mixto: turnos + venta de planes + cursos grabados (pendiente conocido)",
+    "esperado": "Turnos + cobro de planes + cursos es un proyecto mixto: tiene que decir que el precio lo arma el desarrollador, NO cotizar turnos $200.000 solo ni sumar precios inventados. Si deriva, que sea despues de explicar el mixto.",
+    "nombre": "Pato",
+    "turnos": [
+      "hola! tengo un gimnasio en zona oeste",
+      "quiero que se anoten a las clases desde la web y ademas cobrarles el plan mensual online",
+      "y tambien tengo rutinas grabadas en video que quiero vender aparte",
+      "si, todo junto en la misma pagina",
+      "cuanto sale todo eso?",
+      "y si arranco solo con los turnos?",
+      "cuanto tarda?",
+      "dale, armame la demo de los turnos por ahora",
+      "Energia Gym, gimnasio y funcional en Moron, colores negro y verde fluo, 11 4422 8899"
+    ]
+  },
+  {
+    "id": "E02",
+    "titulo": "Cabanas completo: desempate de alojamiento y cierre (pendiente: desc_alojamiento)",
+    "esperado": "Al contestar el desempate tiene que cotizar turnos $200.000 hablando de RESERVA DE ESTADIAS y fechas, no de turnos con dia y horario. Senia $40.000. Bilingue $30.000. Cierra el prediseno con los datos.",
+    "nombre": "Ariel",
+    "turnos": [
+      "buenas, tengo 4 cabanas en Villa General Belgrano",
+      "quiero que la gente vea las fechas libres y reserve sin llamarme",
+      "cuanto sale?",
+      "puedo cargar yo los precios de cada temporada?",
+      "me llegan muchos brasileros, se puede en portugues?",
+      "y la senia cuanto es?",
+      "cuanto tardan en tenerla?",
+      "dale, mandame la demo",
+      "Cabanas El Mirador, 4 cabanas con pileta y parrilla en Villa General Belgrano, colores madera y verde",
+      "3546 45 6789"
+    ]
+  },
+  {
+    "id": "E03",
+    "titulo": "Todo servido en el primer mensaje (pendiente D07)",
+    "esperado": "El cliente da rubro, objetivo, nombre, colores, cantidad y whatsapp de una. NO puede repreguntar el nombre del negocio, los colores ni el whatsapp. Tiene que cotizar y cerrar en pocos turnos.",
+    "nombre": "Flor",
+    "turnos": [
+      "Hola! Te cuento: tengo una tienda de plantas de interior que se llama Verde Living, vendo unas 60 plantas y macetas distintas y quiero que la gente compre y pague online desde la pagina. Los colores de la marca son verde profundo y crema. Mi whatsapp es el 11 9876 5432. Cuanto sale?",
+      "si, todo online con pago",
+      "logo tengo y fotos de los productos tambien",
+      "cuanto tardan?",
+      "dale, avancemos",
+      "se puede poner cuanta luz y riego necesita cada planta en la ficha?",
+      "perfecto, quedo esperando"
+    ]
+  },
+  {
+    "id": "E04",
+    "titulo": "Vivero que solo muestra: catalogo largo hasta cerrar el prediseno",
+    "esperado": "Rubro con productos: cotiza ecommerce y al decir que solo quiere mostrar baja a catalogo con la cuenta por producto. Con 80 productos son $220.000. Cierra el prediseno sin repetir preguntas.",
+    "nombre": "Hugo",
+    "turnos": [
+      "hola, tengo un vivero en las afueras",
+      "no vendo online, quiero que vean las plantas y me consulten por whatsapp",
+      "tendria unas 80 plantas y macetas",
+      "cuanto me queda?",
+      "las fotos las saco yo o ustedes ponen?",
+      "y si despues quiero sumar la venta online?",
+      "el hosting va aparte?",
+      "listo, quiero la demo",
+      "Vivero Los Tilos, plantas de interior y exterior en Pilar, colores verde y terracota",
+      "2304 55 6677"
+    ]
+  },
+  {
+    "id": "E05",
+    "titulo": "Gasista matriculado: landing normal de punta a punta",
+    "esperado": "Landing $160.000, senia $40.000, plazos 7 dias, fotos de trabajos, hosting incluido. Charla normal sin trabas: toma el si y cierra con lead.",
+    "nombre": "Julio",
+    "turnos": [
+      "buen dia, hacen paginas web?",
+      "soy gasista matriculado, hago instalaciones y service de calefones",
+      "quiero que me encuentren y me llamen, nada complicado",
+      "cuanto sale?",
+      "puedo poner fotos de los trabajos y la matricula?",
+      "el dominio y hosting entran?",
+      "como se paga?",
+      "en cuanto la tienen lista?",
+      "dale, armenmela",
+      "Gas Julio, instalaciones y service de calefones en Lanus, colores azul y naranja, 11 3322 1100"
+    ]
+  },
+  {
+    "id": "E06",
+    "titulo": "Ecommerce con cuatro objeciones seguidas y demo aceptada al final",
+    "esperado": "Caro, Tiendanube, el socio y 'lo pienso' tienen cada uno su texto y no se pisan ni se repiten iguales. Al final toma la demo y cierra. No puede bajar el precio ni inventar promociones.",
+    "nombre": "Ceci",
+    "turnos": [
+      "hola, quiero una tienda online de cosmetica natural",
+      "si, que compren y paguen desde la web",
+      "uh, me parece caro",
+      "en tiendanube pago 25 lucas por mes y ya esta",
+      "lo tengo que hablar con mi socio igual",
+      "y encima ahora no es el mejor momento",
+      "bueno, dale, mandame la demo asi la vemos",
+      "Aura Cosmetica, cosmetica natural y jabones artesanales, colores verde oliva y dorado",
+      "11 6655 4433"
+    ]
+  },
+  {
+    "id": "E07",
+    "titulo": "Cursos online: plataforma, facturacion y como cobran los alumnos",
+    "esperado": "Elearning $290.000, senia $60.000. Factura C. Los alumnos pagan online con el medio de pago que se integre. No puede inventar comisiones ni prometer integraciones que no existan.",
+    "nombre": "Belen",
+    "turnos": [
+      "hola! doy cursos de yoga y quiero venderlos grabados",
+      "si, que cada alumna tenga su acceso y vea las clases cuando quiera",
+      "cuanto sale?",
+      "como me pagan las alumnas, va directo a mi cuenta?",
+      "ustedes se quedan con una comision?",
+      "hacen factura?",
+      "y si quiero hacer clases en vivo tambien?",
+      "cuanto tarda la demo?",
+      "dale, quiero la demo",
+      "Espacio Raiz, yoga y meditacion online, colores verde salvia y crudo, 11 2345 6789"
+    ]
+  },
+  {
+    "id": "E08",
+    "titulo": "Postdemo largo: no gusta, pide cambios, avisa el pago",
+    "esperado": "Con el diseno actual el bot contesta una vez y deriva. Lo que sigue es silencio, PERO los cambios pedidos tienen que quedar anotados y el aviso de pago tiene que marcar la columna Pagaron y contestar el acuse una sola vez.",
+    "nombre": "Rocio",
+    "estado": {
+      "fase": "postdemo",
+      "tipo": "ecommerce",
+      "precio_dado": true,
+      "lead_creado": true,
+      "pitch_hecho": true,
+      "nombre_negocio": "Rocio Deco",
+      "descripcion": "venta de deco y velas artesanales",
+      "colores": "terracota y blanco",
+      "presentado_ts": "@ahora",
+      "presentado_slug": "rociodeco"
+    },
+    "turnos": [
+      "hola, la vi recien",
+      "la verdad esperaba algo mas moderno",
+      "le cambiaria los colores del encabezado y la tipografia del titulo",
+      "ah y falta el instagram abajo",
+      "bueno igual me sirve, como sigo?",
+      "listo, ya hice la transferencia de la senia",
+      "te paso el comprobante",
+      "gracias!"
+    ]
+  },
+  {
+    "id": "E09",
+    "titulo": "Cliente erratico que cambia de idea y se va a pensar",
+    "esperado": "Cambia de rubro y de objetivo varias veces. No puede trabarse repitiendo la misma pregunta ni derivar de golpe: tiene que recotizar cuando cambia y cerrar suave cuando dice que lo piensa.",
+    "nombre": "Marce",
+    "turnos": [
+      "hola, cuanto sale una pagina?",
+      "tengo un local de ropa",
+      "aunque en realidad tambien alquilo un salon para eventos",
+      "mmm no se, arranquemos por la ropa",
+      "quiero venderla online",
+      "cuanto era?",
+      "y si en vez de eso hago solo el catalogo?",
+      "uh no se, lo tengo que pensar",
+      "gracias igual"
+    ]
+  },
+  {
+    "id": "E10",
+    "titulo": "Inmobiliaria completa: precio, panel, senia de 60.000 y cierre",
+    "esperado": "Inmobiliaria $240.000 y senia $60.000 (NO $40.000). Cargan las propiedades ellos desde el panel. Fotos: decenas y video. Cierra el prediseno con los datos.",
+    "nombre": "Nico",
+    "turnos": [
+      "buenas, tengo una inmobiliaria chica en Moreno",
+      "quiero publicar las propiedades y que filtren por zona y precio",
+      "cuanto sale?",
+      "las cargo yo desde algun panel?",
+      "cuantas fotos puedo subir por propiedad?",
+      "y la senia?",
+      "cuanto tarda?",
+      "dale, mandame la demo",
+      "Nova Propiedades, venta y alquiler en Moreno, colores azul marino y gris",
+      "11 7788 9900"
+    ]
+  }
+]

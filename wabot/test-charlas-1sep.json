@@ -1,0 +1,180 @@
+[
+  {
+    "id": "C01",
+    "titulo": "Barberia con turnos: precio, pago, plazos, hosting y cierre de prediseno",
+    "esperado": "Desempate a turnos. Precio $200.000. Al preguntar como se paga tiene que salir la sena de $40.000 y el saldo al entregar (NUNCA 50/50 inventado) y las cuotas reales. Plazos 7 dias. Hosting y dominio incluidos el primer anio. Cierra el prediseno con los datos y no vuelve a pedir lo mismo.",
+    "nombre": "Marcos",
+    "turnos": [
+      "hola! me pasan info de las paginas web?",
+      "tengo una barberia en zona sur, somos 3 barberos",
+      "lo que mas me rompe la cabeza es que me escriben todo el dia por whatsapp para sacar turno",
+      "si, eso es justo lo que necesito. cuanto sale?",
+      "y como se paga eso? tienen cuotas?",
+      "cuanto tardan en tenerla lista?",
+      "el hosting y el dominio los tengo que pagar aparte?",
+      "dale, me interesa. como seguimos?",
+      "se llama Barberia Kaiser, hacemos cortes, barba y color. los colores negro y dorado",
+      "mi whatsapp es 11 4567 8912"
+    ]
+  },
+  {
+    "id": "C02",
+    "titulo": "Ecommerce de ropa con objecion de precio, Tiendanube y Wix",
+    "esperado": "Ecommerce $290.000. Ante es caro no baja el precio ni inventa descuentos. Ante Tiendanube y Wix tiene que decir claramente que no trabajan sobre esas plataformas, y recien despues el argumento del pago unico. Mantenimiento opcional. Ante lo voy a pensar ofrece la muestra gratis y no insiste.",
+    "nombre": "Ludmila",
+    "turnos": [
+      "buenas! queria armar una tienda online de ropa",
+      "vendo ropa de mujer, tengo instagram con 8 mil seguidores y vendo todo por dm",
+      "si, quiero que compren y paguen desde la pagina sin que yo tenga que contestar",
+      "uf, la verdad que es bastante caro",
+      "en tiendanube me sale como 30 lucas por mes nada mas",
+      "y si me la hacen en wix? un conocido me dijo que es mas barato",
+      "ese precio que me pasaste es por anio o es una sola vez?",
+      "y despues tengo que pagarles mantenimiento todos los meses?",
+      "mira, lo voy a pensar y te aviso",
+      "igual mandame la demo asi la veo tranquila"
+    ]
+  },
+  {
+    "id": "C03",
+    "titulo": "Conservas artesanales: MOSTRAR y no vender (trampa del matcher rubro vs pregunta)",
+    "esperado": "El cliente CUENTA su negocio con palabras trampa (vendo, envios a domicilio, la gente consigue). No puede cotizar ecommerce ni contestar preguntas que el cliente no hizo (calculo de envio, si compran desde la pagina). Tiene que ir a catalogo. Con 20 productos el total es 180.000 + 500 x 20 = 190.000.",
+    "nombre": "Vale",
+    "turnos": [
+      "hola, tengo una marca de conservas artesanales",
+      "no vendo online, la gente las consigue en dieteticas y en ferias. quiero una pagina que muestre los productos y donde se consiguen",
+      "son como 20 productos entre mermeladas y encurtidos",
+      "hago envios a domicilio tambien pero eso lo arreglo por whatsapp con cada uno",
+      "cuanto me sale eso?",
+      "y si mas adelante quiero vender online, se puede sumar?",
+      "las fotos las tengo que poner yo?",
+      "no tengo logo, solo el nombre",
+      "dale, armame la demo",
+      "se llama Conservas del Sur, colores verde oliva y beige, mi numero es 341 345 6789"
+    ]
+  },
+  {
+    "id": "C04",
+    "titulo": "Cliente que no aporta datos: charla sin avance y sos un bot",
+    "esperado": "El cliente da vueltas sin definir nada. El bot no puede repreguntar lo mismo mas de dos veces con otras palabras: a la tercera tiene que derivar (fase derivado). Ante sos un bot contesta con info.soy_bot sin negarlo. No puede inventar un tipo de web ni un precio que el cliente no eligio.",
+    "nombre": "Ruben",
+    "turnos": [
+      "hola",
+      "queria consultar por una pagina",
+      "alquilo andamios",
+      "y tambien vendo algunos materiales sueltos",
+      "no se, lo que sea mejor",
+      "eso mismo, lo que me convenga a mi",
+      "sos un bot o una persona?",
+      "y no me podes decir vos cual me conviene?",
+      "bueno pero yo que se, decime vos"
+    ]
+  },
+  {
+    "id": "C05",
+    "titulo": "Sistema de gestion a medida: derivacion y coherencia despues de derivar",
+    "esperado": "Un sistema a medida no tiene precio de lista: junta problema, como lo maneja hoy y cuantos usuarios, y deriva. Cuando anuncia que lo toma el desarrollador la fase TIENE que quedar en derivado en ese mismo turno y no puede seguir vendiendo ni mandar nada mas despues. Si despues pregunta por la web institucional, no puede reabrir la venta como si nada.",
+    "nombre": "Fernanda",
+    "turnos": [
+      "hola, necesito un sistema para administrar mi deposito",
+      "es para controlar stock, remitos y que los vendedores carguen pedidos desde el celular",
+      "hoy lo llevo en excel y en planillas de google, un desastre",
+      "seriamos unos 8 usuarios entre deposito y vendedores",
+      "cuanto puede salir algo asi?",
+      "prefiero que me llame alguien y lo charlamos bien",
+      "gracias",
+      "una ultima cosa, hacen tambien la pagina web de la empresa?",
+      "ok, que me escriba entonces"
+    ]
+  },
+  {
+    "id": "C06",
+    "titulo": "Inmobiliaria: precio, panel, fotos por propiedad, bilingue y sena",
+    "esperado": "Inmobiliaria 240.000 y sena 60.000 (NO 40.000). Fotos por propiedad: decenas y video. Bilingue: adicional con el monto que sale del config, no inventado. Cierra el prediseno con nombre, descripcion, colores y whatsapp sin repetir preguntas ya contestadas.",
+    "nombre": "Diego",
+    "turnos": [
+      "buenas tardes, tengo una inmobiliaria en Villa Carlos Paz",
+      "quiero publicar las propiedades con fotos y que la gente filtre por zona y por precio",
+      "cuanto sale?",
+      "las propiedades las puedo cargar yo despues o dependo de ustedes?",
+      "cuantas fotos puedo subir por propiedad?",
+      "me llegan bastantes consultas de extranjeros, se puede hacer en ingles tambien?",
+      "y la senia cuanto seria?",
+      "listo, quiero avanzar con la demo",
+      "Zaguir Propiedades, alquileres y ventas en Carlos Paz, colores azul y blanco",
+      "3541 22 3344"
+    ]
+  },
+  {
+    "id": "C07",
+    "titulo": "Cursos grabados que despues suma venta de productos (upgrade a mixto) + facturacion",
+    "esperado": "Plataforma de cursos 290.000. Cuando suma vender productos tiene que resolverlo como proyecto mixto y NO cobrarlo como un adicional inventado ni repreguntar el proyecto de cero. Factura C, no A ni B. No pide inscripcion fiscal. La demo tarda 24 a 48 hs.",
+    "nombre": "Carolina",
+    "turnos": [
+      "hola! doy cursos de reposteria",
+      "quiero venderlos grabados, que cada alumna tenga su acceso y vea las clases cuando quiera",
+      "cuanto sale una plataforma asi?",
+      "y si ademas quiero vender los moldes y utensilios en la misma pagina? cuanto me sumaria?",
+      "hacen factura A?",
+      "necesito estar inscripta en algo para contratarlos?",
+      "los videos donde se suben, en youtube?",
+      "cuanto tarda la demo?",
+      "dale, quiero la demo",
+      "Dulce Carolina, cursos de tortas y macarons, colores rosa viejo y dorado, 11 5678 1234"
+    ]
+  },
+  {
+    "id": "C08",
+    "titulo": "Catalogo grande: cuenta de precio por producto y quien carga los productos",
+    "esperado": "Catalogo: 180.000 + 500 por producto. Con 450 productos son 405.000 y con 100 son 230.000: las dos cuentas tienen que dar bien. No puede prometer que cargan 450 productos gratis. Ante el socio ofrece la muestra sin presionar.",
+    "nombre": "Sergio",
+    "turnos": [
+      "hola, tengo una distribuidora de repuestos de moto",
+      "no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp",
+      "tengo como 450 productos cargados en un excel",
+      "cuanto queda entonces?",
+      "los productos los cargan ustedes?",
+      "el excel que tengo les sirve o hay que pasarlo a otro formato?",
+      "es mucha plata, no hay algo mas barato?",
+      "y si pongo solo 100 productos para arrancar, cuanto seria?",
+      "dejame verlo con mi socio",
+      "dale igual mandame la muestra asi se la muestro"
+    ]
+  },
+  {
+    "id": "C09",
+    "titulo": "Cliente desconfiado: codigo, dominio, hosting, oficina, garantia y mails",
+    "esperado": "Contesta con los textos reales: entregan el codigo, el dominio se registra a nombre del cliente, el hosting es de ellos con acceso, son de Tigre sin oficina y trabajan remoto. No puede inventar garantias, contratos ni devoluciones. Landing 160.000. Ante pago todo al final sostiene la sena. Las casillas de mail NO estan incluidas.",
+    "nombre": "Hernan",
+    "turnos": [
+      "hola, quiero hacer una web pero ya me clavaron una vez con un chico que desaparecio a la mitad",
+      "me entregan el codigo de la pagina?",
+      "el dominio queda a mi nombre?",
+      "y si el dia de maniana me quiero llevar todo a otro hosting?",
+      "tienen oficina donde pueda ir a hablar en persona?",
+      "quien me garantiza a mi que la terminan?",
+      "es un estudio contable, quiero mostrar los servicios y que me contacten",
+      "puedo pagar todo al final cuando este terminada?",
+      "necesito casillas de mail con mi dominio, eso entra?",
+      "ok, mandame la demo asi la veo"
+    ]
+  },
+  {
+    "id": "C10",
+    "titulo": "Gimnasio mixto y limites de alcance: app, redes, logo, no se nada",
+    "esperado": "Turnos + venta de planes + cursos grabados es un proyecto mixto: no puede elegir uno solo por su cuenta ni sumar precios inventados. Apps: se cotizan aparte. NO hacen marketing ni redes ni recomiendan proveedores. NO hacen logos. Contesta que necesitan del cliente, que la demo es una primera version y que dura 7 dias.",
+    "nombre": "Pato",
+    "turnos": [
+      "hola! tengo un gimnasio en zona oeste",
+      "quiero que se anoten a las clases desde la web y ademas vender los planes mensuales online",
+      "tambien tengo rutinas grabadas en video que quiero vender aparte",
+      "hacen tambien la app para el celular?",
+      "y me manejan las redes sociales? instagram sobre todo",
+      "necesito un logo nuevo, eso lo hacen ustedes?",
+      "la verdad que no entiendo nada de esto",
+      "que necesitan de mi para arrancar?",
+      "y si no me gusta la demo que pasa?",
+      "la demo hasta cuando me dura?"
+    ]
+  }
+]

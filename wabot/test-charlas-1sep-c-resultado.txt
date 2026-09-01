@@ -1,0 +1,383 @@
+Bateria conversacional wabot — 10 escenarios, modo agente, motor fa574fa1f4
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO E01 — Gimnasio mixto: turnos + venta de planes + cursos grabados (pendiente conocido)
+ESPERADO: Turnos + cobro de planes + cursos es un proyecto mixto: tiene que decir que el precio lo arma el desarrollador, NO cotizar turnos $200.000 solo ni sumar precios inventados. Si deriva, que sea despues de explicar el mixto.
+>>> CLIENTE: hola! tengo un gimnasio en zona oeste
+<<< BOT [117c]: Perfecto. Los turnos querés que los reserven directamente desde la web o preferís seguir coordinándolos por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que se anoten a las clases desde la web y ademas cobrarles el plan mensual online
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y tambien tengo rutinas grabadas en video que quiero vender aparte
+<<< BOT [258c]: Perfecto, podemos integrar el sistema de turnos y planes mensuales con una sección para vender tus rutinas en video online. En ese caso lo derivamos directo con el desarrollador para que armemos una propuesta a medida de lo que necesitás. Te comunico con él.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: si, todo junto en la misma pagina
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto sale todo eso?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y si arranco solo con los turnos?
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto tarda?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: dale, armame la demo de los turnos por ahora
+<<< BOT [106c]: Excelente, ya mismo tomamos el pedido para armar la demo. En 24 a 48 horas te escribimos para mostrártela.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: Energia Gym, gimnasio y funcional en Moron, colores negro y verde fluo, 11 4422 8899
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO E02 — Cabanas completo: desempate de alojamiento y cierre (pendiente: desc_alojamiento)
+ESPERADO: Al contestar el desempate tiene que cotizar turnos $200.000 hablando de RESERVA DE ESTADIAS y fechas, no de turnos con dia y horario. Senia $40.000. Bilingue $30.000. Cierra el prediseno con los datos.
+>>> CLIENTE: buenas, tengo 4 cabanas en Villa General Belgrano
+<<< BOT [113c]: Una cosa importante: querés que reserven las fechas solos desde la web, o preferís que te consulten por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que la gente vea las fechas libres y reserve sin llamarme
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: puedo cargar yo los precios de cada temporada?
+<<< BOT [539c]: Depende del tipo de web. En Ecommerce nosotros cargamos hasta 10 productos para que arranques con la tienda lista, y de ahí en más seguís cargando y editando el resto vos mismo desde un panel propio: es bastante sencillo y tenés un video explicativo de cómo usarlo. En Inmobiliaria cargás las propiedades vos, y en Plataforma de cursos tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: me llegan muchos brasileros, se puede en portugues?
+<<< BOT [86c]: Sí, la podemos hacer bilingüe. Tiene un adicional de $30.000 sobre el valor de la web.
+<<< BOT [90c]: Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y la senia cuanto es?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $40.000 y el saldo al entregar la web.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto tardan en tenerla?
+<<< BOT [234c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+           
+           Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, mandame la demo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cabanas El Mirador, 4 cabanas con pileta y parrilla en Villa General Belgrano, colores madera y verde
+<<< BOT [219c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y algunas fotos del local o de los trabajos que hacés. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: 3546 45 6789
+<<< BOT [165c]: Genial, ya quedó todo anotado: la demo te llega mañana. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E03 — Todo servido en el primer mensaje (pendiente D07)
+ESPERADO: El cliente da rubro, objetivo, nombre, colores, cantidad y whatsapp de una. NO puede repreguntar el nombre del negocio, los colores ni el whatsapp. Tiene que cotizar y cerrar en pocos turnos.
+>>> CLIENTE: Hola! Te cuento: tengo una tienda de plantas de interior que se llama Verde Living, vendo unas 60 plantas y macetas distintas y quiero que la gente compre y pague online desde la pagina. Los colores de la marca son verde profundo y crema. Mi whatsapp es el 11 9876 5432. Cuanto sale?
+<<< BOT [361c]: La opción que mejor encaja es una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando. El valor por el desarrollo completo es de $290.000.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, todo online con pago
+<<< BOT [223c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: logo tengo y fotos de los productos tambien
+<<< BOT [128c]: Perfecto, podés mandarme el logo y las fotos de los productos por acá para que el desarrollador los tome y avance con tu tienda.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: cuanto tardan?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: dale, avancemos
+<<< BOT [119c]: Perfecto, ya mismo lo anoto y te paso con el desarrollador para que coordinemos los detalles y empecemos con tu tienda.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: se puede poner cuanta luz y riego necesita cada planta en la ficha?
+<<< BOT [175c]: Sí, se pueden agregar esos detalles en las fichas de los productos. Esa duda puntual te la va a poder contestar el desarrollador cuando te escriba para coordinar los detalles.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: perfecto, quedo esperando
+<<< BOT [164c]: Listo, ya quedó todo anotado: la demo te llega mañana. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E04 — Vivero que solo muestra: catalogo largo hasta cerrar el prediseno
+ESPERADO: Rubro con productos: cotiza ecommerce y al decir que solo quiere mostrar baja a catalogo con la cuenta por producto. Con 80 productos son $220.000. Cierra el prediseno sin repetir preguntas.
+>>> CLIENTE: hola, tengo un vivero en las afueras
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no vendo online, quiero que vean las plantas y me consulten por whatsapp
+<<< BOT [105c]: Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tendria unas 80 plantas y macetas
+<<< BOT [90c]: Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto me queda?
+<<< BOT [205c]: El total es $220.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Catalogo
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=catalogo
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: las fotos las saco yo o ustedes ponen?
+<<< BOT [157c]: Sí, la web lleva imágenes. Si tenés fotos propias las usamos, y si no, la armamos con imágenes acordes al rubro para que se vea completa desde el primer día.
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si despues quiero sumar la venta online?
+<<< BOT [185c]: Sí, por supuesto, más adelante se puede actualizar a tienda online completa sumando un adicional. 
+           
+           Querés que te preparemos una demo gratis de tu web para que la veas antes de decidir?
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: el hosting va aparte?
+<<< BOT [227c]: Hosting y dominio están incluidos en el precio, con el primer año cubierto. 
+           
+           Después del primer año, el hosting y el dominio se renuevan una vez por año. Ronda los $60.000. Con el mantenimiento la renovación ya viene incluida.
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: listo, quiero la demo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Vivero Los Tilos, plantas de interior y exterior en Pilar, colores verde y terracota
+<<< BOT [223c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=catalogo precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: 2304 55 6677
+<<< BOT [163c]: Dale, ya quedó todo anotado: la demo te llega mañana. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.
+    [fase=derivado tipo=catalogo precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E05 — Gasista matriculado: landing normal de punta a punta
+ESPERADO: Landing $160.000, senia $40.000, plazos 7 dias, fotos de trabajos, hosting incluido. Charla normal sin trabas: toma el si y cierra con lead.
+>>> CLIENTE: buen dia, hacen paginas web?
+<<< BOT [250c]: En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: soy gasista matriculado, hago instalaciones y service de calefones
+<<< BOT [308c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que me encuentren y me llamen, nada complicado
+<<< BOT [142c]: Perfecto, justo lo que resuelve esta página. 
+           
+           Qué te parece si te armamos una versión de tu web para que la veas antes de decidir, sin costo?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [197c]: El total es $160.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Landing
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: puedo poner fotos de los trabajos y la matricula?
+<<< BOT [237c]: Por supuesto, en la landing vas a poder incluir fotos de tus trabajos, tu número de matrícula y todos los datos necesarios para que los clientes confíen en vos. 
+           
+           Qué te parece si avanzamos con la demo sin costo para que veas cómo queda?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: el dominio y hosting entran?
+<<< BOT [268c]: Hosting y dominio están incluidos en el precio, con el primer año cubierto. El detalle está en el link del presupuesto.
+           Después del primer año, el hosting y el dominio se renuevan una vez por año. Ronda los $60.000. Con el mantenimiento la renovacion ya viene incluida
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: como se paga?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $40.000 y el saldo al entregar la web.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: en cuanto la tienen lista?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, armenmela
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Gas Julio, instalaciones y service de calefones en Lanus, colores azul y naranja, 11 3322 1100
+<<< BOT [217c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E06 — Ecommerce con cuatro objeciones seguidas y demo aceptada al final
+ESPERADO: Caro, Tiendanube, el socio y 'lo pienso' tienen cada uno su texto y no se pisan ni se repiten iguales. Al final toma la demo y cierra. No puede bajar el precio ni inventar promociones.
+>>> CLIENTE: hola, quiero una tienda online de cosmetica natural
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, que compren y paguen desde la web
+<<< BOT [79c]: Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: uh, me parece caro
+<<< BOT [262c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+           gokywebs.com/presupuestos/Ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: en tiendanube pago 25 lucas por mes y ya esta
+<<< BOT [318c]: Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia tienda, a medida. Esas plataformas son un alquiler mensual que aumenta y la tienda nunca es tuya; lo nuestro es pago único por el desarrollo, con web y dominio propios, y sin comisiones nuestras por venta (solo las del medio de pago que uses).
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: lo tengo que hablar con mi socio igual
+<<< BOT [164c]: Perfecto, charlenlo tranquilos con tu socio. Si les parece bien, avísenme y les armo la demo sin cargo para que puedan ver cómo quedaría la tienda antes de decidir.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y encima ahora no es el mejor momento
+<<< BOT [116c]: Entiendo perfectamente, no te hagas drama. Quedamos en contacto para más adelante cuando sea mejor momento. Saludos.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: bueno, dale, mandame la demo asi la vemos
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Aura Cosmetica, cosmetica natural y jabones artesanales, colores verde oliva y dorado
+<<< BOT [138c]: Perfecto. Tenés alguna web de referencia que te guste o cuyo diseño te parezca que va con la marca? Y contame tu nombre así nos conocemos.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: 11 6655 4433
+<<< BOT [223c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E07 — Cursos online: plataforma, facturacion y como cobran los alumnos
+ESPERADO: Elearning $290.000, senia $60.000. Factura C. Los alumnos pagan online con el medio de pago que se integre. No puede inventar comisiones ni prometer integraciones que no existan.
+>>> CLIENTE: hola! doy cursos de yoga y quiero venderlos grabados
+<<< BOT [250c]: Entiendo que ofrecés cursos de yoga y querés venderlos grabados desde la web. Para confirmar bien la opción, te referís a que los alumnos compren el acceso a los videos desde la página misma, o preferís que te contacten por WhatsApp para coordinarlo?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, que cada alumna tenga su acceso y vea las clases cuando quiera
+<<< BOT [413c]: Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras plataformas de cursos que ya entregamos: gokywebs.com/portfolio/?tipo=elearning
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [214c]: El total es $290.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Elearning
+           Y acá podés ver otras plataformas de cursos que ya entregamos: gokywebs.com/portfolio/?tipo=elearning
+    [fase=pitch tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: como me pagan las alumnas, va directo a mi cuenta?
+<<< BOT [259c]: Sí, el dinero de las ventas va directo a tu cuenta de Mercado Pago o la plataforma de cobros que elijas. 
+           
+           Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=pitch tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: ustedes se quedan con una comision?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+<<< BOT [90c]: Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: hacen factura?
+<<< BOT [88c]: Facturamos con Factura C. No emitimos Factura A ni B, así que no lleva IVA discriminado.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si quiero hacer clases en vivo tambien?
+<<< BOT [199c]: Sí, se puede integrar una sección para clases en vivo además de los cursos grabados. 
+           
+           Qué te parece si te armamos una versión de tu web para que la veas antes de decidir? Es gratis y sin compromiso.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto tarda la demo?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, quiero la demo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Espacio Raiz, yoga y meditacion online, colores verde salvia y crudo, 11 2345 6789
+<<< BOT [225c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y alguna foto tuya dando clase o del material de los cursos. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=elearning precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO E08 — Postdemo largo: no gusta, pide cambios, avisa el pago
+ESPERADO: Con el diseno actual el bot contesta una vez y deriva. Lo que sigue es silencio, PERO los cambios pedidos tienen que quedar anotados y el aviso de pago tiene que marcar la columna Pagaron y contestar el acuse una sola vez.
+ESTADO PREVIO: fase=postdemo tipo=ecommerce presentado=si
+>>> CLIENTE: hola, la vi recien
+<<< BOT [119c]: A partir de ahora el desarrollo completo lo va a continuar el desarrollador, Pablo, te va a escribir desde otro número.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: la verdad esperaba algo mas moderno
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: le cambiaria los colores del encabezado y la tipografia del titulo
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: ah y falta el instagram abajo
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: bueno igual me sirve, como sigo?
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: listo, ya hice la transferencia de la senia
+<<< BOT [62c]: Perfecto, revisamos la transferencia y te confirmamos por acá.
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: te paso el comprobante
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: gracias!
+<<< BOT: (silencio)
+    [fase=derivado tipo=ecommerce precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+
+########## ESCENARIO E09 — Cliente erratico que cambia de idea y se va a pensar
+ESPERADO: Cambia de rubro y de objetivo varias veces. No puede trabarse repitiendo la misma pregunta ni derivar de golpe: tiene que recotizar cuando cambia y cerrar suave cuando dice que lo piensa.
+>>> CLIENTE: hola, cuanto sale una pagina?
+<<< BOT [120c]: Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo un local de ropa
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [55c]: Encaja con lo que estabas buscando, o tenías otra idea?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: aunque en realidad tambien alquilo un salon para eventos
+<<< BOT [194c]: Perfecto, tenemos dos negocios distintos: la tienda de ropa y el salón para eventos. Como son propósitos diferentes, cada web se cotiza por separado. Con cuál de las dos querés arrancar primero?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: mmm no se, arranquemos por la ropa
+<<< BOT [79c]: Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero venderla online
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto era?
+<<< BOT [207c]: El total es $290.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Ecommerce
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y si en vez de eso hago solo el catalogo?
+<<< BOT [105c]: Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: uh no se, lo tengo que pensar
+<<< BOT [93c]: Listo, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: gracias igual
+<<< BOT [92c]: De nada. Que tengas un muy buen día, y acá voy a estar si te surge alguna duda más adelante.
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO E10 — Inmobiliaria completa: precio, panel, senia de 60.000 y cierre
+ESPERADO: Inmobiliaria $240.000 y senia $60.000 (NO $40.000). Cargan las propiedades ellos desde el panel. Fotos: decenas y video. Cierra el prediseno con los datos.
+>>> CLIENTE: buenas, tengo una inmobiliaria chica en Moreno
+<<< BOT [393c]: Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de $240.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+<<< BOT [55c]: Encaja con lo que estabas buscando, o tenías otra idea?
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero publicar las propiedades y que filtren por zona y precio
+<<< BOT [220c]: El total es $240.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Inmobiliaria
+           Y acá podés ver otras webs de inmobiliarias que ya entregamos: gokywebs.com/portfolio/?tipo=inmobiliaria
+    [fase=pitch tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [138c]: Perfecto. A partir de acá sigue Pablo, el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: las cargo yo desde algun panel?
+<<< BOT [137c]: Sí, exactamente: vas a tener un panel de administración para cargar, editar y eliminar las propiedades cuando quieras, de forma sencilla.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuantas fotos puedo subir por propiedad?
+<<< BOT [228c]: En el link del presupuesto está el detalle de todo lo que viene incluido. Si hay algo puntual que quieras sumar —una sección más, un formulario, reservas, otro idioma— decime cuál y te confirmo si entra en el precio o va aparte.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: y la senia?
+<<< BOT [152c]: Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña de $60.000 y el saldo al entregar la web.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: cuanto tarda?
+<<< BOT [142c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: dale, mandame la demo
+<<< BOT [91c]: Perfecto. En las próximas 24 a 48 horas te armamos el prediseño sin costo para que lo veas.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: Nova Propiedades, venta y alquiler en Moreno, colores azul marino y gris
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: 11 7788 9900
+<<< BOT [138c]: Pablo ya tiene tu número y los datos que le pasaste; te va a escribir a la brevedad desde nuestro número de proyectos para coordinar todo.
+    [fase=derivado tipo=inmobiliaria precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

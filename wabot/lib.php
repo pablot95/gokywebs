@@ -462,6 +462,13 @@ function wabot_config_ventas(&$cfg) {
         'pago_link_base' => 'gokywebs.com/pago?monto=',
     ];
     foreach ($defaults as $k => $v) {
+        // 'paraguas' es un array: castearlo a string tiraba un warning en CADA
+        // carga de config en producción y ensuciaba el error_log.
+        if (is_array($v)) {
+            if (empty($cfg[$k]) || !is_array($cfg[$k])) $cfg[$k] = $v;
+            continue;
+        }
+        if (is_array($cfg[$k] ?? null)) continue;
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
     }
 
@@ -1030,7 +1037,10 @@ function wabot_config_ventas(&$cfg) {
             if (!isset($cfg['tipos'][$tipoPU][$campoPU])) continue;
             $valorPU = $cfg['tipos'][$tipoPU][$campoPU];
             $arreglar = function ($txt) {
-                return preg_replace('/,?\s*(?:pago único|en un único pago)\s*\.?/iu',
+                // [ \t] y no \s: el \s de después se tragaba el salto de línea
+                // y "sin abono mensual.Y acá podés ver..." salía pegado en cada
+                // precio de ecommerce (visto en toda la batería del 1-sep).
+                return preg_replace('/,?[ \t]*(?:pago único|en un único pago)[ \t]*\.?/iu',
                     '. Es el valor total del desarrollo, sin abono mensual.', (string)$txt);
             };
             $cfg['tipos'][$tipoPU][$campoPU] = is_array($valorPU)
@@ -1316,6 +1326,11 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         'ejemplos' => 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
         'exclusividad' => 'Cada web se diseña a medida de tu negocio, buscando que tenga una identidad propia: no reciclamos el mismo diseño con otro cliente. Eso no es lo mismo que exclusividad de rubro o de zona, que no manejamos.',
         'fotos_propiedad' => 'Podés subir decenas de fotos por propiedad, y también video.',
+        /* "¿Ustedes se quedan con una comisión?" es la pregunta que decide la
+         * compra frente a Tiendanube, y no tenía clave propia: se contestaba
+         * con las condiciones de pago del desarrollo o con el comodín del
+         * desarrollador (D05 y E07, 1-sep). El dato ya estaba en `plataformas`. */
+        'comisiones' => 'No, nosotros no cobramos ninguna comisión por venta: el desarrollo es un pago único y lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.',
         'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
         'formularios' => 'Sí, formularios y encuestas se pueden incluir, y ya vienen en el precio: la gente los completa desde la web y las respuestas te llegan por mail o quedan guardadas para que las veas cuando quieras.',
@@ -2944,6 +2959,10 @@ function wabot_conv_load($clave) {
         'form_link_ts'                => 0,
         'sistema_lead_creado' => false,
         'handoff_pendiente'=> false,
+        // Pablo le contestó por fuera del sistema (su otro WhatsApp, un mail,
+        // un llamado). Guarda el ts de la marca, no un booleano: así vale
+        // solo mientras no pase nada nuevo en el chat y se limpia sola.
+        'contestado_ts'    => 0,
         'aclaraciones_fallidas' => 0,
         // Mensajes seguidos que no se entienden, antes de saber el rubro.
         'ininteligibles'   => 0,
@@ -3080,6 +3099,10 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * meses" y volvía a los diez días con otra consulta seguía con el
      * seguimiento bloqueado cincuenta días más. */
     $conv['retomar_ts'] = 0;
+    // La marca de "ya le contesté por afuera" es de la sesión anterior: si
+    // sobrevive, la primera consulta del que vuelve meses después entra ya
+    // silenciada y no aparece en SL.
+    $conv['contestado_ts'] = 0;
     $conv['ininteligibles'] = 0;
     $conv['temas_contestados'] = [];
     $conv['contexto_consulta'] = null;
@@ -3782,6 +3805,8 @@ function wabot_lista_items() {
             // que estar de acuerdo siempre (ver wabot_conv_es_sl).
             'sl' => wabot_conv_es_sl($cv),
             'rta' => wabot_conv_rta($cv),
+            // Le contestaste por fuera del sistema: no está ni en SL ni en RTA.
+            'contestado' => wabot_conv_contestada($cv),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -3906,9 +3931,35 @@ function wabot_presentada_con_interes($cv) {
  * la lista y la notificación push (ver wabot/push.php). Escrita dos veces
  * terminaban diciendo cosas distintas.
  */
+/**
+ * "Ya lo atendí": Pablo le contestó por fuera del sistema —su otro WhatsApp, un
+ * mail, un llamado— así que en el transcript no hay ninguna respuesta y el chat
+ * se quedaba en SL para siempre.
+ *
+ * La marca es un timestamp y vale solo mientras el chat no se mueva: se compara
+ * contra el ÚLTIMO mensaje del transcript, sea de quien sea. Si el cliente
+ * vuelve a escribir, la marca queda vieja y el chat regresa solo a SL; si
+ * después Pablo contesta desde el panel, la marca también queda vieja y manda
+ * RTA, que es lo correcto. Mismo criterio que usa RTA para no necesitar ningún
+ * flag que limpiar a mano.
+ */
+function wabot_conv_contestada($cv) {
+    $marca = (int)($cv['contestado_ts'] ?? 0);
+    if ($marca <= 0) return false;
+    return $marca >= wabot_conv_ultimo_ts($cv);
+}
+
+/** Timestamp del último mensaje del transcript, sea de quien sea. */
+function wabot_conv_ultimo_ts($cv) {
+    $lineas = (array)($cv['transcript'] ?? []);
+    $ult = end($lineas);
+    return is_array($ult) ? (int)($ult['ts'] ?? 0) : 0;
+}
+
 function wabot_conv_es_sl($cv) {
     $grupo = wabot_conv_grupo($cv);
     if ($grupo === 'archivado') return false;
+    if (wabot_conv_contestada($cv)) return false;
 
     $leTocaAPablo = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
         || wabot_conv_bot_inactivo($cv)
@@ -3939,6 +3990,8 @@ function wabot_conv_es_sl($cv) {
 function wabot_conv_rta($cv) {
     $grupo = wabot_conv_grupo($cv);
     if ($grupo === 'archivado') return false;
+    // Marcada como atendida: sale de los dos chips, no pasa de SL a RTA.
+    if (wabot_conv_contestada($cv)) return false;
 
     $enSuTerreno = in_array($grupo, ['pago', 'presentados', 'presentadas_48', 'muestra'], true)
         || wabot_conv_bot_inactivo($cv)
@@ -4881,7 +4934,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {

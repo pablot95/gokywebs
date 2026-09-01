@@ -1,0 +1,161 @@
+Bateria conversacional wabot — 8 escenarios, modo agente, motor fa574fa1f4
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO V1 — Conservas (era C03): solo mostrar baja a catalogo y cotiza 190.000
+ESPERADO: Al decir que no vende online tiene que pasar a catalogo y preguntar cantidad. Con 20 productos: 190.000. Sin derivar.
+>>> CLIENTE: hola, tengo una marca de conservas artesanales
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no vendo online, la gente las consigue en dieteticas y en ferias. quiero una pagina que muestre los productos y donde se consiguen
+<<< BOT [105c]: Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: son como 20 productos entre mermeladas y encurtidos
+<<< BOT [73c]: Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto me sale eso?
+<<< BOT [205c]: El total es $190.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Catalogo
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=catalogo
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V2 — Repuestos moto (era C08): 450 productos = 405.000 y repite el precio
+ESPERADO: Baja a catalogo, con 450 productos cotiza 405.000 (180.000 + 450x500). 'cuanto queda entonces?' repite el numero, no deriva.
+>>> CLIENTE: hola, tengo una distribuidora de repuestos de moto
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp
+<<< BOT [105c]: Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo como 450 productos cargados en un excel
+<<< BOT [73c]: Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto queda entonces?
+<<< BOT [205c]: El total es $405.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Catalogo
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=catalogo
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V3 — Rotiseria (era N01): menu + pedido por whatsapp = catalogo, sin texto interno
+ESPERADO: Con 'vea el menu y pedido por whatsapp' baja a catalogo. 'dale me interesa' NO puede sacar jerga interna. 'cuanto sale' repite el precio.
+>>> CLIENTE: hola buenas, tengo una rotiseria, comida casera para llevar
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: queria que la gente vea el menu y me haga el pedido por whatsapp
+<<< BOT [105c]: Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?
+    [fase=catalogo_cantidad tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: seran unos 25 platos
+<<< BOT [90c]: Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [205c]: El total es $192.500 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Catalogo
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=catalogo
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, me interesa
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=catalogo precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V4 — Peluqueria (era N02): precio repetido y gracias sin matar el seguimiento
+ESPERADO: 'cuanto nos saldria' repite 200.000. Tras 'gracias!' el cierre NO queda en despedida ni el seguimiento bloqueado.
+>>> CLIENTE: hola, tengo una peluqueria y queremos que las clientas saquen el turno solas desde la pagina
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [46c]: Buscabas algo así o tenías otra idea en mente?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: si, que reserven online
+<<< BOT [90c]: Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto nos saldria?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: buenisimo. lo hablo con mi socia y te aviso
+<<< BOT [111c]: Perfecto, lo charlan tranquilamente y me avisan cuando quieran avanzar. Quedo a disposición por cualquier duda.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: gracias!
+<<< BOT [74c]: De nada, que tengan un muy buen día. Quedo por acá por cualquier consulta.
+    [fase=prediseno tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V5 — Ropa por IG (era N04): objecion suave y demo aceptada
+ESPERADO: 'es bastante para mi ahora' recibe el argumento del pago unico (texto caro). 'mandame la demo' arranca el prediseno.
+>>> CLIENTE: hola! vendo ropa por instagram y quiero que compren y paguen desde la pagina
+<<< BOT [383c]: Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [60c]: Era más o menos lo que tenías pensado, o buscabas otra cosa?
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: uh, es bastante para mi ahora la verdad
+<<< BOT [262c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+           gokywebs.com/presupuestos/Ecommerce
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: mmm dale, mandame la demo asi la veo
+<<< BOT [253c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V6 — Escuela (era D08): historia+autoridades+novedades = institucional
+ESPERADO: Con el pedido de historia, autoridades, novedades y actos tiene que cotizar institucional 200.000, no landing.
+>>> CLIENTE: buenas tardes, soy la secretaria de una escuela primaria
+<<< BOT [308c]: Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [55c]: Encaja con lo que estabas buscando, o tenías otra idea?
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: necesitamos una pagina con la historia, las autoridades, las novedades y los actos
+<<< BOT [375c]: Por lo que me contás, te conviene una web institucional completa, con secciones para la historia, los servicios, el equipo y las novedades, así la institución tiene una cara formal propia y no depende de una red social. El desarrollo completo tiene un valor de $200.000.
+           Y acá podés ver otras webs institucionales que ya entregamos: gokywebs.com/portfolio/?tipo=institucional
+<<< BOT [295c]: Para prepararte la demo necesito esto:
+           - Tu nombre
+           - El nombre de tu negocio
+           - Una descripción breve de lo que ofrecés
+           - Los colores de tu marca
+           - Si tenés alguna web de referencia que te guste (de cualquier rubro, y si no tenés no pasa nada)
+           Y si tenés logo o fotos propias, mandámelas también.
+    [fase=prediseno tipo=institucional precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [221c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Institucional
+           Y acá podés ver otras webs institucionales que ya entregamos: gokywebs.com/portfolio/?tipo=institucional
+    [fase=prediseno tipo=institucional precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V7 — Cabanas (era D04): la respuesta del desempate cotiza, no deriva
+ESPERADO: 'que vean las fechas libres y reserve' es la respuesta del desempate: cotiza turnos 200.000 con el texto de alojamiento. Nada de 'sigue Pablo'.
+>>> CLIENTE: buenas, tengo 4 cabanas en Villa General Belgrano
+<<< BOT [113c]: Una cosa importante: querés que reserven las fechas solos desde la web, o preferís que te consulten por WhatsApp?
+    [fase=desempate_turnos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero que la gente vea las fechas libres y reserve sin llamarme
+<<< BOT [360c]: Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de $200.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+<<< BOT [55c]: Va por ahí lo que buscabas, o tenías pensada otra cosa?
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto sale?
+<<< BOT [191c]: El total es $200.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Turnos
+           Y acá podés ver otras webs que ya entregamos: gokywebs.com/portfolio/?tipo=turnos
+    [fase=pitch tipo=turnos precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO V8 — Postdemo (era D01): el aviso de pago no se pierde en el silencio
+ESPERADO: Primer mensaje: respuesta postdemo + derivacion (disenio actual). 'ya te transferi' tiene que contestar el acuse de pago y marcar pago_avisado. Lo demas, silencio.
+ESTADO PREVIO: fase=postdemo tipo=turnos presentado=si
+>>> CLIENTE: holaa! recien la vi, me encanto como quedo
+<<< BOT [77c]: Me alegro que te haya gustado. Le cambiarías algo antes de que la siga Pablo?
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: le cambiaria la foto de portada
+<<< BOT: (silencio)
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: listo, ya te transferi la senia recien
+<<< BOT [62c]: Perfecto, revisamos la transferencia y te confirmamos por acá.
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+>>> CLIENTE: gracias!
+<<< BOT: (silencio)
+    [fase=derivado tipo=turnos precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

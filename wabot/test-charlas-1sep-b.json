@@ -1,0 +1,203 @@
+[
+  {
+    "id": "D01",
+    "titulo": "Postdemo que sale bien: elogio, cambios, como pago, transferencia y aviso de pago",
+    "esperado": "Con la demo ya entregada tiene que tomar el elogio, anotar los cambios sin prometer plazos inventados, y al preguntar como paga dar la sena de 40.000 con el CBU, alias, titular y documento REALES del config. Ante 'ya te transferi' no puede pedir la plata de nuevo ni volver a vender.",
+    "nombre": "Vanina",
+    "estado": {
+      "fase": "postdemo",
+      "tipo": "turnos",
+      "precio_dado": true,
+      "lead_creado": true,
+      "cta_muestra": true,
+      "pitch_hecho": true,
+      "nombre_negocio": "Estudio Vanina",
+      "descripcion": "estudio de pilates con clases grupales",
+      "colores": "verde salvia y crudo",
+      "presentado_ts": "@ahora",
+      "presentado_slug": "estudiovanina"
+    },
+    "turnos": [
+      "holaa! recien la vi, me encanto como quedo",
+      "le cambiaria dos cosas: la foto de portada y quiero que diga Pilates Reformer arriba de todo",
+      "ah y el telefono esta mal, es el 11 6789 0123",
+      "listo, y como sigo? cuanto tengo que pagar ahora",
+      "prefiero por transferencia, me pasas los datos?",
+      "y el resto cuando lo pago?",
+      "listo, ya te transferi la senia recien",
+      "cuando estaria lista la web entonces?",
+      "perfecto, gracias!"
+    ]
+  },
+  {
+    "id": "D02",
+    "titulo": "Postdemo que NO gusta: objeciones, videollamada y cuotas sin interes",
+    "esperado": "Ante 'no me convence' tiene que preguntar que fue lo que no cerro, no defenderse ni repetir el precio. Puede ofrecer la videollamada y las 3 cuotas sin interes, pero NO puede inventar descuentos, rehacer gratis ilimitado ni plazos. Ante 'lo veo con mi socia' no presiona.",
+    "nombre": "Rocio",
+    "estado": {
+      "fase": "postdemo",
+      "tipo": "ecommerce",
+      "precio_dado": true,
+      "lead_creado": true,
+      "cta_muestra": true,
+      "pitch_hecho": true,
+      "nombre_negocio": "Rocio Deco",
+      "descripcion": "venta de deco y velas artesanales",
+      "colores": "terracota y blanco",
+      "presentado_ts": "@ahora",
+      "presentado_slug": "rociodeco"
+    },
+    "turnos": [
+      "hola, la vi",
+      "la verdad no me termina de convencer",
+      "la veo muy simple, esperaba algo mas moderno",
+      "y el precio me sigue pareciendo alto para lo que es",
+      "no hay forma de hacerlo en cuotas sin interes?",
+      "me la podes mostrar en una videollamada asi te explico lo que quiero?",
+      "igual lo tengo que ver con mi socia",
+      "si me la rehaces con otro diseño y no me gusta tampoco, me devolves la senia?",
+      "bueno, dejame pensarlo"
+    ]
+  },
+  {
+    "id": "D03",
+    "titulo": "Rubro paraguas (clases de yoga) y upgrade de landing a turnos",
+    "esperado": "Yoga es un rubro paraguas: tiene que repreguntar que tipo de entrenamiento o clases da antes de cotizar. Si despues pide que reserven la clase desde la web, pasa a turnos 200.000 y lo dice como cambio de tipo, no como adicional inventado.",
+    "nombre": "Belen",
+    "turnos": [
+      "hola! doy clases de yoga",
+      "clases presenciales en un salon que alquilo, grupos de 8 personas",
+      "quiero una pagina para que me conozcan y me escriban",
+      "cuanto sale?",
+      "y si quiero que reserven la clase directamente desde la pagina?",
+      "cuanto seria eso entonces?",
+      "la diferencia la pago aparte o es otro precio?",
+      "y si mas adelante quiero vender clases grabadas?",
+      "dale, quiero ver la demo",
+      "Espacio Raiz, yoga y meditacion en Moron, colores verde oliva y beige, 11 2345 6789"
+    ]
+  },
+  {
+    "id": "D04",
+    "titulo": "Cabanas: desempate de alojamiento, bilingue, mapa y sena de la reserva",
+    "esperado": "Alojamiento tiene su propio texto de reserva de estadias, no el generico de turnos. Precio 200.000, sena 40.000. Bilingue 30.000. Mapa si. La pregunta de si la web cobra la sena de la reserva NO puede contestarse con la sena del desarrollo: son dos cosas distintas.",
+    "nombre": "Ariel",
+    "turnos": [
+      "buenas, tengo 4 cabanas en Villa General Belgrano",
+      "quiero que la gente vea las fechas libres y reserve sin llamarme",
+      "cuanto sale?",
+      "puedo cargar yo las fechas y los precios de cada temporada?",
+      "me llegan muchos brasileros, se puede en portugues?",
+      "se puede poner el mapa de como llegar?",
+      "y la web les puede cobrar la senia de la reserva a los huespedes?",
+      "cuanto tarda?",
+      "listo, mandame la demo",
+      "Cabanas El Mirador, 4 cabanas con pileta en Villa General Belgrano, colores madera y verde, 3546 45 6789"
+    ]
+  },
+  {
+    "id": "D05",
+    "titulo": "Ecommerce mayorista: cuentas de revendedores, envios, stock y comisiones",
+    "esperado": "Mayorista tiene su propia descripcion (cuentas exclusivas para revendedores). Envios: se puede integrar, no lo maneja el bot inventando. NO cobran comision por venta, solo el medio de pago. Stock y Mercado Pago se contestan sin prometer integraciones que no existen.",
+    "nombre": "Damian",
+    "turnos": [
+      "hola, vendo indumentaria al por mayor a revendedores",
+      "quiero que mis clientes revendedores entren con su usuario y vean sus precios",
+      "cuanto sale algo asi?",
+      "se puede que cada revendedor tenga una lista de precios distinta?",
+      "el envio lo calcula la pagina o lo arreglo yo?",
+      "me lo integran con mercado pago?",
+      "ustedes cobran comision por cada venta?",
+      "y el stock se descuenta solo cuando compran?",
+      "dale, quiero la demo",
+      "Distribuidora DM, indumentaria mayorista, colores negro y naranja, mi numero 11 3344 5566"
+    ]
+  },
+  {
+    "id": "D06",
+    "titulo": "Ya tiene web y la quiere rehacer: migracion, SEO y comparacion de precio",
+    "esperado": "Ante una web existente pide el link y la revisa con franqueza. Migracion: el contenido lo pasan ellos. SEO: queda preparada tecnicamente, sin prometer posiciones en Google. Ante 'otro me cobra la mitad' usa el argumento de que incluye cada cosa, sin bajar el precio ni hablar mal de nadie.",
+    "nombre": "Gaston",
+    "turnos": [
+      "hola, tengo una web hecha en wordpress que anda para el traste",
+      "es de mi estudio de arquitectura, www.estudiogm.com.ar",
+      "tarda una eternidad en cargar y en el celular se rompe todo",
+      "si la rehacen, el contenido lo tengo que pasar yo?",
+      "y lo que tengo posicionado en google lo pierdo?",
+      "me garantizan que voy a salir primero en google?",
+      "cuanto sale?",
+      "tengo otro presupuesto por la mitad",
+      "y por que ustedes no usan wordpress?",
+      "dale, mandame la demo asi comparo"
+    ]
+  },
+  {
+    "id": "D07",
+    "titulo": "Todo en un solo mensaje: el mejor caso posible",
+    "esperado": "El cliente entrega rubro, objetivo, nombre, colores, cantidad de productos y whatsapp en el primer mensaje. NO puede repreguntar nada de eso. Tiene que cotizar y cerrar el prediseno en la menor cantidad de turnos posible.",
+    "nombre": "Flor",
+    "turnos": [
+      "Hola! Te cuento: tengo una tienda de plantas de interior que se llama Verde Living, vendo unas 60 plantas y macetas distintas y quiero que la gente compre y pague online desde la pagina. Los colores de la marca son verde profundo y crema. Mi whatsapp es el 11 9876 5432. Que necesitas de mi y cuanto sale?",
+      "si, todo online con pago",
+      "logo tengo, fotos de los productos tambien",
+      "cuanto tardan?",
+      "y como se paga?",
+      "dale, avancemos",
+      "una cosa mas: se puede poner cuanta luz y riego necesita cada planta en la ficha?",
+      "perfecto, quedo esperando"
+    ]
+  },
+  {
+    "id": "D08",
+    "titulo": "Escuela: institucional, cinco preguntas en un mensaje y formularios",
+    "esperado": "Institucional 200.000. Cinco preguntas juntas: tiene que contestarlas todas, no elegir una sola y perder las otras cuatro. Formularios: incluidos. Casillas de mail: NO incluidas. No puede inventar convenios, descuentos a escuelas ni facturacion distinta.",
+    "nombre": "Marta",
+    "turnos": [
+      "buenas tardes, soy la secretaria de una escuela primaria",
+      "necesitamos una pagina con la historia, las autoridades, las novedades y los actos",
+      "cuanto sale?",
+      "necesito saber: se puede poner un formulario de inscripcion? las familias pueden descargar circulares? podemos cargar novedades nosotros? entra mail con el dominio de la escuela? y hacen factura para rendir?",
+      "quien carga las novedades entonces?",
+      "hacen descuento a instituciones educativas?",
+      "necesitamos que este antes del inicio de clases",
+      "el pago lo tiene que autorizar la cooperadora, tarda unos dias",
+      "mandenos la muestra asi la presentamos en la reunion",
+      "Escuela N 12 Manuel Belgrano, primaria de gestion publica en Lanus, colores azul y blanco, 11 4444 5555"
+    ]
+  },
+  {
+    "id": "D09",
+    "titulo": "Objeciones duras: el sobrino gratis, la IA, Fiverr y pedido de baja",
+    "esperado": "No puede hablar mal de nadie ni descalificar a la competencia, y tampoco bajar el precio ni inventar promociones. Ante 'no me interesa' cierra bien. Ante 'sacame de la lista' tiene que dar de baja y NO seguir vendiendo despues.",
+    "nombre": "Cristian",
+    "turnos": [
+      "hola, cuanto sale una pagina web?",
+      "tengo una veterinaria, quiero mostrar los servicios y que me llamen",
+      "uh, mi sobrino me la hace gratis",
+      "igual ahora con la IA no se hace sola una pagina?",
+      "vi en fiverr que te la hacen por 50 dolares",
+      "no, la verdad que no me interesa",
+      "no me manden mas mensajes",
+      "sacame de la lista por favor",
+      "gracias"
+    ]
+  },
+  {
+    "id": "D10",
+    "titulo": "Prediseno sucio: numero invalido, colores que no son colores y cambio de rubro a mitad",
+    "esperado": "Un numero de 4 digitos no puede tomarse como WhatsApp: tiene que pedirlo de nuevo con el texto de numero invalido. 'Los que quieras' no son colores y tiene que resolverlo sin trabarse. Si a mitad del prediseno dice que en realidad es para otro negocio, tiene que confirmar el cambio, no mezclar los dos.",
+    "nombre": "Nacho",
+    "turnos": [
+      "hola, tengo una cerrajeria y hago aperturas 24hs",
+      "si, quiero una pagina",
+      "cuanto sale?",
+      "dale, armala",
+      "se llama Cerrajeria Nacho",
+      "los colores los que vos quieras, no tengo preferencia",
+      "mi numero es 4455",
+      "ah pero pensandolo bien, la pagina la quiero para mi otro negocio, una distribuidora de bebidas",
+      "si, la distribuidora, olvidate de la cerrajeria",
+      "mi whatsapp es 11 5566 7788"
+    ]
+  }
+]

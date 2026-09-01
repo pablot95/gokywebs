@@ -5705,5 +5705,242 @@ caso('pedir una web es lo que reabre una charla que no era de venta',
 caso('y los textos de esas dos salidas existen',
     trim((string)($cfg['mensaje_laboral'] ?? '')) !== ''
     && trim((string)($cfg['mensaje_cliente_existente'] ?? '')) !== '');
+/* ── "Ya le contesté por afuera" ──
+ * Pablo contesta seguido desde su otro WhatsApp, y esas respuestas el sistema
+ * no las ve: el chat se quedaba en SL para siempre. La marca lo saca de SL y de
+ * RTA, y como es un ts contra el último mensaje del transcript, se limpia sola
+ * en cuanto el chat se mueve — sin ningún flag que acordarse de bajar. */
+echo "— Marcar como contestado por afuera —\n";
+$convMarca = [
+    'tel' => '999MARCA999', 'fase' => 'derivado', 'archivado' => false,
+    'handoff_pendiente' => false, 'bot_off' => false, 'pausado_hasta' => 0,
+    'contestado_ts' => 0,
+    'transcript' => [
+        ['q' => 'cliente', 't' => 'hola', 'ts' => 1000],
+        ['q' => 'bot',     't' => 'hola!', 'ts' => 1010],
+        ['q' => 'cliente', 't' => 'me pasás el precio?', 'ts' => 1020],
+    ],
+];
+caso('sin marca, el chat derivado con el cliente último está en SL',
+    wabot_conv_es_sl($convMarca) === true && wabot_conv_rta($convMarca) === false);
+
+$convMarca['contestado_ts'] = wabot_conv_ultimo_ts($convMarca);
+caso('marcado sale de SL y NO pasa a RTA',
+    wabot_conv_es_sl($convMarca) === false && wabot_conv_rta($convMarca) === false);
+caso('y queda identificado como contestado, para el tag OK',
+    wabot_conv_contestada($convMarca) === true);
+
+$convMarca['transcript'][] = ['q' => 'cliente', 't' => 'seguís ahí?', 'ts' => 1100];
+caso('si el cliente vuelve a escribir, la marca queda vieja y vuelve a SL',
+    wabot_conv_es_sl($convMarca) === true && wabot_conv_contestada($convMarca) === false);
+
+$convMarca['contestado_ts'] = wabot_conv_ultimo_ts($convMarca);
+$convMarca['transcript'][] = ['q' => 'humano', 't' => 'ahí te paso', 'ts' => 1200];
+caso('si después contesta desde el panel, manda RTA y no la marca',
+    wabot_conv_rta($convMarca) === true && wabot_conv_contestada($convMarca) === false);
+
+$convMarca['contestado_ts'] = 0;
+caso('sacar la marca lo devuelve al estado que le corresponde',
+    wabot_conv_rta($convMarca) === true && wabot_conv_es_sl($convMarca) === false);
+
+/* Un chat que el bot está llevando no le toca a Pablo: no entra en SL ni en RTA
+ * marcado o no, así que el botón no tiene que aparecer ahí. */
+$convBot = $convMarca;
+$convBot['fase'] = 'menu';
+$convBot['contestado_ts'] = 0;
+$convBot['transcript'] = [['q' => 'cliente', 't' => 'hola', 'ts' => 3000]];
+caso('un chat que lleva el bot no entra en SL ni en RTA',
+    wabot_conv_es_sl($convBot) === false && wabot_conv_rta($convBot) === false);
+
+/* Sin transcript no puede tirar warning ni marcar de más. */
+caso('una conversación sin mensajes no rompe el cálculo',
+    wabot_conv_ultimo_ts(['transcript' => []]) === 0
+    && wabot_conv_contestada(['contestado_ts' => 0]) === false);
+
+/* El reset por inactividad arranca una sesión nueva: la marca no puede quedar
+ * tapando la primera consulta del cliente que vuelve meses después. */
+$convViejo = ['ultimo_ts' => time() - 60 * 86400, 'fase' => 'derivado',
+              'contestado_ts' => 999999999, 'transcript' => []];
+wabot_conv_reset_si_vieja($convViejo, $cfg);
+caso('el reset por inactividad limpia la marca de contestado',
+    (int)$convViejo['contestado_ts'] === 0);
+
+/* ── Los 19 arreglos de la batería del 1-sep (25 charlas contra Gemini real) ── */
+echo "— Batería 1-sep: texto interno, estado que no cambiaba y matchers —\n";
+
+caso('"opaulosegundo" no es un mensaje',
+    wabot_texto_parece_interno('opaulosegundo') === true);
+caso('la jerga del andamiaje tampoco ("globo aparte", "texto solicitado")',
+    wabot_texto_parece_interno('Desactivada la invitación a la demo en globo aparte por repetición. Mandá solo el texto solicitado.') === true);
+caso('pero "Dale" y un link pelado pasan',
+    wabot_texto_parece_interno('Dale') === false
+    && wabot_texto_parece_interno('gokywebs.com/demo/barberia') === false);
+caso('y wabot_salida_limpiar los descarta',
+    wabot_salida_limpiar(['opaulosegundo']) === []);
+
+caso('"no vendo online, solo mostrar" baja a catálogo',
+    wabot_texto_solo_mostrar('no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp') === true);
+caso('"que vean el menú y me hagan el pedido por whatsapp" también',
+    wabot_texto_solo_mostrar('queria que la gente vea el menu y me haga el pedido por whatsapp') === true);
+caso('pero vender online o el mayorista de revendedores NO',
+    wabot_texto_solo_mostrar('quiero que compren y paguen desde la pagina') === false
+    && wabot_texto_solo_mostrar('vendo indumentaria al por mayor a revendedores') === false);
+
+caso('"es bastante para mí ahora" es la objeción de precio',
+    wabot_texto_objecion_precio_suave('uh, es bastante para mi ahora la verdad') === true);
+caso('"me gusta mucho" y "es mucho mejor" no',
+    wabot_texto_objecion_precio_suave('me gusta mucho la propuesta') === false
+    && wabot_texto_objecion_precio_suave('es mucho mejor que la que tengo') === false);
+
+caso('"mandame la demo" es pedirla con todas las letras',
+    wabot_pidio_demo_explicita('igual mandame la demo asi la veo tranquila') === true);
+caso('preguntar cuánto dura la demo no es pedirla',
+    wabot_pidio_demo_explicita('la demo hasta cuando me dura?') === false);
+
+caso('preguntar por el mantenimiento mensual no es preguntar cuándo se paga la web',
+    wabot_texto_pregunta_cuando_se_paga('y despues tengo que pagarles mantenimiento todos los meses?') === false
+    && wabot_texto_pregunta_cuando_se_paga('se paga antes o despues?') === true);
+
+caso('"cuánto sale?" en fase pitch repite el precio, no lo esquiva',
+    wabot_info_por_palabras('cuanto sale?', 'pitch') === 'precio_actual');
+caso('"la puedo ir actualizando yo?" va al texto oficial de carga',
+    wabot_info_por_palabras('despues la puedo ir actualizando yo?', 'prediseno') === 'carga');
+caso('pero "puedo cambiar los colores?" no (es un pedido de cambio)',
+    wabot_info_por_palabras('puedo cambiar los colores?', 'prediseno') !== 'carga');
+
+caso('historia + autoridades + novedades = institucional, sin decir "secciones"',
+    wabot_pidio_institucional_explicito('necesitamos una pagina con la historia, las autoridades, las novedades y los actos') === true);
+caso('una sola de esas palabras no alcanza',
+    wabot_pidio_institucional_explicito('quiero publicar novedades de mi negocio') === false);
+
+caso('"que la gente vea las fechas libres y reserve" contesta el desempate de turnos',
+    wabot_desempate_por_palabras('desempate_turnos', 'quiero que la gente vea las fechas libres y reserve sin llamarme') === 'turnos_si');
+
+/* La despedida de cortesía no cierra la venta: solo si el CLIENTE se despidió. */
+$convGr = ['transcript' => [['q' => 'cliente', 't' => 'gracias!', 'ts' => 1]], 'fase' => 'prediseno', 'cierre' => null];
+$rGr = wabot_salida_coherencia(['De nada. Quedamos a disposición por cualquier consulta.'], $convGr, $cfg);
+caso('un "gracias!" del cliente no dispara el cierre por la cortesía del bot',
+    empty($convGr['cierre']) && empty($convGr['seguimiento_bloqueado']) && count($rGr) === 1);
+$convCh = ['transcript' => [['q' => 'cliente', 't' => 'dale, chau, gracias por todo', 'ts' => 1]], 'fase' => 'prediseno', 'cierre' => null];
+wabot_salida_coherencia(['Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.'], $convCh, $cfg);
+caso('un "chau" del cliente sí lo dispara',
+    ($convCh['cierre'] ?? '') === 'despedida' && !empty($convCh['seguimiento_bloqueado']));
+
+/* Un globo que repite entera una tanda anterior se cae si la tanda trae más. */
+$convRep = ['tandas_bot' => [wabot_normalizar_frase('El bloque gigante de quién carga los productos.')], 'fase' => 'precio'];
+$rRep = wabot_anti_repeticion(['El bloque gigante de quién carga los productos.', 'Pablo ya tiene tu consulta.'], $convRep, $cfg);
+caso('el globo repetido de la tanda anterior se cae y queda el nuevo',
+    count($rRep) === 1 && strpos($rRep[0], 'Pablo') !== false);
+
+/* confirma_cambio no puede ser un pozo: a los dos turnos sin resolverse vuelve. */
+$convCC = ['fase' => 'confirma_cambio', 'fase_previa_cambio' => 'prediseno', 'confirma_cambio_turnos' => 0,
+           'ultimo_ts' => time(), 'transcript' => [], 'msgs' => []];
+wabot_turno_preparar($convCC, $cfg);
+wabot_turno_preparar($convCC, $cfg);
+caso('dos turnos en confirma_cambio todavía esperan la respuesta',
+    $convCC['fase'] === 'confirma_cambio');
+wabot_turno_preparar($convCC, $cfg);
+caso('al tercero se asume el mismo proyecto y vuelve a la fase anterior',
+    $convCC['fase'] === 'prediseno' && (int)$convCC['confirma_cambio_turnos'] === 0);
+
+/* La baja es sagrada: con cierre=baja el bot no contesta más, ni en modo agente. */
+$convBaja = conv_nueva();
+$convBaja['cierre'] = 'baja';
+$convBaja['seguimiento_bloqueado'] = true;
+$convBaja['bot_off'] = true;
+caso('con la baja marcada, otro mensaje no recibe respuesta',
+    wabot_responder('pero cuanto sale?', $convBaja, $cfg) === []);
+caso('pedir una web de nuevo la reabre',
+    wabot_responder('bueno en realidad si quiero una pagina para mi negocio', $convBaja, $cfg) !== []
+    && $convBaja['cierre'] === null && empty($convBaja['bot_off']));
+
+/* El silencio postdemo no puede tragarse el aviso de pago (D01). */
+$convPD = conv_nueva();
+$convPD['fase'] = 'derivado';
+$convPD['presentado_ts'] = time();
+$convPD['postdemo_avisado'] = true;
+$convPD['pago_avisado_ts'] = 0;
+$rPD = wabot_responder('listo, ya te transferi la senia recien', $convPD, $cfg);
+caso('"ya te transferí" en el silencio postdemo marca pago_avisado_ts',
+    (int)$convPD['pago_avisado_ts'] > 0 && !empty($convPD['presentado_confirmado']));
+caso('y contesta el acuse de pago oficial, una sola vez',
+    $rPD !== [] && wabot_responder('te transferi de nuevo por las dudas', $convPD, $cfg) === []);
+
+/* Y un pedido de cambios en ese silencio queda anotado aunque no se conteste. */
+$convPD2 = conv_nueva();
+$convPD2['fase'] = 'derivado';
+$convPD2['presentado_ts'] = time();
+$convPD2['postdemo_avisado'] = true;
+wabot_responder('le cambiaria la foto de portada y el titulo', $convPD2, $cfg);
+caso('los cambios pedidos durante el silencio postdemo se anotan',
+    strpos((string)$convPD2['cambios_pedidos'], 'foto de portada') !== false);
+
+/* El cambio de negocio después del cierre queda anotado para Pablo (D10). */
+$convCN = conv_nueva();
+$convCN['fase'] = 'derivado';
+$convCN['cierre'] = 'prediseno';
+$convCN['espera_avisada'] = true;
+$rCN = wabot_cerrada('ah pero pensandolo bien, la pagina la quiero para mi otro negocio, una distribuidora', $convCN, $cfg);
+caso('"la quiero para mi otro negocio" post-cierre se anota como cambio',
+    strpos((string)$convCN['cambios_pedidos'], 'CAMBIO DE NEGOCIO') !== false && $rCN !== []);
+
+/* ── Segunda tanda (10 charlas más, mismo día) ── */
+
+caso('"¿ustedes se quedan con una comisión?" tiene respuesta propia',
+    wabot_info_por_palabras('ustedes se quedan con una comision?', 'pitch') === 'comisiones'
+    && wabot_info_por_palabras('ustedes cobran comision por cada venta?', 'prediseno') === 'comisiones');
+caso('y dice que la comisión no es nuestra, sin pisar la pregunta de cómo se paga',
+    stripos((string)$cfg['info']['comisiones'], 'no cobramos ninguna comisión') !== false
+    && wabot_info_por_palabras('como se paga?', 'pitch') === 'pago');
+
+/* Repetir una respuesta que el cliente volvió a pedir NO es estar trabado.
+ * Una inmobiliaria preguntó el precio dos veces y el bot derivó con lead=0. */
+$convRepP = conv_nueva();
+$convRepP['fase'] = 'pitch'; $convRepP['tipo'] = 'inmobiliaria'; $convRepP['precio_dado'] = true;
+$convRepP['transcript'] = [['q' => 'cliente', 't' => 'cuanto sale?', 'ts' => 1]];
+$precioRep = wabot_precio_resumen($convRepP, $cfg);
+$convRepP['tandas_bot'] = [wabot_normalizar_frase($precioRep)];
+$rRepP = wabot_anti_repeticion([$precioRep], $convRepP, $cfg);
+caso('volver a dar el precio a quien lo vuelve a pedir no deriva',
+    $rRepP === [$precioRep] && ($convRepP['fase'] ?? '') !== 'derivado');
+
+$convRepQ = conv_nueva();
+$convRepQ['fase'] = 'menu';
+$convRepQ['transcript'] = [['q' => 'cliente', 't' => 'asdkjh', 'ts' => 1]];
+$convRepQ['tandas_bot'] = [wabot_normalizar_frase((string)$cfg['contame'])];
+$rRepQ = wabot_anti_repeticion([(string)$cfg['contame']], $convRepQ, $cfg);
+caso('pero repetir la pregunta con la charla trabada sigue cortándose',
+    $rRepQ !== [(string)$cfg['contame']]);
+
+caso('prometer la entrega en 24 a 48 hs sin herramienta se frena',
+    wabot_texto_promete_cierre('Perfecto. En las próximas 24 a 48 horas te armamos el prediseño sin costo para que lo veas.') === true
+    && wabot_texto_promete_cierre('Excelente, ya mismo tomamos el pedido para armar la demo. En 24 a 48 horas te escribimos.') === true);
+caso('pero ofrecer la demo preguntando sigue pasando',
+    wabot_texto_promete_cierre('El prediseño tarda 24 a 48 horas y es sin cargo. Te lo armamos?') === false);
+
+caso('"cuánto sale todo eso?" pregunta por el combinado, "cuánto sale?" no',
+    wabot_texto_pregunta_precio_combinado('cuanto sale todo eso?') === true
+    && wabot_texto_pregunta_precio_combinado('cuanto seria todo junto?') === true
+    && wabot_texto_pregunta_precio_combinado('cuanto sale?') === false
+    && wabot_texto_pregunta_precio_combinado('cuanto queda entonces?') === false);
+
+/* Con la charla ya derivada por mixto, el precio del combinado no es el del
+ * tipo base: un gimnasio con turnos + planes + cursos se llevaba los $200.000. */
+$convComb = conv_nueva();
+$convComb['fase'] = 'derivado'; $convComb['tipo'] = 'turnos';
+$convComb['precio_dado'] = true; $convComb['espera_avisada'] = true;
+$rComb = wabot_cerrada('cuanto sale todo eso?', $convComb, $cfg);
+caso('el precio del proyecto combinado no repite el número del tipo base',
+    $rComb && strpos($rComb[0], '200.000') === false && stripos($rComb[0], 'no sale de la lista') !== false);
+
+/* El array `paraguas` del config de producción ya no revienta el cast a string. */
+$antesErr = error_reporting(E_ALL);
+$warnParaguas = false;
+set_error_handler(function () use (&$warnParaguas) { $warnParaguas = true; return true; });
+wabot_config_load();
+restore_error_handler();
+error_reporting($antesErr);
+caso('cargar la config no tira ningún warning', $warnParaguas === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
