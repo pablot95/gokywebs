@@ -71,6 +71,23 @@ export function llenarSelect(select, opciones, seleccionado) {
     if (seleccionado !== undefined && seleccionado !== null) select.value = String(seleccionado);
 }
 
+// Snapshot de los campos de un modal (form o div) para poder comparar antes de
+// cerrarlo y avisar si hay cambios sin guardar. No depende de que este dentro
+// de un <form> real -- junta cualquier input/select/textarea con id adentro.
+export function snapshotCampos(contenedor) {
+    const campos = contenedor.querySelectorAll('input, select, textarea');
+    const snap = {};
+    campos.forEach((c) => { if (c.id) snap[c.id] = c.value; });
+    return JSON.stringify(snap);
+}
+
+// true si esta bien seguir cerrando (sin cambios, o el usuario confirmo
+// descartarlos); false si hay que cancelar el cierre.
+export function confirmarDescartarCambios(contenedor, snapshotInicial) {
+    if (snapshotInicial === null || snapshotCampos(contenedor) === snapshotInicial) return true;
+    return confirm('Hay cambios sin guardar. ¿Descartarlos y cerrar?');
+}
+
 export function toast(msg, tipo = 'ok') {
     let el = document.getElementById('toast');
     if (!el) {

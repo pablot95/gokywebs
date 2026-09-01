@@ -4,13 +4,14 @@ import {
     collection, doc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import {
-    $, escapeHtml, formatPesos, llenarSelect, toast,
+    $, escapeHtml, formatPesos, llenarSelect, toast, snapshotCampos, confirmarDescartarCambios,
     TIPOS_DOCUMENTO_CLIENTE, CONDICIONES_IVA_RESPALDO,
 } from './utils.js';
 import { estado, arcaListoParaFacturar } from './state.js';
 import { abrirFacturaModal } from './facturacion.js';
 
 let clientes = [];
+let snapshotClienteInicial = null;
 
 function coleccionClientes() {
     return collection(db, 'facturador_usuarios', estado.user.uid, 'clientes');
@@ -171,10 +172,10 @@ function wireRowActionsDelegation() {
 function wireModal() {
     $('addClientBtn').addEventListener('click', () => abrirModalCliente(null));
     $('addClientBtnEmpty').addEventListener('click', () => abrirModalCliente(null));
-    $('closeClienteModalBtn').addEventListener('click', cerrarModalCliente);
-    $('clienteCancelarBtn').addEventListener('click', cerrarModalCliente);
+    $('closeClienteModalBtn').addEventListener('click', intentarCerrarModalCliente);
+    $('clienteCancelarBtn').addEventListener('click', intentarCerrarModalCliente);
     $('clienteModal').addEventListener('click', (e) => {
-        if (e.target === $('clienteModal')) cerrarModalCliente();
+        if (e.target === $('clienteModal')) intentarCerrarModalCliente();
     });
 
     $('clientForm').addEventListener('submit', async (e) => {
@@ -244,8 +245,17 @@ function abrirModalCliente(cliente) {
     $('clienteError').hidden = true;
     $('clienteModal').hidden = false;
     $('clienteNombre').focus();
+    snapshotClienteInicial = snapshotCampos($('clientForm'));
 }
 
 function cerrarModalCliente() {
     $('clienteModal').hidden = true;
+    snapshotClienteInicial = null;
+}
+
+// Cierre por X / Cancelar / click en el fondo: si hay cambios sin guardar, pide
+// confirmacion antes. El cierre despues de guardar con exito no pasa por acá.
+function intentarCerrarModalCliente() {
+    if (!confirmarDescartarCambios($('clientForm'), snapshotClienteInicial)) return;
+    cerrarModalCliente();
 }

@@ -4,7 +4,7 @@
 // y si el emisor es Responsable Inscripto deriva sola si corresponde A o B según
 // la pestaña/documento elegido (nunca un selector aparte que se pueda desincronizar).
 import {
-    $, formatPesos, fechaInput, generarRequestId, llenarSelect,
+    $, formatPesos, fechaInput, generarRequestId, llenarSelect, snapshotCampos, confirmarDescartarCambios,
     SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, ALICUOTAS_IVA,
 } from './utils.js';
 import { estado, emisorEsResponsableInscripto } from './state.js';
@@ -14,6 +14,9 @@ let clienteAFacturar = null;
 let facturaRequestId = null;
 let facturaModo = 'final'; // 'final' | 'identificado'
 let tipoComprobanteActual = null;
+let snapshotFacturaInicial = null;
+
+function cuerpoFacturaModal() { return facturaModal.querySelector('.modal-body'); }
 
 function campoFactura(id) { return $('factura' + id); }
 
@@ -188,12 +191,21 @@ export async function abrirFacturaModal(cliente) {
 
     facturaModal.hidden = false;
     await refrescarProximo();
+    snapshotFacturaInicial = snapshotCampos(cuerpoFacturaModal());
 }
 
 function cerrarFacturaModal() {
     facturaModal.hidden = true;
     clienteAFacturar = null;
     facturaRequestId = null;
+    snapshotFacturaInicial = null;
+}
+
+// Cierre por X / Cancelar / click en el fondo: si hay cambios sin guardar, pide
+// confirmacion antes. El cierre despues de emitir con exito no pasa por acá.
+function intentarCerrarFacturaModal() {
+    if (!confirmarDescartarCambios(cuerpoFacturaModal(), snapshotFacturaInicial)) return;
+    cerrarFacturaModal();
 }
 
 campoFactura('ModoFinal').addEventListener('click', () => { elegirModoFactura('final'); refrescarProximo(); });
@@ -271,8 +283,8 @@ $('facturaEmitirBtn').addEventListener('click', async () => {
     }
 });
 
-$('facturaCancelarBtn').addEventListener('click', cerrarFacturaModal);
-$('closeFacturaModalBtn').addEventListener('click', cerrarFacturaModal);
+$('facturaCancelarBtn').addEventListener('click', intentarCerrarFacturaModal);
+$('closeFacturaModalBtn').addEventListener('click', intentarCerrarFacturaModal);
 facturaModal.addEventListener('click', (e) => {
-    if (e.target === facturaModal && !window.getSelection().toString().length) cerrarFacturaModal();
+    if (e.target === facturaModal && !window.getSelection().toString().length) intentarCerrarFacturaModal();
 });
