@@ -15,7 +15,13 @@
 
 require_once __DIR__ . '/redactor.php';
 
-define('WABOT_AGENTE_MAX_VUELTAS', 5);
+/* Techo de llamadas a Gemini por mensaje entrante. Baja de 5 a 3: medido sobre
+ * 8 dias de produccion (1.181 mensajes reales), el agente promedia 1,5 vueltas
+ * y el tope de 5 se agoto 3 veces. O sea que 4 y 5 no las usa casi nadie, pero
+ * pagamos el riesgo de que una charla se descontrole y gaste cinco prompts
+ * enteros. Agotar el tope no deja al cliente sin respuesta: cae al motor de
+ * reglas de engine.php como cualquier otro fallo. */
+define('WABOT_AGENTE_MAX_VUELTAS', 3);
 
 /**
  * Punto de entrada del modo agente.
