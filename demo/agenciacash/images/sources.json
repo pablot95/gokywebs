@@ -1,0 +1,47 @@
+{
+  "stock": [
+    {
+      "archivo": "placas-numeros-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 7755384,
+      "url": "https://www.pexels.com/photo/7755384/",
+      "uso": "Sección «Cómo jugar» — placas esmaltadas con números sobre madera"
+    },
+    {
+      "archivo": "numeros-oscuro-1920x1080.webp",
+      "origen": "Pexels",
+      "id": 10916183,
+      "url": "https://www.pexels.com/photo/10916183/",
+      "uso": "Fondo del capítulo de juegos y de la banda de cierre"
+    },
+    {
+      "archivo": "carton-numeros-1200x975.webp",
+      "origen": "Pexels",
+      "id": 7438447,
+      "url": "https://www.pexels.com/photo/7438447/",
+      "uso": "Textura de grilla numerada — banda de juego responsable"
+    },
+    {
+      "archivo": "reloj-pared-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 8327633,
+      "url": "https://www.pexels.com/photo/8327633/",
+      "uso": "Sección «La agencia» — el reloj como concepto rector"
+    },
+    {
+      "archivo": "reloj-despertador-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 37808313,
+      "url": "https://www.pexels.com/photo/37808313/",
+      "uso": "Sección «Cómo jugar» — despertador vintage"
+    }
+  ],
+  "descartadas": [
+    { "id": 5550130, "motivo": "Boleta de LOTTO Schleswig-Holstein con «JACKPOT»: marca y jurisdicción extranjeras" },
+    { "id": 36402490, "motivo": "Cartones de bingo vietnamitas con teléfono y nombre de comercio legibles" },
+    { "id": 12973592, "motivo": "Vidriera con carteles reales: «ROYAL LePAGE» y un teléfono canadiense legible" },
+    { "id": 5242813, "motivo": "Manos con tickets: el texto del recibo está en vietnamita y es lo que debería leerse como «tu ticket»" },
+    { "id": 7594401, "motivo": "Mesa de ruleta y fichas de casino: rubro equivocado y estética que no corresponde a una agencia oficial" },
+    { "id": 39114259, "motivo": "Persona posando detrás de un mostrador: se leería como una foto real de Ana Paula" }
+  ]
+}
