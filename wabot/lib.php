@@ -474,11 +474,6 @@ function wabot_config_ventas(&$cfg) {
         if (trim((string)($cfg[$k] ?? '')) === '') $cfg[$k] = $v;
     }
 
-    // Retirado (24-ago): ya no se avisa la vigencia de 7 dias al presentar la
-    // demo. Se fuerza vacio incluso si un config viejo lo tenia guardado, sin
-    // panel que lo edite no hay nada que preservar.
-    $cfg['muestra_vigencia'] = '';
-
     if (empty($cfg['msg_precio_variantes']) || !is_array($cfg['msg_precio_variantes'])) {
         $cfg['msg_precio_variantes'] = [
             "Por lo que me contás, te conviene {desc}. El desarrollo completo tiene un valor de {precio}. Se arranca con una seña de {sena} y el saldo recién cuando la web está terminada, o con tarjeta hasta en 12 cuotas.",
@@ -579,223 +574,14 @@ function wabot_config_ventas(&$cfg) {
     if (trim((string)($cfg['info']['ejemplos'] ?? '')) === 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales; si me decís de qué rubro sos, te oriento con el que más se parezca.') {
         $cfg['info']['ejemplos'] = 'Sí, en gokywebs.com podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.';
     }
-    if (trim((string)($cfg['msg_pitch'] ?? '')) === '') {
-        $cfg['msg_pitch'] = "Buenísimo, lo ideal sería {desc}.
-
-{pregunta}";
-    }
-    // El pitch viejo arrancaba con "Para lo tuyo va", que sonaba a formulario.
-    if (trim((string)($cfg['msg_pitch'] ?? '')) === "Buenísimo. Para lo tuyo va {desc}.
-
-{pregunta}") {
-        $cfg['msg_pitch'] = "Buenísimo, lo ideal sería {desc}.
-
-{pregunta}";
-    }
-    // Una sola forma de pregunta para todos los rubros, con el sustantivo que
-    // corresponda ("producto", "servicios", "curso"). Las viejas preguntaban
-    // "y hoy cómo lo hacés" (por WhatsApp, agenda de papel, Instagram): la
-    // respuesta no cambiaba ni el precio ni la web, y se notaba que era relleno
-    // antes del número. Esta devuelve algo que sí sirve — lo que conteste es lo
-    // que va adelante en la demo — y de paso, al no ser específica del rubro,
-    // no queda fuera de lugar si el tipo se clasificó mal.
-    // Excepción: catálogo mantiene la de cantidad, que ahí SÍ define el precio.
-    $pitchPreguntas = [
-        'landing'       => ['Qué es lo que más se destaca de tus servicios?',
-                            'Qué es lo que más se destaca de tus servicios?'],
-        'catalogo'      => ['Más o menos cuántos productos irían en el catálogo?',
-                            'Más o menos cuántos productos irían en el catálogo?'],
-        'turnos'        => ['Cuál es el servicio que más te piden?',
-                            'Cuál es el servicio que más te piden?'],
-        'institucional' => ['Qué es lo que más se destaca de lo que hacen?',
-                            'Qué es lo que más se destaca de lo que hacen?'],
-        'inmobiliaria'  => ['Qué tipo de propiedades manejás más?',
-                            'Qué tipo de propiedades manejás más?'],
-        'ecommerce'     => ['Cuál es el producto que más vendés?',
-                            'Cuál es el producto que más vendés?'],
-        'elearning'     => ['Cuál es el curso que más te piden?',
-                            'Cuál es el curso que más te piden?'],
-    ];
-    // Lo que ya está guardado en producción no se pisa con los defaults de
-    // arriba (solo rellenan si está vacío): hay que retirarlas explícitamente.
-    $pitchPreguntasRetiradas = [
-        'Contame qué servicios ofrecés y en qué zona trabajás?',
-        'Qué servicios ofrecés y en qué zona estás?',
-        'Contame un poco más qué hacés y dónde trabajás?',
-        'Y hoy cómo te contactan, por WhatsApp, Instagram, los dos?',
-        'Hoy por dónde te llegan la mayoría de las consultas?',
-        'Las consultas hoy te llegan más por WhatsApp o por Instagram?',
-        'Y hoy la gente te encuentra más por recomendación, redes, o de las dos formas?',
-        'Contame qué vendés exactamente, así la armamos con eso?',
-        'Qué es lo que vendés exactamente?',
-        'Contame bien qué productos vendés?',
-        'Y hoy cómo vendés, por Instagram, local, los dos?',
-        'Y actualmente cómo manejás las ventas?',
-        'Hoy los pedidos te llegan más por Instagram o también tenés local?',
-        'Y ahora mismo por dónde te compran más, redes o boca a boca?',
-        'Contame qué servicios ofrecés, así armamos la agenda con eso?',
-        'Qué servicios ofrecés? Así armamos la agenda con eso.',
-        'Contame qué servicios das, para armar bien la agenda?',
-        'Y hoy cómo tomás los turnos, por WhatsApp, agenda de papel?',
-        'Hoy los turnos los manejás por WhatsApp o con agenda de papel?',
-        'Y ahora cómo coordinás los horarios, por WhatsApp o a mano?',
-        'Contame un poco de la institución: qué secciones no pueden faltar?',
-        'Y hoy tienen alguna web o redes, o arrancan de cero?',
-        'Hoy tienen algo armado ya, página o redes, o arrancarían de cero?',
-        'Contame qué cursos das y cómo los entregás hoy?',
-        'Y hoy cómo los entregás, por Drive, WhatsApp, alguna plataforma?',
-        'Hoy cómo se lo mandás a los alumnos, Drive, WhatsApp?',
-        'Más o menos cuántas propiedades tenés publicadas hoy?',
-        // Mal construida: ni "el que más te piden" ni "el que querés destacar".
-        'De tus servicios, cuál es el que más pedís que destaque?',
-    ];
-    foreach (array_keys($pitchPreguntas) as $tipoRet) {
-        if (!isset($cfg['tipos'][$tipoRet])) continue;
-        foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $campoRet) {
-            if (in_array(trim((string)($cfg['tipos'][$tipoRet][$campoRet] ?? '')), $pitchPreguntasRetiradas, true)) {
-                $cfg['tipos'][$tipoRet][$campoRet] = '';
-            }
-        }
-        foreach (['pitch_pregunta_variantes', 'pitch_pregunta_2_variantes'] as $campoRet) {
-            if (empty($cfg['tipos'][$tipoRet][$campoRet]) || !is_array($cfg['tipos'][$tipoRet][$campoRet])) continue;
-            $quedan = array_values(array_filter($cfg['tipos'][$tipoRet][$campoRet], function ($v) use ($pitchPreguntasRetiradas) {
-                return !in_array(trim((string)$v), $pitchPreguntasRetiradas, true);
-            }));
-            $cfg['tipos'][$tipoRet][$campoRet] = $quedan;
-        }
-    }
-    if (trim((string)($cfg['tipos']['institucional']['pitch_pregunta_2'] ?? '')) === 'Y qué secciones no pueden faltar en la web?') {
-        $cfg['tipos']['institucional']['pitch_pregunta_2'] = 'Y hoy tienen alguna web o redes, o arrancan de cero?';
-    }
-    foreach ($pitchPreguntas as $tipoPitch => $preguntas) {
-        if (!isset($cfg['tipos'][$tipoPitch])) continue;
-        if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta'] ?? '')) === '') {
-            $cfg['tipos'][$tipoPitch]['pitch_pregunta'] = $preguntas[0];
-        }
-        if (trim((string)($cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] ?? '')) === '') {
-            $cfg['tipos'][$tipoPitch]['pitch_pregunta_2'] = $preguntas[1];
-        }
-    }
-    // Variantes para que no salga siempre la misma frase (catálogo queda
-    // afuera a propósito: su pregunta es de cantidad, no de destacado).
-    $pitchPreguntaVariantesDefault = [
-        'landing' => [
-            'Qué es lo que más se destaca de tus servicios?',
-            'Qué es lo que más te diferencia en tus servicios?',
-            // La que estaba acá ("cuál es el que más pedís que destaque?") está
-            // mal construida: mezcla "el que más te piden" con "el que querés
-            // destacar" y no significa ninguna de las dos. Le salió a Ulises,
-            // que vende carteles, el 26-ago. Esta sirve igual para servicios y
-            // para productos, que es lo que la landing tiene que cubrir.
-            'Qué es lo que más querés destacar en la web?',
-        ],
-        'ecommerce' => [
-            'Cuál es el producto que más vendés?',
-            'De tus productos, cuál es el que más sale?',
-            'Cuál es tu producto estrella?',
-        ],
-        'turnos' => [
-            'Cuál es el servicio que más te piden?',
-            'Cuál es el servicio que más querés destacar en la web?',
-            'Cuál es el servicio más solicitado?',
-        ],
-        'institucional' => [
-            'Qué es lo que más se destaca de lo que hacen?',
-            'Qué es lo que más quieren que se vea de la institución?',
-            'Cuál es la actividad que más quieren destacar?',
-        ],
-        'inmobiliaria' => [
-            'Qué tipo de propiedades manejás más?',
-            'Cuál es el tipo de propiedad que más publicás?',
-            'Trabajás más con ventas, alquileres, o las dos cosas?',
-        ],
-        'elearning' => [
-            'Cuál es el curso que más te piden?',
-            'De tus cursos, cuál es el que más se vende?',
-            'Cuál es tu curso más elegido?',
-        ],
-    ];
-    foreach ($pitchPreguntaVariantesDefault as $tipoPV => $opciones) {
-        if (!isset($cfg['tipos'][$tipoPV])) continue;
-        if (empty($cfg['tipos'][$tipoPV]['pitch_pregunta_variantes'])) {
-            $cfg['tipos'][$tipoPV]['pitch_pregunta_variantes'] = $opciones;
-        }
-        if (empty($cfg['tipos'][$tipoPV]['pitch_pregunta_2_variantes'])) {
-            $cfg['tipos'][$tipoPV]['pitch_pregunta_2_variantes'] = $opciones;
-        }
-    }
-    if (isset($cfg['tipos']['turnos'])) {
-        if (trim((string)($cfg['tipos']['turnos']['desc_alojamiento'] ?? '')) === '') {
-            $cfg['tipos']['turnos']['desc_alojamiento'] = 'una web con reserva de estadías incluida: tus huéspedes eligen las fechas y ven la disponibilidad solos desde la página, y a vos te queda todo ordenado en un panel, así dejás de coordinar por chat';
-        }
-        if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] ?? '')) === '') {
-            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas unidades tenés, así armamos la disponibilidad con eso?';
-        } elseif (trim((string)$cfg['tipos']['turnos']['pitch_pregunta_alojamiento']) === 'Contame cuántas cabañas o unidades tenés, así armamos la disponibilidad con eso?') {
-            $cfg['tipos']['turnos']['pitch_pregunta_alojamiento'] = 'Contame cuántas unidades tenés, así armamos la disponibilidad con eso?';
-        }
-        if (trim((string)($cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] ?? '')) === '') {
-            $cfg['tipos']['turnos']['pitch_pregunta_2_alojamiento'] = 'Y hoy cómo manejás las reservas, por WhatsApp, alguna plataforma?';
-        }
-    }
-    if (isset($cfg['tipos']['ecommerce'])
-        && trim((string)($cfg['tipos']['ecommerce']['desc_mayorista'] ?? '')) === '') {
-        $cfg['tipos']['ecommerce']['desc_mayorista'] = 'una tienda online pensada para mayoristas: catálogo con tus productos, cuentas exclusivas para que tus clientes revendedores compren con sus condiciones, y un panel propio para manejar todo vos';
-    }
-    if (isset($cfg['tipos']['turnos']) && trim((string)($cfg['tipos']['turnos']['desc_salud'] ?? '')) === '') {
-        $cfg['tipos']['turnos']['desc_salud'] = 'Entonces podemos hacer que tus pacientes vean los horarios disponibles y reserven directo desde la web, y vos manejás todo desde un panel.';
-    }
-
-    $descVariantes = [
-        'landing' => ['desc' => [
-            'una web profesional para mostrar lo que hacés, generar confianza a los clientes y que puedan contactarte directamente por WhatsApp',
-            'una web profesional para mostrar tus servicios, dar confianza a quien te busca y que te escriban directo por WhatsApp',
-            'una web profesional para presentar tus trabajos, que se vea serio lo que hacés y que te contacten directo por WhatsApp',
-        ]],
-        'ecommerce' => ['desc' => [
-            'una tienda online para mostrar tus productos y que tus clientes puedan comprar y pagar directamente desde la web. Además, tendrías un panel administrativo para gestionar productos, precios, stock y pedidos',
-            'una tienda online para que tus clientes vean todo el catálogo y compren y paguen desde la web. Además, tendrías un panel administrativo para manejar productos, precios, stock y pedidos',
-            'una tienda online donde tus clientes eligen, compran y pagan sin escribirte. Además, tendrías un panel administrativo para cargar productos, precios, stock y ver los pedidos',
-        ]],
-        'turnos' => ['desc' => [
-            'una web con reserva de turnos para que tus clientes elijan día y horario solos desde la página. Además, tendrías un panel para manejar la agenda, los servicios y los horarios',
-            'una web con turnos online para que reserven solos sin ida y vuelta por WhatsApp. Además, tendrías un panel para ver la agenda y configurar tus horarios',
-            'una web donde tus clientes ven los horarios libres y sacan el turno ellos mismos. Además, tendrías un panel para manejar la agenda y los servicios',
-        ]],
-        'institucional' => ['desc' => [
-            'una web institucional con secciones para la historia, las autoridades, las actividades y las novedades. Además, tendrías un panel para actualizar los contenidos cuando haga falta',
-            'una web institucional con varias páginas para ordenar la historia, el equipo, las actividades y las novedades. Además, tendrías un panel para ir actualizando todo',
-            'una web institucional que ordene en secciones propias la historia, las autoridades y las novedades. Además, tendrías un panel para cargar las actualizaciones',
-        ]],
-        'inmobiliaria' => ['desc' => [
-            'una web con catálogo de propiedades para que el interesado filtre por zona y precio y te consulte con la propiedad ya elegida. Además, tendrías un panel para cargar, editar y dar de baja las publicaciones',
-            'una web donde cada propiedad tiene su ficha y el interesado filtra por zona, precio y características antes de escribirte. Además, tendrías un panel para manejar las publicaciones',
-            'una web inmobiliaria con buscador y filtros, para que lleguen ya sabiendo qué propiedad quieren ver. Además, tendrías un panel para cargar y actualizar las propiedades',
-        ]],
-        'elearning' => ['desc' => [
-            'una plataforma para vender tus cursos desde la web y que cada alumno entre con su propio acceso a las clases. Además, tendrías un panel para cargar los cursos, los videos y ver los alumnos',
-            'una plataforma de cursos donde cobrás online y cada alumno accede solo a sus clases. Además, tendrías un panel para subir los videos y seguir a los alumnos',
-            'una plataforma propia para vender los cursos y que el alumno vea las clases desde su cuenta. Además, tendrías un panel para cargar contenido y ver quién se inscribió',
-        ]],
-        'catalogo' => ['desc' => [
-            'un catálogo online para mostrar todos tus productos con foto y precio, y que te consulten por WhatsApp con el producto ya elegido. Además, tendrías un panel para cargar y actualizar el catálogo',
-            'un catálogo online donde el que entra recorre todo solo y te escribe por WhatsApp ya con el producto definido. Además, tendrías un panel para manejar los productos y los precios',
-            'un catálogo online con la ficha de cada producto y contacto directo por WhatsApp. Además, tendrías un panel para cargar productos y cambiar precios cuando quieras',
-        ]],
-    ];
-    foreach ($descVariantes as $tipoV => $campos) {
-        if (!isset($cfg['tipos'][$tipoV])) continue;
-        foreach ($campos as $campo => $opciones) {
-            $claveVar = $campo . '_variantes';
-            if (empty($cfg['tipos'][$tipoV][$claveVar])) $cfg['tipos'][$tipoV][$claveVar] = $opciones;
-        }
-    }
-    if (isset($cfg['tipos']['turnos']) && empty($cfg['tipos']['turnos']['desc_alojamiento_variantes'])) {
-        $cfg['tipos']['turnos']['desc_alojamiento_variantes'] = [
-            (string)($cfg['tipos']['turnos']['desc_alojamiento'] ?? ''),
-            'Ahí conviene una web con reserva de estadías: eligen las fechas y ven la disponibilidad solos, y a vos te queda todo ordenado en un panel.',
-            'Se puede armar para que reserven directo desde la web, viendo qué fechas están libres, sin que tengas que ir coordinando por chat.',
-        ];
-    }
+    /* Acá vivían msg_pitch, las pitch_pregunta de cada tipo con sus variantes
+     * y sus retiradas, las desc_variantes por conversación y las variantes de
+     * alojamiento, mayorista y salud: 215 líneas que corrían en cada carga
+     * para llenar campos que ya no lee nadie. La pregunta del pitch se eliminó
+     * el 2-sep —el turno es precio + demo, sin nada en el medio— y el mensaje
+     * del precio lo arma precio_ideal, el texto fijo que dictó Pablo, así que
+     * el armador que elegía entre variantes se fue con ellas. Terminaban todas
+     * vacías igual, después de haberse escrito. */
 
     // Texto fijo del turno del pitch (25-ago, pedido de Pablo): precio+desc
     // dictados tal cual, con {precio} como único reemplazo. institucional y
@@ -2179,12 +1965,12 @@ function wabot_config_pitch_encaje(&$cfg) {
      * de las dos era algo que Pablo hubiera pedido. El flujo que sí pidió es
      * precio y, en el mensaje siguiente, la demo con el formulario. Punto.
      *
-     * Las claves se vacían en vez de borrarse: wabot_pitch_pregunta_texto()
-     * puede seguir leyéndolas y devuelve '' sin que nada reviente. */
+     * Las claves se borran, no se vacían: el 2-sep se vaciaban porque
+     * wabot_pitch_pregunta_texto() todavía podía leerlas, y esa función ya no
+     * existe. Vacías seguían viajando en cada guardado del panel. */
     foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tipo) {
         foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $campo) {
-            $cfg['tipos'][$tipo][$campo] = '';
-            $cfg['tipos'][$tipo][$campo . '_variantes'] = [];
+            unset($cfg['tipos'][$tipo][$campo], $cfg['tipos'][$tipo][$campo . '_variantes']);
         }
         foreach (['alojamiento', 'salud', 'mayorista'] as $ctx) {
             unset(
@@ -2396,6 +2182,25 @@ En este enlace podés verlo bien detallado: {link}";
         $actual = trim((string)($cfg['info'][$clave] ?? ''));
         if ($actual === '' || strpos($actual, $d['marca']) !== false) {
             $cfg['info'][$clave] = $d['nuevo'];
+        }
+    }
+
+    /* Y se van del JSON las claves del pitch por variantes, que ya no lee
+     * nadie: la pregunta del pitch se eliminó el 2-sep y el mensaje del precio
+     * lo arma precio_ideal. Seguían viajando en cada guardado del panel. */
+    unset($cfg['msg_pitch'], $cfg['msg_pitch_variantes']);
+    /* Y las que quedaron guardadas sin ningún lector: la vigencia de 7 días de
+     * la demo (retirada el 24-ago) y los tres textos del cron de presentados,
+     * que se retiró con su función. Vivían solo en el JSON. */
+    unset($cfg['muestra_vigencia'], $cfg['muestra_aviso'],
+          $cfg['presentados_recordatorio'], $cfg['presentados_recordatorio_2']);
+    foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tLimpio) {
+        foreach (['pitch_pregunta', 'pitch_pregunta_2',
+                  'pitch_pregunta_variantes', 'pitch_pregunta_2_variantes',
+                  'pitch_pregunta_alojamiento', 'pitch_pregunta_2_alojamiento',
+                  'desc_variantes', 'desc_mayorista', 'desc_salud',
+                  'desc_alojamiento', 'desc_alojamiento_variantes'] as $campoLimpio) {
+            unset($cfg['tipos'][$tLimpio][$campoLimpio]);
         }
     }
 
@@ -3336,17 +3141,6 @@ function wabot_conv_existe($clave) {
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
     if ($clave === '') return false;
     return file_exists(wabot_conv_path($clave));
-}
-
-function wabot_error_sin_chat($tel, $motivo) {
-    $num = trim((string)$tel);
-    if ($motivo === 'ambiguo') {
-        return "Hay más de una conversación que termina igual que $num: no sé a cuál mandarle la demo. Abrila desde el panel del bot y mandale el link desde ahí.";
-    }
-    if ($motivo === 'vacio' || $motivo === 'corto') {
-        return "El boceto no tiene un teléfono válido ($num): no hay conversación de WhatsApp donde mandar la demo.";
-    }
-    return "No hay ninguna conversación de WhatsApp con $num: este cliente nunca le escribió al bot, o lo tenés cargado con otro número. El link se lo tenés que mandar vos.";
 }
 
 function wabot_tel_abonados($tel) {
@@ -5042,10 +4836,6 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 function wabot_silencio_asegurado($conv, $cfg) {
     if (empty($cfg['activo']) || !empty($conv['bot_off'])) return true;
     return (int)($conv['pausado_hasta'] ?? 0) > time();
-}
-
-function wabot_avisar_al_recibir($conv, $cfg) {
-    return !wabot_silencio_asegurado($conv, $cfg) && ($conv['fase'] ?? '') !== 'derivado';
 }
 
 function wabot_wa_escribiendo($msgId) {

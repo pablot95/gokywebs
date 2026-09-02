@@ -1762,23 +1762,6 @@ function wabot_plazo_humano($dias) {
 }
 
 /**
- * ¿El cliente ya dijo QUÉ tiene que poder hacer el que entra a su web?
- *
- * El rubro no alcanza para elegir el tipo: una consultora puede querer que la
- * llamen, que le reserven una reunión o que le compren un programa. Si el
- * cliente ya lo dijo, no se le pregunta; si solo nombró el rubro, sí.
- */
-function wabot_texto_dice_objetivo_web($texto) {
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return false;
-    return (bool)preg_match('/\b(whatsapp|wasap|wsp|me escriban|me contacten|contactarme|me llamen|consultas'
-        . '|turno|turnos|reserva|reservar|reserven|agenda|agendar|cita|citas'
-        . '|comprar|compren|carrito|cobrar|vender|venta|ventas|pagos|pagar'
-        . '|catalogo|mostrar|muestre|exhibir|presupuesto|cotizar|inscribir|inscripcion'
-        . '|curso|cursos|clases|taller|talleres|alumnos)\b/u', $t);
-}
-
-/**
  * "Pero luego xe creear / Se abona / O antez / Angez".
  *
  * El techista estaba preguntando una sola cosa: si paga antes o después de la
@@ -4448,8 +4431,12 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * sacamos al cliente un número que ya tenía: "el precio no sale de la
      * lista" después de haberle dicho $290.000 es peor que no avisar nada.
      * Le pasó a la clienta de macramé el 27-ago. Si de verdad pide algo nuevo
-     * que cambie el tipo, eso ya tiene su propio camino (cambia_tipo). */
-    if (empty($conv['mixto_avisado']) && empty($conv['precio_dado']) && $tipo !== 'institucional') {
+     * que cambie el tipo, eso ya tiene su propio camino (cambia_tipo).
+     *
+     * institucional salía excluido, por ser la que junta varias secciones. La
+     * condición ya no puede darse: sin precio_dado el tipo retirado se absorbe
+     * a landing más arriba, y con precio_dado este guard no corre. */
+    if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])) {
         $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));
         $textoMixto = $ejes !== null ? wabot_texto_mixto($ejes, $cfg) : null;
         if ($textoMixto !== null) {

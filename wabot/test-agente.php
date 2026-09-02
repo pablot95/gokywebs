@@ -454,14 +454,11 @@ caso('un mensaje sin nada que contestar no fuerza una respuesta de relleno', $r2
 echo "— El \"escribiendo...\" no se promete sin saber si hay respuesta —\n";
 
 $c2 = convNueva(); $c2['fase'] = 'derivado'; $c2['espera_avisada'] = true;
-caso('cerrada: no se avisa al recibir, porque puede no haber respuesta',
-    wabot_avisar_al_recibir($c2, $cfg) === false);
-caso('pero la charla NO está muda: sigue pudiendo contestar dudas',
+caso('derivada: la charla NO está muda, sigue pudiendo contestar dudas',
     wabot_silencio_asegurado($c2, $cfg) === false);
 
 $c2b = convNueva();
-caso('charla normal: sí se avisa apenas llega el mensaje',
-    wabot_avisar_al_recibir($c2b, $cfg) === true);
+caso('y una charla normal tampoco', wabot_silencio_asegurado($c2b, $cfg) === false);
 
 $c3 = convNueva(); $c3['bot_off'] = true;
 caso('bot apagado en ese chat → silencio asegurado', wabot_silencio_asegurado($c3, $cfg) === true);

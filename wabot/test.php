@@ -3112,8 +3112,8 @@ caso('con chat en los dos lados, la demo va por WhatsApp',
     wabot_conv_resolver($wspDeIg, $m) === $claveWaMismo);
 @unlink(WABOT_DATA . '/conv/' . $claveWaMismo . '.json');
 @unlink(WABOT_DATA . '/conv/' . $claveIg . '.json');
-caso('el error de "nunca escribió" nombra el número', strpos(wabot_error_sin_chat('387 311-5008', 'sin_chat'), '387 311-5008') !== false);
-caso('el error ambiguo manda a abrirlo a mano', stripos(wabot_error_sin_chat('3115008', 'ambiguo'), 'panel del bot') !== false);
+/* Los textos de error de wabot_error_sin_chat() se borraron: el endpoint
+ * presentar_muestra devuelve sin_chat y el panel arma su propio mensaje. */
 @unlink(WABOT_DATA . '/conv/' . $claveReal . '.json');
 
 echo "— Normalizar texto para buscar dentro de los mensajes —\n";
@@ -3850,12 +3850,15 @@ caso('pero al que no contó nada sí se le pide',
 
 echo "\n— El pitch y el precio varían y no repiten la misma estructura —\n";
 
-caso('msg_pitch abre con la frase que pidió Pablo y ya no con "Para lo tuyo va"',
-    strpos((string)$cfg['msg_pitch'], 'Buenísimo, lo ideal sería') === 0
-    && strpos((string)$cfg['msg_pitch'], 'Para lo tuyo va') === false);
-foreach (['landing', 'ecommerce', 'turnos'] as $tipoVar) {
-    caso("$tipoVar tiene varias formas de presentar la web",
-        count((array)($cfg['tipos'][$tipoVar]['desc_variantes'] ?? [])) >= 3);
+/* msg_pitch armaba "{desc} + {pregunta}" y las desc_variantes elegían el
+ * {desc}. Las dos murieron el 2-sep: la pregunta del pitch se eliminó y el
+ * mensaje del precio lo arma precio_ideal, el texto fijo de Pablo. */
+caso('msg_pitch ya no está en la config', !isset($cfg['msg_pitch']));
+foreach (array_keys((array)$cfg['tipos']) as $tipoVar) {
+    caso("$tipoVar no arrastra claves del pitch por variantes",
+        !isset($cfg['tipos'][$tipoVar]['desc_variantes'])
+        && !isset($cfg['tipos'][$tipoVar]['pitch_pregunta'])
+        && !isset($cfg['tipos'][$tipoVar]['pitch_pregunta_variantes']));
 }
 /* Las desc_variantes quedaron sin lector: el mensaje del precio lo arma
  * precio_ideal, el texto fijo que dictó Pablo, igual para todas las charlas. */
@@ -3873,8 +3876,8 @@ caso('presentar manda dos mensajes: la demo y, aparte, el pedido de feedback (si
 caso('el mensaje trae el link de la demo', strpos($textosPresentar[0], 'gokywebs.com/demo/midemo') !== false);
 caso('no menciona los 7 días en ningún lado',
     stripos($textosPresentar[0], '7 días') === false);
-caso('muestra_vigencia queda vacío aunque el config lo trajera cargado',
-    trim((string)($cfg['muestra_vigencia'] ?? '')) === '');
+caso('muestra_vigencia ya no está en la config: nadie la leía',
+    !isset($cfg['muestra_vigencia']));
 
 caso('si preguntan hasta cuándo dura, hay respuesta',
     trim((string)($cfg['info']['demo_vigencia'] ?? '')) !== ''
@@ -3957,8 +3960,8 @@ $ahoraPD = 2_000_000_000;
 $convPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraPD - 21 * 3600,
            'ultimo_cliente_ts' => $ahoraPD - 7 * 3600, 'transcript' => []];
 
-caso('en postdemo el bot muestra "escribiendo…" como en cualquier fase activa',
-    wabot_avisar_al_recibir($convPD, $cfg) === true);
+caso('en postdemo la charla no está muda',
+    wabot_silencio_asegurado($convPD, $cfg) === false);
 
 // El corte real (sin pasar por el motor ni por el agente) se prueba en
 // test-redactor.php, que sí tiene cargado wabot_responder() a esta altura.
@@ -3980,7 +3983,7 @@ caso('y el que duda recibe la videollamada, que es otra cosa',
     && $convRespDuda['fase'] === 'derivado');
 
 caso('antes de presentar la demo el bot sigue trabajando normal',
-    wabot_avisar_al_recibir(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === true);
+    wabot_silencio_asegurado(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === false);
 
 // El reset por inactividad vencía el silencio post-demo: a los 7 días dejaba
 // fase='nuevo' y presentado_ts=0, y el bot volvía a venderle desde cero a
@@ -4117,11 +4120,17 @@ $cfgGuardado = ['tipos' => ['landing' => [
     'label' => 'Landing', 'precio' => '$200.000',
     'pitch_pregunta' => $rota,
     'pitch_pregunta_variantes' => ['Qué es lo que más se destaca de tus servicios?', $rota],
+    'desc_variantes' => ['una web profesional'],
 ]]];
 wabot_config_ventas($cfgGuardado);
-caso('y un config que la tenía guardada la pierde al cargar',
-    $cfgGuardado['tipos']['landing']['pitch_pregunta'] !== $rota
-    && !in_array($rota, (array)$cfgGuardado['tipos']['landing']['pitch_pregunta_variantes'], true));
+wabot_config_simplificar_tipos($cfgGuardado);
+caso('y el config que las tenía guardadas las pierde enteras al cargar',
+    !isset($cfgGuardado['tipos']['landing']['pitch_pregunta'])
+    && !isset($cfgGuardado['tipos']['landing']['pitch_pregunta_variantes'])
+    && !isset($cfgGuardado['tipos']['landing']['desc_variantes']));
+caso('pero el tipo sigue entero, con su precio',
+    isset($cfgGuardado['tipos']['landing']['precio'])
+    && trim((string)$cfgGuardado['tipos']['landing']['precio']) !== '');
 
 echo "\n— Charla cerrada: no se manda el comodín pegado al aviso de espera (27-ago) —\n";
 
@@ -5176,11 +5185,8 @@ $cRet = ['fase' => 'precio', 'precio_dado' => true, 'retomar_ts' => time() + 20 
 caso('con fecha puesta, el seguimiento automático no lo persigue antes',
     wabot_seguimiento_corresponde($cRet, $cfg) === false);
 
-/* 5/8. El rubro no alcanza para elegir el tipo. */
-caso('"Una consultora" no dice qué tiene que hacer el visitante',
-    wabot_texto_dice_objetivo_web('Una consultora') === false);
-caso('pero "quiero que me escriban por whatsapp" sí',
-    wabot_texto_dice_objetivo_web('quiero que me escriban por whatsapp') === true);
+/* 5/8. La repregunta por el objetivo de la web se fue con turnos: todos los
+ * servicios son sitio profesional, así que ya no hay nada que desempatar. */
 
 /* 5. La pregunta que Héctor hizo y nadie contestó. */
 caso('"hacés esta clase de página o solo grandes empresas?" tiene respuesta propia',
