@@ -3317,66 +3317,6 @@ clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
 wabot_engine('cuanto sale el hosting?', $cvInfo, $cfg);
 caso('una info que SÍ se contesta no marca nada', empty($cvInfo['handoff_pendiente']));
 
-echo "— Mayoristas que venden solo a otros comercios mencionan cuentas exclusivas —\n";
-
-$convMayorista = conv_nueva();
-$convMayorista['transcript'] = [['q'=>'cliente','t'=>'Somos una distribuidora mayorista de golosinas, vendemos solo a kioscos y almacenes, no al publico','ts'=>time()]];
-$pitchMayorista = wabot_pitch_texto('ecommerce', $convMayorista, $cfg);
-caso('distribuidora mayorista → el pitch menciona cuentas exclusivas',
-    stripos($pitchMayorista, 'cuentas exclusivas') !== false);
-
-$convEcommerceNormal = conv_nueva();
-$convEcommerceNormal['transcript'] = [['q'=>'cliente','t'=>'vendo velas aromaticas','ts'=>time()]];
-$pitchNormal = wabot_pitch_texto('ecommerce', $convEcommerceNormal, $cfg);
-caso('pero un ecommerce común sigue con el pitch de tienda, no "cuentas exclusivas"',
-    stripos($pitchNormal, 'tienda online') !== false && stripos($pitchNormal, 'cuentas exclusivas') === false);
-caso('ninguna variante normal de ecommerce habla de cuentas exclusivas', (function () use ($cfg) {
-    foreach ((array)($cfg['tipos']['ecommerce']['desc_variantes'] ?? []) as $v) {
-        if (stripos($v, 'cuentas exclusivas') !== false) return false;
-    }
-    return true;
-})());
-caso('"vendo al por mayor" también detecta mayorista', wabot_contexto_es_mayorista('vendo al por mayor articulos de limpieza') === true);
-caso('"vendemos solo a locales y comercios, no al publico" también (chat real, 23-ago)',
-    wabot_contexto_es_mayorista('Somos una distribuidora de indumentaria, vendemos solo a locales y comercios, no al publico final') === true);
-caso('pero un ecommerce común que vende al público no es mayorista',
-    wabot_contexto_es_mayorista('tenemos un local de ropa, vendemos al publico en general') === false);
-
-echo "— El pitch no repite \"qué vendés\" si la respuesta corta ya lo dijo —\n";
-
-caso('"Arroz" tiene contenido específico', wabot_frase_tiene_contenido_especifico('Arroz') === true);
-caso('"Medias" también', wabot_frase_tiene_contenido_especifico('Medias') === true);
-caso('pero "Tengo un local" sigue sin decir qué vende',
-    wabot_frase_tiene_contenido_especifico('Tengo un local') === false);
-caso('"Vendo cosas" tampoco', wabot_frase_tiene_contenido_especifico('Vendo cosas') === false);
-caso('"Es un emprendimiento" tampoco', wabot_frase_tiene_contenido_especifico('Es un emprendimiento') === false);
-caso('"Trabajo por mi cuenta" tampoco', wabot_frase_tiene_contenido_especifico('Trabajo por mi cuenta') === false);
-caso('"Vendo repuestos de auto" sí (tiene un producto concreto)',
-    wabot_frase_tiene_contenido_especifico('Vendo repuestos de auto') === true);
-
-$convArroz = conv_nueva();
-$convArroz['transcript'] = [
-    ['q'=>'cliente','t'=>'Es un emprendimiento','ts'=>time()-10],
-    ['q'=>'cliente','t'=>'Arroz','ts'=>time()],
-];
-$pitchArroz = wabot_pitch_texto('ecommerce', $convArroz, $cfg);
-caso('"Arroz" tras la pregunta de rubro → NO repite "qué vendés exactamente"',
-    stripos($pitchArroz, 'qué vendés exactamente') === false);
-caso('y ya no cuelga ninguna pregunta detrás: se eliminó el 2-sep', (function () use ($pitchArroz, $cfg) {
-    if (trim((string)($cfg['tipos']['ecommerce']['pitch_pregunta'] ?? '')) === '') return true;
-    foreach ((array)($cfg['tipos']['ecommerce']['pitch_pregunta_2_variantes'] ?? []) as $v) {
-        if (stripos($pitchArroz, $v) !== false) return true;
-    }
-    return false;
-})());
-
-$convLocalSolo = conv_nueva();
-$convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
-$pitchLocalSolo = wabot_pitch_texto('ecommerce', $convLocalSolo, $cfg);
-caso('y "Tengo un local" tampoco recibe ningún interrogatorio: la pregunta se eliminó',
-    trim((string)($cfg['tipos']['ecommerce']['pitch_pregunta'] ?? '')) === ''
-    && stripos($pitchLocalSolo, 'cómo vendés') === false);
-
 echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
 
 caso('"Rosa .amarillo beige" parece lista de colores', wabot_parece_lista_colores('Rosa .amarillo beige') === true);
@@ -3787,26 +3727,7 @@ caso('pero vender productos online sigue siendo ecommerce',
     wabot_fallback_rubro_local('quiero vender ropa online') === 'ecommerce'
     && wabot_fallback_rubro_local('tengo una tienda online de zapatillas') === 'ecommerce');
 
-echo "\n— No se repregunta un dato que el cliente ya dio —\n";
-
-caso('detecta la cantidad de unidades ya dicha',
-    wabot_contexto_tiene_cantidad_unidades('Tenemos un hostel en Bariloche, 12 habitaciones')
-    && wabot_contexto_tiene_cantidad_unidades('tengo 4 cabañas')
-    && wabot_contexto_tiene_cantidad_unidades('son 6 departamentos'));
-caso('y no la inventa donde no está',
-    !wabot_contexto_tiene_cantidad_unidades('Tenemos un complejo de cabañas en Villa La Angostura')
-    && !wabot_contexto_tiene_cantidad_unidades('tengo un hostel'));
-
-$convHostel = conv_nueva();
-$convHostel['transcript'] = [['q'=>'cliente','t'=>'Tenemos un hostel en Bariloche, 12 habitaciones','ts'=>time()]];
-$pitchHostel = wabot_pitch_texto('turnos', $convHostel, $cfg);
-caso('el hostel que ya dijo cuántas habitaciones tiene no recibe la misma pregunta',
-    stripos($pitchHostel, 'cuántas cabañas o unidades') === false);
-caso('pero sigue siendo el pitch de alojamiento, no el de turnos comunes',
-    stripos($pitchHostel, 'fechas') !== false || stripos($pitchHostel, 'estadías') !== false
-    || stripos($pitchHostel, 'huéspedes') !== false);
-
-echo "\n— Una pregunta contestada no se sigue con el saludo de bienvenida —\n";
+echo "— Una pregunta contestada no se sigue con el saludo de bienvenida —\n";
 
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones' => ['pregunta_info'], 'info_keys' => ['precio_sin_rubro']];
@@ -3889,17 +3810,6 @@ $convInsiste['transcript'] = [['q'=>'cliente','t'=>'bueno, lo voy a pensar','ts'
 caso('y el que insiste con lo mismo sí recibe el cierre corto',
     wabot_objecion_texto('pensarlo', $cfg['pensarlo'], $convInsiste, $cfg) === $cfg['objecion_repetida']);
 
-echo "\n— El alojamiento que ya dijo cuántas unidades tiene habla de reservas, no de turnos —\n";
-
-$convAlojCant = conv_nueva();
-$convAlojCant['transcript'] = [['q'=>'cliente','t'=>'Tengo un complejo de 6 cabañas en Merlo','ts'=>time()]];
-$pitchAlojCant = wabot_pitch_texto('turnos', $convAlojCant, $cfg);
-caso('no le pregunta de nuevo cuántas unidades', stripos($pitchAlojCant, 'cuántas cabañas o unidades') === false);
-caso('la descripción sigue hablando de reservar, no de turnos',
-    stripos($pitchAlojCant, 'reserva') !== false && stripos($pitchAlojCant, 'turnos') === false);
-caso('y ya no lleva ninguna pregunta pegada (2-sep)',
-    trim((string)($cfg['tipos']['turnos']['pitch_pregunta'] ?? '')) === '');
-
 echo "\n— Un elogio tras la demo NO es una despedida —\n";
 
 caso('"la estoy viendo, está hermoso" ya no cierra la charla',
@@ -3945,12 +3855,8 @@ foreach (['landing', 'ecommerce', 'turnos'] as $tipoVar) {
     caso("$tipoVar tiene varias formas de presentar la web",
         count((array)($cfg['tipos'][$tipoVar]['desc_variantes'] ?? [])) >= 3);
 }
-$convVarA = conv_nueva(); $convVarA['chat_started_ts'] = 111; $convVarA['conversation_key'] = 'AAA111';
-$convVarB = conv_nueva(); $convVarB['chat_started_ts'] = 222; $convVarB['conversation_key'] = 'BBB222';
-caso('dos conversaciones distintas no reciben siempre el mismo texto',
-    wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg) !== wabot_tipo_variante('ecommerce', 'desc', $convVarB, $cfg));
-caso('pero la misma conversación siempre recibe el mismo',
-    wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg) === wabot_tipo_variante('ecommerce', 'desc', $convVarA, $cfg));
+/* Las desc_variantes quedaron sin lector: el mensaje del precio lo arma
+ * precio_ideal, el texto fijo que dictó Pablo, igual para todas las charlas. */
 
 caso('el desempate de turnos ya no usa la muletilla de siempre',
     stripos((string)$cfg['desempate_turnos'], 'cambia bastante la web') === false);
@@ -5899,6 +5805,48 @@ foreach (['precio_sin_rubro', 'bilingue', 'rangos', 'pago_generico'] as $claveM)
     if (trim($txtM) === '') continue;
     caso("info.$claveM sale sin marcadores crudos", preg_match('/\{[a-z_]+\}/u', $txtM) === 0);
 }
+
+echo "— 2-sep, auditoría: la pregunta de turnos ya no se hace —\n";
+
+/* Con turnos retirado, las dos respuestas del desempate daban el MISMO sitio
+ * profesional a $180.000: la pregunta costaba un turno y no decidía nada. Y
+ * ofrecía "que los reserven directamente desde la web", que es justo lo que
+ * ese producto no hace. El agente ya cotizaba directo; el motor no. */
+caso('un servicio con turnos ya no abre un desempate', wabot_desempate_de('turnos') === null);
+caso('ni por el nombre viejo del pendiente', wabot_desempate_de('turnos_pendiente') === null);
+caso('el de cursos, que sí distingue dos precios, sigue vivo',
+    wabot_desempate_de('cursos') === ['desempate_cursos', 'desempate_cursos']);
+caso('y el del híbrido también', wabot_desempate_de('hibrido_pendiente') !== null);
+
+$cPelu = conv_nueva(); $cPelu['fase'] = 'menu'; $cPelu['pitch_hecho'] = false;
+clasifica(['servicio_con_turnos']);
+$rPelu = wabot_engine('Tengo una peluqueria', $cPelu, $cfg);
+caso('la peluquería recibe el precio en el primer turno, sin repreguntar',
+    ($cPelu['tipo'] ?? '') === 'landing'
+    && strpos((string)$rPelu[0], (string)$cfg['tipos']['landing']['precio']) !== false);
+caso('y no le preguntan si quiere reservas online, que no van a estar',
+    stripos((string)$rPelu[0], 'reserven') === false
+    && stripos((string)$rPelu[0], 'coordinándolos') === false);
+
+echo "— 2-sep, auditoría: el desempate del híbrido acepta lo que el bot pide —\n";
+
+/* desempate_hibrido_2 dice «respondeme "trabajos" o "vender"» y el matcher no
+ * reconocía ninguna de las dos, ni los ordinales que sí tienen los otros
+ * desempates: el cliente contestaba lo que le pidieron y el bot repreguntaba. */
+foreach (['trabajos' => 'hibrido_trabajos', 'la primera' => 'hibrido_trabajos',
+          'vender' => 'hibrido_vender', 'la segunda' => 'hibrido_vender',
+          'venta online' => 'hibrido_vender'] as $resp => $esperado) {
+    caso("«$resp» se entiende en el desempate del híbrido",
+        wabot_desempate_por_palabras('desempate_hibrido', $resp) === $esperado);
+}
+caso('pero un saludo sigue sin decidir nada',
+    wabot_desempate_por_palabras('desempate_hibrido', 'hola que tal') === null);
+
+/* Y la pregunta ya no ofrece la modalidad catálogo, que se retiró: eran tres
+ * opciones y dos terminaban en el mismo ecommerce de $290.000. */
+caso('la pregunta del híbrido no nombra el catálogo retirado',
+    stripos((string)$cfg['desempate_hibrido'], 'catálogo') === false
+    && stripos((string)$cfg['desempate_hibrido_2'], 'catálogo') === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

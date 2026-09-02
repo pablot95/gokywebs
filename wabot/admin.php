@@ -1568,8 +1568,9 @@ body.embed { min-height: 0; }
             <label>Algo diferente</label><textarea name="contame" rows="2"><?= $e($cfg['contame']) ?></textarea>
             <label>Ya contó qué ofrece, pero falta definir el objetivo</label><textarea name="aclarar_objetivo" rows="2"><?= $e($cfg['aclarar_objetivo'] ?? '') ?></textarea>
             <label>Pregunta de desempate para cursos</label><textarea name="desempate_cursos" rows="3"><?= $e($cfg['desempate_cursos']) ?></textarea>
-            <label>Pregunta de desempate para turnos (peluquerías, consultorios, canchas…)</label><textarea name="desempate_turnos" rows="3"><?= $e($cfg['desempate_turnos'] ?? '') ?></textarea>
-            <label>Pregunta de desempate para comercios (ferreterías, kioscos, locales…)</label><textarea name="desempate_comercio" rows="3"><?= $e($cfg['desempate_comercio'] ?? '') ?></textarea>
+            <label style="opacity:.6">Turnos (peluquerías, consultorios, canchas…) <span style="color:#b45309">· ya no se pregunta</span></label><textarea name="desempate_turnos" rows="3" style="opacity:.6"><?= $e($cfg['desempate_turnos'] ?? '') ?></textarea>
+            <label style="opacity:.6">Comercios (ferreterías, kioscos, locales…) <span style="color:#b45309">· ya no se pregunta</span></label><textarea name="desempate_comercio" rows="3" style="opacity:.6"><?= $e($cfg['desempate_comercio'] ?? '') ?></textarea>
+            <p class="meta" style="margin-top:-6px">Estas dos preguntas quedaron sin uso cuando se retiraron turnos y catálogo: las dos respuestas daban el mismo tipo y el mismo precio. Un servicio con turnos se cotiza directo como sitio profesional, y un comercio como ecommerce. Se siguen mostrando porque las charlas que quedaron trabadas en ellas todavía las usan.</p>
             <label>Pregunta para trabajos/productos a medida (cortinas, toldos, aberturas, muebles…)</label><textarea name="desempate_hibrido" rows="3"><?= $e($cfg['desempate_hibrido'] ?? '') ?></textarea>
         </div>
         <div class="card">

@@ -346,8 +346,8 @@ function wabot_config_ventas(&$cfg) {
         'prediseno_completo_solo_logo' => 'Perfecto {nombre}, el logo ya lo tengo. Mandame {imagenes} y con eso te la dejo lista {entrega}.',
         'cierre_memoria'    => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
         'aclarar_objetivo'  => 'Ya tengo claro qué ofrecés. Para orientarte bien, confirmame qué parte querés resolver primero con la web: presentar tus servicios, recibir consultas o vender y cobrar online?',
-        'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?',
-        'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", según cuál sea el objetivo principal de la web.',
+        'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar tus trabajos y que te consulten por WhatsApp, o para vender tus productos y cobrar online?',
+        'desempate_hibrido_2' => 'Te lo simplifico: respondeme "trabajos" o "vender", según cuál sea el objetivo principal de la web.',
         // A un alojamiento no se le habla de "sacar turno eligiendo día y
         // horario": se le habla de reservas, fechas y disponibilidad.
         'desempate_turnos_alojamiento' => 'Te hago una pregunta que cambia bastante la web: querés que tus huéspedes puedan reservar solos desde la página, eligiendo las fechas y viendo la disponibilidad, o alcanza con que te consulten por WhatsApp y lo coordinás vos?',
@@ -2352,6 +2352,22 @@ En este enlace podés verlo bien detallado: {link}";
         if (isset($cfg['tipos'][$t])) unset($cfg['tipos'][$t]['retirado']);
     }
 
+    /* 5. El desempate del híbrido ofrecía tres caminos y dos daban lo mismo:
+     * "catálogo con contacto por WhatsApp" y "vender y cobrar online" terminan
+     * los dos en el ecommerce de $290.000 desde que catálogo se retiró. Al
+     * cliente se le pedía que eligiera entre opciones que no se distinguen, y
+     * la del medio describe un producto que ya no existe. Quedan dos. */
+    $hibViejo = 'Para cotizarte bien, confirmame una cosa: la web sería principalmente '
+              . 'para mostrar trabajos y recibir consultas, para exhibir modelos o productos '
+              . 'en un catálogo con contacto por WhatsApp, o para vender y cobrar online?';
+    if (in_array(trim((string)($cfg['desempate_hibrido'] ?? '')), [$hibViejo, ''], true)) {
+        $cfg['desempate_hibrido'] = 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar tus trabajos y que te consulten por WhatsApp, o para vender tus productos y cobrar online?';
+    }
+    $hib2Viejo = 'Te lo simplifico: respondeme "trabajos", "catálogo" o "venta online", '
+               . 'según cuál sea el objetivo principal de la web.';
+    if (in_array(trim((string)($cfg['desempate_hibrido_2'] ?? '')), [$hib2Viejo, ''], true)) {
+        $cfg['desempate_hibrido_2'] = 'Te lo simplifico: respondeme "trabajos" o "vender", según cuál sea el objetivo principal de la web.';
+    }
 }
 
 /**

@@ -1447,30 +1447,6 @@ function wabot_texto_objecion_precio_suave($texto) {
     );
 }
 
-function wabot_contexto_es_mayorista($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    return (bool)preg_match(
-        '/\bmayorista\w*\b|\bal por mayor\b|\bb2b\b'
-        . '|\bvend\w*\b.{0,25}\b(solo|solamente|unicamente)\b.{0,25}\b(comercios?|negocios?|kioscos?|almacenes|revendedores?|locales)\b'
-        . '|\bno\b.{0,20}\bal publico\b/u', $t);
-}
-
-function wabot_contexto_es_salud($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    return (bool)preg_match(
-        '/\b(psicolog\w*|psiquiatr\w*|nutricionista|nutricion\w*|kinesiolog\w*|fonoaudiolog\w*|dermatolog\w*'
-        . '|odontolog\w*|dentista|terapeuta|terapia\w*|consultorio\w*|medic[ao]|medicina|paciente\w*|fisioterap\w*'
-        . '|psicopedagog\w*)\b/u', $t);
-}
-
-function wabot_contexto_es_alojamiento($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    return (bool)preg_match(
-        '/\b(cabana\w*|hotel\w*|hosteria\w*|hostal\w*|hostel\w*|posada\w*|complejo\w*|glamping|camping'
-        . '|alquiler\w* temporar\w*|apart\b|apart hotel|casa de campo|quinta\w*|estadia\w*|huespedes'
-        . '|airbnb|booking|departamentos?\s+(en\s+)?alquiler|alquilo?\s+departamentos?)\b/u', $t);
-}
-
 /**
  * Un medio, un portal o cualquier web cuyo contenido cambia todo el tiempo
  * (noticias, novedades, entrevistas) NO es una landing: necesita panel propio
@@ -1551,25 +1527,6 @@ function wabot_texto_pide_precio($texto) {
         || preg_match('/\b(cual es|decime|pasame|necesito saber|queria saber|me pasas)\b.{0,25}\b(precio|valor|presupuesto|costo)\b/u', $t)
         || preg_match('/\b(precio|presupuesto)\b.{0,15}\b(de esto|de eso|de una web|de una pagina)\b/u', $t)
     );
-}
-
-function wabot_contexto_tiene_cantidad_unidades($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    return (bool)preg_match(
-        '/\b\d+\s*(habitacion\w*|cabana\w*|unidad\w*|departamento\w*|dormis|camas?|suites?|bungalow\w*'
-        . '|casas?|cuartos?|plazas?)\b/u', $t);
-}
-
-/**
- * Qué texto usar para el desempate de turnos. A un complejo de cabañas no se
- * le pregunta por "sacar el turno eligiendo día y horario": el rubro habla de
- * reservas, fechas y disponibilidad (caso Recanto del Paraná, 21-ago).
- */
-function wabot_clave_desempate_turnos($contexto, $cfg) {
-    $esAlojamiento = wabot_contexto_es_alojamiento($contexto);
-    return $esAlojamiento && trim((string)($cfg['desempate_turnos_alojamiento'] ?? '')) !== ''
-        ? 'desempate_turnos_alojamiento'
-        : 'desempate_turnos';
 }
 
 /**
@@ -2052,20 +2009,15 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             $rubroLocal = wabot_fallback_rubro_local($t);
             $rubroContexto = wabot_fallback_rubro_local($contexto);
 
-            // Gabriela: "vendo zapatillas" quedó en el turno anterior y ahora
-            // responde "catálogo y WhatsApp". Aunque Gemini caiga, se juntan
-            // ambas piezas antes de decidir.
-            if ($rubroContexto === 'comercio_pendiente') {
-                $objetivo = wabot_desempate_por_palabras('desempate_comercio', $texto);
-                if ($objetivo === 'comercio_vender')  return wabot_precio('ecommerce', $conv, $cfg);
-                // Catálogo se retiró (2-sep): mostrar o vender, es ecommerce.
-                if ($objetivo === 'comercio_mostrar') return wabot_precio('ecommerce', $conv, $cfg);
-            }
-            if ($rubroContexto === 'turnos_pendiente') {
-                $objetivo = wabot_desempate_por_palabras('desempate_turnos', $texto);
-                if ($objetivo === 'turnos_si') return wabot_precio('turnos', $conv, $cfg);
-                if ($objetivo === 'turnos_no') return wabot_precio('landing', $conv, $cfg);
-            }
+            /* Gabriela: "vendo zapatillas" quedó en el turno anterior y ahora
+             * responde "los vendo desde la web". Aunque Gemini caiga, se juntan
+             * ambas piezas antes de decidir.
+             *
+             * Solo queda el de cursos: wabot_fallback_rubro_local() devuelve
+             * 'cursos', 'ecommerce', 'hibrido_pendiente', 'inmobiliaria',
+             * 'institucional', 'landing' o 'sistema_pendiente', y nada más. Las
+             * ramas de 'comercio_pendiente' y 'turnos_pendiente' que vivían acá
+             * no se alcanzaban nunca, y sus dos desempates ya no se preguntan. */
             if ($rubroContexto === 'cursos') {
                 $objetivo = wabot_desempate_por_palabras('desempate_cursos', $texto);
                 if ($objetivo === 'cursos_vender')  return wabot_precio('elearning', $conv, $cfg);
@@ -2082,8 +2034,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($desempate !== null) {
                 $conv['fase'] = $desempate[0];
                 wabot_handoff_aclaracion_resuelta($conv);
-                $claveTexto = $desempate[0] === 'desempate_turnos'
-                    ? wabot_clave_desempate_turnos($texto, $cfg) : $desempate[1];
+                $claveTexto = $desempate[1];
                 return [$cfg[$claveTexto]];
             }
             if ($rubroLocal !== null) return wabot_precio($rubroLocal, $conv, $cfg);
@@ -2171,8 +2122,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                     $conv['tipo'] = null;
                     $conv['fase'] = $desempateFallback[0];
                     wabot_handoff_aclaracion_resuelta($conv);
-                    $claveTextoFallback = $desempateFallback[0] === 'desempate_turnos'
-                        ? wabot_clave_desempate_turnos($texto, $cfg) : $desempateFallback[1];
+                    $claveTextoFallback = $desempateFallback[1];
                     return [$cfg[$claveTextoFallback]];
                 }
                 $conv['tipo'] = $rNuevoFallback;
@@ -2638,7 +2588,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         $rubroLocal = wabot_fallback_rubro_local($texto);
         if ($rubroLocal !== null) {
             $etiquetas = [
-                'cursos' => 'rubro_cursos', 'turnos_pendiente' => 'servicio_con_turnos',
+                'cursos' => 'rubro_cursos',
                 'hibrido_pendiente' => 'rubro_hibrido', 'sistema_pendiente' => 'rubro_sistema',
                 'institucional' => 'rubro_institucional', 'landing' => 'rubro_landing',
                 'ecommerce' => 'rubro_ecommerce', 'inmobiliaria' => 'rubro_inmobiliaria',
@@ -2879,8 +2829,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                     $conv['tipo'] = null;
                     $conv['fase'] = $desempateNuevo[0];
                     wabot_handoff_aclaracion_resuelta($conv);
-                    $claveTexto = $desempateNuevo[0] === 'desempate_turnos'
-                        ? wabot_clave_desempate_turnos($texto, $cfg) : $desempateNuevo[1];
+                    $claveTexto = $desempateNuevo[1];
                     return array_merge($out, [$cfg[$claveTexto]]);
                 }
                 $conv['tipo'] = $rNuevoPitch;
@@ -3011,7 +2960,14 @@ function wabot_rubro_de($acc) {
     // 'cursos' y 'turnos_pendiente' no son tipos cotizables: son preguntas que
     // faltan hacer. El resto sí sale directo al precio.
     if (in_array('rubro_cursos', $acc, true))                                        return 'cursos';
-    if (in_array('servicio_con_turnos', $acc, true))                                 return 'turnos_pendiente';
+    /* La peluquería NO abre un desempate: con turnos retirado (2-sep) las dos
+     * respuestas daban el mismo sitio profesional a $180.000, así que la
+     * pregunta costaba un turno y no decidía nada. Peor: ofrecía "que los
+     * reserven directamente desde la web", que es justo lo que el sitio
+     * profesional no hace, y el que contestaba que sí se llevaba otra cosa.
+     * El agente ya cotizaba directo; el motor era el único que preguntaba.
+     * 'turnos' está retirado: wabot_precio() lo absorbe a landing. */
+    if (in_array('servicio_con_turnos', $acc, true))                                 return 'turnos';
     if (in_array('rubro_hibrido', $acc, true))                                       return 'hibrido_pendiente';
     if (in_array('rubro_comercio', $acc, true))                                      return 'ecommerce';
     if (in_array('rubro_sistema', $acc, true))                                       return 'sistema_pendiente';
@@ -3028,7 +2984,6 @@ function wabot_rubro_de($acc) {
  */
 function wabot_desempate_de($r) {
     if ($r === 'cursos')           return ['desempate_cursos', 'desempate_cursos'];
-    if ($r === 'turnos_pendiente') return ['desempate_turnos', 'desempate_turnos'];
     if ($r === 'hibrido_pendiente')  return ['desempate_hibrido', 'desempate_hibrido'];
     if ($r === 'sistema_pendiente')  return ['sistema_problema', 'sistema_pregunta'];
     return null;
@@ -3427,15 +3382,22 @@ function wabot_desempate_por_palabras($fase, $texto) {
             ]))) return 'comercio_mostrar';
             return null;
         case 'desempate_hibrido':
-            if ($tiene([
+            /* Las palabras que el propio bot pide no matcheaban. desempate_hibrido_2
+             * dice «respondeme "trabajos" o "vender"» y ninguna de las dos estaba
+             * en la lista, ni los ordinales que sí tienen los otros desempates:
+             * el cliente contestaba exactamente lo que le pidieron y el bot le
+             * volvía a preguntar lo mismo (auditoría del 2-sep). */
+            if ($tiene(array_merge($segunda, [
                 'vender online', 'vender por la web', 'vender desde la web', 'tienda online', 'ecommerce',
                 'e commerce', 'carrito', 'cobro online', 'cobrar online', 'que compren', 'que paguen',
-            ])) return 'hibrido_vender';
-            if ($tiene([
+                'vender', 'venderlos', 'venderlas', 'venta', 'venta online', 'ventas', 'cobrar',
+            ]))) return 'hibrido_vender';
+            if ($tiene(array_merge($primera, [
                 'mostrar trabajos', 'mostrar los trabajos', 'mostrar el trabajo', 'mostrar nuestros trabajos',
                 'mostrar mis trabajos', 'trabajos realizados', 'trabajos que hice', 'trabajos hechos',
                 'portfolio', 'portafolio', 'obras', 'mostrar lo que hacemos',
-            ])) return 'hibrido_trabajos';
+                'trabajos', 'los trabajos', 'mis trabajos', 'nuestros trabajos',
+            ]))) return 'hibrido_trabajos';
             if ($tiene([
                 'catalogo', 'catálogo', 'modelos', 'productos', 'exhibir modelos', 'mostrar modelos',
                 'catalogo por whatsapp', 'catalogo con whatsapp', 'lista de productos',
@@ -4026,18 +3988,6 @@ function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
     return $variantes[$indice];
 }
 
-function wabot_tipo_variante($tipo, $campo, $conv, $cfg) {
-    $t = $cfg['tipos'][$tipo] ?? [];
-    $base = trim((string)($t[$campo] ?? ''));
-    $variantes = array_values(array_filter((array)($t[$campo . '_variantes'] ?? []), function ($v) {
-        return is_string($v) && trim($v) !== '';
-    }));
-    if (!$variantes) return $base;
-    $semilla = wabot_conversation_key($conv) . '|' . (string)($conv['session_id'] ?? '') . '|' . $tipo . '|' . $campo;
-    $indice = hexdec(substr(hash('sha256', $semilla), 0, 8)) % count($variantes);
-    return $variantes[$indice];
-}
-
 /**
  * Arma el mensaje de precio del tipo y fija la fase. Según en qué punto de la
  * charla esté, devuelve UN mensaje (el precio+pregunta del pitch, o solo la
@@ -4326,59 +4276,6 @@ function wabot_prediseno_no_sabe_como($texto, &$conv, $cfg) {
     return array_merge($out, wabot_cerrar_o_pedir_whatsapp($conv, $cfg));
 }
 
-function wabot_pitch_pregunta_texto($tipo, $conv, $cfg) {
-    $contexto = wabot_contexto_cliente_texto($conv);
-    $variante = null;
-    if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
-    elseif ($tipo === 'turnos' && wabot_contexto_es_salud($contexto)) $variante = 'salud';
-    if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
-
-    $ultimoMsg = trim((string)wabot_ultimo_texto_cliente($conv));
-    $respuestaEspecifica = !wabot_es_acuse($ultimoMsg) && !wabot_es_negativa($ultimoMsg)
-        && wabot_frase_tiene_contenido_especifico($ultimoMsg);
-    $yaConto = (mb_strlen(trim((string)($conv['descripcion'] ?? ''))) >= 25
-               && !wabot_descripcion_generica((string)($conv['descripcion'] ?? '')))
-               || $respuestaEspecifica;
-    $sufijo = $yaConto ? '_2' : '';
-
-    $campoPregunta = null;
-    if ($variante === 'alojamiento') {
-        $campoPregunta = wabot_contexto_tiene_cantidad_unidades($contexto)
-            ? 'pitch_pregunta_2_alojamiento'
-            : 'pitch_pregunta_alojamiento';
-    } elseif ($variante !== null) {
-        $campoPregunta = 'pitch_pregunta' . $sufijo . '_' . $variante;
-    }
-    $pregunta = $campoPregunta !== null ? wabot_tipo_variante($tipo, $campoPregunta, $conv, $cfg) : '';
-    if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta' . $sufijo, $conv, $cfg);
-    if ($pregunta === '') $pregunta = wabot_tipo_variante($tipo, 'pitch_pregunta', $conv, $cfg);
-    return trim($pregunta);
-}
-
-/**
- * El desc + la pregunta juntos en un solo texto, vía {desc}/{pregunta} de
- * msg_pitch. Solo lo sigue usando catálogo: ahí la "pregunta del pitch" ES la
- * cantidad de productos, y sin ese dato no hay precio que dar todavía, así
- * que no puede separarse en precio+pregunta como el resto de los tipos.
- */
-function wabot_pitch_texto($tipo, $conv, $cfg) {
-    $contexto = wabot_contexto_cliente_texto($conv);
-    $variante = null;
-    if ($tipo === 'turnos' && wabot_contexto_es_alojamiento($contexto)) $variante = 'alojamiento';
-    elseif ($tipo === 'turnos' && wabot_contexto_es_salud($contexto)) $variante = 'salud';
-    if ($tipo === 'ecommerce' && wabot_contexto_es_mayorista($contexto)) $variante = 'mayorista';
-
-    $campoDesc = $variante !== null ? 'desc_' . $variante : 'desc';
-    $desc = wabot_tipo_variante($tipo, $campoDesc, $conv, $cfg);
-    if ($desc === '' && $variante !== null) $desc = wabot_tipo_variante($tipo, 'desc', $conv, $cfg);
-    if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
-
-    $pregunta = wabot_pitch_pregunta_texto($tipo, $conv, $cfg);
-
-    $base = wabot_plantilla_variante('msg_pitch', 'msg_pitch_variantes', $conv, $cfg);
-    return trim(str_replace(['{desc}', '{pregunta}'], [$desc, $pregunta], $base));
-}
-
 /**
  * El precio+desc del turno del pitch. Si el tipo tiene un texto fijo dictado
  * por Pablo (precio_ideal), es ese con {precio} resuelto; si no —institucional,
@@ -4464,23 +4361,14 @@ function wabot_pitch_corresponde($tipo, $conv, $cfg) {
 }
 
 /**
- * Catálogo sigue con la pregunta sola (sin precio: depende de la cantidad).
- * El resto de los tipos ya tiene un precio fijo que no depende de nada, así
- * que sale en este mismo turno junto con la pregunta del pitch —dos mensajes
- * separados, el segundo llega aparte unos segundos después (ver 'aparte' en
- * agente.php)— en vez de esperar a que conteste para recién ahí cotizar.
+ * El turno del precio: cada tipo tiene un precio fijo que no depende de nada,
+ * así que sale acá mismo —dos mensajes separados, el segundo llega aparte unos
+ * segundos después (ver 'aparte' en agente.php)— en vez de esperar a que el
+ * cliente conteste una pregunta para recién ahí cotizar.
  */
 function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['tipo'] = $tipo;
     wabot_handoff_aclaracion_resuelta($conv);
-
-    if ($tipo === 'catalogo') {
-        $conv['fase'] = 'pitch';
-        $conv['pitch_hecho'] = true;
-        $conv['pitch_tipo'] = $tipo;
-        wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
-        return [wabot_pitch_texto($tipo, $conv, $cfg)];
-    }
 
     $precioTexto = wabot_pitch_precio_texto($tipo, $cfg, $conv);
     $conv['pitch_hecho'] = true;
