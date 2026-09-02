@@ -1629,6 +1629,15 @@ body.embed { min-height: 0; }
         <div class="card">
             <h2 style="margin-top:0">Apertura</h2>
             <label>Primer mensaje (menú)</label><textarea name="menu" rows="4"><?= $e($cfg['menu']) ?></textarea>
+            <?php $problemasTextos = wabot_textos_problemas($cfg); ?>
+            <?php if ($problemasTextos): ?>
+                <div style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);border-radius:10px;padding:10px 12px;margin-bottom:12px">
+                    <strong style="color:#F59E0B;font-size:13px">Revisar: el turno del precio tiene textos que no van a salir bien</strong>
+                    <ul style="margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.6">
+                        <?php foreach ($problemasTextos as $pt): ?><li><?= htmlspecialchars($pt, ENT_QUOTES, 'UTF-8') ?></li><?php endforeach; ?>
+                    </ul>
+                </div>
+            <?php endif; ?>
             <label>Qué es cada una (si pregunta)</label><textarea name="def_tipos" rows="3"><?= $e($cfg['def_tipos']) ?></textarea>
             <label>Algo diferente</label><textarea name="contame" rows="2"><?= $e($cfg['contame']) ?></textarea>
             <label>Ya contó qué ofrece, pero falta definir el objetivo</label><textarea name="aclarar_objetivo" rows="2"><?= $e($cfg['aclarar_objetivo'] ?? '') ?></textarea>

@@ -187,6 +187,21 @@ function wabot_config_load() {
     if (!isset($cfg['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = 16;
     if (!isset($cfg['demora_minima']))         $cfg['demora_minima']         = 2;
     if (!isset($cfg['demora_maxima']))         $cfg['demora_maxima']         = 7;
+    wabot_config_migrar($cfg);
+
+    return $cfg;
+}
+
+/**
+ * La cadena de migraciones, aparte de la carga.
+ *
+ * Separada para poder correrla contra una config ARMADA A MANO: la de
+ * producción la reescribe el panel y diverge de la local, así que la única
+ * forma de probar que un texto viejo converge es reproducirlo y pasarlo por
+ * acá. Sin esto, los tests medían la config local —que ya estaba bien— y el
+ * bot seguía diciendo lo de agosto en WhatsApp.
+ */
+function wabot_config_migrar(&$cfg) {
     wabot_config_partir_precio($cfg);
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
@@ -195,11 +210,11 @@ function wabot_config_load() {
     wabot_config_pitch_encaje($cfg);
     wabot_config_postdemo_sin_venta($cfg);
     wabot_config_pide_llamada($cfg);
-    // Último: las funciones de arriba reescriben plantillas de precio buscando
-    // textos exactos, y la línea del portfolio las dejaría sin match.
+    // Anteúltimo: las funciones de arriba reescriben plantillas de precio
+    // buscando textos exactos, y la línea del portfolio las dejaría sin match.
     wabot_config_portfolio($cfg);
-
-    return $cfg;
+    // Y al final, la red que no depende de adivinar la redacción vieja.
+    wabot_config_sin_frases_retiradas($cfg);
 }
 
 /** Circuit breaker compartido: evita duplicar llamadas cuando Gemini ya falló. */
@@ -591,12 +606,23 @@ function wabot_config_ventas(&$cfg) {
     // ("Para las gorras, lo ideal sería..."): {rubro} lo llena el modelo como
     // argumento de dar_precio y lo valida wabot_rubro_valido(); sin rubro, la
     // cláusula se saca sola (wabot_aplicar_rubro). Ver wabot_config_pitch_rubro().
+    /* SIEMPRE el del código, no solo cuando está vacío.
+     *
+     * precio_ideal NO se edita desde el panel: no hay campo. Pero se guardaba
+     * en bot-config.json y las migraciones lo respetaban salvo que coincidiera
+     * EXACTO con una lista de textos viejos. Producción tenía una redacción que
+     * no estaba en esa lista, así que el mensaje del precio se quedó en la
+     * versión de agosto: con la línea del portfolio y sin el link del
+     * presupuesto (Pablo, 2-sep: "a veces sigue diciendo lo de portfolio").
+     *
+     * Un texto que Pablo no puede editar no tiene por qué sobrevivir a un
+     * deploy. Lo edita el código y punto. Lo que sí edita del panel —el precio
+     * y el link de cada tipo— entra por {precio} y {link}, así que no se pisa. */
     $precioIdealPorTipo = wabot_precio_ideal_defaults();
     foreach ($precioIdealPorTipo as $tipoPI => $textoPI) {
         if (!isset($cfg['tipos'][$tipoPI])) continue;
-        if (trim((string)($cfg['tipos'][$tipoPI]['precio_ideal'] ?? '')) === '') {
-            $cfg['tipos'][$tipoPI]['precio_ideal'] = $textoPI;
-        }
+        $cfg['tipos'][$tipoPI]['precio_ideal'] = $textoPI;
+        unset($cfg['tipos'][$tipoPI]['precio_ideal_variantes']);
     }
 
     $preguntaVariantes = [
@@ -1261,16 +1287,13 @@ Completás este formulario con algunos datos de tu negocio y armamos una primera
 Solo completá este formulario, no te lleva un minuto: {link}
 En menos de 24 horas la tenés lista.",
     ];
-    if (in_array(trim((string)($cfg['prediseno_link'] ?? '')), $linksViejos, true) || trim((string)($cfg['prediseno_link'] ?? '')) === '') {
-        $cfg['prediseno_link'] = $linkNuevo;
-    }
-    if (!empty($cfg['prediseno_link_variantes']) && is_array($cfg['prediseno_link_variantes'])) {
-        $cfg['prediseno_link_variantes'] = array_values(array_filter(
-            $cfg['prediseno_link_variantes'],
-            function ($v) use ($linksViejos) { return !in_array(trim((string)$v), $linksViejos, true); }
-        ));
-    }
-    if (empty($cfg['prediseno_link_variantes'])) $cfg['prediseno_link_variantes'] = [$linkNuevo];
+    /* Igual que precio_ideal: prediseno_link tampoco se edita desde el panel,
+     * así que lo manda el código. Con la lista de textos viejos, producción se
+     * quedó con una redacción que no estaba en la lista y el cliente no recibía
+     * el link del formulario. $linksViejos queda como registro de por dónde
+     * pasó el texto, pero ya no decide nada. */
+    $cfg['prediseno_link'] = $linkNuevo;
+    $cfg['prediseno_link_variantes'] = [$linkNuevo];
 
 
     /* info.pago sin montos de cuota: los que estaban guardados se migran. El
@@ -1843,10 +1866,33 @@ function wabot_oferta_demo_defaults() {
  * retiran al cargar la config, vengan del panel o del mapa de migraciones
  * viejas de wabot_config_ventas().
  */
+/**
+ * Las frases que Pablo mandó sacar el 2-sep, textual: "SACÁ TODO lo que sea de
+ * 'si te cierra', 'si va por ahí', 'si te sirve', es ridículo".
+ *
+ * Detecta por contenido y no por texto exacto: una lista de redacciones viejas
+ * solo sirve para las que uno ya conoce, y producción siempre tiene alguna que
+ * no está en la lista. Eso es lo que dejó al bot pidiendo permiso para avanzar
+ * después de que la línea se eliminara del código.
+ */
+function wabot_frase_retirada($texto) {
+    $t = mb_strtolower(trim((string)$texto), 'UTF-8');
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\bsi te (sirve|cierra|interesa|convence|copa)\b'
+      . '|\bsi (te )?va por ah[ií]\b'
+      . '|\bbuscabas algo as[ií]\b'
+      . '|\bte cuento (el pr[oó]ximo paso|c[oó]mo seguimos)\b'
+      . '|\bprimero la ves,? despu[eé]s decid[ií]s\b/u',
+        $t
+    );
+}
+
 function wabot_oferta_demo_retirada($texto) {
     $t = trim((string)$texto);
     if ($t === '') return false;
     if (mb_stripos($t, 'muestra') !== false) return true;
+    if (wabot_frase_retirada($t)) return true;
     return in_array($t, [
         'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?',
         'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?',
@@ -1945,8 +1991,13 @@ function wabot_config_pitch_rubro(&$cfg) {
     }
 
     // El que se va comparando y ya tiene precio: una sola mención de la demo.
-    if (trim((string)($cfg['cierre_comparando'] ?? '')) === '') {
-        $cfg['cierre_comparando'] = 'Dale. Si te sirve para comparar, te armamos la demo de tu web gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.';
+    /* Sin "si te sirve" y sin prometer la web hecha: las dos cosas que Pablo
+     * marcó el 2-sep, y este texto las tenía juntas. */
+    $cierreComparandoNuevo = 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.';
+    if (trim((string)($cfg['cierre_comparando'] ?? '')) === ''
+        || wabot_frase_retirada((string)$cfg['cierre_comparando'])
+        || mb_stripos((string)$cfg['cierre_comparando'], 'te armamos la demo de tu web') !== false) {
+        $cfg['cierre_comparando'] = $cierreComparandoNuevo;
     }
 
     // La apertura del anuncio contesta con el rango real en vez de "depende".
@@ -2284,6 +2335,108 @@ function wabot_tipo_ofrecible($tipo, $cfg) {
     return in_array((string)$tipo, wabot_tipos_ofrecibles($cfg), true);
 }
 
+/**
+ * Red final: ningún texto editable del turno del precio sale con una frase
+ * retirada.
+ *
+ * Las migraciones de arriba comparan contra listas de textos viejos exactos, y
+ * eso falla justo donde importa: la config de producción la reescribe el panel
+ * y termina con redacciones que ninguna lista conoce. El bot quedó pidiendo
+ * permiso para avanzar semanas después de que la línea se sacara del código.
+ * Acá el criterio es el contenido, así que no hay redacción que se escape.
+ */
+function wabot_config_sin_frases_retiradas(&$cfg) {
+    $ofertas = wabot_oferta_demo_defaults();
+    if (wabot_frase_retirada((string)($cfg['msg_prediseno_oferta'] ?? ''))) {
+        $cfg['msg_prediseno_oferta'] = $ofertas[0];
+    }
+    if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $limpias = array_values(array_filter($cfg['msg_prediseno_oferta_variantes'], function ($v) {
+            return !wabot_frase_retirada((string)$v);
+        }));
+        $cfg['msg_prediseno_oferta_variantes'] = $limpias ?: $ofertas;
+    }
+    if (wabot_frase_retirada((string)($cfg['cta_muestra'] ?? ''))) {
+        $cfg['cta_muestra'] = 'Querés que mientras tanto te vaya preparando la demo gratis? Es sin compromiso.';
+    }
+    /* Nunca se borra una clave: esta red corre ÚLTIMA, así que el default ya
+     * pasó y borrar deja el texto faltando en esta misma carga. Se sustituye
+     * por el de reemplazo, que es el que corresponde. */
+    $reemplazos = [
+        'cierre_comparando' => 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
+        'pitch_otra_idea'   => 'Contame qué tenías en mente y lo vemos.',
+    ];
+    foreach ($reemplazos as $k => $sano) {
+        if (isset($cfg[$k]) && is_string($cfg[$k]) && wabot_frase_retirada($cfg[$k])) {
+            $cfg[$k] = $sano;
+        }
+        $kv = $k . '_variantes';
+        if (!empty($cfg[$kv]) && is_array($cfg[$kv])) {
+            $limpias = array_values(array_filter($cfg[$kv], function ($v) {
+                return !wabot_frase_retirada((string)$v);
+            }));
+            $cfg[$kv] = $limpias ?: [$sano];
+        }
+    }
+}
+
+/**
+ * Qué está mal en los textos que salen al cotizar, en castellano.
+ *
+ * Existe porque el 2-sep el bot estuvo días diciendo la versión de agosto y no
+ * había forma de enterarse sin abrir un chat real: bot-config.json la reescribe
+ * el panel en el server, diverge de la local, y las migraciones solo pisaban lo
+ * que coincidía exacto con una lista de redacciones conocidas. Esto mira la
+ * FORMA que el flujo necesita, no una lista, así que avisa igual cuando la
+ * redacción es nueva.
+ *
+ * Devuelve una lista de problemas, vacía si está todo bien.
+ */
+function wabot_textos_problemas($cfg) {
+    $problemas = [];
+
+    foreach (wabot_tipos_ofrecibles($cfg) as $tipo) {
+        $etiqueta = trim((string)($cfg['tipos'][$tipo]['label'] ?? $tipo));
+        $texto = (string)($cfg['tipos'][$tipo]['precio_ideal'] ?? '');
+        if (trim($texto) === '') {
+            $problemas[] = "El mensaje del precio de $etiqueta está vacío.";
+            continue;
+        }
+        if (strpos($texto, '{link}') === false) {
+            $problemas[] = "El mensaje del precio de $etiqueta no lleva el link del presupuesto.";
+        }
+        if (strpos($texto, '{precio}') === false) {
+            $problemas[] = "El mensaje del precio de $etiqueta no lleva el precio.";
+        }
+        if (stripos($texto, 'portfolio') !== false) {
+            $problemas[] = "El mensaje del precio de $etiqueta todavía cuelga la línea del portfolio.";
+        }
+    }
+
+    if (empty($cfg['form_activo'])) {
+        $problemas[] = 'El formulario está apagado: el bot pide los datos por chat en vez de dar el link.';
+    }
+    if (strpos((string)($cfg['prediseno_link'] ?? ''), '{link}') === false) {
+        $problemas[] = 'El mensaje de la demo no lleva el link del formulario.';
+    }
+
+    $mira = ['msg_prediseno_oferta' => 'el ofrecimiento de la demo',
+             'cta_muestra' => 'el empujón después de una duda',
+             'cierre_comparando' => 'la despedida del que compara precios'];
+    foreach ($mira as $clave => $nombre) {
+        if (wabot_frase_retirada((string)($cfg[$clave] ?? ''))) {
+            $problemas[] = "En $nombre quedó una frase que pide permiso para avanzar (\"si te sirve\", \"si te cierra\", \"si va por ahí\").";
+        }
+        foreach ((array)($cfg[$clave . '_variantes'] ?? []) as $v) {
+            if (wabot_frase_retirada((string)$v)) {
+                $problemas[] = "Una variante de $nombre pide permiso para avanzar.";
+                break;
+            }
+        }
+    }
+    return $problemas;
+}
+
 function wabot_config_portfolio(&$cfg) {
     $base = trim((string)($cfg['portfolio_link_base'] ?? ''));
     if ($base === '') {
@@ -2553,6 +2706,23 @@ function wabot_lock_tomar($tel) {
 
 function wabot_lock_soltar($h) {
     if ($h) { @flock($h, LOCK_UN); @fclose($h); }
+}
+
+/**
+ * Igual que wabot_lock_tomar() pero reintentando un rato antes de rendirse.
+ *
+ * Para secciones cortas y compartidas por TODAS las conversaciones, como el
+ * índice de códigos del formulario: ahí el lock no lo pelea el mismo cliente
+ * consigo mismo, lo pelean dos leads distintos que entraron en el mismo
+ * segundo. Rendirse al primer intento le cambia el flujo a uno de los dos.
+ */
+function wabot_lock_tomar_esperando($tel, $intentos = 10, $esperaUs = 50000) {
+    for ($i = 0; $i < max(1, $intentos); $i++) {
+        $h = wabot_lock_tomar($tel);
+        if ($h) return $h;
+        usleep($esperaUs);
+    }
+    return null;
 }
 
 /**
@@ -2866,10 +3036,18 @@ function wabot_codigo_asignar(&$conv) {
         return $codigo;
     }
 
-    $lock = wabot_lock_tomar('CODIGOSIDX');
+    /* El índice de códigos es UNO para todas las conversaciones, así que el
+     * lock lo pelean dos leads distintos que entraron juntos, no el mismo
+     * cliente consigo mismo. Con LOCK_NB a secas, el segundo se quedaba sin
+     * código, wabot_form_link() devolvía '' y ESE cliente recibía la oferta
+     * sin el link del formulario: otro flujo, por una carrera de milisegundos.
+     * Es una de las razones del "a veces" que vio Pablo el 2-sep. */
+    $lock = wabot_lock_tomar_esperando('CODIGOSIDX');
     if (!$lock) {
         // Sin lock no se inventa un codigo: mejor no tenerlo que tener uno
-        // duplicado apuntando a otro cliente.
+        // duplicado apuntando a otro cliente. Pero que quede registrado: el
+        // cliente se va a llevar el camino sin formulario.
+        wabot_log('codigo_sin_lock', ['clave' => $clave]);
         return '';
     }
     try {

@@ -5203,9 +5203,9 @@ caso('y no vuelve la coletilla ", pago único." al final',
     stripos((string)$cfg['tipos']['landing']['precio_ideal'], ', pago único') === false);
 $cfgPU = wabot_config_load();
 $cfgPU['tipos']['landing']['precio_ideal'] = 'Lo ideal sería una landing. Tiene un precio de {precio}, pago único.';
-wabot_config_ventas($cfgPU);
-caso('un texto viejo con la coletilla sigue migrando',
-    stripos($cfgPU['tipos']['landing']['precio_ideal'], 'sin abono mensual') !== false);
+wabot_config_migrar($cfgPU);
+caso('un texto viejo del precio converge al que dictó Pablo, sea cual sea',
+    $cfgPU['tipos']['landing']['precio_ideal'] === $cfg['tipos']['landing']['precio_ideal']);
 
 echo "— Auditoría externa del 29-ago: lo que resultó real —\n";
 
@@ -6004,6 +6004,112 @@ caso('sin carpeta de media no hay imágenes',
 
 foreach (glob($carpetaImg . '/*') ?: [] as $f) @unlink($f);
 @rmdir($carpetaImg);
+
+echo "— 2-sep, producción: los textos del turno del precio no dependen de adivinar —\n";
+
+/* EL BUG QUE VIO PABLO EN WHATSAPP: el bot seguía diciendo lo de agosto.
+ *
+ * bot-config.json la reescribe el panel en el server, así que diverge de la
+ * local. Las migraciones pisaban el texto viejo SOLO si coincidía exacto con
+ * una lista de redacciones conocidas — y producción tenía otra. Resultado: el
+ * mensaje del precio se quedó con la línea del portfolio y sin el link del
+ * presupuesto, y la oferta seguía pidiendo permiso para avanzar.
+ *
+ * Se reproduce una config como la de producción y se comprueba que converja.
+ * Nada de esto se edita desde el panel, así que lo manda el código. */
+$cfgProd = [
+    'tipos' => [
+        'landing' => [
+            'label' => 'Landing', 'precio' => '$210.000', 'link' => 'gokywebs.com/presupuestos/Landing',
+            'precio_ideal' => 'Para {rubro}, lo ideal sería una landing bien armada que muestre lo que hacés. Tiene un precio de {precio}.
+Y acá podés ver otros trabajos que ya entregamos: gokywebs.com/portfolio/?tipo=landing',
+        ],
+        'ecommerce' => ['label' => 'Ecommerce', 'precio' => '$290.000', 'link' => 'gokywebs.com/presupuestos/ecommerce'],
+    ],
+    'prediseno_link' => 'Antes que nada te preparamos algo para que lo veas. Completá acá y arrancamos: {link}',
+    'msg_prediseno_oferta' => 'Si te sirve, te armamos la demo de tu web gratis. Avanzamos con eso?',
+    'msg_prediseno_oferta_variantes' => [
+        'Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.',
+        'Si te cierra, te la preparamos sin cargo. Querés?',
+    ],
+    'cta_muestra' => 'Si te sirve, te preparo la demo mientras tanto.',
+    'cierre_comparando' => 'Dale. Si te sirve para comparar, te armamos la demo de tu web gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
+];
+wabot_config_migrar($cfgProd);
+
+caso('el mensaje del precio queda igual al que dictó Pablo',
+    $cfgProd['tipos']['landing']['precio_ideal'] === $cfg['tipos']['landing']['precio_ideal']);
+caso('con el link del presupuesto adentro, que era lo que faltaba',
+    strpos((string)$cfgProd['tipos']['landing']['precio_ideal'], '{link}') !== false);
+caso('y sin la línea del portfolio, ni con marcador ni ya resuelta',
+    stripos((string)$cfgProd['tipos']['landing']['precio_ideal'], 'portfolio') === false);
+/* El precio SÍ lo edita Pablo desde el panel, así que no se toca: solo la
+ * migración de un uso del 2-sep convierte los valores viejos conocidos
+ * ($160.000 y $200.000) al nuevo. Un valor propio se respeta. */
+caso('el precio que Pablo edita desde el panel NO se pisa',
+    $cfgProd['tipos']['landing']['precio'] === '$210.000');
+
+caso('el mensaje del formulario también converge',
+    $cfgProd['prediseno_link'] === $cfg['prediseno_link']
+    && strpos((string)$cfgProd['prediseno_link'], '{link}') !== false);
+caso('y sus variantes no arrastran la redacción vieja',
+    $cfgProd['prediseno_link_variantes'] === $cfg['prediseno_link_variantes']);
+
+caso('ningún texto del turno del precio queda pidiendo permiso para avanzar',
+    (function () use ($cfgProd) {
+        $todos = [$cfgProd['msg_prediseno_oferta'], $cfgProd['cta_muestra'], $cfgProd['cierre_comparando']];
+        foreach ((array)$cfgProd['msg_prediseno_oferta_variantes'] as $v) $todos[] = $v;
+        foreach ($todos as $t) if (wabot_frase_retirada((string)$t)) return false;
+        return true;
+    })());
+caso('y ninguno queda vacío por haberlo limpiado',
+    trim((string)$cfgProd['msg_prediseno_oferta']) !== ''
+    && trim((string)$cfgProd['cta_muestra']) !== ''
+    && trim((string)$cfgProd['cierre_comparando']) !== ''
+    && count((array)$cfgProd['msg_prediseno_oferta_variantes']) > 0);
+
+/* El detector va por contenido, no por lista: eso es lo que falló. */
+caso('"si te sirve" se detecta', wabot_frase_retirada('Te lo armamos si te sirve, decime.') === true);
+caso('"si te cierra" también', wabot_frase_retirada('Si te cierra avanzamos.') === true);
+caso('"si va por ahí" también', wabot_frase_retirada('Si va por ahí, seguimos.') === true);
+caso('pero "si te gusta y avanzás" no es lo mismo y se respeta',
+    wabot_frase_retirada('Si te gusta y avanzás, la dejamos lista.') === false);
+caso('ni la pregunta de después de la demo',
+    wabot_frase_retirada('Le cambiarías algo, o avanzamos para dejarla lista?') === false);
+
+/* El panel avisa cuando el turno del precio no va a salir bien, sin depender de
+ * conocer la redacción vieja: mira la FORMA que el flujo necesita. */
+caso('con la config al día no hay nada que avisar', wabot_textos_problemas($cfg) === []);
+
+$cfgRoto = $cfg;
+$cfgRoto['tipos']['landing']['precio_ideal'] = "Lo ideal sería una landing. Tiene un precio de {precio}.\nY acá podés ver otros trabajos: gokywebs.com/portfolio/?tipo=landing";
+$cfgRoto['prediseno_link'] = 'Completá acá y arrancamos.';
+$cfgRoto['msg_prediseno_oferta'] = 'Si te sirve, te la armamos. Avanzamos?';
+$avisos = wabot_textos_problemas($cfgRoto);
+caso('avisa que al mensaje del precio le falta el link del presupuesto',
+    (bool)array_filter($avisos, function ($a) { return stripos($a, 'link del presupuesto') !== false; }));
+caso('avisa que todavía cuelga el portfolio',
+    (bool)array_filter($avisos, function ($a) { return stripos($a, 'portfolio') !== false; }));
+caso('avisa que el mensaje de la demo no lleva el link del formulario',
+    (bool)array_filter($avisos, function ($a) { return stripos($a, 'link del formulario') !== false; }));
+caso('y avisa de la frase que pide permiso para avanzar',
+    (bool)array_filter($avisos, function ($a) { return stripos($a, 'pide permiso') !== false; }));
+
+$cfgSinForm = $cfg; $cfgSinForm['form_activo'] = false;
+caso('y si el formulario está apagado, también lo dice',
+    (bool)array_filter(wabot_textos_problemas($cfgSinForm), function ($a) { return stripos($a, 'apagado') !== false; }));
+
+/* El código del formulario no se pierde por una carrera entre dos leads. */
+$lockA = wabot_lock_tomar('CODIGOSIDXTEST');
+caso('con el lock tomado, el no-bloqueante se rinde en el acto',
+    wabot_lock_tomar('CODIGOSIDXTEST') === null);
+caso('y el que espera también se rinde, pero recién tras reintentar',
+    wabot_lock_tomar_esperando('CODIGOSIDXTEST', 2, 1000) === null);
+wabot_lock_soltar($lockA);
+$lockB = wabot_lock_tomar_esperando('CODIGOSIDXTEST', 2, 1000);
+caso('liberado, el que espera lo toma', $lockB !== null);
+wabot_lock_soltar($lockB);
+@unlink(WABOT_DATA . '/lock/CODIGOSIDXTEST.lock');
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
