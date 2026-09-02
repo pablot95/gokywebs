@@ -380,6 +380,13 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            /* Un monto de cuota no sale ni con herramienta: el bot no lo sabe
+             * (Pablo, 2-sep). Cae al motor de reglas, que dice lo correcto. */
+            if (wabot_texto_dice_monto_de_cuota($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'monto de cuota inventado', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             // Promesa de cierre sin cierre real: el modelo le dice al cliente que
             // ya quedó registrado / que lo van a contactar, pero no llamó a
             // ninguna herramienta terminal, así que NO hay lead ni boceto. Pasó
@@ -546,6 +553,25 @@ function wabot_texto_inventa_pago($texto, $pendientes) {
         if (preg_match($condiciones, wabot_normalizar_frase((string)$base))) return false;
     }
     return true;
+}
+
+/**
+ * ¿El texto dice cuánto sale UNA CUOTA? El bot no lo sabe y no puede saberlo:
+ * la tasa de la tarjeta cambia sola (Pablo, 2-sep: "eso varía mucho
+ * diariamente"). Un monto inventado es una condición comercial que después
+ * hay que sostener delante del cliente.
+ *
+ * Solo caza el monto PEGADO a la cuota: "$15.000 por mes" del plan de
+ * mantenimiento es legítimo y no tiene que caer acá.
+ */
+function wabot_texto_dice_monto_de_cuota($texto) {
+    $t = (string)$texto;
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\bcuotas?\b[^.\\n]{0,24}\$\s?\d/iu', $t)
+        || preg_match('/\$\s?\d[^.\\n]{0,24}\b(por|en|cada)\s+\d{1,2}\s*cuotas?\b/iu', $t)
+        || preg_match('/\d{1,2}\s*(x|por)\s*\$\s?\d/iu', $t)
+    );
 }
 
 function wabot_texto_promete_info_sin_entregar($texto) {
@@ -2243,7 +2269,8 @@ REGLAS QUE NO PODÉS ROMPER
 - La seña, el alias, el titular y el link de pago NO existen antes de presentar la demo. Si te preguntan cómo se paga, usá consultar_info('pago'); si te preguntan el monto de la seña, esa respuesta ya lo incluye. No lo ofrezcas por tu cuenta.
 - CUÁNDO SE PAGA es una pregunta de pago y va por consultar_info('pago') SIEMPRE, aunque el cliente lo escriba corto o con errores ("y después se abona?", "se paga antes o después?", "cómo es el pago?"). Nunca la contestes de memoria ni con lo que hayas leído más arriba en la charla: la respuesta sale de la herramienta y se manda con los montos que trae.
 - La seña NUNCA es un porcentaje. No existe "el 50%", ni "la mitad", ni ningún porcentaje del total: es un monto fijo según el tipo de web, el que te devuelve la herramienta, y el saldo se abona al entregar. Si escribís un porcentaje estás inventando una condición comercial que después hay que sostener. El 29-ago le dijiste a un cliente "una seña del 50% y el 50% restante al terminar" y eso no es lo que cobramos.
-- Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí, y nunca calcules el monto de cada cuota.
+- Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí.
+- EL MONTO DE UNA CUOTA NO EXISTE PARA VOS. Nunca lo digas, nunca lo calcules y nunca lo estimes, aunque tengas el precio total y te lo pidan de frente ("en cuánto me queda cada cuota?"). La tasa de la tarjeta cambia todo el tiempo y un número tuyo sería una condición comercial falsa. Lo que decís es que se puede en un pago o hasta en 12 cuotas con interés, y que el valor de cada cuota lo calcula la tarjeta sobre el total: eso ya viene en el texto de consultar_info('pago'), mandalo tal cual.
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por una respuesta de relleno.
 - "Lo tengo que pensar" NO es lo mismo que "solo estaba averiguando", "más adelante", "ahora no tengo presupuesto" o "no me interesa". En esas cuatro salidas llamá a cerrar_sin_presion: cerrá cordialmente, no ofrezcas la demo, no hagas otra pregunta y no intentes recuperar la venta.
 - Dudar del VALOR tampoco es querer irse: "no sé si vale la pena", "no sé si me conviene", "no sé si la necesito", "¿realmente sirve?" son objeciones, no despedidas. NUNCA las contestes con cerrar_sin_presion — despedir a alguien que todavía está evaluando tira la venta sin que él lo haya pedido. Si duda porque ya tiene página, es manejar_objecion('ya_tiene_web'); si duda en general, contestale la duda y ofrecele la demo gratis, que es justo lo que existe para que no tenga que decidir a ciegas.
