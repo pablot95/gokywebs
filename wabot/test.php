@@ -5849,5 +5849,27 @@ $rSL3 = wabot_engine('ok, gracias', $cSL2, $cfg);
 caso('y contesta una línea de espera en vez del link',
     strpos(implode(' ', $rSL3), 'gokywebs.com/form/') === false);
 
+echo "— 2-sep: el link del formulario sale una vez, salvo que lo pidan —
+";
+
+$cLink = ['link_form_enviado' => true];
+foreach (['ah ok, dale lo completo', 'gracias', 'perfecto', 'ok'] as $acuse) {
+    caso("\"$acuse\" no hace repetir el link", wabot_link_form_ya_enviado($cLink, $acuse) === true);
+}
+/* Pero el que lo pide lo recibe: una contadora preguntó "y la demo esa cómo
+ * es? me la podés hacer?" y se llevó "cuando completes el formulario
+ * arrancamos" (batería del 2-sep). */
+foreach ([
+    'y la demo esa como es? me la podes hacer?',
+    'y la demo como funciona?',
+    'mandamelo de nuevo',
+    'no me llega el link',
+    'quiero la demo',
+] as $pide) {
+    caso("\"$pide\" sí vuelve a mandar el link", wabot_link_form_ya_enviado($cLink, $pide) === false);
+}
+caso('y con el lead ya creado el guard no aplica',
+    wabot_link_form_ya_enviado(['link_form_enviado' => true, 'lead_creado' => true], 'hola') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

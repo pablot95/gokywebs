@@ -3158,8 +3158,24 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
  * sacar. El que pide que se lo repitan tiene su propio camino
  * (wabot_pide_repetir).
  */
-function wabot_link_form_ya_enviado($conv) {
-    return !empty($conv['link_form_enviado']) && empty($conv['lead_creado']);
+function wabot_link_form_ya_enviado($conv, $texto = '') {
+    if (empty($conv['link_form_enviado']) || !empty($conv['lead_creado'])) return false;
+    /* Salvo que lo esté pidiendo: "me la podés hacer?", "mandámelo de nuevo",
+     * "no me llega el link". Ahí callarse es peor que repetir — una contadora
+     * preguntó "y la demo esa cómo es? me la podés hacer?" y se llevó
+     * "cuando completes el formulario arrancamos" (batería del 2-sep). */
+    $t = trim((string)$texto);
+    if ($t === '') return true;
+    // Los dos detectores viven en engine.php: lib.php se carga solo en los
+    // crons y en el form, donde esto igual no corre.
+    if (function_exists('wabot_pide_repetir') && wabot_pide_repetir($t)) return false;
+    if (function_exists('wabot_pidio_demo_explicita') && wabot_pidio_demo_explicita($t)) return false;
+    $n = wabot_normalizar_frase($t);
+    if (preg_match('/\b(demo|muestra|formulario|link|enlace)\b/u', $n)
+        && preg_match('/\b(como es|que es|en que consiste|como funciona|me la (podes|podrias|pueden) (hacer|armar)|la (podes|podrias|pueden) (hacer|armar)|hacela|armala|quiero|dale)\b/u', $n)) {
+        return false;
+    }
+    return true;
 }
 
 function wabot_prediseno_texto(&$conv, $cfg) {

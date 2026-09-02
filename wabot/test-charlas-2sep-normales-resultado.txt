@@ -1,0 +1,67 @@
+Bateria conversacional wabot — 3 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO N1 — Ropa de ninos: el caso mas comun del export, con la pregunta del abono
+ESPERADO: Ecommerce $290.000 nombrando el rubro + link del presupuesto, la demo con el formulario 2 segundos despues, la pregunta del abono contestada con el mantenimiento del tipo cotizado, y sin repetir el link.
+>>> CLIENTE: Quiero una página web para mi negocio 💻
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Vendo. Ropa. De niño y niña
+<<< BOT [336c]: Perfecto, para la ropa de niño y niña sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=ZN
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y el abono mensual cuanto es
+<<< BOT [332c]: El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Sale $15.000 por mes y acá lo podés ver en detalle: gokywebs.com/mantenimientoweb
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: ah ok, dale lo completo
+<<< BOT [104c]: Perfecto, cuando completes el formulario arrancamos con tu propuesta. Cualquier duda, escribime por acá.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N2 — Plomero: sitio profesional, cuanto tarda y como se paga
+ESPERADO: Sitio profesional $180.000 sin ninguna pregunta de turnos, con su link. Las dos preguntas (plazos y pago) contestadas de verdad, sin derivar al desarrollador y sin inventar porcentajes.
+>>> CLIENTE: ¿Cuánto cuesta hacer mi página web? 💰
+<<< BOT [122c]: Entre $180.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy plomero matriculado, trabajo en zona sur
+<<< BOT [308c]: Perfecto, para la plomería sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=BG
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: cuanto tardan en hacerla?
+<<< BOT [163c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. La demo gratis de todas formas la tenés en menos de 24 horas desde que pasás los datos.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y como se paga?
+<<< BOT [253c]: El desarrollo completo es $180.000. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de $20.135, 6 de $33.557 o 3 de $60.957. Para arrancar se deja una seña de $40.000 y el saldo al entregar la web.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO N3 — Le parece caro y despues pide la demo igual
+ESPERADO: Contadora -> sitio profesional. 'Es caro' recibe el argumento del pago unico (no cuotas inventadas ni descuentos). Despues pide la demo y recibe el formulario, sin repetirle el precio.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy contadora, tengo estudio propio
+<<< BOT [316c]: Perfecto, para el estudio contable sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=DN
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: uh, me parece caro la verdad
+<<< BOT [226c]: Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas. En el link del presupuesto tenés el detalle de todo lo que incluye.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y la demo esa como es? me la podes hacer?
+<<< BOT [104c]: Perfecto, cuando completes el formulario arrancamos con tu propuesta. Cualquier duda, escribime por acá.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

@@ -2264,7 +2264,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             /* Con el formulario ya mandado no se vuelve a mandar: el cliente lo
              * vio. Repetir el mismo link cada vez que escribe es insistir. */
-            if (wabot_link_form_ya_enviado($conv)) {
+            if (wabot_link_form_ya_enviado($conv, $texto)) {
                 return [(string)($cfg['prediseno_espera'] ?? 'Perfecto, quedo atento a que lo completes y arrancamos.')];
             }
             if (!empty($conv['descripcion']) && empty($conv['colores'])) $pedido = (string)$cfg['prediseno_falta_colores'];
@@ -2958,7 +2958,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             elseif ($conv['colores'] !== null)      { $pedido = $cfg['prediseno_falta_descripcion']; }
             elseif (!$out)                          { $pedido = wabot_prediseno_texto($conv, $cfg); }
             else                                    { $pedido = null; }
-            if ($pedido !== null && wabot_link_form_ya_enviado($conv)) {
+            if ($pedido !== null && wabot_link_form_ya_enviado($conv, $texto)) {
                 $pedido = $out ? null : (string)($cfg['prediseno_espera'] ?? 'Perfecto, quedo atento a que lo completes y arrancamos.');
             }
             if ($pedido !== null) {

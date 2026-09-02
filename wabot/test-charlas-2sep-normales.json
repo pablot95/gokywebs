@@ -1,0 +1,38 @@
+[
+  {
+    "id": "N1",
+    "titulo": "Ropa de ninos: el caso mas comun del export, con la pregunta del abono",
+    "esperado": "Ecommerce $290.000 nombrando el rubro + link del presupuesto, la demo con el formulario 2 segundos despues, la pregunta del abono contestada con el mantenimiento del tipo cotizado, y sin repetir el link.",
+    "nombre": "Vanesa",
+    "turnos": [
+      "Quiero una página web para mi negocio 💻",
+      "Vendo. Ropa. De niño y niña",
+      "Y el abono mensual cuanto es",
+      "ah ok, dale lo completo"
+    ]
+  },
+  {
+    "id": "N2",
+    "titulo": "Plomero: sitio profesional, cuanto tarda y como se paga",
+    "esperado": "Sitio profesional $180.000 sin ninguna pregunta de turnos, con su link. Las dos preguntas (plazos y pago) contestadas de verdad, sin derivar al desarrollador y sin inventar porcentajes.",
+    "nombre": "Enrique",
+    "turnos": [
+      "¿Cuánto cuesta hacer mi página web? 💰",
+      "Soy plomero matriculado, trabajo en zona sur",
+      "cuanto tardan en hacerla?",
+      "y como se paga?"
+    ]
+  },
+  {
+    "id": "N3",
+    "titulo": "Le parece caro y despues pide la demo igual",
+    "esperado": "Contadora -> sitio profesional. 'Es caro' recibe el argumento del pago unico (no cuotas inventadas ni descuentos). Despues pide la demo y recibe el formulario, sin repetirle el precio.",
+    "nombre": "Marisa",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Soy contadora, tengo estudio propio",
+      "uh, me parece caro la verdad",
+      "y la demo esa como es? me la podes hacer?"
+    ]
+  }
+]
