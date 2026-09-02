@@ -691,6 +691,38 @@ function initCapitulo() {
 
 /* ---------- hero ---------- */
 
+function initLeeScroll() {
+  const els = document.querySelectorAll('[data-lee]');
+  if (!els.length) return;
+  els.forEach(el => {
+    const palabras = el.textContent.trim().split(/\s+/);
+    if (palabras.length < 2) return;
+    el.textContent = '';
+    palabras.forEach((palabra, i) => {
+      const s = document.createElement('span');
+      s.className = 'lee-w';
+      s.textContent = palabra;
+      el.appendChild(s);
+      if (i < palabras.length - 1) el.appendChild(document.createTextNode(' '));
+    });
+  });
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined' || reduceMotion) {
+    document.querySelectorAll('.lee-w').forEach(w => w.classList.add('on'));
+    return;
+  }
+  els.forEach(el => {
+    const ws = el.querySelectorAll('.lee-w');
+    if (!ws.length) return;
+    ScrollTrigger.create({
+      trigger: el, start: 'top 82%', end: 'bottom 55%', scrub: .4, invalidateOnRefresh: true,
+      onUpdate: self => {
+        const hasta = self.progress * ws.length;
+        ws.forEach((w, i) => w.classList.toggle('on', i < hasta));
+      },
+    });
+  });
+}
+
 function initHero() {
   if (typeof gsap === 'undefined' || reduceMotion) return;
   const arco = document.querySelector('.hero-arco img');
@@ -768,6 +800,7 @@ initModal();
 initFloats();
 initCapitulo();
 initHero();
+initLeeScroll();
 initJsonLd();
 updateCartBadge();
 document.addEventListener('cart:updated', updateCartBadge);

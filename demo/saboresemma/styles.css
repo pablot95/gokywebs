@@ -886,6 +886,12 @@ body.no-scroll .floats, body.drawer-open .floats { opacity: 0; pointer-events: n
 @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(.95) } }
 @keyframes toast-out { to { opacity: 0; transform: translateY(10px) scale(.96) } }
 
+/* ---------- texto que se lee con el scroll ---------- */
+
+.lee-w { color: var(--color-text-muted); transition: color .4s var(--ease-out); }
+.lee-w.on { color: var(--color-text); }
+@media (prefers-reduced-motion: reduce) { .lee-w { color: var(--color-text); transition: none } }
+
 /* ---------- reveals ---------- */
 
 [data-animate] { transition: opacity .8s var(--ease-rev), transform .8s var(--ease-rev), clip-path .9s var(--ease-rev); }
