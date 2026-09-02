@@ -1789,5 +1789,30 @@ caso('un monto no', wabot_agente_prefijo_humano('Quedaría en $50.000 la seña.'
 caso('vacío o largo no',
     wabot_agente_prefijo_humano('', $term, $cfg) === $term && wabot_agente_prefijo_humano(str_repeat('qué bueno ', 20), $term, $cfg) === $term);
 
+echo "— 2-sep: el bot no dice montos de cuota —
+";
+
+/* "El bot no debería saber el valor de las cuotas, eso varía mucho
+ * diariamente" (Pablo). El monto no sale ni aunque haya corrido la herramienta:
+ * el texto oficial dice que lo calcula la tarjeta. */
+foreach ([
+    'Se puede en 12 cuotas de $20.135',
+    '12 cuotas de $20.135, 6 de $33.557 o 3 de $60.957',
+    'cada cuota te queda en $25.000',
+    'son 12x $15.000',
+] as $conMonto) {
+    caso('"' . mb_substr($conMonto, 0, 38) . '..." se bloquea', wabot_texto_dice_monto_de_cuota($conMonto) === true);
+}
+foreach ([
+    'Se puede abonar en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.',
+    'El mantenimiento sale $15.000 por mes',
+    'El desarrollo completo es $180.000. Para arrancar se deja una seña de $40.000 y el saldo al entregar.',
+    'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas.',
+] as $sinMonto) {
+    caso('"' . mb_substr($sinMonto, 0, 38) . '..." pasa', wabot_texto_dice_monto_de_cuota($sinMonto) === false);
+}
+caso('y el texto oficial de pago no trae ningún monto de cuota',
+    wabot_texto_dice_monto_de_cuota(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg)) === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
