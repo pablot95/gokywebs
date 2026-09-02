@@ -1668,6 +1668,12 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                         'nota'  => 'No mandes un mensaje vacío. Si otra clave contesta lo que preguntó, usá esa. Si no la hay, decile que ese detalle se lo confirma el desarrollador cuando le escriba, en UNA línea.'];
             }
             if ($txt === '') $txt = (string)($cfg['info']['otra'] ?? '');
+            /* Por wabot_texto_info(), no en crudo: es la que resuelve {precio}
+             * de info.bilingue y {min}/{max} de info.precio_sin_rubro. Sin esto
+             * el cliente que pregunta "cuánto cuesta?" recibía literalmente
+             * "Entre {min} y {max}" (auditoría del 2-sep). */
+            $txtResuelto = trim(wabot_texto_info($clave, $cfg));
+            if ($txtResuelto !== '') $txt = $txtResuelto;
             return wabot_agente_agregar_cta([
                 'texto' => $txt,
                 'nota' => 'Contestá con esta información y nada más.',

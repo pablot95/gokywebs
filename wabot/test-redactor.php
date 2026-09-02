@@ -369,10 +369,13 @@ foreach (['fijo', 'natural', 'agente'] as $modoCmp) {
     $convCarrito['fase'] = 'prediseno'; $convCarrito['tipo'] = 'ecommerce';
     $convCarrito['precio_dado'] = true; $convCarrito['cta_muestra'] = true;
     $rCarrito = wabot_responder('Sale lo mismo con carrito?', $convCarrito, $cfgCmp);
-    caso("modo $modoCmp: \"sale lo mismo con carrito\" trae los dos precios",
-        count($rCarrito) === 1
-        && strpos($rCarrito[0], (string)$cfgCmp['tipos']['ecommerce']['precio']) !== false
-        && stripos($rCarrito[0], 'catálogo') !== false);
+    /* Desde el 2-sep, con catálogo retirado, la respuesta es una sola: la
+     * tienda ya trae las dos formas. Lo que no cambia es que se contesta,
+     * en un solo mensaje y sin pasar por el modelo. */
+    caso("modo $modoCmp: \"sale lo mismo con carrito\" se contesta en un mensaje",
+        count($rCarrito) === 1 && trim($rCarrito[0]) !== '');
+    caso("modo $modoCmp: y no cotiza el catálogo retirado",
+        stripos($rCarrito[0], 'catálogo:') === false && strpos($rCarrito[0], '$500') === false);
     caso("modo $modoCmp: y no contesta con el detalle de cuotas",
         stripos($rCarrito[0], 'cuotas de') === false && stripos($rCarrito[0], 'seña') === false);
 

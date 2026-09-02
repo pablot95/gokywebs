@@ -4288,26 +4288,22 @@ echo "\n— \"Costos?\" en medio de un desempate: los dos precios, no el rango (
 // Pediatría ya había dicho el rubro y estaba contestando la pregunta de turnos.
 // Preguntó "Costos?" y el bot volvió al rango genérico rematando con "contame a
 // qué te dedicás": tiró a la basura todo lo que ya sabía.
-$dosTurnos = wabot_desempate_precios_texto('desempate_turnos', $cfg);
-caso('el desempate de turnos contesta con los dos precios reales',
-    strpos($dosTurnos, (string)$cfg['tipos']['landing']['precio']) !== false
-    && strpos($dosTurnos, (string)$cfg['tipos']['turnos']['precio']) !== false);
+/* Sigue valiendo para el desempate que quedó vivo: el de cursos. */
+$dosCursos = wabot_desempate_precios_texto('desempate_cursos', $cfg);
+caso('el desempate de cursos contesta con los dos precios reales',
+    strpos($dosCursos, (string)$cfg['tipos']['landing']['precio']) !== false
+    && strpos($dosCursos, (string)$cfg['tipos']['elearning']['precio']) !== false);
 caso('y NO vuelve a pedir el rubro',
-    stripos($dosTurnos, 'a qué te dedicás') === false && stripos($dosTurnos, 'rubro') === false);
-caso('el de comercio hace lo mismo con catálogo y ecommerce',
-    strpos(wabot_desempate_precios_texto('desempate_comercio', $cfg), (string)$cfg['tipos']['ecommerce']['precio']) !== false
-    && strpos(wabot_desempate_precios_texto('desempate_comercio', $cfg), (string)$cfg['tipos']['catalogo']['precio']) !== false);
-caso('el de cursos, con landing y plataforma',
-    strpos(wabot_desempate_precios_texto('desempate_cursos', $cfg), (string)$cfg['tipos']['elearning']['precio']) !== false);
+    stripos($dosCursos, 'a qué te dedicás') === false && stripos($dosCursos, 'rubro') === false);
 caso('fuera de un desempate no aplica', wabot_desempate_precios_texto('precio', $cfg) === null);
 
-$cPedi = conv_nueva(); $cPedi['fase'] = 'desempate_turnos';
-clasifica(['pregunta_info'], ['info_keys' => ['rangos']]);
-$rPedi = wabot_engine('Costos?', $cPedi, $cfg);
-caso('de punta a punta: preguntar el costo en el desempate trae las dos opciones',
-    strpos($rPedi[0], (string)$cfg['tipos']['landing']['precio']) !== false
-    && strpos($rPedi[0], (string)$cfg['tipos']['turnos']['precio']) !== false
-    && stripos($rPedi[0], 'a qué te dedicás') === false);
+/* Pero un desempate con un tipo RETIRADO no dice ningún precio: decía
+ * "$200.000 si los reservan solos desde la web", el cliente elegía esa y
+ * recibía el sitio profesional a $180.000 (auditoría del 2-sep). */
+caso('el desempate de turnos ya no cotiza: turnos está retirado',
+    wabot_desempate_precios_texto('desempate_turnos', $cfg) === null);
+caso('ni el de comercio, con catálogo retirado',
+    wabot_desempate_precios_texto('desempate_comercio', $cfg) === null);
 
 echo "\n— El listado de datos se pide una vez; después, silencio (27-ago) —\n";
 
@@ -5481,13 +5477,6 @@ caso('pero "Dale" y un link pelado pasan',
 caso('y wabot_salida_limpiar los descarta',
     wabot_salida_limpiar(['opaulosegundo']) === []);
 
-caso('"no vendo online, solo mostrar" baja a catálogo',
-    wabot_texto_solo_mostrar('no quiero vender online, solo mostrar el catalogo y que me consulten por whatsapp') === true);
-caso('"que vean el menú y me hagan el pedido por whatsapp" también',
-    wabot_texto_solo_mostrar('queria que la gente vea el menu y me haga el pedido por whatsapp') === true);
-caso('pero vender online o el mayorista de revendedores NO',
-    wabot_texto_solo_mostrar('quiero que compren y paguen desde la pagina') === false
-    && wabot_texto_solo_mostrar('vendo indumentaria al por mayor a revendedores') === false);
 
 caso('"es bastante para mí ahora" es la objeción de precio',
     wabot_texto_objecion_precio_suave('uh, es bastante para mi ahora la verdad') === true);
@@ -5873,6 +5862,43 @@ foreach ([
 }
 caso('y con el lead ya creado el guard no aplica',
     wabot_link_form_ya_enviado(['link_form_enviado' => true, 'lead_creado' => true], 'hola') === false);
+
+echo "— 2-sep, auditoría: ningún camino cotiza un tipo retirado —
+";
+
+/* Cuatro caminos distintos le seguían poniendo precio a catálogo, turnos o
+ * institucional. Los cuatro pasan ahora por wabot_tipo_ofrecible(). */
+caso('"cuánto sale una web institucional?" no cotiza: el tipo se retiró',
+    wabot_texto_pregunta_precio_de_tipo('cuanto sale una web institucional?', $cfg, 'landing') === null);
+caso('ni "y con turnos cuánto sale?"',
+    wabot_texto_pregunta_precio_de_tipo('y con turnos cuanto sale?', $cfg, 'landing') === null);
+caso('ni "y una web con catálogo?"',
+    wabot_texto_pregunta_precio_de_tipo('y una web con catalogo cuanto sale?', $cfg, 'ecommerce') === null);
+caso('pero el precio de un tipo vigente sí se contesta',
+    wabot_texto_pregunta_precio_de_tipo('y una landing cuanto sale?', $cfg, 'ecommerce') === 'landing');
+caso('y wabot_precio_de_tipo_texto tampoco arma el texto de un retirado',
+    wabot_precio_de_tipo_texto('turnos', conv_nueva(), $cfg) === null
+    && wabot_precio_de_tipo_texto('landing', conv_nueva(), $cfg) !== null);
+
+/* "Sale lo mismo sin carrito?" ofrecía la modalidad catálogo con su precio. */
+$cComp = conv_nueva(); $cComp['tipo'] = 'ecommerce'; $cComp['precio_dado'] = true;
+$txtComp = (string)wabot_comparacion_tipo_texto('ecommerce', $cComp, $cfg);
+caso('"sin carrito" ya no ofrece el catálogo ni su precio por producto',
+    stripos($txtComp, 'catálogo:') === false && strpos($txtComp, '$500') === false);
+caso('y contesta lo que de verdad pasa: la tienda trae las dos formas',
+    $txtComp === (string)$cfg['info']['las_dos_formas']);
+
+echo "— 2-sep, auditoría: los marcadores no salen crudos al cliente —
+";
+
+/* {min}/{max} de precio_sin_rubro y {precio} de bilingue salían literales
+ * cuando el modelo llamaba consultar_info: la rama genérica leía la config en
+ * crudo en vez de pasar por wabot_texto_info(). */
+foreach (['precio_sin_rubro', 'bilingue', 'rangos', 'pago_generico'] as $claveM) {
+    $txtM = wabot_texto_info($claveM, $cfg);
+    if (trim($txtM) === '') continue;
+    caso("info.$claveM sale sin marcadores crudos", preg_match('/\{[a-z_]+\}/u', $txtM) === 0);
+}
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

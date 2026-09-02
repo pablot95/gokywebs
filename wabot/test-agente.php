@@ -1412,10 +1412,13 @@ caso('un "tiene carrito?" suelto, sin comparar precio, no dispara nada',
 
 $cCarrito = convNueva('TCARRITO'); $cCarrito['tipo'] = 'ecommerce'; $cCarrito['precio_dado'] = true;
 $rCarrito = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cCarrito, $cfg, 'Sale lo mismo con carrito?');
-caso('la comparación de ecommerce trae el precio del catálogo y el ya cotizado',
-    stripos((string)($rCarrito['texto'] ?? ''), 'catálogo') !== false
-    && strpos((string)($rCarrito['texto'] ?? ''), (string)$cfg['tipos']['ecommerce']['precio']) !== false
-    && empty($rCarrito['error']));
+/* Con catálogo retirado (2-sep) la respuesta cambió: ya no se cotiza la
+ * modalidad sin carrito, se cuenta que la tienda trae las dos formas. */
+caso('la comparación de ecommerce se contesta sin llamar al desarrollador',
+    trim((string)($rCarrito['texto'] ?? '')) !== '' && empty($rCarrito['error']));
+caso('y NO cotiza el catálogo, que ya no se vende',
+    stripos((string)($rCarrito['texto'] ?? ''), 'catálogo:') === false
+    && strpos((string)($rCarrito['texto'] ?? ''), '$500') === false);
 
 $cTurnos = convNueva('TTURNOS'); $cTurnos['tipo'] = 'turnos'; $cTurnos['precio_dado'] = true;
 $rTurnos = wabot_agente_ejecutar('consultar_info', ['clave' => 'otra'], $cTurnos, $cfg, 'Y si lo agendo yo cual es la diferencia');

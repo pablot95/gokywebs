@@ -253,23 +253,7 @@ function wabot_contexto_es_hibrido($texto) {
  * $290.000 (1-sep). Si además dice que vende, gana la venta: acá solo entra
  * el que repara, instala o hace service y no nombra ninguna venta.
  */
-/**
- * Un oficio que NUNCA agenda por horario: plomero, gasista, electricista,
- * fletes, destapaciones… A estos no se les pregunta si quieren turnos online
- * ("Soy plomero" → "los turnos querés que los reserven desde la web?",
- * Enrique, 1-sep). Es una lista corta a propósito: una consultora, un
- * fotógrafo o un espacio holístico SÍ pueden trabajar con sesiones, y ahí la
- * pregunta sigue valiendo (29-ago).
- */
-function wabot_contexto_es_oficio_sin_turnos($texto) {
-    $t = wabot_normalizar_frase($texto);
-    if ($t === '') return false;
-    if (preg_match('/\b(turno|turnos|reserva|reservas|cita|citas|agenda|sesion|sesiones)\b/u', $t)) return false;
-    return (bool)preg_match('/\b(plomer\w*|gasista\w*|electricista\w*|pintor\w*|albanil\w*|techista\w*|durlock|herrer\w*|soldad\w*|cerrajer\w*|jardiner\w*|fletes?|fletero\w*|mudanzas?|remis\w*|traslados?|gruas?'
-        . '|destapaci\w*|destapo\w*|desagotes?|cloacas?|sanitarios?|fumigaci\w*|control de plagas|refrigeraci\w*|climatizaci\w*|aire acondicionado'
-        . '|servicio tecnico|service|tecnic[oa] (en|de)|instalador\w*|matriculad[oa])\b/u', $t)
-        || wabot_contexto_es_servicio_tecnico($t);
-}
+
 
 function wabot_contexto_es_servicio_tecnico($texto) {
     $t = wabot_normalizar_frase($texto);
@@ -1441,26 +1425,7 @@ function wabot_texto_pregunta_precio_combinado($texto) {
     return (bool)preg_match('/\b(todo eso|todo junto|todo completo|todo en total|las dos cosas|las tres cosas|el combo|ambas cosas|todo el paquete)\b/u', $t);
 }
 
-/**
- * El cliente dice, con todas las letras, que NO quiere cobrar online: quiere
- * mostrar y que le consulten. Es la única evidencia que baja un ecommerce a
- * catálogo (ver feedback del 29-ago: sin esto, catálogo asciende a ecommerce).
- * En modo agente el modelo escribía "te conviene un catálogo" pero el tipo
- * quedaba en ecommerce, y la cotización salía por $290.000 en vez de la cuenta
- * por producto (C03, C08, N01 — 1-sep).
- */
-function wabot_texto_solo_mostrar($texto) {
-    $t = wabot_normalizar_frase($texto);
-    if ($t === '') return false;
-    return (bool)(
-        preg_match('/\bno (quiero|busco|necesito|me interesa) (vender|cobrar)( online| por la pagina| desde la pagina| por la web| por internet)?\b/u', $t)
-        || preg_match('/\bno vendo (online|por internet|por la web)\b/u', $t)
-        || preg_match('/\b(solo|solamente) (mostrar|para mostrar|el catalogo|quiero mostrar|que (lo|los|la|las) vean)\b/u', $t)
-        || preg_match('/\bsin (carrito|pago online|cobro online|venta online)\b/u', $t)
-        || preg_match('/\b(que|y que) me (consulten|escriban|pregunten|contacten) por (whatsapp|wsp)\b/u', $t)
-        || preg_match('/\b(el |los |me )?(pedido|pedidos|encargue|encargues|encargos)\b.{0,25}\bpor (whatsapp|wsp)\b/u', $t)
-    );
-}
+
 
 /**
  * Objeción de precio dicha sin la palabra "caro": "es bastante para mí ahora",
@@ -3589,6 +3554,11 @@ function wabot_desempate_precios_texto($fase, $cfg) {
 
     $lineas = [];
     foreach ($opciones[$fase] as $tipo => $condicion) {
+        /* Un tipo retirado no se cotiza ni de refilón: el desempate de turnos
+         * decía "$200.000 si reservan solos", el cliente elegía esa y recibía
+         * el sitio profesional a $180.000 (auditoría del 2-sep). Sin los dos
+         * precios vigentes no se dice ninguno. */
+        if (!wabot_tipo_ofrecible($tipo, $cfg)) return null;
         $precio = trim((string)($cfg['tipos'][$tipo]['precio'] ?? ''));
         if ($precio === '') return null;   // sin los dos precios no se dice ninguno
         $lineas[] = ucfirst($condicion) . ', ' . $precio . '.';
@@ -3646,6 +3616,14 @@ function wabot_texto_cambia_modalidad($texto, $tipoActual) {
 
 /** El texto de la comparación real: la modalidad sin la función y la que ya tiene cotizada. */
 function wabot_comparacion_tipo_texto($alterno, $conv, $cfg) {
+    /* "Sale lo mismo sin carrito?" ya NO abre la modalidad catálogo: se retiró
+     * el 2-sep y el bot le seguía cotizando a un cliente nuevo un producto que
+     * no se vende ($180.000 + $500 por producto). Lo que pregunta se contesta
+     * mejor con la verdad: la tienda ya trae las dos formas. */
+    if ($alterno === 'ecommerce' && !wabot_tipo_ofrecible('catalogo', $cfg)) {
+        $dosFormas = trim((string)($cfg['info']['las_dos_formas'] ?? ''));
+        return $dosFormas !== '' ? $dosFormas : null;
+    }
     if ($alterno === 'ecommerce' && isset($cfg['tipos']['catalogo']) && isset($cfg['tipos']['ecommerce'])) {
         $c = wabot_catalogo_config($cfg);
         return 'Sin carrito sería la modalidad catálogo: ' . wabot_moneda($c['base'])
@@ -3703,6 +3681,9 @@ function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
     ];
     foreach ($sinonimos as $tipo => $re) {
         if (!isset($cfg['tipos'][$tipo])) continue;
+        /* Y no se cotiza lo que ya no se vende: "cuánto sale una web
+         * institucional?" devolvía "$200.000" con descripción y todo. */
+        if (!wabot_tipo_ofrecible($tipo, $cfg)) continue;
         if (!preg_match('/\b' . $re . '\b/u', $t)) continue;
         if ((string)$tipo === (string)$tipoActual) return null;   // pregunta por el que ya tiene
         return $tipo;
@@ -3714,6 +3695,7 @@ function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
 function wabot_precio_de_tipo_texto($tipo, $conv, $cfg) {
     $d = $cfg['tipos'][$tipo] ?? null;
     if (!$d) return null;
+    if (!wabot_tipo_ofrecible($tipo, $cfg)) return null;   // no se cotiza lo retirado
     $precio = trim((string)($d['precio'] ?? ''));
     if ($precio === '') return null;
 
@@ -4077,28 +4059,9 @@ function wabot_sena_de($conv, $cfg) {
     return trim((string)($cfg['tipos'][$tipo]['sena'] ?? ''));
 }
 
-function wabot_postdemo_transferencia($conv, $cfg) {
-    $sena = wabot_sena_de($conv, $cfg);
-    if ($sena === '') return wabot_texto_pago_generico($cfg);
-    return str_replace(
-        ['{sena}', '{cbu}', '{alias}', '{titular}', '{documento}'],
-        [$sena, (string)($cfg['pago_cbu'] ?? ''), (string)($cfg['pago_alias'] ?? ''),
-         (string)($cfg['pago_titular'] ?? ''), (string)($cfg['pago_documento'] ?? '')],
-        (string)($cfg['postdemo_transferencia'] ?? '')
-    );
-}
 
-/** Link de checkout por el monto de la seña: gokywebs.com/pago?monto=60000 */
-function wabot_postdemo_link_tarjeta($conv, $cfg) {
-    $sena = wabot_sena_de($conv, $cfg);
-    $monto = (int)preg_replace('/\D/', '', $sena);
-    if ($monto <= 0) return '';
-    return str_replace(
-        ['{sena}', '{link}'],
-        [$sena, (string)($cfg['pago_link_base'] ?? 'gokywebs.com/pago?monto=') . $monto],
-        (string)($cfg['postdemo_tarjeta'] ?? '')
-    );
-}
+
+
 
 /** ¿Está avisando que ya pagó? Se valida con el texto, no con una etiqueta. */
 function wabot_dice_que_pago($texto) {
@@ -4866,12 +4829,7 @@ function wabot_postdemo_avance_explicito($texto) {
     );
 }
 
-/* Igual que wabot_derivar(), pero con el mensaje fijo de la parte 2 (después
- * de presentar la demo): "el desarrollo lo sigue Pablo", no el genérico. */
-function wabot_derivar_postdemo(&$conv, $cfg) {
-    wabot_handoff_marcar($conv, 'postdemo_respuesta');
-    return [(string)$cfg['postdemo_derivar']];
-}
+
 
 /**
  * Qué contesta el bot cuando la charla ya está cerrada.

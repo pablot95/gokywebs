@@ -2105,7 +2105,7 @@ function wabot_config_pitch_rubro(&$cfg) {
         ],
     ];
     $sinPortfolio = function ($t) {
-        $t = preg_replace('/\s*\n\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t);
+        $t = preg_replace('/\s*\n?\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}/u', '', (string)$t);
         return trim(preg_replace('/[ \t]+/u', ' ', $t));
     };
     $conRubro = function ($t) use ($sinPortfolio, $nuevos, $viejos) {
@@ -2416,7 +2416,7 @@ function wabot_config_portfolio(&$cfg) {
         foreach (['precio_ideal', 'precio_ideal_variantes'] as $campo) {
             if (!isset($cfg['tipos'][$tipo][$campo])) continue;
             $quitar = function ($t) {
-                return trim(preg_replace('/\s*\n\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+                return trim(preg_replace('/\s*\n?\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}/u', '', (string)$t));
             };
             $cfg['tipos'][$tipo][$campo] = is_array($cfg['tipos'][$tipo][$campo])
                 ? array_map($quitar, $cfg['tipos'][$tipo][$campo])
@@ -6391,11 +6391,6 @@ function wabot_presentados_correr($cfg, $ahora = null) {
         'archivados'    => $res['archivados'],
     ]);
     return $res;
-}
-
-function wabot_presentados_estado_cron() {
-    $j = json_decode((string)@file_get_contents(WABOT_DATA . '/presentados-estado.json'), true);
-    return is_array($j) ? $j : ['ultimo_run_ts' => 0, 'revisadas' => 0, 'archivados' => 0];
 }
 
 /* ─────────────────── Confirmación de la demo a las 48 h ───────────────────
