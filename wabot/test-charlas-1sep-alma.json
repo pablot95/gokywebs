@@ -1,0 +1,84 @@
+[
+  {
+    "id": "A1",
+    "titulo": "Nacho (gorras): el pitch nombra el rubro y el precio de la landing se contesta",
+    "esperado": "Pitch de ecommerce que arranque 'Para las gorras' (o sin la clausula, nunca {rubro} crudo) + linea post-precio con el gancho. 'Y una que sea solo landing?' recibe el precio de la landing ($160.000) sin preguntar mismo proyecto u otra web. 'dale, me sirve' lleva a la oferta de la demo (gratis, sin la palabra muestra).",
+    "nombre": "Nacho",
+    "turnos": [
+      "Quiero una página web para mi negocio 💻",
+      "Gorras",
+      "Y una que sea solo landing?",
+      "dale, me sirve"
+    ]
+  },
+  {
+    "id": "A2",
+    "titulo": "Ximena (arte y ceramica): paraguas antes de cotizar, precio visible, brief escuchado",
+    "esperado": "El CTA del anuncio recibe el rango real (entre $X y $Y) y una pregunta. 'vender objetos de arte y diseño' recibe SOLO 'Qué tipo de diseño hacés?' (sin linea post-precio pegada). 'Cuadros y objetos en cerámica' recibe el pitch de ecommerce con el precio. El brief ('tengo algo, conservar colores, minimalista') se contesta (ya_tiene_web / demo) y no con el precio pelado.",
+    "nombre": "Ximena",
+    "turnos": [
+      "¿Cuánto cuesta hacer mi página web? 💰",
+      "Hola es para vender objetos de arte y diseño",
+      "Cuadros y objetos en cerámica",
+      "Yo tengo algo ya pero no se ve muy profesional, si me gustaría poder conservar los colores y estilo minimalista si es posible"
+    ]
+  },
+  {
+    "id": "A3",
+    "titulo": "Enrique (plomero): sin pregunta de turnos, la pregunta de las fotos se contesta, y el 'no se como' no repite el listado",
+    "esperado": "'Soy plomero' NO recibe la pregunta de turnos: landing $160.000 con 'Para plomería' o similar. 'subir fotos de mis trabajos' se contesta (no la oferta de la demo en su lugar). 'si vos sos el creador no te puedo decir yo como' recibe info.no_se_nada + pedido de solo nombre y negocio (sin colores ni referencia). Con nombre y negocio cierra el prediseño.",
+    "nombre": "Enrique",
+    "turnos": [
+      "¿Cuánto cuesta hacer mi página web? 💰",
+      "Soy plomero",
+      "Si algo donde pueda ir subiendo fotos de mis trabajos",
+      "Si vos sos el creador no te puedo desir yo como aserlo",
+      "Enrique, Plomería Enrique"
+    ]
+  },
+  {
+    "id": "A4",
+    "titulo": "Sol (revendedora, tuvo un bebe): sin aviso de bilingue, y una linea humana antes de derivar",
+    "esperado": "No sale 'la podemos hacer bilingüe' por 'clases de inglés'. La derivacion (es una revendedora que pide presupuesto para su clienta) puede llevar UNA frase humana adelante (felicitaciones/que bueno que retomás) y despues el texto oficial completo. Nunca dos precios.",
+    "nombre": "Sol",
+    "turnos": [
+      "Hola Luciano! Seguis con el tema de las web.",
+      "Tuve un bebé y estoy retomando ahora con el marketing y diseño. Habíamos tenido una videollamada, soy de Cordoba. Para ofrecer tus servicios.",
+      "En este caso necesito un presupuesto para una chica que da clases de ingles",
+      "Me armarías un presupuesto para pasar?"
+    ]
+  },
+  {
+    "id": "A5",
+    "titulo": "Tecnico de heladeras: no es ecommerce; la segunda cotizacion OFRECE la demo en vez de tirar el listado",
+    "esperado": "Con 'técnico en aire acondicionado... muebles a medidas y pintura' NO cotiza ecommerce: pregunta el desempate híbrido (mostrar trabajos / catálogo / vender). 'mostrar trabajos y recibir consultas' recibe landing $160.000 y la OFERTA de la demo (gratis), no 'Para armarla necesito...' pegado al precio. 'dale' recibe el listado corto (sin referencia).",
+    "nombre": "Tecnico",
+    "turnos": [
+      "¿Cuánto cuesta hacer mi página web? 💰",
+      "Soy técnico en aire acondicionado lavarropas heladeras microondas hornos eléctricos lavarropas también muebles a medidas y pintura",
+      "Si claro sería para mostrar trabajos y recibir consultas",
+      "dale"
+    ]
+  },
+  {
+    "id": "A6",
+    "titulo": "Elii: se va comparando precios y se lleva UNA mencion de la demo",
+    "esperado": "Pitch de ecommerce ('Para la tienda online' o sin clausula) + linea post-precio. 'estaba viendo y consultar precios. Muchas gracias' recibe cierre_comparando (te armamos la demo gratis... así comparás con algo concreto) + 'ya queda anotado que lo tuyo sería ecommerce'. Seguimiento bloqueado.",
+    "nombre": "Elii",
+    "turnos": [
+      "Quiero averiguar costos para una tienda online",
+      "Si estaba viendo y consultar precios. Muchas gracias"
+    ]
+  },
+  {
+    "id": "A7",
+    "titulo": "Lucas: 'revisare el portafolio' cierra con la demo como argumento para comparar",
+    "esperado": "Pitch de landing (o pregunta de rubro, ambas valen). 'Revisaré el portafolio y los vuelvo a contactar' recibe el cierre con la demo (una vez) y no un 'quedamos a disposición' improvisado.",
+    "nombre": "Lucas",
+    "turnos": [
+      "Hola, encontré una publicidad que realizan landing pages de alta conversión",
+      "Soy contador, atiendo pymes",
+      "Revisaré el portafolio y los vuelvo a contactar"
+    ]
+  }
+]

@@ -299,7 +299,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         exit;
     }
     if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','pide_llamada','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','seguimiento_pregunta','seguimiento_pregunta_gancho','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
+        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','pide_llamada','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','cierre_comparando','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','seguimiento_pregunta','seguimiento_pregunta_gancho','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
             if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
         }
         foreach (array_keys($cfg['info']) as $k) {
@@ -1611,6 +1611,7 @@ body.embed { min-height: 0; }
             <label>Ya tiene una web y quiere renovarla</label><textarea name="ya_tengo_web" rows="2"><?= $e($cfg['ya_tengo_web'] ?? '') ?></textarea>
             <label>Empujón suave después de contestar una duda</label><textarea name="cta_muestra" rows="2"><?= $e($cfg['cta_muestra'] ?? '') ?></textarea>
             <label>Cierre sin presión (solo averiguaba / más adelante / sin presupuesto)</label><textarea name="cierre_suave" rows="2"><?= $e($cfg['cierre_suave'] ?? '') ?></textarea>
+            <label>Cierre del que se va comparando precios (ya tiene el nuestro y la demo no se le ofreció): una sola mención de la demo</label><textarea name="cierre_comparando" rows="2"><?= $e($cfg['cierre_comparando'] ?? '') ?></textarea>
             <label>Nombra Tienda Nube o similar</label><textarea name="plataformas" rows="2"><?= $e($cfg['plataformas']) ?></textarea>
             <label>No le interesa</label><textarea name="no_interesa" rows="2"><?= $e($cfg['no_interesa']) ?></textarea>
             <label>Mandó algo y no llegó nada (no se pudo bajar el archivo)</label><textarea name="no_texto" rows="2"><?= $e($cfg['no_texto']) ?></textarea>

@@ -225,8 +225,42 @@ function wabot_contexto_cliente_tiene_negocio($conv) {
 /** Rubros que pueden ser portfolio, catálogo o venta online: requieren una pregunta. */
 function wabot_contexto_es_hibrido($texto) {
     $t = wabot_normalizar_frase($texto);
-    return $t !== '' && (bool)preg_match('/\b(cortinas?|toldos?|aberturas?|muebles? a medida|carpinteria|herrerias?|cerramientos?|amoblamientos?|mesadas?|mamparas?'
-        . '|rejas?|portones?|placares?|vestidores?|pergolas?|decks?|barandas?|mosquiteros?|escaleras? a medida)\b/u', $t);
+    // "muebles a medidaS": el plural no entraba y el técnico de heladeras que
+    // además hace muebles se cotizó tienda online (1-sep).
+    return $t !== '' && (bool)preg_match('/\b(cortinas?|toldos?|aberturas?|muebles? a medidas?|carpinteria|herrerias?|cerramientos?|amoblamientos?|mesadas?|mamparas?'
+        . '|rejas?|portones?|placares?|vestidores?|pergolas?|decks?|barandas?|mosquiteros?|escaleras? a medidas?)\b/u', $t);
+}
+
+/**
+ * Un TÉCNICO no vende lo que arregla. "Técnico en aire acondicionado,
+ * lavarropas, heladeras, hornos eléctricos" caía en la lista de productos de
+ * wabot_fallback_rubro_local() y salía cotizado como tienda online de
+ * $290.000 (1-sep). Si además dice que vende, gana la venta: acá solo entra
+ * el que repara, instala o hace service y no nombra ninguna venta.
+ */
+/**
+ * Un oficio que NUNCA agenda por horario: plomero, gasista, electricista,
+ * fletes, destapaciones… A estos no se les pregunta si quieren turnos online
+ * ("Soy plomero" → "los turnos querés que los reserven desde la web?",
+ * Enrique, 1-sep). Es una lista corta a propósito: una consultora, un
+ * fotógrafo o un espacio holístico SÍ pueden trabajar con sesiones, y ahí la
+ * pregunta sigue valiendo (29-ago).
+ */
+function wabot_contexto_es_oficio_sin_turnos($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    if (preg_match('/\b(turno|turnos|reserva|reservas|cita|citas|agenda|sesion|sesiones)\b/u', $t)) return false;
+    return (bool)preg_match('/\b(plomer\w*|gasista\w*|electricista\w*|pintor\w*|albanil\w*|techista\w*|durlock|herrer\w*|soldad\w*|cerrajer\w*|jardiner\w*|fletes?|fletero\w*|mudanzas?|remis\w*|traslados?|gruas?'
+        . '|destapaci\w*|destapo\w*|desagotes?|cloacas?|sanitarios?|fumigaci\w*|control de plagas|refrigeraci\w*|climatizaci\w*|aire acondicionado'
+        . '|servicio tecnico|service|tecnic[oa] (en|de)|instalador\w*|matriculad[oa])\b/u', $t)
+        || wabot_contexto_es_servicio_tecnico($t);
+}
+
+function wabot_contexto_es_servicio_tecnico($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    if (preg_match('/\b(vendo|vendemos|venta|ventas|vender|revendo|comercializo|tienda|local de)\b/u', $t)) return false;
+    return (bool)preg_match('/\b(tecnic[oa] en|tecnic[oa] de|reparacion(es)?|reparo|reparamos|arreglo de|arreglos de|arreglamos|service de|servicio tecnico|instalacion(es)? de|instalador\w*|mantenimiento de)\b/u', $t);
 }
 
 /**
@@ -299,6 +333,15 @@ function wabot_cierre_sin_presion_tipo($texto) {
     }
     if (wabot_texto_es_elogio($t) || wabot_texto_mira_la_demo($t)) return null;
 
+    /* "Revisaré el portafolio y los vuelvo a contactar" (Lucas, 1-sep): se va
+     * a comparar. Antes no matcheaba nada y el turno lo tomaba el modelo, que
+     * improvisó "quedamos a disposición". Solo el portfolio/los trabajos: "la
+     * voy a ver" sobre la demo lo resuelve wabot_texto_mira_la_demo() arriba. */
+    if (preg_match('/\b(voy a|vamos a|dejame|dejenme|primero|despues de)\b.{0,12}\b(ver|revisar|mirar|chequear)\b.{0,12}\b(portfolio|portafolio|trabajos|ejemplos)\b/u', $t)
+        || preg_match('/\b(revisare|mirare|vere|chequeare|reviso|miro|veo)\b.{0,6}\b(el|los|su|sus|tu|tus)\b.{0,4}\b(portfolio|portafolio|trabajos|ejemplos)\b/u', $t)) {
+        return 'consulta';
+    }
+
     if (preg_match('/\b(estoy|estaba|ando|andaba|estamos)\b.{0,20}\b(averiguando|consultando|preguntando|viendo|mirando|chusmeando|cotizando)\b/u', $t)
         || preg_match('/\b(solo|solamente|unicamente|por ahora|por el momento)\b.{0,25}\b(averiguo|averiguando|consultando|preguntando|viendo|mirando)\b/u', $t)
         || preg_match('/\b(mas adelante|en otro momento|cuando pueda|cuando tenga)\b.{0,45}\b(escrib|contact|comunic|retom|veo|vemos|avanzo|avanzamos)\w*/u', $t)
@@ -336,7 +379,15 @@ function wabot_regateo_responder($texto, &$conv, $cfg) {
     return wabot_derivar($conv, $cfg, 'pago_explicito');
 }
 
-function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
+function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta', $motivo = null) {
+    /* El que se va COMPARANDO precios y ya tiene el nuestro se lleva una única
+     * mención de la demo, que es justo lo que le sirve para comparar. Elii
+     * ("estaba viendo y consultar precios") y Lucas ("revisaré el portafolio")
+     * se fueron el 1-sep con una despedida que no la nombraba. Una sola vez:
+     * si la demo ya se ofreció antes, va el cierre de siempre. */
+    $demoAlCierre = $tipo === 'consulta' && $motivo === 'solo_averiguando'
+        && !empty($conv['precio_dado']) && empty($conv['cta_muestra'])
+        && trim((string)($cfg['cierre_comparando'] ?? '')) !== '';
     $conv['seguimiento_bloqueado'] = true;
     $conv['seguimiento_estado'] = 'bloqueado';
     $conv['cta_muestra'] = true;
@@ -348,10 +399,39 @@ function wabot_cerrar_sin_presion(&$conv, $cfg, $tipo = 'consulta') {
         $conv['bot_off'] = true;
         return [(string)($cfg['baja'] ?? 'Listo, no te escribimos más. Gracias por avisar.')];
     }
-    $texto = $tipo === 'rechazo'
-        ? (string)($cfg['no_interesa'] ?? 'Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.')
-        : (string)($cfg['cierre_suave'] ?? 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.');
+    if ($tipo === 'rechazo') {
+        $texto = (string)($cfg['no_interesa'] ?? 'Gracias por escribirnos. Si más adelante lo necesitás, estamos por acá.');
+    } elseif ($demoAlCierre) {
+        wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'cierre_comparando']);
+        $texto = (string)$cfg['cierre_comparando'];
+    } else {
+        $texto = (string)($cfg['cierre_suave'] ?? 'Gracias por consultar. Cuando sea el momento, escribinos y retomamos desde acá.');
+    }
     return [$texto . wabot_cierre_con_memoria($conv, $cfg)];
+}
+
+/**
+ * ¿Se va porque está COMPARANDO (precios, presupuestos, el portfolio)?
+ * Es el motivo de cierre en el que la demo gratis sí tiene sentido: le da
+ * algo concreto con qué comparar. "Mañana lo veo" no es esto.
+ */
+function wabot_texto_esta_comparando($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    if (wabot_texto_pospone($t)) return false;
+    return (bool)(
+        preg_match('/\b(averiguando|consultando|comparando|comparar|cotizando|presupuestando)\b/u', $t)
+        || preg_match('/\b(consultar|ver|viendo|mirando|averiguar|comparar)\b.{0,12}\b(precios?|presupuestos?|costos?|valores|opciones|cotizaciones)\b/u', $t)
+        || preg_match('/\b(otras? (opciones|propuestas|presupuestos|cotizaciones)|varios presupuestos|un par de presupuestos)\b/u', $t)
+        || preg_match('/\b(ver|revisar|mirar|chequear)\w*\b.{0,10}\b(el|los|su|sus|tu|tus)?\s*(portfolio|portafolio|trabajos|ejemplos)\b/u', $t)
+    );
+}
+
+/** "Mañana lo veo", "más adelante", "la semana que viene": posterga, no compara. */
+function wabot_texto_pospone($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\b(manana|mas adelante|en otro momento|mas tarde|la semana que viene|el mes que viene|cuando pueda|cuando tenga|lo pienso|lo veo despues|lo reviso despues|despues te (digo|aviso|escribo))\b/u', $t);
 }
 
 /**
@@ -1948,7 +2028,7 @@ function wabot_ultimo_texto_bot($conv) {
 /** Textos seguros cuando la dependencia de IA no está disponible. Nunca deriva. */
 function wabot_fallback_ia($texto, &$conv, $cfg) {
     $cierre = wabot_cierre_sin_presion_tipo($texto);
-    if ($cierre !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierre);
+    if ($cierre !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierre, wabot_texto_esta_comparando($texto) ? 'solo_averiguando' : null);
 
     $faseActual = $conv['fase'] ?? 'nuevo';
     if (!in_array($faseActual, ['nuevo', 'menu', 'algo_diferente'], true)) {
@@ -2148,12 +2228,14 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             }
             return [wabot_texto_aclaracion($conv, $cfg)];
         case 'prediseno':
+            $noSabeComo = wabot_prediseno_no_sabe_como($texto, $conv, $cfg);
+            if ($noSabeComo !== null) return $noSabeComo;
             $tp = trim($texto);
             if (empty($conv['descripcion']) && mb_strlen($tp) >= 15
                 && strpos($tp, '?') === false && !wabot_fallback_respuesta_vacia($texto)) {
                 $conv['descripcion'] = $tp;
             }
-            if (empty($conv['colores']) && !empty($conv['descripcion']) && wabot_es_delegacion($texto)) {
+            if (empty($conv['colores']) && !empty($conv['descripcion']) && wabot_colores_delegados($texto)) {
                 $conv['colores'] = 'A elección del diseñador';
             }
             if (!empty($conv['descripcion']) && !empty($conv['colores'])) {
@@ -2220,6 +2302,9 @@ function wabot_fallback_rubro_local($t) {
     }
     if (preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases online)\b/u', $t)
         || preg_match('/\b(doy|dicto|damos|dictamos)\b.{0,15}\btaller(es)?\b/u', $t)) return 'cursos';
+    // El que repara o instala es un servicio, aunque nombre electrodomésticos:
+    // va antes de la lista de productos, que lo leía como comercio (1-sep).
+    if (wabot_contexto_es_servicio_tecnico($t)) return 'landing';
     // netbooks, notebooks, celulares y consolas salieron el 27-ago ("Para
     // Netbooks", "Y celulares todo usados") y ninguna estaba en la lista: el
     // cliente contestó dos veces y recibió la misma pregunta las dos.
@@ -2371,7 +2456,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         if (in_array(($conv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion'], true)) $conv['cierre'] = null;
     }
     $cierreSinPresion = wabot_cierre_sin_presion_tipo($texto);
-    if ($cierreSinPresion !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierreSinPresion);
+    if ($cierreSinPresion !== null) return wabot_cerrar_sin_presion($conv, $cfg, $cierreSinPresion, wabot_texto_esta_comparando($texto) ? 'solo_averiguando' : null);
 
     $regateo = wabot_regateo_responder($texto, $conv, $cfg);
     if ($regateo !== null) return $regateo;
@@ -2815,9 +2900,11 @@ function wabot_engine($texto, &$conv, $cfg) {
             return array_merge($out, wabot_precio((string)$conv['tipo'], $conv, $cfg));
 
         case 'prediseno':
+            $noSabeComo = wabot_prediseno_no_sabe_como($texto, $conv, $cfg);
+            if ($noSabeComo !== null) return array_merge($out, $noSabeComo);
             if ($c['descripcion'] !== null) $conv['descripcion'] = $c['descripcion'];
             if ($c['colores']     !== null) $conv['colores']     = $c['colores'];
-            if ($conv['colores'] === null && $conv['descripcion'] !== null && wabot_es_delegacion($texto)) {
+            if ($conv['colores'] === null && $conv['descripcion'] !== null && wabot_colores_delegados($texto)) {
                 $conv['colores'] = 'A elección del diseñador';
             }
 
@@ -3559,8 +3646,15 @@ function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return null;
 
-    $preguntaPrecio = '/\b(cuanto (sale|cuesta|esta|vale|saldria|seria|es)|que (precio|valor|costo)|precio tiene|valor tiene|costo tiene|sale la|sale el|cuesta la|cuesta el)\b/u';
-    if (!preg_match($preguntaPrecio, $t) && !wabot_texto_pide_precio($t)) return null;
+    $preguntaPrecio = '/\b(cuanto (sale|cuesta|esta|vale|saldria|seria|es)|que (precio|valor|costo)|precio tiene|valor tiene|costo tiene|sale la|sale el|cuesta la|cuesta el|(el|del) (precio|valor|costo) de)\b/u';
+    /* "Y una que sea solo landing?" / "y la landing?" con el ecommerce ya
+     * cotizado: pide el precio del otro tipo sin ningún verbo de precio. Nacho
+     * lo preguntó tres veces (1-sep) y nunca recibió los $160.000 que están en
+     * la config. Solo con un precio ya dado, para que "vendo ropa en una
+     * tienda" no cotice nada por su cuenta. */
+    $pideAlternativa = $tipoActual !== null
+        && preg_match('/\b(que sea|solo|sola|solamente|nomas|nada mas|en vez de|en lugar de|y (una|la|el|uno))\b/u', $t);
+    if (!preg_match($preguntaPrecio, $t) && !wabot_texto_pide_precio($t) && !$pideAlternativa) return null;
 
     // De más específico a más general: "tienda online" antes que "tienda", y
     // "plataforma de cursos" antes que "cursos".
@@ -3601,7 +3695,7 @@ function wabot_precio_de_tipo_texto($tipo, $conv, $cfg) {
         $precioActual = trim((string)($cfg['tipos'][$actual]['precio'] ?? ''));
         $labelActual  = trim((string)($cfg['tipos'][$actual]['label'] ?? $actual));
         if ($precioActual !== '') {
-            $txt .= "\n\nLo que te cotizé antes, " . $labelActual . ', queda en ' . $precioActual . '.';
+            $txt .= "\n\nLo que te coticé antes, " . $labelActual . ', queda en ' . $precioActual . '.';
         }
     }
     return $txt;
@@ -3765,7 +3859,31 @@ function wabot_texto_info($clave, $cfg) {
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
+    // {min}/{max}: el rango real de la lista de precios, puesto por el código.
+    // "Depende del tipo de página" era la respuesta a "¿cuánto cuesta?" del
+    // anuncio y 3 de 10 no volvieron a escribir (1-sep).
+    if (strpos($texto, '{min}') !== false || strpos($texto, '{max}') !== false) {
+        $r = wabot_rangos_min_max($cfg);
+        if ($r === null) {
+            $texto = 'Depende del tipo de página que necesites. Contame qué vendés o qué servicio das y te paso el valor exacto.';
+        } else {
+            $texto = str_replace(['{min}', '{max}'], [$r['min'], $r['max']], $texto);
+        }
+    }
     return $texto;
+}
+
+/** El precio más bajo y el más alto de la lista de tipos, como "$160.000". */
+function wabot_rangos_min_max($cfg) {
+    $montos = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $d) {
+        if (!preg_match('/\$[\d.]+/u', (string)($d['precio'] ?? ''), $m)) continue;
+        $n = wabot_monto_a_numero($m[0]);
+        if ($n > 0) $montos[$n] = $m[0];
+    }
+    if (!$montos) return null;
+    ksort($montos);
+    return ['min' => reset($montos), 'max' => end($montos)];
 }
 
 function wabot_texto_rangos($cfg) {
@@ -4091,6 +4209,112 @@ function wabot_frase_tiene_contenido_especifico($texto) {
 }
 
 /** Solo la pregunta diferenciadora del pitch (variante según contexto/tipo). */
+/**
+ * El rubro con las palabras del cliente, para que el precio arranque
+ * nombrándolo ("Para las gorras, lo ideal sería un ecommerce…"). Lo escribe
+ * el modelo como argumento de dar_precio; acá se valida contra lo que el
+ * cliente escribió de verdad: 1 a 6 palabras, sin números ni "$", y al menos
+ * una palabra de cuatro letras o más que aparezca en sus mensajes. Si no pasa,
+ * devuelve '' y el texto sale como hasta ahora, sin la cláusula. Los 10
+ * pitches del 1-sep fueron idénticos, sin una palabra del negocio: ese es el
+ * momento exacto en que se nota el bot.
+ */
+function wabot_rubro_valido($rubro, $conv) {
+    $r = trim(preg_replace('/\s+/u', ' ', (string)$rubro));
+    $r = trim($r, " \t\n\r.,;:!?\"'«»()");
+    if ($r === '' || mb_strlen($r) > 60) return '';
+    if (preg_match('/[\d$%{}]|https?:|www\.|\.com\b/iu', $r)) return '';
+    $norm = wabot_normalizar_frase($r);
+    $palabras = array_values(array_filter(explode(' ', $norm)));
+    if (count($palabras) < 1 || count($palabras) > 6) return '';
+    // Ni un tipo de web ni un relleno: eso no es el rubro del cliente.
+    if (preg_match('/\b(lo tuyo|tu negocio|tu caso|tu rubro|tu emprendimiento|landing|ecommerce|tienda online|pagina web|sitio web|web)\b/u', $norm)) return '';
+    $ctx = ' ' . wabot_normalizar_frase(wabot_contexto_cliente_texto($conv)) . ' ';
+    $enContexto = false;
+    foreach ($palabras as $p) {
+        if (mb_strlen($p) < 4) continue;
+        $raiz = mb_substr($p, 0, max(4, mb_strlen($p) - 2));   // gorras→gorr, cerámica→cerami
+        if (mb_strpos($ctx, $raiz) !== false) { $enContexto = true; break; }
+    }
+    if (!$enContexto) return '';
+    // "Las gorras" → "las gorras"; un nombre propio adentro ("taller Norte") se respeta.
+    $crudas = explode(' ', $r);
+    $hayPropio = false;
+    foreach (array_slice($crudas, 1) as $w) {
+        if (preg_match('/^\p{Lu}/u', $w)) { $hayPropio = true; break; }
+    }
+    if (!$hayPropio) $r = mb_strtolower(mb_substr($r, 0, 1)) . mb_substr($r, 1);
+    return $r;
+}
+
+/** Deshace un pitch que salió este turno pero no llegó al cliente. */
+function wabot_pitch_deshacer(&$conv) {
+    $conv['tipo'] = null;
+    $conv['fase'] = 'menu';
+    $conv['precio_dado'] = false;
+    $conv['pitch_hecho'] = false;
+    $conv['pitch_tipo'] = null;
+    $conv['cta_muestra'] = false;
+    $conv['rubro_pitch'] = '';
+}
+
+/**
+ * ¿Deja los colores en nuestras manos? "Elegí vos", pero también "no tengo",
+ * "no sé", "ninguno": para los colores todo eso es lo mismo, y pedírselos de
+ * nuevo es lo que espantó a Enrique (1-sep).
+ */
+function wabot_colores_delegados($texto) {
+    if (wabot_es_delegacion($texto)) return true;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 60) return false;
+    return (bool)preg_match('/^(no|no tengo|no tengo colores|no tengo definidos?|no tengo ninguno|no se|no sabria|ninguno|ninguna|ninguno en particular|todavia no|aun no|no tengo idea|no hay|los que (vos )?quieras?|lo dejo (en tus manos|a tu criterio))$/u', $t);
+}
+
+/**
+ * "Si vos sos el creador no te puedo decir yo cómo hacerlo" (Enrique, plomero,
+ * 1-sep): no sabe qué contestar al pedido de datos. La respuesta correcta ya
+ * existía (info.no_se_nada, "para eso estamos nosotros") y no tenía detector:
+ * se le volvieron a pedir los colores y la referencia, y no escribió más.
+ */
+function wabot_texto_no_sabe_como($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 220) return false;
+    return (bool)(
+        // "no sé si me conviene" es una duda de valor, no un "no sé cómo".
+        preg_match('/\b(no (se|sabria|sabria decirte|te sabria decir|te puedo decir|te podria decir|tengo idea|entiendo de eso|se de eso|se nada de eso|manejo eso))\b(?!\s+(si|cuanto|cuando|donde)\b)/u', $t)
+        || preg_match('/\b(vos sos|ustedes son|usted es) (el|la|los|las) (creador\w*|que sabe\w*|profesional\w*|expert\w*|disenador\w*|especialista\w*)\b/u', $t)
+        || preg_match('/\b(como (vos|ustedes|usted) (veas?|vean|quieras?|quieran|digas?|digan|creas?|crean)|a tu criterio|a criterio (tuyo|de ustedes)|lo que (vos|ustedes) (digas?|digan|vean|decidan))\b/u', $t)
+        || preg_match('/\b(eso lo (sabes|saben|sabras|sabran|ves|ven) (vos|ustedes)|de eso (sabes|saben) (vos|ustedes))\b/u', $t)
+    );
+}
+
+/**
+ * El turno del "no sé cómo" en el prediseño: se lo tranquiliza con
+ * info.no_se_nada, los colores quedan a elección nuestra y se le pide SOLO lo
+ * que sigue faltando (nombre, negocio); si ya no falta nada, se cierra.
+ * Compartido por el motor y el agente. Devuelve null si no aplica.
+ */
+function wabot_prediseno_no_sabe_como($texto, &$conv, $cfg) {
+    if (!in_array((string)($conv['fase'] ?? ''), ['prediseno', 'prediseno_ref'], true)) return null;
+    if (!empty($conv['lead_creado'])) return null;
+    if (!wabot_texto_no_sabe_como($texto)) return null;
+    if (trim((string)($conv['colores'] ?? '')) === '') $conv['colores'] = 'A elección del diseñador';
+    if (($conv['fase'] ?? '') === 'prediseno_ref' || empty($conv['referencia_preguntada'])) {
+        if (trim((string)($conv['referencia'] ?? '')) === '') $conv['referencia'] = '';
+        $conv['referencia_preguntada'] = true;
+    }
+    $conv['fase'] = 'prediseno';
+    wabot_evento_sesion($conv, 'prediseno_no_sabe_como');
+    $out = [];
+    $tranquilo = trim(wabot_texto_info('no_se_nada', $cfg));
+    if ($tranquilo !== '') $out[] = $tranquilo;
+    if (wabot_prediseno_faltan($conv, false)) {
+        $out[] = wabot_prediseno_texto($conv, $cfg);
+        return $out;
+    }
+    return array_merge($out, wabot_cerrar_o_pedir_whatsapp($conv, $cfg));
+}
+
 function wabot_pitch_pregunta_texto($tipo, $conv, $cfg) {
     $contexto = wabot_contexto_cliente_texto($conv);
     $variante = null;
@@ -4329,7 +4553,18 @@ function wabot_precio($tipo, &$conv, $cfg) {
     // contesta con sus datos, dice que sí).
     $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-    $out[] = wabot_prediseno_texto($conv, $cfg);
+    /* Con el form apagado, wabot_prediseno_texto() devuelve el LISTADO de
+     * datos: al técnico de heladeras (1-sep) le cayó "Para prepararte la demo
+     * necesito esto: - Tu nombre..." pegado al precio, sin que nadie le
+     * hubiera dicho qué es la demo. Con el form activo el texto del link ya es
+     * una oferta en sí ("hacemos una demo de tu web, gratis..."), así que ese
+     * camino sigue igual; sin form, primero se OFRECE y el listado sale recién
+     * con el sí, igual que en el camino del pitch. */
+    if (wabot_form_link($conv, $cfg) !== '') {
+        $out[] = wabot_prediseno_texto($conv, $cfg);
+    } else {
+        $out[] = wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg);
+    }
     return $out;
 }
 

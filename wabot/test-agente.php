@@ -1891,5 +1891,63 @@ caso('pero con la ficha vacía las preguntas son válidas',
 caso('y un nombre tomado del perfil, sin confirmar, se puede preguntar igual',
     wabot_agente_repite_pregunta_contestada('Cuál es tu nombre?', ['nombre' => '.', 'transcript' => []]) === false);
 
+/* ── 1-sep (noche): "le falta alma" ── */
+echo "— 1-sep: bilingüe por rubro, paraguas antes de cotizar, plomero sin turnos, rubro en el pitch, línea humana —\n";
+
+caso('"da clases de inglés" es su rubro, no un pedido de web bilingüe (Sol)',
+    wabot_texto_pide_otro_idioma('En este caso necesito un presupuesto para una chica que da clases de ingles') === false);
+caso('"soy profesora de inglés" tampoco', wabot_texto_pide_otro_idioma('soy profesora de ingles y quiero una web') === false);
+caso('"la quiero en español e inglés" sí', wabot_texto_pide_otro_idioma('la quiero en español e ingles') === true);
+caso('"se puede hacer en inglés también?" sí', wabot_texto_pide_otro_idioma('se puede hacer en ingles tambien?') === true);
+caso('"vendo cursos de inglés online" no', wabot_texto_pide_otro_idioma('vendo cursos de ingles online') === false);
+
+$cPar = convNueva(); $cPar['fase'] = 'menu'; unset($cPar['pitch_hecho']);
+$cPar['transcript'] = [['q' => 'cliente', 't' => 'Hola es para vender objetos de arte y diseño', 'ts' => time()]];
+$rPar = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPar, $cfg, 'Hola es para vender objetos de arte y diseño');
+caso('el paraguas "diseño" se pregunta ANTES de cotizar, y el precio no se da por dado (Ximena)',
+    !empty($rPar['exacta']) && $rPar['texto'] === $cfg['paraguas']['diseno'] && empty($rPar['aparte'])
+    && empty($cPar['precio_dado']) && empty($cPar['tipo']) && !empty($cPar['paraguas_preguntado']));
+$rPar2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPar, $cfg, 'Cuadros y objetos en cerámica');
+caso('con la respuesta, cotiza normal', !empty($rPar2['texto']) && strpos($rPar2['texto'], '$290.000') !== false && !empty($cPar['precio_dado']));
+
+$cRub = convNueva(); unset($cRub['pitch_hecho']);
+$cRub['transcript'] = [['q' => 'cliente', 't' => 'Quiero una página web para mi negocio', 'ts' => time()], ['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
+$rRub = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'Las gorras'], $cRub, $cfg, 'Gorras');
+caso('dar_precio guarda el rubro validado y el pitch sale nombrándolo',
+    $cRub['rubro_pitch'] === 'las gorras'
+    && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Para las gorras, lo ideal sería un ecommerce') === 0);
+$cRub2 = convNueva(); unset($cRub2['pitch_hecho']);
+$cRub2['transcript'] = [['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
+$rRub2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub2, $cfg, 'Gorras');
+caso('un rubro inventado no pasa: el texto sale sin la cláusula',
+    empty($cRub2['rubro_pitch']) && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Lo ideal sería un ecommerce') === 0);
+
+$cPlo = convNueva();
+caso('"Soy plomero" ya no recibe la pregunta de turnos (Enrique)', wabot_agente_desempate_pendiente('landing', 'Soy plomero', $cPlo, $cfg) === null);
+$cGas = convNueva();
+caso('"soy gasista matriculado" tampoco', wabot_agente_desempate_pendiente('landing', 'soy gasista matriculado', $cGas, $cfg) === null);
+$cCon = convNueva();
+$gCon = wabot_agente_desempate_pendiente('landing', 'Una consultora', $cCon, $cfg);
+caso('pero un servicio suelto que no está en la lista de landing sigue preguntando', is_array($gCon) && !empty($gCon['exacta']));
+$cTec = convNueva();
+caso('un técnico en electrodomésticos cotizado como ecommerce se corrige a landing',
+    wabot_agente_desempate_pendiente('ecommerce', 'Soy técnico en aire acondicionado, lavarropas y heladeras', $cTec, $cfg) === ['tipo' => 'landing']);
+
+$cCol = convNueva();
+wabot_agente_anotar(['colores' => 'elegí vos'], $cCol);
+caso('anotar colores "elegí vos" los deja a elección del diseñador', $cCol['colores'] === 'A elección del diseñador');
+wabot_agente_anotar(['colores' => 'azul y blanco'], $cCol);
+caso('y unos colores de verdad se guardan tal cual', $cCol['colores'] === 'azul y blanco');
+
+$term = 'Perfecto, {nombre}. Tu consulta la sigue el desarrollador directamente: te escribe a la brevedad por acá para avanzar.';
+caso('una frase humana corta va delante de la derivación (Sol)',
+    wabot_agente_prefijo_humano('Felicitaciones por el bebé, y qué bueno que retomás', $term, $cfg) === 'Felicitaciones por el bebé, y qué bueno que retomás. ' . $term);
+caso('una segunda derivación no', wabot_agente_prefijo_humano('Te paso con el desarrollador para que lo vean juntos.', $term, $cfg) === $term);
+caso('un dato del servicio no', wabot_agente_prefijo_humano('Sí, se puede hacer en inglés.', $term, $cfg) === $term);
+caso('una pregunta no', wabot_agente_prefijo_humano('Cómo se llama tu negocio?', $term, $cfg) === $term);
+caso('un monto no', wabot_agente_prefijo_humano('Quedaría en $50.000 la seña.', $term, $cfg) === $term);
+caso('vacío o largo no',
+    wabot_agente_prefijo_humano('', $term, $cfg) === $term && wabot_agente_prefijo_humano(str_repeat('qué bueno ', 20), $term, $cfg) === $term);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

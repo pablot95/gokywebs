@@ -190,6 +190,7 @@ function wabot_config_load() {
     wabot_config_partir_precio($cfg);
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
+    wabot_config_pitch_rubro($cfg);
     wabot_config_pitch_encaje($cfg);
     wabot_config_postdemo_sin_venta($cfg);
     wabot_config_pide_llamada($cfg);
@@ -364,7 +365,7 @@ function wabot_config_ventas(&$cfg) {
         'sistema_cierre'    => 'Excelente, {nombre}. Con esto Pablo ya puede prepararte una propuesta a medida: te escribe a la brevedad para definir el próximo paso.',
         // {faltan} lo arma wabot_prediseno_texto() con lo que falte, uno por renglón.
         // Se usa solo cuando no hay link de formulario disponible (Instagram: sin teléfono).
-        'prediseno' => "Para prepararte la demo necesito esto:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también.",
+        'prediseno' => "Para armarla necesito poco:\n{faltan}\nSi no tenés colores definidos, decime 'elegí vos' y los defino yo. Si tenés logo o fotos, mandámelas; si no, arranco con imágenes del rubro y después las cambiamos.",
         'prediseno_link' => "Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}",
         'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
         'confirma_cambio_2' => 'Decime nomás: es para el mismo proyecto que veníamos viendo (respondé "mismo") o es otra web aparte (respondé "otra")?',
@@ -495,16 +496,23 @@ function wabot_config_ventas(&$cfg) {
             "En esa modalidad, {desc} con {cantidad} productos queda en {total}: {base} por la web y {productos} por la carga, calculados a {unitario} cada uno. Se arranca con una seña de {sena} y el saldo recién al entregar la web, o con tarjeta hasta en 12 cuotas.",
         ];
     }
-    $ofertaVariantesDefault = [
-        'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
-        'Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?',
-        'Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?',
-        'Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?',
-    ];
+    /* La oferta dicha como lo que es (Pablo, 1-sep: "que lo ofrezca como algo
+     * que realmente es bueno, que levante interés"). "Si querés, te preparamos
+     * una muestra sin costo para que veas cómo podría quedar. Te sirve?" tenía
+     * cuatro señales de poca confianza en dos líneas. Reglas que se conservan:
+     * "gratis" siempre, termina en pregunta cerrada, 2-3 líneas, ningún monto
+     * ni plazo comprometido ("tarda uno o dos días" es descriptivo). {rubro}
+     * lo resuelve wabot_personalizar() con las palabras del cliente. */
+    $ofertaVariantesDefault = wabot_oferta_demo_defaults();
     if (empty($cfg['msg_prediseno_oferta_variantes']) || !is_array($cfg['msg_prediseno_oferta_variantes'])) {
         $cfg['msg_prediseno_oferta_variantes'] = $ofertaVariantesDefault;
     }
     $ofertasRetiradas = [
+        // Retiradas el 1-sep: vendían chica la demo.
+        'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?',
+        'Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?',
+        'Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?',
+        'Sin compromiso, te dejamos ver una muestra de cómo quedaría tu web. Querés que te la arme?',
         'Antes de que pongas un peso, te armamos una muestra de tu propia web para que la veas terminada. Si no te convence, no avanzamos y listo. La hacemos?',
         'Como primer paso te armamos una muestra gratis de tu web. Si te gusta y querés avanzar, ahí te pido algunos datos. La armamos?',
         'Arrancamos con una muestra gratis de tu web. Si te convence, te pido un par de datos para seguir. La preparamos?',
@@ -792,13 +800,11 @@ function wabot_config_ventas(&$cfg) {
     // dictados tal cual, con {precio} como único reemplazo. institucional y
     // catálogo quedan afuera a propósito —no dictó copy para esos dos— y
     // siguen con la plantilla dinámica de {desc} (ver wabot_pitch_precio_texto).
-    $precioIdealPorTipo = [
-        'landing' => 'Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}, pago único.',
-        'ecommerce' => 'Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}, en un único pago',
-        'turnos' => 'Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}, pago único.',
-        'inmobiliaria' => 'Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}, pago único.',
-        'elearning' => 'Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}, pago único.',
-    ];
+    // Desde el 1-sep arrancan nombrando el rubro con las palabras del cliente
+    // ("Para las gorras, lo ideal sería..."): {rubro} lo llena el modelo como
+    // argumento de dar_precio y lo valida wabot_rubro_valido(); sin rubro, la
+    // cláusula se saca sola (wabot_aplicar_rubro). Ver wabot_config_pitch_rubro().
+    $precioIdealPorTipo = wabot_precio_ideal_defaults();
     foreach ($precioIdealPorTipo as $tipoPI => $textoPI) {
         if (!isset($cfg['tipos'][$tipoPI])) continue;
         if (trim((string)($cfg['tipos'][$tipoPI]['precio_ideal'] ?? '')) === '') {
@@ -1271,7 +1277,10 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
         // Preguntan el precio antes de decir a qué se dedican: sin el rubro no
         // hay precio exacto, pero escaparse con "te lo confirma el equipo" tira
         // la venta (caso Abel, 22-ago). Se le pregunta.
-        'precio_sin_rubro' => 'Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.',
+        // 1-sep: "¿Cuánto cuesta?" es la única pregunta del anuncio y "depende"
+        // era la respuesta; 3 de 10 no volvieron a escribir. Los dos números los
+        // pone el código desde la lista de tipos ({min}/{max}), nunca el texto.
+        'precio_sin_rubro' => 'Entre {min} y {max}, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
 
         /* Solo Factura C (monotributo). Una SRL responsable inscripto preguntó
@@ -1745,6 +1754,13 @@ function wabot_primer_nombre($conv) {
 }
 
 function wabot_personalizar($texto, $conv) {
+    // {rubro} = lo que vende o hace, con sus palabras, validado en dar_precio.
+    // Se resuelve acá y no al generar el texto: así el pitch y la oferta
+    // siguen siendo iguales a la config para todos los guards que comparan
+    // contra ella, igual que pasa con {nombre}.
+    if (strpos($texto, '{rubro}') !== false) {
+        $texto = wabot_aplicar_rubro($texto, (string)($conv['rubro_pitch'] ?? ''));
+    }
     // {entrega} = "hoy" o "mañana" según la hora en que se cerró el prediseño.
     if (strpos($texto, '{entrega}') !== false) {
         $cuando = wabot_dia_entrega(time());
@@ -1761,6 +1777,23 @@ function wabot_personalizar($texto, $conv) {
     $t = preg_replace('/\s*\{nombre\}/', '', $t);         // "Hola {nombre}, te" → "Hola, te"
     $t = preg_replace('/\s+([.,;:!?])/', '$1', $t);
     return trim(preg_replace('/ {2,}/', ' ', $t));
+}
+
+/**
+ * Resuelve {rubro}. Con rubro: "Para {rubro}, lo ideal" → "Para las gorras, lo
+ * ideal". Sin rubro válido: la cláusula inicial se saca entera y la frase
+ * arranca como antes ("Lo ideal sería..."); en el medio de una frase queda
+ * "tu negocio" ("pensada para tu negocio").
+ */
+function wabot_aplicar_rubro($texto, $rubro) {
+    $texto = (string)$texto;
+    if (strpos($texto, '{rubro}') === false) return $texto;
+    $rubro = trim((string)$rubro);
+    if ($rubro !== '') return str_replace('{rubro}', $rubro, $texto);
+    $t = preg_replace_callback('/(^|\n)Para \{rubro\},?\s*(\p{L})/u', function ($m) {
+        return $m[1] . mb_strtoupper($m[2]);
+    }, $texto);
+    return str_replace('{rubro}', 'tu negocio', $t);
 }
 
 /** La etiqueta humana de un tipo, incluidos los que no tienen precio de lista. */
@@ -1912,6 +1945,137 @@ function wabot_config_postdemo_sin_venta(&$cfg) {
     }
 }
 
+/** Los textos fijos del turno del pitch (1-sep), con {rubro} al frente. */
+function wabot_precio_ideal_defaults() {
+    return [
+        'landing' => 'Para {rubro}, lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        'ecommerce' => 'Para {rubro}, lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total, sin abono mensual.',
+        'turnos' => 'Para {rubro}, lo ideal sería una web con sistema de turnos: tus clientes eligen día y horario directamente desde la página, y vos tenés un panel para la disponibilidad y las reservas. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        'inmobiliaria' => 'Para {rubro}, lo ideal sería una web inmobiliaria: publicás propiedades con fotos, características y contacto, y tenés un panel para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        'elearning' => 'Para {rubro}, lo ideal sería una plataforma de cursos online: tus alumnos se registran, acceden al contenido y avanzan con las clases desde la web, y vos tenés un panel para cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+    ];
+}
+
+/**
+ * La oferta de la demo, dicha como lo que es (1-sep). "Si querés, te
+ * preparamos una muestra sin costo para que veas cómo podría quedar. Te
+ * sirve?" tenía cuatro señales de poca confianza en dos líneas. Se conserva:
+ * "gratis" siempre, pregunta cerrada al final, 2-3 líneas, ningún monto ni
+ * plazo comprometido. {rubro} lo resuelve wabot_personalizar().
+ */
+function wabot_oferta_demo_defaults() {
+    return [
+        'Te armamos la demo de tu web, gratis: diseñada para {rubro}, con tu nombre y tus colores, en una página real que abrís desde el celular. Si te gusta seguimos, y si no, no pasa nada. La preparamos?',
+        'Antes de que decidas nada te mostramos tu web hecha. Es una demo gratis, pensada para {rubro}, y tarda uno o dos días. Te la armamos?',
+        'Acá es al revés de lo común: primero ves tu web armada, después decidís. La demo es gratis y sin compromiso. Arrancamos?',
+        'El próximo paso es ver tu web, no imaginarla: te preparamos la demo con tu nombre, tus colores y lo que ofrecés, gratis. La armamos?',
+    ];
+}
+
+/**
+ * ¿Es una oferta de la generación anterior? Todas las viejas la llamaban
+ * "muestra" (la palabra que la vendía chica) o están en esta lista corta. Se
+ * retiran al cargar la config, vengan del panel o del mapa de migraciones
+ * viejas de wabot_config_ventas().
+ */
+function wabot_oferta_demo_retirada($texto) {
+    $t = trim((string)$texto);
+    if ($t === '') return false;
+    if (mb_stripos($t, 'muestra') !== false) return true;
+    return in_array($t, [
+        'Siempre ofrecemos un prediseño gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te armemos uno?',
+        'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?',
+        'Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?',
+        'También podemos armarte una demo sin costo y sin compromiso, así evaluás algo concreto. Querés que la preparemos?',
+        'Como siguiente paso, podemos mostrarte una demo gratis de tu propia web. Te gustaría que la armemos?',
+        'Antes de que decidas, te podemos preparar una demo sin cargo para que veas el resultado. Avanzamos con eso?',
+        'Si te sirve para evaluarlo, armamos una demo gratis adaptada a tu negocio. Querés que la preparemos?',
+        'Como primer paso te armamos una demo gratis de la web, para que veas cómo queda con tu estilo y colores. La armamos?',
+    ], true);
+}
+
+/**
+ * Migraciones del 1-sep ("le falta alma"): el pitch nombra el rubro, la oferta
+ * de la demo se dice como lo que es, el listado de datos pide menos, la
+ * despedida del que compara menciona la demo una vez, y la apertura del
+ * anuncio da el rango real. Corre después de wabot_config_ventas() (que ya
+ * dejó los textos de precio en su forma "sin abono mensual") y antes de
+ * wabot_config_portfolio() (que vuelve a colgar la línea del portfolio).
+ */
+function wabot_config_pitch_rubro(&$cfg) {
+    $nuevos = wabot_precio_ideal_defaults();
+    // Los cuerpos dictados el 25-ago, tal como quedan tras la migración de
+    // "pago único" y sin la línea del portfolio: producción tiene exactamente
+    // estos (se ven en el export del 1-sep).
+    $viejos = [
+        'landing' => ['Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+        'ecommerce' => ['Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+        'turnos' => ['Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+        'inmobiliaria' => ['Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+        'elearning' => ['Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+    ];
+    $sinPortfolio = function ($t) {
+        $t = preg_replace('/\s*\n\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t);
+        return trim(preg_replace('/[ \t]+/u', ' ', $t));
+    };
+    $conRubro = function ($t) use ($sinPortfolio, $nuevos, $viejos) {
+        $t = (string)$t;
+        if (trim($t) === '' || strpos($t, '{rubro}') !== false) return $t;
+        $cuerpo = $sinPortfolio($t);
+        foreach ($nuevos as $tipo => $nuevo) {
+            if (in_array($cuerpo, $viejos[$tipo] ?? [], true)) return $nuevo;
+        }
+        // Editado a mano en el panel: se le antepone el rubro y se respeta el resto.
+        if (preg_match('/^Lo (ideal|mejor|que te conviene|más práctico|mas practico)\b/u', $cuerpo)) {
+            return 'Para {rubro}, ' . mb_strtolower(mb_substr($cuerpo, 0, 1)) . mb_substr($cuerpo, 1);
+        }
+        return $t;
+    };
+    foreach ((array)($cfg['tipos'] ?? []) as $tipo => $datos) {
+        if (!isset($nuevos[$tipo])) continue;
+        if (isset($datos['precio_ideal']) && is_string($datos['precio_ideal'])) {
+            $cfg['tipos'][$tipo]['precio_ideal'] = $conRubro($datos['precio_ideal']);
+        }
+        if (!empty($datos['precio_ideal_variantes']) && is_array($datos['precio_ideal_variantes'])) {
+            $cfg['tipos'][$tipo]['precio_ideal_variantes'] = array_map($conRubro, $datos['precio_ideal_variantes']);
+        }
+    }
+
+    // La oferta: las variantes que vendían chica la demo se retiran también
+    // cuando llegan por el mapa de migraciones viejas de wabot_config_ventas().
+    $ofertaDefault = wabot_oferta_demo_defaults();
+    if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $limpias = array_values(array_filter($cfg['msg_prediseno_oferta_variantes'], function ($v) {
+            return !wabot_oferta_demo_retirada($v);
+        }));
+        $cfg['msg_prediseno_oferta_variantes'] = $limpias ?: $ofertaDefault;
+    } else {
+        $cfg['msg_prediseno_oferta_variantes'] = $ofertaDefault;
+    }
+    if (wabot_oferta_demo_retirada((string)($cfg['msg_prediseno_oferta'] ?? ''))
+        || trim((string)($cfg['msg_prediseno_oferta'] ?? '')) === '') {
+        $cfg['msg_prediseno_oferta'] = $cfg['msg_prediseno_oferta_variantes'][0];
+    }
+
+    // El listado de datos pide menos y avisa que el resto lo resolvemos nosotros.
+    $listadoViejo = "Para prepararte la demo necesito esto:\n{faltan}\nY si tenés logo o fotos propias, mandámelas también.";
+    $listadoNuevo = "Para armarla necesito poco:\n{faltan}\nSi no tenés colores definidos, decime 'elegí vos' y los defino yo. Si tenés logo o fotos, mandámelas; si no, arranco con imágenes del rubro y después las cambiamos.";
+    if (trim((string)($cfg['prediseno'] ?? '')) === $listadoViejo || trim((string)($cfg['prediseno'] ?? '')) === '') {
+        $cfg['prediseno'] = $listadoNuevo;
+    }
+
+    // El que se va comparando y ya tiene precio: una sola mención de la demo.
+    if (trim((string)($cfg['cierre_comparando'] ?? '')) === '') {
+        $cfg['cierre_comparando'] = 'Dale. Si te sirve para comparar, te armamos la demo de tu web gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.';
+    }
+
+    // La apertura del anuncio contesta con el rango real en vez de "depende".
+    if (trim((string)($cfg['info']['precio_sin_rubro'] ?? ''))
+        === 'Depende del tipo de página que necesites. Contame brevemente para qué la querés y te paso el valor exacto en un mensaje.') {
+        $cfg['info']['precio_sin_rubro'] = 'Entre {min} y {max}, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.';
+    }
+}
+
 function wabot_config_pitch_encaje(&$cfg) {
     /* Pablo, 1-sep: "es malísimo que pregunte eso de si encaja, o buscabas
      * algo así". Pedirle al cliente que valide el encaje lo pone a dudar justo
@@ -1922,12 +2086,16 @@ function wabot_config_pitch_encaje(&$cfg) {
      * caza por el "no", no por la forma de la pregunta.
      *
      * Sin signo de pregunta a propósito: no es una pregunta, es una invitación. */
-    $pregunta = 'Si te sirve esta propuesta, te cuento cuál sería el próximo paso.';
+    /* 1-sep, noche: la línea afirmaba pero escondía el gancho ("te digo cuál
+     * es el próximo paso": 4 la recibieron, 2 silencio). Sigue sin preguntar
+     * y sigue pidiendo el opt-in, pero ahora dice qué hay del otro lado: ver
+     * su web armada antes de decidir. "Dale"/"contame" avanzan igual. */
+    $pregunta = 'Si te cierra, el próximo paso no es pagar: es ver tu web armada.';
     $variantes = [
-        'Si te sirve esta propuesta, te cuento cuál sería el próximo paso.',
-        'Si te cierra, te cuento cómo seguiríamos.',
-        'Si va por ahí lo que necesitás, te digo cuál es el próximo paso.',
-        'Si te gusta la idea, te cuento cómo seguimos.',
+        'Si te cierra, el próximo paso no es pagar: es ver tu web armada.',
+        'Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.',
+        'Si te sirve, el paso siguiente es verla hecha antes de decidir nada.',
+        'Si te gusta la idea, te cuento el próximo paso: ver tu web antes de decidir.',
     ];
     foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tipo) {
         if ($tipo === 'catalogo') continue;
@@ -2767,7 +2935,11 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
  * se sabe todo, se mantiene el texto por chat.
  */
 function wabot_prediseno_texto(&$conv, $cfg) {
-    $faltan = wabot_prediseno_faltan($conv);
+    // Sin la referencia: era la línea más larga del listado y es opcional. Se
+    // pregunta después, en su propio turno (prediseno_referencia), cuando ya
+    // está lo que sí hace falta. Pedir cinco cosas de entrada espantó a
+    // Enrique (1-sep: "si vos sos el creador no te puedo decir yo cómo").
+    $faltan = wabot_prediseno_faltan($conv, false);
     if (!$faltan) {
         $conv['prediseno_pedido'] = [];
         return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
@@ -2789,6 +2961,10 @@ function wabot_prediseno_texto(&$conv, $cfg) {
 
     $lista = implode("\n", array_map(function ($i) { return "- $i"; }, $faltan));
     $base  = (string)($cfg['prediseno'] ?? '');
+    // La aclaración de los colores solo si los colores están en la lista.
+    if (!in_array('Los colores de tu marca', $faltan, true)) {
+        $base = preg_replace("/Si no tenés colores definidos, decime 'elegí vos' y los defino yo\\.\\s*/u", '', $base);
+    }
     return strpos($base, '{faltan}') !== false ? str_replace('{faltan}', $lista, $base) : $base;
 }
 

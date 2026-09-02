@@ -1,0 +1,123 @@
+Bateria conversacional wabot — 7 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO A1 — Nacho (gorras): el pitch nombra el rubro y el precio de la landing se contesta
+ESPERADO: Pitch de ecommerce que arranque 'Para las gorras' (o sin la clausula, nunca {rubro} crudo) + linea post-precio con el gancho. 'Y una que sea solo landing?' recibe el precio de la landing ($160.000) sin preguntar mismo proyecto u otra web. 'dale, me sirve' lleva a la oferta de la demo (gratis, sin la palabra muestra).
+>>> CLIENTE: Quiero una página web para mi negocio 💻
+<<< BOT [86c]: Hola, contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Gorras
+<<< BOT [348c]: Para las gorras, lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y una que sea solo landing?
+<<< BOT [280c]: Landing: $160.000. Es una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico.
+           
+           Lo que te cotizé antes, Ecommerce, queda en $290.000.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, me sirve
+<<< BOT [136c]: Antes de que decidas nada te mostramos tu web hecha. Es una demo gratis, pensada para las gorras, y tarda uno o dos días. Te la armamos?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO A2 — Ximena (arte y ceramica): paraguas antes de cotizar, precio visible, brief escuchado
+ESPERADO: El CTA del anuncio recibe el rango real (entre $X y $Y) y una pregunta. 'vender objetos de arte y diseño' recibe SOLO 'Qué tipo de diseño hacés?' (sin linea post-precio pegada). 'Cuadros y objetos en cerámica' recibe el pitch de ecommerce con el precio. El brief ('tengo algo, conservar colores, minimalista') se contesta (ya_tiene_web / demo) y no con el precio pelado.
+>>> CLIENTE: ¿Cuánto cuesta hacer mi página web? 💰
+<<< BOT [122c]: Entre $160.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Hola es para vender objetos de arte y diseño
+<<< BOT [25c]: Qué tipo de diseño hacés?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuadros y objetos en cerámica
+<<< BOT [371c]: Para los cuadros y objetos en cerámica, lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [64c]: Si te cierra, el próximo paso no es pagar: es ver tu web armada.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Yo tengo algo ya pero no se ve muy profesional, si me gustaría poder conservar los colores y estilo minimalista si es posible
+<<< BOT [170c]: Perfecto, pasame el link de tu página actual así la reviso. Te puedo preparar una demo gratis de cómo quedaría hecha de nuevo a medida, sin compromiso, para que compares.
+<<< BOT [207c]: El total es $290.000 por todo el desarrollo, y el detalle completo está acá: gokywebs.com/presupuestos/Ecommerce
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO A3 — Enrique (plomero): sin pregunta de turnos, la pregunta de las fotos se contesta, y el 'no se como' no repite el listado
+ESPERADO: 'Soy plomero' NO recibe la pregunta de turnos: landing $160.000 con 'Para plomería' o similar. 'subir fotos de mis trabajos' se contesta (no la oferta de la demo en su lugar). 'si vos sos el creador no te puedo decir yo como' recibe info.no_se_nada + pedido de solo nombre y negocio (sin colores ni referencia). Con nombre y negocio cierra el prediseño.
+>>> CLIENTE: ¿Cuánto cuesta hacer mi página web? 💰
+<<< BOT [122c]: Entre $160.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy plomero
+<<< BOT [304c]: Lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si algo donde pueda ir subiendo fotos de mis trabajos
+<<< BOT [120c]: Acá es al revés de lo común: primero ves tu web armada, después decidís. La demo es gratis y sin compromiso. Arrancamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si vos sos el creador no te puedo desir yo como aserlo
+<<< BOT [184c]: No hace falta que sepas nada de eso, para eso estamos nosotros. Vos contanos de tu negocio y del resto nos encargamos: te vamos pidiendo solo la información que hace falta, en criollo.
+<<< BOT [163c]: Para armarla necesito poco:
+           - Tu nombre
+           - El nombre de tu negocio
+           Si tenés logo o fotos, mandámelas; si no, arranco con imágenes del rubro y después las cambiamos.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Enrique, Plomería Enrique
+<<< BOT [225c]: Listo Enrique, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO A4 — Sol (revendedora, tuvo un bebe): sin aviso de bilingue, y una linea humana antes de derivar
+ESPERADO: No sale 'la podemos hacer bilingüe' por 'clases de inglés'. La derivacion (es una revendedora que pide presupuesto para su clienta) puede llevar UNA frase humana adelante (felicitaciones/que bueno que retomás) y despues el texto oficial completo. Nunca dos precios.
+>>> CLIENTE: Hola Luciano! Seguis con el tema de las web.
+<<< BOT [250c]: En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Tuve un bebé y estoy retomando ahora con el marketing y diseño. Habíamos tenido una videollamada, soy de Cordoba. Para ofrecer tus servicios.
+<<< BOT [128c]: Dale, eso lo hablás directo con Pablo, el desarrollador: te escribe desde nuestro número de proyectos para coordinar la llamada.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: En este caso necesito un presupuesto para una chica que da clases de ingles
+<<< BOT [106c]: Pablo, el desarrollador, ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+>>> CLIENTE: Me armarías un presupuesto para pasar?
+<<< BOT [71c]: Esa duda te la va a poder contestar el desarrollador cuando te escriba.
+    [fase=derivado tipo=- precio_dado=0 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO A5 — Tecnico de heladeras: no es ecommerce; la segunda cotizacion OFRECE la demo en vez de tirar el listado
+ESPERADO: Con 'técnico en aire acondicionado... muebles a medidas y pintura' NO cotiza ecommerce: pregunta el desempate híbrido (mostrar trabajos / catálogo / vender). 'mostrar trabajos y recibir consultas' recibe landing $160.000 y la OFERTA de la demo (gratis), no 'Para armarla necesito...' pegado al precio. 'dale' recibe el listado corto (sin referencia).
+>>> CLIENTE: ¿Cuánto cuesta hacer mi página web? 💰
+<<< BOT [122c]: Entre $160.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy técnico en aire acondicionado lavarropas heladeras microondas hornos eléctricos lavarropas también muebles a medidas y pintura
+<<< BOT [218c]: Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar trabajos y recibir consultas, para exhibir modelos o productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online?
+    [fase=desempate_hibrido tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si claro sería para mostrar trabajos y recibir consultas
+<<< BOT [344c]: Para el servicio técnico y los muebles, lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale
+<<< BOT [120c]: Acá es al revés de lo común: primero ves tu web armada, después decidís. La demo es gratis y sin compromiso. Arrancamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO A6 — Elii: se va comparando precios y se lleva UNA mencion de la demo
+ESPERADO: Pitch de ecommerce ('Para la tienda online' o sin clausula) + linea post-precio. 'estaba viendo y consultar precios. Muchas gracias' recibe cierre_comparando (te armamos la demo gratis... así comparás con algo concreto) + 'ya queda anotado que lo tuyo sería ecommerce'. Seguimiento bloqueado.
+>>> CLIENTE: Quiero averiguar costos para una tienda online
+<<< BOT [331c]: Lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de $290.000. Es el valor total, sin abono mensual.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si estaba viendo y consultar precios. Muchas gracias
+<<< BOT [245c]: Dale. Si te sirve para comparar, te armamos la demo de tu web gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame. Ya queda anotado que lo tuyo sería ecommerce, así que no vas a tener que explicar todo otra vez.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+
+########## ESCENARIO A7 — Lucas: 'revisare el portafolio' cierra con la demo como argumento para comparar
+ESPERADO: Pitch de landing (o pregunta de rubro, ambas valen). 'Revisaré el portafolio y los vuelvo a contactar' recibe el cierre con la demo (una vez) y no un 'quedamos a disposición' improvisado.
+>>> CLIENTE: Hola, encontré una publicidad que realizan landing pages de alta conversión
+<<< BOT [304c]: Lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de $160.000. Es el valor total del desarrollo, sin abono mensual.
+           Y acá podés ver otras landings que ya entregamos: gokywebs.com/portfolio/?tipo=landing
+<<< BOT [68c]: Si te sirve, el paso siguiente es verla hecha antes de decidir nada.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy contador, atiendo pymes
+<<< BOT [120c]: Acá es al revés de lo común: primero ves tu web armada, después decidís. La demo es gratis y sin compromiso. Arrancamos?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Revisaré el portafolio y los vuelvo a contactar
+<<< BOT [170c]: Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá. Ya queda anotado que lo tuyo sería landing, así que no vas a tener que explicar todo otra vez.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=consulta_sin_presion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar
