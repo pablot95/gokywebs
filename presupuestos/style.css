@@ -341,3 +341,17 @@ a { color: inherit; text-decoration: none; }
     .plan-pago, .mant-card, .mods-card { box-shadow: none; border: 1px solid var(--border-2); }
     .pres-footer { margin-top: 0.5rem; padding: 1rem; }
 }
+
+/* ── Aviso de la demo gratis, al pie de seña/saldo/entrega (Pablo, 2-sep) ── */
+.demo-aviso {
+    display: flex; align-items: center; gap: 0.7rem;
+    width: 100%;
+    margin-top: 1.1rem; padding-top: 1rem;
+    border-top: 1px dashed var(--border-2);
+    font-size: 0.95rem; line-height: 1.45; color: var(--text);
+}
+.demo-aviso svg { flex: none; width: 22px; height: 22px; color: var(--green); }
+.demo-aviso b { font-weight: 700; color: var(--green); }
+@media (max-width: 480px) {
+    .demo-aviso { font-size: 0.9rem; gap: 0.55rem; }
+}
