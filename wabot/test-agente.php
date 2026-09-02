@@ -772,8 +772,9 @@ caso('una empresa de limpieza o de fletes es landing, no institucional',
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
 caso('y prohíbe expresamente la pregunta de carrito vs WhatsApp',
     stripos($sistema, 'Esa pregunta está prohibida') !== false);
-caso('el playbook sabe que el precio va después de la presentación',
-    stripos($sistema, 'PRIMERO SE PRESENTA LA WEB') !== false);
+caso('el playbook explica el turno del precio: un solo llamado y la demo sale sola',
+    stripos($sistema, 'UN SOLO LLAMADO Y LA DEMO SALE SOLA') !== false
+    && stripos($sistema, 'esperá su respuesta antes de') === false);
 caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
     strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
     && strpos($sistema, 'NO elijas uno solo y descartes el otro en silencio') !== false);
@@ -1813,6 +1814,44 @@ foreach ([
 }
 caso('y el texto oficial de pago no trae ningún monto de cuota',
     wabot_texto_dice_monto_de_cuota(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg)) === false);
+
+echo "— 2-sep: el playbook no arrastra el flujo viejo ni tipos retirados —
+";
+
+$sysLimpio = wabot_agente_sistema(['fase' => 'menu', 'tipo' => null, 'transcript' => []], $cfg);
+/* Cada una de estas frases describía un flujo o un producto que ya no existe.
+ * Si vuelven al prompt, el modelo manda el precio dos veces o cotiza un tipo
+ * retirado. */
+foreach ([
+    'esperá su respuesta antes de'        => 'el turno de dos pasos',
+    'segunda vez que llamás a dar_precio' => 'la oferta en el segundo llamado',
+    'Ya no se manda el link'              => 'el precio sin link de presupuesto',
+    'quiere_avanzar'                      => 'una causa de derivar que no existe en el enum',
+    'turnos online'                       => 'el producto turnos',
+    'cuotas sin interés'                  => 'una condición de pago retirada',
+    'cantidad de productos'               => 'la pregunta del catálogo',
+] as $frase => $porQue) {
+    caso("el playbook ya no dice \"$frase\" ($porQue)", mb_stripos($sysLimpio, $frase) === false);
+}
+/* Y las causas que el prompt manda usar tienen que existir en la herramienta. */
+$causasTool = [];
+foreach (wabot_agente_tools(false) as $t) {
+    if (($t['name'] ?? '') === 'derivar') $causasTool = $t['parameters']['properties']['causa']['enum'] ?? [];
+}
+caso('las causas de derivar del prompt están todas en el enum de la tool', (function () use ($sysLimpio, $causasTool) {
+    preg_match_all('/causa ([a-z_]+)/u', $sysLimpio, $m);
+    foreach (array_unique($m[1]) as $c) {
+        if (!in_array($c, $causasTool, true)) return false;
+    }
+    return true;
+})());
+/* El parámetro de la cantidad de productos se fue con el catálogo. */
+caso('ninguna herramienta pide ya la cantidad de productos', (function () {
+    foreach (wabot_agente_tools(false) as $t) {
+        if (isset($t['parameters']['properties']['productos'])) return false;
+    }
+    return true;
+})());
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
