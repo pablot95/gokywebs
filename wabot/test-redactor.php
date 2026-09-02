@@ -99,7 +99,7 @@ caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
     && strpos($r[0], '$180.000') !== false);
 caso('la propuesta del prediseño va aparte, CON el link, y NO se reescribe',
-    stripos($r[1], 'demo de tu web gratis') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
+    stripos($r[1], 'cómo podría quedar tu web') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };

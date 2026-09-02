@@ -2262,6 +2262,11 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
                 $conv['referencia_preguntada'] = true;
                 return [$cfg['prediseno_referencia']];
             }
+            /* Con el formulario ya mandado no se vuelve a mandar: el cliente lo
+             * vio. Repetir el mismo link cada vez que escribe es insistir. */
+            if (wabot_link_form_ya_enviado($conv)) {
+                return [(string)($cfg['prediseno_espera'] ?? 'Perfecto, quedo atento a que lo completes y arrancamos.')];
+            }
             if (!empty($conv['descripcion']) && empty($conv['colores'])) $pedido = (string)$cfg['prediseno_falta_colores'];
             elseif (!empty($conv['colores']) && empty($conv['descripcion'])) $pedido = (string)$cfg['prediseno_falta_descripcion'];
             else $pedido = wabot_prediseno_texto($conv, $cfg);
@@ -2923,6 +2928,15 @@ function wabot_engine($texto, &$conv, $cfg) {
             $noSabeComo = wabot_prediseno_no_sabe_como($texto, $conv, $cfg);
             if ($noSabeComo !== null) return array_merge($out, $noSabeComo);
             if ($c['descripcion'] !== null) $conv['descripcion'] = $c['descripcion'];
+            /* Lo que cuenta de su negocio en esta fase es la descripción del
+             * boceto, aunque el clasificador no la haya etiquetado: desde el
+             * 2-sep el turno del precio ya deja la charla acá, así que es el
+             * lugar donde llega "vendo ropa de mujer, tengo local en Salta". */
+            $tpLibre = trim($texto);
+            if (empty($conv['descripcion']) && mb_strlen($tpLibre) >= 15 && strpos($tpLibre, '?') === false
+                && !wabot_fallback_respuesta_vacia($texto) && !$has('pregunta_info')) {
+                $conv['descripcion'] = $tpLibre;
+            }
             if ($c['colores']     !== null) $conv['colores']     = $c['colores'];
             if ($conv['colores'] === null && $conv['descripcion'] !== null && wabot_colores_delegados($texto)) {
                 $conv['colores'] = 'A elección del diseñador';
@@ -2944,6 +2958,9 @@ function wabot_engine($texto, &$conv, $cfg) {
             elseif ($conv['colores'] !== null)      { $pedido = $cfg['prediseno_falta_descripcion']; }
             elseif (!$out)                          { $pedido = wabot_prediseno_texto($conv, $cfg); }
             else                                    { $pedido = null; }
+            if ($pedido !== null && wabot_link_form_ya_enviado($conv)) {
+                $pedido = $out ? null : (string)($cfg['prediseno_espera'] ?? 'Perfecto, quedo atento a que lo completes y arrancamos.');
+            }
             if ($pedido !== null) {
                 if (trim($pedido) === wabot_ultimo_texto_bot($conv)) {
                     $agotada = wabot_handoff_ambiguedad($conv, $texto);
@@ -4243,7 +4260,10 @@ function wabot_frase_tiene_contenido_especifico($texto) {
  * momento exacto en que se nota el bot.
  */
 function wabot_rubro_valido($rubro, $conv) {
-    $r = trim(preg_replace('/\s+/u', ' ', (string)$rubro));
+    // El modelo a veces manda "las_gorras" (guiones bajos por espacios), y eso
+    // sale crudo al cliente. Visto en la batería del 2-sep.
+    $r = str_replace(['_', '-'], ' ', (string)$rubro);
+    $r = trim(preg_replace('/\s+/u', ' ', $r));
     $r = trim($r, " \t\n\r.,;:!?\"'«»()");
     if ($r === '' || mb_strlen($r) > 60) return '';
     if (preg_match('/[\d$%{}]|https?:|www\.|\.com\b/iu', $r)) return '';
@@ -4469,7 +4489,10 @@ function wabot_pitch_corresponde($tipo, $conv, $cfg) {
     if (!empty($conv['demo_pedida_entrada'])) return false;
     if (!empty($conv['pidio_precio'])) return false;
     if (wabot_texto_pide_precio(wabot_ultimo_texto_cliente($conv))) return false;
-    return trim((string)($cfg['tipos'][$tipo]['pitch_pregunta'] ?? '')) !== '';
+    /* Ya no depende de que haya una línea de pitch cargada: esa línea se
+     * eliminó el 2-sep y el turno es precio + demo. Catálogo queda afuera
+     * porque su "pitch" era la pregunta por la cantidad, que también se fue. */
+    return $tipo !== 'catalogo' && isset($cfg['tipos'][$tipo]);
 }
 
 /**
@@ -4495,16 +4518,24 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['pitch_hecho'] = true;
     $conv['pitch_tipo'] = $tipo;
     $conv['precio_dado'] = true;
-    // Fase 'pitch', no 'precio': lo que falta es la respuesta a la pregunta
-    // del pitch, y esa respuesta la termina de procesar el case 'pitch' del
-    // switch de wabot_engine() (llama a wabot_precio() de nuevo, que ya sabe
-    // que acá solo falta ofrecer la demo). 'precio' es una fase distinta, con
-    // su propio manejo de objeciones/dudas — no la de esperar el pitch.
-    $conv['fase'] = 'pitch';
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
-    $pregunta = wabot_pitch_pregunta_texto($tipo, $conv, $cfg);
-    return [$precioTexto, $pregunta];
+
+    /* EL TURNO DEL PRECIO SON DOS MENSAJES: el precio y, atrás, la demo con el
+     * formulario. Sin nada en el medio (Pablo, 2-sep: "sacá todo lo que sea
+     * 'si te cierra', 'si va por ahí'"). Antes había una línea de opt-in y la
+     * demo esperaba a que el cliente contestara: un turno de más que no
+     * agregaba nada, porque el formulario es un link, no un compromiso.
+     *
+     * Sin link (Instagram, que no tiene teléfono) se mantiene el ofrecimiento
+     * que pregunta, porque ahí los datos se piden por chat. */
+    $conv['fase'] = 'prediseno';
+    $conv['cta_muestra'] = true;
+    wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
+    $segundo = wabot_form_link($conv, $cfg) !== ''
+        ? wabot_prediseno_texto($conv, $cfg)
+        : wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg);
+    return [$precioTexto, $segundo];
 }
 
 /**

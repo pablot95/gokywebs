@@ -904,6 +904,12 @@ function wabot_config_ventas(&$cfg) {
     }
 
     // Pablo, 2-sep: el formulario vuelve a ser el paso siguiente al precio.
+    /* Una línea corta para el que sigue escribiendo con el formulario ya
+     * mandado: ni el link de nuevo ni silencio. */
+    if (trim((string)($cfg['prediseno_espera'] ?? '')) === '') {
+        $cfg['prediseno_espera'] = 'Perfecto, cuando completes el formulario arrancamos con tu propuesta. Cualquier duda, escribime por acá.';
+    }
+
     $cfg['form_activo'] = true;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (trim((string)($cfg['seguimiento_pregunta'] ?? '')) === '') {
@@ -1453,11 +1459,21 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
     /* El turno de la demo: qué es, el formulario y las 24 horas. Antes se
      *    ofrecía ("te la armo?") y recién con el sí llegaba el link; ahora el
      *    link va en el mismo mensaje, que es lo que pidió Pablo. */
-    $linkNuevo = "Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.\nSolo completá este formulario, no te lleva un minuto: {link}\nEn menos de 24 horas la tenés lista.";
+    /* El texto lo dictó Pablo el 2-sep, palabra por palabra. El anterior
+     * ("Te armamos la demo de tu web gratis: es tu página real...") lo rechazó:
+     * promete la web como si ya estuviera hecha, en vez de ofrecer mostrar
+     * cómo podría quedar. */
+    $linkNuevo = "Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+
+Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+{link}";
     $linksViejos = [
         'Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}',
         'Para que veas la calidad del trabajo antes de decidir, te armamos una demo de tu web: es una primera entrega, sin cargo. Completá este formulario, te lleva menos de un minuto: {link}',
         'Antes de que compres nada, te mostramos la calidad del trabajo con una demo de tu web: es la primera entrega, gratis. Solo tenés que llenar este formulario, no lleva más de un minuto: {link}',
+        "Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.
+Solo completá este formulario, no te lleva un minuto: {link}
+En menos de 24 horas la tenés lista.",
     ];
     if (in_array(trim((string)($cfg['prediseno_link'] ?? '')), $linksViejos, true) || trim((string)($cfg['prediseno_link'] ?? '')) === '') {
         $cfg['prediseno_link'] = $linkNuevo;
@@ -2142,34 +2158,21 @@ function wabot_config_pitch_rubro(&$cfg) {
 }
 
 function wabot_config_pitch_encaje(&$cfg) {
-    /* Pablo, 1-sep: "es malísimo que pregunte eso de si encaja, o buscabas
-     * algo así". Pedirle al cliente que valide el encaje lo pone a dudar justo
-     * después de escuchar el precio, y encima suena a que no confiamos en lo
-     * que acabamos de proponer. La línea ahora AFIRMA la propuesta y ofrece
-     * seguir: el que dice que sí ya está pidiendo el próximo paso (la demo),
-     * y el que no quería eso lo dice igual — wabot_pitch_dice_otra_idea() lo
-     * caza por el "no", no por la forma de la pregunta.
+    /* NO HAY LÍNEA ENTRE EL PRECIO Y LA DEMO (Pablo, 2-sep: "sacá todo lo que
+     * sea 'si te cierra', 'si va por ahí', 'si te sirve', es ridículo").
      *
-     * Sin signo de pregunta a propósito: no es una pregunta, es una invitación. */
-    /* 1-sep, noche: la línea afirmaba pero escondía el gancho ("te digo cuál
-     * es el próximo paso": 4 la recibieron, 2 silencio). Sigue sin preguntar
-     * y sigue pidiendo el opt-in, pero ahora dice qué hay del otro lado: ver
-     * su web armada antes de decidir. "Dale"/"contame" avanzan igual. */
-    $pregunta = 'Si te cierra, el próximo paso no es pagar: es ver tu web armada.';
-    $variantes = [
-        'Si te cierra, el próximo paso no es pagar: es ver tu web armada.',
-        'Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.',
-        'Si te sirve, el paso siguiente es verla hecha antes de decidir nada.',
-        'Si te gusta la idea, te cuento el próximo paso: ver tu web antes de decidir.',
-    ];
+     * Historia corta: era la pregunta de encaje ("buscabas algo así?"), el
+     * 1-sep pasó a ser una invitación ("te cuento el próximo paso") y ninguna
+     * de las dos era algo que Pablo hubiera pedido. El flujo que sí pidió es
+     * precio y, en el mensaje siguiente, la demo con el formulario. Punto.
+     *
+     * Las claves se vacían en vez de borrarse: wabot_pitch_pregunta_texto()
+     * puede seguir leyéndolas y devuelve '' sin que nada reviente. */
     foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tipo) {
-        if ($tipo === 'catalogo') continue;
         foreach (['pitch_pregunta', 'pitch_pregunta_2'] as $campo) {
-            $cfg['tipos'][$tipo][$campo] = $pregunta;
-            $cfg['tipos'][$tipo][$campo . '_variantes'] = $variantes;
+            $cfg['tipos'][$tipo][$campo] = '';
+            $cfg['tipos'][$tipo][$campo . '_variantes'] = [];
         }
-        // Las variantes por contexto preguntaban por el negocio (cuántas
-        // unidades, qué servicio): con la pregunta de encaje ya no aplican.
         foreach (['alojamiento', 'salud', 'mayorista'] as $ctx) {
             unset(
                 $cfg['tipos'][$tipo]['pitch_pregunta_' . $ctx],
@@ -3148,6 +3151,17 @@ function wabot_prediseno_lista_posicional($texto, &$conv) {
  * Solo en Instagram (sin link posible, wabot_form_link() da vacío) o si ya
  * se sabe todo, se mantiene el texto por chat.
  */
+/**
+ * ¿Ya se le mandó el link del formulario y todavía no mandó ningún dato?
+ * Entonces no se repite: el cliente lo vio y lo va a completar, o no. Repetir
+ * el mismo link en cada mensaje es exactamente el "demo demo" que Pablo pidió
+ * sacar. El que pide que se lo repitan tiene su propio camino
+ * (wabot_pide_repetir).
+ */
+function wabot_link_form_ya_enviado($conv) {
+    return !empty($conv['link_form_enviado']) && empty($conv['lead_creado']);
+}
+
 function wabot_prediseno_texto(&$conv, $cfg) {
     // Sin la referencia: era la línea más larga del listado y es opcional. Se
     // pregunta después, en su propio turno (prediseno_referencia), cuando ya
@@ -3168,6 +3182,7 @@ function wabot_prediseno_texto(&$conv, $cfg) {
     if (wabot_prediseno_faltan($conv, false)) {
         $link = wabot_form_link($conv, $cfg);
         if ($link !== '') {
+            $conv['link_form_enviado'] = true;
             $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
             return str_replace('{link}', $link, $texto);
         }
@@ -5310,12 +5325,41 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
  * demora configurada es 5, espera 2 más. Nunca alarga de gusto.
  */
 /**
+ * ¿Este mensaje es el ofrecimiento de la demo (el que lleva el formulario o
+ * la propuesta de armarla)? Se compara contra los textos de la config, no
+ * contra palabras sueltas: si Pablo los edita desde el panel, sigue andando.
+ */
+function wabot_es_texto_demo($texto, $cfg) {
+    $t = trim((string)$texto);
+    if ($t === '') return false;
+    $oficiales = array_merge(
+        [(string)($cfg['prediseno_link'] ?? ''), (string)($cfg['msg_prediseno_oferta'] ?? '')],
+        (array)($cfg['prediseno_link_variantes'] ?? []),
+        (array)($cfg['msg_prediseno_oferta_variantes'] ?? [])
+    );
+    foreach ($oficiales as $of) {
+        $of = trim((string)$of);
+        if ($of === '') continue;
+        // El {link} ya viene resuelto en el texto que sale: se compara el
+        // arranque, que es lo que no cambia.
+        $cabeza = trim(explode('{link}', $of)[0]);
+        if ($cabeza !== '' && mb_strpos($t, mb_substr($cabeza, 0, 60)) === 0) return true;
+    }
+    return false;
+}
+
+/**
  * Cuánto tarda en "escribirse" un mensaje, según su largo. Un mensaje de dos
  * líneas no puede llegar en el mismo tiempo que uno de diez: eso es lo que
  * delata al bot. El piso evita que un "dale" salga disparado y el techo evita
  * que un mensaje largo deje al cliente esperando medio minuto.
  */
 function wabot_demora_tipeo($texto, $cfg) {
+    /* La demo va pegada al precio: "precio y 2 segundos después, demo" (Pablo,
+     * 2-sep). Por largo le tocarían 7 segundos —el techo— y el cliente se
+     * queda mirando la pantalla justo en el momento que decide. Es el único
+     * mensaje con demora fija, y sale de demora_entre_mensajes. */
+    if (wabot_es_texto_demo($texto, $cfg)) return (float)($cfg['demora_entre_mensajes'] ?? 2);
     if (empty($cfg['demora_por_longitud'])) return (float)($cfg['demora_entre_mensajes'] ?? 2);
 
     $vel = (float)($cfg['tipeo_por_segundo'] ?? 16);

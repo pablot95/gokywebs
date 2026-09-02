@@ -71,28 +71,25 @@ $cPitch = convNueva('AGPITCH1');
 unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 /* Desde el 1-sep la línea del pitch no pregunta: ofrece el próximo paso. */
-caso('la primera llamada ya da el precio (texto fijo), con la línea del pitch aparte',
+/* Desde el 2-sep el turno del precio son DOS mensajes: el precio y, dos
+ * segundos después, la demo. Sin ninguna línea en el medio. */
+caso('la primera llamada da el precio y, aparte, la demo con el formulario',
     !empty($r['exacta']) && strpos($r['texto'], '$290.000') !== false
     && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/ecommerce') !== false
-    && !empty($r['aparte'])
-    && preg_match('/pr[oó]ximo paso|paso siguiente|c[oó]mo seguir[ií]amos|c[oó]mo seguimos/iu', (string)$r['aparte'])
-    && stripos((string)$r['aparte'], 'buscabas') === false
-    && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
+    && !empty($r['aparte']) && wabot_es_texto_demo((string)$r['aparte'], $cfg)
+    && $cPitch['fase'] === 'prediseno' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
+caso('y no queda ninguna línea de "si te cierra" en el medio',
+    stripos((string)$r['aparte'], 'si te cierra') === false
+    && stripos((string)$r['aparte'], 'si va por ah') === false
+    && stripos((string)$r['aparte'], 'si te sirve') === false);
+/* Y si el modelo vuelve a llamar dar_precio, sale el resumen corto: el total y
+ * el link, sin re-pegar el bloque entero ni el formulario de nuevo. */
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-/* Desde el 2-sep esa segunda llamada YA trae el formulario: explica la demo,
- * da el link y promete las 24 horas, todo en el mismo mensaje. Antes ofrecía y
- * esperaba otro turno para dar el link, un paso que no aportaba nada. */
-caso('la segunda llamada, con el pitch ya contestado, NO repite el precio y trae el formulario',
-    !empty($r2['exacta']) && !empty($r2['texto']) && strpos((string)$r2['texto'], '$290.000') === false
-    && empty($r2['aparte']) && strpos((string)$r2['texto'], 'gokywebs.com/form/') !== false
-    && stripos((string)$r2['texto'], 'menos de 24 horas') !== false
-    && $cPitch['fase'] === 'prediseno' && $cPitch['cta_muestra'] === true);
+caso('una segunda llamada devuelve el resumen corto, no el bloque completo',
+    strpos((string)($r2['texto'] ?? ''), '$290.000') !== false
+    && mb_strlen((string)$r2['texto']) < mb_strlen((string)$r['texto'])
+    && strpos((string)$r2['texto'], 'gokywebs.com/form/') === false);
 
-// Y si el modelo vuelve a pedir el prediseño sin que el cliente haya mandado
-// nada nuevo, el guard lo frena: el link ya salió, repetirlo es insistir.
-$r3 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cPitch, $cfg);
-caso('pedir el prediseño de nuevo, sin datos nuevos, no repite el link',
-    isset($r3['error']) && $cPitch['fase'] === 'prediseno');
 @unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
 /* Catálogo se retiró (2-sep): pedirlo devuelve el ecommerce completo y ya no
@@ -484,7 +481,7 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('dar_precio devuelve la propuesta como mensaje aparte, con el link adentro',
-    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'demo de tu web gratis') !== false
+    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'cómo podría quedar tu web') !== false
     && strpos($r['aparte'], 'gokywebs.com/form/') !== false);
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);
