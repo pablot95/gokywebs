@@ -126,6 +126,9 @@ telefonoInput.addEventListener('input', () => {
 // El bot manda un código corto (?c=) en vez del teléfono: el link queda corto
 // y el número no viaja a la vista. El backend lo resuelve contra su índice.
 const _codigoBot = (_paramsInicial.get('c') || '').trim().slice(0, 8);
+// Vino por Instagram: de ahí no sale ningún teléfono, así que el número hay
+// que pedirlo acá. En WhatsApp ya lo tenemos y el campo se oculta.
+const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
 
 (function _prellenarDesdeBot() {
     const mapa = { t: 'telefono', neg: 'nombre_negocio' };
@@ -142,7 +145,14 @@ const _codigoBot = (_paramsInicial.get('c') || '').trim().slice(0, 8);
     });
 
     const tel = (_paramsInicial.get('t') || '').trim();
-    if (tel) {
+    if (_desdeInstagram) {
+        // El campo queda a la vista y con su propia explicación: por Instagram
+        // no tenemos cómo mandarle la demo.
+        const pista = document.createElement('p');
+        pista.className = 'form-tip';
+        pista.textContent = 'Dejanos tu WhatsApp: es por donde te mandamos la demo cuando esté lista.';
+        telefonoInput.insertAdjacentElement('afterend', pista);
+    } else if (tel) {
         const digits = tel.replace(/\D/g, '');
         const num = document.createElement('strong');
         num.textContent = digits;
@@ -163,7 +173,9 @@ const _codigoBot = (_paramsInicial.get('c') || '').trim().slice(0, 8);
     const aviso = document.createElement('p');
     aviso.className = 'form-tip';
     aviso.style.cssText = 'background:rgba(37,180,90,.10);border:1px solid rgba(37,180,90,.35)';
-    aviso.textContent = '✓ Ya cargamos algunos datos con lo que nos contaste por WhatsApp — revisá que estén bien.';
+    aviso.textContent = _desdeInstagram
+        ? '✓ Ya cargamos algunos datos con lo que nos contaste por Instagram — revisá que estén bien.'
+        : '✓ Ya cargamos algunos datos con lo que nos contaste por WhatsApp — revisá que estén bien.';
     document.querySelector('.form-section')?.insertAdjacentElement('beforebegin', aviso);
 })();
 

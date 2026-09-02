@@ -2,6 +2,8 @@
 config/mp-config.php
 config/wabot-config.php
 wabot/data/
+# track.php la crea sola, con su propio .htaccess: es de runtime
+form/data/
 config/arca/*.key
 config/arca/*.crt
 config/arca/*.csr

@@ -57,10 +57,36 @@ caso('dos conversaciones distintas no comparten código',
 caso('el link del form acepta el código y resuelve el teléfono del cliente',
     wabot_form_lead_validar(['c' => 'ZZZ', 'nombre' => 'A', 'nombre_negocio' => 'B',
         'resumen' => 'C', 'colores' => 'D']) === null);
+/* Instagram va por el mismo camino que WhatsApp (Pablo, 2-sep: "si instagram
+ * que sea igual que wsp"). El formulario identifica la charla por el código,
+ * no por el teléfono, así que siempre pudo: faltaba dejarlo pasar. */
 $convIg = ['tel' => 'IG1', 'channel_user_id' => 'IG1', 'canal' => 'instagram'];
-caso('nunca se ofrece en Instagram', wabot_form_link($convIg, $cfg) === '');
+$linkIg = wabot_form_link($convIg, $cfg);
+caso('en Instagram también sale el link del formulario', strpos($linkIg, '/form/?c=') !== false);
+caso('y avisa que ahí hay que pedir el WhatsApp, porque del IGSID no sale ninguno',
+    strpos($linkIg, '&ig=1') !== false);
+$convWsp = ['tel' => 'TESTWSP1', 'channel_user_id' => 'TESTWSP1', 'canal' => 'whatsapp'];
+caso('en WhatsApp el link sigue sin esa marca: el número ya lo tenemos',
+    strpos(wabot_form_link($convWsp, $cfg), '&ig=1') === false);
 $convSinTel = ['tel' => '', 'channel_user_id' => '', 'canal' => 'whatsapp'];
 caso('ni sin teléfono', wabot_form_link($convSinTel, $cfg) === '');
+
+/* Y del otro lado: el formulario de una charla de Instagram NO cambia la clave
+ * por el teléfono tipeado —eso perdería el hilo del DM—, lo guarda aparte. */
+$claveIg = 'ig17841400000000000';
+$idxPath = wabot_codigo_indice_path();
+$idxPrevio = @file_get_contents($idxPath);
+file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(), ['K7' => $claveIg])));
+$datosIg = wabot_form_lead_validar(['c' => 'K7', 't' => '1123456789', 'nombre' => 'Ana',
+    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
+caso('la charla sigue siendo la de Instagram, no el teléfono',
+    is_array($datosIg) && $datosIg['clave'] === $claveIg);
+caso('y el WhatsApp tipeado queda como dato aparte',
+    is_array($datosIg) && $datosIg['telWsp'] === '1123456789');
+caso('sin WhatsApp no se acepta: el boceto llegaría sin destinatario',
+    wabot_form_lead_validar(['c' => 'K7', 'nombre' => 'Ana', 'nombre_negocio' => 'Estudio',
+        'resumen' => 'Diseño de interiores', 'colores' => 'verde']) === null);
+if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 
 echo "— wabot_form_lead_procesar(): validación —\n";
 

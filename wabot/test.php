@@ -1974,14 +1974,18 @@ $textoConFormActivo = wabot_prediseno_texto($convWspConTel, $cfgPredisFormOn);
 caso('con el form activo, WhatsApp con teléfono recibe el link, no el checklist',
     strpos($textoConFormActivo, 'gokywebs.com/form/') !== false && strpos($textoConFormActivo, '- Tu nombre') === false);
 
-// El form vuelve a estar activo desde el 2-sep, pero Instagram sigue sin link
-// (no hay teléfono): ahí el pedido de datos por chat es el que corresponde.
+/* Instagram va por el mismo camino que WhatsApp (Pablo, 2-sep). El formulario
+ * identifica la charla por el codigo, no por el telefono, asi que siempre
+ * pudo: lo unico que faltaba era dejarlo pasar. El numero se lo pide el
+ * formulario, que es lo mismo que antes le pedia el bot por chat. */
 caso('el formulario está activo por defecto (2-sep)', !empty($cfg['form_activo']));
 $convIgSinTel = ['tel' => 'IG9999TEST', 'channel_user_id' => 'IG9999TEST', 'canal' => 'instagram',
     'nombre' => '', 'nombre_confirmado' => false, 'nombre_negocio' => '', 'descripcion' => '', 'colores' => ''];
-$textoIg = wabot_prediseno_texto($convIgSinTel, $cfgPredis);
-caso('Instagram, que no tiene teléfono, sigue cayendo al checklist por chat',
-    strpos($textoIg, 'gokywebs.com/form/') === false && strpos($textoIg, '- Tu nombre') !== false);
+$textoIg = wabot_prediseno_texto($convIgSinTel, $cfgPredisFormOn);
+caso('Instagram también recibe el link del formulario, no el checklist por chat',
+    strpos($textoIg, 'gokywebs.com/form/') !== false && strpos($textoIg, '- Tu nombre') === false);
+caso('y el link le avisa al formulario que ahí hay que pedir el WhatsApp',
+    strpos($textoIg, 'ig=1') !== false);
 
 echo "— Regresiones comerciales reales —\n";
 

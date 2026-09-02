@@ -3100,13 +3100,22 @@ function wabot_codigo_asignar(&$conv) {
  */
 function wabot_form_link(&$conv, $cfg) {
     // Pablo, 25-ago: momentáneamente sin el form, para volver al pedido de
-    // datos por chat (el mismo mecanismo que ya usa Instagram sin link).
+    // datos por chat.
     if (empty($cfg['form_activo'])) return '';
-    if (wabot_canal($conv) !== 'whatsapp') return '';
     if (wabot_channel_user_id($conv) === '') return '';
     $codigo = wabot_codigo_asignar($conv);
     if ($codigo === '') return '';
-    return 'https://gokywebs.com/form/?c=' . $codigo;
+    /* Instagram va por el mismo camino que WhatsApp (Pablo, 2-sep). El
+     * formulario identifica la charla por el código, no por el teléfono, así
+     * que funcionaba desde siempre: lo único que faltaba era dejarlo pasar.
+     *
+     * La diferencia es que del IGSID no sale ningún teléfono, y sin WhatsApp
+     * el boceto llega sin destinatario (lo mismo que ya exigía
+     * wabot_cerrar_o_pedir_whatsapp antes de cerrar por chat). El &ig=1 le
+     * dice al formulario que muestre y pida el número en vez de darlo por
+     * sabido. */
+    $link = 'https://gokywebs.com/form/?c=' . $codigo;
+    return wabot_canal($conv) === 'instagram' ? $link . '&ig=1' : $link;
 }
 
 function wabot_prediseno_faltan($conv, $incluirReferencia = true) {
@@ -6889,29 +6898,48 @@ function wabot_form_lead_validar($payload) {
     // resuelve contra el indice para saber de que conversacion se trata. El
     // formulario abierto a mano sigue mandando el telefono tipeado (?t=).
     $codigo = wabot_codigo_normalizar($payload['c'] ?? '');
-    $tel = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
-    // Un telefono tipeado gana sobre el codigo: si el cliente toco "Corregir"
-    // es porque el numero del que le escribimos NO es el suyo.
-    if ($codigo !== '' && (strlen($tel) < 10 || strlen($tel) > 15)) {
-        $tel = preg_replace('/\D+/', '', wabot_codigo_buscar($codigo));
+    $telTipeado = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
+    $telValido = strlen($telTipeado) >= 10 && strlen($telTipeado) <= 15;
+    // La charla que el codigo señala, tal cual: una de Instagram se guarda como
+    // ig<IGSID> y tiene letras. Antes se le sacaban los no-dígitos y quedaba un
+    // numerito de 17 cifras que no era el telefono de nadie ni una clave valida.
+    $claveCodigo = $codigo !== ''
+        ? preg_replace('/[^0-9A-Za-z]/', '', wabot_codigo_buscar($codigo))
+        : '';
+    $esInstagram = $claveCodigo !== '' && stripos($claveCodigo, 'ig') === 0;
+
+    $telWsp = '';
+    if ($esInstagram) {
+        /* La charla sigue siendo la de Instagram: el telefono que tipea es un
+         * dato NUEVO (por donde mandarle la demo), no una correccion de la
+         * clave. Cambiarsela perderia el hilo del DM. */
+        $clave = $claveCodigo;
+        if (!$telValido) return null;   // sin WhatsApp el boceto no tiene a donde ir
+        $telWsp = $telTipeado;
+    } else {
+        // Un telefono tipeado gana sobre el codigo: si el cliente toco "Corregir"
+        // es porque el numero del que le escribimos NO es el suyo.
+        $clave = $telValido ? $telTipeado : $claveCodigo;
+        if (strlen($clave) < 10 || strlen($clave) > 15) return null;
     }
+
     $nombre = trim((string)($payload['nombre'] ?? ''));
     $nombreNegocio = trim((string)($payload['nombre_negocio'] ?? ''));
     $resumen = trim((string)($payload['resumen'] ?? ''));
     $colores = trim((string)($payload['colores'] ?? ''));
-    if (strlen($tel) < 10 || strlen($tel) > 15) return null;
     if ($nombre === '' || $nombreNegocio === '' || $resumen === '' || $colores === '') return null;
     if (mb_strlen($nombre) > 80 || mb_strlen($nombreNegocio) > 80) return null;
     if (mb_strlen($resumen) > 600 || mb_strlen($colores) > 200) return null;
-    return compact('tel', 'nombre', 'nombreNegocio', 'resumen', 'colores');
+    return compact('clave', 'telWsp', 'nombre', 'nombreNegocio', 'resumen', 'colores');
 }
 
 function wabot_form_lead_procesar($payload, $cfg) {
     $datos = wabot_form_lead_validar($payload);
     if ($datos === null) return ['ok' => false, 'error' => 'datos_invalidos'];
-    ['tel' => $tel, 'nombre' => $nombre, 'nombreNegocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] = $datos;
+    ['clave' => $clave, 'telWsp' => $telWsp, 'nombre' => $nombre,
+     'nombreNegocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] = $datos;
 
-    $clave = preg_replace('/[^0-9A-Za-z]/', '', $tel);
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', $clave);
     $lock = null;
     for ($intento = 0; $intento < 3; $intento++) {
         $lock = wabot_lock_tomar($clave);
@@ -6925,6 +6953,9 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if (empty($conv['tel'])) $conv['tel'] = $clave;
     if (empty($conv['channel_user_id'])) $conv['channel_user_id'] = $clave;
     if (empty($conv['conversation_key'])) $conv['conversation_key'] = $clave;
+    /* El WhatsApp que dejó un lead de Instagram: es por donde se le entrega la
+     * demo y por donde el panel lo encuentra (ver wabot_conv_wsp_crudo). */
+    if ($telWsp !== '') $conv['telefono_wsp'] = $telWsp;
 
     $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
 
@@ -6944,7 +6975,10 @@ function wabot_form_lead_procesar($payload, $cfg) {
         // últimas 24h) queda solo logueado, nunca frena el guardado del lead.
         $avisoNombre  = $conv['nombre'] !== null && $conv['nombre'] !== '' ? $conv['nombre'] : $nombre;
         $avisoNegocio = $conv['nombre_negocio'] !== null && $conv['nombre_negocio'] !== '' ? $conv['nombre_negocio'] : $nombreNegocio;
-        $avisoTexto = "Nuevo lead por formulario: {$avisoNombre} — {$avisoNegocio}. Tel: {$clave}.";
+        $avisoDonde = wabot_canal($conv) === 'instagram'
+            ? 'Instagram, escribile al ' . ($telWsp !== '' ? $telWsp : 'WhatsApp que dejó')
+            : 'Tel: ' . $clave;
+        $avisoTexto = "Nuevo lead por formulario: {$avisoNombre} — {$avisoNegocio}. {$avisoDonde}.";
         $avisoOk = wabot_wa_send_text('5491125068578', $avisoTexto);
         wabot_log('form_lead_aviso_pablo', ['ok' => $avisoOk, 'tel' => $clave]);
     }
