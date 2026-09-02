@@ -1,0 +1,74 @@
+{
+  "cliente": [
+    {
+      "archivo": "obra-agua-ladrillo-968x1169.webp",
+      "original": "5491134045968-20260901-224206-f769e950.jpg",
+      "origen": "Foto del cliente (WhatsApp, 01-09-2026)",
+      "uso": "Hero — instalación de agua en termofusión sobre pared de ladrillo"
+    },
+    {
+      "archivo": "obra-colector-termofusion-538x1194.webp",
+      "original": "5491134045968-20260901-224205-c1eb5779.jpg",
+      "origen": "Foto del cliente (WhatsApp, 01-09-2026)",
+      "uso": "Capítulo de proceso y galería — colector de termofusión"
+    },
+    {
+      "archivo": "obra-desagues-losa-1080x1027.webp",
+      "original": "5491134045968-20260901-224205-63c25f44.jpg",
+      "origen": "Foto del cliente (WhatsApp, 01-09-2026)",
+      "uso": "Capítulo de proceso y galería — desagües cloacales en losa"
+    }
+  ],
+  "stock": [
+    {
+      "archivo": "manos-llave-cano-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 6419128,
+      "url": "https://www.pexels.com/photo/6419128/",
+      "uso": "Sección de oficio — manos ajustando una unión"
+    },
+    {
+      "archivo": "canerias-pared-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 8488035,
+      "url": "https://www.pexels.com/photo/8488035/",
+      "uso": "Galería — cañería vieja embutida en pared"
+    },
+    {
+      "archivo": "bano-terminado-ducha-1200x1600.webp",
+      "origen": "Pexels",
+      "id": 10486085,
+      "url": "https://www.pexels.com/photo/10486085/",
+      "uso": "Capítulo de proceso (paso final, pared cerrada) y galería"
+    },
+    {
+      "archivo": "bano-terminado-vanitory-1600x1300.webp",
+      "origen": "Pexels",
+      "id": 19666087,
+      "url": "https://www.pexels.com/photo/19666087/",
+      "uso": "Galería — baño terminado"
+    },
+    {
+      "archivo": "perdida-goteo-1133x2000.webp",
+      "origen": "Pexels",
+      "id": 15206136,
+      "url": "https://www.pexels.com/photo/15206136/",
+      "uso": "Sección de síntomas — pérdida atada con trapo. Recortada para quitar la marca del fabricante que se leía en el caño",
+      "editada": true
+    }
+  ],
+  "descartadas": [
+    {
+      "id": 8581897,
+      "motivo": "Medidor con 'SAVANNAH GAS COMPANY' y 'CUBIC FEET' legibles"
+    },
+    {
+      "id": 5691533,
+      "motivo": "Obra en curso pero fuera de tema (no sanitaria) y paleta fría que rompe la cohesión"
+    },
+    {
+      "id": 8486978,
+      "motivo": "Retrato de una persona posando: el negocio lleva el nombre real de Enrique y se leería como su foto"
+    }
+  ]
+}
