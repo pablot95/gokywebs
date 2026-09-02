@@ -101,6 +101,71 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
+ * TODAS las imágenes que mandó el cliente, en un solo archivo.
+ *
+ * El botón del boceto bajaba una sola foto —la que el bot eligió como logo— y
+ * el resto había que ir a buscarlas de a una al chat. Acá bajan juntas, que es
+ * como se usan al diseñar. Con una sola imagen no se arma ningún paquete: se
+ * baja el archivo y listo.
+ *
+ * Mismo gate y mismo criterio de validación que 'media': la clave se limpia a
+ * alfanumérico y los nombres salen de leer el directorio, nunca del query
+ * string, así que no hay path que manipular.
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'imagenes') {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)($_GET['tel'] ?? ''));
+    if ($clave === '' || !wabot_conv_existe($clave)) {
+        http_response_code(400);
+        exit('conversacion invalida');
+    }
+    $convImg = wabot_conv_load($clave);
+    $imagenes = wabot_imagenes_cliente($convImg);
+    if (!$imagenes) {
+        http_response_code(404);
+        exit('esta conversacion no tiene imagenes');
+    }
+    $nombresZip = wabot_imagenes_nombres($imagenes);
+
+    // El nombre del negocio hace el archivo reconocible en la carpeta de
+    // descargas, donde van a caer los bocetos de varios clientes el mismo día.
+    $negocio = wabot_slug_archivo((string)($convImg['nombre_negocio'] ?? ''));
+    $etiqueta = $negocio !== '' ? $negocio : strtolower($clave);
+
+    if (count($imagenes) === 1) {
+        $ruta = WABOT_DATA . '/media/' . $clave . '/' . $imagenes[0]['archivo'];
+        if (!is_file($ruta)) { http_response_code(404); exit('no encontrado'); }
+        $mimes = array_flip(wabot_media_extensiones());
+        $ext = strtolower(pathinfo($imagenes[0]['archivo'], PATHINFO_EXTENSION));
+        header('Content-Type: ' . ($mimes[$ext] ?? 'application/octet-stream'));
+        header('X-Content-Type-Options: nosniff');
+        header('Content-Length: ' . filesize($ruta));
+        header('Content-Disposition: attachment; filename="' . $etiqueta . '-' . $nombresZip[0] . '"');
+        header('Cache-Control: private, max-age=0, no-store');
+        readfile($ruta);
+        exit;
+    }
+
+    $entradas = [];
+    foreach ($imagenes as $i => $img) {
+        $entradas[] = ['nombre' => $nombresZip[$i],
+                       'ruta' => WABOT_DATA . '/media/' . $clave . '/' . $img['archivo']];
+    }
+    $zip = wabot_zip_armar($entradas);
+    if ($zip === null) {
+        http_response_code(404);
+        exit('no se pudo leer ninguna imagen');
+    }
+    wabot_log('imagenes_descargadas', ['clave' => $clave, 'cantidad' => count($entradas)]);
+    header('Content-Type: application/zip');
+    header('X-Content-Type-Options: nosniff');
+    header('Content-Length: ' . strlen($zip));
+    header('Content-Disposition: attachment; filename="imagenes-' . $etiqueta . '.zip"');
+    header('Cache-Control: private, max-age=0, no-store');
+    echo $zip;
+    exit;
+}
+
+/**
  * Exporta las conversaciones activas en los últimos N días como un .txt
  * legible, para pasarlas afuera del panel y revisar errores de a muchas.
  * Se incluye la charla ENTERA de cualquier conversación con al menos un

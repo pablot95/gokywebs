@@ -4091,6 +4091,193 @@ function wabot_logo_url($clave, $archivo) {
     return 'https://gokywebs.com/wabot/admin.php?accion=media&tel=' . urlencode($clave) . '&archivo=' . urlencode($archivo);
 }
 
+/** URL protegida para bajar TODAS las imágenes del cliente en un solo archivo. */
+function wabot_imagenes_url($clave) {
+    return 'https://gokywebs.com/wabot/admin.php?accion=imagenes&tel=' . urlencode($clave);
+}
+
+/**
+ * Qué extensiones cuentan como "una imagen que mandó el cliente" para el
+ * boceto. Van los rasters y también los formatos de diseño: un logo llega
+ * tanto como .png como en .ai, .pdf o .cdr, y dejarlo afuera del paquete
+ * obliga a ir a buscarlo a mano, que es justo lo que se quiere evitar.
+ */
+function wabot_imagen_extensiones() {
+    return ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'bmp', 'tiff', 'tif',
+            'svg', 'avif', 'psd', 'ai', 'eps', 'cdr', 'pdf'];
+}
+
+/**
+ * TODAS las imágenes que mandó el cliente, en orden cronológico.
+ *
+ * Sale del DIRECTORIO, no del transcript: el transcript se recorta a los
+ * últimos WABOT_TRANSCRIPT_VIVO mensajes, así que en una charla larga las
+ * primeras fotos ya no están ahí aunque sigan en disco — y son justo las que
+ * mandó al principio, cuando le pedimos el logo. En la carpeta solo hay
+ * entrantes del cliente más los audios que graba Pablo desde el panel, que
+ * quedan afuera por extensión.
+ *
+ * El transcript sí se usa para enriquecer: el nombre con que el cliente mandó
+ * el archivo y si dijo "logo" al pasarlo. Devuelve
+ * [['archivo' =>, 'nombre' =>, 'es_logo' => bool], ...].
+ */
+function wabot_imagenes_cliente($cv) {
+    $clave = wabot_conversation_key($cv);
+    if ($clave === '') return [];
+    $carpeta = WABOT_DATA . '/media/' . $clave;
+    if (!is_dir($carpeta)) return [];
+
+    $extensiones = wabot_imagen_extensiones();
+    $archivos = [];
+    foreach (scandir($carpeta) ?: [] as $nombre) {
+        if ($nombre === '.' || $nombre === '..') continue;
+        if (!in_array(strtolower(pathinfo($nombre, PATHINFO_EXTENSION)), $extensiones, true)) continue;
+        $archivos[] = $nombre;
+    }
+    // El nombre en disco arranca con Ymd-His, así que alfabético ES cronológico.
+    sort($archivos);
+    if (!$archivos) return [];
+
+    /* Del transcript, lo que el disco no sabe: cómo llamó el cliente al archivo
+     * y si al mandarlo dijo que era el logo. */
+    $meta = [];
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (($fila['q'] ?? '') !== 'cliente') continue;
+        $arch = $fila['media']['archivo'] ?? null;
+        if (!$arch) continue;
+        $meta[$arch] = [
+            'nombre'  => trim((string)($fila['media']['nombre'] ?? '')),
+            'es_logo' => (bool)preg_match('/\blogo\b/iu', (string)($fila['t'] ?? '')),
+        ];
+    }
+
+    /* La que el boceto tomó como logo va PRIMERA y es la única que se llama
+     * así: es la que Pablo busca al abrir la carpeta. Las demás quedan en
+     * orden cronológico, con el nombre que les puso el cliente. */
+    $logoElegido = wabot_logo_cliente($cv);
+    $out = [];
+    foreach ($archivos as $arch) {
+        $fila = [
+            'archivo' => $arch,
+            'nombre'  => (string)($meta[$arch]['nombre'] ?? ''),
+            'es_logo' => $arch === $logoElegido,
+        ];
+        if ($fila['es_logo']) array_unshift($out, $fila);
+        else $out[] = $fila;
+    }
+    return $out;
+}
+
+/**
+ * Cómo se llama cada imagen DENTRO del paquete. El nombre en disco es un
+ * timestamp y no dice nada; acá se numera en orden y se usa el nombre que puso
+ * el cliente si lo hay. La que el boceto tomó como logo se llama "logo", que
+ * es la que Pablo busca primero.
+ */
+function wabot_imagenes_nombres($imagenes) {
+    $nombres = [];
+    $usados = [];
+    $i = 0;
+    foreach ((array)$imagenes as $img) {
+        $i++;
+        $ext = strtolower(pathinfo((string)$img['archivo'], PATHINFO_EXTENSION));
+        $base = 'imagen';
+        if (!empty($img['es_logo'])) {
+            $base = 'logo';
+        } elseif (trim((string)($img['nombre'] ?? '')) !== '') {
+            $limpio = pathinfo((string)$img['nombre'], PATHINFO_FILENAME);
+            $limpio = wabot_slug_archivo($limpio);
+            if ($limpio !== '') $base = $limpio;
+        }
+        $nombre = sprintf('%02d-%s.%s', $i, $base, $ext);
+        // Dos "logo.png" en el mismo zip son un zip roto en algunos
+        // descompresores: el índice de adelante ya los separa, pero si alguna
+        // vez se saca, esto lo sostiene.
+        while (isset($usados[strtolower($nombre)])) {
+            $nombre = sprintf('%02d-%s-%d.%s', $i, $base, count($usados), $ext);
+        }
+        $usados[strtolower($nombre)] = true;
+        $nombres[] = $nombre;
+    }
+    return $nombres;
+}
+
+/**
+ * Nombre de archivo seguro y sin acentos, para adentro del zip.
+ *
+ * Sin wabot_normalizar_frase(), que vive en engine.php: lib.php se carga sola
+ * en el cron y en el panel. Y sin iconv, que en este hosting devuelve '?' por
+ * cada acento en vez de la letra sin tilde.
+ */
+function wabot_slug_archivo($texto) {
+    $t = mb_strtolower(trim((string)$texto), 'UTF-8');
+    $t = strtr($t, [
+        'á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'ã' => 'a', 'å' => 'a',
+        'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+        'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i',
+        'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o', 'õ' => 'o',
+        'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u',
+        'ñ' => 'n', 'ç' => 'c',
+    ]);
+    $t = preg_replace('/[^a-z0-9]+/u', '-', $t);
+    $t = trim((string)$t, '-');
+    return mb_substr($t, 0, 60);
+}
+
+/**
+ * Un ZIP sin comprimir (método "store") armado a mano.
+ *
+ * Sin librerías: ZipArchive es una extensión que puede no estar en el hosting,
+ * y no hace falta — las fotos ya vienen comprimidas, así que comprimirlas de
+ * nuevo no ahorra nada y solo agrega una dependencia que puede faltar el día
+ * que el cliente necesita sus imágenes.
+ *
+ * $entradas es [['nombre' => 'dentro-del-zip.png', 'ruta' => '/path/real'], ...].
+ */
+function wabot_zip_armar($entradas) {
+    $locales = '';
+    $central = '';
+    $offset = 0;
+    $cuenta = 0;
+
+    foreach ((array)$entradas as $e) {
+        $ruta = (string)($e['ruta'] ?? '');
+        if (!is_file($ruta)) continue;
+        $datos = @file_get_contents($ruta);
+        if ($datos === false) continue;
+
+        $nombre = (string)($e['nombre'] ?? basename($ruta));
+        $crc = crc32($datos);
+        $largo = strlen($datos);
+
+        $t = getdate(@filemtime($ruta) ?: time());
+        $anio = max(1980, (int)$t['year']);
+        $fechaDos = (($anio - 1980) << 9) | ((int)$t['mon'] << 5) | (int)$t['mday'];
+        $horaDos = ((int)$t['hours'] << 11) | ((int)$t['minutes'] << 5) | ((int)$t['seconds'] >> 1);
+
+        // bit 11 = nombre en UTF-8; método 0 = guardado sin comprimir.
+        $comun = pack('vvvv', 20, 0x0800, 0, $horaDos)
+               . pack('v', $fechaDos)
+               . pack('VVV', $crc, $largo, $largo)
+               . pack('vv', strlen($nombre), 0);
+
+        $locales .= "PK\x03\x04" . $comun . $nombre . $datos;
+        $central .= "PK\x01\x02" . pack('v', 20) . $comun
+                  . pack('vvv', 0, 0, 0)          // comentario, disco, atributos internos
+                  . pack('V', 0)                  // atributos externos
+                  . pack('V', $offset)
+                  . $nombre;
+        $offset = strlen($locales);
+        $cuenta++;
+    }
+    if ($cuenta === 0) return null;
+
+    return $locales . $central . "PK\x05\x06"
+         . pack('vvvv', 0, 0, $cuenta, $cuenta)
+         . pack('VV', strlen($central), strlen($locales))
+         . pack('v', 0);
+}
+
 /**
  * Lista de conversaciones para el panel, ordenada por actividad más reciente.
  * La usan el render inicial de la pestaña y el refresco automático por JSON,

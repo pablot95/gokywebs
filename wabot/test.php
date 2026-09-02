@@ -5930,5 +5930,80 @@ caso('"es caro" y el link de tarjeta dicen que las cuotas tienen interés',
     stripos((string)$cfg['caro'], 'con interés') !== false
     && stripos((string)$cfg['postdemo_tarjeta'], 'con interés') !== false);
 
+echo "— El boceto baja TODAS las imágenes del cliente, juntas —\n";
+
+/* El botón bajaba una sola foto —la que el bot eligió como logo— y el resto
+ * había que ir a buscarlas de a una al chat. */
+$claveImg = 'QATESTIMGS1';
+$carpetaImg = WABOT_DATA . '/media/' . $claveImg;
+@mkdir($carpetaImg, 0777, true);
+foreach (glob($carpetaImg . '/*') ?: [] as $f) @unlink($f);
+$archivosImg = [
+    '20260830-101500-aaaaaaaa.jpg'  => 'primera foto',
+    '20260830-101600-bbbbbbbb.png'  => 'segunda foto',
+    '20260901-140000-cccccccc.webp' => 'la fachada',
+    '20260901-140100-dddddddd.pdf'  => 'el logo en vectores',
+    '20260901-140200-eeeeeeee.ogg'  => 'un audio',
+];
+foreach ($archivosImg as $n => $c) file_put_contents($carpetaImg . '/' . $n, $c);
+
+/* El transcript SOLO tiene las dos últimas: wabot_conv_save() lo recorta a los
+ * últimos WABOT_TRANSCRIPT_VIVO mensajes, así que en una charla larga las
+ * primeras fotos ya no están ahí — y son las que mandó cuando le pedimos el
+ * logo. Por eso las imágenes salen del directorio, no del transcript. */
+$convImg = ['tel' => $claveImg, 'nombre_negocio' => 'Peluquería Ñandú & Co', 'transcript' => [
+    ['q' => 'cliente', 't' => 'Te paso la fachada', 'ts' => 1,
+     'media' => ['clase' => 'imagen', 'archivo' => '20260901-140000-cccccccc.webp', 'nombre' => 'Foto Fachada.webp']],
+    ['q' => 'cliente', 't' => 'Y acá va el logo en vectores', 'ts' => 2,
+     'media' => ['clase' => 'documento', 'archivo' => '20260901-140100-dddddddd.pdf', 'nombre' => 'logo final.pdf']],
+]];
+
+$imgs = wabot_imagenes_cliente($convImg);
+caso('junta las 4 imágenes, incluidas las que ya no están en el transcript',
+    count($imgs) === 4);
+caso('y deja afuera el audio, que no es una imagen',
+    !in_array('20260901-140200-eeeeeeee.ogg', array_column($imgs, 'archivo'), true));
+caso('el .pdf del logo entra: un logo llega tanto en .png como en vectores',
+    in_array('20260901-140100-dddddddd.pdf', array_column($imgs, 'archivo'), true));
+
+$nombresImg = wabot_imagenes_nombres($imgs);
+caso('la que el boceto tomó como logo va primera y se llama así',
+    $nombresImg[0] === '01-logo.webp');
+caso('una sola se llama "logo": el resto conserva su nombre o queda numerada',
+    count(array_filter($nombresImg, function ($n) { return strpos($n, '-logo.') !== false; })) === 1);
+caso('y el nombre que le puso el cliente se conserva, sin acentos ni espacios',
+    in_array('04-logo-final.pdf', $nombresImg, true));
+caso('ningún nombre se repite adentro del paquete',
+    count(array_unique($nombresImg)) === count($nombresImg));
+
+$entradasImg = [];
+foreach ($imgs as $iImg => $img) {
+    $entradasImg[] = ['nombre' => $nombresImg[$iImg], 'ruta' => $carpetaImg . '/' . $img['archivo']];
+}
+$zipImg = wabot_zip_armar($entradasImg);
+caso('el zip arranca con la firma que espera cualquier descompresor',
+    substr((string)$zipImg, 0, 4) === "PK\x03\x04");
+caso('y adentro están las 4, con esos nombres',
+    wabot_zip_listar($zipImg) === $nombresImg);
+caso('el contenido de cada una sale intacto', (function () use ($zipImg, $nombresImg, $imgs, $archivosImg) {
+    foreach ($nombresImg as $k => $nombre) {
+        if (wabot_zip_entrada($zipImg, $nombre) !== $archivosImg[$imgs[$k]['archivo']]) return false;
+    }
+    return true;
+})());
+caso('sin ninguna imagen legible no se arma un zip vacío',
+    wabot_zip_armar([['nombre' => 'x.png', 'ruta' => $carpetaImg . '/no-existe.png']]) === null);
+
+caso('el nombre del archivo sale del negocio, sin acentos ni símbolos',
+    wabot_slug_archivo('Peluquería Ñandú & Co') === 'peluqueria-nandu-co');
+caso('y nunca queda vacío ni con barras', wabot_slug_archivo('../../etc/passwd') === 'etc-passwd');
+
+/* Una charla sin imágenes no ofrece nada que bajar. */
+caso('sin carpeta de media no hay imágenes',
+    wabot_imagenes_cliente(['tel' => 'QATESTSINIMG', 'transcript' => []]) === []);
+
+foreach (glob($carpetaImg . '/*') ?: [] as $f) @unlink($f);
+@rmdir($carpetaImg);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

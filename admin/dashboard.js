@@ -1061,26 +1061,34 @@ function guardarBlobComoArchivo(blob, nombre) {
     URL.revokeObjectURL(blobUrl);
 }
 
-async function downloadLogo(url, nombre) {
+/* El nombre del archivo lo decide el servidor (lleva el nombre del negocio y
+   dice si es un zip o una imagen suelta): sale del Content-Disposition. */
+function nombreDeLaRespuesta(res, fallback) {
+    const cd = res.headers.get('Content-Disposition') || '';
+    const m = /filename\s*=\s*"?([^";]+)"?/i.exec(cd);
+    return m ? m[1].trim() : fallback;
+}
+
+/* Baja TODAS las imágenes que mandó el cliente, juntas. Antes bajaba una sola
+   —la que el bot eligió como logo— y el resto había que ir a buscarlas de a una
+   al chat. La URL sale de logoUrl, que ya trae la conversación en el query
+   string, así que funciona igual con los bocetos viejos. */
+async function downloadImagenesCliente(logoUrl, negocio) {
     try {
-        const u = new URL(url);
-        // El logo que mandó el cliente por WhatsApp lo sirve el panel del bot,
-        // que se protege con su propia sesión en vez del token de Firebase.
-        if (u.pathname.includes('/wabot/admin.php')) {
-            await wabotAuthHandshake();
-            const res = await fetch('../wabot/admin.php' + u.search, { credentials: 'same-origin' });
-            if (!res.ok) throw new Error('El panel del bot no devolvió el archivo');
-            guardarBlobComoArchivo(await res.blob(), nombre);
-            return;
-        }
-        const filePath = u.pathname.replace(/^\//, '');
-        await fetchProtectedFile(filePath, nombre);
+        const tel = new URL(logoUrl).searchParams.get('tel');
+        if (!tel) throw new Error('El boceto no tiene la conversación del cliente');
+        await wabotAuthHandshake();
+        const res = await fetch('../wabot/admin.php?accion=imagenes&tel=' + encodeURIComponent(tel),
+                                { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('El panel del bot no devolvió las imágenes');
+        const fallback = 'imagenes-' + (negocio || tel).replace(/[^\w.-]+/g, '-').toLowerCase() + '.zip';
+        guardarBlobComoArchivo(await res.blob(), nombreDeLaRespuesta(res, fallback));
     } catch (err) {
         console.error(err);
-        alert('No se pudo descargar el logo.');
+        alert('No se pudieron descargar las imágenes del cliente.');
     }
 }
-window.downloadLogo = downloadLogo;
+window.downloadImagenesCliente = downloadImagenesCliente;
 
 function initRealtime() {
     const q = query(collection(db, "clientes"), orderBy("createdAt", "desc"));
@@ -1697,7 +1705,6 @@ function briefDetailHTML(src) {
         row("Adicionales elegidos", adicionales, true),
         row("Ciudad / zona", ciudad),
         row("Cantidad de cursos", cantCursos),
-        row("Imágenes que mandó", imagenes > 0 ? String(imagenes) : ""),
         row("Colores", colores, true),
         row("Fondos", fondos),
         row("Color principal", principal),
@@ -1720,7 +1727,7 @@ function briefDetailHTML(src) {
     ].join("");
 
     const logoRow = logoUrl
-        ? `<div class="prop-row"><span class="prop-label">Logo</span><span><button type="button" onclick="downloadLogo('${escapeHtml(logoUrl)}','${escapeHtml(logoNombre || "logo")}')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar logo</button> <span class="muted" style="font-size:11px">(${escapeHtml(logoNombre || "")})</span></span></div>`
+        ? `<div class="prop-row"><span class="prop-label">Imágenes</span><span><button type="button" onclick="downloadImagenesCliente('${escapeHtml(logoUrl)}','')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar ${imagenes > 1 ? `las ${imagenes} imágenes` : "la imagen"}</button> <span class="muted" style="font-size:11px">(${imagenes > 1 ? "en un zip, el logo primero" : escapeHtml(logoNombre || "")})</span></span></div>`
         : "";
 
     const precioBlock = (total || sinPrecio)
@@ -2219,7 +2226,7 @@ function renderPropuestas() {
                 <td class="prop-col-colores">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="center">
                     ${p.logoUrl
-                        ? `<button type="button" onclick="downloadLogo('${escapeHtml(p.logoUrl)}','${escapeHtml(p.logoNombre || 'logo')}')" class="btn-ghost" style="font-size:12px;padding:4px 8px" title="Descargar logo">Logo</button>`
+                        ? `<button type="button" onclick="downloadImagenesCliente('${escapeHtml(p.logoUrl)}','${escapeHtml(slugNegocio(nombreNegocio) || '')}')" class="btn-ghost" style="font-size:12px;padding:4px 8px" title="Descargar todas las imágenes que mandó el cliente${Number(p.imagenes_recibidas || 0) > 1 ? ` (${Number(p.imagenes_recibidas)})` : ''}">Imágenes${Number(p.imagenes_recibidas || 0) > 1 ? ` (${Number(p.imagenes_recibidas)})` : ''}</button>`
                         : `<span class="muted" style="font-size:12px">—</span>`}
                 </td>
                 <td class="notes-col">
@@ -2418,9 +2425,10 @@ function openPropuestaModal(id) {
     const negocioFields = getPropuestaNegocioFields(p);
     propuestaModalTitle.textContent = negocioFields.nombreNegocio || "Propuesta";
 
+    const cuantasImgs = Number(p.imagenes_recibidas || 0);
     const logoRow = p.logoUrl
-        ? `<div class="prop-row"><span class="prop-label">Logo</span><span><button onclick="downloadLogo('${escapeHtml(p.logoUrl)}','${escapeHtml(p.logoNombre || 'logo')}')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar logo</button> <span class="muted" style="font-size:11px">(${escapeHtml(p.logoNombre || '')})</span></span></div>`
-        : `<div class="prop-row"><span class="prop-label">Logo</span><span class="muted">No subió logo</span></div>`;
+        ? `<div class="prop-row"><span class="prop-label">Imágenes</span><span><button onclick="downloadImagenesCliente('${escapeHtml(p.logoUrl)}','${escapeHtml(slugNegocio(negocioFields.nombreNegocio) || '')}')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar ${cuantasImgs > 1 ? `las ${cuantasImgs} imágenes` : 'la imagen'}</button> <span class="muted" style="font-size:11px">(${cuantasImgs > 1 ? 'en un zip, el logo primero' : escapeHtml(p.logoNombre || '')})</span></span></div>`
+        : `<div class="prop-row"><span class="prop-label">Imágenes</span><span class="muted">No mandó ninguna</span></div>`;
 
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const adicionalesTexto = cleanFieldValue(p.adicionales_texto);
