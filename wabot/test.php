@@ -10,6 +10,16 @@ require_once __DIR__ . '/engine.php';
 
 $GLOBALS['WABOT_TEST_SIN_RED'] = true;
 
+/* La suite espera la bot-config.json LOCAL. Si quedó puesta la de producción
+ * —cosa que pasa al correr la batería conversacional, que necesita los textos
+ * reales— fallan ~30 casos de cuotas y hosting porque allá `info.pago` está
+ * degradado, y se pierde media hora buscando un bug que no existe (pasó tres
+ * veces el 1-sep). El delator es `capi_token`: solo lo tiene la de producción. */
+if (trim((string)(json_decode((string)@file_get_contents(__DIR__ . '/bot-config.json'), true)['capi_token'] ?? '')) !== '') {
+    fwrite(STDERR, "\n*** OJO: wabot/bot-config.json es la de PRODUCCIÓN.\n"
+        . "    Los fallos de cuotas/hosting van a ser falsos. Restaurá la local antes de leer nada.\n\n");
+}
+
 $cfg = wabot_config_load();
 // El resto de esta suite asume el link del form activo (mecanismo por
 // defecto): el caso apagado (momentáneamente, pedido de Pablo 25-ago) se
@@ -542,13 +552,20 @@ caso('si no contesta la pregunta de turnos, la REFORMULA (no la repite) antes de
 echo "— El precio (texto fijo) y la pregunta del pitch salen juntos; la demo recién cuando contesta —\n";
 
 /**
- * La pregunta que va detrás del precio desde el 28-ago: valida si lo cotizado
- * encaja ("buscabas algo así o tenías otra idea en mente?"), en cualquiera de
- * sus variantes. Todas dicen "tenías" + qué tenía pensado.
+ * La línea que va detrás del precio. Desde el 1-sep ya no le pide al cliente
+ * que valide el encaje ("buscabas algo así o tenías otra idea en mente?"):
+ * afirma la propuesta y ofrece el próximo paso (Pablo: "es malísimo que
+ * pregunte eso de si encaja"). Todas las variantes son condicional + oferta
+ * de seguir, y ninguna vuelve a preguntar qué tenía pensado.
  */
-function pregunta_es_de_encaje($texto) {
-    foreach (['tenías otra idea', 'tenías pensado', 'tenías pensada'] as $marca) {
-        if (mb_stripos((string)$texto, $marca) !== false) return true;
+function invita_al_proximo_paso($texto) {
+    $t = (string)$texto;
+    foreach (['tenías otra idea', 'tenías pensado', 'tenías pensada', 'buscabas'] as $viejo) {
+        if (mb_stripos($t, $viejo) !== false) return false;
+    }
+    if (mb_stripos($t, 'si te ') === false && mb_stripos($t, 'si va por ahí') === false) return false;
+    foreach (['próximo paso', 'cómo seguiríamos', 'cómo seguimos'] as $marca) {
+        if (mb_stripos($t, $marca) !== false) return true;
     }
     return false;
 }
@@ -562,8 +579,8 @@ function conv_sin_pitch() {
 $cP = conv_sin_pitch();
 clasifica(['rubro_comercio']);
 $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
-caso('el turno A trae DOS mensajes: precio+desc primero, la pregunta del pitch después',
-    count($rP) === 2 && strpos($rP[0], '$290.000') !== false && mb_substr(trim($rP[1]), -1) === '?');
+caso('el turno A trae DOS mensajes: precio+desc primero, la línea del pitch después',
+    count($rP) === 2 && strpos($rP[0], '$290.000') !== false && invita_al_proximo_paso($rP[1]));
 caso('ni el link del presupuesto', strpos($rP[0], 'presupuestos/') === false);
 caso('el primer mensaje es el texto fijo del ecommerce, con su panel administrativo',
     stripos($rP[0], 'ecommerce') !== false && stripos($rP[0], 'panel administrativo') !== false);
@@ -587,9 +604,9 @@ foreach (['landing' => 'rubro_landing', 'institucional' => 'rubro_institucional'
     $cx = conv_sin_pitch();
     clasifica([$accP]);
     $rx = wabot_engine('cuento mi rubro', $cx, $cfg);
-    caso("$tipoP también da el precio junto con la pregunta del pitch, en dos mensajes",
+    caso("$tipoP también da el precio junto con la línea del pitch, en dos mensajes",
         $cx['fase'] === 'pitch' && $cx['tipo'] === $tipoP && $cx['precio_dado'] === true
-        && count($rx) === 2 && strpos($rx[0], '$') !== false && mb_substr(trim($rx[1]), -1) === '?');
+        && count($rx) === 2 && strpos($rx[0], '$') !== false && invita_al_proximo_paso($rx[1]));
     caso("$tipoP no fuerza el link del presupuesto en ese primer mensaje",
         strpos($rx[0], 'presupuestos/') === false);
 }
@@ -629,7 +646,7 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
                . ': ' . $cfg['tipos'][$tipoFijo]['portfolio'];
     caso("$tipoFijo: el texto fijo de Pablo sale tal cual, con {precio} resuelto", $rFijo[0] === $esperado);
     caso("$tipoFijo: el texto fijo no lleva el link del presupuesto", strpos($rFijo[0], 'presupuestos/') === false);
-    caso("$tipoFijo: la pregunta del pitch llega en el segundo mensaje", count($rFijo) === 2 && mb_substr(trim($rFijo[1]), -1) === '?');
+    caso("$tipoFijo: la línea del pitch llega en el segundo mensaje", count($rFijo) === 2 && invita_al_proximo_paso($rFijo[1]));
 }
 
 echo "— institucional y catálogo NO tienen texto fijo dictado: siguen con la plantilla dinámica de {desc} —\n";
@@ -3500,7 +3517,7 @@ $pitchAloj = wabot_pitch_texto('turnos', $convAloj, $cfg);
 caso('cabañas → el pitch habla de fechas, no de día y horario',
     stripos($pitchAloj, 'fechas') !== false && stripos($pitchAloj, 'día y horario') === false);
 caso('y la pregunta ya no indaga el negocio: valida el encaje',
-    pregunta_es_de_encaje($pitchAloj) && stripos($pitchAloj, 'cuántas unidades') === false);
+    invita_al_proximo_paso($pitchAloj) && stripos($pitchAloj, 'cuántas unidades') === false);
 caso('ninguna variante de alojamiento vuelve a hablar de día y horario', (function () use ($cfg) {
     foreach ((array)($cfg['tipos']['turnos']['desc_alojamiento_variantes'] ?? []) as $v) {
         if (stripos($v, 'día y horario') !== false) return false;
@@ -3576,7 +3593,7 @@ $convLocalSolo = conv_nueva();
 $convLocalSolo['transcript'] = [['q'=>'cliente','t'=>'Tengo un local','ts'=>time()]];
 $pitchLocalSolo = wabot_pitch_texto('ecommerce', $convLocalSolo, $cfg);
 caso('y "Tengo un local" recibe la misma pregunta de encaje, no un interrogatorio',
-    pregunta_es_de_encaje($pitchLocalSolo));
+    invita_al_proximo_paso($pitchLocalSolo));
 
 echo "— Referencia que es una lista de colores, y descripciones que no describen (Julieta) —\n";
 
@@ -4031,8 +4048,12 @@ foreach (['landing', 'ecommerce', 'turnos', 'institucional', 'inmobiliaria', 'el
         }
     }
     caso("$tipoTanteo ya no pregunta \"cómo lo hacés hoy\" en ninguna variante", $limpio);
-    caso("$tipoTanteo siempre termina preguntando algo", (function () use ($todas) {
-        foreach ($todas as $q) { if (trim((string)$q) === '' || strpos((string)$q, '?') === false) return false; }
+    /* Desde el 1-sep la línea del pitch NO es una pregunta: afirma la propuesta
+     * y ofrece el próximo paso (Pablo: "es malísimo que pregunte eso de si
+     * encaja"). Lo que se exige ahora es que ninguna variante quede vacía y
+     * que todas inviten a seguir. */
+    caso("$tipoTanteo cierra el pitch invitando al próximo paso, sin preguntar", (function () use ($todas) {
+        foreach ($todas as $q) { if (!invita_al_proximo_paso((string)$q)) return false; }
         return count($todas) > 0;
     })());
 }
@@ -4047,8 +4068,8 @@ caso('catálogo mantiene la pregunta por la cantidad de productos',
 foreach (['ecommerce', 'elearning', 'inmobiliaria', 'landing', 'institucional', 'turnos'] as $tipoEnc) {
     if (!isset($cfg['tipos'][$tipoEnc])) continue;
     caso("la pregunta de $tipoEnc pregunta si encaja, no por el negocio",
-        pregunta_es_de_encaje((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta'])
-        && pregunta_es_de_encaje((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta_2']));
+        invita_al_proximo_paso((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta'])
+        && invita_al_proximo_paso((string)$cfg['tipos'][$tipoEnc]['pitch_pregunta_2']));
 }
 
 // La pregunta genérica de "qué se destaca" reemplazó a la vieja (que sí
@@ -4156,7 +4177,7 @@ caso('no le pregunta de nuevo cuántas unidades', stripos($pitchAlojCant, 'cuán
 caso('la descripción sigue hablando de reservar, no de turnos',
     stripos($pitchAlojCant, 'reserva') !== false && stripos($pitchAlojCant, 'turnos') === false);
 caso('y la pregunta es la de encaje, igual que para el resto',
-    pregunta_es_de_encaje($pitchAlojCant));
+    invita_al_proximo_paso($pitchAlojCant));
 
 echo "\n— Un elogio tras la demo NO es una despedida —\n";
 
@@ -5096,14 +5117,14 @@ foreach (['landing', 'ecommerce', 'turnos', 'inmobiliaria', 'elearning'] as $tip
                'gokywebs.com/portfolio/?tipo=' . $tipo) !== false);
 }
 
-// El turno del pitch tal como sale: precio con el link, y la pregunta aparte.
-// El "?" de la query string no puede comerse el segundo mensaje.
+// El turno del pitch tal como sale: precio con el link, y la línea del pitch
+// aparte. El "?" de la query string no puede comerse el segundo mensaje.
 $convPitch = conv_sin_pitch();
 $salidaPitch = (array)wabot_pitch('ecommerce', $convPitch, $cfg);
-caso('el turno del pitch manda el precio con el portfolio Y la pregunta',
+caso('el turno del pitch manda el precio con el portfolio Y la línea del pitch',
     count($salidaPitch) === 2
     && strpos($salidaPitch[0], 'gokywebs.com/portfolio/?tipo=ecommerce') !== false
-    && strpos($salidaPitch[1], '?') !== false);
+    && invita_al_proximo_paso($salidaPitch[1]));
 caso('la línea del portfolio va última, después del precio',
     substr(trim($salidaPitch[0]), -strlen('gokywebs.com/portfolio/?tipo=ecommerce'))
         === 'gokywebs.com/portfolio/?tipo=ecommerce');
@@ -5932,6 +5953,44 @@ $convComb['precio_dado'] = true; $convComb['espera_avisada'] = true;
 $rComb = wabot_cerrada('cuanto sale todo eso?', $convComb, $cfg);
 caso('el precio del proyecto combinado no repite el número del tipo base',
     $rComb && strpos($rComb[0], '200.000') === false && stripos($rComb[0], 'no sale de la lista') !== false);
+
+/* ── La línea del pitch ya no pregunta si encaja (1-sep) ── */
+echo "— El pitch afirma la propuesta y ofrece el próximo paso —\n";
+
+foreach (['ecommerce', 'landing', 'turnos', 'inmobiliaria', 'elearning', 'institucional'] as $tipoPP) {
+    if (!isset($cfg['tipos'][$tipoPP])) continue;
+    $vars = (array)($cfg['tipos'][$tipoPP]['pitch_pregunta_variantes'] ?? []);
+    $todasBien = $vars !== [];
+    foreach ($vars as $v) {
+        if (!invita_al_proximo_paso($v) || strpos((string)$v, '?') !== false) { $todasBien = false; break; }
+    }
+    caso("$tipoPP: ninguna variante del pitch pregunta si encaja", $todasBien);
+}
+caso('y catálogo sigue preguntando la cantidad, que ahí SÍ define el precio',
+    stripos((string)$cfg['tipos']['catalogo']['pitch_pregunta'], 'cuántos productos') !== false);
+
+/* "dale, me sirve" es la respuesta más natural a la línea nueva y no entraba:
+ * normalizaba a "dale me sirve", el turno se lo quedaba el modelo y repitió el
+ * precio en vez de avanzar (verificado con Gemini, 1-sep). */
+caso('"dale, me sirve" y "dale contame" son aceptaciones',
+    wabot_es_afirmativa('dale, me sirve') === true
+    && wabot_es_afirmativa('dale contame') === true
+    && wabot_es_afirmativa('contame') === true
+    && wabot_es_afirmativa('te escucho') === true);
+caso('pero una aceptación con reparo NO cuenta',
+    wabot_es_afirmativa('dale pero es caro') === false
+    && wabot_es_afirmativa('si pero no ahora') === false
+    && wabot_es_afirmativa('me sirve pero lo pienso') === false
+    && wabot_es_afirmativa('no me sirve') === false);
+
+/* Y aceptar el pitch lleva al próximo paso sin volver a cotizar. */
+$convPP = conv_nueva();
+$convPP['fase'] = 'pitch'; $convPP['tipo'] = 'landing';
+$convPP['pitch_hecho'] = true; $convPP['precio_dado'] = true;
+$rPP = (array)wabot_precio('landing', $convPP, $cfg);
+caso('con el pitch ya hecho, aceptar ofrece la demo y no repite el precio',
+    $rPP && strpos(implode(' ', $rPP), '$160.000') === false
+    && preg_match('/muestra|demo|versi[oó]n de tu/iu', implode(' ', $rPP)) === 1);
 
 /* El array `paraguas` del config de producción ya no revienta el cast a string. */
 $antesErr = error_reporting(E_ALL);

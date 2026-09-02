@@ -1913,12 +1913,21 @@ function wabot_config_postdemo_sin_venta(&$cfg) {
 }
 
 function wabot_config_pitch_encaje(&$cfg) {
-    $pregunta = 'Buscabas algo así o tenías otra idea en mente?';
+    /* Pablo, 1-sep: "es malísimo que pregunte eso de si encaja, o buscabas
+     * algo así". Pedirle al cliente que valide el encaje lo pone a dudar justo
+     * después de escuchar el precio, y encima suena a que no confiamos en lo
+     * que acabamos de proponer. La línea ahora AFIRMA la propuesta y ofrece
+     * seguir: el que dice que sí ya está pidiendo el próximo paso (la demo),
+     * y el que no quería eso lo dice igual — wabot_pitch_dice_otra_idea() lo
+     * caza por el "no", no por la forma de la pregunta.
+     *
+     * Sin signo de pregunta a propósito: no es una pregunta, es una invitación. */
+    $pregunta = 'Si te sirve esta propuesta, te cuento cuál sería el próximo paso.';
     $variantes = [
-        'Buscabas algo así o tenías otra idea en mente?',
-        'Era más o menos lo que tenías pensado, o buscabas otra cosa?',
-        'Encaja con lo que estabas buscando, o tenías otra idea?',
-        'Va por ahí lo que buscabas, o tenías pensada otra cosa?',
+        'Si te sirve esta propuesta, te cuento cuál sería el próximo paso.',
+        'Si te cierra, te cuento cómo seguiríamos.',
+        'Si va por ahí lo que necesitás, te digo cuál es el próximo paso.',
+        'Si te gusta la idea, te cuento cómo seguimos.',
     ];
     foreach (array_keys((array)($cfg['tipos'] ?? [])) as $tipo) {
         if ($tipo === 'catalogo') continue;

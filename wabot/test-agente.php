@@ -70,10 +70,13 @@ echo "— El agente también pasa por el pitch antes del precio —\n";
 $cPitch = convNueva('AGPITCH1');
 unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-caso('la primera llamada ya da el precio (texto fijo), con la pregunta del pitch aparte',
+/* Desde el 1-sep la línea del pitch no pregunta: ofrece el próximo paso. */
+caso('la primera llamada ya da el precio (texto fijo), con la línea del pitch aparte',
     !empty($r['exacta']) && strpos($r['texto'], '$290.000') !== false
     && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/') === false
-    && !empty($r['aparte']) && mb_substr(trim($r['aparte']), -1) === '?'
+    && !empty($r['aparte'])
+    && preg_match('/pr[oó]ximo paso|c[oó]mo seguir[ií]amos|c[oó]mo seguimos/iu', (string)$r['aparte'])
+    && stripos((string)$r['aparte'], 'buscabas') === false
     && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 caso('la segunda llamada, con el pitch ya contestado, NO repite el precio: solo OFRECE la demo (sin pedir datos)',

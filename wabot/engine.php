@@ -4763,8 +4763,28 @@ function wabot_es_afirmativa($texto) {
                     'si porfa', 'porfa', 'de acuerdo', 'esta bien', 'ta bien',
                     'si gracias', 'dale gracias', 'buenisimo gracias', 'ok gracias',
                     'si me sirve', 'si claro', 'claro', 'claro que si', 'copado',
-                    'excelente', 'ideal', 'si obvio', 'seria buenisimo', 'me gustaria'];
-    return in_array($t, $afirmativas, true);
+                    'excelente', 'ideal', 'si obvio', 'seria buenisimo', 'me gustaria',
+                    /* La línea del pitch ahora ofrece contar el próximo paso
+                     * ("te cuento cuál sería el próximo paso"), así que la
+                     * aceptación más natural pasó a ser "contame" / "te
+                     * escucho" — ninguna estaba y la venta se trababa. */
+                    'contame', 'contame mas', 'decime', 'te escucho', 'quiero saber',
+                    'me sirve si', 'sirve', 'buenisima', 'buena'];
+    if (in_array($t, $afirmativas, true)) return true;
+
+    /* Dos afirmativas pegadas: "dale, me sirve" —la respuesta más común a la
+     * línea nueva del pitch— normalizaba a "dale me sirve", que no estaba en
+     * la lista, y el turno se lo quedaba el modelo, que repitió el precio y
+     * dejó la venta sin cerrar (verificado con Gemini el 1-sep). Se prueban
+     * los cortes en dos: ambas mitades tienen que ser afirmativas conocidas,
+     * así "dale pero no" o "si pero caro" siguen sin entrar. */
+    $palabras = explode(' ', $t);
+    for ($i = 1; $i < count($palabras); $i++) {
+        $izq = implode(' ', array_slice($palabras, 0, $i));
+        $der = implode(' ', array_slice($palabras, $i));
+        if (in_array($izq, $afirmativas, true) && in_array($der, $afirmativas, true)) return true;
+    }
+    return false;
 }
 
 /* ¿Contestó que no tiene ninguna referencia? */

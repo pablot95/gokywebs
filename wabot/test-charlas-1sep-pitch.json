@@ -1,0 +1,38 @@
+[
+  {
+    "id": "P1",
+    "titulo": "Acepta la propuesta: el si tiene que llevar al proximo paso (la demo)",
+    "esperado": "Tras el precio, la linea nueva invita al proximo paso SIN preguntar si encaja. Un 'dale' tiene que ofrecer/pedir la demo, no repreguntar.",
+    "nombre": "Sofi",
+    "turnos": [
+      "hola, tengo una tienda de ropa y quiero vender online",
+      "dale, contame",
+      "listo, armame la demo",
+      "Mica Ropa, indumentaria femenina, colores negro y rosa, 11 2233 4455"
+    ]
+  },
+  {
+    "id": "P2",
+    "titulo": "Rechaza la propuesta: el no tiene que preguntar que tenia en mente",
+    "esperado": "Ante 'no, yo queria otra cosa' tiene que preguntar que tenia en mente (pitch_otra_idea), NO ofrecer la demo ni derivar.",
+    "nombre": "Marcos",
+    "turnos": [
+      "hola, tengo una veterinaria y quiero una pagina",
+      "si, que saquen turno online",
+      "no, en realidad yo queria otra cosa",
+      "queria solo mostrar los servicios y que me llamen"
+    ]
+  },
+  {
+    "id": "P3",
+    "titulo": "Landing: la linea nueva no puede sonar a pregunta ni repetir el precio",
+    "esperado": "Landing $160.000 + linea de proximo paso. El cliente pregunta algo suelto y despues acepta: tiene que cerrar sin volver a preguntar si le encaja.",
+    "nombre": "Julio",
+    "turnos": [
+      "buen dia, soy plomero matriculado y quiero que me encuentren",
+      "cuanto tarda?",
+      "dale, me sirve",
+      "Plomeria Julio, destapaciones y urgencias en Lanus, colores azul y blanco, 11 6677 8899"
+    ]
+  }
+]

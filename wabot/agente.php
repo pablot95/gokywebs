@@ -249,6 +249,33 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
 
+    /* ACEPTÓ LA PROPUESTA DEL PITCH → próximo paso, sin pasar por el modelo.
+     *
+     * La línea del pitch ya no pregunta si encaja: ofrece contar cómo se sigue
+     * (Pablo, 1-sep). Entonces el "dale" / "me sirve" / "contame" que viene
+     * después ES la aceptación, y el próximo paso es la demo. Dejárselo al
+     * modelo salía mal: a un plomero que contestó "dale, me sirve" le repitió
+     * el precio y la charla terminó derivada sin lead. Determinista, como los
+     * desempates: wabot_precio() con el pitch ya hecho ofrece la muestra sin
+     * volver a cotizar. */
+    if ($faseAtajo === 'pitch' && !empty($conv['pitch_hecho']) && !empty($conv['tipo'])
+        && empty($conv['lead_creado'])
+        && wabot_es_afirmativa($mensaje)
+        && wabot_pitch_encaje_rechazado($mensaje, $conv, $cfg) === null) {
+        wabot_handoff_aclaracion_resuelta($conv);
+        wabot_evento_sesion($conv, 'pitch_aceptado', ['tipo' => (string)$conv['tipo']]);
+        /* Con la muestra YA ofrecida antes, wabot_precio() no la vuelve a
+         * ofrecer: devuelve el resumen del precio. Repetirle el precio al que
+         * acaba de aceptar es no avanzar — a un plomero que contestó "dale, me
+         * sirve" le llegó de nuevo el $160.000 y la charla murió derivada sin
+         * lead. Si ya la ofrecimos, el próximo paso son los datos. */
+        if (!empty($conv['cta_muestra'])) {
+            $conv['fase'] = 'prediseno';
+            return [wabot_prediseno_texto($conv, $cfg)];
+        }
+        return wabot_precio((string)$conv['tipo'], $conv, $cfg);
+    }
+
     /* El precio del proyecto combinado lo arma el desarrollador, no la lista. */
     if (!empty($conv['precio_dado']) && wabot_texto_pregunta_precio_combinado($mensaje)) {
         $mixtoTxt = trim((string)($cfg['mixto'] ?? ''));
