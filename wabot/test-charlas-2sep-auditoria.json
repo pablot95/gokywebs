@@ -1,0 +1,47 @@
+[
+  {
+    "nombre": "A01 peluqueria: ya no hay repregunta de turnos",
+    "tel": "QATEST-A01",
+    "turnos": [
+      "Hola! Tengo una peluqueria en Cordoba",
+      "Cuanto sale?",
+      "Y si quiero que saquen turno solas desde la web?"
+    ]
+  },
+  {
+    "nombre": "A02 muebles a medida: el desempate del hibrido, contestado con una palabra",
+    "tel": "QATEST-A02",
+    "turnos": [
+      "Buenas, hago muebles a medida y tambien vendo algunos ya hechos",
+      "trabajos",
+      "Dale, cuanto sale"
+    ]
+  },
+  {
+    "nombre": "A03 pregunta general: que tipos de web hacen y cuanto salen",
+    "tel": "QATEST-A03",
+    "turnos": [
+      "Hola, que tipos de paginas hacen?",
+      "Y mas o menos que precios manejan?",
+      "Se puede pagar en cuotas?"
+    ]
+  },
+  {
+    "nombre": "A04 tienda de ropa: sale lo mismo sin carrito",
+    "tel": "QATEST-A04",
+    "turnos": [
+      "Hola, tengo un local de ropa y quiero vender online",
+      "Sale lo mismo sin carrito?",
+      "Ah dale, y la demo cuanto tarda?"
+    ]
+  },
+  {
+    "nombre": "A05 gimnasio con clases: no se le ofrece nada retirado",
+    "tel": "QATEST-A05",
+    "turnos": [
+      "Hola! Tengo un gimnasio y doy clases de funcional",
+      "Es para que la gente vea los horarios y me escriba",
+      "cuanto es la senia?"
+    ]
+  }
+]

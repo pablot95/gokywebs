@@ -3420,7 +3420,8 @@ $ofertaVieja = wabot_config_load();
 $ofertaVieja['msg_prediseno_oferta'] = 'Siempre ofrecemos una demo gratis de la web, para que veas cómo quedaría antes de decidir nada. Querés que te la armemos?';
 $ofertaVieja['msg_prediseno_oferta_variantes'] = ['Si querés, te preparamos una demo gratis para que veas cómo quedaría tu web antes de decidir. La armamos?'];
 wabot_config_ventas($ofertaVieja);
-wabot_config_pitch_rubro($ofertaVieja);   // mismo orden que wabot_config_load()
+wabot_config_pitch_rubro($ofertaVieja);
+wabot_config_simplificar_tipos($ofertaVieja);   // mismo orden que wabot_config_load()
 caso('la oferta vieja de producción migra sola', $ofertaVieja['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']);
 
 $ofertaIntermedia = wabot_config_load();
@@ -3428,6 +3429,7 @@ $ofertaIntermedia['msg_prediseno_oferta'] = 'Y no hace falta que decidas solo co
 $ofertaIntermedia['msg_prediseno_oferta_variantes'] = ['Para que no tengas que imaginártelo: te preparamos una muestra real de tu web, sin cargo ni compromiso. Recién cuando la veas decidís. Avanzamos con eso?'];
 wabot_config_ventas($ofertaIntermedia);
 wabot_config_pitch_rubro($ofertaIntermedia);
+wabot_config_simplificar_tipos($ofertaIntermedia);
 caso('y la versión intermedia (la que estaba en producción hasta hoy) también migra',
     $ofertaIntermedia['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']
     && $ofertaIntermedia['msg_prediseno_oferta_variantes'] === $cfg['msg_prediseno_oferta_variantes']);
@@ -5602,6 +5604,7 @@ $cfgOfertaVieja = wabot_config_load();
 $cfgOfertaVieja['msg_prediseno_oferta'] = 'Si querés, te preparamos una muestra sin costo para que veas cómo podría quedar. Te sirve?';
 $cfgOfertaVieja['msg_prediseno_oferta_variantes'] = ['Te armamos una muestra gratis para que veas cómo quedaría. La preparamos?', 'Podemos prepararte una muestra sin cargo antes de que decidas nada. Te la armo?'];
 wabot_config_pitch_rubro($cfgOfertaVieja);
+wabot_config_simplificar_tipos($cfgOfertaVieja);
 caso('las ofertas que estaban en producción el 1-sep migran solas',
     $cfgOfertaVieja['msg_prediseno_oferta_variantes'] === $cfg['msg_prediseno_oferta_variantes']
     && $cfgOfertaVieja['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']);
@@ -5847,6 +5850,79 @@ caso('pero un saludo sigue sin decidir nada',
 caso('la pregunta del híbrido no nombra el catálogo retirado',
     stripos((string)$cfg['desempate_hibrido'], 'catálogo') === false
     && stripos((string)$cfg['desempate_hibrido_2'], 'catálogo') === false);
+
+echo "— 2-sep, auditoría: ningún texto ofrece lo que ya no se vende —\n";
+
+/* "Qué tipos de web hacen?" contestaba con los tres retirados y remataba con
+ * "Cuál encaja mejor con lo tuyo?": el bot ofreciendo productos que no existen. */
+caso('def_tipos ya no ofrece turnos, institucional ni la modalidad catálogo',
+    stripos($cfg['def_tipos'], 'sistema de turnos') === false
+    && stripos($cfg['def_tipos'], 'institucional') === false
+    && stripos($cfg['def_tipos'], 'webs con catálogo') === false);
+caso('pero sigue nombrando los cuatro que sí se venden',
+    stripos($cfg['def_tipos'], 'sitio profesional') !== false
+    && stripos($cfg['def_tipos'], 'ecommerce') !== false
+    && stripos($cfg['def_tipos'], 'cursos') !== false
+    && stripos($cfg['def_tipos'], 'inmobiliaria') !== false);
+caso('"qué hacen ustedes?" tampoco lista los retirados',
+    stripos($cfg['info']['que_hacemos'], 'webs con turnos') === false
+    && stripos($cfg['info']['que_hacemos'], 'institucional') === false);
+
+/* Y la plata: los rangos decían "desde $200.000 (una landing) hasta $320.000",
+ * precios de antes del recorte. Ahora salen de los tipos vigentes. */
+list($minVig, $maxVig) = wabot_rangos_min_max($cfg);
+caso('el rango de precios sale de los tipos vigentes, no escrito a mano',
+    strpos(wabot_texto_info('rangos', $cfg), (string)$minVig) !== false
+    && strpos(wabot_texto_info('rangos', $cfg), (string)$maxVig) !== false);
+caso('y no quedó ningún precio viejo en el texto',
+    strpos((string)$cfg['info']['rangos'], '$200.000') === false
+    && strpos((string)$cfg['info']['rangos'], '$320.000') === false);
+
+/* El respaldo del pago va sin montos: si la cuenta de las señas falla, es
+ * preferible no decir ninguno a decir los de antes del recorte. */
+caso('el respaldo del pago no dice señas viejas',
+    strpos((string)$cfg['info']['pago_generico'], '$60.000') === false
+    && strpos((string)$cfg['info']['pago_generico'], '$80.000') === false
+    && strpos((string)$cfg['info']['pago_generico'], '$90.000') === false);
+caso('y el que de verdad sale sí trae las señas al día',
+    strpos(wabot_texto_pago_generico($cfg), (string)$cfg['tipos']['landing']['sena']) !== false);
+
+echo "— 2-sep, auditoría: el bot reconoce que ya ofreció la demo —\n";
+
+/* El detector pedía la palabra "demo", "muestra" o "prediseño". El mensaje que
+ * de verdad sale en producción desde el 2-sep no dice ninguna: dice "podemos
+ * mostrarte cómo podría quedar tu web". Así que el bot no se reconocía a sí
+ * mismo y se la volvía a ofrecer, que es el loop de "demo demo" del 1-sep. */
+$tsDet = time();
+foreach (['msg_prediseno_oferta', 'prediseno_link', 'cta_muestra'] as $kDet) {
+    $txtDet = trim((string)($cfg[$kDet] ?? ''));
+    if ($txtDet === '') continue;
+    $convDet = ['session_started_ts' => $tsDet - 100,
+                'transcript' => [['q' => 'bot', 't' => $txtDet, 'ts' => $tsDet]]];
+    caso("$kDet se reconoce como demo ya ofrecida", wabot_cta_muestra_ya_ofrecida($convDet) === true);
+}
+foreach ((array)($cfg['msg_prediseno_oferta_variantes'] ?? []) as $iDet => $vDet) {
+    $convDet = ['session_started_ts' => $tsDet - 100,
+                'transcript' => [['q' => 'bot', 't' => (string)$vDet, 'ts' => $tsDet]]];
+    caso("la variante $iDet del ofrecimiento también", wabot_cta_muestra_ya_ofrecida($convDet) === true);
+}
+caso('pero un mensaje cualquiera no cuenta como ofrecimiento',
+    wabot_cta_muestra_ya_ofrecida(['session_started_ts' => $tsDet - 100,
+        'transcript' => [['q' => 'bot', 't' => (string)$cfg['info']['hosting'], 'ts' => $tsDet]]]) === false);
+
+/* Y las promesas: el plazo es el mismo en todos lados, y las cuotas de la
+ * tarjeta nunca se nombran sin decir que tienen interés. */
+caso('ningún ofrecimiento promete "uno o dos días" contra las 24hs del principal',
+    (function () use ($cfg) {
+        foreach (array_merge([$cfg['msg_prediseno_oferta'], $cfg['prediseno_link'] ?? ''],
+                             (array)$cfg['msg_prediseno_oferta_variantes']) as $v) {
+            if (stripos((string)$v, 'uno o dos días') !== false) return false;
+        }
+        return true;
+    })());
+caso('"es caro" y el link de tarjeta dicen que las cuotas tienen interés',
+    stripos((string)$cfg['caro'], 'con interés') !== false
+    && stripos((string)$cfg['postdemo_tarjeta'], 'con interés') !== false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

@@ -2352,6 +2352,96 @@ En este enlace podés verlo bien detallado: {link}";
         if (isset($cfg['tipos'][$t])) unset($cfg['tipos'][$t]['retirado']);
     }
 
+    /* 5. Cuatro textos seguían ofreciendo lo que ya no se vende, y dos de
+     * ellos con plata vieja. def_tipos es el que contesta "qué tipos de web
+     * hacen?" y terminaba en "Cuál encaja mejor con lo tuyo?" después de
+     * ofrecer catálogo, turnos e institucional. Los de precio ahora usan
+     * {min}/{max}, que salen de los tipos vigentes, para que no se vuelvan a
+     * desfasar: decían "desde $200.000 (una landing) hasta $320.000". */
+    $textosViejos = [
+        'def_tipos' => [
+            'nuevo' => "El sitio profesional es una página para presentar tu negocio o profesión, con toda tu info, tus trabajos y contacto directo a tu WhatsApp.\n"
+                     . "El ecommerce es una tienda online con catálogo, carrito y cobro online, con panel propio para cargar tus productos.\n"
+                     . "También hacemos plataformas de cursos, con acceso propio para cada alumno, y webs para inmobiliarias.\n"
+                     . "Cuál encaja mejor con lo tuyo?",
+            'marca' => 'webs con sistema de turnos',
+        ],
+    ];
+    foreach ($textosViejos as $clave => $d) {
+        $actual = trim((string)($cfg[$clave] ?? ''));
+        if ($actual === '' || strpos($actual, $d['marca']) !== false) {
+            $cfg[$clave] = $d['nuevo'];
+        }
+    }
+
+    $infoViejos = [
+        'que_hacemos' => [
+            'nuevo' => 'En Gokywebs diseñamos y desarrollamos páginas web a medida: sitios profesionales, tiendas online, plataformas de cursos e inmobiliarias, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.',
+            'marca' => 'webs con turnos',
+        ],
+        'rangos' => [
+            'nuevo' => 'Los desarrollos van desde {min} hasta {max}, según lo que necesites. Contame a qué te dedicás y te confirmo el precio exacto en un mensaje.',
+            'marca' => '(una landing)',
+        ],
+        /* El texto que de verdad sale lo arma wabot_texto_pago_generico() con
+         * los tipos vigentes. Este es el respaldo de última instancia, así que
+         * va sin montos: si la cuenta falla, es preferible no decir ninguno a
+         * decir los de marzo. */
+        'pago_generico' => [
+            'nuevo' => 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña y el saldo al entregar la web. Contame a qué te dedicás y te paso los montos exactos.',
+            'marca' => 'en landing o catálogo',
+        ],
+    ];
+    foreach ($infoViejos as $clave => $d) {
+        $actual = trim((string)($cfg['info'][$clave] ?? ''));
+        if ($actual === '' || strpos($actual, $d['marca']) !== false) {
+            $cfg['info'][$clave] = $d['nuevo'];
+        }
+    }
+
+    /* 6. Dos promesas que no coincidían con lo que Pablo fijó el 2-sep.
+     *
+     * El plazo: una de las variantes del ofrecimiento decía "tarda uno o dos
+     * días" cuando el compromiso es "en menos de 24hs", que es lo que dice el
+     * mensaje principal. Y el encuadre: "te armamos la demo de tu web" promete
+     * la web hecha; lo que se ofrece es mostrar cómo PODRÍA quedar. */
+    $reemplazosOferta = [
+        'Te armamos la demo de tu web, gratis: diseñada para {rubro}'
+            => 'Antes de avanzar podemos mostrarte cómo podría quedar tu web, con una demo gratis: pensada para {rubro}',
+        'Antes de que decidas nada te mostramos tu web hecha. Es una demo gratis, pensada para {rubro}, y tarda uno o dos días.'
+            => 'Antes de que decidas nada podemos mostrarte cómo quedaría tu web. Es una demo gratis, pensada para {rubro}, y la tenés en menos de 24hs.',
+        'primero ves tu web armada, después decidís'
+            => 'primero ves cómo podría quedar tu web, después decidís',
+    ];
+    foreach (['msg_prediseno_oferta', 'cta_muestra'] as $kOferta) {
+        if (isset($cfg[$kOferta]) && is_string($cfg[$kOferta])) {
+            $cfg[$kOferta] = strtr($cfg[$kOferta], $reemplazosOferta);
+        }
+    }
+    if (!empty($cfg['msg_prediseno_oferta_variantes']) && is_array($cfg['msg_prediseno_oferta_variantes'])) {
+        $cfg['msg_prediseno_oferta_variantes'] = array_map(
+            function ($v) use ($reemplazosOferta) { return strtr((string)$v, $reemplazosOferta); },
+            $cfg['msg_prediseno_oferta_variantes']);
+    }
+
+    /* 7. Las cuotas de la tarjeta TIENEN interés, y así lo dice info.pago. Dos
+     * textos lo omitían: el que contesta "es caro" y el del link de pago. Un
+     * "hasta en 12 cuotas" a secas se lee como sin interés. */
+    $conInteres = [
+        'con tarjeta hasta en 12 cuotas.'
+            => 'con tarjeta, en un pago o hasta en 12 cuotas con interés.',
+        'Podés hacerlo hasta en 12 cuotas:'
+            => 'Podés hacerlo en un pago o hasta en 12 cuotas con interés:',
+    ];
+    foreach (['caro', 'postdemo_tarjeta', 'objecion_precio'] as $kCuota) {
+        if (isset($cfg[$kCuota]) && is_string($cfg[$kCuota])) {
+            $cfg[$kCuota] = strtr($cfg[$kCuota], $conInteres);
+        }
+        if (isset($cfg['info'][$kCuota]) && is_string($cfg['info'][$kCuota])) {
+            $cfg['info'][$kCuota] = strtr($cfg['info'][$kCuota], $conInteres);
+        }
+    }
+
     /* 5. El desempate del híbrido ofrecía tres caminos y dos daban lo mismo:
      * "catálogo con contacto por WhatsApp" y "vender y cobrar online" terminan
      * los dos en el ecommerce de $290.000 desde que catálogo se retiró. Al

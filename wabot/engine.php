@@ -221,7 +221,10 @@ function wabot_cta_muestra_ya_ofrecida($conv) {
         if (($linea['q'] ?? '') !== 'bot') continue;
         if ($inicio > 0 && (int)($linea['ts'] ?? 0) < $inicio) continue;
         $t = wabot_normalizar_frase((string)($linea['t'] ?? ''));
-        if (!preg_match('/\b(demo|muestra|prediseno)\b/u', $t)) continue;
+        /* "como podria quedar tu web" es el encuadre que fijó Pablo el 2-sep y
+         * no dice la palabra demo: sin esta alternativa el ofrecimiento que sí
+         * sale en producción no se reconocía y se repetía. */
+        if (!preg_match('/\b(demo|muestra|prediseno)\b|como (podria|podriamos) quedar|como quedaria/u', $t)) continue;
         if (preg_match('/\b(gratis|sin cargo|sin costo|sin compromiso|armamos|armarte|preparamos|prepararte|queres que)\b/u', $t)) {
             return true;
         }
