@@ -1736,29 +1736,32 @@ foreach (array_keys($cfg['tipos']) as $tipo) {
 caso('sin tipo cotizado todavía, la seña es la genérica con los montos reales',
     wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
 
-echo "— Las cuotas que se dicen son las del tipo ya cotizado —\n";
+echo "— El bot NO dice montos de cuota (Pablo, 2-sep) —\n";
 
-// Recalculadas el 22-ago con el CFT real de Mercado Pago (125%): el checkout
-// devolvió $320.000 → 12x $40.269,33, y las viejas estaban ~25% por encima.
-// El catálogo ya no tiene cuotas de lista: su total depende de los productos.
-$cuotasPorTipo = [];
-foreach ($cfg['tipos'] as $tipoCuota => $datosCuota) {
-    if (!empty($datosCuota['cuotas'])) $cuotasPorTipo[$tipoCuota] = $datosCuota['cuotas'];
+/* "El bot no debería saber el valor de las cuotas, eso varía mucho
+ * diariamente." La tasa de la tarjeta se mueve sola y un monto viejo es una
+ * condición comercial que después hay que sostener delante del cliente. Se
+ * dice que hay hasta 12 cuotas; el número lo calcula la tarjeta. */
+foreach (array_keys((array)$cfg['tipos']) as $tipoCuota) {
+    caso("$tipoCuota ya no tiene cuotas de lista en la config",
+        empty($cfg['tipos'][$tipoCuota]['cuotas']));
 }
-caso('el catálogo no lleva cuotas de lista: su total depende de los productos',
-    !isset($cuotasPorTipo['catalogo']));
-caso('la cuota de 12 sale del CFT real de Mercado Pago (125%)', (function () use ($cfg) {
-    $total = wabot_monto_a_numero($cfg['tipos']['ecommerce']['precio']);
-    return $cfg['tipos']['ecommerce']['cuotas']['12'] === wabot_moneda((int)round($total * 0.125841));
-})());
-foreach ($cuotasPorTipo as $tipo => $cuotas) {
-    $texto = wabot_texto_pago(['tipo' => $tipo, 'precio_dado' => true], $cfg);
-    caso("$tipo cotizado → 12 cuotas de {$cuotas['12']}", strpos($texto, '12 cuotas de ' . $cuotas['12']) !== false);
-    caso("$tipo cotizado → 6 de {$cuotas['6']}", strpos($texto, '6 de ' . $cuotas['6']) !== false);
-    caso("$tipo cotizado → 3 de {$cuotas['3']}", strpos($texto, '3 de ' . $cuotas['3']) !== false);
+foreach (wabot_tipos_ofrecibles($cfg) as $tipoPago) {
+    $texto = wabot_texto_pago(['tipo' => $tipoPago, 'precio_dado' => true], $cfg);
+    caso("$tipoPago: la respuesta de pago no trae ningún monto de cuota",
+        preg_match('/\d+ (cuotas )?de \$/u', $texto) === 0);
+    caso("$tipoPago: pero sí dice que hay hasta 12 cuotas",
+        stripos($texto, '12 cuotas') !== false);
+    caso("$tipoPago: y no deja ningún marcador crudo",
+        strpos($texto, '{') === false);
 }
-caso('landing NO lleva las cuotas de ecommerce (montos de otro tipo)',
-    strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), $cfg['tipos']['ecommerce']['cuotas']['12']) === false);
+/* Una config vieja con los montos guardados migra sola. */
+$cfgCuotasViejas = wabot_config_load();
+$cfgCuotasViejas['info']['pago'] = 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: 12 cuotas de {cuotas_12}, 6 de {cuotas_6} o 3 de {cuotas_3}. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.';
+wabot_config_ventas($cfgCuotasViejas);
+caso('el info.pago con montos que estaba en producción migra solo',
+    strpos($cfgCuotasViejas['info']['pago'], '{cuotas_12}') === false
+    && stripos($cfgCuotasViejas['info']['pago'], '12 cuotas') !== false);
 caso('sin tipo cotizado, la genérica no inventa montos de cuota',
     strpos(wabot_texto_pago(['tipo' => null], $cfg), 'cuotas de $') === false);
 caso('la respuesta de pago del tipo cotizado arranca con el precio total',

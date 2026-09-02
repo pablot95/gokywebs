@@ -4019,12 +4019,17 @@ function wabot_texto_pago($conv, $cfg) {
         return wabot_pago_asegurar_sena(
             str_replace(['{precio}', '{sena}'], [wabot_moneda($d['total']), $sena], $plantillaCat), $sena);
     }
-    $cuotas = $datosTipo['cuotas'] ?? [];
-    return wabot_pago_asegurar_sena(str_replace(
+    /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
+     * cuota (Pablo, 2-sep). Si quedó alguno en un texto editado a mano, sale
+     * la frase sin el número en vez de un {cuotas_12} crudo. */
+    $texto = str_replace(
         ['{precio}', '{sena}', '{cuotas_12}', '{cuotas_6}', '{cuotas_3}'],
-        [(string)($datosTipo['precio'] ?? ''), $sena, $cuotas['12'] ?? '', $cuotas['6'] ?? '', $cuotas['3'] ?? ''],
+        [(string)($datosTipo['precio'] ?? ''), $sena, '', '', ''],
         (string)($cfg['info']['pago'] ?? '')
-    ), $sena);
+    );
+    $texto = preg_replace('/:?\s*12 cuotas de\s*,?\s*6 de\s*,?\s*(o\s*)?3 de\s*/u', '', $texto);
+    $texto = trim(preg_replace('/\s{2,}/u', ' ', $texto));
+    return wabot_pago_asegurar_sena($texto, $sena);
 }
 
 /** Elige una variante estable por conversación; precios y links siguen exactos. */

@@ -1487,6 +1487,24 @@ En menos de 24 horas la tenés lista.",
     if (empty($cfg['prediseno_link_variantes'])) $cfg['prediseno_link_variantes'] = [$linkNuevo];
 
 
+    /* info.pago sin montos de cuota: los que estaban guardados se migran. El
+     * patrón cubre cualquier redacción con ": 12 cuotas de $X, 6 de $Y..." */
+    $pagoSinCuotas = 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total. Para arrancar se deja una seña de {sena} y el saldo al entregar la web.';
+    $pagoActual = trim((string)($cfg['info']['pago'] ?? ''));
+    if ($pagoActual === '' || preg_match('/12 cuotas de |\{cuotas_12\}/u', $pagoActual)) {
+        $cfg['info']['pago'] = $pagoSinCuotas;
+    }
+    foreach (['pago', 'pago_generico', 'pago_catalogo', 'objecion_precio', 'caro'] as $claveCuota) {
+        $txtCuota = (string)($cfg['info'][$claveCuota] ?? $cfg[$claveCuota] ?? '');
+        if ($txtCuota === '') continue;
+        $limpio = preg_replace('/:?\s*12 cuotas de [^,.]+(?:, 6 de [^,.]+)?(?: o 3 de [^,.]+)?/u', '', $txtCuota);
+        $limpio = preg_replace('/\{cuotas_(12|6|3)\}/u', '', $limpio);
+        $limpio = trim(preg_replace('/\s{2,}/u', ' ', $limpio));
+        if ($limpio === $txtCuota) continue;
+        if (isset($cfg['info'][$claveCuota])) $cfg['info'][$claveCuota] = $limpio;
+        else $cfg[$claveCuota] = $limpio;
+    }
+
     wabot_config_venta_en_dos_partes($cfg);
 }
 
@@ -1506,18 +1524,13 @@ function wabot_config_venta_en_dos_partes(&$cfg) {
     // Factores de cuota derivados del CFT 125% anual (tasa mensual 6,991%) que
     // devolvió el checkout real. El de 12 está verificado contra ese checkout;
     // los de 3 y 6 salen de la misma tasa.
-    $factores = ['12' => 0.125841, '6' => 0.209734, '3' => 0.380983];
+    /* NINGÚN MONTO DE CUOTA (Pablo, 2-sep: "el bot no debería saber el valor de
+     * las cuotas, eso varía mucho diariamente"). La tasa de la tarjeta cambia
+     * sola y un número viejo es una condición comercial que después hay que
+     * sostener. Se dice que hay hasta 12 cuotas y que el valor lo calcula la
+     * tarjeta; el número exacto lo ve el cliente en el checkout. */
     foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
-        unset($cfg['tipos'][$tipo]['pagos3']);
-        $total = (int)preg_replace('/\D/', '', (string)($datos['precio'] ?? ''));
-        // El catálogo cotiza por cantidad de productos: su total no es fijo, así
-        // que no puede tener cuotas de lista (ver info.pago_catalogo). Se le
-        // sacan para que nadie lea montos que no corresponden a lo cotizado.
-        if ($tipo === 'catalogo') { unset($cfg['tipos'][$tipo]['cuotas']); continue; }
-        if ($total <= 0) continue;
-        foreach ($factores as $n => $factor) {
-            $cfg['tipos'][$tipo]['cuotas'][$n] = wabot_moneda((int)round($total * $factor));
-        }
+        unset($cfg['tipos'][$tipo]['pagos3'], $cfg['tipos'][$tipo]['cuotas']);
     }
 
     // Sin la seña y sin montos de cuota: eso es de la parte 2.
