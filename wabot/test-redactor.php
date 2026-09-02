@@ -23,14 +23,14 @@ function caso($nombre, $ok) {
     if (!$ok) $fallas++;
 }
 
-$BASE_PRECIO = "Perfecto, eso tendría un precio de \$200.000 por todo el desarrollo. En este link podés ver todo lo que incluye: gokywebs.com/presupuestos/Landing\nSiempre ofrecemos un prediseño gratis de la web";
+$BASE_PRECIO = "Perfecto, eso tendría un precio de \$200.000 por todo el desarrollo. En este link podés ver todo lo que incluye: gokywebs.com/presupuestos/sitioprofesional\nSiempre ofrecemos un prediseño gratis de la web";
 
 echo "— Validaciones sobre lo que devuelve el modelo —\n";
 
-$r = wabot_validar_redaccion("Dale, en tu caso sale \$200.000 por todo el desarrollo. Acá tenés el detalle: gokywebs.com/presupuestos/Landing y siempre hacemos un prediseño gratis antes.", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion("Dale, en tu caso sale \$200.000 por todo el desarrollo. Acá tenés el detalle: gokywebs.com/presupuestos/sitioprofesional y siempre hacemos un prediseño gratis antes.", $BASE_PRECIO, $cfg);
 caso('redacción válida con precio y link exactos → se acepta', is_string($r) && strpos($r, '$200.000') !== false);
 
-$r = wabot_validar_redaccion("Sale doscientos mil pesos. Mirá gokywebs.com/presupuestos/Landing", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion("Sale doscientos mil pesos. Mirá gokywebs.com/presupuestos/sitioprofesional", $BASE_PRECIO, $cfg);
 caso('precio escrito en letras → se rechaza (usa el texto fijo)', $r === null);
 
 $r = wabot_validar_redaccion("Sale \$200.000. Mirá gokywebs.com/presupuestos/landing", $BASE_PRECIO, $cfg);
@@ -39,22 +39,22 @@ caso('link en minúscula (daría 404) → se rechaza', $r === null);
 $r = wabot_validar_redaccion("Sale \$200.000. Escribinos a wa.me/5491111111111", $BASE_PRECIO, $cfg);
 caso('link inventado que no estaba en el base → se rechaza', $r === null);
 
-$r = wabot_validar_redaccion("Sale \$210.000 en tu caso. gokywebs.com/presupuestos/Landing", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion("Sale \$210.000 en tu caso. gokywebs.com/presupuestos/sitioprofesional", $BASE_PRECIO, $cfg);
 caso('precio cambiado → se rechaza', $r === null);
 
-$r = wabot_validar_redaccion("Dale 😊 sale \$200.000, mirá gokywebs.com/presupuestos/Landing", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion("Dale 😊 sale \$200.000, mirá gokywebs.com/presupuestos/sitioprofesional", $BASE_PRECIO, $cfg);
 caso('emoji → se limpia y se acepta', is_string($r) && strpos($r, '😊') === false && strpos($r, '$200.000') !== false);
 
-$r = wabot_validar_redaccion("¿Te sirve? Sale \$200.000. gokywebs.com/presupuestos/Landing ¡Genial!", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion("¿Te sirve? Sale \$200.000. gokywebs.com/presupuestos/sitioprofesional ¡Genial!", $BASE_PRECIO, $cfg);
 caso('signos de apertura → se limpian', is_string($r) && strpos($r, '¿') === false && strpos($r, '¡') === false);
 
-$r = wabot_validar_redaccion(str_repeat("bla ", 300) . "\$200.000 gokywebs.com/presupuestos/Landing", $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion(str_repeat("bla ", 300) . "\$200.000 gokywebs.com/presupuestos/sitioprofesional", $BASE_PRECIO, $cfg);
 caso('respuesta larguísima → se rechaza', $r === null);
 
 $r = wabot_validar_redaccion("   ", $BASE_PRECIO, $cfg);
 caso('respuesta vacía → se rechaza', $r === null);
 
-$r = wabot_validar_redaccion('"Sale $200.000, mirá gokywebs.com/presupuestos/Landing"', $BASE_PRECIO, $cfg);
+$r = wabot_validar_redaccion('"Sale $200.000, mirá gokywebs.com/presupuestos/sitioprofesional"', $BASE_PRECIO, $cfg);
 caso('comillas envolventes → se sacan', is_string($r) && $r[0] !== '"');
 
 $BASE_SIMPLE = "Contame un poco qué andas necesitando";
@@ -65,7 +65,7 @@ caso('mensaje sin precio ni link → se acepta libre', is_string($r));
 // landings sin haber llamado a dar_precio, así que no había BASE con la que
 // compararlo. La validación vieja solo chequeaba que el precio del base
 // estuviera en la salida; nunca chequeaba lo inverso.
-$r = wabot_validar_redaccion("Te preparo una landing. El valor es de \$170.000. gokywebs.com/presupuestos/Landing", "", $cfg);
+$r = wabot_validar_redaccion("Te preparo una landing. El valor es de \$170.000. gokywebs.com/presupuestos/sitioprofesional", "", $cfg);
 caso('precio inventado SIN ningún base → se rechaza', $r === null);
 
 $r = wabot_validar_redaccion("El desarrollo completo tiene un valor de \$145.000.", "", $cfg);
@@ -91,28 +91,28 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va una Landing: \$160.000 por todo el desarrollo. Todo el detalle está acá: gokywebs.com/presupuestos/Landing y te hacemos un prediseño gratis antes de que decidas.";
+    return "Mirá, para lo tuyo va una Landing: \$180.000 por todo el desarrollo. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional y te hacemos un prediseño gratis antes de que decidas.";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
-    && strpos($r[0], '$160.000') !== false);
+    && strpos($r[0], '$180.000') !== false);
 caso('la propuesta del prediseño va aparte, CON el link, y NO se reescribe',
-    stripos($r[1], 'calidad del trabajo') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
+    stripos($r[1], 'demo de tu web gratis') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 2 && strpos($r[0], '$160.000') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 2 && strpos($r[0], '$180.000') !== false && strpos($r[0], 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[0], '$160.000') !== false);
+caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[0], '$180.000') !== false);
 
 // La derivación nunca se reescribe.
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
@@ -157,29 +157,29 @@ caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
     && strpos($r[0], '$290.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $290.000 por todo, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
-    wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
 caso('tampoco puede colar 3 pagos: ya no está en el base',
-    wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/Ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
-caso('el precio ya no viene con el link del presupuesto pegado ni forzado',
-    strpos($r[0], 'presupuestos/') === false);
+caso('el precio viene con el link del presupuesto (Pablo, 2-sep)',
+    strpos($r[0], 'presupuestos/') !== false);
 
 echo "— El salto de línea se garantiza aunque la IA lo aplaste —\n";
 
 $v = wabot_validar_redaccion(
-    'Dale, para lo tuyo un ecommerce sale $320.000. El detalle completo está en gokywebs.com/presupuestos/Ecommerce',
-    "Perfecto, eso tendría un valor de \$320.000 para todo el desarrollo.\nEn este link: gokywebs.com/presupuestos/Ecommerce",
+    'Dale, para lo tuyo un ecommerce sale $320.000. El detalle completo está en gokywebs.com/presupuestos/ecommerce',
+    "Perfecto, eso tendría un valor de \$320.000 para todo el desarrollo.\nEn este link: gokywebs.com/presupuestos/ecommerce",
     $cfg);
 caso('si la IA escribió todo en una línea, el link se corta a renglón nuevo',
-    $v !== null && strpos($v, "\nEl detalle completo está en gokywebs.com/presupuestos/Ecommerce") !== false);
+    $v !== null && strpos($v, "\nEl detalle completo está en gokywebs.com/presupuestos/ecommerce") !== false);
 
 $v = wabot_validar_redaccion(
-    "Sale \$320.000 todo el desarrollo.\nMirá el detalle: gokywebs.com/presupuestos/Ecommerce",
-    "base con \$320.000 y gokywebs.com/presupuestos/Ecommerce",
+    "Sale \$320.000 todo el desarrollo.\nMirá el detalle: gokywebs.com/presupuestos/ecommerce",
+    "base con \$320.000 y gokywebs.com/presupuestos/ecommerce",
     $cfg);
 caso('si ya venía con su salto, no se toca', substr_count($v, "\n") === 1);
 
@@ -213,9 +213,9 @@ caso('si el BASE ya trae la palabra descuento (texto oficial), no se rechaza por
 
 echo "— El chequeo de links es exacto: un dominio recortado no pasa —\n";
 
-$baseLink = "El detalle está acá: gokywebs.com/presupuestos/Landing";
+$baseLink = "El detalle está acá: gokywebs.com/presupuestos/sitioprofesional";
 caso('el link exacto pasa',
-    wabot_validar_redaccion("Mirá el detalle en:\ngokywebs.com/presupuestos/Landing", $baseLink, $cfg) !== null);
+    wabot_validar_redaccion("Mirá el detalle en:\ngokywebs.com/presupuestos/sitioprofesional", $baseLink, $cfg) !== null);
 caso('"gokywebs.co" (dominio recortado) se rechaza',
     wabot_validar_redaccion("Mirá el detalle en gokywebs.co y me contás.", $baseLink, $cfg) === null);
 
@@ -223,13 +223,13 @@ echo "— Dos artículos pegados: \"iría un una página\" (salió así en produ
 
 $basePrecio = wabot_msg_precio_texto('landing', $cfg);
 caso('"un una" se rechaza y cae al texto fijo',
-    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('"la un" también',
-    wabot_validar_redaccion('Te queda la un página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Te queda la un página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $160.000. gokywebs.com/presupuestos/Landing', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 
 echo "— Tras un cierre sin presión, el acuse recibe silencio (caso 👍 si, 21-ago) —\n";
 
@@ -339,16 +339,21 @@ $convCambio = convNueva();
 $convCambio['fase'] = 'pitch'; $convCambio['tipo'] = 'ecommerce';
 $convCambio['precio_dado'] = true; $convCambio['pitch_hecho'] = true; $convCambio['pitch_tipo'] = 'ecommerce';
 $rCambio = wabot_responder('Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp', $convCambio, $cfgCambio);
-caso('el cambio de modalidad pasa el tipo a catálogo', ($convCambio['tipo'] ?? '') === 'catalogo');
-caso('y no contesta con la oferta de la demo',
-    stripos(implode(' ', $rCambio), 'muestra') === false && stripos(implode(' ', $rCambio), 'demo') === false);
+/* Con catálogo retirado (2-sep) el tipo no cambia: sigue siendo ecommerce, que
+ * es lo que se le cotizó, y no se le da un precio nuevo. */
+caso('el cambio de modalidad ya no baja a catálogo: el tipo queda como estaba',
+    ($convCambio['tipo'] ?? '') === 'ecommerce');
 
 // Una PREGUNTA sobre la otra modalidad se contesta, no recotiza sola.
 caso('"sale lo mismo sin carrito?" no cambia el tipo por su cuenta',
     wabot_texto_cambia_modalidad('sale lo mismo sin carrito?', 'ecommerce') === null);
 caso('ni una duda sin decisión', wabot_texto_cambia_modalidad('no entiendo lo del carrito', 'ecommerce') === null);
-caso('el cambio de turnos a landing también se detecta',
-    wabot_texto_cambia_modalidad('mejor lo agendo yo, sin reserva online', 'turnos') === 'landing');
+/* Turnos se retiró (2-sep): ese salto ya no existe, y el que quedó cotizado
+ * ahí conserva su tipo y su precio. El único vivo es catálogo → ecommerce. */
+caso('el salto de turnos ya no cambia nada',
+    wabot_texto_cambia_modalidad('mejor lo agendo yo, sin reserva online', 'turnos') === null);
+caso('pero una charla vieja en catálogo sí puede pasar a ecommerce',
+    wabot_texto_cambia_modalidad('mejor con carrito, que compren desde la web', 'catalogo') === 'ecommerce');
 
 echo "\n— La comparación de precio se contesta sin pasar por el modelo (27-ago) —\n";
 

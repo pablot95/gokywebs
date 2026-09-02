@@ -1,0 +1,17 @@
+# Las carpetas pasaron a minúscula y Landing pasó a llamarse sitioprofesional
+# (Pablo, 2-sep-2026). Hostinger corre Linux: las rutas son case sensitive, así
+# que los links con mayúscula que YA se mandaron por WhatsApp darían 404 sin
+# esto. Redirect permanente, no alias: el link nuevo es el que queda.
+RedirectMatch 301 ^/presupuestos/Landing/?$          /presupuestos/sitioprofesional/
+RedirectMatch 301 ^/presupuestos/Ecommerce/?$        /presupuestos/ecommerce/
+RedirectMatch 301 ^/presupuestos/EcommerceElearning/?$ /presupuestos/ecommerceelearning/
+RedirectMatch 301 ^/presupuestos/Elearning/?$        /presupuestos/elearning/
+RedirectMatch 301 ^/presupuestos/Inmobiliaria/?$     /presupuestos/inmobiliaria/
+RedirectMatch 301 ^/presupuestos/Catalogo/?$         /presupuestos/catalogo/
+RedirectMatch 301 ^/presupuestos/Institucional/?$    /presupuestos/institucional/
+RedirectMatch 301 ^/presupuestos/Turnos/?$           /presupuestos/turnos/
+RedirectMatch 301 ^/presupuestos/Noticias/?$         /presupuestos/noticias/
+
+# Los tipos que dejaron de venderse (catálogo, turnos e institucional) siguen
+# teniendo su página para los presupuestos ya entregados: no se borran ni se
+# redirigen, porque el cliente que la abre tiene que ver lo que le cotizamos.

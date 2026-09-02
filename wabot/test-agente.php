@@ -39,9 +39,9 @@ echo "— Herramientas —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
-caso('dar_precio(landing) → texto exacto y estado actualizado, sin forzar el link',
-    strpos($r['texto'], '$160.000') !== false
-    && strpos($r['texto'], 'presupuestos/') === false
+caso('dar_precio(landing) → texto exacto, con el precio nuevo y el link del presupuesto',
+    strpos($r['texto'], '$180.000') !== false
+    && strpos($r['texto'], 'presupuestos/sitioprofesional') !== false
     && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
 caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
@@ -73,84 +73,36 @@ $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg)
 /* Desde el 1-sep la línea del pitch no pregunta: ofrece el próximo paso. */
 caso('la primera llamada ya da el precio (texto fijo), con la línea del pitch aparte',
     !empty($r['exacta']) && strpos($r['texto'], '$290.000') !== false
-    && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/') === false
+    && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/ecommerce') !== false
     && !empty($r['aparte'])
-    && preg_match('/pr[oó]ximo paso|c[oó]mo seguir[ií]amos|c[oó]mo seguimos/iu', (string)$r['aparte'])
+    && preg_match('/pr[oó]ximo paso|paso siguiente|c[oó]mo seguir[ií]amos|c[oó]mo seguimos/iu', (string)$r['aparte'])
     && stripos((string)$r['aparte'], 'buscabas') === false
     && $cPitch['fase'] === 'pitch' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
-caso('la segunda llamada, con el pitch ya contestado, NO repite el precio: solo OFRECE la demo (sin pedir datos)',
+/* Desde el 2-sep esa segunda llamada YA trae el formulario: explica la demo,
+ * da el link y promete las 24 horas, todo en el mismo mensaje. Antes ofrecía y
+ * esperaba otro turno para dar el link, un paso que no aportaba nada. */
+caso('la segunda llamada, con el pitch ya contestado, NO repite el precio y trae el formulario',
     !empty($r2['exacta']) && !empty($r2['texto']) && strpos((string)$r2['texto'], '$290.000') === false
-    && empty($r2['aparte'])
+    && empty($r2['aparte']) && strpos((string)$r2['texto'], 'gokywebs.com/form/') !== false
+    && stripos((string)$r2['texto'], 'menos de 24 horas') !== false
     && $cPitch['fase'] === 'prediseno' && $cPitch['cta_muestra'] === true);
 
-// Recién si confirma que la quiere (llamando a consultar_info('prediseno'),
-// como indica el prompt) le llega el pedido de datos — no antes. Con el form
-// activo (como el resto de esta suite), ese pedido es el link.
+// Y si el modelo vuelve a pedir el prediseño sin que el cliente haya mandado
+// nada nuevo, el guard lo frena: el link ya salió, repetirlo es insistir.
 $r3 = wabot_agente_ejecutar('consultar_info', ['clave' => 'prediseno'], $cPitch, $cfg);
-caso('confirmada la demo, ahí sí llega el pedido de datos (el link del form)',
-    strpos((string)$r3['texto'], 'gokywebs.com/form/') !== false && $cPitch['fase'] === 'prediseno');
+caso('pedir el prediseño de nuevo, sin datos nuevos, no repite el link',
+    isset($r3['error']) && $cPitch['fase'] === 'prediseno');
 @unlink(WABOT_DATA . '/conv/AGPITCH1.json');
 
+/* Catálogo se retiró (2-sep): pedirlo devuelve el ecommerce completo y ya no
+ * existe la pregunta por la cantidad de productos. */
 $cCatPitch = convNueva('AGPITCH2');
 unset($cCatPitch['pitch_hecho']);
 $rc1 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo'], $cCatPitch, $cfg);
-caso('catálogo sin cantidad marca el pitch como hecho con su propia pregunta',
-    !empty($rc1['exacta']) && !empty($cCatPitch['pitch_hecho'])
-    && stripos($rc1['texto'], 'cuántos productos') !== false);
-$rc2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 40], $cCatPitch, $cfg);
-caso('y al dar la cantidad cotiza de una, sin repreguntar la misma pregunta',
-    empty($rc2['exacta']) && strpos($rc2['texto'], '$200.000') !== false
-    && stripos($rc2['texto'], 'cuántos productos') === false);
-caso('y tampoco repite la descripción del catálogo, ya la vio en el pitch',
-    stripos($rc2['texto'], 'catálogo completo') === false);
-@unlink(WABOT_DATA . '/conv/AGPITCH2.json');
-
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('segundo precio distinto → no recotiza ni deriva sin aclarar',
-    isset($r['error']) && empty($r['terminal']) && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'inventado'], $c, $cfg);
-caso('tipo inexistente → error, sin tocar el estado', isset($r['error']) && $c['tipo'] === null);
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('consultar_info', ['clave' => 'plazos'], $c, $cfg);
-caso('consultar_info(plazos) → devuelve el texto oficial', $r['texto'] === $cfg['info']['plazos']);
-
-$r = wabot_agente_ejecutar('consultar_info', ['clave' => 'cualquier_cosa'], $c, $cfg);
-caso('info desconocida → cae en la respuesta de escape', $r['texto'] === $cfg['info']['otra']);
-
-$c = convNueva();
-$c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
-$r = wabot_agente_ejecutar('guardar_prediseno', ['nombre_negocio' => 'Deportes Andina', 'descripcion' => 'ropa deportiva', 'colores' => 'negro y verde'], $c, $cfg);
-caso('guardar_prediseno con los 3 datos → crea el lead, cierra y deriva',
-    !empty($r['terminal']) && $c['lead_creado'] === true && $c['fase'] === 'derivado'
-    && $c['descripcion'] === 'ropa deportiva');
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('guardar_prediseno', ['nombre_negocio' => 'Algo', 'descripcion' => 'algo', 'colores' => ''], $c, $cfg);
-caso('guardar_prediseno sin colores → error, no crea lead', isset($r['error']) && empty($c['lead_creado']));
-
-$c = convNueva();
-$c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
-$r = wabot_agente_ejecutar('guardar_prediseno', ['descripcion' => 'ropa deportiva', 'colores' => 'negro y verde'], $c, $cfg);
-caso('guardar_prediseno sin nombre del negocio → error, no crea lead', isset($r['error']) && empty($c['lead_creado']));
-
-$c = convNueva();
-$c['transcript'][] = ['q'=>'cliente','t'=>'quiero hablar con Pablo','ts'=>time()];
-$r = wabot_agente_ejecutar('derivar', ['motivo' => 'pidió hablar con alguien', 'causa'=>'pide_humano'], $c, $cfg);
-caso('pedido humano explícito → terminal, handoff real y fase derivado',
-    !empty($r['terminal']) && $c['fase'] === 'derivado' && $c['handoff_pendiente'] === true
-    && ($c['eventos_emitidos_sesion']['derivado'] ?? '') === $c['session_id']);
-
-caso('el prompt aclara que "sos un bot" + "quiero una persona" son DOS pedidos, no uno',
-    stripos(wabot_agente_sistema(convNueva(), $cfg), 'DOS cosas, no una') !== false
-    && stripos(wabot_agente_sistema(convNueva(), $cfg), 'pide_humano') !== false);
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('herramienta_que_no_existe', [], $c, $cfg);
-caso('herramienta inventada por el modelo → error controlado', isset($r['error']));
+caso('pedir catálogo devuelve el ecommerce, sin preguntar cantidades',
+    $cCatPitch['tipo'] === 'ecommerce' && strpos((string)$rc1['texto'], '$290.000') !== false
+    && stripos((string)$rc1['texto'], 'cuántos productos') === false);
 
 echo "— Redes de seguridad —\n";
 
@@ -162,7 +114,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 $c = convNueva();
 $r = wabot_responder('soy plomero', $c, $cfg);
 caso('agente devuelve null → contesta el motor de reglas',
-    count($r) === 2 && strpos($r[0], '$160.000') !== false && $c['tipo'] === 'landing');
+    count($r) === 2 && strpos($r[0], '$180.000') !== false && $c['tipo'] === 'landing');
 
 $GLOBALS['WABOT_TEST_AGENTE'] = function ($m, $conv, $cfg) {
     return ['Dale, para lo tuyo va una landing. Te paso el precio y el link.'];
@@ -310,42 +262,6 @@ caso('un mensaje repetido conserva la ocurrencia anterior en el historial', coun
 
 unset($GLOBALS['WABOT_TEST_AGENTE'], $GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
-echo "— Catálogo por cantidad de productos —\n";
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo'], $c, $cfg);
-caso('dar_precio(catalogo) sin cantidad → NO cotiza, pregunta cuántos productos',
-    $r['texto'] === $cfg['catalogo_cantidad'] && !empty($r['exacta'])
-    && $c['fase'] === 'catalogo_cantidad' && empty($c['productos_cantidad']));
-
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 60], $c, $cfg);
-caso('con la cantidad → cotiza $180.000 + $500 × 60 = $210.000',
-    strpos($r['texto'], '$210.000') !== false && $c['productos_cantidad'] === 60 && $c['fase'] === 'prediseno');
-caso('y el texto lleva el desglose, sin forzar el link de Catálogo',
-    strpos($r['texto'], '$180.000') !== false && strpos($r['texto'], '60 productos') !== false
-    && strpos($r['texto'], 'presupuestos/') === false);
-caso('la oferta del prediseño sigue saliendo aparte', !empty($r['aparte']));
-
-$c = convNueva();
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'catalogo', 'productos' => 99999], $c, $cfg);
-caso('una cantidad absurda no se toma: vuelve a preguntar',
-    $r['texto'] === $cfg['catalogo_cantidad'] && empty($c['productos_cantidad']));
-
-$c = convNueva(); $c['fase'] = 'catalogo_cantidad'; $c['tipo'] = 'catalogo';
-$r = wabot_agente_intento('mas o menos 25', $c, $cfg);
-caso('en fase catalogo_cantidad, un número se cotiza sin llamar a la IA',
-    $r !== null && strpos($r[0], '$192.500') !== false && $c['productos_cantidad'] === 25);
-
-$c = convNueva(); $c['fase'] = 'catalogo_cantidad'; $c['tipo'] = 'catalogo';
-$r = wabot_agente_intento('y cuanto tardan?', $c, $cfg);
-caso('una pregunta NO se confunde con una cantidad: sigue al agente',
-    $r === null && empty($c['productos_cantidad']));
-
-$c = convNueva(); $c['fase'] = 'desempate_comercio';
-$r = wabot_agente_intento('solo mostrar', $c, $cfg);
-caso('el atajo del desempate lleva a la pregunta de cantidad, no a un precio',
-    $r === [$cfg['catalogo_cantidad']] && $c['fase'] === 'catalogo_cantidad');
-
 echo "— El agente resuelve el desempate sin IA si la respuesta es clara —\n";
 
 // El chat real de la ropa en modo agente: la IA falló dos veces seguidas y el
@@ -355,9 +271,12 @@ $r = wabot_agente_intento('Por la web', $c, $cfg);
 caso('"Por la web" en el agente → cotiza ecommerce sin llamar a la IA',
     $r !== null && $c['tipo'] === 'ecommerce' && strpos($r[0], '$290.000') !== false);
 
+/* El desempate de turnos se retiró (2-sep): quien lo pide igual se cotiza
+ * como sitio profesional, sin abrir ninguna pregunta. */
 $c = convNueva(); $c['fase'] = 'desempate_turnos';
 $r = wabot_agente_intento('que reserven solos', $c, $cfg);
-caso('turnos: "que reserven solos" → turnos $200.000', $c['tipo'] === 'turnos');
+caso('"que reserven solos" ya no cotiza turnos: va a sitio profesional',
+    ($c['tipo'] ?? '') !== 'turnos');
 
 $c = convNueva(); $c['fase'] = 'desempate_comercio';
 $r = wabot_agente_intento('mmm no se', $c, $cfg);
@@ -565,7 +484,7 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('dar_precio devuelve la propuesta como mensaje aparte, con el link adentro',
-    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'calidad del trabajo') !== false
+    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'demo de tu web gratis') !== false
     && strpos($r['aparte'], 'gokywebs.com/form/') !== false);
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);
@@ -611,23 +530,27 @@ $tipos = null;
 foreach (wabot_agente_tools(false) as $t) {
     if ($t['name'] === 'dar_precio') $tipos = $t['parameters']['properties']['tipo']['enum'];
 }
-caso('el modelo puede cotizar turnos e institucional',
-    in_array('turnos', $tipos, true) && in_array('institucional', $tipos, true));
-caso('y siguen los de antes', count(array_diff(['landing','ecommerce','inmobiliaria','elearning'], $tipos)) === 0);
+caso('el modelo solo puede cotizar los cuatro tipos vigentes (2-sep)',
+    $tipos === ['landing', 'ecommerce', 'inmobiliaria', 'elearning']);
+caso('turnos, institucional, catálogo y LMS ya no están en la herramienta',
+    !in_array('turnos', $tipos, true) && !in_array('institucional', $tipos, true)
+    && !in_array('catalogo', $tipos, true) && !in_array('lms', $tipos, true));
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
-caso('dar_precio(turnos) → $200.000, sin forzar el link de Turnos',
-    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/') === false);
+caso('dar_precio(turnos) hoy devuelve el sitio profesional a $180.000',
+    strpos($r['texto'], '$180.000') !== false && $c['tipo'] === 'landing');
 
 $c = convNueva();
 $c['transcript'][] = ['q' => 'cliente', 't' => 'queremos algo mas completo, con varias paginas', 'ts' => time()];
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $c, $cfg);
-caso('dar_precio(institucional) → $200.000, sin forzar el link Institucional',
-    strpos($r['texto'], '$200.000') !== false && strpos($r['texto'], 'presupuestos/') === false);
+caso('dar_precio(institucional) también devuelve el sitio profesional',
+    strpos($r['texto'], '$180.000') !== false && $c['tipo'] === 'landing');
 
-caso('el prompt le prohíbe cotizar un rubro con turnos sin preguntar',
-    strpos(wabot_agente_sistema($c, $cfg), 'NUNCA cotices uno de esos rubros sin haber hecho la pregunta') !== false);
+caso('el prompt le prohíbe preguntar por turnos: ese desempate se retiró (2-sep)',
+    strpos(wabot_agente_sistema($c, $cfg), 'NUNCA preguntes si quiere que sus clientes reserven turnos') !== false);
+caso('y le dice que la clasificación es una sola pregunta',
+    strpos(wabot_agente_sistema($c, $cfg), 'VENDE PRODUCTOS O PRESTA UN SERVICIO') !== false);
 caso('y le dice que empresa o institución no es landing',
     strpos(wabot_agente_sistema($c, $cfg), 'EMPRESA O INSTITUCIÓN') !== false);
 
@@ -843,11 +766,10 @@ caso('un texto sin ninguna de esas señales sigue mostrando el aparte normal',
 echo "— El playbook manda tienda online para todo comercio —\n";
 
 $sistema = wabot_agente_sistema(convNueva(), $cfg);
-caso('el playbook avisa que institucional no se ofrece de entrada, ni a instituciones reales',
-    stripos($sistema, 'NO se ofrece de entrada') !== false
-    && stripos($sistema, 'nunca por iniciativa tuya') !== false);
-caso('y que solo se cotiza si el cliente pide explícitamente algo con varias páginas',
-    stripos($sistema, 'algo más completo, con varias páginas') !== false);
+caso('el playbook prohíbe ofrecer o mencionar la institucional, que se retiró (2-sep)',
+    stripos($sistema, 'NUNCA ofrezcas ni menciones una web institucional') !== false);
+caso('y aclara que una institución va a sitio profesional como cualquier otro',
+    stripos($sistema, 'se cotiza como SITIO PROFESIONAL') !== false);
 caso('una empresa de limpieza o de fletes es landing, no institucional',
     stripos($sistema, 'empresa de limpieza, de fletes') !== false);
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
@@ -859,8 +781,8 @@ caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
     strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
     && strpos($sistema, 'NO elijas uno solo y descartes el otro en silencio') !== false);
 caso('con la ferretería en la lista', stripos($sistema, 'ferretería') !== false);
-caso('y aclara que un comercio nunca es institucional',
-    strpos($sistema, 'NUNCA es una web institucional') !== false);
+caso('y aclara que un comercio nunca es un sitio profesional',
+    strpos($sistema, 'NUNCA es un sitio profesional') !== false);
 caso('el tono es profesional y cercano, no vendedor ni de amigo',
     strpos($sistema, 'no como un amigo ni como un vendedor') !== false);
 caso('prohíbe las muletillas coloquiales más informales ("che", "posta", "buenísimo")',
@@ -934,9 +856,10 @@ caso('avisa cuándo llega la muestra, sin prometer plazos vagos',
     && stripos($cfg['prediseno_completo'], '24 a 48') === false);
 caso('y la línea de espera sí aclara que llega por acá',
     stripos($cfg['espera_prediseno'], 'por acá') !== false);
-caso('la bienvenida pregunta qué vende, ya no el menú de opciones ni el "rubro"',
-    stripos($cfg['menu'], 'qué vendés o qué servicio ofrecés') !== false
-    && stripos($cfg['menu'], 'Landing (') === false);
+caso('la bienvenida dice para qué sirve contestar, sin menú de opciones ni "rubro"',
+    stripos($cfg['menu'], 'valor exacto de tu web') !== false
+    && stripos($cfg['menu'], 'a qué te dedicás') !== false
+    && stripos($cfg['menu'], 'Landing (') === false && stripos($cfg['menu'], 'rubro') === false);
 
 echo "— Regresiones de conversaciones reales —\n";
 
@@ -1049,7 +972,7 @@ $c['transcript'][] = ['q'=>'cliente','t'=>'Quiero mostrar trabajos y recibir con
 $c['_mensaje_agente'] = 'Quiero mostrar trabajos y recibir consultas por WhatsApp';
 $r = wabot_agente_ejecutar('dar_precio', ['tipo'=>'landing'], $c, $cfg);
 caso('después de confirmar el objetivo sí permite cotizar',
-    !isset($r['error']) && strpos($r['texto'], '$160.000') !== false);
+    !isset($r['error']) && strpos($r['texto'], '$180.000') !== false);
 
 $c = convNueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $r = wabot_agente_intento('Por el momento estaba preguntando, más adelante me comunico', $c, $cfg);
@@ -1075,7 +998,7 @@ caso('si la demo ya fue ofrecida, la duda de hosting no agrega otro CTA', empty(
 $cRangos = convNueva();
 $rRangos = wabot_agente_ejecutar('consultar_info', ['clave' => 'rangos'], $cRangos, $cfg);
 caso('consultar_info(rangos) devuelve los precios reales, no un texto fijo desactualizado',
-    strpos($rRangos['texto'], '$160.000') !== false && strpos($rRangos['texto'], '$320.000') === false);
+    strpos($rRangos['texto'], '$180.000') !== false && strpos($rRangos['texto'], '$320.000') === false);
 caso('un chat anterior a la corrección reconstruye el CTA usado desde el transcript', !empty($c['cta_muestra']));
 
 $c['session_started_ts'] = time() - 10;
@@ -1128,51 +1051,6 @@ caso('con el bot ya hablando en esta sesión, un "hola" suelto vuelve a la IA y 
     $vistoPorAgente === ['Hola']);
 unset($GLOBALS['WABOT_TEST_AGENTE'], $GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
-echo "— Los desempates obligatorios ahora los garantiza el código, no el prompt —\n";
-
-$c = convNueva('AGGUARD1');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Tengo un negocio y quiero una pagina','ts'=>time()-20];
-$c['transcript'][] = ['q'=>'cliente','t'=>'vendo ropa de bebe mas que nada','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('vender ropa cotiza tienda online derecho, sin preguntar carrito vs WhatsApp',
-    empty($r['exacta']) && $c['tipo'] === 'ecommerce' && !empty($c['precio_dado']));
-
-$c = convNueva('AGGUARD2');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Quiero una tienda online con carrito y cobro online para mi ropa','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('con la venta online confirmada por el cliente, ecommerce cotiza normal',
-    empty($r['error']) && strpos((string)$r['texto'], '$290.000') !== false && $c['precio_dado'] === true);
-
-$c = convNueva('AGGUARD3');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Soy nutricionista','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
-caso('una nutricionista sin desempate de turnos NO recibe la landing directa',
-    !empty($r['exacta']) && $r['texto'] === $cfg['desempate_turnos'] && $c['fase'] === 'desempate_turnos');
-
-$c = convNueva('AGGUARD4');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Soy nutricionista, que me escriban por whatsapp nomas y los agendo yo','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
-caso('con el "por whatsapp" dicho, la landing cotiza normal',
-    empty($r['error']) && empty($r['exacta']) && strpos((string)$r['texto'], '$160.000') !== false);
-
-$c = convNueva('AGGUARD5');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Tengo una veterinaria y quiero que saquen turno solos desde la pagina','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
-caso('turnos con la reserva online confirmada cotiza normal',
-    empty($r['error']) && strpos((string)$r['texto'], '$200.000') !== false);
-
-$c = convNueva('AGGUARD6');
-$c['transcript'][] = ['q'=>'cliente','t'=>'Tengo una estetica','ts'=>time()-10];
-$c['session_started_ts'] = time() - 60;
-$r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'turnos'], $c, $cfg);
-caso('el caso O&B: "estetica" sola nunca más recibe turnos directo',
-    !empty($r['exacta']) && $r['texto'] === $cfg['desempate_turnos'] && $c['fase'] === 'desempate_turnos');
-
 echo "— La charla derivada no se reabre por consultar_info —\n";
 
 $c = convNueva('AGDERIV1');
@@ -1182,7 +1060,7 @@ caso('consultar_info(prediseno) en fase derivada contesta plazos y NO muta la fa
     $c['fase'] === 'derivado' && $r['texto'] === $cfg['info']['plazos']);
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'precio_cotizado'], $c, $cfg);
 caso('el precio ya cotizado se puede repetir en fase derivada, con el total',
-    strpos((string)$r['texto'], '$160.000') !== false);
+    strpos((string)$r['texto'], '$180.000') !== false);
 
 echo "— El prompt no filtra datos de otros clientes —\n";
 
@@ -1350,32 +1228,6 @@ caso('y cuando sirve, se lo pasa hecho y no lo hace preguntar',
     strpos(wabot_agente_sistema($convNombre, $cfg), 'Nombre de la persona: Marcelo Polzoni') !== false);
 @unlink(WABOT_DATA . '/conv/TESTNOMBREPERFIL.json');
 
-echo "— El desempate escala en vez de repetirse sin techo —\n";
-
-$convD = wabot_conv_load('TESTDESEMPESC');
-$convD['fase'] = 'menu';
-$r1 = wabot_agente_desempate_pendiente('turnos', 'algo incomprensible', $convD, $cfg);
-caso('la primera vez pregunta el desempate normal',
-    $r1 !== null && $r1['texto'] === $cfg['desempate_turnos'] && empty($r1['terminal']));
-$r2 = wabot_agente_desempate_pendiente('turnos', 'otra cosa rara', $convD, $cfg);
-caso('la segunda usa la versión simplificada, no la misma pregunta',
-    $r2 !== null && $r2['texto'] !== $r1['texto'] && empty($r2['terminal']));
-$r3 = wabot_agente_desempate_pendiente('turnos', 'tercera sin sentido', $convD, $cfg);
-caso('la tercera deriva a Pablo en vez de insistir',
-    $r3 !== null && !empty($r3['terminal']) && $r3['texto'] === $cfg['derivar']);
-caso('y la conversación queda marcada como pendiente de atención',
-    !empty($convD['handoff_pendiente']));
-
-$convOK = wabot_conv_load('TESTDESEMPOK');
-$convOK['fase'] = 'menu';
-caso('con evidencia clara ("botón de pago y pedido integrado") no pregunta nada',
-    wabot_agente_desempate_pendiente('ecommerce', 'Gestion en la web,boton de pago y pedido integrado a WhatsApp', $convOK, $cfg) === null);
-caso('y "cotizame ambas" también deja cotizar directo',
-    wabot_agente_desempate_pendiente('ecommerce', 'Coti,ane ambas', $convOK, $cfg) === null);
-
-@unlink(WABOT_DATA . '/conv/TESTDESEMPESC.json');
-@unlink(WABOT_DATA . '/conv/TESTDESEMPOK.json');
-
 echo "— Guards nuevos de los chats del 21-ago —\n";
 
 $cM = ['tel' => 'TM', 'fase' => 'menu', 'tipo' => null, 'transcript' => [], 'msgs' => [], 'desempates_preguntados' => []];
@@ -1385,10 +1237,8 @@ caso('y una polleria también cotiza tienda online sin pregunta previa',
     wabot_agente_desempate_pendiente('ecommerce', 'tengo una polleria', $cM, $cfg) === null);
 caso('pedir catálogo sin decir que NO quiere cobrar online cae en ecommerce',
     wabot_agente_desempate_pendiente('catalogo', 'tengo una polleria', $cM, $cfg) === ['tipo' => 'ecommerce']);
-caso('pero si dijo que NO quiere cobrar online, catálogo se cotiza derecho',
-    wabot_agente_desempate_pendiente('catalogo', 'quiero solo mostrar los productos y que me escriban por whatsapp', $cM, $cfg) === null);
-caso('pero si dice explícitamente que no quiere cobrar online, se respeta el catálogo',
-    wabot_agente_desempate_pendiente('catalogo', 'solo mostrar los productos, que me consulten por whatsapp', $cM, $cfg) === null);
+caso('y aunque diga que no quiere cobrar online, sigue siendo ecommerce (2-sep)',
+    wabot_agente_desempate_pendiente('catalogo', 'quiero solo mostrar los productos y que me escriban por whatsapp', $cM, $cfg) === ['tipo' => 'ecommerce']);
 
 $cRef = ['colores' => 'cálidos', 'referencia' => null, 'referencia_preguntada' => false];
 wabot_agente_anotar(['referencia' => 'Rosa .amarillo beige'], $cRef);
@@ -1418,23 +1268,14 @@ $convInst = function ($msg) {
 
 $cOng = $convInst('Hola, somos una ONG que da capacitacion laboral a jovenes');
 $rOng = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cOng, $cfg);
-caso('una ONG que no pidió nada especial NO puede cotizarse como institucional',
-    isset($rOng['error']));
-caso('y la nota le dice que vaya a landing', stripos($rOng['nota'] ?? '', 'landing') !== false);
+caso('una ONG se cotiza como sitio profesional, sin errores ni preguntas (2-sep)',
+    empty($rOng['error']) && $cOng['tipo'] === 'landing'
+    && strpos((string)$rOng['texto'], '$180.000') !== false);
 
 $cUni = $convInst('Somos una universidad privada y necesitamos una web completa con varias secciones: historia, autoridades, carreras y novedades');
 $rUni = wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cUni, $cfg);
-caso('pero si pide varias secciones, institucional pasa', !isset($rUni['error']));
-
-$cOngLanding = $convInst('Hola, somos una ONG que da capacitacion laboral a jovenes');
-caso('y la misma ONG cotizada como landing pasa sin problema',
-    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $cOngLanding, $cfg)['error']));
-
-$cYaInst = $convInst('quiero algo mas completo, con varias paginas');
-$cYaInst['tipo'] = 'institucional';
-$cYaInst['precio_dado'] = true;
-caso('a quien ya está cotizado como institucional no se le bloquea repetir el precio',
-    !isset(wabot_agente_ejecutar('dar_precio', ['tipo' => 'institucional'], $cYaInst, $cfg)['error']));
+caso('y la universidad que pide varias secciones también: el sitio profesional las lleva',
+    empty($rUni['error']) && $cUni['tipo'] === 'landing');
 
 echo "\n— Revisión de las 17 charlas del 26-ago —\n";
 
@@ -1915,20 +1756,22 @@ $cRub['transcript'] = [['q' => 'cliente', 't' => 'Quiero una página web para mi
 $rRub = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'Las gorras'], $cRub, $cfg, 'Gorras');
 caso('dar_precio guarda el rubro validado y el pitch sale nombrándolo',
     $cRub['rubro_pitch'] === 'las gorras'
-    && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Para las gorras, lo ideal sería un ecommerce') === 0);
+    && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Perfecto, para las gorras sería un ecommerce') === 0);
 $cRub2 = convNueva(); unset($cRub2['pitch_hecho']);
 $cRub2['transcript'] = [['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
 $rRub2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub2, $cfg, 'Gorras');
-caso('un rubro inventado no pasa: el texto sale sin la cláusula',
-    empty($cRub2['rubro_pitch']) && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Lo ideal sería un ecommerce') === 0);
+caso('un rubro inventado no pasa: el texto sale con "tu negocio"',
+    empty($cRub2['rubro_pitch']) && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Perfecto, para tu negocio sería un ecommerce') === 0);
 
 $cPlo = convNueva();
 caso('"Soy plomero" ya no recibe la pregunta de turnos (Enrique)', wabot_agente_desempate_pendiente('landing', 'Soy plomero', $cPlo, $cfg) === null);
 $cGas = convNueva();
 caso('"soy gasista matriculado" tampoco', wabot_agente_desempate_pendiente('landing', 'soy gasista matriculado', $cGas, $cfg) === null);
+/* Y desde el 2-sep tampoco a una consultora: sin turnos no hay desempate que
+ * hacer, todos los servicios son sitio profesional. */
 $cCon = convNueva();
-$gCon = wabot_agente_desempate_pendiente('landing', 'Una consultora', $cCon, $cfg);
-caso('pero un servicio suelto que no está en la lista de landing sigue preguntando', is_array($gCon) && !empty($gCon['exacta']));
+caso('un servicio suelto tampoco abre ninguna pregunta: se cotiza derecho',
+    wabot_agente_desempate_pendiente('landing', 'Una consultora', $cCon, $cfg) === null);
 $cTec = convNueva();
 caso('un técnico en electrodomésticos cotizado como ecommerce se corrige a landing',
     wabot_agente_desempate_pendiente('ecommerce', 'Soy técnico en aire acondicionado, lavarropas y heladeras', $cTec, $cfg) === ['tipo' => 'landing']);

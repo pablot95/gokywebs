@@ -26,14 +26,16 @@
         ecommerce: 'ecommerce', ecommerces: 'ecommerce', tienda: 'ecommerce', tiendas: 'ecommerce',
         tiendaonline: 'ecommerce', tiendasonline: 'ecommerce', shop: 'ecommerce', venderonline: 'ecommerce',
         landing: 'landing', landings: 'landing', landingpage: 'landing', landingpages: 'landing',
-        institucional: 'institucional', institucionales: 'institucional', empresa: 'institucional', empresas: 'institucional',
+        sitioprofesional: 'landing', sitiosprofesionales: 'landing', sitio: 'landing', profesional: 'landing',
+        institucional: 'landing', institucionales: 'landing', empresa: 'landing', empresas: 'landing',
         inmobiliaria: 'inmobiliaria', inmobiliarias: 'inmobiliaria', propiedades: 'inmobiliaria',
         elearning: 'elearning', elearnings: 'elearning', curso: 'elearning', cursos: 'elearning',
         academia: 'elearning', plataformadecursos: 'elearning',
         noticias: 'noticias', noticia: 'noticias', prensa: 'noticias', medio: 'noticias',
-        /* Catálogo y turnos ya no son un filtro propio (los trabajos pasaron a
-           ecommerce y landing), pero el bot los sigue cotizando: sus links
-           tienen que caer en el tipo que los absorbió, no en una página vacía. */
+        /* Catálogo, turnos e institucional dejaron de ser tipos propios: la venta
+           converge en sitio profesional y ecommerce (Pablo, 2-sep). Los links
+           viejos —los que ya se mandaron por WhatsApp— tienen que seguir
+           cayendo en el tipo que los absorbió, nunca en una página vacía. */
         catalogo: 'ecommerce', catalogos: 'ecommerce', webconcatalogo: 'ecommerce',
         turnos: 'landing', turno: 'landing', reservas: 'landing', agenda: 'landing'
     };

@@ -191,6 +191,7 @@ function wabot_config_load() {
     wabot_config_descs($cfg);
     wabot_config_ventas($cfg);
     wabot_config_pitch_rubro($cfg);
+    wabot_config_simplificar_tipos($cfg);
     wabot_config_pitch_encaje($cfg);
     wabot_config_postdemo_sin_venta($cfg);
     wabot_config_pide_llamada($cfg);
@@ -902,8 +903,8 @@ function wabot_config_ventas(&$cfg) {
         }
     }
 
-    // Pablo, 25-ago: apagado por defecto — momentáneamente no se usa el form.
-    if (!isset($cfg['form_activo'])) $cfg['form_activo'] = false;
+    // Pablo, 2-sep: el formulario vuelve a ser el paso siguiente al precio.
+    $cfg['form_activo'] = true;
     if (!isset($cfg['pitch_activo'])) $cfg['pitch_activo'] = true;
     if (trim((string)($cfg['seguimiento_pregunta'] ?? '')) === '') {
         $cfg['seguimiento_pregunta'] = 'Hola {nombre}, cómo estás? Quedó pendiente esto: {pregunta}';
@@ -1046,7 +1047,12 @@ function wabot_config_ventas(&$cfg) {
                 // [ \t] y no \s: el \s de después se tragaba el salto de línea
                 // y "sin abono mensual.Y acá podés ver..." salía pegado en cada
                 // precio de ecommerce (visto en toda la batería del 1-sep).
-                return preg_replace('/,?[ \t]*(?:pago único|en un único pago)[ \t]*\.?/iu',
+                //
+                // La COMA es obligatoria: lo que se retiró es la coletilla
+                // ", pago único." colgada al final. Desde el 2-sep el texto
+                // dice "Es un pago único de $290.000" a pedido de Pablo, y esa
+                // forma —sin coma delante— no se toca.
+                return preg_replace('/,[ \t]*(?:pago único|en un único pago)[ \t]*\.?/iu',
                     '. Es el valor total del desarrollo, sin abono mensual.', (string)$txt);
             };
             $cfg['tipos'][$tipoPU][$campoPU] = is_array($valorPU)
@@ -1407,10 +1413,6 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
     foreach ($infoNuevas as $clave => $texto) {
         if (trim((string)($cfg['info'][$clave] ?? '')) === '') $cfg['info'][$clave] = $texto;
     }
-    if (isset($cfg['tipos']['catalogo']['link'])
-        && trim((string)$cfg['tipos']['catalogo']['link']) === 'https://gokywebs.com/presupuestos/Catalogo') {
-        $cfg['tipos']['catalogo']['link'] = 'gokywebs.com/presupuestos/Catalogo';
-    }
     // "las novedades de la empresa" le sonaba mal a una asociación civil, a una
     // fundación o a un club, que son justo los que más piden institucional.
     if (trim((string)($cfg['tipos']['institucional']['desc'] ?? ''))
@@ -1423,6 +1425,51 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
             $cfg['ejemplos'][$iEj]['info_keys'] = ['hosting'];
         }
     }
+
+    /* El saludo dictado por Pablo el 2-sep. El de antes preguntaba sin
+     *    decir para qué: 66 de 237 conversaciones murieron ahí en una semana.
+     *    Este dice primero qué gana el cliente si contesta. */
+    $menuNuevo = 'Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.';
+    $menusViejos = [
+        'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
+        'Hola Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
+        'Hola, cómo estás? Contame un poco para qué necesitarías la web',
+        'Hola, cómo estás? Contame un poco para qué necesitarías la web.',
+        'Hola, contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
+    ];
+    if (in_array(trim((string)($cfg['menu'] ?? '')), $menusViejos, true) || trim((string)($cfg['menu'] ?? '')) === '') {
+        $cfg['menu'] = $menuNuevo;
+    }
+
+    /* La demo llega en menos de 24 horas (Pablo, 2-sep). info.plazos decía "24
+     * a 48" y contradecía al mensaje del formulario en la misma charla: el
+     * cliente lee las dos cosas y una de las dos queda mal. */
+    $plazosViejo = 'La web queda lista en unos 7 días desde la seña y la entrega del contenido. El prediseño gratis tarda 24 a 48 horas desde que pasás los datos.';
+    $plazosNuevo = 'La web queda lista en unos 7 días desde la seña y la entrega del contenido. La demo gratis la tenés en menos de 24 horas desde que pasás los datos.';
+    if (in_array(trim((string)($cfg['info']['plazos'] ?? '')), [$plazosViejo, ''], true)) {
+        $cfg['info']['plazos'] = $plazosNuevo;
+    }
+
+    /* El turno de la demo: qué es, el formulario y las 24 horas. Antes se
+     *    ofrecía ("te la armo?") y recién con el sí llegaba el link; ahora el
+     *    link va en el mismo mensaje, que es lo que pidió Pablo. */
+    $linkNuevo = "Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.\nSolo completá este formulario, no te lleva un minuto: {link}\nEn menos de 24 horas la tenés lista.";
+    $linksViejos = [
+        'Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}',
+        'Para que veas la calidad del trabajo antes de decidir, te armamos una demo de tu web: es una primera entrega, sin cargo. Completá este formulario, te lleva menos de un minuto: {link}',
+        'Antes de que compres nada, te mostramos la calidad del trabajo con una demo de tu web: es la primera entrega, gratis. Solo tenés que llenar este formulario, no lleva más de un minuto: {link}',
+    ];
+    if (in_array(trim((string)($cfg['prediseno_link'] ?? '')), $linksViejos, true) || trim((string)($cfg['prediseno_link'] ?? '')) === '') {
+        $cfg['prediseno_link'] = $linkNuevo;
+    }
+    if (!empty($cfg['prediseno_link_variantes']) && is_array($cfg['prediseno_link_variantes'])) {
+        $cfg['prediseno_link_variantes'] = array_values(array_filter(
+            $cfg['prediseno_link_variantes'],
+            function ($v) use ($linksViejos) { return !in_array(trim((string)$v), $linksViejos, true); }
+        ));
+    }
+    if (empty($cfg['prediseno_link_variantes'])) $cfg['prediseno_link_variantes'] = [$linkNuevo];
+
 
     wabot_config_venta_en_dos_partes($cfg);
 }
@@ -1947,12 +1994,15 @@ function wabot_config_postdemo_sin_venta(&$cfg) {
 
 /** Los textos fijos del turno del pitch (1-sep), con {rubro} al frente. */
 function wabot_precio_ideal_defaults() {
+    /* Estructura dictada por Pablo el 2-sep: confirmación + tipo + precio como
+     * PAGO ÚNICO + mini descripción de qué es + el link del presupuesto para
+     * verlo en detalle. Un solo link, el del presupuesto: los trabajos del
+     * rubro ya están enlazados adentro de esa página. */
     return [
-        'landing' => 'Para {rubro}, lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
-        'ecommerce' => 'Para {rubro}, lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total, sin abono mensual.',
-        'turnos' => 'Para {rubro}, lo ideal sería una web con sistema de turnos: tus clientes eligen día y horario directamente desde la página, y vos tenés un panel para la disponibilidad y las reservas. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
-        'inmobiliaria' => 'Para {rubro}, lo ideal sería una web inmobiliaria: publicás propiedades con fotos, características y contacto, y tenés un panel para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
-        'elearning' => 'Para {rubro}, lo ideal sería una plataforma de cursos online: tus alumnos se registran, acceden al contenido y avanzan con las clases desde la web, y vos tenés un panel para cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        'landing' => "Perfecto, para {rubro} sería un sitio profesional. Es un pago único de {precio}.\nEl sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
+        'ecommerce' => "Perfecto, para {rubro} sería un ecommerce. Es un pago único de {precio}.\nEl ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.\nEn este enlace podés verlo bien detallado: {link}",
+        'inmobiliaria' => "Perfecto, para {rubro} sería una web inmobiliaria. Es un pago único de {precio}.\nLa web inmobiliaria publica tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.\nEn este enlace podés verlo bien detallado: {link}",
+        'elearning' => "Perfecto, para {rubro} sería una plataforma de cursos. Es un pago único de {precio}.\nLa plataforma tiene los videos subidos ahí, cada alumno entra con su usuario y sigue su progreso, y el cobro de la inscripción se hace online.\nEn este enlace podés verlo bien detallado: {link}",
     ];
 }
 
@@ -2008,11 +2058,22 @@ function wabot_config_pitch_rubro(&$cfg) {
     // "pago único" y sin la línea del portfolio: producción tiene exactamente
     // estos (se ven en el export del 1-sep).
     $viejos = [
-        'landing' => ['Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
-        'ecommerce' => ['Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
-        'turnos' => ['Lo ideal sería una web con sistema de turnos, para que tus clientes puedan elegir día y horario directamente desde la página. Vos tendrías un panel para gestionar la disponibilidad y las reservas. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
-        'inmobiliaria' => ['Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
-        'elearning' => ['Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.'],
+        'landing' => [
+            'Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+            'Para {rubro}, lo ideal sería una landing profesional: muestra claramente lo que hacés, genera confianza y lleva a los clientes directo a tu WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        ],
+        'ecommerce' => [
+            'Lo ideal sería un ecommerce, para que tus clientes puedan armar el carrito y comprar directamente desde la web. Vos tendrías un panel administrativo para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+            'Para {rubro}, lo ideal sería un ecommerce: tus clientes arman el carrito y compran directo desde la web, y vos tenés un panel para gestionar productos y pedidos. El desarrollo completo tiene un valor de {precio}. Es el valor total, sin abono mensual.',
+        ],
+        'inmobiliaria' => [
+            'Lo ideal sería una web inmobiliaria, para publicar propiedades con fotos, características y datos de contacto. Vos tendrías un panel administrativo para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+            'Para {rubro}, lo ideal sería una web inmobiliaria: publicás propiedades con fotos, características y contacto, y tenés un panel para cargar, editar y eliminar propiedades cuando quieras. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        ],
+        'elearning' => [
+            'Lo ideal sería una plataforma de cursos online, para que tus alumnos puedan registrarse, acceder al contenido y avanzar con las clases desde la web. Vos tendrías un panel administrativo para gestionar cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+            'Para {rubro}, lo ideal sería una plataforma de cursos online: tus alumnos se registran, acceden al contenido y avanzan con las clases desde la web, y vos tenés un panel para cursos, alumnos y contenido. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.',
+        ],
     ];
     $sinPortfolio = function ($t) {
         $t = preg_replace('/\s*\n\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t);
@@ -2020,11 +2081,15 @@ function wabot_config_pitch_rubro(&$cfg) {
     };
     $conRubro = function ($t) use ($sinPortfolio, $nuevos, $viejos) {
         $t = (string)$t;
-        if (trim($t) === '' || strpos($t, '{rubro}') !== false) return $t;
+        if (trim($t) === '') return $t;
         $cuerpo = $sinPortfolio($t);
+        // El match contra los textos ya conocidos va PRIMERO: los del 1-sep ya
+        // traen {rubro} y aun así tienen que migrar al formato del 2-sep (con
+        // el link del presupuesto). Solo después se respeta un texto propio.
         foreach ($nuevos as $tipo => $nuevo) {
             if (in_array($cuerpo, $viejos[$tipo] ?? [], true)) return $nuevo;
         }
+        if (strpos($t, '{rubro}') !== false) return $t;
         // Editado a mano en el panel: se le antepone el rubro y se respeta el resto.
         if (preg_match('/^Lo (ideal|mejor|que te conviene|más práctico|mas practico)\b/u', $cuerpo)) {
             return 'Para {rubro}, ' . mb_strtolower(mb_substr($cuerpo, 0, 1)) . mb_substr($cuerpo, 1);
@@ -2172,6 +2237,126 @@ function wabot_config_pitch_encaje(&$cfg) {
  * plantilla de precio todavía no nombra el portfolio, se le suma la línea al
  * final sin tocar el resto del texto.
  */
+/**
+ * LOS SEIS TIPOS (Pablo, 2-sep-2026). Se retiran catálogo, turnos e
+ * institucional: en 237 conversaciones de una semana tocaron a 15 clientes y
+ * ninguno cerró por esa vía, y el desempate de turnos costó más de lo que
+ * rindió. La venta converge en dos preguntas: vende productos o presta un
+ * servicio.
+ *
+ * Quedan ofrecibles: sitio profesional ($180.000), ecommerce, elearning e
+ * inmobiliaria. LMS ($330.000) existe con precio y label pero NO se ofrece
+ * nunca —"siempre ofrecé elearning, yo veo después si es LMS"—, igual que
+ * ecommerce+elearning, que lo sigue armando Pablo a mano.
+ *
+ * Los retirados NO se borran de la config: una conversación vieja cotizada en
+ * turnos tiene que poder seguir viendo su precio y su presupuesto. Se marcan
+ * con `retirado` y wabot_tipos_ofrecibles() es la lista que manda de acá en
+ * más.
+ */
+function wabot_config_simplificar_tipos(&$cfg) {
+    // 1. Landing pasa a llamarse sitio profesional y sube a $180.000.
+    if (isset($cfg['tipos']['landing'])) {
+        $l =& $cfg['tipos']['landing'];
+        if (in_array(trim((string)($l['label'] ?? '')), ['Landing', 'Landing page', 'Landing Page', ''], true)) {
+            $l['label'] = 'Sitio profesional';
+        }
+        if (in_array(trim((string)($l['precio'] ?? '')), ['$160.000', '$200.000', ''], true)) {
+            $l['precio'] = '$180.000';
+        }
+        unset($l);
+    }
+
+    // 2. Todas las rutas en minúscula: Hostinger es case sensitive y el link
+    //    con mayúscula da 404. Landing es además otra carpeta.
+    $rutas = [
+        'landing' => 'sitioprofesional', 'ecommerce' => 'ecommerce', 'elearning' => 'elearning',
+        'inmobiliaria' => 'inmobiliaria', 'catalogo' => 'catalogo', 'turnos' => 'turnos',
+        'institucional' => 'institucional', 'lms' => 'elearning',
+    ];
+    foreach ($rutas as $tipo => $slug) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        $actual = trim((string)($cfg['tipos'][$tipo]['link'] ?? ''));
+        /* Solo se corrige el que está mal: vacío, con mayúsculas (404 seguro en
+         * Linux) o apuntando a la carpeta vieja de Landing. Un link editado a
+         * mano desde el panel, ya en minúscula, se respeta. */
+        $rotoOViejo = $actual === ''
+            || preg_match('~presupuestos/[^/]*[A-Z]~', $actual)
+            || stripos($actual, 'presupuestos/landing') !== false;
+        if ($rotoOViejo) $cfg['tipos'][$tipo]['link'] = 'gokywebs.com/presupuestos/' . $slug;
+    }
+    // El portfolio del sitio profesional absorbió landing e institucional.
+    $portfolios = ['landing' => 'sitioprofesional', 'institucional' => 'sitioprofesional',
+                   'turnos' => 'sitioprofesional', 'catalogo' => 'ecommerce', 'lms' => 'elearning'];
+    foreach ($portfolios as $tipo => $slug) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        $cfg['tipos'][$tipo]['portfolio'] = 'gokywebs.com/portfolio/?tipo=' . $slug;
+    }
+    if (isset($cfg['tipos']['landing'])) $cfg['tipos']['landing']['portfolio_texto'] = 'otros sitios que ya entregamos';
+
+    // 3. LMS: existe para cotizar a mano, nunca se ofrece solo.
+    if (!isset($cfg['tipos']['lms'])) {
+        $base = $cfg['tipos']['elearning'] ?? [];
+        $cfg['tipos']['lms'] = array_merge($base, [
+            'label' => 'Plataforma LMS', 'precio' => '$330.000', 'sena' => '$60.000',
+            'link' => 'gokywebs.com/presupuestos/elearning',
+            'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
+            'desc' => 'una plataforma de cursos completa, con seguimiento de cada alumno, evaluaciones y certificados',
+        ]);
+        unset($cfg['tipos']['lms']['precio_ideal'], $cfg['tipos']['lms']['precio_ideal_variantes']);
+    }
+
+    /* Todo mensaje de precio termina con el link del presupuesto, no solo el
+     * del pitch: el cliente que llega por cualquier camino tiene que poder
+     * ver el detalle (Pablo, 2-sep). */
+    $sinPortfolio = function ($t) {
+        return trim(preg_replace('/\s*
+\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+    };
+    $conLink = function ($t) use ($sinPortfolio) {
+        $t = $sinPortfolio($t);
+        if (trim($t) === '' || strpos($t, '{link}') !== false) return $t;
+        return rtrim($t) . "
+En este enlace podés verlo bien detallado: {link}";
+    };
+    foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch',
+              'msg_precio_catalogo_tras_pitch'] as $k) {
+        if (isset($cfg[$k]) && is_string($cfg[$k])) $cfg[$k] = $conLink($cfg[$k]);
+    }
+    foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes',
+              'msg_precio_tras_pitch_variantes'] as $k) {
+        if (!empty($cfg[$k]) && is_array($cfg[$k])) $cfg[$k] = array_map($conLink, $cfg[$k]);
+    }
+
+    // 4. Los retirados. `retirado` no borra nada: solo los saca de lo ofrecible.
+    foreach (['catalogo', 'turnos', 'institucional', 'lms'] as $t) {
+        if (isset($cfg['tipos'][$t])) $cfg['tipos'][$t]['retirado'] = true;
+    }
+    foreach (['landing', 'ecommerce', 'elearning', 'inmobiliaria'] as $t) {
+        if (isset($cfg['tipos'][$t])) unset($cfg['tipos'][$t]['retirado']);
+    }
+
+}
+
+/**
+ * Los tipos que el bot puede ofrecer hoy. Todo lo que cotiza, pregunta o
+ * enumera sale de acá, nunca de array_keys($cfg['tipos']) — que incluye los
+ * retirados para no romper las conversaciones ya cotizadas.
+ */
+function wabot_tipos_ofrecibles($cfg) {
+    $out = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $tipo => $datos) {
+        if (!empty($datos['retirado'])) continue;
+        $out[] = (string)$tipo;
+    }
+    return $out ?: ['landing', 'ecommerce', 'elearning', 'inmobiliaria'];
+}
+
+/** ¿Este tipo se puede cotizar hoy? Los retirados solo sobreviven en charlas viejas. */
+function wabot_tipo_ofrecible($tipo, $cfg) {
+    return in_array((string)$tipo, wabot_tipos_ofrecibles($cfg), true);
+}
+
 function wabot_config_portfolio(&$cfg) {
     $base = trim((string)($cfg['portfolio_link_base'] ?? ''));
     if ($base === '') {
@@ -2207,20 +2392,40 @@ function wabot_config_portfolio(&$cfg) {
         return rtrim($t) . "\nY acá podés ver {portfolio_texto}: {portfolio}";
     };
 
-    // precio_ideal es EL mensaje de precio del camino normal (el turno del
-    // pitch, wabot_pitch_precio_texto): si no se lo suma acá, el portfolio solo
-    // aparecería en los caminos secundarios.
+    /* precio_ideal ya NO lleva la línea del portfolio (Pablo, 2-sep): el
+     * mensaje del precio termina en el link del presupuesto, y los trabajos
+     * del rubro están enlazados adentro de esa página. Dos links en el mismo
+     * mensaje se pisan entre sí. Se saca de los que ya la tengan guardada. */
     foreach (($cfg['tipos'] ?? []) as $tipo => $datos) {
-        if (trim((string)($datos['precio_ideal'] ?? '')) === '') continue;
-        $cfg['tipos'][$tipo]['precio_ideal'] = $sumar($datos['precio_ideal']);
+        foreach (['precio_ideal', 'precio_ideal_variantes'] as $campo) {
+            if (!isset($cfg['tipos'][$tipo][$campo])) continue;
+            $quitar = function ($t) {
+                return trim(preg_replace('/\s*\n\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+            };
+            $cfg['tipos'][$tipo][$campo] = is_array($cfg['tipos'][$tipo][$campo])
+                ? array_map($quitar, $cfg['tipos'][$tipo][$campo])
+                : $quitar($cfg['tipos'][$tipo][$campo]);
+        }
     }
+    /* Los mensajes de precio dejaron de llevar el portfolio el 2-sep: llevan el
+     * link del presupuesto (ver wabot_config_simplificar_tipos), y adentro de
+     * esa página están los trabajos del rubro. Solo el resumen corto —el que
+     * sale cuando vuelven a preguntar el precio— conserva el portfolio, que
+     * ahí es lo único que agrega algo. */
+    if (isset($cfg['precio_resumen']) && is_string($cfg['precio_resumen'])) {
+        $cfg['precio_resumen'] = $sumar($cfg['precio_resumen']);
+    }
+    $quitarPortfolio = function ($t) {
+        return trim(preg_replace('/\s*
+\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+    };
     foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch',
-              'msg_precio_catalogo_tras_pitch', 'precio_resumen'] as $k) {
-        if (isset($cfg[$k]) && is_string($cfg[$k])) $cfg[$k] = $sumar($cfg[$k]);
+              'msg_precio_catalogo_tras_pitch'] as $k) {
+        if (isset($cfg[$k]) && is_string($cfg[$k])) $cfg[$k] = $quitarPortfolio($cfg[$k]);
     }
     foreach (['msg_precio_variantes', 'msg_precio_catalogo_variantes',
               'msg_precio_tras_pitch_variantes'] as $k) {
-        if (!empty($cfg[$k]) && is_array($cfg[$k])) $cfg[$k] = array_map($sumar, $cfg[$k]);
+        if (!empty($cfg[$k]) && is_array($cfg[$k])) $cfg[$k] = array_map($quitarPortfolio, $cfg[$k]);
     }
 
     // "Tienen ejemplos?" y la respuesta a la desconfianza mandaban a la home,
@@ -2667,6 +2872,10 @@ function wabot_muestra_presentar_textos($slug, $cfg) {
  * cuando alguien tiene que dictarlo o tipearlo. Quedan 31 simbolos, o sea
  * 29.791 combinaciones de 3 caracteres: de sobra, y el link queda corto.
  */
+/* Largo base del código del link del formulario. 2 desde el 2-sep-2026; la
+ * escalera de wabot_codigo_asignar() sube sola cuando se agotan. */
+if (!defined('WABOT_CODIGO_LARGO')) define('WABOT_CODIGO_LARGO', 2);
+
 function wabot_codigo_alfabeto() {
     return '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 }
@@ -2723,7 +2932,7 @@ function wabot_codigo_asignar(&$conv) {
         $alfabeto = wabot_codigo_alfabeto();
         $hash = md5($clave);
         $codigo = '';
-        for ($i = 0; $i < 3; $i++) {
+        for ($i = 0; $i < WABOT_CODIGO_LARGO; $i++) {
             $codigo .= $alfabeto[hexdec(substr($hash, $i * 2, 2)) % strlen($alfabeto)];
         }
         $conv['codigo'] = $codigo;
@@ -2748,16 +2957,21 @@ function wabot_codigo_asignar(&$conv) {
         $alfabeto = wabot_codigo_alfabeto();
         $largo = strlen($alfabeto);
         $codigo = '';
-        for ($intento = 0; $intento < 200; $intento++) {
-            $cand = '';
-            for ($i = 0; $i < 3; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
-            if (!isset($idx[$cand])) { $codigo = $cand; break; }
+        /* Dos caracteres (Pablo, 2-sep: "el link tiene que ser más corto, menos
+         * sospechoso"). Son 961 combinaciones, así que se van a agotar: por eso
+         * la escalera sigue en 3 y 4 en vez de quedarse sin código. El que ya
+         * tiene uno asignado lo conserva, sea del largo que sea. */
+        for ($n = WABOT_CODIGO_LARGO; $n <= 4 && $codigo === ''; $n++) {
+            for ($intento = 0; $intento < 200; $intento++) {
+                $cand = '';
+                for ($i = 0; $i < $n; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
+                if (!isset($idx[$cand])) { $codigo = $cand; break; }
+            }
         }
-        // Agotadas las combinaciones de 3, se pasa a 4 en vez de quedarse sin.
         if ($codigo === '') {
             do {
                 $cand = '';
-                for ($i = 0; $i < 4; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
+                for ($i = 0; $i < 5; $i++) $cand .= $alfabeto[random_int(0, $largo - 1)];
             } while (isset($idx[$cand]));
             $codigo = $cand;
         }

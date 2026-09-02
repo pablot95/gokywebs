@@ -1583,8 +1583,8 @@ body.embed { min-height: 0; }
             <label>Segundo mensaje: el ofrecimiento del prediseño (llega aparte, unos segundos después)</label>
             <textarea name="msg_prediseno_oferta" rows="2"><?= $e($cfg['msg_prediseno_oferta'] ?? '') ?></textarea>
             <?php foreach ($cfg['tipos'] as $t => $d): ?>
-                <div class="fila" style="margin-top:12px">
-                    <strong class="campo-etiqueta"><?= $e($d['label']) ?></strong>
+                <div class="fila" style="margin-top:12px<?= !empty($d["retirado"]) ? ";opacity:.55" : "" ?>">
+                    <strong class="campo-etiqueta"><?= $e($d['label']) ?><?php if (!empty($d['retirado'])): ?> <span style="font-weight:400;color:#b45309">· retirado, no se ofrece</span><?php endif; ?></strong>
                     <input type="text" name="precio_<?= $t ?>" value="<?= $e($d['precio']) ?>" style="width:110px">
                     <input type="text" name="link_<?= $t ?>" value="<?= $e($d['link']) ?>" style="flex:1;min-width:220px">
                 </div>

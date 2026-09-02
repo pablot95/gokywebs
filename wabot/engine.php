@@ -175,9 +175,24 @@ function wabot_ejes_mixtos($texto) {
     if (preg_match('/\b(curso\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
             . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)
         || $dictaTalleres) $ejes['cursos'] = 'los cursos o materiales';
+    /* "Vender los cursos" NO es un segundo eje: es la forma normal de pedir
+     * una plataforma de cursos. Sin este freno, "quiero venderlos desde la web
+     * con los videos y el acceso de cada alumna" disparaba el aviso de mixto y
+     * la clienta se iba sin precio, con el elearning ya identificado (batería
+     * del 2-sep). El verbo de venta cuenta solo si NO viene pegado al curso. */
+    $ventaEsDelCurso = preg_match('/\b(vend\w+|venta\w*)\b\s*(los?|las?|mis?|el|la)?\s*'
+        . '(curso\w*|clase\w*|taller\w*|capacitacion\w*|seminario\w*|ebook\w*|cuadernillo\w*)\b/u', $t)
+        || preg_match('/\b(venderlos|venderlas|venderlo|venderla)\b/u', $t);
+    /* Pero si además nombra un producto aparte, el eje vuelve: "doy talleres
+     * de costura online y vendo ropa" son dos negocios, no uno. */
+    if ($ventaEsDelCurso
+        && preg_match('/\b(producto\w*|mercaderia|articulo\w*|stock|indumentaria|ropa|accesorio\w*|sahumerio\w*|tienda)\b/u', $t)) {
+        $ventaEsDelCurso = false;
+    }
     // "vendo" / "vendemos" faltaban y son la forma más común de decirlo:
     // "vendo los kits", "vendo lana" no caían en ningún eje.
-    if (preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
+    if (!$ventaEsDelCurso
+        && preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
         . '|sahumerio\w*|indumentaria|ropa|accesorio\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
     if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
 
@@ -2078,7 +2093,8 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($rubroContexto === 'comercio_pendiente') {
                 $objetivo = wabot_desempate_por_palabras('desempate_comercio', $texto);
                 if ($objetivo === 'comercio_vender')  return wabot_precio('ecommerce', $conv, $cfg);
-                if ($objetivo === 'comercio_mostrar') return wabot_precio('catalogo', $conv, $cfg);
+                // Catálogo se retiró (2-sep): mostrar o vender, es ecommerce.
+                if ($objetivo === 'comercio_mostrar') return wabot_precio('ecommerce', $conv, $cfg);
             }
             if ($rubroContexto === 'turnos_pendiente') {
                 $objetivo = wabot_desempate_por_palabras('desempate_turnos', $texto);
@@ -2293,8 +2309,12 @@ function wabot_fallback_rubro_local($t) {
         return 'ecommerce';
     }
     if (wabot_contexto_es_hibrido($t)) return 'hibrido_pendiente';
+    /* Los rubros que trabajan con turno ya no abren ningún desempate: turnos
+     * se retiró el 2-sep y todos van a sitio profesional. En una semana la
+     * pregunta tocó a doce clientes, solo tres terminaron cotizados como
+     * turnos y ninguno cerró por ahí. */
     if (preg_match('/\b(peluqueria|barberia|estetica|esteticista|spa|masajes|unas|manicura|depilacion|tatuajes|consultorio|odontologia|psicologia|nutricionista|kinesiologo|kinesiologa|kinesiologia|fonoaudiologia|fonoaudiologa|dermatologia|dermatologa|dermatologo|cosmiatra|podologia|podologa|veterinaria|gimnasio|pilates|yoga|canchas|cabanas|hotel|taller mecanico)\b/u', $t)) {
-        return 'turnos_pendiente';
+        return 'landing';
     }
     if (preg_match('/\b(ong|fundacion|asociacion civil|sin fines de lucro)\b/u', $t)
         && !preg_match('/\b(vender|vendemos|vendo|cobrar|cobramos|arancel|aranceles|matricula|pagas?|pagos)\b/u', $t)) {
@@ -2715,7 +2735,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                 if ($local !== null) { $acc[] = $local; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
             }
             if ($has('comercio_vender'))    { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
-            elseif ($has('comercio_mostrar')) { $out = array_merge($out, wabot_precio('catalogo', $conv, $cfg)); }
+            elseif ($has('comercio_mostrar')) { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
             else                            { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
             break;
 
@@ -3595,17 +3615,14 @@ function wabot_texto_cambia_modalidad($texto, $tipoActual) {
     $decide = '/\b(mejor|prefiero|preferiria|pensandolo bien|en realidad|finalmente|al final|mas que nada|me quedo con)\b/u';
     if (!preg_match($decide, $t)) return null;
 
-    if ($tipoActual === 'ecommerce'
-        && preg_match('/\b(sin carrito|sin cobro online|sin pagos online|sin vender online|nada de carrito)\b/u', $t)) {
-        return 'catalogo';
-    }
+    /* Los saltos que quedaban (ecommerce→catálogo, turnos→sitio profesional)
+     * murieron con esos tipos el 2-sep: hoy "mejor sin carrito" no cambia
+     * nada, sigue siendo el ecommerce que se le cotizó y el precio no se
+     * toca. Solo sobrevive el salto HACIA un tipo vigente, para la charla
+     * vieja que quedó cotizada en catálogo. */
     if ($tipoActual === 'catalogo'
         && preg_match('/\b(con carrito|cobro online|pagos online|vender online|que compren)\b/u', $t)) {
         return 'ecommerce';
-    }
-    if ($tipoActual === 'turnos'
-        && preg_match('/\b(sin reserva|sin turnos online|lo agendo yo|los agendo yo|coordino yo|sin que reserven)\b/u', $t)) {
-        return 'landing';
     }
     return null;
 }
@@ -3877,6 +3894,7 @@ function wabot_texto_info($clave, $cfg) {
 function wabot_rangos_min_max($cfg) {
     $montos = [];
     foreach ((array)($cfg['tipos'] ?? []) as $d) {
+        if (!empty($d['retirado'])) continue;
         if (!preg_match('/\$[\d.]+/u', (string)($d['precio'] ?? ''), $m)) continue;
         $n = wabot_monto_a_numero($m[0]);
         if ($n > 0) $montos[$n] = $m[0];
@@ -3889,6 +3907,10 @@ function wabot_rangos_min_max($cfg) {
 function wabot_texto_rangos($cfg) {
     $precios = [];
     foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
+        // Los tipos retirados no entran en el rango: decir "desde $180.000
+        // hasta $290.000" y meter ahí un precio que ya no se vende sería
+        // cotizar algo que no existe (2-sep).
+        if (!empty($d['retirado'])) continue;
         if (!preg_match('/\$[\d.]+/u', (string)($d['precio'] ?? ''), $m)) continue;
         $monto = wabot_monto_a_numero($m[0]);
         if ($monto <= 0) continue;
@@ -3907,6 +3929,7 @@ function wabot_texto_rangos($cfg) {
 function wabot_texto_pago_generico($cfg) {
     $grupos = [];
     foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
+        if (!empty($d['retirado'])) continue;   // no se nombra lo que ya no se vende
         $sena = trim((string)($d['sena'] ?? ''));
         if ($sena === '') continue;
         $grupos[$sena][] = mb_strtolower((string)($d['label'] ?? $tipo));
@@ -4380,9 +4403,12 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
     $fijo = trim((string)($cfg['tipos'][$tipo]['precio_ideal'] ?? ''));
     if ($fijo !== '') {
         $t = $cfg['tipos'][$tipo];
+        // {link} desde el 2-sep: el mensaje del precio termina en el link del
+        // presupuesto, que es donde el cliente ve el detalle y los trabajos.
         return str_replace(
-            ['{precio}', '{portfolio}', '{portfolio_texto}'],
-            [(string)($t['precio'] ?? ''), (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
+            ['{precio}', '{link}', '{portfolio}', '{portfolio_texto}'],
+            [(string)($t['precio'] ?? ''), (string)($t['link'] ?? ''),
+             (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
             $fijo
         );
     }
@@ -4481,7 +4507,39 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     return [$precioTexto, $pregunta];
 }
 
+/**
+ * A qué tipo vigente va a parar uno retirado. Es el embudo de compatibilidad
+ * del 2-sep: catálogo lo absorbe ecommerce, turnos e institucional el sitio
+ * profesional, y LMS se cotiza como plataforma de cursos salvo que Pablo diga
+ * otra cosa. Devuelve el mismo tipo si ya es ofrecible.
+ */
+function wabot_tipo_absorbido($tipo, $cfg) {
+    $tipo = (string)$tipo;
+    if (wabot_tipo_ofrecible($tipo, $cfg)) return $tipo;
+    $mapa = ['catalogo' => 'ecommerce', 'turnos' => 'landing',
+             'institucional' => 'landing', 'lms' => 'elearning'];
+    $destino = $mapa[$tipo] ?? 'landing';
+    return isset($cfg['tipos'][$destino]) ? $destino : $tipo;
+}
+
 function wabot_precio($tipo, &$conv, $cfg) {
+    /* Los tipos retirados no se cotizan más (Pablo, 2-sep). Este es el embudo
+     * único por donde pasan TODAS las cotizaciones —motor, atajo y agente—,
+     * así que es el único lugar donde el mapeo no se puede esquivar.
+     *
+     * Excepción: una charla que YA fue cotizada con ese tipo se queda con el
+     * suyo. Cambiarle el tipo a quien ya tiene un precio dado le cambiaría el
+     * número, que es exactamente lo que nunca hay que hacer. */
+    if (!wabot_tipo_ofrecible($tipo, $cfg)) {
+        $yaCotizado = !empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo;
+        if (!$yaCotizado) {
+            $absorbido = wabot_tipo_absorbido($tipo, $cfg);
+            if ($absorbido !== $tipo) {
+                wabot_evento_sesion($conv, 'tipo_retirado', ['pedido' => $tipo, 'cotizado' => $absorbido]);
+                $tipo = $absorbido;
+            }
+        }
+    }
     /* Nadie cotiza UN tipo a quien pidió DOS cosas distintas sin avisarle.
      *
      * El guard vivía en dar_precio (agente.php) y no alcanzaba: la respuesta a
@@ -4532,6 +4590,15 @@ function wabot_precio($tipo, &$conv, $cfg) {
         wabot_handoff_aclaracion_resuelta($conv);
         $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
         wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
+        /* Pablo, 2-sep: el mensaje que sigue al precio explica qué es la demo,
+         * da el formulario y promete las 24 horas. Con el link disponible eso
+         * ES la oferta, así que no hace falta preguntar primero y esperar otro
+         * turno: se pierde un paso y no se gana nada. Sin link (Instagram, que
+         * no tiene teléfono) se mantiene la oferta de siempre y los datos se
+         * piden por chat. */
+        if (wabot_form_link($conv, $cfg) !== '') {
+            return [wabot_prediseno_texto($conv, $cfg)];
+        }
         return [wabot_plantilla_variante('msg_prediseno_oferta', 'msg_prediseno_oferta_variantes', $conv, $cfg)];
     }
 

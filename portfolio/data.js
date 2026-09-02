@@ -22,8 +22,7 @@
 
 const GW_TIPOS = [
     { id: 'ecommerce',     label: 'Ecommerce' },
-    { id: 'landing',       label: 'Landing' },
-    { id: 'institucional', label: 'Institucional' },
+    { id: 'landing',       label: 'Sitio profesional' },
     { id: 'inmobiliaria',  label: 'Inmobiliaria' },
     { id: 'elearning',     label: 'Plataforma de cursos' },
     { id: 'noticias',      label: 'Noticias' }
@@ -142,23 +141,23 @@ const GW_TRABAJOS = [
       que: 'Capacitación en aparatología estética', zona: '', tags: 'estética capacitación aparatología cursos cosmiatría', estado: 'online' },
 
     /* ── Institucionales ─────────────────────────────────────── */
-    { id: 'culturapixel', nombre: 'Instituto Cultura Pixel', url: 'https://www.institutoculturapixel.com/', tipo: 'institucional', rubro: 'educacion',
+    { id: 'culturapixel', nombre: 'Instituto Cultura Pixel', url: 'https://www.institutoculturapixel.com/', tipo: 'landing', rubro: 'educacion',
       que: 'Cursos de fotografía, video, sonido y marketing', zona: 'Mendoza', tags: 'instituto fotografía video sonido marketing carreras', estado: 'online' },
-    { id: 'lenguasadicionales', nombre: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar/', tipo: 'institucional', rubro: 'educacion',
+    { id: 'lenguasadicionales', nombre: 'Lenguas Adicionales', url: 'https://lenguasadicionales.com.ar/', tipo: 'landing', rubro: 'educacion',
       que: 'Instituto de inglés y portugués', zona: 'Spegazzini, Buenos Aires', tags: 'inglés portugués idiomas instituto clases', estado: 'online' },
-    { id: 'sanatoriosarmiento', nombre: 'Sanatorio Sarmiento Salud', url: 'https://www.sanatoriosarmientosalud.com.ar/', tipo: 'institucional', rubro: 'salud',
+    { id: 'sanatoriosarmiento', nombre: 'Sanatorio Sarmiento Salud', url: 'https://www.sanatoriosarmientosalud.com.ar/', tipo: 'landing', rubro: 'salud',
       que: 'Centro médico integral', zona: 'Resistencia, Chaco', tags: 'sanatorio clínica médicos especialidades turnos', estado: 'online' },
-    { id: 'aisamsalud', nombre: 'A.I.Sa.M', url: 'https://www.aisamsalud.com.ar/', tipo: 'institucional', rubro: 'salud',
+    { id: 'aisamsalud', nombre: 'A.I.Sa.M', url: 'https://www.aisamsalud.com.ar/', tipo: 'landing', rubro: 'salud',
       que: 'Atención integral en salud mental', zona: 'Gral. Alvear, Mendoza', tags: 'salud mental psiquiatría psicología centro', estado: 'online' },
-    { id: 'ahcd', nombre: 'AHCD', url: 'https://ahcd.org.ar/', tipo: 'institucional', rubro: 'deportes',
+    { id: 'ahcd', nombre: 'AHCD', url: 'https://ahcd.org.ar/', tipo: 'landing', rubro: 'deportes',
       que: 'Intervención profesional en alto rendimiento deportivo', zona: '', tags: 'deporte alto rendimiento asociación profesionales', estado: 'online' },
-    { id: 'fiam', nombre: 'FIAM Guerreros Tiger', url: 'https://fiam.club/', tipo: 'institucional', rubro: 'deportes',
+    { id: 'fiam', nombre: 'FIAM Guerreros Tiger', url: 'https://fiam.club/', tipo: 'landing', rubro: 'deportes',
       que: 'Federación internacional de artistas marciales', zona: '', tags: 'artes marciales karate federación graduaciones campeonatos', estado: 'online' },
-    { id: 'ampsolutionsar', nombre: 'AMP Solutions Argentina', url: 'https://ampsolutionsar.com/', tipo: 'institucional', rubro: 'industria',
+    { id: 'ampsolutionsar', nombre: 'AMP Solutions Argentina', url: 'https://ampsolutionsar.com/', tipo: 'landing', rubro: 'industria',
       que: 'Ingeniería y servicios industriales', zona: '', tags: 'ingeniería industria mantenimiento planta', estado: 'online' },
-    { id: 'grupoacot', nombre: 'GrupoAcot', url: 'https://grupoacot.com/', tipo: 'institucional', rubro: 'industria',
+    { id: 'grupoacot', nombre: 'GrupoAcot', url: 'https://grupoacot.com/', tipo: 'landing', rubro: 'industria',
       que: 'Construcción y mantenimiento industrial', zona: '', tags: 'construcción obra mantenimiento industrial empresa', estado: 'online' },
-    { id: 'silcasa', nombre: 'SILCA', url: 'https://silcasa.com/', tipo: 'institucional', rubro: 'industria',
+    { id: 'silcasa', nombre: 'SILCA', url: 'https://silcasa.com/', tipo: 'landing', rubro: 'industria',
       que: 'Fabricación, montajes metalúrgicos y soldadura industrial', zona: '', tags: 'metalúrgica soldadura montajes herrería industria', estado: 'online' },
 
     /* ── Noticias ────────────────────────────────────────────── */

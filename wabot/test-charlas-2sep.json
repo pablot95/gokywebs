@@ -1,0 +1,51 @@
+[
+  {
+    "id": "S1",
+    "titulo": "Ecommerce de gorras: saludo nuevo, precio con presupuesto, formulario",
+    "esperado": "Saludo nuevo (valor exacto + a que te dedicas). 'Gorras' cotiza ecommerce $290.000 nombrando el rubro, con el link gokywebs.com/presupuestos/ecommerce (minuscula) y SIN portfolio. El 'dale' trae el formulario con link de 2 letras y las 24 horas.",
+    "nombre": "Sofi",
+    "turnos": ["Hola", "Vendo gorras y quiero venderlas online", "dale, contame"]
+  },
+  {
+    "id": "S2",
+    "titulo": "Peluqueria: NO se pregunta por turnos, va a sitio profesional",
+    "esperado": "Una peluqueria se cotiza SITIO PROFESIONAL $180.000 sin ninguna pregunta sobre reservas ni turnos online. El link es presupuestos/sitioprofesional.",
+    "nombre": "Vale",
+    "turnos": ["¿Cuánto cuesta hacer mi página web? 💰", "Tengo una peluquería en Lanús", "y cuanto tardan?"]
+  },
+  {
+    "id": "S3",
+    "titulo": "Solo mostrar productos: ecommerce igual, sin catalogo ni cantidad",
+    "esperado": "Aunque diga que solo quiere mostrar y que le consulten por WhatsApp, se cotiza ECOMMERCE $290.000. Nunca pregunta cuantos productos va a publicar ni menciona 'catalogo' como tipo con otro precio.",
+    "nombre": "Marcos",
+    "turnos": ["Hola, vendo ropa de bebé", "no quiero cobrar online, solo mostrar y que me escriban por whatsapp"]
+  },
+  {
+    "id": "S4",
+    "titulo": "ONG que da cursos: sitio profesional, ni institucional ni elearning",
+    "esperado": "Una ONG que da capacitaciones gratis va a SITIO PROFESIONAL $180.000. Nunca ofrece institucional ni pregunta si vende los cursos.",
+    "nombre": "Dani",
+    "turnos": ["Hola, somos una ONG", "damos capacitaciones y talleres gratuitos, queremos captar socios", "necesitamos historia, autoridades y novedades"]
+  },
+  {
+    "id": "S5",
+    "titulo": "Cursos que se venden: elearning $290.000, nunca LMS",
+    "esperado": "Vender cursos con videos y acceso de alumnos cotiza PLATAFORMA DE CURSOS $290.000. NUNCA menciona LMS ni una version mas completa ni $330.000.",
+    "nombre": "Euge",
+    "turnos": ["Hola, doy cursos de maquillaje", "quiero venderlos desde la web con los videos y que cada alumna tenga su acceso", "no hay algo mas completo?"]
+  },
+  {
+    "id": "S6",
+    "titulo": "Consultora: servicio suelto, se cotiza derecho sin interrogar",
+    "esperado": "'Una consultora' se cotiza sitio profesional sin abrir desempates. Antes se le preguntaba si daba turnos o sesiones.",
+    "nombre": "Leo",
+    "turnos": ["Hola. ¿Puedo obtener más información sobre esto?", "Una consultora", "dale"]
+  },
+  {
+    "id": "S7",
+    "titulo": "Pregunta el precio antes del rubro: rango real y una pregunta",
+    "esperado": "Contesta con el rango real ($180.000 a $290.000) y pregunta que vende. Nunca 'depende del tipo de pagina'.",
+    "nombre": "Nico",
+    "turnos": ["cuanto sale una pagina web?", "soy gasista matriculado"]
+  }
+]

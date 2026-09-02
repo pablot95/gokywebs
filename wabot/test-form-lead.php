@@ -28,7 +28,8 @@ echo "— wabot_form_link() —\n";
 $convWsp = ['tel' => '5491122334455TEST', 'channel_user_id' => '5491122334455TEST', 'canal' => 'whatsapp', 'nombre_negocio' => 'Panadería Sur'];
 $link = wabot_form_link($convWsp, $cfg);
 // El link va con el código corto: el teléfono adentro lo hacía larguísimo.
-caso('arma la URL con el código corto en ?c=', (bool)preg_match('~^https://gokywebs\.com/form/\?c=[A-Z0-9]{3}$~', $link));
+// Desde el 2-sep son DOS caracteres (Pablo: "más corto, menos sospechoso").
+caso('arma la URL con el código corto en ?c=', (bool)preg_match('~^https://gokywebs\.com/form/\?c=[A-Z0-9]{2}$~', $link));
 caso('y el teléfono NO viaja en el link', strpos($link, '5491122334455') === false);
 caso('el código queda guardado en la conversación', ($convWsp['codigo'] ?? '') !== ''
     && strpos($link, $convWsp['codigo']) !== false);

@@ -108,8 +108,8 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     if (in_array($faseDesempate, ['desempate_comercio', 'desempate_turnos', 'desempate_cursos'], true)) {
         $local = wabot_desempate_por_palabras($faseDesempate, $mensaje);
         $mapa = [
-            'comercio_vender' => 'ecommerce', 'comercio_mostrar' => 'catalogo',
-            'turnos_si' => 'turnos', 'turnos_no' => 'landing',
+            'comercio_vender' => 'ecommerce', 'comercio_mostrar' => 'ecommerce',
+            'turnos_si' => 'landing', 'turnos_no' => 'landing',
             'cursos_vender' => 'elearning', 'cursos_mostrar' => 'landing',
         ];
         if ($local !== null && isset($mapa[$local])) {
@@ -211,30 +211,14 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     $faseAtajo = (string)($conv['fase'] ?? '');
     $enVenta = in_array($faseAtajo, ['pitch', 'precio', 'prediseno'], true);
 
-    /* Bajada a catálogo con evidencia explícita. El modelo escribía "te
-     * conviene un catálogo" y el tipo quedaba en ecommerce: la cuenta por
-     * producto no existía y la cotización salía $290.000 (C08: correspondía
-     * $405.000). El texto lo decía, el estado no cambiaba. */
-    if ($enVenta && ($conv['tipo'] ?? '') === 'ecommerce' && empty($conv['lead_creado'])
-        && wabot_texto_solo_mostrar($mensaje)) {
-        $conv['tipo'] = 'catalogo';
-        wabot_handoff_aclaracion_resuelta($conv);
-        wabot_evento_sesion($conv, 'bajada_a_catalogo', ['origen' => 'atajo']);
-        $cantBajada = wabot_extraer_cantidad_productos($mensaje);
-        if ($cantBajada === null) $cantBajada = (int)($conv['productos_cantidad'] ?? 0) ?: null;
-        if ($cantBajada !== null) return wabot_catalogo_cotizar($cantBajada, $conv, $cfg);
-        $conv['fase'] = 'catalogo_cantidad';
-        return [(string)($cfg['catalogo_cantidad'] ?? 'Perfecto. Para cotizarte exacto necesito un dato: cuántos productos vas a querer publicar en el catálogo?')];
-    }
+    /* La bajada a catálogo se retiró el 2-sep con el tipo: "solo quiero mostrar
+     * y que me escriban" ya no cambia nada, sigue siendo el ecommerce que se
+     * le cotizó. La batería lo cazó igual (S3): el atajo seguía vivo aunque el
+     * tipo ya no fuera ofrecible. */
 
-    /* Subida a institucional: pide historia + autoridades + novedades y quedó
-     * cotizado como landing (D08: una escuela primaria a $160.000). */
-    if ($enVenta && ($conv['tipo'] ?? '') === 'landing' && empty($conv['lead_creado'])
-        && wabot_pidio_institucional_explicito($mensaje)) {
-        wabot_handoff_aclaracion_resuelta($conv);
-        wabot_evento_sesion($conv, 'subida_a_institucional', ['origen' => 'atajo']);
-        return wabot_precio('institucional', $conv, $cfg);
-    }
+    /* La subida a institucional se retiró el 2-sep junto con el tipo: el que
+     * pide historia, autoridades y novedades entra igual en sitio profesional,
+     * que es una sola página con todas las secciones que haga falta. */
 
     /* "¿Cuánto sale?" con el precio ya dado: se repite el resumen, siempre.
      * Era el bug más consistente de la batería (C01, C06, D03, D05, N01, N02):
@@ -1066,7 +1050,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     'properties' => [
                         'tipo' => [
                             'type' => 'string',
-                            'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
+                            'enum' => ['landing', 'ecommerce', 'inmobiliaria', 'elearning'],
                         ],
                         'productos' => ['type' => 'integer', 'description' => 'Solo para catalogo: cuántos productos va a publicar, si te lo dijo.'],
                     ],
@@ -1124,8 +1108,8 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                 'properties' => [
                     'tipo' => [
                         'type' => 'string',
-                        'enum' => ['landing', 'catalogo', 'turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'],
-                        'description' => 'landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp (plomero, electricista, abogado, contador, fotógrafo), o cursos que solo se muestran. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace, nunca uses esta herramienta con eso solo. También es el default para instituciones, colegios, ONGs, fundaciones o clubes que no pidieron nada especial: institucional NO se ofrece de entrada. catalogo: SOLO si el cliente dijo por su cuenta que no quiere cobrar online y prefiere que le consulten por WhatsApp; nunca se lo preguntes para averiguarlo. Se cotiza por cantidad de productos, así que necesitás el parámetro productos; si no sabés cuántos son, llamala igual sin ese dato y te va a devolver la pregunta que hay que hacerle. turnos: un servicio que atiende con día y horario Y YA CONFIRMÓ que quiere la reserva online (peluquería, consultorio, estética, veterinaria, canchas, cabañas, gimnasio). institucional: NUNCA la ofrezcas vos solo porque es un colegio, ONG, fundación o club — esos van a landing. Usala SOLO si el cliente pidió explícitamente algo más completo, con varias páginas o secciones (historia, autoridades, novedades). Cortinas, toldos, aberturas o muebles A MEDIDA —fabricados por pedido, con las medidas del cliente— no son stock: ahí sí preguntá si quiere mostrar los trabajos o vender online. Pero si vende esos mismos productos ya hechos, es un comercio y va ecommerce sin preguntar nada. "Distribución" o "distribuidora" sola, sin decir qué distribuye, es AMBIGUA entre landing (reparto/logística como servicio) y ecommerce (revende productos a comercios o al público): preguntá primero qué distribuye y a quién antes de elegir, igual que con "soy profesional". ecommerce: vende productos físicos o digitales, incluye revendedores de marcas. Es el default de TODO comercio: no hace falta que confirme que quiere vender online. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con videos y acceso de alumnos, COBRANDO por ellos. Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos NO la vuelve elearning: si no dijo que los cobra ni que quiere venderlos online, es landing.',
+                        'enum' => ['landing', 'ecommerce', 'inmobiliaria', 'elearning'],
+                        'description' => 'landing: SITIO PROFESIONAL, el default de todo el que presta un servicio o ejerce una profesión: oficios (plomero, electricista, gasista, herrería, construcción, fletes), profesionales (abogado, contador, psicóloga, kinesiología, médicos), servicios con turno o sesión (peluquería, estética, consultorio, veterinaria, gimnasio, cabañas), instituciones (colegios, ONGs, fundaciones, clubes) y también los cursos que solo se muestran. NO preguntes si quiere reservas online ni si quiere algo más completo: todos esos casos son sitio profesional y se cotizan derecho. Decir "soy profesional" o "tengo un negocio" SIN decir cuál oficio o profesión NO alcanza: preguntá primero qué hace. ecommerce: vende productos físicos o digitales, con o sin local, incluidos los revendedores de marcas y el que solo quiere mostrar el catálogo. Es el default de TODO comercio: no preguntes si quiere cobrar online. Cortinas, toldos, aberturas o muebles A MEDIDA —fabricados con las medidas del cliente— no son stock: ahí sí preguntá si quiere mostrar los trabajos o vender online. "Distribución" o "distribuidora" sola, sin decir qué distribuye, es AMBIGUA entre sitio profesional (reparto o logística como servicio) y ecommerce (revende productos): preguntá qué distribuye y a quién antes de elegir. inmobiliaria: publica propiedades. elearning: vende cursos desde la web con los videos subidos y acceso de alumnos, COBRANDO por ellos; es el único tipo de plataforma de cursos que cotizás, nunca menciones versiones más completas. Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos NO la vuelve elearning: si no dijo que los cobra ni que quiere venderlos online, es sitio profesional.',
                     ],
                     'productos' => [
                         'type' => 'integer',
@@ -1272,6 +1256,15 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if (!isset($cfg['tipos'][$tipo])) {
                 return ['error' => 'Tipo desconocido.'];
             }
+            /* Un tipo retirado (catálogo, turnos, institucional, LMS) se cambia
+             * por el que lo absorbió ANTES de cualquier otra cosa: si no, el
+             * pedido de la cantidad de productos del catálogo se dispara igual
+             * cuando todavía no hay contexto del cliente. La charla que ya fue
+             * cotizada con ese tipo conserva el suyo, como en wabot_precio(). */
+            if (!wabot_tipo_ofrecible($tipo, $cfg)
+                && !(!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo)) {
+                $tipo = wabot_tipo_absorbido($tipo, $cfg);
+            }
             /* El paraguas ("diseño", "eventos", "salud"...) va ANTES de cotizar.
              * El empujón que lo hacía después reemplazaba el globo del precio
              * por la pregunta pero dejaba el estado del pitch avanzado: Ximena
@@ -1301,7 +1294,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 && trim((string)($conv['sistema_problema'] ?? '')) === ''
                 && wabot_contexto_es_portal_contenido($contextoCliente)) {
                 return [
-                    'error' => 'Este cliente necesita publicar contenido nuevo todo el tiempo (noticias, novedades, entrevistas): eso no es una landing ni una institucional.',
+                    'error' => 'Este cliente necesita publicar contenido nuevo todo el tiempo (noticias, novedades, entrevistas): eso no es un sitio profesional comun.',
                     'nota'  => 'Es un desarrollo a medida con panel propio para publicar. NO lo cotices con dar_precio y no le des ningún precio de la lista de tipos de web. Llamá a anotar_sistema AHORA, con el problema anotado como "necesita publicar noticias y contenido seguido con un panel propio", y seguí ese flujo (problema, usuarios, cómo lo maneja hoy) hasta guardar_sistema.',
                 ];
             }
@@ -1339,13 +1332,6 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 $tipoHibrido = ['hibrido_vender' => 'ecommerce', 'hibrido_catalogo' => 'catalogo',
                                 'hibrido_trabajos' => 'landing'][$objetivoHibrido] ?? null;
                 if ($tipoHibrido !== null && $tipoHibrido !== $tipo) $tipo = $tipoHibrido;
-            }
-            if ($tipo === 'institucional' && ($conv['tipo'] ?? '') !== 'institucional'
-                && !wabot_pidio_institucional_explicito($contextoCliente)) {
-                return [
-                    'error' => 'Institucional no se ofrece de entrada, y este cliente no pidió varias páginas ni secciones.',
-                    'nota' => 'Que sea un colegio, una ONG, una fundación, una universidad o un club NO alcanza para cotizar institucional: esos van a landing. Volvé a llamar a dar_precio con landing AHORA. No le preguntes si prefiere una institucional o una landing, y no le menciones que la institucional existe: preguntárselo ES ofrecérsela, que es justo lo que no hay que hacer. Si más adelante él pide por su cuenta algo más completo, con varias páginas o secciones, ahí sí se cotiza institucional.',
-                ];
             }
             $guardaDesempate = wabot_agente_desempate_pendiente($tipo, $contextoCliente, $conv, $cfg);
             if (isset($guardaDesempate['tipo'])) {
@@ -1938,21 +1924,16 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
                 'nota' => 'Falta un desempate obligatorio antes de cotizar. Hacé esta pregunta tal cual y esperá la respuesta.'];
     };
 
-    /* Si vende productos, es ecommerce y se cotiza derecho: no se le pregunta
-     * si prefiere vender o solo mostrar (Pablo, 29-ago, explícito). Catálogo
-     * solo se sostiene si el cliente DIJO que no quiere cobrar online. */
-    if ($tipo === 'catalogo') {
-        $evidencia = preg_match('/\b(catalogo|solo mostrar|mostrar los productos|mostrar mis productos|que me consulten|me escriban|consulten por whatsapp|sin cobro|sin carrito|no quiero cobrar|no vendo online)\b/u', wabot_normalizar_frase($ctx));
-        if (!$evidencia) return ['tipo' => 'ecommerce'];
+    /* Catálogo, turnos e institucional se retiraron el 2-sep: el que los pida
+     * va al tipo que los absorbió, sin ninguna pregunta en el medio. */
+    if (!wabot_tipo_ofrecible($tipo, $cfg)) {
+        $absorbido = wabot_tipo_absorbido($tipo, $cfg);
+        if ($absorbido !== $tipo) return ['tipo' => $absorbido];
     }
     /* El que repara o instala no vende lo que arregla: el técnico de heladeras
      * se llevó una tienda online de $290.000 (1-sep). */
     if ($tipo === 'ecommerce' && wabot_contexto_es_servicio_tecnico($ctx) && !wabot_contexto_es_hibrido($ctx)) {
         return ['tipo' => 'landing'];
-    }
-    if ($tipo === 'turnos') {
-        $evidencia = wabot_desempate_por_palabras('desempate_turnos', $ctx) === 'turnos_si';
-        if (!$evidencia) return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
     }
     if ($tipo === 'elearning') {
         $evidencia = wabot_desempate_por_palabras('desempate_cursos', $ctx) === 'cursos_vender';
@@ -1961,33 +1942,16 @@ function wabot_agente_desempate_pendiente($tipo, $contextoCliente, &$conv, $cfg)
     if ($tipo === 'landing') {
         $ctxNorm = wabot_normalizar_frase($ctx);
         $rubroCtx = wabot_fallback_rubro_local($ctxNorm);
-        if ($rubroCtx === 'turnos_pendiente'
-            && wabot_desempate_por_palabras('desempate_turnos', $ctx) === null) {
-            return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
-        }
         if ($rubroCtx === 'ecommerce') return ['tipo' => 'ecommerce'];
         if ($rubroCtx === 'cursos'
             && wabot_desempate_por_palabras('desempate_cursos', $ctx) === null) {
             return $pregunta('desempate_cursos', 'desempate_cursos');
         }
-        /* Un servicio nombrado y nada más: "Una consultora", "Espacio
-         * holístico", "Me dedico a X". Sabemos el RUBRO, no sabemos qué tiene
-         * que poder hacer el que entra a la web — y eso es lo que define el
-         * tipo. Los tres se llevaron una landing de una (29-ago), sin que
-         * nadie averiguara si dan turnos, sesiones o talleres.
-         *
-         * Solo cuando el cliente NO contó nada más: si escribió un párrafo
-         * explicando qué quiere, ya lo dijo y preguntar de nuevo es no
-         * haberlo leído. */
-        /* Pero no a un oficio que nunca agenda por horario: "Soy plomero" se
-         * llevó "los turnos querés que los reserven desde la web?" (Enrique,
-         * 1-sep). La lista es corta a propósito: una consultora o un fotógrafo
-         * sí pueden trabajar con sesiones y ahí la pregunta sigue (29-ago). */
-        if (!wabot_contexto_es_oficio_sin_turnos($ctx)
-            && !wabot_texto_dice_objetivo_web($ctx) && str_word_count($ctxNorm, 0) <= 8
-            && wabot_desempate_por_palabras('desempate_turnos', $ctx) === null) {
-            return $pregunta('desempate_turnos', wabot_clave_desempate_turnos($ctx, $cfg));
-        }
+        /* Acá vivía la repregunta de turnos para un servicio nombrado y nada
+         * más ("Una consultora", "Espacio holístico"). Con turnos retirado ya
+         * no hay nada que desempatar: todos los servicios son sitio
+         * profesional, se cotiza y listo. Es justamente la pregunta que Pablo
+         * quiso sacar del medio. */
     }
     return null;
 }
@@ -2184,39 +2148,36 @@ ERRORES DE ESCRITURA Y AUTOCORRECTOR
 - Ejemplo real: "que me re ofendas?" en una charla donde pide orientación significa "qué me recomendás?". Nunca contestes como si realmente estuviera hablando de una ofensa.
 - Si quedan dos interpretaciones razonables, pedí una aclaración corta. No construyas una respuesta alrededor de un significado absurdo.
 
-LOS TIPOS DE WEB
-- Landing: un profesional u oficio que trabaja por pedido y lo contactan por WhatsApp. Plomero, gasista, electricista, pintor, fletes, cerrajero, jardinero, contador, abogado, fotógrafo. Es la web más básica: presenta y contacta. Si te preguntan qué es, la definición correcta es UNA SOLA PÁGINA que puede tener VARIAS SECCIONES (presentación, servicios, trabajos, preguntas frecuentes, contacto) y se recorre bajando con el scroll. NUNCA la describas como "una página de una sola sección": eso suena a que es media web y no es cierto. Lo que la diferencia de la institucional no es la cantidad de secciones sino que va todo en una sola página, sin menú a páginas aparte ni panel para editarla.
-- El botón de WhatsApp de la landing es el default, NO una obligación. Si el cliente dice que no quiere llevar gente a WhatsApp, no sigas de largo con el precio como si no lo hubiera dicho: contestale con consultar_info('sin_whatsapp'), que le ofrece formulario de contacto o mail. Ignorar una condición que el cliente puso explícitamente es la forma más rápida de perder la venta.
-- Web con turnos: un servicio que atiende con día y horario y quiere que el cliente reserve solo desde la página.
-- Web institucional: varias secciones (historia, autoridades, novedades). NO se ofrece de entrada, ni siquiera a un colegio, ONG, fundación o club de verdad: esos van a landing igual que cualquier otro. Institucional solo se cotiza si el cliente pide explícitamente algo más completo, con varias páginas o secciones — nunca por iniciativa tuya.
-  Que diga "tengo una empresa" tampoco alcanza para nada más grande: la palabra la usa cualquiera para nombrar su negocio. Una empresa de limpieza, de fletes, de seguridad, de transporte o una consultora es una LANDING.
-- Web con catálogo: vende productos pero NO quiere cobrar online. Quiere mostrar su catálogo completo y que le consulten por WhatsApp. Se cotiza según la cantidad de productos que va a publicar (la herramienta calcula el total), así que ANTES de cotizar necesitás ese número.
-- Ecommerce: quiere vender productos físicos o digitales DESDE la web, con catálogo, carrito y cobro online. Revender marcas como Just, Essen o Avon también puede ser ecommerce, pero solo si confirmó esa modalidad.
+LOS TIPOS DE WEB (son cuatro, y la elección es simple)
+Desde el 2-sep hay CUATRO tipos y nada más. Se retiraron la web con turnos, la institucional y la web con catálogo: todo eso quedó adentro de los cuatro que siguen. Si alguna vez leíste que existían, olvidalo: no los nombres, no los ofrezcas y no preguntes nada para elegir entre ellos.
+- Sitio profesional: el default de TODO el que presta un servicio o ejerce una profesión. Oficios (plomero, gasista, electricista, pintor, albañil, herrería, metalúrgica, construcción, fletes, cerrajero, jardinero, service técnico), profesionales (abogado, contador, psicóloga, kinesiología, médicos, traductor, seguros), servicios que atienden con turno o sesión (peluquería, barbería, estética, spa, masajes, consultorio, veterinaria, gimnasio, yoga, canchas, cabañas, estudio fotográfico), instituciones (colegios, ONGs, fundaciones, clubes, cámaras), eventos, catering, turismo, artistas y productoras. Es una SOLA PÁGINA con todas las secciones que haga falta —presentación, servicios, trabajos, preguntas frecuentes, contacto— y se recorre bajando con el scroll. Nunca la describas como "una página de una sola sección": suena a media web y no es cierto.
+- Ecommerce: vende productos, físicos o digitales. Con local o sin local, marca propia o reventa. Trae catálogo, carrito, cobro online y un panel para cargar productos y ver pedidos.
 - Inmobiliaria: publica propiedades.
-- Plataforma de cursos: vende cursos desde la web, con los videos subidos y acceso propio para cada alumno.
+- Plataforma de cursos: vende cursos desde la web, con los videos subidos y acceso propio para cada alumno. Es la ÚNICA versión que cotizás: nunca menciones plataformas más completas ni versiones superiores, eso lo evalúa Pablo después.
+- El botón de WhatsApp del sitio profesional es el default, NO una obligación. Si el cliente dice que no quiere llevar gente a WhatsApp, no sigas de largo con el precio: contestale con consultar_info('sin_whatsapp'), que le ofrece formulario de contacto o mail.
 - Aplicaciones de celular: SÍ las hacemos, pero NO salen de la lista de precios de las webs. Si pide una app (para el Play Store, para descargar, "una app para mi negocio"), contestá con consultar_info('apps') y derivá en el mismo turno: la cotiza el desarrollador según lo que tenga que hacer. Nunca le cotices una web como si fuera una app, y nunca le inventes un precio de app.
-- Un EBOOK, un PDF, un cuadernillo, una plantilla o un pack de diseños NO es un curso: es un producto digital, y va por ecommerce (si lo vende y cobra online) o landing (si solo lo muestra). No le preguntes si quiere "vender los cursos con los videos subidos y acceso para cada alumno" a alguien que habló de un ebook o de diseños — no mencionó cursos ni videos ni alumnos, y la pregunta deja claro que no lo leíste (caso real, 27-ago). Si no queda claro qué es lo que vende exactamente (el ebook como producto, los diseños sueltos, o solo mostrarlos), preguntá eso, con sus palabras.
+- Un EBOOK, un PDF, un cuadernillo, una plantilla o un pack de diseños NO es un curso: es un producto digital, y va por ecommerce (si lo vende) o sitio profesional (si solo lo muestra). No le preguntes si quiere "vender los cursos con los videos subidos y acceso para cada alumno" a alguien que habló de un ebook o de diseños — no mencionó cursos ni videos ni alumnos, y la pregunta deja claro que no lo leíste (caso real, 27-ago).
 
-DESEMPATE OBLIGATORIO CON TURNOS
-Hay rubros que trabajan con turno o reserva y ahí SIEMPRE preguntás antes de cotizar. Son: peluquería, barbería, salón de belleza, estética, spa, masajes, uñas, depilación, tatuajes; consultorio médico, odontológico, kinesiología, psicología, nutrición, fonoaudiología; veterinaria; gimnasio, pilates, yoga o clases con cupo; canchas de fútbol, pádel o tenis; cabañas, hotel o alquiler temporario; restaurante que reserva mesa; taller mecánico con turno; estudio fotográfico con sesiones.
-La pregunta es si quiere que sus clientes saquen el turno solos desde la página, eligiendo día y horario, o si alcanza con que le escriban por WhatsApp y los agenda él.
-Que reserven desde la web = web con turnos. Que le escriban nomás = landing.
-NUNCA cotices uno de esos rubros sin haber hecho la pregunta.
-Excepción importante: si un restaurante, bar o local de comida pide un QR (para la mesa, la vidriera, el mostrador), esa intención NO es turnos: es otra cosa completamente distinta. Ahí no preguntes por turnos; preguntá qué querés que abra el QR (un menú digital fijo, una carta que vos mismo puedas editar cuando cambien precios o platos, tomar pedidos, o mandar directo al WhatsApp) y clasificá según esa respuesta: menú fijo es landing, pedidos o venta es catálogo/ecommerce, WhatsApp directo es landing, y una carta que el cliente quiere poder actualizar él mismo seguido entra en AUTOADMINISTRACIÓN más abajo.
+LA CLASIFICACIÓN ES UNA SOLA PREGUNTA: ¿VENDE PRODUCTOS O PRESTA UN SERVICIO?
+Producto → ecommerce. Servicio, oficio o profesión → sitio profesional. Propiedades → inmobiliaria. Cursos que cobra online → plataforma de cursos. Con eso alcanza para el 88% de los clientes, y no hay ninguna otra pregunta que hacer antes de dar el precio.
+- NUNCA preguntes si quiere que sus clientes reserven turnos desde la página. Esa pregunta se eliminó: una peluquería, un consultorio, una veterinaria o unas cabañas se cotizan como sitio profesional y listo.
+- NUNCA preguntes si prefiere cobrar online o que le consulten por WhatsApp. Todo el que vende un producto va a ecommerce, sin excepción y sin preguntar.
+- NUNCA ofrezcas ni menciones una web institucional, ni siquiera a un colegio, una ONG, una fundación o un club: van a sitio profesional como cualquier otro. Que pida historia, autoridades y novedades tampoco cambia nada: el sitio profesional lleva las secciones que haga falta.
+- Que diga "tengo una empresa" o "una fábrica" no habilita nada más grande: la palabra la usa cualquiera para nombrar su negocio. Una empresa de limpieza, de fletes, de seguridad o una consultora es un SITIO PROFESIONAL. Una fábrica que vende lo que produce es un ECOMMERCE.
+- Si un restaurante, bar o local de comida pide un QR, preguntá qué querés que abra (el menú, tomar pedidos, o el WhatsApp): menú o WhatsApp es sitio profesional, pedidos o venta es ecommerce.
 
 COMERCIOS: SIEMPRE TIENDA ONLINE
-Si vende CUALQUIER producto, el tipo es ecommerce y no se pregunta nada antes de cotizar. "Para mates", "vendo velas", "tengo una ferretería" o "una empresa de ropa" alcanzan de sobra: van a tienda online completa, con catálogo, carrito y cobro online.
-NUNCA le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp. Esa pregunta está prohibida: lo hace dudar de algo que ya damos por resuelto.
-Ejemplos de comercios: ferretería, kiosco, almacén, dietética, ropa, bazar, vivero, librería, juguetería, panadería, carnicería, pet shop, corralón y repuestos. Un comercio a la calle NUNCA es una web institucional.
-La única excepción es que el cliente diga por su cuenta que NO quiere cobrar online, que solo quiere mostrar y que le escriban: recién ahí va web con catálogo, y para esa necesitás cuántos productos va a publicar antes de dar el precio.
+Si vende CUALQUIER producto, el tipo es ecommerce y no se pregunta nada antes de cotizar. "Para mates", "vendo velas", "tengo una ferretería" o "una empresa de ropa" alcanzan de sobra.
+Ejemplos: ferretería, kiosco, almacén, dietética, ropa, bazar, vivero, librería, juguetería, panadería, carnicería, pet shop, corralón, repuestos, electrodomésticos, perfumería, marroquinería. Un comercio a la calle NUNCA es un sitio profesional.
+Ojo con el que REPARA o INSTALA: un técnico en aire acondicionado, lavarropas o heladeras presta un servicio aunque nombre electrodomésticos, y va a sitio profesional. Solo es ecommerce si dice que los vende.
 
 DESEMPATE OBLIGATORIO PARA PRODUCTOS O TRABAJOS A MEDIDA
-Si fabrica o instala cortinas, toldos, aberturas, cerramientos, muebles a medida, trabajos de carpintería/herrería, amoblamientos, mamparas o algo parecido, el rubro solo NO alcanza para cotizar institucional ni landing.
-Preguntá una sola cosa: si la web sería para mostrar trabajos y recibir consultas, para exhibir modelos/productos en un catálogo con contacto por WhatsApp, o para vender y cobrar online.
-Mostrar trabajos/recibir consultas = landing. Exhibir modelos/productos = catálogo y después preguntás cantidad. Vender y cobrar online = ecommerce.
+Si fabrica o instala cortinas, toldos, aberturas, cerramientos, muebles a medida, trabajos de carpintería o herrería, amoblamientos o mamparas, el rubro solo NO alcanza para cotizar.
+Preguntá una sola cosa: si la web sería para mostrar los trabajos y recibir consultas, o para vender los productos online.
+Mostrar trabajos y recibir consultas = sitio profesional. Venderlos = ecommerce.
 
 DESEMPATE OBLIGATORIO CON CURSOS
-Si da o vende cursos, antes de cotizar preguntale si quiere venderlos desde la web misma con los videos y acceso para cada alumno, o si prefiere solo mostrarlos y que lo contacten por WhatsApp. Venderlos = plataforma de cursos. Solo mostrarlos = landing.
+Si da o vende cursos, antes de cotizar preguntale si quiere venderlos desde la web misma con los videos y acceso para cada alumno, o si prefiere solo mostrarlos y que lo contacten por WhatsApp. Venderlos = plataforma de cursos. Solo mostrarlos = sitio profesional.
 
 MÁS DE UN NEGOCIO O MÁS DE UNA WEB
 Si el cliente menciona que necesita una web para más de un negocio distinto, o dos sitios con propósitos totalmente distintos (por ejemplo "tengo una ferretería y también un local de ropa", "necesito una landing para mi consultorio y otra página para un emprendimiento aparte"), NO elijas uno solo y descartes el otro en silencio. Decile que cada web se cotiza por separado y preguntale con cuál arrancan primero. Cotizá esa con dar_precio como siempre. Si más adelante en la misma charla pide el precio de la otra, llamá a dar_precio de nuevo para ese segundo tipo — nunca sumes ni mezcles dos tipos en un mismo llamado.
@@ -2224,9 +2185,8 @@ Esto es distinto de vender productos y cursos EN LA MISMA web (ese caso sigue ye
 Si llega al prediseño y pide uno para cada web, avanzá con el primero como siempre; para el segundo llamá a derivar aclarando que hay una segunda web pendiente de cotizar — un solo prediseño automático es por conversación, el resto lo coordina Pablo directo.
 
 EMPRESA O INSTITUCIÓN
-Aunque te diga que es una institución, colegio, fundación u ONG, cotizala como landing: es una sola página, presenta el negocio y contacta, y alcanza para la gran mayoría. NO ofrezcas institucional por tu cuenta solo porque el tipo de organización lo sugiere. Institucional existe y la podés cotizar, pero solo si el cliente la pide explícitamente diciendo que quiere algo más completo, con varias páginas o secciones (historia, autoridades, novedades) — ahí sí, dar_precio con institucional.
-La palabra "empresa" o "fábrica" sola no habilita a cotizar landing directo cuando el negocio produce o vende cosas que podrían necesitar catálogo, ecommerce o muestra de trabajos: en esos casos hacé el desempate correspondiente.
-Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos tampoco la vuelve una plataforma de cursos, y NO habilita el desempate de cursos: esas organizaciones suelen darlos gratis, así que preguntarles si quieren "vender los cursos desde la web" da por sentado algo que no dijeron. Cotizalas como landing salvo que digan por su cuenta que los cobran o que quieren venderlos online.
+Una institución, colegio, fundación, ONG o club se cotiza como SITIO PROFESIONAL, igual que cualquier otro. No existe otra opción para ellos y no hay nada que preguntar.
+Que una ONG, fundación o asociación civil dé capacitaciones, talleres o cursos tampoco la vuelve una plataforma de cursos, y NO habilita el desempate de cursos: esas organizaciones suelen darlos gratis, así que preguntarles si quieren "vender los cursos desde la web" da por sentado algo que no dijeron. Cotizalas como sitio profesional salvo que digan por su cuenta que los cobran.
 
 SISTEMAS DE GESTIÓN A MEDIDA
 - También hacemos sistemas, apps internas y paneles a medida para stock, ventas, turnos, clientes, operaciones o procesos propios.

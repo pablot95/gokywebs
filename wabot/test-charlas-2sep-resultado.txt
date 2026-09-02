@@ -1,0 +1,111 @@
+Bateria conversacional wabot — 7 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO S1 — Ecommerce de gorras: saludo nuevo, precio con presupuesto, formulario
+ESPERADO: Saludo nuevo (valor exacto + a que te dedicas). 'Gorras' cotiza ecommerce $290.000 nombrando el rubro, con el link gokywebs.com/presupuestos/ecommerce (minuscula) y SIN portfolio. El 'dale' trae el formulario con link de 2 letras y las 24 horas.
+>>> CLIENTE: Hola
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Vendo gorras y quiero venderlas online
+<<< BOT [324c]: Perfecto, para las gorras sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale, contame
+<<< BOT [263c]: Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.
+           Solo completá este formulario, no te lleva un minuto: https://gokywebs.com/form/?c=ZK
+           En menos de 24 horas la tenés lista.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S2 — Peluqueria: NO se pregunta por turnos, va a sitio profesional
+ESPERADO: Una peluqueria se cotiza SITIO PROFESIONAL $180.000 sin ninguna pregunta sobre reservas ni turnos online. El link es presupuestos/sitioprofesional.
+>>> CLIENTE: ¿Cuánto cuesta hacer mi página web? 💰
+<<< BOT [122c]: Entre $180.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Tengo una peluquería en Lanús
+<<< BOT [310c]: Perfecto, para la peluquería sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [76c]: Si te gusta la idea, te cuento el próximo paso: ver tu web antes de decidir.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: y cuanto tardan?
+<<< BOT [147c]: La web queda lista en unos 7 días desde la seña y la entrega del contenido. La demo gratis la tenés en menos de 24 horas desde que pasás los datos.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S3 — Solo mostrar productos: ecommerce igual, sin catalogo ni cantidad
+ESPERADO: Aunque diga que solo quiere mostrar y que le consulten por WhatsApp, se cotiza ECOMMERCE $290.000. Nunca pregunta cuantos productos va a publicar ni menciona 'catalogo' como tipo con otro precio.
+>>> CLIENTE: Hola, vendo ropa de bebé
+<<< BOT [329c]: Perfecto, para la ropa de bebé sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [72c]: Si va por ahí, te cuento cómo seguimos. Primero la ves, después decidís.
+    [fase=pitch tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no quiero cobrar online, solo mostrar y que me escriban por whatsapp
+<<< BOT [263c]: Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.
+           Solo completá este formulario, no te lleva un minuto: https://gokywebs.com/form/?c=4X
+           En menos de 24 horas la tenés lista.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S4 — ONG que da cursos: sitio profesional, ni institucional ni elearning
+ESPERADO: Una ONG que da capacitaciones gratis va a SITIO PROFESIONAL $180.000. Nunca ofrece institucional ni pregunta si vende los cursos.
+>>> CLIENTE: Hola, somos una ONG
+<<< BOT [307c]: Perfecto, para tu negocio sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [76c]: Si te gusta la idea, te cuento el próximo paso: ver tu web antes de decidir.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: damos capacitaciones y talleres gratuitos, queremos captar socios
+<<< BOT [165c]: Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?
+    [fase=desempate_cursos tipo=- precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: necesitamos historia, autoridades y novedades
+<<< BOT [127c]: El desarrollo completo queda en $180.000.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [263c]: Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.
+           Solo completá este formulario, no te lleva un minuto: https://gokywebs.com/form/?c=BA
+           En menos de 24 horas la tenés lista.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S5 — Cursos que se venden: elearning $290.000, nunca LMS
+ESPERADO: Vender cursos con videos y acceso de alumnos cotiza PLATAFORMA DE CURSOS $290.000. NUNCA menciona LMS ni una version mas completa ni $330.000.
+>>> CLIENTE: Hola, doy cursos de maquillaje
+<<< BOT [165c]: Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?
+    [fase=desempate_cursos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: quiero venderlos desde la web con los videos y que cada alumna tenga su acceso
+<<< BOT [288c]: Por lo que me contás necesitarías una web que integre los cursos o materiales y la venta de productos en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.
+<<< BOT [104c]: Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?
+    [fase=desempate_cursos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: no hay algo mas completo?
+<<< BOT [228c]: En el link del presupuesto está el detalle de todo lo que viene incluido. Si hay algo puntual que quieras sumar —una sección más, un formulario, reservas, otro idioma— decime cuál y te confirmo si entra en el precio o va aparte.
+    [fase=desempate_cursos tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S6 — Consultora: servicio suelto, se cotiza derecho sin interrogar
+ESPERADO: 'Una consultora' se cotiza sitio profesional sin abrir desempates. Antes se le preguntaba si daba turnos o sesiones.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Una consultora
+<<< BOT [310c]: Perfecto, para la consultora sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [68c]: Si te sirve, el paso siguiente es verla hecha antes de decidir nada.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: dale
+<<< BOT [263c]: Te armamos la demo de tu web gratis: es tu página real, con tu nombre, tus colores y lo que ofrecés, para que la veas antes de decidir nada.
+           Solo completá este formulario, no te lleva un minuto: https://gokywebs.com/form/?c=4Z
+           En menos de 24 horas la tenés lista.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO S7 — Pregunta el precio antes del rubro: rango real y una pregunta
+ESPERADO: Contesta con el rango real ($180.000 a $290.000) y pregunta que vende. Nunca 'depende del tipo de pagina'.
+>>> CLIENTE: cuanto sale una pagina web?
+<<< BOT [122c]: Entre $180.000 y $290.000, según lo que tenga que hacer la web. Contame qué vendés o qué servicio das y te digo el exacto.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: soy gasista matriculado
+<<< BOT [307c]: Perfecto, para tu negocio sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [76c]: Si te gusta la idea, te cuento el próximo paso: ver tu web antes de decidir.
+    [fase=pitch tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar
