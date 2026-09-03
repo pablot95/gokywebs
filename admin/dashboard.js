@@ -927,6 +927,7 @@ let completados = [];
 let tareas = [];
 let mantenimiento = [];
 let presupuestoFunnel = [];
+let resenas = [];
 
 // --- Botón nuevo cliente desde seguimientos ---
 document.getElementById("openModalBtnSeg")?.addEventListener("click", () => openModal());
@@ -1186,6 +1187,90 @@ function initRealtime() {
     }, (err) => {
         console.error("Mantenimiento error:", err);
     });
+
+    // ── Reseñas de demos (botón flotante de snippets_canonicos_demos §9) ──
+    const qResenas = query(collection(db, "resenas"), orderBy("createdAt", "desc"));
+    onSnapshot(qResenas, (snap) => {
+        resenas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        _updateResenasBadge();
+        // Si el modal de un cliente está abierto, refrescarle la sección de
+        // reseñas por si llegó una nueva mientras Pablo lo tenía a la vista.
+        const openId = document.getElementById("clientId")?.value;
+        if (openId && modal && !modal.hidden) renderResenasEnModal(openId);
+    }, (err) => {
+        console.error("Reseñas error:", err);
+    });
+}
+
+/* Badge rojo tipo notificación (distinto del .pill-count neutro que ya
+   traían los tabs) en los tabs Clientes y Seguimientos: cuenta reseñas con
+   visto:false en TODA la colección, sin cruzar con clientes — no hace falta
+   saber a quién pertenece cada una para saber que hay algo nuevo sin ver. */
+function _updateResenasBadge() {
+    const sinVer = resenas.filter(r => !r.visto).length;
+    ["badgeResenasClientes", "badgeResenasSeg"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = sinVer > 99 ? "99+" : String(sinVer);
+        el.hidden = sinVer === 0;
+    });
+}
+
+/* El botón de la demo (snippets_canonicos_demos §9) guarda `slug` ya pasado
+   por la MISMA slugify que slugNegocio() de acá abajo, calculado desde la
+   URL /demo/<slug>/ — así no hace falta configurar nada por proyecto: alcanza
+   con recalcular el slug del nombre del negocio del cliente y comparar. */
+function resenasParaCliente(c) {
+    const slugCliente = slugNegocio(c.proyecto || c.nombre || "");
+    if (!slugCliente) return [];
+    return resenas.filter(r => slugNegocio(r.slug || "") === slugCliente);
+}
+
+/* Pinta la sección "Reseñas de esta demo" dentro del modal de cliente/seguimiento
+   y marca como vistas las que todavía no lo estaban — Pablo ya las tiene
+   delante, no hace falta un botón "marcar como leído" aparte. */
+async function renderResenasEnModal(clientId) {
+    const section = document.getElementById("resenasInfoSection");
+    const body    = document.getElementById("resenasInfoBody");
+    const summary = document.getElementById("resenasInfoSummary");
+    const c = clients.find(x => x.id === clientId);
+    if (!section || !body || !c) return;
+
+    const lista = resenasParaCliente(c);
+    if (!lista.length) {
+        section.style.display = "none";
+        body.innerHTML = "";
+        return;
+    }
+
+    const sinVer = lista.filter(r => !r.visto).length;
+    section.style.display = "";
+    if (summary) summary.textContent = `⭐ Reseñas de esta demo (${lista.length}${sinVer ? `, ${sinVer} nueva${sinVer > 1 ? "s" : ""}` : ""})`;
+    section.querySelector("details")?.toggleAttribute("open", sinVer > 0);
+
+    body.innerHTML = lista.map(r => {
+        const estrellas = r.rating ? "★".repeat(r.rating) + "☆".repeat(5 - r.rating) : "";
+        const fecha = r.createdAt?.toDate
+            ? r.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "";
+        return `
+            <div class="resena-card${r.visto ? "" : " resena-card--nueva"}">
+                ${estrellas ? `<div class="resena-stars">${estrellas}</div>` : ""}
+                <p class="resena-mensaje${r.mensaje ? "" : " muted"}">${r.mensaje ? escapeHtml(r.mensaje) : "Sin comentario, solo calificación."}</p>
+                <div class="resena-meta">${escapeHtml(fecha)}${!r.visto ? ' <span class="resena-nueva-tag">Nueva</span>' : ""}</div>
+            </div>`;
+    }).join("");
+
+    const sinVerIds = lista.filter(r => !r.visto).map(r => r.id);
+    if (sinVerIds.length) {
+        try {
+            const batch = writeBatch(db);
+            sinVerIds.forEach(id => batch.update(doc(db, "resenas", id), { visto: true }));
+            await batch.commit();
+        } catch (err) {
+            console.error("No se pudo marcar la reseña como vista:", err);
+        }
+    }
 }
 
 function _updateClientCounters() {
@@ -1799,6 +1884,8 @@ function openModal(id = null) {
             presSection.style.display = "none";
             presBody.innerHTML = "";
         }
+
+        renderResenasEnModal(c.id);
     } else {
         modalTitle.textContent = "Nuevo cliente";
         document.getElementById("abono").value = 0;
@@ -1807,6 +1894,8 @@ function openModal(id = null) {
         document.getElementById("propuestaInfoBody").innerHTML = "";
         document.getElementById("presupuestoInfoSection").style.display = "none";
         document.getElementById("presupuestoInfoBody").innerHTML = "";
+        document.getElementById("resenasInfoSection").style.display = "none";
+        document.getElementById("resenasInfoBody").innerHTML = "";
         modalTareas = {};
     }
     renderTareasChecklist();
@@ -3227,12 +3316,21 @@ async function presentarPropuesta(propId) {
     // confirmación a las 48h y el archivo por inactividad saben a qué cliente avisarle.
     const clienteRef = doc(collection(db, "clientes"));
 
+    // No bloquear el pase a Seguimiento por un fallo del bot (sin teléfono,
+    // sin nombre de negocio, wabot caído, Meta rechazó el envío...): hasta el
+    // 25-ago-2026 había una opción "pasarla igual" y se sacó al simplificar el
+    // flujo de presentar — desde entonces CUALQUIER error acá dejaba el boceto
+    // trabado para siempre, sin forma de avanzarlo ("no pasa a Seguimiento").
+    // Se pregunta en vez de asumir, y si Pablo confirma, el cliente se crea
+    // igual: el link se lo manda él a mano.
     const envio = await enviarMuestraWhatsapp(p, clienteRef.id);
     if (envio?.error) {
-        alert("No se pudo marcar como presentada en el bot: " + envio.error + "\n\nNo se movió nada. Probá de nuevo.");
-        return;
-    }
-    if (envio) {
+        const seguirIgual = confirm(
+            "No se le pudo avisar al bot / mandar el link por WhatsApp:\n\n" + envio.error +
+            "\n\n¿Pasarla a Seguimiento igual? El cliente NO recibe nada automático: mandale vos el link a mano."
+        );
+        if (!seguirIgual) return;
+    } else if (envio) {
         const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
         if (envio.sin_chat) {
             alert("Quedó en Seguimiento. Mandale vos el link por WhatsApp desde tu número"

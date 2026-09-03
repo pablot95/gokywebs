@@ -648,6 +648,25 @@ textarea:focus {
     background: rgba(37, 99, 235, 0.3);
 }
 
+/* Burbuja roja tipo notificación — reseñas nuevas sin ver (distinta a propósito
+   del .pill-count neutro: esta tiene que leerse como "algo pendiente"). */
+.nav-badge-alert {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    margin-left: 5px;
+    border-radius: 999px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+}
+
 .search-row {
     margin-bottom: 16px;
     display: flex;
@@ -1813,6 +1832,54 @@ body.modal-open { overflow: hidden; }
 /* Modal propuesta */
 .modal-propuesta {
     max-width: 540px;
+}
+
+/* Reseñas dejadas desde el botón flotante de la demo (ver snippets_canonicos_demos §9) */
+.resenas-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.resena-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+}
+.resena-card--nueva {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.06);
+}
+.resena-stars {
+    color: #F5B301;
+    font-size: 15px;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+.resena-mensaje {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 0 0 6px;
+    white-space: pre-wrap;
+}
+.resena-mensaje.muted {
+    color: var(--text-muted);
+    font-style: italic;
+}
+.resena-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+.resena-nueva-tag {
+    display: inline-block;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    margin-left: 4px;
 }
 
 .propuesta-detail {

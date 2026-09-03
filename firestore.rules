@@ -50,5 +50,12 @@ service cloud.firestore {
     }
     match /completados/{doc}   { allow read, write: if isAdmin(); }
     match /tareas/{doc}        { allow read, write: if isAdmin(); }
+    match /resenas/{doc} {
+      // El botón flotante de cada demo escribe sin login (ver snippets_canonicos_demos §9).
+      allow create: if request.resource.data.keys().hasOnly(['slug', 'negocio', 'rating', 'mensaje', 'url', 'createdAt', 'visto'])
+                    && request.resource.data.slug is string
+                    && (!('mensaje' in request.resource.data) || (request.resource.data.mensaje is string && request.resource.data.mensaje.size() <= 500));
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
