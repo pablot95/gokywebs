@@ -117,7 +117,9 @@ function initTuftGrid() {
   const section = document.querySelector('.tuft-section');
   if (!grid || !section) return;
 
-  const COLORS = ['#FF0000', '#0c0a0a', '#f7f3f1', '#c98a1f', '#7a1414', '#2a2222'];
+  // El grid ahora vive sobre fondo claro (var(--color-bg)) — ningún tono del swatch
+  // puede acercarse al crema del fondo o la celda se vuelve invisible ahí adentro.
+  const COLORS = ['#C1392B', '#C1392B', '#241E1B', '#A9762F', '#7A2E22', '#3A302A'];
   const COLS = 10, ROWS = 6;
   const cells = [];
   for (let r = 0; r < ROWS; r++) {
@@ -222,7 +224,9 @@ function initFeedbackFloat() {
   const backdrop = document.getElementById('feedback-modal-backdrop');
   const closeBtn = document.getElementById('feedback-modal-close');
   const starsWrap = document.getElementById('feedback-stars');
-  const textEl = document.getElementById('feedback-text');
+  const coloresEl = document.getElementById('feedback-colores');
+  const contenidoEl = document.getElementById('feedback-contenido');
+  const otrosEl = document.getElementById('feedback-otros');
   const submitBtn = document.getElementById('feedback-submit');
   if (!btn || !backdrop) return;
 
@@ -241,7 +245,7 @@ function initFeedbackFloat() {
   const open = () => {
     backdrop.hidden = false;
     document.body.classList.add('no-scroll');
-    (stars[0] || textEl)?.focus();
+    (stars[0] || coloresEl)?.focus();
   };
   const close = () => {
     backdrop.hidden = true;
@@ -254,26 +258,30 @@ function initFeedbackFloat() {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !backdrop.hidden) close(); });
 
   submitBtn.addEventListener('click', () => {
-    const mensaje = textEl.value.trim();
-    if (!rating && !mensaje) { textEl.focus(); return; }
+    const colores = coloresEl.value.trim();
+    const contenido = contenidoEl.value.trim();
+    const otros = otrosEl.value.trim();
+    if (!rating && !colores && !contenido && !otros) { coloresEl.focus(); return; }
 
     const slugUrl = (location.pathname.match(/\/demo\/([^/]+)/) || [])[1] || document.title;
     const slug = gkySlugify(slugUrl);
     const negocio = (document.title.split(/\s[—|]\s|\s-\s/)[0] || document.title || '').trim();
     const estrellas = rating ? '⭐'.repeat(rating) + ` (${rating}/5)` : 'Sin calificar';
     const lineas = [
-      `Reseña de la demo${negocio ? ' — ' + negocio : ''}`,
+      `Devolución de la demo${negocio ? ' — ' + negocio : ''}`,
       `Calificación: ${estrellas}`,
-      mensaje ? `Comentario: ${mensaje}` : null,
+      colores ? `Colores: ${colores}` : null,
+      contenido ? `Contenido: ${contenido}` : null,
+      otros ? `Otros: ${otros}` : null,
       location.href
     ].filter(Boolean);
 
     window.open(`https://wa.me/${GKY_FEEDBACK_WHATSAPP}?text=${encodeURIComponent(lineas.join('\n'))}`, '_blank', 'noopener');
-    window.__gkySendResena?.({ slug, negocio, rating: rating || null, mensaje, url: location.href })
-      ?.catch(err => console.warn('No se pudo guardar la reseña en Firestore:', err));
+    window.__gkySendResena?.({ slug, negocio, rating: rating || null, colores, contenido, otros, url: location.href })
+      ?.catch(err => console.warn('No se pudo guardar la devolución en Firestore:', err));
 
     close();
-    rating = 0; paintStars(0); textEl.value = '';
+    rating = 0; paintStars(0); coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
   });
 
   if (reduceMotion) return;
