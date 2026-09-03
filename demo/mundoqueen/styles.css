@@ -192,20 +192,21 @@ body.no-scroll { overflow: hidden; }
 }
 .hero-panel {
   position: relative; overflow: hidden;
-  background: var(--color-magenta); color: var(--color-on-magenta);
+  background: var(--color-bg-soft); color: var(--color-ink);
+  border: 1px solid var(--color-line);
   border-radius: clamp(24px, 4vw, 40px);
   padding: clamp(1.5rem, 3.4vw, 2.8rem);
-  box-shadow: 0 24px 60px rgba(255, 0, 255, .22);
+  box-shadow: 0 20px 48px rgba(23, 17, 26, .07);
 }
 .hero-brillo {
   position: absolute; left: -18%; top: -46%; width: 58%; height: 190%;
   transform: rotate(18deg);
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, .38), rgba(255, 255, 255, 0));
+  background: linear-gradient(90deg, rgba(255, 0, 255, 0), rgba(255, 0, 255, .13), rgba(255, 0, 255, 0));
   pointer-events: none;
 }
 .hero-kicker {
   font: 700 .68rem/1 var(--font-body); letter-spacing: .24em; text-transform: uppercase;
-  color: rgba(26, 0, 24, .72); margin-bottom: .9rem; position: relative;
+  color: var(--color-magenta-text); margin-bottom: .9rem; position: relative;
 }
 .hero-wordmark {
   position: relative;
@@ -213,14 +214,12 @@ body.no-scroll { overflow: hidden; }
   font-size: clamp(2.3rem, 6vw, 4.4rem); line-height: .92; letter-spacing: -.06em;
   margin-bottom: 1rem;
 }
-.hero-wordmark em { display: block; font-style: normal; color: #FFFFFF; padding-left: .04em; }
+.hero-wordmark em { display: block; font-style: normal; color: var(--color-magenta-text); padding-left: .04em; }
 .hero h1 { position: relative; max-width: 20ch; margin-bottom: .8rem; }
-.hero-sub { position: relative; color: rgba(26, 0, 24, .82); max-width: 42ch; margin-bottom: 1.5rem; }
+.hero-sub { position: relative; color: var(--color-ink-muted); max-width: 42ch; margin-bottom: 1.5rem; }
 .hero-cta { position: relative; display: flex; flex-wrap: wrap; gap: .7rem; }
-.hero-panel .btn-primary { background: var(--color-on-magenta); color: #fff; }
-.hero-panel .btn-primary:hover { background: #000; }
-.hero-panel .btn-ghost { border-color: rgba(26, 0, 24, .38); color: var(--color-on-magenta); }
-.hero-panel .btn-ghost:hover { background: rgba(26, 0, 24, .1); border-color: var(--color-on-magenta); color: var(--color-on-magenta); }
+.hero-panel .btn-ghost { border-color: rgba(23, 17, 26, .22); }
+.hero-panel .btn-ghost:hover { border-color: var(--color-magenta-text); color: var(--color-magenta-text); }
 
 .hero-vitrina {
   position: relative;
