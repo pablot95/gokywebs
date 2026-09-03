@@ -1,0 +1,17 @@
+{
+  "banco": "Pexels",
+  "fecha": "2026-09-03",
+  "nota": "10 fotos descargadas. Los archivos pr-* y cat-* son recortes derivados de esas 10 (ver tecnica_recortes_multiproducto_una_foto).",
+  "descargas": [
+    { "id": 24779116, "uso": "hero-modelo, pr-jean-recto-uso", "que": "Persona con remera blanca y jean recto, estudio blanco" },
+    { "id": 4210866,  "uso": "cat-jeans, pr-jean-tiro-alto, pr-jean-rigido-oscuro", "que": "PRODUCTO - pila de jeans doblados sobre estante blanco" },
+    { "id": 1082528,  "uso": "jeans-perchas, pr-jean-recto-claro, pr-jean-recto-oscuro", "que": "PRODUCTO - dos jeans colgados de perchas de madera" },
+    { "id": 18533668, "uso": "flatlay-denim, cat-calzado, pr-jean-wide-claro, pr-jean-mom-medio, pr-jean-skinny-azul, pr-jean-negro, pr-zapatillas-plataforma, pr-zapatillas-urbanas, pr-anteojos-sol", "que": "PRODUCTO - flat lay de jeans, zapatillas y anteojos" },
+    { "id": 16390585, "uso": "pr-campera-clasica, pr-campera-oversize", "que": "PRODUCTO - camperas de jean colgadas" },
+    { "id": 11671964, "uso": "pr-remera-blanca", "que": "PRODUCTO - remera blanca en percha, fondo minimal" },
+    { "id": 31959216, "uso": "cat-accesorios, pr-cinturon-negro, pr-cinturon-marron, pr-cinturon-verde, pr-cinturon-cuero", "que": "PRODUCTO - cuatro cinturones de cuero sobre fondo negro" },
+    { "id": 6275949,  "uso": "denim-detalle, pr-jean-roto", "que": "Denim claro deshilachado, costura naranja" },
+    { "id": 29906028, "uso": "local-perchero", "que": "Perchero con prendas blancas y negras" },
+    { "id": 3595231,  "uso": "editorial-campera, cat-indumentaria", "que": "Persona con campera de jean contra pared blanca" }
+  ]
+}
