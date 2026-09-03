@@ -2731,6 +2731,25 @@ function slugNegocio(nombre) {
         .replace(/[^a-z0-9]/g, "");
 }
 
+/* El bot re-ofrece el link de /form/ (completar datos → primera propuesta) cada vez
+   que cotiza un precio, con más de 10 variantes de texto distintas según cuándo se
+   armó la charla (ver wabot/lib.php: $linksViejos, $prediseñoLinkVariantesDefault,
+   $prediseñoLinkViejas) — por eso el filtro no busca una frase exacta, busca el link
+   en sí, que es lo único que no cambió nunca: siempre gokywebs.com/form/?c=<código>.
+   Es puro relleno para el brief, y puede repetirse varias veces en una charla larga.
+   Distinto del link de gokywebs.com/presupuestos/<tipo> (detalle de precio, en el
+   MISMO mensaje donde el bot dice qué tipo y precio cotizó) — ese sí queda, tiene
+   información real. Solo toca el texto que arma "Copiar"; chat_completo en Firestore
+   no se toca. */
+function limpiarChatBoilerplate(chat) {
+    if (!chat) return chat;
+    const mensajes = chat.split(/(?=^\d{2}\/\d{2} \d{2}:\d{2} (?:Cliente|Bot|Vos): )/m);
+    return mensajes
+        .filter(m => !(/^\d{2}\/\d{2} \d{2}:\d{2} Bot: /.test(m) && /gokywebs\.com\/form/i.test(m)))
+        .join("")
+        .trim();
+}
+
 function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const { nombreNegocio } = getPropuestaNegocioFields(p);
@@ -2757,7 +2776,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
 
     // La charla completa va al final, después de los campos: primero lo
     // resumido (que es lo que se usa siempre) y abajo el respaldo textual.
-    const chat = cleanFieldValue(p.chat_completo || "");
+    const chat = limpiarChatBoilerplate(cleanFieldValue(p.chat_completo || ""));
     const bloqueChat = chat
         ? `\n\nAcá está el chat con el cliente, por si algún dato del brief quedó corto:\n\n${chat}\n`
         : "";
