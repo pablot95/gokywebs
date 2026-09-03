@@ -1245,7 +1245,7 @@ async function renderResenasEnModal(clientId) {
 
     const sinVer = lista.filter(r => !r.visto).length;
     section.style.display = "";
-    if (summary) summary.textContent = `⭐ Reseñas de esta demo (${lista.length}${sinVer ? `, ${sinVer} nueva${sinVer > 1 ? "s" : ""}` : ""})`;
+    if (summary) summary.textContent = `⭐ Devoluciones de esta demo (${lista.length}${sinVer ? `, ${sinVer} nueva${sinVer > 1 ? "s" : ""}` : ""})`;
     section.querySelector("details")?.toggleAttribute("open", sinVer > 0);
 
     body.innerHTML = lista.map(r => {
@@ -1253,10 +1253,18 @@ async function renderResenasEnModal(clientId) {
         const fecha = r.createdAt?.toDate
             ? r.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
             : "";
+        const campos = [
+            r.colores   ? { label: "Colores",   texto: r.colores } : null,
+            r.contenido ? { label: "Contenido", texto: r.contenido } : null,
+            r.otros     ? { label: "Otros",     texto: r.otros } : null,
+        ].filter(Boolean);
+        const camposHTML = campos.length
+            ? campos.map(f => `<p class="resena-mensaje"><strong>${f.label}:</strong> ${escapeHtml(f.texto)}</p>`).join("")
+            : `<p class="resena-mensaje muted">Solo calificación, sin comentario.</p>`;
         return `
             <div class="resena-card${r.visto ? "" : " resena-card--nueva"}">
                 ${estrellas ? `<div class="resena-stars">${estrellas}</div>` : ""}
-                <p class="resena-mensaje${r.mensaje ? "" : " muted"}">${r.mensaje ? escapeHtml(r.mensaje) : "Sin comentario, solo calificación."}</p>
+                ${camposHTML}
                 <div class="resena-meta">${escapeHtml(fecha)}${!r.visto ? ' <span class="resena-nueva-tag">Nueva</span>' : ""}</div>
             </div>`;
     }).join("");

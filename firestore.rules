@@ -51,10 +51,12 @@ service cloud.firestore {
     match /completados/{doc}   { allow read, write: if isAdmin(); }
     match /tareas/{doc}        { allow read, write: if isAdmin(); }
     match /resenas/{doc} {
-      // El botón flotante de cada demo escribe sin login (ver snippets_canonicos_demos §9).
-      allow create: if request.resource.data.keys().hasOnly(['slug', 'negocio', 'rating', 'mensaje', 'url', 'createdAt', 'visto'])
+      // La barra de devolución de cada demo escribe sin login (ver snippets_canonicos_demos §9).
+      allow create: if request.resource.data.keys().hasOnly(['slug', 'negocio', 'rating', 'colores', 'contenido', 'otros', 'url', 'createdAt', 'visto'])
                     && request.resource.data.slug is string
-                    && (!('mensaje' in request.resource.data) || (request.resource.data.mensaje is string && request.resource.data.mensaje.size() <= 500));
+                    && (!('colores' in request.resource.data) || (request.resource.data.colores is string && request.resource.data.colores.size() <= 300))
+                    && (!('contenido' in request.resource.data) || (request.resource.data.contenido is string && request.resource.data.contenido.size() <= 300))
+                    && (!('otros' in request.resource.data) || (request.resource.data.otros is string && request.resource.data.otros.size() <= 300));
       allow read, update, delete: if isAdmin();
     }
   }
