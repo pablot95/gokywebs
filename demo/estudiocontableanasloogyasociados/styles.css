@@ -541,7 +541,8 @@ button { font: inherit; color: inherit; }
 .pie .marca-nombre { color: var(--color-papel); font-size: clamp(1.7rem, 3.2vw, 2.2rem); }
 .pie .marca-pie { color: var(--color-text-claro); }
 .pie-links li, .pie-datos li { font-size: .9rem; color: var(--color-text-claro); }
-.pie-links a, .pie-datos a, .pie-datos li { display: inline-flex; align-items: center; min-height: 44px; }
+.pie-links a, .pie-datos a { display: inline-flex; align-items: center; min-height: 44px; }
+.pie-datos li { display: flex; align-items: center; min-height: 44px; }
 .pie-links a:hover, .pie-datos a:hover { color: var(--color-secondary); }
 .pie-abajo {
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
