@@ -297,7 +297,7 @@ function initFeedbackFloat() {
     window.__gkySendResena?.({ slug, negocio, rating: rating || null, colores, contenido, otros, url: location.href })
       ?.catch(err => console.warn('No se pudo guardar la devolución en Firestore:', err));
 
-    if (typeof showToast === 'function') showToast('¡Gracias por tu devolución!'); else alert('¡Gracias por tu devolución!');
+    if (typeof showToast === 'function') showToast('¡Gracias por tu devolución!'); else window.alert('¡Gracias por tu devolución!');
     close();
     rating = 0; paintStars(0); coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
   });
