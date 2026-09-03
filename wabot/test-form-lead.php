@@ -88,6 +88,43 @@ caso('sin WhatsApp no se acepta: el boceto llegaría sin destinatario',
         'resumen' => 'Diseño de interiores', 'colores' => 'verde']) === null);
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 
+/* Y en WhatsApp igual: el código manda sobre el teléfono tipeado. Cuidar+ y
+ * Distribuidora Lionel se llevaron dos bocetos cada uno el 3-sep porque el
+ * número que el cliente escribe ("1167134135") no es la clave con la que
+ * WhatsApp guarda la charla ("5491167134135"): el formulario abría una segunda
+ * conversación, fantasma, y el chat cerraba después la suya. */
+$claveWsp = '5491167134135';
+$idxPrevio = @file_get_contents($idxPath);
+file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(), ['K8' => $claveWsp])));
+$mismoNumero = ['c' => 'K8', 't' => '1167134135', 'nombre' => 'Silvia', 'nombre_negocio' => 'Cuidar+',
+    'resumen' => 'Cuidados a domicilio', 'colores' => 'crema y verde'];
+$datosWsp = wabot_form_lead_validar($mismoNumero);
+caso('el mismo número escrito sin el 549 no abre otra conversación',
+    is_array($datosWsp) && $datosWsp['clave'] === $claveWsp);
+caso('y no se guarda como WhatsApp aparte: es el número del chat, no una corrección',
+    is_array($datosWsp) && $datosWsp['telWsp'] === '');
+$corregido = array_merge($mismoNumero, ['t' => '3814002001']);
+$datosCorr = wabot_form_lead_validar($corregido);
+caso('un número de OTRO abonado sigue siendo una corrección, no una clave nueva',
+    is_array($datosCorr) && $datosCorr['clave'] === $claveWsp && $datosCorr['telWsp'] === '3814002001');
+if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
+
+/* Sin código —el formulario abierto a mano— el número tipeado es lo único que
+ * hay, pero si ya existe la charla de ese abonado el boceto va ahí. */
+@unlink(WABOT_DATA . '/conv/5493810004001.json');
+caso('sin código y sin charla previa, la clave es lo que tipeó',
+    (wabot_form_lead_validar(['t' => '3810004001', 'nombre' => 'Ana', 'nombre_negocio' => 'B',
+        'resumen' => 'C', 'colores' => 'D'])['clave'] ?? '') === '3810004001');
+wabot_conv_save(wabot_conv_load('5493810004001'));
+caso('sin código pero con la charla ya abierta, cae en la charla',
+    (wabot_form_lead_validar(['t' => '3810004001', 'nombre' => 'Ana', 'nombre_negocio' => 'B',
+        'resumen' => 'C', 'colores' => 'D'])['clave'] ?? '') === '5493810004001');
+@unlink(WABOT_DATA . '/conv/5493810004001.json');
+
+caso('mismo abonado escrito de las dos formas', wabot_mismo_abonado('1167134135', '5491167134135'));
+caso('con el 15 del medio también', wabot_mismo_abonado('3814002001', '5493814002001'));
+caso('dos números distintos no se confunden', !wabot_mismo_abonado('1167134135', '5493814002001'));
+
 echo "— wabot_form_lead_procesar(): validación —\n";
 
 caso('rechaza sin teléfono válido',

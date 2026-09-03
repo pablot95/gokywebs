@@ -3349,6 +3349,21 @@ function wabot_tel_abonados($tel) {
     return array_keys($abonados);
 }
 
+/**
+ * ¿Son el mismo abonado dos números escritos distinto?
+ *
+ * "1167134135" es como lo escribe el cliente y "5491167134135" como lo guarda
+ * WhatsApp: es el mismo teléfono. Compara por los últimos 8 dígitos, igual que
+ * wabot_conv_resolver(). No sirve para claves de Instagram (el IGSID no es un
+ * número de nadie): ahí la comparación no tiene sentido y quien llama la evita.
+ */
+function wabot_mismo_abonado($a, $b) {
+    $unos = wabot_tel_abonados($a);
+    $otros = wabot_tel_abonados($b);
+    if (!$unos || !$otros) return false;
+    return (bool)array_intersect($unos, $otros);
+}
+
 function wabot_conv_resolver($tel, &$motivo = null) {
     $motivo = null;
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$tel);
@@ -6896,7 +6911,9 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
 function wabot_form_lead_validar($payload) {
     // El link que manda el bot trae el codigo corto (?c=), no el telefono: se
     // resuelve contra el indice para saber de que conversacion se trata. El
-    // formulario abierto a mano sigue mandando el telefono tipeado (?t=).
+    // formulario abierto a mano no trae codigo y lo unico que hay es el
+    // telefono que el cliente tipea, que el form manda SIEMPRE (el campo se
+    // oculta, no se vacia: puede venir de un borrador o de "Corregir").
     $codigo = wabot_codigo_normalizar($payload['c'] ?? '');
     $telTipeado = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
     $telValido = strlen($telTipeado) >= 10 && strlen($telTipeado) <= 15;
@@ -6909,18 +6926,33 @@ function wabot_form_lead_validar($payload) {
     $esInstagram = $claveCodigo !== '' && stripos($claveCodigo, 'ig') === 0;
 
     $telWsp = '';
-    if ($esInstagram) {
-        /* La charla sigue siendo la de Instagram: el telefono que tipea es un
-         * dato NUEVO (por donde mandarle la demo), no una correccion de la
-         * clave. Cambiarsela perderia el hilo del DM. */
+    if ($claveCodigo !== '') {
+        /* El codigo identifica la CHARLA, y esa es siempre la clave. Lo que el
+         * cliente tipea es por donde mandarle la demo, nunca otra conversacion.
+         *
+         * Antes el telefono tipeado le ganaba al codigo, y como el cliente
+         * escribe su numero como lo dice ("1167134135") y WhatsApp lo guarda
+         * con el 549 adelante ("5491167134135"), el formulario abria una charla
+         * fantasma: el mismo cliente con dos claves, cada una con su propio
+         * boceto. Cuidar+ y Distribuidora Lionel se llevaron dos cada uno
+         * (3-sep), y en el chat el bot siguio pidiendo los datos que el
+         * formulario ya tenia, porque ese lead_creado cayo en la otra clave.
+         *
+         * De Instagram no sale ningun telefono: sin el, el boceto llega sin
+         * destinatario y la muestra no se puede entregar. */
         $clave = $claveCodigo;
-        if (!$telValido) return null;   // sin WhatsApp el boceto no tiene a donde ir
-        $telWsp = $telTipeado;
+        if ($esInstagram && !$telValido) return null;
+        /* Solo si es OTRO abonado. En Instagram siempre lo es: el IGSID no es
+         * un numero, asi que ni se compara. */
+        if ($telValido && ($esInstagram || !wabot_mismo_abonado($telTipeado, $claveCodigo))) {
+            $telWsp = $telTipeado;
+        }
     } else {
-        // Un telefono tipeado gana sobre el codigo: si el cliente toco "Corregir"
-        // es porque el numero del que le escribimos NO es el suyo.
-        $clave = $telValido ? $telTipeado : $claveCodigo;
-        if (strlen($clave) < 10 || strlen($clave) > 15) return null;
+        /* Formulario abierto a mano: no hay codigo, el unico dato es lo que
+         * tipeo. Si ya existe una charla de ese abonado, el boceto va ahi
+         * aunque el numero este escrito de otra forma. */
+        if (!$telValido) return null;
+        $clave = wabot_conv_resolver($telTipeado) ?: $telTipeado;
     }
 
     $nombre = trim((string)($payload['nombre'] ?? ''));
@@ -6953,8 +6985,9 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if (empty($conv['tel'])) $conv['tel'] = $clave;
     if (empty($conv['channel_user_id'])) $conv['channel_user_id'] = $clave;
     if (empty($conv['conversation_key'])) $conv['conversation_key'] = $clave;
-    /* El WhatsApp que dejó un lead de Instagram: es por donde se le entrega la
-     * demo y por donde el panel lo encuentra (ver wabot_conv_wsp_crudo). */
+    /* El WhatsApp que dejó un lead de Instagram —o el número que el cliente de
+     * WhatsApp corrigió porque el del chat no es el suyo—: es por donde se le
+     * entrega la demo y por donde el panel lo encuentra (wabot_conv_wsp_crudo). */
     if ($telWsp !== '') $conv['telefono_wsp'] = $telWsp;
 
     $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
@@ -6967,8 +7000,12 @@ function wabot_form_lead_procesar($payload, $cfg) {
     $conv['colores'] = $colores;
 
     if (empty($conv['form_completado_ts'])) {
+        /* El número corregido va en la línea del transcript porque en una charla
+         * de WhatsApp el panel muestra el del chat, no el telefono_wsp: sin esto
+         * la corrección quedaba guardada donde nadie la ve. */
+        $lineaWsp = $telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : '';
         wabot_conv_transcript($conv, 'sistema',
-            "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}");
+            "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}{$lineaWsp}");
         // Aviso a Pablo de que entró un formulario nuevo, para que lo pueda ver
         // sin tener que estar mirando el panel. Fire-and-forget: si Meta lo
         // rechaza (por ejemplo porque ese número no le escribió al bot en las
