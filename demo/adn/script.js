@@ -10,6 +10,19 @@ if (typeof ScrollTrigger !== 'undefined') {
   window.addEventListener('load', () => ScrollTrigger.refresh());
 }
 
+/* ===== Toast (snippet canónico §2) ===== */
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function showToast(msg) {
+  let wrap = document.querySelector('.toast-wrap');
+  if (!wrap) { wrap = document.createElement('div'); wrap.className = 'toast-wrap'; wrap.setAttribute('aria-live', 'polite'); document.body.appendChild(wrap); }
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.setAttribute('role', 'status');
+  toast.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg><span>${esc(msg)}</span>`;
+  wrap.appendChild(toast);
+  setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 220); }, 3200);
+}
+
 /* ===== Anti-copia ===== */
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('dragstart', e => e.preventDefault());
@@ -266,7 +279,11 @@ function initFeedbackFloat() {
     const slugUrl = (location.pathname.match(/\/demo\/([^/]+)/) || [])[1] || document.title;
     const slug = gkySlugify(slugUrl);
     const negocio = (document.title.split(/\s[—|]\s|\s-\s/)[0] || document.title || '').trim();
-    const estrellas = rating ? '⭐'.repeat(rating) + ` (${rating}/5)` : 'Sin calificar';
+    // "★"/"☆" (U+2605/2606), no el emoji "⭐" (U+2B50): el emoji llegaba
+    // roto (mojibake) por WhatsApp en pruebas reales — estos dos son texto
+    // Unicode viejo, mucho más compatible, y son los mismos que ya usa el
+    // admin para pintar la calificación.
+    const estrellas = rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) + ` (${rating}/5)` : 'Sin calificar';
     const lineas = [
       `Devolución de la demo${negocio ? ' — ' + negocio : ''}`,
       `Calificación: ${estrellas}`,
@@ -280,6 +297,7 @@ function initFeedbackFloat() {
     window.__gkySendResena?.({ slug, negocio, rating: rating || null, colores, contenido, otros, url: location.href })
       ?.catch(err => console.warn('No se pudo guardar la devolución en Firestore:', err));
 
+    if (typeof showToast === 'function') showToast('¡Gracias por tu devolución!'); else alert('¡Gracias por tu devolución!');
     close();
     rating = 0; paintStars(0); coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
   });
