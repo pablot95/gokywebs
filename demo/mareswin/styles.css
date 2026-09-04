@@ -116,7 +116,7 @@ h3{font-size:var(--fs-h3)}
 .chip.is-on{background:var(--color-deep);color:var(--color-cyan);border-color:var(--color-deep)}
 
 /* ---------- HEADER (barra full-width integrada al hero) ---------- */
-.site-header{position:relative;z-index:15;background:var(--color-cyan)}
+.site-header{position:relative;z-index:15;background:var(--color-bg-alt);border-bottom:1px solid var(--color-line)}
 .header-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-block:.9rem}
 .brand{position:relative;z-index:100;display:block;line-height:.9;color:var(--color-deep)}
 .brand-mare,.brand-swin{font-family:var(--font-display);font-weight:700;font-size:clamp(1.5rem,3vw,2.3rem);letter-spacing:-.03em}
@@ -152,7 +152,7 @@ h3{font-size:var(--fs-h3)}
 body.no-scroll{overflow:hidden}
 
 /* ---------- HERO ---------- */
-.hero{position:relative;background:var(--color-cyan);padding-block:clamp(1rem,3vw,2.2rem) clamp(3rem,6vw,5rem);overflow:hidden}
+.hero{position:relative;background:linear-gradient(180deg,var(--color-bg-alt) 58%,#E4FDFF 100%);padding-block:clamp(1rem,3vw,2.2rem) clamp(3rem,6vw,5rem);overflow:hidden}
 .hero-grid{
   position:relative;display:grid;
   grid-template-columns:minmax(0,1.05fr) minmax(0,.52fr) minmax(0,.43fr);
@@ -184,7 +184,7 @@ body.no-scroll{overflow:hidden}
 .hero-foto-a{aspect-ratio:4/5}
 .hero-foto-b{aspect-ratio:3/4;margin-bottom:clamp(1rem,4vw,3rem)}
 .hero-azulejo{
-  position:absolute;inset:auto -10% -18% 30%;height:60%;z-index:1;opacity:.5;pointer-events:none;
+  position:absolute;inset:auto -10% -18% 30%;height:60%;z-index:1;opacity:.38;pointer-events:none;
   background-image:linear-gradient(rgba(8,35,74,.14) 2px,transparent 2px),linear-gradient(90deg,rgba(8,35,74,.14) 2px,transparent 2px);
   background-size:46px 46px;
   -webkit-mask-image:radial-gradient(ellipse at 50% 100%,#000 20%,transparent 72%);
@@ -203,7 +203,7 @@ body.no-scroll{overflow:hidden}
 
 .ola-sep{line-height:0;position:relative;z-index:1}
 .ola-sep svg{display:block;width:100%;height:clamp(36px,4.6vw,68px)}
-.ola-sep-cyan{background:var(--color-cyan)}
+.ola-sep-cyan{background:#E4FDFF}
 .ola-sep-cyan svg path{fill:var(--color-bg)}
 .ola-sep-deep svg path{fill:var(--color-bg)}
 
