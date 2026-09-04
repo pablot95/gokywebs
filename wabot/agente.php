@@ -139,9 +139,21 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
      * duda es el ORDEN, no el monto: contestarle la seña y las cuotas es
      * contestar otra cosa (el techista, 29-ago). Determinista y antes del
      * modelo, porque acá el modelo se inventó las condiciones. */
+    /* "¿Cuánto es la seña?" ANTES de la demo. El monto no sale (Pablo, 3-sep),
+     * pero dejar la pregunta sin contestar es el error 4 de su propia lista: la
+     * respuesta dice qué pasa —una parte para arrancar, el resto al entregar— y
+     * cuándo va a saber el número. Después de la demo esto no corre: ahí el
+     * monto lo dan postdemo_transferencia y postdemo_tarjeta. */
+    if (empty($conv['presentado_ts']) && wabot_texto_pregunta_cuanto_anticipo($mensaje)) {
+        wabot_evento_sesion($conv, 'pregunta_anticipo_pre_demo');
+        return [wabot_texto_sin_sena((string)($cfg['pago_cuanto_anticipo']
+            ?? 'Para arrancar se deja una parte y el saldo lo pagás al entregarte la web terminada. El monto exacto te lo pasamos cuando veas la demo y quieras avanzar, así no te comprometés con nada antes de verla.'))];
+    }
+
     if (empty($conv['presentado_ts']) && wabot_texto_pregunta_cuando_se_paga($mensaje)) {
         wabot_evento_sesion($conv, 'pago_antes_o_despues');
-        return [(string)($cfg['pago_antes_o_despues'] ?? 'La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona la seña para arrancar. El saldo lo pagás al entregarte la web terminada.')];
+        // Sin nombrar la seña: es un texto previo a la demo (Pablo, 3-sep).
+        return [wabot_texto_sin_sena((string)($cfg['pago_antes_o_despues'] ?? 'La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar con la web se abona una parte para arrancar. El saldo lo pagás al entregarte la web terminada.'))];
     }
 
     /* El teclado apretado al azar. Tres veces le contestamos la misma pregunta

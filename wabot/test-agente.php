@@ -681,7 +681,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 };
 $r = wabot_engine('y cuánto tarda?', $c, $cfg);
 caso('una duda antes del WhatsApp se contesta sin cerrar ni comerse el pedido',
-    $r === [$cfg['info']['plazos'], wabot_sistema_whatsapp_texto($cfg)] && $c['fase'] === 'sistema_wsp'
+    $r === [wabot_texto_info('plazos', $cfg), wabot_sistema_whatsapp_texto($cfg)] && $c['fase'] === 'sistema_wsp'
     && empty($c['telefono_wsp']) && empty($c['sistema_lead_creado']));
 $r = wabot_agente_intento('11 2506-8578', $c, $cfg);
 caso('al recibir un celular real retoma el cierre del sistema de Instagram',
@@ -806,7 +806,7 @@ echo "— Cómo trabajamos, disponible como herramienta —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'proceso'], $c, $cfg);
-caso('proceso devuelve el paso a paso oficial', $r['texto'] === $cfg['info']['proceso']);
+caso('proceso devuelve el paso a paso oficial, ya sin nombrar la sena', $r['texto'] === wabot_texto_info('proceso', $cfg));
 caso('sin revelar el monto de la seña', strpos($r['texto'], '$') === false);
 caso('y no cambia la fase de la charla', $c['fase'] === 'nuevo');
 

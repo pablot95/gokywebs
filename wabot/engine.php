@@ -1801,6 +1801,31 @@ function wabot_plazo_humano($dias) {
  * Solo cuenta como esta pregunta si nombra el ANTES/DESPUÉS o el orden. Un
  * "cómo se paga" pelado sigue siendo consultar_info('pago'), que ya funciona.
  */
+/**
+ * "¿Cuánto es la seña?" / "¿cuánto hay que dejar para arrancar?"
+ *
+ * Pregunta por el MONTO del anticipo, no por el orden del pago ni por los
+ * medios. Desde el 3-sep ese número no sale antes de la demo, así que la
+ * pregunta necesita su propia respuesta: sin ella el cliente se lleva los
+ * medios de pago, que no es lo que preguntó.
+ *
+ * Igual que el resto de los matchers, exige forma de PREGUNTA además del tema:
+ * "ya te hice la seña" es un aviso de pago y lo toma otro camino
+ * ([[tecnica_wabot_matcher_rubro_vs_pregunta]]).
+ */
+function wabot_texto_pregunta_cuanto_anticipo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 180) return false;
+    // Avisar que ya pagó no es preguntar cuánto.
+    if (preg_match('/\b(ya |te )?(hice|realice|mande|envie|deposite|pague|abone|transferi)\b/u', $t)) return false;
+    if (preg_match('/\b(mantenimiento|mensual\w*|por mes|todos los meses|cada mes|abono)\b/u', $t)) return false;
+    $monto = '\b(cuanto|cuanta|que monto|de cuanto|cual es)\b';
+    $cosa  = '\b(sena|senia|anticipo|adelanto|deposito|entrega inicial|para arrancar|para empezar|por adelantado)\b';
+    if (!preg_match('/' . $cosa . '/u', $t)) return false;
+    return (bool)(preg_match('/' . $monto . '/u', $t)
+        || preg_match('/\b(hay que|tengo que|debo|se deja|se necesita)\b.{0,25}\b(dejar|poner|adelantar|depositar|pagar)\b/u', $t));
+}
+
 function wabot_texto_pregunta_cuando_se_paga($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
@@ -3863,7 +3888,14 @@ function wabot_texto_info($clave, $cfg) {
             $texto = str_replace(['{min}', '{max}'], [$r['min'], $r['max']], $texto);
         }
     }
-    return $texto;
+    /* Último de la cadena: ningún texto de info nombra la seña (Pablo, 3-sep).
+     * Va acá porque es el embudo único de todo lo que sale de `info.*`, que es
+     * justo lo que Pablo edita desde el panel: así también queda cubierta la
+     * redacción que escriba mañana. `proceso` y `plazos` la nombraban sin
+     * monto, `pago_sin_precio` con monto. Los textos del cobro
+     * (postdemo_transferencia, postdemo_tarjeta) no son claves de info y no
+     * pasan por acá: ahí la seña se pide completa, que es cuando corresponde. */
+    return wabot_texto_sin_sena($texto);
 }
 
 /** El precio más bajo y el más alto de la lista de tipos, como "$160.000". */
@@ -3910,17 +3942,12 @@ function wabot_texto_pago_generico($cfg) {
         if ($sena === '') continue;
         $grupos[$sena][] = mb_strtolower((string)($d['label'] ?? $tipo));
     }
-    if (!$grupos) return trim((string)($cfg['info']['pago_generico'] ?? ''));
-    uksort($grupos, function ($a, $b) { return wabot_monto_a_numero($a) <=> wabot_monto_a_numero($b); });
-    $partes = [];
-    foreach ($grupos as $sena => $labels) {
-        $lista = count($labels) > 1
-            ? implode(', ', array_slice($labels, 0, -1)) . ' y ' . end($labels)
-            : $labels[0];
-        $partes[] = "$sena en $lista";
-    }
-    return 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una seña ('
-        . implode(', ', $partes) . ') y el saldo al entregar la web.';
+    if (!$grupos) return wabot_texto_sin_sena(trim((string)($cfg['info']['pago_generico'] ?? '')));
+    /* La enumeración de señas por tipo se retiró el 3-sep: antes de la demo no
+     * se nombra ni la palabra ni el monto (Pablo). Los $grupos se siguen
+     * calculando porque son los que dicen si hay algo que cobrar; lo que ya no
+     * sale es la lista. El monto lo pide postdemo_transferencia cuando toca. */
+    return 'Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. Para arrancar se deja una parte y el saldo al entregar la web.';
 }
 
 /** Hosting: responde también qué pasa al terminar el primer año incluido. */
@@ -3933,28 +3960,48 @@ function wabot_texto_hosting($conv, $cfg) {
 }
 
 /**
- * El monto de la seña no puede faltar, escriba lo que escriba el panel.
+ * Antes de la demo el bot NO nombra la seña. Ni la palabra, ni el monto.
  *
- * En producción el texto de `info.pago` había quedado en una sola línea —"Se
- * puede abonar por transferencia o con tarjeta hasta en 12 cuotas con
- * interés"— sin la seña, sin el saldo y sin los {marcadores}. O sea que a
- * "¿cómo se paga?" el bot contestaba sin decir cuánto hay que poner para
- * arrancar. **Ahí nació el 50/50 del 29-ago**: la herramienta le devolvió al
- * modelo un texto sin ningún monto, y el modelo lo completó inventando "una
- * seña del 50% y el 50% restante al terminar".
+ * Pablo, 3-sep-2026, viendo lo que salía: "no, no tiene que mencionar la seña!".
+ * La seña es del momento de cobrar —después de que vio la demo y quiere
+ * avanzar— y ahí la piden `postdemo_transferencia` y `postdemo_tarjeta`, que no
+ * pasan por acá. Antes de eso se dice lo mismo sin nombrarla: se abona una
+ * parte para arrancar y el saldo al entregar la web.
  *
- * El texto del panel decide el TONO; los números los pone el código.
+ * Acá vivía `wabot_pago_asegurar_sena()`, que hacía lo CONTRARIO: le pegaba el
+ * monto a cualquier texto que no lo tuviera. Se escribió el 29-ago porque
+ * `info.pago` había quedado sin ningún monto y el modelo lo completó inventando
+ * "una seña del 50% y el 50% restante al terminar". Pero ese texto sin monto
+ * era la edición deliberada de Pablo, y la función se la pisaba en cada
+ * respuesta. Contra la invención sigue estando `wabot_texto_inventa_pago()`
+ * (agente.php), que corta los porcentajes y las condiciones dichas de memoria
+ * — que es el guard que de verdad corresponde a ese problema.
+ *
+ * Limpia por CONTENIDO y no por lista de textos viejos: `info.*` lo edita Pablo
+ * desde el panel, así que producción siempre tiene una redacción que no está en
+ * ninguna lista (misma razón que `wabot_frase_retirada()`). Y SUSTITUYE en vez
+ * de borrar: la condición comercial —una parte al arrancar, el resto al
+ * entregar— se sigue diciendo; lo que desaparece es la palabra y el número.
  */
-function wabot_pago_asegurar_sena($texto, $sena) {
-    $t = trim((string)$texto);
-    $sena = trim((string)$sena);
-    if ($sena === '') return $t;
-    if (mb_stripos($t, $sena) !== false) return $t;   // ya lo dice
+function wabot_texto_sin_sena($texto) {
+    $t = (string)$texto;
+    if ($t === '' || !preg_match('/se[ñn]a|senia/iu', $t)) return $t;
 
-    $frase = 'Para arrancar se deja una seña de ' . $sena . ' y el saldo al entregar la web.';
-    if ($t === '') return $frase;
-    if (!preg_match('/[.!?]$/u', $t)) $t .= '.';
-    return $t . ' ' . $frase;
+    // "en unos 7 días desde la seña y la entrega del contenido" → "desde que arrancamos"
+    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde que arrancamos', $t);
+    // "la seña es de $40.000" / "la seña de {sena}" (con monto, entre paréntesis o no)
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+(\{sena\}|\$\s?[\d.,]+)/iu', 'una parte', $t);
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s*\([^)]*\)/iu', 'una parte', $t);
+    // Y la mención pelada, sin monto: "se abona una seña", "se deja la seña".
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'una parte', $t);
+    $t = preg_replace('/\bse[ñn]a\b/iu', 'parte', $t);
+
+    /* "se deja una parte de" queda colgando si el monto venía con otra forma
+     * que las de arriba; y "una parte para arrancar y el saldo" es redundante
+     * cuando la oración ya arranca con "Para arrancar". */
+    $t = preg_replace('/\buna parte\s+de\s*(?=[.,;]|$)/iu', 'una parte', $t);
+    $t = preg_replace('/\bPara arrancar\b(.{0,30}?)\buna parte para arrancar\b/iu', 'Para arrancar$1una parte', $t);
+    return trim(preg_replace('/\s{2,}/u', ' ', $t));
 }
 
 function wabot_texto_pago($conv, $cfg) {
@@ -3964,31 +4011,34 @@ function wabot_texto_pago($conv, $cfg) {
     if ($sena === '') {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una seña y el saldo al entregar la web.';
+        return 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés. Para arrancar se deja una parte y el saldo al entregar la web.';
     }
+    /* {sena} se resuelve VACÍO, igual que los marcadores de cuota: antes de la
+     * demo el monto no sale (Pablo, 3-sep). Si el texto del panel todavía lo
+     * trae, wabot_texto_sin_sena() se lleva la frase entera. */
     if (empty($conv['precio_dado'])) {
         $sinPrecio = trim((string)($cfg['info']['pago_sin_precio'] ?? ''));
         if ($sinPrecio === '') return wabot_texto_pago_generico($cfg);
-        return wabot_pago_asegurar_sena(str_replace('{sena}', $sena, $sinPrecio), $sena);
+        return wabot_texto_sin_sena(str_replace('{sena}', '', $sinPrecio));
     }
     if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) > 0) {
         $d = wabot_catalogo_total((int)$conv['productos_cantidad'], $cfg);
         $plantillaCat = (string)($cfg['info']['pago_catalogo']
-            ?? "El total cotizado es {precio}. Se abona por transferencia, con una seña de {sena} para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.");
-        return wabot_pago_asegurar_sena(
-            str_replace(['{precio}', '{sena}'], [wabot_moneda($d['total']), $sena], $plantillaCat), $sena);
+            ?? "El total cotizado es {precio}. Se abona por transferencia, con una parte para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.");
+        return wabot_texto_sin_sena(
+            str_replace(['{precio}', '{sena}'], [wabot_moneda($d['total']), ''], $plantillaCat));
     }
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
      * cuota (Pablo, 2-sep). Si quedó alguno en un texto editado a mano, sale
      * la frase sin el número en vez de un {cuotas_12} crudo. */
     $texto = str_replace(
         ['{precio}', '{sena}', '{cuotas_12}', '{cuotas_6}', '{cuotas_3}'],
-        [(string)($datosTipo['precio'] ?? ''), $sena, '', '', ''],
+        [(string)($datosTipo['precio'] ?? ''), '', '', '', ''],
         (string)($cfg['info']['pago'] ?? '')
     );
     $texto = preg_replace('/:?\s*12 cuotas de\s*,?\s*6 de\s*,?\s*(o\s*)?3 de\s*/u', '', $texto);
     $texto = trim(preg_replace('/\s{2,}/u', ' ', $texto));
-    return wabot_pago_asegurar_sena($texto, $sena);
+    return wabot_texto_sin_sena($texto);
 }
 
 /** Elige una variante estable por conversación; precios y links siguen exactos. */

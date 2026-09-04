@@ -88,24 +88,29 @@ clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('se puede pagar en cuotas?', $c, $cfg);
 caso('pregunta de info en el primer mensaje → responde y suma el menú',
     count($r) === 2 && $r[0] === wabot_texto_pago_generico($cfg) && $r[1] === $cfg['menu'] && $c['fase'] === 'menu');
-caso('sin tipo cotizado, la seña sale genérica: menciona los montos reales de cada grupo',
-    strpos($r[0], '$40.000') !== false && strpos($r[0], '$60.000') !== false);
+/* 3-sep: antes de la demo NO se nombra la seña ni su monto (Pablo: "no tiene
+ * que mencionar la seña!"). Estos casos afirmaban lo contrario —que el texto
+ * genérico enumerara $40.000/$60.000 por tipo— y se invierten, no se
+ * restauran. El monto se pide después de la demo, en postdemo_transferencia. */
+caso('sin tipo cotizado, NO sale ningún monto de seña',
+    strpos($r[0], '$40.000') === false && strpos($r[0], '$60.000') === false);
+caso('ni la palabra', stripos($r[0], 'seña') === false && stripos($r[0], 'sena') === false);
 
-echo "— pago_generico se calcula en vivo (agrupado por seña real), no queda un texto fijo con montos viejos —\n";
+echo "— pago_generico: los medios de pago, sin la seña ni su monto (3-sep) —\n";
 
 $pagoGenerico = wabot_texto_pago_generico($cfg);
-caso('ya no cita los montos viejos $60.000/$80.000/$90.000 como si fueran actuales',
-    strpos($pagoGenerico, '$80.000') === false && strpos($pagoGenerico, '$90.000') === false);
+caso('no cita ningún monto de seña', !preg_match('/\$\s?\d/u', $pagoGenerico));
 caso('deja explícito que se puede pagar en un solo pago', strpos($pagoGenerico, 'en un pago o hasta en 12 cuotas') !== false);
-caso('agrupa por seña real y solo nombra los tipos vigentes',
-    stripos($pagoGenerico, '$40.000 en sitio profesional') !== false
-    && stripos($pagoGenerico, 'turnos') === false && stripos($pagoGenerico, 'lms') === false);
-caso('y agrupa inmobiliaria/ecommerce/elearning en $60.000', stripos($pagoGenerico, '$60.000 en web inmobiliaria') !== false);
+caso('no nombra la seña', stripos($pagoGenerico, 'seña') === false && stripos($pagoGenerico, 'sena') === false);
+caso('pero sigue diciendo la condición: una parte para arrancar y el saldo al entregar',
+    stripos($pagoGenerico, 'una parte') !== false && stripos($pagoGenerico, 'saldo al entregar') !== false);
+caso('y no enumera tipos ni deja colgando la lista',
+    stripos($pagoGenerico, 'sitio profesional') === false && stripos($pagoGenerico, '(') === false);
 
 $cfgSenaNueva = wabot_config_load();
 $cfgSenaNueva['tipos']['landing']['sena'] = '$55.000';
-caso('si una seña cambia, el texto genérico lo refleja al toque',
-    strpos(wabot_texto_pago_generico($cfgSenaNueva), '$55.000') !== false);
+caso('cambiar una seña ya no cambia el texto previo a la demo',
+    strpos(wabot_texto_pago_generico($cfgSenaNueva), '$55.000') === false);
 
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['elige_ecommerce']);
@@ -257,7 +262,7 @@ $r = wabot_engine('en cuanto tiempo estaria?', $c, $cfg);
 caso('con la charla cerrada igual contesta una duda',
     $r === [wabot_texto_plazos($c, $cfg)]);
 caso('y esperando la demo le contesta por la demo, no por los 7 días de la web',
-    $r === [$cfg['espera_prediseno']] && $r !== [$cfg['info']['plazos']]);
+    $r === [$cfg['espera_prediseno']] && $r !== [wabot_texto_info('plazos', $cfg)]);
 
 clasifica(['pregunta_info'], ['info_keys' => ['pago', 'hosting']]);
 $r = wabot_engine('como se paga y el hosting?', $c, $cfg);
@@ -685,7 +690,7 @@ $c = conv_nueva(); $c['fase'] = 'desempate_comercio';
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('cuanto tardan?', $c, $cfg);
 caso('una duda en la pregunta del comercio se contesta y sigue en pie',
-    $r === [$cfg['info']['plazos']] && $c['fase'] === 'desempate_comercio');
+    $r === [wabot_texto_info('plazos', $cfg)] && $c['fase'] === 'desempate_comercio');
 
 $c = conv_nueva(); $c['fase'] = 'desempate_comercio';
 clasifica(['rubro_cursos']);
@@ -747,26 +752,30 @@ foreach (['turnos', 'institucional', 'ecommerce', 'inmobiliaria', 'elearning'] a
 caso('el texto de mantenimiento aclara que es opcional',
     stripos($cfg['info']['mantenimiento'], 'opcional') !== false);
 
-echo "— Cómo trabajamos: el paso a paso, sin decir la seña —\n";
+echo "— Cómo trabajamos: el paso a paso, sin nombrar la seña (3-sep) —\n";
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['pregunta_info'], ['info_keys' => ['proceso']]);
 $r = wabot_engine('como se manejan ustedes?', $c, $cfg);
-caso('explica el proceso completo', $r === [$cfg['info']['proceso']]);
+/* Se compara contra wabot_texto_info() y no contra $cfg['info'][...] crudo:
+ * lo que le llega al cliente pasa por esa función, que es la que le saca la
+ * seña. Comparar contra el campo del panel medía algo que nadie recibe. */
+caso('explica el proceso completo', $r === [wabot_texto_info('proceso', $cfg)]);
 caso('arranca por la demo gratis', stripos($r[0], 'demo gratis') !== false);
-caso('nombra la seña para avanzar', stripos($r[0], 'seña') !== false);
+caso('NO nombra la seña', stripos($r[0], 'seña') === false && stripos($r[0], 'sena') === false);
+caso('pero sigue diciendo que se abona una parte para arrancar',
+    stripos($r[0], 'una parte') !== false);
 caso('y aclara que el resto se paga con la web terminada y subida',
     stripos($r[0], 'terminada y subida') !== false);
-caso('NO dice cuánto es la seña', strpos($r[0], '$') === false);
+caso('NO dice ningún monto', strpos($r[0], '$') === false);
 
-// La pregunta por la plata sigue siendo otra, y esa sí da números.
+// La pregunta por la plata sigue siendo otra, y tampoco da el monto del anticipo.
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
-$r = wabot_engine('cuanto es la seña?', $c, $cfg);
-caso('preguntar por la seña sí devuelve los montos',
-    strpos($r[0], $cfg['tipos']['landing']['sena']) !== false);
-caso('y con el tipo ya sabido da SOLO la seña de ese tipo, no la lista de los 7',
-    strpos($r[0], $cfg['tipos']['ecommerce']['sena']) === false
-    && stripos($r[0], 'en landing,') === false);
+$r = wabot_engine('como se paga?', $c, $cfg);
+caso('preguntar cómo se paga no devuelve el monto de la seña',
+    strpos($r[0], $cfg['tipos']['landing']['sena']) === false
+    && stripos($r[0], 'seña') === false);
+caso('pero sí los medios de pago', stripos($r[0], 'transferencia') !== false);
 
 // Y si pregunta las dos cosas, van las dos.
 clasifica(['pregunta_info'], ['info_keys' => ['proceso', 'pago']]);
@@ -774,13 +783,14 @@ $r = wabot_engine('como trabajan y como se paga?', $c, $cfg);
 caso('las dos preguntas juntas → las dos respuestas en bullets',
     count($r) === 1 && strpos($r[0], '- ') === 0
     && stripos($r[0], 'demo gratis') !== false
-    && strpos($r[0], $cfg['tipos']['landing']['sena']) !== false);
+    && stripos($r[0], 'transferencia') !== false);
+caso('y ninguna de las dos nombra la seña', stripos($r[0], 'seña') === false);
 
 // También se contesta con la charla ya cerrada.
 $c2 = conv_nueva(); $c2['fase'] = 'derivado'; $c2['cierre'] = 'prediseno'; $c2['espera_avisada'] = true;
 clasifica(['pregunta_info'], ['info_keys' => ['proceso']]);
 $r = wabot_engine('me recordas como seguia?', $c2, $cfg);
-caso('con la charla cerrada también explica el proceso', $r === [$cfg['info']['proceso']]);
+caso('con la charla cerrada también explica el proceso', $r === [wabot_texto_info('proceso', $cfg)]);
 
 echo "— La objeción de precio no promete cuotas sin interés que las páginas no respaldan —\n";
 
@@ -1192,7 +1202,7 @@ caso('un no-número se rechaza y sigue pidiendo',
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('y cuanto tarda?', $c, $cfg);
 caso('una pregunta en ese paso se contesta sin comerse el pedido',
-    $r === [$cfg['info']['plazos'], $cfg['prediseno_whatsapp']] && $c['fase'] === 'prediseno_wsp');
+    $r === [wabot_texto_info('plazos', $cfg), $cfg['prediseno_whatsapp']] && $c['fase'] === 'prediseno_wsp');
 
 // En WhatsApp el paso ni existe: ya tenemos el teléfono.
 $c = conv_nueva(); $c['fase'] = 'prediseno_ref'; $c['tipo'] = 'landing';
@@ -1245,7 +1255,7 @@ $c['descripcion'] = 'mates'; $c['colores'] = 'marron';
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('cuanto tarda el prediseño?', $c, $cfg);
 caso('pregunta en prediseno_ref → se contesta, re-pide la referencia y NO cierra',
-    $r === [$cfg['info']['plazos'], $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
+    $r === [wabot_texto_info('plazos', $cfg), $cfg['prediseno_referencia']] && $c['fase'] === 'prediseno_ref');
 caso('y la pregunta NO queda guardada como referencia', empty($c['referencia']) && $c['lead_creado'] === false);
 
 clasifica(['objecion_caro']);
@@ -1720,20 +1730,20 @@ caso('el tope de 16 MB es el que documenta WhatsApp', WABOT_AUDIO_MAX_BYTES === 
 
 echo "— La seña que se dice es la del tipo ya cotizado, no las 6 juntas —\n";
 
+/* 3-sep: antes esto verificaba que dijera la seña de SU tipo y no la de otro.
+ * Pablo la sacó entera del tramo previo a la demo, así que ahora se verifica lo
+ * contrario: ninguna respuesta de pago nombra ninguna seña, la propia ni la
+ * ajena. El monto lo pide postdemo_transferencia, cuando toca cobrar. */
 foreach (array_keys($cfg['tipos']) as $tipo) {
-    $sena = (string)($cfg['tipos'][$tipo]['sena'] ?? '');
     $texto = wabot_texto_pago(['tipo' => $tipo, 'precio_dado' => true], $cfg);
-    // "seña de $X", no el monto suelto: una cuota de otro tipo puede coincidir
-    // en número con la seña de este (ej. turnos cotiza 6 cuotas de $60.000,
-    // que es justo la seña de landing) sin que sea el dato equivocado.
-    caso("$tipo cotizado → la seña dice $sena y ninguna otra", strpos($texto, 'seña de ' . $sena) !== false);
+    caso("$tipo cotizado: no nombra la seña",
+        stripos($texto, 'seña') === false && stripos($texto, 'sena') === false);
     $todasLasSenas = array_unique(array_map(function ($d) { return (string)($d['sena'] ?? ''); }, $cfg['tipos']));
-    $otras = array_diff($todasLasSenas, [$sena, '']);
-    foreach ($otras as $otraSena) {
-        caso("$tipo cotizado → NO menciona la seña de otro tipo ($otraSena)", strpos($texto, 'seña de ' . $otraSena) === false);
+    foreach (array_diff($todasLasSenas, ['']) as $unaSena) {
+        caso("$tipo cotizado: tampoco el monto $unaSena", strpos($texto, (string)$unaSena) === false);
     }
 }
-caso('sin tipo cotizado todavía, la seña es la genérica con los montos reales',
+caso('sin tipo cotizado todavía, sale la genérica, que tampoco trae montos',
     wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
 
 echo "— El bot NO dice montos de cuota (Pablo, 2-sep) —\n";
@@ -1766,12 +1776,14 @@ caso('sin tipo cotizado, la genérica no inventa montos de cuota',
     strpos(wabot_texto_pago(['tipo' => null], $cfg), 'cuotas de $') === false);
 caso('la respuesta de pago del tipo cotizado arranca con el precio total',
     strpos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), '$180.000') !== false);
-caso('con tipo puesto pero SIN precio dado, la seña es la de ESE tipo, sin el total que todavía no vio',
-    strpos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), $cfg['tipos']['catalogo']['sena']) !== false
+/* 3-sep: con tipo puesto y sin precio dado tampoco sale el monto del anticipo.
+ * Lo que sí se sigue cuidando es que no se filtre el TOTAL que todavía no vio. */
+caso('con tipo puesto pero SIN precio dado, no sale ni la seña ni el total que todavía no vio',
+    strpos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), $cfg['tipos']['catalogo']['sena']) === false
     && strpos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), $cfg['tipos']['catalogo']['precio']) === false);
 caso('y esa respuesta no contradice a la de ecommerce cotizado (el bug de los $90.000)',
-    strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), $cfg['tipos']['ecommerce']['sena']) !== false
-    && strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), '$90.000') === false);
+    strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), '$90.000') === false
+    && stripos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), 'seña') === false);
 caso('sin tipo todavía, ahí sí va la lista completa de señas',
     wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
 caso('"en un pago" se contesta también antes de tener precio',
@@ -2243,7 +2255,7 @@ $r = wabot_engine('gracias igual', $c, $cfg);
 caso('el gracias posterior queda en silencio, no re-manda el pitch', $r === []);
 clasifica(['pregunta_info'], ['info_keys' => ['plazos']]);
 $r = wabot_engine('cuanto tardan en general?', $c, $cfg);
-caso('pero una duda concreta sí se contesta', $r === [$cfg['info']['plazos']]);
+caso('pero una duda concreta sí se contesta', $r === [wabot_texto_info('plazos', $cfg)]);
 clasifica(['rubro_comercio']);
 $r = wabot_engine('che al final tengo una ferreteria y quiero la web', $c, $cfg);
 caso('un rubro nuevo reabre la venta', $r !== [] && $c['seguimiento_bloqueado'] === false);
@@ -2312,13 +2324,18 @@ caso('y la derivación también', stripos((string)$cfg['derivar'], 'el desarroll
 caso('la videollamada de la parte 2 sigue nombrando a Pablo',
     stripos((string)$cfg['postdemo_videollamada'], 'pablo') !== false);
 
-// Si el cliente pregunta explícitamente cómo se paga, ahí sí va todo.
+/* Preguntar por la seña antes de la demo ya NO devuelve el monto (3-sep). La
+ * pregunta igual se contesta —qué pasa y cuándo va a saber el número— por el
+ * atajo determinista del agente; acá se verifica que el camino del motor no
+ * filtre el monto y que el detector de esa pregunta la reconozca. */
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('cuanto es la seña?', $c, $cfg);
-caso('preguntar por la seña sí la responde, con el monto y las cuotas reales',
-    strpos($r[0], $cfg['tipos']['landing']['sena']) !== false
-    && strpos($r[0], $cfg['tipos']['landing']['cuotas']['12']) !== false);
+caso('preguntar por la seña antes de la demo no devuelve el monto',
+    strpos($r[0], $cfg['tipos']['landing']['sena']) === false
+    && stripos($r[0], 'seña') === false);
+caso('y el detector de esa pregunta la reconoce, para que la conteste el atajo',
+    wabot_texto_pregunta_cuanto_anticipo('cuanto es la seña?') === true);
 
 echo "— Parte 2: la respuesta tras la demo depende de lo que dijo el cliente —\n";
 
@@ -5213,16 +5230,18 @@ caso('un texto viejo del precio converge al que dictó Pablo, sea cual sea',
 
 echo "— Auditoría externa del 29-ago: lo que resultó real —\n";
 
-/* La seña la garantiza el CÓDIGO, no el texto del panel. En producción
- * info.pago había quedado en una línea sin la seña, sin el saldo y sin los
- * marcadores: ahí nació el 50/50 que inventó el modelo. */
+/* 3-sep: esto se dio vuelta. El texto de una línea que producción tenía en
+ * info.pago era la edición deliberada de Pablo —"no tiene que mencionar la
+ * seña!"— y wabot_pago_asegurar_sena() se la pisaba en cada respuesta. Ahora se
+ * respeta: antes de la demo el monto no sale por ningún lado. Contra el 50/50
+ * que inventó el modelo el 29-ago queda wabot_texto_inventa_pago(), que es el
+ * guard que de verdad corresponde a ese problema. */
 $cfgPagoPelado = $cfg;
 $cfgPagoPelado['info']['pago'] = 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés';
 $pagoPelado = wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfgPagoPelado);
-caso('aunque el texto del panel se quede sin la seña, la respuesta la trae igual',
-    strpos($pagoPelado, 'seña de ' . $cfg['tipos']['landing']['sena']) !== false);
-caso('y no la repite si el texto ya la decía',
-    substr_count(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), 'seña de ') === 1);
+caso('el texto del panel sin la seña se respeta tal cual', $pagoPelado === $cfgPagoPelado['info']['pago']);
+caso('y si el panel todavía la tuviera escrita, se la saca igual',
+    stripos(wabot_texto_pago(['tipo' => 'landing', 'precio_dado' => true], $cfg), 'seña') === false);
 
 /* Las bajas de precio automáticas se retiraron: impedían volver a subir un
  * precio desde el panel. */
@@ -5894,8 +5913,8 @@ caso('el respaldo del pago no dice señas viejas',
     strpos((string)$cfg['info']['pago_generico'], '$60.000') === false
     && strpos((string)$cfg['info']['pago_generico'], '$80.000') === false
     && strpos((string)$cfg['info']['pago_generico'], '$90.000') === false);
-caso('y el que de verdad sale sí trae las señas al día',
-    strpos(wabot_texto_pago_generico($cfg), (string)$cfg['tipos']['landing']['sena']) !== false);
+caso('y el que de verdad sale tampoco: antes de la demo no hay monto de seña (3-sep)',
+    strpos(wabot_texto_pago_generico($cfg), (string)$cfg['tipos']['landing']['sena']) === false);
 
 echo "— 2-sep, auditoría: el bot reconoce que ya ofreció la demo —\n";
 
@@ -6210,6 +6229,62 @@ caso('y también con los emojis rotos, que es como llegó en 3 de 23 envíos',
     wabot_texto_es_aviso_de_formulario("Hola! Acabo de completar el formulario de la demo gratis.\n\n\u{FFFD} Nombre: Natalia\n\u{FFFD} Negocio: Secretos Compartidos") === true);
 caso('un mensaje normal no se confunde con el aviso',
     wabot_texto_es_aviso_de_formulario('Hola, quería consultar por el formulario que me mandaste') === false);
+
+echo "— 3-sep: la seña no se nombra antes de la demo, pero sí al cobrar —\n";
+
+/* Pablo, 3-sep: "no, no tiene que mencionar la seña!". Se limpia por CONTENIDO
+ * (info.* lo edita él desde el panel, así que producción siempre tiene una
+ * redacción que no está en ninguna lista) y se SUSTITUYE, no se borra: la
+ * condición comercial se sigue diciendo, lo que desaparece es la palabra y el
+ * número. Mismo criterio que wabot_frase_retirada(). */
+$variantes = [
+    'Se puede abonar por transferencia. Para arrancar se deja una seña de $40.000 y el saldo al entregar la web.',
+    'Para arrancar se deja una seña ($40.000 en sitio profesional, $60.000 en ecommerce) y el saldo al entregar la web.',
+    'Para arrancar se deja una seña de {sena} y el saldo al entregar la web.',
+    'Si te gusta y querés avanzar, se abona una seña. El resto lo pagás cuando la web está terminada.',
+    'La web queda lista en unos 7 días desde la seña y la entrega del contenido.',
+    'recién si te gusta se abona la seña para arrancar.',
+    'Se abona por transferencia, con una seña de $40.000 para arrancar y el saldo al entregar la web.',
+];
+foreach ($variantes as $i => $v) {
+    $limpio = wabot_texto_sin_sena($v);
+    caso('variante ' . ($i + 1) . ': no queda la palabra ni el monto',
+        stripos($limpio, 'seña') === false && stripos($limpio, 'sena') === false
+        && strpos($limpio, '$') === false && strpos($limpio, '{sena}') === false);
+    caso('variante ' . ($i + 1) . ': no queda vacía ni con espacios dobles',
+        trim($limpio) !== '' && strpos($limpio, '  ') === false);
+}
+caso('la condición comercial se sigue diciendo, no se borra',
+    stripos(wabot_texto_sin_sena($variantes[0]), 'una parte') !== false
+    && stripos(wabot_texto_sin_sena($variantes[0]), 'saldo al entregar') !== false);
+caso('y el plazo no queda hablando de nada',
+    stripos(wabot_texto_sin_sena($variantes[4]), 'desde que arrancamos') !== false);
+caso('un texto que no la nombra queda intacto',
+    wabot_texto_sin_sena('Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés')
+        === 'Se puede abonar por transferencia o con tarjeta hasta en 12 cuotas con interés');
+
+/* Y donde SÍ tiene que estar: el cobro después de la demo no pasa por
+ * wabot_texto_info(), así que conserva el monto. Es el único momento en que
+ * corresponde pedirla. */
+caso('postdemo_transferencia sigue pidiendo la seña con su monto',
+    stripos((string)$cfg['postdemo_transferencia'], 'seña') !== false
+    && strpos((string)$cfg['postdemo_transferencia'], '{sena}') !== false);
+caso('y postdemo_tarjeta también',
+    strpos((string)$cfg['postdemo_tarjeta'], '{sena}') !== false);
+
+/* La pregunta directa por el monto tiene respuesta propia: sacarla del texto no
+ * puede dejarla sin contestar (es el error 4 de la lista de Pablo). */
+foreach (['cuanto es la seña?', 'cual es la seña?', 'de cuanto es el adelanto?',
+          'cuanto hay que dejar de anticipo?'] as $preg) {
+    caso('"' . $preg . '" se reconoce como pregunta por el monto',
+        wabot_texto_pregunta_cuanto_anticipo($preg) === true);
+}
+caso('pero avisar que ya pagó no lo es',
+    wabot_texto_pregunta_cuanto_anticipo('ya te hice la seña') === false);
+caso('ni preguntar por el abono mensual',
+    wabot_texto_pregunta_cuanto_anticipo('cuanto es el mantenimiento mensual?') === false);
+caso('ni preguntar el precio de la web',
+    wabot_texto_pregunta_cuanto_anticipo('cuanto sale la web?') === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);
