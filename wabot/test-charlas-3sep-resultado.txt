@@ -1,0 +1,165 @@
+Bateria conversacional wabot — 8 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO T1 — Estetica Integral: la referencia negada, el link del catalogo y el dato nuevo
+ESPERADO: Tras 'No tengo ninguna referencia me gustan los colores pasteles' NO vuelve a preguntar por la referencia. El link del catalogo de WhatsApp se toma como material suyo, NUNCA con 'esa duda te la va a poder contestar el desarrollador'. Y 'Tengo un catalogo de productos' no dispara la explicacion del ecommerce: ya se le cotizo el sitio profesional.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Buen día soy Cosmiatra. Y necesito una landing page
+<<< BOT [321c]: Perfecto, para la cosmiatría sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=XN
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Tengo un gabinete en mi casa no local a la calle
+<<< BOT [318c]: Perfecto, tener el gabinete en casa es súper cómodo y un sitio profesional va perfecto para mostrar tus tratamientos, que te conozcan y coordinar los turnos directo por WhatsApp.
+           
+           Para armarte la demo gratis y sin compromiso, contame cómo te llamás, qué colores te gustaría usar y si tenés alguna página de referencia.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: El mismo una landing page
+<<< BOT [310c]: Buenísimo, tal como te comenté antes, para tu gabinete de cosmiatría lo ideal es un sitio profesional, que es exactamente el tipo de web que se adapta a lo que necesitás.
+           
+           Para armarte la demo gratis y sin compromiso, contame cómo te llamás, qué colores te gustaría usar y si tenés alguna página de referencia.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No tengo ninguna referencia me gustan los colores pasteles
+<<< BOT [131c]: Perfecto, nos quedamos con los colores pasteles. Para terminar de armar la demo, contame cómo te llamás y el nombre de tu gabinete.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sigue este enlace para ver nuestro catálogo en WhatsApp: https://wa.me/c/5491135240018
+<<< BOT [217c]: Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo. Con eso te la dejo lista mañana. Es gratis y sin compromiso.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+>>> CLIENTE: Tengo un catálogo de productos
+<<< BOT [163c]: Dale, ya quedó todo anotado: la demo te llega mañana. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO T2 — Rodo: la pregunta directa mezclada con el rubro
+ESPERADO: Ademas del precio del sitio profesional, tiene que contestar SI o SI si hay pago mensual (el mantenimiento es opcional). Hoy esa pregunta no la contestaba nadie porque el pitch sale exacto.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto? Quería saber el precio de cuánto me cuesta hacer una página web Gracias y como es el procedimiento
+<<< BOT [400c]: Para poder pasarte el precio exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés. 
+           
+           Y sobre cómo nos manejamos, primero te armamos una demo gratis, para que veas cómo quedaría tu página, el estilo y el diseño. Si te gusta y querés avanzar con las modificaciones y el desarrollo completo, se abona una seña. El resto lo pagás recién cuando la web está terminada y subida.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Perfecto Soy instructor de calistenia Y tiene algún pago mensual o la página me queda de por vida una vez pagada ?
+<<< BOT [332c]: Perfecto, para las clases de calistenia sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=VM
+<<< BOT [336c]: El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Sale $10.000 por mes y acá lo podés ver en detalle: gokywebs.com/mantenimientomensual
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T3 — Campeonatos de futbol: siete secciones enumeradas
+ESPERADO: El pitch tiene que nombrar los campeonatos de futbol (no 'tu negocio') y acusar recibo de lo que enumero (tablas, goleadores, equipos, jugadores). Nada de 'muestra tus trabajos'.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Hago campeonatos de fútbol. Necesitaría q ahí esté toda la info como
+Inicio
+Tablas
+Rojas/ amarillas
+Goleadores
+Fotos
+ Equipos
+Jugadores
+<<< BOT [333c]: Perfecto, para los campeonatos de fútbol sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=S6
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T4 — Henry: enfermeria domiciliaria explicada en tres renglones
+ESPERADO: El pitch nombra la enfermeria domiciliaria, no 'tu negocio', y refleja al menos una de las cosas que pidio (cuidadores, turnos, terapias). La descripcion del sitio profesional ya no dice 'muestra tus trabajos'.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Buen día. Mucho gusto mí nombre es Henry estaría interesado en una de enfermería domiciliaria o de cuidadores para prestar servicio de cuidados en turnos o prestaciones por hora de terapia física, cognitiva o curaciones
+<<< BOT [351c]: Perfecto, para la enfermería domiciliaria y los cuidadores sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=C9
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T5 — Ana Sloog: la pregunta cerrada sobre el mantenimiento
+ESPERADO: A 'Ese pago es si o si. Es decir fijo o es opcional?' contesta CORTO que es opcional. No vuelve a pegar el bloque entero del mantenimiento.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Hola tengo un estudio Contable. Nunca hicimos publicidad. La idea sería captar nuevos clientes. Cuánto nos cobraría?
+<<< BOT [327c]: Perfecto, para el estudio contable sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=V5
+<<< BOT [118c]: No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Costo de mantenimiento de la web mensual? Hacen redes también?
+<<< BOT [522c]: El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Sale $10.000 por mes y acá lo podés ver en detalle: gokywebs.com/mantenimientomensual
+           
+           Y con respecto a las redes, no hacemos publicidad, marketing ni gestión de redes, y no recomendamos proveedores; nos dedicamos exclusivamente al diseño y desarrollo de webs y sistemas.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ese pago es si o si. Es decir fijo o es opcional?
+<<< BOT [105c]: Es opcional. La web es tuya igual: lo contratás solo si lo querés, y lo podés dar de baja cuando quieras.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T6 — Ceramica: venta Y clases, dos necesidades en cuatro palabras
+ESPERADO: No puede cotizar ecommerce a secas ignorando las clases: tiene que nombrar las dos cosas y preguntar si las quiere juntas o arranca con una.
+>>> CLIENTE: Hola
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: ceramica, venta y clases
+<<< BOT [171c]: Para la venta de cerámica y las clases, que combinan productos y cursos, querés armar todo integrado en la misma web o preferís arrancar primero con una de esas dos cosas?
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T7 — Marita: el cliente se queda con el proximo paso
+ESPERADO: Se despide sin insistir. Y ademas tiene que quedar anotado que el cliente prometio contactar el (aviso_prometido_ts), para que el seguimiento automatico no le escriba ese mismo dia.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: tengo emprendimiento de decoración textil
+<<< BOT [334c]: Perfecto, para la decoración textil sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=ZH
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: gracias
+<<< BOT [86c]: Perfecto, quedo atento. Cuando los tengas mandámelos por acá y arrancamos con la demo.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: gracias cualquier cosa te contacto
+<<< BOT [78c]: Dale, quedo a disposición cuando quieras avanzar. Que tengas un excelente día.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T8 — Mundo Queen: belleza + venta de insumos, gestionado por WhatsApp
+ESPERADO: La respuesta tiene que reflejar lo que pidio (mostrar todo y gestionar las ventas por WhatsApp), no el bloque generico del ecommerce. El rubro del pitch sale de sus palabras.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Todo bien
+<<< BOT [55c]: Contame un poco más, qué vendés o qué servicio ofrecés?
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Con mi esposa tenemos un local donde hace uñas, pestañas, un salón de belleza y también hacemos ventas de insumos para uñas y pestañas, perfumería, de todo un poco, quería un presupuesto para armar una tienda online donde se pueda mostrar todo y gestionar las ventas directas por Whatsapp
+<<< BOT [344c]: Perfecto, para el local de estética e insumos sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=UP
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

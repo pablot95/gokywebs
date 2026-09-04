@@ -1755,11 +1755,25 @@ $rRub = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => '
 caso('dar_precio guarda el rubro validado y el pitch sale nombrándolo',
     $cRub['rubro_pitch'] === 'las gorras'
     && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Perfecto, para las gorras sería un ecommerce') === 0);
+/* 3-sep: el rubro inventado se sigue rechazando, pero ya no se cae en "tu
+ * negocio" sin intentar nada: wabot_rubro_desde_contexto() lo saca de lo que
+ * escribió el cliente. Acá escribió "Gorras", así que eso es lo que tiene que
+ * salir — el pitch genérico era el que hacía sentir a Henry y a Mundo Queen
+ * que nadie los había leído. */
 $cRub2 = convNueva(); unset($cRub2['pitch_hecho']);
 $cRub2['transcript'] = [['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
 $rRub2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub2, $cfg, 'Gorras');
-caso('un rubro inventado no pasa: el texto sale con "tu negocio"',
-    empty($cRub2['rubro_pitch']) && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Perfecto, para tu negocio sería un ecommerce') === 0);
+caso('un rubro inventado no pasa, y en su lugar va la palabra del cliente',
+    $cRub2['rubro_pitch'] === 'gorras'
+    && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Perfecto, para gorras sería un ecommerce') === 0);
+
+/* Y cuando no hay de dónde sacarlo, sigue saliendo "tu negocio": inventarle un
+ * rubro equivocado es peor que no nombrarlo. */
+$cRub3 = convNueva(); unset($cRub3['pitch_hecho']);
+$cRub3['transcript'] = [['q' => 'cliente', 't' => 'Hola, queria consultar por una pagina', 'ts' => time()]];
+$rRub3 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub3, $cfg, 'Hola');
+caso('sin nada que nombrar, sigue saliendo "tu negocio"',
+    empty($cRub3['rubro_pitch']) && strpos(wabot_personalizar($rRub3['texto'], $cRub3), 'Perfecto, para tu negocio sería un ecommerce') === 0);
 
 $cPlo = convNueva();
 caso('"Soy plomero" ya no recibe la pregunta de turnos (Enrique)', wabot_agente_desempate_pendiente('landing', 'Soy plomero', $cPlo, $cfg) === null);
@@ -1852,6 +1866,128 @@ caso('ninguna herramienta pide ya la cantidad de productos', (function () {
     }
     return true;
 })());
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * 3-sep: los guards que faltaban, todos sacados de charlas reales del día.
+ * ───────────────────────────────────────────────────────────────────────── */
+echo "— 3-sep: el comodín del desarrollador solo contesta DUDAS —\n";
+
+$comodin = 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.';
+caso('el comodín se reconoce', wabot_texto_comodin_desarrollador($comodin) === true);
+caso('y también dicho de otra forma',
+    wabot_texto_comodin_desarrollador('Eso lo va a poder responder Pablo cuando te contacte.') === true);
+caso('mandar el catálogo propio NO es una pregunta (Estética Integral)',
+    wabot_mensaje_pregunta_algo('Sigue este enlace para ver nuestro catálogo en WhatsApp: https://wa.me/c/5491135240018') === false);
+caso('"Este es mi face" tampoco', wabot_mensaje_pregunta_algo('Este es mi face') === false);
+caso('"Que lo haga vía wasap" tampoco', wabot_mensaje_pregunta_algo('Que lo haga vía wasap') === false);
+caso('pero con signo de pregunta sí', wabot_mensaje_pregunta_algo('Tienen hosting incluido?') === true);
+caso('y sin signo, con la forma de pregunta, también (así escribe casi todo el mundo)',
+    wabot_mensaje_pregunta_algo('tienen algún pago mensual') === true
+    && wabot_mensaje_pregunta_algo('la pagina me queda de por vida una vez pagada') === true);
+caso('un texto normal del bot no se confunde con el comodín',
+    wabot_texto_comodin_desarrollador('Listo, ya quedó todo anotado: la demo te llega mañana.') === false);
+
+echo "— 3-sep: una sola fecha de entrega —\n";
+
+$onceVeinte = mktime(11, 21, 0, 9, 3, 2026);     // {entrega} = "mañana"
+$nueve      = mktime(9, 0, 0, 9, 3, 2026);       // {entrega} = "hoy"
+caso('a las 11:21 {entrega} dice mañana', wabot_dia_entrega($onceVeinte)['palabra'] === 'mañana');
+caso('"Hoy a la tarde estará lista la demo" a esa hora se corta (Aura32)',
+    wabot_texto_promete_otra_entrega('Hoy a la tarde estará lista la demo para que la puedas ver.', $onceVeinte) === true);
+caso('pero decir "mañana" a esa hora está bien',
+    wabot_texto_promete_otra_entrega('La demo te llega mañana.', $onceVeinte) === false);
+caso('y a las 9, cuando {entrega} dice hoy, "mañana" es lo que se corta',
+    wabot_texto_promete_otra_entrega('Te la dejo lista mañana.', $nueve) === true);
+caso('un "hoy" que no habla de la demo no se toca',
+    wabot_texto_promete_otra_entrega('Hoy te puedo pasar el detalle del pago.', $onceVeinte) === false);
+
+echo "— 3-sep: la demo la preparamos nosotros —\n";
+
+caso('"Quedamos a la espera de la demo" se corta (Natalia)',
+    wabot_texto_espera_la_demo('De nada, Natalia. Quedamos a la espera de la demo, que tengas buenas tardes.') === true);
+caso('la despedida correcta pasa',
+    wabot_texto_espera_la_demo('De nada, a vos. En cuanto esté lista la demo te escribimos por acá.') === false);
+
+echo "— 3-sep: a una pregunta cerrada, la respuesta concreta primero —\n";
+
+caso('"Ese pago es si o si. Es decir fijo o es opcional?" es una pregunta cerrada (Ana Sloog)',
+    wabot_texto_pregunta_si_es_obligatorio('Ese pago es si o si. Es decir fijo o es opcional?') === true);
+caso('"es obligatorio?" también', wabot_texto_pregunta_si_es_obligatorio('el mantenimiento es obligatorio?') === true);
+caso('pero una pregunta abierta no',
+    wabot_texto_pregunta_si_es_obligatorio('qué incluye el mantenimiento y cómo se contrata?') === false);
+$cOpc = ['transcript' => [['q' => 'bot', 't' => 'El mantenimiento es opcional e incluye un cambio por mes, además del soporte. Sale $10.000 por mes.', 'ts' => time()]]];
+caso('con "opcional" en el último mensaje, contesta corto y no repite el bloque',
+    ($r = wabot_respuesta_obligatorio($cOpc, $cfg)) !== null && mb_stripos($r, 'opcional') !== false && mb_strlen($r) < 160);
+$cInc = ['transcript' => [['q' => 'bot', 't' => 'Hosting y dominio están incluidos en el precio, con el primer año cubierto.', 'ts' => time()]]];
+caso('con "incluido", contesta que está incluido',
+    ($r2 = wabot_respuesta_obligatorio($cInc, $cfg)) !== null && mb_stripos($r2, 'incluid') !== false);
+$cNada = ['transcript' => [['q' => 'bot', 't' => 'Perfecto, para las gorras sería un ecommerce.', 'ts' => time()]]];
+caso('y si lo último que dijo no define nada, no se inventa una respuesta',
+    wabot_respuesta_obligatorio($cNada, $cfg) === null);
+
+echo "— 3-sep: un dato nuevo no descarta la charla anterior —\n";
+
+/* Estética Integral pidió landing tres veces, se le cotizó el sitio
+ * profesional y se le creó el boceto. Después dijo "Tengo un catálogo de
+ * productos" y se llevó la explicación completa del ecommerce. */
+$cLanding = convNueva();
+$cLanding['tipo'] = 'landing'; $cLanding['precio_dado'] = true; $cLanding['fase'] = 'prediseno';
+$cLanding['transcript'] = [['q' => 'cliente', 't' => 'Tengo un catálogo de productos', 'ts' => time()]];
+$rTienda = wabot_agente_ejecutar('consultar_info', ['clave' => 'como_funciona_tienda'], $cLanding, $cfg, 'Tengo un catálogo de productos');
+caso('con el sitio profesional ya cotizado, NO se explica cómo funciona la tienda',
+    !empty($rTienda['error']) && empty($rTienda['texto']));
+caso('y la nota le dice qué hacer en su lugar', mb_stripos((string)($rTienda['nota'] ?? ''), 'sin cambiarle el proyecto') !== false);
+
+$cEcom = convNueva();
+$cEcom['tipo'] = 'ecommerce'; $cEcom['precio_dado'] = true; $cEcom['fase'] = 'prediseno';
+$cEcom['transcript'] = [['q' => 'cliente', 't' => 'Cómo funciona la tienda? la gente compra desde la página?', 'ts' => time()]];
+$rEcom = wabot_agente_ejecutar('consultar_info', ['clave' => 'como_funciona_tienda'], $cEcom, $cfg, 'Cómo funciona la tienda? la gente compra desde la página?');
+caso('pero al que SÍ compró un ecommerce se le contesta normal', !empty($rEcom['texto']));
+
+$cSinPrecio = convNueva();
+$cSinPrecio['tipo'] = null; $cSinPrecio['precio_dado'] = false;
+$cSinPrecio['transcript'] = [['q' => 'cliente', 't' => 'Cómo funciona la tienda? se paga desde la web?', 'ts' => time()]];
+$rSinPrecio = wabot_agente_ejecutar('consultar_info', ['clave' => 'como_funciona_tienda'], $cSinPrecio, $cfg, 'Cómo funciona la tienda? se paga desde la web?');
+caso('y antes de cotizar nada, tampoco se bloquea', !empty($rSinPrecio['texto']));
+
+echo "— 3-sep: el pitch puede acusar recibo de lo que el cliente escribió —\n";
+
+$exactaPitch = "Perfecto, para los campeonatos de fútbol sería un sitio profesional. Es un pago único de \$180.000.\nEl sitio profesional es una página a tu medida.";
+$acu = function ($modelo) use ($exactaPitch, $cfg) { return wabot_agente_prefijo_acuse($modelo, $exactaPitch, [], $cfg); };
+
+$rFati = $acu('Perfecto, entonces necesitás una web donde puedas mostrar y actualizar tablas, equipos, jugadores, goleadores y sanciones.');
+caso('Fátima: el acuse va adelante y el texto del precio sale entero detrás',
+    $rFati !== $exactaPitch && mb_strpos($rFati, 'tablas, equipos, jugadores') !== false
+    && mb_strpos($rFati, $exactaPitch) !== false);
+caso('y no quedan dos "Perfecto" pegados', substr_count(mb_strtolower($rFati), 'perfecto') === 1);
+caso('Henry: el acuse nombra su servicio',
+    mb_stripos($acu('Entiendo, un sitio que muestre los servicios de enfermería domiciliaria, cuidadores y las terapias por hora.'), 'enfermería domiciliaria') !== false);
+
+caso('sin texto del modelo, el precio sale igual que siempre', $acu('') === $exactaPitch);
+caso('una muletilla sola no es un acuse', $acu('Perfecto.') === $exactaPitch);
+caso('un acuse con un monto NO pasa', $acu('Perfecto, eso sale $180.000 y te lo armamos.') === $exactaPitch);
+caso('ni con una pregunta', $acu('Entiendo, querés tablas y goleadores. Te sirve?') === $exactaPitch);
+caso('ni con una promesa de contacto', $acu('Perfecto, ya lo anoté y te contacto en breve.') === $exactaPitch);
+caso('ni con un link', $acu('Mirá gokywebs.com/portfolio para ver ejemplos parecidos.') === $exactaPitch);
+caso('ni ofreciendo la demo por su cuenta', $acu('Perfecto, te preparamos la demo con todo eso.') === $exactaPitch);
+caso('ni con el comodín del desarrollador', $acu('Eso lo va a poder responder el desarrollador cuando te escriba.') === $exactaPitch);
+caso('ni un párrafo entero', $acu(str_repeat('palabra ', 40)) === $exactaPitch);
+
+echo "— 3-sep: una pregunta sola también hay que contestarla —\n";
+
+$convRodo = ['fase' => 'menu', 'tipo' => null, 'temas_contestados' => []];
+caso('la pregunta de Rodo se detecta, y viene sola',
+    wabot_preguntas_del_mensaje('Perfecto Soy instructor de calistenia Y tiene algún pago mensual o la página me queda de por vida una vez pagada ?', $convRodo, 'menu') === ['mantenimiento']);
+$cR = $convRodo;
+$pitch = ['Perfecto, para las clases de calistenia sería un sitio profesional. Es un pago único de $180.000.'];
+caso('con el pitch exacto (que descarta el texto del modelo), el empujón la contesta',
+    wabot_agente_empujon_preguntas('Y tiene algún pago mensual o la página me queda de por vida una vez pagada ?', $pitch, $cR, $cfg, 1) !== null);
+$cR2 = $convRodo;
+caso('con el texto libre del modelo sigue exigiendo dos, para no duplicar',
+    wabot_agente_empujon_preguntas('Y tiene algún pago mensual o la página me queda de por vida una vez pagada ?', $pitch, $cR2, $cfg) === null);
+$cR3 = $convRodo;
+caso('y si la respuesta ya nombró el tema, no lo repite',
+    wabot_agente_empujon_preguntas('Y tiene algún pago mensual?', ['El mantenimiento es opcional y sale $10.000 por mes.'], $cR3, $cfg, 1) === null);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

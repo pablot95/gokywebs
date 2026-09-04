@@ -172,9 +172,18 @@ function wabot_ejes_mixtos($texto) {
      * wabot_fallback_rubro_local(). */
     $dictaTalleres = preg_match('/\b(doy|dicto|damos|dictamos|dando|dictando|enseno|ensenamos)\b.{0,15}\btaller(es)?\b/u', $t)
         || preg_match('/\btaller(es)?\s+(online|virtual\w*|grabad\w*|de capacitacion|para aprender)\b/u', $t);
+    /* "Clases" a secas tampoco alcanza —una clase de spinning es el servicio
+     * del gimnasio, no algo que venda— pero SÍ cuando aparece enumerada como
+     * una función más: "cerámica, venta y clases" se cotizó como ecommerce a
+     * secas y las clases quedaron afuera sin que nadie las nombrara (Pablo,
+     * 3-sep). Se exige la conjunción o el verbo de dictar delante, que es lo
+     * que distingue "y clases" (otra cosa que ofrece) de "para clases de
+     * spinning" (el destino del producto que vende). */
+    $enumeraClases = preg_match('/\b(y|e|tambien|ademas|mas|damos|doy|dicto|dictamos|hacemos|brindamos|ofrecemos|dictar|dar)\s+(clases|talleres|cursos)\b/u', $t)
+        || preg_match('/\b(clases|talleres)\s+(y|e)\s/u', $t);
     if (preg_match('/\b(curso\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
             . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)
-        || $dictaTalleres) $ejes['cursos'] = 'los cursos o materiales';
+        || $dictaTalleres || $enumeraClases) $ejes['cursos'] = 'los cursos o materiales';
     /* "Vender los cursos" NO es un segundo eje: es la forma normal de pedir
      * una plataforma de cursos. Sin este freno, "quiero venderlos desde la web
      * con los videos y el acceso de cada alumna" disparaba el aviso de mixto y
@@ -1546,6 +1555,26 @@ function wabot_dijo_te_aviso($texto) {
         . '|dejame hablarlo|dejame consultarlo|dejame verlo|dejame pensarlo'
         . '|lo (veo|hablo|charlo|converso|evaluo) con (mi|mis|la|el)'
         . '|con mi socc?ia?o?\b|con mis socios|con mi pareja|con mi marido|con mi mujer|con mi familia)/u',
+        ' ' . $t . ' '
+    )
+    /* "Gracias, cualquier cosa te contacto". Es la misma cosa dicha al revés:
+     * el cliente se queda él con el próximo paso. Marita lo dijo a las 00:39 y
+     * a las 11:00 del mismo día el seguimiento automático le escribió "nos
+     * habían quedado pendiente los datos", que es exactamente lo que ella
+     * acababa de decir que iba a traer cuando quisiera (Pablo, 3-sep).
+     *
+     * Va acá y no en wabot_cierre_sin_presion_tipo() a propósito: eso marcaría
+     * un cierre y devolvería un texto fijo, y la respuesta que el bot le dio
+     * ("quedo a disposición cuando quieras avanzar") ya estaba bien. Lo único
+     * que sobraba era el seguimiento. Esto solo mueve aviso_prometido_ts, que
+     * lo frena ese día. */
+    || (bool)preg_match(
+        '/\b(cualquier cosa|si me decido|si decido|ante cualquier|ni bien pueda|cuando pueda|cuando me decida)\b'
+        . '.{0,20}\b(te|los|les)\b.{0,4}\b(contacto|contactamos|escribo|escribimos|aviso|avisamos|hablo|busco|consulto)\b/u',
+        ' ' . $t . ' '
+    )
+    || (bool)preg_match(
+        '/\b(yo|despues|luego|mas adelante)\b.{0,12}\b(te|los|les)\b.{0,4}\b(contacto|escribo|aviso|busco)\b/u',
         ' ' . $t . ' '
     );
 }
@@ -4192,6 +4221,165 @@ function wabot_rubro_valido($rubro, $conv) {
     }
     if (!$hayPropio) $r = mb_strtolower(mb_substr($r, 0, 1)) . mb_substr($r, 1);
     return $r;
+}
+
+/**
+ * El rubro sacado de lo que el cliente escribió, cuando el modelo no lo mandó.
+ *
+ * "Perfecto, para tu negocio sería un sitio profesional" les llegó a Henry
+ * (que había escrito tres renglones sobre enfermería domiciliaria), a Mundo
+ * Queen y a la clienta de cerámica, todos el 3-sep. El argumento `rubro` de
+ * dar_precio era opcional y el modelo lo omitía: ahora es obligatorio, y esto
+ * es la red por si igual llega vacío.
+ *
+ * Deliberadamente angosta. Solo toma lo que viene detrás de una fórmula de
+ * presentación explícita ("soy...", "tengo un...", "vendo...", "hago..."), que
+ * es donde el rubro está dicho con todas las letras, y lo pasa por
+ * wabot_rubro_valido() como si lo hubiera mandado el modelo. Si no encuentra
+ * nada con esa forma devuelve '' y sale "tu negocio", como hasta ahora:
+ * inventarle un rubro equivocado es peor que no nombrarlo.
+ */
+function wabot_rubro_desde_contexto($conv) {
+    $ctx = trim((string)wabot_contexto_cliente_texto($conv));
+    if ($ctx === '') return '';
+
+    /* Se recorre por oración y se prefiere la PRIMERA presentación, que es
+     * donde la gente dice a qué se dedica antes de entrar en detalles. */
+    $verbos = 'soy|somos|tengo|tenemos|vendo|vendemos|hago|hacemos|ofrezco|ofrecemos'
+            . '|me dedico a|nos dedicamos a|fabrico|fabricamos|trabajo (?:con|de)|doy|damos|dicto|dictamos'
+            . '|interesad[oa] en|necesito|necesitaria|quiero|queria';
+    $articulos = '(?:un|una|unos|unas|el|la|los|las|mi|mis)\s+';
+
+    /* Palabras que no dicen nada del rubro. "Tenemos un local donde hacemos
+     * uñas" daba "un local", que en el pitch se lee igual de genérico que "tu
+     * negocio" y encima suena raro ("para un local sería un ecommerce"). */
+    $vacias = '/^(un |una |el |la |los |las |mi |mis )?(local|negocio|negocios|emprendimiento|empresa|comercio'
+            . '|marca|tienda|proyecto|rubro|servicio|servicios|producto|productos|pagina|paginas|web|sitio'
+            . '|cliente|clientes|persona|gente|cosas|todo|algo'
+            // Saludos y muletillas: son el primer segmento de casi todo mensaje.
+            . '|hola|holaa+|buenas|buen dia|buenas tardes|buenas noches|gracias|consulta|consultas'
+            . '|informacion|información|info|precio|precios|presupuesto|presupuestos|ayuda|idea)$/iu';
+
+    $tomar = function ($candidato, $articulo) use ($conv, $vacias) {
+        $candidato = trim((string)$candidato);
+        if ($candidato === '' || preg_match($vacias, $candidato)) return '';
+        /* El rubro es un sustantivo, no una acción. "Quería consultar por una
+         * página" daba "consultar por una pagina" y el pitch salía "para
+         * consultar por una pagina sería un ecommerce". */
+        if (preg_match('/^(consultar|preguntar|saber|ver|hacer|armar|tener|conseguir|averiguar|cotizar|presupuestar|comprar|contratar|hablar|charlar)\b/iu', $candidato)) return '';
+        // Una sola palabra que además es la primera del mensaje y termina en
+        // -ar/-er/-ir tiene todas las chances de ser otro infinitivo suelto.
+        if (preg_match('/^\p{L}+(ar|er|ir)$/u', $candidato)) return '';
+        $articulo = trim((string)$articulo);
+        if ($articulo !== '') {
+            $valido = wabot_rubro_valido($articulo . ' ' . $candidato, $conv);
+            if ($valido !== '') return $valido;
+        }
+        return wabot_rubro_valido($candidato, $conv);
+    };
+
+    /* preg_match_all y no preg_match: en una oración larga la primera fórmula
+     * puede no servir y la segunda sí. "Con mi esposa tenemos un local donde
+     * hace uñas... y también hacemos ventas de insumos" arranca con "tenemos un
+     * local" —que no es un rubro— y recién la segunda ("hacemos ventas de
+     * insumos") dice algo. Con una sola pasada se caía a "tu negocio". */
+    $candidatos = [];
+    foreach (preg_split('/[.;\n]+/u', $ctx) as $oracion) {
+        $o = trim((string)$oracion);
+        if ($o === '') continue;
+        if (!preg_match_all('/\b(' . $verbos . ')\s+(' . $articulos . ')?([\p{L}][\p{L}\s]{2,45})/ui', $o, $ms, PREG_SET_ORDER)) continue;
+        foreach ($ms as $m) $candidatos[] = $m;
+    }
+    foreach ($candidatos as $m) {
+        $cola = trim((string)$m[3]);
+        if ($cola === '') continue;
+        // Se corta en el primer conector: lo que sigue ya es otra cosa.
+        $cola = preg_split('/\b(y|o|que|para|con|en|por|sobre|desde|hasta|donde|pero|porque|ademas|además)\b/ui', $cola)[0] ?? '';
+        $cola = trim((string)$cola);
+        if ($cola === '') continue;
+        /* "Interesado en una DE enfermería domiciliaria": el partitivo no es
+         * parte del rubro, y arrastrarlo daba "para una de enfermería
+         * domiciliaria sería...". Si estaba, el artículo tampoco va. */
+        $articulo = (string)($m[2] ?? '');
+        if (preg_match('/^(de|del|a|al)\s+/ui', $cola)) {
+            $cola = trim(preg_replace('/^(de|del|a|al)\s+/ui', '', $cola));
+            $articulo = '';
+        }
+        if ($cola === '') continue;
+        $palabras = preg_split('/\s+/u', $cola);
+        if (count($palabras) > 4) $palabras = array_slice($palabras, 0, 4);
+        $valido = $tomar(implode(' ', $palabras), $articulo);
+        if ($valido !== '') return $valido;
+    }
+
+    /* Sin fórmula de presentación y con el rubro dicho a secas: "ceramica,
+     * venta y clases" son cuatro palabras y ninguna es un verbo. Solo cuando
+     * TODO lo que escribió es corto: en un texto largo, el primer segmento
+     * puede ser cualquier cosa menos el rubro. */
+    $palabrasCtx = preg_split('/\s+/u', trim(preg_replace('/\s+/u', ' ', $ctx)));
+    if (count($palabrasCtx) <= 8) {
+        // Se recorren los segmentos y no solo el primero: casi todo mensaje
+        // arranca con un saludo, que $tomar() descarta.
+        foreach (preg_split('/[,;\n]+/u', $ctx) as $segmento) {
+            $segmento = trim((string)$segmento);
+            /* Si el segmento trae un verbo de presentación, su turno ya pasó
+             * arriba y no salió nada: agarrarlo entero acá deja frases como
+             * "queria consultar por una pagina" de rubro. */
+            if ($segmento === '' || preg_match('/\b(' . $verbos . ')\b/ui', $segmento)) continue;
+            $valido = $tomar($segmento, '');
+            if ($valido !== '') return $valido;
+        }
+    }
+    return '';
+}
+
+/**
+ * "No tengo ninguna referencia": la respuesta NEGATIVA también es una respuesta.
+ *
+ * La clienta de Estética Integral contestó el listado con "No tengo ninguna
+ * referencia me gustan los colores pasteles" y el bot le repreguntó, en el
+ * turno siguiente, si tenía alguna página de referencia — cerrando encima con
+ * "si no tenés ninguna, decime que no", que es lo que ella acababa de decir
+ * (3-sep). De todos los errores es el que más suena a respuesta automática.
+ *
+ * Pasaba porque la referencia solo se daba por contestada si el modelo llamaba
+ * anotar_prediseno con el argumento `referencia` (wabot_agente_anotar), y con
+ * una negativa el modelo simplemente no lo manda. wabot_prediseno_faltan() la
+ * seguía pidiendo y wabot_agente_repite_pregunta_contestada() —que sí tiene el
+ * patrón de esa pregunta— no la frenaba, porque exige referencia_preguntada.
+ *
+ * ANOTA Y NO CONTESTA, igual que wabot_prediseno_lista_posicional(): marca el
+ * dato y deja seguir el flujo, que con la ficha completa hace lo que va.
+ */
+function wabot_prediseno_referencia_negada($texto, &$conv) {
+    if (trim((string)($conv['referencia'] ?? '')) !== '' || !empty($conv['referencia_preguntada'])) return false;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+
+    $sustantivo = '(referencia\w*|ejemplo\w*|pagina\w*|paginas|web\w*|sitio\w*|modelo\w*|inspiracion)';
+    $negacionExplicita = preg_match('/\b(no tengo|no tenemos|no cuento con|no manejo|no se me ocurre|no tengo ninguna|ninguna en particular)\b.{0,25}\b' . $sustantivo . '\b/u', $t)
+        || preg_match('/\b' . $sustantivo . '\b.{0,20}\b(no tengo|no tenemos|ninguna|ninguno|no)\b/u', $t)
+        || preg_match('/\b(no vi|no mire|no busque)\b.{0,20}\b' . $sustantivo . '\b/u', $t);
+
+    if (!$negacionExplicita) {
+        /* "No. Ninguna" a secas: solo cuenta si lo último que preguntó el bot
+         * fue justamente la referencia. Sin ese anclaje, un "no" suelto puede
+         * estar contestando cualquier otra cosa. */
+        /* "No. Ninguna" normaliza a "no ninguna": la negativa corta llega
+         * encadenada tanto o más seguido que sola. Se acepta cualquier
+         * combinación corta de palabras negativas y nada más. */
+        if (!preg_match('/^(no|ninguna|ninguno|nada|tengo|por|ahora|todavia|aun|todavía|ni|una|conozco|se)(\s+(no|ninguna|ninguno|nada|tengo|por|ahora|todavia|aun|todavía|ni|una|conozco|se)){0,3}$/u', $t)) return false;
+        if (!preg_match('/\b(no|ninguna|ninguno|nada|ni)\b/u', $t)) return false;
+        $ultimaDelBot = '';
+        foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+            if (($linea['q'] ?? '') === 'bot') { $ultimaDelBot = wabot_normalizar_frase((string)($linea['t'] ?? '')); break; }
+        }
+        if ($ultimaDelBot === '' || !preg_match('/\breferencia\w*\b|\bpagina que te (haya )?gust\w+\b|\bweb que te guste\b/u', $ultimaDelBot)) return false;
+    }
+
+    $conv['referencia'] = '';
+    $conv['referencia_preguntada'] = true;
+    return true;
 }
 
 /** Deshace un pitch que salió este turno pero no llegó al cliente. */

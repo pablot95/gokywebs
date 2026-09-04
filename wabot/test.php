@@ -6115,5 +6115,101 @@ caso('liberado, el que espera lo toma', $lockB !== null);
 wabot_lock_soltar($lockB);
 @unlink(WABOT_DATA . '/lock/CODIGOSIDXTEST.lock');
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * 3-sep: los 18 errores que Pablo sacó de las charlas del día.
+ * ───────────────────────────────────────────────────────────────────────── */
+echo "— 3-sep: no repreguntar lo que el cliente ya contestó —
+";
+
+$convRef = ['referencia' => '', 'referencia_preguntada' => false, 'transcript' => [
+    ['q' => 'bot', 't' => 'Para armar la propuesta contame el nombre de tu negocio, los colores y si tenés alguna página de referencia que te guste.', 'ts' => time()],
+]];
+$c1 = $convRef;
+caso('"No tengo ninguna referencia me gustan los colores pasteles" cuenta como respuesta (Estética Integral)',
+    wabot_prediseno_referencia_negada('No tengo ninguna referencia me gustan los colores pasteles', $c1) === true
+    && !empty($c1['referencia_preguntada']));
+$c2 = $convRef;
+caso('y "No. Ninguna" también, porque la última pregunta fue esa',
+    wabot_prediseno_referencia_negada('No. Ninguna', $c2) === true);
+$c3 = ['referencia' => '', 'referencia_preguntada' => false, 'transcript' => [
+    ['q' => 'bot', 't' => 'Perfecto, seguimos con el sitio profesional para tu gabinete.', 'ts' => time()]]];
+caso('un "No" suelto sin esa pregunta delante NO la da por contestada',
+    wabot_prediseno_referencia_negada('No', $c3) === false);
+$c4 = $convRef;
+caso('ni una referencia de verdad', wabot_prediseno_referencia_negada('me gusta la de zara', $c4) === false);
+$c5 = $convRef;
+caso('ni una negativa sobre otra cosa', wabot_prediseno_referencia_negada('no me gusta el rojo', $c5) === false);
+$c6 = ['referencia' => 'gokywebs.com', 'referencia_preguntada' => true, 'transcript' => []];
+caso('y con la referencia ya cargada no toca nada', wabot_prediseno_referencia_negada('no tengo ninguna', $c6) === false);
+
+echo "— 3-sep: el cliente que se queda con el próximo paso no recibe seguimiento —
+";
+
+caso('"gracias cualquier cosa te contacto" es el cliente tomando la posta (Marita)',
+    wabot_dijo_te_aviso('gracias cualquier cosa te contacto') === true);
+caso('"cualquier cosa te aviso" también', wabot_dijo_te_aviso('cualquier cosa te aviso') === true);
+caso('"yo te contacto" también', wabot_dijo_te_aviso('yo te contacto') === true);
+caso('"después te escribo" también', wabot_dijo_te_aviso('despues te escribo') === true);
+caso('y lo de siempre sigue andando', wabot_dijo_te_aviso('lo veo con mi socia y te aviso') === true);
+caso('pero pedir que le escriban NO es el cliente tomando la posta',
+    wabot_dijo_te_aviso('escribime vos cuando esté lista') === false);
+caso('ni un mensaje cualquiera', wabot_dijo_te_aviso('dale, mandame la demo') === false);
+
+echo "— 3-sep: la segunda necesidad no se ignora —
+";
+
+caso('"ceramica, venta y clases" son dos ejes, no solo la venta',
+    ($ej = wabot_ejes_mixtos('ceramica, venta y clases')) !== null
+    && isset($ej['productos']) && isset($ej['cursos']));
+caso('"vendo ropa y doy clases" también',
+    ($ej2 = wabot_ejes_mixtos('vendo ropa y doy clases')) !== null && count($ej2) >= 2);
+caso('pero "vendo indumentaria para clases de spinning" NO: las clases son de otro',
+    wabot_ejes_mixtos('vendo indumentaria para clases de spinning') === null);
+caso('y el ecommerce de macramé sigue sin disparar el aviso de mixto (27-ago)',
+    wabot_ejes_mixtos('hago macrame y bijouterie en mi taller') === null);
+
+echo "— 3-sep: el rubro sale de las palabras del cliente, no de \"tu negocio\" —
+";
+
+$rub = function ($texto) {
+    return wabot_rubro_desde_contexto(['transcript' => [['q' => 'cliente', 't' => $texto, 'ts' => time()]],
+                                       'session_started_ts' => time() - 10]);
+};
+caso('Henry: "estaría interesado en una de enfermería domiciliaria..." → enfermería domiciliaria',
+    $rub('Buen día. Mucho gusto mí nombre es Henry estaría interesado en una de enfermería domiciliaria o de cuidadores para prestar servicio de cuidados en turnos') === 'enfermería domiciliaria');
+caso('Fátima: "Hago campeonatos de fútbol" → campeonatos de fútbol',
+    $rub('Hago campeonatos de fútbol. Necesitaría q ahí esté toda la info') === 'campeonatos de fútbol');
+caso('"ceramica, venta y clases" → ceramica', $rub('ceramica, venta y clases') === 'ceramica');
+caso('"Tengo una marca de ropa" → una marca de ropa', $rub('Buen día! Tengo una marca de ropa , estoy armando un local .') === 'una marca de ropa');
+/* "Tenemos un local" no dice nada del rubro, pero la oración sigue: se
+ * descarta ese candidato y se prueba el siguiente, en vez de rendirse en el
+ * primero y caer en "tu negocio" (Mundo Queen). */
+caso('un local a secas no es un rubro, y se sigue buscando en la misma oración',
+    $rub('Con mi esposa tenemos un local donde hacemos uñas y pestañas y también vendemos insumos, perfumería, de todo un poco') === 'insumos');
+caso('pero si no hay nada más que un local, no se inventa nada',
+    $rub('Tenemos un local') === '');
+caso('ni un saludo', $rub('Hola, queria consultar por una pagina') === '');
+caso('ni un infinitivo suelto', $rub('queria consultar precios') === '');
+
+echo "— 3-sep: el formulario completado no se vuelve a ofrecer —
+";
+
+$cForm = wabot_conv_load('QATESTFORM1');
+$cForm['form_completado_ts'] = time();
+caso('con el formulario ya completado, wabot_form_link() no devuelve link (Natalia lo llenó dos veces)',
+    wabot_form_link($cForm, $cfg) === '');
+$cSinForm = wabot_conv_load('QATESTFORM2');
+$cSinForm['form_completado_ts'] = 0;
+caso('y sin completar sigue saliendo normal', wabot_form_link($cSinForm, $cfg) !== '');
+@unlink(WABOT_DATA . '/conv/QATESTFORM1.json');
+@unlink(WABOT_DATA . '/conv/QATESTFORM2.json');
+
+caso('el aviso que manda el propio formulario se reconoce',
+    wabot_texto_es_aviso_de_formulario("Hola! Acabo de completar el formulario de la demo gratis.\n\n🙋 Nombre: Natalia\n🏢 Negocio: Secretos Compartidos") === true);
+caso('y también con los emojis rotos, que es como llegó en 3 de 23 envíos',
+    wabot_texto_es_aviso_de_formulario("Hola! Acabo de completar el formulario de la demo gratis.\n\n\u{FFFD} Nombre: Natalia\n\u{FFFD} Negocio: Secretos Compartidos") === true);
+caso('un mensaje normal no se confunde con el aviso',
+    wabot_texto_es_aviso_de_formulario('Hola, quería consultar por el formulario que me mandaste') === false);
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
 exit($fallas === 0 ? 0 : 1);

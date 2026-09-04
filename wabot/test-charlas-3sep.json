@@ -1,0 +1,92 @@
+[
+  {
+    "id": "T1",
+    "titulo": "Estetica Integral: la referencia negada, el link del catalogo y el dato nuevo",
+    "esperado": "Tras 'No tengo ninguna referencia me gustan los colores pasteles' NO vuelve a preguntar por la referencia. El link del catalogo de WhatsApp se toma como material suyo, NUNCA con 'esa duda te la va a poder contestar el desarrollador'. Y 'Tengo un catalogo de productos' no dispara la explicacion del ecommerce: ya se le cotizo el sitio profesional.",
+    "nombre": "Graciela",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Buen día soy Cosmiatra. Y necesito una landing page",
+      "Tengo un gabinete en mi casa no local a la calle",
+      "El mismo una landing page",
+      "No tengo ninguna referencia me gustan los colores pasteles",
+      "Sigue este enlace para ver nuestro catálogo en WhatsApp: https://wa.me/c/5491135240018",
+      "Tengo un catálogo de productos"
+    ]
+  },
+  {
+    "id": "T2",
+    "titulo": "Rodo: la pregunta directa mezclada con el rubro",
+    "esperado": "Ademas del precio del sitio profesional, tiene que contestar SI o SI si hay pago mensual (el mantenimiento es opcional). Hoy esa pregunta no la contestaba nadie porque el pitch sale exacto.",
+    "nombre": "Rodo",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto? Quería saber el precio de cuánto me cuesta hacer una página web Gracias y como es el procedimiento",
+      "Perfecto Soy instructor de calistenia Y tiene algún pago mensual o la página me queda de por vida una vez pagada ?"
+    ]
+  },
+  {
+    "id": "T3",
+    "titulo": "Campeonatos de futbol: siete secciones enumeradas",
+    "esperado": "El pitch tiene que nombrar los campeonatos de futbol (no 'tu negocio') y acusar recibo de lo que enumero (tablas, goleadores, equipos, jugadores). Nada de 'muestra tus trabajos'.",
+    "nombre": "Fatima",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Hago campeonatos de fútbol. Necesitaría q ahí esté toda la info como\nInicio\nTablas\nRojas/ amarillas\nGoleadores\nFotos\n Equipos\nJugadores"
+    ]
+  },
+  {
+    "id": "T4",
+    "titulo": "Henry: enfermeria domiciliaria explicada en tres renglones",
+    "esperado": "El pitch nombra la enfermeria domiciliaria, no 'tu negocio', y refleja al menos una de las cosas que pidio (cuidadores, turnos, terapias). La descripcion del sitio profesional ya no dice 'muestra tus trabajos'.",
+    "nombre": "Henry",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Buen día. Mucho gusto mí nombre es Henry estaría interesado en una de enfermería domiciliaria o de cuidadores para prestar servicio de cuidados en turnos o prestaciones por hora de terapia física, cognitiva o curaciones"
+    ]
+  },
+  {
+    "id": "T5",
+    "titulo": "Ana Sloog: la pregunta cerrada sobre el mantenimiento",
+    "esperado": "A 'Ese pago es si o si. Es decir fijo o es opcional?' contesta CORTO que es opcional. No vuelve a pegar el bloque entero del mantenimiento.",
+    "nombre": "Ana",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Hola tengo un estudio Contable. Nunca hicimos publicidad. La idea sería captar nuevos clientes. Cuánto nos cobraría?",
+      "Costo de mantenimiento de la web mensual? Hacen redes también?",
+      "Ese pago es si o si. Es decir fijo o es opcional?"
+    ]
+  },
+  {
+    "id": "T6",
+    "titulo": "Ceramica: venta Y clases, dos necesidades en cuatro palabras",
+    "esperado": "No puede cotizar ecommerce a secas ignorando las clases: tiene que nombrar las dos cosas y preguntar si las quiere juntas o arranca con una.",
+    "nombre": "Choy",
+    "turnos": [
+      "Hola",
+      "ceramica, venta y clases"
+    ]
+  },
+  {
+    "id": "T7",
+    "titulo": "Marita: el cliente se queda con el proximo paso",
+    "esperado": "Se despide sin insistir. Y ademas tiene que quedar anotado que el cliente prometio contactar el (aviso_prometido_ts), para que el seguimiento automatico no le escriba ese mismo dia.",
+    "nombre": "Marita",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "tengo emprendimiento de decoración textil",
+      "gracias",
+      "gracias cualquier cosa te contacto"
+    ]
+  },
+  {
+    "id": "T8",
+    "titulo": "Mundo Queen: belleza + venta de insumos, gestionado por WhatsApp",
+    "esperado": "La respuesta tiene que reflejar lo que pidio (mostrar todo y gestionar las ventas por WhatsApp), no el bloque generico del ecommerce. El rubro del pitch sale de sus palabras.",
+    "nombre": "Carina",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Todo bien",
+      "Con mi esposa tenemos un local donde hace uñas, pestañas, un salón de belleza y también hacemos ventas de insumos para uñas y pestañas, perfumería, de todo un poco, quería un presupuesto para armar una tienda online donde se pueda mostrar todo y gestionar las ventas directas por Whatsapp"
+    ]
+  }
+]

@@ -19,6 +19,13 @@ require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 function wabot_responder($texto, &$conv, $cfg) {
     $modo = $cfg['modo_redaccion'] ?? 'fijo';
 
+    /* Lo primero de todo: si este cliente ya venía hablando por el otro canal,
+     * se trae lo que dejó allá ANTES de que nadie lea el estado. Si no, el
+     * mismo cliente arranca de cero acá —le preguntan lo que ya contó y le
+     * ofrecen el formulario que ya completó— que es lo que le pasó a Natalia
+     * el 3-sep. Ver wabot_conv_adoptar_hermana(). */
+    wabot_conv_adoptar_hermana($conv, $cfg);
+
     // El reset pertenece al borde común, antes de que el agente vea el estado y
     // antes de actualizar ultimo_ts. Así también funciona en modo agente, donde
     // el motor de reglas puede no ejecutarse nunca.
@@ -91,6 +98,28 @@ function wabot_responder($texto, &$conv, $cfg) {
                 $conv['cambios_pedidos'] = $previos === '' ? $nuevo : $previos . ' | ' . $nuevo;
                 wabot_evento_sesion($conv, 'cambios_pedidos', ['origen' => 'postdemo_silencio']);
             }
+        }
+        return [];
+    }
+
+    /* El aviso que manda el propio formulario, con el formulario ya recibido.
+     * No hay nada que preguntar: los datos están. Se acusa recibo con el texto
+     * de siempre —que trae {entrega}, la única fecha de entrega del sistema— y
+     * se sigue. Determinista porque acá el modelo hizo las dos cosas mal el
+     * mismo día: a Natalia le arrancó el embudo de cero (le preguntó qué era su
+     * negocio con el resumen ya escrito) y a Mayra le inventó "hoy a la tarde"
+     * un minuto antes de que el texto oficial dijera "mañana".
+     *
+     * Va detrás de la adopción de la hermana, así que también cubre al que
+     * completó el formulario desde Instagram y aparece por WhatsApp; y detrás
+     * de los cortes de baja y postdemo, para no contestarle "la demo te llega
+     * mañana" a alguien que ya la recibió o que pidió que no le escribamos. */
+    if (wabot_texto_es_aviso_de_formulario($texto) && (int)($conv['form_completado_ts'] ?? 0) > 0) {
+        if (empty($conv['form_aviso_respondido'])) {
+            $conv['form_aviso_respondido'] = true;
+            wabot_evento_sesion($conv, 'form_aviso_recibido');
+            $espera = trim((string)($cfg['espera_prediseno'] ?? ''));
+            if ($espera !== '') return [wabot_personalizar($espera, $conv)];
         }
         return [];
     }
@@ -264,6 +293,12 @@ function wabot_responder($texto, &$conv, $cfg) {
      * ese formato no puede depender del modelo (caso Whitesoul, 27-ago). Anota
      * y NO contesta: el flujo sigue igual, pero ya con la ficha completa. */
     wabot_prediseno_lista_posicional($texto, $conv);
+
+    /* "No tengo ninguna referencia": una negativa también contesta la pregunta.
+     * Va acá, en el borde común, por el mismo motivo que la lista posicional:
+     * la pregunta la hizo el bot, así que leer la respuesta no puede depender
+     * de que el modelo llame la herramienta con el argumento justo. */
+    wabot_prediseno_referencia_negada($texto, $conv);
 
     /* "Está todo en lo que te mandé". El cliente sostiene que ya pasó los
      * datos y el bot se los sigue pidiendo por partes (Clínica de Mar,

@@ -292,10 +292,20 @@ async function enviarFormulario() {
     }
 }
 
+/* Sin emojis a propósito.
+ *
+ * Los dos que había (🙋 y 🏢) son caracteres de 4 bytes, y en 3 de 23 envíos
+ * reales del 3-sep llegaron a WhatsApp como "�": la clienta de Secretos
+ * Compartidos vio "� Nombre" y "� Negocio" en el mensaje que ella misma
+ * mandaba. El texto sale bien de acá (el archivo es UTF-8 y el link se arma con
+ * encodeURIComponent): lo rompe el WhatsApp del cliente al levantar el ?text=,
+ * y no siempre — a la mayoría le llega intacto, así que no hay nada que
+ * corregir de este lado más que no depender de eso. Con texto ASCII el mensaje
+ * llega igual en todos los dispositivos. */
 function mensajeFormWsp(nombre, nombreNegocio) {
     const lineas = [`Hola! Acabo de completar el formulario de la demo gratis.`, ''];
-    lineas.push(`🙋 Nombre: ${nombre || 'sin nombre'}`);
-    lineas.push(`🏢 Negocio: ${nombreNegocio || 'sin nombre'}`);
+    lineas.push(`Nombre: ${nombre || 'sin nombre'}`);
+    lineas.push(`Negocio: ${nombreNegocio || 'sin nombre'}`);
     lineas.push('', 'Quedo atento/a!');
     return lineas.join('\n');
 }

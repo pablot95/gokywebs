@@ -1837,7 +1837,13 @@ function wabot_precio_ideal_defaults() {
      * verlo en detalle. Un solo link, el del presupuesto: los trabajos del
      * rubro ya están enlazados adentro de esa página. */
     return [
-        'landing' => "Perfecto, para {rubro} sería un sitio profesional. Es un pago único de {precio}.\nEl sitio profesional es una página a tu medida: presenta lo que hacés, muestra tus trabajos y lleva a los clientes directo a tu WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
+        /* "Muestra tus trabajos" no le cabe a media lista de rubros que caen en
+         * sitio profesional: una contadora, un abogado, una cuidadora
+         * domiciliaria o un colegio no tienen trabajos que mostrar, y la frase
+         * delata que el texto es el mismo para todos (Pablo, 3-sep). La
+         * redacción de reemplazo es la que dictó él: sirve igual para
+         * contadores, abogados, técnicos, peluqueros y cuidadores. */
+        'landing' => "Perfecto, para {rubro} sería un sitio profesional. Es un pago único de {precio}.\nEl sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
         'ecommerce' => "Perfecto, para {rubro} sería un ecommerce. Es un pago único de {precio}.\nEl ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.\nEn este enlace podés verlo bien detallado: {link}",
         'inmobiliaria' => "Perfecto, para {rubro} sería una web inmobiliaria. Es un pago único de {precio}.\nLa web inmobiliaria publica tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.\nEn este enlace podés verlo bien detallado: {link}",
         'elearning' => "Perfecto, para {rubro} sería una plataforma de cursos. Es un pago único de {precio}.\nLa plataforma tiene los videos subidos ahí, cada alumno entra con su usuario y sigue su progreso, y el cobro de la inscripción se hace online.\nEn este enlace podés verlo bien detallado: {link}",
@@ -3102,6 +3108,13 @@ function wabot_form_link(&$conv, $cfg) {
     // Pablo, 25-ago: momentáneamente sin el form, para volver al pedido de
     // datos por chat.
     if (empty($cfg['form_activo'])) return '';
+    /* Al que ya lo completó NUNCA se le vuelve a ofrecer. Natalia lo llenó dos
+     * veces con quince minutos de diferencia (3-sep) y quedaron dos leads del
+     * mismo negocio: la segunda vez el bot se lo ofreció porque esa punta de la
+     * charla no sabía nada de la primera. Con la hermana ya adoptada
+     * (wabot_conv_adoptar_hermana) form_completado_ts viaja, así que este corte
+     * alcanza para los dos casos: el mismo chat y el chat del otro canal. */
+    if ((int)($conv['form_completado_ts'] ?? 0) > 0) return '';
     if (wabot_channel_user_id($conv) === '') return '';
     $codigo = wabot_codigo_asignar($conv);
     if ($codigo === '') return '';
@@ -3403,6 +3416,137 @@ function wabot_conv_resolver($tel, &$motivo = null) {
 
     $motivo = ($coinciden || $porWsp) ? 'ambiguo' : 'sin_chat';
     return null;
+}
+
+/**
+ * La OTRA conversación del mismo cliente, cuando ya existe una con esta clave.
+ *
+ * wabot_conv_resolver() corta apenas la clave existe como archivo —es lo que
+ * tiene que hacer: resuelve a dónde va un teléfono tipeado—, así que no sirve
+ * para el caso inverso: el cliente que YA tiene charla abierta acá y además
+ * tiene otra por el otro canal.
+ *
+ * Es el camino de Natalia (Secretos Compartidos, 3-sep): entró por Instagram,
+ * completó el formulario desde el DM —con lo cual el boceto y todos los datos
+ * quedaron en ig1409100161313864— y después el propio formulario la mandó a
+ * WhatsApp con su mensaje de aviso. Ese mensaje abrió la conversación
+ * 5492494691266 completamente vacía, así que el bot le preguntó "contame un
+ * poco qué es o qué ofrecés en el negocio" teniendo el resumen escrito, la
+ * hizo repetir todo, le ofreció el formulario de nuevo y ella lo completó
+ * dos veces (12:14 y 12:29): dos leads del mismo negocio.
+ *
+ * El puente es telefono_wsp, el mismo que ya usa wabot_conv_resolver() para
+ * entregarle la demo a un lead de Instagram.
+ */
+function wabot_conv_hermana($clave) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    if ($clave === '') return null;
+    $abonados = wabot_tel_abonados(stripos($clave, 'ig') === 0 ? '' : $clave);
+    if (!$abonados) return null;
+
+    $hermanas = [];
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $otra = basename($f, '.json');
+        if ($otra === $clave) continue;
+        if (ctype_digit($otra)) {
+            if (array_intersect($abonados, wabot_tel_abonados($otra))) $hermanas[] = $otra;
+            continue;
+        }
+        $wsp = wabot_conv_wsp_crudo($f);
+        if ($wsp !== '' && array_intersect($abonados, wabot_tel_abonados($wsp))) $hermanas[] = $otra;
+    }
+    // Con más de una no se adivina: que siga como hasta ahora.
+    return count($hermanas) === 1 ? $hermanas[0] : null;
+}
+
+/**
+ * ¿Es el mensaje que arma el propio formulario al terminar?
+ *
+ * form/script.js abre WhatsApp con un texto prellenado ("Hola! Acabo de
+ * completar el formulario de la demo gratis..."). Reconocerlo no es un lujo:
+ * es el mensaje que abre la conversación de WhatsApp de todo el que llegó por
+ * Instagram, y tratarlo como un mensaje cualquiera es lo que hacía arrancar el
+ * embudo de cero con el formulario recién completado.
+ *
+ * Se reconoce por la frase, no por los emojis: en 3 de 23 envíos reales
+ * llegaron rotos (U+FFFD) porque el WhatsApp del cliente les come los
+ * caracteres de 4 bytes del texto prellenado.
+ */
+function wabot_texto_es_aviso_de_formulario($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match('/\bacabo de completar\b.{0,25}\bformulario\b/u', $t)
+        || (bool)preg_match('/\bcomplete\b.{0,15}\bformulario\b.{0,25}\b(demo|muestra)\b/u', $t);
+}
+
+/**
+ * Trae a esta conversación lo que el mismo cliente ya dejó en la otra.
+ *
+ * Se aplica UNA sola vez y solo mientras esta charla no tenga nada propio: si
+ * el cliente ya venía hablando por acá, lo de acá manda. Lo que se trae es el
+ * estado comercial —qué vende, colores, tipo, precio dado, boceto creado— que
+ * es justo lo que hace que el bot no vuelva a preguntar lo que ya sabe ni
+ * vuelva a ofrecer un formulario que ya completó.
+ *
+ * lead_creado viaja a propósito: es lo que evita el SEGUNDO lead en Firestore.
+ * El boceto ya existe, con los datos del formulario; lo que faltaba era que
+ * esta punta se enterara.
+ */
+function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
+    if (!empty($conv['hermana_adoptada'])) return false;
+    if (!empty($conv['tipo']) || !empty($conv['lead_creado'])) return false;
+
+    /* "Todavía no pasó nada acá" se mide por si EL BOT ya habló, no por el
+     * último mensaje del cliente: webhook.php escribe el mensaje entrante en
+     * el transcript ANTES de llamar a wabot_responder(), así que para cuando
+     * esto corre el cliente SIEMPRE tiene un mensaje y un guard por
+     * wabot_ultimo_cliente_ts() no se cumpliría nunca. (Lo tuvo, y pasaba los
+     * tests igual porque los tests llaman a wabot_responder() directo, sin la
+     * escritura previa del webhook: el mismo pozo de siempre, una batería que
+     * no reproduce producción.)
+     *
+     * Si el bot ya contestó en esta charla, esta charla tiene su propio
+     * contexto y no se le trae nada de otra. */
+    $turnosCliente = 0;
+    foreach ((array)($conv['transcript'] ?? []) as $fila) {
+        $quien = $fila['q'] ?? '';
+        if ($quien === 'bot' || $quien === 'humano') return false;
+        if ($quien === 'cliente') $turnosCliente++;
+    }
+    // Y si escribió varias veces sin que nadie contestara, tampoco: eso es una
+    // charla propia, aunque esté sin atender.
+    if ($turnosCliente > 2) return false;
+
+    $otraClave = wabot_conv_hermana(wabot_conversation_key($conv));
+    if ($otraClave === null) return false;
+    $otra = wabot_conv_load($otraClave);
+    // Solo vale la pena si allá pasó algo que acá no: datos del formulario o
+    // un boceto ya creado. Dos charlas vacías no se tocan.
+    if (empty($otra['form_completado_ts']) && empty($otra['lead_creado'])) return false;
+
+    foreach (['nombre_negocio', 'descripcion', 'colores', 'colores_hex', 'referencia', 'brief',
+              'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno'] as $k) {
+        if (trim((string)($conv[$k] ?? '')) === '' && !empty($otra[$k])) $conv[$k] = $otra[$k];
+    }
+    if (trim((string)($conv['nombre'] ?? '')) === '' && trim((string)($otra['nombre'] ?? '')) !== '') {
+        $conv['nombre'] = $otra['nombre'];
+        $conv['nombre_confirmado'] = !empty($otra['nombre_confirmado']);
+    }
+    foreach (['precio_dado', 'pitch_hecho', 'cta_muestra', 'lead_creado', 'referencia_preguntada'] as $k) {
+        if (!empty($otra[$k])) $conv[$k] = true;
+    }
+    if (!empty($otra['form_completado_ts'])) $conv['form_completado_ts'] = (int)$otra['form_completado_ts'];
+    if (empty($conv['fase']) || $conv['fase'] === 'nuevo') {
+        $conv['fase'] = !empty($otra['lead_creado']) ? 'prediseno' : (string)($otra['fase'] ?? 'nuevo');
+    }
+    $conv['hermana_adoptada'] = $otraClave;
+    wabot_conv_transcript($conv, 'sistema',
+        "[Continuación] Este cliente ya venía hablando en la conversación {$otraClave}; se trajeron sus datos para no volver a pedírselos.");
+    wabot_log('conv_hermana_adoptada', ['clave' => wabot_conversation_key($conv), 'hermana' => $otraClave]);
+    if (function_exists('wabot_evento_sesion')) {
+        wabot_evento_sesion($conv, 'hermana_adoptada', ['hermana' => $otraClave]);
+    }
+    return true;
 }
 
 /**

@@ -1,0 +1,62 @@
+Bateria conversacional wabot — 3 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO T3 — Campeonatos de futbol: siete secciones enumeradas
+ESPERADO: El pitch tiene que nombrar los campeonatos de futbol (no 'tu negocio') y acusar recibo de lo que enumero (tablas, goleadores, equipos, jugadores). Nada de 'muestra tus trabajos'.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Hago campeonatos de fútbol. Necesitaría q ahí esté toda la info como
+Inicio
+Tablas
+Rojas/ amarillas
+Goleadores
+Fotos
+ Equipos
+Jugadores
+<<< BOT [435c]: Entonces necesitás una web donde puedas cargar y actualizar las tablas, los goleadores y los equipos.
+           Perfecto, para los campeonatos de fútbol sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=S6
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T4 — Henry: enfermeria domiciliaria explicada en tres renglones
+ESPERADO: El pitch nombra la enfermeria domiciliaria, no 'tu negocio', y refleja al menos una de las cosas que pidio (cuidadores, turnos, terapias). La descripcion del sitio profesional ya no dice 'muestra tus trabajos'.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Buen día. Mucho gusto mí nombre es Henry estaría interesado en una de enfermería domiciliaria o de cuidadores para prestar servicio de cuidados en turnos o prestaciones por hora de terapia física, cognitiva o curaciones
+<<< BOT [456c]: Entonces necesitás una web donde puedas ofrecer servicios de enfermería domiciliaria, cuidadores y prestaciones por hora.
+           Perfecto, para la enfermería domiciliaria sería un sitio profesional. Es un pago único de $180.000.
+           El sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=C9
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO T8 — Mundo Queen: belleza + venta de insumos, gestionado por WhatsApp
+ESPERADO: La respuesta tiene que reflejar lo que pidio (mostrar todo y gestionar las ventas por WhatsApp), no el bloque generico del ecommerce. El rubro del pitch sale de sus palabras.
+>>> CLIENTE: Hola. ¿Puedo obtener más información sobre esto?
+<<< BOT [128c]: Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Todo bien
+<<< BOT [120c]: Me alegro. Contame brevemente a qué te dedicás o qué tipo de negocio tenés para poder pasarte el valor exacto de tu web.
+    [fase=menu tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Con mi esposa tenemos un local donde hace uñas, pestañas, un salón de belleza y también hacemos ventas de insumos para uñas y pestañas, perfumería, de todo un poco, quería un presupuesto para armar una tienda online donde se pueda mostrar todo y gestionar las ventas directas por Whatsapp
+<<< BOT [500c]: Entonces necesitás una tienda online donde puedan mostrar todos los servicios del salón y también los productos para que los clientes consulten y compren directo por WhatsApp.
+           Perfecto, para tu negocio sería un ecommerce. Es un pago único de $290.000.
+           El ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+<<< BOT [225c]: Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+           
+           Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
+           https://gokywebs.com/form/?c=UP
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

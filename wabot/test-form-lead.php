@@ -186,4 +186,81 @@ $convDespues = wabot_conv_load('5493810002002');
 caso('el brief queda vacío para que corra wabot_resumen_negocio() como siempre', empty($convDespues['brief']));
 @unlink(WABOT_DATA . '/conv/5493810002002.json');
 
+/* ─────────────────────────────────────────────────────────────────────────
+ * 3-sep: Instagram → formulario → WhatsApp es UN cliente, no tres.
+ *
+ * Natalia (Secretos Compartidos) entró por DM, completó el formulario desde
+ * ahí —así que el boceto y sus datos quedaron en la charla de Instagram— y el
+ * propio formulario la mandó a WhatsApp con su mensaje de aviso. Esa
+ * conversación arrancaba vacía: le preguntó "contame un poco qué es o qué
+ * ofrecés", la hizo repetir todo, le ofreció el formulario de nuevo y ella lo
+ * completó dos veces en quince minutos. Dos leads del mismo negocio.
+ * ───────────────────────────────────────────────────────────────────────── */
+echo "— Instagram → formulario → WhatsApp: un solo lead —\n";
+
+$igNat = wabot_conv_load('igQATESTNATALIA1');
+$igNat['canal'] = 'instagram';
+$igNat['telefono_wsp'] = '2494691266';          // como lo tipeó ella en el form
+$igNat['nombre'] = 'Natalia'; $igNat['nombre_confirmado'] = true;
+$igNat['nombre_negocio'] = 'Secretos Compartidos';
+$igNat['descripcion'] = 'Ofrecemos prendas femeninas de calidad para diferentes edades y estilos';
+$igNat['colores'] = 'Color principal: #ffffff'; $igNat['tipo'] = 'ecommerce';
+$igNat['precio_dado'] = true; $igNat['pitch_hecho'] = true; $igNat['cta_muestra'] = true;
+$igNat['lead_creado'] = true; $igNat['form_completado_ts'] = time(); $igNat['fase'] = 'prediseno';
+wabot_conv_save($igNat);
+
+// El mismo abonado escribiendo por WhatsApp: Meta lo manda con 549 adelante.
+$wspNat = wabot_conv_load('5492494691266TEST');
+$wspNat['tel'] = '5492494691266'; $wspNat['channel_user_id'] = '5492494691266';
+caso('la conversación de WhatsApp encuentra a su hermana de Instagram por el telefono_wsp',
+    wabot_conv_hermana('5492494691266') === 'igQATESTNATALIA1');
+
+$wspNat2 = wabot_conv_load('5492494691266');
+caso('y adopta lo que ella ya había dejado allá', wabot_conv_adoptar_hermana($wspNat2, $cfg) === true);
+caso('trae la descripción, así no se la vuelve a pedir',
+    mb_stripos((string)$wspNat2['descripcion'], 'prendas femeninas') !== false);
+caso('trae el tipo y el precio ya dados', ($wspNat2['tipo'] ?? '') === 'ecommerce' && !empty($wspNat2['precio_dado']));
+caso('trae lead_creado, que es lo que evita el SEGUNDO lead en Firestore', !empty($wspNat2['lead_creado']));
+caso('y trae form_completado_ts', (int)($wspNat2['form_completado_ts'] ?? 0) > 0);
+caso('con eso, el formulario ya no se le vuelve a ofrecer', wabot_form_link($wspNat2, $cfg) === '');
+caso('la adopción ocurre una sola vez', wabot_conv_adoptar_hermana($wspNat2, $cfg) === false);
+
+/* Y el turno entero, COMO LO HACE EL WEBHOOK: el mensaje entrante ya está en
+ * el transcript y ultimo_cliente_ts ya está puesto cuando corre wabot_responder().
+ * Sin reproducir ese orden el test miente — la primera versión de la adopción
+ * se guardaba por wabot_ultimo_cliente_ts() y pasaba estos tests en verde
+ * mientras en producción no se habría disparado nunca. */
+$wspTurno = wabot_conv_load('5492494691266');
+$msgForm = "Hola! Acabo de completar el formulario de la demo gratis.\n\n\u{FFFD} Nombre: Natalia\n\u{FFFD} Negocio: Secretos Compartidos\n\nQuedo atento/a!";
+wabot_conv_transcript($wspTurno, 'cliente', $msgForm);   // webhook.php:243
+$wspTurno['ultimo_cliente_ts'] = time();                 // webhook.php:251
+$GLOBALS['WABOT_TEST_AGENTE'] = function ($m, &$c, $cf) { return ['EL MODELO NO DEBERIA TOMAR ESTE TURNO']; };
+$rTurno = wabot_responder($msgForm, $wspTurno, $cfg);
+unset($GLOBALS['WABOT_TEST_AGENTE']);
+caso('la adopción corre igual con el mensaje ya escrito por el webhook',
+    !empty($wspTurno['hermana_adoptada']));
+caso('el aviso del formulario lo contesta el texto oficial, no el modelo',
+    is_array($rTurno) && count($rTurno) === 1 && mb_stripos($rTurno[0], 'NO DEBERIA') === false
+    && mb_stripos($rTurno[0], 'ya quedó todo anotado') !== false);
+caso('y no vuelve a preguntar de qué se trata el negocio',
+    mb_stripos($rTurno[0], 'contame') === false && mb_stripos($rTurno[0], 'qué ofrecés') === false);
+caso('ni manda otro formulario', mb_stripos($rTurno[0], 'gokywebs.com/form') === false);
+
+@unlink(WABOT_DATA . '/conv/igQATESTNATALIA1.json');
+@unlink(WABOT_DATA . '/conv/5492494691266TEST.json');
+@unlink(WABOT_DATA . '/conv/5492494691266.json');
+
+/* Dos charlas vacías no se tocan: la adopción es para traer datos, no para
+ * fusionar cualquier par de conversaciones del mismo número. */
+$vacia1 = wabot_conv_load('5491199887766');
+wabot_conv_save($vacia1);
+$vacia2 = wabot_conv_load('igQATESTVACIA1');
+$vacia2['canal'] = 'instagram'; $vacia2['telefono_wsp'] = '1199887766';
+wabot_conv_save($vacia2);
+$vacia1b = wabot_conv_load('5491199887766');
+caso('sin formulario ni boceto del otro lado, no se adopta nada',
+    wabot_conv_adoptar_hermana($vacia1b, $cfg) === false);
+@unlink(WABOT_DATA . '/conv/5491199887766.json');
+@unlink(WABOT_DATA . '/conv/igQATESTVACIA1.json');
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";

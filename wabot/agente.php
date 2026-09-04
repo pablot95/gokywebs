@@ -45,7 +45,7 @@ function wabot_agente($mensaje, &$conv, $cfg) {
     }
 
     if ($salida === null) return null;
-    unset($trabajo['_mensaje_agente']);
+    unset($trabajo['_mensaje_agente'], $trabajo['_acuse_pitch']);
     $conv = $trabajo;
     wabot_eventos_confirmar($conv);
     return $salida;
@@ -285,6 +285,20 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         return [wabot_texto_info('carga', $cfg)];
     }
 
+    /* Pregunta cerrada sobre algo que el bot acaba de explicar: la respuesta
+     * concreta primero, y nada más. A Ana Sloog le repitió el bloque entero del
+     * mantenimiento para contestarle si era opcional, cuando ese mismo bloque
+     * ya arrancaba diciendo que lo era (3-sep). Determinista y antes del
+     * modelo: acá el modelo ya demostró que su reflejo es volver a pegar el
+     * texto oficial. Ver wabot_respuesta_obligatorio(). */
+    if (wabot_texto_pregunta_si_es_obligatorio($mensaje)) {
+        $corta = wabot_respuesta_obligatorio($conv, $cfg);
+        if ($corta !== null && $corta !== '') {
+            wabot_evento_sesion($conv, 'pregunta_cerrada_respondida');
+            return [$corta];
+        }
+    }
+
     /* "No sé cómo", "vos sos el que sabe" en pleno prediseño: se lo tranquiliza
      * con info.no_se_nada, los colores quedan a elección nuestra y se le pide
      * solo lo que falta. Antes se le repetía el listado entero (Enrique). */
@@ -402,6 +416,26 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            /* El comodín del desarrollador contestando algo que no preguntó
+             * nada. Ver wabot_texto_comodin_desarrollador(): la regla estaba
+             * en el prompt con los ejemplos exactos y salió igual. */
+            if (wabot_texto_comodin_desarrollador($texto) && !wabot_mensaje_pregunta_algo($mensaje)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'comodin sin pregunta', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
+            /* Una fecha de entrega distinta de la que dice {entrega}. */
+            if (wabot_texto_promete_otra_entrega($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'otra fecha de entrega', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
+            /* "Quedamos a la espera de la demo": la demo la hacemos nosotros. */
+            if (wabot_texto_espera_la_demo($texto)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'dice esperar la demo', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             if (empty($conv['precio_dado']) && wabot_texto_pide_prediseno($texto)) {
                 wabot_log('error', ['donde' => 'agente', 'msg' => 'pide prediseno sin haber dado precio', 'texto' => mb_substr($texto, 0, 140)]);
                 return null;
@@ -485,7 +519,28 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                     wabot_pitch_deshacer($conv);
                 }
             }
+            /* Una línea de reconocimiento delante del texto exacto.
+             *
+             * Fátima enumeró siete secciones para su web de campeonatos
+             * (tablas, goleadores, sanciones, equipos, jugadores) y Henry
+             * explicó en tres renglones su servicio de enfermería domiciliaria:
+             * los dos recibieron el mismo pitch de siempre, sin una palabra de
+             * lo que habían escrito (Pablo, 3-sep). No es que el modelo no lo
+             * entienda —lo entiende— es que su texto se descartaba entero al
+             * salir por acá. Es el mismo permiso que ya tiene la derivación
+             * desde el 1-sep, con los mismos frenos: sin precios, sin links,
+             * sin preguntas, sin promesas. El texto del precio sigue saliendo
+             * exacto y completo detrás. */
             $salidaExacta = $reemplazoExacta !== null ? $reemplazoExacta : [$exacta];
+            if ($reemplazoExacta === null) {
+                // Primero el argumento `acuse` de la herramienta, que es como
+                // el modelo lo manda de verdad; el texto libre es el respaldo.
+                $crudoAcuse = trim((string)($conv['_acuse_pitch'] ?? ''));
+                if ($crudoAcuse === '') $crudoAcuse = $texto;
+                $conAcuse = wabot_agente_prefijo_acuse($crudoAcuse, $exacta, $conv, $cfg);
+                if ($conAcuse !== $exacta) $salidaExacta = [$conAcuse];
+            }
+            unset($conv['_acuse_pitch']);
             // El precio+pitch del turno A también trae su globo aparte (la
             // pregunta del pitch, unos segundos después): antes se perdía acá,
             // porque este camino no pasaba por wabot_agente_filtrar_aparte.
@@ -502,7 +557,9 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             if ($idiomaExacta !== null) $salidaExacta[] = $idiomaExacta;
             // Por acá salió el pitch de Héctor: texto exacto, sin pasar por el
             // modelo, y sus otras tres preguntas no las contestó nadie.
-            $sinContestarExacta = wabot_agente_empujon_preguntas($mensaje, $salidaExacta, $conv, $cfg);
+            // Con UNA alcanza: el texto del modelo se descartó, así que la
+            // pregunta del cliente no la contestó nadie (caso Rodo, 3-sep).
+            $sinContestarExacta = wabot_agente_empujon_preguntas($mensaje, $salidaExacta, $conv, $cfg, 1);
             if ($sinContestarExacta !== null) $salidaExacta[] = $sinContestarExacta;
             return $salidaExacta;
         }
@@ -621,6 +678,160 @@ function wabot_texto_promete_cierre($texto) {
     return false;
 }
 
+/**
+ * "Ese pago es si o si. Es decir fijo o es opcional?"
+ *
+ * Ana Sloog, 3-sep: acababa de recibir el bloque entero del mantenimiento —que
+ * arranca diciendo "El mantenimiento es opcional"— y preguntó eso. El bot le
+ * volvió a pegar el bloque entero, palabra por palabra. La respuesta eran dos
+ * palabras y salieron cuatro renglones repetidos.
+ *
+ * (El anti-repetición no lo agarró porque la primera vez el texto traía además
+ * el párrafo de redes, así que las dos tandas no eran idénticas.)
+ *
+ * Regla de Pablo: a una pregunta cerrada se le contesta primero la respuesta
+ * concreta, y recién después se amplía si hace falta.
+ */
+function wabot_texto_pregunta_si_es_obligatorio($mensaje) {
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if ($t === '' || mb_strlen($t) > 160) return false;
+    return (bool)(
+        preg_match('/\b(si o si|obligatorio|obligatoria|obligatorios|es fijo|es fija|son fijos)\b/u', $t)
+        || preg_match('/\bes opcional\b|\bopcional\?/u', $t)
+        || preg_match('/\b(hay que|tengo que|debo)\b.{0,12}\b(pagarlo|pagarla|contratarlo|contratarla|tomarlo|abonarlo)\b/u', $t)
+        || preg_match('/\b(se puede|puedo)\b.{0,8}\bno\b.{0,12}\b(pagarlo|contratarlo|tomarlo)\b/u', $t)
+    );
+}
+
+/**
+ * La respuesta corta, sacada de lo que el bot acaba de decir.
+ *
+ * No consulta la config ni el modelo: mira el último mensaje propio y le
+ * responde la polaridad que ese mismo mensaje ya tenía. Así no puede
+ * contradecirse, que es el único riesgo real de contestar corto. Si lo último
+ * que dijo no habla ni de opcional ni de incluido, devuelve null y sigue el
+ * flujo normal.
+ */
+function wabot_respuesta_obligatorio($conv, $cfg) {
+    $ultima = '';
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+        if (($linea['q'] ?? '') === 'bot') { $ultima = (string)($linea['t'] ?? ''); break; }
+    }
+    if (trim($ultima) === '') return null;
+    $u = wabot_normalizar_frase($ultima);
+
+    if (preg_match('/\bopcional\w*\b/u', $u)) {
+        return trim((string)($cfg['respuesta_es_opcional']
+            ?? 'Es opcional. La web es tuya igual: lo contratás solo si lo querés, y lo podés dar de baja cuando quieras.'));
+    }
+    if (preg_match('/\b(incluid[oa]s?|sin cargo|ya viene|viene incluido)\b/u', $u)) {
+        return trim((string)($cfg['respuesta_esta_incluido']
+            ?? 'Está incluido en el precio, no se paga aparte.'));
+    }
+    return null;
+}
+
+/**
+ * ¿El cliente preguntó algo?
+ *
+ * No se puede resolver con wabot_normalizar_frase(): borra el signo de
+ * pregunta. Así que se mira el texto CRUDO —el "?" y los interrogativos— y
+ * recién después se normaliza para las formas sin signo, que en WhatsApp son
+ * la mayoría ("me queda de por vida una vez pagada").
+ */
+function wabot_mensaje_pregunta_algo($mensaje) {
+    $crudo = trim((string)$mensaje);
+    if ($crudo === '') return false;
+    if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '') return false;
+    return (bool)(
+        /* Los interrogativos inequívocos. "Que" a secas queda AFUERA: "Que lo
+         * haga vía wasap" es una instrucción, no una pregunta, y era uno de
+         * los mensajes que se llevaban el comodín. Entra solo pegado a lo que
+         * se pregunta ("que precio", "que incluye"). */
+        preg_match('/\b(como|cuanto|cuanta|cuantos|cuando|donde|cual|cuales|quien|por que|porque)\b/u', $t)
+        || preg_match('/\bque\s+(precio|valor|costo|tal|incluye|incluyen|necesito|necesitas|hacen|hace|es|son|tipo|pasa|onda|opciones|formas|medios)\b/u', $t)
+        || preg_match('/\b(se puede|se pueden|puedo|podes|podria|podrian|hay forma|hay que|es posible|me decis|me podes decir'
+            . '|tienen|tenes|tiene|incluye|incluyen|sirve|conviene|hace falta|necesito saber|queria saber|quisiera saber'
+            . '|de por vida|para siempre|o no|si o no)\b/u', $t)
+    );
+}
+
+/**
+ * El comodín del desarrollador contestando un mensaje que no preguntó nada.
+ *
+ * La clienta de Estética Integral mandó el link de su catálogo de WhatsApp
+ * —material suyo, no una duda— y se llevó "esa duda te la va a poder contestar
+ * el desarrollador cuando te escriba" (3-sep). Es, de todos los errores, el
+ * que más deja en evidencia que del otro lado hay un bot que no entendió.
+ *
+ * La regla ya estaba escrita en el prompt, con estos mismos ejemplos y todo
+ * (wabot_agente_sistema: "Este es mi face", "Que lo haga vía wasap"), y no
+ * alcanzó — como siempre que algo importante vive solo en el prompt. Acá el
+ * turno se descarta y contesta el motor de reglas, que para un mensaje sin
+ * pregunta dice algo que corresponde.
+ */
+function wabot_texto_comodin_desarrollador($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\b(esa|esta|tu|eso|esto)\b.{0,30}\b(duda|consulta|pregunta)?\b.{0,30}\b(desarrollador|pablo)\b/u', $t
+    ) && (bool)preg_match('/\b(contestar|responder|resolver|contesta|responde|ver|decir)\b/u', $t)
+    // Y en el otro orden: "eso lo va a poder responder Pablo cuando te contacte".
+    || (bool)preg_match(
+        '/\b(contestar|responder|resolver)\b.{0,20}\b(el desarrollador|pablo)\b/u', $t
+    );
+}
+
+/**
+ * Una sola fecha de entrega para toda la conversación.
+ *
+ * Aura32, 3-sep: 11:21 "Hoy a la tarde estará lista la demo" y 11:22 "la demo
+ * te llega mañana". El segundo mensaje es el texto de la config con {entrega},
+ * que lo resuelve wabot_dia_entrega() —la única fuente de verdad, con su corte
+ * a las 11— y el primero lo escribió el modelo de memoria.
+ *
+ * Solo corta cuando CONTRADICE: si el modelo dice el mismo día que
+ * wabot_dia_entrega(), el mensaje sale igual. Prometer una fecha equivocada es
+ * un problema; nombrar la correcta con sus palabras, no.
+ */
+function wabot_texto_promete_otra_entrega($texto, $ts = null) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    /* Tiene que hablar de la entrega de la demo, no de cualquier "hoy". El
+     * segundo patrón es para cuando la nombra con un pronombre ("te la dejo
+     * lista mañana"), que en esta parte del embudo es siempre la demo. */
+    if (!preg_match('/\b(demo|muestra|predise\w*|boceto|propuesta)\b/u', $t)
+        && !preg_match('/\bte la (dejo|dejamos|mando|mandamos|paso|pasamos|envio|enviamos|tengo|tenemos)\b/u', $t)) return false;
+    $entrega = function_exists('wabot_dia_entrega') ? wabot_dia_entrega($ts) : ['palabra' => ''];
+    $palabra = (string)($entrega['palabra'] ?? '');
+
+    $diceHoy = (bool)preg_match('/\b(hoy|esta tarde|en el dia|mas tarde|dentro de un rato|en un rato)\b/u', $t);
+    $diceManana = (bool)preg_match('/\b(manana|el lunes|el martes|el miercoles|el jueves|el viernes)\b/u', $t);
+
+    if ($palabra === 'hoy' && $diceManana && !$diceHoy) return true;
+    if ($palabra === 'mañana' && $diceHoy && !$diceManana) return true;
+    return false;
+}
+
+/**
+ * "Quedamos a la espera de la demo."
+ *
+ * Se lo dijo a Natalia después de que ella completara todo (3-sep). La demo la
+ * prepara Gokywebs: el que espera es el cliente, no nosotros. Dicho al revés
+ * suena a que del otro lado nadie va a hacer nada, que es exactamente lo
+ * contrario de lo que hay que transmitir en ese momento de la venta.
+ */
+function wabot_texto_espera_la_demo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    return (bool)preg_match(
+        '/\b(quedamos|quedo|estamos|seguimos)\b.{0,18}\b(a la espera|esperando|al aguardo)\b.{0,25}\b(demo|muestra|predise\w*|boceto)\b/u',
+        $t
+    );
+}
+
 /** Marca el uso del nombre para que el prompt no lo repita en cada mensaje. */
 /**
  * Una línea humana delante de la derivación, y nada más.
@@ -652,6 +863,62 @@ function wabot_agente_prefijo_humano($textoModelo, $terminal, $cfg) {
     if ($p === '') return $terminal;
     if (!preg_match('/[.!]$/u', $p)) $p .= '.';
     return $p . ' ' . $terminal;
+}
+
+/**
+ * Lo mismo que wabot_agente_prefijo_humano(), pero para el texto EXACTO del
+ * precio, que es donde se nota más que el bot no acusa recibo de nada.
+ *
+ * Se separan porque los frenos no pueden ser los mismos: el prefijo de la
+ * derivación prohíbe hablar del servicio ("podemos", "incluye", "tiene"), y
+ * acá el reconocimiento es JUSTAMENTE sobre lo que el cliente necesita
+ * ("entonces necesitás una web donde puedas cargar las tablas y los
+ * goleadores"). Lo que no cambia es lo que no puede salir mal: ni un monto, ni
+ * un link, ni una pregunta, ni una promesa, ni una condición comercial.
+ *
+ * Si el modelo no escribió nada —el caso más común, porque suele mandar la
+ * llamada a la herramienta y nada más— devuelve el texto exacto tal cual y no
+ * cambia nada.
+ */
+function wabot_agente_prefijo_acuse($textoModelo, $exacta, $conv, $cfg) {
+    $p = trim(preg_replace('/\s+/u', ' ', (string)$textoModelo));
+    if ($p === '' || mb_strlen($p) > 180) return $exacta;
+    // Ni preguntas, ni montos, ni links, ni marcadores sin resolver.
+    if (preg_match('/[?¿$]|\d{3,}|https?:|www\.|\.com\b|\{/u', $p)) return $exacta;
+    $n = wabot_normalizar_frase($p);
+    if ($n === '') return $exacta;
+
+    // Nada de plata, plazos, condiciones ni promesas: eso lo dice el texto oficial.
+    if (preg_match('/\b(precio|precios|valor|cuesta|sale|sena|cuotas?|pago|abon\w*|descuento|gratis'
+        . '|plazo|dias|semanas|manana|hoy|demo|predise\w*|muestra|formulario|link|presupuesto)\b/u', $n)) return $exacta;
+    // Ni derivaciones, ni anotaciones, ni pedidos de datos.
+    if (preg_match('/\b(te paso|te comunico|te derivo|te contact\w*|te escrib\w*|te llam\w*|desarrollador|pablo|equipo'
+        . '|en breve|a la brevedad|enseguida|te aviso|quedo|quedamos|contame|decime|pasame|mandame'
+        . '|anot\w*|registr\w*|sum[eé]|tom[eé] nota)\b/u', $n)) return $exacta;
+    if (wabot_texto_promete_cierre($p) || wabot_texto_promete_info_sin_entregar($p)) return $exacta;
+    if (wabot_texto_comodin_desarrollador($p)) return $exacta;
+    if (function_exists('wabot_texto_parece_interno') && wabot_texto_parece_interno($p)) return $exacta;
+    if (function_exists('wabot_frase_retirada') && wabot_frase_retirada($p)) return $exacta;
+
+    if (function_exists('wabot_castellanizar')) $p = wabot_castellanizar($p);
+    $p = trim(preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]/u', '', $p));
+    $p = trim(str_replace(['¿', '¡'], '', $p));
+
+    /* El texto del precio ya arranca con "Perfecto,". Si el acuse también, se
+     * le saca la muletilla al acuse: dos "Perfecto" seguidos suenan peor que
+     * ninguno. Si de eso no queda nada, no había acuse, había relleno. */
+    if (preg_match('/^\s*(perfecto|dale|listo|buenisimo|buenísimo|barbaro|bárbaro|genial|ok|entiendo|entendido)\b[\s,.:!–—-]*/iu', $p)) {
+        $sinMuletilla = trim(preg_replace('/^\s*(perfecto|dale|listo|buenisimo|buenísimo|barbaro|bárbaro|genial|ok|entiendo|entendido)\b[\s,.:!–—-]*/iu', '', $p));
+        $arrancaIgual = (bool)preg_match('/^\s*(perfecto|dale|listo|buenisimo|buenísimo|genial|ok)\b/iu', (string)$exacta);
+        if ($sinMuletilla === '') return $exacta;
+        if ($arrancaIgual) {
+            $p = mb_strtoupper(mb_substr($sinMuletilla, 0, 1)) . mb_substr($sinMuletilla, 1);
+        }
+    }
+    // Un acuse tiene que decir algo: menos de cuatro palabras es una muletilla.
+    if (count(array_filter(preg_split('/\s+/u', wabot_normalizar_frase($p)))) < 4) return $exacta;
+    if (!preg_match('/[.!]$/u', $p)) $p .= '.';
+    return $p . "\n" . $exacta;
 }
 
 function wabot_agente_marcar_nombre_usado($texto, &$conv) {
@@ -800,17 +1067,26 @@ function wabot_agente_empujon_logo($mensaje, $salida, &$conv, $cfg) {
  * pedido de vincularla a sus redes, y salió solo el precio. La regla de prompt
  * que puse esa mañana es una sugerencia; esto lo garantiza.
  *
- * Se activa solo cuando el mensaje trae DOS temas o más, que es el caso que
- * falla: una pregunta sola ya la contesta bien el flujo normal, y perseguirla
- * acá solo agregaría riesgo de duplicar. Y de los temas detectados salen los
- * que la respuesta ni siquiera nombra, hasta tres, en un globo aparte.
+ * Con el texto libre del modelo pide DOS temas o más: una pregunta sola la
+ * contesta bien el flujo normal y perseguirla ahí solo duplicaría.
+ *
+ * Pero cuando la tanda salió por un texto EXACTO o TERMINAL, el texto del
+ * modelo se descartó entero (agente.php: `return [$terminal]` / `$exacta`), así
+ * que no hubo "flujo normal" que contestara nada: ahí alcanza UNA. Ese es el
+ * caso de Rodo (3-sep), que preguntó "tiene algún pago mensual o la página me
+ * queda de por vida una vez pagada?" junto con su rubro: el pitch salió exacto,
+ * su única pregunta la detectó wabot_preguntas_del_mensaje() —clave
+ * 'mantenimiento'— y este empujón la descartó por venir sola. El cliente
+ * recibió el precio y la oferta de la demo, y nadie le contestó lo que había
+ * preguntado. Antes de avanzar de etapa hay que mirar si quedó una pregunta sin
+ * contestar, que es justo lo que pidió Pablo.
  *
  * El logo y el idioma tienen su propio empujón desde antes: quedan afuera para
  * no contestarlos dos veces.
  */
-function wabot_agente_empujon_preguntas($mensaje, $salida, &$conv, $cfg) {
+function wabot_agente_empujon_preguntas($mensaje, $salida, &$conv, $cfg, $minimo = 2) {
     $claves = wabot_preguntas_del_mensaje($mensaje, $conv, $conv['fase'] ?? null);
-    if (count($claves) < 2) return null;
+    if (count($claves) < max(1, (int)$minimo)) return null;
 
     $yaDichas = (array)($conv['temas_contestados'] ?? []);
     $claves = array_values(array_diff($claves, $yaDichas));
@@ -1138,10 +1414,26 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     ],
                     'rubro' => [
                         'type' => 'string',
-                        'description' => 'Lo que vende o hace el cliente, con SUS palabras, en 1 a 6 palabras y con artículo si corresponde: "las gorras", "la ropa de nene", "el taller de metalúrgica", "plomería". Sin precios, sin números, sin el nombre del negocio y sin el tipo de web. El texto del precio arranca nombrándolo ("Para las gorras, lo ideal sería..."). Si todavía no dijo qué vende o hace, dejalo vacío: nunca lo inventes.',
+                        'description' => 'OBLIGATORIO. Lo que vende o hace el cliente, con SUS palabras, en 1 a 6 palabras y con artículo si corresponde: "las gorras", "la ropa de nene", "el taller de metalúrgica", "plomería", "la enfermería domiciliaria", "los campeonatos de fútbol". Sin precios, sin números, sin el nombre del negocio y sin el tipo de web. El texto del precio arranca nombrándolo ("Para las gorras, lo ideal sería..."), así que si lo dejás vacío el cliente recibe "para tu negocio" y siente que no lo leyó nadie. Si el cliente enumeró varias cosas, elegí la principal con sus palabras. Solo puede ir vacío si todavía no dijo qué vende ni qué hace — pero en ese caso tampoco tendrías que estar cotizando.',
+                    ],
+                    /* El acuse viaja como ARGUMENTO y no como texto libre a
+                     * propósito: en la batería del 3-sep el modelo mandó la
+                     * llamada a dar_precio sin una sola palabra suelta en las
+                     * tres charlas donde hacía falta, así que un prefijo que
+                     * dependa del texto libre no sale casi nunca. Como
+                     * argumento sí lo escribe, igual que el rubro. */
+                    'acuse' => [
+                        'type' => 'string',
+                        'description' => 'Opcional, UNA sola oración corta. Completala SOLO si el cliente enumeró varias funciones o te explicó su servicio con detalle: repetile con SUS palabras lo que entendiste que necesita, para que vea que lo leíste. Ejemplo: para "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" va "Entonces necesitás una web donde puedas cargar y actualizar las tablas, los goleadores y los equipos". Sin precios, sin números, sin plazos, sin links, sin preguntas y sin prometer nada: todo eso ya lo dice el texto del precio, que sale entero abajo. Si el cliente solo dijo su rubro en pocas palabras, dejalo vacío: no lo rellenes.',
                     ],
                 ],
-                'required' => ['tipo'],
+                /* rubro pasa a ser obligatorio (3-sep). Antes era opcional y el
+                 * modelo lo omitía seguido: Henry (enfermería domiciliaria),
+                 * Mundo Queen y la clienta de cerámica recibieron los tres
+                 * "Perfecto, para tu negocio sería...", que es exactamente el
+                 * mensaje genérico del que se quejó Pablo. El respaldo si igual
+                 * viene vacío es wabot_rubro_desde_contexto(). */
+                'required' => ['tipo', 'rubro'],
             ],
         ],
         $consultar,
@@ -1304,7 +1596,18 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 }
             }
             $rubroPitch = wabot_rubro_valido((string)($args['rubro'] ?? ''), $conv);
+            /* Si el modelo no lo mandó (o mandó algo que no pasó la
+             * validación), se saca de lo que escribió el cliente antes de
+             * caer en "tu negocio" — ver wabot_rubro_desde_contexto(). */
+            if ($rubroPitch === '') $rubroPitch = wabot_rubro_desde_contexto($conv);
             if ($rubroPitch !== '') $conv['rubro_pitch'] = $rubroPitch;
+            /* La línea de reconocimiento, si el modelo la mandó. Se guarda
+             * transitoria y la consume el armado de la salida exacta, que es
+             * donde se puede poner delante del texto del precio. Pasa por los
+             * mismos filtros que el prefijo de texto libre. */
+            unset($conv['_acuse_pitch']);
+            $acusePitch = trim((string)($args['acuse'] ?? ''));
+            if ($acusePitch !== '') $conv['_acuse_pitch'] = $acusePitch;
             $contextoCliente = wabot_contexto_cliente_texto($conv);
             // Un portal de noticias no se cotiza con la lista de tipos de web.
             // Va antes que todo lo demás: si el cliente necesita publicar
@@ -1508,6 +1811,39 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     'nota'  => 'No contestes una pregunta que no hizo. Releé su último mensaje y contestá eso; si no pregunta nada, no uses consultar_info.',
                 ];
             }
+            /* Y no se le describe un producto que no es el suyo.
+             *
+             * La clienta de Estética Integral pidió una landing page tres
+             * veces, se le cotizó el sitio profesional, se le creó el boceto y
+             * se le prometió la demo. Después dijo "Tengo un catálogo de
+             * productos" —un dato de su negocio— y se llevó
+             * info.como_funciona_tienda entera: "el cliente entra, ve el
+             * catálogo, arma el carrito y paga desde la web" (3-sep). Un dato
+             * nuevo no puede hacer que el bot descarte toda la charla anterior
+             * y le explique otra web.
+             *
+             * Si de verdad quiere pasarse a vender online, eso tiene su propio
+             * camino determinista y con precio (wabot_texto_pregunta_upgrade y
+             * wabot_texto_cambia_modalidad, los dos en el borde común). */
+            $clavesDeTipo = [
+                'como_funciona_tienda'    => ['ecommerce', 'catalogo'],
+                'envios'                  => ['ecommerce', 'catalogo'],
+                'impuestos_importacion'   => ['ecommerce', 'catalogo'],
+                'comisiones'              => ['ecommerce', 'catalogo'],
+                'inscripcion'             => ['elearning', 'lms'],
+                'fotos_propiedad'         => ['inmobiliaria'],
+            ];
+            $tipoActual = (string)($conv['tipo'] ?? '');
+            if ($tipoActual !== '' && !empty($conv['precio_dado']) && isset($clavesDeTipo[$clave])
+                && !in_array($tipoActual, $clavesDeTipo[$clave], true)) {
+                $label = wabot_tipo_label($tipoActual, $cfg);
+                return [
+                    'error' => 'Esa clave describe otro tipo de web. A este cliente ya se le cotizó ' . ($label !== '' ? $label : $tipoActual)
+                        . ', así que contestarle cómo funciona la tienda es explicarle un producto que no es el suyo.',
+                    'nota'  => 'No uses esa clave. Si lo que dijo es un dato de su negocio, tomalo como eso y confirmáselo en una línea sin cambiarle el proyecto. Si lo que quiere es AGREGAR la venta online, decíselo con esas palabras y preguntale si quiere que lo veamos, sin describir la tienda todavía.',
+                ];
+            }
+
             // "¿El dominio viene incluido o se paga aparte?" pregunta por el
             // COSTO, no por la titularidad. El modelo confundía las dos y la
             // respuesta de "queda a tu nombre" desconcertaba al cliente (caso
@@ -2147,6 +2483,7 @@ MEMORIA: NUNCA REPITAS UNA PREGUNTA YA CONTESTADA
 CÓMO VENDÉS (sin salirte de las reglas)
 - Vendés siendo simple y directo, no argumentando. Nada de frases de beneficio, introducciones motivacionales ni párrafos sobre por qué una web le conviene a su rubro: el texto de dar_precio va tal cual, solo y sin preámbulo. Una pregunta también va sola, sin frase de venta adelante.
 - Única excepción: si el cliente cuenta un dolor concreto o algo personal importante (hace un mes que no vende, es un regalo, está por abrir), reconocelo en UNA frase corta y seguí. Nunca pases al siguiente paso ignorando algo importante que acaba de contar.
+- Segunda excepción, del mismo tamaño: si en el mensaje ENUMERÓ funciones o te explicó su servicio con detalle, escribí UNA línea corta —antes de llamar a dar_precio, en el mismo turno— que repita con sus palabras lo que entendiste que necesita. Ejemplo real: a "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" le corresponde algo como "Entonces necesitás una web donde puedas cargar y actualizar las tablas, los goleadores y los equipos." Esa línea sale delante del texto del precio, que igual va entero y sin tocar detrás. Es una sola oración: sin precios, sin plazos, sin links, sin preguntas y sin prometer nada. Si el cliente dijo su rubro en tres palabras y nada más, no hace falta: no la inventes para rellenar.
 - Si lo personal que cuenta tiene que ver con su origen, familia, comunidad, religión o etnia (por ejemplo con quién se crió, de dónde es su familia), reconocelo con calidez pero NUNCA generalices sobre las cualidades o características de ese grupo étnico o religioso, aunque el cliente lo haya mencionado primero y aunque suene positivo ("son grandes vendedores", "de ahí viene tu don para el comercio"). Quedate en algo neutro sobre ÉL, nunca sobre el grupo: por ejemplo "Se nota que tenés mucha experiencia y gusto por la venta."
 - Si dice que lo revisa más tarde, mañana o cuando pueda, contestá con UNA línea cordial y nada más: no aproveches para pedirle datos ni para volver a ofrecer la demo en ese mensaje.
 - Si pide explícitamente los precios de todos los servicios, no lo obligues a elegir a ciegas: usá consultar_info('rangos') y después preguntale el rubro para confirmarle el exacto.
@@ -2236,6 +2573,15 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 EL TURNO DEL PRECIO: UN SOLO LLAMADO Y LA DEMO SALE SOLA
 Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya con la descripción de lo que incluye esa web. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también el parámetro rubro: lo que vende o hace, con SUS palabras, en 1 a 6 palabras y con artículo si corresponde ("las gorras", "la ropa de nene", "el taller de metalúrgica", "plomería"). El texto del precio arranca nombrándolo, y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo: detrás de tu mensaje sale sola, unos segundos después, la propuesta de la demo con el link del formulario. No la escribas vos, no la anuncies y no metas ninguna pregunta en el medio.
 No vuelvas a llamar a dar_precio para el mismo tipo: ya está dado. Si el cliente después pregunta el precio otra vez, ahí sí, y te va a devolver el resumen corto.
+
+ANTES DE ESCRIBIR CADA RESPUESTA, PASÁ ESTOS CINCO CONTROLES
+(Pablo, 3-sep, después de leer las charlas del día. Casi todo lo que se sintió
+"automático" ese día falla en alguno de estos cinco.)
+1. ¿Hay una pregunta directa en el último mensaje? Contestala PRIMERO, antes de seguir con el pitch, el precio o la demo. Aunque sea una sola y venga mezclada con otra cosa: el que pregunta "tiene algún pago mensual?" junto con su rubro tiene que recibir esa respuesta, no solo el precio. Y si la pregunta es CERRADA (sí/no, "es fijo o es opcional?"), contestá la respuesta concreta en una línea y recién después ampliá si hace falta: volver a pegar el bloque entero que ya mandaste es lo que te hace parecer menos inteligente.
+2. ¿Esto ya me lo dijo? Mirá la ficha y la charla antes de preguntar. Si ya contestó —incluso con un NO ("no tengo ninguna referencia", "no tengo logo")— eso es una respuesta y no se vuelve a preguntar. Repreguntar algo que el cliente acaba de contestar es lo que más delata a un bot.
+3. ¿Ya completó el formulario? Si en la ficha figura que sí, NUNCA se lo vuelvas a ofrecer ni le pidas de nuevo los datos que ya mandó. Puede haberlo completado desde Instagram y estar escribiéndote por WhatsApp: es la misma persona.
+4. ¿Lo que acaba de decir contradice o modifica algo anterior? Un dato nuevo no borra la charla. Si viene pidiendo un sitio profesional y menciona que tiene un catálogo de productos, eso NO lo convierte en un ecommerce: tomá el dato, confirmáselo, y si te parece que quiere vender online preguntáselo, no se lo supongas.
+5. ¿Mi respuesta demuestra que entendí lo que escribió? Si enumeró funciones o te explicó su servicio en detalle, nombrá brevemente eso —con sus palabras— antes de seguir. Una respuesta genérica a un mensaje detallado se lee como que no lo leyó nadie.
 
 REGLAS QUE NO PODÉS ROMPER
 - Los precios los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes. El texto que te devuelve ya trae el link del presupuesto: mandalo completo, no lo recortes. Si más adelante te pide que se lo repitas, usá consultar_info('precio_cotizado').
