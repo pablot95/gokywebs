@@ -860,34 +860,17 @@ function initFeedbackFloat() {
   const btn = document.getElementById("feedback-float");
   const backdrop = document.getElementById("feedback-modal-backdrop");
   const closeBtn = document.getElementById("feedback-modal-close");
-  const starsWrap = document.getElementById("feedback-stars");
   const coloresEl = document.getElementById("feedback-colores");
   const contenidoEl = document.getElementById("feedback-contenido");
   const otrosEl = document.getElementById("feedback-otros");
   const submitBtn = document.getElementById("feedback-submit");
   if (!btn || !backdrop) return;
 
-  const stars = [...starsWrap.querySelectorAll(".feedback-star")];
-  let rating = 0;
-  const paintStars = (n) =>
-    stars.forEach((s, i) => {
-      s.classList.toggle("active", i < n);
-      s.setAttribute("aria-pressed", i < n ? "true" : "false");
-    });
-  stars.forEach((s, i) => {
-    s.addEventListener("click", () => {
-      rating = i + 1;
-      paintStars(rating);
-    });
-    s.addEventListener("mouseenter", () => paintStars(i + 1));
-  });
-  starsWrap.addEventListener("mouseleave", () => paintStars(rating));
-
   const open = () => {
     backdrop.hidden = false;
     window.lenis?.stop();
     document.body.classList.add("no-scroll");
-    (stars[0] || coloresEl)?.focus();
+    coloresEl?.focus();
   };
   const close = () => {
     backdrop.hidden = true;
@@ -908,7 +891,7 @@ function initFeedbackFloat() {
     const colores = coloresEl.value.trim();
     const contenido = contenidoEl.value.trim();
     const otros = otrosEl.value.trim();
-    if (!rating && !colores && !contenido && !otros) {
+    if (!colores && !contenido && !otros) {
       coloresEl.focus();
       return;
     }
@@ -921,12 +904,8 @@ function initFeedbackFloat() {
       document.title ||
       ""
     ).trim();
-    const estrellas = rating
-      ? "★".repeat(rating) + "☆".repeat(5 - rating) + ` (${rating}/5)`
-      : "Sin calificar";
     const lineas = [
       `Devolución de la demo${negocio ? " — " + negocio : ""}`,
-      `Calificación: ${estrellas}`,
       colores ? `Colores: ${colores}` : null,
       contenido ? `Contenido: ${contenido}` : null,
       otros ? `Otros: ${otros}` : null,
@@ -942,7 +921,6 @@ function initFeedbackFloat() {
       .__gkySendResena?.({
         slug,
         negocio,
-        rating: rating || null,
         colores,
         contenido,
         otros,
@@ -956,24 +934,10 @@ function initFeedbackFloat() {
       showToast("¡Gracias por tu devolución!");
     else window.alert("¡Gracias por tu devolución!");
     close();
-    rating = 0;
-    paintStars(0);
     coloresEl.value = "";
     contenidoEl.value = "";
     otrosEl.value = "";
   });
-
-  if (reduceMotion) return;
-  let hideTimer = null;
-  window.addEventListener(
-    "scroll",
-    () => {
-      btn.classList.add("is-hidden");
-      clearTimeout(hideTimer);
-      hideTimer = setTimeout(() => btn.classList.remove("is-hidden"), 550);
-    },
-    { passive: true },
-  );
 }
 
 /* ---------- arranque ---------- */

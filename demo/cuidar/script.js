@@ -343,29 +343,16 @@ function initFeedbackFloat() {
   const btn = document.getElementById('feedback-float');
   const backdrop = document.getElementById('feedback-modal-backdrop');
   const closeBtn = document.getElementById('feedback-modal-close');
-  const starsWrap = document.getElementById('feedback-stars');
   const coloresEl = document.getElementById('feedback-colores');
   const contenidoEl = document.getElementById('feedback-contenido');
   const otrosEl = document.getElementById('feedback-otros');
   const submitBtn = document.getElementById('feedback-submit');
   if (!btn || !backdrop) return;
 
-  const stars = [...starsWrap.querySelectorAll('.feedback-star')];
-  let rating = 0;
-  const paintStars = n => stars.forEach((s, i) => {
-    s.classList.toggle('active', i < n);
-    s.setAttribute('aria-pressed', i < n ? 'true' : 'false');
-  });
-  stars.forEach((s, i) => {
-    s.addEventListener('click', () => { rating = i + 1; paintStars(rating); });
-    s.addEventListener('mouseenter', () => paintStars(i + 1));
-  });
-  starsWrap.addEventListener('mouseleave', () => paintStars(rating));
-
   const open = () => {
     backdrop.hidden = false;
     document.body.classList.add('no-scroll');
-    (stars[0] || coloresEl)?.focus();
+    coloresEl?.focus();
   };
   const close = () => {
     backdrop.hidden = true;
@@ -381,15 +368,13 @@ function initFeedbackFloat() {
     const colores = coloresEl.value.trim();
     const contenido = contenidoEl.value.trim();
     const otros = otrosEl.value.trim();
-    if (!rating && !colores && !contenido && !otros) { coloresEl.focus(); return; }
+    if (!colores && !contenido && !otros) { coloresEl.focus(); return; }
 
     const slugUrl = (location.pathname.match(/\/demo\/([^/]+)/) || [])[1] || document.title;
     const slug = gkySlugify(slugUrl);
     const negocio = (document.title.split(/\s[—|]\s|\s-\s/)[0] || document.title || '').trim();
-    const estrellas = rating ? '★'.repeat(rating) + '☆'.repeat(5 - rating) + ' (' + rating + '/5)' : 'Sin calificar';
     const lineas = [
       'Devolución de la demo' + (negocio ? ' — ' + negocio : ''),
-      'Calificación: ' + estrellas,
       colores ? 'Colores: ' + colores : null,
       contenido ? 'Contenido: ' + contenido : null,
       otros ? 'Otros: ' + otros : null,
@@ -397,21 +382,13 @@ function initFeedbackFloat() {
     ].filter(Boolean);
 
     window.open('https://wa.me/' + GKY_FEEDBACK_WHATSAPP + '?text=' + encodeURIComponent(lineas.join('\n')), '_blank', 'noopener');
-    window.__gkySendResena?.({ slug, negocio, rating: rating || null, colores, contenido, otros, url: location.href })
+    window.__gkySendResena?.({ slug, negocio, colores, contenido, otros, url: location.href })
       ?.catch(err => console.warn('No se pudo guardar la devolución en Firestore:', err));
 
     if (typeof showToast === 'function') showToast('¡Gracias por tu devolución!'); else window.alert('¡Gracias por tu devolución!');
     close();
-    rating = 0; paintStars(0); coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
+    coloresEl.value = ''; contenidoEl.value = ''; otrosEl.value = '';
   });
-
-  if (reduceMotion) return;
-  let hideTimer = null;
-  window.addEventListener('scroll', () => {
-    btn.classList.add('is-hidden');
-    clearTimeout(hideTimer);
-    hideTimer = setTimeout(() => btn.classList.remove('is-hidden'), 550);
-  }, { passive: true });
 }
 
 /* ------------------------------------------------------------- arranque --- */

@@ -337,7 +337,7 @@
 
 <button type="button" class="feedback-bar" id="feedback-float" aria-haspopup="dialog">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-  <span>Dar devolución de demo</span>
+  <span>Contanos qué le cambiarías</span>
 </button>
 
 <div class="feedback-modal-backdrop" id="feedback-modal-backdrop" hidden>
@@ -350,25 +350,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
       </span>
       <div>
-        <h3 id="feedback-modal-title">Tu devolución nos ayuda</h3>
-        <p class="feedback-modal-sub">Contanos qué te pareció esta demo — se lo pasamos directo a quien la armó.</p>
-      </div>
-    </div>
-
-    <div class="feedback-field">
-      <span class="feedback-field-label">Tu impresión general</span>
-      <div class="feedback-stars" id="feedback-stars" role="group" aria-label="Calificación de 1 a 5 estrellas">
-        <button type="button" class="feedback-star" data-star="1" aria-pressed="false" aria-label="1 estrella"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-        <button type="button" class="feedback-star" data-star="2" aria-pressed="false" aria-label="2 estrellas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-        <button type="button" class="feedback-star" data-star="3" aria-pressed="false" aria-label="3 estrellas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-        <button type="button" class="feedback-star" data-star="4" aria-pressed="false" aria-label="4 estrellas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
-        <button type="button" class="feedback-star" data-star="5" aria-pressed="false" aria-label="5 estrellas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+        <h3 id="feedback-modal-title">¿Qué le cambiarías a esta demo?</h3>
+        <p class="feedback-modal-sub">Se lo pasamos directo a quien la armó.</p>
       </div>
     </div>
 
     <div class="feedback-field">
       <label class="feedback-field-label" for="feedback-colores"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="5" fill="currentColor" opacity=".55"/><circle cx="14" cy="8" r="5" fill="currentColor" opacity=".55"/><circle cx="14" cy="16" r="5" fill="currentColor" opacity=".55"/></svg>Colores</label>
-      <textarea id="feedback-colores" class="feedback-textarea" maxlength="300" rows="2" placeholder="¿Qué te parecen los colores elegidos?"></textarea>
+      <textarea id="feedback-colores" class="feedback-textarea" maxlength="300" rows="2" placeholder="¿Qué le cambiarías a los colores elegidos?"></textarea>
     </div>
     <div class="feedback-field">
       <label class="feedback-field-label" for="feedback-contenido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Contenido</label>
@@ -376,7 +365,7 @@
     </div>
     <div class="feedback-field">
       <label class="feedback-field-label" for="feedback-otros"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Algo más</label>
-      <textarea id="feedback-otros" class="feedback-textarea" maxlength="300" rows="2" placeholder="Cualquier otra cosa que quieras sumar"></textarea>
+      <textarea id="feedback-otros" class="feedback-textarea" maxlength="300" rows="2" placeholder="Cualquier otra cosa que quieras cambiar"></textarea>
     </div>
 
     <button type="button" class="feedback-submit" id="feedback-submit">Enviar devolución</button>

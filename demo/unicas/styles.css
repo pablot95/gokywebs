@@ -1525,7 +1525,7 @@ body.no-scroll {
 .wsp-float {
   position: fixed;
   right: clamp(14px, 3vw, 26px);
-  bottom: clamp(14px, 3vw, 26px);
+  bottom: clamp(62px, 11vw, 74px);
   z-index: 90;
   display: grid;
   place-items: center;
@@ -1584,42 +1584,31 @@ body.no-scroll .wsp-float {
 
 .feedback-bar {
   position: fixed;
-  left: 50%;
-  bottom: clamp(80px, 14vw, 100px);
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
   z-index: 85;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 22px;
-  border-radius: 999px;
-  border: 1px solid rgba(127, 127, 127, 0.25);
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: none;
+  border-top: 1px solid rgba(127, 127, 127, 0.25);
   background: var(--color-bg);
-  color: var(--color-text);
+  color: var(--color-text-muted);
   cursor: pointer;
-  font: 700 0.85rem/1 var(--font-body);
+  font: 600 0.8rem/1 var(--font-body);
   white-space: nowrap;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
-  opacity: 1;
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
 }
 .feedback-bar svg {
-  width: 18px;
-  height: 18px;
+  width: 15px;
+  height: 15px;
   flex: none;
 }
 .feedback-bar:hover {
-  transform: translateX(-50%) translateY(-2px);
-}
-.feedback-bar:active {
-  transform: translateX(-50%) scale(0.97);
-}
-.feedback-bar.is-hidden {
-  opacity: 0;
-  transform: translateX(-50%) translateY(14px);
-  pointer-events: none;
+  color: var(--color-text);
 }
 body.no-scroll .feedback-bar {
   opacity: 0;
@@ -1714,35 +1703,6 @@ body.no-scroll .feedback-bar {
   height: 16px;
   color: var(--color-gold-text);
   flex: none;
-}
-.feedback-stars {
-  display: flex;
-  gap: 6px;
-}
-.feedback-star {
-  background: none;
-  border: none;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 7px;
-  cursor: pointer;
-  color: var(--color-text-muted);
-}
-.feedback-star svg {
-  width: 28px;
-  height: 28px;
-  transition:
-    transform 0.15s ease,
-    color 0.15s ease,
-    fill 0.15s ease;
-}
-.feedback-star.active svg {
-  color: #f5b301;
-  fill: #f5b301;
-  transform: scale(1.08);
-}
-.feedback-star:hover svg {
-  transform: scale(1.15);
 }
 .feedback-textarea {
   width: 100%;
@@ -1858,10 +1818,6 @@ body.no-scroll .feedback-bar {
   }
   .lee-w {
     color: var(--color-ink);
-    transition: none;
-  }
-  .feedback-bar,
-  .feedback-star svg {
     transition: none;
   }
   * {

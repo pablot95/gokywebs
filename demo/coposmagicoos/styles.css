@@ -687,7 +687,7 @@ body.no-scroll { overflow: hidden; }
 /* ==========================================================================
    FLOTANTES + TOAST
    ========================================================================== */
-.floats { position: fixed; right: clamp(14px, 3vw, 24px); bottom: clamp(14px, 3vw, 24px); z-index: 90; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.floats { position: fixed; right: clamp(14px, 3vw, 24px); bottom: clamp(60px, 11vw, 72px); z-index: 90; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .float-btn {
   width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
   border: 2.5px solid var(--color-ink); cursor: pointer; position: relative;
@@ -719,18 +719,14 @@ body.no-scroll .floats { opacity: 0; pointer-events: none; }
    DEVOLUCIÓN DE DEMO
    ========================================================================== */
 .feedback-bar {
-  position: fixed; left: 50%; bottom: clamp(80px, 14vw, 100px); transform: translateX(-50%);
-  z-index: 85; display: inline-flex; align-items: center; gap: 10px;
-  padding: 13px 22px; border-radius: 999px; border: 2.5px solid var(--color-ink);
+  position: fixed; left: 0; right: 0; bottom: 0; height: 46px;
+  z-index: 85; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 0 16px; border: none; border-top: 2.5px solid var(--color-ink);
   background: var(--color-secondary); color: var(--color-ink); cursor: pointer;
-  font: 700 .85rem/1 var(--font-body); white-space: nowrap;
-  box-shadow: var(--shadow-hard-sm);
-  opacity: 1; transition: opacity .35s ease, transform .35s ease;
+  font: 600 .8rem/1 var(--font-body); white-space: nowrap;
 }
-.feedback-bar svg { width: 18px; height: 18px; flex: none; }
-.feedback-bar:hover { transform: translateX(-50%) translateY(-2px); }
-.feedback-bar:active { transform: translateX(-50%) scale(.97); }
-.feedback-bar.is-hidden { opacity: 0; transform: translateX(-50%) translateY(14px); pointer-events: none; }
+.feedback-bar svg { width: 15px; height: 15px; flex: none; }
+.feedback-bar:hover { background: var(--color-paper); }
 body.no-scroll .feedback-bar { opacity: 0; pointer-events: none; }
 
 .feedback-modal-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(20, 16, 58, .6); display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -745,11 +741,6 @@ body.no-scroll .feedback-bar { opacity: 0; pointer-events: none; }
 .feedback-field { margin-bottom: 16px; }
 .feedback-field-label { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; font-size: .82rem; font-weight: 700; color: var(--color-text); }
 .feedback-field-label svg { width: 16px; height: 16px; color: var(--color-primary-deep); flex: none; }
-.feedback-stars { display: flex; gap: 6px; }
-.feedback-star { background: none; border: none; min-width: 44px; min-height: 44px; padding: 7px; cursor: pointer; color: var(--color-text-muted); }
-.feedback-star svg { width: 28px; height: 28px; transition: transform .15s ease, color .15s ease, fill .15s ease; }
-.feedback-star.active svg { color: #F5B301; fill: #F5B301; transform: scale(1.08); }
-.feedback-star:hover svg { transform: scale(1.15); }
 .feedback-textarea { width: 100%; min-height: 56px; resize: vertical; border: 2px solid var(--color-ink); border-radius: 12px; background: var(--color-paper); color: var(--color-text); font: 400 .92rem/1.5 var(--font-body); padding: 10px 13px; }
 .feedback-textarea:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .feedback-submit { width: 100%; padding: 14px; border-radius: 12px; border: 2px solid var(--color-ink); cursor: pointer; margin-top: 4px; background: var(--color-cta); color: var(--color-cta-text); font: 700 .98rem/1 var(--font-body); }
