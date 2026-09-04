@@ -1,0 +1,13 @@
+{
+  "nota": "Fotos de stock descargadas de Pexels para la demo v2 (2-sep-2026). Los logos de prepagas y prestadores son marcas de sus titulares, usados en la demo a modo ilustrativo.",
+  "fotos": [
+    { "archivo": "hero-empresas-1920x1080.webp",     "origen": "Pexels", "id": "6814524", "url": "https://www.pexels.com/photo/6814524/", "uso": "Hero slide 1 - empresas" },
+    { "archivo": "hero-asesoria-1920x1080.webp",     "origen": "Pexels", "id": "12903168", "url": "https://www.pexels.com/photo/12903168/", "uso": "Hero slide 2 - asesoramiento" },
+    { "archivo": "hero-familia-1920x1080.webp",      "origen": "Pexels", "id": "3875141", "url": "https://www.pexels.com/photo/3875141/", "uso": "Hero slide 3 - familia" },
+    { "archivo": "escena-corporativa-1920x1080.webp","origen": "Pexels", "id": "8463151", "url": "https://www.pexels.com/photo/8463151/", "uso": "Escena sticky - corporativo" },
+    { "archivo": "escena-consulta-1920x1080.webp",   "origen": "Pexels", "id": "6129444", "url": "https://www.pexels.com/photo/6129444/", "uso": "Escena sticky - proceso" },
+    { "archivo": "escena-equipo-1920x1080.webp",     "origen": "Pexels", "id": "8867631", "url": "https://www.pexels.com/photo/8867631/", "uso": "Escena - equipo de asesores" },
+    { "archivo": "escena-salud-1600x1300.webp",      "origen": "Pexels", "id": "5998455", "url": "https://www.pexels.com/photo/5998455/", "uso": "Bloque cartilla / salud" },
+    { "archivo": "detalle-firma-1600x1300.webp",     "origen": "Pexels", "id": "6814522", "url": "https://www.pexels.com/photo/6814522/", "uso": "Bloque documentacion" }
+  ]
+}
