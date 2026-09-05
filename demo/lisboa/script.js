@@ -660,9 +660,9 @@ function renderDrawer() {
       <div class="drawer-vacio">
         <span class="cota-mini cota-mini--lg" aria-hidden="true"></span>
         <h3>Todavía no elegiste nada</h3>
-        <p>Empezá por los más pedidos o armá tu cortina en tres toques y te decimos cuál conviene.</p>
+        <p>Empezá por los más pedidos o mirá un día en tu casa y te decimos cuál conviene en cada hora.</p>
         <a class="btn btn--primary btn--wide" href="#elegidos" data-cerrar-drawer>Ver los más pedidos</a>
-        <a class="drawer-link" href="#armala" data-cerrar-drawer>Armala en tres toques</a>
+        <a class="drawer-link" href="#undia" data-cerrar-drawer>Mirá un día en tu casa</a>
       </div>`;
     foot.hidden = true;
     body.querySelectorAll('[data-cerrar-drawer]').forEach(a => a.addEventListener('click', cerrarDrawer));
@@ -748,96 +748,161 @@ function initDrawer() {
   });
 }
 
-const biSel = { amb: '', luz: '', motor: '' };
-const BI_LUZ = { nada: 'Nada de luz', poca: 'Un poco, filtrada', difusa: 'Toda, con privacidad' };
-const BI_MOTOR = { si: 'Con motor', no: 'Sin motor' };
+const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+const tramoP = (p, a, b) => clamp01((p - a) / (b - a));
+const suaveP = t => t * t * (3 - 2 * t);
+const mezclaP = (a, b, t) => a + (b - a) * t;
 
-function biPuntaje(p) {
-  let n = 0;
-  if (biSel.amb) {
-    if (biSel.amb === 'exterior') n += p.cat === 'toldos' ? 4 : (p.perfil.amb.includes('exterior') ? 1 : -3);
-    else n += p.perfil.amb.includes(biSel.amb) ? 2 : -1;
-    if (biSel.amb !== 'exterior' && p.cat === 'toldos') n -= 3;
+function initDiaNoche() {
+  const sec = document.querySelector('.dianoche');
+  const escena = document.getElementById('dn-escena');
+  if (!sec || !escena) return;
+  const copyDia = document.getElementById('dn-copy-dia');
+  const copyNoche = document.getElementById('dn-copy-noche');
+  const fondoDia = escena.querySelector('.dn-dia .dn-fondo');
+  const fondoNoche = escena.querySelector('.dn-noche .dn-fondo');
+  const giantDia = escena.querySelector('.dn-dia .dn-giant');
+  const giantNoche = escena.querySelector('.dn-noche .dn-giant');
+  const riel = document.getElementById('dn-riel');
+  const val = document.getElementById('dn-val');
+
+  const pintar = p => {
+    escena.style.setProperty('--w', mezclaP(108, -8, suaveP(tramoP(p, .04, .70))).toFixed(2));
+
+    const saleDia = suaveP(tramoP(p, .08, .28));
+    copyDia.style.transform = `translateX(${mezclaP(0, -70, saleDia).toFixed(1)}px)`;
+    copyDia.style.opacity = (1 - saleDia).toFixed(3);
+    copyDia.style.pointerEvents = saleDia > .85 ? 'none' : 'auto';
+    giantDia.style.transform = `translateX(${mezclaP(0, -60, suaveP(tramoP(p, 0, .55))).toFixed(1)}px)`;
+    giantDia.style.opacity = (1 - suaveP(tramoP(p, .20, .46))).toFixed(3);
+    fondoDia.style.transform = `scale(${mezclaP(1, 1.07, suaveP(tramoP(p, 0, 1))).toFixed(4)})`;
+
+    const entraNoche = suaveP(tramoP(p, .34, .58));
+    copyNoche.style.transform = `translateY(${mezclaP(40, 0, entraNoche).toFixed(1)}px)`;
+    copyNoche.style.opacity = entraNoche.toFixed(3);
+    copyNoche.style.pointerEvents = entraNoche < .15 ? 'none' : 'auto';
+    const gN = suaveP(tramoP(p, .30, .54));
+    giantNoche.style.transform = `translateX(${mezclaP(80, 0, gN).toFixed(1)}px)`;
+    giantNoche.style.opacity = gN.toFixed(3);
+    fondoNoche.style.transform = `scale(${mezclaP(1.09, 1, suaveP(tramoP(p, .18, .9))).toFixed(4)})`;
+
+    const luz = Math.round(mezclaP(78, 0, suaveP(tramoP(p, .10, .70))));
+    riel.style.width = luz + '%';
+    val.textContent = luz + ' %';
+  };
+
+  if (reduceMotion) {
+    sec.classList.add('is-corta');
+    escena.classList.add('is-static');
+    escena.style.setProperty('--w', '50');
+    [copyDia, copyNoche, giantDia, giantNoche].forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+    riel.style.width = '39%';
+    val.textContent = '39 %';
+    return;
   }
-  if (biSel.luz) n += p.luz === biSel.luz ? 3 : (p.luz === 'exterior' || p.luz === 'servicio' ? 0 : -1);
-  if (biSel.motor === 'si') n += p.motor ? 3 : -2;
-  if (biSel.motor === 'no') n += p.motor ? -3 : 1;
-  if (esServicio(p)) n -= 2;
-  if (p.destacado) n += .5;
-  return n;
+
+  const progreso = () => {
+    const r = sec.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    return total > 0 ? clamp01(-r.top / total) : 0;
+  };
+  const calcular = () => pintar(progreso());
+  let pedido = false;
+  const pedir = () => {
+    if (pedido) return;
+    pedido = true;
+    requestAnimationFrame(() => { pedido = false; calcular(); });
+  };
+  window.addEventListener('scroll', pedir, { passive: true });
+  window.addEventListener('resize', pedir, { passive: true });
+  window.addEventListener('load', calcular);
+  calcular();
 }
 
-function biRender() {
-  const out = document.getElementById('bi-out');
-  const mas = document.getElementById('bi-mas');
-  const resumen = document.getElementById('bi-resumen');
-  if (!out) return;
-  const elegidos = [...PRODUCTOS]
-    .map(p => ({ p, n: biPuntaje(p) }))
-    .sort((a, b) => b.n - a.n || precioFinal(a.p) - precioFinal(b.p))
-    .slice(0, 3);
-  const razones = [biSel.amb && AMBIENTES[biSel.amb], biSel.luz && BI_LUZ[biSel.luz], biSel.motor && BI_MOTOR[biSel.motor]].filter(Boolean);
-  const previos = new Map([...out.querySelectorAll('[data-bi-id]')].map(el => [el.dataset.biId, el.getBoundingClientRect()]));
+function initCapitulos() {
+  const sec = document.querySelector('.capitulos');
+  if (!sec) return;
+  const textos = [...sec.querySelectorAll('.cap-texto')];
+  const shots = [...sec.querySelectorAll('.cap-shot')];
+  const marcas = [...sec.querySelectorAll('.cap-marca')];
+  const hora = document.getElementById('cap-hora');
+  const momento = document.getElementById('cap-momento');
+  const riel = document.getElementById('cap-riel');
+  const luzTxt = document.getElementById('cap-luz-txt');
+  if (!textos.length) return;
+  const N = Math.min(textos.length, 4);
+  let actual = -1;
 
-  out.innerHTML = elegidos.map(({ p }, i) => `
-    <article class="bi-card" data-bi-id="${p.id}" data-id="${p.id}">
-      <span class="bi-rank">0${i + 1}</span>
-      <button type="button" class="bi-media" data-quick="${p.id}" aria-label="Ver ${esc(p.nombre)}">${mediaHTML(p)}</button>
-      <div class="bi-body">
-        <p class="prod-cat">${esc(catNombre(p.cat))}</p>
-        <h3 class="bi-nom"><button type="button" data-quick="${p.id}">${esc(p.nombre)}</button></h3>
-        <p class="bi-por">${razones.length ? `Elegido por: ${esc(razones.join(' · '))}` : 'Lo más pedido en La Plata'}</p>
-        <div class="bi-row">
-          <strong>${formatearPrecio(precioFinal(p))}</strong>
-          <button type="button" class="btn btn--dark btn--sm" data-add="${p.id}">Agregar</button>
-        </div>
-      </div>
-    </article>`).join('');
-  bindCards(out);
-
-  if (resumen) resumen.textContent = razones.length ? razones.join(' · ') : 'Tocá una opción y la selección cambia al instante';
-  if (mas) {
-    const top = elegidos[0]?.p;
-    const partes = [];
-    if (top) partes.push(`cat:${top.cat}`);
-    if (biSel.luz && top && top.luz === biSel.luz) partes.push(`luz:${biSel.luz}`);
-    if (biSel.motor === 'si' && top && top.motor) partes.push('motor:si');
-    mas.dataset.gotoFiltro = partes.join(',');
-  }
-
-  const ventana = document.getElementById('bi-ventana');
-  if (ventana) {
-    ventana.dataset.luz = biSel.luz || 'inicio';
-    ventana.dataset.amb = biSel.amb || 'living';
-    ventana.dataset.motor = biSel.motor || '';
-    const lbl = ventana.querySelector('[data-ventana-lbl]');
-    if (lbl) lbl.textContent = biSel.luz ? BI_LUZ[biSel.luz] : 'Elegí cuánta luz querés';
-  }
-
-  if (reduceMotion) return;
-  out.querySelectorAll('[data-bi-id]').forEach(el => {
-    const antes = previos.get(el.dataset.biId);
-    if (!antes) { el.animate([{ opacity: 0, transform: 'translateY(14px) scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'cubic-bezier(0.23,1,0.32,1)' }); return; }
-    const ahora = el.getBoundingClientRect();
-    const dx = antes.left - ahora.left, dy = antes.top - ahora.top;
-    if (!dx && !dy) return;
-    el.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(0.23,1,0.32,1)' });
+  sec.querySelectorAll('[data-precio-de]').forEach(el => {
+    const p = getProducto(el.dataset.precioDe);
+    if (p) el.textContent = formatearPrecio(precioFinal(p));
   });
+  sec.querySelectorAll('[data-nombre-de]').forEach(el => {
+    const p = getProducto(el.dataset.nombreDe);
+    if (p) el.textContent = p.nombre;
+  });
+  bindCards(sec);
+
+  const pintarHora = txt => {
+    hora.innerHTML = txt.split('').map(ch => `<span class="d">${esc(ch)}</span>`).join('');
+    if (reduceMotion) return;
+    hora.querySelectorAll('.d').forEach((d, i) => {
+      d.style.animationDelay = `${i * 0.045}s`;
+      d.classList.add('tick');
+    });
+  };
+
+  const activar = i => {
+    if (i === actual) return;
+    actual = i;
+    const t = textos[i];
+    textos.forEach((x, n) => x.classList.toggle('is-on', n === i));
+    shots.forEach((s, n) => s.classList.toggle('is-on', n === i));
+    marcas.forEach((m, n) => {
+      m.classList.toggle('is-on', n === i);
+      m.classList.toggle('is-pasada', n < i);
+    });
+    pintarHora(t.dataset.hora);
+    momento.textContent = t.dataset.momento;
+    riel.style.width = t.dataset.luz + '%';
+    luzTxt.textContent = t.dataset.luz + ' %';
+  };
+
+  const progreso = () => {
+    const r = sec.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    return total > 0 ? clamp01(-r.top / total) : 0;
+  };
+
+  const calcular = () => {
+    const p = progreso();
+    const i = Math.min(N - 1, Math.floor(p * N * 0.9999));
+    activar(i);
+    if (reduceMotion) return;
+    const local = clamp01(p * N - i);
+    const img = shots[i]?.querySelector('img');
+    if (img) img.style.transform = `scale(${(1.07 - local * 0.07).toFixed(4)})`;
+  };
+
+  marcas.forEach(m => m.addEventListener('click', () => {
+    const i = parseInt(m.dataset.ir, 10);
+    const total = sec.offsetHeight - window.innerHeight;
+    const destino = sec.getBoundingClientRect().top + window.scrollY + total * ((i + 0.5) / N);
+    window.scrollTo({ top: destino, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }));
+
+  let pedido = false;
+  const pedir = () => {
+    if (pedido) return;
+    pedido = true;
+    requestAnimationFrame(() => { pedido = false; calcular(); });
+  };
+  window.addEventListener('scroll', pedir, { passive: true });
+  window.addEventListener('resize', pedir, { passive: true });
+  window.addEventListener('load', calcular);
+  calcular();
 }
 
-function initBloqueInteractivo() {
-  const cont = document.getElementById('armala');
-  if (!cont) return;
-  cont.querySelectorAll('.bi-chip').forEach(chip => chip.addEventListener('click', () => {
-    const q = chip.closest('.bi-q'), key = q.dataset.key;
-    const ya = biSel[key] === chip.dataset.val;
-    q.querySelectorAll('.bi-chip').forEach(c => c.setAttribute('aria-pressed', 'false'));
-    if (ya) biSel[key] = ''; else { biSel[key] = chip.dataset.val; chip.setAttribute('aria-pressed', 'true'); }
-    biRender();
-    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-  }));
-  biRender();
-}
 
 function initLeeScroll() {
   const els = document.querySelectorAll('[data-lee]');
@@ -1080,7 +1145,8 @@ function initGlobales() {
 initCategorias();
 initRail();
 initCatalogo();
-initBloqueInteractivo();
+initDiaNoche();
+initCapitulos();
 initReveals();
 initHero();
 initParallax();

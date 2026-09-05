@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
 <link href="https://api.fontshare.com/v2/css?f%5B0%5D=zodiak@400,401,700&f%5B1%5D=switzer@400,500,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}</style></noscript>
 </head>
 <body>
@@ -44,7 +44,8 @@
       <a href="#categorias">Categorías</a>
       <a href="#elegidos">Más pedidos</a>
       <a href="#colocacion">Colocación</a>
-      <a href="#armala">Armala en 3 toques</a>
+      <a href="#dianoche">Día y noche</a>
+      <a href="#undia">Un día en tu casa</a>
       <a href="#tienda">Catálogo</a>
       <a href="#medir">Cómo medir</a>
     </nav>
@@ -156,6 +157,45 @@
   </div>
 </section>
 
+<section class="dianoche" id="dianoche" aria-label="La misma ventana, de día y de noche">
+  <div class="dn-escena" id="dn-escena">
+    <div class="dn-mundo dn-dia">
+      <img class="dn-fondo" src="images/hero-living-cortinas-1920x1080.webp" alt="Living de día con cortinas de voile blanco y luz filtrada" width="1920" height="1080" decoding="async">
+      <span class="dn-scrim" aria-hidden="true"></span>
+      <span class="dn-giant" aria-hidden="true">DÍA</span>
+      <div class="dn-copy" id="dn-copy-dia">
+        <div class="dn-copy-in">
+          <p class="eyebrow">De día</p>
+          <h2>Que entre la luz, no la vereda</h2>
+          <p>El voile y el screen filtran el sol y cortan la vista desde afuera sin apagar el ambiente. La capa que se queda puesta todo el día.</p>
+          <a class="btn btn--primary" href="#tienda" data-goto-filtro="cat:tela">Ver telas de día</a>
+        </div>
+      </div>
+    </div>
+    <div class="dn-mundo dn-noche" id="dn-noche">
+      <img class="dn-fondo" src="images/roller-motorizada-dormitorio-1200x1500.webp" alt="Dormitorio de noche con la cortina blackout baja" width="1200" height="1500" decoding="async">
+      <span class="dn-scrim" aria-hidden="true"></span>
+      <span class="dn-giant" aria-hidden="true">NOCHE</span>
+      <div class="dn-copy" id="dn-copy-noche">
+        <div class="dn-copy-in">
+          <p class="eyebrow">De noche</p>
+          <h2>Que no entre nada, ni a las siete</h2>
+          <p>El blackout de tres capas corta el 100 % de la luz y aísla del calor. El que trabaja de noche duerme igual de día.</p>
+          <a class="btn btn--primary" href="#tienda" data-goto-filtro="cat:blackout">Ver blackout</a>
+        </div>
+      </div>
+    </div>
+    <div class="dn-linea-wrap" aria-hidden="true"><div class="dn-linea" id="dn-linea"></div></div>
+    <div class="dn-hud" aria-hidden="true">
+      <div class="dn-hud-in">
+        <span class="dn-hud-lbl">Paso de luz</span>
+        <span class="dn-hud-riel"><i id="dn-riel"></i></span>
+        <span class="dn-hud-val" id="dn-val">78 %</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="colocacion" id="colocacion" aria-labelledby="colocacion-title">
   <div class="shell colocacion-grid">
     <div class="colocacion-media" data-animate="mask" style="opacity:0;clip-path:inset(0 100% 0 0)">
@@ -167,7 +207,7 @@
       <h2 id="colocacion-title" data-animate="up" style="opacity:0;transform:translateY(24px)">Medimos, fabricamos y colocamos: el mismo equipo de punta a punta</h2>
       <blockquote class="lee" data-lee>Una cortina bien medida no se nota. Se nota la luz que deja pasar.</blockquote>
       <ol class="pasos">
-        <li><span class="paso-n">1</span><div><h3>Elegís online</h3><p>Sistema, tela y color desde el catálogo. Si no sabés cuál va, armala en tres toques o mandanos una foto por WhatsApp.</p></div></li>
+        <li><span class="paso-n">1</span><div><h3>Elegís online</h3><p>Sistema, tela y color desde el catálogo. Si no sabés cuál va, mirá qué tela resuelve cada hora del día o mandanos una foto por WhatsApp.</p></div></li>
         <li><span class="paso-n">2</span><div><h3>Medimos y fabricamos</h3><p>Podés mandarnos tus medidas o pedir que vayamos a medir. Fabricamos al centímetro, con los herrajes para tu tipo de pared.</p></div></li>
         <li><span class="paso-n">3</span><div><h3>Colocamos y regulamos</h3><p>Coordinamos el día por WhatsApp. Colocamos, nivelamos y dejamos regulado el tope. También colocamos cortinas que ya tenés.</p></div></li>
       </ol>
@@ -178,55 +218,84 @@
   </div>
 </section>
 
-<section class="bi" id="armala" aria-labelledby="bi-title">
-  <div class="shell bi-grid">
-    <div class="bi-ventana-wrap" data-animate="scale" style="opacity:0;transform:scale(.94)">
-      <div class="ventana" id="bi-ventana" data-luz="inicio" data-amb="living" aria-hidden="true">
-        <div class="ventana-toldo"></div>
-        <div class="ventana-marco">
-          <div class="ventana-vista"></div>
-          <div class="ventana-pano"></div>
-          <div class="ventana-tube"></div>
+<section class="capitulos" id="undia" aria-labelledby="undia-title">
+  <div class="cap-escena" id="cap-escena">
+    <div class="cap-grid">
+      <div class="cap-visual">
+        <figure class="cap-shot is-on" data-shot="0" style="--tinte:rgba(255,214,140,.32)">
+          <img src="images/hero-living-cortinas-1920x1080.webp" alt="Living con cortinas de voile blanco y la luz de la mañana" width="1920" height="1080" decoding="async">
+        </figure>
+        <figure class="cap-shot" data-shot="1" style="--tinte:rgba(255,168,74,.38)">
+          <img src="images/roller-sunscreen-tostado-1200x1500.webp" alt="Trama de una cortina sunscreen tostada con el sol de frente" width="1200" height="1500" decoding="async">
+        </figure>
+        <figure class="cap-shot" data-shot="2" style="--tinte:rgba(255,133,60,.32)">
+          <img src="images/roller-zebra-dia-noche-1200x1500.webp" alt="Cortina roller zebra con las franjas alineadas" width="1200" height="1500" decoding="async">
+        </figure>
+        <figure class="cap-shot" data-shot="3" style="--tinte:rgba(40,54,120,.48)">
+          <img src="images/blackout-gris-plomo-1200x1500.webp" alt="Cortina blackout gris plomo cerrada junto a una silla" width="1200" height="1500" decoding="async">
+        </figure>
+        <span class="cap-vig" aria-hidden="true"></span>
+        <div class="cap-hud">
+          <p class="cap-reloj"><span class="cap-hora" id="cap-hora">07:00</span><span class="cap-momento" id="cap-momento">Recién amanece</span></p>
+          <div class="cap-barra">
+            <div class="cap-barra-top"><span>Paso de luz</span><span id="cap-luz-txt">78 %</span></div>
+            <div class="cap-riel"><i id="cap-riel"></i></div>
+          </div>
         </div>
-        <div class="ventana-piso"></div>
-        <p class="ventana-lbl" data-ventana-lbl>Elegí cuánta luz querés</p>
-        <span class="ventana-remote"></span>
+      </div>
+      <div class="cap-panel">
+        <p class="eyebrow"><span class="folio">04</span> Cómo se usa</p>
+        <h2 id="undia-title">Un día en tu casa</h2>
+        <div class="cap-textos" id="cap-textos">
+          <article class="cap-texto is-on" data-texto="0" data-hora="07:00" data-momento="Recién amanece" data-luz="78">
+            <p class="cap-texto-h"><i aria-hidden="true"></i>07:00 · Living</p>
+            <h3>Que entre la mañana, no la vereda</h3>
+            <p>El voile deja pasar casi toda la luz y corta la vista desde afuera. Es la capa que se queda puesta todo el día.</p>
+            <div class="cap-buy">
+              <span class="cap-prod"><span data-nombre-de="lis-16"></span><strong data-precio-de="lis-16"></strong></span>
+              <button type="button" class="btn btn--primary btn--sm" data-add="lis-16">Agregar</button>
+              <button type="button" class="cap-ver" data-quick="lis-16">Ver ficha</button>
+            </div>
+          </article>
+          <article class="cap-texto" data-texto="1" data-hora="12:00" data-momento="Sol de frente" data-luz="30">
+            <p class="cap-texto-h"><i aria-hidden="true"></i>12:00 · Cocina y living</p>
+            <h3>El sol de las doce, sin el calor</h3>
+            <p>La trama del sunscreen filtra el sol directo y baja el reflejo en las pantallas. Seguís viendo el patio; de afuera no ven adentro.</p>
+            <div class="cap-buy">
+              <span class="cap-prod"><span data-nombre-de="lis-07"></span><strong data-precio-de="lis-07"></strong></span>
+              <button type="button" class="btn btn--primary btn--sm" data-add="lis-07">Agregar</button>
+              <button type="button" class="cap-ver" data-quick="lis-07">Ver ficha</button>
+            </div>
+          </article>
+          <article class="cap-texto" data-texto="2" data-hora="18:00" data-momento="Cae la tarde" data-luz="45">
+            <p class="cap-texto-h"><i aria-hidden="true"></i>18:00 · Comedor</p>
+            <h3>La hora en que la calle mira para adentro</h3>
+            <p>Con las franjas alineadas entra luz; corridas medio paso, se cierra. La misma cortina cambia dos veces por día sin tocar nada más.</p>
+            <div class="cap-buy">
+              <span class="cap-prod"><span data-nombre-de="lis-01"></span><strong data-precio-de="lis-01"></strong></span>
+              <button type="button" class="btn btn--primary btn--sm" data-add="lis-01">Agregar</button>
+              <button type="button" class="cap-ver" data-quick="lis-01">Ver ficha</button>
+            </div>
+          </article>
+          <article class="cap-texto" data-texto="3" data-hora="23:00" data-momento="Hora de dormir" data-luz="0">
+            <p class="cap-texto-h"><i aria-hidden="true"></i>23:00 · Dormitorio</p>
+            <h3>Cero luz, también a las siete de la mañana</h3>
+            <p>Tres capas con alma de PVC: no pasa nada de luz y el ambiente queda más fresco. El que trabaja de noche duerme igual.</p>
+            <div class="cap-buy">
+              <span class="cap-prod"><span data-nombre-de="lis-04"></span><strong data-precio-de="lis-04"></strong></span>
+              <button type="button" class="btn btn--primary btn--sm" data-add="lis-04">Agregar</button>
+              <button type="button" class="cap-ver" data-quick="lis-04">Ver ficha</button>
+            </div>
+          </article>
+        </div>
+        <div class="cap-marcas" id="cap-marcas">
+          <button type="button" class="cap-marca is-on" data-ir="0" aria-label="Ir a las 07:00"><span></span></button>
+          <button type="button" class="cap-marca" data-ir="1" aria-label="Ir a las 12:00"><span></span></button>
+          <button type="button" class="cap-marca" data-ir="2" aria-label="Ir a las 18:00"><span></span></button>
+          <button type="button" class="cap-marca" data-ir="3" aria-label="Ir a las 23:00"><span></span></button>
+        </div>
       </div>
     </div>
-    <div class="bi-panel">
-      <p class="eyebrow"><span class="folio">04</span> Armala en tres toques</p>
-      <h2 id="bi-title">¿Cuánta luz querés en el ambiente?</h2>
-      <p class="bi-sub">Tocá una opción por fila y abajo aparecen los tres modelos que mejor van. <a class="bi-skip" href="#tienda">Prefiero mirar todo el catálogo</a></p>
-      <div class="bi-q" data-key="amb">
-        <p class="bi-label">Ambiente</p>
-        <div class="bi-chips">
-          <button type="button" class="bi-chip" data-val="dormitorio" aria-pressed="false">Dormitorio</button>
-          <button type="button" class="bi-chip" data-val="living" aria-pressed="false">Living</button>
-          <button type="button" class="bi-chip" data-val="cocina" aria-pressed="false">Cocina o baño</button>
-          <button type="button" class="bi-chip" data-val="exterior" aria-pressed="false">Balcón o exterior</button>
-        </div>
-      </div>
-      <div class="bi-q" data-key="luz">
-        <p class="bi-label">Luz</p>
-        <div class="bi-chips">
-          <button type="button" class="bi-chip" data-val="nada" aria-pressed="false">Nada de luz</button>
-          <button type="button" class="bi-chip" data-val="poca" aria-pressed="false">Un poco, filtrada</button>
-          <button type="button" class="bi-chip" data-val="difusa" aria-pressed="false">Toda, con privacidad</button>
-        </div>
-      </div>
-      <div class="bi-q" data-key="motor">
-        <p class="bi-label">Motor</p>
-        <div class="bi-chips">
-          <button type="button" class="bi-chip" data-val="si" aria-pressed="false">Con motor</button>
-          <button type="button" class="bi-chip" data-val="no" aria-pressed="false">Sin motor</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="shell bi-result">
-    <p class="bi-resumen" id="bi-resumen" aria-live="polite"></p>
-    <div class="bi-out" id="bi-out"></div>
-    <a class="btn btn--dark" id="bi-mas" href="#tienda" data-goto-filtro="">Ver más como estos</a>
   </div>
   <span class="sello-medida" aria-hidden="true">A medida · ancho × alto al centímetro</span>
 </section>
@@ -317,7 +386,7 @@
       <h3>Tienda</h3>
       <a href="#categorias">Categorías</a>
       <a href="#elegidos">Los más pedidos</a>
-      <a href="#armala">Armala en tres toques</a>
+      <a href="#undia">Un día en tu casa</a>
       <a href="#tienda">Catálogo completo</a>
       <a href="#medir">Cómo medir</a>
     </div>
@@ -406,7 +475,7 @@
 <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
 <script src="https://unpkg.com/gsap@3.13.0/dist/Flip.min.js"></script>
-<script src="script.js?v=2"></script>
+<script src="script.js?v=3"></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>
