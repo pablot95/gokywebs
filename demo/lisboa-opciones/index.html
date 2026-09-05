@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lisboa — Tres opciones de sección animada</title>
-<meta name="description" content="Comparación interna de tres formatos de sección firma para las demos de Gokywebs, montados con las fotos reales de la demo de Lisboa.">
+<title>Lisboa — Dos opciones de sección animada</title>
+<meta name="description" content="Comparación interna de dos formatos de sección firma para las demos de Gokywebs, montados con las fotos reales de la demo de Lisboa.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23000'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='40' font-weight='700' fill='%23fff' text-anchor='middle'%3EL%3C/text%3E%3Crect x='14' y='52' width='36' height='3' fill='%23E8C872'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://api.fontshare.com">
@@ -27,20 +27,19 @@
 .rotulo-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
 .rotulo-meta span { font: 500 .72rem/1 var(--font-body); letter-spacing: .06em; padding: 7px 10px; border: 1px solid var(--color-line); border-radius: 4px; color: var(--color-text-muted); }
 
-/* ══ Opción 1 — Un día en tu casa ══ */
-.op1 { background: var(--color-bg); }
-.op1-grid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: start; }
-.op1-visual { position: sticky; top: 24px; }
-.op1-stack { position: relative; width: 100%; height: clamp(360px, 68svh, 640px); border-radius: 8px; overflow: hidden; background: var(--color-bg-alt); }
-.op1-shot { position: absolute; inset: 0; margin: 0; opacity: 0; transition: opacity 1s var(--ease-out); }
-.op1-shot img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.09); transition: transform 9s linear; }
-.op1-shot::after { content: ""; position: absolute; inset: 0; background: var(--tinte, transparent); mix-blend-mode: soft-light; transition: background 1s var(--ease-out); }
-.op1-shot.is-on { opacity: 1; }
-.op1-shot.is-on img { transform: scale(1); }
-.op1-vig { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(12,6,33,.5), transparent 26%, transparent 52%, rgba(12,6,33,.82)); }
+/* ══ Opción 1 — Un día en tu casa (todo fijo, el texto cambia) ══ */
+.op1 { min-height: 420svh; position: relative; padding: 0; }
+.op1-escena { position: sticky; top: 0; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+.op1-grid { width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: clamp(1.5rem, 4vw, 4rem); align-items: center; }
+.op1-visual { position: relative; width: 100%; height: clamp(340px, 66svh, 620px); border-radius: 8px; overflow: hidden; background: var(--color-bg-alt); }
+.op1-shot { position: absolute; inset: 0; margin: 0; opacity: 0; visibility: hidden; transition: opacity .8s var(--ease-out), visibility 0s .8s; }
+.op1-shot img { width: 100%; height: 100%; object-fit: cover; will-change: transform; }
+.op1-shot::after { content: ""; position: absolute; inset: 0; background: var(--tinte, transparent); mix-blend-mode: soft-light; }
+.op1-shot.is-on { opacity: 1; visibility: visible; transition: opacity .8s var(--ease-out); }
+.op1-vig { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(12,6,33,.42), transparent 24%, transparent 54%, rgba(12,6,33,.82)); }
 .op1-hud { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 20px; display: grid; gap: 12px; }
 .op1-reloj { display: flex; align-items: flex-end; gap: 12px; }
-.op1-hora { font: 700 clamp(2.6rem, 6vw, 4.6rem)/.85 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.op1-hora { font: 700 clamp(2.6rem, 6vw, 4.4rem)/.85 var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
 .op1-hora .d { display: inline-block; }
 .op1-hora .d.tick { animation: hora-tick .5s var(--ease-out); }
 @keyframes hora-tick { 0% { transform: translateY(-70%); opacity: 0; } 100% { transform: none; opacity: 1; } }
@@ -48,80 +47,38 @@
 .op1-barra { display: grid; gap: 6px; }
 .op1-barra-top { display: flex; justify-content: space-between; font: 600 .68rem/1 var(--font-body); letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.82); }
 .op1-riel { height: 5px; border-radius: 3px; background: rgba(255,255,255,.2); overflow: hidden; }
-.op1-riel i { display: block; height: 100%; width: 0; background: var(--color-luz); transition: width .9s var(--ease-out); }
-.op1-pasos { list-style: none; display: grid; gap: 10px; padding: clamp(1rem, 4vw, 3rem) 0; }
-.op1-paso { padding: clamp(1.1rem, 2vw, 1.6rem) 0; border-top: 1px solid var(--color-line); opacity: .38; transition: opacity .5s var(--ease-out); }
-.op1-paso.is-on { opacity: 1; }
-.op1-paso-h { display: flex; align-items: center; gap: 10px; font: 600 .72rem/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--color-text-muted); }
-.op1-paso.is-on .op1-paso-h { color: var(--color-luz); }
-.op1-paso-h i { width: 0; height: 1px; background: var(--color-luz); transition: width .6s var(--ease-out); }
-.op1-paso.is-on .op1-paso-h i { width: 42px; }
-.op1-paso h3 { font: 700 clamp(1.25rem, 2.1vw, 1.7rem)/1.15 var(--font-display); margin: 10px 0 8px; }
-.op1-paso p { color: var(--color-text-muted); max-width: 46ch; }
-.op1-buy { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
-.op1-buy .op1-prod { display: grid; }
-.op1-buy .op1-prod span { font: 500 .78rem/1.3 var(--font-body); color: var(--color-text-muted); }
-.op1-buy .op1-prod strong { font: 600 1.1rem/1.2 var(--font-body); font-variant-numeric: tabular-nums; }
+.op1-riel i { display: block; height: 100%; width: 0; background: var(--color-luz); transition: width .8s var(--ease-out); }
+.op1-panel { position: relative; }
+.op1-textos { position: relative; min-height: clamp(300px, 42svh, 380px); }
+.op1-texto { position: absolute; inset: 0; opacity: 0; visibility: hidden; transform: translateY(14px); transition: opacity .42s var(--ease-out), transform .42s var(--ease-out), visibility 0s .42s; }
+.op1-texto.is-on { opacity: 1; visibility: visible; transform: none; transition: opacity .5s var(--ease-out) .1s, transform .5s var(--ease-out) .1s; }
+.op1-texto-h { display: flex; align-items: center; gap: 10px; font: 600 .72rem/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: var(--color-luz); }
+.op1-texto-h i { width: 42px; height: 1px; background: var(--color-luz); }
+.op1-texto h3 { font: 700 clamp(1.5rem, 2.8vw, 2.3rem)/1.1 var(--font-display); letter-spacing: -.01em; margin: 14px 0 10px; }
+.op1-texto p { color: var(--color-text-muted); max-width: 44ch; }
+.op1-buy { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 20px; }
+.op1-prod { display: grid; }
+.op1-prod span { font: 500 .8rem/1.3 var(--font-body); color: var(--color-text-muted); }
+.op1-prod strong { font: 600 1.2rem/1.2 var(--font-body); font-variant-numeric: tabular-nums; }
+.op1-marcas { display: flex; gap: 8px; margin-top: 26px; }
+.op1-marca { flex: 1; max-width: 90px; height: 34px; display: flex; align-items: center; padding: 0; background: none; border: 0; cursor: pointer; }
+.op1-marca span { display: block; width: 100%; height: 4px; border-radius: 2px; background: rgba(255,255,255,.2); overflow: hidden; }
+.op1-marca span::after { content: ""; display: block; height: 100%; width: 0; background: var(--color-luz); transition: width .5s var(--ease-out); }
+.op1-marca.is-on span::after, .op1-marca.is-pasada span::after { width: 100%; }
+.op1-marca.is-pasada span::after { background: rgba(232,200,114,.45); }
 
-/* ══ Opción 2 — Recorrido por la foto ══ */
-.op2 { background: var(--color-bg-alt); }
-.op2-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(1.4rem, 3vw, 2.6rem); align-items: center; }
-.op2-foto { position: relative; margin: 0; width: 100%; aspect-ratio: 16 / 11; max-height: 70svh; overflow: hidden; border-radius: 8px; background: var(--color-bg-soft); cursor: crosshair; }
-.op2-foto > img { width: 100%; height: 100%; object-fit: cover; }
-.op2-foto::after { content: ""; position: absolute; inset: 0; background: rgba(12,6,33,.28); transition: background .5s var(--ease-out); pointer-events: none; }
-.op2-foto.is-hover::after { background: rgba(12,6,33,.12); }
-.op2-lupa { position: absolute; width: clamp(120px, 15vw, 190px); aspect-ratio: 1; border-radius: 50%; left: 0; top: 0; translate: -50% -50%; z-index: 3; pointer-events: none; box-shadow: 0 18px 46px rgba(0,0,0,.6), inset 0 0 0 2px rgba(255,255,255,.85); background-image: var(--foto); background-repeat: no-repeat; background-size: 260% auto; transition: left .9s var(--ease-out), top .9s var(--ease-out), background-position .9s var(--ease-out), opacity .4s; }
-.op2-lupa.libre { transition: left .12s linear, top .12s linear, background-position .12s linear, opacity .4s; }
-.op2-lupa::after { content: ""; position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 0 0 26px rgba(12,6,33,.45); }
-.op2-punto { position: absolute; left: var(--x); top: var(--y); translate: -50% -50%; z-index: 4; width: 44px; height: 44px; display: grid; place-items: center; }
-.op2-punto span { width: 15px; height: 15px; border-radius: 50%; background: var(--color-luz); box-shadow: 0 0 0 4px rgba(232,200,114,.28); transition: transform .3s var(--ease-out), box-shadow .3s; }
-.op2-punto::after { content: ""; position: absolute; width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--color-luz); opacity: 0; }
-.op2-punto.is-on span { transform: scale(1.25); box-shadow: 0 0 0 7px rgba(232,200,114,.22); }
-.op2-punto.is-on::after { animation: punto-ring 1.8s ease-out infinite; }
-@keyframes punto-ring { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(3.4); opacity: 0; } }
-.op2-num { position: absolute; left: 20px; bottom: 18px; z-index: 4; font: 400 .9rem/1 var(--font-display); color: rgba(255,255,255,.75); font-variant-numeric: tabular-nums; }
-.op2-panel { display: grid; gap: 14px; }
-.op2-fichas { position: relative; min-height: 220px; }
-.op2-ficha { position: absolute; inset: 0; opacity: 0; transform: translateY(14px); transition: opacity .45s var(--ease-out), transform .45s var(--ease-out); pointer-events: none; }
-.op2-ficha.is-on { opacity: 1; transform: none; pointer-events: auto; }
-.op2-ficha .n { font: 400 2.6rem/1 var(--font-display); color: var(--color-luz); }
-.op2-ficha h3 { font: 700 clamp(1.3rem, 2.1vw, 1.7rem)/1.15 var(--font-display); margin: 8px 0 8px; }
-.op2-ficha p { color: var(--color-text-muted); max-width: 40ch; }
-.op2-ficha .op2-buy { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
-.op2-ficha .op2-buy strong { font: 600 1.1rem/1 var(--font-body); font-variant-numeric: tabular-nums; }
-.op2-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
-.op2-tab { width: 34px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); transition: background .3s, width .3s var(--ease-out); }
-.op2-tab.is-on { background: var(--color-luz); width: 52px; }
-
-/* ══ Opción 3 — Vidriera cinética ══ */
-.op3 { background: var(--color-bg); overflow: hidden; padding-bottom: calc(var(--section-pad-y) + 10px); }
-.op3-bandas { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(10px, 1.6vw, 18px); }
-.op3-banda { overflow: hidden; min-width: 0; }
-.op3-track { display: flex; gap: clamp(10px, 1.6vw, 18px); width: max-content; will-change: transform; }
-.op3-pieza { position: relative; flex: 0 0 auto; width: clamp(210px, 24vw, 360px); aspect-ratio: 4 / 3; overflow: hidden; border-radius: 6px; background: var(--color-bg-alt); display: block; padding: 0; }
-.op3-pieza img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--ease-out), filter .5s; filter: saturate(.92); }
-.op3-pieza:hover img { transform: scale(1.05); filter: saturate(1.05); }
-.op3-pieza figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 12px; text-align: left; background: linear-gradient(180deg, transparent, rgba(12,6,33,.88)); font: 600 .78rem/1.2 var(--font-body); opacity: 0; transform: translateY(8px); transition: opacity .35s, transform .35s var(--ease-out); }
-.op3-pieza:hover figcaption { opacity: 1; transform: none; }
-.op3-word { display: flex; align-items: center; gap: clamp(16px, 3vw, 46px); width: max-content; will-change: transform; font: 700 clamp(3.2rem, 11vw, 9rem)/.9 var(--font-display); letter-spacing: -.02em; padding-block: clamp(4px, 1vw, 10px); }
-.op3-word span { white-space: nowrap; }
-.op3-word .hueco { -webkit-text-stroke: 1px rgba(255,255,255,.45); color: transparent; }
-.op3-word .luz { color: var(--color-luz); }
-.op3-pie { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: clamp(1.2rem, 3vw, 2rem); }
-.op3-pie p { color: var(--color-text-muted); max-width: 46ch; }
-
-/* ══ Opción 4 — Día y noche, la cortina que se corre ══ */
-.op4 { min-height: 300svh; position: relative; padding: 0; }
+/* ══ Opción 4 — Día y noche, una línea que barre ══ */
+.op4 { min-height: 210svh; position: relative; padding: 0; }
 .op4-escena { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--color-bg); }
 .op4-mundo { position: absolute; inset: 0; display: flex; align-items: center; z-index: 1; }
 .op4-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .op4-dia .op4-fondo { object-position: 50% 46%; }
-.op4-noche { z-index: 2; clip-path: polygon(calc(var(--w, 134) * 1% + 5%) 0%, 220% 0%, 220% 100%, calc(var(--w, 134) * 1% - 5%) 100%); }
+.op4-noche { z-index: 2; clip-path: polygon(calc(var(--w, 108) * 1% + 4%) 0%, 220% 0%, 220% 100%, calc(var(--w, 108) * 1% - 4%) 100%); }
 .op4-noche .op4-fondo { object-position: 50% 40%; }
 .op4-scrim { position: absolute; inset: 0; }
 .op4-dia .op4-scrim { background: linear-gradient(90deg, rgba(12,6,33,.9) 0%, rgba(12,6,33,.62) 42%, rgba(12,6,33,.12) 78%); }
 .op4-noche .op4-scrim { background: linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.7) 46%, rgba(0,0,0,.35) 100%); }
-.op4-copy { position: relative; z-index: 3; width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; max-width: none; }
+.op4-copy { position: relative; z-index: 3; width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; }
 .op4-copy-in { max-width: 30rem; }
 .op4-copy h3 { font: 700 clamp(1.9rem, 4.4vw, 3.4rem)/1.05 var(--font-display); letter-spacing: -.015em; margin: 10px 0 12px; }
 .op4-copy p { color: rgba(255,255,255,.82); max-width: 38ch; }
@@ -129,10 +86,8 @@
 .op4-giant { position: absolute; z-index: 1; font: 700 clamp(4rem, 15vw, 13rem)/.82 var(--font-display); letter-spacing: -.03em; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.3); pointer-events: none; }
 .op4-dia .op4-giant { top: 7%; right: 4%; }
 .op4-noche .op4-giant { bottom: 6%; right: 4%; -webkit-text-stroke-color: rgba(232,200,114,.5); }
-.op4-cortina-wrap { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 4; }
-.op4-cortina { position: absolute; top: -8%; bottom: -8%; left: calc(var(--w, 134) * 1%); width: 30%; transform: translateX(-100%) skewX(-5deg); background-image: url('../lisboa/images/blackout-gris-plomo-1200x1500.webp'); background-size: cover; background-position: 60% 50%; box-shadow: 26px 0 60px rgba(0,0,0,.55); }
-.op4-cortina::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 2px, transparent 2px 8px, rgba(0,0,0,.22) 8px 13px, transparent 13px 22px); }
-.op4-cortina::after { content: ""; position: absolute; top: 0; bottom: 0; right: -3px; width: 3px; background: var(--color-luz); box-shadow: 0 0 26px 5px rgba(232,200,114,.55); }
+.op4-linea-wrap { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 4; }
+.op4-linea { position: absolute; top: -10%; bottom: -10%; left: calc(var(--w, 108) * 1%); width: 3px; transform: skewX(-4deg); background: linear-gradient(180deg, rgba(232,200,114,0), var(--color-luz) 12%, var(--color-luz) 88%, rgba(232,200,114,0)); box-shadow: 0 0 34px 7px rgba(232,200,114,.42); }
 .op4-hud { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 0 clamp(14px, 3vw, 26px); pointer-events: none; }
 .op4-hud-in { width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; display: flex; align-items: center; gap: 14px; }
 .op4-hud-lbl { font: 600 .68rem/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.75); white-space: nowrap; }
@@ -141,36 +96,34 @@
 .op4-hud-val { font: 600 .82rem/1 var(--font-body); font-variant-numeric: tabular-nums; color: var(--color-luz); min-width: 46px; }
 .op4.is-corta { min-height: 100svh; }
 .op4-escena.is-static { position: relative; }
-.op4-escena.is-static .op4-cortina { display: none; }
+.op4-escena.is-static .op4-linea { display: none; }
 
 .pruebas-foot { padding: clamp(2rem, 5vw, 3.5rem) 0 40px; border-top: 1px solid var(--color-line); color: var(--color-text-muted); display: grid; gap: 8px; }
 .pruebas-foot a { color: var(--color-text); font-weight: 600; }
 
 @media (max-width: 980px) {
-  .op1-grid { grid-template-columns: 1fr; gap: 0; }
-  .op1-visual { top: 0; z-index: 2; padding-top: 10px; background: var(--color-bg); }
-  .op1-stack { height: 40svh; min-height: 240px; }
-  .op1-hud { padding: 14px; }
-  .op1-pasos { padding-top: 8px; padding-bottom: 20svh; }
-  .op2-grid { grid-template-columns: 1fr; }
-  .op2-foto { aspect-ratio: 4 / 3; max-height: 52svh; }
-  .op2-fichas { min-height: 260px; }
-  .op3-pieza { width: 56vw; }
-}
-@media (max-width: 640px) {
-  .op2-lupa { width: 108px; }
-  .op1-paso p { max-width: none; }
-  .op3-pieza { width: 66vw; }
+  .op1 { min-height: 400svh; }
+  .op1-escena { align-items: flex-start; }
+  .op1-grid { grid-template-columns: 1fr; gap: 16px; padding-top: 14px; align-content: start; height: 100%; grid-template-rows: auto minmax(0, 1fr); }
+  .op1-visual { height: 38svh; min-height: 220px; }
+  .op1-textos { min-height: 0; height: 100%; }
+  .op1-texto h3 { font-size: 1.45rem; margin: 10px 0 8px; }
+  .op1-texto p { font-size: .95rem; max-width: none; }
+  .op1-buy { margin-top: 14px; }
+  .op1-marcas { margin-top: 18px; }
   .op4-copy p { font-size: .95rem; max-width: none; }
   .op4-copy-in { max-width: 22rem; }
   .op4-giant { -webkit-text-stroke-width: 1px; }
-  .op4-cortina { width: 46%; }
   .op4-hud-lbl { display: none; }
 }
+@media (max-width: 640px) {
+  .op1-visual { height: 32svh; min-height: 190px; }
+  .op1-hud { padding: 12px; }
+  .op1-hora { font-size: 2.2rem; }
+}
 @media (prefers-reduced-motion: reduce) {
-  .op1-shot img { transition: none; transform: none; }
-  .op2-punto.is-on::after { animation: none; }
-  .op2-lupa { display: none; }
+  .op1-shot img { transform: none !important; }
+  .op1-texto, .op1-shot { transition-duration: .01ms; }
 }
 </style>
 </head>
@@ -181,12 +134,10 @@
   <div class="shell pruebas-in">
     <a class="brand" href="../lisboa/">
       <span class="brand-word">Lisboa</span>
-      <span class="brand-sub">Tres opciones de sección animada</span>
+      <span class="brand-sub">Dos opciones de sección animada</span>
     </a>
     <nav class="pruebas-nav" aria-label="Opciones">
       <a href="#op1">1 · Un día en tu casa</a>
-      <a href="#op2">2 · Recorrido por la foto</a>
-      <a href="#op3">3 · Vidriera cinética</a>
       <a href="#op4">4 · Día y noche</a>
       <a href="../lisboa/">Volver a la demo</a>
     </nav>
@@ -199,25 +150,25 @@
   <div class="shell rotulo-in">
     <p class="rotulo-n"><b>01</b> Relato de fotos</p>
     <h2>Un día en tu casa</h2>
-    <p>La foto queda fija y cambia sola a medida que bajás, con la hora y el paso de luz corriendo arriba. Cada capítulo es una hora real del día y termina en el producto que la resuelve. En otro rubro los capítulos son los pasos del servicio, los ambientes de una propiedad o los módulos de un curso.</p>
-    <div class="rotulo-meta"><span>Se mueve solo con el scroll</span><span>Pide 3 o 4 fotos buenas</span><span>Ata cada foto a una situación</span></div>
+    <p>La escena entera queda fija y el scroll solo cambia de capítulo: se reemplaza el texto y se reemplaza la foto, sin que nada se deslice. Cuatro momentos del día, cuatro productos. En otro rubro son los pasos del servicio, los ambientes de una propiedad o los módulos de un curso.</p>
+    <div class="rotulo-meta"><span>Máximo 4 items</span><span>El texto cambia, no scrollea</span><span>Cada capítulo termina en producto</span></div>
   </div>
 </section>
 
 <section class="op1" aria-label="Un día en tu casa">
-  <div class="shell op1-grid">
-    <div class="op1-visual">
-      <div class="op1-stack">
-        <figure class="op1-shot is-on" data-shot="0" style="--tinte:rgba(255,214,140,.35)">
+  <div class="op1-escena" id="op1-escena">
+    <div class="op1-grid">
+      <div class="op1-visual">
+        <figure class="op1-shot is-on" data-shot="0" style="--tinte:rgba(255,214,140,.32)">
           <img src="../lisboa/images/hero-living-cortinas-1920x1080.webp" alt="Living con cortinas de voile blanco y luz de la mañana" width="1920" height="1080" decoding="async">
         </figure>
-        <figure class="op1-shot" data-shot="1" style="--tinte:rgba(255,168,74,.4)">
+        <figure class="op1-shot" data-shot="1" style="--tinte:rgba(255,168,74,.38)">
           <img src="../lisboa/images/roller-sunscreen-tostado-1200x1500.webp" alt="Trama de una cortina sunscreen tostada con el sol de frente" width="1200" height="1500" decoding="async">
         </figure>
-        <figure class="op1-shot" data-shot="2" style="--tinte:rgba(255,133,60,.34)">
+        <figure class="op1-shot" data-shot="2" style="--tinte:rgba(255,133,60,.32)">
           <img src="../lisboa/images/roller-zebra-dia-noche-1200x1500.webp" alt="Cortina roller zebra con las franjas alineadas" width="1200" height="1500" decoding="async">
         </figure>
-        <figure class="op1-shot" data-shot="3" style="--tinte:rgba(40,54,120,.5)">
+        <figure class="op1-shot" data-shot="3" style="--tinte:rgba(40,54,120,.48)">
           <img src="../lisboa/images/blackout-gris-plomo-1200x1500.webp" alt="Cortina blackout gris plomo cerrada junto a una silla" width="1200" height="1500" decoding="async">
         </figure>
         <span class="op1-vig" aria-hidden="true"></span>
@@ -229,140 +180,53 @@
           </div>
         </div>
       </div>
-    </div>
-    <ol class="op1-pasos" id="op1-pasos">
-      <li class="op1-paso is-on" data-paso="0" data-hora="07:00" data-momento="Recién amanece" data-luz="78">
-        <p class="op1-paso-h"><i aria-hidden="true"></i>07:00 · Living</p>
-        <h3>Que entre la mañana, no la vereda</h3>
-        <p>El voile deja pasar casi toda la luz y corta la vista desde afuera. Es la capa que se queda puesta todo el día.</p>
-        <div class="op1-buy">
-          <span class="op1-prod"><span>Cortina voile Blanco, 2 paños</span><strong>$92.000</strong></span>
-          <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+      <div class="op1-panel">
+        <div class="op1-textos" id="op1-textos">
+          <article class="op1-texto is-on" data-texto="0" data-hora="07:00" data-momento="Recién amanece" data-luz="78">
+            <p class="op1-texto-h"><i aria-hidden="true"></i>07:00 · Living</p>
+            <h3>Que entre la mañana, no la vereda</h3>
+            <p>El voile deja pasar casi toda la luz y corta la vista desde afuera. Es la capa que se queda puesta todo el día.</p>
+            <div class="op1-buy">
+              <span class="op1-prod"><span>Cortina voile Blanco, 2 paños</span><strong>$92.000</strong></span>
+              <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+            </div>
+          </article>
+          <article class="op1-texto" data-texto="1" data-hora="12:00" data-momento="Sol de frente" data-luz="30">
+            <p class="op1-texto-h"><i aria-hidden="true"></i>12:00 · Cocina y living</p>
+            <h3>El sol de las doce, sin el calor</h3>
+            <p>La trama del sunscreen filtra el sol directo y baja el reflejo en las pantallas. Seguís viendo el patio; de afuera no ven adentro.</p>
+            <div class="op1-buy">
+              <span class="op1-prod"><span>Roller screen 5 % Tostado</span><strong>$109.000</strong></span>
+              <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+            </div>
+          </article>
+          <article class="op1-texto" data-texto="2" data-hora="18:00" data-momento="Cae la tarde" data-luz="45">
+            <p class="op1-texto-h"><i aria-hidden="true"></i>18:00 · Comedor</p>
+            <h3>La hora en que la calle mira para adentro</h3>
+            <p>Con las franjas alineadas entra luz; corridas medio paso, se cierra. La misma cortina cambia dos veces por día sin tocar nada más.</p>
+            <div class="op1-buy">
+              <span class="op1-prod"><span>Roller zebra día/noche Blanco Nube</span><strong>$118.000</strong></span>
+              <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+            </div>
+          </article>
+          <article class="op1-texto" data-texto="3" data-hora="23:00" data-momento="Hora de dormir" data-luz="0">
+            <p class="op1-texto-h"><i aria-hidden="true"></i>23:00 · Dormitorio</p>
+            <h3>Cero luz, también a las siete de la mañana</h3>
+            <p>Tres capas con alma de PVC: no pasa nada de luz y el ambiente queda más fresco. El que trabaja de noche duerme igual.</p>
+            <div class="op1-buy">
+              <span class="op1-prod"><span>Roller blackout Plomo</span><strong>$98.000</strong></span>
+              <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+            </div>
+          </article>
         </div>
-      </li>
-      <li class="op1-paso" data-paso="1" data-hora="12:00" data-momento="Sol de frente" data-luz="30">
-        <p class="op1-paso-h"><i aria-hidden="true"></i>12:00 · Cocina y living</p>
-        <h3>El sol de las doce, sin el calor</h3>
-        <p>La trama del sunscreen filtra el sol directo y baja el reflejo en las pantallas. Seguís viendo el patio; de afuera no ven adentro.</p>
-        <div class="op1-buy">
-          <span class="op1-prod"><span>Roller screen 5 % Tostado</span><strong>$109.000</strong></span>
-          <button type="button" class="btn btn--primary btn--sm">Agregar</button>
+        <div class="op1-marcas" id="op1-marcas">
+          <button type="button" class="op1-marca is-on" data-ir="0" aria-label="Ir a las 07:00"><span></span></button>
+          <button type="button" class="op1-marca" data-ir="1" aria-label="Ir a las 12:00"><span></span></button>
+          <button type="button" class="op1-marca" data-ir="2" aria-label="Ir a las 18:00"><span></span></button>
+          <button type="button" class="op1-marca" data-ir="3" aria-label="Ir a las 23:00"><span></span></button>
         </div>
-      </li>
-      <li class="op1-paso" data-paso="2" data-hora="18:00" data-momento="Cae la tarde" data-luz="45">
-        <p class="op1-paso-h"><i aria-hidden="true"></i>18:00 · Comedor</p>
-        <h3>La hora en que la calle mira para adentro</h3>
-        <p>Con las franjas alineadas entra luz; corridas medio paso, se cierra. La misma cortina cambia dos veces por día sin tocar nada más.</p>
-        <div class="op1-buy">
-          <span class="op1-prod"><span>Roller zebra día/noche Blanco Nube</span><strong>$118.000</strong></span>
-          <button type="button" class="btn btn--primary btn--sm">Agregar</button>
-        </div>
-      </li>
-      <li class="op1-paso" data-paso="3" data-hora="23:00" data-momento="Hora de dormir" data-luz="0">
-        <p class="op1-paso-h"><i aria-hidden="true"></i>23:00 · Dormitorio</p>
-        <h3>Cero luz, también a las siete de la mañana</h3>
-        <p>Tres capas con alma de PVC: no pasa nada de luz y el ambiente queda más fresco. El que trabaja de noche duerme igual.</p>
-        <div class="op1-buy">
-          <span class="op1-prod"><span>Roller blackout Plomo</span><strong>$98.000</strong></span>
-          <button type="button" class="btn btn--primary btn--sm">Agregar</button>
-        </div>
-      </li>
-    </ol>
-  </div>
-</section>
-
-<section class="rotulo" id="op2">
-  <div class="shell rotulo-in">
-    <p class="rotulo-n"><b>02</b> Recorrido por la foto</p>
-    <h2>Mirá de cerca</h2>
-    <p>Una sola foto real y una lupa que recorre sus puntos sola, ampliando la zona de la propia foto. Cada punto trae su ficha con precio. Si el visitante mueve el mouse, la lupa lo sigue y puede mirar donde quiera. Sirve para el cliente que tiene una foto excelente y pocas más.</p>
-    <div class="rotulo-meta"><span>Se mueve solo, y también se toca</span><span>Alcanza con UNA foto</span><span>Explica el producto por partes</span></div>
-  </div>
-</section>
-
-<section class="op2" aria-label="Mirá de cerca">
-  <div class="shell op2-grid">
-    <figure class="op2-foto" id="op2-foto" style="--foto:url('../lisboa/images/hero-living-cortinas-1920x1080.webp')">
-      <img src="../lisboa/images/hero-living-cortinas-1920x1080.webp" alt="Ventanal de living con roller blackout recogido, voile blanco y cortinas de lino a los lados" width="1920" height="1080" decoding="async">
-      <span class="op2-lupa" id="op2-lupa" aria-hidden="true"></span>
-      <button type="button" class="op2-punto is-on" data-i="0" style="--x:51%;--y:15%" aria-label="Ver el roller blackout recogido"><span></span></button>
-      <button type="button" class="op2-punto" data-i="1" style="--x:32%;--y:47%" aria-label="Ver el voile"><span></span></button>
-      <button type="button" class="op2-punto" data-i="2" style="--x:12%;--y:34%" aria-label="Ver la cortina de lino"><span></span></button>
-      <button type="button" class="op2-punto" data-i="3" style="--x:87%;--y:72%" aria-label="Ver el doble riel"><span></span></button>
-      <span class="op2-num" id="op2-num">01 / 04</span>
-    </figure>
-    <div class="op2-panel">
-      <div class="op2-fichas" id="op2-fichas">
-        <article class="op2-ficha is-on" data-i="0">
-          <p class="n">01</p>
-          <h3>Blackout arriba, voile abajo</h3>
-          <p>El roller queda recogido contra el marco y casi no se ve. Baja de noche y tapa el mismo vano que de día cubre el voile.</p>
-          <div class="op2-buy"><strong>$98.000</strong><button type="button" class="btn btn--primary btn--sm">Agregar</button></div>
-        </article>
-        <article class="op2-ficha" data-i="1">
-          <p class="n">02</p>
-          <h3>El voile es la capa de todos los días</h3>
-          <p>Tamiza la luz sin apagar el ambiente y corta la vista desde la vereda. Se lava en el lavarropas y vuelve al riel.</p>
-          <div class="op2-buy"><strong>$92.000</strong><button type="button" class="btn btn--primary btn--sm">Agregar</button></div>
-        </article>
-        <article class="op2-ficha" data-i="2">
-          <p class="n">03</p>
-          <h3>El lino cae del techo al piso</h3>
-          <p>Tela pesada con textura visible: se abre a los costados y enmarca la ventana. Le da peso al ambiente sin oscurecerlo.</p>
-          <div class="op2-buy"><strong>$154.000</strong><button type="button" class="btn btn--primary btn--sm">Agregar</button></div>
-        </article>
-        <article class="op2-ficha" data-i="3">
-          <p class="n">04</p>
-          <h3>Doble riel: las dos cortinas juntas</h3>
-          <p>Un solo riel de aluminio sostiene el voile adelante y el lino atrás. Se corren por separado y quedan alineadas.</p>
-          <div class="op2-buy"><strong>$238.000</strong><button type="button" class="btn btn--primary btn--sm">Agregar</button></div>
-        </article>
-      </div>
-      <div class="op2-tabs" id="op2-tabs" aria-hidden="true">
-        <span class="op2-tab is-on"></span><span class="op2-tab"></span><span class="op2-tab"></span><span class="op2-tab"></span>
       </div>
     </div>
-  </div>
-</section>
-
-<section class="rotulo" id="op3">
-  <div class="shell rotulo-in">
-    <p class="rotulo-n"><b>03</b> Vidriera cinética</p>
-    <h2>Todo lo que fabricamos, pasando</h2>
-    <p>Dos filas de fotos que corren en sentidos opuestos y aceleran con el scroll, con el nombre de la marca viajando entre medio. Es la más vistosa y la que menos explica, así que va con una franja de CTA debajo. Necesita seis fotos o más.</p>
-    <div class="rotulo-meta"><span>Puro movimiento, sin decisiones</span><span>Pide 6 fotos o más</span><span>La marca se repite en grande</span></div>
-  </div>
-</section>
-
-<section class="op3" aria-label="Todo lo que fabricamos">
-  <div class="op3-bandas">
-    <div class="op3-banda" data-dir="1">
-      <div class="op3-track">
-        <figure class="op3-pieza"><img src="../lisboa/images/roller-zebra-dia-noche-1200x1500.webp" alt="Roller zebra día y noche" width="1200" height="1500" decoding="async"><figcaption>Roller zebra · Luz regulable</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/blackout-gris-plomo-1200x1500.webp" alt="Cortina blackout gris plomo" width="1200" height="1500" decoding="async"><figcaption>Blackout Plomo · 0 % de luz</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/cortina-lino-arena-1200x1500.webp" alt="Cortina de lino arena" width="1200" height="1500" decoding="async"><figcaption>Lino Arena · Luz difusa</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/roller-motorizada-dormitorio-1200x1500.webp" alt="Roller motorizada en un dormitorio" width="1200" height="1500" decoding="async"><figcaption>Motorizada · A control</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/roller-sunscreen-tostado-1200x1500.webp" alt="Trama de sunscreen tostado" width="1200" height="1500" decoding="async"><figcaption>Screen Tostado · 5 % de luz</figcaption></figure>
-      </div>
-    </div>
-    <div class="op3-banda">
-      <p class="op3-word" id="op3-word" aria-hidden="true">
-        <span>Lisboa</span><span class="hueco">Cortinas</span><span class="luz">&amp; toldos</span><span>Lisboa</span><span class="hueco">Cortinas</span><span class="luz">&amp; toldos</span>
-      </p>
-    </div>
-    <div class="op3-banda" data-dir="-1">
-      <div class="op3-track">
-        <figure class="op3-pieza"><img src="../lisboa/images/toldo-brazo-rayado-1200x1500.webp" alt="Toldo de brazos invisibles rayado" width="1200" height="1500" decoding="async"><figcaption>Toldo de brazos · Exterior</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/muestrario-telas-1600x1300.webp" alt="Muestrario de telas sobre una mesa" width="1600" height="1300" decoding="async"><figcaption>Muestrario · A domicilio</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/toldo-capota-azul-1200x1500.webp" alt="Toldo capota azul sobre una vidriera" width="1200" height="1500" decoding="async"><figcaption>Capota · Vidriera y ventana</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/hero-living-cortinas-1920x1080.webp" alt="Living con cortinas de voile" width="1920" height="1080" decoding="async"><figcaption>Voile Blanco · 2 paños</figcaption></figure>
-        <figure class="op3-pieza"><img src="../lisboa/images/instalacion-colocador-1200x1600.webp" alt="Colocador instalando una cortina" width="1200" height="1600" decoding="async"><figcaption>Colocación · La Plata</figcaption></figure>
-      </div>
-    </div>
-  </div>
-  <div class="shell op3-pie">
-    <p>Cada foto abre su ficha con precio y «Agregar». La fila corre sola y acelera cuando el visitante baja.</p>
-    <a class="btn btn--primary" href="../lisboa/#tienda">Ver el catálogo</a>
   </div>
 </section>
 
@@ -370,8 +234,8 @@
   <div class="shell rotulo-in">
     <p class="rotulo-n"><b>04</b> Dos mundos, como Step Scente</p>
     <h2>Día y noche</h2>
-    <p>La escena queda fija y una cortina real se corre de derecha a izquierda con el scroll. Detrás de la tela, el living de día se convierte en el dormitorio de noche: cambia la foto, cambia el texto y la barra de paso de luz baja de 78 % a 0. Es el formato de la sección «Pisá / Estela» de Step Scente, con la tela haciendo el barrido en vez de un panel de color.</p>
-    <div class="rotulo-meta"><span>El movimiento más grande de las cuatro</span><span>Pide 2 fotos fuertes y opuestas</span><span>Ocupa tres pantallas de scroll</span></div>
+    <p>La escena queda fija y una línea de luz barre la pantalla de derecha a izquierda. Detrás de la línea, el living de día se convierte en el dormitorio de noche: cambia la foto, cambia el texto y la barra de paso de luz baja de 78 % a 0. El barrido entero pasa en una pantalla de scroll.</p>
+    <div class="rotulo-meta"><span>El movimiento más grande</span><span>Pide 2 fotos fuertes y opuestas</span><span>Barrido rápido, sin tela en el medio</span></div>
   </div>
 </section>
 
@@ -403,7 +267,7 @@
         </div>
       </div>
     </div>
-    <div class="op4-cortina-wrap" aria-hidden="true"><div class="op4-cortina" id="op4-cortina"></div></div>
+    <div class="op4-linea-wrap" aria-hidden="true"><div class="op4-linea" id="op4-linea"></div></div>
     <div class="op4-hud" aria-hidden="true">
       <div class="op4-hud-in">
         <span class="op4-hud-lbl">Paso de luz</span>
@@ -418,7 +282,7 @@
 
 <footer class="pruebas-foot">
   <div class="shell">
-    <p>Página interna de comparación. Las tres secciones usan las fotos y la paleta de la demo de <a href="../lisboa/">Lisboa</a>.</p>
+    <p>Página interna de comparación. Las dos secciones usan las fotos y la paleta de la demo de <a href="../lisboa/">Lisboa</a>.</p>
     <p><a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Developed and designed by Gokywebs</a></p>
   </div>
 </footer>
@@ -426,16 +290,24 @@
 <script>
 'use strict';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+const tramo = (p, a, b) => clamp01((p - a) / (b - a));
+const suave = t => t * t * (3 - 2 * t);
+const mezcla = (a, b, t) => a + (b - a) * t;
 
 /* ── Opción 1 ── */
 function initOp1() {
-  const pasos = [...document.querySelectorAll('.op1-paso')];
+  const sec = document.querySelector('.op1');
+  const escena = document.getElementById('op1-escena');
+  if (!sec || !escena) return;
+  const textos = [...document.querySelectorAll('.op1-texto')];
   const shots = [...document.querySelectorAll('.op1-shot')];
+  const marcas = [...document.querySelectorAll('.op1-marca')];
   const hora = document.getElementById('op1-hora');
   const momento = document.getElementById('op1-momento');
   const riel = document.getElementById('op1-riel');
   const luzTxt = document.getElementById('op1-luz-txt');
-  if (!pasos.length || !shots.length) return;
+  const N = Math.min(textos.length, 4);
   let actual = -1;
 
   const pintarHora = txt => {
@@ -450,40 +322,43 @@ function initOp1() {
   const activar = i => {
     if (i === actual) return;
     actual = i;
-    const p = pasos[i];
-    pasos.forEach((x, n) => x.classList.toggle('is-on', n === i));
+    const t = textos[i];
+    textos.forEach((x, n) => x.classList.toggle('is-on', n === i));
     shots.forEach((s, n) => s.classList.toggle('is-on', n === i));
-    if (!reduceMotion) {
-      const img = shots[i].querySelector('img');
-      img.style.transition = 'none';
-      img.style.transform = 'scale(1.09)';
-      void img.offsetWidth;
-      img.style.transition = '';
-      img.style.transform = '';
-    }
-    pintarHora(p.dataset.hora);
-    momento.textContent = p.dataset.momento;
-    riel.style.width = p.dataset.luz + '%';
-    luzTxt.textContent = p.dataset.luz + ' %';
-  };
-
-  activar(0);
-
-  const visual = document.querySelector('.op1-visual');
-  const calcular = () => {
-    const v = visual.getBoundingClientRect();
-    const l = pasos[0].getBoundingClientRect();
-    const unaColumna = !(v.right <= l.left + 1 || v.left >= l.right - 1);
-    const tope = unaColumna ? Math.max(0, Math.min(v.bottom, window.innerHeight * .62)) : 0;
-    const centro = tope + (window.innerHeight - tope) * .5;
-    let mejor = 0, dist = Infinity;
-    pasos.forEach((p, n) => {
-      const r = p.getBoundingClientRect();
-      const d = Math.abs(r.top + r.height * .5 - centro);
-      if (d < dist) { dist = d; mejor = n; }
+    marcas.forEach((m, n) => {
+      m.classList.toggle('is-on', n === i);
+      m.classList.toggle('is-pasada', n < i);
     });
-    activar(mejor);
+    pintarHora(t.dataset.hora);
+    momento.textContent = t.dataset.momento;
+    riel.style.width = t.dataset.luz + '%';
+    luzTxt.textContent = t.dataset.luz + ' %';
   };
+
+  const progreso = () => {
+    const r = sec.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    return total > 0 ? clamp01(-r.top / total) : 0;
+  };
+
+  const calcular = () => {
+    const p = progreso();
+    const i = Math.min(N - 1, Math.floor(p * N * 0.9999));
+    activar(i);
+    if (!reduceMotion) {
+      const local = clamp01(p * N - i);
+      const img = shots[i]?.querySelector('img');
+      if (img) img.style.transform = `scale(${(1.07 - local * 0.07).toFixed(4)})`;
+    }
+  };
+
+  marcas.forEach(m => m.addEventListener('click', () => {
+    const i = parseInt(m.dataset.ir, 10);
+    const total = sec.offsetHeight - window.innerHeight;
+    const destino = sec.getBoundingClientRect().top + window.scrollY + total * ((i + 0.5) / N);
+    window.scrollTo({ top: destino, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }));
+
   let pedido = false;
   const pedir = () => {
     if (pedido) return;
@@ -493,132 +368,8 @@ function initOp1() {
   window.addEventListener('scroll', pedir, { passive: true });
   window.addEventListener('resize', pedir, { passive: true });
   window.addEventListener('load', calcular);
-  window.__op1 = { calcular };
-}
-
-/* ── Opción 2 ── */
-function initOp2() {
-  const foto = document.getElementById('op2-foto');
-  const lupa = document.getElementById('op2-lupa');
-  const num = document.getElementById('op2-num');
-  if (!foto || !lupa) return;
-  const puntos = [...foto.querySelectorAll('.op2-punto')];
-  const fichas = [...document.querySelectorAll('.op2-ficha')];
-  const tabs = [...document.querySelectorAll('.op2-tab')];
-  let i = 0, timer = null, libre = false;
-
-  const ZOOM = 1.9;
-  const ajustarZoom = () => {
-    const r = foto.getBoundingClientRect();
-    const img = foto.querySelector('img');
-    if (!r.width || !img.naturalWidth) return;
-    const razonImg = img.naturalWidth / img.naturalHeight;
-    const razonCaja = r.width / r.height;
-    lupa.style.backgroundSize = razonCaja > razonImg
-      ? Math.round(r.width * ZOOM) + 'px auto'
-      : 'auto ' + Math.round(r.height * ZOOM) + 'px';
-  };
-  ajustarZoom();
-  window.addEventListener('load', ajustarZoom);
-  window.addEventListener('resize', ajustarZoom, { passive: true });
-
-  const posicionar = (xPct, yPct) => {
-    lupa.style.left = xPct + '%';
-    lupa.style.top = yPct + '%';
-    lupa.style.backgroundPosition = `${xPct}% ${yPct}%`;
-  };
-
-  const ir = n => {
-    i = (n + puntos.length) % puntos.length;
-    puntos.forEach((p, k) => p.classList.toggle('is-on', k === i));
-    fichas.forEach((f, k) => f.classList.toggle('is-on', k === i));
-    tabs.forEach((t, k) => t.classList.toggle('is-on', k === i));
-    num.textContent = String(i + 1).padStart(2, '0') + ' / ' + String(puntos.length).padStart(2, '0');
-    if (libre) return;
-    const p = puntos[i];
-    posicionar(parseFloat(p.style.getPropertyValue('--x')), parseFloat(p.style.getPropertyValue('--y')));
-  };
-
-  const arrancar = () => {
-    if (reduceMotion || timer) return;
-    timer = setInterval(() => ir(i + 1), 3400);
-  };
-  const frenar = () => { clearInterval(timer); timer = null; };
-
-  puntos.forEach(p => p.addEventListener('click', () => {
-    frenar();
-    libre = false;
-    lupa.classList.remove('libre');
-    ir(parseInt(p.dataset.i, 10));
-    setTimeout(arrancar, 6000);
-  }));
-
-  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches && !reduceMotion) {
-    foto.addEventListener('pointerenter', () => { foto.classList.add('is-hover'); libre = true; lupa.classList.add('libre'); frenar(); });
-    foto.addEventListener('pointermove', e => {
-      const r = foto.getBoundingClientRect();
-      posicionar(((e.clientX - r.left) / r.width) * 100, ((e.clientY - r.top) / r.height) * 100);
-    });
-    foto.addEventListener('pointerleave', () => {
-      foto.classList.remove('is-hover');
-      libre = false;
-      lupa.classList.remove('libre');
-      ir(i);
-      arrancar();
-    });
-  }
-
-  ir(0);
-  const io = new IntersectionObserver(entries => {
-    entries.forEach(e => (e.isIntersecting ? arrancar() : frenar()));
-  }, { threshold: .25 });
-  io.observe(foto);
-}
-
-/* ── Opción 3 ── */
-function initOp3() {
-  const bandas = [...document.querySelectorAll('.op3-banda')].filter(b => b.querySelector('.op3-track'));
-  const word = document.getElementById('op3-word');
-  if (!bandas.length) return;
-  bandas.forEach(b => {
-    const t = b.querySelector('.op3-track');
-    t.insertAdjacentHTML('beforeend', t.innerHTML);
-  });
-  if (word) word.insertAdjacentHTML('beforeend', word.innerHTML);
-  if (reduceMotion) {
-    bandas.forEach(b => { b.style.overflowX = 'auto'; });
-    return;
-  }
-
-  const capas = bandas.map(b => ({ el: b.querySelector('.op3-track'), dir: parseFloat(b.dataset.dir) || 1, x: 0, w: 0, skew: 0 }));
-  if (word) capas.push({ el: word, dir: -1, x: 0, w: 0, skew: 0, base: .22 });
-  const medir = () => capas.forEach(c => { c.w = c.el.scrollWidth / 2; });
-  medir();
-  window.addEventListener('resize', medir, { passive: true });
-  window.addEventListener('load', medir);
-
-  let last = window.scrollY, vel = 0;
-  const paso = dv => {
-    vel += (dv - vel) * .12;
-    capas.forEach(c => {
-      c.x -= ((c.base ?? .5) + vel * .5) * c.dir;
-      if (c.w) {
-        if (c.x <= -c.w) c.x += c.w;
-        if (c.x > 0) c.x -= c.w;
-      }
-      const sk = Math.max(-2.4, Math.min(2.4, -vel * .05 * c.dir));
-      c.el.style.transform = `translate3d(${c.x.toFixed(2)}px,0,0) skewX(${sk.toFixed(2)}deg)`;
-    });
-  };
-  window.__op3 = { paso, capas, medir };
-  const tick = () => {
-    const y = window.scrollY;
-    const dv = Math.max(-90, Math.min(90, y - last));
-    last = y;
-    paso(dv);
-    requestAnimationFrame(tick);
-  };
-  requestAnimationFrame(tick);
+  window.__op1 = { calcular, progreso, activar };
+  calcular();
 }
 
 /* ── Opción 4 ── */
@@ -635,33 +386,28 @@ function initOp4() {
   const riel = document.getElementById('op4-riel');
   const val = document.getElementById('op4-val');
 
-  const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
-  const tramo = (p, a, b) => clamp01((p - a) / (b - a));
-  const suave = t => t * t * (3 - 2 * t);
-  const mezcla = (a, b, t) => a + (b - a) * t;
-
   const pintar = p => {
-    const barrido = suave(tramo(p, .04, .80));
-    escena.style.setProperty('--w', mezcla(134, -12, barrido).toFixed(2));
+    const barrido = suave(tramo(p, .04, .70));
+    escena.style.setProperty('--w', mezcla(108, -8, barrido).toFixed(2));
 
-    const saleDia = suave(tramo(p, .12, .34));
-    copyDia.style.transform = `translateX(${mezcla(0, -90, saleDia).toFixed(1)}px)`;
+    const saleDia = suave(tramo(p, .08, .28));
+    copyDia.style.transform = `translateX(${mezcla(0, -70, saleDia).toFixed(1)}px)`;
     copyDia.style.opacity = (1 - saleDia).toFixed(3);
     copyDia.style.pointerEvents = saleDia > .85 ? 'none' : 'auto';
-    giantDia.style.transform = `translateX(${mezcla(0, -70, suave(tramo(p, 0, .62))).toFixed(1)}px)`;
-    giantDia.style.opacity = (1 - suave(tramo(p, .30, .58))).toFixed(3);
-    fondoDia.style.transform = `scale(${mezcla(1, 1.08, suave(tramo(p, 0, 1))).toFixed(4)})`;
+    giantDia.style.transform = `translateX(${mezcla(0, -60, suave(tramo(p, 0, .55))).toFixed(1)}px)`;
+    giantDia.style.opacity = (1 - suave(tramo(p, .20, .46))).toFixed(3);
+    fondoDia.style.transform = `scale(${mezcla(1, 1.07, suave(tramo(p, 0, 1))).toFixed(4)})`;
 
-    const entraNoche = suave(tramo(p, .42, .70));
-    copyNoche.style.transform = `translateY(${mezcla(46, 0, entraNoche).toFixed(1)}px)`;
+    const entraNoche = suave(tramo(p, .34, .58));
+    copyNoche.style.transform = `translateY(${mezcla(40, 0, entraNoche).toFixed(1)}px)`;
     copyNoche.style.opacity = entraNoche.toFixed(3);
     copyNoche.style.pointerEvents = entraNoche < .15 ? 'none' : 'auto';
-    const gN = suave(tramo(p, .38, .66));
-    giantNoche.style.transform = `translateX(${mezcla(90, 0, gN).toFixed(1)}px)`;
+    const gN = suave(tramo(p, .30, .54));
+    giantNoche.style.transform = `translateX(${mezcla(80, 0, gN).toFixed(1)}px)`;
     giantNoche.style.opacity = gN.toFixed(3);
-    fondoNoche.style.transform = `scale(${mezcla(1.1, 1, suave(tramo(p, .25, 1))).toFixed(4)})`;
+    fondoNoche.style.transform = `scale(${mezcla(1.09, 1, suave(tramo(p, .18, .9))).toFixed(4)})`;
 
-    const luz = Math.round(mezcla(78, 0, suave(tramo(p, .18, .84))));
+    const luz = Math.round(mezcla(78, 0, suave(tramo(p, .10, .70))));
     riel.style.width = luz + '%';
     val.textContent = luz + ' %';
   };
@@ -705,8 +451,6 @@ document.addEventListener('click', e => {
 });
 
 initOp1();
-initOp2();
-initOp3();
 initOp4();
 </script>
 </body>
