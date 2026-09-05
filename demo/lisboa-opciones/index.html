@@ -110,6 +110,39 @@
 .op3-pie { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: clamp(1.2rem, 3vw, 2rem); }
 .op3-pie p { color: var(--color-text-muted); max-width: 46ch; }
 
+/* ══ Opción 4 — Día y noche, la cortina que se corre ══ */
+.op4 { min-height: 300svh; position: relative; padding: 0; }
+.op4-escena { position: sticky; top: 0; height: 100svh; overflow: hidden; background: var(--color-bg); }
+.op4-mundo { position: absolute; inset: 0; display: flex; align-items: center; z-index: 1; }
+.op4-fondo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.op4-dia .op4-fondo { object-position: 50% 46%; }
+.op4-noche { z-index: 2; clip-path: polygon(calc(var(--w, 134) * 1% + 5%) 0%, 220% 0%, 220% 100%, calc(var(--w, 134) * 1% - 5%) 100%); }
+.op4-noche .op4-fondo { object-position: 50% 40%; }
+.op4-scrim { position: absolute; inset: 0; }
+.op4-dia .op4-scrim { background: linear-gradient(90deg, rgba(12,6,33,.9) 0%, rgba(12,6,33,.62) 42%, rgba(12,6,33,.12) 78%); }
+.op4-noche .op4-scrim { background: linear-gradient(90deg, rgba(0,0,0,.92) 0%, rgba(0,0,0,.7) 46%, rgba(0,0,0,.35) 100%); }
+.op4-copy { position: relative; z-index: 3; width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; max-width: none; }
+.op4-copy-in { max-width: 30rem; }
+.op4-copy h3 { font: 700 clamp(1.9rem, 4.4vw, 3.4rem)/1.05 var(--font-display); letter-spacing: -.015em; margin: 10px 0 12px; }
+.op4-copy p { color: rgba(255,255,255,.82); max-width: 38ch; }
+.op4-copy .btn { margin-top: 18px; }
+.op4-giant { position: absolute; z-index: 1; font: 700 clamp(4rem, 15vw, 13rem)/.82 var(--font-display); letter-spacing: -.03em; color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.3); pointer-events: none; }
+.op4-dia .op4-giant { top: 7%; right: 4%; }
+.op4-noche .op4-giant { bottom: 6%; right: 4%; -webkit-text-stroke-color: rgba(232,200,114,.5); }
+.op4-cortina-wrap { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 4; }
+.op4-cortina { position: absolute; top: -8%; bottom: -8%; left: calc(var(--w, 134) * 1%); width: 30%; transform: translateX(-100%) skewX(-5deg); background-image: url('../lisboa/images/blackout-gris-plomo-1200x1500.webp'); background-size: cover; background-position: 60% 50%; box-shadow: 26px 0 60px rgba(0,0,0,.55); }
+.op4-cortina::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.09) 0 2px, transparent 2px 8px, rgba(0,0,0,.22) 8px 13px, transparent 13px 22px); }
+.op4-cortina::after { content: ""; position: absolute; top: 0; bottom: 0; right: -3px; width: 3px; background: var(--color-luz); box-shadow: 0 0 26px 5px rgba(232,200,114,.55); }
+.op4-hud { position: absolute; left: 0; right: 0; bottom: 0; z-index: 5; padding: 0 0 clamp(14px, 3vw, 26px); pointer-events: none; }
+.op4-hud-in { width: min(100% - 2 * var(--gutter), var(--container)); margin-inline: auto; display: flex; align-items: center; gap: 14px; }
+.op4-hud-lbl { font: 600 .68rem/1 var(--font-body); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.75); white-space: nowrap; }
+.op4-hud-riel { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,.22); overflow: hidden; max-width: 320px; }
+.op4-hud-riel i { display: block; height: 100%; width: 78%; background: var(--color-luz); }
+.op4-hud-val { font: 600 .82rem/1 var(--font-body); font-variant-numeric: tabular-nums; color: var(--color-luz); min-width: 46px; }
+.op4.is-corta { min-height: 100svh; }
+.op4-escena.is-static { position: relative; }
+.op4-escena.is-static .op4-cortina { display: none; }
+
 .pruebas-foot { padding: clamp(2rem, 5vw, 3.5rem) 0 40px; border-top: 1px solid var(--color-line); color: var(--color-text-muted); display: grid; gap: 8px; }
 .pruebas-foot a { color: var(--color-text); font-weight: 600; }
 
@@ -128,6 +161,11 @@
   .op2-lupa { width: 108px; }
   .op1-paso p { max-width: none; }
   .op3-pieza { width: 66vw; }
+  .op4-copy p { font-size: .95rem; max-width: none; }
+  .op4-copy-in { max-width: 22rem; }
+  .op4-giant { -webkit-text-stroke-width: 1px; }
+  .op4-cortina { width: 46%; }
+  .op4-hud-lbl { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .op1-shot img { transition: none; transform: none; }
@@ -149,6 +187,7 @@
       <a href="#op1">1 · Un día en tu casa</a>
       <a href="#op2">2 · Recorrido por la foto</a>
       <a href="#op3">3 · Vidriera cinética</a>
+      <a href="#op4">4 · Día y noche</a>
       <a href="../lisboa/">Volver a la demo</a>
     </nav>
   </div>
@@ -324,6 +363,54 @@
   <div class="shell op3-pie">
     <p>Cada foto abre su ficha con precio y «Agregar». La fila corre sola y acelera cuando el visitante baja.</p>
     <a class="btn btn--primary" href="../lisboa/#tienda">Ver el catálogo</a>
+  </div>
+</section>
+
+<section class="rotulo" id="op4">
+  <div class="shell rotulo-in">
+    <p class="rotulo-n"><b>04</b> Dos mundos, como Step Scente</p>
+    <h2>Día y noche</h2>
+    <p>La escena queda fija y una cortina real se corre de derecha a izquierda con el scroll. Detrás de la tela, el living de día se convierte en el dormitorio de noche: cambia la foto, cambia el texto y la barra de paso de luz baja de 78 % a 0. Es el formato de la sección «Pisá / Estela» de Step Scente, con la tela haciendo el barrido en vez de un panel de color.</p>
+    <div class="rotulo-meta"><span>El movimiento más grande de las cuatro</span><span>Pide 2 fotos fuertes y opuestas</span><span>Ocupa tres pantallas de scroll</span></div>
+  </div>
+</section>
+
+<section class="op4" aria-label="Día y noche">
+  <div class="op4-escena" id="op4-escena">
+    <div class="op4-mundo op4-dia">
+      <img class="op4-fondo" src="../lisboa/images/hero-living-cortinas-1920x1080.webp" alt="Living de día con cortinas de voile blanco" width="1920" height="1080" decoding="async">
+      <span class="op4-scrim" aria-hidden="true"></span>
+      <span class="op4-giant" aria-hidden="true">DÍA</span>
+      <div class="op4-copy" id="op4-copy-dia">
+        <div class="op4-copy-in">
+          <p class="eyebrow">De día</p>
+          <h3>Que entre la luz, no la vereda</h3>
+          <p>El voile y el screen filtran el sol y cortan la vista desde afuera sin apagar el ambiente. La capa que se queda puesta todo el día.</p>
+          <a class="btn btn--primary" href="../lisboa/#tienda">Ver telas de día</a>
+        </div>
+      </div>
+    </div>
+    <div class="op4-mundo op4-noche" id="op4-noche">
+      <img class="op4-fondo" src="../lisboa/images/roller-motorizada-dormitorio-1200x1500.webp" alt="Dormitorio de noche con cortina blackout baja" width="1200" height="1500" decoding="async">
+      <span class="op4-scrim" aria-hidden="true"></span>
+      <span class="op4-giant" aria-hidden="true">NOCHE</span>
+      <div class="op4-copy" id="op4-copy-noche">
+        <div class="op4-copy-in">
+          <p class="eyebrow">De noche</p>
+          <h3>Que no entre nada, ni a las siete</h3>
+          <p>El blackout de tres capas corta el 100 % de la luz y aísla del calor. El que trabaja de noche duerme igual de día.</p>
+          <a class="btn btn--primary" href="../lisboa/#tienda">Ver blackout</a>
+        </div>
+      </div>
+    </div>
+    <div class="op4-cortina-wrap" aria-hidden="true"><div class="op4-cortina" id="op4-cortina"></div></div>
+    <div class="op4-hud" aria-hidden="true">
+      <div class="op4-hud-in">
+        <span class="op4-hud-lbl">Paso de luz</span>
+        <span class="op4-hud-riel"><i id="op4-riel"></i></span>
+        <span class="op4-hud-val" id="op4-val">78 %</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -534,6 +621,80 @@ function initOp3() {
   requestAnimationFrame(tick);
 }
 
+/* ── Opción 4 ── */
+function initOp4() {
+  const sec = document.querySelector('.op4');
+  const escena = document.getElementById('op4-escena');
+  if (!sec || !escena) return;
+  const copyDia = document.getElementById('op4-copy-dia');
+  const copyNoche = document.getElementById('op4-copy-noche');
+  const fondoDia = escena.querySelector('.op4-dia .op4-fondo');
+  const fondoNoche = escena.querySelector('.op4-noche .op4-fondo');
+  const giantDia = escena.querySelector('.op4-dia .op4-giant');
+  const giantNoche = escena.querySelector('.op4-noche .op4-giant');
+  const riel = document.getElementById('op4-riel');
+  const val = document.getElementById('op4-val');
+
+  const clamp01 = v => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const tramo = (p, a, b) => clamp01((p - a) / (b - a));
+  const suave = t => t * t * (3 - 2 * t);
+  const mezcla = (a, b, t) => a + (b - a) * t;
+
+  const pintar = p => {
+    const barrido = suave(tramo(p, .04, .80));
+    escena.style.setProperty('--w', mezcla(134, -12, barrido).toFixed(2));
+
+    const saleDia = suave(tramo(p, .12, .34));
+    copyDia.style.transform = `translateX(${mezcla(0, -90, saleDia).toFixed(1)}px)`;
+    copyDia.style.opacity = (1 - saleDia).toFixed(3);
+    copyDia.style.pointerEvents = saleDia > .85 ? 'none' : 'auto';
+    giantDia.style.transform = `translateX(${mezcla(0, -70, suave(tramo(p, 0, .62))).toFixed(1)}px)`;
+    giantDia.style.opacity = (1 - suave(tramo(p, .30, .58))).toFixed(3);
+    fondoDia.style.transform = `scale(${mezcla(1, 1.08, suave(tramo(p, 0, 1))).toFixed(4)})`;
+
+    const entraNoche = suave(tramo(p, .42, .70));
+    copyNoche.style.transform = `translateY(${mezcla(46, 0, entraNoche).toFixed(1)}px)`;
+    copyNoche.style.opacity = entraNoche.toFixed(3);
+    copyNoche.style.pointerEvents = entraNoche < .15 ? 'none' : 'auto';
+    const gN = suave(tramo(p, .38, .66));
+    giantNoche.style.transform = `translateX(${mezcla(90, 0, gN).toFixed(1)}px)`;
+    giantNoche.style.opacity = gN.toFixed(3);
+    fondoNoche.style.transform = `scale(${mezcla(1.1, 1, suave(tramo(p, .25, 1))).toFixed(4)})`;
+
+    const luz = Math.round(mezcla(78, 0, suave(tramo(p, .18, .84))));
+    riel.style.width = luz + '%';
+    val.textContent = luz + ' %';
+  };
+
+  if (reduceMotion) {
+    sec.classList.add('is-corta');
+    escena.classList.add('is-static');
+    escena.style.setProperty('--w', '50');
+    [copyDia, copyNoche, giantDia, giantNoche].forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+    riel.style.width = '39%';
+    val.textContent = '39 %';
+    return;
+  }
+
+  const progreso = () => {
+    const r = sec.getBoundingClientRect();
+    const total = r.height - window.innerHeight;
+    return total > 0 ? clamp01(-r.top / total) : 0;
+  };
+  const calcular = () => pintar(progreso());
+  let pedido = false;
+  const pedir = () => {
+    if (pedido) return;
+    pedido = true;
+    requestAnimationFrame(() => { pedido = false; calcular(); });
+  };
+  window.addEventListener('scroll', pedir, { passive: true });
+  window.addEventListener('resize', pedir, { passive: true });
+  window.addEventListener('load', calcular);
+  window.__op4 = { pintar, progreso, calcular };
+  calcular();
+}
+
 document.addEventListener('click', e => {
   const a = e.target.closest('a[href^="#"]');
   if (!a) return;
@@ -546,6 +707,7 @@ document.addEventListener('click', e => {
 initOp1();
 initOp2();
 initOp3();
+initOp4();
 </script>
 </body>
 </html>
