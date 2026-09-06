@@ -285,7 +285,7 @@ $rSinFlag = wabot_responder('dale', $convSinFlag, $cfgFijo);
 caso('sin el flag, un "dale" post-demo NO dispara el texto de la demo de nuevo',
     strpos(implode(' ', (array)$rSinFlag), 'gokywebs.com/demo/yfprevencion') === false);
 
-echo "\n— Post-demo lo lleva Pablo: cualquier respuesta deriva con el mensaje fijo —\n";
+echo "\n— Post-demo: el aviso sale con interés real, y sin nombre propio (5-sep) —\n";
 
 $cfgPD = $cfg; $cfgPD['modo_redaccion'] = 'fijo';
 $convPD = convNueva();
@@ -305,20 +305,26 @@ caso('un "cómo pago?" post-demo NO recibe el CBU ni el alias',
     mb_stripos($textoPagoPD, 'Banco Santander') === false
     && strpos($textoPagoPD, '0720071788000003618268') === false
     && mb_stripos($textoPagoPD, 'pablotravis') === false);
-caso('se le contesta que lo sigue Pablo, y queda derivado',
-    mb_stripos($textoPagoPD, 'Pablo') !== false
+// Preguntar cómo se paga ES interés real: ahí sí sale el aviso, una vez.
+caso('se le avisa que lo sigue el desarrollador, y queda derivado',
+    mb_stripos($textoPagoPD, 'te va a escribir el desarrollador') !== false
+    && mb_stripos($textoPagoPD, 'Pablo') === false
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 
-// Y el que dice algo que el bot no sabe leer sigue recibiendo el aviso.
+/* Pablo, 5-sep: "que identifique si de verdad el cliente mostró interés". Un
+ * "buenas" no lo es, y gastar ahí el aviso corta la charla de alguien que
+ * todavía estaba mirando la demo. */
 $convPDOtro = convNueva();
 $convPDOtro['fase'] = 'postdemo';
 $convPDOtro['tipo'] = 'landing';
 $convPDOtro['precio_dado'] = true;
 $convPDOtro['presentado_ts'] = time() - 3600;
 $convPDOtro['presentado_slug'] = 'midemo';
-caso('y un mensaje que no dice nada sigue derivando con el aviso fijo',
-    wabot_responder('buenas', $convPDOtro, $cfgPD) === [(string)$cfgPD['postdemo_derivar']]
-    && $convPDOtro['fase'] === 'derivado' && $convPDOtro['presentado_confirmado'] === true);
+$rOtro = implode(' ', (array)wabot_responder('buenas', $convPDOtro, $cfgPD));
+caso('un mensaje que no muestra interés NO gasta el aviso',
+    mb_stripos($rOtro, (string)$cfgPD['postdemo_derivar']) === false
+    && ($convPDOtro['fase'] ?? '') === 'postdemo'
+    && empty($convPDOtro['postdemo_avisado']));
 
 $convDemoPend = convNueva();
 $convDemoPend['fase'] = 'postdemo';
@@ -446,7 +452,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 caso('pero mandar los datos reales sí avanza',
     wabot_responder('Denise, BJR Best Job Review, colores azul y negro', $convDatos, $cfgAcuse) !== []);
 
-echo "\n— Post-demo: se contesta UNA vez y despues silencio (28-ago) —\n";
+echo "\n— Post-demo: el aviso no se repite NUNCA (Silvana, 28-ago) —\n";
 
 /* Charla de Silvana, tal cual paso: contesto la demo y el bot le fue
  * respondiendo mensaje por mensaje, siempre alguna version de "Pablo te escribe
@@ -454,7 +460,11 @@ echo "\n— Post-demo: se contesta UNA vez y despues silencio (28-ago) —\n";
  * Gokywebs a una pregunta sobre las formas de pago de SU pagina.
  *
  * Pablo, 28-ago: "malisimo que sea tan reiterativo, que lo diga una vez y ya
- * deje de contestar para el resto de las cosas". */
+ * deje de contestar para el resto de las cosas".
+ *
+ * Lo que NO se repite es el AVISO. Desde el 5-sep el bot sigue conversando
+ * mientras el cliente mira la demo —Silvana estaba pidiendo cambios, no
+ * cerrando— y el aviso se guarda para cuando muestre interes real. */
 $cfgSil = $cfg; $cfgSil['modo_redaccion'] = 'fijo';
 $convSil = convNueva();
 $convSil['fase'] = 'postdemo';
@@ -466,7 +476,9 @@ $convSil['lead_creado'] = true;
 
 $primera = wabot_responder('Recien paro. Me gusta. Yo le pondria mas color .', $convSil, $cfgSil);
 caso('la primera respuesta tras la demo si sale', count((array)$primera) > 0);
-caso('y deja marcado que ya se aviso', !empty($convSil['postdemo_avisado']));
+caso('a quien esta mirando no se le gasta el aviso',
+    mb_stripos(implode(' ', (array)$primera), (string)$cfgSil['postdemo_derivar']) === false
+    && empty($convSil['postdemo_avisado']));
 
 $siguientes = [
     'Si ....los colores. Quisiera alguna imagen mia por ahi',
@@ -477,11 +489,20 @@ $siguientes = [
     'Pero le falta lo de registros akashicos',
     'Y las formas de pago para exterior del pais y para el pais',
 ];
-$contestados = 0;
+$avisos = 0;
 foreach ($siguientes as $msjSil) {
-    if (count((array)wabot_responder($msjSil, $convSil, $cfgSil)) > 0) $contestados++;
+    $r = implode(' ', (array)wabot_responder($msjSil, $convSil, $cfgSil));
+    if ($r !== '' && mb_stripos($r, (string)$cfgSil['postdemo_derivar']) !== false) $avisos++;
 }
-caso('y de ahi en mas el bot no contesta nada mas', $contestados === 0);
+caso('ninguno de los 7 mensajes siguientes repite el aviso', $avisos === 0);
+
+/* Y cuando por fin decide avanzar, sale una sola vez y no vuelve a salir. */
+$rCierre = implode(' ', (array)wabot_responder('Listo, quiero avanzar. Como seguimos?', $convSil, $cfgSil));
+caso('al decidir avanzar, ahi si sale el aviso',
+    mb_stripos($rCierre, (string)$cfgSil['postdemo_derivar']) !== false
+    && !empty($convSil['postdemo_avisado']));
+$rDespues = implode(' ', (array)wabot_responder('Dale, gracias', $convSil, $cfgSil));
+caso('y despues no se repite', mb_stripos($rDespues, (string)$cfgSil['postdemo_derivar']) === false);
 
 // El que pregunta por las formas de pago de SU web no se lleva las de Gokywebs.
 $convPagoSil = convNueva();

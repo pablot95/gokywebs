@@ -1837,7 +1837,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>
-            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Cualquier respuesta del cliente después de eso —duda, pedido de cambios, que la va a mirar, lo que sea— dispara un único mensaje fijo avisando que el desarrollo lo sigue Pablo, y la charla queda con vos. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
+            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Después sigue contestando normal —dudas, elogios, pedidos de cambio, "la miro y te digo"— sin vender ni pedir la seña. Recién cuando el cliente muestra interés real (pregunta cómo sigue, pregunta por el pago, discute el precio, acepta la videollamada o confirma que no le cambiaría nada) manda una sola vez «Para seguir con el proyecto te va a escribir el desarrollador desde otro número», la charla queda con vos y ese aviso no se repite nunca más. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>

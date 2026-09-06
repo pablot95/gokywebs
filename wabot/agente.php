@@ -423,6 +423,19 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
+            /* Después de la demo, el aviso de que sigue el desarrollador lo
+             * manda el código: una sola vez y solo con interés real (Pablo,
+             * 5-sep). Si el modelo lo anuncia por su cuenta, le corta la charla
+             * a un cliente que todavía estaba mirando la demo —y si ya se
+             * mandó, lo repite, que es de lo que Pablo se quejó el 28-ago. */
+            if ($terminal === null
+                && in_array(($conv['fase'] ?? ''), ['postdemo', 'derivado'], true)
+                && wabot_texto_anuncia_contacto($texto)
+                && !wabot_salida_es_texto_de_config($texto, $cfg)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'anuncia el contacto por su cuenta', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
             if (wabot_agente_repite_pregunta_contestada($texto, $conv)) {
                 wabot_log('error', ['donde' => 'agente', 'msg' => 'pregunta ya respondida', 'texto' => mb_substr($texto, 0, 140)]);
                 return null;
@@ -688,6 +701,28 @@ function wabot_texto_promete_cierre($texto) {
     }
 
     return false;
+}
+
+/**
+ * El modelo le anuncia al cliente que lo van a contactar: "te va a escribir el
+ * desarrollador", "se comunica con vos", "te escribe desde otro número".
+ *
+ * Después de la demo ese aviso es el ÚLTIMO mensaje de la charla y lo manda el
+ * código, una sola vez y solo con interés real (wabot_postdemo_interes_real).
+ * Dicho por el modelo, corta una conversación viva o repite un aviso ya dado.
+ */
+function wabot_texto_anuncia_contacto($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    /* Sujeto explícito en tercera persona: "yo te escribo" no es un anuncio de
+     * handoff, es el bot quedando disponible, que es justo lo que queremos. */
+    $quien = '(el desarrollador|mi companero|un companero|el equipo|nuestro equipo)';
+    return (bool)(
+        preg_match('/' . $quien . '.{0,40}\b(te (va a |vamos a |van a )?(escrib|contact|llam)|se (va a )?comunic|se pone en contacto)/u', $t)
+        || preg_match('/\b(te (va a |van a )(escrib|contact)\w*)\b.{0,45}\b(otro numero|numero de proyectos|desde otro)/u', $t)
+        || preg_match('/\b(de (aca|ahi) en mas|a partir de (aca|ahora|ahi))\b.{0,45}\b(lo sigue|la sigue|sigue|continua|se encarga)\b.{0,25}(desarrollador|el)\b/u', $t)
+        || preg_match('/\b(te (lo |la )?(paso|derivo|derivamos)|paso tu consulta|lo paso)\b.{0,30}\b(al desarrollador|con el desarrollador)\b/u', $t)
+    );
 }
 
 /**
@@ -1353,7 +1388,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
             $consultar,
             [
                 'name' => 'ofrecer_videollamada',
-                'description' => 'Ofrece una videollamada con Pablo, el desarrollador. Usala cuando el cliente duda, lo tiene que pensar, desconfía o pide más seguridad antes de pagar. Es la carta que destraba una venta frenada; no la uses si ya está por pagar. VOS NO COORDINÁS HORARIOS: solo ofrecés y, si acepta, derivás.',
+                'description' => 'Ofrece una videollamada con el desarrollador. Usala cuando el cliente duda, lo tiene que pensar, desconfía o pide más seguridad antes de pagar. Es la carta que destraba una venta frenada; no la uses si ya está por pagar. VOS NO COORDINÁS HORARIOS: solo ofrecés y, si acepta, derivás.',
                 'parameters' => ['type' => 'object', 'properties' => (object)[]],
             ],
             [
@@ -2184,7 +2219,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             $conv['videollamada_ofrecida'] = true;
             wabot_evento_sesion($conv, 'videollamada_ofrecida');
             return ['texto' => (string)($cfg['postdemo_videollamada'] ?? ''),
-                    'nota' => 'Mandá este texto tal cual. Es la única vez que se nombra a Pablo: no lo menciones en ningún otro mensaje. NUNCA propongas ni confirmes un día u horario: si acepta, derivá y el horario lo arregla Pablo.'];
+                    'nota' => 'Mandá este texto tal cual. Nunca nombres al desarrollador por su nombre. NUNCA propongas ni confirmes un día u horario: si acepta, derivá y el horario lo arregla él.'];
 
         /* datos_transferencia, link_tarjeta y cuotas_sin_interes se retiraron el
          * 28-ago: el bot no vende después de la demo, solo deriva. Si el modelo
@@ -2194,7 +2229,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
         case 'link_tarjeta':
         case 'cuotas_sin_interes':
             return ['error' => 'Esa herramienta ya no existe: el bot no pide la seña ni manda datos de pago.',
-                    'nota'  => 'Contestale en una línea que de acá en más lo sigue Pablo y derivá con causa pago_explicito. Nunca escribas vos el CBU, el alias ni el monto de la seña.'];
+                    'nota'  => 'Derivá con causa pago_explicito y dejá que el sistema mande el aviso: no anuncies vos el contacto. Nunca escribas el CBU, el alias ni el monto de la seña.'];
 
         case 'cambiar_tipo_web':
             $tipoNuevo = (string)($args['tipo'] ?? '');
@@ -2659,11 +2694,13 @@ HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Nunca prometas que Pablo va a escribir si una herramienta terminal no confirmó el handoff.
 - Si el cliente contó algo personal o importante (un bebé, una mudanza, que retoma después de un tiempo, que cerró el local) y en ese mismo turno vas a derivar, escribí UNA frase corta de reconocimiento humano junto con la llamada a derivar: sin preguntas, sin promesas, sin montos y sin nombrar al desarrollador ni repetir lo que dice la derivación. El código la pone delante del texto oficial. Es el único caso en que tu texto acompaña una derivación; en cualquier otro se descarta.
 
-DESPUÉS DE LA DEMO: ACÁ SE CIERRA LA VENTA
-Cuando la demo ya está presentada, tu trabajo cambia: ya no explicás, no cotizás y NO VENDÉS. Contestás lo que el cliente dice y lo pasás a Pablo, que es el que cierra. Nunca pidas la seña ni mandes datos de pago.
-- Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y en el MISMO mensaje seguí: preguntale si le cambiaría algo antes de que la siga Pablo. Nunca le propongas pagar.
-- Si te pide cambios, anotalos y confirmá que quedan aplicados cuando avancen. Después seguí con el cierre.
-- Si pregunta cómo pagar, cuánto es la seña, dice que quiere avanzar o se frena por plata: NO le des datos bancarios, links de pago ni cuotas, y no negocies el precio. Eso lo arregla Pablo. Contestale en una línea que de ahí en más lo sigue él y derivá con causa pago_explicito.
+DESPUÉS DE LA DEMO: ACOMPAÑÁS, NO VENDÉS
+Con la demo ya presentada tu trabajo cambia: no cotizás, no vendés y no empujás a pagar. Contestás lo que el cliente dice y las dudas que le queden, con naturalidad, como quien acompaña a alguien que está mirando lo que le hicieron. El que cierra el proyecto es el desarrollador.
+- Mientras el cliente esté mirando —le gustó, quiere pensarlo, pregunta algo, pide un cambio— seguís conversando normal. NO le anuncies que lo van a contactar: ese aviso lo manda el sistema solo, una vez, y solo cuando el cliente decidió avanzar. Si lo decís vos antes de tiempo, la charla se corta cuando el cliente todavía tenía preguntas.
+- Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y preguntale si le cambiaría algo. Nunca le propongas pagar.
+- Si te pide cambios, anotalos con anotar_cambios y confirmá en una línea que quedan tomados. Sin prometer fechas.
+- Si pregunta algo de la web (qué incluye, cómo se edita, hosting, dominio, plazos), contestalo con consultar_info como en cualquier otro momento de la charla.
+- Si pregunta cómo pagar, cuánto es la seña, dice que quiere avanzar o se frena por plata: NO le des datos bancarios, links de pago ni cuotas, y no negocies el precio. Eso lo arregla el desarrollador: derivá con causa pago_explicito y el sistema manda el aviso.
 - Si duda o desconfía, ofrecé la videollamada. Se juega una sola vez.
 - Nunca cierres la charla vos ni te despidas mientras el cliente siga interesado: el que decide terminar es él. Un elogio, una duda o un "lo miro y te digo" NO son una despedida.
 

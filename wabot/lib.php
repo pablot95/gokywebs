@@ -213,6 +213,8 @@ function wabot_config_migrar(&$cfg) {
     // Anteúltimo: las funciones de arriba reescriben plantillas de precio
     // buscando textos exactos, y la línea del portfolio las dejaría sin match.
     wabot_config_portfolio($cfg);
+    // Último de todo: ninguna de las de arriba puede dejar el nombre propio.
+    wabot_config_sin_nombre_propio($cfg);
     // Y al final, la red que no depende de adivinar la redacción vieja.
     wabot_config_sin_frases_retiradas($cfg);
 }
@@ -452,17 +454,18 @@ function wabot_config_ventas(&$cfg) {
         'muestra_presentar' => "Hola! Ya tenemos lista la demo.\n\nPodés verla acá:\n{link}\n\nLa idea es que veas la estructura y el estilo general; después la personalizamos con tu contenido, imágenes, secciones y detalles para que quede realmente adaptada a tu negocio.",
         // Segundo mensaje, aparte, tras presentar la demo (ver wabot_muestra_presentar_textos).
         'muestra_presentar_seguimiento' => 'Cuando puedas mirala y contame qué te pareció. Si te gusta la propuesta, te explico cómo seguimos para avanzar con el proyecto.',
-        // Único mensaje del bot en la parte 2: ante cualquier respuesta del
-        // cliente tras la demo (duda, pedido de cambios, que la va a mirar, lo
-        // que sea) se manda esto una sola vez y la charla queda con Pablo.
-        'postdemo_derivar' => 'A partir de ahora el desarrollo completo lo va a continuar el desarrollador, Pablo, te va a escribir desde otro número.',
+        /* El cierre de la parte 2. Sale UNA sola vez y solo cuando el cliente
+         * mostró interés real (ver wabot_postdemo_interes_real): al que todavía
+         * está mirando la demo se le sigue contestando como siempre.
+         * Pablo, 5-sep: "mejor que solo diga esto", y sin nombrarlo a él. */
+        'postdemo_derivar' => 'Para seguir con el proyecto te va a escribir el desarrollador desde otro número.',
         'postdemo_transferencia' => "Para arrancar se deja una seña de {sena} y el saldo recién cuando la web está terminada.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.",
         'postdemo_tarjeta' => "Te dejo el link para pagar la seña de {sena} con tarjeta, hasta en 12 cuotas:\n{link}",
         // El bot ofrece la videollamada pero NO coordina horarios: eso lo arregla
-        // Pablo directamente. Es el único texto donde aparece su nombre.
-        'postdemo_videollamada' => 'Si te sirve, coordinamos una videollamada con Pablo, el desarrollador: te muestra todo en vivo y te saca las dudas de una. Te lo paso así arreglan el horario?',
-        // Sin link: las 3 cuotas sin interés las arma Pablo a mano.
-        'postdemo_cuotas_sin_interes' => 'Si te sirve para acomodarlo, lo podemos dividir en 3 cuotas sin interés, sin recargo sobre el precio. Te lo prepara Pablo directamente y te lo pasa por acá. Avanzamos así?',
+        // el desarrollador. El bot nunca lo nombra (Pablo, 5-sep).
+        'postdemo_videollamada' => 'Si te sirve, coordinamos una videollamada con el desarrollador: te muestra todo en vivo y te saca las dudas de una. Te lo paso así arreglan el horario?',
+        // Sin link: las 3 cuotas sin interés las arma el desarrollador a mano.
+        'postdemo_cuotas_sin_interes' => 'Si te sirve para acomodarlo, lo podemos dividir en 3 cuotas sin interés, sin recargo sobre el precio. Te lo prepara el desarrollador y te lo pasa por acá. Avanzamos así?',
         'postdemo_cambios' => 'Perfecto, tomo nota de esos cambios. Los aplicamos apenas confirmes y la web queda como la necesitás.',
         'postdemo_pago_avisado' => 'Buenísimo, lo verificamos y te confirmamos por acá. Cualquier cosa quedamos en contacto.',
         'postdemo_no_gusto' => 'Gracias por la sinceridad, me sirve. Contame qué es lo que no te cerró y lo revisamos.',
@@ -1812,22 +1815,75 @@ function wabot_texto_prediseno_completo($conv, $cfg) {
  */
 function wabot_config_pide_llamada(&$cfg) {
     if (trim((string)($cfg['pide_llamada'] ?? '')) === '') {
-        $cfg['pide_llamada'] = 'Dale, eso lo hablás directo con Pablo, el desarrollador: '
+        $cfg['pide_llamada'] = 'Dale, eso lo hablás directo con el desarrollador: '
             . 'te escribe desde nuestro número de proyectos para coordinar la llamada.';
     }
 }
 
+/**
+ * Los textos de la parte 2. Ninguno es editable desde el panel, así que el
+ * código los escribe en cada carga (ver [[tecnica_wabot_config_produccion_diverge]]):
+ * la detección va por CONTENIDO, no por lista de redacciones viejas, porque
+ * producción siempre tiene otra.
+ */
 function wabot_config_postdemo_sin_venta(&$cfg) {
     if (trim((string)($cfg['postdemo_avanzar'] ?? '')) === '') {
-        $cfg['postdemo_avanzar'] = 'Buenísimo. De acá en más lo sigue Pablo, el desarrollador: '
-            . 'te va a escribir desde nuestro número de proyectos para arreglar cómo seguimos.';
+        $cfg['postdemo_avanzar'] = 'Buenísimo.';
     }
-    // El de elogio cerraba proponiendo avanzar con la seña: ahora pregunta por
-    // los cambios, que es lo único que el bot puede tomar antes de derivar.
-    $elogioViejo = 'Le cambiarías algo, o avanzamos para dejarla lista?';
-    if (trim((string)($cfg['postdemo_elogio'] ?? '')) === '' || trim((string)$cfg['postdemo_elogio']) === $elogioViejo) {
-        $cfg['postdemo_elogio'] = 'Me alegro que te haya gustado. Le cambiarías algo antes de que la siga Pablo?';
+    // El de elogio cerraba proponiendo avanzar con la seña; después pasó a
+    // nombrar al desarrollador por su nombre. Ahora solo pregunta por los
+    // cambios, que es lo único que el bot puede tomar.
+    $elogio = trim((string)($cfg['postdemo_elogio'] ?? ''));
+    if ($elogio === '' || mb_stripos($elogio, 'avanzamos') !== false || mb_stripos($elogio, 'pablo') !== false) {
+        $cfg['postdemo_elogio'] = 'Me alegro que te haya gustado. Le cambiarías algo?';
     }
+    /* El aviso de handoff: corto y sin el nombre (Pablo, 5-sep). Las versiones
+     * viejas hablaban de "el desarrollo completo" y lo nombraban. */
+    $aviso = trim((string)($cfg['postdemo_derivar'] ?? ''));
+    if ($aviso === '' || mb_stripos($aviso, 'pablo') !== false || mb_stripos($aviso, 'desarrollo completo') !== false) {
+        $cfg['postdemo_derivar'] = 'Para seguir con el proyecto te va a escribir el desarrollador desde otro número.';
+    }
+}
+
+/**
+ * El bot no nombra al desarrollador (Pablo, 5-sep: "que diga desarrollador, no
+ * Pablo"). El cliente todavía no lo conoce: un nombre propio suelto no le dice
+ * nada y suena a que lo derivan a un tercero.
+ *
+ * Corre ÚLTIMA en la cadena y detecta por contenido, no por lista de
+ * redacciones: producción siempre tiene una redacción distinta de la local
+ * (ver la nota de config que diverge), así que una lista exact-match no lo
+ * cubre nunca. Los datos duros —alias, titular, CBU, tokens— quedan afuera:
+ * ahí el nombre es el dato, no el copy.
+ */
+function wabot_config_sin_nombre_propio(&$cfg) {
+    $reemplazar = function ($t) {
+        if (!is_string($t) || $t === '' || mb_stripos($t, 'pablo') === false) return $t;
+        // Primero las aposiciones, para no dejar "el desarrollador, el desarrollador".
+        $t = preg_replace('/\bPablo,\s*el desarrollador\b/u', 'el desarrollador', $t);
+        $t = preg_replace('/\bel desarrollador,\s*Pablo\b/u', 'el desarrollador', $t);
+        // Al principio de la oración va en mayúscula; en el medio, no.
+        $t = preg_replace('/(^|(?<=[.!?\n]\s))Pablo\b/u', 'El desarrollador', $t);
+        $t = preg_replace('/\bPablo\b/u', 'el desarrollador', $t);
+        /* La aposición se reemplaza primero, así que "Pablo, el desarrollador,
+         * ya tiene tu consulta" queda arrancando en minúscula. */
+        return preg_replace_callback(
+            '/(^|(?<=[.!?\n])\s)(el desarrollador)\b/u',
+            function ($m) { return $m[1] . 'El desarrollador'; },
+            $t
+        );
+    };
+    $recorrer = function (&$nodo, $clave = '') use (&$recorrer, $reemplazar) {
+        if (is_string($nodo)) { $nodo = $reemplazar($nodo); return; }
+        if (!is_array($nodo)) return;
+        foreach ($nodo as $k => &$v) {
+            // Los datos de cobro y las credenciales no son copy.
+            if (is_string($k) && preg_match('/(token|key|secret|alias|titular|cbu|documento|password)/i', $k)) continue;
+            $recorrer($v, (string)$k);
+        }
+        unset($v);
+    };
+    $recorrer($cfg);
 }
 
 /** Los textos fijos del turno del pitch (1-sep), con {rubro} al frente. */

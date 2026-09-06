@@ -2233,7 +2233,12 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             // Una sola cadena de detectores para los tres caminos (motor,
             // agente y el corte de redactor.php): si divergen, el cliente
             // recibe cosas distintas segun por donde entro su mensaje.
-            return wabot_postdemo_responder($texto, $conv, $cfg);
+            // Null = sin interes y sin texto fijo: en el motor no hay quien
+            // improvise, asi que se reabre la conversacion con el pedido de
+            // feedback en vez de dejarlo sin respuesta.
+            $rPost = wabot_postdemo_responder($texto, $conv, $cfg);
+            if ($rPost !== null) return $rPost;
+            return [(string)($cfg['postdemo_apertura'] ?? '')];
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
                 $conv['referencia'] = wabot_referencia_utilizable($texto) ? trim($texto) : '';
@@ -2792,7 +2797,9 @@ function wabot_engine($texto, &$conv, $cfg) {
             // llega, se comporta igual —misma cadena de detectores— ignorando
             // lo que se haya acumulado en $out más arriba (por ejemplo, una
             // respuesta de precio ante una palabra suelta de pago).
-            return wabot_postdemo_responder($texto, $conv, $cfg);
+            $rPost2 = wabot_postdemo_responder($texto, $conv, $cfg);
+            if ($rPost2 !== null) return $rPost2;
+            return $out ?: [(string)($cfg['postdemo_apertura'] ?? '')];
 
         case 'confirma_cambio':
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -4853,6 +4860,74 @@ function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
 }
 
 /**
+ * El cliente mostró INTERÉS REAL en avanzar con el proyecto, no solo una
+ * reacción a la demo.
+ *
+ * Pablo, 5-sep: "que identifique si de verdad el cliente mostró interés". El
+ * aviso de que sigue el desarrollador es lo último que dice el bot en la
+ * charla, así que gastarlo con un "dale, la miro" o un "qué linda" quema el
+ * único momento en que ese aviso sirve — y deja al cliente hablándole a un bot
+ * mudo cuando todavía estaba mirando.
+ *
+ * Interés real es COMPROMISO, no entusiasmo: pregunta cómo sigue, quiere
+ * contratar, discute el precio, pide pagar, acepta la videollamada, o confirma
+ * que no le cambiaría nada cuando se le preguntó. Un elogio suelto NO alcanza:
+ * se le contesta y se le pregunta por los cambios, y si ahí confirma, ahí sí.
+ */
+function wabot_postdemo_interes_real($texto, $conv) {
+    if (wabot_dice_que_pago($texto))              return true;   // ya transfirió
+    if (wabot_postdemo_avance_explicito($texto))  return true;   // "cómo sigo"
+    if (wabot_prefiere_tarjeta($texto))           return true;   // pide el link
+    if (wabot_postdemo_objecion_plata($texto))    return true;   // regatea = compra
+    if (wabot_postdemo_pregunta_como_pagar($texto)) return true;
+
+    /* Aceptar la videollamada es pedir hablar con una persona: es el handoff
+     * mismo. Solo cuenta si el bot la ofreció en el turno anterior. */
+    if (!empty($conv['videollamada_ofrecida']) && wabot_es_afirmativa($texto)) return true;
+
+    /* "No, así está perfecta": la respuesta a "le cambiarías algo?". El elogio
+     * del turno anterior no alcanzaba solo; con la confirmación, sí. */
+    if (!empty($conv['postdemo_pregunto_cambios'])
+        && (wabot_es_afirmativa($texto) || wabot_postdemo_sin_cambios($texto))) return true;
+
+    return false;
+}
+
+/**
+ * "Cómo te pago?", "cuánto hay que dejar para arrancar?" — pagarNOS a nosotros.
+ *
+ * ⚠️ No confundir con la pregunta por los medios de pago de SU web, que en esta
+ * etapa es de las más comunes: Silvana preguntó "las formas de pago para
+ * exterior del país y para el país" —qué va a poder cobrar ella— y recibió las
+ * condiciones comerciales de Gokywebs. Tomarla como intención de compra sería
+ * el mismo error, con el agravante de gastar ahí el aviso de handoff.
+ */
+function wabot_postdemo_pregunta_como_pagar($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '') return false;
+    // Habla de la web del cliente, no de esta compra.
+    if (preg_match('/\b(mi|mis|su|sus)\b.{0,14}\b(web|pagina|sitio|tienda|negocio|clientes|compradores)\b/u', $t)) return false;
+    if (preg_match('/\b(cobrar|cobro|cobren|cobra|exterior|del pais|extranjero|dolares|paypal)\b/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(como|donde|cuando|de que forma)\b.{0,22}\b(te pago|les pago|te abono|hago para pagar|hago el pago|se paga|se abona|te transfiero|te deposito|deposito)\b/u', $t)
+        || preg_match('/\b(cuanto|que)\b.{0,20}\b(hay que|tengo que|debo|se)\b.{0,14}\b(dejar|pagar|abonar|adelantar)\b/u', $t)
+        || preg_match('/\b(sena|seña|anticipo|adelanto)\b/u', $t)
+        || preg_match('/\b(formas?|medios?|metodos?)\b.{0,12}\b(de pago)\b/u', $t)
+    );
+}
+
+/** "No, así está bien" / "no le cambiaría nada": queda como está. */
+function wabot_postdemo_sin_cambios($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '' || mb_strlen($t) > 90) return false;
+    return (bool)(
+        preg_match('/\bno\b.{0,20}\b(le )?(cambiaria|cambiaría|cambiar|tocaria|sacaria)\b/u', $t)
+        || preg_match('/\b(asi|as[ií])\b.{0,12}\b(esta|queda|va)\b.{0,12}\b(bien|perfecta|perfecto|barbara|joya|ok)\b/u', $t)
+        || preg_match('/^(no|nada|ninguno|ninguna|nada que cambiar|esta perfecta|esta perfecto|dejala asi)\b/u', $t)
+    );
+}
+
+/**
  * Qué contesta el bot cuando el cliente responde a la demo ya presentada.
  *
  * Pablo, 28-ago: "siempre se manda el mismo mensaje repetido; que el mensaje
@@ -4860,31 +4935,30 @@ function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
  * pedía un cambio de color y al que decía que no le cerró les llegaba el
  * mismo aviso de derivación, palabra por palabra.
  *
- * La parte 2 la sigue llevando Pablo: el handoff se marca igual, pase lo que
- * pase. Lo que cambia es el texto con el que se corta — primero se contesta lo
- * que el cliente dijo, y el aviso de que sigue Pablo va como segundo mensaje
- * solo cuando la respuesta no deja una pregunta abierta (si la deja, la
- * contesta él y el aviso sobra).
+ * Pablo, 5-sep: y el aviso de que sigue el desarrollador sale SOLO si el
+ * cliente mostró interés real (ver wabot_postdemo_interes_real). Mientras no
+ * lo muestre, el bot le contesta lo que dijo y SIGUE DISPONIBLE: la charla no
+ * se deriva, no se marca handoff y no se calla. Devolver null significa "no
+ * tengo nada fijo que decir": el turno sigue al agente, que contesta la duda
+ * con sus propias palabras sin vender.
  */
 function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $conv['presentado_confirmado'] = true;
-    /* Se contesta UNA vez y listo. Después de esto el bot se calla: lo que siga
-     * mandando el cliente queda en el panel para Pablo, pero sin respuesta.
-     * Ver el corte de wabot_responder() en redactor.php. */
-    $conv['postdemo_avisado'] = true;
 
     /* El cliente avisa que ya pagó. No es vender: es acusar recibo de algo que
      * ya pasó, y quedarse callado ahí sería peor. */
     if (wabot_dice_que_pago($texto)) {
         $conv['pago_avisado_ts'] = time();
+        $conv['postdemo_avisado'] = true;
         return array_merge([(string)$cfg['postdemo_pago_avisado']],
                            wabot_derivar($conv, $cfg, 'pago_explicito'));
     }
 
+    $interes = wabot_postdemo_interes_real($texto, $conv);
+
     /* De lo más concreto a lo más vago. El orden importa: "no me gusta el color,
      * se puede cambiar?" es un pedido de cambio, no un rechazo. */
     $especifico = '';
-    $yaAvisa    = false;   // el texto ya dice que sigue Pablo: no repetirlo
 
     if (wabot_postdemo_pide_cambios($texto)) {
         $especifico = (string)($cfg['postdemo_cambios'] ?? '');
@@ -4892,34 +4966,37 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
         $especifico = (string)($cfg['postdemo_no_gusto'] ?? '');
     } elseif (wabot_postdemo_la_va_a_mirar($texto)) {
         $especifico = (string)($cfg['postdemo_la_miro'] ?? '');
-    } elseif (wabot_postdemo_avance_explicito($texto)
-              || wabot_prefiere_tarjeta($texto)
-              || wabot_postdemo_objecion_plata($texto)) {
-        /* Quiere avanzar, pide el link de tarjeta o dice que es caro: TODO eso
-         * lo arregla Pablo. El bot no pide la seña, no manda el CBU, no pasa
-         * links de pago y no ofrece cuotas.
-         *
-         * Pablo, 28-ago: "el bot NO PUEDE PEDIR SEÑA, NO TIENE QUE VENDER, solo
-         * me tiene que derivar a mí a los interesados". A una clienta que
-         * contestó "la primer mirada me gustó" le llegó el CBU con el alias y
-         * el CUIT de una. */
-        $especifico = (string)($cfg['postdemo_avanzar'] ?? '');
-        $yaAvisa    = true;
-    } elseif (wabot_postdemo_elogio($texto) || wabot_postdemo_quiere_avanzar($texto)) {
-        // Un elogio es la mejor señal que hay: se le contesta y se deriva.
-        $especifico = (string)($cfg['postdemo_elogio'] ?? '');
+    } elseif (wabot_postdemo_elogio($texto)) {
+        /* Un elogio se contesta preguntando por los cambios, que es lo único
+         * que el bot puede tomar. Si contesta que no le cambia nada, ESE turno
+         * ya es interés real: ahí sale el aviso y la pregunta no se repite
+         * ("está perfecta" es a la vez la respuesta y otro elogio). */
+        if (!$interes) {
+            $especifico = (string)($cfg['postdemo_elogio'] ?? '');
+            $conv['postdemo_pregunto_cambios'] = true;
+        }
     } elseif (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
-        // La videollamada tampoco es vender: es pasárselo a Pablo en persona.
+        /* La videollamada no es vender: es pasárselo al desarrollador en
+         * persona. Se ofrece y se espera la respuesta: recién si acepta hay
+         * handoff. */
         $conv['videollamada_ofrecida'] = true;
-        $especifico = (string)($cfg['postdemo_videollamada'] ?? '');
+        return [(string)($cfg['postdemo_videollamada'] ?? '')];
     }
 
+    if (!$interes) {
+        // Sigue mirando: el bot queda disponible para la próxima.
+        return trim($especifico) === '' ? null : [$especifico];
+    }
+
+    /* Interés real: se avisa UNA vez que sigue el desarrollador y la charla
+     * queda con él. El aviso no se repite nunca más (postdemo_avisado). */
+    $conv['postdemo_avisado'] = true;
     wabot_handoff_marcar($conv, 'postdemo_respuesta');
     $aviso = (string)($cfg['postdemo_derivar'] ?? '');
+    if (trim($aviso) === '')      return trim($especifico) === '' ? null : [$especifico];
     if (trim($especifico) === '') return [$aviso];
-    // El aviso va aparte salvo que el texto ya lo diga, o que deje una pregunta
-    // abierta (ahí la contesta Pablo y el aviso sobra).
-    if ($yaAvisa || $aviso === '' || strpos($especifico, '?') !== false) return [$especifico];
+    // Si la respuesta deja una pregunta abierta, el aviso la contradice.
+    if (strpos($especifico, '?') !== false) return [$especifico];
     return [$especifico, $aviso];
 }
 
@@ -5073,8 +5150,11 @@ function wabot_cerrada($texto, &$conv, $cfg) {
         }
     }
 
-    // La primera vez que vuelve a escribir, se le aclara cómo sigue.
-    if (!$conv['espera_avisada']) {
+    /* La primera vez que vuelve a escribir, se le aclara cómo sigue. Salvo
+     * después de la demo: ahí el aviso ya salió y este texto lo repite con
+     * otras palabras, que es exactamente de lo que se quejó Pablo (28-ago).
+     * A esa altura la duda se contesta y punto. */
+    if (!$conv['espera_avisada'] && empty($conv['postdemo_avisado'])) {
         $conv['espera_avisada'] = true;
         $out[] = wabot_texto_espera($conv, $cfg);
     }

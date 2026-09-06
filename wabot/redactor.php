@@ -52,30 +52,36 @@ function wabot_responder($texto, &$conv, $cfg) {
         }
     }
 
-    // Parte 2 de la venta: la lleva Pablo. Cualquier respuesta del cliente
-    // después de presentar la demo deriva, sin pasar por el motor de reglas ni
-    // por el agente. Vale en los tres modos de redacción. Lo que NO es fijo es
-    // el texto: wabot_postdemo_responder() contesta lo que el cliente dijo
-    // —elogio, pedido de cambio, "no me cerró", que la va a mirar— antes de
-    // avisar que sigue Pablo (Pablo, 28-ago: "que el mensaje dependa de lo que
-    // envía el cliente").
+    /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
+     * es fijo: wabot_postdemo_responder() contesta lo que el cliente dijo
+     * —elogio, pedido de cambio, "no me cerró", que la va a mirar— (Pablo,
+     * 28-ago: "que el mensaje dependa de lo que envía el cliente").
+     *
+     * Y desde el 5-sep el aviso de que sigue el desarrollador sale SOLO con
+     * interés real. Mientras no lo haya, esto puede devolver null: ahí el
+     * turno sigue de largo y lo contesta el agente con sus palabras, que es lo
+     * que pidió Pablo ("que siga contestando dudas, no venda, más natural").
+     * El agente en esta fase no tiene herramientas de cobro. */
     if (($conv['fase'] ?? '') === 'postdemo' && !empty($conv['presentado_ts'])) {
-        return wabot_postdemo_responder($texto, $conv, $cfg);
+        $postdemo = wabot_postdemo_responder($texto, $conv, $cfg);
+        if ($postdemo !== null) return $postdemo;
     }
 
-    /* Y de ahí en más, silencio.
+    /* Ya avisado que sigue el desarrollador: el AVISO no se repite nunca más.
      *
-     * El corte de arriba solo valía mientras la fase era 'postdemo', y la
-     * primera respuesta la pasa a 'derivado': todo lo que el cliente mandaba
-     * después caía en el agente o en wabot_cerrada() y volvía a recibir alguna
-     * versión de "Pablo te escribe a la brevedad", una y otra vez. En la charla
-     * de Silvana salió cinco veces seguidas, y la última encima contestó las
-     * formas de pago de Gokywebs a una pregunta sobre las formas de pago de SU
-     * página (Pablo, 28-ago: "malísimo que sea tan reiterativo, que lo diga una
-     * vez y ya deje de contestar para el resto de las cosas").
+     * La primera respuesta pasa la fase a 'derivado', y todo lo que el cliente
+     * mandaba después caía en el agente o en wabot_cerrada() y volvía a recibir
+     * alguna versión de "te escribe a la brevedad", una y otra vez. En la
+     * charla de Silvana salió cinco veces seguidas (Pablo, 28-ago: "malísimo
+     * que sea tan reiterativo, que lo diga una vez y ya deje de contestar").
      *
-     * Lo que sigue mandando —fotos, cambios, preguntas— se guarda igual en el
-     * transcript y le aparece a Pablo sin leer en el panel. Solo no se contesta. */
+     * Lo que NO se repite es el aviso; una PREGUNTA sí se contesta (Pablo,
+     * 5-sep: "la idea es que siga contestando dudas, no venda"). Por eso las
+     * preguntas siguen de largo hasta el agente, que en fase derivado solo
+     * tiene consultar_info —informa, no vende— y tiene prohibido reprometer el
+     * contacto. Lo que no es pregunta (un "dale", "gracias", una foto) se
+     * guarda en el transcript, le aparece al desarrollador en el panel y no se
+     * contesta: ahí no hay nada que agregar. */
     if (!empty($conv['presentado_ts']) && !empty($conv['postdemo_avisado'])) {
         /* El silencio no puede tragarse el AVISO DE PAGO. "Ya te transferí la
          * seña" durante esta etapa quedaba sin marcar: pago_avisado_ts en 0, el
@@ -89,8 +95,8 @@ function wabot_responder($texto, &$conv, $cfg) {
             wabot_evento_sesion($conv, 'pago_avisado', ['origen' => 'postdemo_silencio']);
             return [(string)($cfg['postdemo_pago_avisado'] ?? '')];
         }
-        /* Y un pedido de cambios se ANOTA aunque no se conteste: Pablo tiene
-         * que verlo junto al boceto, no perdido en el transcript. */
+        /* Un pedido de cambios se ANOTA siempre: el desarrollador tiene que
+         * verlo junto al boceto, no perdido en el transcript. */
         if (wabot_postdemo_pide_cambios($texto)) {
             $previos = trim((string)($conv['cambios_pedidos'] ?? ''));
             $nuevo = trim((string)$texto);
@@ -98,8 +104,14 @@ function wabot_responder($texto, &$conv, $cfg) {
                 $conv['cambios_pedidos'] = $previos === '' ? $nuevo : $previos . ' | ' . $nuevo;
                 wabot_evento_sesion($conv, 'cambios_pedidos', ['origen' => 'postdemo_silencio']);
             }
+            return [(string)($cfg['postdemo_cambios'] ?? '')];
         }
-        return [];
+        /* Una PREGUNTA se contesta: sigue de largo hasta el agente, que en fase
+         * derivado solo informa. Lo que no pregunta nada, silencio. */
+        $preguntaAlgo = function_exists('wabot_mensaje_pregunta_algo')
+            ? wabot_mensaje_pregunta_algo($texto)
+            : (mb_strpos((string)$texto, '?') !== false);
+        if (!$preguntaAlgo) return [];
     }
 
     /* El aviso que manda el propio formulario, con el formulario ya recibido.
