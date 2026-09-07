@@ -4632,6 +4632,19 @@ function mantUsedCurrentPeriod(m, period = mantCurrentPeriod(m)) {
     return Boolean(lastUpdate && mantCurrentPeriod(m, lastUpdate).key === period.key);
 }
 
+function mantShortDate(date) {
+    return String(date.getDate()).padStart(2, "0") + "/" + String(date.getMonth() + 1).padStart(2, "0");
+}
+
+function mantLongDate(date) {
+    return mantShortDate(date) + "/" + date.getFullYear();
+}
+
+// Días que dura el ciclo vigente (28 a 31 según el mes que toque).
+function mantPeriodDays(period) {
+    return Math.round((period.next - period.start) / 86400000);
+}
+
 function mantWaLink(raw) {
     let digits = String(raw || "").replace(/\D/g, "");
     if (!digits) return "";
@@ -4687,11 +4700,10 @@ function renderMantenimiento() {
             : `<span class="muted">—</span>`;
         const period = mantCurrentPeriod(m);
         const pidio = mantUsedCurrentPeriod(m, period);
-        const proximoReinicio = period.next.toLocaleDateString("es-AR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric"
-        });
+        const proximoReinicio = mantLongDate(period.next);
+        const franja = `${mantShortDate(period.start)} al ${mantShortDate(period.next)}`;
+        const diasCiclo = mantPeriodDays(period);
+        const diasRestantes = Math.max(0, Math.ceil((period.next - new Date()) / 86400000));
 
         return `
             <tr class="client-row">
@@ -4711,6 +4723,8 @@ function renderMantenimiento() {
                     <label title="Se habilita nuevamente el ${escapeHtml(proximoReinicio)}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;justify-content:center">
                         <input type="checkbox" data-mant-check="${m.id}" ${pidio ? "checked" : ""} style="width:18px;height:18px;cursor:pointer;accent-color:#2563eb">
                     </label>
+                    <div style="font-size:12px;font-weight:600;color:#93b4e8;margin-top:4px;white-space:nowrap">${escapeHtml(franja)}</div>
+                    <div class="muted" style="font-size:11px;white-space:nowrap">ciclo de ${diasCiclo} días · se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>
                 </td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-mant-edit="${m.id}" style="font-size:13px">✎ Editar</button>
