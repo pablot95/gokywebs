@@ -74,7 +74,7 @@ caso('rubro en el primer mensaje → precio directo sin menú',
 caso('el precio lleva el link del presupuesto para verlo en detalle (Pablo, 2-sep)',
     strpos($r[0], 'gokywebs.com/presupuestos/sitioprofesional') !== false);
 caso('el precio llega en DOS mensajes: el precio y, dos segundos después, la demo con el formulario',
-    count($r) === 2 && stripos($r[1], 'cómo podría quedar tu web') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
+    count($r) === 2 && stripos($r[1], 'cómo podría verse la web') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
     stripos(implode(' ', $r), 'si te cierra') === false && stripos(implode(' ', $r), 'si va por ahí') === false
     && stripos(implode(' ', $r), 'si te sirve') === false);
@@ -2289,20 +2289,19 @@ caso('el resumen de precio tampoco adelanta la seña',
 foreach (['sistema_whatsapp', 'sistema_cierre'] as $clave) {
     caso("el texto \"$clave\" de la parte 1 no nombra a Pablo", stripos((string)$cfg[$clave], 'pablo') === false);
 }
-// espera_prediseno SÍ lo nombra desde el 28-ago, y es la excepción correcta:
-// la demo no la manda el bot, la manda Pablo — por este mismo chat si no
-// pasaron las 24 h de Meta, y desde el número de proyectos si pasaron. Tiene
-// que decir las dos cosas o el que la recibe del otro número no sabe de quién
-// es (fue el reclamo de Pablo el 28-ago).
-caso('espera_prediseno nombra a Pablo, que es quien manda la demo',
-    stripos((string)$cfg['espera_prediseno'], 'pablo') !== false);
+/* Desde el 5-sep-2026 NINGÚN texto lo nombra: el cliente no conoce a Pablo y
+ * un nombre propio suelto suena a que lo derivan a un tercero. Se lo nombra
+ * siempre por el rol. Lo que sí se conserva es avisar el cambio de número. */
+caso('espera_prediseno ya no lo nombra, pero sí dice quién manda la demo',
+    stripos((string)$cfg['espera_prediseno'], 'pablo') === false
+    && stripos((string)$cfg['espera_prediseno'], 'desarrollador') !== false);
 caso('avisa que puede llegar por acá o desde el otro número',
     stripos((string)$cfg['espera_prediseno'], 'por acá') !== false
     && stripos((string)$cfg['espera_prediseno'], 'otro número') !== false);
 caso('y sigue diciendo cuándo llega', strpos((string)$cfg['espera_prediseno'], '{entrega}') !== false);
 foreach (['derivar', 'espera'] as $clave) {
-    caso("el traspaso \"$clave\" nombra a Pablo y avisa el cambio de número",
-        stripos((string)$cfg[$clave], 'pablo') !== false
+    caso("el traspaso \"$clave\" no lo nombra y avisa el cambio de número",
+        stripos((string)$cfg[$clave], 'pablo') === false
         && stripos((string)$cfg[$clave], 'número de proyectos') !== false);
     caso("y \"$clave\" ya no promete la respuesta \"por acá\"",
         stripos((string)$cfg[$clave], 'por acá') === false);
@@ -2321,8 +2320,9 @@ foreach (['otra', 'reuniones'] as $clave) {
 caso('la respuesta de último recurso ahora manda la duda al desarrollador',
     stripos((string)$cfg['info']['otra'], 'el desarrollador') !== false);
 caso('y la derivación también', stripos((string)$cfg['derivar'], 'el desarrollador') !== false);
-caso('la videollamada de la parte 2 sigue nombrando a Pablo',
-    stripos((string)$cfg['postdemo_videollamada'], 'pablo') !== false);
+caso('la videollamada de la parte 2 tampoco lo nombra',
+    stripos((string)$cfg['postdemo_videollamada'], 'pablo') === false
+    && stripos((string)$cfg['postdemo_videollamada'], 'desarrollador') !== false);
 
 /* Preguntar por la seña antes de la demo ya NO devuelve el monto (3-sep). La
  * pregunta igual se contesta —qué pasa y cuándo va a saber el número— por el
@@ -2346,32 +2346,41 @@ echo "— Parte 2: la respuesta tras la demo depende de lo que dijo el cliente �
 // test-redactor.php); acá se prueba la salvaguarda del motor, que usa la misma
 // cadena de detectores.
 $esperadoPostdemo = [
-    'me gusto mucho, como sigo?'          => 'lo sigue Pablo',       // quiere avanzar → derivar
-    'prefiero con tarjeta'                => 'lo sigue Pablo',       // tampoco: lo arregla Pablo
+    'me gusto mucho, como sigo?'          => 'el desarrollador',     // quiere avanzar → derivar
+    'prefiero con tarjeta'                => 'el desarrollador',     // el pago no lo arregla el bot
     'ya te transferi la seña'             => 'revisamos la transferencia',
-    'mmm no se, lo tengo que pensar bien' => 'videollamada',         // duda
-    'uh, es mucha plata para mi ahora'    => 'lo sigue Pablo',       // no se ofrecen cuotas
+    'mmm no se, lo tengo que pensar bien' => 'videollamada',         // duda: sigue abierta
+    'uh, es mucha plata para mi ahora'    => 'el desarrollador',     // no se ofrecen cuotas
     'dale, la voy a mirar'                => 'miralo tranquilo',
     'se puede cambiar el color?'          => 'anoto esos cambios',
     'no me gusto la verdad'               => 'no te cerró',
 ];
+/* Desde el 5-sep-2026 la respuesta se contesta con lo suyo Y la charla sigue
+ * viva: solo deriva el que muestra interés real (pide avanzar, pregunta por el
+ * pago, regatea). El que está mirando recibe su respuesta y nada más. */
+$derivanPostdemo = ['me gusto mucho, como sigo?', 'prefiero con tarjeta',
+                    'uh, es mucha plata para mi ahora', 'ya te transferi la seña'];
 foreach ($esperadoPostdemo as $msjPostdemo => $fragmento) {
     $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
     clasifica(['otro']);
     $r = wabot_engine($msjPostdemo, $c, $cfg);
     $junto = implode(' ', $r);
-    caso("\"$msjPostdemo\" tras la demo se contesta con lo suyo, no con el aviso pelado",
-        $r !== [(string)$cfg['postdemo_derivar']]
-        && mb_stripos($junto, $fragmento) !== false
-        && $c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && $c['presentado_confirmado'] === true);
+    $deriva = in_array($msjPostdemo, $derivanPostdemo, true);
+    caso("\"$msjPostdemo\" tras la demo se contesta con lo suyo",
+        mb_stripos($junto, $fragmento) !== false && $c['presentado_confirmado'] === true);
+    caso("\"$msjPostdemo\": " . ($deriva ? 'muestra interés y queda derivado' : 'sigue mirando y la charla queda viva'),
+        $deriva
+            ? ($c['fase'] === 'derivado' && !empty($c['handoff_pendiente']) && !empty($c['postdemo_avisado']))
+            : ($c['fase'] === 'postdemo' && empty($c['handoff_pendiente']) && empty($c['postdemo_avisado'])));
 }
 
-// Lo que no encaja en ninguna sigue derivando con el aviso, una sola vez.
+// Un "hola" no es interés: no gasta el aviso ni cierra la charla.
 $cPDOtro = conv_nueva(); $cPDOtro['fase'] = 'postdemo'; $cPDOtro['tipo'] = 'ecommerce'; $cPDOtro['precio_dado'] = true;
 clasifica(['otro']);
-caso('un mensaje que no dice nada sigue derivando con el aviso fijo',
-    wabot_engine('hola', $cPDOtro, $cfg) === [(string)$cfg['postdemo_derivar']]
-    && $cPDOtro['fase'] === 'derivado' && !empty($cPDOtro['handoff_pendiente']));
+$rPDOtro = wabot_engine('hola', $cPDOtro, $cfg);
+caso('un mensaje que no muestra interés NO gasta el aviso',
+    mb_stripos(implode(' ', $rPDOtro), (string)$cfg['postdemo_derivar']) === false
+    && $cPDOtro['fase'] === 'postdemo' && empty($cPDOtro['handoff_pendiente']));
 
 // Ninguno contesta lo mismo que otro: ese era exactamente el reclamo.
 $textosPostdemo = [];
@@ -3369,10 +3378,10 @@ $cvDemo['demo_pedida_entrada'] = true; $cvDemo['chat_started_ts'] = time();
 clasifica(['rubro_landing']);
 $rDemo = wabot_precio('landing', $cvDemo, $cfg);
 caso('tras el precio va directo al link del form, sin re-ofrecer',
-    count($rDemo) === 2 && mb_stripos($rDemo[1], 'cómo podría quedar tu web') !== false
+    count($rDemo) === 2 && mb_stripos($rDemo[1], 'cómo podría verse la web') !== false
     && strpos($rDemo[1], 'gokywebs.com/form/') !== false && mb_stripos($rDemo[1], 'Querés que') === false);
 caso('y ese mensaje ofrece mostrar cómo quedaría, con las 24hs (texto de Pablo, 2-sep)',
-    mb_stripos($rDemo[1], 'menos de 24hs') !== false && mb_stripos($rDemo[1], 'formulario') !== false
+    mb_stripos($rDemo[1], 'menos de 24 horas') !== false && mb_stripos($rDemo[1], 'formulario') !== false
     && mb_stripos($rDemo[1], 'sin compromiso') !== false);
 caso('y la fase queda en prediseño', $cvDemo['fase'] === 'prediseno');
 
@@ -3669,8 +3678,11 @@ foreach ([
     'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la muestra por acá mismo apenas esté lista.' => 'prediseno_completo',
     'Listo {nombre}, con eso ya lo preparamos. El prediseño tarda 24 a 48 horas y te mandamos la demo por acá mismo apenas esté lista.' => 'prediseno_completo',
 ] as $textoViejo => $clave) {
+    /* La cadena COMPLETA, como en producción: wabot_config_ventas() reescribe
+     * el texto y wabot_config_sin_nombre_propio() le saca el nombre propio al
+     * final. Con solo la primera, el resultado difiere del $cfg real. */
     $cvMig = [$clave => $textoViejo];
-    wabot_config_ventas($cvMig);
+    wabot_config_migrar($cvMig);
     caso("el $clave viejo de producción migra solo", $cvMig[$clave] === $cfg[$clave]);
 }
 
@@ -3965,17 +3977,44 @@ $igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagra
 caso('y por Instagram no se usan plantillas',
     wabot_enviar_plantilla($igPlant, 'confirmacion_demo_48h', $cfgPlant) === false);
 
-echo "\n— El texto de la demo es el que pidió Pablo, y explica que todavía no está personalizada —\n";
+echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
 
-$demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg);
-caso('arranca con "Hola! Ya tenemos lista la demo"', strpos($demoTextos[0], 'Hola! Ya tenemos lista la demo') === 0);
+/* Pablo encontró 17 envíos con la misma presentación, cambiando solo el enlace:
+ * no decía qué mirar ni qué contenido era de muestra. Ahora hay un texto por
+ * tipo, y cada uno nombra SOLO pantallas que esa demo tiene de verdad. */
+$demoTextos = wabot_muestra_presentar_textos('yfprevencion', $cfg, ['tipo' => 'landing', 'nombre_negocio' => 'YF Prevención']);
+caso('usa el nombre del negocio', strpos($demoTextos[0], 'YF Prevención') !== false);
 caso('trae el link', strpos($demoTextos[0], 'gokywebs.com/demo/yfprevencion') !== false);
-caso('aclara que después se personaliza con contenido e imágenes propias',
-    stripos($demoTextos[0], 'personalizamos') !== false && (stripos($demoTextos[0], 'imagenes') !== false || stripos($demoTextos[0], 'imágenes') !== false));
+caso('aclara que el contenido es de ejemplo',
+    stripos($demoTextos[0], 'de ejemplo') !== false);
+caso('y dice qué mirar', stripos($demoTextos[0], 'mirá') !== false);
 caso('son dos mensajes: la demo y, aparte, el pedido de feedback',
     count($demoTextos) === 2 && stripos($demoTextos[1], 'qué te pareció') !== false);
 
-echo "\n— Presentada la demo, el cierre lo lleva Pablo: cualquier respuesta deriva con un único mensaje fijo —\n";
+$presentaciones = [];
+foreach (['landing', 'turnos', 'ecommerce', 'catalogo', 'inmobiliaria', 'elearning', 'lms', 'sistema'] as $tipoDemo) {
+    $t = wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => $tipoDemo, 'nombre_negocio' => 'Cuidar+'])[0];
+    $presentaciones[$tipoDemo] = $t;
+    caso("la presentación de $tipoDemo trae el link y aclara que hay contenido de muestra",
+        strpos($t, 'gokywebs.com/demo/midemo') !== false
+        && preg_match('/de ejemplo|ficticios/iu', $t) === 1
+        && strpos($t, '{') === false);
+}
+caso('cada rubro tiene la suya, no son todas iguales',
+    count(array_unique(array_values($presentaciones))) >= 6);
+caso('la tienda habla de productos y la inmobiliaria de propiedades',
+    stripos($presentaciones['ecommerce'], 'productos') !== false
+    && stripos($presentaciones['inmobiliaria'], 'propiedades') !== false);
+/* La demo de e-learning NO tiene aula: prometerla sería mostrar una pantalla
+ * que no existe. En LMS se nombra solo para decir que se construye después. */
+caso('e-learning no promete el aula ni el acceso de alumnos',
+    preg_match('/\baula\b|acceso de (los )?alumnos/iu', $presentaciones['elearning']) === 0);
+caso('y LMS la nombra solo como lo que viene después',
+    stripos($presentaciones['lms'], 'se construyen al avanzar') !== false);
+caso('sin nombre de negocio, el texto igual cierra bien',
+    stripos(wabot_muestra_presentar_textos('midemo', $cfg, ['tipo' => 'ecommerce'])[0], 'la tienda de tu negocio') !== false);
+
+echo "\n— Presentada la demo, el cierre lo lleva el desarrollador: se avisa una vez, con interés real —\n";
 
 $ahoraPD = 2_000_000_000;
 $convPD = ['fase' => 'postdemo', 'tipo' => 'landing', 'presentado_ts' => $ahoraPD - 21 * 3600,
@@ -3989,19 +4028,21 @@ caso('en postdemo la charla no está muda',
 $convResp = $convPD;
 clasifica(['otro']);
 $r = wabot_engine('me gusto mucho, como sigo?', $convResp, $cfg);
-caso('el que quiere avanzar NO recibe los datos para señar: lo toma Pablo',
+caso('el que quiere avanzar NO recibe los datos para señar: lo toma el desarrollador',
     mb_stripos(implode(' ', $r), 'Banco Santander') === false
-    && mb_stripos(implode(' ', $r), 'Pablo') !== false
+    && mb_stripos(implode(' ', $r), 'el desarrollador') !== false
+    && mb_stripos(implode(' ', $r), 'Pablo') === false
     && $convResp['fase'] === 'derivado' && !empty($convResp['handoff_pendiente'])
     && $convResp['presentado_confirmado'] === true);
 
 $convRespDuda = $convPD;
 clasifica(['otro']);
 $r2 = wabot_engine('mmm no se, lo tengo que pensar', $convRespDuda, $cfg);
+// Dudar no es interés: se le ofrece la videollamada y la charla sigue abierta.
 caso('y el que duda recibe la videollamada, que es otra cosa',
     mb_stripos(implode(' ', $r2), 'videollamada') !== false
     && implode(' ', $r2) !== implode(' ', $r)
-    && $convRespDuda['fase'] === 'derivado');
+    && $convRespDuda['fase'] === 'postdemo' && empty($convRespDuda['postdemo_avisado']));
 
 caso('antes de presentar la demo el bot sigue trabajando normal',
     wabot_silencio_asegurado(['fase' => 'precio', 'tipo' => 'landing', 'precio_dado' => true], $cfg) === false);
@@ -5757,8 +5798,8 @@ caso('el turno del precio son dos mensajes: precio y demo',
     count($rSL) === 2 && strpos($rSL[0], '$290.000') !== false && wabot_es_texto_demo($rSL[1], $cfg));
 caso('el segundo trae el formulario y las 24hs, con el texto que dictó Pablo',
     strpos($rSL[1], 'gokywebs.com/form/') !== false
-    && mb_stripos($rSL[1], 'cómo podría quedar tu web') !== false
-    && mb_stripos($rSL[1], 'menos de 24hs') !== false);
+    && mb_stripos($rSL[1], 'cómo podría verse la web') !== false
+    && mb_stripos($rSL[1], 'menos de 24 horas') !== false);
 caso('y en ninguno de los dos aparece la línea vieja',
     preg_match('/si te cierra|si va por ah|si te sirve|si te gusta la idea/iu', implode(' ', $rSL)) === 0);
 caso('la demo queda ofrecida en el mismo turno, sin esperar respuesta',
@@ -5920,7 +5961,7 @@ echo "— 2-sep, auditoría: el bot reconoce que ya ofreció la demo —\n";
 
 /* El detector pedía la palabra "demo", "muestra" o "prediseño". El mensaje que
  * de verdad sale en producción desde el 2-sep no dice ninguna: dice "podemos
- * mostrarte cómo podría quedar tu web". Así que el bot no se reconocía a sí
+ * mostrarte cómo podría verse la web". Así que el bot no se reconocía a sí
  * mismo y se la volvía a ofrecer, que es el loop de "demo demo" del 1-sep. */
 $tsDet = time();
 foreach (['msg_prediseno_oferta', 'prediseno_link', 'cta_muestra'] as $kDet) {

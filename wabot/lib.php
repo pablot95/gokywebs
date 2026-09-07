@@ -178,7 +178,7 @@ function wabot_config_load() {
     if (!isset($cfg['demora_segundos']))       $cfg['demora_segundos']       = 10;
     if (!isset($cfg['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = 20;
     if (trim((string)($cfg['espera_prediseno'] ?? '')) === '') {
-        $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda Pablo, el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.';
+        $cfg['espera_prediseno'] = 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda el desarrollador por acá — y si te escribe desde otro número, es el nuestro de proyectos.';
     }
     if (trim((string)($cfg['gemini_modelo'] ?? '')) === '') {
         $cfg['gemini_modelo'] = wabot_gemini_modelo_default();
@@ -209,6 +209,7 @@ function wabot_config_migrar(&$cfg) {
     wabot_config_simplificar_tipos($cfg);
     wabot_config_pitch_encaje($cfg);
     wabot_config_postdemo_sin_venta($cfg);
+    wabot_config_presentaciones_por_tipo($cfg);
     wabot_config_pide_llamada($cfg);
     // Anteúltimo: las funciones de arriba reescriben plantillas de precio
     // buscando textos exactos, y la línea del portfolio las dejaría sin match.
@@ -1274,14 +1275,17 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
     /* El turno de la demo: qué es, el formulario y las 24 horas. Antes se
      *    ofrecía ("te la armo?") y recién con el sí llegaba el link; ahora el
      *    link va en el mismo mensaje, que es lo que pidió Pablo. */
-    /* El texto lo dictó Pablo el 2-sep, palabra por palabra. El anterior
-     * ("Te armamos la demo de tu web gratis: es tu página real...") lo rechazó:
-     * promete la web como si ya estuviera hecha, en vez de ofrecer mostrar
-     * cómo podría quedar. */
-    $linkNuevo = "Antes de avanzar podemos mostrarte cómo podría quedar tu web, gratis, sin compromiso
+    /* El texto lo dicta Pablo, palabra por palabra. Última versión: 6-sep-2026.
+     * Suma el rubro del cliente al ofrecimiento, dice qué datos pide el
+     * formulario (así no parece un trámite a ciegas) y cierra aclarando que
+     * después de verla decide él. {rubro} lo resuelve wabot_personalizar(): sin
+     * rubro detectado, "tu negocio de {rubro}" colapsa a "tu negocio". */
+    $linkNuevo = "Podemos prepararte una primera muestra de cómo podría verse la web de tu negocio de {rubro}, gratis y sin compromiso.
 
-Completás este formulario con algunos datos de tu negocio y armamos una primera propuesta en menos de 24hs:
-{link}";
+Completá este formulario con el nombre del negocio, qué ofrecés y los colores que te gustan:
+{link}
+
+Con esos datos armamos una propuesta visual y te la enviamos por acá en menos de 24 horas. Después de verla, decidís si querés avanzar.";
     $linksViejos = [
         'Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}',
         'Para que veas la calidad del trabajo antes de decidir, te armamos una demo de tu web: es una primera entrega, sin cargo. Completá este formulario, te lleva menos de un minuto: {link}',
@@ -1649,6 +1653,14 @@ function wabot_personalizar($texto, $conv) {
     if (strpos($texto, '{rubro}') !== false) {
         $texto = wabot_aplicar_rubro($texto, (string)($conv['rubro_pitch'] ?? ''));
     }
+    /* {negocio} = la marca del cliente, para las presentaciones de la demo.
+     * Sin marca detectada cae en "tu negocio", que encaja en las tres formas en
+     * que se usa ("la tienda de…", "la web de…", "el sistema para…"). */
+    if (strpos($texto, '{negocio}') !== false) {
+        $negocio = trim((string)($conv['nombre_negocio'] ?? ''));
+        if ($negocio === '') $negocio = trim((string)($conv['brief']['marca'] ?? ''));
+        $texto = str_replace('{negocio}', $negocio !== '' ? $negocio : 'tu negocio', $texto);
+    }
     // {entrega} = "hoy" o "mañana" según la hora en que se cerró el prediseño.
     if (strpos($texto, '{entrega}') !== false) {
         $cuando = wabot_dia_entrega(time());
@@ -1681,6 +1693,9 @@ function wabot_aplicar_rubro($texto, $rubro) {
     $t = preg_replace_callback('/(^|\n)Para \{rubro\},?\s*(\p{L})/u', function ($m) {
         return $m[1] . mb_strtoupper($m[2]);
     }, $texto);
+    /* "la web de tu negocio de {rubro}" (el ofrecimiento de la demo) sin rubro
+     * daría "tu negocio de tu negocio": ahí el marcador se lleva su "de". */
+    $t = preg_replace('/\b(negocio|emprendimiento|local)\s+de\s+\{rubro\}/u', '$1', $t);
     return str_replace('{rubro}', 'tu negocio', $t);
 }
 
@@ -2224,9 +2239,9 @@ function wabot_config_simplificar_tipos(&$cfg) {
     /* Todo mensaje de precio termina con el link del presupuesto, no solo el
      * del pitch: el cliente que llega por cualquier camino tiene que poder
      * ver el detalle (Pablo, 2-sep). */
+    // `\R`, nunca un salto literal: ver la nota de wabot_config_portfolio().
     $sinPortfolio = function ($t) {
-        return trim(preg_replace('/\s*
-\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+        return trim(preg_replace('/\s*\R\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
     };
     $conLink = function ($t) use ($sinPortfolio) {
         $t = $sinPortfolio($t);
@@ -2557,9 +2572,13 @@ function wabot_config_portfolio(&$cfg) {
     if (isset($cfg['precio_resumen']) && is_string($cfg['precio_resumen'])) {
         $cfg['precio_resumen'] = $sumar($cfg['precio_resumen']);
     }
+    /* ⚠️ El salto va como `\R` (cualquier fin de línea), NUNCA como un salto
+     * literal dentro del patrón: escrito así, el regex hereda el fin de línea
+     * DEL ARCHIVO FUENTE, y basta con que alguien guarde lib.php en CRLF para
+     * que deje de matchear en silencio — el mensaje de precio sale con dos
+     * links, el del presupuesto y el del portfolio. Pasó el 6-sep-2026. */
     $quitarPortfolio = function ($t) {
-        return trim(preg_replace('/\s*
-\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
+        return trim(preg_replace('/\s*\R\s*Y acá podés ver \{portfolio_texto\}: \{portfolio\}\s*$/u', '', (string)$t));
     };
     foreach (['msg_precio', 'msg_precio_catalogo', 'msg_precio_tras_pitch',
               'msg_precio_catalogo_tras_pitch'] as $k) {
@@ -3013,17 +3032,109 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
     return true;
 }
 
-function wabot_muestra_presentar_textos($slug, $cfg) {
+/**
+ * Los dos mensajes con los que se entrega la demo, según el TIPO de web.
+ *
+ * Pablo, 6-sep-2026: encontró 17 envíos con exactamente la misma presentación,
+ * cambiando solo el enlace. Dos problemas: no dice qué mirar, y no aclara qué
+ * contenido es de muestra. El caso que lo disparó es [[demo_cuidarmas]], donde
+ * la demo hablaba de 12 años de experiencia y el negocio tenía un mes.
+ *
+ * ⚠️ Cada texto menciona SOLO pantallas que esa demo tiene de verdad. En
+ * e-learning y LMS eso significa no prometer el aula ni el acceso de alumnos:
+ * la demo es la parte pública (ver [[prompt_demo_elearning]]).
+ *
+ * Aclarar que hay contenido de muestra NO habilita a inventar trayectoria,
+ * testimonios ni resultados: eso se corrige al generar la demo, no en el aviso.
+ */
+function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     $link = 'gokywebs.com/demo/' . trim((string)$slug);
-    $base = trim((string)($cfg['muestra_presentar'] ?? ''));
+    $tipo = trim((string)($conv['tipo'] ?? ''));
+
+    $porTipo = (array)($cfg['muestra_presentar_por_tipo'] ?? []);
+    $base = trim((string)($porTipo[$tipo] ?? ''));
+    if ($base === '') $base = trim((string)($porTipo['_default'] ?? ''));
+    if ($base === '') $base = trim((string)($cfg['muestra_presentar'] ?? ''));
     if ($base === '') {
         $base = "Ya preparamos la demo para tu web (considerá que las imágenes también son de prueba).\n\nSe encuentra en este link: {link}\n\nMirala y después contame qué te parece o si hay algo que te gustaría cambiar.";
     }
-    $textos = [str_replace('{link}', $link, $base)];
+
+    // {link_demo} es como lo escribe Pablo en el panel; {link} es el histórico.
+    $texto = str_replace(['{link_demo}', '{link}'], $link, $base);
+    if (is_array($conv)) $texto = wabot_personalizar($texto, $conv);
+    else $texto = str_replace('{negocio}', 'tu negocio', $texto);
+
+    $textos = [$texto];
     // Segundo mensaje, aparte, pidiendo el feedback.
     $seguimiento = trim((string)($cfg['muestra_presentar_seguimiento'] ?? ''));
-    if ($seguimiento !== '') $textos[] = $seguimiento;
+    if ($seguimiento !== '') {
+        $textos[] = is_array($conv) ? wabot_personalizar($seguimiento, $conv) : $seguimiento;
+    }
     return $textos;
+}
+
+/**
+ * Las presentaciones por tipo. No son editables desde el panel, así que las
+ * escribe el código en cada carga (ver [[tecnica_wabot_config_produccion_diverge]]).
+ * Los textos de ecommerce, sitio profesional e inmobiliaria los dictó Pablo
+ * palabra por palabra el 6-sep-2026.
+ */
+function wabot_config_presentaciones_por_tipo(&$cfg) {
+    $profesional = "¡Ya está lista la primera propuesta para la web de {negocio}!\n\n"
+        . "Podés verla acá:\n{link}\n\n"
+        . "La armamos para que puedas visualizar cómo presentar tu negocio, organizar tus servicios y facilitar que te contacten.\n\n"
+        . "Mirá el estilo general y cómo está distribuida la información. Los textos e imágenes de ejemplo se reemplazan o ajustan con tu contenido real si avanzamos.";
+
+    $tienda = "¡Ya está lista la demo de la tienda de {negocio}! 🛍️\n\n"
+        . "Podés verla acá:\n{link}\n\n"
+        . "Los productos, fotos y precios que usamos para completar la muestra son de ejemplo; no representan tu catálogo real. Sirven para mostrarte cómo se verían los artículos y cómo estaría organizada la tienda.\n\n"
+        . "Si avanzamos, la adaptamos con tus productos, precios, imágenes y categorías.";
+
+    $cfg['muestra_presentar_por_tipo'] = [
+        // Sitio profesional: el default de oficios, profesionales y servicios.
+        'landing'       => $profesional,
+        'institucional' => $profesional,
+        // Turnos: la demo SÍ trae el bloque de reservas, así que se nombra.
+        'turnos'        => "¡Ya está lista la primera propuesta para la web de {negocio}!\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "La armamos para que puedas visualizar cómo presentar tus servicios y cómo alguien pediría un turno.\n\n"
+            . "Los servicios, horarios y precios que aparecen son de ejemplo. Mirá el estilo general y el recorrido hasta el contacto; si avanzamos, lo ajustamos con tu información real.",
+
+        'ecommerce'     => $tienda,
+        // Catálogo sin precios: el mismo mensaje, sin prometer precios.
+        'catalogo'      => "¡Ya está lista la demo del catálogo de {negocio}! 🛍️\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Los productos, las fotos y las categorías que usamos para completar la muestra son de ejemplo; no representan tu catálogo real. Sirven para mostrarte cómo se verían los artículos y cómo estaría organizado el catálogo.\n\n"
+            . "Si avanzamos, lo adaptamos con tus productos, imágenes y categorías.",
+
+        'inmobiliaria'  => "¡Ya está lista la demo de la web de {negocio}! 🏡\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Las propiedades, fotos, ubicaciones y valores utilizados en la muestra son ficticios. Sirven para mostrar cómo se presentaría tu cartera de inmuebles.\n\n"
+            . "Mirá la organización de las publicaciones y la información de cada propiedad. Si avanzamos, la adaptamos con tus inmuebles y datos reales.",
+
+        /* E-learning: la demo es la parte PÚBLICA (catálogo de cursos y ficha).
+         * El aula no existe todavía, así que no se nombra como algo que mirar. */
+        'elearning'     => "¡Ya está lista la demo de la academia de {negocio}! 🎓\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Los cursos, programas, docentes y precios que aparecen son de ejemplo; no representan tu propuesta real. Sirven para mostrar cómo se presentarían tus cursos y cómo alguien elegiría uno.\n\n"
+            . "Mirá cómo se muestra cada curso con su programa. Si avanzamos, la adaptamos con tus cursos, docentes y contenidos reales.",
+
+        'lms'           => "¡Ya está lista la demo de la academia de {negocio}! 🎓\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Los cursos, programas, docentes y precios que aparecen son de ejemplo; no representan tu propuesta real. Sirven para mostrar cómo se presentarían tus cursos y cómo alguien elegiría uno.\n\n"
+            . "Esta muestra es la parte pública de la plataforma. El aula, el acceso de los alumnos y la carga de contenidos se construyen al avanzar con el proyecto.",
+
+        'sistema'       => "¡Ya está lista la demo del sistema para {negocio}!\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Los datos que aparecen cargados son de ejemplo, para que puedas ver cómo se vería la información y cómo se navega entre las pantallas.\n\n"
+            . "Mirá el flujo general y cómo está organizada cada vista. Si avanzamos, lo adaptamos a tu operación real.",
+
+        // Sin tipo definido: el más neutro, sin nombrar pantallas.
+        '_default'      => "¡Ya está lista la primera propuesta para la web de {negocio}!\n\n"
+            . "Podés verla acá:\n{link}\n\n"
+            . "Los textos y las imágenes que usamos para completar la muestra son de ejemplo; no representan tu contenido real.\n\n"
+            . "Mirá el estilo general y cómo está distribuida la información. Si avanzamos, la adaptamos con tu contenido.",
+    ];
 }
 
 /**

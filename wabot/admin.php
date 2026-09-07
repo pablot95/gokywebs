@@ -519,7 +519,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
          * los 20 s, así que un timeout con Meta lenta devuelve false igual con
          * el mensaje entregado. Por eso el panel avisa que hay que mirar el
          * chat antes de reenviar, en vez de mandar a reenviar de una. */
-        $textos = wabot_muestra_presentar_textos($slug, $cfg);
+        $textos = wabot_muestra_presentar_textos($slug, $cfg, $conv);
         $enviados = 0;
         foreach ($textos as $i => $texto) {
             // Un respiro entre los dos: mandarlos pegados hace que Meta a veces

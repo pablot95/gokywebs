@@ -33,7 +33,7 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
-        return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg);
+        return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg, $conv);
     }
 
     /* Baja pedida: no se le escribe más, en ningún modo de redacción. El motor
