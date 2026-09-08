@@ -2143,6 +2143,22 @@ function wabot_config_pitch_encaje(&$cfg) {
     if (trim((string)($cfg['retomar_confirmado'] ?? '')) === '') {
         $cfg['retomar_confirmado'] = 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo. Y si antes te surge cualquier duda o querés ver la demo gratis mientras tanto, escribime cuando quieras.';
     }
+    /* Las otras tres caras del mismo compromiso (auditoría 7-sep, punto C):
+     * con fecha de calendario, cuando el que va a escribir es el cliente, y
+     * cuando la charla ya la lleva el desarrollador. Y el texto con el que el
+     * bot cumple la cita si todavía puede escribir (ventana de 24 h). */
+    if (trim((string)($cfg['retomar_confirmado_fecha'] ?? '')) === '') {
+        $cfg['retomar_confirmado_fecha'] = 'Dale {nombre}, me lo anoto: te escribo {fecha} para retomarlo. Y si antes te surge cualquier duda o querés ver la demo gratis mientras tanto, escribime cuando quieras.';
+    }
+    if (trim((string)($cfg['retomar_cliente_avisa'] ?? '')) === '') {
+        $cfg['retomar_cliente_avisa'] = 'Dale {nombre}, quedo atento. Cuando puedas escribime por acá y lo retomamos; y si antes te surge alguna duda, acá estoy.';
+    }
+    if (trim((string)($cfg['retomar_derivado'] ?? '')) === '') {
+        $cfg['retomar_derivado'] = 'Dale {nombre}, queda anotado: el desarrollador te escribe {fecha} para retomarlo.';
+    }
+    if (trim((string)($cfg['retomar_texto'] ?? '')) === '') {
+        $cfg['retomar_texto'] = 'Hola {nombre}! Como quedamos, te escribo para retomar lo de tu web. Seguimos?';
+    }
     /* "¿Se abona antes o después?" durante la demo. Lo primero que hay que
      * decirle es que la demo no se paga: ver wabot_texto_pregunta_cuando_se_paga(). */
     if (trim((string)($cfg['pago_antes_o_despues'] ?? '')) === '') {
@@ -3955,6 +3971,9 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * meses" y volvía a los diez días con otra consulta seguía con el
      * seguimiento bloqueado cincuenta días más. */
     $conv['retomar_ts'] = 0;
+    foreach (['retomar_quien', 'retomar_estado', 'retomar_humano', 'retomar_motivo'] as $k) $conv[$k] = '';
+    foreach (['retomar_creado_ts', 'retomar_vencido_ts', 'retomar_avisado_ts', 'retomar_hecho_ts'] as $k) $conv[$k] = 0;
+    $conv['retomar_bloqueo'] = false;
     // La marca de "ya le contesté por afuera" es de la sesión anterior: si
     // sobrevive, la primera consulta del que vuelve meses después entra ya
     // silenciada y no aparece en SL.
@@ -4836,6 +4855,15 @@ function wabot_lista_items() {
             // ventana de 24 h de Meta no hay forma de escribirle solo, así que
             // la fecha viaja al panel para que la retome Pablo.
             'retomar_ts' => (int)($cv['retomar_ts'] ?? 0),
+            // La tarea completa: fecha, quién sigue, estado y las palabras del
+            // cliente. Con esto el panel muestra "retomar 14/09" o "vencido".
+            'retomar' => [
+                'ts'     => (int)($cv['retomar_ts'] ?? 0),
+                'estado' => (string)($cv['retomar_estado'] ?? ''),
+                'quien'  => (string)($cv['retomar_quien'] ?? ''),
+                'humano' => (string)($cv['retomar_humano'] ?? ''),
+                'motivo' => (string)($cv['retomar_motivo'] ?? ''),
+            ],
             // Sin leer = el CLIENTE escribió algo que todavía no miraste, no
             // "el último mensaje es suyo". Con lo segundo, cualquier mensaje
             // automático posterior (el recordatorio de 20 h, la última llamada,
@@ -6959,6 +6987,105 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
             }
             wabot_conv_save($cv);
             wabot_log('ultima_llamada', ['clave' => $clave]);
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
+/* ───────────── Retomar: la tarea con fecha que dejó el cliente ─────────────
+ *
+ * "Contactame en 30 días" guardaba una fecha, bloqueaba los seguimientos y
+ * respondía "te escribo en un mes"; al llegar la fecha nadie hacía nada
+ * (auditoría 7-sep, punto C). Ahora es una tarea: el cron la ejecuta si el
+ * bot todavía puede escribir (ventana de 24 h de Meta) o si hay una plantilla
+ * `retomar` configurada; si no, la vence y le avisa al desarrollador, que la
+ * ve en el panel con fecha, quién sigue y qué pidió.
+ */
+
+/** Cómo se resuelve hoy: '' (nada), 'bot', 'plantilla' o 'desarrollador'. */
+function wabot_retomar_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (($cv['retomar_estado'] ?? '') !== 'pendiente') return '';
+    $ts = (int)($cv['retomar_ts'] ?? 0);
+    if ($ts <= 0 || $ts > $ahora) return '';
+    if (!empty($cv['archivado'])) return '';
+    // Ni el mensaje ni el aviso salen de madrugada.
+    if (!wabot_seguimiento_hora_ok($cfg, $ahora)) return '';
+    // Era el cliente el que iba a escribir y no escribió: lo mira el desarrollador.
+    if (($cv['retomar_quien'] ?? 'bot') === 'cliente') return 'desarrollador';
+    if (empty($cfg['activo']) || !empty($cv['bot_off'])) return 'desarrollador';
+    // Dentro de la ventana de 24 h el bot escribe con texto libre.
+    if ($ahora - wabot_ultimo_cliente_ts($cv) < 23 * 3600) return 'bot';
+    if (wabot_plantilla_config('retomar', $cfg) !== null) return 'plantilla';
+    return 'desarrollador';
+}
+
+/** La tarea se cumplió (por el bot, por el panel o porque el cliente escribió). */
+function wabot_retomar_marcar_hecho(&$conv, $como = '') {
+    if (($conv['retomar_estado'] ?? '') === '' ) return;
+    $conv['retomar_estado'] = 'hecho';
+    $conv['retomar_hecho_ts'] = time();
+    $conv['retomar_hecho_como'] = (string)$como;
+    $conv['retomar_ts'] = 0;
+    // El bloqueo del seguimiento era de esta tarea: se levanta con ella.
+    if (!empty($conv['retomar_bloqueo'])) {
+        $conv['seguimiento_bloqueado'] = false;
+        $conv['retomar_bloqueo'] = false;
+    }
+}
+
+function wabot_retomar_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['revisadas' => 0, 'enviados' => 0, 'vencidos' => 0, 'detalle' => []];
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        $modo = wabot_retomar_corresponde($cv, $cfg, $ahora);
+        if ($modo === '') continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            $modo = wabot_retomar_corresponde($cv, $cfg, $ahora);
+            if ($modo === '') continue;
+
+            if ($modo === 'bot') {
+                $texto = wabot_salida_emisor_texto(wabot_personalizar((string)($cfg['retomar_texto'] ?? ''), $cv), $cv, $cfg);
+                if ($texto !== '' && wabot_enviar($cv, $texto)) {
+                    wabot_conv_transcript($cv, 'bot', $texto);
+                    wabot_retomar_marcar_hecho($cv, 'bot');
+                    wabot_evento($cv, 'retomar_enviado', ['via' => 'texto']);
+                    $res['enviados']++;
+                } else {
+                    $modo = 'desarrollador';
+                }
+            }
+            if ($modo === 'plantilla') {
+                if (wabot_enviar_plantilla($cv, 'retomar', $cfg)) {
+                    wabot_retomar_marcar_hecho($cv, 'plantilla');
+                    wabot_evento($cv, 'retomar_enviado', ['via' => 'plantilla']);
+                    $res['enviados']++;
+                } else {
+                    $modo = 'desarrollador';
+                }
+            }
+            if ($modo === 'desarrollador') {
+                $cv['retomar_estado'] = 'vencido';
+                $cv['retomar_vencido_ts'] = $ahora;
+                wabot_evento($cv, 'retomar_vencido', ['quien' => (string)($cv['retomar_quien'] ?? '')]);
+                $res['vencidos']++;
+            }
+            $res['detalle'][] = $clave . ':' . $modo;
+            wabot_conv_save($cv);
+            wabot_log('retomar', ['clave' => $clave, 'modo' => $modo]);
+            // El aviso va después de guardar, con el estado ya en disco.
+            if ($modo === 'desarrollador' && function_exists('wabot_push_retomar')) wabot_push_retomar($cv);
         } finally {
             wabot_lock_soltar($lock);
         }

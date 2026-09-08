@@ -135,22 +135,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         }
     }
 
-    /* "Podríamos hacer un punto de 30 días" / "contactarnos en un mes y medio".
-     * No es una despedida: es un sí con fecha. El bot le contestó "cuando estés
-     * listo, escribime" y perdió el único dato accionable que le habían dado
-     * (Héctor, 29-ago). Se anota la fecha, el bot se compromete él, y los
-     * seguimientos automáticos no lo molestan hasta entonces. */
-    if (empty($conv['retomar_ts']) && ($conv['fase'] ?? '') !== 'derivado') {
-        $diasRetomar = wabot_texto_pide_retomar_en($mensaje);
-        if ($diasRetomar !== null) {
-            $conv['retomar_ts'] = time() + $diasRetomar * 86400;
-            $conv['seguimiento_bloqueado'] = true;
-            wabot_evento_sesion($conv, 'retomar_agendado', ['dias' => $diasRetomar]);
-            $texto = str_replace('{plazo}', wabot_plazo_humano($diasRetomar),
-                (string)($cfg['retomar_confirmado'] ?? 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo.'));
-            return [wabot_personalizar($texto, $conv)];
-        }
-    }
+    /* "Podríamos hacer un punto de 30 días" / "contactarnos en un mes y medio"
+     * (Héctor, 29-ago) se resolvía acá. Desde el 8-sep lo hace
+     * wabot_retomar_responder() en el borde común de wabot_responder(): así
+     * vale también para el motor y para la charla ya derivada, y anota una
+     * tarea con fecha y responsable en vez de solo bloquear el seguimiento. */
 
     /* "¿Se abona antes o después?" antes de que la demo esté presentada. La
      * duda es el ORDEN, no el monto: contestarle la seña y las cuotas es

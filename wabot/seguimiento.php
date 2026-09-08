@@ -31,17 +31,28 @@ if (php_sapi_name() !== 'cli') {
     header('Content-Type: application/json; charset=utf-8');
 }
 
+// El aviso de "retomar vencido" sale por push: sin esto la función no existe
+// en este proceso y la tarea vence en silencio.
+require_once __DIR__ . '/push.php';
+
 $cfg = wabot_config_load();
 $res = wabot_seguimiento_correr($cfg);
 $presentados = wabot_presentados_correr($cfg);
 $confirmacionDemo = wabot_confirmacion_demo_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
+$retomar = wabot_retomar_correr($cfg);
 
 echo json_encode([
     'revisadas' => $res['revisadas'],
     'enviados'  => $res['enviados'],
     'fallidos'  => $res['fallidos'],
     'detalle'   => $res['detalle'],
+    'retomar' => [
+        'revisadas' => $retomar['revisadas'],
+        'enviados'  => $retomar['enviados'],
+        'vencidos'  => $retomar['vencidos'],
+        'detalle'   => $retomar['detalle'],
+    ],
     'ultima_llamada' => [
         'revisadas' => $ultima['revisadas'],
         'enviados'  => $ultima['enviados'],

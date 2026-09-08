@@ -67,6 +67,19 @@ function wabot_responder($texto, &$conv, $cfg) {
      * turno sigue de largo y lo contesta el agente con sus palabras, que es lo
      * que pidió Pablo ("que siga contestando dudas, no venda, más natural").
      * El agente en esta fase no tiene herramientas de cobro. */
+    /* El cliente escribió: si había una tarea de retomar esperándolo a él, o
+     * vencida esperando al desarrollador, ya se cumplió sola. */
+    wabot_retomar_cliente_escribio($conv);
+
+    /* Un compromiso con fecha —"contactame en 30 días", "hablamos el lunes",
+     * "vuelvo en octubre y te escribo"— es lo más accionable que puede decir un
+     * cliente, así que se lee antes que cualquier otro corte: queda anotado
+     * como tarea (fecha, quién sigue, estado) y se contesta acorde. Vive acá,
+     * en el borde común, para que valga igual en modo agente, en el motor y
+     * con la charla ya derivada (auditoría 7-sep, punto C). */
+    $retomar = wabot_retomar_responder($texto, $conv, $cfg);
+    if ($retomar !== null) return $retomar;
+
     if (($conv['fase'] ?? '') === 'postdemo' && !empty($conv['presentado_ts'])) {
         $postdemo = wabot_postdemo_responder($texto, $conv, $cfg);
         if ($postdemo !== null) return $postdemo;

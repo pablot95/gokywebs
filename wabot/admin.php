@@ -843,6 +843,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $conv['contestado_ts'] = 0;
         } else {
             $conv['contestado_ts'] = max(1, wabot_conv_ultimo_ts($conv));
+            // "Ya le contesté" también cierra la tarea de retomar que estaba
+            // esperando eso mismo.
+            if (in_array(($conv['retomar_estado'] ?? ''), ['vencido', 'pendiente'], true)) wabot_retomar_marcar_hecho($conv, 'panel');
             // Marcarlo como atendido implica haberlo leído: si no, el globito
             // de sin leer queda encendido en un chat que ya resolviste.
             $conv['panel_visto_ts'] = max((int)$conv['panel_visto_ts'], $conv['contestado_ts']);
@@ -1047,6 +1050,8 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .conv-nav-btn[data-grupo="presentadas_48"].on { border-left-color:var(--bad); }
 .conv-nav-btn[data-grupo="no_leidos"].tiene { color:var(--info); }
 .conv-nav-btn[data-grupo="no_leidos"].tiene .conv-cuenta { background:var(--info-tenue); color:var(--info); }
+.conv-chip--retomar.tiene { color:var(--warn); border-color:var(--warn); }
+.conv-chip--retomar.tiene .conv-chip-n { background:var(--warn-tenue); color:var(--warn); }
 
 /* WhatsApp e Instagram comparten la misma lista: se distinguen con esta
    etiqueta chica al lado del nombre, no con una columna aparte. */
@@ -1994,6 +1999,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
                         <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
                         <button type="button" class="conv-chip conv-chip--rta" data-grupo="rta" title="Ya le contestaste vos a mano: queda esperando al cliente.">RTA <span class="conv-chip-n" id="cuentaRta">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--retomar" data-grupo="retomar" title="Retomar: pidieron que les escribas en una fecha, o dijeron que escribían y no lo hicieron. Vencidas y las que vencen en 2 días.">RT <span class="conv-chip-n" id="cuentaRetomar">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
                         <button type="button" class="conv-chip" data-grupo="interesado_chat" title="Vieron precio + todas las demás conversaciones: la charla que todavía no llegó a nada concreto.">VP · T</button>
                         <div class="conv-chips-mas">
@@ -2264,6 +2270,19 @@ body.embed { min-height: 0; }
             return !!it.rta;
         }
 
+        /* Tarea de retomar que te toca mirar: vencida, o pendiente y vence en
+         * los próximos 2 días (para llegar antes que el cron, si querés). */
+        function esRetomar(it) {
+            const r = it.retomar;
+            if (!r || !r.ts) return false;
+            if (r.estado === 'vencido') return true;
+            return r.estado === 'pendiente' && r.ts <= Date.now() / 1000 + 2 * 86400;
+        }
+        function fechaCorta(ts) {
+            try { return new Date(ts * 1000).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); }
+            catch (e) { return ''; }
+        }
+
         /* "Ya le contesté" desde la propia fila, para las respuestas que salen
          * del otro WhatsApp y el sistema no ve. La fila entera es un <a>, así
          * que hay que cortar el click antes de que abra el chat. */
@@ -2300,6 +2319,7 @@ body.embed { min-height: 0; }
                 return g === 'interesado' || g === 'chat';
             }
             if (filtro === 'rta') return esRTA(it);
+            if (filtro === 'retomar') return esRetomar(it);
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
@@ -2392,7 +2412,7 @@ body.embed { min-height: 0; }
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, rta: 0, retomar: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
@@ -2401,6 +2421,7 @@ body.embed { min-height: 0; }
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
                 if (esRTA(it)) cuentas.rta++;
+                if (esRetomar(it)) cuentas.retomar++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
                 if (!buscandoGeneral && fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
@@ -2503,6 +2524,16 @@ body.embed { min-height: 0; }
                     pe.textContent = it.handoff_pendiente ? 'te toca a vos' : 'te espera';
                     pills.appendChild(pe);
                 }
+                // La tarea de retomar, con su fecha: "retomar 14/09" mientras
+                // está pendiente, "retomar: vencido" cuando ya te toca a vos.
+                if (it.retomar && it.retomar.ts && (it.retomar.estado === 'pendiente' || it.retomar.estado === 'vencido')) {
+                    const pr = document.createElement('span');
+                    pr.className = 'pill ' + (it.retomar.estado === 'vencido' ? 'off' : 'pausa');
+                    pr.textContent = it.retomar.estado === 'vencido' ? 'retomar: vencido' : ('retomar ' + fechaCorta(it.retomar.ts));
+                    pr.title = (it.retomar.quien === 'cliente' ? 'Dijo que escribía ' : 'Pidió que le escribas ')
+                        + (it.retomar.humano || '') + (it.retomar.motivo ? ' — «' + it.retomar.motivo + '»' : '');
+                    pills.appendChild(pr);
+                }
                 if (it.tipo) {
                     const p2 = document.createElement('span');
                     p2.className = 'pill tipo';
@@ -2543,9 +2574,12 @@ body.embed { min-height: 0; }
             if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
             const elRta = document.getElementById('cuentaRta');
             if (elRta) elRta.textContent = cuentas.rta ?? 0;
+            const elRetomar = document.getElementById('cuentaRetomar');
+            if (elRetomar) elRetomar.textContent = cuentas.retomar ?? 0;
             for (const b of navBtns) {
                 if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
                 if (b.dataset.grupo === 'rta') b.classList.toggle('tiene', (cuentas.rta ?? 0) > 0);
+                if (b.dataset.grupo === 'retomar') b.classList.toggle('tiene', (cuentas.retomar ?? 0) > 0);
             }
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;

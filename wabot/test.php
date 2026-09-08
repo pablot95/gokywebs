@@ -5352,6 +5352,98 @@ caso('"en dos semanas" en 14',
 caso('y el plazo se dice como corresponde',
     wabot_plazo_humano(7) === 'una semana' && wabot_plazo_humano(14) === 'dos semanas');
 
+/* Auditoría 7-sep, punto C: fechas de calendario, quién sigue y una tarea
+ * real con vencimiento. "Ahora" fijo: martes 8-sep-2026, 15:00 AR. */
+echo "— Retomar: fechas de calendario, responsable y tarea —\n";
+$ahoraR = gmmktime(18, 0, 0, 9, 8, 2026);
+$diaR = function ($m, $d, $y = 2026) { return gmmktime(13, 0, 0, $m, $d, $y); };   // 10:00 AR
+$fr = function ($texto) use ($ahoraR) { return wabot_texto_retomar_fecha($texto, $ahoraR); };
+caso('"escribime el lunes" → el lunes 14', ($fr('Escribime el lunes')['ts'] ?? 0) === $diaR(9, 14) && $fr('Escribime el lunes')['humano'] === 'el lunes 14');
+caso('"escribime el martes" dicho un martes → el martes que viene', ($fr('escribime el martes')['ts'] ?? 0) === $diaR(9, 15));
+caso('"hablamos mañana" → mañana', ($fr('Hablamos mañana')['ts'] ?? 0) === $diaR(9, 9) && $fr('Hablamos mañana')['humano'] === 'mañana');
+caso('"pasado mañana hablamos" → pasado mañana', ($fr('pasado mañana hablamos')['ts'] ?? 0) === $diaR(9, 10));
+caso('"a la mañana te escribo" NO es una fecha', $fr('a la mañana te escribo') === null);
+caso('"vuelvo a principios de octubre y te escribo" → 3 de octubre', ($fr('Vuelvo a principios de octubre y te escribo')['ts'] ?? 0) === $diaR(10, 3)
+    && $fr('Vuelvo a principios de octubre y te escribo')['humano'] === 'a principios de octubre');
+caso('"hablamos a fines de septiembre" → 27 de septiembre (este año)', ($fr('hablamos a fines de septiembre')['ts'] ?? 0) === $diaR(9, 27));
+caso('"contactame a mediados de enero" → 15 de enero del año que viene', ($fr('contactame a mediados de enero')['ts'] ?? 0) === $diaR(1, 15, 2027));
+caso('"contactame el 15 de octubre" → esa fecha', ($fr('contactame el 15 de octubre')['ts'] ?? 0) === $diaR(10, 15) && $fr('contactame el 15 de octubre')['humano'] === 'el 15 de octubre');
+caso('"hablamos el 20" → el 20 de este mes', ($fr('hablamos el 20')['ts'] ?? 0) === $diaR(9, 20) && $fr('hablamos el 20')['humano'] === 'el 20 de septiembre');
+caso('"hablamos el 3" (ya pasó) → el 3 del mes que viene', ($fr('hablamos el 3')['ts'] ?? 0) === $diaR(10, 3));
+caso('"en octubre retomamos" → principios de octubre', ($fr('en octubre retomamos')['ts'] ?? 0) === $diaR(10, 3));
+caso('"después de las fiestas hablamos" → 6 de enero', ($fr('despues de las fiestas hablamos')['ts'] ?? 0) === $diaR(1, 6, 2027));
+caso('"la web la necesito para el 20" no habla de volver a hablar', $fr('la web la necesito para el 20') === null);
+caso('"contactame en 15 dias" no es calendario: cae al plazo', $fr('contactame en 15 dias') === null
+    && (wabot_retomar_detectar('contactame en 15 dias', $ahoraR)['ts'] ?? 0) === $ahoraR + 15 * 86400);
+
+caso('"escribime el lunes": el próximo paso es nuestro', wabot_texto_retomar_quien('escribime el lunes') === 'bot');
+caso('"contactame en 30 dias": nuestro', wabot_texto_retomar_quien('contactame en 30 dias') === 'bot');
+caso('"hablamos mañana": nuestro por defecto', wabot_texto_retomar_quien('hablamos mañana') === 'bot');
+caso('"el lunes te escribo": del cliente', wabot_texto_retomar_quien('el lunes te escribo') === 'cliente');
+caso('"te aviso el viernes": del cliente', wabot_texto_retomar_quien('te aviso el viernes') === 'cliente');
+caso('"vuelvo en octubre y te escribo": del cliente', wabot_texto_retomar_quien('vuelvo en octubre y te escribo') === 'cliente');
+caso('"lo veo con mi socia y hablamos el lunes": del cliente', wabot_texto_retomar_quien('lo veo con mi socia y hablamos el lunes') === 'cliente');
+
+$cfgR = $cfg; $cfgR['modo_redaccion'] = 'fijo';
+$convR = ['tel' => 'TESTRET1', 'fase' => 'precio', 'precio_dado' => true, 'tipo' => 'landing', 'nombre' => 'Héctor',
+          'transcript' => [['q' => 'cliente', 't' => 'Contactame en 30 dias', 'ts' => time()]], 'ultimo_cliente_ts' => time()];
+$outR = wabot_responder('Contactame en 30 dias', $convR, $cfgR);
+caso('"contactame en 30 días": se compromete el bot, con el plazo', stripos(implode(' ', (array)$outR), 'en un mes') !== false, json_encode($outR, JSON_UNESCAPED_UNICODE));
+caso('...y queda la TAREA: pendiente, nuestra, con fecha y motivo',
+    ($convR['retomar_estado'] ?? '') === 'pendiente' && ($convR['retomar_quien'] ?? '') === 'bot'
+    && (int)$convR['retomar_ts'] > time() + 29 * 86400 && $convR['retomar_motivo'] === 'Contactame en 30 dias');
+caso('...y el seguimiento queda bloqueado por esta tarea', !empty($convR['seguimiento_bloqueado']) && !empty($convR['retomar_bloqueo']));
+
+$convR2 = ['tel' => 'TESTRET2', 'fase' => 'precio', 'precio_dado' => true, 'tipo' => 'landing', 'nombre' => 'Ana',
+           'transcript' => [['q' => 'cliente', 't' => 'Escribime el lunes', 'ts' => time()]], 'ultimo_cliente_ts' => time()];
+$outR2 = wabot_responder('Escribime el lunes', $convR2, $cfgR);
+caso('"escribime el lunes": contesta con la fecha, no con "en X días"', preg_match('/te escribo el lunes \d{1,2}/u', implode(' ', (array)$outR2)) === 1, json_encode($outR2, JSON_UNESCAPED_UNICODE));
+
+$convR3 = ['tel' => 'TESTRET3', 'fase' => 'precio', 'precio_dado' => true, 'tipo' => 'landing', 'nombre' => 'Ana',
+           'transcript' => [['q' => 'cliente', 't' => 'El lunes te escribo', 'ts' => time()]], 'ultimo_cliente_ts' => time()];
+$outR3 = wabot_responder('El lunes te escribo', $convR3, $cfgR);
+caso('"el lunes te escribo": el bot queda atento, no promete escribir él', stripos(implode(' ', (array)$outR3), 'quedo atento') !== false
+    && ($convR3['retomar_quien'] ?? '') === 'cliente', json_encode($outR3, JSON_UNESCAPED_UNICODE));
+
+$convR4 = ['tel' => 'TESTRET4', 'fase' => 'derivado', 'cierre' => 'derivacion', 'precio_dado' => true, 'presentado_ts' => time() - 9000,
+           'postdemo_avisado' => true, 'handoff_pendiente' => true, 'tipo' => 'landing', 'nombre' => 'Ana',
+           'transcript' => [['q' => 'cliente', 't' => 'Hablamos el lunes', 'ts' => time()]], 'ultimo_cliente_ts' => time()];
+$outR4 = wabot_responder('Hablamos el lunes', $convR4, $cfgR);
+caso('charla derivada: promete al desarrollador, no se calla', stripos(implode(' ', (array)$outR4), 'desarrollador') !== false
+    && ($convR4['retomar_estado'] ?? '') === 'pendiente', json_encode($outR4, JSON_UNESCAPED_UNICODE));
+
+// El cliente escribe: la tarea que lo esperaba a él se cumple sola.
+$convR5 = array_merge($convR3, ['transcript' => [['q' => 'cliente', 't' => 'Hola, ya estoy', 'ts' => time()]]]);
+wabot_retomar_cliente_escribio($convR5);
+caso('escribió el cliente: la tarea "del cliente" pasa a hecha y se destraba el seguimiento',
+    ($convR5['retomar_estado'] ?? '') === 'hecho' && (int)$convR5['retomar_ts'] === 0 && empty($convR5['seguimiento_bloqueado']));
+$convR6 = $convR; wabot_retomar_cliente_escribio($convR6);
+caso('pero la tarea "nuestra" sigue pendiente si escribe antes', ($convR6['retomar_estado'] ?? '') === 'pendiente');
+$convR7 = array_merge($convR, ['retomar_estado' => 'vencido']); wabot_retomar_cliente_escribio($convR7);
+caso('y una vencida se cumple cuando el cliente aparece', ($convR7['retomar_estado'] ?? '') === 'hecho');
+
+// El cron: qué hace con cada tarea vencida.
+$hoyR = gmmktime(18, 0, 0);   // 15:00 AR
+$cfgC = $cfg; $cfgC['activo'] = true;
+$tarea = ['retomar_estado' => 'pendiente', 'retomar_quien' => 'bot', 'retomar_ts' => $hoyR - 3600, 'ultimo_cliente_ts' => $hoyR - 2 * 3600, 'transcript' => []];
+caso('vencida, nuestra y dentro de la ventana de 24 h: la manda el bot', wabot_retomar_corresponde($tarea, $cfgC, $hoyR) === 'bot');
+$vieja = array_merge($tarea, ['ultimo_cliente_ts' => $hoyR - 40 * 86400]);
+caso('fuera de la ventana y sin plantilla: le toca al desarrollador', wabot_retomar_corresponde($vieja, $cfgC, $hoyR) === 'desarrollador');
+$cfgP = $cfgC; $cfgP['plantillas'] = ['retomar' => ['activa' => true, 'nombre' => 'recordatorio_consulta_web', 'params' => ['nombre']]];
+caso('fuera de la ventana con plantilla: plantilla', wabot_retomar_corresponde($vieja, $cfgP, $hoyR) === 'plantilla');
+caso('era el cliente el que escribía y no escribió: desarrollador', wabot_retomar_corresponde(array_merge($tarea, ['retomar_quien' => 'cliente']), $cfgC, $hoyR) === 'desarrollador');
+caso('todavía no venció: nada', wabot_retomar_corresponde(array_merge($tarea, ['retomar_ts' => $hoyR + 3600]), $cfgC, $hoyR) === '');
+caso('a las 02:00 no se hace nada, ni el aviso', wabot_retomar_corresponde($tarea, $cfgC, gmmktime(5, 0, 0)) === '');
+caso('archivada: nada', wabot_retomar_corresponde(array_merge($tarea, ['archivado' => true]), $cfgC, $hoyR) === '');
+caso('ya hecha: nada', wabot_retomar_corresponde(array_merge($tarea, ['retomar_estado' => 'hecho']), $cfgC, $hoyR) === '');
+$hecha = array_merge($tarea, ['seguimiento_bloqueado' => true, 'retomar_bloqueo' => true]);
+wabot_retomar_marcar_hecho($hecha, 'panel');
+caso('marcar hecha: estado, fecha en cero y seguimiento destrabado', $hecha['retomar_estado'] === 'hecho' && (int)$hecha['retomar_ts'] === 0
+    && empty($hecha['seguimiento_bloqueado']) && $hecha['retomar_hecho_como'] === 'panel');
+$viejoR = ['ultimo_ts' => time() - 30 * 86400, 'retomar_ts' => time() + 5 * 86400, 'retomar_estado' => 'pendiente', 'retomar_quien' => 'bot', 'transcript' => []];
+wabot_conv_reset_si_vieja($viejoR, $cfg);
+caso('el reset de sesión limpia la tarea', ($viejoR['retomar_estado'] ?? '') === '' && (int)$viejoR['retomar_ts'] === 0);
+
 /* El reset se lleva todo el estado de la sesión anterior. */
 $cViejo = ['ultimo_ts' => time() - 30 * 86400, 'retomar_ts' => time() + 40 * 86400,
            'ininteligibles' => 2, 'pitch_otra_idea_dicha' => true,

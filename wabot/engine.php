@@ -1807,6 +1807,191 @@ function wabot_texto_pide_retomar_en($texto) {
     return null;
 }
 
+/**
+ * Fecha de CALENDARIO para retomar, en las palabras del cliente.
+ *
+ * wabot_texto_pide_retomar_en() entiende plazos ("en 30 días", "en un mes") y
+ * nada más: "escribime el lunes", "hablamos mañana" y "vuelvo a principios de
+ * octubre y te escribo" pasaban de largo y la fecha se perdía (auditoría
+ * 7-sep, punto C). Acá van las formas de calendario. Devuelve
+ * ['ts' => int, 'humano' => string] o null. El ts cae a las 10:00 de
+ * Argentina de ese día, que es cuando el cron puede escribir.
+ */
+function wabot_texto_retomar_fecha($texto, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return null;
+    // Tiene que hablar de VOLVER a hablar: una fecha suelta puede ser cualquier cosa.
+    if (!preg_match('/\b(contact\w+|escrib\w+|hablamos|hablemos|retom\w+|charlamos|me avisas|avisame|lo vemos|volver a|vuelvo|te aviso|te digo|te confirmo|te contesto|te respondo|seguimos|lo seguimos|lo cerramos|llamame|me llamas|buscame)\b/u', $t)) return null;
+
+    $local = $ahora - 3 * 3600;   // reloj argentino, UTC-3 fijo
+    $hoyY = (int)gmdate('Y', $local); $hoyM = (int)gmdate('n', $local); $hoyD = (int)gmdate('j', $local);
+    $hoyW = (int)gmdate('N', $local);   // 1 = lunes
+    $meses = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7,
+              'agosto' => 8, 'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
+    $nombreMes = [1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    $diasSemana = ['lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'domingo' => 7];
+    $reMes = '(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)';
+
+    // 10:00 AR de un día dado (13:00 UTC).
+    $diaTs = function ($y, $m, $d) { return gmmktime(13, 0, 0, $m, $d, $y); };
+    $hoyTs = $diaTs($hoyY, $hoyM, $hoyD);
+    // Un día de un mes, en el año en que todavía no pasó.
+    $enMes = function ($mes, $dia) use ($hoyY, $hoyM, $hoyD, $diaTs) {
+        $y = $hoyY;
+        if ($mes < $hoyM || ($mes === $hoyM && $dia <= $hoyD)) $y++;
+        $tope = (int)gmdate('t', gmmktime(0, 0, 0, $mes, 1, $y));
+        return $diaTs($y, $mes, min($dia, $tope));
+    };
+
+    if (preg_match('/\bpasado manana\b/u', $t)) {
+        return ['ts' => $hoyTs + 2 * 86400, 'humano' => 'pasado mañana'];
+    }
+    // "a la mañana" es un momento del día, no una fecha.
+    if (preg_match('/\bmanana\b/u', $t) && !preg_match('/\b(a|por|en|de|esta) la manana\b/u', $t)) {
+        return ['ts' => $hoyTs + 86400, 'humano' => 'mañana'];
+    }
+    if (preg_match('/\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/u', $t, $m)) {
+        $delta = ($diasSemana[$m[1]] - $hoyW + 7) % 7;
+        if ($delta === 0) $delta = 7;   // "el lunes" dicho un lunes es el que viene
+        $ts = $hoyTs + $delta * 86400;
+        $nombre = $m[1] === 'miercoles' ? 'miércoles' : ($m[1] === 'sabado' ? 'sábado' : $m[1]);
+        return ['ts' => $ts, 'humano' => 'el ' . $nombre . ' ' . (int)gmdate('j', $ts - 3 * 3600)];
+    }
+    if (preg_match('/\b(\d{1,2}) de ' . $reMes . '\b/u', $t, $m)) {
+        $d = (int)$m[1]; $mes = $meses[$m[2]];
+        if ($d >= 1 && $d <= 31) return ['ts' => $enMes($mes, $d), 'humano' => 'el ' . $d . ' de ' . $nombreMes[$mes]];
+    }
+    if (preg_match('/\b(principios|comienzos|inicios|arranque|primeros dias|mediados|mitad|fines|finales|fin|ultimos dias) de ' . $reMes . '\b/u', $t, $m)) {
+        $mes = $meses[$m[2]];
+        if (in_array($m[1], ['mediados', 'mitad'], true)) return ['ts' => $enMes($mes, 15), 'humano' => 'a mediados de ' . $nombreMes[$mes]];
+        if (in_array($m[1], ['fines', 'finales', 'fin', 'ultimos dias'], true)) return ['ts' => $enMes($mes, 27), 'humano' => 'a fines de ' . $nombreMes[$mes]];
+        return ['ts' => $enMes($mes, 3), 'humano' => 'a principios de ' . $nombreMes[$mes]];
+    }
+    if (preg_match('/\b(en|para|hasta|desde|recien en) ' . $reMes . '\b/u', $t, $m)) {
+        $mes = $meses[$m[2]];
+        return ['ts' => $enMes($mes, 3), 'humano' => 'a principios de ' . $nombreMes[$mes]];
+    }
+    if (preg_match('/\bdespues de (las fiestas|fin de ano|ano nuevo|navidad|las vacaciones)\b/u', $t)) {
+        return ['ts' => $enMes(1, 6), 'humano' => 'después de las fiestas'];
+    }
+    // "el 15" a secas: ese día del mes, el que todavía no pasó. Nunca "el 15 de
+    // septiembre" (ya cubierto) ni "en 15 días" (eso es un plazo).
+    if (preg_match('/\b(el|para el|hasta el) (\d{1,2})\b(?!\s*(de|dias?|hs|h|horas|meses|semanas|min))/u', $t, $m)) {
+        $d = (int)$m[2];
+        if ($d >= 1 && $d <= 31) {
+            // Este mes si todavía no pasó; si no, el que viene (no el año que viene).
+            $mes = $d > $hoyD ? $hoyM : ($hoyM % 12) + 1;
+            $ts = $enMes($mes, $d);
+            return ['ts' => $ts, 'humano' => 'el ' . $d . ' de ' . $nombreMes[(int)gmdate('n', $ts - 3 * 3600)]];
+        }
+    }
+    return null;
+}
+
+/**
+ * ¿Quién tiene el próximo paso? "Escribime el lunes" es nuestro; "el lunes te
+ * escribo" es del cliente. La diferencia importa: en el primero el bot (o el
+ * desarrollador) tiene que escribir ese día; en el segundo hay que esperar y,
+ * si no escribió, recién ahí retomarlo.
+ */
+function wabot_texto_retomar_quien($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return 'bot';
+    if (preg_match('/\b(escribime|escribanme|contactame|contactenme|contactarme|avisame|avisenme|llamame|llamenme|buscame|mandame|hablame'
+        . '|me escribis|me escriben|me contactas|me contactan|me avisas|me avisan|me llamas|me llaman'
+        . '|podrias escribirme|podes escribirme|pueden escribirme|podrian escribirme|escribirme|contactarnos|contactenos)\b/u', $t)) return 'bot';
+    if (wabot_dijo_te_aviso($texto)) return 'cliente';
+    if (preg_match('/\b(yo )?(te|les) (escribo|aviso|contacto|hablo|confirmo|digo|cuento|respondo|contesto|llamo|busco)\b'
+        . '|\b(vuelvo|te busco|los busco|les escribo|me comunico|retomo yo|lo retomo yo|yo retomo|me pongo en contacto)\b/u', $t)) return 'cliente';
+    return 'bot';
+}
+
+/**
+ * Detecta un compromiso con fecha: primero calendario, después plazo.
+ * Devuelve ['ts', 'humano', 'quien', ('dias')] o null. `humano` ya trae la
+ * preposición: "mañana", "el lunes 14", "a principios de octubre", "en un mes".
+ */
+function wabot_retomar_detectar($texto, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $f = wabot_texto_retomar_fecha($texto, $ahora);
+    if ($f === null) {
+        $dias = wabot_texto_pide_retomar_en($texto);
+        if ($dias === null) return null;
+        $f = ['ts' => $ahora + $dias * 86400, 'humano' => 'en ' . wabot_plazo_humano($dias), 'dias' => $dias];
+    }
+    $f['quien'] = wabot_texto_retomar_quien($texto);
+    return $f;
+}
+
+/**
+ * Deja el compromiso anotado en la conversación como una TAREA: fecha, quién
+ * tiene el próximo paso, estado y las palabras del cliente. El cron
+ * (wabot_retomar_correr) la ejecuta o la vence; el panel la muestra.
+ */
+function wabot_retomar_agendar(&$conv, $det, $texto = '') {
+    $conv['retomar_ts'] = (int)$det['ts'];
+    $conv['retomar_quien'] = ($det['quien'] ?? 'bot') === 'cliente' ? 'cliente' : 'bot';
+    $conv['retomar_estado'] = 'pendiente';
+    $conv['retomar_humano'] = (string)($det['humano'] ?? '');
+    $conv['retomar_motivo'] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$texto)), 0, 160);
+    $conv['retomar_creado_ts'] = time();
+    $conv['retomar_vencido_ts'] = 0;
+    $conv['retomar_avisado_ts'] = 0;
+    // El seguimiento automático no lo persigue hasta la fecha; la marca dice
+    // que el bloqueo es de esta tarea, para levantarlo cuando se cumpla.
+    $conv['seguimiento_bloqueado'] = true;
+    $conv['retomar_bloqueo'] = true;
+    wabot_evento_sesion($conv, 'retomar_agendado', [
+        'quien' => $conv['retomar_quien'],
+        'dias'  => isset($det['dias']) ? (int)$det['dias'] : (int)round(((int)$det['ts'] - time()) / 86400),
+        'fecha' => gmdate('Y-m-d', (int)$det['ts'] - 3 * 3600),
+    ]);
+}
+
+/**
+ * "Contactame en 30 días" / "hablamos el lunes" / "vuelvo en octubre y te
+ * escribo": se anota la tarea y se contesta según quién tiene el próximo paso
+ * y en qué etapa está la charla. Corre en el borde común (wabot_responder),
+ * así vale igual en modo agente, en el motor y con la charla ya derivada.
+ * Devuelve la respuesta o null si el mensaje no trae un compromiso con fecha.
+ */
+function wabot_retomar_responder($texto, &$conv, $cfg) {
+    $det = wabot_retomar_detectar($texto);
+    if ($det === null) return null;
+    wabot_retomar_agendar($conv, $det, $texto);
+
+    $cerrada = ($conv['fase'] ?? '') === 'derivado'
+        || (!empty($conv['presentado_ts']) && !empty($conv['postdemo_avisado']));
+    if ($det['quien'] === 'cliente') {
+        $tpl = (string)($cfg['retomar_cliente_avisa'] ?? '');
+        if (trim($tpl) === '') $tpl = 'Dale {nombre}, quedo atento. Cuando puedas escribime por acá y lo retomamos; y si antes te surge alguna duda, acá estoy.';
+    } elseif ($cerrada) {
+        $tpl = (string)($cfg['retomar_derivado'] ?? '');
+        if (trim($tpl) === '') $tpl = 'Dale {nombre}, queda anotado: el desarrollador te escribe {fecha} para retomarlo.';
+    } elseif (isset($det['dias'])) {
+        $tpl = (string)($cfg['retomar_confirmado'] ?? '');
+        if (trim($tpl) === '') $tpl = 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo.';
+    } else {
+        $tpl = (string)($cfg['retomar_confirmado_fecha'] ?? '');
+        if (trim($tpl) === '') $tpl = 'Dale {nombre}, me lo anoto: te escribo {fecha} para retomarlo. Y si antes te surge cualquier duda o querés ver la demo gratis mientras tanto, escribime cuando quieras.';
+    }
+    $plazo = isset($det['dias']) ? wabot_plazo_humano($det['dias']) : $det['humano'];
+    $out = str_replace(['{fecha}', '{plazo}'], [$det['humano'], $plazo], $tpl);
+    return [wabot_personalizar($out, $conv)];
+}
+
+/**
+ * El cliente escribió: si la tarea era esperarlo a él, o ya estaba vencida
+ * esperando al desarrollador, el contacto se dio solo y la tarea se cumple.
+ */
+function wabot_retomar_cliente_escribio(&$conv) {
+    $estado = (string)($conv['retomar_estado'] ?? '');
+    if ($estado === 'vencido' || ($estado === 'pendiente' && ($conv['retomar_quien'] ?? '') === 'cliente')) {
+        wabot_retomar_marcar_hecho($conv, 'cliente_escribio');
+    }
+}
+
 /** "30 días" dicho como lo diría una persona. */
 function wabot_plazo_humano($dias) {
     $dias = (int)$dias;

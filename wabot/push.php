@@ -246,3 +246,42 @@ function wabot_push_si_sl($cv, $cfg = null) {
     }
     return $ok > 0;
 }
+
+/**
+ * Venció una tarea de retomar que le toca al desarrollador: el cliente pidió
+ * que le escriban en una fecha y el bot ya no puede (ventana de Meta cerrada),
+ * o dijo que escribía él y no escribió. Una sola vez por tarea.
+ */
+function wabot_push_retomar($cv) {
+    if (!wabot_push_configurado()) return false;
+    if (!is_array($cv) || ($cv['retomar_estado'] ?? '') !== 'vencido') return false;
+    if ((int)($cv['retomar_avisado_ts'] ?? 0) >= (int)($cv['retomar_vencido_ts'] ?? 0)) return false;
+
+    $quien = trim((string)($cv['nombre_agenda'] ?? ''));
+    if ($quien === '') $quien = trim((string)($cv['nombre_negocio'] ?? ''));
+    if ($quien === '') $quien = trim((string)($cv['nombre'] ?? ''));
+    if ($quien === '') {
+        $quien = (($cv['canal'] ?? '') === 'instagram' ? 'Instagram · ' : '+')
+               . (string)($cv['channel_user_id'] ?? $cv['tel'] ?? '');
+    }
+    $humano = trim((string)($cv['retomar_humano'] ?? ''));
+    $motivo = trim((string)($cv['retomar_motivo'] ?? ''));
+    $cuerpo = ($cv['retomar_quien'] ?? '') === 'cliente'
+        ? 'Dijo que escribía ' . ($humano !== '' ? $humano : 'hoy') . ' y no escribió.'
+        : 'Pidió que le escribas ' . ($humano !== '' ? $humano : 'hoy') . '.';
+    if ($motivo !== '') $cuerpo .= ' «' . mb_substr($motivo, 0, 90) . '»';
+    $clave = (string)($cv['conversation_key'] ?? $cv['tel'] ?? '');
+
+    $ok = wabot_push_enviar("$quien · retomar hoy", $cuerpo, [
+        'tel'   => $clave,
+        'grupo' => 'retomar',
+        'link'  => 'https://www.gokywebs.com/wabot/admin.php?chat=' . rawurlencode($clave),
+    ]);
+    if ($ok > 0) {
+        $fresca = wabot_conv_load($clave);
+        $fresca['retomar_avisado_ts'] = time();
+        wabot_conv_save($fresca);
+        wabot_log('push_retomar', ['tel' => $clave, 'dispositivos' => $ok]);
+    }
+    return $ok > 0;
+}
