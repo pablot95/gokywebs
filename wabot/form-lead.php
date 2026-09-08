@@ -32,6 +32,13 @@ if (!is_array($payload)) {
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Freno por IP: el endpoint es público y sin esto se podía martillar.
+if (!wabot_form_rate_ok((string)($_SERVER['REMOTE_ADDR'] ?? ''))) {
+    http_response_code(429);
+    echo json_encode(['ok' => false, 'error' => 'demasiados_intentos', 'reintentar' => false]);
+    exit;
+}
+
 $cfg = wabot_config_load();
 $res = wabot_form_lead_procesar($payload, $cfg);
 

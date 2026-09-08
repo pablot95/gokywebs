@@ -129,6 +129,78 @@ echo "— wabot_form_lead_procesar(): validación —\n";
 
 caso('rechaza sin teléfono válido',
     wabot_form_lead_procesar(['t' => '123', 'nombre' => 'X', 'nombre_negocio' => 'X', 'resumen' => 'X', 'colores' => 'X'], $cfg)['ok'] === false);
+/* Auditoría 7-sep, punto K: el rechazo dice qué campo y por qué. */
+$rK = wabot_form_lead_procesar(['t' => '123', 'nombre' => 'X', 'nombre_negocio' => 'X', 'resumen' => 'X', 'colores' => 'X'], $cfg);
+caso('...y dice que fue el teléfono', ($rK['motivo'] ?? '') === 'telefono' && ($rK['campo'] ?? '') === 'telefono');
+$rK = wabot_form_lead_procesar(['t' => '5493810001001', 'nombre' => 'X', 'nombre_negocio' => '', 'resumen' => 'X', 'colores' => 'X'], $cfg);
+caso('campo vacío: dice cuál', ($rK['motivo'] ?? '') === 'vacio' && ($rK['campo'] ?? '') === 'nombre_negocio');
+$rK = wabot_form_lead_procesar(['t' => '5493810001002', 'nombre' => 'X', 'nombre_negocio' => 'X', 'resumen' => str_repeat('a', 601), 'colores' => 'X'], $cfg);
+caso('resumen largo: dice el campo y el máximo', ($rK['motivo'] ?? '') === 'largo' && ($rK['campo'] ?? '') === 'resumen' && ($rK['max'] ?? 0) === 600);
+
+/* Auditoría 7-sep, punto F: sin código no se pisa una charla ajena. */
+echo "— Sin código, el formulario no pisa una charla que ya existe —\n";
+@unlink(WABOT_DATA . '/conv/5493810003001.json');
+$victima = wabot_conv_load('5493810003001');
+$victima['transcript'] = [['q' => 'cliente', 't' => 'Hola, tengo una panadería', 'ts' => time() - 500]];
+$victima['ultimo_cliente_ts'] = time() - 500;
+$victima['nombre'] = 'Rosa'; $victima['nombre_negocio'] = 'Panadería Sur';
+$victima['descripcion'] = 'Panadería artesanal'; $victima['colores'] = 'marrón y crema';
+$victima['form_completado_ts'] = time() - 400;
+wabot_conv_save($victima);
+$rF = wabot_form_lead_procesar(['t' => '3810003001', 'nombre' => 'Atacante', 'nombre_negocio' => 'Otro',
+    'resumen' => 'Descripción pisada', 'colores' => 'negro'], $cfg);
+$victimaDespues = wabot_conv_load('5493810003001');
+caso('con formulario previo: el envío se acepta pero NO se aplica', ($rF['ok'] ?? false) === true && ($rF['aplicado'] ?? true) === false);
+caso('la descripción y los colores quedan como estaban',
+    $victimaDespues['descripcion'] === 'Panadería artesanal' && $victimaDespues['colores'] === 'marrón y crema'
+    && $victimaDespues['nombre'] === 'Rosa' && $victimaDespues['nombre_negocio'] === 'Panadería Sur');
+caso('y lo enviado queda en el transcript para el desarrollador',
+    strpos(json_encode($victimaDespues['transcript'], JSON_UNESCAPED_UNICODE), 'NO aplicado') !== false);
+@unlink(WABOT_DATA . '/conv/5493810003001.json');
+
+@unlink(WABOT_DATA . '/conv/5493810003002.json');
+$parcial = wabot_conv_load('5493810003002');
+$parcial['transcript'] = [['q' => 'cliente', 't' => 'Hola, tengo una panadería', 'ts' => time() - 500]];
+$parcial['ultimo_cliente_ts'] = time() - 500;
+$parcial['descripcion'] = 'Panadería artesanal en Caballito';
+wabot_conv_save($parcial);
+$rF2 = wabot_form_lead_procesar(['t' => '3810003002', 'nombre' => 'Rosa', 'nombre_negocio' => 'Panadería Sur',
+    'resumen' => 'Otra descripción', 'colores' => 'marrón'], $cfg);
+$parcialDespues = wabot_conv_load('5493810003002');
+caso('con chat pero sin formulario previo: completa lo que falta', ($rF2['ok'] ?? false) === true
+    && $parcialDespues['nombre'] === 'Rosa' && $parcialDespues['nombre_negocio'] === 'Panadería Sur' && $parcialDespues['colores'] === 'marrón');
+caso('...pero no pisa lo que el cliente ya contó por chat', $parcialDespues['descripcion'] === 'Panadería artesanal en Caballito');
+caso('...y el lead se crea igual', !empty($parcialDespues['lead_creado']));
+@unlink(WABOT_DATA . '/conv/5493810003002.json');
+
+// Con el código del link la charla es la suya: se actualiza como siempre.
+@unlink(WABOT_DATA . '/conv/5493810003003.json');
+$propia = wabot_conv_load('5493810003003');
+$propia['transcript'] = [['q' => 'cliente', 't' => 'Hola', 'ts' => time() - 500]];
+$propia['ultimo_cliente_ts'] = time() - 500;
+$propia['descripcion'] = 'vieja'; $propia['form_completado_ts'] = time() - 400;
+$propia['tel'] = '5493810003003'; $propia['channel_user_id'] = '5493810003003'; $propia['canal'] = 'whatsapp';
+wabot_conv_save($propia);
+// En modo test el índice de códigos no se escribe solo: se planta a mano, como arriba.
+$idxPrevio = @file_get_contents($idxPath);
+file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(), ['JZ' => '5493810003003'])));
+$rF3 = wabot_form_lead_procesar(['c' => 'JZ', 't' => '3810003003', 'nombre' => 'Rosa', 'nombre_negocio' => 'Panadería Sur',
+    'resumen' => 'Descripción nueva del propio cliente', 'colores' => 'marrón'], $cfg);
+caso('con código sí actualiza la charla', ($rF3['ok'] ?? false) === true
+    && wabot_conv_load('5493810003003')['descripcion'] === 'Descripción nueva del propio cliente');
+if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
+@unlink(WABOT_DATA . '/conv/5493810003003.json');
+
+echo "— Freno por IP —\n";
+@unlink(WABOT_DATA . '/form-rate.json');
+$okRate = true;
+for ($i = 0; $i < 10; $i++) $okRate = $okRate && wabot_form_rate_ok('203.0.113.9', 10, 600, 1000000 + $i);
+caso('10 envíos en 10 minutos pasan', $okRate);
+caso('el 11° no', wabot_form_rate_ok('203.0.113.9', 10, 600, 1000011) === false);
+caso('otra IP no se ve afectada', wabot_form_rate_ok('203.0.113.10', 10, 600, 1000011) === true);
+caso('pasada la ventana, vuelve a pasar', wabot_form_rate_ok('203.0.113.9', 10, 600, 1000000 + 700) === true);
+caso('sin IP no frena', wabot_form_rate_ok('', 10, 600) === true);
+@unlink(WABOT_DATA . '/form-rate.json');
 caso('rechaza con un campo vacío',
     wabot_form_lead_procesar(['t' => '5493810001001', 'nombre' => '', 'nombre_negocio' => 'X', 'resumen' => 'X', 'colores' => 'X'], $cfg)['ok'] === false);
 caso('rechaza un resumen absurdamente largo',

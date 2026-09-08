@@ -26,6 +26,11 @@ function _detectarOrigen() {
         if (/whatsapp|^wsp$|^wa$/.test(p)) return 'whatsapp';
         if (/instagram|^ig$/.test(p)) return 'instagram';
 
+        // El link del bot trae solo ?c= (y &ig=1 desde Instagram): sin esto
+        // esas entradas se contaban como "nativo" y el embudo por canal mentía.
+        if (params.get('ig') === '1') return 'instagram';
+        if ((params.get('c') || '').trim() !== '') return 'whatsapp';
+
         const ref = (document.referrer || '').toLowerCase();
         if (ref.includes('instagram.com')) return 'instagram';
         if (ref.includes('wa.me') || ref.includes('whatsapp.com')) return 'whatsapp';
@@ -62,7 +67,10 @@ function track(event) {
     if (_tracked[event]) return;
     _tracked[event] = true;
     try {
-        const body = JSON.stringify({ sid: _sid, event, origen: _origen });
+        // El código del chat viaja con cada evento: es lo que permite unir el
+        // recorrido del formulario con la conversación del bot.
+        const c = (_paramsInicial.get('c') || '').trim().slice(0, 8);
+        const body = JSON.stringify(c ? { sid: _sid, event, origen: _origen, c } : { sid: _sid, event, origen: _origen });
         if (navigator.sendBeacon) {
             navigator.sendBeacon(TRACK_URL, new Blob([body], { type: 'text/plain' }));
         } else {
@@ -205,6 +213,12 @@ function validateForm() {
             markError(el, msg);
             valid = false;
             if (!firstError) firstError = el;
+        } else if (LIMITES[id] && el.value.trim().length > LIMITES[id]) {
+            // Mismo tope que el servidor: antes el servidor rechazaba y acá
+            // salía un "ocurrió un error" sin decir por qué.
+            markError(el, `Demasiado largo: máximo ${LIMITES[id]} caracteres.`);
+            valid = false;
+            if (!firstError) firstError = el;
         }
     });
 
@@ -264,31 +278,106 @@ function buildPayload() {
     return payload;
 }
 
+/* Aviso de error del envío, en la propia tarjeta y no en un alert: dice qué
+ * pasó y qué hacer. Se reemplaza en cada intento. */
+function mostrarErrorEnvio(msg) {
+    let box = document.getElementById('formEnvioError');
+    if (!box) {
+        box = document.createElement('p');
+        box.id = 'formEnvioError';
+        box.className = 'form-tip';
+        box.setAttribute('role', 'alert');
+        box.style.cssText = 'background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.35)';
+        btnEnviar.insertAdjacentElement('beforebegin', box);
+    }
+    box.textContent = msg;
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function limpiarErrorEnvio() {
+    document.getElementById('formEnvioError')?.remove();
+}
+
+const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200 };
+const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono' };
+
+/* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
+ * campo, no se tira un "ocurrió un error" genérico. */
+function mostrarErrorServidor(json) {
+    const campo = json.campo || '';
+    const el = document.getElementById(campo);
+    if (json.motivo === 'largo' && el) {
+        markError(el, `Demasiado largo: máximo ${json.max || LIMITES[campo] || ''} caracteres.`);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+    }
+    if (json.motivo === 'vacio' && el) {
+        markError(el, `Completá ${NOMBRES_CAMPO[campo] || 'este campo'}.`);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+    }
+    if (json.motivo === 'telefono') {
+        if (telefonoInput.hidden) mostrarTelefono();
+        markError(telefonoInput, 'Ingresá un WhatsApp válido: entre 10 y 15 números.');
+        telefonoInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+    }
+    return false;
+}
+
+function restaurarBoton() {
+    btnEnviar.disabled = false;
+    btnEnviar.classList.remove('loading');
+    btnEnviar.textContent = 'Enviar →';
+}
+
 async function enviarFormulario() {
     btnEnviar.disabled = true;
     btnEnviar.classList.add('loading');
     btnEnviar.textContent = 'Enviando…';
+    limpiarErrorEnvio();
 
     const payload = buildPayload();
 
     try {
-        const res = await fetch(FORM_LEAD_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        });
-        const json = await res.json();
-        if (!json.ok) throw new Error(json.error || 'respuesta inválida');
+        let json = null;
+        // "ocupado": la charla estaba tomada un instante (el bot escribiendo).
+        // El servidor pide reintentar; se hace solo, sin molestar a la persona.
+        for (let intento = 0; intento < 3; intento++) {
+            const res = await fetch(FORM_LEAD_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            json = await res.json();
+            if (json.ok || !json.reintentar) break;
+            btnEnviar.textContent = 'Un segundo…';
+            await new Promise(r => setTimeout(r, 900 * (intento + 1)));
+        }
+        if (!json || !json.ok) {
+            if (json && json.error === 'datos_invalidos' && mostrarErrorServidor(json)) {
+                restaurarBoton();
+                return;
+            }
+            if (json && json.error === 'demasiados_intentos') {
+                mostrarErrorEnvio('Recibimos muchos envíos seguidos desde esta conexión. Esperá unos minutos y volvé a probar, o escribinos por WhatsApp.');
+                restaurarBoton();
+                return;
+            }
+            if (json && json.reintentar) {
+                mostrarErrorEnvio('El sistema estaba ocupado un instante. Tus datos siguen acá: tocá Enviar de nuevo.');
+                restaurarBoton();
+                return;
+            }
+            throw new Error((json && json.error) || 'respuesta inválida');
+        }
 
         track('success');
         clearDraft();
         showSuccess(payload.nombre, payload.nombre_negocio);
     } catch (err) {
         console.error('Error al enviar el formulario:', err);
-        alert('Ocurrió un error. Por favor intentá de nuevo o escribinos por WhatsApp.');
-        btnEnviar.disabled = false;
-        btnEnviar.classList.remove('loading');
-        btnEnviar.textContent = 'Enviar →';
+        mostrarErrorEnvio('No pudimos enviar el formulario. Revisá tu conexión y probá de nuevo; si sigue fallando, escribinos por WhatsApp.');
+        restaurarBoton();
     }
 }
 
@@ -338,6 +427,22 @@ document.querySelectorAll('textarea.autosize').forEach(ta => {
     autoGrow(ta);
     ta.addEventListener('input', () => autoGrow(ta));
 });
+
+// Contador del resumen: el tope de 600 existía en el servidor y el campo no
+// lo mostraba; el que se pasaba recién se enteraba con un error genérico.
+(function _contadorResumen() {
+    const ta = document.getElementById('resumen');
+    const contador = document.getElementById('resumenContador');
+    if (!ta || !contador) return;
+    const max = LIMITES.resumen;
+    const pintar = () => {
+        const n = ta.value.length;
+        contador.textContent = `${n}/${max}`;
+        contador.style.color = n >= max ? '#dc2626' : (n > max * 0.85 ? '#b45309' : '');
+    };
+    ta.addEventListener('input', pintar);
+    pintar();
+})();
 
 const DRAFT_KEY = 'gky_form_draft';
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',

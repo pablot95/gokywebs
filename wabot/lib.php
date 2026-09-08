@@ -6883,9 +6883,51 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     if ($ultimoCliente <= 0) return false;
     $desde = (float)($cfg['ultima_llamada_horas'] ?? 23);
     $transcurrido = $ahora - $ultimoCliente;
-    // Entre las 23 h y el cierre real de la ventana: antes es apurarse, después
-    // Meta ya no deja pasar el mensaje.
-    return $transcurrido >= $desde * 3600 && $transcurrido < 23.7 * 3600;
+    // Después del cierre real de la ventana Meta ya no deja pasar el mensaje.
+    $cierre = $ultimoCliente + (int)(23.7 * 3600);
+    if ($ahora >= $cierre) return false;
+
+    /* Nunca fuera del horario de contacto. Este aviso salía a la hora que
+     * cayera la marca de 23 h —a la 01:00 si el cliente escribió a las 02:00—
+     * porque no aplicaba el horario que sí respeta el seguimiento común
+     * (auditoría 7-sep, punto D). Pero tampoco se pierde el lead cuya ventana
+     * cierra de noche: si la marca cae fuera de horario, el aviso se ADELANTA
+     * a la última hora hábil antes del cierre. El que escribió a las 23:00
+     * recibe la última llamada al día siguiente entre las 19:00 y las 19:59,
+     * no a las 22:00. */
+    if (!wabot_seguimiento_hora_ok($cfg, $ahora)) return false;
+    $marca = $ultimoCliente + (int)($desde * 3600);
+    if (wabot_seguimiento_hora_ok($cfg, $marca)) {
+        // La marca cae en horario: entre las 23 h y el cierre, como siempre.
+        return $transcurrido >= $desde * 3600;
+    }
+    // Con 30 min de margen antes del cierre, para que el cron llegue.
+    $ultimoHabil = wabot_ultimo_momento_habil($cfg, $cierre - 1800);
+    // Tan cerca del último mensaje sería el seguimiento común, no el cierre.
+    if ($ultimoHabil <= $ultimoCliente + 6 * 3600) return false;
+    // Ventana de una hora que termina en el último momento hábil.
+    return $ahora >= $ultimoHabil - 3599;
+}
+
+/**
+ * El último instante dentro del horario de contacto que no pasa de $t.
+ * Si $t ya está en horario es $t mismo; si no, es el cierre (hasta:00 menos
+ * un segundo) del día hábil anterior. Horario y reloj: los de
+ * wabot_seguimiento_hora_ok() y wabot_hora_local().
+ */
+function wabot_ultimo_momento_habil($cfg, $t) {
+    $desde = max(0, min(23, (int)($cfg['seguimiento_hora_desde'] ?? 8)));
+    $hasta = max(0, min(24, (int)($cfg['seguimiento_hora_hasta'] ?? 20)));
+    if ($hasta <= $desde) return $t;
+    for ($i = 0; $i < 3; $i++) {
+        $h = wabot_hora_local($t);
+        if ($h >= $desde && $h < $hasta) return $t;
+        $local = $t - 3 * 3600;
+        $inicioDia = $local - ($local % 86400);
+        $cierreHoy = $inicioDia + $hasta * 3600 - 1 + 3 * 3600;
+        $t = $h >= $hasta ? $cierreHoy : $cierreHoy - 86400;
+    }
+    return $t;
 }
 
 function wabot_ultima_llamada_correr($cfg, $ahora = null) {
@@ -7273,7 +7315,10 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     ];
 }
 
-function wabot_form_lead_validar($payload) {
+function wabot_form_lead_validar($payload, &$motivo = null) {
+    // Por qué se rechazó, para que el formulario lo muestre en el campo que
+    // corresponde en vez de un "ocurrió un error" (auditoría 7-sep, punto K).
+    $motivo = null;
     // El link que manda el bot trae el codigo corto (?c=), no el telefono: se
     // resuelve contra el indice para saber de que conversacion se trata. El
     // formulario abierto a mano no trae codigo y lo unico que hay es el
@@ -7306,7 +7351,7 @@ function wabot_form_lead_validar($payload) {
          * De Instagram no sale ningun telefono: sin el, el boceto llega sin
          * destinatario y la muestra no se puede entregar. */
         $clave = $claveCodigo;
-        if ($esInstagram && !$telValido) return null;
+        if ($esInstagram && !$telValido) { $motivo = ['motivo' => 'telefono', 'campo' => 'telefono']; return null; }
         /* Solo si es OTRO abonado. En Instagram siempre lo es: el IGSID no es
          * un numero, asi que ni se compara. */
         if ($telValido && ($esInstagram || !wabot_mismo_abonado($telTipeado, $claveCodigo))) {
@@ -7316,25 +7361,61 @@ function wabot_form_lead_validar($payload) {
         /* Formulario abierto a mano: no hay codigo, el unico dato es lo que
          * tipeo. Si ya existe una charla de ese abonado, el boceto va ahi
          * aunque el numero este escrito de otra forma. */
-        if (!$telValido) return null;
+        if (!$telValido) { $motivo = ['motivo' => 'telefono', 'campo' => 'telefono']; return null; }
         $clave = wabot_conv_resolver($telTipeado) ?: $telTipeado;
     }
+    // Con código, el envío está autorizado a actualizar ESA charla. Sin código
+    // solo puede crear o completar, nunca pisar (ver wabot_form_lead_procesar).
+    $conCodigo = $claveCodigo !== '';
 
     $nombre = trim((string)($payload['nombre'] ?? ''));
     $nombreNegocio = trim((string)($payload['nombre_negocio'] ?? ''));
     $resumen = trim((string)($payload['resumen'] ?? ''));
     $colores = trim((string)($payload['colores'] ?? ''));
-    if ($nombre === '' || $nombreNegocio === '' || $resumen === '' || $colores === '') return null;
-    if (mb_strlen($nombre) > 80 || mb_strlen($nombreNegocio) > 80) return null;
-    if (mb_strlen($resumen) > 600 || mb_strlen($colores) > 200) return null;
-    return compact('clave', 'telWsp', 'nombre', 'nombreNegocio', 'resumen', 'colores');
+    foreach (['nombre' => $nombre, 'nombre_negocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] as $campo => $valor) {
+        if ($valor === '') { $motivo = ['motivo' => 'vacio', 'campo' => $campo]; return null; }
+    }
+    foreach (['nombre' => [$nombre, 80], 'nombre_negocio' => [$nombreNegocio, 80], 'resumen' => [$resumen, 600], 'colores' => [$colores, 200]] as $campo => [$valor, $max]) {
+        if (mb_strlen($valor) > $max) { $motivo = ['motivo' => 'largo', 'campo' => $campo, 'max' => $max]; return null; }
+    }
+    return compact('clave', 'telWsp', 'nombre', 'nombreNegocio', 'resumen', 'colores', 'conCodigo');
+}
+
+/**
+ * Freno por IP del formulario público: hasta $max envíos cada $ventana
+ * segundos. Sin esto, cualquiera podía tirar envíos en loop contra
+ * form-lead.php (auditoría 7-sep, punto F). Guarda un JSON chico en data/.
+ */
+function wabot_form_rate_ok($ip, $max = 10, $ventana = 600, $ahora = null) {
+    $ip = trim((string)$ip);
+    if ($ip === '') return true;
+    $ahora = $ahora ?? time();
+    wabot_ensure_dirs();
+    $path = WABOT_DATA . '/form-rate.json';
+    $todo = json_decode((string)@file_get_contents($path), true);
+    if (!is_array($todo)) $todo = [];
+    foreach ($todo as $k => $ts) {
+        $todo[$k] = array_values(array_filter((array)$ts, function ($t) use ($ahora, $ventana) { return (int)$t > $ahora - $ventana; }));
+        if (!$todo[$k]) unset($todo[$k]);
+    }
+    $mios = (array)($todo[$ip] ?? []);
+    if (count($mios) >= $max) {
+        @file_put_contents($path, json_encode($todo), LOCK_EX);
+        return false;
+    }
+    $mios[] = $ahora;
+    $todo[$ip] = $mios;
+    @file_put_contents($path, json_encode($todo), LOCK_EX);
+    return true;
 }
 
 function wabot_form_lead_procesar($payload, $cfg) {
-    $datos = wabot_form_lead_validar($payload);
-    if ($datos === null) return ['ok' => false, 'error' => 'datos_invalidos'];
+    $motivo = null;
+    $datos = wabot_form_lead_validar($payload, $motivo);
+    if ($datos === null) return array_merge(['ok' => false, 'error' => 'datos_invalidos'], (array)$motivo);
     ['clave' => $clave, 'telWsp' => $telWsp, 'nombre' => $nombre,
      'nombreNegocio' => $nombreNegocio, 'resumen' => $resumen, 'colores' => $colores] = $datos;
+    $conCodigo = !empty($datos['conCodigo']);
 
     $clave = preg_replace('/[^0-9A-Za-z]/', '', $clave);
     $lock = null;
@@ -7357,12 +7438,37 @@ function wabot_form_lead_procesar($payload, $cfg) {
 
     $huboChatReal = wabot_ultimo_cliente_ts($conv) > 0;
 
+    /* Sin código, el envío NO está autorizado a pisar una charla que ya
+     * existe. Cualquiera con el teléfono de un cliente podía reemplazarle la
+     * descripción y los colores de su boceto (auditoría 7-sep, punto F). El
+     * formulario abierto a mano por el propio cliente sigue funcionando:
+     *  - charla con chat real y formulario ya completado → se guarda lo
+     *    enviado en el transcript para que lo vea el desarrollador y no se
+     *    toca ningún dato;
+     *  - charla con chat real sin formulario → completa SOLO lo que falta;
+     *  - sin chat real (número nuevo) → alta normal.
+     * Con el código del link, la charla es la suya y se actualiza como siempre. */
+    if (!$conCodigo && $huboChatReal && !empty($conv['form_completado_ts'])) {
+        wabot_conv_transcript($conv, 'sistema',
+            "[Formulario web sin código — NO aplicado, la ficha ya tenía formulario] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}"
+            . ($telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : ''));
+        wabot_log('form_lead_sin_codigo_ignorado', ['tel' => $clave]);
+        wabot_conv_save($conv);
+        wabot_lock_soltar($lock);
+        return ['ok' => true, 'aplicado' => false];
+    }
+    $soloCompletar = !$conCodigo && $huboChatReal;
+
     $personaLimpia = wabot_nombre_usable($nombre);
-    if ($personaLimpia !== '') { $conv['nombre'] = $personaLimpia; $conv['nombre_confirmado'] = true; }
+    if ($personaLimpia !== '' && (!$soloCompletar || trim((string)($conv['nombre'] ?? '')) === '')) {
+        $conv['nombre'] = $personaLimpia; $conv['nombre_confirmado'] = true;
+    }
     $negocioLimpio = wabot_nombre_negocio_limpiar($nombreNegocio);
-    if ($negocioLimpio !== '') $conv['nombre_negocio'] = $negocioLimpio;
-    $conv['descripcion'] = $resumen;
-    $conv['colores'] = $colores;
+    if ($negocioLimpio !== '' && (!$soloCompletar || trim((string)($conv['nombre_negocio'] ?? '')) === '')) {
+        $conv['nombre_negocio'] = $negocioLimpio;
+    }
+    if (!$soloCompletar || trim((string)($conv['descripcion'] ?? '')) === '') $conv['descripcion'] = $resumen;
+    if (!$soloCompletar || trim((string)($conv['colores'] ?? '')) === '') $conv['colores'] = $colores;
 
     if (empty($conv['form_completado_ts'])) {
         /* El número corregido va en la línea del transcript porque en una charla

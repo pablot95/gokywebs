@@ -2537,7 +2537,10 @@ caso('el que ni vio el precio sigue en Chats', wabot_conv_grupo($cSinPrecio) ===
 
 echo "— Última llamada a las 23 h, antes de que cierre la ventana —\n";
 
-$ahoraU = time();
+// Un "ahora" fijo en horario (15:00 AR = 18:00 UTC): la última llamada ya no
+// sale fuera del horario de contacto, así que time() a la noche haría fallar
+// los casos de abajo por el reloj y no por la regla.
+$ahoraU = gmmktime(18, 0, 0);
 $cfgU = $cfg; $cfgU['ultima_llamada_activa'] = true;
 $baseU = ['precio_dado' => true, 'fase' => 'precio', 'tipo' => 'landing', 'bot_off' => false,
           'archivado' => false, 'pausado_hasta' => 0, 'seguimiento_bloqueado' => false,
@@ -2555,6 +2558,28 @@ $contesto = $baseU;
 $contesto['transcript'][] = ['q' => 'cliente', 't' => 'lo veo y te digo', 'ts' => $ahoraU - 100];
 caso('si el cliente escribió último, la charla está viva y no corresponde',
     wabot_ultima_llamada_corresponde($contesto, $cfgU, $ahoraU) === false);
+
+/* Auditoría 7-sep, punto D: nunca de madrugada. La marca de 23 h que cae
+ * fuera del horario se adelanta a la última hora hábil antes del cierre. */
+echo "— Última llamada: respeta el horario de contacto —\n";
+$ar = function ($h, $m = 0, $diasAtras = 0) { return gmmktime($h + 3, $m, 0) - $diasAtras * 86400; };  // hora AR → UTC
+$madrugada = $baseU; $madrugada['ultimo_cliente_ts'] = $ar(2, 0, 1);   // escribió ayer 02:00
+$madrugada['transcript'] = [['q' => 'bot', 't' => 'te paso el precio', 'ts' => $ar(2, 5, 1)]];
+caso('a la 01:00 no sale aunque se cumplan las 23 h', wabot_ultima_llamada_corresponde($madrugada, $cfgU, $ar(1, 0)) === false);
+caso('y a las 08:00 la ventana ya cerró: no sale nunca', wabot_ultima_llamada_corresponde($madrugada, $cfgU, $ar(8, 0)) === false);
+$noche = $baseU; $noche['ultimo_cliente_ts'] = $ar(23, 0, 1);           // escribió ayer 23:00
+$noche['transcript'] = [['q' => 'bot', 't' => 'te paso el precio', 'ts' => $ar(23, 5, 1)]];
+caso('escribió a las 23:00 → hoy a las 18:30 todavía no', wabot_ultima_llamada_corresponde($noche, $cfgU, $ar(18, 30)) === false);
+caso('escribió a las 23:00 → hoy a las 19:30 sí (última hora hábil antes del cierre)', wabot_ultima_llamada_corresponde($noche, $cfgU, $ar(19, 30)) === true);
+caso('escribió a las 23:00 → hoy a las 22:00 no (fuera de horario)', wabot_ultima_llamada_corresponde($noche, $cfgU, $ar(22, 0)) === false);
+$manana = $baseU; $manana['ultimo_cliente_ts'] = $ar(8, 30, 1);         // escribió ayer 08:30
+$manana['transcript'] = [['q' => 'bot', 't' => 'te paso el precio', 'ts' => $ar(8, 35, 1)]];
+caso('escribió a las 08:30 → hoy 07:40 (marca de 23 h) no sale', wabot_ultima_llamada_corresponde($manana, $cfgU, $ar(7, 40)) === false);
+caso('escribió a las 08:30 → ayer 19:30 sí, antes de que cierre de noche', wabot_ultima_llamada_corresponde($manana, $cfgU, $ar(19, 30, 1)) === true);
+caso('escribió a las 08:30 → ayer 14:00 todavía no', wabot_ultima_llamada_corresponde($manana, $cfgU, $ar(14, 0, 1)) === false);
+caso('ultimo_momento_habil: en horario devuelve lo mismo', wabot_ultimo_momento_habil($cfgU, $ar(15, 0)) === $ar(15, 0));
+caso('ultimo_momento_habil: a las 22:00 es las 19:59:59', wabot_ultimo_momento_habil($cfgU, $ar(22, 0)) === $ar(20, 0) - 1);
+caso('ultimo_momento_habil: a las 03:00 es las 19:59:59 de ayer', wabot_ultimo_momento_habil($cfgU, $ar(3, 0)) === $ar(20, 0, 1) - 1);
 $repetido = $baseU; $repetido['ultima_llamada_enviada'] = true;
 caso('no se manda dos veces', wabot_ultima_llamada_corresponde($repetido, $cfgU, $ahoraU) === false);
 $cerrado = $baseU; $cerrado['seguimiento_bloqueado'] = true;

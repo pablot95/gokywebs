@@ -214,6 +214,11 @@ if ($sid === '') {
 $origen = isset($data['origen']) ? strtolower((string) $data['origen']) : 'nativo';
 if (!in_array($origen, ['whatsapp', 'instagram', 'nativo'], true)) $origen = 'nativo';
 
+// Código corto del chat del bot (?c= del link): une el recorrido del
+// formulario con la conversación. Vacío cuando el form se abrió a mano.
+$codigo = isset($data['c']) ? strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', (string) $data['c'])) : '';
+$codigo = substr($codigo, 0, 8);
+
 /* ── Carpeta de datos (protegida de acceso público) ── */
 $dir = __DIR__ . '/data';
 if (!is_dir($dir)) {
@@ -225,12 +230,14 @@ if (!file_exists($ht)) {
 }
 
 /* ── Registrar evento ── */
-$line = json_encode([
+$fila = [
     'ts'     => date('c'),
     'sid'    => $sid,
     'event'  => $event,
     'origen' => $origen,
-]) . "\n";
+];
+if ($codigo !== '') $fila['c'] = $codigo;
+$line = json_encode($fila) . "\n";
 
 @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
 
