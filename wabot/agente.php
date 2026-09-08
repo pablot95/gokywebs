@@ -45,8 +45,25 @@ function wabot_agente($mensaje, &$conv, $cfg) {
     }
 
     if ($salida === null) return null;
-    unset($trabajo['_mensaje_agente'], $trabajo['_acuse_pitch']);
+
+    /* El corte de postdemo ya decidió el texto fijo ("tomo nota de esos
+     * cambios", "le cambiarías algo?") y le dejó al agente SOLO la pregunta
+     * que ese texto no contesta. Acá se junta: el fijo adelante, la respuesta
+     * del agente atrás. Es código, no prompt: el modelo no puede olvidarse de
+     * ponerlo ni cambiarlo (auditoría 7-sep, punto A). */
+    $prefijo = trim((string)($trabajo['_postdemo_prefijo'] ?? ''));
+    if ($prefijo !== '' && is_array($salida)) {
+        $salida = array_values(array_filter(array_map('strval', $salida), function ($m) use ($prefijo) {
+            return trim($m) !== '' && trim($m) !== $prefijo;
+        }));
+        // El fijo que termina preguntando va último: la charla queda abierta
+        // en la pregunta, no en un dato.
+        if (strpos($prefijo, '?') !== false) $salida[] = $prefijo;
+        else array_unshift($salida, $prefijo);
+    }
+    unset($trabajo['_mensaje_agente'], $trabajo['_acuse_pitch'], $trabajo['_postdemo_prefijo']);
     $conv = $trabajo;
+    unset($conv['_postdemo_prefijo']);
     wabot_eventos_confirmar($conv);
     return $salida;
 }
@@ -778,32 +795,9 @@ function wabot_respuesta_obligatorio($conv, $cfg) {
     return null;
 }
 
-/**
- * ¿El cliente preguntó algo?
- *
- * No se puede resolver con wabot_normalizar_frase(): borra el signo de
- * pregunta. Así que se mira el texto CRUDO —el "?" y los interrogativos— y
- * recién después se normaliza para las formas sin signo, que en WhatsApp son
- * la mayoría ("me queda de por vida una vez pagada").
- */
-function wabot_mensaje_pregunta_algo($mensaje) {
-    $crudo = trim((string)$mensaje);
-    if ($crudo === '') return false;
-    if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
-    $t = wabot_normalizar_frase($crudo);
-    if ($t === '') return false;
-    return (bool)(
-        /* Los interrogativos inequívocos. "Que" a secas queda AFUERA: "Que lo
-         * haga vía wasap" es una instrucción, no una pregunta, y era uno de
-         * los mensajes que se llevaban el comodín. Entra solo pegado a lo que
-         * se pregunta ("que precio", "que incluye"). */
-        preg_match('/\b(como|cuanto|cuanta|cuantos|cuando|donde|cual|cuales|quien|por que|porque)\b/u', $t)
-        || preg_match('/\bque\s+(precio|valor|costo|tal|incluye|incluyen|necesito|necesitas|hacen|hace|es|son|tipo|pasa|onda|opciones|formas|medios)\b/u', $t)
-        || preg_match('/\b(se puede|se pueden|puedo|podes|podria|podrian|hay forma|hay que|es posible|me decis|me podes decir'
-            . '|tienen|tenes|tiene|incluye|incluyen|sirve|conviene|hace falta|necesito saber|queria saber|quisiera saber'
-            . '|de por vida|para siempre|o no|si o no)\b/u', $t)
-    );
-}
+/* wabot_mensaje_pregunta_algo() vivía acá y se mudó a engine.php: la usa el
+ * corte de postdemo, que corre también en el motor y en los crons, donde este
+ * archivo no está cargado. */
 
 /**
  * El comodín del desarrollador contestando un mensaje que no preguntó nada.
@@ -986,6 +980,9 @@ function wabot_agente_marcar_nombre_usado($texto, &$conv) {
 function wabot_agente_empujon_postdemo($salida, $mensaje, &$conv, $cfg) {
     if (($conv['fase'] ?? '') !== 'postdemo') return null;
     if (!empty($conv['empujon_postdemo_dado'])) return null;
+    // El corte de postdemo ya eligió el texto fijo de este turno y lo pone el
+    // wrapper: sumarlo acá sería mandarlo dos veces.
+    if (trim((string)($conv['_postdemo_prefijo'] ?? '')) !== '') return null;
     if (!wabot_texto_es_elogio((string)$mensaje)) return null;
 
     $dicho = implode(' ', (array)$salida);
@@ -2259,11 +2256,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
 
         case 'anotar_cambios':
             $cambios = trim((string)($args['cambios'] ?? ''));
-            if ($cambios !== '') {
-                $previos = trim((string)($conv['cambios_pedidos'] ?? ''));
-                $conv['cambios_pedidos'] = $previos === '' ? $cambios : $previos . ' | ' . $cambios;
-                wabot_evento_sesion($conv, 'cambios_pedidos');
-            }
+            if ($cambios !== '') wabot_cambios_anotar($conv, $cambios, 'agente');
             return ['ok' => true, 'anotado' => (string)($conv['cambios_pedidos'] ?? ''),
                     'texto' => (string)($cfg['postdemo_cambios'] ?? ''),
                     'nota' => 'Ya quedaron anotados. Confirmáselo y seguí con el cierre.'];
@@ -2766,6 +2759,12 @@ EOT;
         $p .= "- No insistas más de dos veces. Si después de la videollamada sigue sin decidir, cerrá cordial con cerrar_sin_presion.\n";
         if (!empty($conv['videollamada_ofrecida'])) $p .= "- La videollamada YA se la ofreciste: no la repitas.\n";
         if (!empty($conv['cambios_pedidos'])) $p .= '- Cambios que ya pidió: ' . wabot_agente_texto_seguro($conv['cambios_pedidos']) . "\n";
+        $prefijo = trim((string)($conv['_postdemo_prefijo'] ?? ''));
+        if ($prefijo !== '') {
+            $p .= "ESTE TURNO: el sistema ya le contesta «" . wabot_agente_texto_seguro($prefijo) . "» y lo manda junto con tu texto. "
+                . "Vos contestá SOLAMENTE la pregunta que hizo, en una o dos líneas. No repitas eso, no digas que anotaste nada, "
+                . "no le preguntes si le cambiaría algo y no lo derives.\n";
+        }
         $p .= "\n";
     }
 

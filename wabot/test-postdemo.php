@@ -76,8 +76,11 @@ list($out, $conv) = responder('Lo tengo que pensar');
 caso('duda: ofrece la videollamada', $out === [(string)$cfg['postdemo_videollamada']], json_encode($out, JSON_UNESCAPED_UNICODE));
 caso('duda: no deriva todavía', empty($conv['handoff_pendiente']));
 
+list($out) = responder('Una consulta, la demo tiene animaciones cuando hago scroll?');
+caso('pregunta suelta sin texto oficial: la contesta el agente (null)', $out === null, json_encode($out, JSON_UNESCAPED_UNICODE));
 list($out) = responder('Una consulta, los textos los puedo editar yo después?');
-caso('pregunta suelta: la contesta el agente (null)', $out === null, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('pregunta suelta con texto oficial: se contesta acá, sin agente',
+    is_array($out) && count($out) === 1 && stripos($out[0], 'panel') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
 
 echo "\n=== El aviso SÍ sale con interés real ===\n";
 
@@ -165,6 +168,95 @@ foreach ([
     caso(($esperado ? 'detecta' : 'deja pasar') . ': ' . mb_substr($texto, 0, 42),
         wabot_texto_anuncia_contacto($texto) === $esperado);
 }
+
+/* ─── Auditoría 7-sep: A (preguntas que se comían), B (cambios que no se
+ *     guardaban), E (actividad ≠ interés) ─── */
+
+echo "\n=== A. El texto fijo no se come las preguntas del mismo mensaje ===\n";
+
+list($out, $conv) = responder('Me gustó, pero cuánto sale y tiene mantenimiento mensual?');
+$todo = implode("\n", (array)$out);
+caso('elogio + 2 preguntas: contesta el precio', stripos($todo, 'seña') !== false || preg_match('/\$\s?\d/', $todo), json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('elogio + 2 preguntas: contesta el mantenimiento', stripos($todo, 'mantenimiento') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('elogio + 2 preguntas: y la pregunta por los cambios va ÚLTIMA', end($out) === (string)$cfg['postdemo_elogio'], json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('elogio + 2 preguntas: sin aviso, la charla sigue viva', !tiene_aviso($out) && empty($conv['handoff_pendiente']));
+
+list($out, $conv) = responder('Quiero cambiar el color y saber cuánto cuesta el mantenimiento');
+caso('cambio + pregunta: primero acusa el cambio', ($out[0] ?? '') === (string)$cfg['postdemo_cambios'], json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('cambio + pregunta: después contesta el mantenimiento', count($out) === 2 && stripos($out[1], 'mantenimiento') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('cambio + pregunta: y el cambio quedó ANOTADO en la ficha', stripos((string)($conv['cambios_pedidos'] ?? ''), 'cambiar el color') !== false, (string)($conv['cambios_pedidos'] ?? ''));
+
+list($out, $conv) = responder('Se puede cambiar el color del fondo?');
+caso('la pregunta que ES el cambio no dispara nada extra', $out === [(string)$cfg['postdemo_cambios']], json_encode($out, JSON_UNESCAPED_UNICODE));
+
+list($out, $conv) = responder('Me encantó! Los botones se pueden hacer más grandes en el celular?');
+caso('elogio + pregunta sin texto oficial: null (la contesta el agente)', $out === null, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('...y el texto fijo queda pendiente para ponerlo adelante', ($conv['_postdemo_prefijo'] ?? '') === (string)$cfg['postdemo_elogio'], (string)($conv['_postdemo_prefijo'] ?? ''));
+
+// El wrapper del agente pone el fijo con la respuesta del modelo.
+require_once __DIR__ . '/agente.php';
+$GLOBALS['WABOT_TEST_AGENTE'] = function ($m, &$c, $cfg) { return ['Sí, en el celular los botones se hacen más grandes.']; };
+$convA = conv_postdemo(['_postdemo_prefijo' => (string)$cfg['postdemo_elogio']]);
+$out = wabot_agente('Me encantó! Los botones se pueden hacer más grandes en el celular?', $convA, $cfg);
+caso('agente: contesta la pregunta y cierra con la pregunta fija', $out === ['Sí, en el celular los botones se hacen más grandes.', (string)$cfg['postdemo_elogio']], json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('agente: la transitoria no queda en la conversación', !array_key_exists('_postdemo_prefijo', $convA));
+$convB = conv_postdemo(['_postdemo_prefijo' => (string)$cfg['postdemo_cambios']]);
+$out = wabot_agente('Cambiame el verde. Y el logo lo puedo mandar después?', $convB, $cfg);
+caso('agente: el acuse de cambios (sin pregunta) va ADELANTE', ($out[0] ?? '') === (string)$cfg['postdemo_cambios'] && count($out) === 2, json_encode($out, JSON_UNESCAPED_UNICODE));
+unset($GLOBALS['WABOT_TEST_AGENTE']);
+
+// Sin agente, el motor manda el fijo solo: el peor caso es el de antes.
+$convC = conv_postdemo();
+$out = wabot_engine('Me encantó! Los botones se pueden hacer más grandes en el celular?', $convC, $cfg);
+caso('motor sin agente: sale el fijo, nunca "contame qué te pareció"', $out === [(string)$cfg['postdemo_elogio']], json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('motor: la transitoria se consumió', !array_key_exists('_postdemo_prefijo', $convC));
+
+// Por el borde real (wabot_responder), con el orden del webhook: la línea
+// del cliente ya está en el transcript cuando corre el corte.
+$convD = conv_postdemo(['tel' => 'TEST-A', 'transcript' => [['q' => 'cliente', 't' => 'Me gustó, pero cuánto sale y tiene mantenimiento mensual?', 'ts' => time()]]]);
+$convD['ultimo_cliente_ts'] = time();
+$out = wabot_responder('Me gustó, pero cuánto sale y tiene mantenimiento mensual?', $convD, array_merge($cfg, ['modo_redaccion' => 'fijo']));
+caso('por wabot_responder: las dos preguntas salen contestadas', stripos(implode("\n", (array)$out), 'mantenimiento') !== false && count($out) >= 2, json_encode($out, JSON_UNESCAPED_UNICODE));
+
+echo "\n=== B. Lo que dice que anota, lo anota ===\n";
+
+list($out, $conv) = responder('Sí, quiero cambiar los colores');
+caso('postdemo: "anoto esos cambios" con cambios_pedidos cargado', $out === [(string)$cfg['postdemo_cambios']] && trim((string)($conv['cambios_pedidos'] ?? '')) !== '', json_encode($conv['cambios_pedidos'] ?? null, JSON_UNESCAPED_UNICODE));
+list($out, $conv) = responder('Quiero cambiar los colores', ['cambios_pedidos' => 'Quiero cambiar los colores']);
+caso('el mismo pedido dos veces no se duplica', $conv['cambios_pedidos'] === 'Quiero cambiar los colores', $conv['cambios_pedidos']);
+$convE = conv_postdemo(['cambios_pedidos' => 'sacar el banner']);
+wabot_cambios_anotar($convE, 'cambiar el verde');
+caso('helper: acumula con separador', $convE['cambios_pedidos'] === 'sacar el banner | cambiar el verde', $convE['cambios_pedidos']);
+caso('helper: vacío no anota', wabot_cambios_anotar($convE, '   ') === false);
+
+echo "\n=== E. Actividad no es interés ===\n";
+
+list($out, $conv) = responder('No me interesa, no quiero avanzar');
+caso('rechazo postdemo: se cierra sin presión', ($conv['cierre'] ?? '') === 'sin_interes' && !empty($conv['seguimiento_bloqueado']), json_encode($conv['cierre'] ?? null));
+caso('rechazo postdemo: contesta la despedida, no "le cambiarías algo?"', is_array($out) && count($out) === 1 && stripos($out[0], 'cambiar') === false, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('rechazo postdemo: el panel NO lo cuenta como demo con interés', wabot_presentada_con_interes($conv) === false && wabot_presentada_nivel($conv) === 'rechazo', wabot_presentada_nivel($conv));
+list($out, $conv) = responder('No me interesa vender online, solo que me consulten');
+caso('"no me interesa vender" NO es un rechazo', ($conv['cierre'] ?? '') !== 'sin_interes');
+
+$base = ['presentado_ts' => time() - 3600, 'transcript' => []];
+caso('demo sin respuesta → sin_respuesta', wabot_presentada_nivel($base) === 'sin_respuesta');
+$hablo = $base; $hablo['transcript'][] = ['q' => 'cliente', 't' => 'Dale, la miro', 'ts' => time()];
+caso('escribió después de la demo → respondio (DEI)', wabot_presentada_nivel($hablo) === 'respondio' && wabot_presentada_con_interes($hablo));
+caso('se le avisó que sigue el desarrollador → avanza', wabot_presentada_nivel(array_merge($hablo, ['postdemo_avisado' => true])) === 'avanza');
+caso('pidió que lo busquemos → pausa', wabot_presentada_nivel(array_merge($hablo, ['retomar_ts' => time() + 86400 * 20])) === 'pausa');
+
+$precio = ['precio_dado' => true, 'fase' => 'precio', 'transcript' => [
+    ['q' => 'cliente', 't' => 'cuánto sale?', 'ts' => time() - 100],
+    ['q' => 'bot', 't' => 'Una landing sale $190.000 por todo el desarrollo. gokywebs.com/presupuestos/Landing', 'ts' => time() - 90],
+]];
+caso('precio dado y silencio: NO es "interesado"', wabot_conv_interesado($precio) === false);
+$precio['transcript'][] = ['q' => 'cliente', 't' => 'y tiene mantenimiento?', 'ts' => time() - 10];
+caso('precio dado y siguió hablando: sí', wabot_conv_interesado($precio) === true);
+caso('sin precio en el transcript se asume como antes', wabot_conv_interesado(['precio_dado' => true, 'transcript' => []]) === true);
+caso('y la última llamada respeta lo mismo',
+    wabot_ultima_llamada_corresponde(['precio_dado' => true, 'ultimo_cliente_ts' => time() - 23.2 * 3600,
+        'transcript' => [['q' => 'cliente', 't' => 'precio?', 'ts' => time() - 23.2 * 3600], ['q' => 'bot', 't' => 'Sale $190.000. gokywebs.com/presupuestos/Landing', 'ts' => time() - 23.1 * 3600]]],
+        array_merge($cfg, ['activo' => true, 'ultima_llamada_activa' => true]), time()) === false);
 
 echo "\n" . ($fallas === 0 ? "TODO OK" : "$fallas FALLAS") . " de $total casos\n";
 exit($fallas === 0 ? 0 : 1);

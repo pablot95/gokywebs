@@ -1687,6 +1687,37 @@ function wabot_temas_perseguibles() {
     ];
 }
 
+/**
+ * ¿El cliente preguntó algo?
+ *
+ * No se puede resolver con wabot_normalizar_frase(): borra el signo de
+ * pregunta. Así que se mira el texto CRUDO —el "?" y los interrogativos— y
+ * recién después se normaliza para las formas sin signo, que en WhatsApp son
+ * la mayoría ("me queda de por vida una vez pagada").
+ *
+ * Vive acá y no en agente.php porque la usa el corte de postdemo, que corre
+ * en los tres caminos (motor, agente, crons): en el motor agente.php no está
+ * cargado y la función no existía.
+ */
+function wabot_mensaje_pregunta_algo($mensaje) {
+    $crudo = trim((string)$mensaje);
+    if ($crudo === '') return false;
+    if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '') return false;
+    return (bool)(
+        /* Los interrogativos inequívocos. "Que" a secas queda AFUERA: "Que lo
+         * haga vía wasap" es una instrucción, no una pregunta, y era uno de
+         * los mensajes que se llevaban el comodín. Entra solo pegado a lo que
+         * se pregunta ("que precio", "que incluye"). */
+        preg_match('/\b(como|cuanto|cuanta|cuantos|cuando|donde|cual|cuales|quien|por que|porque)\b/u', $t)
+        || preg_match('/\bque\s+(precio|valor|costo|tal|incluye|incluyen|necesito|necesitas|hacen|hace|es|son|tipo|pasa|onda|opciones|formas|medios)\b/u', $t)
+        || preg_match('/\b(se puede|se pueden|puedo|podes|podria|podrian|hay forma|hay que|es posible|me decis|me podes decir'
+            . '|tienen|tenes|tiene|incluye|incluyen|sirve|conviene|hace falta|necesito saber|queria saber|quisiera saber'
+            . '|de por vida|para siempre|o no|si o no)\b/u', $t)
+    );
+}
+
 /** Las preguntas que trae un mensaje, no la primera nomás. */
 function wabot_preguntas_del_mensaje($texto, $conv, $fase = null) {
     $crudo = trim(wabot_texto_sin_urls((string)$texto));
@@ -2238,6 +2269,16 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             // feedback en vez de dejarlo sin respuesta.
             $rPost = wabot_postdemo_responder($texto, $conv, $cfg);
             if ($rPost !== null) return $rPost;
+            /* Null con texto fijo pendiente = había una pregunta que solo el
+             * agente podía contestar y el agente no está (o falló). El peor
+             * caso es el de siempre: sale el texto fijo y la pregunta queda
+             * para el desarrollador, que la ve en el panel como pendiente. */
+            $prefijo = trim((string)($conv['_postdemo_prefijo'] ?? ''));
+            unset($conv['_postdemo_prefijo']);
+            if ($prefijo !== '') {
+                wabot_evento_sesion($conv, 'postdemo_pregunta_sin_contestar');
+                return [$prefijo];
+            }
             return [(string)($cfg['postdemo_apertura'] ?? '')];
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
@@ -4954,6 +4995,18 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
                            wabot_derivar($conv, $cfg, 'pago_explicito'));
     }
 
+    /* "No me interesa, no quiero avanzar" es un rechazo, no una charla viva.
+     * Antes esto caía en null: en modo agente lo cerraba wabot_agente_intento()
+     * y en el motor salía "contame qué te pareció" a quien acababa de decir
+     * que no. Y el panel lo contaba como "demo entregada con interés" porque
+     * mira si escribió algo después de la demo (auditoría 7-sep, punto E).
+     * Acá se cierra igual en los tres caminos; wabot_cierre_sin_presion_tipo()
+     * ya descarta "no me interesa vender/cobrar", que es otra cosa. */
+    $cierre = wabot_cierre_sin_presion_tipo($texto);
+    if ($cierre === 'rechazo' || $cierre === 'baja') {
+        return wabot_cerrar_sin_presion($conv, $cfg, $cierre);
+    }
+
     $interes = wabot_postdemo_interes_real($texto, $conv);
 
     /* De lo más concreto a lo más vago. El orden importa: "no me gusta el color,
@@ -4961,6 +5014,11 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $especifico = '';
 
     if (wabot_postdemo_pide_cambios($texto)) {
+        /* Se ANOTA acá, no solo se dice. Antes esta rama contestaba "tomo nota
+         * de esos cambios" con cambios_pedidos vacío, y recién la rama de
+         * fase derivado (redactor.php) escribía el campo: el mismo pedido
+         * quedaba guardado o no según la etapa (auditoría 7-sep, punto B). */
+        wabot_cambios_anotar($conv, $texto, 'postdemo');
         $especifico = (string)($cfg['postdemo_cambios'] ?? '');
     } elseif (wabot_postdemo_no_gusto($texto)) {
         $especifico = (string)($cfg['postdemo_no_gusto'] ?? '');
@@ -4983,9 +5041,26 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
         return [(string)($cfg['postdemo_videollamada'] ?? '')];
     }
 
+    /* Lo que preguntó ADEMÁS de lo que el texto fijo contesta. "Me gustó, pero
+     * cuánto sale y tiene mantenimiento?" se llevaba solo "le cambiarías
+     * algo?" y las dos preguntas quedaban sin responder: el texto fijo
+     * terminaba el turno antes de que nadie las leyera (auditoría 7-sep,
+     * punto A). Lo que tiene respuesta oficial se contesta acá mismo; lo que
+     * no, se le deja al agente con el texto fijo adelante. */
+    $extra = wabot_postdemo_preguntas_extra($texto, $conv, $cfg);
+    $info  = $extra['info'];
+
     if (!$interes) {
+        if ($extra['hay'] && $info === '') {
+            /* Hay una pregunta y el bot no tiene texto oficial para ella: la
+             * contesta el agente. El texto fijo no se pierde: viaja en una
+             * clave transitoria y el agente lo pone adelante (o el motor lo
+             * manda solo si el agente falla). */
+            if (trim($especifico) !== '') $conv['_postdemo_prefijo'] = $especifico;
+            return null;
+        }
         // Sigue mirando: el bot queda disponible para la próxima.
-        return trim($especifico) === '' ? null : [$especifico];
+        return wabot_postdemo_componer($especifico, $info);
     }
 
     /* Interés real: se avisa UNA vez que sigue el desarrollador y la charla
@@ -4993,11 +5068,92 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $conv['postdemo_avisado'] = true;
     wabot_handoff_marcar($conv, 'postdemo_respuesta');
     $aviso = (string)($cfg['postdemo_derivar'] ?? '');
-    if (trim($aviso) === '')      return trim($especifico) === '' ? null : [$especifico];
-    if (trim($especifico) === '') return [$aviso];
+    if (trim($aviso) === '') return wabot_postdemo_componer($especifico, $info);
     // Si la respuesta deja una pregunta abierta, el aviso la contradice.
-    if (strpos($especifico, '?') !== false) return [$especifico];
-    return [$especifico, $aviso];
+    if (strpos($especifico, '?') !== false) return wabot_postdemo_componer($especifico, $info);
+    $out = wabot_postdemo_componer($especifico, $info) ?? [];
+    $out[] = $aviso;
+    return $out;
+}
+
+/**
+ * Arma la tanda de postdemo: el texto fijo y la info que contesta lo que
+ * preguntó. Si el texto fijo termina preguntando ("le cambiarías algo?") va
+ * último, para que la charla quede abierta en la pregunta y no en un dato.
+ * Devuelve null si no hay nada que decir.
+ */
+function wabot_postdemo_componer($especifico, $info) {
+    $especifico = trim((string)$especifico);
+    $info = trim((string)$info);
+    if ($especifico === '' && $info === '') return null;
+    if ($especifico === '') return [$info];
+    if ($info === '') return [$especifico];
+    return strpos($especifico, '?') !== false ? [$info, $especifico] : [$especifico, $info];
+}
+
+/**
+ * Las preguntas de un mensaje de postdemo que el texto fijo NO contesta.
+ *
+ * Devuelve ['hay' => bool, 'info' => string]: `hay` dice si quedó alguna
+ * pregunta afuera del texto fijo; `info` es la respuesta oficial a las que
+ * la tienen (mantenimiento, plazos, hosting... y el precio ya cotizado, que
+ * en esta fase se repite sin recotizar). Si `hay` y `info` está vacía, la
+ * pregunta existe pero solo la puede contestar el agente.
+ *
+ * Se corta por las mismas junturas que wabot_preguntas_del_mensaje(): en
+ * "quiero cambiar el color y saber cuánto cuesta el mantenimiento", la
+ * primera parte ES el pedido de cambio (la contesta el texto fijo) y la
+ * segunda es la pregunta que se quedaba sin respuesta.
+ */
+function wabot_postdemo_preguntas_extra($texto, &$conv, $cfg) {
+    $crudo = trim(wabot_texto_sin_urls((string)$texto));
+    $vacio = ['hay' => false, 'info' => ''];
+    if ($crudo === '') return $vacio;
+
+    $partes = preg_split('/[?.;!\n]+|,| y | o | pero | si | tambien | también | ademas | además /iu', $crudo);
+    $hay = false; $pidePrecio = false;
+    foreach ((array)$partes as $parte) {
+        $parte = trim((string)$parte);
+        if ($parte === '' || mb_strlen($parte) < 6) continue;
+        if (!wabot_mensaje_pregunta_algo($parte)) continue;
+        // La pregunta ES el cambio ("se puede cambiar el color?"): el texto
+        // fijo de cambios ya la contesta.
+        if (wabot_postdemo_pide_cambios($parte)) continue;
+        $hay = true;
+        $p = wabot_normalizar_frase($parte);
+        if (preg_match('/\b(cuanto (sale|cuesta|vale|es|seria|saldria|costaria|me sale)|que precio|el precio|el valor|el costo|cuanto (era|es) el total)\b/u', $p)
+            && !preg_match('/\b(por mes|mensual\w*|al mes|mantenimiento|abono\w*|hosting|dominio)\b/u', $p)) {
+            $pidePrecio = true;
+        }
+    }
+    if (!$hay) return $vacio;
+
+    $claves = wabot_preguntas_del_mensaje($texto, $conv, 'postdemo');
+    if ($pidePrecio && !empty($conv['precio_dado'])) array_unshift($claves, 'precio_actual');
+    $yaDichas = (array)($conv['temas_contestados'] ?? []);
+    $claves = array_values(array_diff($claves, $yaDichas));
+    $info = $claves ? wabot_info_lineas($claves, $conv, $cfg) : '';
+    if (trim($info) !== '') {
+        $conv['temas_contestados'] = array_values(array_unique(array_merge($yaDichas, $claves)));
+        wabot_evento_sesion($conv, 'postdemo_pregunta_contestada', ['temas' => implode(',', $claves)]);
+    }
+    return ['hay' => true, 'info' => trim($info)];
+}
+
+/**
+ * Guarda un pedido de cambios sobre la demo en la ficha, una sola vez y con
+ * las palabras del cliente. La ÚNICA forma de anotar: la usan el corte de
+ * postdemo, el silencio de fase derivado y la herramienta del agente, así
+ * "tomo nota de esos cambios" nunca más sale con el campo vacío.
+ */
+function wabot_cambios_anotar(&$conv, $texto, $origen = 'postdemo') {
+    $nuevo = trim((string)$texto);
+    if ($nuevo === '') return false;
+    $previos = trim((string)($conv['cambios_pedidos'] ?? ''));
+    if ($previos !== '' && mb_strpos($previos, $nuevo) !== false) return false;
+    $conv['cambios_pedidos'] = $previos === '' ? $nuevo : $previos . ' | ' . $nuevo;
+    wabot_evento_sesion($conv, 'cambios_pedidos', ['origen' => $origen]);
+    return true;
 }
 
 /**

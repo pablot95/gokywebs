@@ -478,7 +478,7 @@ echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
 caso('dar_precio devuelve la propuesta como mensaje aparte, con el link adentro',
-    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'cómo podría quedar tu web') !== false
+    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'cómo podría verse') !== false
     && strpos($r['aparte'], 'gokywebs.com/form/') !== false);
 caso('y le avisa al modelo que no la escriba él',
     stripos($r['nota'], 'no menciones el prediseño') !== false);
@@ -1107,9 +1107,11 @@ caso('ninguna de las tres deja escapar el CBU',
     ]), '0720071788000003618268') === false);
 
 $r = wabot_agente_ejecutar('ofrecer_videollamada', [], $cP, $cfg);
-caso('ofrecer_videollamada es el único texto con el nombre de Pablo',
-    stripos($r['texto'], 'pablo') !== false && $cP['videollamada_ofrecida'] === true);
-caso('y la nota le prohíbe nombrarlo en otro lado', stripos($r['nota'], 'única vez que se nombra a Pablo') !== false);
+// Desde el 5-sep el bot nunca nombra a Pablo: es "el desarrollador" también acá.
+caso('ofrecer_videollamada nombra al desarrollador, no a Pablo',
+    stripos($r['texto'], 'desarrollador') !== false && stripos($r['texto'], 'pablo') === false
+    && $cP['videollamada_ofrecida'] === true);
+caso('y la nota le prohíbe nombrarlo', stripos($r['nota'], 'nunca nombres al desarrollador por su nombre') !== false);
 
 $r = wabot_agente_ejecutar('anotar_cambios', ['cambios' => 'cambiar el verde por azul y sacar el banner'], $cP, $cfg);
 caso('anotar_cambios guarda lo que pidió, con sus palabras',

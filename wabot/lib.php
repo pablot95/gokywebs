@@ -4844,6 +4844,8 @@ function wabot_lista_items() {
             'no_leido' => wabot_ultimo_cliente_ts($cv) > (int)($cv['panel_visto_ts'] ?? 0),
             'sin_leer_cuenta' => wabot_conv_sin_leer_cuenta($cv),
             'con_interes' => wabot_presentada_con_interes($cv),
+            // Más fino que con_interes: respondio / avanza / rechazo / pausa.
+            'presentada_nivel' => wabot_presentada_nivel($cv),
             // Resuelto en el server: el chip y la notificación push tienen
             // que estar de acuerdo siempre (ver wabot_conv_es_sl).
             'sl' => wabot_conv_es_sl($cv),
@@ -4922,15 +4924,44 @@ function wabot_conv_grupo($cv) {
 }
 
 /**
- * Mostró interés real y quedó a mitad de camino: se le dio el precio (o pidió
- * la demo) y todavía no cerró el prediseño ni se le presentó nada.
+ * Vio el precio Y SIGUIÓ HABLANDO (o pidió la demo), y todavía no cerró el
+ * prediseño ni se le presentó nada.
+ *
+ * Es actividad después del precio, no intención de compra: sirve para la
+ * columna "vieron precio" y para decidir a quién le sale la última llamada.
+ * Antes alcanzaba con precio_dado, así que el que recibió el precio y nunca
+ * más contestó figuraba "interesado" y se llevaba la última llamada igual
+ * (auditoría 7-sep, punto E). Para eso está wabot_conv_respondio_al_precio().
  */
 function wabot_conv_interesado($cv) {
     if (!empty($cv['lead_creado']) || !empty($cv['sistema_lead_creado'])) return false;
     if (!empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts'])) return false;
     if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja'], true)) return false;
-    if (!empty($cv['precio_dado'])) return true;
+    if (!empty($cv['precio_dado'])) return wabot_conv_respondio_al_precio($cv);
     return in_array(($cv['fase'] ?? ''), ['prediseno', 'prediseno_ref', 'prediseno_wsp'], true);
+}
+
+/**
+ * ¿El cliente escribió algo DESPUÉS del mensaje del bot que traía el precio?
+ *
+ * El precio no tiene timestamp propio: se busca en el transcript la última
+ * línea del bot con un monto o el link del presupuesto y se mira si detrás
+ * hay una línea del cliente. Si el precio no se encuentra en el transcript
+ * (charlas viejas, texto raro) se asume que sí, que es lo que valía antes.
+ */
+function wabot_conv_respondio_al_precio($cv) {
+    $t = array_values((array)($cv['transcript'] ?? []));
+    $idxPrecio = -1;
+    for ($i = count($t) - 1; $i >= 0; $i--) {
+        if (($t[$i]['q'] ?? '') !== 'bot') continue;
+        $txt = (string)($t[$i]['t'] ?? '');
+        if (preg_match('/\$\s?\d{2,3}(\.\d{3})+|gokywebs\.com\/presupuestos?\//iu', $txt)) { $idxPrecio = $i; break; }
+    }
+    if ($idxPrecio < 0) return true;
+    for ($i = $idxPrecio + 1; $i < count($t); $i++) {
+        if (($t[$i]['q'] ?? '') === 'cliente') return true;
+    }
+    return false;
 }
 
 /**
@@ -4955,14 +4986,37 @@ function wabot_presentada_sin_respuesta($cv, $cfg = null, $ahora = null) {
     return true;
 }
 
+/**
+ * Demo entregada y el cliente contestó algo que no es un rechazo (DEI).
+ *
+ * Es "está mirando y habla", no "quiere comprar": para eso está
+ * wabot_presentada_nivel() = 'avanza'. Un "no me interesa" después de la demo
+ * contaba acá como interés (auditoría 7-sep, punto E); ahora es 'rechazo'.
+ */
 function wabot_presentada_con_interes($cv) {
+    return in_array(wabot_presentada_nivel($cv), ['respondio', 'avanza'], true);
+}
+
+/**
+ * En qué punto está una demo entregada, para el panel:
+ *   sin_respuesta → no escribió nada desde la entrega
+ *   respondio     → escribió (elogio, cambio, pregunta, "la miro")
+ *   avanza        → interés real: se le avisó que sigue el desarrollador, o avisó que pagó
+ *   rechazo       → dijo que no le interesa, o pidió la baja
+ *   pausa         → pidió que lo busquemos más adelante (retomar_ts)
+ * Vacío si no hay demo entregada.
+ */
+function wabot_presentada_nivel($cv) {
     $presentado = (int)($cv['presentado_ts'] ?? 0);
-    if ($presentado <= 0) return false;
+    if ($presentado <= 0) return '';
+    if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'baja'], true)) return 'rechazo';
+    if (!empty($cv['pago_avisado_ts']) || !empty($cv['postdemo_avisado'])) return 'avanza';
+    if ((int)($cv['retomar_ts'] ?? 0) > time()) return 'pausa';
     foreach (array_reverse((array)($cv['transcript'] ?? [])) as $linea) {
         if ((int)($linea['ts'] ?? 0) < $presentado) break;
-        if (($linea['q'] ?? '') === 'cliente') return true;
+        if (($linea['q'] ?? '') === 'cliente') return 'respondio';
     }
-    return false;
+    return 'sin_respuesta';
 }
 
 /**

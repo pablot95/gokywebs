@@ -31,6 +31,11 @@ function wabot_responder($texto, &$conv, $cfg) {
     // el motor de reglas puede no ejecutarse nunca.
     wabot_turno_preparar($conv, $cfg, time());
 
+    // Transitoria de UN turno (ver wabot_postdemo_responder): si un corte de
+    // más abajo terminó el turno anterior sin consumirla, no puede aparecer
+    // adelante de la respuesta de hoy.
+    unset($conv['_postdemo_prefijo']);
+
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg, $conv);
@@ -98,12 +103,7 @@ function wabot_responder($texto, &$conv, $cfg) {
         /* Un pedido de cambios se ANOTA siempre: el desarrollador tiene que
          * verlo junto al boceto, no perdido en el transcript. */
         if (wabot_postdemo_pide_cambios($texto)) {
-            $previos = trim((string)($conv['cambios_pedidos'] ?? ''));
-            $nuevo = trim((string)$texto);
-            if ($nuevo !== '' && mb_strpos($previos, $nuevo) === false) {
-                $conv['cambios_pedidos'] = $previos === '' ? $nuevo : $previos . ' | ' . $nuevo;
-                wabot_evento_sesion($conv, 'cambios_pedidos', ['origen' => 'postdemo_silencio']);
-            }
+            wabot_cambios_anotar($conv, $texto, 'postdemo_silencio');
             return [(string)($cfg['postdemo_cambios'] ?? '')];
         }
         /* Una PREGUNTA se contesta: sigue de largo hasta el agente, que en fase
