@@ -5154,6 +5154,30 @@ function wabot_postdemo_sin_cambios($texto) {
 }
 
 /**
+ * El cliente escribió con la demo ya entregada.
+ *
+ * `presentado_confirmado` significa exactamente eso —contestó algo, lo que
+ * sea— y de ahí cuelgan tres automatismos: el recordatorio por plantilla a
+ * las 48 h (wabot_confirmacion_demo_corresponde), el archivado a los 7 días
+ * (wabot_presentado_archivar_corresponde) y la columna "presentadas sin
+ * respuesta" del panel.
+ *
+ * Vive en el BORDE COMÚN de wabot_responder() y no adentro del corte de
+ * postdemo, que es donde estaba: cualquier corte anterior que conteste y
+ * termine el turno —el de retomar, agregado el 8-sep— dejaba el flag apagado
+ * y el cliente que había contestado "dale, la miro y te escribo el lunes"
+ * recibía igual la plantilla de las 48 h. Marcarlo donde entra el mensaje y
+ * no donde se decide la respuesta es lo único que no se rompe con el próximo
+ * corte que se agregue arriba.
+ */
+function wabot_presentado_marcar_respuesta(&$conv) {
+    if (empty($conv['presentado_ts'])) return false;
+    if (!empty($conv['presentado_confirmado'])) return false;
+    $conv['presentado_confirmado'] = true;
+    return true;
+}
+
+/**
  * Qué contesta el bot cuando el cliente responde a la demo ya presentada.
  *
  * Pablo, 28-ago: "siempre se manda el mismo mensaje repetido; que el mensaje
@@ -5169,7 +5193,7 @@ function wabot_postdemo_sin_cambios($texto) {
  * con sus propias palabras sin vender.
  */
 function wabot_postdemo_responder($texto, &$conv, $cfg) {
-    $conv['presentado_confirmado'] = true;
+    wabot_presentado_marcar_respuesta($conv);
 
     /* El cliente avisa que ya pagó. No es vender: es acusar recibo de algo que
      * ya pasó, y quedarse callado ahí sería peor. */

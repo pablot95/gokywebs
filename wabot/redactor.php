@@ -36,6 +36,13 @@ function wabot_responder($texto, &$conv, $cfg) {
     // adelante de la respuesta de hoy.
     unset($conv['_postdemo_prefijo']);
 
+    /* Con la demo ya entregada, ESTE mensaje es la respuesta del cliente: se
+     * marca acá, antes de cualquier corte, porque de ese flag dependen la
+     * plantilla de las 48 h, el archivado y la columna del panel. Va después
+     * del reset de sesión (si la charla era vieja, presentado_ts ya quedó en
+     * cero y no hay nada que marcar). Ver wabot_presentado_marcar_respuesta(). */
+    wabot_presentado_marcar_respuesta($conv);
+
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg, $conv);

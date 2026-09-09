@@ -2362,6 +2362,10 @@ $derivanPostdemo = ['me gusto mucho, como sigo?', 'prefiero con tarjeta',
                     'uh, es mucha plata para mi ahora', 'ya te transferi la seña'];
 foreach ($esperadoPostdemo as $msjPostdemo => $fragmento) {
     $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'ecommerce'; $c['precio_dado'] = true;
+    // La fase postdemo SIEMPRE viene con la demo entregada: el corte de
+    // redactor.php exige las dos cosas, y de presentado_ts cuelga la marca de
+    // "contestó" (ver wabot_presentado_marcar_respuesta).
+    $c['presentado_ts'] = time() - 3600;
     clasifica(['otro']);
     $r = wabot_engine($msjPostdemo, $c, $cfg);
     $junto = implode(' ', $r);

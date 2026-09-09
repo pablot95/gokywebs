@@ -258,5 +258,62 @@ caso('y la última llamada respeta lo mismo',
         'transcript' => [['q' => 'cliente', 't' => 'precio?', 'ts' => time() - 23.2 * 3600], ['q' => 'bot', 't' => 'Sale $190.000. gokywebs.com/presupuestos/Landing', 'ts' => time() - 23.1 * 3600]]],
         array_merge($cfg, ['activo' => true, 'ultima_llamada_activa' => true]), time()) === false);
 
+/* ─── La plantilla de las 48 h es SOLO para el que nunca contestó ───
+ *
+ * De `presentado_confirmado` cuelgan tres automatismos: la plantilla de las
+ * 48 h, el archivado a los 7 días y la columna "presentadas sin respuesta".
+ * El flag se marcaba adentro del corte de postdemo, así que cualquier corte
+ * anterior que contestara y terminara el turno lo dejaba apagado: el de
+ * retomar (8-sep) hacía que "dale, la miro y te escribo el lunes" recibiera
+ * igual la plantilla. Ahora se marca en el borde común de wabot_responder().
+ */
+echo "\n=== La plantilla de 48 h no le llega al que contestó ===\n";
+
+$cfg48 = array_merge($cfg, ['activo' => true, 'modo_redaccion' => 'fijo']);
+function conv48($texto) {
+    return [
+        'tel' => 'TEST48', 'canal' => 'whatsapp', 'fase' => 'postdemo',
+        'presentado_ts' => time() - 49 * 3600, 'presentado_via_bot' => true,
+        'presentado_slug' => 'demo-test', 'tipo' => 'landing', 'precio_dado' => true, 'nombre' => 'Ana',
+        // Orden del webhook: la línea del cliente ya está escrita cuando corre
+        // wabot_responder() (ver tecnica_wabot_webhook_escribe_antes_de_responder).
+        'transcript' => [
+            ['q' => 'bot', 't' => 'Acá está tu demo', 'ts' => time() - 49 * 3600],
+            ['q' => 'cliente', 't' => $texto, 'ts' => time()],
+        ],
+        'ultimo_cliente_ts' => time(),
+    ];
+}
+
+foreach ([
+    'elogio'                 => 'Me gustó mucho, quedó linda',
+    'la va a mirar'          => 'Dale, la voy a mirar',
+    'pide un cambio'         => 'Se puede cambiar el color?',
+    'contesta con fecha'     => 'Dale, la miro y te escribo el lunes',
+    'promete avisar'         => 'La veo tranquilo y te aviso mañana',
+    'pide que lo busquen'    => 'Buenísimo. Contactame en 30 dias',
+    'rechaza'                => 'No me interesa, no quiero avanzar',
+    'pide la baja'           => 'Sacame de la lista, no me escriban mas',
+    'solo agradece'          => 'gracias!!',
+    'un pulgar'              => '👍',
+] as $nombre => $texto) {
+    $c = conv48($texto);
+    wabot_responder($texto, $c, $cfg48);
+    caso("$nombre: queda marcado como que contestó", !empty($c['presentado_confirmado']));
+    caso("$nombre: NO se le manda la plantilla de 48 h", wabot_confirmacion_demo_corresponde($c, $cfg48) === false);
+    caso("$nombre: y no se archiva a los 7 días", wabot_presentado_archivar_corresponde($c, $cfg48, time() + 8 * 86400) === false);
+}
+
+$mudo = ['tel' => 'TEST48MUDO', 'canal' => 'whatsapp', 'fase' => 'postdemo', 'tipo' => 'landing',
+         'presentado_ts' => time() - 49 * 3600, 'presentado_via_bot' => true,
+         'transcript' => [['q' => 'bot', 't' => 'Acá está tu demo', 'ts' => time() - 49 * 3600]]];
+caso('el que NUNCA contestó sí la recibe', wabot_confirmacion_demo_corresponde($mudo, $cfg48) === true);
+caso('a las 47 h todavía no', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_ts' => time() - 47 * 3600]), $cfg48) === false);
+caso('si la demo no la mandó el bot, nunca', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_via_bot' => false]), $cfg48) === false);
+caso('y una sola vez por conversación', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['confirmacion_demo_enviada' => true]), $cfg48) === false);
+
+$sinDemo = ['tel' => 'TEST48SIN', 'fase' => 'menu', 'transcript' => []];
+caso('sin demo entregada no hay nada que marcar', wabot_presentado_marcar_respuesta($sinDemo) === false && empty($sinDemo['presentado_confirmado']));
+
 echo "\n" . ($fallas === 0 ? "TODO OK" : "$fallas FALLAS") . " de $total casos\n";
 exit($fallas === 0 ? 0 : 1);
