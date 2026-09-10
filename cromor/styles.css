@@ -758,8 +758,7 @@ input.clock-digital[readonly] {
 
 /* ═══ PROYECTOS ARRIBA DERECHA ═══ */
 
-.hoy-col--proyectos,
-.hoy-col--proyectos.is-collapsed {
+.hoy-col--proyectos {
     grid-column: 2;
     grid-row: 3;
     width: 100%;
@@ -774,7 +773,16 @@ input.clock-digital[readonly] {
     flex-direction: column;
     align-items: stretch;
     overflow: hidden;
-    transition: none;
+    transition: height .2s ease;
+}
+
+.hoy-col--proyectos.is-collapsed {
+    height: auto;
+}
+
+.hoy-col--proyectos.is-collapsed .add-row,
+.hoy-col--proyectos.is-collapsed .proyectos-list {
+    display: none;
 }
 .add-task-between {
     grid-column: 2;
@@ -793,7 +801,25 @@ input.clock-digital[readonly] {
 }
 
 .panel-toggle-btn {
-    display: none;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1.5px solid var(--borde);
+    background: var(--fondo);
+    color: var(--texto);
+    font-size: 1rem;
+    font-weight: 800;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .2s, border-color .2s;
+}
+
+.panel-toggle-btn:hover {
+    background: var(--amarillo-suave);
+    border-color: var(--amarillo);
 }
 
 .col-header {
@@ -2103,8 +2129,7 @@ input.clock-digital[readonly] {
         justify-content: center;
     }
 
-    .hoy-col--proyectos,
-    .hoy-col--proyectos.is-collapsed {
+    .hoy-col--proyectos {
         width: 100%;
         height: auto;
         flex: none;

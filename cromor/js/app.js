@@ -573,7 +573,7 @@ function setupProjectsPanelToggle() {
         btn.title = collapsed ? 'Mostrar proyectos' : 'Minimizar proyectos';
     };
 
-    const saved = localStorage.getItem('cromorProjectsPanelCollapsed') === 'true';
+    const saved = localStorage.getItem('cromorProjectsPanelCollapsed') !== 'false';
     applyState(saved);
 
     btn.addEventListener('click', () => {
