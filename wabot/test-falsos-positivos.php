@@ -268,12 +268,13 @@ $cPaso = wabot_conv_load('999FPTEST'); $cPaso['transcript'] = []; $cPaso['tel'] 
 $cPaso['channel_user_id'] = '5491100000000TEST'; $cPaso['canal'] = 'whatsapp';
 $rPaso = wabot_pitch('landing', $cPaso, $cfg);
 caso('son dos mensajes y el segundo arranca con los pasos', count($rPaso) === 2 && strpos($rPaso[1], 'Así trabajamos, en tres pasos:') === 0);
-caso('paso 1: demo gratis y prediseño', preg_match('/1\. Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web\./u', $rPaso[1]) === 1);
-caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/1\. .*La tenés lista en menos de 24 horas\./u', $rPaso[1]) === 1);
-caso('paso 2: el primer pago para arrancar, textual y sin monto',
-    preg_match('/2\. Luego se abona el primer pago para arrancar con los cambios y dejar la web totalmente funcional\./u', $rPaso[1]) === 1
+caso('paso 1: la primera entrega es gratis (Pablo, 11-sep)', preg_match('/1\. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría\./u', $rPaso[1]) === 1);
+caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/1\. .*La tenés en menos de 24 horas\./u', $rPaso[1]) === 1);
+caso('paso 2: el primer pago si le gusta, textual y sin monto',
+    preg_match('/2\. Si te gusta y querés avanzar, hacés el primer pago y trabajamos en la versión final\./u', $rPaso[1]) === 1
     && !preg_match('/\$\s?\d/u', $rPaso[1]));
-caso('paso 3: a los 30 días, el plan mensual', preg_match('/3\. Luego a los 30 días comienza el plan mensual$/u', $rPaso[1]) === 1);
+caso('paso 3: a los 30 días, el plan mensual', preg_match('/3\. A los 30 días del primer pago comienza el plan mensual\./u', $rPaso[1]) === 1);
+caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[1]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
     strpos($rPaso[1], 'gokywebs.com/form/') === false);
 caso('el bot reconoce ese mensaje como demo ya ofrecida',

@@ -337,13 +337,23 @@ function wabot_responder($texto, &$conv, $cfg) {
      * de que el modelo llame la herramienta con el argumento justo. */
     wabot_prediseno_referencia_negada($texto, $conv);
 
+    /* Con el link del formulario ya mandado: el "sí" repetido, los datos por
+     * chat y el "ya lo completé" se contestan acá, sin modelo (V07 y V08 de la
+     * batería del 10-sep). Va después de la lista posicional, que es la que
+     * anota "Malena - IndumentariaMale - negro y dorado". */
+    $conFormulario = wabot_form_enviado_responder($texto, $conv, $cfg);
+    if ($conFormulario !== null) return $conFormulario;
+
     /* "Está todo en lo que te mandé". El cliente sostiene que ya pasó los
      * datos y el bot se los sigue pidiendo por partes (Clínica de Mar,
      * 27-ago). Si después de releer lo que hay todavía faltan, el bot ya
      * demostró que no los puede sacar solo: insistir es la fricción que
      * costó esa charla. Lo toma Pablo con todo lo que el cliente escribió,
-     * que es lo único que no pierde la venta. */
+     * que es lo único que no pierde la venta. Solo en el chat sin link: con
+     * el formulario mandado, "ya está todo arriba" quiere decir que lo llenó
+     * y lo contesta wabot_form_enviado_responder() mirando si llegó. */
     if (in_array(($conv['fase'] ?? ''), ['prediseno', 'prediseno_ref'], true)
+        && empty($conv['link_form_enviado'])
         && wabot_apunta_a_lo_ya_dicho($texto)
         && wabot_prediseno_faltan($conv, false)) {
         wabot_evento_sesion($conv, 'prediseno_datos_no_extraibles');

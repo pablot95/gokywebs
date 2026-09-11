@@ -1946,20 +1946,27 @@ function wabot_precio_anterior_de($tipo, $cfg) {
 /**
  * EL SEGUNDO MENSAJE DEL PRECIO: los tres pasos.
  *
- * Dictado por Pablo palabra por palabra el 10-sep-2026. No se reescribe ni se
- * "mejora": lo único agregado es el plazo de la demo en el paso 1, que también
- * pidió él ("que aclare que el demo está en menos de 24hs").
+ * Dictado por Pablo el 10-sep-2026 y reescrito con él el 11-sep: el paso 1
+ * arranca con "La primera entrega es gratis" y el plazo de menos de 24 horas
+ * que pidió ("que aclare que el demo está en menos de 24hs"). No se "mejora"
+ * por cuenta propia.
  *
- * El link del formulario YA NO va acá: se manda recién cuando el cliente
- * contesta que sí (ver case 'prediseno' en engine.php y consultar_info
- * ('prediseno') en agente.php). Por eso el texto es el mismo haya link o no,
- * y el que escribe por Instagram recibe exactamente lo mismo.
+ * El link del formulario NO va acá: se manda recién cuando el cliente contesta
+ * que sí a la pregunta que va debajo (wabot_tres_pasos_pregunta; ver case
+ * 'prediseno' en engine.php y consultar_info('prediseno') en agente.php). Por
+ * eso el texto es el mismo haya link o no, y el que escribe por Instagram
+ * recibe exactamente lo mismo.
  */
 function wabot_tres_pasos_default() {
     return "Así trabajamos, en tres pasos:\n"
-         . "1. Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web. La tenés lista en menos de 24 horas.\n"
-         . "2. Luego se abona el primer pago para arrancar con los cambios y dejar la web totalmente funcional.\n"
-         . "3. Luego a los 30 días comienza el plan mensual";
+         . "1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.\n"
+         . "2. Si te gusta y querés avanzar, hacés el primer pago y trabajamos en la versión final.\n"
+         . "3. A los 30 días del primer pago comienza el plan mensual.";
+}
+
+/** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
+function wabot_tres_pasos_pregunta() {
+    return 'Querés que preparemos la demo para tu negocio?';
 }
 
 /**
@@ -2618,7 +2625,9 @@ function wabot_config_modelo_mensual(&$cfg) {
                 . '|3 pagos|\{pagos3\}|\{cuotas_|rondas de modificaci|renovaci[óo]n anual|cuotas sin inter[ée]s'
                 . '|Los desarrollos van desde|\{min\}|\{max\}|por el desarrollo m[áa]s|desde \$\d{3}'
                 // "Depende del tipo" es la respuesta que Pablo retiró el 1-sep.
-                . '|depende del tipo de (p[áa]gina|web)/iu';
+                . '|depende del tipo de (p[áa]gina|web)'
+                // La propiedad a los 18 meses pasó a 12 el 11-sep.
+                . '|18 meses/iu';
     $forzar = function ($actual, $nuevo, $requiere = null) use ($huelaVieja) {
         $a = trim((string)$actual);
         if ($a === '') return $nuevo;
@@ -2637,17 +2646,23 @@ function wabot_config_modelo_mensual(&$cfg) {
     $cfg['msg_tres_pasos'] = $tresPasos;
 
     $infoNueva = [
-        'proceso' => [$tresPasos, ['tres pasos', 'plan mensual']],
+        // El requisito es el paso 1 del 11-sep: el texto del 10-sep traía "tres
+        // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
+        'proceso' => [$tresPasos, ['primera entrega es gratis']],
+        /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
+         * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
-                 . "El plan mensual de {mensualidad} arranca a los 30 días del primer pago y va por suscripción automática de Mercado Pago, así se debita solo.", ['{mensualidad}']],
+                 . "El plan mensual de {mensualidad} arranca a los 30 días del primer pago y va por suscripción automática de Mercado Pago, así se debita solo. No hace falta tener cuenta de Mercado Pago: te podés suscribir con cualquier tarjeta.", ['{mensualidad}', 'cualquier tarjeta']],
         'mantenimiento' => ["El plan mensual no es opcional, es parte del servicio: son {mensualidad} por mes e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Se actualiza una vez al año.\n"
                  . "Si necesitás más de un cambio por mes, son \$10.000 más por mes y pasás a un plan con varios cambios.", ['{mensualidad}']],
         'mantenimiento_ambos' => ["El plan mensual no es opcional, es parte del servicio: incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 30 días del primer pago y se actualiza una vez al año.\n"
                  . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}']],
         'hosting' => ["El hosting y el dominio están incluidos mientras dure el plan: van dentro de la mensualidad, sin costo aparte.\n"
                  . "No los contratás ni los renovás vos, se ocupa Gokywebs.", ['mientras dure el plan']],
+        /* 12 meses y no 18 (Pablo, 11-sep: "habíamos dicho 18, pero es mucho"),
+         * y a pedido: el cliente puede reclamar el código y la propiedad. */
         'titularidad' => ["Mientras dure el plan, la web y el dominio están a nombre de Gokywebs: por eso el hosting, el dominio y el soporte van incluidos.\n"
-                 . "A los 18 meses de plan pasás a ser dueño de todo, la web y el dominio.", ['18 meses']],
+                 . "A los 12 meses de plan podés reclamar el código y la propiedad de la web y del dominio.", ['12 meses']],
         'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
                  . "Adicionales hay solo dos: \$500 por cada producto arriba de 10, y \$10.000 por mes si querés más de un cambio mensual. Si tenés en mente algo puntual, como reservas online o un área de socios, decime cuál y te lo confirmamos.", ['todo incluido']],
         /* Por tipo, como antes: la contadora que pregunta "¿lo puedo editar
@@ -2669,8 +2684,10 @@ function wabot_config_modelo_mensual(&$cfg) {
         /* Clave nueva: "¿y si dejo de pagar?" / "¿hay permanencia?". Sin texto
          * propio caía en el comodín del desarrollador, que es la peor
          * respuesta posible para la pregunta que decide la venta. */
-        'baja_del_plan' => ["No hay permanencia: podés dar de baja el plan cuando quieras.\n"
-                 . "Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.", ['permanencia']],
+        /* Cómo se da de baja (Pablo, 11-sep): desde Mercado Pago; y el que se
+         * suscribió sin cuenta, llamando al banco de la tarjeta. */
+        'baja_del_plan' => ["No hay permanencia: el plan lo das de baja cuando quieras, desde Mercado Pago. Si te suscribiste sin cuenta de Mercado Pago (se puede, con cualquier tarjeta), la baja se hace llamando al banco de esa tarjeta.\n"
+                 . "Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si se da de baja o dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.", ['permanencia', 'banco']],
         /* Con /portfolio y "escribirles por tu cuenta", como el default del
          * 29-ago: sin eso wabot_config_portfolio() lo reescribía en la carga
          * siguiente y la config no convergía en un solo pase. */
@@ -2678,7 +2695,7 @@ function wabot_config_modelo_mensual(&$cfg) {
         'comisiones' => ['No, nosotros no cobramos ninguna comisión por venta: lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.', null],
         'accesos' => ["El hosting es nuestro y viene incluido en el plan: trabajamos con Hostinger, así que la web queda subida ahí y no tenés que contratar ni configurar nada.\n"
                  . "Si necesitás un acceso puntual, al panel o por FTP, decímelo y lo vemos.", ['incluido en el plan']],
-        'entrega_codigo' => ['Mientras dure el plan la web es nuestra y corre por nuestra cuenta, así que el código no se entrega aparte. Si lo que te preocupa es quedar atado, no hay permanencia: el plan lo das de baja cuando quieras.', ['plan']],
+        'entrega_codigo' => ['Mientras dure el plan la web corre por nuestra cuenta. A los 12 meses de plan podés reclamar el código y la propiedad de la web. Y si lo que te preocupa es quedar atado, no hay permanencia: el plan lo das de baja cuando quieras.', ['12 meses']],
         'licencias' => ['Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Tu contenido —textos, fotos, productos— es tuyo siempre.', null],
         'manual' => ['No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y los cambios de contenido los hacemos nosotros: el plan incluye un cambio por mes.', ['un cambio por mes']],
         'emails' => ['Este plan no incluye casillas de correo corporativas. Se pueden sumar aparte: decime si te interesa y lo vemos.', null],
@@ -3837,6 +3854,13 @@ function wabot_prediseno_texto(&$conv, $cfg) {
     if (wabot_prediseno_faltan($conv, false)) {
         $link = wabot_form_link($conv, $cfg);
         if ($link !== '') {
+            /* Ya se lo mandamos: el MISMO texto otra vez es lo que el
+             * anti-repetición lee como bot trabado, y deriva (V08, 10-sep). Va
+             * el recordatorio, que dice dónde está y ofrece el chat. */
+            if (!empty($conv['link_form_enviado']) && function_exists('wabot_form_recordatorio_texto')) {
+                $conv['form_recordatorio_enviado'] = true;
+                return str_replace('{link}', $link, wabot_form_recordatorio_texto());
+            }
             $conv['link_form_enviado'] = true;
             $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
             return str_replace('{link}', $link, $texto);
@@ -4153,6 +4177,12 @@ function wabot_conv_load($clave) {
         // Entró pidiendo la demo: el precio no la vuelve a ofrecer, va directo
         // a pedir los datos.
         'demo_pedida_entrada'    => false,
+        // El sí a la demo y el formulario ya mandado (11-sep, ver
+        // wabot_form_enviado_responder en engine.php).
+        'tres_pasos_repreguntas'   => 0,
+        'form_recordatorio_enviado' => false,
+        'form_no_llego_avisos'     => 0,
+        'form_recibido_confirmado' => false,
         'cliente_id'             => null,
         'espera_avisada'   => false,
         'no_texto_avisado' => false,
@@ -4348,7 +4378,11 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * el suyo) y el teléfono también. */
     foreach (['pitch_hecho', 'link_form_enviado', 'form_link_enviado', 'mixto_avisado', 'bilingue_avisado',
               'prediseno_acuse_respondido', 'form_aviso_respondido', 'empujon_postdemo_dado',
-              'postdemo_pregunto_cambios', 'pidio_precio'] as $k) $conv[$k] = false;
+              'postdemo_pregunto_cambios', 'pidio_precio',
+              // el sí a la demo y el formulario ya mandado (11-sep)
+              'form_recordatorio_enviado', 'form_recibido_confirmado'] as $k) $conv[$k] = false;
+    $conv['tres_pasos_repreguntas'] = 0;
+    $conv['form_no_llego_avisos'] = 0;
     foreach (['pitch_tipo', 'rubro_pitch', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;

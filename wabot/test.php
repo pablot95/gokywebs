@@ -75,9 +75,11 @@ caso('el precio lleva el link del presupuesto para verlo en detalle (Pablo, 2-se
     strpos($r[0], 'gokywebs.com/presupuestos/sitioprofesional') !== false);
 caso('el precio llega en DOS mensajes: el precio y, dos segundos después, los tres pasos SIN el formulario (Pablo, 10-sep)',
     count($r) === 2 && stripos($r[1], 'tres pasos') !== false && strpos($r[1], 'gokywebs.com/form/') === false);
-caso('los tres pasos: demo gratis en menos de 24 horas, primer pago para arrancar, plan mensual a los 30 días',
-    preg_match('/1\. .*demo gratis.*menos de 24 horas/u', $r[1]) === 1 && preg_match('/2\. .*primer pago/u', $r[1]) === 1
-    && preg_match('/3\. .*30 días comienza el plan mensual/u', $r[1]) === 1);
+caso('los tres pasos: primera entrega gratis en menos de 24 horas, primer pago, plan mensual a los 30 días (11-sep)',
+    preg_match('/1\. La primera entrega es gratis.*menos de 24 horas/u', $r[1]) === 1 && preg_match('/2\. .*primer pago/u', $r[1]) === 1
+    && preg_match('/3\. A los 30 días del primer pago comienza el plan mensual/u', $r[1]) === 1);
+caso('y terminan preguntando si quiere la demo: su sí es lo que manda el formulario (11-sep)',
+    preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1]) === 1);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
     stripos(implode(' ', $r), 'si te cierra') === false && stripos(implode(' ', $r), 'si va por ahí') === false
     && stripos(implode(' ', $r), 'si te sirve') === false);
@@ -186,7 +188,10 @@ echo "— Después del precio —\n";
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['quiere_prediseno']);
 $r = wabot_engine('me interesa el prediseño', $c, $cfg);
-caso('pide el prediseño → lo explica y pide los 3 datos', $r === [wabot_prediseno_texto($c, $cfg)] && $c['fase'] === 'prediseno');
+// Contra la forma y no contra wabot_prediseno_texto($c): llamada después, con
+// el link ya mandado, devuelve el recordatorio y no el primer envío (11-sep).
+caso('pide el prediseño → le manda el formulario', count($r) === 1 && strpos($r[0], 'gokywebs.com/form/') !== false
+    && !empty($c['link_form_enviado']) && $c['fase'] === 'prediseno');
 
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 clasifica(['objecion_caro']);
@@ -771,12 +776,14 @@ $r = wabot_engine('como se manejan ustedes?', $c, $cfg);
  * lo que le llega al cliente pasa por esa función, que es la que le saca la
  * seña. Comparar contra el campo del panel medía algo que nadie recibe. */
 caso('explica el proceso completo', $r === [wabot_texto_info('proceso', $cfg)]);
-caso('arranca por la demo gratis', stripos($r[0], 'demo gratis') !== false);
+caso('arranca por la primera entrega gratis (11-sep)', stripos($r[0], '1. La primera entrega es gratis') !== false);
 caso('NO nombra la seña', stripos($r[0], 'seña') === false && stripos($r[0], 'sena') === false);
-caso('el paso 2 es el primer pago para arrancar',
-    stripos($r[0], 'primer pago para arrancar') !== false);
+caso('el paso 2 es el primer pago, si le gusta',
+    stripos($r[0], 'Si te gusta y querés avanzar, hacés el primer pago') !== false);
 caso('y el paso 3, el plan mensual a los 30 días',
-    stripos($r[0], '30 días comienza el plan mensual') !== false);
+    stripos($r[0], '30 días del primer pago comienza el plan mensual') !== false);
+caso('contestando "cómo trabajan" no pregunta si quiere la demo: eso es del turno del precio',
+    stripos($r[0], 'Querés que preparemos') === false);
 caso('NO dice ningún monto', strpos($r[0], '$') === false);
 
 // La pregunta por la plata es otra: ahí sí van los montos, y nunca la seña.
@@ -792,7 +799,7 @@ clasifica(['pregunta_info'], ['info_keys' => ['proceso', 'pago']]);
 $r = wabot_engine('como trabajan y como se paga?', $c, $cfg);
 caso('las dos preguntas juntas → las dos respuestas en bullets',
     count($r) === 1 && strpos($r[0], '- ') === 0
-    && stripos($r[0], 'demo gratis') !== false
+    && stripos($r[0], 'primera entrega es gratis') !== false
     && stripos($r[0], 'transferencia') !== false);
 caso('y ninguna de las dos nombra la seña', stripos($r[0], 'seña') === false);
 
@@ -2699,9 +2706,9 @@ caso('el bilingüe no sale con un precio inventado ni con el placeholder',
 caso('los accesos explican la invitación de Hostinger y el FTP',
     stripos((string)$cfg['info']['accesos'], 'hostinger') !== false
     && stripos((string)$cfg['info']['accesos'], 'ftp') !== false);
-caso('la titularidad dice la verdad del modelo nuevo: de Gokywebs mientras dure el plan, del cliente a los 18 meses',
+caso('la titularidad dice la verdad del modelo nuevo: de Gokywebs mientras dure el plan, reclamable a los 12 meses (11-sep)',
     stripos((string)$cfg['info']['titularidad'], 'a nombre de Gokywebs') !== false
-    && stripos((string)$cfg['info']['titularidad'], '18 meses') !== false);
+    && stripos((string)$cfg['info']['titularidad'], '12 meses') !== false);
 caso('los correos aclaran que no son transferibles',
     stripos((string)$cfg['info']['emails'], 'no son transferibles') !== false);
 caso('las licencias aclaran que son de terceros',

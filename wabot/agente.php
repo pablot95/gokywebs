@@ -302,13 +302,14 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
      * que se juega la demo, y dejárselo al modelo es el mismo riesgo que tenía
      * el "dale, me sirve" del pitch (el plomero del 1-sep): que repita el
      * precio o conteste otra cosa. Determinista, con el mismo texto que manda
-     * consultar_info('prediseno'). Una pregunta no cuenta como sí. */
+     * consultar_info('prediseno'). Una pregunta no cuenta como sí, y desde el
+     * 11-sep tampoco un "si" que no es un sí: wabot_acepta_demo() entiende
+     * "Si dale, armenla" y deja afuera "Vestidos y conjuntos". */
     if ($faseAtajo === 'prediseno' && !empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
         && empty($conv['link_form_enviado']) && empty($conv['lead_creado'])
         && empty($conv['form_completado_ts']) && empty($conv['presentado_ts'])
         && !(array)($conv['prediseno_pedido'] ?? [])
-        && strpos((string)$mensaje, '?') === false
-        && (wabot_es_afirmativa($mensaje) || wabot_pidio_demo_explicita($mensaje))) {
+        && wabot_acepta_demo($mensaje)) {
         wabot_handoff_aclaracion_resuelta($conv);
         wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'atajo_tres_pasos']);
         return [wabot_prediseno_texto($conv, $cfg)];
@@ -2051,6 +2052,19 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     return ['error' => 'Todavía no le ofreciste la demo: nadie habló de armarle una.',
                             'nota'  => 'No le pidas los datos. Si querés ofrecérsela, ofrecela primero con una pregunta y esperá que conteste. Si lo que dijo cerraba otro tema, contestá UNA línea corta o seguí con lo que estaba pendiente.'];
                 }
+                /* EL SÍ LO DICE EL CLIENTE, NO EL MODELO (11-sep). Los tres
+                 * pasos terminan preguntando si quiere la demo, y el link sale
+                 * con la respuesta afirmativa. "Vestidos y conjuntos" y
+                 * "Consultas y vacunación" contaban más del negocio y el modelo
+                 * mandó el formulario igual (V08 y V09, batería del 10-sep): la
+                 * regla del prompt no alcanzaba. */
+                if (empty($conv['link_form_enviado']) && !empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
+                    && empty($conv['demo_pedida_entrada'])   // ya la pidió con todas las letras antes
+                    && trim((string)$mensaje) !== '' && !wabot_acepta_demo($mensaje, true)
+                    && !wabot_texto_pide_prediseno($mensaje) && !wabot_pide_repetir($mensaje)) {
+                    return ['error' => 'El cliente todavía no dijo que quiere la demo: lo que escribió no es un sí.',
+                            'nota'  => 'No le mandes el formulario. Si te contó algo más de su negocio, reconocelo en UNA línea nombrando lo que dijo y preguntale si quiere que le preparemos la demo. Si te hizo una pregunta, contestala. No repitas el precio ni los tres pasos. El link sale recién cuando conteste que sí.'];
+                }
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);
                 return ['texto' => wabot_prediseno_texto($conv, $cfg),
@@ -2708,7 +2722,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
 - No prometas secciones ni funcionalidades puntuales (blog, reservas, idiomas, integraciones) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma Pablo.
 - Si pide explícitamente una APP para Android o iPhone (no una web), contestá con consultar_info('apps') y derivá en el mismo turno, como dice la regla de arriba: la app SÍ la hacemos, pero se cotiza aparte según lo que tenga que hacer. No sigas el desempate de la web, no cotices una web como si fuera la app, y nunca inventes un precio de app.
-- Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual ni el adicional por web bilingüe: si el cliente no pregunta, no existen. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó. Esto vale DOBLE para los 18 meses: que a los 18 meses de plan el cliente pasa a ser dueño de todo se dice SOLO si pregunta de quién es la web o el dominio (consultar_info('titularidad')). Nunca lo ofrezcas ni lo uses como argumento de venta.
+- Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual ni el adicional por web bilingüe: si el cliente no pregunta, no existen. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó. Esto vale DOBLE para los 12 meses: que a los 12 meses de plan el cliente puede reclamar el código y la propiedad de la web se dice SOLO si pregunta de quién es la web, el dominio o el código (consultar_info('titularidad') o consultar_info('entrega_codigo')). Nunca lo ofrezcas ni lo uses como argumento de venta.
 - "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices el tipo más caro solo porque pidió "la más completa": el tipo sale de lo que vende o hace, no del adjetivo. El precio son DOS números —el primer pago y el plan mensual— y se dicen siempre juntos: nunca des uno solo.
 - Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el primer pago y el plan mensual, nunca las cuotas solas.
 - "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es por mes?" van por consultar_info('mantenimiento'): SÍ hay un plan mensual y es obligatorio, y esa respuesta ya trae el monto que le corresponde. Las comparaciones con Tiendanube/Wix/Shopify van a manejar_objecion('plataforma'). "Por qué no uso Tiendanube que es gratis" es esto, NUNCA consultar_info('tecnologia'): esa clave es solo si preguntan de qué lenguaje o hosting está hecha la web, no para comparar con una plataforma competidora. manejar_objecion('plataforma') te devuelve el argumento correcto: allá la página la arma el cliente con una plantilla y paga por mes igual; acá la hacemos nosotros, a medida, y nos ocupamos de todo. Nunca digas que lo nuestro es "pago único" ni "sin costos mensuales": ya no es así.
@@ -2736,7 +2750,11 @@ REGLAS QUE NO PODÉS ROMPER
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
-Es gratis y sin compromiso: le armamos una versión de su web para que la vea antes de decidir. Se entrega en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio (si pregunta cuánto dura, consultar_info('demo_vigencia')). Detrás del precio salen solos los tres pasos (demo gratis, primer pago, plan mensual): vos no los escribís ni los repetís. Si contesta que sí quiere la demo, recién ahí le mandás el formulario con consultar_info('prediseno').
+Es gratis y sin compromiso: la primera entrega es gratis, le armamos una versión de su web para que la vea antes de decidir. Se entrega en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio (si pregunta cuánto dura, consultar_info('demo_vigencia')). Detrás del precio salen solos los tres pasos (primera entrega gratis, primer pago, plan mensual), que terminan preguntándole si quiere que le preparemos la demo: vos no los escribís ni los repetís.
+Lo que conteste a esa pregunta decide qué hacés, y el orden importa:
+- Dice que sí (sí, dale, quiero, armala, mandame el formulario): le mandás el formulario con consultar_info('prediseno').
+- Te cuenta algo más de su negocio sin contestar ("vestidos y conjuntos", "reservas online", "clases grupales"): NO le mandes el formulario. Reconocé en UNA línea lo que dijo, nombrándolo, y preguntale si quiere que le preparemos la demo.
+- Te hace una pregunta: contestala. Si pide una persona: derivá. Si dice que no o que lo piensa: cerrá cordial, sin insistir.
 Si confirma que la quiere, llamá a la herramienta que corresponda (consultar_info('prediseno') o guardar_prediseno según el caso) y mandá el texto que te devuelve TAL CUAL, sin reescribirlo ni agregarle nada: según el caso te devuelve un link a una página donde carga sus datos (nombre, negocio, descripción, colores), o la lista de esos mismos datos para pedirlos por chat — NO le pidas vos esos datos por chat si ya te dio un link, y no asumas cuál de los dos te va a tocar: mandá el que te devuelva la herramienta.
 No vuelvas a llamar a consultar_info('prediseno') ni repitas ese texto (link o lista) si ya lo mandaste antes en la charla y el cliente todavía no contestó con datos reales: un "ok", "dale", "genial" o cualquier acuse sin información nueva significa que lo vio y lo va a hacer, no que haya que insistirle de nuevo. Quedate en silencio o contestá una línea corta esperando los datos.
 Si el cliente igual te contesta con esos datos por chat en vez de completar el link (pasa seguido, no está mal), anotalos igual: APENAS te dice uno de esos datos, llamá a anotar_prediseno con ese dato EN EL MISMO TURNO, antes de escribirle. No esperes a tenerlos todos: si la charla se corta y no lo anotaste, ese dato se pierde. Antes de preguntar algo, fijate en lo que ya te devolvió anotar_prediseno/guardar_prediseno en "anotado": si ya está, no lo vuelvas a pedir.

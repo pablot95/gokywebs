@@ -1,0 +1,110 @@
+[
+    {
+        "id": "F01",
+        "titulo": "V01 — Alquiler de sonido e iluminacion: el dato despues de los tres pasos no es un si",
+        "esperado": "Con 'alquilamos sonido e iluminacion para eventos' ya alcanza para cotizar: NO pregunta 'que tipo de eventos organizas'. Despues de los tres pasos (que terminan preguntando si quiere la demo), 'No tengo mas nada que agregar, es alquiler de equipos' NO se lleva el formulario: se toma y se vuelve a preguntar.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, alquilamos sonido e iluminacion para eventos",
+            "Ya te dije, alquiler de sonido e iluminacion para fiestas y eventos",
+            "No tengo mas nada que agregar, es alquiler de equipos"
+        ]
+    },
+    {
+        "id": "F02",
+        "titulo": "V02 — Pide la demo y despues un asesor",
+        "esperado": "'Si, quiero la demo gratis' se lleva el formulario. 'Me pasas con un asesor porfa' deriva (pide humano).",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo una tienda de plantas y macetas",
+            "Si, quiero la demo gratis",
+            "Me pasas con un asesor porfa"
+        ]
+    },
+    {
+        "id": "F03",
+        "titulo": "V03 — Web bilingue",
+        "esperado": "Cotiza el sitio profesional con los tres pasos y la pregunta de la demo. Lo del ingles lo contesta sin inventar precio.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo cabanas para turistas y necesito la web en espanol e ingles porque me llegan muchos extranjeros"
+        ]
+    },
+    {
+        "id": "F04",
+        "titulo": "V04 — Sistema de gestion y pedido de llamada",
+        "esperado": "Toma el sistema a medida y, cuando pide que lo llamen, deriva.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, necesito un sistema de gestion de stock a medida para mi deposito, es bastante especifico",
+            "Es complicado de explicar por texto, prefiero que me llame alguien"
+        ]
+    },
+    {
+        "id": "F05",
+        "titulo": "V05 — 'Reservas online' despues de los tres pasos, y el upgrade a tienda",
+        "esperado": "'Reservas online' NO se lleva 'me faltan solo los colores de tu marca' ni el formulario: se toma y se vuelve a preguntar si quiere la demo. La pregunta del skincare con cobro online se contesta con los dos precios.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo un centro de estetica y quiero que las clientas reserven turno desde la web",
+            "Reservas online",
+            "Y si ademas quiero vender productos de skincare con cobro online, cuanto sale sumar eso?"
+        ]
+    },
+    {
+        "id": "F06",
+        "titulo": "V06 — Wix para un negocio de tortas",
+        "esperado": "Contesta que en Wix no trabajamos y por que. (Seguir la venta con el rubro queda para el paso siguiente.)",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"
+        ]
+    },
+    {
+        "id": "F07",
+        "titulo": "V07 — Acepta con 'Si dale, armenla' y dice que ya lo completo",
+        "esperado": "'Clases grupales' no se lleva el formulario. 'Si dale, armenla' si. 'ya esta todo arriba, fijate' con el formulario sin llegar: 'Todavia no me llego el formulario', con el link, SIN derivar.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo un gimnasio y quiero que se puedan anotar a las clases desde la web",
+            "Clases grupales",
+            "Si dale, armenla",
+            "ya esta todo arriba, fijate"
+        ]
+    },
+    {
+        "id": "F08",
+        "titulo": "V08 — El dato no es un si, el si repetido no deriva y los datos por chat cierran",
+        "esperado": "'Vestidos y conjuntos' NO se lleva el formulario. 'Si, quiero la muestra gratis' si. Si el link ya estaba, el si repetido se lleva 'la demo sale del formulario que te pase', NUNCA la derivacion. 'Malena - IndumentariaMale - negro y dorado' cierra el prediseno (cierre=prediseno) con el texto de siempre, no con 'el desarrollador ya tiene tu consulta'.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo una marca de indumentaria femenina y quiero vender online",
+            "Vestidos y conjuntos",
+            "Si, quiero la muestra gratis",
+            "Malena - IndumentariaMale - negro y dorado"
+        ]
+    },
+    {
+        "id": "F09",
+        "titulo": "V09 — 'Consultas y vacunacion' y lo charla con la pareja",
+        "esperado": "'Consultas y vacunacion' NO se lleva el formulario: se toma y se vuelve a preguntar. 'Lo voy a charlar con mi pareja' se cierra sin presion.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo una veterinaria y quiero mostrar mis servicios con turnos",
+            "Consultas y vacunacion",
+            "Lo voy a charlar con mi pareja y despues te escribo, gracias"
+        ]
+    },
+    {
+        "id": "F10",
+        "titulo": "V10 — Caro para ahora y 'Ok'",
+        "esperado": "'Detergentes y suavizantes' no se lleva el formulario. 'esta caro para mi ahora' se contesta sin presion. 'Ok' final: silencio.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, vendo productos de limpieza a granel y quiero vender por la web",
+            "Detergentes y suavizantes",
+            "Uh esta caro para mi ahora, no puedo pagar eso",
+            "Ok"
+        ]
+    }
+]

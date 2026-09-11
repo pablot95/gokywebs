@@ -753,6 +753,19 @@ function wabot_anti_repeticion($mensajes, &$conv, $cfg) {
         }
     }
 
+    /* Lo mismo con el link del formulario ya mandado, o con la demo ofrecida y
+     * esperando el sí: el cliente sigue escribiendo por chat y el próximo paso
+     * ya lo tiene. "Sí, quiero la muestra gratis" (V08, 10-sep) volvió a generar
+     * el texto del formulario, esto lo leyó como bot trabado y derivó, y la
+     * charla se cortó justo cuando la clienta mandaba sus datos. Se calla. */
+    if ((!empty($conv['link_form_enviado']) && empty($conv['lead_creado'])
+            && in_array(($conv['fase'] ?? ''), ['prediseno', 'prediseno_ref'], true))
+        || wabot_espera_si_a_la_demo($conv, $cfg)) {
+        $conv['repeticiones_seguidas'] = 0;
+        wabot_evento_sesion($conv, 'repeticion_form_silenciada');
+        return [];
+    }
+
     $veces = (int)($conv['repeticiones_seguidas'] ?? 0) + 1;
     $conv['repeticiones_seguidas'] = $veces;
     wabot_evento_sesion($conv, 'repeticion_evitada', ['veces' => $veces]);
@@ -3306,6 +3319,37 @@ function wabot_engine($texto, &$conv, $cfg) {
                 $conv['colores'] = 'A elección del diseñador';
             }
 
+            /* DESPUÉS DE LOS TRES PASOS, EL FORMULARIO SALE CON EL SÍ (11-sep).
+             * Los tres pasos terminan preguntando si quiere la demo, así que lo
+             * que viene es un sí o no lo es. "Reservas online" (V05) contaba más
+             * del negocio y se llevó "me faltan solo los colores de tu marca",
+             * el pedido por chat de antes del formulario; con cualquier otra
+             * cosa, el motor mandaba el link sin que nadie lo pidiera. Con el
+             * formulario activo y el link todavía sin mandar: el sí se lleva el
+             * link, el no se cierra sin presión y lo demás se toma y se vuelve
+             * a preguntar. Lo que contó ya quedó anotado arriba. */
+            if (!$out && trim((string)$texto) !== '' && wabot_espera_si_a_la_demo($conv, $cfg)) {
+                if (wabot_acepta_demo($texto)) {
+                    wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'motor_tres_pasos']);
+                    $out[] = wabot_prediseno_texto($conv, $cfg);
+                    break;
+                }
+                if (wabot_es_negativa($texto)) {
+                    return wabot_cerrar_sin_presion($conv, $cfg, 'consulta');
+                }
+                if (mb_strpos($texto, '?') === false) {
+                    /* Una vez se vuelve a preguntar; la segunda se deja la puerta
+                     * abierta sin preguntar de nuevo, y de ahí en más silencio (lo
+                     * ve el desarrollador en el panel). Repetir la misma pregunta
+                     * es lo que el anti-repetición convierte en derivación. */
+                    $vez = (int)($conv['tres_pasos_repreguntas'] ?? 0);
+                    $conv['tres_pasos_repreguntas'] = $vez + 1;
+                    if ($vez === 0) $out[] = wabot_tres_pasos_repregunta_texto();
+                    elseif ($vez === 1) $out[] = 'Buenísimo. Cuando quieras que te armemos la demo, avisame y te paso el formulario.';
+                    break;
+                }
+            }
+
             if ($conv['descripcion'] !== null && $conv['colores'] !== null) {
                 // Si el agente ya la anotó o ya se la preguntamos, no se repite:
                 // volver a pedirla es el reclamo típico de "ya te la pasé".
@@ -3489,6 +3533,17 @@ function wabot_info_por_palabras($texto, $fase = null) {
      * pregunta. "tengo que" no cuenta como contar el negocio. */
     $cuentaSuNegocio = preg_match('/\b(vendo|vendemos|tengo(?! que)|tenemos(?! que)|hago|hacemos|ofrezco|ofrecemos|soy|somos|manejo|manejamos|me dedico|nos dedicamos|trabajo (de|en)|fabrico|fabricamos|acepto|aceptamos|cobro|cobramos)\b/u', $t);
     $tienePregunta = strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false;
+    /* Cómo se da de baja el plan y si hace falta cuenta de Mercado Pago (Pablo,
+     * 11-sep). Antes que el plan mensual, que agarraría "dar de baja el plan
+     * mensual". La baja tiene que ser del plan o la suscripción: "dar de baja
+     * una propiedad" es del panel de la inmobiliaria. */
+    if (preg_match('/\b(permanencia|desuscrib\w*|dejar de pagar|dejo de pagar|deja de pagar)\b/u', $t)
+        || (preg_match('/\b(de baja|la baja|cancel\w*|anular)\b/u', $t)
+            && preg_match('/\b(plan|suscripcion|mensualidad|abono|servicio|debito|mercado ?pago|cuota)\w*/u', $t)
+            && !preg_match('/\b(propiedad\w*|producto\w*|curso\w*|publicacion\w*|alumno\w*)\b/u', $t))
+        || preg_match('/\b(cuenta (de|en) mercado ?pago|no tengo mercado ?pago|sin mercado ?pago|tener mercado ?pago)\b/u', $t)) {
+        return 'baja_del_plan';
+    }
     if (preg_match('/\bmantenimiento\b/u', $t)) return 'mantenimiento';
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)
         && !($cuentaSuNegocio && !$tienePregunta)) return 'mantenimiento';
@@ -4800,10 +4855,19 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     );
 }
 
-/** El segundo mensaje del turno del precio: los tres pasos, dictados por Pablo (10-sep). */
-function wabot_tres_pasos_texto($conv, $cfg) {
+/**
+ * El segundo mensaje del turno del precio: los tres pasos (Pablo, 10-sep) y,
+ * desde el 11-sep, la pregunta de si quiere la demo. Terminaban en "comienza el
+ * plan mensual", que informa pero no dice qué contestar, y el "Vestidos y
+ * conjuntos" que venía después se tomaba como un sí. Con la pregunta, el sí
+ * siguiente significa una sola cosa. Sin la pregunta cuando el formulario sale
+ * en el mismo turno (el que pidió la demo al entrar): preguntarle si la quiere y
+ * mandarle el link en el globo de al lado se contradice.
+ */
+function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
     $t = trim((string)($cfg['msg_tres_pasos'] ?? ''));
     if ($t === '' && function_exists('wabot_tres_pasos_default')) $t = wabot_tres_pasos_default();
+    if ($conPregunta && $t !== '') $t .= "\n" . wabot_tres_pasos_pregunta();
     return $t;
 }
 
@@ -5490,15 +5554,12 @@ function wabot_precio($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
     /* Detrás del precio van los tres pasos (Pablo, 10-sep), con o sin link:
      * el formulario o el listado de datos salen recién con el sí del cliente,
-     * igual que en el camino del pitch. */
-    $out[] = wabot_tres_pasos_texto($conv, $cfg);
-    /* Salvo que ya haya pedido la demo al entrar ("quiero la demo gratis"):
-     * ese sí ya está dicho, así que el formulario va en el mismo turno en vez
-     * de hacerle esperar otra respuesta para mandárselo. */
-    if (!empty($conv['demo_pedida_entrada'])) {
-        $pedidoDemo = trim((string)wabot_prediseno_texto($conv, $cfg));
-        if ($pedidoDemo !== '') $out[] = $pedidoDemo;
-    }
+     * igual que en el camino del pitch. Salvo que ya haya pedido la demo al
+     * entrar ("quiero la demo gratis"): ese sí ya está dicho, así que el
+     * formulario va en el mismo turno, y los tres pasos sin la pregunta. */
+    $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
+    $out[] = wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '');
+    if ($pedidoDemo !== '') $out[] = $pedidoDemo;
     return $out;
 }
 
@@ -6182,6 +6243,177 @@ function wabot_es_negativa($texto) {
     $sinMuletillas = trim(preg_replace('/\b(la|vdd|verdad|que|mmm+|eh+|em+|posta|jaja+|jeje+|uh|ay|y|pues|este)\b/u', ' ', $t));
     $sinMuletillas = trim(preg_replace('/\s+/u', ' ', $sinMuletillas));
     return $sinMuletillas !== $t && in_array($sinMuletillas, $negativas, true);
+}
+
+/**
+ * ¿Aceptó la demo? Es la respuesta a la pregunta con la que terminan los tres
+ * pasos ("Querés que preparemos la demo para tu negocio?") y lo único que manda
+ * el formulario (Pablo, 11-sep).
+ *
+ * wabot_es_afirmativa() es a propósito una lista cerrada de síes pelados:
+ * "Si dale, armenla" no entraba, y el formulario salió igual porque lo mandó el
+ * modelo — que con "Vestidos y conjuntos" y "Consultas y vacunación" también lo
+ * mandó (V07, V08 y V09 de la batería del 10-sep). Acá entran los síes con un
+ * pedido de armarla atrás; NO entra lo que cuenta más del negocio, lo que
+ * posterga ni lo que pone un pero.
+ *
+ * "Si" sin tilde puede ser condicional ("si tengo 50 productos..."): cuenta
+ * solo pegado a una coma o seguido de otra aceptación. $permitirPregunta es
+ * para el guard de la herramienta: "Sí, cuánto tarda?" acepta Y pregunta.
+ */
+function wabot_acepta_demo($texto, $permitirPregunta = false) {
+    $crudo = trim((string)$texto);
+    if ($crudo === '') return false;
+    $pregunta = mb_strpos($crudo, '?') !== false;
+    if ($pregunta && !$permitirPregunta) return false;
+    if (wabot_pidio_demo_explicita($crudo)) return true;
+    if (!$pregunta && wabot_es_afirmativa($crudo)) return true;
+    if (preg_match('/^(👍|👌|✅|🙌)+$/u', preg_replace('/[\s\x{FE0F}\x{1F3FB}-\x{1F3FF}]+/u', '', $crudo))) return true;
+
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '' || mb_strlen($t) > 80) return false;
+    // Lo que posterga o pone un pero no es un sí, venga con "dale" o sin él.
+    if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|charl\w*|hablarlo|despues|luego|te aviso|te escribo|te confirmo|a ver|lo veo|caro|no puedo|no me alcanza|pero)\b/u', $t)) return false;
+
+    $pedirla = 'arm(a|e)(la|nla|mela|nmela)|haganla|haganmela|hac(e|a)(la|mela)|prepar(a|e)(la|nla|mela|nmela)'
+             . '|mand(a|e)(la|nla|mela|melo|me|nme)|pasa(la|mela|melo|me)|el formulario|el link|el enlace|la demo|la muestra'
+             . '|avancemos|arranquemos|empecemos|adelante|vamos|quiero verla|me interesa|me encanta|me encantaria|me gustaria|me sirve';
+    $siguen = 'dale|ok|oka|okey|okay|bueno|perfecto|genial|de una|obvio|claro|buenisimo|buenisima|joya|barbaro|excelente|listo';
+
+    // "Sí, ..." con coma o punto: como respuesta a la pregunta de la demo, es un sí.
+    if (preg_match('/^\s*s[ií]+\s*[,.!]/iu', $crudo)) return true;
+    // "si dale armenla", "si porfa", "si quiero": el sí seguido de otra aceptación.
+    if (preg_match('/^si+ (' . $siguen . '|porfa|por favor|gracias|' . $pedirla . ')\b/u', $t)) return true;
+    if (preg_match('/^(si+ )?quiero( verla| la demo| la muestra| el formulario| el link)?$/u', $t)) return true;
+    // "dale armenla", "ok mandame el formulario", "bueno prepárenla".
+    if (preg_match('/^(' . $siguen . ')\b/u', $t)) return true;
+    // "armenla", "pasame el link", "avancemos".
+    return (bool)preg_match('/^(' . $pedirla . ')\b/u', $t);
+}
+
+/**
+ * ¿Dice que ya completó el formulario? "Ya está todo arriba, fijate" (V07,
+ * batería del 10-sep) se llevaba la derivación de wabot_apunta_a_lo_ya_dicho,
+ * que es la regla del chat SIN formulario: ahí "está todo en lo que te mandé"
+ * significa que los datos están más arriba. Con el link mandado significa otra
+ * cosa —que lo llenó— y se contesta mirando si llegó de verdad.
+ */
+function wabot_dice_que_completo_form($texto) {
+    $t = wabot_normalizar_frase($texto);
+    if ($t === '' || mb_strlen($t) > 90) return false;
+    foreach (['esta todo arriba', 'ya esta todo', 'esta todo ahi', 'ya esta arriba', 'fijate arriba',
+              'te pase todo', 'te mande todo', 'en lo que te mande', 'ya esta completo', 'ya esta hecho'] as $f) {
+        if (strpos($t, $f) !== false) return true;
+    }
+    if (preg_match('/\b(ya|recien|listo|ahi)\b.{0,25}\b(complete|llene|cargue|envie|mande|termine|rellene)\b/u', $t)) return true;
+    return (bool)preg_match('/\b(formulario|form|link|datos)\b.{0,20}\b(completo|completado|completados|enviado|enviados|mandado|mandados|cargado|cargados|listo)\b/u', $t);
+}
+
+/**
+ * ¿Está la charla esperando el sí a la demo? Es el turno que sigue a los tres
+ * pasos: precio dado, demo ofrecida, formulario activo y el link todavía sin
+ * mandar. Sin formulario (form_activo apagado) sigue el flujo de antes, con los
+ * datos por chat.
+ */
+function wabot_espera_si_a_la_demo($conv, $cfg) {
+    return !empty($cfg['form_activo']) && ($conv['fase'] ?? '') === 'prediseno'
+        && !empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
+        && empty($conv['link_form_enviado']) && empty($conv['lead_creado'])
+        && empty($conv['form_completado_ts']) && empty($conv['presentado_ts'])
+        && !(array)($conv['prediseno_pedido'] ?? []);
+}
+
+/** Lo que cuenta de su negocio sin contestar si quiere la demo: se toma y se vuelve a preguntar. */
+function wabot_tres_pasos_repregunta_texto() {
+    return 'Dale, lo tenemos en cuenta para tu web. Querés que te preparemos la demo gratis?';
+}
+
+/** "Sí, quiero la demo" con el link ya mandado: se le recuerda dónde está, sin repetir el mismo texto. */
+function wabot_form_recordatorio_texto() {
+    return "Dale, la demo sale del formulario que te pasé:\n{link}\n"
+         . 'Si algo no te anda, mandame por acá el nombre del negocio y los colores que te gustan y la armamos igual.';
+}
+
+function wabot_form_no_llego_texto() {
+    return "Todavía no me llegó el formulario. Fijate que al final hayas tocado Enviar:\n{link}\n"
+         . 'Si te trabó, mandame por acá el nombre del negocio y los colores que te gustan y la armamos igual.';
+}
+
+function wabot_form_ya_recibido_texto() {
+    return 'Sí, ya lo tengo: la demo te llega {entrega}.';
+}
+
+/**
+ * Lo que el cliente escribe con el link del formulario ya mandado y el
+ * formulario todavía sin llegar, más el "ya lo completé" con el formulario ya
+ * recibido. Determinista y en el borde común, antes del agente y del motor,
+ * porque en la batería del 10-sep los tres casos salieron mal por caminos
+ * distintos (Pablo, 11-sep: "corregir cuándo manda el formulario y cuándo
+ * deriva"):
+ *  - "Sí, quiero la muestra gratis" (V08) volvía a generar el MISMO texto del
+ *    formulario, el anti-repetición lo leía como bot trabado y derivaba.
+ *  - "Malena - IndumentariaMale - negro y dorado" (V08): la lista posicional
+ *    lo leyó bien, pero la charla ya estaba derivada y el lead nunca se creó.
+ *  - "Ya está todo arriba, fijate" (V07) derivaba por "está todo en lo que te
+ *    mandé", sin mirar si el formulario había llegado.
+ * Devuelve null cuando no le toca: una pregunta o cualquier otra cosa sigue
+ * al agente o al motor como siempre.
+ */
+function wabot_form_enviado_responder($texto, &$conv, $cfg) {
+    // El formulario ya llegó: "ya lo completé, fijate" se confirma una vez.
+    if ((int)($conv['form_completado_ts'] ?? 0) > 0) {
+        if (!wabot_dice_que_completo_form($texto) || mb_strpos((string)$texto, '?') !== false) return null;
+        if (!empty($conv['form_recibido_confirmado'])) return [];
+        $conv['form_recibido_confirmado'] = true;
+        return [wabot_personalizar(wabot_form_ya_recibido_texto(), $conv)];
+    }
+    if (empty($conv['link_form_enviado']) || !empty($conv['lead_creado'])) return null;
+    if (($conv['fase'] ?? '') !== 'prediseno') return null;
+
+    /* Mandó los datos por chat en vez de llenar el formulario (pasa seguido y
+     * no está mal): con el negocio y los colores alcanza, la descripción sale
+     * de lo que ya contó. La referencia no se pide: el formulario tampoco la
+     * exige. Mismo cierre que el prediseño por chat de siempre, con su lead. */
+    $negocio = trim((string)($conv['nombre_negocio'] ?? ''));
+    $colores = trim((string)($conv['colores'] ?? ''));
+    $pregunta = mb_strpos((string)$texto, '?') !== false;
+    // Una pregunta se contesta primero: cerrar encima la dejaría sin respuesta.
+    if ($negocio !== '' && $colores !== '' && !$pregunta) {
+        if (wabot_descripcion_generica((string)($conv['descripcion'] ?? ''))) {
+            $desdeCharla = wabot_descripcion_desde_contexto($conv);
+            if ($desdeCharla !== '') $conv['descripcion'] = $desdeCharla;
+        }
+        $conv['origen_prediseno'] = ($conv['origen_prediseno'] ?? '') ?: 'chat';
+        $conv['referencia_preguntada'] = true;
+        wabot_evento_sesion($conv, 'prediseno_datos_por_chat', ['con_link' => true]);
+        return wabot_cerrar_o_pedir_whatsapp($conv, $cfg);
+    }
+
+    // Dice que ya lo llenó: se mira si llegó. La segunda vez algo anda mal con
+    // el formulario, y eso lo tiene que ver una persona.
+    if (wabot_dice_que_completo_form($texto) && mb_strpos((string)$texto, '?') === false) {
+        $avisos = (int)($conv['form_no_llego_avisos'] ?? 0);
+        $conv['form_no_llego_avisos'] = $avisos + 1;
+        if ($avisos >= 1) {
+            wabot_evento_sesion($conv, 'form_no_llega');
+            return wabot_derivar($conv, $cfg, 'form_no_llega');
+        }
+        $link = wabot_form_link($conv, $cfg);
+        if ($link === '') return null;
+        wabot_evento_sesion($conv, 'form_no_llego_avisado');
+        return [str_replace('{link}', $link, wabot_form_no_llego_texto())];
+    }
+
+    // Vuelve a decir que sí, o pide el link de nuevo: dónde está, una vez.
+    if (wabot_acepta_demo($texto) || (function_exists('wabot_pide_repetir') && wabot_pide_repetir($texto))) {
+        if (!empty($conv['form_recordatorio_enviado'])) return [];
+        $link = wabot_form_link($conv, $cfg);
+        if ($link === '') return null;
+        $conv['form_recordatorio_enviado'] = true;
+        wabot_evento_sesion($conv, 'form_recordado');
+        return [str_replace('{link}', $link, wabot_form_recordatorio_texto())];
+    }
+    return null;
 }
 
 function wabot_es_delegacion($texto) {

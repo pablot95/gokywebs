@@ -13,7 +13,7 @@
  *  5. Las charlas cotizadas antes del 10-sep conservan su pago único.
  *  6. Los guards no tiran las respuestas correctas del modelo nuevo.
  *  7. Ningún texto sale con {precio} o {mensualidad} crudos.
- *  8. Los 18 meses se dicen solo si preguntan.
+ *  8. Los 12 meses (eran 18 hasta el 11-sep) se dicen solo si preguntan.
  */
 
 if (php_sapi_name() !== 'cli') { http_response_code(404); exit; }
@@ -129,7 +129,8 @@ $r = wabot_pitch('landing', $c, $cfg);
 caso('son dos mensajes', count($r) === 2);
 caso('el primero dice primer pago y plan mensual en la misma oración',
     preg_match('/primer pago es de \$60\.000 y a los 30 días arranca el plan mensual de \$20\.000/u', $r[0]) === 1, $r[0]);
-caso('el segundo son los tres pasos, textuales', ($r[1] ?? '') === wabot_tres_pasos_default());
+caso('el segundo son los tres pasos, textuales, y la pregunta de la demo (11-sep)',
+    ($r[1] ?? '') === wabot_tres_pasos_default() . "\n" . wabot_tres_pasos_pregunta());
 caso('con el plazo de la demo que pidió Pablo', mb_stripos($r[1] ?? '', 'menos de 24 horas') !== false);
 caso('y sin el link del formulario', strpos($r[1] ?? '', 'gokywebs.com/form/') === false);
 caso('el precio queda congelado en la charla',
@@ -270,14 +271,17 @@ foreach ([
         $texto);
 }
 
-echo "— 9. Los 18 meses se dicen solo si preguntan —\n";
+echo "— 9. Los 12 meses se dicen solo si preguntan (eran 18 hasta el 11-sep) —\n";
 
 $salenSolos = [$cfg['tipos']['landing']['precio_ideal'], $cfg['msg_precio'], $cfg['caro'], $cfg['plataformas'],
     $cfg['info']['que_incluye'], $cfg['info']['mantenimiento'], $cfg['info']['pago'], $cfg['info']['baja_del_plan'],
     wabot_tres_pasos_default(), $cfg['muestra_presentar_seguimiento'], $cfg['prediseno_link']];
-caso('ningún texto que sale solo nombra los 18 meses',
-    count(array_filter($salenSolos, function ($t) { return mb_stripos((string)$t, '18 meses') !== false; })) === 0);
-caso('solo la respuesta de titularidad, que sale si preguntan', mb_stripos($cfg['info']['titularidad'], '18 meses') !== false);
+caso('ningún texto que sale solo nombra los 12 meses',
+    count(array_filter($salenSolos, function ($t) { return mb_stripos((string)$t, '12 meses') !== false; })) === 0);
+caso('solo las respuestas de titularidad y del código, que salen si preguntan',
+    mb_stripos($cfg['info']['titularidad'], '12 meses') !== false && mb_stripos($cfg['info']['entrega_codigo'], '12 meses') !== false);
+caso('a los 12 meses puede reclamar el código y la propiedad', mb_stripos($cfg['info']['titularidad'], 'reclamar el código y la propiedad') !== false);
+caso('y los 18 meses ya no aparecen en ningún texto', mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), '18 meses') === false);
 caso('"y si dejo de pagar?" tiene su clave y su texto',
     wabot_info_clave_del_enum('baja_del_plan') && trim((string)$cfg['info']['baja_del_plan']) !== '');
 caso('y dice que no hay permanencia y que la web se desactiva',
@@ -290,7 +294,8 @@ caso('explica el primer pago y el plan mensual obligatorio', mb_stripos($sis, 'P
 caso('prohíbe decir que el plan es opcional o que es pago único', mb_stripos($sis, 'Nunca digas que el plan es opcional') !== false);
 caso('ya no afirma que el mantenimiento es opcional', mb_stripos($sis, 'El mantenimiento es opcional') === false);
 caso('ni que existe la seña', mb_stripos($sis, 'La seña NUNCA es un porcentaje') === false);
-caso('los 18 meses, solo si pregunta', mb_stripos($sis, 'SOLO si pregunta de quién es la web') !== false);
+caso('los 12 meses, solo si pregunta', mb_stripos($sis, 'a los 12 meses de plan') !== false && mb_stripos($sis, 'SOLO si pregunta de quién es la web') !== false);
+caso('y el prompt ya no dice 18 meses', mb_stripos($sis, '18 meses') === false);
 caso('la demo queda disponible 5 días', mb_stripos($sis, 'disponible 5 días') !== false);
 
 echo "— 11. El paso 2 del formulario llega al brief del boceto —\n";
