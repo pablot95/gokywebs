@@ -206,6 +206,11 @@ async function sincronizarPresentados() {
         for (const item of (data.items || [])) {
             if (!item.cliente_id) continue;
             if (item.archivado) {
+                // Desde el 10-sep-2026 el cliente con la web entregada se queda en
+                // Clientes con su plan mensual: un chat archivado nunca lo borra.
+                // Si todavía no está en la lista cargada, se deja para la próxima vuelta.
+                const archivado = clients.find(x => x.id === item.cliente_id);
+                if (!archivado || getEstado(archivado) === "cliente") continue;
                 try { await deleteDoc(doc(db, "clientes", item.cliente_id)); } catch (_) {}
                 continue;
             }
@@ -694,8 +699,9 @@ function renderEmbudoPresupuesto() {
             const tipo = TYPE_LABELS[s.siteType] || s.siteType || "";
             /* `presupuesto_funnel` no guarda el flag `sinPrecio` (su allowlist de
                firestore.rules lo rechazaría): un total en 0 con precioAt ya
-               registrado solo puede ser el catálogo de +100 productos, porque
-               ningún presupuesto real arranca por debajo de $150.000. */
+               registrado solo puede ser una sesión vieja del catálogo de +100
+               productos. Desde el 10-sep-2026 la calculadora guarda como total el
+               primer pago ($60.000 o $90.000), que es lo que se vio en pantalla. */
             const precio = fmtPrecioOACotizar(s.totalPrice, Number(s.totalPrice) === 0);
             out += `<a class="funnel-leak-item" href="https://wa.me/${s.phone.replace(/\D/g, "")}" target="_blank" rel="noopener" title="Abrir WhatsApp">
                 <span class="funnel-leak-phone">${escapeHtml(s.phone)}</span>
@@ -919,6 +925,7 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal && !window
 
 // --- Estado ---
 let clients = [];
+let clientesCargados = false;   // hasta el primer snapshot, Clientes muestra "Cargando..."
 let propuestas = [];
 let propuestasListaVisible = [];  // lo que renderPropuestas() dejó filtrado; lo usa "Copiar carpetas"
 let presupuestos = [];
@@ -960,6 +967,142 @@ function fmtMoney(n) {
    mostraría "$0" como si fuera un presupuesto real de precio cero. */
 function fmtPrecioOACotizar(monto, sinPrecio) {
     return sinPrecio ? `<span style="color:#FCD34D">A cotizar</span>` : fmtMoney(monto);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PLAN MENSUAL — modelo comercial del 10-sep-2026
+   Primer pago + plan mensual obligatorio, que arranca a los 30 días del
+   primer pago y se cobra por suscripción de Mercado Pago. Mismos montos que
+   PRIMER_PAGO / MENSUALIDAD de /presupuesto/script.js (mantener sincronizados).
+   Ya no hay saldo: en `clientes` los campos nuevos (planLabel, primerPago,
+   primerPagoAt, montoMensual, estadoSuscripcion, suscripcionDesde,
+   preapprovalId) se escriben ADEMÁS de los viejos (`valorTotal` = primer
+   pago, `abono`), que quedan por compatibilidad con los docs anteriores.
+   ═══════════════════════════════════════════════════════════ */
+const PLANES = {
+    profesional:  { label: "Sitio profesional",    primerPago: 60000, mensual: 20000 },
+    ecommerce:    { label: "Ecommerce",            primerPago: 90000, mensual: 30000 },
+    cursos:       { label: "Plataforma de cursos", primerPago: 90000, mensual: 30000 },
+    inmobiliaria: { label: "Inmobiliaria",         primerPago: 90000, mensual: 30000 },
+    noticias:     { label: "Portal de noticias",   primerPago: 90000, mensual: 30000 },
+};
+// Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
+const PLAN_RESTO = { primerPago: 90000, mensual: 30000 };
+const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
+const DIAS_HASTA_EL_PLAN = 30;
+
+function _num(v) {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/* Tipo de web → clave de PLANES. Acepta las claves del bot (landing, turnos,
+   institucional, catalogo, lms…), las de la calculadora, las del alta manual
+   (landing-reservas, ecommerce-elearning…) y las etiquetas tipeadas en el
+   boceto ("Landing Page", "Plataforma LMS"). null si no se reconoce. */
+function planKeyDeTipo(tipo) {
+    const t = String(tipo || "").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+    if (!t.trim()) return null;
+    if (/noticia/.test(t)) return "noticias";
+    if (/inmobil|propiedad|bienes raices/.test(t)) return "inmobiliaria";
+    if (/e-?commerce|tienda|catalogo|shop|carrito/.test(t)) return "ecommerce";
+    if (/e-?learning|\blms\b|curso|academia/.test(t)) return "cursos";
+    if (/landing|sitio|profesional|institucional|turno|reserva|web.?completa|portfolio/.test(t)) return "profesional";
+    return null;
+}
+
+/* Plan y montos de un doc: cliente (planLabel, primerPago, montoMensual),
+   boceto de la calculadora o del alta manual (primerPago, mensualidad) o
+   snapshot de un boceto. `extra` es el boceto o el lead del que salió, por si
+   el doc no trae los montos. Compatibilidad: los bocetos viejos traían `sena`,
+   que casi siempre coincide con el primer pago de hoy (60.000 / 90.000). Lo
+   que falte sale del tipo de web. planLabel "" = plan sin definir, a propósito. */
+function planDe(src, extra = null) {
+    const s = src || {};
+    const x = extra || {};
+    const guardado = typeof s.planLabel === "string" ? s.planLabel.trim() : null;
+    let key = guardado !== null ? (PLAN_POR_LABEL[guardado] || null) : null;
+    if (guardado === null) {
+        for (const f of [s, s.propuestaSnapshot, extra]) {
+            if (!f) continue;
+            key = [f.tipoDetectado, f.tipoDetectadoLabel, f.tipo_web, f.siteType].map(planKeyDeTipo).find(Boolean) || null;
+            if (key) break;
+        }
+    }
+    const base = key ? PLANES[key] : PLAN_RESTO;
+    return {
+        key,
+        label: guardado !== null ? guardado : (key ? PLANES[key].label : ""),
+        primerPago: _num(s.primerPago) || _num(x.primerPago) || _num(s.sena) || _num(x.sena) || base.primerPago,
+        mensual:    _num(s.montoMensual) || _num(s.mensualidad) || _num(x.montoMensual) || _num(x.mensualidad) || base.mensual,
+    };
+}
+
+/* Boceto del que salió un cliente: el vivo si todavía existe o la copia que
+   se guardó al pasarlo a Seguimiento. */
+function propuestaDeCliente(c) {
+    return (c.propuestaId && propuestas.find(p => p.id === c.propuestaId)) || c.propuestaSnapshot || null;
+}
+
+/* Suscriptor de Mantenimiento (lo escribe el webhook de Mercado Pago) que
+   corresponde a un cliente: por ID de la suscripción, email o WhatsApp. Las
+   colecciones no se fusionan; solo se cruzan al pintar. */
+function mantenimientoDeCliente(c) {
+    const pre = String(c.preapprovalId || "").trim();
+    const email = String(c.email || "").trim().toLowerCase();
+    const tel = cleanArgPhone(c.telefono);
+    return (pre && mantenimiento.find(m => m.id === pre || String(m.preapprovalId || "").trim() === pre))
+        || (email && mantenimiento.find(m => String(m.email || "").trim().toLowerCase() === email))
+        || (tel.length >= 8 && mantenimiento.find(m => cleanArgPhone(m.whatsapp) === tel))
+        || null;
+}
+
+function _fechaDeInput(valor) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(valor || ""));
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : null;
+}
+
+function _sumarDias(fecha, dias) {
+    return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + dias, 12);
+}
+
+/* Cómo se ve la suscripción de un cliente en el tab Clientes. Una baja cargada
+   a mano manda; si no, un suscriptor activo en Mantenimiento la vuelve
+   'activa'; si no, vale lo guardado ('pendiente' por defecto). El inicio es el
+   guardado, o el primer pago + 30 días, o el alta en Mercado Pago. */
+function suscripcionDe(c) {
+    const plan = planDe(c, propuestaDeCliente(c));
+    const mant = mantenimientoDeCliente(c);
+    const primerPagoAt = mantToDate(c.primerPagoAt);
+    const inicio = mantToDate(c.suscripcionDesde)
+        || (primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : null)
+        || mantToDate(mant?.createdAt);
+    const desde = inicio ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()) : null;
+    const mantActivo = !!mant && (mant.estado || "activo") === "activo";
+    const estado = c.estadoSuscripcion === "baja" ? "baja"
+        : (mantActivo || c.estadoSuscripcion === "activa") ? "activa"
+        : "pendiente";
+    return {
+        plan,
+        mensual: _num(c.montoMensual) || _num(mant?.monto) || plan.mensual,
+        primerPago: plan.primerPago,
+        primerPagoAt,
+        desde,
+        estado,
+        mant,
+        porActivar: estado === "pendiente" && !!desde && desde <= new Date(),
+        preapprovalId: String(c.preapprovalId || mant?.preapprovalId || "").trim(),
+        // Lo abonado con el modelo anterior, para no perderlo de vista.
+        abonoAnterior: !_num(c.primerPago) && !primerPagoAt ? _num(c.abono) : 0,
+    };
+}
+
+/* Filas del plan para los detalles (brief, boceto, presupuesto): el primer
+   pago y la mensualidad van por separado, nunca sumados. */
+function _planRowsHTML(plan) {
+    return `<div class="prop-row"><span class="prop-label">Plan</span><span style="font-weight:700;color:#4ade80">${escapeHtml(plan.label || "Sin definir")}</span></div>
+        <div class="prop-row"><span class="prop-label">Primer pago</span><span>${fmtMoney(plan.primerPago)}</span></div>
+        <div class="prop-row"><span class="prop-label">Plan mensual</span><span>${fmtMoney(plan.mensual)}/mes, arranca a los ${DIAS_HASTA_EL_PLAN} días del primer pago</span></div>`;
 }
 
 // Los adicionales de /presupuesto/ se guardan como slug (`calendario`, `login`…).
@@ -1095,13 +1238,14 @@ function initRealtime() {
     const q = query(collection(db, "clientes"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
         clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        clientesCargados = true;
         render();
         if (activeTab === "seguimientos") renderSeg();
         if (activeTab === "calendario") renderCal();
         if (enMetrica("stats")) renderStats();
     }, (err) => {
         console.error(err);
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
     });
 
     // ── Propuestas realtime (Bocetos) ──
@@ -1134,14 +1278,14 @@ function initRealtime() {
     });
 
     // ── Presupuestos + Leads en una sola colección ──
-    // Los señados (pagaron seña) no tienen estado:'lead'
+    // Los que pagaron el primer pago (tab "Primer pago") no tienen estado:'lead'
     // Los leads (calcularon precio sin pagar) tienen estado:'lead'
     const qPres = query(collection(db, "presupuestos"), orderBy("createdAt", "desc"));
     onSnapshot(qPres, (snap) => {
         presupuestos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-        // Separar señados y leads del mismo array
-        // Señados: clientes reales que pagaron via Mercado Pago → SIEMPRE tienen paymentStatus
+        // Separar los que pagaron y los leads del mismo array
+        // Pagaron: clientes reales que pagaron via Mercado Pago → SIEMPRE tienen paymentStatus
         // Leads: calcularon precio sin pagar → tienen estado:'lead', NUNCA tienen paymentStatus
         leads = presupuestos.filter(p => p.estado === 'lead');
         const senados = presupuestos.filter(p => p.paymentStatus);
@@ -1182,6 +1326,8 @@ function initRealtime() {
     onSnapshot(qMant, (snap) => {
         mantenimiento = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         renderMantenimiento();
+        // Clientes cruza la suscripción con Mantenimiento (estado, ID de Mercado Pago).
+        if (clientesCargados) render();
         const el = document.getElementById("countMantenimiento");
         if (el) el.textContent = mantenimiento.filter(m => (m.estado || "activo") === "activo").length;
     }, (err) => {
@@ -1296,21 +1442,28 @@ function _updateClientCounters() {
     const um = document.getElementById("segCountUM"); if (um) um.textContent = nUM;
     const sb = document.getElementById("segCountSB"); if (sb) sb.textContent = nSB;
 
-    const clientesActivos = clients.filter(c => getEstado(c) === "cliente");
-    const pendienteDe = c => Math.max(0, (Number(c.valorTotal) || 0) - (Number(c.abono) || 0));
-    // Clientes "a cotizar" (catálogo de +100 productos) NO suman al pendiente:
-    // su valorTotal es 0 a propósito, no un saldo ya cobrado — sumarlos daría
-    // "$0 pendiente" que se lee igual que "ya pagó todo".
-    const clientesConPrecio = clientesActivos.filter(c => !c.sinPrecio);
-    const totalPendiente = clientesConPrecio.reduce((sum, c) => sum + pendienteDe(c), 0);
+    /* Modelo del 10-sep-2026: ya no hay saldo que cobrar. Los dos números del tab
+       son la mensualidad que entra por mes (suscripciones activas) y cuántas
+       suscripciones pendientes ya tendrían que haber arrancado. */
+    const suscripciones = clients.filter(c => getEstado(c) === "cliente").map(suscripcionDe);
+    const mensualidadActiva = suscripciones
+        .filter(s => s.estado === "activa")
+        .reduce((sum, s) => sum + s.mensual, 0);
+    const porActivar = suscripciones.filter(s => s.porActivar).length;
 
-    document.getElementById("totalPendiente").textContent = fmtMoney(totalPendiente);
+    const mrrEl = document.getElementById("mrrActivo");
+    if (mrrEl) mrrEl.textContent = fmtMoney(mensualidadActiva);
+    const porActivarEl = document.getElementById("porActivar");
+    if (porActivarEl) {
+        porActivarEl.textContent = porActivar;
+        porActivarEl.style.color = porActivar ? "var(--warning)" : "";
+    }
 }
 
 function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll(".client-row").forEach(row => {
         row.addEventListener("click", (e) => {
-            if (e.target.closest("button, input, select, .date-cell, .actions-col, .notes-col, .phone-copy")) return;
+            if (e.target.closest("button, input, select, label, .date-cell, .actions-col, .notes-col, .phone-copy")) return;
             if (window.getSelection().toString().length > 0) return;
             openModal(row.dataset.rowId);
         });
@@ -1328,6 +1481,9 @@ function _bindTableListeners(tbodyEl) {
         }));
     tbodyEl.querySelectorAll("[data-status-id]").forEach(sel => {
         sel.addEventListener("change", () => setStatus(sel.dataset.statusId, sel.value));
+    });
+    tbodyEl.querySelectorAll("[data-cli-cambio]").forEach(chk => {
+        chk.addEventListener("change", () => toggleCambiosCliente(chk.dataset.cliCambio, chk.checked));
     });
     tbodyEl.querySelectorAll(".notes-cell").forEach(cell => {
         const label = cell.querySelector(".notes-label");
@@ -1387,41 +1543,87 @@ function _bindTableListeners(tbodyEl) {
     });
 }
 
+/* Fila de Clientes con la misma forma que Mantenimiento (modelo del 10-sep-2026):
+   plan y cuánto paga por mes, primer pago, suscripción y el cambio del mes. Las
+   notas se editan desde el modal; acá solo se ve la primera línea. */
+const ESTADO_SUSCRIPCION_HTML = {
+    activa:    `<span style="color:#4ade80;font-weight:700">● Activa</span>`,
+    pendiente: `<span style="color:#F59E0B;font-weight:700">○ Pendiente</span>`,
+    baja:      `<span style="color:#9CA3AF;font-weight:600">Baja</span>`,
+};
+
 function _clientRow(c) {
-    const estado = getEstado(c);
-    const sketchSlot = _clientSketchSlotLabel(c);
+    const s = suscripcionDe(c);
+    const proyecto = String(c.proyecto || "").trim();
+    const mostrarProyecto = proyecto && proyecto.toLowerCase() !== String(c.nombre || "").trim().toLowerCase();
+    const entregada = mantToDate(c.entregadoAt);
     const phoneDisplay = c.telefono
-        ? `<span class="phone-copy" data-phone-copy="${escapeHtml(c.telefono)}" title="Copiar número" style="cursor:pointer">${escapeHtml(c.telefono)}</span>`
+        ? `<span class="phone-copy" data-phone-copy="${escapeHtml(c.telefono)}" title="Copiar número" style="cursor:pointer;font-size:12px">${escapeHtml(c.telefono)}</span>`
         : '';
+
+    const primerPago = s.primerPagoAt
+        ? `<div style="color:#4ade80;font-weight:700">✓ Cobrado</div>
+           <div class="muted" style="font-size:12px;white-space:nowrap">${mantLongDate(s.primerPagoAt)} · ${fmtMoney(s.primerPago)}</div>`
+        : `<div style="color:#F59E0B;font-weight:600">Sin registrar</div>
+           <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.primerPago)}</div>
+           ${s.abonoAnterior ? `<div class="muted" style="font-size:11px">abonó ${fmtMoney(s.abonoAnterior)} con el modelo anterior</div>` : ""}`;
+
+    const suscripcion = `
+        <div>${ESTADO_SUSCRIPCION_HTML[s.estado]}</div>
+        <div class="muted" style="font-size:12px;white-space:nowrap">${s.desde ? `desde ${mantLongDate(s.desde)}` : "sin fecha de inicio"}</div>
+        ${s.porActivar ? `<div style="font-size:12px;font-weight:600;color:#F59E0B">por activar en Mercado Pago</div>` : ""}
+        ${s.mant ? `<div class="muted" style="font-size:11px">vía Mercado Pago</div>` : ""}
+        ${s.preapprovalId ? `<div class="muted" style="font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.preapprovalId)}">ID ${escapeHtml(s.preapprovalId)}</div>` : ""}`;
+
+    // Un cambio por mes incluido desde que arranca el plan. El ciclo se reinicia el
+    // mismo día del mes en que arrancó (mismo motor que Mantenimiento).
+    let cambios;
+    if (s.estado === "baja" || !s.desde) {
+        cambios = `<span class="muted">—</span>`;
+    } else if (s.desde > new Date()) {
+        cambios = `<span class="muted" style="font-size:12px;white-space:nowrap">arranca el ${mantShortDate(s.desde)}</span>`;
+    } else {
+        const period = mantCurrentPeriod(null, new Date(), s.desde);
+        const pidio = mantUsedCurrentPeriod(c, period);
+        const diasRestantes = Math.max(0, Math.ceil((period.next - new Date()) / 86400000));
+        cambios = `
+            <label title="Se habilita nuevamente el ${escapeHtml(mantLongDate(period.next))}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;justify-content:center">
+                <input type="checkbox" data-cli-cambio="${c.id}" ${pidio ? "checked" : ""} style="width:18px;height:18px;cursor:pointer;accent-color:#2563eb">
+            </label>
+            <div style="font-size:12px;font-weight:600;color:#93b4e8;margin-top:4px;white-space:nowrap">${mantShortDate(period.start)} al ${mantShortDate(period.next)}</div>
+            <div class="muted" style="font-size:11px;white-space:nowrap">se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>`;
+    }
+
     return `
         <tr class="client-row" data-row-id="${c.id}">
             <td>
                 <div class="client-name-cell">
-                    <span>${escapeHtml(c.nombre)}</span>
-                    ${sketchSlot ? `<small class="sketch-slot">${escapeHtml(sketchSlot)}</small>` : ''}
+                    <span style="font-weight:600">${escapeHtml(c.nombre)}</span>
+                    ${mostrarProyecto ? `<small class="muted" style="font-size:12px">${escapeHtml(proyecto)}</small>` : ""}
+                    ${phoneDisplay}
+                    ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
+                    ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
                 </div>
             </td>
-            <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
-            <td class="col-telefono">${phoneDisplay}</td>
-            <td class="num">${fmtPrecioOACotizar(c.valorTotal, c.sinPrecio)}</td>
-            <td class="num">${fmtMoney(c.abono)}</td>
-            <td class="notes-col">
-                <div class="notes-cell" data-note-id="${c.id}">
-                    <span class="notes-label${c.notas ? ' has-note' : ''}">${escapeHtml(c.notas || 'Agregar nota…')}</span>
-                    <textarea class="notes-input" maxlength="500" rows="2" data-original="${escapeHtml(c.notas || '')}">${escapeHtml(c.notas || '')}</textarea>
-                </div>
+            <td>
+                <div>${escapeHtml(s.plan.label || "Plan sin definir")}</div>
+                <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.mensual)}/mes</div>
             </td>
+            <td>${primerPago}</td>
+            <td>${suscripcion}</td>
+            <td class="center">${cambios}</td>
             <td class="actions-col">
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
-                <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual (sin completar el proyecto)">🧾</button>
+                <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo una mensualidad (no marca la web como entregada)">🧾</button>
                 <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
-                <button class="icon-btn delete" data-id="${c.id}" title="Eliminar">🗑</button>
+                <button class="icon-btn delete" data-id="${c.id}" title="${entregada ? "Eliminar de Clientes" : "Marcar la web como entregada (con factura o sin factura)"}">🗑</button>
             </td>
         </tr>`;
 }
 
 function _segRow(c) {
     const estado = getEstado(c);
+    const plan = planDe(c, propuestaDeCliente(c));
     const phoneDisplay = c.telefono
         ? `<span class="phone-copy" data-phone-copy="${escapeHtml(c.telefono)}" title="Copiar número" style="cursor:pointer">${escapeHtml(c.telefono)}</span>`
         : '';
@@ -1430,8 +1632,10 @@ function _segRow(c) {
             <td>${escapeHtml(c.nombre)}</td>
             <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
             <td class="col-telefono">${phoneDisplay}</td>
-            <td class="num">${fmtPrecioOACotizar(c.valorTotal, c.sinPrecio)}</td>
-            <td class="num">${fmtMoney(c.abono)}</td>
+            <td>
+                <div>${escapeHtml(plan.label || "Plan sin definir")}</div>
+                <div class="muted" style="font-size:12px;white-space:nowrap">primer pago ${fmtMoney(plan.primerPago)} · ${fmtMoney(plan.mensual)}/mes</div>
+            </td>
             <td class="center">
                 <select class="inline-status-select ${estado}" data-status-id="${c.id}">
                     <option value="seguimiento1"${estado === 'seguimiento1' ? ' selected' : ''}>Seguimiento</option>
@@ -1642,7 +1846,7 @@ function render() {
 
     tbody.innerHTML = ordered.length
         ? ordered.map(_clientRow).join("")
-        : `<tr class="empty-row"><td colspan="7">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        : `<tr class="empty-row"><td colspan="6">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
@@ -1680,7 +1884,7 @@ function renderSeg() {
     const emptyLabels = { "seguimiento1": "seguimientos", "ultimo-mensaje": "clientes en Último mensaje", "standby": "clientes en Stand by" };
     segTbody.innerHTML = list.length
         ? list.map(_segRow).join("")
-        : `<tr class="empty-row"><td colspan="9">No hay ${emptyLabels[segView] || "seguimientos"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        : `<tr class="empty-row"><td colspan="8">No hay ${emptyLabels[segView] || "seguimientos"}${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(segTbody);
@@ -1712,6 +1916,26 @@ async function toggleField(id, field) {
     }
 }
 
+/* "Pidió el cambio del mes" en Clientes: mismo criterio que Mantenimiento
+   (`cambiosPeriodo` = inicio del ciclo vigente), con el ciclo anclado al día
+   en que arranca el plan mensual. */
+async function toggleCambiosCliente(id, checked) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const { desde } = suscripcionDe(c);
+    if (!desde) return;
+    try {
+        await updateDoc(doc(db, "clientes", id), {
+            cambiosPeriodo: checked ? mantCurrentPeriod(null, new Date(), desde).key : "",
+            updatedAt: serverTimestamp()
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error al guardar el cambio: " + err.message);
+        render(); // revertir el checkbox visual
+    }
+}
+
 async function setStatus(id, value) {
     try {
         const c = clients.find(x => x.id === id);
@@ -1722,18 +1946,37 @@ async function setStatus(id, value) {
             updatedAt: serverTimestamp()
         };
 
-        // Al pasar de Seguimiento a Cliente, dejar agregar plata al abonado
+        /* Pasar a Cliente = pagó el primer pago (modelo del 10-sep-2026). Se fija el
+           plan y se registra el primer pago; el plan mensual arranca a los 30 días.
+           La sugerencia sale del boceto (primerPago / mensualidad de la calculadora o
+           del alta manual; en los bocetos viejos, `sena`) o, si no, del tipo de web. */
         if (value === "cliente" && prevEstado !== "cliente" && c) {
-            // Momento de la seña: alimenta las stats de "Señas por día / por horario".
-            // Solo se sella la primera vez (si vuelve a Seguimiento y regresa, conserva la original).
-            if (!c.senaAt) updateData.senaAt = serverTimestamp();
+            const plan = planDe(c, propuestaDeCliente(c));
+            if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
+            if (!_num(c.montoMensual)) updateData.montoMensual = plan.mensual;
+            if (!_num(c.primerPago)) updateData.primerPago = plan.primerPago;
+            if (!c.estadoSuscripcion) updateData.estadoSuscripcion = "pendiente";
+            if (typeof c.preapprovalId !== "string") updateData.preapprovalId = "";
 
-            // Sugerencia según la franja de seña real (60k landing puro / 90k el resto) — Pablo puede tipear otro monto igual.
-            const senaSugerida = (c.tipoDetectado || "").trim() === "landing" ? "60000" : "90000";
-            const montoInput = prompt(`"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente.\n\n¿Cuánto abonó ahora? (se suma al abonado actual: ${fmtMoney(c.abono || 0)})`, senaSugerida);
-            if (montoInput !== null) {
-                const monto = Number(montoInput) || 0;
-                if (monto) updateData.abono = (Number(c.abono) || 0) + monto;
+            // Se registra una sola vez: si vuelve a Seguimiento y regresa, conserva el original.
+            if (!c.primerPagoAt) {
+                const montoInput = prompt(
+                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente.\n\n` +
+                    `Plan ${plan.label || "sin definir"}: ${fmtMoney(plan.mensual)}/mes, arranca a los ${DIAS_HASTA_EL_PLAN} días del primer pago.\n\n` +
+                    `Cuánto cobraste de primer pago? Si cancelás, pasa igual a Cliente y el primer pago queda sin registrar.`,
+                    String(plan.primerPago)
+                );
+                const monto = montoInput === null ? 0 : Number(String(montoInput).replace(/\D/g, "")) || 0;
+                if (monto) {
+                    updateData.primerPago = monto;
+                    updateData.primerPagoAt = serverTimestamp();
+                    updateData.suscripcionDesde = _sumarDias(new Date(), DIAS_HASTA_EL_PLAN);
+                    // Campos viejos, por compatibilidad: sin saldo, lo abonado es el primer pago.
+                    updateData.valorTotal = monto;
+                    updateData.abono = monto;
+                    // Sello que usaban las stats antes del 10-sep-2026 (compatibilidad).
+                    if (!c.senaAt) updateData.senaAt = serverTimestamp();
+                }
             }
         }
 
@@ -1775,10 +2018,8 @@ function briefDetailHTML(src) {
     const instagram = cleanFieldValue(src.instagram || "");
     const referencias = cleanFieldValue(src.referencias || "");
     const extra     = cleanFieldValue(src.extra || "");
-    const total = Number(src.precioTotal || 0);
-    const sena  = Number(src.sena || 0);
-    const saldo = Number(src.saldo || (total && sena ? total - sena : 0));
-    const sinPrecio = !!src.sinPrecio;
+    // Modelo del 10-sep-2026: primer pago + plan mensual, sin total ni saldo.
+    const plan = planDe(src);
     const fecha = src.fecha || src.propuestaFecha || "";
     const logoUrl = src.logoUrl || "";
     const logoNombre = src.logoNombre || "";
@@ -1823,17 +2064,11 @@ function briefDetailHTML(src) {
         ? `<div class="prop-row"><span class="prop-label">Imágenes</span><span><button type="button" onclick="downloadImagenesCliente('${escapeHtml(logoUrl)}','')" style="background:none;border:none;cursor:pointer;color:var(--accent-green);font-weight:600;padding:0">⬇ Descargar ${imagenes > 1 ? `las ${imagenes} imágenes` : "la imagen"}</button> <span class="muted" style="font-size:11px">(${imagenes > 1 ? "en un zip, el logo primero" : escapeHtml(logoNombre || "")})</span></span></div>`
         : "";
 
-    const precioBlock = (total || sinPrecio)
-        ? `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
-           ${sinPrecio
-               ? `<div class="prop-row"><span class="prop-label">Total</span><span style="font-weight:700;color:#FCD34D">A cotizar</span></div>
-                  ${src.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[src.catalogQty] || src.catalogQty)}</span></div>` : ""}`
-               : `<div class="prop-row"><span class="prop-label">Total</span><span style="font-weight:700;color:#4ade80">${fmtMoney(total)}</span></div>
-                  <div class="prop-row"><span class="prop-label">Seña</span><span>${fmtMoney(sena)}</span></div>
-                  <div class="prop-row"><span class="prop-label">Saldo</span><span>${fmtMoney(saldo)}</span></div>`}`
-        : "";
+    const precioBlock = `<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
+           ${_planRowsHTML(plan)}
+           ${src.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[src.catalogQty] || src.catalogQty)}</span></div>` : ""}`;
 
-    if (!rows && !precioBlock && !logoRow) return "";
+    if (!rows && !logoRow) return "";
 
     return rows + precioBlock + logoRow
         + (fecha ? `<div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha propuesta</span><span>${escapeHtml(fecha)}</span></div>` : "");
@@ -1851,10 +2086,11 @@ function openModal(id = null) {
         document.getElementById("nombre").value = c.nombre || "";
         document.getElementById("proyecto").value = c.proyecto || "";
         document.getElementById("telefono").value = c.telefono || "";
-        document.getElementById("valorTotal").value = c.valorTotal ?? 0;
-        document.getElementById("abono").value = c.abono ?? 0;
+        document.getElementById("emailCliente").value = c.email || "";
+        document.getElementById("notasCliente").value = c.notas || "";
         document.getElementById("estadoCliente").value = getEstado(c);
         document.getElementById("hablarleElDia").value = c.hablarleElDia || "";
+        cargarPlanEnModal(c);
 
         modalTareas = { ...(c.tareas || {}) };
 
@@ -1880,7 +2116,7 @@ function openModal(id = null) {
             presBody.innerHTML = `
                 ${c.siteType ? `<div class="prop-row"><span class="prop-label">Tipo de sitio</span><span>${escapeHtml(TYPE_LABELS[c.siteType] || c.siteType || "—")}</span></div>` : ""}
                 ${c.businessType ? `<div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(c.businessType)}</span></div>` : ""}
-                <div class="prop-row"><span class="prop-label">Total estimado</span><span style="font-weight:700;${c.sinPrecio ? "" : "color:#4ade80"}">${fmtPrecioOACotizar(c.valorTotal, c.sinPrecio)}</span></div>
+                ${_planRowsHTML(planDe({ siteType: c.siteType }, presupuestos.find(l => l.id === c.presupuestoId)))}
                 ${c.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[c.catalogQty] || c.catalogQty)}</span></div>` : ""}
                 ${Array.isArray(c.functionalities) && c.functionalities.length ? `<div class="prop-row prop-row-block"><span class="prop-label">Funcionalidades</span><p class="prop-text">${escapeHtml(formatFuncionalidadesValue(c.functionalities))}</p></div>` : ""}
                 ${Array.isArray(c.objectives) && c.objectives.length ? `<div class="prop-row prop-row-block"><span class="prop-label">Objetivos</span><p class="prop-text">${escapeHtml(formatObjetivosValue(c.objectives))}</p></div>` : (c.objectives && typeof c.objectives === "string" ? `<div class="prop-row"><span class="prop-label">Objetivos</span><span>${escapeHtml(c.objectives)}</span></div>` : "")}
@@ -1896,7 +2132,7 @@ function openModal(id = null) {
         renderResenasEnModal(c.id);
     } else {
         modalTitle.textContent = "Nuevo cliente";
-        document.getElementById("abono").value = 0;
+        cargarPlanEnModal(null);
         document.getElementById("estadoCliente").value = "seguimiento1";
         document.getElementById("propuestaInfoSection").style.display = "none";
         document.getElementById("propuestaInfoBody").innerHTML = "";
@@ -1943,6 +2179,7 @@ function toggleTareasSection() {
     const sel = document.getElementById("estadoCliente");
     const isClient = sel.value === "cliente";
     document.getElementById("tareasSection").style.display = isClient ? "" : "none";
+    document.getElementById("suscripcionSection").style.display = isClient ? "" : "none";
     document.getElementById("hablarleElDiaField").style.display = isClient ? "none" : "";
 }
 
@@ -1983,7 +2220,88 @@ function renderTareasChecklist() {
 document.getElementById("estadoCliente").addEventListener("change", () => {
     syncEstadoSelect();
     toggleTareasSection();
+    // Pasar a Cliente = cobró el primer pago: se propone hoy como fecha (editable).
+    const pagoEl = document.getElementById("primerPagoAt");
+    if (document.getElementById("estadoCliente").value === "cliente" && !pagoEl.value) {
+        pagoEl.value = mantDateKey(new Date());
+        sincronizarDesdeAuto();
+    }
 });
+
+// ── Plan y suscripción en el modal de cliente (modelo del 10-sep-2026) ──
+// Las opciones salen de PLANES: una sola fuente para los montos.
+document.getElementById("planCliente").innerHTML = `<option value="">Sin definir</option>` + Object.values(PLANES)
+    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.primerPago)} y ${fmtMoney(p.mensual)}/mes</option>`)
+    .join("");
+
+document.getElementById("planCliente").addEventListener("change", (e) => {
+    const plan = PLANES[PLAN_POR_LABEL[e.target.value]];
+    if (!plan) return;
+    document.getElementById("primerPago").value = plan.primerPago;
+    document.getElementById("montoMensual").value = plan.mensual;
+});
+document.getElementById("primerPagoAt").addEventListener("change", sincronizarDesdeAuto);
+
+/* "El plan arranca el" sigue a la fecha del primer pago (+30 días) mientras no
+   se la haya tocado a mano. */
+function sincronizarDesdeAuto() {
+    const pago = _fechaDeInput(document.getElementById("primerPagoAt").value);
+    const desdeEl = document.getElementById("suscripcionDesde");
+    const auto = pago ? mantDateKey(_sumarDias(pago, DIAS_HASTA_EL_PLAN)) : "";
+    if (!desdeEl.value || desdeEl.value === desdeEl.dataset.auto) desdeEl.value = auto;
+    desdeEl.dataset.auto = auto;
+}
+
+/* Carga el plan y la suscripción en el modal. Muestra lo efectivo (lo guardado
+   o, en los docs anteriores al 10-sep-2026, lo que sale del boceto y del tipo de
+   web): al guardar queda escrito en los campos nuevos. */
+function cargarPlanEnModal(c) {
+    const $ = id => document.getElementById(id);
+    const s = c ? suscripcionDe(c) : null;
+
+    $("planCliente").value = s ? s.plan.label : "";
+    if ($("planCliente").selectedIndex < 0) $("planCliente").value = "";
+    $("primerPago").value = s ? s.primerPago : "";
+    $("montoMensual").value = s ? s.mensual : "";
+
+    const pagoAt = s?.primerPagoAt ? mantDateKey(s.primerPagoAt) : "";
+    $("primerPagoAt").value = pagoAt;
+    $("primerPagoAt").dataset.original = pagoAt;
+
+    const desdeGuardado = c ? mantToDate(c.suscripcionDesde) : null;
+    const desdeKey = desdeGuardado ? mantDateKey(desdeGuardado) : "";
+    const auto = s?.primerPagoAt ? mantDateKey(_sumarDias(s.primerPagoAt, DIAS_HASTA_EL_PLAN)) : "";
+    $("suscripcionDesde").value = desdeKey || auto;
+    $("suscripcionDesde").dataset.original = desdeKey;
+    $("suscripcionDesde").dataset.auto = auto;
+
+    $("estadoSuscripcion").value = s ? s.estado : "pendiente";
+    $("preapprovalId").value = s ? s.preapprovalId : "";
+
+    const notaMp = $("suscripcionNota");
+    if (s?.mant) {
+        const alta = mantToDate(s.mant.createdAt);
+        const estadoMant = s.mant.estado || "activo";
+        notaMp.textContent = `Figura en Mantenimiento (${s.mant.email || s.mant.whatsapp || s.mant.nombre || "Mercado Pago"})`
+            + (alta ? `, suscripto desde el ${mantLongDate(alta)}` : "")
+            + (estadoMant === "activo" ? "." : `, con estado "${estadoMant}".`);
+        notaMp.hidden = false;
+    } else {
+        notaMp.textContent = "";
+        notaMp.hidden = true;
+    }
+
+    // Importes de un proyecto del modelo anterior: no se pisan y quedan a la vista como referencia.
+    const notaAnterior = $("modeloAnteriorNota");
+    const valorAnterior = c ? _num(c.valorTotal) : 0;
+    if (valorAnterior && _num(c.abono) && valorAnterior !== _num(c.primerPago)) {
+        notaAnterior.textContent = `Modelo anterior (solo lectura): valor total ${fmtMoney(valorAnterior)} · abonado ${fmtMoney(c.abono)}.`;
+        notaAnterior.hidden = false;
+    } else {
+        notaAnterior.textContent = "";
+        notaAnterior.hidden = true;
+    }
+}
 
 document.getElementById("hablarleElDia").addEventListener("click", function () {
     try { this.showPicker(); } catch (e) {}
@@ -1992,17 +2310,45 @@ document.getElementById("hablarleElDia").addEventListener("click", function () {
 form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = document.getElementById("clientId").value;
+    const actual = id ? clients.find(x => x.id === id) : null;
+    const estadoCliente = document.getElementById("estadoCliente").value;
+    const primerPago = Number(document.getElementById("primerPago").value) || 0;
     const data = {
         nombre: document.getElementById("nombre").value.trim(),
         proyecto: document.getElementById("proyecto").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
-        estadoCliente: document.getElementById("estadoCliente").value,
+        email: document.getElementById("emailCliente").value.trim(),
+        notas: document.getElementById("notasCliente").value.trim(),
+        estadoCliente,
         hablarleElDia: document.getElementById("hablarleElDia").value || "",
-        valorTotal: Number(document.getElementById("valorTotal").value) || 0,
-        abono: Number(document.getElementById("abono").value) || 0,
+        // ── Plan mensual (modelo del 10-sep-2026) ──
+        planLabel: document.getElementById("planCliente").value,
+        primerPago,
+        montoMensual: Number(document.getElementById("montoMensual").value) || 0,
+        estadoSuscripcion: document.getElementById("estadoSuscripcion").value || "pendiente",
+        preapprovalId: document.getElementById("preapprovalId").value.trim(),
         tareas: { ...modalTareas },
         updatedAt: serverTimestamp()
     };
+    // Las fechas se escriben solo si cambiaron: así no se pisa la hora exacta con
+    // que se registró el primer pago al pasar a Cliente.
+    const pagoEl = document.getElementById("primerPagoAt");
+    const desdeEl = document.getElementById("suscripcionDesde");
+    const primerPagoAt = _fechaDeInput(pagoEl.value);
+    if (!id || pagoEl.value !== pagoEl.dataset.original) data.primerPagoAt = primerPagoAt;
+    if (!id || desdeEl.value !== desdeEl.dataset.original) {
+        data.suscripcionDesde = _fechaDeInput(desdeEl.value)
+            || (primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : null);
+    }
+    /* Campos viejos, por compatibilidad: `valorTotal` = primer pago y `abono` = lo
+       cobrado de ese primer pago. Se siguen escribiendo mientras reflejen el primer
+       pago, o cuando el doc pasa a Cliente ahora; los importes de un proyecto del
+       modelo anterior no se pisan. */
+    const pasaACliente = estadoCliente === "cliente" && (!actual || getEstado(actual) !== "cliente");
+    const reflejaPrimerPago = campo => !actual || pasaACliente
+        || !_num(actual[campo]) || _num(actual[campo]) === _num(actual.primerPago);
+    if (reflejaPrimerPago("valorTotal")) data.valorTotal = primerPago;
+    if (reflejaPrimerPago("abono")) data.abono = primerPagoAt ? primerPago : 0;
 
     const saveBtn = document.getElementById("saveBtn");
     saveBtn.disabled = true;
@@ -2530,10 +2876,10 @@ function openPropuestaModal(id) {
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const adicionalesTexto = cleanFieldValue(p.adicionales_texto);
 
-    const precioTotal = p.precioTotal || 0;
-    const senaMonto   = p.sena || 0;
-    const saldoMonto  = p.saldo || (precioTotal && senaMonto ? precioTotal - senaMonto : 0);
-    const sinPrecio   = !!p.sinPrecio;
+    // Modelo del 10-sep-2026: primer pago + plan mensual. La calculadora y el alta
+    // manual escriben primerPago / mensualidad; los bocetos del bot, solo el tipo.
+    const linkedLead = p.presupuestoId ? leads.find(l => l.id === p.presupuestoId) : null;
+    const plan = planDe(p, linkedLead);
 
     /* La calculadora de /presupuesto/ (origen:'presupuesto-modal') nunca pregunta
        ciudad, cantidad de cursos, fondos ni tipografías — a diferencia de /form/
@@ -2600,24 +2946,13 @@ function openPropuestaModal(id) {
         <textarea id="propNotas" rows="3" maxlength="500" placeholder="Notas internas (no visibles para el cliente)">${escapeHtml(p.notas || "")}</textarea>
 
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
-        ${(precioTotal || sinPrecio) ? `
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60A5FA;margin-bottom:8px">💰 Presupuesto</div>
-        ${sinPrecio ? `
-        <div class="prop-row"><span class="prop-label">Total</span><span style="font-weight:700;color:#FCD34D">A cotizar</span></div>
+        ${_planRowsHTML(plan)}
         ${p.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[p.catalogQty] || p.catalogQty)}</span></div>` : ""}
-        ` : `
-        <div class="prop-row"><span class="prop-label">Total</span><span style="font-weight:700;color:#4ade80">${fmtMoney(precioTotal)}</span></div>
-        <div class="prop-row"><span class="prop-label">Seña</span><span>${fmtMoney(senaMonto)}</span></div>
-        <div class="prop-row"><span class="prop-label">Saldo</span><span>${fmtMoney(saldoMonto)}</span></div>
-        `}
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
-        ` : ""}
         ${logoRow}
         <div class="prop-row muted" style="font-size:12px"><span class="prop-label">Fecha</span><span>${escapeHtml(p.fecha || "—")}</span></div>
     `;
-    propuestaForm.dataset.precioTotal = precioTotal;
-    propuestaForm.dataset.sena        = senaMonto;
-    propuestaForm.dataset.saldo       = saldoMonto;
     propuestaForm.dataset.propId = p.id;
     propuestaForm.dataset.copyObjectives = getPropuestaObjetivosTexto(p);
     propuestaDirty = false;
@@ -2952,12 +3287,17 @@ async function removeClient(id) {
     const c = clients.find(x => x.id === id);
     if (!c) return;
 
-    if (getEstado(c) === "cliente") {
+    // Cliente con la web todavía sin entregar: el tacho abre "factura + entregada", como siempre.
+    if (getEstado(c) === "cliente" && !c.entregadoAt) {
         abrirFacturaModal(c);
         return;
     }
 
-    if (!confirm(`¿Eliminar a "${c.nombre}"? Esta acción no se puede deshacer.`)) return;
+    const conRegistro = c.completadoId && completados.some(x => x.id === c.completadoId);
+    const mensaje = getEstado(c) === "cliente"
+        ? `Eliminar a "${c.nombre}" de Clientes?${conRegistro ? " El registro de la entrega queda en Completados." : ""}\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`
+        : `¿Eliminar a "${c.nombre}"? Esta acción no se puede deshacer.`;
+    if (!confirm(mensaje)) return;
     try {
         await deleteDoc(doc(db, "clientes", id));
     } catch (err) {
@@ -2966,6 +3306,10 @@ async function removeClient(id) {
     }
 }
 
+/* Marcar la web como entregada. Con el plan mensual (10-sep-2026) entregar es
+   cuando empieza a correr el plan, no el final de la relación: el cliente ya no
+   se borra de `clientes`, se marca `entregadoAt` y sigue con su suscripción. En
+   `completados` queda una copia como registro de la entrega (y de la factura). */
 async function completarCliente(id, factura) {
     const c = clients.find(x => x.id === id);
     if (!c) throw new Error("El cliente ya no está en la lista.");
@@ -2977,10 +3321,15 @@ async function completarCliente(id, factura) {
 
     batch.set(completadoRef, {
         ...clientData,
+        clienteId: id,
         completadoAt: serverTimestamp(),
         ...(factura ? { factura } : {})
     });
-    batch.delete(clienteRef);
+    batch.update(clienteRef, {
+        entregadoAt: serverTimestamp(),
+        completadoId: completadoRef.id,
+        updatedAt: serverTimestamp()
+    });
     await batch.commit();
 }
 
@@ -3119,9 +3468,11 @@ async function abrirFacturaModal(cliente, opts = {}) {
     facturaRequestId = generarRequestId();
 
     document.getElementById("facturaModalTitulo").textContent =
-        facturaEsAdhoc ? "Emitir factura" : "Emitir factura y completar";
+        facturaEsAdhoc ? "Emitir factura" : "Emitir factura y marcar entregada";
     document.getElementById("facturaCliente").textContent = etiquetaCliente(cliente);
-    campoFactura("Total").value = facturaEsAdhoc ? "" : Number(cliente.valorTotal || 0);
+    // Al entregar se factura lo cobrado al arrancar: el primer pago (`valorTotal` lo
+    // refleja; en los proyectos del modelo anterior es el valor total del proyecto).
+    campoFactura("Total").value = facturaEsAdhoc ? "" : (_num(cliente.valorTotal) || planDe(cliente, propuestaDeCliente(cliente)).primerPago);
     campoFactura("Comprobante").textContent = "Consultando a ARCA…";
     campoFactura("EntornoAviso").hidden = true;
     campoFactura("EmitirBtn").disabled = true;
@@ -3268,7 +3619,7 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
 document.getElementById("facturaSinFacturarBtn")?.addEventListener("click", async () => {
     if (!clienteAFacturar) return;
     const cliente = clienteAFacturar;
-    if (!confirm(`¿Mover a "${cliente.nombre}" a Completados sin emitir factura?`)) return;
+    if (!confirm(`Marcar la web de "${cliente.nombre}" como entregada sin emitir factura? Sigue en Clientes con su plan mensual y queda el registro en Completados.`)) return;
     try {
         await completarCliente(cliente.id, null);
         cerrarFacturaModal();
@@ -3328,7 +3679,8 @@ async function presentarPropuesta(propId) {
     if (!confirm(`Pasar "${p.nombre_negocio || "este boceto"}" a Seguimiento?`)) return;
 
     const linkedLead = p.presupuestoId ? leads.find(l => l.id === p.presupuestoId) : null;
-    const valor = p.precioTotal || linkedLead?.totalPrice || 0;
+    // Plan cotizado (modelo del 10-sep-2026): el del boceto o, si no lo trae, el del tipo de web.
+    const plan = planDe(p, linkedLead);
 
     const en72Horas = new Date();
     en72Horas.setDate(en72Horas.getDate() + 3);
@@ -3394,7 +3746,16 @@ async function presentarPropuesta(propId) {
             telefono:        p.telefono || p.contacto_cel || "",
             estadoCliente:   "seguimiento1",
             hablarleElDia,
-            valorTotal:      valor,
+            // ── Plan mensual (modelo del 10-sep-2026); el primer pago se registra al pasar a Cliente ──
+            planLabel:         plan.label,
+            primerPago:        plan.primerPago,
+            primerPagoAt:      null,
+            montoMensual:      plan.mensual,
+            estadoSuscripcion: "pendiente",
+            suscripcionDesde:  null,
+            preapprovalId:     "",
+            // Campos viejos, por compatibilidad: valorTotal = primer pago, todavía sin nada abonado.
+            valorTotal:      plan.primerPago,
             abono:           0,
             notas:           "",
             // ── Brief original completo (fuente de verdad para la vista de detalle) ──
@@ -3461,7 +3822,7 @@ searchPresupuestosInput.addEventListener("input", renderPresupuestos);
 function renderPresupuestos() {
     const tbody = document.getElementById("presupuestosTbody");
     const term  = searchPresupuestosInput.value.trim().toLowerCase();
-    // Solo mostrar señados: clientes que pagaron via Mercado Pago → SIEMPRE tienen paymentStatus
+    // Solo los que pagaron el primer pago por Mercado Pago → SIEMPRE tienen paymentStatus
     // Leads y docs basura nunca tienen paymentStatus → quedan automáticamente excluidos
     const senados = presupuestos.filter(p => p.paymentStatus);
     const list  = term
@@ -3483,9 +3844,9 @@ function renderPresupuestos() {
             ? p.createdAt.toDate().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" })
             : "—";
         const typeLabel = TYPE_LABELS[p.siteType] || p.siteType || "—";
-        const total = fmtMoney(p.totalPrice || 0);
-        const senaBadge = p.paymentStatus === "approved"
-            ? `<span style="color:#4ade80;font-weight:700">✓ ${fmtMoney(p.sena || 90000)}</span>`
+        const plan = planDe(p);
+        const primerPagoBadge = p.paymentStatus === "approved"
+            ? `<span style="color:#4ade80;font-weight:700">✓ ${fmtMoney(plan.primerPago)}</span>`
             : `<span style="color:#F59E0B;font-weight:600">⏳ Pendiente</span>`;
         const briefBadge = p.briefCompleted
             ? `<span style="color:#4ade80;font-weight:700">✓ Recibido</span>`
@@ -3503,8 +3864,11 @@ function renderPresupuestos() {
                     <div class="muted" style="font-size:12px">${escapeHtml(p.businessType || "")}</div>
                 </td>
                 <td>${escapeHtml(typeLabel)}</td>
-                <td class="num">${total}</td>
-                <td class="center">${senaBadge}</td>
+                <td>
+                    <div>${escapeHtml(plan.label || "Sin definir")}</div>
+                    <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(plan.mensual)}/mes</div>
+                </td>
+                <td class="center">${primerPagoBadge}</td>
                 <td class="center">${briefBadge}</td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-pres-id="${p.id}" style="font-size:13px">Ver →</button>
@@ -3552,8 +3916,8 @@ function openPresupuestoModal(id) {
         <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(p.businessType || "—")}</span></div>
         <hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:8px 0">
         <div class="prop-row"><span class="prop-label">Tipo de sitio</span><span>${escapeHtml(TYPE_LABELS[p.siteType] || p.siteType || "—")}</span></div>
-        <div class="prop-row"><span class="prop-label">Precio total</span><span style="font-weight:700;color:#4ade80">${fmtMoney(p.totalPrice || 0)}</span></div>
-        <div class="prop-row"><span class="prop-label">Seña</span><span>${p.paymentStatus === "approved" ? `✅ ${fmtMoney(p.sena || 90000)} pagados` : "⏳ " + (p.paymentStatus || "pendiente")}</span></div>
+        ${_planRowsHTML(planDe(p))}
+        <div class="prop-row"><span class="prop-label">Estado del pago</span><span>${p.paymentStatus === "approved" ? `✅ ${fmtMoney(planDe(p).primerPago)} pagados` : "⏳ " + (p.paymentStatus || "pendiente")}</span></div>
         <div class="prop-row"><span class="prop-label">Payment ID</span><span class="muted" style="font-size:12px">${escapeHtml(p.paymentId || "—")}</span></div>
         <div class="prop-row"><span class="prop-label">Objetivos</span><span>${yorn(formatObjetivosValue(p.objectives))}</span></div>
         <div class="prop-row"><span class="prop-label">Funcionalidades</span><span>${yorn(formatFuncionalidadesValue(p.functionalities))}</span></div>
@@ -3580,15 +3944,28 @@ async function presupuestoToCliente(id) {
     const p = presupuestos.find(x => x.id === id);
     if (!p) return;
     if (!confirm(`Pasar "${p.nombre || p.negocio || "este presupuesto"}" a Seguimiento?`)) return;
+    // Pagó desde /presupuesto/ por Mercado Pago: ese pago es el primer pago (en los
+    // registros anteriores al 10-sep-2026 figura como `sena`; compatibilidad).
+    const plan = planDe(p);
+    const pagadoAt = p.paymentStatus === "approved" ? (mantToDate(p.createdAt) || new Date()) : null;
     try {
         await addDoc(collection(db, "clientes"), {
             nombre:         p.nombre || p.negocio || "",
             proyecto:       (TYPE_LABELS[p.siteType] || p.siteType || "") + (p.businessType ? " · " + p.businessType : ""),
             telefono:       p.telefono || "",
+            email:          /@/.test(p.email || "") ? p.email.trim() : "",
             estadoCliente:  "seguimiento1",
             hablarleElDia:  "",
-            valorTotal:     p.totalPrice || 0,
-            abono:          p.sena || 90000,
+            planLabel:         plan.label,
+            primerPago:        plan.primerPago,
+            primerPagoAt:      pagadoAt,
+            montoMensual:      plan.mensual,
+            estadoSuscripcion: "pendiente",
+            suscripcionDesde:  pagadoAt ? _sumarDias(pagadoAt, DIAS_HASTA_EL_PLAN) : null,
+            preapprovalId:     "",
+            // Campos viejos, por compatibilidad: valorTotal = primer pago; abono = lo cobrado.
+            valorTotal:     plan.primerPago,
+            abono:          pagadoAt ? plan.primerPago : 0,
             notas:          "",
             presupuestoId:  id,
             siteType:        p.siteType || "",
@@ -3604,7 +3981,8 @@ async function presupuestoToCliente(id) {
             createdAt:      serverTimestamp(),
             createdBy:      currentUser?.uid || null
         });
-        alert(`✅ "${p.nombre || p.negocio}" agregado a Clientes con ${fmtMoney(p.sena || 90000)} abonados.`);
+        alert(`✅ "${p.nombre || p.negocio}" quedó en Seguimiento con el plan ${plan.label || "sin definir"}` +
+            (pagadoAt ? ` y el primer pago de ${fmtMoney(plan.primerPago)} registrado. El plan mensual arranca el ${mantLongDate(_sumarDias(pagadoAt, DIAS_HASTA_EL_PLAN))}.` : "."));
     } catch (err) {
         console.error(err);
         alert("Error: " + err.message);
@@ -3653,7 +4031,7 @@ function renderLeads() {
             ? l.createdAt.toDate().toLocaleDateString("es-AR", { day:"2-digit", month:"2-digit", year:"numeric" })
             : "—";
         const typeLabel  = TYPE_LABELS[l.siteType] || l.siteType || "—";
-        const total      = fmtPrecioOACotizar(l.totalPrice, l.sinPrecio);
+        const plan       = planDe(l);
         const linkedBoceto = propuestas.find(p => p.presupuestoId === l.id);
         const bocetoBadge  = linkedBoceto
             ? `<span style="color:#4ade80;font-weight:700">✓ Recibido</span>`
@@ -3668,7 +4046,10 @@ function renderLeads() {
                 <td>${escapeHtml(l.businessType || "—")}</td>
                 <td class="col-telefono">${phoneDisplay}</td>
                 <td>${escapeHtml(typeLabel)}</td>
-                <td class="num">${total}</td>
+                <td>
+                    <div>${escapeHtml(plan.label || "Sin definir")}</div>
+                    <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(plan.primerPago)} · ${fmtMoney(plan.mensual)}/mes</div>
+                </td>
                 <td class="center">${bocetoBadge}</td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-lead-id="${l.id}" style="font-size:13px">Ver →</button>
@@ -3716,10 +4097,8 @@ function openLeadModal(id) {
         <div class="prop-row"><span class="prop-label">Rubro</span><span>${escapeHtml(l.businessType || "—")}</span></div>
         ${l.phone ? `<div class="prop-row"><span class="prop-label">Teléfono / WhatsApp</span><span><a href="https://wa.me/${l.phone.replace(/\D/g,'')}" target="_blank" rel="noopener" style="color:#4ade80">${escapeHtml(l.phone)}</a></span></div>` : ""}
         <div class="prop-row"><span class="prop-label">Tipo de sitio</span><span>${escapeHtml(TYPE_LABELS[l.siteType] || l.siteType || "—")}</span></div>
-        <div class="prop-row"><span class="prop-label">Precio total estimado</span><span style="font-weight:700;${l.sinPrecio ? "" : "color:#4ade80"}">${fmtPrecioOACotizar(l.totalPrice, l.sinPrecio)}</span></div>
-        ${!l.sinPrecio ? `<div class="prop-row"><span class="prop-label">Precio base</span><span>${fmtMoney(l.basePrice || 0)}</span></div>` : ""}
+        ${_planRowsHTML(planDe(l))}
         ${l.catalogQty ? `<div class="prop-row"><span class="prop-label">Catálogo</span><span>${escapeHtml(PRESUPUESTO_CATALOGO_QTY_LABELS[l.catalogQty] || l.catalogQty)}</span></div>` : ""}
-        ${(l.extrasPrice || 0) > 0 ? `<div class="prop-row"><span class="prop-label">Adicionales</span><span>+${fmtMoney(l.extrasPrice)}</span></div>` : ""}
         <div class="prop-row"><span class="prop-label">Objetivos</span><span>${yorn(formatObjetivosValue(l.objectives))}</span></div>
         <div class="prop-row"><span class="prop-label">Funcionalidades</span><span>${yorn(formatFuncionalidadesValue(l.functionalities))}</span></div>
         ${Array.isArray(l.extras) && l.extras.length ? `<div class="prop-row prop-row-block"><span class="prop-label">Adicionales</span><p class="prop-text">${l.extras.map(e => escapeHtml(e.name + " — $" + Number(e.price).toLocaleString("es-AR"))).join("<br>")}</p></div>` : ""}
@@ -4230,18 +4609,9 @@ document.getElementById("addTareaHoyBtn")?.addEventListener("click", () => {
    Pegás lo que te pasó el cliente → autocompleta → elegís tipo → guarda
    el doc en la colección `propuestas` con el MISMO esquema que usaba el
    form, así el boceto se ve y se convierte igual que los de antes.
-   Precios espejados de form/script.js (mantener sincronizados).
+   Los montos (primer pago y plan mensual) salen de PLANES según el tipo: el
+   tamaño y las reservas ya no cambian el precio (modelo del 10-sep-2026).
    ═══════════════════════════════════════════════════════════════════ */
-
-// Seña por franja (24-jul-2026): landing puro $60.000 · el resto $90.000 (idéntica a PRICING de form/script.js)
-const NB_SENA = {
-    landing: 60000, 'landing-reservas': 90000,
-    catalogo: 90000, 'catalogo-reservas': 90000,
-    inmobiliaria: 90000, 'inmobiliaria-reservas': 90000,
-    ecommerce: 90000, 'ecommerce-reservas': 90000,
-    elearning: 90000, 'elearning-reservas': 90000,
-    'ecommerce-elearning': 90000, 'ecommerce-elearning-reservas': 90000,
-};
 
 // Etiqueta comercial por tipo (idéntica a PRICING de form/script.js)
 const NB_LABEL = {
@@ -4279,27 +4649,6 @@ const NB_BASE_OBJETIVOS = {
     'ecommerce-elearning': ['vender-online', 'cursos-digitales'],
 };
 
-// Total según tipo y tamaño (idéntico a calcularPrecioTotal de form/script.js)
-function nbCalcularTotal(tipoKey, tipoPagina) {
-    const landingBase  = tipoPagina === 'Multipágina' ? 200000 : 150000;
-    const landingAddon = tipoPagina === 'Multipágina' ? 40000  : 60000;
-    switch (tipoKey) {
-        case 'landing':                      return landingBase;
-        case 'landing-reservas':             return landingBase + landingAddon;
-        case 'inmobiliaria':                 return 240000;
-        case 'inmobiliaria-reservas':        return 240000 + 30000;
-        case 'ecommerce':                    return 270000;
-        case 'ecommerce-reservas':           return 270000 + 30000;
-        case 'catalogo':                     return 150000;
-        case 'catalogo-reservas':            return 180000;
-        case 'elearning':                    return 320000;
-        case 'elearning-reservas':           return 320000 + 30000;
-        case 'ecommerce-elearning':          return 350000;
-        case 'ecommerce-elearning-reservas': return 350000;
-        default:                             return 0;
-    }
-}
-
 function nbTipoKey(base, reservas) {
     return reservas ? base + '-reservas' : base;
 }
@@ -4330,14 +4679,11 @@ function nbTipoKey(base, reservas) {
         tipoPagRow.style.display = esLanding ? '' : 'none';
         const tipoPagina = esLanding ? tipoPaginaValue() : '';
         const tipoKey = nbTipoKey(base, reservasCb.checked);
-        const total = nbCalcularTotal(tipoKey, tipoPagina);
-        const sena  = NB_SENA[tipoKey] || 0;
-        const saldo = total - sena;
-        $("nbPriceType").textContent  = NB_LABEL[tipoKey] || '—';
-        $("nbPriceTotal").textContent = fmtMoney(total);
-        $("nbPriceSena").textContent  = fmtMoney(sena);
-        $("nbPriceSaldo").textContent = fmtMoney(saldo);
-        return { tipoKey, total, sena, saldo, tipoPagina };
+        const plan = planDe({ tipoDetectado: tipoKey });
+        $("nbPriceType").textContent       = `${NB_LABEL[tipoKey] || '—'} · plan ${plan.label}`;
+        $("nbPricePrimerPago").textContent = fmtMoney(plan.primerPago);
+        $("nbPriceMensual").textContent    = `${fmtMoney(plan.mensual)}/mes`;
+        return { tipoKey, tipoPagina, plan };
     }
 
     tipoSel.addEventListener("change", recalcPrecio);
@@ -4416,7 +4762,7 @@ function nbTipoKey(base, reservas) {
             return;
         }
 
-        const { tipoKey, total, sena, saldo, tipoPagina } = recalcPrecio();
+        const { tipoKey, tipoPagina, plan } = recalcPrecio();
         const objetivos = [...(NB_BASE_OBJETIVOS[tipoSel.value] || []), ...(reservasCb.checked ? ['reservas-turnos'] : [])];
         const objetivosTexto = objetivos.map(o => OBJETIVO_LABELS[o] || o).join(", ");
 
@@ -4440,12 +4786,10 @@ function nbTipoKey(base, reservas) {
             tipoDetectado:       tipoKey,
             tipoDetectadoLabel:  NB_LABEL[tipoKey] || "",
             que_incluye:         NB_INCLUYE[tipoKey] || NB_INCLUYE.landing,
-            precioTotal:         total,
-            sena,
-            saldo,
-            precio_total:        total.toLocaleString("es-AR"),
-            precio_sena:         sena.toLocaleString("es-AR"),
-            precio_saldo:        saldo.toLocaleString("es-AR"),
+            // Mismos campos que escribe la calculadora (/presupuesto/script.js):
+            // primer pago y plan mensual, nunca un total.
+            primerPago:          plan.primerPago,
+            mensualidad:         plan.mensual,
             notas:               $("nbNotas").value.trim(),
             confirmoMuestra:     true,   // vino por WhatsApp y aceptó la muestra → ya calificado
             origen:              "whatsapp-admin",
@@ -4570,8 +4914,11 @@ function parseChatBoceto(texto) {
    del ciclo vigente en `cambiosPeriodo`. Cada ciclo empieza el mismo
    número de día en que se dio de alta el suscriptor.
    ═══════════════════════════════════════════════════════════ */
-const MANT_PLAN_LABELS = { landing: "Mantenimiento Landing", mensual: "Mantenimiento Mensual" };
-const MANT_PLAN_MONTO  = { landing: 7000, mensual: 10000 };
+/* Claves del campo `plan` que escribe el webhook (mantenimiento/api/webhook-mp.php):
+   se conservaron 'landing' / 'mensual' para los planes del 10-sep-2026. Solo son el
+   respaldo de los docs que no traen planLabel / monto propios. */
+const MANT_PLAN_LABELS = { landing: "Plan mensual sitio profesional", mensual: "Plan mensual tienda online, cursos e inmobiliaria" };
+const MANT_PLAN_MONTO  = { landing: 20000, mensual: 30000 };
 
 function mantToDate(value) {
     if (value?.toDate) return value.toDate();
@@ -4596,8 +4943,10 @@ function mantAnchoredDate(year, month, anchorDay) {
     return new Date(year, month, Math.min(anchorDay, lastDay));
 }
 
-function mantCurrentPeriod(m, now = new Date()) {
-    const alta = mantToDate(m?.createdAt);
+/* `ancla` = día en que arranca el ciclo: el alta del suscriptor en Mantenimiento;
+   en Clientes, el día en que arranca el plan mensual. */
+function mantCurrentPeriod(m, now = new Date(), ancla = m?.createdAt) {
+    const alta = mantToDate(ancla);
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     if (!alta) {
@@ -4901,10 +5250,11 @@ document.getElementById("mantForm")?.addEventListener("submit", async (e) => {
 // ══════════════════════════════════════════════════════════
 /* Cuatro lecturas, todas sobre datos que ya están en memoria:
    - Bocetos por día y por hora: TODAS las propuestas (el formulario llenado), por su createdAt.
-   - Señas por día: clientes + completados que tengan senaAt (el sello que pone setStatus al
-     pasar de Seguimiento a Cliente). Los anteriores a ese sello no tienen fecha y se informan
-     aparte en vez de ensuciar el gráfico.
-   - Total por semana: clientes activos + completados, sumando valorTotal. */
+   - Primeros pagos por día: clientes + completados con `primerPagoAt` (lo registra setStatus
+     al pasar de Seguimiento a Cliente). Los anteriores al 10-sep-2026 solo tienen el sello
+     viejo `senaAt` (compatibilidad: era el mismo momento). Los que no tienen ninguno de los
+     dos se informan aparte en vez de ensuciar el gráfico.
+   - Total por semana: clientes activos + completados, sumando el primer pago de cada uno. */
 
 const STATS_HOURS = Array.from({ length: 24 }, (_, h) => h);
 
@@ -4950,14 +5300,18 @@ function _statsBocetoDates() {
     return [...vivas, ...convertidos];
 }
 
-function _statsSenaEntries() {
-    const todos = [...clients.filter(c => getEstado(c) === "cliente"), ...completados];
-    const dates = todos.map(c => _parseSketchDate(c.senaAt)).filter(Boolean);
+function _statsPrimerPagoEntries() {
+    const todos = _statsProyectos();
+    const dates = todos.map(c => _parseSketchDate(c.primerPagoAt) || _parseSketchDate(c.senaAt)).filter(Boolean);
     return { dates, total: todos.length, sinFecha: todos.length - dates.length };
 }
 
+/* Desde el 10-sep-2026 la web entregada sigue en Clientes (con su plan) y además deja una
+   copia en Completados con `clienteId`: se cuenta una sola vez, la del cliente vivo. */
 function _statsProyectos() {
-    return [...clients.filter(c => getEstado(c) === "cliente"), ...completados];
+    const vivos = clients.filter(c => getEstado(c) === "cliente");
+    const idsVivos = new Set(vivos.map(c => c.id));
+    return [...vivos, ...completados.filter(x => !(x.clienteId && idsVivos.has(x.clienteId)))];
 }
 
 /* La semana sale de la fecha del boceto, pero MÁS DE LA MITAD de los proyectos no vienen de
@@ -4971,10 +5325,12 @@ function _statsFechaSemana(c) {
         || _parseSketchDate(c.createdAt);
 }
 
-/* El total semanal representa el valor completo de cada proyecto: lo ya cobrado (`abono`)
-   más lo que todavía queda por cobrar. `valorTotal` ya contiene esa suma. */
+/* Lo que suma cada proyecto a su semana: el primer pago (modelo del 10-sep-2026). Los
+   proyectos del modelo anterior no tienen `primerPago` y suman su `valorTotal` (el precio
+   completo del proyecto). Las mensualidades no entran acá: la mensualidad activa está en
+   el tab Clientes. */
 function _statsTotalProyecto(c) {
-    return Number(c.valorTotal) || 0;
+    return _num(c.primerPago) || Number(c.valorTotal) || 0;
 }
 
 function _statsSinFecha() {
@@ -5048,18 +5404,18 @@ function renderStats() {
     if (!el) return;
 
     const bocetos = _statsBocetoDates();
-    const senas = _statsSenaEntries();
+    const pagos = _statsPrimerPagoEntries();
 
     const bocetosDia = bocetos.length
         ? _sketchStatsBarsHTML(WEEKDAY_NAMES_MON_FIRST, _statsDayCounts(bocetos))
         : `<p class="sketch-stats-empty">Todavía no hay bocetos con fecha.</p>`;
 
-    const senasDia = senas.dates.length
-        ? _sketchStatsBarsHTML(WEEKDAY_NAMES_MON_FIRST, _statsDayCounts(senas.dates))
-        : `<p class="sketch-stats-empty">Todavía no hay señas con fecha registrada.</p>`;
+    const pagosDia = pagos.dates.length
+        ? _sketchStatsBarsHTML(WEEKDAY_NAMES_MON_FIRST, _statsDayCounts(pagos.dates))
+        : `<p class="sketch-stats-empty">Todavía no hay primeros pagos con fecha registrada.</p>`;
 
-    const senasNota = senas.sinFecha > 0
-        ? `<p class="stats-note">${senas.sinFecha} de ${senas.total} señas son anteriores al registro de la fecha y no entran en estos gráficos.</p>`
+    const pagosNota = pagos.sinFecha > 0
+        ? `<p class="stats-note">${pagos.sinFecha} de ${pagos.total} proyectos no tienen registrada la fecha del primer pago y no entran en estos gráficos.</p>`
         : "";
 
     el.innerHTML = `
@@ -5069,9 +5425,9 @@ function renderStats() {
                 ${bocetosDia}
             </div>
             <div class="sketch-stats-col">
-                <div class="sketch-stats-title">Señas por día (${senas.dates.length})</div>
-                ${senasDia}
-                ${senasNota}
+                <div class="sketch-stats-title">Primeros pagos por día (${pagos.dates.length})</div>
+                ${pagosDia}
+                ${pagosNota}
             </div>
         </div>
 
@@ -5086,8 +5442,9 @@ function renderStats() {
 
         <div class="sketch-stats">
             <div class="sketch-stats-col sketch-stats-col--hours">
-                <div class="sketch-stats-title">Total por semana — cobrado + a cobrar</div>
+                <div class="sketch-stats-title">Total por semana — primeros pagos</div>
                 <div class="stats-weeks">${_statsSemanasHTML()}</div>
+                <p class="stats-note">Los proyectos del modelo anterior suman su valor total. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
             </div>
         </div>`;
 }

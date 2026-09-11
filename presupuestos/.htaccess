@@ -12,6 +12,8 @@ RedirectMatch 301 ^/presupuestos/Institucional/?$    /presupuestos/institucional
 RedirectMatch 301 ^/presupuestos/Turnos/?$           /presupuestos/turnos/
 RedirectMatch 301 ^/presupuestos/Noticias/?$         /presupuestos/noticias/
 
-# Los tipos que dejaron de venderse (catálogo, turnos e institucional) siguen
-# teniendo su página para los presupuestos ya entregados: no se borran ni se
-# redirigen, porque el cliente que la abre tiene que ver lo que le cotizamos.
+# Los tipos que dejaron de venderse (catálogo, turnos, institucional,
+# ecommerceelearning y noticias) siguen teniendo su página para los
+# presupuestos ya entregados: no se borran ni se redirigen, porque el cliente
+# que la abre tiene que ver lo que le cotizamos. Las cinco se migraron igual
+# al modelo nuevo de primer pago + plan mensual (10-sep-2026).

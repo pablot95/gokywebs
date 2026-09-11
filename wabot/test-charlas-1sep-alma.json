@@ -2,7 +2,7 @@
   {
     "id": "A1",
     "titulo": "Nacho (gorras): el pitch nombra el rubro y el precio de la landing se contesta",
-    "esperado": "Pitch de ecommerce que arranque 'Para las gorras' (o sin la clausula, nunca {rubro} crudo) + linea post-precio con el gancho. 'Y una que sea solo landing?' recibe el precio de la landing ($160.000) sin preguntar mismo proyecto u otra web. 'dale, me sirve' lleva a la oferta de la demo (gratis, sin la palabra muestra).",
+    "esperado": "Pitch de ecommerce que arranque 'Para las gorras' (o sin la clausula, nunca {rubro} crudo) + los tres pasos como segundo mensaje, sin link. 'Y una que sea solo landing?' recibe el precio del sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes) sin preguntar mismo proyecto u otra web. 'dale, me sirve' lleva a la demo (gratis, sin la palabra muestra): con ese si recien sale el link del formulario.",
     "nombre": "Nacho",
     "turnos": [
       "Quiero una página web para mi negocio 💻",
@@ -26,7 +26,7 @@
   {
     "id": "A3",
     "titulo": "Enrique (plomero): sin pregunta de turnos, la pregunta de las fotos se contesta, y el 'no se como' no repite el listado",
-    "esperado": "'Soy plomero' NO recibe la pregunta de turnos: landing $160.000 con 'Para plomería' o similar. 'subir fotos de mis trabajos' se contesta (no la oferta de la demo en su lugar). 'si vos sos el creador no te puedo decir yo como' recibe info.no_se_nada + pedido de solo nombre y negocio (sin colores ni referencia). Con nombre y negocio cierra el prediseño.",
+    "esperado": "'Soy plomero' NO recibe la pregunta de turnos: sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes) con 'Para plomería' o similar. 'subir fotos de mis trabajos' se contesta (no la oferta de la demo en su lugar). 'si vos sos el creador no te puedo decir yo como' recibe info.no_se_nada + pedido de solo nombre y negocio (sin colores ni referencia). Con nombre y negocio cierra el prediseño.",
     "nombre": "Enrique",
     "turnos": [
       "¿Cuánto cuesta hacer mi página web? 💰",
@@ -51,7 +51,7 @@
   {
     "id": "A5",
     "titulo": "Tecnico de heladeras: no es ecommerce; la segunda cotizacion OFRECE la demo en vez de tirar el listado",
-    "esperado": "Con 'técnico en aire acondicionado... muebles a medidas y pintura' NO cotiza ecommerce: pregunta el desempate híbrido (mostrar trabajos / catálogo / vender). 'mostrar trabajos y recibir consultas' recibe landing $160.000 y la OFERTA de la demo (gratis), no 'Para armarla necesito...' pegado al precio. 'dale' recibe el listado corto (sin referencia).",
+    "esperado": "Con 'técnico en aire acondicionado... muebles a medidas y pintura' NO cotiza ecommerce: pregunta el desempate híbrido (mostrar trabajos / catálogo / vender). 'mostrar trabajos y recibir consultas' recibe el sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes) y despues los tres pasos (sin link; la demo gratis es el primero), no 'Para armarla necesito...' pegado al precio. 'dale' es el si: recien ahi sale el link del formulario (o el listado corto, sin referencia, si va sin formulario).",
     "nombre": "Tecnico",
     "turnos": [
       "¿Cuánto cuesta hacer mi página web? 💰",

@@ -24,22 +24,26 @@ $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-PAGO-' . time() .
 // Monto dinámico (?monto= en pago/index.html → enviado acá en el body). Se recalcula
 // server-side por seguridad (nunca confiar en el unit_price que mandaría el cliente
 // sin validar): entero, dentro de un rango razonable; si falta o es inválido, cae al
-// default histórico de $90.000.
+// default de $90.000 (primer pago de tienda online, cursos e inmobiliaria; el sitio
+// profesional va con ?monto=60000).
 $montoRaw = $body['monto'] ?? null;
 $monto    = is_numeric($montoRaw) ? (int) $montoRaw : 90000;
 if ($monto < 1000 || $monto > 5000000) $monto = 90000;
 
-$descripcion = 'Seña para arrancar el proyecto' . ($whatsapp !== '' ? ' (' . $whatsapp . ')' : '');
+$descripcion = 'Primer pago para arrancar el proyecto' . ($whatsapp !== '' ? ' (' . $whatsapp . ')' : '');
 
 $preference = [
     'items' => [[
-        'id'          => 'sena-web-gokywebs',
-        'title'       => 'Seña — Desarrollo Web Gokywebs',
+        'id'          => 'primer-pago-web-gokywebs',
+        'title'       => 'Primer pago — Desarrollo Web Gokywebs',
         'description' => $descripcion,
         'quantity'    => 1,
         'currency_id' => 'ARS',
         'unit_price'  => $monto
     ]],
+    // El primer pago se puede hacer con tarjeta hasta en 12 cuotas (con interés: el
+    // valor de cada cuota lo calcula la tarjeta, acá no se escribe nunca).
+    'payment_methods' => ['installments' => 12],
     'payer' => ['name' => $nombre],
     'back_urls' => [
         'success' => $BASE_URL . '/exito.html?monto=' . $monto,

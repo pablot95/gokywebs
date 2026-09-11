@@ -187,7 +187,14 @@ function wabot_procesar_entrante($ev, $cfg) {
                 }
             }
         }
-        if ($texto === '' && $media['caption'] !== '') $texto = $media['caption'];
+    }
+    /* El texto que acompaña a la foto, el audio o el archivo vale aunque
+     * Gemini no haya podido leer el adjunto (IA caída, circuito abierto, foto
+     * de más de 12 MB): antes solo se rescataba en la rama de documentos, y
+     * "Este es mi logo, quiero estos colores" con una foto grande se
+     * convertía en "[imagen]" para el bot Y para el panel (auditoría 9-sep). */
+    if ($texto === '' && $media && ($media['clase'] ?? '') !== 'reaccion' && trim((string)($media['caption'] ?? '')) !== '') {
+        $texto = trim((string)$media['caption']);
     }
 
     // Una reacción o un mensaje de solo emojis igual dice algo: un pulgar arriba
@@ -253,6 +260,20 @@ function wabot_procesar_entrante($ev, $cfg) {
             if ($primerContacto) {
                 $conv['lead_recibido_evento'] = true;
                 wabot_evento($conv, 'lead_recibido');
+            }
+
+            /* La baja se levanta si el cliente vuelve pidiendo una web. Ese
+             * camino existía en redactor.php (cierre 'baja' + pide web), pero
+             * era código muerto: la baja pone bot_off y acá abajo bot_off
+             * cortaba antes de llamar al motor, así que el que decía "quiero
+             * una web" un mes después seguía mudo (auditoría 9-sep). Solo la
+             * baja pedida por el cliente: el apagado a mano del panel no tiene
+             * cierre 'baja' y se respeta. */
+            $entrada = implode("\n", $usables);
+            if ($usables && !empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'baja'
+                && (wabot_reabre_consulta($entrada) || wabot_texto_pide_web($entrada))) {
+                $conv['bot_off'] = false;   // redactor.php limpia cierre y seguimiento
+                wabot_log('baja_reabierta', ['tel' => $de, 'canal' => $canal]);
             }
 
             $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
@@ -368,34 +389,41 @@ function wabot_procesar_entrante($ev, $cfg) {
 }
 
 function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
-    $tanda = wabot_cola_drenar($clave);
-    if (!$tanda) return;
-    $conv = wabot_conv_load($clave);
-    wabot_conv_identidad_entrante($conv, $clave, $de, $canal);
-    $usables = [];
-    foreach ($tanda as $item) {
-        wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
-        wabot_imagenes_contar($conv, $item['media'] ?? null);
-        if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
-        if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
-    }
-    $conv['ultimo_cliente_ts'] = time();
-    wabot_logo_sincronizar($conv);
-    $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
-    if (!$activo || !$usables) {
+    /* En bucle, igual que el camino principal: el rescate drenaba UNA vez y
+     * el mensaje que entraba mientras este proceso estaba en Gemini (su
+     * webhook no conseguía el candado y se iba) quedaba varado en data/cola/
+     * hasta el próximo mensaje del cliente, que veía contestado lo anterior y
+     * no lo último (auditoría 9-sep). */
+    do {
+        $tanda = wabot_cola_drenar($clave);
+        if (!$tanda) return;
+        $conv = wabot_conv_load($clave);
+        wabot_conv_identidad_entrante($conv, $clave, $de, $canal);
+        $usables = [];
+        foreach ($tanda as $item) {
+            wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+            wabot_imagenes_contar($conv, $item['media'] ?? null);
+            if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
+            if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
+        }
+        $conv['ultimo_cliente_ts'] = time();
+        wabot_logo_sincronizar($conv);
+        $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
+        if (!$activo || !$usables) {
+            wabot_conv_save($conv);
+            continue;
+        }
+        // Mismo pipeline que el camino principal: este rescate de la cola aplicaba
+        // un solo filtro de los cuatro, así que un mensaje rescatado salía sin la
+        // aclaración de que la demo es gratis y sin anti-repetición.
+        $respuestas = wabot_salida_preparar(wabot_responder(implode("\n", $usables), $conv, $cfg), $conv, $cfg);
+        foreach ($respuestas as $mensaje) {
+            $mensaje = wabot_personalizar($mensaje, $conv);
+            wabot_escribiendo($conv, $id);
+            if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
+        }
         wabot_conv_save($conv);
-        return;
-    }
-    // Mismo pipeline que el camino principal: este rescate de la cola aplicaba
-    // un solo filtro de los cuatro, así que un mensaje rescatado salía sin la
-    // aclaración de que la demo es gratis y sin anti-repetición.
-    $respuestas = wabot_salida_preparar(wabot_responder(implode("\n", $usables), $conv, $cfg), $conv, $cfg);
-    foreach ($respuestas as $mensaje) {
-        $mensaje = wabot_personalizar($mensaje, $conv);
-        wabot_escribiendo($conv, $id);
-        if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
-    }
-    wabot_conv_save($conv);
+    } while (wabot_cola_tiene($clave));
 }
 
 /** Baja la media por donde corresponda: WhatsApp en dos pasos, Instagram directo. */
@@ -440,9 +468,14 @@ if (($payload['object'] ?? '') === 'instagram') {
 
                 // El candado es el mismo que toma el envío: sin esto el eco podía
                 // pisar la conversación mientras el bot todavía estaba mandando
-                // la tanda de respuestas.
-                $lockEco = wabot_lock_tomar($clave);
-                if (!$lockEco) continue;   // está contestando el bot: el eco es suyo
+                // la tanda de respuestas. Se ESPERA hasta un minuto: si Pablo
+                // contesta desde la app mientras el bot piensa (los 20 s de
+                // espera más Gemini), descartar el eco dejaba al bot sin pausar
+                // y contestando encima de él (auditoría 9-sep). Ya se respondió
+                // 200 a Meta, así que esperar acá no cuesta nada. Si el eco era
+                // del bot, wabot_eco_es_propio() lo reconoce por el texto.
+                $lockEco = wabot_lock_tomar_esperando($clave, 60, 1000000);
+                if (!$lockEco) continue;
                 try {
                     $conv = wabot_conv_load($clave);
                     // Segundo filtro: si el texto es uno que el bot acaba de mandar,
@@ -495,8 +528,10 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 $textoEco = (string)($eco['text']['body'] ?? '[mensaje]');
 
                 // Mismo guard que en Instagram: el eco de un mensaje que mandó el
-                // bot no puede pausar al bot. Ver wabot_eco_es_propio().
-                $lockEco = wabot_lock_tomar($clave);
+                // bot no puede pausar al bot. Ver wabot_eco_es_propio(). Y misma
+                // espera: la respuesta de Pablo desde el celular no se descarta
+                // porque el bot tenga el candado (auditoría 9-sep).
+                $lockEco = wabot_lock_tomar_esperando($clave, 60, 1000000);
                 if (!$lockEco) continue;
                 try {
                     $conv = wabot_conv_load($clave);

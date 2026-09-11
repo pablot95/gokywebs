@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260823-onepage">
+    <link rel="stylesheet" href="styles.css?v=20260910">
 </head>
 <body>
 
@@ -34,73 +34,149 @@
         <!-- Card -->
         <div class="form-card" id="formCard">
 
+            <!-- Indicador de pasos (el "Paso N de 2" de cada paso es el que se lee) -->
+            <div class="steps-indicator" id="stepsIndicator" aria-hidden="true">
+                <div class="step-dot active" data-s="1">
+                    <div class="step-dot-circle">1</div>
+                    <div class="step-dot-label">Tu negocio</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-dot" data-s="2">
+                    <div class="step-dot-circle">2</div>
+                    <div class="step-dot-label">Colores y estilo</div>
+                </div>
+            </div>
+
             <form id="propuestaForm" novalidate autocomplete="off">
-                <div class="form-section">
 
-                    <div class="step-header">
-                        <h2 class="step-header-title">Contanos sobre tu negocio</h2>
-                        <p class="step-header-desc">Con esto alcanza para armar tu demo. Lleva menos de un minuto.</p>
+                <!-- ─── PASO 1: Tu negocio ─── -->
+                <div class="form-step" data-step="1">
+                    <div class="form-section">
+
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 1 de 2</span>
+                            <h2 class="step-header-title" tabindex="-1">Contanos sobre tu negocio</h2>
+                            <p class="step-header-desc">Primero lo básico: lleva menos de un minuto.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="nombre">
+                                Tu nombre <span class="req">*</span>
+                            </label>
+                            <input type="text" id="nombre" name="nombre" class="field-input" placeholder="" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="nombre_negocio">
+                                Nombre de tu negocio o marca <span class="req">*</span>
+                            </label>
+                            <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="resumen">
+                                Breve resumen de lo que ofrecés <span class="req">*</span>
+                                <span class="field-hint" id="resumenContador" aria-live="polite">0/600</span>
+                            </label>
+                            <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required maxlength="600"></textarea>
+                        </div>
+
+                        <div class="field-group" id="telefonoGroup">
+                            <label class="field-label" for="telefono">
+                                Teléfono / WhatsApp <span class="req">*</span>
+                            </label>
+                            <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
+                            <p class="field-hint" id="telefonoConfirmado" hidden>¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
+                        </div>
+
                     </div>
 
-                    <div class="field-group">
-                        <label class="field-label" for="nombre">
-                            Tu nombre <span class="req">*</span>
-                        </label>
-                        <input type="text" id="nombre" name="nombre" class="field-input" placeholder="" required>
+                    <div class="step-nav">
+                        <div></div>
+                        <button type="button" class="btn-step btn-step-next" id="btnSiguiente">Siguiente <span class="btn-step-arrow">→</span></button>
                     </div>
+                </div>
 
-                    <div class="field-group">
-                        <label class="field-label" for="nombre_negocio">
-                            Nombre de tu negocio o marca <span class="req">*</span>
-                        </label>
-                        <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
-                    </div>
+                <!-- ─── PASO 2: Colores y estilo ─── -->
+                <div class="form-step" data-step="2" hidden>
+                    <div class="form-section">
 
-                    <div class="field-group">
-                        <label class="field-label" for="resumen">
-                            Breve resumen de lo que ofrecés <span class="req">*</span>
-                            <span class="field-hint" id="resumenContador" aria-live="polite">0/600</span>
-                        </label>
-                        <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required maxlength="600"></textarea>
-                    </div>
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 2 de 2</span>
+                            <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
+                            <p class="step-header-desc">Colores, estilo y lo que no puede faltar. Lo que no tengas claro lo resolvemos al diseñar tu demo.</p>
+                        </div>
 
-                    <div class="field-group">
-                        <label class="field-label">
-                            Colores de identidad <span class="req">*</span>
-                            <span class="field-hint">¿Tenés colores de marca?</span>
-                        </label>
-                        <div class="color-fields-grid">
-                            <div class="field-group color-field-group">
-                                <label class="field-label small-label" for="color_principal">Color principal</label>
-                                <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
-                            </div>
-                            <div class="field-group color-field-group">
-                                <label class="field-label small-label" for="color_secundario">Color secundario</label>
-                                <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
-                            </div>
-                            <div class="field-group color-field-group">
-                                <label class="field-label small-label" for="color_fondos">Color de fondos</label>
-                                <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
+                        <div class="field-group">
+                            <label class="field-label">
+                                Colores de identidad <span class="req">*</span>
+                                <span class="field-hint">Tenés colores de marca?</span>
+                            </label>
+                            <div class="color-fields-grid">
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_principal">Color principal</label>
+                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_secundario">Color secundario</label>
+                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_fondos">Color de fondos</label>
+                                    <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
+                                </div>
                             </div>
                         </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="estilo">
+                                Estilo de página <span class="req">*</span>
+                            </label>
+                            <!-- Cada opción trae su descripción y un ejemplo del portfolio, que
+                                 script.js muestra abajo (un <option> no puede llevar links). La
+                                 lista tiene que coincidir con formlead_estilos() de wabot/form-lead.php. -->
+                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
+                                <option value="" disabled selected>Elegí un estilo</option>
+                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow">Minimalista</option>
+                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE">Moderno y audaz</option>
+                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes">Elegante / premium</option>
+                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo">Cálido y cercano</option>
+                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos">Colorido y divertido</option>
+                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones">Corporativo / sobrio</option>
+                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
+                            </select>
+                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y acá te mostramos un ejemplo.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="referencia">
+                                Referencia web <span class="optional">(opcional)</span>
+                            </label>
+                            <p class="field-hint" id="referenciaAyuda">Puede ser cualquier sitio web que te guste, de cualquier rubro, o uno de <a class="inline-link" href="https://gokywebs.com/portfolio/" target="_blank" rel="noopener">nuestro catálogo</a>.</p>
+                            <input type="text" id="referencia" name="referencia" class="field-input" placeholder="Link o nombre del sitio" maxlength="300" autocapitalize="off" autocorrect="off" spellcheck="false" aria-describedby="referenciaAyuda">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="incluir">
+                                Cosas que quieras incluir sí o sí en la web <span class="optional">(opcional)</span>
+                                <span class="field-hint" id="incluirContador" aria-live="polite">0/600</span>
+                            </label>
+                            <textarea id="incluir" name="incluir" class="field-input field-textarea autosize" rows="1" placeholder="Ej: galería de trabajos, mapa con la ubicación, horarios de atención" maxlength="600"></textarea>
+                        </div>
+
                     </div>
 
-                    <div class="field-group" id="telefonoGroup">
-                        <label class="field-label" for="telefono">
-                            Teléfono / WhatsApp <span class="req">*</span>
-                        </label>
-                        <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
-                        <p class="field-hint" id="telefonoConfirmado" hidden>¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
+                    <div class="divider"></div>
+
+                    <div class="submit-row">
+                        <div class="step-nav step-nav-submit">
+                            <button type="button" class="btn-step btn-step-prev" id="btnVolver">← Volver</button>
+                            <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
+                        </div>
+                        <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu demo.</p>
                     </div>
-
                 </div>
 
-                <div class="divider"></div>
-
-                <div class="submit-row">
-                    <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
-                    <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu demo.</p>
-                </div>
             </form>
         </div>
 
@@ -111,21 +187,21 @@
 
     </div>
 
-    <!-- Modal: ¿Qué es una Primera entrega GRATIS? -->
+    <!-- Modal: cómo funciona la demo gratis -->
     <div class="que-es-overlay" id="queEsOverlay" role="dialog" aria-modal="true" aria-labelledby="queEsTitle">
         <div class="que-es-modal">
             <div class="que-es-header">
-                <h2 class="que-es-title" id="queEsTitle">¿Qué es una Primera entrega GRATIS?</h2>
+                <h2 class="que-es-title" id="queEsTitle">Cómo funciona la demo gratis</h2>
                 <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
             </div>
             <div class="que-es-body">
 
                 <p class="que-es-intro">
-                    Una demo es un <strong>diseño real de tu sitio web</strong>, hecho 100% a medida según tu marca, rubro y estilo — <strong>sin costo y sin compromiso</strong>. No es un template genérico: es tu web, antes de contratarla.
+                    La demo es un <strong>prediseño de tu web</strong>, hecho a medida según tu marca, tu rubro y el estilo que elijas, <strong>sin costo y sin compromiso</strong>. No es una plantilla genérica: es una primera versión pensada para tu negocio.
                 </p>
 
                 <div class="que-es-block">
-                    <div class="que-es-block-title">¿Para qué sirve?</div>
+                    <div class="que-es-block-title">Para qué sirve</div>
                     <div class="que-es-items">
                         <div class="que-es-item">
                             <div class="que-es-item-icon">🎨</div>
@@ -152,14 +228,14 @@
                 </div>
 
                 <div class="que-es-block">
-                    <div class="que-es-block-title">¿Cómo sigue?</div>
+                    <div class="que-es-block-title">Cómo es la demo</div>
                     <div class="que-es-steps">
                         <div class="que-es-step">
                             <div class="que-es-step-line"></div>
                             <div class="que-es-step-num">1</div>
                             <div class="que-es-step-text">
                                 <strong>Completás este formulario</strong>
-                                Solo lleva un minuto. Nos contás tu negocio y tus colores.
+                                Son dos pasos cortos: tu negocio, y después los colores y el estilo.
                             </div>
                         </div>
                         <div class="que-es-step">
@@ -167,23 +243,35 @@
                             <div class="que-es-step-num">2</div>
                             <div class="que-es-step-text">
                                 <strong>Nuestro equipo diseña tu demo</strong>
-                                Armamos una sección real de tu sitio, personalizada para vos.
+                                Un prediseño de tu web, con tu marca, tus colores y el estilo que elegiste.
                             </div>
+                        </div>
+                        <div class="que-es-step">
+                            <div class="que-es-step-num">3</div>
+                            <div class="que-es-step-text">
+                                <strong>Te la mandamos en menos de 24 horas</strong>
+                                Te llega por WhatsApp y queda disponible 5 días, por una cuestión de espacio.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="que-es-block">
+                    <div class="que-es-block-title">Así trabajamos, en tres pasos:</div>
+                    <div class="que-es-steps">
+                        <div class="que-es-step">
+                            <div class="que-es-step-line"></div>
+                            <div class="que-es-step-num">1</div>
+                            <div class="que-es-step-text">Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web.</div>
                         </div>
                         <div class="que-es-step">
                             <div class="que-es-step-line"></div>
-                            <div class="que-es-step-num">3</div>
-                            <div class="que-es-step-text">
-                                <strong>Te la enviamos en 24 a 48 horas</strong>
-                                Recibís la demo por WhatsApp para verla y comentar.
-                            </div>
+                            <div class="que-es-step-num">2</div>
+                            <div class="que-es-step-text">Luego se abona el primer pago para arrancar con los cambios y dejar la web totalmente funcional.</div>
                         </div>
                         <div class="que-es-step">
-                            <div class="que-es-step-num">4</div>
-                            <div class="que-es-step-text">
-                                <strong>Decidís sin presión</strong>
-                                Si te gusta el estilo, arrancamos el proyecto completo. Si no, sin cargo ni compromiso.
-                            </div>
+                            <div class="que-es-step-num">3</div>
+                            <div class="que-es-step-text">Luego a los 30 días comienza el plan mensual</div>
                         </div>
                     </div>
                 </div>
@@ -191,8 +279,8 @@
                 <div class="que-es-cta">
                     <div class="que-es-cta-icon">🚀</div>
                     <div class="que-es-cta-text">
-                        <strong>Ya lo sabés todo — ahora es el momento</strong>
-                        Completá el formulario, en menos de un minuto estás listo.
+                        <strong>Para pedirla, completá el formulario</strong>
+                        Son dos pasos cortos.
                     </div>
                 </div>
 
@@ -224,6 +312,6 @@
         });
     </script>
 
-    <script type="module" src="script.js"></script>
+    <script type="module" src="script.js?v=20260910"></script>
 </body>
 </html>

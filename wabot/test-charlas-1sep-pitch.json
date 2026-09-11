@@ -26,7 +26,7 @@
   {
     "id": "P3",
     "titulo": "Landing: la linea nueva no puede sonar a pregunta ni repetir el precio",
-    "esperado": "Landing $160.000 + linea de proximo paso. El cliente pregunta algo suelto y despues acepta: tiene que cerrar sin volver a preguntar si le encaja.",
+    "esperado": "Sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes) + los tres pasos como segundo mensaje, sin link. El cliente pregunta algo suelto y despues acepta: tiene que cerrar sin volver a preguntar si le encaja (con ese si recien sale el link del formulario).",
     "nombre": "Julio",
     "turnos": [
       "buen dia, soy plomero matriculado y quiero que me encuentren",

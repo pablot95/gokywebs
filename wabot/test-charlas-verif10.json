@@ -24,7 +24,7 @@
   {
     "id": "V03",
     "titulo": "Web bilingue pedida en un rubro distinto (turismo)",
-    "esperado": "Tiene que contestar sobre el adicional de web bilingue, no solo presentar el tipo y preguntar otra cosa.",
+    "esperado": "Tiene que contestar lo de la web bilingue (sin cotizarla como adicional con precio: desde el 10-sep los unicos adicionales son $500 por producto arriba de 10 y $10.000 por mes por mas de un cambio), no solo presentar el tipo y preguntar otra cosa.",
     "nombre": "Julian",
     "turnos": [
       "Hola, tengo cabanas para turistas y necesito la web en espanol e ingles porque me llegan muchos extranjeros"
@@ -54,7 +54,7 @@
   {
     "id": "V06",
     "titulo": "Otra plataforma (Wix) en vez de armar la propia",
-    "esperado": "Tiene que decir claramente que sobre Wix no trabajan antes de dar el argumento de pago unico.",
+    "esperado": "Tiene que decir claramente que sobre Wix no trabajan antes de dar el diferenciador (alla la armas vos con una plantilla y pagas por mes igual; aca la hacemos nosotros a medida y nos ocupamos de todo). Nunca 'pago unico vs alquiler'.",
     "nombre": "Sole",
     "turnos": [
       "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"

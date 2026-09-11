@@ -177,13 +177,13 @@ echo "\n=== A. El texto fijo no se come las preguntas del mismo mensaje ===\n";
 list($out, $conv) = responder('Me gustó, pero cuánto sale y tiene mantenimiento mensual?');
 $todo = implode("\n", (array)$out);
 caso('elogio + 2 preguntas: contesta el precio', stripos($todo, 'seña') !== false || preg_match('/\$\s?\d/', $todo), json_encode($out, JSON_UNESCAPED_UNICODE));
-caso('elogio + 2 preguntas: contesta el mantenimiento', stripos($todo, 'mantenimiento') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('elogio + 2 preguntas: contesta el mantenimiento', stripos($todo, 'mantenimiento') !== false || stripos($todo, 'plan mensual') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
 caso('elogio + 2 preguntas: y la pregunta por los cambios va ÚLTIMA', end($out) === (string)$cfg['postdemo_elogio'], json_encode($out, JSON_UNESCAPED_UNICODE));
 caso('elogio + 2 preguntas: sin aviso, la charla sigue viva', !tiene_aviso($out) && empty($conv['handoff_pendiente']));
 
 list($out, $conv) = responder('Quiero cambiar el color y saber cuánto cuesta el mantenimiento');
 caso('cambio + pregunta: primero acusa el cambio', ($out[0] ?? '') === (string)$cfg['postdemo_cambios'], json_encode($out, JSON_UNESCAPED_UNICODE));
-caso('cambio + pregunta: después contesta el mantenimiento', count($out) === 2 && stripos($out[1], 'mantenimiento') !== false, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('cambio + pregunta: después contesta el mantenimiento', count($out) === 2 && (stripos($out[1], 'mantenimiento') !== false || stripos($out[1], 'plan mensual') !== false), json_encode($out, JSON_UNESCAPED_UNICODE));
 caso('cambio + pregunta: y el cambio quedó ANOTADO en la ficha', stripos((string)($conv['cambios_pedidos'] ?? ''), 'cambiar el color') !== false, (string)($conv['cambios_pedidos'] ?? ''));
 
 list($out, $conv) = responder('Se puede cambiar el color del fondo?');
@@ -216,7 +216,7 @@ caso('motor: la transitoria se consumió', !array_key_exists('_postdemo_prefijo'
 $convD = conv_postdemo(['tel' => 'TEST-A', 'transcript' => [['q' => 'cliente', 't' => 'Me gustó, pero cuánto sale y tiene mantenimiento mensual?', 'ts' => time()]]]);
 $convD['ultimo_cliente_ts'] = time();
 $out = wabot_responder('Me gustó, pero cuánto sale y tiene mantenimiento mensual?', $convD, array_merge($cfg, ['modo_redaccion' => 'fijo']));
-caso('por wabot_responder: las dos preguntas salen contestadas', stripos(implode("\n", (array)$out), 'mantenimiento') !== false && count($out) >= 2, json_encode($out, JSON_UNESCAPED_UNICODE));
+caso('por wabot_responder: las dos preguntas salen contestadas', (stripos(implode("\n", (array)$out), 'mantenimiento') !== false || stripos(implode("\n", (array)$out), 'plan mensual') !== false) && count($out) >= 2, json_encode($out, JSON_UNESCAPED_UNICODE));
 
 echo "\n=== B. Lo que dice que anota, lo anota ===\n";
 

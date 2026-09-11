@@ -1059,6 +1059,10 @@ body {
     transition: var(--transition);
     border: none;
     letter-spacing: 0.1px;
+    /* Al lado de Enviar (width:100%) se achicaba hasta partir "← Volver" en dos
+       renglones a 375 px. */
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .btn-step-next {

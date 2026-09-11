@@ -84,6 +84,10 @@ a { color: inherit; text-decoration: none; }
 .price-hero { display: flex; align-items: baseline; gap: 0.6rem; margin-bottom: 1.5rem; }
 .price-hero b { font-size: clamp(2.3rem, 7vw, 3rem); font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
 .price-hero span { font-size: 0.95rem; color: var(--text-muted); font-weight: 600; }
+/* Primer pago + mensualidad, uno debajo del otro y con el mismo peso (10-sep) */
+.price-duo { margin-bottom: 1.5rem; }
+.price-duo .price-hero { margin-bottom: 0.3rem; }
+.price-duo .price-hero:last-child { margin-bottom: 0; }
 
 
 /* ── Checklist numerada (incluye) ── */
@@ -98,7 +102,7 @@ a { color: inherit; text-decoration: none; }
     font-variant-numeric: tabular-nums;
 }
 
-/* ── Seña / saldo / entrega, + cuotas en su propia fila horizontal al pie ── */
+/* ── Primer pago / mensualidad / entrega, + cuotas en su propia fila horizontal al pie ── */
 .plan-pago {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
@@ -114,7 +118,7 @@ a { color: inherit; text-decoration: none; }
 .plan-pago-stats > div { min-width: 0; }
 .plan-pago .et { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.3rem; }
 .plan-pago .val { font-size: 1.3rem; font-weight: 800; color: var(--text); }
-.plan-pago .val.saldo { color: var(--green); }
+.plan-pago .val.destacado { color: var(--green); }
 .plan-pago .val.cuotas { color: var(--blue-text); }
 .plan-pago-cuotas {
     display: flex; align-items: center; justify-content: space-between; gap: 1rem;
@@ -156,7 +160,7 @@ a { color: inherit; text-decoration: none; }
     outline-offset: 3px;
 }
 
-/* ── Mantenimiento ── */
+/* ── Plan mensual (precio + qué incluye + adicionales al pie) ── */
 .mant-card {
     background: var(--bg-card); border: 1px solid var(--border);
     border-radius: var(--radius-lg); padding: 1.5rem 1.75rem;
@@ -172,6 +176,7 @@ a { color: inherit; text-decoration: none; }
     border-top: 1px dashed var(--border-2);
     font-size: 0.88rem; font-weight: 600; color: var(--text-muted);
 }
+.addon-note + .addon-note { margin-top: 0.45rem; padding-top: 0; border-top: none; }
 .btn-addon-toggle {
     width: 100%; min-height: 48px; margin-top: 1.1rem;
     display: inline-flex; align-items: center; justify-content: center;
@@ -322,6 +327,7 @@ a { color: inherit; text-decoration: none; }
     .plan-pago { padding: 1.1rem 1rem; }
     .plan-pago-stats { gap: 0.75rem; }
     .plan-pago .val { font-size: 1.05rem; }
+    .plan-pago-cuotas { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
     .works-grid { grid-template-columns: minmax(0, 1fr); gap: 3rem; }
     .works-grid .work-card { margin: 0 -1rem; border-radius: 8px; }
     .carga-calc-form { flex-direction: column; align-items: stretch; padding: 1.1rem 1rem; }
@@ -330,7 +336,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Impresión / Guardar como PDF ──
    El header es fixed (tapa contenido en papel) y varias cosas no tienen
-   sentido en una hoja: volver al inicio, pagar la seña, el link de soporte.
+   sentido en una hoja: volver al inicio, el botón de pago, el link de soporte.
    Se sacan y se compensa el padding que el header fixed le reservaba al hero. */
 @media print {
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -342,7 +348,7 @@ a { color: inherit; text-decoration: none; }
     .pres-footer { margin-top: 0.5rem; padding: 1rem; }
 }
 
-/* ── Aviso de la demo gratis, al pie de seña/saldo/entrega (Pablo, 2-sep) ── */
+/* ── Aviso de la demo gratis, al pie de primer pago/mensualidad/entrega (Pablo, 2-sep) ── */
 .demo-aviso {
     display: flex; align-items: center; gap: 0.7rem;
     width: 100%;

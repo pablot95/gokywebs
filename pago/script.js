@@ -1,12 +1,15 @@
-/* Página de pago de seña — sin wizard, para el cliente que ya vio la muestra
+/* Página del primer pago — sin wizard, para el cliente que ya vio la muestra
    y quiere avanzar. Con ?monto= en la URL va derecho al checkout de Mercado
    Pago (ver "Auto-redirect" al final del archivo); la página completa con
    los dos medios (transferencia o form manual de MP) queda de fallback.
 
    Monto dinámico por link: gokywebs.com/pago?monto=60000 cobra exactamente
-   ese valor (Pablo arma el link con el monto real de cada cliente: 60.000
-   para landing, 90.000 para el resto, o cualquier otro importe puntual —
-   saldo, adicional, etc.). Sin el parámetro, cae al default $90.000.
+   ese valor (Pablo arma el link con el primer pago de cada cliente: 60.000
+   para sitio profesional, 90.000 para tienda online, cursos e inmobiliaria,
+   o cualquier otro importe puntual — adicional, carga de productos, etc.).
+   Sin el parámetro, cae al default $90.000. El plan mensual NO se cobra por
+   acá: va por suscripción de Mercado Pago (/mantenimientomensual y
+   /mantenimientoweb).
    OJO: es "monto", no "pago" — "?pago=fallido" ya existe en esta misma
    página para el aviso de pago rechazado (ver checkFailedPayment más abajo);
    reusar esa clave para el monto lo pisaría. */

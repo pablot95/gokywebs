@@ -8,7 +8,7 @@
       "Buzos baggy",
       "Sale lo mismo con carrito?"
     ],
-    "esperado": "El bot contesta SOLO los dos precios (catalogo $180.000+$500 por producto vs ecommerce $290.000). NO deriva al desarrollador ni dice 'esa duda te la va a contestar'."
+    "esperado": "El bot contesta SOLO el precio: con o sin carrito es ecommerce, primer pago $90.000 + plan mensual $30.000 por mes desde los 30 dias (catalogo ya no tiene precio propio). NO deriva al desarrollador ni dice 'esa duda te la va a contestar'."
   },
   {
     "id": "R02",
@@ -19,7 +19,7 @@
       "Reservar",
       "Y si lo agendo yo cual es la diferencia"
     ],
-    "esperado": "Contesta la diferencia real y los dos precios (landing $160.000 vs turnos $200.000). NO deriva."
+    "esperado": "Contesta la diferencia real y el precio del sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes; ya no hay un precio distinto por turnos). NO deriva."
   },
   {
     "id": "R03",
@@ -114,7 +114,7 @@
       "Pediatria",
       "Costos?"
     ],
-    "esperado": "Contesta los DOS precios concretos ($160.000 por WhatsApp / $200.000 con reserva). NO vuelve al rango generico ni repregunta 'contame a que te dedicas', que ya lo dijo."
+    "esperado": "Contesta el precio concreto del sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes; ya no hay un precio distinto 'con reserva'). NO vuelve al rango generico ni repregunta 'contame a que te dedicas', que ya lo dijo."
   },
   {
     "id": "R12",
@@ -163,7 +163,7 @@
       "Che, pensandolo bien mejor sin carrito, que me escriban por WhatsApp",
       "Cuanto queda entonces?"
     ],
-    "esperado": "Acepta el cambio sin pelearlo, recotiza catalogo y da el precio nuevo. No repite el precio viejo de ecommerce ni se confunde."
+    "esperado": "Acepta el cambio sin pelearlo y aclara que el precio es el mismo: con o sin carrito es ecommerce, primer pago $90.000 + plan mensual $30.000 por mes (catalogo ya no tiene precio propio). No inventa un precio nuevo ni se confunde."
   },
   {
     "id": "N17",
@@ -243,7 +243,7 @@
       "Necesito una landing para mi productora de eventos",
       "La necesito lista para manana a la manana si o si, se puede?"
     ],
-    "esperado": "Dice el plazo real (7 dias desde la sena y el contenido) sin prometer algo imposible para quedar bien."
+    "esperado": "Dice el plazo real (7 dias desde el primer pago y el contenido; nunca 'seña') sin prometer algo imposible para quedar bien."
   },
   {
     "id": "N25",
@@ -253,7 +253,7 @@
       "Vendo productos de limpieza, quiero tienda online",
       "Se puede pagar en cuotas? Cuanto seria cada cuota?"
     ],
-    "esperado": "Contesta las formas de pago sin calcular el monto de cada cuota (lo calcula la tarjeta) y sin adelantar la sena si no se la preguntaron."
+    "esperado": "Contesta las formas de pago (primer pago por transferencia o tarjeta hasta en 12 cuotas con interes; plan mensual por suscripcion automatica de Mercado Pago desde los 30 dias) sin calcular el monto de cada cuota (lo calcula la tarjeta) y sin hablar de 'seña'."
   },
   {
     "id": "N26",
@@ -263,7 +263,7 @@
       "Tengo una cabana en Bariloche y recibo turistas extranjeros",
       "Necesito que este en ingles tambien, se puede? cuanto mas sale?"
     ],
-    "esperado": "Contesta el adicional de bilingue con el precio real de config, sin inventar un numero."
+    "esperado": "Contesta lo del bilingue sin cotizarlo como adicional con precio (desde el 10-sep los unicos adicionales son $500 por producto arriba de 10 y $10.000 por mes por mas de un cambio), sin inventar un numero."
   },
   {
     "id": "N27",

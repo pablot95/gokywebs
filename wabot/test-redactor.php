@@ -91,28 +91,28 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va una Landing: \$180.000 por todo el desarrollo. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional y te hacemos un prediseño gratis antes de que decidas.";
+    return "Mirá, para lo tuyo va un sitio profesional: \$60.000 de primer pago y \$20.000 por mes desde los 30 días. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional y te hacemos un prediseño gratis antes de que decidas.";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada del primero',
     count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
-    && strpos($r[0], '$180.000') !== false);
-caso('la propuesta del prediseño va aparte, CON el link, y NO se reescribe',
-    stripos($r[1], 'cómo podría verse la web') !== false && strpos($r[1], 'gokywebs.com/form/') !== false);
+    && strpos($r[0], '$60.000') !== false);
+caso('los tres pasos van aparte, SIN el link (sale con el sí del cliente), y NO se reescriben',
+    stripos($r[1], 'tres pasos') !== false && strpos($r[1], 'gokywebs.com/form/') === false);
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 2 && strpos($r[0], '$180.000') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 2 && strpos($r[0], '$60.000') !== false && strpos($r[0], 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[0], '$180.000') !== false);
+caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[0], '$60.000') !== false);
 
 // La derivación nunca se reescribe.
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
@@ -155,9 +155,9 @@ $c = convNueva();
 $r = wabot_responder('vendo ropa', $c, $cfgFijo);
 caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
-    && strpos($r[0], '$290.000') !== false);
+    && strpos($r[0], '$90.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $290.000 por todo, mirá gokywebs.com/presupuestos/ecommerce',
+    wabot_validar_redaccion('Sale $90.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/ecommerce',
@@ -223,13 +223,15 @@ echo "— Dos artículos pegados: \"iría un una página\" (salió así en produ
 
 $basePrecio = wabot_msg_precio_texto('landing', $cfg);
 caso('"un una" se rechaza y cae al texto fijo',
-    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('"la un" también',
-    wabot_validar_redaccion('Te queda la un página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Te queda la un página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $180.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+caso('y una redacción que se come la mensualidad NO pasa: los dos montos van siempre juntos (10-sep)',
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $60.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 
 echo "— Tras un cierre sin presión, el acuse recibe silencio (caso 👍 si, 21-ago) —\n";
 
@@ -389,10 +391,12 @@ foreach (['fijo', 'natural', 'agente'] as $modoCmp) {
     $convAgendo['fase'] = 'prediseno'; $convAgendo['tipo'] = 'turnos';
     $convAgendo['precio_dado'] = true; $convAgendo['cta_muestra'] = true;
     $rAgendo = wabot_responder('Y si lo agendo yo cual es la diferencia', $convAgendo, $cfgCmp);
+    /* Turnos solo lo tiene una charla cotizada con el modelo viejo: compara
+     * los pagos únicos de entonces (10-sep). */
     caso("modo $modoCmp: \"si lo agendo yo\" trae landing y turnos",
         count($rAgendo) === 1
-        && strpos($rAgendo[0], (string)$cfgCmp['tipos']['landing']['precio']) !== false
-        && strpos($rAgendo[0], (string)$cfgCmp['tipos']['turnos']['precio']) !== false);
+        && strpos($rAgendo[0], wabot_precio_anterior_de('landing', $cfgCmp)) !== false
+        && strpos($rAgendo[0], wabot_precio_anterior_de('turnos', $cfgCmp)) !== false);
     caso("modo $modoCmp: y no le ofrece la demo en vez de contestar",
         stripos($rAgendo[0], 'muestra') === false && stripos($rAgendo[0], 'demo') === false);
 }

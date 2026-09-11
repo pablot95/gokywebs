@@ -72,9 +72,27 @@ function receptor_condiciones_venta()
     ];
 }
 
+// Descripciones por defecto del comprobante. Desde el modelo del 10-sep-2026 se
+// facturan dos conceptos: el primer pago del desarrollo y el plan mensual.
+// receptor_descripcion_por_defecto() sigue devolviendo la del primer pago (es la
+// que usan facturar.php como sugerencia y comprobante.php como respaldo); la del
+// plan mensual queda en su propia función para cuando el modal ofrezca elegir.
 function receptor_descripcion_por_defecto()
 {
     return 'Diseño y desarrollo web';
+}
+
+function receptor_descripcion_plan_mensual()
+{
+    return 'Plan mensual de sitio web (hosting, dominio, soporte y actualizaciones)';
+}
+
+function receptor_descripciones_sugeridas()
+{
+    return [
+        'primerPago'  => receptor_descripcion_por_defecto(),
+        'planMensual' => receptor_descripcion_plan_mensual(),
+    ];
 }
 
 // Digito verificador de CUIT/CUIL (modulo 11). Mandar uno invalido hace que ARCA

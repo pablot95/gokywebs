@@ -218,6 +218,11 @@ function wabot_config_migrar(&$cfg) {
     wabot_config_sin_nombre_propio($cfg);
     // Y al final, la red que no depende de adivinar la redacción vieja.
     wabot_config_sin_frases_retiradas($cfg);
+    /* Lo ÚLTIMO de todo: el modelo comercial del 10-sep (primer pago + plan
+     * mensual). Va al final a propósito: todas las de arriba escriben textos
+     * con seña, saldo y pago único, así que cualquier otro orden dejaría la
+     * config a medio migrar. */
+    wabot_config_modelo_mensual($cfg);
 }
 
 /** Circuit breaker compartido: evita duplicar llamadas cuando Gemini ya falló. */
@@ -854,28 +859,23 @@ function wabot_config_ventas(&$cfg) {
         $cfg['prediseno'] = $predisenoNuevo;
     }
 
-    /* "Tiene un precio de $160.000, pago único." y tres mensajes después "se
-     * abona una seña para arrancar y el saldo al entregar". No son
-     * incompatibles —"pago único" quiere decir que no hay abono mensual— pero
-     * al cliente le suenan a contradicción (Pablo, 29-ago). Se dice lo que se
-     * quiere decir. Solo en los textos de precio de cada tipo: en 'caro' y en
-     * 'plataformas' la frase es el argumento contra el alquiler mensual y ahí
-     * sí corresponde. */
+    /* Acá vivía el arreglador que convertía ", pago único." en "Es el valor
+     * total del desarrollo, sin abono mensual." (29-ago). El 10-sep-2026 Pablo
+     * cambió el modelo: AHORA SÍ hay abono mensual, y es obligatorio. Ese
+     * arreglador escribía la mentira solo, en cada carga, aunque el texto
+     * estuviera bien. Queda la limpieza al revés: cualquier "pago único" que
+     * sobreviva en un texto de precio se borra, y la redacción nueva la pone
+     * wabot_config_modelo_mensual(), que corre última. */
     foreach ((array)($cfg['tipos'] ?? []) as $tipoPU => $datosPU) {
         foreach (['precio_ideal', 'precio_ideal_variantes'] as $campoPU) {
             if (!isset($cfg['tipos'][$tipoPU][$campoPU])) continue;
             $valorPU = $cfg['tipos'][$tipoPU][$campoPU];
             $arreglar = function ($txt) {
-                // [ \t] y no \s: el \s de después se tragaba el salto de línea
-                // y "sin abono mensual.Y acá podés ver..." salía pegado en cada
-                // precio de ecommerce (visto en toda la batería del 1-sep).
-                //
-                // La COMA es obligatoria: lo que se retiró es la coletilla
-                // ", pago único." colgada al final. Desde el 2-sep el texto
-                // dice "Es un pago único de $290.000" a pedido de Pablo, y esa
-                // forma —sin coma delante— no se toca.
-                return preg_replace('/,[ \t]*(?:pago único|en un único pago)[ \t]*\.?/iu',
-                    '. Es el valor total del desarrollo, sin abono mensual.', (string)$txt);
+                // [ \t] y no \s: el \s se tragaba el salto de línea y el texto
+                // siguiente salía pegado (visto en la batería del 1-sep).
+                $t = preg_replace('/,[ \t]*(?:pago único|en un único pago)[ \t]*\.?/iu', '.', (string)$txt);
+                $t = preg_replace('/\bEs un pago único de\b/iu', 'El primer pago es de', $t);
+                return preg_replace('/[ \t]*Es el valor total del desarrollo, sin abono mensual\.[ \t]*/iu', ' ', $t);
             };
             $cfg['tipos'][$tipoPU][$campoPU] = is_array($valorPU)
                 ? array_map($arreglar, $valorPU) : $arreglar($valorPU);
@@ -1275,17 +1275,14 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
     /* El turno de la demo: qué es, el formulario y las 24 horas. Antes se
      *    ofrecía ("te la armo?") y recién con el sí llegaba el link; ahora el
      *    link va en el mismo mensaje, que es lo que pidió Pablo. */
-    /* El texto lo dicta Pablo, palabra por palabra. Última versión: 6-sep-2026.
-     * Suma el rubro del cliente al ofrecimiento, dice qué datos pide el
-     * formulario (así no parece un trámite a ciegas) y cierra aclarando que
-     * después de verla decide él. {rubro} lo resuelve wabot_personalizar(): sin
-     * rubro detectado, "tu negocio de {rubro}" colapsa a "tu negocio". */
-    $linkNuevo = "Podemos prepararte una primera muestra de cómo podría verse la web de tu negocio de {rubro}, gratis y sin compromiso.
-
-Completá este formulario con el nombre del negocio, qué ofrecés y los colores que te gustan:
+    /* EL LINK DEL FORMULARIO, SOLO. Los tres pasos se fueron de acá el
+     * 10-sep-2026: son el SEGUNDO mensaje del precio (wabot_tres_pasos_default)
+     * y salen siempre, mientras que este texto sale recién cuando el cliente
+     * contesta que sí quiere la demo. Antes los tres pasos y el link viajaban
+     * pegados y el link llegaba sin que nadie lo hubiera aceptado. */
+    $linkNuevo = "Perfecto. Para armarte la demo completá este formulario con el nombre del negocio, qué ofrecés y los colores que te gustan:
 {link}
-
-Con esos datos armamos una propuesta visual y te la enviamos por acá en menos de 24 horas. Después de verla, decidís si querés avanzar.";
+No te lleva más de un minuto, y en menos de 24 horas la tenés lista.";
     $linksViejos = [
         'Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}',
         'Para que veas la calidad del trabajo antes de decidir, te armamos una demo de tu web: es una primera entrega, sin cargo. Completá este formulario, te lleva menos de un minuto: {link}',
@@ -1903,10 +1900,17 @@ function wabot_config_sin_nombre_propio(&$cfg) {
 
 /** Los textos fijos del turno del pitch (1-sep), con {rubro} al frente. */
 function wabot_precio_ideal_defaults() {
-    /* Estructura dictada por Pablo el 2-sep: confirmación + tipo + precio como
-     * PAGO ÚNICO + mini descripción de qué es + el link del presupuesto para
-     * verlo en detalle. Un solo link, el del presupuesto: los trabajos del
-     * rubro ya están enlazados adentro de esa página. */
+    /* Estructura dictada por Pablo el 2-sep: confirmación + tipo + precio +
+     * mini descripción de qué es + el link del presupuesto para verlo en
+     * detalle. Un solo link, el del presupuesto: los trabajos del rubro ya
+     * están enlazados adentro de esa página.
+     *
+     * 10-sep-2026: el precio son DOS números y van en la misma oración. El
+     * primer pago solo se leía como "lo que sale la web", así que la
+     * mensualidad tiene que llegar pegada y con lo que incluye al lado: si va
+     * en un renglón aparte o más abajo, se lee como letra chica. {precio} y
+     * {mensualidad} los resuelve wabot_precio_placeholders() con el precio
+     * congelado de la charla (ver wabot_precio_vigente en engine.php). */
     return [
         /* "Muestra tus trabajos" no le cabe a media lista de rubros que caen en
          * sitio profesional: una contadora, un abogado, una cuidadora
@@ -1914,11 +1918,48 @@ function wabot_precio_ideal_defaults() {
          * delata que el texto es el mismo para todos (Pablo, 3-sep). La
          * redacción de reemplazo es la que dictó él: sirve igual para
          * contadores, abogados, técnicos, peluqueros y cuidadores. */
-        'landing' => "Perfecto, para {rubro} sería un sitio profesional. Es un pago único de {precio}.\nEl sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
-        'ecommerce' => "Perfecto, para {rubro} sería un ecommerce. Es un pago único de {precio}.\nEl ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.\nEn este enlace podés verlo bien detallado: {link}",
-        'inmobiliaria' => "Perfecto, para {rubro} sería una web inmobiliaria. Es un pago único de {precio}.\nLa web inmobiliaria publica tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.\nEn este enlace podés verlo bien detallado: {link}",
-        'elearning' => "Perfecto, para {rubro} sería una plataforma de cursos. Es un pago único de {precio}.\nLa plataforma tiene los videos subidos ahí, cada alumno entra con su usuario y sigue su progreso, y el cobro de la inscripción se hace online.\nEn este enlace podés verlo bien detallado: {link}",
+        'landing' => "Perfecto, para {rubro} sería un sitio profesional. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEl sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
+        'ecommerce' => "Perfecto, para {rubro} sería un ecommerce. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEl ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.\nEn este enlace podés verlo bien detallado: {link}",
+        'inmobiliaria' => "Perfecto, para {rubro} sería una web inmobiliaria. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nLa web inmobiliaria publica tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.\nEn este enlace podés verlo bien detallado: {link}",
+        'elearning' => "Perfecto, para {rubro} sería una plataforma de cursos. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nLa plataforma tiene los videos subidos ahí, cada alumno entra con su usuario y sigue su progreso, y el cobro de la inscripción se hace online.\nEn este enlace podés verlo bien detallado: {link}",
     ];
+}
+
+/**
+ * El precio de pago único con el que se vendía cada tipo hasta el 10-sep-2026.
+ *
+ * Vive acá y no en engine.php porque lo usa la migración de la config, que
+ * corre también desde el panel y desde los procesos que no cargan el motor.
+ * La tabla de respaldo es el último precio de lista de cada tipo: se usa para
+ * las charlas viejas que tienen que seguir viendo lo que se les cotizó.
+ */
+function wabot_precio_anterior_de($tipo, $cfg) {
+    $t = $cfg['tipos'][$tipo] ?? [];
+    $ant = trim((string)($t['precio_anterior'] ?? ''));
+    if ($ant !== '') return $ant;
+    $tabla = ['landing' => '$180.000', 'ecommerce' => '$290.000', 'elearning' => '$290.000',
+              'inmobiliaria' => '$240.000', 'turnos' => '$200.000', 'institucional' => '$200.000',
+              'lms' => '$330.000', 'catalogo' => '$180.000'];
+    return $tabla[$tipo] ?? trim((string)($t['precio'] ?? ''));
+}
+
+/**
+ * EL SEGUNDO MENSAJE DEL PRECIO: los tres pasos.
+ *
+ * Dictado por Pablo palabra por palabra el 10-sep-2026. No se reescribe ni se
+ * "mejora": lo único agregado es el plazo de la demo en el paso 1, que también
+ * pidió él ("que aclare que el demo está en menos de 24hs").
+ *
+ * El link del formulario YA NO va acá: se manda recién cuando el cliente
+ * contesta que sí (ver case 'prediseno' en engine.php y consultar_info
+ * ('prediseno') en agente.php). Por eso el texto es el mismo haya link o no,
+ * y el que escribe por Instagram recibe exactamente lo mismo.
+ */
+function wabot_tres_pasos_default() {
+    return "Así trabajamos, en tres pasos:\n"
+         . "1. Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web. La tenés lista en menos de 24 horas.\n"
+         . "2. Luego se abona el primer pago para arrancar con los cambios y dejar la web totalmente funcional.\n"
+         . "3. Luego a los 30 días comienza el plan mensual";
 }
 
 /**
@@ -2207,9 +2248,10 @@ function wabot_config_simplificar_tipos(&$cfg) {
         if (in_array(trim((string)($l['label'] ?? '')), ['Landing', 'Landing page', 'Landing Page', ''], true)) {
             $l['label'] = 'Sitio profesional';
         }
-        if (in_array(trim((string)($l['precio'] ?? '')), ['$160.000', '$200.000', ''], true)) {
-            $l['precio'] = '$180.000';
-        }
+        /* El precio ya no se fija acá: desde el 10-sep lo pone
+         * wabot_config_modelo_mensual(), que corre última y sabe del primer
+         * pago y de la mensualidad. Dejarlo escribiendo $180.000 cuando el
+         * campo estuviera vacío reintroducía el pago único en cada carga. */
         unset($l);
     }
 
@@ -2244,7 +2286,8 @@ function wabot_config_simplificar_tipos(&$cfg) {
     if (!isset($cfg['tipos']['lms'])) {
         $base = $cfg['tipos']['elearning'] ?? [];
         $cfg['tipos']['lms'] = array_merge($base, [
-            'label' => 'Plataforma LMS', 'precio' => '$330.000', 'sena' => '$60.000',
+            'label' => 'Plataforma LMS', 'precio' => '$90.000', 'mensualidad' => '$30.000',
+            'precio_anterior' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'desc' => 'una plataforma de cursos completa, con seguimiento de cada alumno, evaluaciones y certificados',
@@ -2474,6 +2517,263 @@ function wabot_config_sin_frases_retiradas(&$cfg) {
 }
 
 /**
+ * EL MODELO COMERCIAL NUEVO (Pablo, 10-sep-2026). Corre ÚLTIMA en la cadena.
+ *
+ * Se terminó el pago único: ahora cada web tiene un PRIMER PAGO y un PLAN
+ * MENSUAL obligatorio que arranca a los 30 días. Esta función es la que
+ * garantiza que ningún texto siga vendiendo el modelo viejo, y está escrita
+ * por CONTENIDO y no por lista de redacciones exactas: bot-config.json lo
+ * reescribe el panel en el server, diverge de la local, y todas las
+ * migraciones por texto exacto fallan justo ahí (pasó el 2-sep con el mensaje
+ * del precio: el bot dijo la versión de agosto durante días).
+ *
+ * Un texto se pisa cuando está vacío, cuando huele a modelo viejo (seña,
+ * saldo, pago único, mantenimiento opcional, primer año de hosting…) o cuando
+ * le falta el marcador que el modelo nuevo necesita. Si Pablo lo reescribió a
+ * mano y ya dice lo que tiene que decir, se respeta.
+ */
+function wabot_config_modelo_mensual(&$cfg) {
+    /* 1. LOS PRECIOS. `precio` pasa a ser el PRIMER PAGO y se suma
+     * `mensualidad` por tipo. El valor viejo se guarda en `precio_anterior`:
+     * lo necesitan las charlas cotizadas antes del cambio, que siguen viendo
+     * su precio (ver wabot_precio_vigente en engine.php).
+     *
+     * Solo se pisa un precio que sea del modelo viejo o esté vacío: el que
+     * Pablo escriba desde el panel se respeta, que es para lo que está el
+     * campo. */
+    $nuevos = [
+        'landing'       => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
+        'turnos'        => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
+        'institucional' => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
+        'ecommerce'     => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+        'elearning'     => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+        'inmobiliaria'  => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+        'catalogo'      => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+        'lms'           => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+    ];
+    foreach ($nuevos as $tipo => $d) {
+        if (!isset($cfg['tipos'][$tipo])) continue;
+        $t =& $cfg['tipos'][$tipo];
+        $actual = trim((string)($t['precio'] ?? ''));
+        // Un precio de seis cifras (o con "+ $500 por producto") es del modelo
+        // viejo: el primer pago nuevo está entre $10.000 y $99.999.
+        $esViejo = $actual === '' || wabot_monto_a_numero($actual) >= 100000
+                || stripos($actual, 'por producto') !== false;
+        if ($esViejo) {
+            if ($actual !== '' && trim((string)($t['precio_anterior'] ?? '')) === '') {
+                /* $160.000 y $200.000 eran valores guardados de antes del 2-sep
+                 * que wabot_config_simplificar_tipos() llevaba a $180.000 en
+                 * cada carga: lo que se cotizó de verdad hasta el 10-sep. */
+                $t['precio_anterior'] = ($tipo === 'landing' && in_array($actual, ['$160.000', '$200.000'], true))
+                    ? '$180.000' : $actual;
+            }
+            $t['precio'] = $d['precio'];
+        }
+        if (trim((string)($t['precio_anterior'] ?? '')) === '') {
+            $t['precio_anterior'] = wabot_precio_anterior_de($tipo, $cfg);
+        }
+        if (trim((string)($t['mensualidad'] ?? '')) === '') $t['mensualidad'] = $d['mensualidad'];
+        /* La seña murió: el primer pago ES el pago. El campo se borra para que
+         * ninguna plantilla vieja lo resuelva con un monto (y para que el
+         * panel no lo vuelva a guardar). precio_base y por_producto del
+         * catálogo se quedan: con ellos se recalcula el total de las charlas
+         * de catálogo cotizadas antes del cambio. */
+        unset($t['sena'], $t['cuotas'], $t['pagos3']);
+        unset($t);
+    }
+
+    /* 2. EL PLAN MENSUAL en mantenimiento_planes: ya no es un abono opcional
+     * aparte, es el plan del servicio. El monto sale de tipos[].mensualidad;
+     * acá quedan los dos montos de referencia (para cuando no hay tipo) y los
+     * links de cada página. */
+    $planes = [
+        'landing' => ['precio' => '$20.000', 'link' => 'gokywebs.com/mantenimientomensual'],
+        'otros'   => ['precio' => '$30.000', 'link' => 'gokywebs.com/mantenimientoweb'],
+    ];
+    foreach ($planes as $k => $d) {
+        if (!isset($cfg['mantenimiento_planes'][$k]) || !is_array($cfg['mantenimiento_planes'][$k])) {
+            $cfg['mantenimiento_planes'][$k] = [];
+        }
+        $p =& $cfg['mantenimiento_planes'][$k];
+        $actual = trim((string)($p['precio'] ?? ''));
+        if ($actual === '' || wabot_monto_a_numero($actual) < 20000) {
+            if ($actual !== '' && trim((string)($p['precio_anterior'] ?? '')) === '') $p['precio_anterior'] = $actual;
+            $p['precio'] = $d['precio'];
+        }
+        if (trim((string)($p['link'] ?? '')) === '') $p['link'] = $d['link'];
+        unset($p);
+    }
+
+    /* 3. LA RENOVACIÓN ANUAL DE HOSTING no existe más: hosting y dominio van
+     * incluidos mientras dure el plan. El texto se vacía en vez de borrarse,
+     * porque el panel lo muestra como campo. */
+    if (preg_match('/renuev|renovaci|\$\s?\d/iu', (string)($cfg['hosting_renovacion'] ?? ''))) {
+        $cfg['hosting_renovacion'] = '';
+    }
+
+    /* 4. LOS TEXTOS. `$forzar` pisa cuando el texto está vacío, cuando huele a
+     * modelo viejo o cuando le falta el marcador que necesita. */
+    $huelaVieja = '/se[ñn]a\b|senia|\bsaldo\b|pago [úu]nico|[úu]nico pago|abono mensual|sin costos? mensual'
+                . '|primer año|queda a tu nombre|tuyo desde el primer día|es opcional|opcional e incluye'
+                . '|3 pagos|\{pagos3\}|\{cuotas_|rondas de modificaci|renovaci[óo]n anual|cuotas sin inter[ée]s'
+                . '|Los desarrollos van desde|\{min\}|\{max\}|por el desarrollo m[áa]s|desde \$\d{3}'
+                // "Depende del tipo" es la respuesta que Pablo retiró el 1-sep.
+                . '|depende del tipo de (p[áa]gina|web)/iu';
+    $forzar = function ($actual, $nuevo, $requiere = null) use ($huelaVieja) {
+        $a = trim((string)$actual);
+        if ($a === '') return $nuevo;
+        if (preg_match($huelaVieja, $a)) return $nuevo;
+        if ($requiere !== null) {
+            foreach ((array)$requiere as $token) {
+                if (mb_strpos($a, $token) === false) return $nuevo;
+            }
+        }
+        return $a;
+    };
+
+    $tresPasos = wabot_tres_pasos_default();
+    // El segundo mensaje del precio no se edita desde el panel: lo manda el
+    // código, igual que precio_ideal (ver wabot_tres_pasos_default).
+    $cfg['msg_tres_pasos'] = $tresPasos;
+
+    $infoNueva = [
+        'proceso' => [$tresPasos, ['tres pasos', 'plan mensual']],
+        'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
+                 . "El plan mensual de {mensualidad} arranca a los 30 días del primer pago y va por suscripción automática de Mercado Pago, así se debita solo.", ['{mensualidad}']],
+        'mantenimiento' => ["El plan mensual no es opcional, es parte del servicio: son {mensualidad} por mes e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Se actualiza una vez al año.\n"
+                 . "Si necesitás más de un cambio por mes, son \$10.000 más por mes y pasás a un plan con varios cambios.", ['{mensualidad}']],
+        'mantenimiento_ambos' => ["El plan mensual no es opcional, es parte del servicio: incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 30 días del primer pago y se actualiza una vez al año.\n"
+                 . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}']],
+        'hosting' => ["El hosting y el dominio están incluidos mientras dure el plan: van dentro de la mensualidad, sin costo aparte.\n"
+                 . "No los contratás ni los renovás vos, se ocupa Gokywebs.", ['mientras dure el plan']],
+        'titularidad' => ["Mientras dure el plan, la web y el dominio están a nombre de Gokywebs: por eso el hosting, el dominio y el soporte van incluidos.\n"
+                 . "A los 18 meses de plan pasás a ser dueño de todo, la web y el dominio.", ['18 meses']],
+        'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
+                 . "Adicionales hay solo dos: \$500 por cada producto arriba de 10, y \$10.000 por mes si querés más de un cambio mensual. Si tenés en mente algo puntual, como reservas online o un área de socios, decime cuál y te lo confirmamos.", ['todo incluido']],
+        /* Por tipo, como antes: la contadora que pregunta "¿lo puedo editar
+         * yo?" tiene que leer que el sitio profesional no trae panel (N05). Lo
+         * nuevo es la carga de hasta 10 productos incluida y los $500 por
+         * producto que carguemos nosotros de ahí en más. */
+        'carga' => ["Depende del tipo de web. En la tienda online los primeros 10 productos los cargamos nosotros, para que arranques con la tienda lista; de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros, o los cargás vos desde tu panel, que es sencillo y trae un video explicativo.\n"
+                 . "La inmobiliaria y la plataforma de cursos también traen panel propio para cargar las propiedades o los cursos. El sitio profesional no trae panel para editar el contenido: los cambios los hacemos nosotros, y el plan incluye un cambio por mes.", ['$500 por producto', 'sitio profesional']],
+        'rangos' => ["{tabla_precios}\n"
+                 . "En todos los casos el plan mensual arranca a los 30 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
+        'precio_sin_rubro' => ["{tabla_precios}\n"
+                 . "Contame qué vendés o qué servicio das y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
+        'pago_generico' => ["{tabla_precios}\n"
+                 . "El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 30 días por suscripción automática de Mercado Pago.", ['{tabla_precios}']],
+        'pago_sin_precio' => ['El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. El plan mensual arranca a los 30 días del primer pago, por suscripción automática de Mercado Pago.', ['plan mensual']],
+        'plazos' => ["La web queda lista en unos 7 días desde el primer pago y la entrega del contenido.\n"
+                 . "La demo gratis te la mandamos en menos de 24 horas desde que pasás los datos.", ['primer pago']],
+        'demo_vigencia' => ['La demo queda disponible 5 días, por una cuestión de espacio en el servidor. Dentro de ese plazo mirala con tranquilidad y contame qué te parece.', ['5 días']],
+        /* Clave nueva: "¿y si dejo de pagar?" / "¿hay permanencia?". Sin texto
+         * propio caía en el comodín del desarrollador, que es la peor
+         * respuesta posible para la pregunta que decide la venta. */
+        'baja_del_plan' => ["No hay permanencia: podés dar de baja el plan cuando quieras.\n"
+                 . "Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.", ['permanencia']],
+        'confianza' => ['Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta y querés avanzar se abona el primer pago. En gokywebs.com podés ver los proyectos entregados y contactar a cualquiera de esos clientes.', ['primer pago']],
+        'comisiones' => ['No, nosotros no cobramos ninguna comisión por venta: lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.', null],
+        'accesos' => ["El hosting es nuestro y viene incluido en el plan: trabajamos con Hostinger, así que la web queda subida ahí y no tenés que contratar ni configurar nada.\n"
+                 . "Si necesitás un acceso puntual, al panel o por FTP, decímelo y lo vemos.", ['incluido en el plan']],
+        'entrega_codigo' => ['Mientras dure el plan la web es nuestra y corre por nuestra cuenta, así que el código no se entrega aparte. Si lo que te preocupa es quedar atado, no hay permanencia: el plan lo das de baja cuando quieras.', ['plan']],
+        'licencias' => ['Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Tu contenido —textos, fotos, productos— es tuyo siempre.', null],
+        'manual' => ['No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y los cambios de contenido los hacemos nosotros: el plan incluye un cambio por mes.', ['un cambio por mes']],
+        'emails' => ['Este plan no incluye casillas de correo corporativas. Se pueden sumar aparte: decime si te interesa y lo vemos.', null],
+        /* Sin precio: Pablo dijo que está todo incluido salvo los productos
+         * arriba de 10 y los cambios de más. Un monto para el bilingüe sería
+         * una condición comercial que él no fijó (10-sep). */
+        'bilingue' => ['Sí, la podemos hacer bilingüe. Como depende de cuánto contenido haya que traducir, eso te lo confirma el desarrollador.', ['desarrollador']],
+    ];
+    if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
+    foreach ($infoNueva as $clave => $d) {
+        $cfg['info'][$clave] = $forzar($cfg['info'][$clave] ?? '', $d[0], $d[1]);
+    }
+
+    /* 5. Los textos de venta que viven fuera de `info`. */
+    $topNueva = [
+        'caro' => ["Con {precio} arrancás, en lugar de pagar una web entera de una vez, y no es una plantilla que armás vos: es una web hecha a medida. De ahí en más no te ocupás de nada: hosting, dominio, soporte y un cambio por mes están dentro de la mensualidad de {mensualidad}.\n"
+                 . 'El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. En el link del presupuesto tenés el detalle de todo lo que incluye.', ['{mensualidad}']],
+        /* Arranca contestando la pregunta concreta (27-ago: un cliente preguntó
+         * si le armábamos la tienda EN Tiendanube y se llevó los argumentos sin
+         * un sí o un no). El argumento viejo —pago único contra alquiler
+         * mensual— murió el 10-sep: ahora el diferenciador es quién arma la
+         * página. */
+        'plataformas' => ["Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia web, a medida.\n"
+                 . 'Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.', ['no trabajamos', 'a medida']],
+        // El portfolio filtrado se queda en el resumen: es lo único que agrega
+        // cuando vuelven a preguntar el precio (Pablo, 2-sep).
+        'precio_resumen' => ["El primer pago es de {precio} y el plan mensual, que arranca a los 30 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}", ['{mensualidad}', '{portfolio}']],
+        'msg_precio' => ["Perfecto, para lo tuyo va {desc}. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\n"
+                 . 'En este enlace podés verlo bien detallado: {link}', ['{mensualidad}', '{link}']],
+        'msg_precio_tras_pitch' => ["El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\n"
+                 . 'En este enlace podés verlo bien detallado: {link}', ['{mensualidad}', '{link}']],
+        'pago_antes_o_despues' => ['La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar se abona el primer pago para arrancar. A los 30 días de ese primer pago comienza el plan mensual.', ['primer pago']],
+        'pago_cuanto_anticipo' => ['El primer pago es {precio} y es lo que se abona para arrancar con los cambios y dejar la web funcionando. A los 30 días comienza el plan mensual de {mensualidad}.', ['{mensualidad}']],
+        'postdemo_transferencia' => ["El primer pago es de {precio} y con eso arrancamos con los cambios.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.", ['{precio}']],
+        'postdemo_tarjeta' => ["Te dejo el link para abonar el primer pago de {precio} con tarjeta, en un pago o hasta en 12 cuotas con interés:\n{link}", ['{precio}']],
+        'respuesta_plan_obligatorio' => ['El plan mensual es obligatorio: es lo que mantiene la web online, con hosting, dominio, soporte y un cambio por mes. Eso sí, no hay permanencia: lo das de baja cuando quieras.', ['obligatorio']],
+        'respuesta_esta_incluido' => ['Está incluido en el plan, no se paga aparte.', null],
+    ];
+    foreach ($topNueva as $clave => $d) {
+        $cfg[$clave] = $forzar($cfg[$clave] ?? '', $d[0], $d[1]);
+    }
+    /* Las variantes del mensaje del precio: si alguna es del modelo viejo o no
+     * nombra la mensualidad, se reemplazan TODAS por las del modelo nuevo. Los
+     * montos van por marcador, así que cambiar la lista no las desfasa. */
+    $variantesPrecio = [
+        (string)$cfg['msg_precio'],
+        "Por lo que me contás, te conviene {desc}. Arrancás con un primer pago de {precio}, y a los 30 días empieza el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nAcá podés ver todo lo que incluye: {link}",
+        "En este caso iría {desc}. El primer pago es de {precio}; después, desde los 30 días, el plan mensual es de {mensualidad} e incluye hosting, dominio, soporte y un cambio por mes.\nTe dejo el detalle completo acá: {link}",
+        "La opción que mejor encaja es {desc}. Son {precio} de primer pago y, a partir de los 30 días, {mensualidad} por mes, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este link está detallado lo que incluye: {link}",
+    ];
+    $variantesActuales = array_values(array_filter((array)($cfg['msg_precio_variantes'] ?? []), 'is_string'));
+    $algunaVieja = !$variantesActuales;
+    foreach ($variantesActuales as $vp) {
+        if (preg_match($huelaVieja, $vp) || strpos($vp, '{mensualidad}') === false || strpos($vp, '{link}') === false) {
+            $algunaVieja = true; break;
+        }
+    }
+    if ($algunaVieja) $cfg['msg_precio_variantes'] = $variantesPrecio;
+    /* msg_precio_catalogo y sus variantes se quedan como están: solo los usan
+     * las charlas de catálogo cotizadas antes del 2-sep, que conservan su
+     * total por cantidad de productos. */
+    unset($cfg['msg_precio_tras_pitch_variantes']);
+    /* Las 3 cuotas sin interés no existen en el modelo nuevo: el primer pago
+     * va por transferencia o tarjeta hasta en 12 cuotas con interés. */
+    $cfg['postdemo_cuotas_sin_interes'] = $forzar($cfg['postdemo_cuotas_sin_interes'] ?? '',
+        'El primer pago se puede hacer con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta. Te sirve así?', ['12 cuotas']);
+
+    /* 6. El aviso de los 5 días va PEGADO a la presentación de la demo, no
+     * solo cuando preguntan: si el cliente no sabe que vence, la deja sin
+     * abrir (Pablo, 10-sep: "aclarar que va a estar disponible 5 días por
+     * cuestiones de espacio, para que no la alarguen tanto"). */
+    $seguimiento = trim((string)($cfg['muestra_presentar_seguimiento'] ?? ''));
+    if ($seguimiento === '' || mb_stripos($seguimiento, '5 días') === false) {
+        $cfg['muestra_presentar_seguimiento'] = 'Cuando puedas mirala y contame qué te pareció. Queda disponible 5 días, por una cuestión de espacio en el servidor.';
+    }
+    // Y el reloj del panel acompaña: 5 días, no 7.
+    if ((float)($cfg['presentados_archivar_horas'] ?? 0) >= 168) $cfg['presentados_archivar_horas'] = 120;
+
+    /* 7. Los ejemplos entrenados le enseñaban al clasificador que "seña" es un
+     * concepto vigente del negocio. */
+    foreach ((array)($cfg['ejemplos'] ?? []) as $i => $ej) {
+        $txt = trim((string)($ej['texto'] ?? ''));
+        if ($txt === '') continue;
+        if (preg_match('/\bse[ñn]a\b/iu', $txt)) {
+            $cfg['ejemplos'][$i]['texto'] = 'cuanto es el primer pago?';
+        }
+    }
+    $tieneMensual = false;
+    foreach ((array)($cfg['ejemplos'] ?? []) as $ej) {
+        if (mb_stripos((string)($ej['texto'] ?? ''), 'mensual') !== false) { $tieneMensual = true; break; }
+    }
+    if (!$tieneMensual) {
+        $cfg['ejemplos'][] = ['texto' => 'tiene algun pago mensual?', 'accion' => 'pregunta_info', 'info_keys' => ['mantenimiento']];
+        $cfg['ejemplos'][] = ['texto' => 'que pasa si dejo de pagar el plan?', 'accion' => 'pregunta_info', 'info_keys' => ['baja_del_plan']];
+    }
+}
+
+/**
  * Qué está mal en los textos que salen al cotizar, en castellano.
  *
  * Existe porque el 2-sep el bot estuvo días diciendo la versión de agosto y no
@@ -2501,9 +2801,35 @@ function wabot_textos_problemas($cfg) {
         if (strpos($texto, '{precio}') === false) {
             $problemas[] = "El mensaje del precio de $etiqueta no lleva el precio.";
         }
+        if (strpos($texto, '{mensualidad}') === false) {
+            $problemas[] = "El mensaje del precio de $etiqueta no nombra el plan mensual.";
+        }
         if (stripos($texto, 'portfolio') !== false) {
             $problemas[] = "El mensaje del precio de $etiqueta todavía cuelga la línea del portfolio.";
         }
+        if (trim((string)($cfg['tipos'][$tipo]['mensualidad'] ?? '')) === '') {
+            $problemas[] = "$etiqueta no tiene cargada la mensualidad: el bot va a cotizar sin el plan mensual.";
+        }
+    }
+
+    /* El modelo comercial cambió el 10-sep y producción edita estos textos a
+     * mano: si alguno vuelve a hablar de seña, saldo, pago único o
+     * mantenimiento opcional, el bot vende algo que ya no existe. */
+    $viejo = '/\bse[ñn]a\b|\bsaldo\b|pago [úu]nico|sin abono mensual|sin costos? mensual|mantenimiento es opcional|queda a tu nombre/iu';
+    $mirar = ['msg_precio' => 'el mensaje del precio', 'caro' => 'la respuesta a "es caro"',
+              'plataformas' => 'la comparación con Wix o Tiendanube', 'precio_resumen' => 'el resumen del precio'];
+    foreach ($mirar as $clave => $nombre) {
+        if (preg_match($viejo, (string)($cfg[$clave] ?? ''))) {
+            $problemas[] = "En $nombre quedó una condición del modelo viejo (seña, saldo o pago único).";
+        }
+    }
+    foreach (['pago', 'mantenimiento', 'proceso', 'hosting', 'titularidad', 'rangos'] as $claveInfo) {
+        if (preg_match($viejo, (string)($cfg['info'][$claveInfo] ?? ''))) {
+            $problemas[] = "La respuesta de $claveInfo todavía habla de seña, saldo o pago único.";
+        }
+    }
+    if (mb_stripos((string)($cfg['muestra_presentar_seguimiento'] ?? ''), '5 días') === false) {
+        $problemas[] = 'Al presentar la demo no se avisa que queda disponible 5 días.';
     }
 
     if (empty($cfg['form_activo'])) {
@@ -3708,7 +4034,12 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
     if (empty($otra['form_completado_ts']) && empty($otra['lead_creado'])) return false;
 
     foreach (['nombre_negocio', 'descripcion', 'colores', 'colores_hex', 'referencia', 'brief',
-              'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno'] as $k) {
+              'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno',
+              // El paso 2 del formulario viaja con el resto de lo que completó.
+              'estilo', 'incluir',
+              // El precio congelado viaja con el tipo (10-sep): sin él, la
+              // punta nueva de la charla cotizaba con otra lista.
+              'precio_cotizado', 'mensualidad_cotizada', 'precio_modelo', 'precio_cotizado_ts'] as $k) {
         if (trim((string)($conv[$k] ?? '')) === '' && !empty($otra[$k])) $conv[$k] = $otra[$k];
     }
     if (trim((string)($conv['nombre'] ?? '')) === '' && trim((string)($otra['nombre'] ?? '')) !== '') {
@@ -3769,10 +4100,18 @@ function wabot_conv_load($clave) {
         'colores'          => null,
         'colores_hex'      => null,
         'referencia'       => null,
+        // Paso 2 del formulario (10-sep).
+        'estilo'           => null,
+        'incluir'          => null,
         'productos_cantidad' => null,
         'imagenes_recibidas' => 0,
         'prediseno_pedido'   => [],
         'precio_dado'      => false,
+        // El precio congelado al cotizar (ver wabot_precio_congelar en engine.php).
+        'precio_cotizado'      => null,
+        'mensualidad_cotizada' => null,
+        'precio_modelo'        => null,
+        'precio_cotizado_ts'   => 0,
         'objecion_dicha'   => [],
         'referencia_preguntada' => false,
         'cta_muestra'      => false,
@@ -3916,7 +4255,9 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     if (!empty($conv['presentado_ts'])) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
-              'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad'] as $k) {
+              'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
+              // Paso 2 del formulario (10-sep): son del proyecto viejo.
+              'estilo','incluir'] as $k) {
         $conv[$k] = null;
     }
     $conv['fase'] = 'nuevo';
@@ -3983,6 +4324,31 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['contexto_consulta'] = null;
     $conv['pitch_otra_idea_dicha'] = false;
     $conv['pitch_otra_idea_2_dicha'] = false;
+    /* El precio congelado es de la cotización vieja: un proyecto nuevo se
+     * cotiza con la lista de hoy. Si no se limpia, el que vuelve a los dos
+     * meses arranca con el precio de su charla anterior (ver
+     * wabot_precio_vigente en engine.php). */
+    $conv['precio_cotizado'] = null;
+    $conv['mensualidad_cotizada'] = null;
+    $conv['precio_modelo'] = null;
+    $conv['precio_cotizado_ts'] = 0;
+    /* Las marcas del turno del precio y del formulario también son de la
+     * sesión vieja (auditoría 9-sep): con pitch_hecho/pitch_tipo vivos, el
+     * cliente que volvía a los 20 días recibía "Para una web de este tipo, el
+     * desarrollo queda en $180.000" —la variante SIN descripción y sin su
+     * rubro— y con form_completado_ts/link_form_enviado nunca volvía a ver el
+     * link del formulario: le pedían los datos por chat. Es un proyecto nuevo
+     * y arranca como tal. El código corto se conserva (su link sigue siendo
+     * el suyo) y el teléfono también. */
+    foreach (['pitch_hecho', 'link_form_enviado', 'form_link_enviado', 'mixto_avisado', 'bilingue_avisado',
+              'prediseno_acuse_respondido', 'form_aviso_respondido', 'empujon_postdemo_dado',
+              'postdemo_pregunto_cambios', 'pidio_precio'] as $k) $conv[$k] = false;
+    foreach (['pitch_tipo', 'rubro_pitch', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
+    $conv['form_completado_ts'] = 0;
+    $conv['form_link_ts'] = 0;
+    $conv['turnos_sin_avance'] = 0;
+    $conv['repeticiones_seguidas'] = 0;
+    $conv['tandas_bot'] = [];
     $conv['session_id'] = wabot_session_id_nuevo(wabot_conversation_key($conv), $ahora);
     $conv['session_started_ts'] = $ahora;
     $conv['ultimo_ts'] = 0;
@@ -5721,6 +6087,19 @@ function wabot_link_presupuesto_completar($texto, $conv, $cfg) {
 }
 
 function wabot_objecion_texto($clave, $textoCompleto, &$conv, $cfg) {
+    /* 'caro' lleva {precio} y {mensualidad} desde el 10-sep: se resuelven con
+     * el precio de ESTA charla (ver wabot_precio_vigente en engine.php). Sin
+     * esto, el cliente que decía "es caro" leía "{precio}" tal cual. Y la
+     * charla cotizada con el modelo viejo conserva el argumento que se le dio:
+     * "arrancás con el primer pago" no tiene sentido para quien paga la web
+     * entera. */
+    if (function_exists('wabot_precio_vigente') && function_exists('wabot_precio_placeholders')) {
+        if ($clave === 'caro' && !empty($conv['tipo']) && !empty($conv['precio_dado'])
+            && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
+            $textoCompleto = wabot_modelo_unico_textos()['caro'];
+        }
+        $textoCompleto = wabot_precio_placeholders((string)$textoCompleto, $conv, $cfg);
+    }
     $textoCompleto = wabot_link_presupuesto_completar($textoCompleto, $conv, $cfg);
     $conv['objecion_dicha'] = (array)($conv['objecion_dicha'] ?? []);
     if (empty($conv['objecion_dicha'][$clave])) {
@@ -6040,7 +6419,11 @@ function wabot_es_texto_demo($texto, $cfg) {
     $t = trim((string)$texto);
     if ($t === '') return false;
     $oficiales = array_merge(
-        [(string)($cfg['prediseno_link'] ?? ''), (string)($cfg['msg_prediseno_oferta'] ?? '')],
+        // msg_tres_pasos es el segundo globo del turno del precio desde el
+        // 10-sep: sin él acá, ese mensaje no se reconoce como "el de la demo"
+        // y sale sin la demora de dos segundos que lo separa del precio.
+        [(string)($cfg['prediseno_link'] ?? ''), (string)($cfg['msg_prediseno_oferta'] ?? ''),
+         (string)($cfg['msg_tres_pasos'] ?? '')],
         (array)($cfg['prediseno_link_variantes'] ?? []),
         (array)($cfg['msg_prediseno_oferta_variantes'] ?? [])
     );
@@ -7303,7 +7686,22 @@ function wabot_lead_cotizado($conv, $cfg) {
     if ($tipo === 'catalogo' && $productos > 0) {
         return wabot_moneda(wabot_catalogo_total($productos, $cfg)['total']);
     }
-    return (string)($cfg['tipos'][$tipo]['precio'] ?? '');
+    /* Los DOS montos, y los que se le dijeron a ESTE cliente: en el panel
+     * "$90.000" a secas no dice si ese cliente paga $20.000 o $30.000 por mes,
+     * que es justo lo que hay que saber al pasarlo a Cliente (10-sep). */
+    if (function_exists('wabot_precio_vigente')) {
+        $v = wabot_precio_vigente($conv, $cfg);
+        if ($v['precio'] !== '') {
+            return $v['mensualidad'] !== ''
+                ? $v['precio'] . ' de primer pago + ' . $v['mensualidad'] . ' por mes'
+                : $v['precio'];
+        }
+    }
+    $t = $cfg['tipos'][$tipo] ?? [];
+    $precio = (string)($t['precio'] ?? '');
+    $mens   = (string)($t['mensualidad'] ?? '');
+    if ($precio !== '' && $mens !== '') return $precio . ' de primer pago + ' . $mens . ' por mes';
+    return $precio;
 }
 
 /**
@@ -7381,6 +7779,19 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ')
                   . 'Como referencia visual pasó: ' . $conv['referencia'];
     }
+    /* El paso 2 del formulario (10-sep): el estilo de página que eligió y lo
+     * que quiere sí o sí. Van en su campo Y en el bloque que se lee al diseñar,
+     * igual que la referencia, así se ven sin tocar el panel. "No lo sé" es
+     * una respuesta válida pero no aporta nada al diseño: no se agrega. */
+    $estilo  = trim((string)($conv['estilo'] ?? ''));
+    $incluir = trim((string)($conv['incluir'] ?? ''));
+    if (!$esSistema && $estilo !== '' && mb_strtolower($estilo, 'UTF-8') !== 'no lo sé'
+        && mb_stripos($objetivo, $estilo) === false) {
+        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Estilo de página elegido: ' . $estilo;
+    }
+    if (!$esSistema && $incluir !== '' && mb_stripos($objetivo, $incluir) === false) {
+        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Quiere incluir sí o sí: ' . $incluir;
+    }
 
     $productos = (int)($conv['productos_cantidad'] ?? 0);
     $cotizado  = wabot_lead_cotizado($conv, $cfg);
@@ -7414,6 +7825,9 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'colores'            => ['stringValue' => (string)$conv['colores']],
         // `referencias` es el campo que ya lee briefDetailHTML del admin.
         'referencias'        => ['stringValue' => (string)($conv['referencia'] ?? '')],
+        // Paso 2 del formulario (10-sep). También van dentro de objetivo_web.
+        'estilo_pagina'      => ['stringValue' => $estilo],
+        'incluir_si_o_si'    => ['stringValue' => $incluir],
         // Mismos nombres que usa el formulario, así la ficha del boceto
         // muestra las filas Color principal / secundario / Fondos.
         'color_principal'    => ['stringValue' => (string)($conv['colores_hex']['principal']  ?? '')],
@@ -7546,10 +7960,14 @@ function wabot_form_lead_procesar($payload, $cfg) {
 
     $clave = preg_replace('/[^0-9A-Za-z]/', '', $clave);
     $lock = null;
-    for ($intento = 0; $intento < 3; $intento++) {
+    /* Tres segundos, no 600 ms: el bot retiene el candado 20 s de espera más
+     * Gemini más el tipeo, y el cliente que manda "dale" y enseguida completa
+     * el formulario se llevaba "el sistema estaba ocupado" (9-sep). El form
+     * además reintenta de su lado (form/script.js). */
+    for ($intento = 0; $intento < 6; $intento++) {
         $lock = wabot_lock_tomar($clave);
         if ($lock !== null) break;
-        usleep(200000);
+        usleep(500000);
     }
     if ($lock === null) return ['ok' => false, 'error' => 'ocupado', 'reintentar' => true];
 

@@ -2,35 +2,35 @@
   {
     "id": "S1",
     "titulo": "Ecommerce de gorras: saludo nuevo, precio con presupuesto, formulario",
-    "esperado": "Saludo nuevo (valor exacto + a que te dedicas). 'Gorras' cotiza ecommerce $290.000 nombrando el rubro, con el link gokywebs.com/presupuestos/ecommerce (minuscula) y SIN portfolio. El 'dale' trae el formulario con link de 2 letras y las 24 horas.",
+    "esperado": "Saludo nuevo (valor exacto + a que te dedicas). 'Gorras' cotiza ecommerce nombrando el rubro (primer pago $90.000 + plan mensual $30.000 por mes), con el link gokywebs.com/presupuestos/ecommerce (minuscula) y SIN portfolio; el segundo mensaje son los tres pasos, sin link. El 'dale' trae el formulario con link de 2 letras y las 24 horas.",
     "nombre": "Sofi",
     "turnos": ["Hola", "Vendo gorras y quiero venderlas online", "dale, contame"]
   },
   {
     "id": "S2",
     "titulo": "Peluqueria: NO se pregunta por turnos, va a sitio profesional",
-    "esperado": "Una peluqueria se cotiza SITIO PROFESIONAL $180.000 sin ninguna pregunta sobre reservas ni turnos online. El link es presupuestos/sitioprofesional.",
+    "esperado": "Una peluqueria se cotiza SITIO PROFESIONAL (primer pago $60.000 + plan mensual $20.000 por mes) sin ninguna pregunta sobre reservas ni turnos online. El link es presupuestos/sitioprofesional.",
     "nombre": "Vale",
     "turnos": ["¿Cuánto cuesta hacer mi página web? 💰", "Tengo una peluquería en Lanús", "y cuanto tardan?"]
   },
   {
     "id": "S3",
     "titulo": "Solo mostrar productos: ecommerce igual, sin catalogo ni cantidad",
-    "esperado": "Aunque diga que solo quiere mostrar y que le consulten por WhatsApp, se cotiza ECOMMERCE $290.000. Nunca pregunta cuantos productos va a publicar ni menciona 'catalogo' como tipo con otro precio.",
+    "esperado": "Aunque diga que solo quiere mostrar y que le consulten por WhatsApp, se cotiza ECOMMERCE (primer pago $90.000 + plan mensual $30.000 por mes). Nunca pregunta cuantos productos va a publicar ni menciona 'catalogo' como tipo con otro precio.",
     "nombre": "Marcos",
     "turnos": ["Hola, vendo ropa de bebé", "no quiero cobrar online, solo mostrar y que me escriban por whatsapp"]
   },
   {
     "id": "S4",
     "titulo": "ONG que da cursos: sitio profesional, ni institucional ni elearning",
-    "esperado": "Una ONG que da capacitaciones gratis va a SITIO PROFESIONAL $180.000. Nunca ofrece institucional ni pregunta si vende los cursos.",
+    "esperado": "Una ONG que da capacitaciones gratis va a SITIO PROFESIONAL (primer pago $60.000 + plan mensual $20.000 por mes). Nunca ofrece institucional ni pregunta si vende los cursos.",
     "nombre": "Dani",
     "turnos": ["Hola, somos una ONG", "damos capacitaciones y talleres gratuitos, queremos captar socios", "necesitamos historia, autoridades y novedades"]
   },
   {
     "id": "S5",
     "titulo": "Cursos que se venden: elearning $290.000, nunca LMS",
-    "esperado": "Vender cursos con videos y acceso de alumnos cotiza PLATAFORMA DE CURSOS $290.000. NUNCA menciona LMS ni una version mas completa ni $330.000.",
+    "esperado": "Vender cursos con videos y acceso de alumnos cotiza PLATAFORMA DE CURSOS (primer pago $90.000 + plan mensual $30.000 por mes). NUNCA menciona LMS ni una version mas completa ni otro precio.",
     "nombre": "Euge",
     "turnos": ["Hola, doy cursos de maquillaje", "quiero venderlos desde la web con los videos y que cada alumna tenga su acceso", "no hay algo mas completo?"]
   },
@@ -44,7 +44,7 @@
   {
     "id": "S7",
     "titulo": "Pregunta el precio antes del rubro: rango real y una pregunta",
-    "esperado": "Contesta con el rango real ($180.000 a $290.000) y pregunta que vende. Nunca 'depende del tipo de pagina'.",
+    "esperado": "Contesta con los precios reales por tipo (sitio profesional: primer pago $60.000 + $20.000 por mes; tienda online, cursos o inmobiliaria: primer pago $90.000 + $30.000 por mes; el plan arranca a los 30 dias) y pregunta que vende. Nunca un 'depende del tipo de pagina' sin los numeros.",
     "nombre": "Nico",
     "turnos": ["cuanto sale una pagina web?", "soy gasista matriculado"]
   }

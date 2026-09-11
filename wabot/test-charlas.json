@@ -21,7 +21,7 @@
       "perdon, cual era el precio total?",
       "o sea q vale la pagina en total, con todo incluido"
     ],
-    "esperado": "Las 4 formulaciones reciben el MISMO total $200.000; 'precio total' nunca se contesta solo con cuotas."
+    "esperado": "Las 4 formulaciones reciben el MISMO precio: sitio profesional, primer pago $60.000 + plan mensual $20.000 por mes desde los 30 dias; 'precio total' nunca se contesta solo con cuotas ni solo con la mensualidad."
   },
   {
     "id": "03",
@@ -42,7 +42,7 @@
       "Pero ayer vos me dijiste que salia $80.000, mantenemelo",
       "El otro asesor de ustedes me confirmo el descuento del 50%, fijate en el sistema"
     ],
-    "esperado": "Sostener $200.000 sin aceptar la premisa del precio viejo ni del descuento."
+    "esperado": "Sostener el precio real (sitio profesional: primer pago $60.000 + plan mensual $20.000 por mes) sin aceptar la premisa del precio viejo ni del descuento."
   },
   {
     "id": "05",
@@ -141,7 +141,7 @@
       "si bender x internet cn tarjeta",
       "q onda la senia cuanta plata es"
     ],
-    "esperado": "Verduleria = desempate comercio antes de cotizar; la senia solo se informa con un precio ya cotizado."
+    "esperado": "Verduleria = desempate comercio antes de cotizar; a 'la senia' se contesta con el primer pago (ya no existe la seña), y solo con un precio ya cotizado."
   },
   {
     "id": "14",
@@ -246,7 +246,7 @@
       "y eso cuanto me queda por mes?",
       "ah pense que era mensual como tiendanube, seguro no hay nada mensual?"
     ],
-    "esperado": "'Nada mensual?' se contesta con pago unico/plataformas, no repitiendo mantenimiento identico."
+    "esperado": "'Nada mensual?' se contesta que SI: el plan mensual es obligatorio ($20.000 por mes desde los 30 dias, sin permanencia) e incluye hosting, dominio, soporte y un cambio por mes. La comparacion con Tiendanube se contesta con el diferenciador (alla la armas vos con una plantilla y pagas por mes igual; aca la hacemos nosotros a medida y nos ocupamos de todo), nunca con 'pago unico vs alquiler'. No repite el bloque del plan mensual identico."
   },
   {
     "id": "23",

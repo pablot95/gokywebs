@@ -22,7 +22,10 @@ service cloud.firestore {
         'tipo_pagina', 'tipo_web', 'que_incluye', 'precio_total', 'precio_sena',
         'precio_saldo', 'adicionales', 'color_fondos', 'color_principal',
         'color_secundario', 'colores', 'tipografias', 'fecha', 'logoUrl', 'logoNombre',
-        'tipoDetectado', 'tipoDetectadoLabel', 'precioTotal', 'sena', 'saldo', 'presupuestoId'
+        'tipoDetectado', 'tipoDetectadoLabel', 'precioTotal', 'sena', 'saldo', 'presupuestoId',
+        // Modelo primer pago + plan mensual (10-sep-2026). Los viejos se siguen
+        // escribiendo (sena = primer pago, saldo = 0) para que el admin no rompa.
+        'primerPago', 'mensualidad'
       ]);
     }
     match /presupuestos/{doc}  {
@@ -40,7 +43,7 @@ service cloud.firestore {
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'step1At', 'step2At', 'step3At', 'precioAt', 'muestraAt', 'confirmoAt',
         'customObjAt',
-        'phone', 'siteType', 'totalPrice', 'updatedAt'
+        'phone', 'siteType', 'totalPrice', 'primerPago', 'mensualidad', 'updatedAt'
       ]);
       allow read, delete: if isAdmin();
     }

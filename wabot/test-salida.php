@@ -58,8 +58,10 @@ caso('"nos ajustamos a tu presupuesto" → se saca la oración, el resto queda',
     count($r) === 1 && strpos($r[0], 'ajustamos') === false && strpos($r[0], 'Contame qué necesitás') !== false);
 
 $r = wabot_salida_sin_promesas(['Nos ajustamos a tu presupuesto.'], $cfg);
-caso('si era todo el mensaje → sale el texto oficial de la objeción de precio',
-    count($r) === 1 && trim($r[0]) === trim((string)$cfg['caro']));
+caso('si era todo el mensaje → sale el texto oficial de la objeción de precio, con los montos resueltos',
+    count($r) === 1
+    && trim($r[0]) === trim(wabot_link_presupuesto_completar(wabot_precio_placeholders((string)$cfg['caro'], null, $cfg), [], $cfg))
+    && strpos($r[0], '{') === false);
 
 $r = wabot_salida_sin_promesas(['Te hacemos un precio especial por ser vos.'], $cfg);
 caso('"un precio especial" también se bloquea',
@@ -241,7 +243,9 @@ caso('y aclara que no es un adicional sobre lo ya cotizado',
     is_string($up) && strpos($up, 'No es un adicional') !== false);
 
 // El camino entero, como lo ve el cliente.
-$c = conv_de('precio', ['tipo' => 'landing', 'precio_dado' => true, 'pitch_hecho' => true]);
+// Cotizada con el modelo nuevo: el precio congelado es el de hoy (10-sep).
+$c = conv_de('precio', ['tipo' => 'landing', 'precio_dado' => true, 'pitch_hecho' => true,
+    'precio_cotizado' => '$60.000', 'mensualidad_cotizada' => '$20.000', 'precio_modelo' => 'mensual']);
 $r = wabot_responder('Cuánto cuesta agregar venta y cobro online?', $c, $cfg);
 caso('Aberturas: la consulta se contesta con el precio del ecommerce, sin repreguntar el proyecto',
     is_array($r) && count($r) === 1
@@ -376,8 +380,10 @@ $idioma = wabot_agente_empujon_bilingue(
 caso('Marcco: el pedido de idioma se contesta con el texto oficial',
     is_string($idioma) && mb_stripos($idioma, 'bilingüe') !== false
     && strpos($idioma, '{precio}') === false);
-caso('y trae el adicional real, no un placeholder',
-    is_string($idioma) && strpos($idioma, (string)$cfg['adicional_bilingue']) !== false);
+/* 10-sep: el modelo nuevo es "todo incluido" salvo dos adicionales con precio
+ * fijo, y el bilingüe no es uno de ellos: el bot no le inventa un monto. */
+caso('y no le pone un precio inventado: lo confirma el desarrollador',
+    is_string($idioma) && strpos($idioma, '$') === false && mb_stripos($idioma, 'desarrollador') !== false);
 
 $c = conv_de('pitch', ['tipo' => 'ecommerce']);
 caso('si el modelo YA lo contestó, no se duplica',
@@ -428,8 +434,13 @@ echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube
 caso('el texto abre diciendo que sobre esas plataformas no se trabaja',
     preg_match('/^Sobre Tiendanube[^.]*no trabajamos/u', (string)$cfg['plataformas']) === 1);
 
-caso('y conserva el argumento de pago único',
-    strpos((string)$cfg['plataformas'], 'pago único') !== false);
+/* 10-sep: el argumento del pago único murió con el modelo viejo. El que queda
+ * es quién arma la página: allá una plantilla que arma el cliente, acá una web
+ * a medida hecha por nosotros. */
+caso('y ya no usa el argumento del pago único: el diferenciador es quién arma la página',
+    strpos((string)$cfg['plataformas'], 'pago único') === false
+    && stripos((string)$cfg['plataformas'], 'plantilla') !== false
+    && stripos((string)$cfg['plataformas'], 'a medida') !== false);
 
 @unlink(WABOT_DATA . '/conv/TESTSALIDA.json');
 

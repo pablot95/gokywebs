@@ -2,7 +2,7 @@
   {
     "id": "C01",
     "titulo": "Barberia con turnos: precio, pago, plazos, hosting y cierre de prediseno",
-    "esperado": "Desempate a turnos. Precio $200.000. Al preguntar como se paga tiene que salir la sena de $40.000 y el saldo al entregar (NUNCA 50/50 inventado) y las cuotas reales. Plazos 7 dias. Hosting y dominio incluidos el primer anio. Cierra el prediseno con los datos y no vuelve a pedir lo mismo.",
+    "esperado": "Desempate a turnos. Precio: sitio profesional, primer pago $60.000 + plan mensual $20.000 por mes desde los 30 dias. Al preguntar como se paga y si hay cuotas: primer pago por transferencia o con tarjeta hasta en 12 cuotas con interes (sin decir el monto de una cuota) y plan mensual por suscripcion automatica de Mercado Pago; nunca seña, saldo al entregar ni un 50/50 inventado. Plazos 7 dias. Hosting y dominio incluidos mientras dure el plan. Cierra el prediseno con los datos y no vuelve a pedir lo mismo.",
     "nombre": "Marcos",
     "turnos": [
       "hola! me pasan info de las paginas web?",
@@ -20,7 +20,7 @@
   {
     "id": "C02",
     "titulo": "Ecommerce de ropa con objecion de precio, Tiendanube y Wix",
-    "esperado": "Ecommerce $290.000. Ante es caro no baja el precio ni inventa descuentos. Ante Tiendanube y Wix tiene que decir claramente que no trabajan sobre esas plataformas, y recien despues el argumento del pago unico. Mantenimiento opcional. Ante lo voy a pensar ofrece la muestra gratis y no insiste.",
+    "esperado": "Ecommerce: primer pago $90.000 + plan mensual $30.000 por mes desde los 30 dias. Ante es caro no baja el precio ni inventa descuentos. Ante Tiendanube y Wix tiene que decir claramente que no trabajan sobre esas plataformas, y recien despues el diferenciador (alla la armas vos con una plantilla y pagas por mes igual; aca la hacemos nosotros a medida y nos ocupamos de todo), nunca 'pago unico vs alquiler'. A 'es por anio o una sola vez?' y al mantenimiento de todos los meses contesta que el primer pago es uno solo y que el plan mensual es obligatorio ($30.000 por mes desde los 30 dias, sin permanencia) e incluye hosting, dominio, soporte y un cambio por mes. Ante lo voy a pensar ofrece la muestra gratis y no insiste.",
     "nombre": "Ludmila",
     "turnos": [
       "buenas! queria armar una tienda online de ropa",
@@ -38,7 +38,7 @@
   {
     "id": "C03",
     "titulo": "Conservas artesanales: MOSTRAR y no vender (trampa del matcher rubro vs pregunta)",
-    "esperado": "El cliente CUENTA su negocio con palabras trampa (vendo, envios a domicilio, la gente consigue). No puede cotizar ecommerce ni contestar preguntas que el cliente no hizo (calculo de envio, si compran desde la pagina). Tiene que ir a catalogo. Con 20 productos el total es 180.000 + 500 x 20 = 190.000.",
+    "esperado": "El cliente CUENTA su negocio con palabras trampa (vendo, envios a domicilio, la gente consigue). No puede contestar preguntas que el cliente no hizo (calculo de envio, si compran desde la pagina) ni darle por hecho el cobro online: lo que pide es mostrar los productos, y eso va como ecommerce, que absorbe el catalogo (primer pago $90.000 + plan mensual $30.000 por mes). Con 20 productos no hay cuenta por producto: 10 se cargan incluidos y los otros 10 son $500 cada uno solo si quiere que los carguen ellos.",
     "nombre": "Vale",
     "turnos": [
       "hola, tengo una marca de conservas artesanales",
@@ -90,7 +90,7 @@
   {
     "id": "C06",
     "titulo": "Inmobiliaria: precio, panel, fotos por propiedad, bilingue y sena",
-    "esperado": "Inmobiliaria 240.000 y sena 60.000 (NO 40.000). Fotos por propiedad: decenas y video. Bilingue: adicional con el monto que sale del config, no inventado. Cierra el prediseno con nombre, descripcion, colores y whatsapp sin repetir preguntas ya contestadas.",
+    "esperado": "Inmobiliaria: primer pago $90.000 + plan mensual $30.000 por mes desde los 30 dias. A 'y la senia cuanto seria?' contesta con el primer pago de $90.000 (ya no existe la seña). Fotos por propiedad: decenas y video. Bilingue: sin cotizarlo como adicional con precio (desde el 10-sep los unicos adicionales son $500 por producto arriba de 10 y $10.000 por mes por mas de un cambio). Cierra el prediseno con nombre, descripcion, colores y whatsapp sin repetir preguntas ya contestadas.",
     "nombre": "Diego",
     "turnos": [
       "buenas tardes, tengo una inmobiliaria en Villa Carlos Paz",
@@ -108,7 +108,7 @@
   {
     "id": "C07",
     "titulo": "Cursos grabados que despues suma venta de productos (upgrade a mixto) + facturacion",
-    "esperado": "Plataforma de cursos 290.000. Cuando suma vender productos tiene que resolverlo como proyecto mixto y NO cobrarlo como un adicional inventado ni repreguntar el proyecto de cero. Factura C, no A ni B. No pide inscripcion fiscal. La demo tarda 24 a 48 hs.",
+    "esperado": "Plataforma de cursos: primer pago $90.000 + plan mensual $30.000 por mes desde los 30 dias. Cuando suma vender productos tiene que resolverlo como proyecto mixto y NO cobrarlo como un adicional inventado ni repreguntar el proyecto de cero. Factura C, no A ni B. No pide inscripcion fiscal. La demo tarda menos de 24 horas.",
     "nombre": "Carolina",
     "turnos": [
       "hola! doy cursos de reposteria",
@@ -126,7 +126,7 @@
   {
     "id": "C08",
     "titulo": "Catalogo grande: cuenta de precio por producto y quien carga los productos",
-    "esperado": "Catalogo: 180.000 + 500 por producto. Con 450 productos son 405.000 y con 100 son 230.000: las dos cuentas tienen que dar bien. No puede prometer que cargan 450 productos gratis. Ante el socio ofrece la muestra sin presionar.",
+    "esperado": "Solo mostrar el catalogo va como ecommerce, que lo absorbe: primer pago $90.000 + plan mensual $30.000 por mes (ya no se cobra desarrollo por producto). La carga incluye 10 productos; arriba de 10 son $500 por producto solo si quiere que los carguen ellos (si no, los carga el desde el panel). Si hace las cuentas tienen que dar bien: con 450 productos son 440 x $500 = $220.000 y con 100 son 90 x $500 = $45.000. No puede prometer que cargan 450 productos gratis. Ante el socio ofrece la muestra sin presionar.",
     "nombre": "Sergio",
     "turnos": [
       "hola, tengo una distribuidora de repuestos de moto",
@@ -144,7 +144,7 @@
   {
     "id": "C09",
     "titulo": "Cliente desconfiado: codigo, dominio, hosting, oficina, garantia y mails",
-    "esperado": "Contesta con los textos reales: entregan el codigo, el dominio se registra a nombre del cliente, el hosting es de ellos con acceso, son de Tigre sin oficina y trabajan remoto. No puede inventar garantias, contratos ni devoluciones. Landing 160.000. Ante pago todo al final sostiene la sena. Las casillas de mail NO estan incluidas.",
+    "esperado": "Contesta con los textos reales del modelo nuevo (titularidad, codigo, hosting): mientras dure el plan la web y el dominio estan a nombre de Gokywebs y el codigo no se entrega aparte; el hosting es de ellos y va incluido en el plan; sin permanencia (la web funciona mientras el plan este activo). Son de Tigre sin oficina y trabajan remoto. Nunca 'el dominio se registra a tu nombre desde el primer dia'. No puede inventar garantias, contratos ni devoluciones. Sitio profesional: primer pago $60.000 + plan mensual $20.000 por mes. Ante pago todo al final sostiene que primero va la demo gratis y despues el primer pago para arrancar, nunca 'seña'. Las casillas de mail NO estan incluidas.",
     "nombre": "Hernan",
     "turnos": [
       "hola, quiero hacer una web pero ya me clavaron una vez con un chico que desaparecio a la mitad",
@@ -162,7 +162,7 @@
   {
     "id": "C10",
     "titulo": "Gimnasio mixto y limites de alcance: app, redes, logo, no se nada",
-    "esperado": "Turnos + venta de planes + cursos grabados es un proyecto mixto: no puede elegir uno solo por su cuenta ni sumar precios inventados. Apps: se cotizan aparte. NO hacen marketing ni redes ni recomiendan proveedores. NO hacen logos. Contesta que necesitan del cliente, que la demo es una primera version y que dura 7 dias.",
+    "esperado": "Turnos + venta de planes + cursos grabados es un proyecto mixto: no puede elegir uno solo por su cuenta ni sumar precios inventados. Apps: se cotizan aparte. NO hacen marketing ni redes ni recomiendan proveedores. NO hacen logos. Contesta que necesitan del cliente, que la demo es una primera version y que queda disponible 5 dias (por una cuestion de espacio).",
     "nombre": "Pato",
     "turnos": [
       "hola! tengo un gimnasio en zona oeste",

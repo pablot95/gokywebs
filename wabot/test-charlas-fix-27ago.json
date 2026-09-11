@@ -48,7 +48,7 @@
   {
     "id": "F05",
     "titulo": "Marcco: el pedido de web bilingue no puede quedar sin contestar",
-    "esperado": "En el primer turno tiene que aparecer la respuesta sobre la web bilingue (con su adicional). No alcanza con presentar el ecommerce y preguntar el producto estrella.",
+    "esperado": "En el primer turno tiene que aparecer la respuesta sobre la web bilingue (sin cotizarla como adicional con precio: desde el 10-sep los unicos adicionales son $500 por producto arriba de 10 y $10.000 por mes por mas de un cambio). No alcanza con presentar el ecommerce y preguntar el producto estrella.",
     "nombre": "Marco",
     "turnos": [
       "Hola, tengo una marroquineria y necesito un ecommerce internacional, en espanol e ingles, con precios en pesos y en dolares para vender al exterior"
@@ -57,7 +57,7 @@
   {
     "id": "F06",
     "titulo": "Aberturas: cuanto sale agregar venta online con una landing cotizada",
-    "esperado": "Tiene que contestar el precio del ecommerce ($290.000) y aclarar que no es un adicional sobre la landing. NO puede repetir el precio de la landing ni preguntar si es el mismo proyecto.",
+    "esperado": "Tiene que contestar el precio del ecommerce (primer pago $90.000 + plan mensual $30.000 por mes) y aclarar que no es un adicional sobre la landing. NO puede repetir el precio de la landing ni preguntar si es el mismo proyecto.",
     "nombre": "Hernan",
     "turnos": [
       "Hola, fabrico y coloco aberturas de aluminio a medida",
@@ -68,7 +68,7 @@
   {
     "id": "F07",
     "titulo": "Tiendanube: contestar si se puede o no antes de argumentar",
-    "esperado": "Tiene que decir claramente que sobre Tiendanube no trabajan, y recien despues el argumento del pago unico. Nunca argumentar sin contestar.",
+    "esperado": "Tiene que decir claramente que sobre Tiendanube no trabajan, y recien despues el diferenciador (alla la armas vos con una plantilla y pagas por mes igual; aca la hacemos nosotros a medida y nos ocupamos de todo), nunca 'pago unico vs alquiler'. Nunca argumentar sin contestar.",
     "nombre": "Luciana",
     "turnos": [
       "Hola, me pueden armar una tienda en Tiendanube?"

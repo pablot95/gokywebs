@@ -21,22 +21,37 @@ $nombre    = htmlspecialchars(trim($body['nombre']    ?? ''), ENT_QUOTES);
 $email     = filter_var(trim($body['email']           ?? ''), FILTER_SANITIZE_EMAIL);
 $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
 
-// Seña por franja (24-jul-2026): landing puro $60.000 · el resto $90.000 — se recalcula
-// server-side a partir del siteType (nunca se confía en un monto mandado directo desde
-// el cliente), mismo criterio que PRICING.*.sena de /form/script.js.
-$siteType = trim($body['siteType'] ?? '');
-$sena     = ($siteType === 'landing') ? 60000 : 90000;
+// Primer pago (modelo 10-sep-2026: primer pago + plan mensual obligatorio). Se
+// recalcula server-side a partir del siteType, nunca se confía en un monto mandado
+// desde el cliente: sitio profesional (clave 'landing') $60.000 · ecommerce,
+// inmobiliaria y elearning $90.000. Tiene que coincidir con PRIMER_PAGO de
+// presupuesto/script.js y de presupuesto/exito.html.
+$siteType   = trim($body['siteType'] ?? '');
+$primerPago = ($siteType === 'landing') ? 60000 : 90000;
+
+// TODO (Pablo): el plan mensual NO se crea acá. Es una suscripción automática de
+// Mercado Pago (preapproval) que arranca a los 30 días del primer pago: $20.000/mes
+// sitio profesional, $30.000/mes el resto. Se da de alta desde la cuenta de MP de
+// Gokywebs y las altas las procesa mantenimiento/api/webhook-mp.php (crea el
+// suscriptor en Firestore /mantenimiento; ahí falta pegar los ids de los dos
+// planes nuevos). Para que el primer débito caiga a los 30 días, el plan tiene que
+// tener un mes de prueba (free_trial) o el link se manda a los 30 días.
+// Si algún día se crea por API: sin preapproval_plan_id (con plan, MP exige
+// card_token_id) y cancelando el preapproval anterior antes de crear otro.
 
 $preference = [
     'items' => [[
-        'id'          => 'sena-web-gokywebs',
-        'title'       => 'Seña — Desarrollo Web Gokywebs',
-        'description' => 'Seña inicial para el desarrollo de tu sitio web.',
+        'id'          => 'primer-pago-web-gokywebs',
+        'title'       => 'Primer pago — Desarrollo Web Gokywebs',
+        'description' => 'Primer pago para el desarrollo de tu sitio web. El plan mensual arranca a los 30 días.',
         'quantity'    => 1,
         'currency_id' => 'ARS',
-        'unit_price'  => $sena
+        'unit_price'  => $primerPago
     ]],
     'payer' => ['name' => $nombre, 'email' => $email],
+    // Con tarjeta, hasta 12 cuotas con interés: el valor de cada cuota lo calcula
+    // la tarjeta y no se escribe en ningún texto.
+    'payment_methods' => ['installments' => 12],
     'back_urls' => [
         'success' => $BASE_URL . '/exito.html',
         'failure' => $BASE_URL . '/?pago=fallido',

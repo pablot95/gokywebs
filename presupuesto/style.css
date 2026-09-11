@@ -186,13 +186,6 @@ input, select, textarea { font-family: var(--font); }
     border-color: var(--blue-2); color: #1d4ed8;
     box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
 }
-.pill.addon { border-style: dashed; }
-.pill.addon.selected { border-style: solid; }
-.pill-price {
-    font-size: 0.72rem; font-weight: 700; color: var(--green);
-    background: var(--green-dim); padding: 0.1rem 0.45rem;
-    border-radius: 6px;
-}
 
 /* Pills de objetivo: selección única, con línea aclaratoria debajo */
 .pills-grid-obj { flex-direction: column; }
@@ -249,9 +242,12 @@ input, select, textarea { font-family: var(--font); }
     color: #111827;
 }
 
+/* La mensualidad va al lado del primer pago (nunca sumada) y se ve también
+   en mobile: antes este detalle se ocultaba en pantallas chicas. */
 .live-budget small {
-    font-size: 0.72rem;
-    color: #6B7280;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--blue);
 }
 
 @keyframes liveBudgetIn {
@@ -323,7 +319,6 @@ input, select, textarea { font-family: var(--font); }
 .badge-landing  { background: rgba(99,102,241,0.15); color: #818CF8; border: 1px solid rgba(129,140,248,0.3); }
 .badge-ecommerce { background: rgba(16,185,129,0.12); color: #34D399; border: 1px solid rgba(52,211,153,0.3); }
 .badge-inmobiliaria { background: rgba(245,158,11,0.12); color: #FCD34D; border: 1px solid rgba(252,211,77,0.3); }
-.badge-web-completa { background: rgba(59,130,246,0.12); color: #93C5FD; border: 1px solid rgba(147,197,253,0.3); }
 .badge-elearning { background: rgba(168,85,247,0.12); color: #C084FC; border: 1px solid rgba(192,132,252,0.3); }
 
 .price-card {
@@ -361,50 +356,18 @@ input, select, textarea { font-family: var(--font); }
 .include-item .check { color: var(--green); flex-shrink: 0; margin-top: 1px; }
 .include-item .inc-label { font-weight: 500; color: #111827; }
 
-.extras-block {
-    background: var(--green-dim);
-    border: 1px solid rgba(16,185,129,0.2);
-    border-radius: var(--radius);
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.5rem;
-}
-.extras-title { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 0.6rem; }
-.extra-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 0.25rem 0; }
-.extra-name { color: var(--text-muted); }
-.extra-price { font-weight: 700; color: var(--green); }
-
 .price-totals { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 1.25rem; }
-.price-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.6rem; }
-.price-total-row .label { font-size: 0.85rem; color: #6B7280; }
-.price-total-row .value { font-size: 0.95rem; font-weight: 700; color: #111827; }
-/* Total y cuotas sin interés van juntos y con el mismo peso visual (31-jul-2026):
-   antes las cuotas eran una línea aparte y mucho más chica, y se perdían. */
-.price-final-group {
-    margin-top: 0.85rem; padding-top: 0.85rem;
-    border-top: 1px solid rgba(0,0,0,0.07);
-    display: flex; flex-direction: column; gap: 0.55rem;
-}
+/* Primer pago y plan mensual (10-sep-2026): dos filas con el MISMO peso
+   visual y nunca sumadas en un total. La mensualidad va en azul para que se
+   lea como lo recurrente, con el mismo tamaño que el primer pago. */
+.price-final-group { display: flex; flex-direction: column; gap: 0.55rem; }
 .price-final-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
 .price-final-row .label { font-size: 1rem; font-weight: 700; color: #111827; }
-.price-final-row .value { font-size: 1.4rem; font-weight: 800; color: #111827; }
-.price-final-cuotas { flex-wrap: nowrap; }
-.price-final-cuotas .label,
-.price-final-cuotas .value { color: var(--blue); }
-.price-final-cuotas .value { font-size: 1.05rem; font-weight: 700; white-space: nowrap; }
-
-.sena-box {
-    background: rgba(37,99,235,0.05);
-    border: 1px solid rgba(37,99,235,0.2);
-    border-radius: var(--radius);
-    padding: 0.8rem 1rem;
-    margin-top: 1rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    flex-wrap: wrap;
-}
-.sena-info { font-size: 0.85rem; }
-.sena-label { color: #6B7280; margin-bottom: 0.15rem; }
-.sena-val { font-size: 1rem; font-weight: 800; color: var(--blue); }
-.sena-note { font-size: 0.75rem; color: #9CA3AF; margin-top: 0.1rem; }
+.price-final-row .label small { display: block; font-size: 0.75rem; font-weight: 500; color: #6B7280; margin-top: 0.15rem; }
+.price-final-row .value { font-size: 1.4rem; font-weight: 800; color: #111827; white-space: nowrap; }
+.price-final-mensual .label,
+.price-final-mensual .value { color: var(--blue); }
+.plan-note { font-size: 0.78rem; color: #6B7280; line-height: 1.6; margin-top: 0.9rem; }
 
 .result-actions { display: flex; flex-direction: column; gap: 1.6rem; margin-top: 1.75rem; }
 .btn-contratar {
@@ -536,7 +499,9 @@ input, select, textarea { font-family: var(--font); }
 }
 .checkout-summary .cs-label { font-size: 0.8rem; color: #6B7280; }
 .checkout-summary .cs-value { font-size: 0.88rem; font-weight: 700; color: #111827; }
-.checkout-summary .cs-sena { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
+.checkout-summary .cs-primer-pago,
+.checkout-summary .cs-mensualidad { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
+.cs-note { font-size: 0.78rem; color: #6B7280; line-height: 1.6; margin-top: 0.85rem; text-align: center; }
 
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
@@ -913,10 +878,11 @@ input, select, textarea { font-family: var(--font); }
         margin: 0 0 0.85rem;
         padding: 0.75rem 0.85rem;
         gap: 0.55rem;
+        flex-wrap: wrap;
     }
     .live-budget-label { font-size: 0.6rem; }
     .live-budget strong { font-size: 1rem; }
-    .live-budget small { display: none; }
+    .live-budget small { font-size: 0.68rem; }
     .similar-grid { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
     .pf-mini-visuals { aspect-ratio: 9/16; }
     .pf-mini-web { display: none; }

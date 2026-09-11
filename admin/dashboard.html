@@ -28,12 +28,16 @@
             <div class="panel-header">
                 <div>
                     <h1>Clientes</h1>
-                    <p class="muted">Proyectos activos y pagos.</p>
+                    <p class="muted">Clientes activos y su plan mensual. La suscripción figura activa cuando el email, el WhatsApp o el ID coinciden con uno de Mantenimiento (Mercado Pago).</p>
                 </div>
                 <div class="stats-box stats-box--periods">
                     <div class="stat-item">
-                        <span class="stat-label">Total pendiente de cobro</span>
-                        <span class="stat-value" id="totalPendiente">$0</span>
+                        <span class="stat-label">Mensualidad activa</span>
+                        <span class="stat-value" id="mrrActivo">$0</span>
+                    </div>
+                    <div class="stat-item" title="Suscripciones pendientes cuya fecha de inicio ya pasó: toca activarlas en Mercado Pago">
+                        <span class="stat-label">Por activar</span>
+                        <span class="stat-value" id="porActivar">0</span>
                     </div>
                 </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
@@ -47,17 +51,16 @@
                 <table class="clients-table">
                     <thead>
                         <tr>
-                            <th>Nombre</th>
-                            <th class="col-proyecto">Proyecto</th>
-                            <th class="col-telefono">Teléfono</th>
-                            <th class="num">Valor total</th>
-                            <th class="num">Abonado</th>
-                            <th class="notes-col-th">Notas</th>
+                            <th>Cliente</th>
+                            <th>Plan</th>
+                            <th>Primer pago</th>
+                            <th>Suscripción</th>
+                            <th class="center">Cambios del mes</th>
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTbody">
-                        <tr class="empty-row"><td colspan="7">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="6">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -97,8 +100,7 @@
                             <th>Nombre</th>
                             <th class="col-proyecto">Proyecto</th>
                             <th class="col-telefono">Teléfono</th>
-                            <th class="num">Valor total</th>
-                            <th class="num">Abonado</th>
+                            <th>Plan</th>
                             <th class="center">Estado</th>
                             <th class="center">Hablarle el día</th>
                             <th class="notes-col-th">Notas</th>
@@ -106,7 +108,7 @@
                         </tr>
                     </thead>
                     <tbody id="segTbody">
-                        <tr class="empty-row"><td colspan="9">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="8">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -147,12 +149,12 @@
             </div>
         </section>
 
-        <!-- Tab: Señados (ex Presupuestos) -->
+        <!-- Tab: Primer pago (ex Presupuestos): los que pagaron desde /presupuesto/ -->
         <section class="panel tab-panel" id="tabPresupuestos" hidden>
             <div class="panel-header">
                 <div>
-                    <h1>Señados</h1>
-                    <p class="muted">Clientes que calcularon precio y pagaron la seña desde la página de presupuesto.</p>
+                    <h1>Primer pago</h1>
+                    <p class="muted">Clientes que calcularon su plan y pagaron el primer pago desde la página de presupuesto.</p>
                 </div>
             </div>
             <div class="search-row">
@@ -166,8 +168,8 @@
                             <th>Cliente</th>
                             <th>Negocio / Rubro</th>
                             <th>Tipo de sitio</th>
-                            <th class="num">Total</th>
-                            <th class="center">Seña</th>
+                            <th>Plan</th>
+                            <th class="center">Primer pago</th>
                             <th class="center">Brief</th>
                             <th class="actions-col">Detalle</th>
                         </tr>
@@ -198,7 +200,7 @@
                             <th>Rubro</th>
                             <th>Teléfono</th>
                             <th>Tipo de sitio</th>
-                            <th class="num">Total estimado</th>
+                            <th>Plan</th>
                             <th class="center">Boceto</th>
                             <th class="actions-col">Detalle</th>
                         </tr>
@@ -223,7 +225,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Stats</h1>
-                    <p class="muted">Cuándo se llenan los bocetos, cuándo entran las señas y cuánto suma cada semana entre clientes y completados.</p>
+                    <p class="muted">Cuándo se llenan los bocetos, cuándo entran los primeros pagos y cuánto suma cada semana entre clientes y completados.</p>
                 </div>
             </div>
             <div id="statsContent"><p class="muted">Cargando…</p></div>
@@ -302,7 +304,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <p class="muted">Suscriptores de los planes de mantenimiento. Se cargan solos cuando alguien paga por Mercado Pago, o agregalos a mano. El check de "pidió cambios" se reinicia según el día de alta de cada cliente.</p>
+                    <p class="muted">Suscripciones del plan mensual por Mercado Pago. Se cargan solas cuando alguien se suscribe, o agregalas a mano. Si coinciden con un cliente por email, WhatsApp o ID, en Clientes la suscripción figura activa. El check de "pidió cambios" se reinicia según el día de alta de cada suscripción.</p>
                 </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
             </div>
@@ -335,7 +337,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Completados</h1>
-                    <p class="muted">Clientes cuyo proyecto fue finalizado y entregado. El período se calcula por la fecha de creación del boceto.</p>
+                    <p class="muted">Registro de las webs entregadas. Con el plan mensual el cliente sigue en Clientes con su suscripción y acá queda la copia de la entrega. El período se calcula por la fecha de creación del boceto.</p>
                 </div>
                 <div class="stats-box stats-box--periods">
                     <div class="stat-item">
@@ -559,9 +561,8 @@
                     <div class="nb-price" id="nbPriceBox">
                         <div class="nb-price-type" id="nbPriceType">—</div>
                         <div class="nb-price-grid">
-                            <div><span>Total</span><strong id="nbPriceTotal">$0</strong></div>
-                            <div><span>Seña</span><strong id="nbPriceSena">$0</strong></div>
-                            <div><span>Saldo</span><strong id="nbPriceSaldo">$0</strong></div>
+                            <div><span>Primer pago</span><strong id="nbPricePrimerPago">$0</strong></div>
+                            <div><span>Plan mensual</span><strong id="nbPriceMensual">$0</strong></div>
                         </div>
                     </div>
 
@@ -643,10 +644,10 @@
                     <input type="text" id="mantDominio" maxlength="160" placeholder="midominio.com">
 
                     <label for="mantPlan">Plan / descripción *</label>
-                    <input type="text" id="mantPlan" maxlength="120" required placeholder="Ej.: Mantenimiento ecommerce">
+                    <input type="text" id="mantPlan" maxlength="120" required placeholder="Ej.: Plan mensual ecommerce">
 
                     <label for="mantMonto">Precio mensual *</label>
-                    <input type="number" id="mantMonto" min="0" step="1" inputmode="numeric" required placeholder="Ej.: 15000">
+                    <input type="number" id="mantMonto" min="0" step="1" inputmode="numeric" required placeholder="Ej.: 30000">
 
                     <label for="mantEstado">Estado</label>
                     <select id="mantEstado">
@@ -684,16 +685,25 @@
                 <label for="telefono">Teléfono</label>
                 <input type="tel" id="telefono" required maxlength="30">
 
+                <label for="emailCliente">Email <span class="muted">(opcional)</span></label>
+                <input type="text" id="emailCliente" maxlength="160" inputmode="email" autocomplete="off" placeholder="El que usa en Mercado Pago">
+
+                <!-- Modelo del 10-sep-2026: primer pago + plan mensual obligatorio.
+                     Las opciones del plan las carga dashboard.js desde PLANES. -->
+                <label for="planCliente">Plan</label>
+                <select id="planCliente"></select>
+
                 <div class="grid-2">
                     <div>
-                        <label for="valorTotal">Valor total</label>
-                        <input type="number" id="valorTotal" min="0" step="0.01" required>
+                        <label for="primerPago">Primer pago</label>
+                        <input type="number" id="primerPago" min="0" step="1" inputmode="numeric" required>
                     </div>
                     <div>
-                        <label for="abono">Cuánto abonó</label>
-                        <input type="number" id="abono" min="0" step="0.01" required value="0">
+                        <label for="montoMensual">Plan mensual</label>
+                        <input type="number" id="montoMensual" min="0" step="1" inputmode="numeric" required>
                     </div>
                 </div>
+                <p class="muted" id="modeloAnteriorNota" style="font-size:12px;margin-top:8px" hidden></p>
 
                 <label for="estadoCliente">Estado</label>
                 <select id="estadoCliente">
@@ -707,6 +717,38 @@
                     <label for="hablarleElDia">Hablarle el día</label>
                     <input type="date" id="hablarleElDia">
                 </div>
+
+                <!-- Suscripción al plan mensual (solo clientes) -->
+                <div id="suscripcionSection" style="display:none">
+                    <div class="grid-2">
+                        <div>
+                            <label for="primerPagoAt">Fecha del primer pago</label>
+                            <input type="date" id="primerPagoAt">
+                        </div>
+                        <div>
+                            <label for="suscripcionDesde">El plan arranca el</label>
+                            <input type="date" id="suscripcionDesde">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div>
+                            <label for="estadoSuscripcion">Suscripción</label>
+                            <select id="estadoSuscripcion">
+                                <option value="pendiente">Pendiente</option>
+                                <option value="activa">Activa</option>
+                                <option value="baja">Baja</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="preapprovalId">ID en Mercado Pago</label>
+                            <input type="text" id="preapprovalId" maxlength="80" placeholder="Lo carga el webhook">
+                        </div>
+                    </div>
+                    <p class="muted" id="suscripcionNota" style="font-size:12px;margin-top:8px" hidden></p>
+                </div>
+
+                <label for="notasCliente">Notas internas</label>
+                <textarea id="notasCliente" rows="2" maxlength="500" placeholder="(opcional)"></textarea>
 
                 <!-- Checklist de entrega (solo clientes) -->
                 <div id="tareasSection" style="display:none;margin-top:16px">
@@ -776,7 +818,7 @@
     <div id="facturaModal" class="modal-backdrop" hidden>
         <div class="modal">
             <div class="modal-header">
-                <h2 id="facturaModalTitulo">Emitir factura y completar</h2>
+                <h2 id="facturaModalTitulo">Emitir factura y marcar entregada</h2>
                 <button class="modal-close" id="closeFacturaModalBtn" aria-label="Cerrar">&times;</button>
             </div>
 
@@ -863,12 +905,12 @@
 
             <div class="modal-actions">
                 <button type="button" class="btn-ghost" id="facturaCancelarBtn">Cancelar</button>
-                <button type="button" class="btn-ghost" id="facturaSinFacturarBtn">Completar sin facturar</button>
+                <button type="button" class="btn-ghost" id="facturaSinFacturarBtn">Marcar entregada sin facturar</button>
                 <button type="button" class="btn-primary" id="facturaEmitirBtn">Emitir factura</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260903-devolucion-campos"></script>
+    <script type="module" src="dashboard.js?v=20260910"></script>
 </body>
 </html>

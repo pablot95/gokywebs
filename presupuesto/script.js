@@ -73,10 +73,16 @@ async function _guardarLead(st) {
             objectives:      st.objectives      || [],
             functionalities: st.functionalities || [],
             pages:           st.pages           || '',
+            /* basePrice/totalPrice/sena valen el primer pago y extrasPrice 0:
+               la ficha de lead del admin (dashboard.js 3719-3722) los sigue
+               pintando. primerPago/mensualidad son los campos del modelo
+               nuevo (10-sep-2026), para cuando el admin los lea. */
             basePrice:       st.basePrice       || 0,
             extrasPrice:     st.extrasPrice     || 0,
             totalPrice:      st.totalPrice      || 0,
             sena:            st.sena            || 0,
+            primerPago:      st.primerPago      || 0,
+            mensualidad:     st.mensualidad     || 0,
             sinPrecio:       !!st.sinPrecio,
             extras:          st.extras          || [],
             createdAt:       serverTimestamp(),
@@ -98,8 +104,12 @@ async function _guardarLead(st) {
      quiere lograr", que se ve en el modal del boceto y sale en Copiar/Design);
      NO en "notas" (apuntes internos de Pablo) ni solo en "extra" (esa fila
      recién se ve al convertir a cliente).
-   · precio → precioTotal/sena/saldo, los nombres canónicos que muestra el
-     bloque "💰 Presupuesto" (totalPrice NO lo lee nadie en el admin).
+   · precio → precioTotal/sena/saldo siguen siendo los nombres canónicos que
+     muestra el bloque "💰 Presupuesto" (dashboard.js 1778-1780 y 2533-2535,
+     con el fallback `saldo || (precioTotal - sena)`); totalPrice NO lo lee
+     nadie en el admin. Desde el 10-sep-2026 valen primer pago / primer pago /
+     0, y además se escriben `primerPago` y `mensualidad` (modelo nuevo) para
+     cuando el admin los lea. Nunca sacar los viejos antes de eso.
    · adicionales elegidos → campo propio `adicionales_texto` (31-jul-2026:
      antes se mezclaban dentro de productos_servicios, que en /form/ significa
      otra cosa — quedaban pegados en medio del párrafo de "Sobre el negocio"). */
@@ -138,7 +148,9 @@ async function _guardarBoceto(nombreNegocio, colorPrincipal, colorSecundario, co
             extrasPrice:         state.extrasPrice || 0,
             precioTotal:         state.totalPrice || 0,
             sena:                state.sena || 0,
-            saldo:               Math.max((state.totalPrice || 0) - (state.sena || 0), 0),
+            saldo:               0,
+            primerPago:          state.primerPago || 0,
+            mensualidad:         state.mensualidad || 0,
             sinPrecio:           !!state.sinPrecio,
             extras:              state.extras || [],
             color_principal:     colorPrincipal,
@@ -233,8 +245,15 @@ const BUSINESS_TYPES = [
     { label: 'Otro' },
 ];
 
+/* Qué incluye cada tipo de web (10-sep-2026). Es UNA sola lista por tipo y
+   la usan tanto el panel del paso 3 como la tarjeta de resultado (antes había
+   dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Arriba de
+   todo va el argumento del modelo — todo incluido, el cliente se olvida de
+   todo — y al final lo que el modelo incluye en cualquier tipo de web: carga
+   de hasta 10 productos y un cambio por mes. */
 const INCLUDES = {
     landing: [
+        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu plan</strong>',
         'Diseño personalizado y responsive',
         'Hasta 5 secciones optimizadas para conversión',
         'SEO básico y meta etiquetas',
@@ -242,34 +261,24 @@ const INCLUDES = {
         'Integración con redes sociales',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>',
-        '3 revisiones de diseño'
-    ],
-    'web-completa': [
-        'Diseño personalizado multi-página y responsive',
-        'Hasta 4 páginas internas adicionales',
-        'SEO avanzado en todas las páginas',
-        'Formulario de contacto',
-        'Blog / sección de noticias (con panel admin)',
-        'Integración con redes sociales',
-        'Botón flotante de WhatsApp',
-        'Certificado SSL incluido',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>',
-        '3 revisiones de diseño'
+        'Carga de hasta 10 productos',
+        'Un cambio por mes incluido, siempre'
     ],
     ecommerce: [
+        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu plan</strong>',
         'Tienda online completa y responsive',
         'Catálogo de productos con filtros',
         'Carrito de compras y proceso de pago',
         'Integración con Mercado Pago',
         'Panel de gestión de pedidos',
+        'Carga de hasta 10 productos',
         'SEO optimizado para e-commerce',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>',
-        '3 revisiones de diseño'
+        'Un cambio por mes incluido, siempre'
     ],
     inmobiliaria: [
+        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu plan</strong>',
         'Sitio inmobiliaria profesional y responsive',
         'Listado de propiedades con filtros avanzados',
         'Ficha de propiedad con galería de fotos',
@@ -278,10 +287,11 @@ const INCLUDES = {
         'SEO local optimizado',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>',
-        '3 revisiones de diseño'
+        'Carga de hasta 10 productos',
+        'Un cambio por mes incluido, siempre'
     ],
     elearning: [
+        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu plan</strong>',
         'Plataforma LMS completa y responsive',
         'Login y panel propio para tus alumnos',
         'Cursos organizados en módulos con videos',
@@ -289,10 +299,11 @@ const INCLUDES = {
         'Acceso docente para cargar contenido y gestionar sus cursos',
         'Chat entre alumnos y docentes',
         'Cobro de los cursos online',
+        'SEO básico y meta etiquetas',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>',
-        '3 revisiones de diseño'
+        'Carga de hasta 10 productos',
+        'Un cambio por mes incluido, siempre'
     ]
 };
 
@@ -306,14 +317,6 @@ const SIMILAR_PROJECTS = {
         { name: 'Estudio A. Silva', url: 'https://estudioasilva.com.ar',    webSrc: PP + 'abogada.png' },
         { name: 'Infinity Trading', url: 'https://infinitytrader.com.ar',   webSrc: PP + 'infinity.png' },
         { name: 'AMP Solutions',    url: 'https://ampsolutionsar.com',      webSrc: PP + 'amp.png' },
-    ],
-    'web-completa': [
-        { name: 'AHCD',                  url: 'https://ahcd.org.ar',                   webSrc: PP + 'ahcd.png' },
-        { name: 'Agrimensura Satelital', url: 'https://agrimensurasatelital.com',       webSrc: PP + 'agrimensura.png' },
-        { name: 'Galeón Consultora',     url: 'https://consultoramaritima.com.ar',      webSrc: PP + 'galeon.png' },
-        { name: 'Grupo Acot',            url: 'https://grupoacot.com',                  webSrc: PP + 'acot.png' },
-        { name: 'Urgencias 24hs',        url: 'https://urgencias24hs.com.ar',           webSrc: PP + 'odonto.png' },
-        { name: 'SkyMed',                url: 'https://skymedconsultorios.com',         webSrc: PP + 'skymed.png' },
     ],
     ecommerce: [
         { name: 'Distrito Río Grande', url: 'https://distririogrande.com.ar',          webSrc: PP + 'disitrito.png',    celuSrc: PP + 'disitrito.png' },
@@ -330,16 +333,16 @@ const SIMILAR_PROJECTS = {
     ]
 };
 
+// La clave interna sigue siendo 'landing' (la lee el admin y el backend de MP);
+// solo cambia el nombre visible: "Sitio profesional" (10-sep-2026).
 const TYPE_NAMES = {
-    landing: 'Landing Page',
-    'web-completa': 'Web Completa',
+    landing: 'Sitio profesional',
     ecommerce: 'E-commerce',
     inmobiliaria: 'Web Inmobiliaria',
     elearning: 'Plataforma LMS'
 };
 const TYPE_BADGE_CLASSES = {
     landing: 'badge-landing',
-    'web-completa': 'badge-web-completa',
     ecommerce: 'badge-ecommerce',
     inmobiliaria: 'badge-inmobiliaria',
     elearning: 'badge-elearning'
@@ -348,24 +351,13 @@ const TYPE_BADGE_CLASSES = {
 const QUE_ES_DATA = {
     landing: {
         icon: '🚀',
-        title: '¿Qué es una Landing Page?',
-        body: 'Es un sitio de una sola página diseñado para presentar tu negocio y convertir visitantes en clientes. Simple, rápida y efectiva.',
+        title: '¿Qué es un Sitio profesional?',
+        body: 'Es la web de tu negocio o tu actividad: presenta lo que hacés, genera confianza y convierte visitas en consultas. Simple, rápida y efectiva.',
         bullets: [
             'Cargás más rápido y generás mejor primera impresión',
             'Ideal para servicios, profesionales y emprendimientos',
             'Posicionamiento en Google desde el primer día',
             'Más económica y lista en menos tiempo'
-        ]
-    },
-    'web-completa': {
-        icon: '🌐',
-        title: '¿Qué es una Web Completa?',
-        body: 'Un sitio multi-página con secciones separadas: inicio, servicios, nosotros, blog y contacto. Más contenido, más autoridad.',
-        bullets: [
-            'Transmitís más confianza y profesionalismo',
-            'Mejor posicionamiento SEO con más páginas indexadas',
-            'Ideal para empresas con varios servicios o áreas',
-            'Panel de administración para actualizar contenido'
         ]
     },
     ecommerce: {
@@ -418,7 +410,9 @@ const state = {
     basePrice: 0,
     extrasPrice: 0,
     totalPrice: 0,
-    sena: 90000,
+    primerPago: 0,
+    mensualidad: 0,
+    sena: 0, // compat admin: vale lo mismo que primerPago, lo fija renderResult()
     sinPrecio: false, // precio a cotizar en vez de $0 real — el admin lo necesita para no mostrarlo como plata
     extras: [],
     clientData: {}
@@ -496,12 +490,6 @@ function _restorePresState() {
             }
         }
 
-        // Restaurar pills de funcionalidades
-        if (step >= 3) {
-            _restorePills('func-pills', state.functionalities);
-            _restorePills('func-panel-wrap', state.functionalities);
-        }
-
         if (step === 5) {
             // El resultado ya estaba visible — volver a renderizarlo
             renderResult();
@@ -524,58 +512,18 @@ function _restorePills(containerId, values) {
     });
 }
 
-const ALREADY_INCLUDED = {
-    landing: [
-        'Diseño personalizado y responsive',
-        'Formulario de contacto',
-        'Galería de fotos / videos',
-        'Integración con redes sociales',
-        'Optimización de SEO',
-        'WhatsApp flotante',
-        'Certificado SSL',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>'
-    ],
-    ecommerce: [
-        'Tienda online completa y responsive',
-        'Catálogo de productos con filtros',
-        'Carrito de compras + Mercado Pago',
-        'Panel de gestión de pedidos',
-        'Optimización de SEO',
-        'WhatsApp flotante',
-        'Certificado SSL',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>'
-    ],
-    inmobiliaria: [
-        'Listado de propiedades con filtros avanzados',
-        'Ficha de propiedad con galería de fotos',
-        'Formulario de contacto por propiedad',
-        'Mapa interactivo de ubicaciones',
-        'Optimización de SEO',
-        'WhatsApp flotante',
-        'Certificado SSL',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>'
-    ],
-    elearning: [
-        'Login y panel propio para tus alumnos',
-        'Cursos organizados en módulos con videos',
-        'Evaluaciones y seguimiento de progreso por alumno',
-        'Acceso docente para cargar contenido y gestionar sus cursos',
-        'Chat entre alumnos y docentes',
-        'Cobro de los cursos online',
-        'WhatsApp flotante',
-        'Certificado SSL',
-        '<strong>Hosting y dominio .com.ar incluidos por 1 año</strong>'
-    ]
-};
-
+/* Paso 3 (10-sep-2026): ya no hay pills de adicionales — el modelo es "todo
+   incluido" y los dos únicos adicionales (productos arriba de 10, más de un
+   cambio por mes) se coordinan por WhatsApp. El paso queda como el panel de
+   qué incluye la web + los dos números del plan. */
 function renderStep3Context() {
     const type     = getSiteType();
-    const items    = ALREADY_INCLUDED[type];
+    const items    = INCLUDES[type] || INCLUDES.landing;
     const included = document.getElementById('func-included');
-    const { base: baseAmt, sinPrecio, qtyLabel } = getBasePriceInfo(type);
+    const { primerPago, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
-        ? `Con ${qtyLabel}, armamos un precio a medida — lo coordinamos directo con vos.`
-        : `Tiene un precio inicial de <strong style="color:black">${fmt(baseAmt)}</strong>${qtyLabel ? ` (${qtyLabel})` : ''}`;
+        ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
+        : `Primer pago de <strong style="color:black">${fmt(primerPago)}</strong> y después <strong style="color:black">${fmt(mensualidad)} por mes</strong>, con todo incluido. El plan mensual arranca a los 30 días del primer pago.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -588,37 +536,6 @@ function renderStep3Context() {
             </ul>
             <p style="font-size:0.9rem;color:black">${precioTexto}</p>`;
     }
-
-    // Agenda de turnos / Login salen más baratos en ecommerce ($30.000 c/u,
-    // combo de $50.000 si se eligen los dos) — el badge de cada pill tiene
-    // que reflejar el precio real de ESTE tipo antes de que el usuario elija.
-    const precioAddon = type === 'ecommerce' ? 30000 : 50000;
-    const pillCalPrice = document.getElementById('pillCalendarioPrice');
-    const pillLoginPrice = document.getElementById('pillLoginPrice');
-    if (pillCalPrice) pillCalPrice.textContent = '+' + fmt(precioAddon);
-    if (pillLoginPrice) pillLoginPrice.textContent = '+' + fmt(precioAddon);
-    const calPill = document.querySelector('#func-pills .pill[data-value="calendario"]');
-    const loginPill = document.querySelector('#func-pills .pill[data-value="login"]');
-    calPill?.setAttribute('data-extra', precioAddon);
-    loginPill?.setAttribute('data-extra', precioAddon);
-    const comboHint = document.getElementById('comboHint');
-    if (comboHint) comboHint.style.display = (type === 'ecommerce') ? '' : 'none';
-
-    /* La Plataforma LMS ya trae login de alumnos/docentes de fábrica y no tiene
-       agenda de turnos (no es un servicio con horarios) — ofrecer esos dos
-       addons ahí sería cobrar por algo ya incluido o por algo que no aplica.
-       Se ocultan (no solo se dejan sin marcar) y, si venían tildados de un
-       tipo anterior, se destildan y se sacan de state.functionalities para
-       que no sigan sumando al precio con la pill ya invisible. */
-    const hideForLMS = type === 'elearning';
-    [calPill, loginPill].forEach(pill => {
-        if (!pill) return;
-        pill.style.display = hideForLMS ? 'none' : '';
-        if (hideForLMS && pill.classList.contains('selected')) {
-            pill.classList.remove('selected');
-            state.functionalities = state.functionalities.filter(v => v !== pill.dataset.value);
-        }
-    });
 
     updateLiveBudget();
 }
@@ -794,13 +711,15 @@ function mensajeMuestraWsp(nombreNegocio) {
     lineas.push(`🏢 Negocio: ${nombreNegocio}`);
     if (state.businessInput) lineas.push(`📌 Rubro: ${state.businessInput}`);
     if (TYPE_NAMES[state.siteType]) lineas.push(`🌐 Tipo de web: ${TYPE_NAMES[state.siteType]}`);
-    if ((state.extras || []).length) {
-        lineas.push(`⚙️ Adicionales: ${state.extras.map(e => `${e.name} (+${fmt(e.price)})`).join(', ')}`);
+    // Dos líneas y nunca un total sumado: el primer pago y la mensualidad son
+    // cosas distintas, y la charla no tiene que arrancar anclada a una suma.
+    if (state.sinPrecio) {
+        lineas.push(`💰 Precio: a coordinar`);
+    } else {
+        lineas.push(`💰 Primer pago: ${fmt(state.primerPago)}`);
+        lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes (arranca a los 30 días)`);
     }
-    lineas.push(state.sinPrecio
-        ? `💰 Precio: a coordinar`
-        : `💰 Total estimado: ${fmt(state.totalPrice)}`);
-    lineas.push('', 'Quedo atento/a!');
+    lineas.push('', 'Gracias!');
     return lineas.join('\n');
 }
 
@@ -819,46 +738,19 @@ function getSiteType() {
     return 'landing';
 }
 
-const BASE_PRICES = { landing: 150000, ecommerce: 270000, inmobiliaria: 240000, elearning: 320000 };
+/* Modelo comercial (10-sep-2026): primer pago + plan mensual obligatorio que
+   arranca a los 30 días. Ya no hay pago único ni adicionales en la
+   calculadora. Son DOS números que nunca se suman entre sí. El monto que
+   cobra Mercado Pago se recalcula server-side en api/crear-preferencia.php a
+   partir del siteType: PRIMER_PAGO tiene que coincidir con lo que hay ahí. */
+const PRIMER_PAGO = { landing: 60000, ecommerce: 90000, inmobiliaria: 90000, elearning: 90000 };
+const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
 
-// Precio base + flag de "sin precio fijo" (sin uso actual, siempre false).
-// Centralizado acá porque tanto calcPrice() como renderStep3Context() (el
-// panel "Tiene un precio inicial de...") necesitan el mismo número.
-function getBasePriceInfo(type) {
-    return { base: BASE_PRICES[type] ?? 0, sinPrecio: false, qtyLabel: null };
-}
-
-/* Seña por franja (24-jul-2026): landing puro $60.000 · el resto $90.000
-   (mismo criterio que PRICING.*.sena de /form/script.js). */
-function calcSena(type) {
-    return type === 'landing' ? 60000 : 90000;
-}
-
-function calcPrice(type) {
-    const { base, sinPrecio } = getBasePriceInfo(type);
-
-    let extras = 0;
-    const extraDetails = [];
-
-    const hasCalendario = state.functionalities.includes('calendario');
-    const hasLogin      = state.functionalities.includes('login');
-
-    /* Agenda de turnos / Login en ecommerce (2-ago-2026): más baratos por
-       separado ($30.000 c/u en vez de los $50.000 de landing/inmobiliaria)
-       porque una tienda ya trae buena parte de esa infraestructura (cuentas,
-       panel), pero elegir los DOS juntos pasa a precio de paquete: $50.000
-       total, no $60.000 — se registra como un único adicional combinado. */
-    if (type === 'ecommerce' && hasCalendario && hasLogin) {
-        extras += 50000;
-        extraDetails.push({ name: 'Agenda de turnos + Login de usuarios', price: 50000 });
-    } else {
-        const precioAddon = type === 'ecommerce' ? 30000 : 50000;
-        if (hasCalendario) { extras += precioAddon; extraDetails.push({ name: 'Agenda de turnos', price: precioAddon }); }
-        if (hasLogin)      { extras += precioAddon; extraDetails.push({ name: 'Login de usuarios', price: precioAddon }); }
-    }
-    if (state.functionalities.includes('dominio-com')) { extras += 12000; extraDetails.push({ name: 'Dominio .com', price: 12000 }); }
-
-    return { base, extras, total: sinPrecio ? 0 : base + extras, extraDetails, sinPrecio };
+// Centralizado acá porque renderStep3Context(), updateLiveBudget() y
+// renderResult() necesitan los mismos dos números. `sinPrecio` queda por
+// compatibilidad con el admin (siempre false: todos los tipos tienen precio fijo).
+function getPlanInfo(type) {
+    return { primerPago: PRIMER_PAGO[type], mensualidad: MENSUALIDAD[type], sinPrecio: false };
 }
 
 function updateLiveBudget() {
@@ -875,12 +767,13 @@ function updateLiveBudget() {
     }
 
     const type = getSiteType();
-    const pricing = calcPrice(type);
+    const { primerPago, mensualidad } = getPlanInfo(type);
 
+    // Número grande = primer pago; la mensualidad va al lado, nunca sumada.
     const totalEl = document.getElementById('liveBudgetTotal');
     const detailEl = document.getElementById('liveBudgetDetail');
-    if (totalEl) totalEl.textContent = fmt(pricing.total);
-    if (detailEl) detailEl.textContent = `Base ${fmt(pricing.base)} · Adicionales ${fmt(pricing.extras)}`;
+    if (totalEl) totalEl.textContent = fmt(primerPago);
+    if (detailEl) detailEl.textContent = `Después ${fmt(mensualidad)}/mes`;
 
     bubble.classList.add('visible');
     bubble.classList.remove('bump');
@@ -892,30 +785,27 @@ function renderResult() {
     const type = getSiteType();
     state.siteType = type;
 
-    const pricing = calcPrice(type);
-    state.basePrice = pricing.base;
-    state.extrasPrice = pricing.extras;
-    state.totalPrice = pricing.total;
-    state.extras = pricing.extraDetails;
-    state.sena = pricing.sinPrecio ? 0 : calcSena(type);
-    state.sinPrecio = pricing.sinPrecio;
+    const { primerPago, mensualidad, sinPrecio } = getPlanInfo(type);
+    state.primerPago  = sinPrecio ? 0 : primerPago;
+    state.mensualidad = sinPrecio ? 0 : mensualidad;
+    /* Campos viejos que el admin sigue leyendo (precioTotal/sena/saldo en
+       `propuestas`, totalPrice/basePrice/extrasPrice en `presupuestos`): se
+       mantienen con el primer pago como valor y sin adicionales. */
+    state.basePrice   = state.primerPago;
+    state.extrasPrice = 0;
+    state.totalPrice  = state.primerPago;
+    state.extras      = [];
+    state.sena        = state.primerPago;
+    state.sinPrecio   = sinPrecio;
 
     const badge = document.getElementById('typeBadge');
     badge.className = 'result-type-badge ' + TYPE_BADGE_CLASSES[type];
     badge.textContent = TYPE_NAMES[type];
 
+    // Dos filas del mismo peso: primer pago y plan mensual. Nunca un total.
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    if (pricing.sinPrecio) {
-        setT('priceTotal',    'A coordinar');
-        setT('priceTypeName', TYPE_NAMES[type]);
-        setT('priceBase',     'A coordinar');
-        setT('priceFinal',    'A coordinar');
-    } else {
-        setT('priceTotal',    fmt(pricing.total));
-        setT('priceTypeName', TYPE_NAMES[type]);
-        setT('priceBase',     fmt(pricing.base));
-        setT('priceFinal',    fmt(pricing.total));
-    }
+    setT('priceFinal',   sinPrecio ? 'A coordinar' : fmt(primerPago));
+    setT('priceMensual', sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
 
     const includesList = document.getElementById('includesList');
     const items = INCLUDES[type] || INCLUDES.landing;
@@ -931,18 +821,9 @@ function renderResult() {
         `<div class="que-es-bullet"><span class="que-es-bullet-icon">✓</span><span>${b}</span></div>`
     ).join('');
 
-    if (!pricing.sinPrecio && pricing.extraDetails.length > 0) {
-        document.getElementById('extrasBlock').style.display = '';
-        document.getElementById('extrasRow').style.display = '';
-        document.getElementById('priceExtras').textContent = fmt(pricing.extras);
-        document.getElementById('extrasList').innerHTML = pricing.extraDetails.map(e =>
-            `<div class="extra-item"><span class="extra-name">${e.name}</span><span class="extra-price">+${fmt(e.price)}</span></div>`
-        ).join('');
-    }
-
-    setT('summTypeName', TYPE_NAMES[type]);
-    setT('summTotal',    pricing.sinPrecio ? 'A coordinar' : fmt(pricing.total));
-    setT('summSena',     pricing.sinPrecio ? 'A coordinar' : fmt(state.sena));
+    setT('summTypeName',    TYPE_NAMES[type]);
+    setT('summPrimerPago',  sinPrecio ? 'A coordinar' : fmt(primerPago));
+    setT('summMensualidad', sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
 
     document.getElementById('resultSection').classList.add('visible');
     document.getElementById('liveBudget')?.classList.remove('visible', 'bump');
@@ -973,7 +854,7 @@ function renderSimilar(type) {
     if (!projects) { section?.classList.remove('visible'); return; }
     const grid = document.getElementById('similarGrid');
     const sub = document.getElementById('similarSub');
-    const names = { landing: 'landing pages', 'web-completa': 'webs completas', ecommerce: 'e-commerces', inmobiliaria: 'webs inmobiliarias', elearning: 'plataformas LMS' };
+    const names = { landing: 'sitios profesionales', ecommerce: 'e-commerces', inmobiliaria: 'webs inmobiliarias', elearning: 'plataformas LMS' };
     sub.textContent = `Ejemplos de ${names[type] || 'sitios'} que ya desarrollamos.`;
     grid.innerHTML = projects.map(p => `
         <a href="${p.url}" target="_blank" rel="noopener" class="pf-card-mini">
@@ -1006,6 +887,9 @@ function resetCalculator() {
     state.basePrice      = 0;
     state.extrasPrice    = 0;
     state.totalPrice     = 0;
+    state.primerPago     = 0;
+    state.mensualidad    = 0;
+    state.sena           = 0;
     state.sinPrecio      = false;
     state.extras         = [];
     state.clientData     = {};
@@ -1034,8 +918,6 @@ function resetCalculator() {
     document.getElementById('similarSection')?.classList.remove('visible');
     document.getElementById('checkoutSection')?.classList.remove('visible');
     document.getElementById('liveBudget')?.classList.remove('visible', 'bump');
-    document.getElementById('extrasBlock').style.display = 'none';
-    document.getElementById('extrasRow').style.display   = 'none';
 
     // 6. Restaurar hero y barra de pasos
     document.documentElement.classList.remove('has-result');
@@ -1127,6 +1009,11 @@ async function handlePayment() {
         extrasPrice: state.extrasPrice,
         totalPrice: state.totalPrice,
         sena: state.sena,
+        // Los lee exito.html (`presupuesto.primerPago` / `.mensualidad`) para
+        // pintar la confirmación y armar los mails: si se renombran acá hay
+        // que renombrarlos allá en el mismo commit.
+        primerPago: state.primerPago,
+        mensualidad: state.mensualidad,
         extras: state.extras,
         clientData: { nombre, email, telefono: pais + ' ' + tel, cuit, negocio }
     };
@@ -1155,7 +1042,7 @@ async function handlePayment() {
         btn.disabled = false;
         btn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            Pagar seña ${fmt(state.sena)} con Mercado Pago`;
+            Abonar primer pago ${fmt(state.primerPago)} con Mercado Pago`;
     }
 }
 
@@ -1171,8 +1058,6 @@ document.addEventListener('DOMContentLoaded', () => {
     _pfOnce('gky_pf_s1', () => _trackFunnel({ step1At: serverTimestamp() })); // "entraron"
     initAutocomplete();
     initObjetivoPills();
-    initPills('func-pills', 'functionalities');
-    initPills('func-panel-wrap', 'functionalities');
     _restorePresState(); // restaurar estado si la pestaña fue descartada por el browser
     updateLiveBudget();
 
@@ -1350,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="muestra-success">
                     <div class="muestra-success-icon">✅</div>
                     <h3>¡Listo! Ya arrancamos con tu boceto</h3>
-                    <p>Te estamos abriendo WhatsApp con todos los datos cargados. Si no se abrió solo, tocá el botón de acá abajo.</p>
+                    <p>La demo te llega en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio. Te estamos abriendo WhatsApp con todos los datos cargados: si no se abrió solo, tocá el botón de acá abajo.</p>
                     <a class="btn-wsp" id="muestraSuccessWsp" href="${url}" target="_blank" rel="noopener" style="display:inline-flex;margin-bottom:0.9rem">💬 Abrir WhatsApp</a>
                     <button type="button" class="btn-muestra-confirm" id="muestraSuccessClose" style="margin-top:0">Volver al presupuesto</button>
                 </div>`;

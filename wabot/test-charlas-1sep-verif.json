@@ -2,7 +2,7 @@
   {
     "id": "V1",
     "titulo": "Conservas (era C03): solo mostrar baja a catalogo y cotiza 190.000",
-    "esperado": "Al decir que no vende online tiene que pasar a catalogo y preguntar cantidad. Con 20 productos: 190.000. Sin derivar.",
+    "esperado": "Al decir que no vende online no cambia el precio: mostrar los productos y que le consulten va como ecommerce, que absorbe el catalogo (primer pago $90.000 + plan mensual $30.000 por mes), y el precio no depende de la cantidad. Con 20 productos no suma $500 por cada uno: 10 se cargan incluidos y los otros 10 son $500 cada uno solo si quiere que los carguen ellos. Sin derivar.",
     "nombre": "Vale",
     "turnos": [
       "hola, tengo una marca de conservas artesanales",
@@ -14,7 +14,7 @@
   {
     "id": "V2",
     "titulo": "Repuestos moto (era C08): 450 productos = 405.000 y repite el precio",
-    "esperado": "Baja a catalogo, con 450 productos cotiza 405.000 (180.000 + 450x500). 'cuanto queda entonces?' repite el numero, no deriva.",
+    "esperado": "Solo mostrar los productos va como ecommerce (absorbe el catalogo): primer pago $90.000 + plan mensual $30.000 por mes, sin precio por producto. Los 450 productos no se cobran de a $500 todos: 10 van incluidos y, si quiere que los carguen ellos, los otros 440 son $500 cada uno ($220.000); si no, los carga el desde el panel. 'cuanto queda entonces?' repite el precio, no deriva.",
     "nombre": "Sergio",
     "turnos": [
       "hola, tengo una distribuidora de repuestos de moto",
@@ -39,7 +39,7 @@
   {
     "id": "V4",
     "titulo": "Peluqueria (era N02): precio repetido y gracias sin matar el seguimiento",
-    "esperado": "'cuanto nos saldria' repite 200.000. Tras 'gracias!' el cierre NO queda en despedida ni el seguimiento bloqueado.",
+    "esperado": "'cuanto nos saldria' repite el precio del sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes; los turnos ya no tienen precio propio). Tras 'gracias!' el cierre NO queda en despedida ni el seguimiento bloqueado.",
     "nombre": "Jesica",
     "turnos": [
       "hola, tengo una peluqueria y queremos que las clientas saquen el turno solas desde la pagina",
@@ -52,7 +52,7 @@
   {
     "id": "V5",
     "titulo": "Ropa por IG (era N04): objecion suave y demo aceptada",
-    "esperado": "'es bastante para mi ahora' recibe el argumento del pago unico (texto caro). 'mandame la demo' arranca el prediseno.",
+    "esperado": "'es bastante para mi ahora' recibe el texto caro del modelo nuevo (con el primer pago de $90.000 arranca en lugar de pagar una web entera de una vez, es a medida y no una plantilla, la mensualidad de $30.000 incluye hosting, dominio, soporte y un cambio por mes, y el primer pago va hasta en 12 cuotas con interes sin decir el monto de una cuota), nunca el argumento del pago unico. 'mandame la demo' arranca el prediseno.",
     "nombre": "Micaela",
     "turnos": [
       "hola! vendo ropa por instagram y quiero que compren y paguen desde la pagina",
@@ -63,7 +63,7 @@
   {
     "id": "V6",
     "titulo": "Escuela (era D08): historia+autoridades+novedades = institucional",
-    "esperado": "Con el pedido de historia, autoridades, novedades y actos tiene que cotizar institucional 200.000, no landing.",
+    "esperado": "Con el pedido de historia, autoridades, novedades y actos cotiza el sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes): el institucional ya no tiene un precio distinto del de la landing.",
     "nombre": "Marta",
     "turnos": [
       "buenas tardes, soy la secretaria de una escuela primaria",
@@ -74,7 +74,7 @@
   {
     "id": "V7",
     "titulo": "Cabanas (era D04): la respuesta del desempate cotiza, no deriva",
-    "esperado": "'que vean las fechas libres y reserve' es la respuesta del desempate: cotiza turnos 200.000 con el texto de alojamiento. Nada de 'sigue Pablo'.",
+    "esperado": "'que vean las fechas libres y reserve' es la respuesta del desempate: cotiza el sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes) con el texto de alojamiento. Nada de 'sigue Pablo'.",
     "nombre": "Ariel",
     "turnos": [
       "buenas, tengo 4 cabanas en Villa General Belgrano",

@@ -17,7 +17,7 @@
   {
     "id": "T2",
     "titulo": "Rodo: la pregunta directa mezclada con el rubro",
-    "esperado": "Ademas del precio del sitio profesional, tiene que contestar SI o SI si hay pago mensual (el mantenimiento es opcional). Hoy esa pregunta no la contestaba nadie porque el pitch sale exacto.",
+    "esperado": "Ademas del precio del sitio profesional (primer pago $60.000 + plan mensual $20.000 por mes), tiene que contestar SI o SI si hay pago mensual: si, el plan mensual es obligatorio ($20.000 por mes desde los 30 dias, sin permanencia) e incluye hosting, dominio, soporte y un cambio por mes. Hoy esa pregunta no la contestaba nadie porque el pitch sale exacto.",
     "nombre": "Rodo",
     "turnos": [
       "Hola. ¿Puedo obtener más información sobre esto? Quería saber el precio de cuánto me cuesta hacer una página web Gracias y como es el procedimiento",
@@ -47,7 +47,7 @@
   {
     "id": "T5",
     "titulo": "Ana Sloog: la pregunta cerrada sobre el mantenimiento",
-    "esperado": "A 'Ese pago es si o si. Es decir fijo o es opcional?' contesta CORTO que es opcional. No vuelve a pegar el bloque entero del mantenimiento.",
+    "esperado": "A 'Ese pago es si o si. Es decir fijo o es opcional?' contesta CORTO que si, es obligatorio: el plan mensual es parte del servicio, sin permanencia. No vuelve a pegar el bloque entero del plan mensual.",
     "nombre": "Ana",
     "turnos": [
       "Hola. ¿Puedo obtener más información sobre esto?",

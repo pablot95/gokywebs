@@ -190,17 +190,72 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
 // Evita que Enter recargue la página vía submit nativo.
 document.getElementById('propuestaForm').addEventListener('submit', (e) => e.preventDefault());
 
+/* ─── Pasos ───
+ * Dos pantallas dentro del mismo <form> (10-sep, pedido de Pablo): el paso 1
+ * se valida antes de dejar avanzar y el envío sale del paso 2. Los dos pasos
+ * están siempre en el DOM, así el borrador y los reintentos ven todos los
+ * campos aunque el paso no esté a la vista. */
+const PASOS = [...document.querySelectorAll('.form-step')];
+
+function pasoDe(el) {
+    return Number(el?.closest('.form-step')?.dataset.step || 1);
+}
+
+function irAPaso(n, { enfocar = true, scroll = true } = {}) {
+    PASOS.forEach(p => { p.hidden = Number(p.dataset.step) !== n; });
+    document.querySelectorAll('.step-dot').forEach(dot => {
+        const s = Number(dot.dataset.s);
+        dot.classList.toggle('active', s === n);
+        dot.classList.toggle('done', s < n);
+    });
+    document.querySelectorAll('.step-connector').forEach((c, i) => c.classList.toggle('done', i + 1 < n));
+
+    const paso = PASOS.find(p => Number(p.dataset.step) === n);
+    // Un textarea oculto mide 0 de alto: se ajusta recién ahora que se ve.
+    paso?.querySelectorAll('textarea.autosize').forEach(autoGrow);
+    if (scroll) document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (enfocar) paso?.querySelector('.step-header-title')?.focus({ preventScroll: true });
+    if (n === 2) track('step2');
+}
+
+document.getElementById('btnSiguiente').addEventListener('click', () => {
+    clearErrors();
+    const error = validarPaso1();
+    if (error) {
+        error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    irAPaso(2);
+});
+
+document.getElementById('btnVolver').addEventListener('click', () => {
+    clearErrors();
+    irAPaso(1);
+});
+
 const btnEnviar = document.getElementById('btnEnviar');
 btnEnviar.addEventListener('click', () => {
     if (btnEnviar.disabled) return;
-    if (!validateForm()) return;
+    clearErrors();
+    // El paso 1 ya se validó para llegar acá; se repasa igual por si algo
+    // cambió por atrás (un borrador, "Corregir" el teléfono).
+    const error1 = validarPaso1();
+    if (error1) {
+        irAPaso(1, { enfocar: false, scroll: false });
+        error1.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    const error2 = validarPaso2();
+    if (error2) {
+        error2.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
     enviarFormulario();
 });
 
-function validateForm() {
-    clearErrors();
-
-    let valid = true;
+/* Cada validación marca sus errores y devuelve el primer campo con error (o
+ * null): quien la llama decide si hay que cambiar de paso antes de mostrarlo. */
+function validarPaso1() {
     let firstError = null;
 
     [
@@ -211,13 +266,11 @@ function validateForm() {
         const el = document.getElementById(id);
         if (!el.value.trim()) {
             markError(el, msg);
-            valid = false;
             if (!firstError) firstError = el;
         } else if (LIMITES[id] && el.value.trim().length > LIMITES[id]) {
             // Mismo tope que el servidor: antes el servidor rechazaba y acá
             // salía un "ocurrió un error" sin decir por qué.
             markError(el, `Demasiado largo: máximo ${LIMITES[id]} caracteres.`);
-            valid = false;
             if (!firstError) firstError = el;
         }
     });
@@ -226,20 +279,35 @@ function validateForm() {
         const telefonoDigits = telefonoInput.value.replace(/\D/g, '');
         if (!telefonoInput.value.trim()) {
             markError(telefonoInput, 'Por favor ingresá un número de teléfono o WhatsApp.');
-            valid = false;
             if (!firstError) firstError = telefonoInput;
         } else if (telefonoDigits.length < 10 || telefonoDigits.length > 15) {
             markError(telefonoInput, 'Ingresá un teléfono válido: entre 10 y 15 números.');
-            valid = false;
             if (!firstError) firstError = telefonoInput;
         }
     }
 
-    if (!valid && firstError) {
-        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return firstError;
+}
+
+function validarPaso2() {
+    let firstError = null;
+
+    // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
+    const estilo = document.getElementById('estilo');
+    if (estilo && !estilo.value) {
+        markError(estilo, 'Elegí un estilo. Si todavía no lo tenés claro, elegí "No lo sé".');
+        firstError = estilo;
     }
 
-    return valid;
+    ['referencia', 'incluir'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value.trim().length > LIMITES[id]) {
+            markError(el, `Demasiado largo: máximo ${LIMITES[id]} caracteres.`);
+            if (!firstError) firstError = el;
+        }
+    });
+
+    return firstError;
 }
 
 function markError(input, msg) {
@@ -273,6 +341,11 @@ function buildPayload() {
         nombre_negocio: get('nombre_negocio'),
         resumen: get('resumen'),
         colores,
+        // Paso 2 (10-sep). Van siempre, aunque estén vacíos: así el servidor
+        // sabe que el formulario ya preguntó la referencia y no la pide por chat.
+        estilo: get('estilo'),
+        referencia: get('referencia'),
+        incluir: get('incluir'),
     };
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
@@ -288,7 +361,8 @@ function mostrarErrorEnvio(msg) {
         box.className = 'form-tip';
         box.setAttribute('role', 'alert');
         box.style.cssText = 'background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.35)';
-        btnEnviar.insertAdjacentElement('beforebegin', box);
+        // Arriba de la fila Volver / Enviar: adentro quedaría entre los dos botones.
+        (btnEnviar.closest('.step-nav') || btnEnviar).insertAdjacentElement('beforebegin', box);
     }
     box.textContent = msg;
     box.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -297,25 +371,31 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200 };
-const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono' };
+const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200, estilo: 40, referencia: 300, incluir: 600 };
+const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
+    estilo: 'el estilo de página', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
- * campo, no se tira un "ocurrió un error" genérico. */
+ * campo, no se tira un "ocurrió un error" genérico. Si el campo está en el otro
+ * paso, primero se muestra ese paso. */
 function mostrarErrorServidor(json) {
     const campo = json.campo || '';
     const el = document.getElementById(campo);
+    const verPasoDe = input => irAPaso(pasoDe(input), { enfocar: false, scroll: false });
     if (json.motivo === 'largo' && el) {
+        verPasoDe(el);
         markError(el, `Demasiado largo: máximo ${json.max || LIMITES[campo] || ''} caracteres.`);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return true;
     }
     if (json.motivo === 'vacio' && el) {
+        verPasoDe(el);
         markError(el, `Completá ${NOMBRES_CAMPO[campo] || 'este campo'}.`);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return true;
     }
     if (json.motivo === 'telefono') {
+        verPasoDe(telefonoInput);
         if (telefonoInput.hidden) mostrarTelefono();
         markError(telefonoInput, 'Ingresá un WhatsApp válido: entre 10 y 15 números.');
         telefonoInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -342,7 +422,10 @@ async function enviarFormulario() {
         let json = null;
         // "ocupado": la charla estaba tomada un instante (el bot escribiendo).
         // El servidor pide reintentar; se hace solo, sin molestar a la persona.
-        for (let intento = 0; intento < 3; intento++) {
+        // Seis intentos, con esperas crecientes: el bot puede retener la
+        // charla 20 a 40 segundos (espera, Gemini y tipeo) y con tres intentos
+        // de menos de un segundo el formulario se rendía antes (9-sep).
+        for (let intento = 0; intento < 6; intento++) {
             const res = await fetch(FORM_LEAD_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -351,7 +434,7 @@ async function enviarFormulario() {
             json = await res.json();
             if (json.ok || !json.reintentar) break;
             btnEnviar.textContent = 'Un segundo…';
-            await new Promise(r => setTimeout(r, 900 * (intento + 1)));
+            await new Promise(r => setTimeout(r, 1500 * (intento + 1)));
         }
         if (!json || !json.ok) {
             if (json && json.error === 'datos_invalidos' && mostrarErrorServidor(json)) {
@@ -406,10 +489,10 @@ function showSuccess(nombre, nombreNegocio) {
     card.innerHTML = `
         <div class="success-screen">
             <div class="success-icon">✅</div>
-            <h2 class="success-title">¡Listo, recibimos tus datos!</h2>
-            <span class="success-badge">⏱️ De 24 a 48hs tendremos tu demo</span>
+            <h2 class="success-title">Listo, recibimos tus datos!</h2>
+            <span class="success-badge">⏱️ Tu demo va a estar lista en menos de 24 horas</span>
             <p class="success-desc">
-                Te estamos abriendo WhatsApp para coordinar los próximos pasos. Si no se abrió solo, tocá el botón de acá abajo.
+                Te la mandamos por WhatsApp y queda disponible 5 días, por una cuestión de espacio. Ahora te estamos abriendo WhatsApp para coordinar los próximos pasos: si no se abrió solo, tocá el botón de acá abajo.
             </p>
             <a href="${url}" class="btn-wsp-form" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>
             <a href="https://www.gokywebs.com" class="success-link">Mientras tanto, explorá nuestros trabajos →</a>
@@ -428,13 +511,14 @@ document.querySelectorAll('textarea.autosize').forEach(ta => {
     ta.addEventListener('input', () => autoGrow(ta));
 });
 
-// Contador del resumen: el tope de 600 existía en el servidor y el campo no
-// lo mostraba; el que se pasaba recién se enteraba con un error genérico.
-(function _contadorResumen() {
-    const ta = document.getElementById('resumen');
-    const contador = document.getElementById('resumenContador');
-    if (!ta || !contador) return;
-    const max = LIMITES.resumen;
+// Contadores de los textos largos: el tope de 600 existía en el servidor y el
+// campo no lo mostraba; el que se pasaba recién se enteraba con un error
+// genérico. Cada uno devuelve su "pintar" para refrescarlo después del borrador.
+function _contador(idCampo, idContador) {
+    const ta = document.getElementById(idCampo);
+    const contador = document.getElementById(idContador);
+    if (!ta || !contador) return () => {};
+    const max = LIMITES[idCampo];
     const pintar = () => {
         const n = ta.value.length;
         contador.textContent = `${n}/${max}`;
@@ -442,11 +526,46 @@ document.querySelectorAll('textarea.autosize').forEach(ta => {
     };
     ta.addEventListener('input', pintar);
     pintar();
-})();
+    return pintar;
+}
+const _pintarContadores = [_contador('resumen', 'resumenContador'), _contador('incluir', 'incluirContador')];
+
+/* Estilo de página: un <option> no puede llevar links, así que el ejemplo de
+ * cada estilo va en la línea de abajo y cambia con lo que se elige. La
+ * descripción, el link y el nombre del ejemplo viven en cada <option>. */
+const estiloSelect = document.getElementById('estilo');
+const estiloAyuda = document.getElementById('estiloEjemplo');
+const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
+
+function pintarEstilo() {
+    if (!estiloSelect || !estiloAyuda) return;
+    const op = estiloSelect.selectedOptions[0];
+    if (!op || !op.value) {
+        estiloAyuda.textContent = ESTILO_AYUDA_INICIAL;
+        return;
+    }
+    const desc = op.dataset.desc || '';
+    if (!op.dataset.ejemplo) {
+        estiloAyuda.textContent = desc;
+        return;
+    }
+    const a = document.createElement('a');
+    a.href = op.dataset.ejemplo;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.className = 'inline-link';
+    a.textContent = op.dataset.ejemploNombre || 'ver ejemplo';
+    estiloAyuda.textContent = desc.replace(/\.$/, '') + ' (ejemplo: ';
+    estiloAyuda.append(a, ').');
+}
+estiloSelect?.addEventListener('change', pintarEstilo);
+pintarEstilo();
 
 const DRAFT_KEY = 'gky_form_draft';
+// Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
-    'color_principal', 'color_secundario', 'color_fondos'];
+    'color_principal', 'color_secundario', 'color_fondos',
+    'estilo', 'referencia', 'incluir'];
 
 function saveDraft() {
     try {
@@ -467,6 +586,8 @@ function restoreDraft() {
     Object.entries(d.fields || {}).forEach(([id, v]) => {
         const el = document.getElementById(id);
         if (!el || el.value.trim()) return;
+        // Un estilo que ya no está en la lista dejaría el desplegable en blanco.
+        if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === v)) return;
         el.value = v;
         if (el.classList.contains('autosize')) autoGrow(el);
     });
@@ -481,3 +602,7 @@ _formEl.addEventListener('input', saveDraft);
 _formEl.addEventListener('change', saveDraft);
 
 restoreDraft();
+// Lo restaurado no dispara 'input': se repintan a mano los contadores y el
+// ejemplo del estilo.
+_pintarContadores.forEach(pintar => pintar());
+pintarEstilo();

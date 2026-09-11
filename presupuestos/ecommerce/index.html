@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260824">
+<link rel="stylesheet" href="../style.css?v=20260910">
 </head>
 <body>
 
@@ -31,7 +31,10 @@
 <main class="pago-main">
 
     <section class="pago-section" id="oferta">
-        <div class="price-hero"><b>$290.000</b><span>pago único</span></div>
+        <div class="price-duo">
+            <div class="price-hero"><b>$90.000</b><span>primer pago</span></div>
+            <div class="price-hero"><b>$30.000</b><span>por mes, a partir de los 30 días</span></div>
+        </div>
         <ul class="check-list">
             <li>Tienda completa con carrito de compras</li>
             <li>Cobro online con Mercado Pago</li>
@@ -44,27 +47,49 @@
             <li>Diseño a medida, pensado para vender desde el celular</li>
             <li>Optimización SEO básica para que aparezca en Google</li>
             <li>Certificado de seguridad SSL (https)</li>
-            <li>Hosting y dominio propio incluidos por el primer año</li>
+            <li>Hosting y dominio incluidos mientras dure el plan</li>
             <li>Se entrega configurada y te enseñamos a usar el panel</li>
-            <li>3 rondas de modificaciones antes de la entrega</li>
+            <li>1 cambio por mes incluido, todos los meses</li>
         </ul>
         <div class="plan-pago">
             <div class="plan-pago-stats">
-                <div><div class="et">Seña</div><div class="val">$60.000</div></div>
-                <div><div class="et">Saldo</div><div class="val saldo">$230.000</div></div>
+                <div><div class="et">Primer pago</div><div class="val">$90.000</div></div>
+                <div><div class="et">Mensualidad</div><div class="val destacado">$30.000</div></div>
                 <div><div class="et">Entrega</div><div class="val">7 días</div></div>
+            </div>
+            <div class="plan-pago-cuotas">
+                <div class="et">Cómo se paga</div>
+                <div class="val cuotas">Transferencia o tarjeta hasta en 12 cuotas con interés</div>
             </div>
             <div class="demo-aviso">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/></svg>
-                <span>Antes de avanzar podemos mostrarte cómo podría quedar tu web, con una <b>demo gratis</b>!</span>
+                <span>Antes de avanzar podemos mostrarte cómo podría quedar tu web, con una <b>demo gratis</b>! Te la mandamos en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio.</span>
             </div>
         </div>
     </section>
 
+    <section class="pago-section" id="plan">
+        <p class="pago-section-eyebrow">Plan mensual</p>
+        <h2 class="pago-section-title">Qué incluye el plan mensual</h2>
+        <p class="pago-section-desc">Arranca a los 30 días del primer pago y se cobra por suscripción automática de Mercado Pago, así se debita solo. Sin permanencia: lo das de baja cuando quieras. La web funciona mientras el plan esté activo.</p>
+        <div class="mant-card">
+            <div class="mant-price"><b>$30.000</b><span>por mes</span></div>
+            <ul class="check-list">
+                <li>Hosting incluido</li>
+                <li>Dominio incluido</li>
+                <li>Soporte técnico</li>
+                <li>1 cambio por mes, que puede ser un cambio grande y no solo un retoque</li>
+                <li>Carga de hasta 10 productos</li>
+            </ul>
+            <p class="addon-note">Adicionales, solo dos: <b>$500 por producto</b> arriba de los 10 incluidos, si los cargamos nosotros, y <b>$10.000 más por mes</b> si necesitás más de un cambio mensual.</p>
+            <p class="addon-note">La mensualidad se actualiza una vez al año.</p>
+        </div>
+    </section>
+
     <section class="pago-section" id="carga-productos">
-        <p class="pago-section-eyebrow">Opcional</p>
-        <h2 class="pago-section-title">También podemos cargarte los productos</h2>
-        <p class="pago-section-desc">Nos pasás tus productos como los tengas —una planilla, un catálogo de WhatsApp, fotos sueltas— y los dejamos cargados con foto, descripción y precio, a <strong>$500 por producto</strong>. ¿Cuántos son?</p>
+        <p class="pago-section-eyebrow">Adicional</p>
+        <h2 class="pago-section-title">Las primeras 10 van incluidas</h2>
+        <p class="pago-section-desc">Nos pasás tus productos como los tengas —una planilla, un catálogo de WhatsApp, fotos sueltas— y los dejamos cargados con foto, descripción y precio. Las primeras 10 cargas ya vienen incluidas en el plan; de ahí en adelante, <strong>$500 por producto</strong>. Poné la cantidad y te mostramos el total.</p>
         <div class="carga-calc-form">
             <div class="carga-calc-field">
                 <label for="cantProductosInput">Cantidad de productos</label>
@@ -74,9 +99,13 @@
         </div>
         <div class="plan-pago" id="resultadoCarga" hidden>
             <div class="plan-pago-stats">
-                <div><div class="et">Desarrollo</div><div class="val">$290.000</div></div>
-                <div><div class="et"><span id="cantProductosEt">0</span> productos</div><div class="val" id="valCarga">$0</div></div>
-                <div><div class="et">Total</div><div class="val saldo" id="valTotalCarga">$290.000</div></div>
+                <div><div class="et">Primer pago</div><div class="val">$90.000</div></div>
+                <div><div class="et"><span id="cantProductosEt">0</span> productos (10 incluidos)</div><div class="val" id="valCarga">$0</div></div>
+                <div><div class="et">Total</div><div class="val destacado" id="valTotalCarga">$90.000</div></div>
+            </div>
+            <div class="plan-pago-cuotas">
+                <div class="et">Plan mensual, aparte</div>
+                <div class="val">$30.000 por mes</div>
             </div>
         </div>
     </section>
@@ -123,35 +152,28 @@
     </section>
 
     <section class="pago-section" id="como-sigue">
-        <p class="pago-section-eyebrow">Cómo sigue</p>
-        <h2 class="pago-section-title">De la seña a tu web online</h2>
+        <p class="pago-section-eyebrow">Cómo trabajamos</p>
+        <h2 class="pago-section-title">Así trabajamos, en tres pasos</h2>
         <div class="timeline">
             <div class="timeline-step">
                 <div class="timeline-num">1</div>
                 <div class="timeline-body">
-                    <h3>Abonás la seña de $60.000</h3>
-                    <p>Arrancamos con tu proyecto ese mismo día, ya sea por transferencia o con Mercado Pago.</p>
+                    <h3>Te mostramos una demo gratis</h3>
+                    <p>Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web. Te la mandamos en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio.</p>
                 </div>
             </div>
             <div class="timeline-step">
                 <div class="timeline-num">2</div>
                 <div class="timeline-body">
-                    <h3>Aplicamos tus modificaciones</h3>
-                    <p>Sumamos los cambios que nos pediste sobre la demo y todo lo que tu web necesita para quedar terminada: textos definitivos, contenido real, ajustes de diseño y las funciones de tu proyecto.</p>
+                    <h3>Abonás el primer pago de $90.000</h3>
+                    <p>Con el primer pago arrancamos con los cambios que nos pediste sobre la demo y todo lo que tu tienda necesita para quedar totalmente funcional: textos definitivos, contenido real, ajustes de diseño, los primeros 10 productos cargados y las funciones de tu proyecto. En un <strong>máximo de 7 días</strong> tenés tu tienda terminada y publicada. Podés pagarlo por transferencia o con tarjeta hasta en 12 cuotas con interés.</p>
                 </div>
             </div>
             <div class="timeline-step">
                 <div class="timeline-num">3</div>
                 <div class="timeline-body">
-                    <h3>Tu web queda lista y online</h3>
-                    <p>En un <strong>máximo de 7 días</strong> (o menos) tenés tu sitio terminado y publicado.</p>
-                </div>
-            </div>
-            <div class="timeline-step">
-                <div class="timeline-num">4</div>
-                <div class="timeline-body">
-                    <h3>Pagás el saldo restante</h3>
-                    <p>Con la web ya entregada, tenés <strong>7 días</strong> para abonar el saldo final.</p>
+                    <h3>A los 30 días comienza el plan mensual</h3>
+                    <p>Son <strong>$30.000 por mes</strong> e incluye hosting, dominio, soporte y un cambio por mes. Se cobra por suscripción automática de Mercado Pago. Sin permanencia: lo das de baja cuando quieras.</p>
                 </div>
             </div>
         </div>
@@ -159,12 +181,12 @@
 
     <section class="pago-section" id="modificaciones">
         <p class="pago-section-eyebrow">Modificaciones incluidas</p>
-        <h2 class="pago-section-title">3 intercambios de ajustes</h2>
+        <h2 class="pago-section-title">Un cambio por mes, todos los meses</h2>
         <div class="mods-card">
             <span class="mods-icon">🔄</span>
             <div>
-                <h3>Contando el intercambio inicial</h3>
-                <p>El proyecto incluye <strong>3 rondas de modificaciones</strong>: la primera tanda de cambios que ya nos pasaste sobre la demo cuenta como el intercambio 1, y quedan <strong>2 rondas más</strong> disponibles para pulir el resultado antes de la entrega. Cada intercambio es una tanda de pedidos que nos mandás junta — así avanzamos ordenados y sin ida y vuelta interminable.</p>
+                <h3>Incluido en el plan mensual, siempre</h3>
+                <p>Mientras dure el plan tenés <strong>1 cambio por mes incluido</strong>, y puede ser un cambio grande, no solo un retoque. Nos mandás el pedido junto y lo aplicamos nosotros — así avanzamos ordenados y sin ida y vuelta interminable. Si necesitás más de un cambio por mes, pasás a un plan con varios cambios por <strong>$10.000 más por mes</strong>.</p>
             </div>
         </div>
     </section>
@@ -179,8 +201,9 @@
 
 <script>
 (function () {
-    var BASE = 290000;
-    var POR_PRODUCTO = 500;
+    var BASE = 90000;          // primer pago
+    var INCLUIDOS = 10;        // cargas incluidas en el plan
+    var POR_PRODUCTO = 500;    // adicional por cada producto arriba de los incluidos
     var input = document.getElementById('cantProductosInput');
     var btn = document.getElementById('btnCalcularCarga');
     var resultado = document.getElementById('resultadoCarga');
@@ -198,7 +221,7 @@
             input.focus();
             return;
         }
-        var costoProductos = cant * POR_PRODUCTO;
+        var costoProductos = Math.max(0, cant - INCLUIDOS) * POR_PRODUCTO;
         etCant.textContent = cant;
         valCarga.textContent = formatear(costoProductos);
         valTotal.textContent = formatear(BASE + costoProductos);

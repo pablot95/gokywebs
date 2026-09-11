@@ -2,7 +2,7 @@
   {
     "id": "D01",
     "titulo": "Postdemo que sale bien: elogio, cambios, como pago, transferencia y aviso de pago",
-    "esperado": "Con la demo ya entregada tiene que tomar el elogio, anotar los cambios sin prometer plazos inventados, y al preguntar como paga dar la sena de 40.000 con el CBU, alias, titular y documento REALES del config. Ante 'ya te transferi' no puede pedir la plata de nuevo ni volver a vender.",
+    "esperado": "Con la demo ya entregada tiene que tomar el elogio y anotar los cambios sin prometer plazos inventados. Al preguntar cuanto y como paga no vende ni pasa datos de pago (CBU, alias, titular): el cierre lo sigue el desarrollador. Si nombra el monto es el primer pago ($60.000), nunca 'seña' ni el valor de una cuota, y si contesta 'y el resto cuando lo pago?' no habla de saldo: lo que sigue al primer pago es el plan mensual de $20.000 por mes desde los 30 dias. Ante 'ya te transferi' no puede pedir la plata de nuevo ni volver a vender.",
     "nombre": "Vanina",
     "estado": {
       "fase": "postdemo",
@@ -32,7 +32,7 @@
   {
     "id": "D02",
     "titulo": "Postdemo que NO gusta: objeciones, videollamada y cuotas sin interes",
-    "esperado": "Ante 'no me convence' tiene que preguntar que fue lo que no cerro, no defenderse ni repetir el precio. Puede ofrecer la videollamada y las 3 cuotas sin interes, pero NO puede inventar descuentos, rehacer gratis ilimitado ni plazos. Ante 'lo veo con mi socia' no presiona.",
+    "esperado": "Ante 'no me convence' tiene que preguntar que fue lo que no cerro, no defenderse ni repetir el precio. Puede ofrecer la videollamada; a las cuotas sin interes contesta que el primer pago se puede hacer con tarjeta hasta en 12 cuotas con interes (sin decir el monto de una cuota), pero NO puede inventar descuentos, cuotas sin interes, rehacer gratis ilimitado ni plazos. Si nombra la plata es el primer pago, nunca 'seña' (tampoco ante 'me devolves la senia?'). Ante 'lo veo con mi socia' no presiona.",
     "nombre": "Rocio",
     "estado": {
       "fase": "postdemo",
@@ -62,7 +62,7 @@
   {
     "id": "D03",
     "titulo": "Rubro paraguas (clases de yoga) y upgrade de landing a turnos",
-    "esperado": "Yoga es un rubro paraguas: tiene que repreguntar que tipo de entrenamiento o clases da antes de cotizar. Si despues pide que reserven la clase desde la web, pasa a turnos 200.000 y lo dice como cambio de tipo, no como adicional inventado.",
+    "esperado": "Yoga es un rubro paraguas: tiene que repreguntar que tipo de entrenamiento o clases da antes de cotizar. Si despues pide que reserven la clase desde la web, sigue siendo sitio profesional con el mismo precio (primer pago $60.000 + plan mensual $20.000 por mes): ya no hay un precio distinto por turnos, ni diferencia que pagar aparte ni adicional inventado.",
     "nombre": "Belen",
     "turnos": [
       "hola! doy clases de yoga",
@@ -80,7 +80,7 @@
   {
     "id": "D04",
     "titulo": "Cabanas: desempate de alojamiento, bilingue, mapa y sena de la reserva",
-    "esperado": "Alojamiento tiene su propio texto de reserva de estadias, no el generico de turnos. Precio 200.000, sena 40.000. Bilingue 30.000. Mapa si. La pregunta de si la web cobra la sena de la reserva NO puede contestarse con la sena del desarrollo: son dos cosas distintas.",
+    "esperado": "Alojamiento tiene su propio texto de reserva de estadias, no el generico de turnos. Precio: sitio profesional, primer pago $60.000 + plan mensual $20.000 por mes, sin seña. Bilingue: sin cotizarlo como adicional con precio (desde el 10-sep los unicos adicionales son $500 por producto arriba de 10 y $10.000 por mes por mas de un cambio). Mapa si. La pregunta de si la web les cobra la sena de la reserva a los huespedes NO puede contestarse con el primer pago del desarrollo: son dos cosas distintas.",
     "nombre": "Ariel",
     "turnos": [
       "buenas, tengo 4 cabanas en Villa General Belgrano",
@@ -150,7 +150,7 @@
   {
     "id": "D08",
     "titulo": "Escuela: institucional, cinco preguntas en un mensaje y formularios",
-    "esperado": "Institucional 200.000. Cinco preguntas juntas: tiene que contestarlas todas, no elegir una sola y perder las otras cuatro. Formularios: incluidos. Casillas de mail: NO incluidas. No puede inventar convenios, descuentos a escuelas ni facturacion distinta.",
+    "esperado": "Institucional = sitio profesional: primer pago $60.000 + plan mensual $20.000 por mes. Cinco preguntas juntas: tiene que contestarlas todas, no elegir una sola y perder las otras cuatro. Formularios: incluidos. Casillas de mail: NO incluidas. No puede inventar convenios, descuentos a escuelas ni facturacion distinta.",
     "nombre": "Marta",
     "turnos": [
       "buenas tardes, soy la secretaria de una escuela primaria",

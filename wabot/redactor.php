@@ -217,6 +217,11 @@ function wabot_responder($texto, &$conv, $cfg) {
     if (wabot_prediseno_acuse($texto, $conv)) {
         if (!empty($conv['prediseno_acuse_respondido'])) return [];
         $conv['prediseno_acuse_respondido'] = true;
+        // Con el link del formulario ya mandado, "cuando los tengas mandámelos
+        // por acá" contradice al link: el acuse remite al formulario.
+        if (!empty($conv['link_form_enviado']) && trim((string)($cfg['prediseno_espera'] ?? '')) !== '') {
+            return [(string)$cfg['prediseno_espera']];
+        }
         return [(string)$cfg['prediseno_espera_datos']];
     }
 
