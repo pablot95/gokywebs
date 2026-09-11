@@ -2671,7 +2671,10 @@ function wabot_config_modelo_mensual(&$cfg) {
          * respuesta posible para la pregunta que decide la venta. */
         'baja_del_plan' => ["No hay permanencia: podés dar de baja el plan cuando quieras.\n"
                  . "Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.", ['permanencia']],
-        'confianza' => ['Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta y querés avanzar se abona el primer pago. En gokywebs.com podés ver los proyectos entregados y contactar a cualquiera de esos clientes.', ['primer pago']],
+        /* Con /portfolio y "escribirles por tu cuenta", como el default del
+         * 29-ago: sin eso wabot_config_portfolio() lo reescribía en la carga
+         * siguiente y la config no convergía en un solo pase. */
+        'confianza' => ['Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta y querés avanzar se abona el primer pago. En gokywebs.com/portfolio podés ver los proyectos entregados: son negocios reales y públicos, así que podés escribirles por tu cuenta.', ['primer pago']],
         'comisiones' => ['No, nosotros no cobramos ninguna comisión por venta: lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.', null],
         'accesos' => ["El hosting es nuestro y viene incluido en el plan: trabajamos con Hostinger, así que la web queda subida ahí y no tenés que contratar ni configurar nada.\n"
                  . "Si necesitás un acceso puntual, al panel o por FTP, decímelo y lo vemos.", ['incluido en el plan']],
@@ -2719,12 +2722,15 @@ function wabot_config_modelo_mensual(&$cfg) {
     }
     /* Las variantes del mensaje del precio: si alguna es del modelo viejo o no
      * nombra la mensualidad, se reemplazan TODAS por las del modelo nuevo. Los
-     * montos van por marcador, así que cambiar la lista no las desfasa. */
+     * montos van por marcador, así que cambiar la lista no las desfasa. La
+     * línea del link es la canónica en las cuatro: wabot_config_ventas() borra
+     * cualquier renglón con {link} y wabot_config_simplificar_tipos() pone ese,
+     * así que otra redacción cambiaba en la carga siguiente. */
     $variantesPrecio = [
         (string)$cfg['msg_precio'],
-        "Por lo que me contás, te conviene {desc}. Arrancás con un primer pago de {precio}, y a los 30 días empieza el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nAcá podés ver todo lo que incluye: {link}",
-        "En este caso iría {desc}. El primer pago es de {precio}; después, desde los 30 días, el plan mensual es de {mensualidad} e incluye hosting, dominio, soporte y un cambio por mes.\nTe dejo el detalle completo acá: {link}",
-        "La opción que mejor encaja es {desc}. Son {precio} de primer pago y, a partir de los 30 días, {mensualidad} por mes, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este link está detallado lo que incluye: {link}",
+        "Por lo que me contás, te conviene {desc}. Arrancás con un primer pago de {precio}, y a los 30 días empieza el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
+        "En este caso iría {desc}. El primer pago es de {precio}; después, desde los 30 días, el plan mensual es de {mensualidad} e incluye hosting, dominio, soporte y un cambio por mes.\nEn este enlace podés verlo bien detallado: {link}",
+        "La opción que mejor encaja es {desc}. Son {precio} de primer pago y, a partir de los 30 días, {mensualidad} por mes, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
     ];
     $variantesActuales = array_values(array_filter((array)($cfg['msg_precio_variantes'] ?? []), 'is_string'));
     $algunaVieja = !$variantesActuales;

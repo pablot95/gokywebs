@@ -80,6 +80,7 @@ $prod['hosting_renovacion'] = 'Después del primer año se renuevan: ronda los $
 $prod['muestra_presentar_seguimiento'] = 'Cuando puedas mirala y contame qué te pareció.';
 $prod['presentados_archivar_horas'] = 168;
 $prod['msg_precio_variantes'] = ["Te conviene {desc}. El desarrollo completo tiene un valor de {precio}.\nDetalle: {link}"];
+unset($prod['info']['confianza']);   // en la config real de producción la clave no existe (11-sep)
 wabot_config_migrar($prod);
 
 caso('el precio de seis cifras pasa a ser el primer pago nuevo',
@@ -103,6 +104,18 @@ caso('todas las variantes del precio nombran la mensualidad',
     count(array_filter($prod['msg_precio_variantes'], function ($v) { return strpos($v, '{mensualidad}') !== false; }))
     === count($prod['msg_precio_variantes']));
 caso('el segundo mensaje del precio lo fija el código', $prod['msg_tres_pasos'] === wabot_tres_pasos_default());
+caso('info.confianza, que en producción faltaba, sale con el primer pago y el portfolio',
+    strpos($prod['info']['confianza'], 'primer pago') !== false && strpos($prod['info']['confianza'], 'gokywebs.com/portfolio') !== false
+    && !preg_match('/\bse[ñn]a\b|\bsaldo\b/iu', $prod['info']['confianza']), $prod['info']['confianza']);
+
+/* La migración corre en cada carga y el panel guarda lo migrado: si un segundo
+ * pase cambia algo, los textos de producción cambian solos la próxima vez que
+ * Pablo guarda cualquier cosa. Con la config real del 11-sep pasaba con las
+ * variantes del precio (línea del link) y con info.confianza (/portfolio). */
+$segunda = $prod;
+wabot_config_migrar($segunda);
+$cambian = array_keys(array_filter($segunda, function ($v, $k) use ($prod) { return ($prod[$k] ?? null) !== $v; }, ARRAY_FILTER_USE_BOTH));
+caso('una segunda carga no cambia nada: la config converge en un solo pase', !$cambian, implode(', ', $cambian));
 
 $prodPanel = wabot_config_load();
 $prodPanel['tipos']['landing']['precio'] = '$65.000';
