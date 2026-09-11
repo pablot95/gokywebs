@@ -613,9 +613,11 @@ caso('pedir catálogo hoy devuelve el ecommerce completo, con su precio de lista
 
 echo "— Los 5 textos fijos que dictó Pablo (25-ago), con {precio} resuelto —\n";
 
-/* Desde el 2-sep son CUATRO y su forma la dictó Pablo: confirmación, tipo,
- * precio, mini descripción y el link del presupuesto. Desde el 10-sep el
- * precio son dos números en la misma oración: primer pago y plan mensual. El
+/* Desde el 2-sep son CUATRO, con el link del presupuesto. Desde el 10-sep el
+ * precio son dos números: primer pago y plan mensual. Desde el 11-sep el
+ * formato es el que dictó Pablo ("Para tu centro de estética podemos hacer
+ * una web donde…" y, aparte, "Empezás con un primer pago de…"): {propuesta}
+ * la arma el código y, sin para_que del modelo, es la frase fija del tipo. El
  * {rubro} queda crudo en la plantilla: lo resuelve wabot_personalizar(). */
 $textosFijosEsperados = wabot_precio_ideal_defaults();
 caso('los textos de precio son cuatro, uno por tipo ofrecible',
@@ -624,14 +626,15 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
     $cFijo = conv_sin_pitch();
     $rFijo = wabot_pitch($tipoFijo, $cFijo, $cfg);
     $esperado = wabot_aplicar_rubro(
-        str_replace(['{precio}', '{mensualidad}', '{link}'],
-            [(string)$cfg['tipos'][$tipoFijo]['precio'], (string)$cfg['tipos'][$tipoFijo]['mensualidad'],
-             (string)$cfg['tipos'][$tipoFijo]['link']],
+        str_replace(['{propuesta}', '{precio}', '{mensualidad}', '{link}'],
+            [wabot_propuesta_texto($tipoFijo, []), (string)$cfg['tipos'][$tipoFijo]['precio'],
+             (string)$cfg['tipos'][$tipoFijo]['mensualidad'], (string)$cfg['tipos'][$tipoFijo]['link']],
             $plantillaFija), '');
-    caso("$tipoFijo: el texto del precio sale tal cual, con el primer pago, la mensualidad y el link resueltos",
+    caso("$tipoFijo: el texto del precio sale tal cual, con la propuesta, el primer pago, la mensualidad y el link resueltos",
         wabot_personalizar($rFijo[0], $cFijo) === $esperado);
-    caso("$tipoFijo: dice primer pago y plan mensual, nunca pago único (10-sep)",
-        stripos($rFijo[0], 'primer pago') !== false && stripos($rFijo[0], 'plan mensual') !== false
+    caso("$tipoFijo: dice primer pago y plan por mes, nunca pago único (11-sep)",
+        stripos($rFijo[0], 'Empezás con un primer pago de $') !== false
+        && preg_match('/comienza el plan de \$[\d.]+ por mes/u', $rFijo[0])
         && stripos($rFijo[0], 'pago único') === false);
     caso("$tipoFijo: linkea el presupuesto para verlo en detalle (2-sep)",
         strpos($rFijo[0], 'gokywebs.com/presupuestos/') !== false);
@@ -2697,12 +2700,13 @@ foreach (['accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'ma
     caso("la respuesta de \"$clave\" existe y no quedó vacía", trim((string)($cfg['info'][$clave] ?? '')) !== '');
 }
 /* 10-sep: "todo incluido" salvo dos adicionales con precio fijo. El bilingüe
- * no es uno de ellos, así que el bot no le pone un monto: lo confirma el
- * desarrollador. */
-caso('el bilingüe no sale con un precio inventado ni con el placeholder',
+ * no es uno de ellos, así que el bot no le pone un monto. 11-sep: está
+ * incluido, hasta 3 idiomas (Pablo). */
+caso('el bilingüe no sale con un precio inventado ni con el placeholder: está incluido, hasta 3 idiomas (11-sep)',
     strpos(wabot_texto_info('bilingue', $cfg), '$') === false
     && strpos(wabot_texto_info('bilingue', $cfg), '{precio}') === false
-    && stripos(wabot_texto_info('bilingue', $cfg), 'desarrollador') !== false);
+    && stripos(wabot_texto_info('bilingue', $cfg), '3 idiomas') !== false
+    && stripos(wabot_texto_info('bilingue', $cfg), 'desarrollador') === false);
 caso('los accesos explican la invitación de Hostinger y el FTP',
     stripos((string)$cfg['info']['accesos'], 'hostinger') !== false
     && stripos((string)$cfg['info']['accesos'], 'ftp') !== false);
@@ -5335,10 +5339,10 @@ caso('y la clave existe en la config',
 /* 10. La coletilla ", pago único." colgada al final sonaba a contradicción con
  * la seña (29-ago) y se retiró. Desde el 2-sep el texto dice "Es un pago único
  * de $180.000" a pedido de Pablo: la forma con coma es la que sigue prohibida. */
-/* 10-sep: el precio son dos números en la misma oración. */
-caso('el precio dice primer pago y plan mensual, en la forma que dictó Pablo (10-sep)',
-    stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'El primer pago es de {precio}') !== false
-    && stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'plan mensual de {mensualidad}') !== false
+/* 10-sep: el precio son dos números. 11-sep: en la forma que dictó Pablo. */
+caso('el precio dice primer pago y plan por mes, en la forma que dictó Pablo (11-sep)',
+    stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'Empezás con un primer pago de {precio}') !== false
+    && stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'comienza el plan de {mensualidad} por mes') !== false
     && stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'pago único') === false);
 caso('y no vuelve la coletilla ", pago único." al final',
     stripos((string)$cfg['tipos']['landing']['precio_ideal'], ', pago único') === false);
@@ -5814,16 +5818,16 @@ caso('"Las gorras" es un rubro válido (está en lo que escribió) y sale en min
 caso('un rubro que el cliente nunca nombró no pasa', wabot_rubro_valido('las zapatillas', $cR) === '');
 caso('ni un precio, ni "lo tuyo", ni un tipo de web',
     wabot_rubro_valido('$290.000', $cR) === '' && wabot_rubro_valido('lo tuyo', $cR) === '' && wabot_rubro_valido('el ecommerce de gorras', $cR) === '');
-caso('ni más de seis palabras', wabot_rubro_valido('las gorras que vendo en mi local de siempre', $cR) === '');
+caso('ni más de siete palabras (con el "tu" de adelante, 11-sep)', wabot_rubro_valido('las gorras que vendo en mi local de siempre', $cR) === '');
 /* El modelo a veces manda "las_gorras" y eso salía crudo al cliente (2-sep). */
 caso('los guiones bajos se limpian antes de salir', wabot_rubro_valido('las_gorras', $cR) === 'las gorras');
 $cR['rubro_pitch'] = 'las gorras';
 $pitchR = wabot_pitch_precio_texto('ecommerce', $cfg, $cR);
 caso('el texto arranca con {rubro} y personalizar lo resuelve con las palabras del cliente',
-    strpos($pitchR, 'Perfecto, para {rubro} sería') === 0
-    && strpos(wabot_personalizar($pitchR, $cR), 'Perfecto, para las gorras sería un ecommerce') === 0);
-caso('sin rubro válido queda "tu negocio", sin marcador crudo',
-    strpos(wabot_personalizar($pitchR, conv_nueva()), 'Perfecto, para tu negocio sería un ecommerce') === 0);
+    strpos($pitchR, 'Para {rubro} podemos hacer') === 0
+    && strpos(wabot_personalizar($pitchR, $cR), 'Para las gorras podemos hacer una web para vender online') === 0);
+caso('sin rubro válido la cláusula se va entera: arranca "Podemos hacer", sin marcador crudo',
+    strpos(wabot_personalizar($pitchR, conv_nueva()), 'Podemos hacer una web para vender online') === 0);
 caso('en el medio de una frase, sin rubro, queda "tu negocio"',
     wabot_aplicar_rubro('Es una demo gratis, pensada para {rubro}.', '') === 'Es una demo gratis, pensada para tu negocio.'
     && wabot_aplicar_rubro('Es una demo gratis, pensada para {rubro}.', 'la ropa de nene') === 'Es una demo gratis, pensada para la ropa de nene.');

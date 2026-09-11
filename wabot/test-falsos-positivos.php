@@ -245,7 +245,8 @@ caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con descripción y en dos mensajes (los tres pasos, sin link)',
-    count($rR) === 2 && stripos($rR[0], 'sitio profesional') !== false && stripos($rR[1], 'tres pasos') !== false
+    count($rR) === 2 && wabot_texto_arranca_con_propuesta($rR[0]) && stripos($rR[0], 'que presente tu negocio') !== false
+    && stripos($rR[1], 'tres pasos') !== false
     && strpos($rR[1], 'gokywebs.com/form/') === false,
     json_encode($rR, JSON_UNESCAPED_UNICODE));
 

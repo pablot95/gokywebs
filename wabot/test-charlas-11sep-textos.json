@@ -1,0 +1,100 @@
+[
+    {
+        "id": "T01",
+        "titulo": "El ejemplo de Pablo: centro de estetica",
+        "esperado": "El precio arranca 'Para tu centro de estetica podemos hacer una web donde ...' (con lo que va a poder hacer, en segunda persona), sigue en parrafo aparte con 'Empezas con un primer pago de $60.000. A los 30 dias de ese pago comienza el plan de $20.000 por mes...' y el link. Nada adelante. Despues, los tres pasos con la pregunta.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo un centro de estetica"
+        ]
+    },
+    {
+        "id": "T02",
+        "titulo": "V01 — sonido e iluminacion para eventos",
+        "esperado": "NO pregunta 'que tipo de eventos organizas': cotiza derecho el sitio profesional nombrando el alquiler de sonido e iluminacion.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, alquilamos sonido e iluminacion para eventos"
+        ]
+    },
+    {
+        "id": "T03",
+        "titulo": "V06 — Wix para un negocio de tortas",
+        "esperado": "Contesta que en Wix no trabajamos y la venta sigue en el mismo turno: cotiza (tortas = tienda online) o pregunta lo que falte. No se queda solo con la objecion.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?"
+        ]
+    },
+    {
+        "id": "T04",
+        "titulo": "Pregunta el precio antes del rubro",
+        "esperado": "Primero los precios reales y la pregunta del rubro. Con 'tengo una pasteleria' el precio sale en el formato nuevo ('Para tu pasteleria podemos hacer una web donde...'), no con 'Perfecto, para lo tuyo va...'.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, cuanto sale una pagina?",
+            "Tengo una pasteleria, vendo tortas y budines por encargo"
+        ]
+    },
+    {
+        "id": "T05",
+        "titulo": "Lo incluido, solo si pregunta: turnos, idiomas y .com",
+        "esperado": "El precio NO nombra idiomas ni el .com. 'Se pueden sacar turnos online?' -> incluido, sin costo aparte. 'Y puede estar en ingles?' -> hasta 3 idiomas, incluido. 'Puede ser .com?' -> el .com.ar va incluido y el .com tiene una renovacion de $40.000 por ano.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, soy psicologa y quiero una web",
+            "Se pueden sacar turnos online?",
+            "Y puede estar en ingles tambien?",
+            "El dominio puede ser .com?"
+        ]
+    },
+    {
+        "id": "T06",
+        "titulo": "Estadisticas en la tienda",
+        "esperado": "Cotiza tienda online. 'La tienda tiene estadisticas?' -> si, el panel trae estadisticas (cuanta gente entra, que se mira, cuanto vende). No habla de Google Analytics del sitio profesional.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, vendo ropa de bebe",
+            "La tienda tiene estadisticas? quiero saber cuanta gente entra"
+        ]
+    },
+    {
+        "id": "T07",
+        "titulo": "El formulario corto",
+        "esperado": "Con el si, el formulario en dos lineas ('Dale. Para preparar la demo completa este formulario...' + link + 'Si algo no te queda claro, escribime por aca y te ayudo.') y SIN 'Es gratis y sin compromiso.' al final.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo una veterinaria",
+            "Si, dale"
+        ]
+    },
+    {
+        "id": "T08",
+        "titulo": "Que incluye, en un sitio profesional",
+        "esperado": "'Que incluye el plan?' se contesta sin la carga de 10 productos ni los $500 por producto: al sitio profesional no le corresponde.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, soy abogado laboralista",
+            "Que incluye el plan?"
+        ]
+    },
+    {
+        "id": "T09",
+        "titulo": "Campeonatos de futbol: enumero lo que necesita",
+        "esperado": "El precio arranca nombrando lo que pidio ('...podemos hacer una web donde cargues las tablas, los goleadores...'), sin una linea de reconocimiento aparte adelante.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hago campeonatos de futbol, necesito una web con tablas, goleadores, equipos y jugadores"
+        ]
+    },
+    {
+        "id": "T10",
+        "titulo": "V05 — gimnasio con clases y reservas",
+        "esperado": "El precio nombra que se anoten a las clases. 'Y las reservas online entran en el precio?' -> si, estan incluidas; nada de carga de productos ni 'te lo confirmamos'.",
+        "nombre": "Cliente",
+        "turnos": [
+            "Hola, tengo un gimnasio y quiero que se puedan anotar a las clases desde la web",
+            "Y las reservas online entran en el precio?"
+        ]
+    }
+]

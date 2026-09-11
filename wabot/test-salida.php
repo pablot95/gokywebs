@@ -378,12 +378,14 @@ $idioma = wabot_agente_empujon_bilingue(
     'Necesito ecommerce internacional, español/inglés, con ventas al extranjero',
     ['Lo ideal sería un ecommerce. Cuál es tu producto estrella?'], $c, $cfg);
 caso('Marcco: el pedido de idioma se contesta con el texto oficial',
-    is_string($idioma) && mb_stripos($idioma, 'bilingüe') !== false
+    is_string($idioma) && mb_stripos($idioma, 'idiomas') !== false
     && strpos($idioma, '{precio}') === false);
 /* 10-sep: el modelo nuevo es "todo incluido" salvo dos adicionales con precio
- * fijo, y el bilingüe no es uno de ellos: el bot no le inventa un monto. */
-caso('y no le pone un precio inventado: lo confirma el desarrollador',
-    is_string($idioma) && strpos($idioma, '$') === false && mb_stripos($idioma, 'desarrollador') !== false);
+ * fijo, y el bilingüe no es uno de ellos: el bot no le inventa un monto.
+ * 11-sep: está incluido, hasta 3 idiomas (Pablo). */
+caso('y no le pone un precio inventado: está incluido, hasta 3 idiomas',
+    is_string($idioma) && strpos($idioma, '$') === false && mb_stripos($idioma, 'incluido') !== false
+    && mb_stripos($idioma, '3 idiomas') !== false);
 
 $c = conv_de('pitch', ['tipo' => 'ecommerce']);
 caso('si el modelo YA lo contestó, no se duplica',
@@ -422,12 +424,45 @@ caso('"no quiero nada con Tiendanube" NO dispara la objeción (ya está de acuer
 caso('un mensaje sin ninguna plataforma no dispara nada',
     !wabot_texto_pide_armar_en_plataforma('Hola, tengo una veterinaria'));
 
+/* V06 (10-sep): después del "no trabajamos en Wix" la venta tiene que seguir.
+ * La objeción la contesta el código siempre; lo que sigue lo hace el agente
+ * (cotiza o pregunta el rubro) y, si el agente no está, sale la pregunta del
+ * rubro. */
 $c = conv_de('menu');
 $r = wabot_responder('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', $c, $cfg);
-caso('en el flujo completo, el mensaje se contesta con la objeción de plataforma sin pasar por el agente',
-    is_array($r) && count($r) === 1 && mb_stripos($r[0], 'wix') !== false && strpos($r[0], '{') === false);
+caso('sin agente disponible: la objeción de plataforma y la pregunta del rubro, sin cortar la charla (V06)',
+    is_array($r) && count($r) === 2 && mb_stripos($r[0], 'wix') !== false && strpos($r[0], '{') === false
+    && $r[1] === (string)$cfg['contame']);
 caso('y la fase no avanza a un tipo cotizado: el pedido de plataforma se contestó, no se ignoró',
     empty($c['tipo']));
+caso('y la marca del turno no queda guardada en la charla', !isset($c['_plataforma_contestada']));
+
+$vistoPorElAgente = null;
+$GLOBALS['WABOT_TEST_AGENTE'] = function ($mensaje, &$conv, $cfg) use (&$vistoPorElAgente) {
+    $vistoPorElAgente = [
+        'marca'   => (string)($conv['_plataforma_contestada'] ?? ''),
+        'prompt'  => wabot_agente_sistema($conv, $cfg),
+        'objecion'=> wabot_agente_ejecutar('manejar_objecion', ['tipo' => 'plataforma'], $conv, $cfg, $mensaje),
+    ];
+    return ['Para tu negocio de tortas podemos hacer una web donde…', 'Así trabajamos, en tres pasos…'];
+};
+$c = conv_de('menu');
+$r = wabot_responder('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', $c, $cfg);
+unset($GLOBALS['WABOT_TEST_AGENTE']);
+caso('con agente: la objeción va adelante y la venta sigue en el mismo turno (V06)',
+    is_array($r) && count($r) === 3 && mb_stripos($r[0], 'wix') !== false
+    && strpos($r[1], 'Para tu negocio de tortas') === 0);
+caso('el agente sabe que la objeción ya salió',
+    is_array($vistoPorElAgente) && $vistoPorElAgente['marca'] !== ''
+    && mb_stripos($vistoPorElAgente['prompt'], 'ya le contesta lo de la plataforma') !== false);
+caso('y si igual pide manejar_objecion(plataforma), la herramienta no la repite',
+    !empty($vistoPorElAgente['objecion']['error']));
+caso('la marca no queda en la charla', !isset($c['_plataforma_contestada']));
+
+$c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
+$r = wabot_responder('Me la pueden hacer en Tiendanube?', $c, $cfg);
+caso('con el precio ya dado, la objeción sola, como antes',
+    is_array($r) && count($r) === 1 && mb_stripos($r[0], 'tiendanube') !== false);
 
 echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube) —\n";
 

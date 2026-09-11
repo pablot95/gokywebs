@@ -127,8 +127,8 @@ echo "— 3. El turno del precio: dos mensajes, los tres pasos sin link —\n";
 $c = conv_mm('5491177770001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
 caso('son dos mensajes', count($r) === 2);
-caso('el primero dice primer pago y plan mensual en la misma oración',
-    preg_match('/primer pago es de \$60\.000 y a los 30 días arranca el plan mensual de \$20\.000/u', $r[0]) === 1, $r[0]);
+caso('el primero dice el primer pago y el plan por mes, pegados, como los dictó Pablo (11-sep)',
+    preg_match('/Empezás con un primer pago de \$60\.000\. A los 30 días de ese pago comienza el plan de \$20\.000 por mes/u', $r[0]) === 1, $r[0]);
 caso('el segundo son los tres pasos, textuales, y la pregunta de la demo (11-sep)',
     ($r[1] ?? '') === wabot_tres_pasos_default() . "\n" . wabot_tres_pasos_pregunta());
 caso('con el plazo de la demo que pidió Pablo', mb_stripos($r[1] ?? '', 'menos de 24 horas') !== false);

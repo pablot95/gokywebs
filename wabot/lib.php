@@ -1279,10 +1279,14 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
      * 10-sep-2026: son el SEGUNDO mensaje del precio (wabot_tres_pasos_default)
      * y salen siempre, mientras que este texto sale recién cuando el cliente
      * contesta que sí quiere la demo. Antes los tres pasos y el link viajaban
-     * pegados y el link llegaba sin que nadie lo hubiera aceptado. */
-    $linkNuevo = "Perfecto. Para armarte la demo completá este formulario con el nombre del negocio, qué ofrecés y los colores que te gustan:
+     * pegados y el link llegaba sin que nadie lo hubiera aceptado.
+     *
+     * 11-sep: dos líneas. "Gratis", "sin compromiso" y las 24 horas ya
+     * estaban en los tres pasos del turno anterior, y el cliente acaba de
+     * decir que sí: repetírselo amontonaba el mensaje (batería del 10-sep). */
+    $linkNuevo = "Dale. Para preparar la demo completá este formulario, no te lleva más de un minuto:
 {link}
-No te lleva más de un minuto, y en menos de 24 horas la tenés lista.";
+Si algo no te queda claro, escribime por acá y te ayudo.";
     $linksViejos = [
         'Para que veas la calidad del trabajo antes de comprar, hacemos una demo de tu web. Es una primera entrega, gratis. Solo tenés que completar este formulario, no te lleva más de un minuto: {link}',
         'Para que veas la calidad del trabajo antes de decidir, te armamos una demo de tu web: es una primera entrega, sin cargo. Completá este formulario, te lleva menos de un minuto: {link}',
@@ -1910,19 +1914,20 @@ function wabot_precio_ideal_defaults() {
      * mensualidad tiene que llegar pegada y con lo que incluye al lado: si va
      * en un renglón aparte o más abajo, se lee como letra chica. {precio} y
      * {mensualidad} los resuelve wabot_precio_placeholders() con el precio
-     * congelado de la charla (ver wabot_precio_vigente en engine.php). */
-    return [
-        /* "Muestra tus trabajos" no le cabe a media lista de rubros que caen en
-         * sitio profesional: una contadora, un abogado, una cuidadora
-         * domiciliaria o un colegio no tienen trabajos que mostrar, y la frase
-         * delata que el texto es el mismo para todos (Pablo, 3-sep). La
-         * redacción de reemplazo es la que dictó él: sirve igual para
-         * contadores, abogados, técnicos, peluqueros y cuidadores. */
-        'landing' => "Perfecto, para {rubro} sería un sitio profesional. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEl sitio profesional es una página a tu medida: presenta tu negocio, explica tus servicios y hace que los clientes te escriban directo por WhatsApp.\nEn este enlace podés verlo bien detallado: {link}",
-        'ecommerce' => "Perfecto, para {rubro} sería un ecommerce. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEl ecommerce es una web para vender online: tu catálogo de productos, carrito, cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.\nEn este enlace podés verlo bien detallado: {link}",
-        'inmobiliaria' => "Perfecto, para {rubro} sería una web inmobiliaria. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nLa web inmobiliaria publica tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.\nEn este enlace podés verlo bien detallado: {link}",
-        'elearning' => "Perfecto, para {rubro} sería una plataforma de cursos. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nLa plataforma tiene los videos subidos ahí, cada alumno entra con su usuario y sigue su progreso, y el cobro de la inscripción se hace online.\nEn este enlace podés verlo bien detallado: {link}",
-    ];
+     * congelado de la charla (ver wabot_precio_vigente en engine.php).
+     *
+     * 11-sep: el formato es el que dictó Pablo. "Para tu centro de estética
+     * podemos hacer una web donde muestres los tratamientos y tus clientas
+     * reserven turno online." y, en un párrafo aparte, el primer pago y el
+     * plan. La primera oración sale de lo que escribió el cliente: {propuesta}
+     * la arma wabot_propuesta_texto() (engine.php) con el argumento para_que
+     * de dar_precio, o con la frase fija del tipo si no llegó. Por eso el texto
+     * es el mismo para los cuatro tipos. La línea del link se queda: el 2-sep
+     * Pablo pidió que todo mensaje de precio la lleve. */
+    $texto = "Para {rubro} podemos hacer {propuesta}.\n\n"
+           . "Empezás con un primer pago de {precio}. A los 30 días de ese pago comienza el plan de {mensualidad} por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.\n"
+           . "En este enlace podés verlo bien detallado: {link}";
+    return ['landing' => $texto, 'ecommerce' => $texto, 'inmobiliaria' => $texto, 'elearning' => $texto];
 }
 
 /**
@@ -2657,14 +2662,41 @@ function wabot_config_modelo_mensual(&$cfg) {
                  . "Si necesitás más de un cambio por mes, son \$10.000 más por mes y pasás a un plan con varios cambios.", ['{mensualidad}']],
         'mantenimiento_ambos' => ["El plan mensual no es opcional, es parte del servicio: incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 30 días del primer pago y se actualiza una vez al año.\n"
                  . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}']],
-        'hosting' => ["El hosting y el dominio están incluidos mientras dure el plan: van dentro de la mensualidad, sin costo aparte.\n"
-                 . "No los contratás ni los renovás vos, se ocupa Gokywebs.", ['mientras dure el plan']],
+        /* El dominio que va incluido es .com.ar (Pablo, 11-sep). El .com tiene
+         * su propia respuesta, dominio_com, y sale solo si lo pregunta. */
+        'hosting' => ["El hosting y el dominio .com.ar están incluidos mientras dure el plan: van dentro de la mensualidad, sin costo aparte.\n"
+                 . "No los contratás ni los renovás vos, se ocupa Gokywebs.", ['mientras dure el plan', '.com.ar']],
+        // "Renovación adicional" y no "renovación anual": esa frase es de la
+        // renovación de hosting que murió el 10-sep y $huelaVieja la pisa.
+        'dominio_com' => ['Sí, se puede. El dominio que viene incluido en el plan es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.', ['.com.ar', '$40.000']],
         /* 12 meses y no 18 (Pablo, 11-sep: "habíamos dicho 18, pero es mucho"),
          * y a pedido: el cliente puede reclamar el código y la propiedad. */
         'titularidad' => ["Mientras dure el plan, la web y el dominio están a nombre de Gokywebs: por eso el hosting, el dominio y el soporte van incluidos.\n"
                  . "A los 12 meses de plan podés reclamar el código y la propiedad de la web y del dominio.", ['12 meses']],
+        /* Los turnos online y el área de socios dejaron de ser "decime cuál y
+         * te lo confirmamos": están incluidos (Pablo, 11-sep), así que la
+         * invitación queda abierta sin nombrarlos. Van solo si los pregunta
+         * (claves turnos y usuarios). Y el sitio profesional, la inmobiliaria
+         * y los cursos no tienen productos que cargar: a una consulta de
+         * "reservas online" le llegaba la carga de 10 productos y los $500
+         * (batería del 10-sep). Esa versión la elige wabot_texto_info(). */
         'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
-                 . "Adicionales hay solo dos: \$500 por cada producto arriba de 10, y \$10.000 por mes si querés más de un cambio mensual. Si tenés en mente algo puntual, como reservas online o un área de socios, decime cuál y te lo confirmamos.", ['todo incluido']],
+                 . "Adicionales hay solo dos: \$500 por cada producto arriba de 10, y \$10.000 por mes si querés más de un cambio mensual. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+        'que_incluye_sin_productos' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte y un cambio por mes. No tenés que ocuparte de nada.\n"
+                 . "El único adicional es si querés más de un cambio por mes: son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+        /* Incluidos en todos los planes, y SOLO si el cliente pregunta (Pablo,
+         * 11-sep): turnos online, creación de usuarios y la traducción hasta
+         * 3 idiomas. */
+        'turnos' => ['Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.', ['turnos online', 'No se paga aparte']],
+        'usuarios' => ['Sí, está incluido: la web puede tener usuarios, así tus clientes se registran y entran con su cuenta. No se paga aparte.', ['usuarios', 'No se paga aparte']],
+        /* Las estadísticas: la tienda y la plataforma de cursos traen su panel
+         * desde el 11-sep (los templates); en el sitio profesional y la
+         * inmobiliaria se vincula Google Analytics, como ya decía info.pixel.
+         * Con el tipo cotizado sale solo la parte que le toca. */
+        'estadisticas' => ["La tienda online y la plataforma de cursos traen estadísticas en tu panel: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.\n"
+                 . 'En el sitio profesional y en la web inmobiliaria te vinculamos Google Analytics, así ves las visitas igual.', ['Google Analytics', 'cuánta gente entra']],
+        'estadisticas_tienda' => ['Sí, tu panel trae estadísticas: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.', ['cuánta gente entra']],
+        'estadisticas_sitio' => ['Sí: te vinculamos Google Analytics, así ves cuánta gente entra a la web, de dónde llega y qué mira.', ['Google Analytics']],
         /* Por tipo, como antes: la contadora que pregunta "¿lo puedo editar
          * yo?" tiene que leer que el sitio profesional no trae panel (N05). Lo
          * nuevo es la carga de hasta 10 productos incluida y los $500 por
@@ -2700,9 +2732,10 @@ function wabot_config_modelo_mensual(&$cfg) {
         'manual' => ['No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y los cambios de contenido los hacemos nosotros: el plan incluye un cambio por mes.', ['un cambio por mes']],
         'emails' => ['Este plan no incluye casillas de correo corporativas. Se pueden sumar aparte: decime si te interesa y lo vemos.', null],
         /* Sin precio: Pablo dijo que está todo incluido salvo los productos
-         * arriba de 10 y los cambios de más. Un monto para el bilingüe sería
-         * una condición comercial que él no fijó (10-sep). */
-        'bilingue' => ['Sí, la podemos hacer bilingüe. Como depende de cuánto contenido haya que traducir, eso te lo confirma el desarrollador.', ['desarrollador']],
+         * arriba de 10 y los cambios de más (10-sep). Y el 11-sep lo cerró: la
+         * traducción hasta 3 idiomas está incluida, ya no "lo confirma el
+         * desarrollador". */
+        'bilingue' => ['Sí, está incluido: la web se puede traducir hasta a 3 idiomas, sin costo aparte.', ['3 idiomas']],
     ];
     if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
     foreach ($infoNueva as $clave => $d) {
@@ -4383,7 +4416,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
               'form_recordatorio_enviado', 'form_recibido_confirmado'] as $k) $conv[$k] = false;
     $conv['tres_pasos_repreguntas'] = 0;
     $conv['form_no_llego_avisos'] = 0;
-    foreach (['pitch_tipo', 'rubro_pitch', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
+    foreach (['pitch_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
     $conv['turnos_sin_avance'] = 0;
@@ -6525,7 +6558,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, turnos, usuarios, dominio_com, estadisticas, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {

@@ -1289,7 +1289,10 @@ caso('"que ustedes me asesoren" tampoco',
 caso('"quiero un diseño lindo" tampoco',
     wabot_agente_paraguas_clave('Quiero un diseño lindo para la web') === null);
 caso('pero el que SÍ ofrece asesoramiento sigue recibiendo la repregunta',
-    wabot_agente_paraguas_clave('Hago asesoramiento contable') === 'asesoramiento');
+    wabot_agente_paraguas_clave('Hago asesoramiento') === 'asesoramiento');
+/* V01 (10-sep): si ya dijo de qué es, la repregunta es "ya te dije". */
+caso('"asesoramiento contable" ya dice de qué es: no se repregunta (V01)',
+    wabot_agente_paraguas_clave('Hago asesoramiento contable') === null);
 caso('y "necesito una web para mi consultoría" también: la consultoría es suya',
     wabot_agente_paraguas_clave('Necesito una web para mi consultoria') === 'consultoria');
 caso('el paraguas de un rubro dicho solo no se toca',
@@ -1750,21 +1753,54 @@ caso('"la quiero en español e inglés" sí', wabot_texto_pide_otro_idioma('la q
 caso('"se puede hacer en inglés también?" sí', wabot_texto_pide_otro_idioma('se puede hacer en ingles tambien?') === true);
 caso('"vendo cursos de inglés online" no', wabot_texto_pide_otro_idioma('vendo cursos de ingles online') === false);
 
+/* El mecanismo (Ximena, 1-sep): el paraguas va ANTES de cotizar. Desde el
+ * 11-sep solo con el rubro dicho solo: "vender objetos de arte y diseño" ya
+ * dice qué vende y se cotiza derecho (V01, abajo). */
 $cPar = convNueva(); $cPar['fase'] = 'menu'; unset($cPar['pitch_hecho']);
-$cPar['transcript'] = [['q' => 'cliente', 't' => 'Hola es para vender objetos de arte y diseño', 'ts' => time()]];
-$rPar = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPar, $cfg, 'Hola es para vender objetos de arte y diseño');
+$cPar['transcript'] = [['q' => 'cliente', 't' => 'Hola, es para mi emprendimiento de diseño', 'ts' => time()]];
+$rPar = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPar, $cfg, 'Hola, es para mi emprendimiento de diseño');
 caso('el paraguas "diseño" se pregunta ANTES de cotizar, y el precio no se da por dado (Ximena)',
     !empty($rPar['exacta']) && $rPar['texto'] === $cfg['paraguas']['diseno'] && empty($rPar['aparte'])
     && empty($cPar['precio_dado']) && empty($cPar['tipo']) && !empty($cPar['paraguas_preguntado']));
 $rPar2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPar, $cfg, 'Cuadros y objetos en cerámica');
 caso('con la respuesta, cotiza normal', !empty($rPar2['texto']) && strpos($rPar2['texto'], '$90.000') !== false && !empty($cPar['precio_dado']));
 
+/* V01 (10-sep): "alquilamos sonido e iluminación para eventos" recibió "Qué
+ * tipo de eventos organizás?" y el cliente contestó "Ya te dije". */
+foreach ([
+    'Hola, alquilamos sonido e iluminación para eventos',
+    'Hola es para vender objetos de arte y diseño',
+    'Fotografía de eventos',
+    'Vendo productos de belleza',
+    'Doy entrenamiento personal',
+    'Tengo una distribuidora de bebidas',
+] as $conDetalle) {
+    caso("\"$conDetalle\" ya dice qué hace: no se repregunta el paraguas (V01)", wabot_agente_paraguas_clave($conDetalle) === null);
+}
+foreach ([
+    'Organizo eventos' => 'eventos',
+    'Trabajo en salud' => 'salud',
+    'Me dedico a la belleza' => 'belleza',
+    'Tengo un estudio de diseño' => 'diseno',
+    'Tengo una distribuidora' => 'distribuidora',
+    'Hago diseño web' => 'diseno',
+] as $solo => $claveSola) {
+    caso("\"$solo\" es el rubro dicho solo: se repregunta", wabot_agente_paraguas_clave($solo) === $claveSola);
+}
+$cV01 = convNueva(); $cV01['fase'] = 'menu'; unset($cV01['pitch_hecho']);
+$cV01['transcript'] = [['q' => 'cliente', 't' => 'Hola, alquilamos sonido e iluminación para eventos', 'ts' => time()]];
+$rV01 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu alquiler de sonido e iluminación',
+    'para_que' => 'muestres los equipos que alquilás y te pidan presupuesto por WhatsApp'], $cV01, $cfg, 'Hola, alquilamos sonido e iluminación para eventos');
+caso('y dar_precio cotiza derecho, nombrando lo que dijo (V01)',
+    !empty($cV01['precio_dado']) && empty($cV01['paraguas_preguntado'])
+    && strpos(wabot_personalizar($rV01['texto'], $cV01), 'Para tu alquiler de sonido e iluminación podemos hacer una web donde muestres los equipos que alquilás y te pidan presupuesto por WhatsApp.') === 0);
+
 $cRub = convNueva(); unset($cRub['pitch_hecho']);
 $cRub['transcript'] = [['q' => 'cliente', 't' => 'Quiero una página web para mi negocio', 'ts' => time()], ['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
 $rRub = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'Las gorras'], $cRub, $cfg, 'Gorras');
 caso('dar_precio guarda el rubro validado y el pitch sale nombrándolo',
     $cRub['rubro_pitch'] === 'las gorras'
-    && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Perfecto, para las gorras sería un ecommerce') === 0);
+    && strpos(wabot_personalizar($rRub['texto'], $cRub), 'Para las gorras podemos hacer una web para vender online') === 0);
 /* 3-sep: el rubro inventado se sigue rechazando, pero ya no se cae en "tu
  * negocio" sin intentar nada: wabot_rubro_desde_contexto() lo saca de lo que
  * escribió el cliente. Acá escribió "Gorras", así que eso es lo que tiene que
@@ -1775,15 +1811,84 @@ $cRub2['transcript'] = [['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
 $rRub2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub2, $cfg, 'Gorras');
 caso('un rubro inventado no pasa, y en su lugar va la palabra del cliente',
     $cRub2['rubro_pitch'] === 'gorras'
-    && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Perfecto, para gorras sería un ecommerce') === 0);
+    && strpos(wabot_personalizar($rRub2['texto'], $cRub2), 'Para gorras podemos hacer una web para vender online') === 0);
 
-/* Y cuando no hay de dónde sacarlo, sigue saliendo "tu negocio": inventarle un
+/* Y cuando no hay de dónde sacarlo, la cláusula del rubro se va: inventarle un
  * rubro equivocado es peor que no nombrarlo. */
 $cRub3 = convNueva(); unset($cRub3['pitch_hecho']);
 $cRub3['transcript'] = [['q' => 'cliente', 't' => 'Hola, queria consultar por una pagina', 'ts' => time()]];
 $rRub3 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'zapatillas'], $cRub3, $cfg, 'Hola');
-caso('sin nada que nombrar, sigue saliendo "tu negocio"',
-    empty($cRub3['rubro_pitch']) && strpos(wabot_personalizar($rRub3['texto'], $cRub3), 'Perfecto, para tu negocio sería un ecommerce') === 0);
+caso('sin nada que nombrar, arranca "Podemos hacer…", sin rubro inventado',
+    empty($cRub3['rubro_pitch']) && strpos(wabot_personalizar($rRub3['texto'], $cRub3), 'Podemos hacer una web para vender online') === 0);
+
+echo "— 11-sep: el precio en el formato de Pablo (para_que) —\n";
+/* "Para tu centro de estética podemos hacer una web donde muestres los
+ * tratamientos y tus clientas reserven turno online." + el primer pago y el
+ * plan en un párrafo aparte + el link (Pablo, 11-sep). */
+$cEst = convNueva(); unset($cEst['pitch_hecho']);
+$cEst['transcript'] = [['q' => 'cliente', 't' => 'Hola, tengo un centro de estética', 'ts' => time()]];
+$rEst = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu centro de estética',
+    'para_que' => 'muestres los tratamientos y tus clientas reserven turno online'], $cEst, $cfg, 'Hola, tengo un centro de estética');
+$pitchEst = wabot_personalizar($rEst['texto'], $cEst);
+caso('el precio arranca con el rubro y lo que va a poder hacer, como lo dictó Pablo',
+    strpos($pitchEst, "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\n") === 0);
+caso('y sigue con el primer pago y el plan por mes, en su párrafo, y el link',
+    strpos($pitchEst, 'Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.') !== false
+    && strpos($pitchEst, 'gokywebs.com/presupuestos/') !== false);
+caso('el para_que queda guardado con su tipo', $cEst['pitch_para_que_tipo'] === 'landing'
+    && $cEst['pitch_para_que'] === 'muestres los tratamientos y tus clientas reserven turno online');
+caso('los tres pasos siguen saliendo aparte', !empty($rEst['aparte']) && mb_stripos($rEst['aparte'], 'tres pasos') !== false);
+caso('ni una línea de reconocimiento adelante: el precio ya arranca reconociendo',
+    wabot_agente_prefijo_acuse('Entonces necesitás una web donde tus clientas reserven turno online', $rEst['texto'], $cEst, $cfg) === $rEst['texto']);
+
+$cCar = convNueva(); unset($cCar['pitch_hecho']);
+$cCar['transcript'] = [['q' => 'cliente', 't' => 'Soy contadora', 'ts' => time()]];
+$rCar = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu estudio contable',
+    'para_que' => 'tus clientes paguen online y compren tus servicios con el carrito'], $cCar, $cfg, 'Soy contadora');
+caso('un sitio profesional no promete carrito ni cobro online: va la frase fija del tipo',
+    empty($cCar['pitch_para_que']) && strpos(wabot_personalizar($rCar['texto'], $cCar),
+        'Para tu estudio contable podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.') === 0);
+caso('y el rubro con sus palabras pasa aunque no las repita letra por letra ("soy contadora" → "tu estudio contable")',
+    $cCar['rubro_pitch'] === 'tu estudio contable');
+foreach ([
+    'tus clientes te encuentren primero en Google',
+    'tengas la web lista en 24 horas',
+    'te armemos la demo gratis',
+    'integrada con tu sistema de facturación',
+    'una app para el celular',
+] as $paraQueMalo) {
+    caso("para_que \"$paraQueMalo\" no pasa", wabot_para_que_valido($paraQueMalo, 'ecommerce') === '');
+}
+caso('el para_que se limpia: sin "donde" adelante, sin punto y en minúscula',
+    wabot_para_que_valido('Donde tus alumnas se inscriban y vean las clases.', 'elearning') === 'tus alumnas se inscriban y vean las clases'
+    && wabot_para_que_valido('una web donde publiques tus propiedades con fotos', 'inmobiliaria') === 'publiques tus propiedades con fotos');
+caso('"mi centro de estética" se dice "tu centro de estética"',
+    wabot_rubro_valido('mi centro de estética', $cEst) === 'tu centro de estética');
+/* Batería del 11-sep: "Para alquilamos sonido e iluminación para eventos
+ * podemos hacer…". Lo que hace dicho con su verbo no es el rubro. */
+$cAlq = ['transcript' => [['q' => 'cliente', 't' => 'Hola, alquilamos sonido e iluminacion para eventos', 'ts' => time()]]];
+caso('"alquilamos sonido e iluminación" no es un rubro: el verbo no va detrás de "Para"',
+    wabot_rubro_valido('alquilamos sonido e iluminacion para eventos', $cAlq) === ''
+    && wabot_rubro_desde_contexto($cAlq) === '');
+caso('"tu alquiler de sonido e iluminación" sí',
+    wabot_rubro_valido('tu alquiler de sonido e iluminación', $cAlq) === 'tu alquiler de sonido e iluminación');
+$cTor = ['transcript' => [['q' => 'cliente', 't' => 'Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', 'ts' => time()]]];
+caso('"tu negocio de tortas" dice cuál es: pasa (batería del 11-sep)',
+    wabot_rubro_valido('tu negocio de tortas', $cTor) === 'tu negocio de tortas');
+caso('"tu negocio" solo sigue sin pasar', wabot_rubro_valido('tu negocio', $cTor) === '' && wabot_rubro_valido('mi negocio', $cTor) === '');
+/* F10 del 11-sep: "Para productos de limpieza a podemos hacer…". */
+$cLim = ['transcript' => [['q' => 'cliente', 't' => 'Hola, vendo productos de limpieza a granel y quiero vender por la web', 'ts' => time()]]];
+caso('el rubro sacado del mensaje no queda con una preposición colgando',
+    wabot_rubro_desde_contexto($cLim) === 'productos de limpieza');
+caso('ni lo acepta si viene así del modelo', wabot_rubro_valido('productos de limpieza a', $cLim) === '');
+caso('"tus productos de limpieza a granel" entra entero',
+    wabot_rubro_valido('tus productos de limpieza a granel', $cLim) === 'tus productos de limpieza a granel');
+caso('y "ramos de novia" no se confunde con un verbo',
+    wabot_rubro_valido('ramos de novia', ['transcript' => [['q' => 'cliente', 't' => 'Hago ramos de novia', 'ts' => time()]]]) === 'ramos de novia');
+/* El para_que de un tipo no se usa si se termina cotizando otro. */
+caso('un para_que escrito para otro tipo no se usa',
+    wabot_propuesta_texto('ecommerce', ['pitch_para_que' => 'muestres tus trabajos', 'pitch_para_que_tipo' => 'landing'])
+        === wabot_propuesta_texto('ecommerce', []));
 
 $cPlo = convNueva();
 caso('"Soy plomero" ya no recibe la pregunta de turnos (Enrique)', wabot_agente_desempate_pendiente('landing', 'Soy plomero', $cPlo, $cfg) === null);
@@ -1851,7 +1956,9 @@ foreach ([
     'segunda vez que llamás a dar_precio' => 'la oferta en el segundo llamado',
     'Ya no se manda el link'              => 'el precio sin link de presupuesto',
     'quiere_avanzar'                      => 'una causa de derivar que no existe en el enum',
-    'turnos online'                       => 'el producto turnos',
+    // Los turnos online volvieron el 11-sep, pero como función incluida en
+    // todos los planes: lo que no vuelve es el tipo de web con su precio.
+    'web con turnos online'               => 'el producto turnos',
     'cuotas sin interés'                  => 'una condición de pago retirada',
     'cantidad de productos'               => 'la pregunta del catálogo',
 ] as $frase => $porQue) {

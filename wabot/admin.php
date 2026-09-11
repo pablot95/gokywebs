@@ -1657,7 +1657,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Precio</h2>
-            <label>Plantilla del mensaje de precio ({desc}, {precio} = primer pago, {mensualidad} = plan mensual y {link} se reemplazan)</label>
+            <label>Plantilla del mensaje de precio ({desc}, {precio} = primer pago, {mensualidad} = plan mensual y {link} se reemplazan) <span style="color:#b45309">· desde el 11-sep el primer precio sale con el texto fijo de cada tipo ("Para tu … podemos hacer una web donde…"); esta queda para el cambio de tipo después de la demo</span></label>
             <textarea name="msg_precio" rows="3"><?= $e($cfg['msg_precio']) ?></textarea>
             <label>Mismo mensaje, pero cuando ya se presentó la web con el pitch (sin repetir {desc}, que el cliente ya leyó)</label>
             <textarea name="msg_precio_tras_pitch" rows="3"><?= $e($cfg['msg_precio_tras_pitch'] ?? '') ?></textarea>

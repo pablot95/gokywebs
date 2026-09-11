@@ -34,7 +34,7 @@ function wabot_responder($texto, &$conv, $cfg) {
     // Transitoria de UN turno (ver wabot_postdemo_responder): si un corte de
     // más abajo terminó el turno anterior sin consumirla, no puede aparecer
     // adelante de la respuesta de hoy.
-    unset($conv['_postdemo_prefijo']);
+    unset($conv['_postdemo_prefijo'], $conv['_plataforma_contestada']);
 
     /* Con la demo ya entregada, ESTE mensaje es la respuesta del cliente: se
      * marca acá, antes de cualquier corte, porque de ese flag dependen la
@@ -233,7 +233,16 @@ function wabot_responder($texto, &$conv, $cfg) {
     if (!in_array(($conv['fase'] ?? ''), ['derivado', 'postdemo'], true)
         && wabot_texto_pide_armar_en_plataforma($texto)) {
         wabot_evento_sesion($conv, 'objecion_plataforma_forzada');
-        return [wabot_objecion_texto('plataforma', (string)$cfg['plataformas'], $conv, $cfg)];
+        $plataforma = wabot_objecion_texto('plataforma', (string)$cfg['plataformas'], $conv, $cfg);
+        /* "¿Me pueden hacer una página en Wix para mi negocio de tortas?"
+         * recibía el "no trabajamos en Wix" y nada más: la charla quedaba sin
+         * próximo paso (V06, batería del 10-sep). Sin precio dado, la venta
+         * sigue en el mismo turno: el agente arranca con la objeción ya
+         * contestada adelante y cotiza o pregunta el rubro; sin agente, se
+         * pregunta el rubro. */
+        if (!empty($conv['precio_dado'])) return [$plataforma];
+        if ($modo !== 'agente') return [$plataforma, (string)$cfg['contame']];
+        $conv['_plataforma_contestada'] = $plataforma;
     }
 
     /* Pedir una llamada, o hablar con una persona, deriva a Pablo SIEMPRE.
@@ -371,6 +380,11 @@ function wabot_responder($texto, &$conv, $cfg) {
         require_once __DIR__ . '/agente.php';
         $r = wabot_agente($texto, $conv, $cfg);
         if ($r !== null) return $r;
+        // La objeción de la plataforma ya estaba contestada: sin el agente,
+        // sale con la pregunta del rubro, igual que sin modo agente.
+        $plataformaDicha = trim((string)($conv['_plataforma_contestada'] ?? ''));
+        unset($conv['_plataforma_contestada']);
+        if ($plataformaDicha !== '') return [$plataformaDicha, (string)$cfg['contame']];
         wabot_log('agente_fallback', ['tel' => $conv['tel'] ?? '']);
         if (function_exists('wabot_evento_sesion')) {
             wabot_evento_sesion($conv, 'ia_fallback_seguro', ['origen' => 'agente']);

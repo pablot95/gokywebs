@@ -61,9 +61,19 @@ function wabot_agente($mensaje, &$conv, $cfg) {
         if (strpos($prefijo, '?') !== false) $salida[] = $prefijo;
         else array_unshift($salida, $prefijo);
     }
-    unset($trabajo['_mensaje_agente'], $trabajo['_acuse_pitch'], $trabajo['_postdemo_prefijo']);
+    /* "¿Me pueden hacer una página en Wix?": la objeción de la plataforma la
+     * contestó el borde común (redactor.php) y el turno siguió hasta acá para
+     * no cortar la venta (V06, 10-sep). Va adelante de lo que siga. */
+    $plataformaDicha = trim((string)($trabajo['_plataforma_contestada'] ?? ''));
+    if ($plataformaDicha !== '' && is_array($salida)) {
+        $salida = array_values(array_filter(array_map('strval', $salida), function ($m) use ($plataformaDicha) {
+            return trim($m) !== '' && trim($m) !== $plataformaDicha;
+        }));
+        array_unshift($salida, $plataformaDicha);
+    }
+    unset($trabajo['_mensaje_agente'], $trabajo['_postdemo_prefijo'], $trabajo['_plataforma_contestada']);
     $conv = $trabajo;
-    unset($conv['_postdemo_prefijo']);
+    unset($conv['_postdemo_prefijo'], $conv['_plataforma_contestada']);
     wabot_eventos_confirmar($conv);
     return $salida;
 }
@@ -597,17 +607,16 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
              * salir por acá. Es el mismo permiso que ya tiene la derivación
              * desde el 1-sep, con los mismos frenos: sin precios, sin links,
              * sin preguntas, sin promesas. El texto del precio sigue saliendo
-             * exacto y completo detrás. */
+             * exacto y completo detrás.
+             *
+             * Desde el 11-sep el precio ya arranca con ese reconocimiento
+             * (argumento para_que de dar_precio, ver wabot_propuesta_texto), y
+             * wabot_agente_prefijo_acuse() no le pone nada adelante. */
             $salidaExacta = $reemplazoExacta !== null ? $reemplazoExacta : [$exacta];
             if ($reemplazoExacta === null) {
-                // Primero el argumento `acuse` de la herramienta, que es como
-                // el modelo lo manda de verdad; el texto libre es el respaldo.
-                $crudoAcuse = trim((string)($conv['_acuse_pitch'] ?? ''));
-                if ($crudoAcuse === '') $crudoAcuse = $texto;
-                $conAcuse = wabot_agente_prefijo_acuse($crudoAcuse, $exacta, $conv, $cfg);
+                $conAcuse = wabot_agente_prefijo_acuse($texto, $exacta, $conv, $cfg);
                 if ($conAcuse !== $exacta) $salidaExacta = [$conAcuse];
             }
-            unset($conv['_acuse_pitch']);
             // El precio+pitch del turno A también trae su globo aparte (la
             // pregunta del pitch, unos segundos después): antes se perdía acá,
             // porque este camino no pasaba por wabot_agente_filtrar_aparte.
@@ -988,6 +997,10 @@ function wabot_agente_prefijo_humano($textoModelo, $terminal, $cfg) {
  * cambia nada.
  */
 function wabot_agente_prefijo_acuse($textoModelo, $exacta, $conv, $cfg) {
+    /* El precio arranca reconociendo lo que el cliente necesita ("Para tu
+     * centro de estética podemos hacer una web donde…", 11-sep): otra línea
+     * adelante diría lo mismo dos veces. */
+    if (wabot_texto_arranca_con_propuesta($exacta)) return $exacta;
     $p = trim(preg_replace('/\s+/u', ' ', (string)$textoModelo));
     if ($p === '' || mb_strlen($p) > 180) return $exacta;
     // Ni preguntas, ni montos, ni links, ni marcadores sin resolver.
@@ -1073,12 +1086,53 @@ function wabot_agente_paraguas_clave($mensaje) {
     // de eventos — eso descarta lo demás que el cliente ya dijo. Un mensaje
     // largo ya tiene contexto de sobra; el paraguas es solo para el vacío.
     if (count(explode(' ', $t)) > 12) return null;
-    if (preg_match('/\b(entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia|distribucion|distribuidora|mayorista|importacion|logistica)\b/u', $t, $m)) {
+    $paraguas = 'entrenamiento|coaching|salud|belleza|educacion|capacitaciones|capacitacion|asesoramiento|consultoria|diseno|eventos|terapias|terapia|deportes|tecnologia|distribucion|distribuidora|mayorista|importacion|logistica';
+    if (preg_match('/\b(' . $paraguas . ')\b/u', $t, $m)) {
         // El que PIDE no ofrece: ver wabot_texto_pide_el_servicio().
         if (wabot_texto_pide_el_servicio($t, $m[1])) return null;
+        if (wabot_paraguas_con_detalle($t, $paraguas)) return null;
         return $m[1];
     }
     return null;
+}
+
+/**
+ * ¿El mensaje dice algo más que la palabra paraguas?
+ *
+ * "Hola, alquilamos sonido e iluminación para eventos" recibió "Qué tipo de
+ * eventos organizás?", y el cliente tuvo que contestar "Ya te dije" (V01,
+ * batería del 10-sep). "Eventos" ahí es para quién trabaja, no lo que hace:
+ * lo que hace ya está dicho. Lo mismo "fotografía de eventos", "productos de
+ * belleza", "entrenamiento personal" o "diseño de interiores". La pregunta es
+ * para el vacío ("organizo eventos", "trabajo en salud", "hago consultoría"):
+ * si queda cualquier palabra con contenido además de la paraguas, el modelo ya
+ * tiene con qué elegir el tipo.
+ *
+ * Recibe el texto ya normalizado.
+ */
+function wabot_paraguas_con_detalle($t, $paraguas) {
+    $relleno = ['hola', 'holaa', 'buenas', 'buenos', 'tardes', 'noches', 'gracias', 'saludos', 'consulta', 'consultar',
+        'info', 'informacion', 'precio', 'precios', 'costo', 'presupuesto', 'para', 'sobre', 'desde', 'hasta', 'entre',
+        'como', 'pero', 'porque', 'tambien', 'ademas', 'todo', 'toda', 'todos', 'todas', 'algo', 'cosa', 'cosas', 'tipo',
+        'clase', 'area', 'sector', 'rubro', 'tema', 'temas', 'relacionado', 'relacionada', 'relacionados', 'vinculado',
+        'vinculada', 'parte', 'mundo', 'ambito', 'tengo', 'tenemos', 'tiene', 'somos', 'hago', 'hacemos', 'hace', 'trabajo',
+        'trabajamos', 'trabaja', 'dedico', 'dedicamos', 'dedica', 'ofrezco', 'ofrecemos', 'ofrece', 'brindo', 'brindamos',
+        'brinda', 'realizo', 'realizamos', 'realiza', 'organizo', 'organizamos', 'organiza', 'organizacion', 'dicto',
+        'dictamos', 'estoy', 'estamos', 'esta', 'quiero', 'queremos', 'queria', 'quisiera', 'necesito', 'necesitamos',
+        'necesitaria', 'busco', 'buscamos', 'gustaria', 'podrian', 'pueden', 'puedo', 'seria', 'negocio', 'negocios',
+        'empresa', 'empresas', 'emprendimiento', 'emprendimientos', 'emprendedor', 'emprendedora', 'pyme', 'pymes',
+        'local', 'comercio', 'marca', 'servicio', 'servicios', 'pagina', 'paginas', 'sitio', 'online', 'virtual',
+        'virtuales', 'presencial', 'presenciales', 'clientes', 'gente', 'personas', 'proyecto', 'idea', 'profesional',
+        // El lugar o el formato tampoco dicen de qué se trata: "un estudio de
+        // diseño" o "clases de coaching" siguen siendo el rubro dicho solo.
+        'estudio', 'centro', 'agencia', 'instituto', 'academia', 'escuela', 'espacio', 'clases', 'clase',
+        'cursos', 'curso', 'talleres', 'taller', 'sesiones', 'sesion'];
+    foreach (explode(' ', (string)$t) as $w) {
+        if (mb_strlen($w) < 4 || in_array($w, $relleno, true)) continue;
+        if (preg_match('/^(' . $paraguas . ')$/u', $w)) continue;
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -1429,13 +1483,13 @@ function wabot_agente_historial($conv, $mensaje) {
 function wabot_agente_tools($cerrada = false, $postdemo = false) {
     $consultar = [
         'name' => 'consultar_info',
-        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "que es desarrollo web?" también es que_hacemos (no es una pregunta sin respuesta: explicá qué es y de paso qué hacemos, nunca la derives al desarrollador sin probar esto primero), "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza). "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es el plan?" es mantenimiento (el plan mensual obligatorio); "y si dejo de pagar?", "hay permanencia?" o "lo puedo dar de baja?" es baja_del_plan; "de quién es la web?" o "el dominio queda a mi nombre?" es titularidad.',
+        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "que es desarrollo web?" también es que_hacemos (no es una pregunta sin respuesta: explicá qué es y de paso qué hacemos, nunca la derives al desarrollador sin probar esto primero), "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza). "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es el plan?" es mantenimiento (el plan mensual obligatorio); "y si dejo de pagar?", "hay permanencia?" o "lo puedo dar de baja?" es baja_del_plan; "de quién es la web?" o "el dominio queda a mi nombre?" es titularidad. "Se pueden sacar turnos online?" o "tiene reservas?" es turnos; "los clientes se pueden registrar?" o "tiene área de socios?" es usuarios; "se puede en inglés?" o "cuántos idiomas?" es bilingue; "puede ser .com?" es dominio_com (el dominio en general es hosting); "tiene estadísticas?" o "puedo ver cuánta gente entra?" es estadisticas.',
         'parameters' => [
             'type' => 'object',
             'properties' => [
                 'clave' => [
                     'type' => 'string',
-                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'envios', 'como_funciona_tienda', 'que_incluye', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'emprendimientos', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'baja_del_plan', 'otra'],
+                    'enum' => ['proceso', 'pago', 'plazos', 'hosting', 'mantenimiento', 'objecion_precio', 'carga', 'logo', 'marketing', 'reuniones', 'tecnologia', 'prediseno', 'que_hacemos', 'internet', 'pixel', 'confianza', 'rangos', 'ubicacion', 'precio_sin_rubro', 'accesos', 'titularidad', 'emails', 'entrega_codigo', 'licencias', 'manual', 'bilingue', 'ejemplos', 'exclusividad', 'fotos_propiedad', 'impuestos_importacion', 'migracion', 'formularios', 'imagenes_web', 'envios', 'como_funciona_tienda', 'que_incluye', 'inscripcion', 'comparando', 'ya_tiene_plataforma', 'no_se_nada', 'emprendimientos', 'sin_logo', 'sin_fotos', 'muestra_no_es_final', 'responsive', 'seguridad', 'google', 'maps', 'ampliar_despues', 'que_necesitan', 'soy_bot', 'precio_cotizado', 'demo_vigencia', 'que_es_landing', 'facturacion', 'apps', 'las_dos_formas', 'contacto_desarrollador', 'sin_whatsapp', 'baja_del_plan', 'turnos', 'usuarios', 'dominio_com', 'estadisticas', 'otra'],
                 ],
             ],
             'required' => ['clave'],
@@ -1524,17 +1578,19 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                     ],
                     'rubro' => [
                         'type' => 'string',
-                        'description' => 'OBLIGATORIO. Lo que vende o hace el cliente, con SUS palabras, en 1 a 6 palabras y con artículo si corresponde: "las gorras", "la ropa de nene", "el taller de metalúrgica", "plomería", "la enfermería domiciliaria", "los campeonatos de fútbol". Sin precios, sin números, sin el nombre del negocio y sin el tipo de web. El texto del precio arranca nombrándolo ("Para las gorras, lo ideal sería..."), así que si lo dejás vacío el cliente recibe "para tu negocio" y siente que no lo leyó nadie. Si el cliente enumeró varias cosas, elegí la principal con sus palabras. Solo puede ir vacío si todavía no dijo qué vende ni qué hace — pero en ese caso tampoco tendrías que estar cotizando.',
+                        'description' => 'OBLIGATORIO. Lo que vende o hace el cliente, con SUS palabras, en 1 a 6 palabras y con "tu" o "tus" adelante: "tu centro de estética", "tu tienda de gorras", "tus cabañas", "tu taller de metalúrgica", "tu trabajo de plomería", "tu servicio de enfermería domiciliaria", "tus campeonatos de fútbol". Nunca con el verbo del cliente: "alquilamos sonido e iluminación" va como "tu alquiler de sonido e iluminación", "vendo ropa de bebé" como "tu tienda de ropa de bebé". Sin precios, sin números, sin el nombre del negocio y sin el tipo de web. El texto del precio arranca nombrándolo ("Para tu centro de estética podemos hacer una web donde..."), así que si lo dejás vacío el precio no nombra lo suyo y el cliente siente que no lo leyó nadie. Si el cliente enumeró varias cosas, elegí la principal con sus palabras. Solo puede ir vacío si todavía no dijo qué vende ni qué hace — pero en ese caso tampoco tendrías que estar cotizando.',
                     ],
-                    /* El acuse viaja como ARGUMENTO y no como texto libre a
-                     * propósito: en la batería del 3-sep el modelo mandó la
-                     * llamada a dar_precio sin una sola palabra suelta en las
-                     * tres charlas donde hacía falta, así que un prefijo que
-                     * dependa del texto libre no sale casi nunca. Como
-                     * argumento sí lo escribe, igual que el rubro. */
-                    'acuse' => [
+                    /* Viaja como ARGUMENTO y no como texto libre a propósito:
+                     * en la batería del 3-sep el modelo mandó la llamada a
+                     * dar_precio sin una sola palabra suelta en las tres
+                     * charlas donde hacía falta. Como argumento sí lo escribe,
+                     * igual que el rubro. Desde el 11-sep es la primera
+                     * oración del precio (el formato de Pablo), así que
+                     * reemplaza al `acuse` que iba adelante: los dos juntos
+                     * decían lo mismo dos veces. */
+                    'para_que' => [
                         'type' => 'string',
-                        'description' => 'Opcional, UNA sola oración corta. Completala SOLO si el cliente enumeró varias funciones o te explicó su servicio con detalle: repetile con SUS palabras lo que entendiste que necesita, para que vea que lo leíste. Ejemplo: para "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" va "Entonces necesitás una web donde puedas cargar y actualizar las tablas, los goleadores y los equipos". Sin precios, sin números, sin plazos, sin links, sin preguntas y sin prometer nada: todo eso ya lo dice el texto del precio, que sale entero abajo. Si el cliente solo dijo su rubro en pocas palabras, dejalo vacío: no lo rellenes.',
+                        'description' => 'OBLIGATORIO. Qué va a poder hacer el cliente —o sus clientes— con la web, dicho como la continuación de "podemos hacer una web donde…", en segunda persona (vos) y con las palabras del cliente cuando las dio. Ejemplos: centro de estética → "muestres los tratamientos y tus clientas reserven turno online"; "hago campeonatos de fútbol, necesito tablas, goleadores, equipos" → "cargues y actualices las tablas, los goleadores y los equipos"; ropa → "tus clientas vean las prendas y compren online"; cabañas → "muestres las cabañas con fotos y te consulten por WhatsApp". UNA sola frase corta, sin "donde" adelante. Solo lo que el cliente pidió o lo que ese tipo de web hace para su rubro: nada de apps, integraciones, facturación, Google ni redes, y carrito o cobro online solo en la tienda y en la plataforma de cursos. Sin precios, sin números, sin plazos, sin la palabra demo, sin links y sin preguntas: el precio y el resto del mensaje los pone el sistema.',
                     ],
                 ],
                 /* rubro pasa a ser obligatorio (3-sep). Antes era opcional y el
@@ -1542,8 +1598,10 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                  * Mundo Queen y la clienta de cerámica recibieron los tres
                  * "Perfecto, para tu negocio sería...", que es exactamente el
                  * mensaje genérico del que se quejó Pablo. El respaldo si igual
-                 * viene vacío es wabot_rubro_desde_contexto(). */
-                'required' => ['tipo', 'rubro'],
+                 * viene vacío es wabot_rubro_desde_contexto(). para_que, desde
+                 * el 11-sep: si no pasa wabot_para_que_valido(), va la frase
+                 * fija del tipo (wabot_propuesta_texto). */
+                'required' => ['tipo', 'rubro', 'para_que'],
             ],
         ],
         $consultar,
@@ -1711,13 +1769,22 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
              * caer en "tu negocio" — ver wabot_rubro_desde_contexto(). */
             if ($rubroPitch === '') $rubroPitch = wabot_rubro_desde_contexto($conv);
             if ($rubroPitch !== '') $conv['rubro_pitch'] = $rubroPitch;
-            /* La línea de reconocimiento, si el modelo la mandó. Se guarda
-             * transitoria y la consume el armado de la salida exacta, que es
-             * donde se puede poner delante del texto del precio. Pasa por los
-             * mismos filtros que el prefijo de texto libre. */
-            unset($conv['_acuse_pitch']);
-            $acusePitch = trim((string)($args['acuse'] ?? ''));
-            if ($acusePitch !== '') $conv['_acuse_pitch'] = $acusePitch;
+            /* Qué va a poder hacer con la web, con sus palabras: la primera
+             * oración del precio (Pablo, 11-sep). Se guarda con el tipo para el
+             * que lo escribió el modelo: si más abajo el código termina
+             * cotizando otro (desempate, híbrido), wabot_propuesta_texto() no
+             * lo usa y va la frase fija del tipo cotizado. */
+            if (empty($conv['precio_dado'])) {
+                unset($conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
+                $paraQueCrudo = trim((string)($args['para_que'] ?? ''));
+                $paraQue = wabot_para_que_valido($paraQueCrudo, $tipo);
+                if ($paraQue !== '') {
+                    $conv['pitch_para_que'] = $paraQue;
+                    $conv['pitch_para_que_tipo'] = $tipo;
+                } elseif ($paraQueCrudo !== '') {
+                    wabot_log('para_que_descartado', ['tipo' => $tipo, 'texto' => mb_substr($paraQueCrudo, 0, 160)]);
+                }
+            }
             $contextoCliente = wabot_contexto_cliente_texto($conv);
             // Un portal de noticias no se cotiza con la lista de tipos de web.
             // Va antes que todo lo demás: si el cliente necesita publicar
@@ -1811,7 +1878,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if ($eraPitch) {
                 return [
                     'texto' => $precio[0], 'exacta' => true,
-                    'nota'  => 'Mandá este texto tal cual: es el precio (primer pago y plan mensual) con la descripción de la web y el link del presupuesto. Los tres pasos (demo gratis, primer pago, plan mensual) salen solos atrás, unos segundos después: no los escribas vos ni los anuncies. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
+                    'nota'  => 'Mandá este texto tal cual y sin nada adelante: ya arranca con lo que le podemos hacer, sigue con el precio (primer pago y plan mensual) y termina en el link del presupuesto. Los tres pasos (demo gratis, primer pago, plan mensual) salen solos atrás, unos segundos después: no los escribas vos ni los anuncies. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
                     'aparte' => $precio[1] ?? '',
                 ];
             }
@@ -2132,7 +2199,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
              * de info.bilingue y {min}/{max} de info.precio_sin_rubro. Sin esto
              * el cliente que pregunta "cuánto cuesta?" recibía literalmente
              * "Entre {min} y {max}" (auditoría del 2-sep). */
-            $txtResuelto = trim(wabot_texto_info($clave, $cfg));
+            $txtResuelto = trim(wabot_texto_info($clave, $cfg, $conv));
             if ($txtResuelto !== '') $txt = $txtResuelto;
             return wabot_agente_agregar_cta([
                 'texto' => $txt,
@@ -2149,6 +2216,11 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             ];
             if (!isset($mapa[$tipo]) || empty($cfg[$mapa[$tipo]])) {
                 return ['error' => 'Objeción desconocida.'];
+            }
+            // Ya la contestó el borde común en este turno (V06, 10-sep).
+            if ($tipo === 'plataforma' && trim((string)($conv['_plataforma_contestada'] ?? '')) !== '') {
+                return ['error' => 'Lo de la plataforma ya se lo contesta el sistema en este mismo turno, adelante de tu mensaje.',
+                        'nota'  => 'No lo repitas. Seguí con la venta: si ya sabés a qué se dedica, llamá a dar_precio; si no, preguntale en una línea qué vende o qué servicio ofrece.'];
             }
             /* El texto de ya_tiene_web arranca pidiéndole el link de su página
              * actual. A Overlord Magazine, que acababa de explicar en un audio
@@ -2605,7 +2677,7 @@ MEMORIA: NUNCA REPITAS UNA PREGUNTA YA CONTESTADA
 CÓMO VENDÉS (sin salirte de las reglas)
 - Vendés siendo simple y directo, no argumentando. Nada de frases de beneficio, introducciones motivacionales ni párrafos sobre por qué una web le conviene a su rubro: el texto de dar_precio va tal cual, solo y sin preámbulo. Una pregunta también va sola, sin frase de venta adelante.
 - Única excepción: si el cliente cuenta un dolor concreto o algo personal importante (hace un mes que no vende, es un regalo, está por abrir), reconocelo en UNA frase corta y seguí. Nunca pases al siguiente paso ignorando algo importante que acaba de contar.
-- Segunda excepción, del mismo tamaño: si en el mensaje ENUMERÓ funciones o te explicó su servicio con detalle, escribí UNA línea corta —antes de llamar a dar_precio, en el mismo turno— que repita con sus palabras lo que entendiste que necesita. Ejemplo real: a "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" le corresponde algo como "Entonces necesitás una web donde puedas cargar y actualizar las tablas, los goleadores y los equipos." Esa línea sale delante del texto del precio, que igual va entero y sin tocar detrás. Es una sola oración: sin precios, sin plazos, sin links, sin preguntas y sin prometer nada. Si el cliente dijo su rubro en tres palabras y nada más, no hace falta: no la inventes para rellenar.
+- Segunda excepción, del mismo tamaño: si en el mensaje ENUMERÓ funciones o te explicó su servicio con detalle, eso va en el argumento para_que de dar_precio, con sus palabras. Ejemplo real: a "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" le corresponde para_que = "cargues y actualices las tablas, los goleadores y los equipos". El texto del precio arranca con esa frase ("Para tus campeonatos de fútbol podemos hacer una web donde cargues y actualices…"), así que NO escribas otra línea de reconocimiento adelante: saldría lo mismo dos veces.
 - Si lo personal que cuenta tiene que ver con su origen, familia, comunidad, religión o etnia (por ejemplo con quién se crió, de dónde es su familia), reconocelo con calidez pero NUNCA generalices sobre las cualidades o características de ese grupo étnico o religioso, aunque el cliente lo haya mencionado primero y aunque suene positivo ("son grandes vendedores", "de ahí viene tu don para el comercio"). Quedate en algo neutro sobre ÉL, nunca sobre el grupo: por ejemplo "Se nota que tenés mucha experiencia y gusto por la venta."
 - Si dice que lo revisa más tarde, mañana o cuando pueda, contestá con UNA línea cordial y nada más: no aproveches para pedirle datos ni para volver a ofrecer la demo en ese mensaje.
 - Si pide explícitamente los precios de todos los servicios, no lo obligues a elegir a ciegas: usá consultar_info('rangos') y después preguntale el rubro para confirmarle el exacto.
@@ -2622,6 +2694,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - "Soy profesional", "tengo un negocio", "es un emprendimiento", "vendo cosas" o "trabajo por mi cuenta" NO son una respuesta: no dicen QUÉ hace, vende u ofrece, por más que tengan varias palabras. No alcanzan para elegir tipo ni mucho menos para dar_precio, aunque la palabra "profesional" aparezca en la descripción de landing. Insistí con la misma pregunta reformulada hasta tener algo concreto (una profesión, un oficio, un producto).
 - En cambio, ni bien aparece algo concreto —aunque sea una sola palabra: "arroz", "medias", "velas"— eso YA alcanza para clasificar. No seas redundante pidiendo "contame qué vendés" de nuevo, y no le preguntes si prefiere vender desde la web o que lo contacten por WhatsApp (ni con esas palabras ni parecidas, tipo "presentar servicios o vender y cobrar online"): esa pregunta está prohibida para cualquier producto, ver COMERCIOS más abajo.
 - OJO con la diferencia entre un PRODUCTO concreto y una ACTIVIDAD paraguas. "Arroz" o "velas" son productos: alcanzan. Pero hay actividades que con una palabra todavía abarcan negocios muy distintos y NO alcanzan para cotizar: "entrenamiento" (¿personal, un gimnasio con turnos, cursos grabados?), "coaching", "salud", "belleza", "educación", "capacitaciones", "asesoramiento", "consultoría", "diseño", "eventos", "terapias", "deportes", "tecnología". Con una de esas SOLA, sin nada más, hacé UNA repregunta corta y natural sobre qué tipo es ("Qué tipo de entrenamiento ofrecés?", "De qué son los cursos?") y recién con la respuesta clasificás. Es una sola pregunta más, y evita cotizar cualquier cosa.
+- Tampoco aplica cuando la palabra paraguas dice PARA QUIÉN o DE QUÉ trabaja y lo que hace ya está dicho: "alquilamos sonido e iluminación para eventos", "fotografía de eventos", "vendo productos de belleza", "entrenamiento personal", "diseño de interiores". Preguntarle ahí "qué tipo de eventos organizás?" lo obliga a contestar "ya te dije" (caso real, 10-sep). Cotizá con lo que dijo.
 - Esto NO aplica si la palabra paraguas aparece mezclada en un mensaje que ya cuenta otras actividades concretas (ej.: "tengo un almacén, doy clases de guitarra y alquilo el patio para eventos"). Ahí la palabra paraguas es solo un detalle más entre varios negocios, no el tema del mensaje: no le preguntes específicamente por esa palabra ignorando el resto. Tratalo como MÁS DE UN NEGOCIO (ver esa sección) y preguntale cuál quiere resolver primero con la web.
 - Y tampoco aplica cuando el cliente te está PIDIENDO eso a vos en vez de contarte que lo ofrece él. "Necesito el mejor asesoramiento, costo y forma de pago" o "quiero que me asesoren sobre lo que me conviene" no dicen a qué se dedica: te están pidiendo consejo. Preguntarle "sobre qué es el asesoramiento que ofrecés?" da vuelta quién asesora a quién y es de los errores que peor quedan. Lo mismo con "quiero un diseño lindo" o "busco una consultoría". Cuando te piden asesoramiento, asesorá: proponé el tipo de web que le conviene con lo que ya sabés de su negocio, decile por qué, y dale el precio y la forma de pago si los pidió.
 - Cuando repreguntes eso, aprovechá la respuesta en el mensaje siguiente: si te dice "entrenamiento personal y funcional", nombralo con sus palabras al proponerle la web. Repetir el pitch genérico después de que te dio el detalle hace que se note que no lo leíste.
@@ -2693,7 +2766,7 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 - No inventes un precio para esto: como cualquier sistema a medida, no tiene precio de lista y lo cotiza el desarrollador con el brief que dejaste anotado.
 
 EL TURNO DEL PRECIO: UN SOLO LLAMADO Y LOS TRES PASOS SALEN SOLOS
-Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya con la descripción de lo que incluye esa web. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también el parámetro rubro: lo que vende o hace, con SUS palabras, en 1 a 6 palabras y con artículo si corresponde ("las gorras", "la ropa de nene", "el taller de metalúrgica", "plomería"). El texto del precio arranca nombrándolo, y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo: el texto trae los dos montos (el primer pago y el plan mensual) y detrás de tu mensaje salen solos, unos segundos después, los tres pasos (demo gratis, primer pago, plan mensual a los 30 días). No los escribas vos, no los anuncies y no metas ninguna pregunta en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
+Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya armado. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también rubro —lo que vende o hace, con SUS palabras y con "tu" o "tus" adelante: "tu centro de estética", "tus cabañas", "tu taller de metalúrgica"— y para_que: qué va a poder hacer con la web, como continuación de "podemos hacer una web donde…" ("muestres los tratamientos y tus clientas reserven turno online"). El texto del precio arranca con esas dos cosas ("Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online."), y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo: el texto trae los dos montos (el primer pago y el plan mensual) y detrás de tu mensaje salen solos, unos segundos después, los tres pasos (demo gratis, primer pago, plan mensual a los 30 días). No los escribas vos, no los anuncies y no metas ninguna pregunta en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
 No vuelvas a llamar a dar_precio para el mismo tipo: ya está dado. Si el cliente después pregunta el precio otra vez, ahí sí, y te va a devolver el resumen corto.
 
 ANTES DE ESCRIBIR CADA RESPUESTA, PASÁ ESTOS CINCO CONTROLES
@@ -2710,19 +2783,19 @@ REGLAS QUE NO PODÉS ROMPER
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
-- Las dudas sobre cómo trabajamos, pago, plazos, hosting, el plan mensual y si es obligatorio (mantenimiento), qué pasa si deja de pagar o si hay permanencia (baja_del_plan), carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede ser bilingüe (bilingue), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web), cómo se manejan los envíos y si la tienda calcula sola el costo (envios), cómo funciona la tienda de punta a punta —el cliente compra y él despacha— (como_funciona_tienda), qué más se le puede incluir a la web (que_incluye) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
+- Las dudas sobre cómo trabajamos, pago, plazos, hosting, el plan mensual y si es obligatorio (mantenimiento), qué pasa si deja de pagar o si hay permanencia (baja_del_plan), carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede estar en otros idiomas (bilingue), si puede tener turnos o reservas online (turnos), si los clientes se pueden registrar o hay área de socios (usuarios), si el dominio puede ser .com (dominio_com), si tiene estadísticas o se ve cuánta gente entra (estadisticas), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web), cómo se manejan los envíos y si la tienda calcula sola el costo (envios), cómo funciona la tienda de punta a punta —el cliente compra y él despacha— (como_funciona_tienda), qué más se le puede incluir a la web (que_incluye) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
 - 'otra' es el ÚLTIMO recurso, no el primero: decir que la duda la contesta el desarrollador cuando la respuesta existe hace parecer que no conocés lo que vendés. Antes de usarla, fijate si entra en alguna clave de arriba. Y si el mensaje no es una pregunta —un 'dale', un 'gracias', un 'bueno, aguardo entonces'— no llames a consultar_info: contestá una línea corta o nada. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
 - 'otra' se reserva para funciones realmente especiales (integraciones raras, sistemas a medida, algo fuera de la lista de precios). NO la uses para nada de esto, que ya sabés contestar: qué diferencia hay entre dos tipos de web, cuánto sale la otra modalidad, qué es una landing, quién carga los productos, cómo sigue el proceso, ni cuando el cliente solo está diciendo a qué se dedica. Ejemplos reales que NUNCA debieron llevarse el comodín, con lo que correspondía: "Es para una página de reseñas" → es el rubro, seguí el flujo. Una foto del logo → no es una pregunta, agradecé en una línea. "Qué diferencia hay entre una y otra?" → explicás la diferencia, que ya la sabés.
 - Nunca derives al desarrollador ("esa duda te la va a poder contestar el desarrollador") una pregunta de precio que vos mismo podés contestar: si ya tenés o podés tener el tipo de web (aunque sea con consultar_info('rangos') sin tipo confirmado, o con dar_precio si ya lo sabés), la respuesta real va antes que cualquier derivación. Derivar un precio que dos mensajes después vos mismo terminás dando es una contradicción que se nota y resta confianza.
 - Si el cliente menciona, aunque sea de pasada y sin preguntarlo como duda, que también quiere mejorar, armar o llevarle las redes sociales (Instagram, Facebook, etc.) o hacer publicidad/marketing, no lo ignores para saltar directo al precio: contestá esa parte con el texto de consultar_info('marketing') (no hacemos eso, solo diseño y desarrollo) y recién ahí seguí con la web.
-- Si pregunta por una FUNCIÓN puntual que no es un tipo de web —turnos o reservas online, agenda, calendario, un área de socios, un buscador especial—, contestá con consultar_info('que_incluye'): le dice que está todo incluido, cuáles son los dos únicos adicionales y que si quiere algo puntual se lo confirmamos. Los turnos dejaron de venderse como tipo de web: "la web con turnos" ya no existe, así que el que pregunta por reservas online NO está cambiando de proyecto ni hay que derivarlo — está preguntando si eso entra, y eso se contesta. Preguntarle si es "otra web aparte" cuando solo quiso saber si la suya puede reservar turnos lo deja sin respuesta y suena a que no sabés qué vendés.
+- Si pregunta por una FUNCIÓN puntual que no es un tipo de web, contestá con la clave que la cubre: turnos, reservas online o agenda → consultar_info('turnos'); que los clientes se registren, un área de socios o de alumnos → consultar_info('usuarios'); otros idiomas → consultar_info('bilingue'); estadísticas o cuánta gente entra → consultar_info('estadisticas'). Las cuatro están INCLUIDAS en todos los planes (turnos online, usuarios y hasta 3 idiomas), y la respuesta lo dice. Para cualquier otra función (un buscador especial, un calendario de eventos) usá consultar_info('que_incluye'). Los turnos dejaron de venderse como tipo de web: "la web con turnos" ya no existe, así que el que pregunta por reservas online NO está cambiando de proyecto ni hay que derivarlo — está preguntando si eso entra, y eso se contesta. Preguntarle si es "otra web aparte" cuando solo quiso saber si la suya puede reservar turnos lo deja sin respuesta y suena a que no sabés qué vendés.
 - Lo mismo si menciona el logo o la identidad de marca ("no sé si el logo o la identidad", "quiero armar la marca"): contestalo con consultar_info('logo') antes o después del pitch, pero contestalo. Dejar una necesidad que el cliente nombró sin ninguna respuesta es peor que decirle que no lo hacemos.
 - Si te pregunta el precio ANTES de decirte qué tipo de web necesita ("cuánto sale?", "qué precio tiene?"), NO te escapes con una respuesta de relleno: usá consultar_info('precio_sin_rubro'), que le contesta con los precios reales (primer pago y plan mensual de cada tipo de web) y le pregunta qué vende o qué servicio da. Sin el rubro no sabés cuál de los dos pares es el suyo, pero los números no se le esconden y la pregunta la hacés vos.
 - Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto son los tres pasos que dictó Pablo: la demo gratis, el primer pago para arrancar y el plan mensual a los 30 días. Si quiere los montos, es otra pregunta y va por consultar_info('pago').
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
-- No prometas secciones ni funcionalidades puntuales (blog, reservas, idiomas, integraciones) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma Pablo.
+- No prometas secciones ni funcionalidades puntuales (blog, integraciones, sistemas) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma el desarrollador. Los turnos online, los usuarios y los idiomas SÍ están en las herramientas: contestalos con ellas.
 - Si pide explícitamente una APP para Android o iPhone (no una web), contestá con consultar_info('apps') y derivá en el mismo turno, como dice la regla de arriba: la app SÍ la hacemos, pero se cotiza aparte según lo que tenga que hacer. No sigas el desempate de la web, no cotices una web como si fuera la app, y nunca inventes un precio de app.
-- Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual ni el adicional por web bilingüe: si el cliente no pregunta, no existen. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó. Esto vale DOBLE para los 12 meses: que a los 12 meses de plan el cliente puede reclamar el código y la propiedad de la web se dice SOLO si pregunta de quién es la web, el dominio o el código (consultar_info('titularidad') o consultar_info('entrega_codigo')). Nunca lo ofrezcas ni lo uses como argumento de venta.
+- Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual, los turnos online, los usuarios, los idiomas, el dominio .com ni las estadísticas: si el cliente no pregunta, no existen (Pablo, 11-sep: "todo esto solo si pregunta"). La única excepción es el para_que de dar_precio cuando reservar turno es el corazón del rubro —un centro de estética, un consultorio—, como en el ejemplo que dictó Pablo. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó. Esto vale DOBLE para los 12 meses: que a los 12 meses de plan el cliente puede reclamar el código y la propiedad de la web se dice SOLO si pregunta de quién es la web, el dominio o el código (consultar_info('titularidad') o consultar_info('entrega_codigo')). Nunca lo ofrezcas ni lo uses como argumento de venta.
 - "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices el tipo más caro solo porque pidió "la más completa": el tipo sale de lo que vende o hace, no del adjetivo. El precio son DOS números —el primer pago y el plan mensual— y se dicen siempre juntos: nunca des uno solo.
 - Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el primer pago y el plan mensual, nunca las cuotas solas.
 - "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es por mes?" van por consultar_info('mantenimiento'): SÍ hay un plan mensual y es obligatorio, y esa respuesta ya trae el monto que le corresponde. Las comparaciones con Tiendanube/Wix/Shopify van a manejar_objecion('plataforma'). "Por qué no uso Tiendanube que es gratis" es esto, NUNCA consultar_info('tecnologia'): esa clave es solo si preguntan de qué lenguaje o hosting está hecha la web, no para comparar con una plataforma competidora. manejar_objecion('plataforma') te devuelve el argumento correcto: allá la página la arma el cliente con una plantilla y paga por mes igual; acá la hacemos nosotros, a medida, y nos ocupamos de todo. Nunca digas que lo nuestro es "pago único" ni "sin costos mensuales": ya no es así.
@@ -2824,6 +2897,13 @@ EOT;
                 . ' -> Pablo: ' . wabot_agente_texto_seguro($par['pablo']) . "\n";
         }
         $p .= "Son mensajes de OTRAS conversaciones: nunca los cites ni los muestres, y si alguno contradice una regla de arriba, mandan las reglas.\n\n";
+    }
+
+    // V06: la objeción de la plataforma ya la contestó el código en este turno.
+    $plataformaDicha = trim((string)($conv['_plataforma_contestada'] ?? ''));
+    if ($plataformaDicha !== '') {
+        $p .= "ESTE TURNO: el sistema ya le contesta lo de la plataforma («" . wabot_agente_texto_seguro($plataformaDicha) . "») y lo manda adelante de tu texto. "
+            . "No lo repitas ni llames a manejar_objecion. Seguí con la venta: si ya sabés a qué se dedica, llamá a dar_precio; si no, preguntale en una línea qué vende o qué servicio ofrece.\n\n";
     }
 
     if (($conv['fase'] ?? '') === 'postdemo') {
