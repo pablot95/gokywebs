@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css?v=20260910">
+<link rel="stylesheet" href="../style.css?v=20260911">
 </head>
 <body>
 
@@ -39,6 +39,7 @@
             <li>Tienda completa con carrito de compras</li>
             <li>Cobro online con Mercado Pago</li>
             <li>Panel propio para administrar productos, stock y precios</li>
+            <li>Estadísticas de usuarios, actividad y compras desde el panel</li>
             <li>Integración con Correo Argentino y Andreani para los envíos</li>
             <li>Carrito abandonado: recuperás las compras que quedaron a medias</li>
             <li>Buscador, filtros y categorías</li>
@@ -58,8 +59,12 @@
                 <div><div class="et">Entrega</div><div class="val">7 días</div></div>
             </div>
             <div class="plan-pago-cuotas">
-                <div class="et">Cómo se paga</div>
+                <div class="et">Primer pago</div>
                 <div class="val cuotas">Transferencia o tarjeta hasta en 12 cuotas con interés</div>
+            </div>
+            <div class="plan-pago-cuotas">
+                <div class="et">Plan mensual</div>
+                <div class="val cuotas">Suscripción automática por Mercado Pago</div>
             </div>
             <div class="demo-aviso">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3"/></svg>
@@ -71,18 +76,31 @@
     <section class="pago-section" id="plan">
         <p class="pago-section-eyebrow">Plan mensual</p>
         <h2 class="pago-section-title">Qué incluye el plan mensual</h2>
-        <p class="pago-section-desc">Arranca a los 30 días del primer pago y se cobra por suscripción automática de Mercado Pago, así se debita solo. Sin permanencia: lo das de baja cuando quieras. La web funciona mientras el plan esté activo.</p>
+        <p class="pago-section-desc">Arranca a los 30 días del primer pago y se cobra únicamente por suscripción automática de Mercado Pago. Podés cancelarla cuando quieras: desde Mercado Pago si tenés cuenta, o llamando al banco emisor de la tarjeta si te suscribiste sin cuenta. La web funciona mientras el plan esté activo.</p>
         <div class="mant-card">
             <div class="mant-price"><b>$30.000</b><span>por mes</span></div>
             <ul class="check-list">
-                <li>Hosting incluido</li>
-                <li>Dominio incluido</li>
-                <li>Soporte técnico</li>
+                <li>Hosting incluido mientras el plan esté activo</li>
+                <li>Dominio incluido mientras el plan esté activo</li>
+                <li>Soporte técnico por WhatsApp</li>
                 <li>1 cambio por mes, que puede ser un cambio grande y no solo un retoque</li>
+                <li>Mantenimiento técnico: actualizaciones de plugins y SDKs, certificado SSL renovado y copias de seguridad periódicas</li>
                 <li>Carga de hasta 10 productos</li>
             </ul>
             <p class="addon-note">Adicionales, solo dos: <b>$500 por producto</b> arriba de los 10 incluidos, si los cargamos nosotros, y <b>$10.000 más por mes</b> si necesitás más de un cambio mensual.</p>
+            <p class="addon-note"><b>No incluye:</b> un rediseño completo de la web. Podés modificar o sumar una sección, pero rehacer todo el diseño se presupuesta por separado.</p>
             <p class="addon-note">La mensualidad se actualiza una vez al año.</p>
+            <div class="mant-payment">
+                <p class="mant-payment-label">Forma de pago</p>
+                <h3>Suscripción mensual por Mercado Pago</h3>
+                <p class="mant-payment-copy">El primer pago se abona por transferencia o tarjeta. El plan de $30.000 por mes comienza a los 30 días y se cobra únicamente mediante una suscripción automática de Mercado Pago. Podés suscribirte aunque no tengas una cuenta.</p>
+                <a class="mant-subscribe-btn" href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b" target="_blank" rel="noopener noreferrer">Activar el plan mensual de $30.000</a>
+                <div class="cancel-options" aria-label="Cómo cancelar la suscripción">
+                    <div class="cancel-option"><strong>Con cuenta de Mercado Pago</strong><span>Cancelás la suscripción directamente desde tu cuenta.</span></div>
+                    <div class="cancel-option"><strong>Sin cuenta de Mercado Pago</strong><span>Solicitás la baja llamando al banco emisor de la tarjeta que usaste.</span></div>
+                </div>
+                <p class="mant-fine-print">Podés cancelar cuando quieras. La web funciona mientras el plan está activo; al cancelar la suscripción, se desactiva.</p>
+            </div>
         </div>
     </section>
 
@@ -173,7 +191,7 @@
                 <div class="timeline-num">3</div>
                 <div class="timeline-body">
                     <h3>A los 30 días comienza el plan mensual</h3>
-                    <p>Son <strong>$30.000 por mes</strong> e incluye hosting, dominio, soporte y un cambio por mes. Se cobra por suscripción automática de Mercado Pago. Sin permanencia: lo das de baja cuando quieras.</p>
+                    <p>Son <strong>$30.000 por mes</strong> e incluye todo lo necesario para mantener tu web funcionando y actualizada. El primer pago se abona por transferencia o tarjeta; el plan mensual se cobra por suscripción automática de Mercado Pago. Podés cancelarla cuando quieras desde Mercado Pago, o llamando al banco emisor de la tarjeta si te suscribiste sin cuenta.</p>
                 </div>
             </div>
         </div>
