@@ -1,2 +1,20 @@
 # Evita que el repositorio git (si queda deployado) sea navegable públicamente.
 RedirectMatch 404 /\.git
+
+# Hostinger usa un sistema de archivos sensible a mayúsculas. Si una URL llega
+# con otra combinación de mayúsculas/minúsculas, el router busca el archivo o
+# directorio real y redirige a su URL canónica. Las rutas correctas no pasan por
+# PHP, por lo que no se agrega trabajo extra a las visitas normales.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ case-router.php [L,QSA]
+</IfModule>
+
+# Cuando el módulo está disponible, también corrige diferencias de mayúsculas
+# dentro de nombres de archivos estáticos (imágenes, CSS y JavaScript).
+<IfModule mod_speling.c>
+CheckSpelling On
+CheckCaseOnly On
+</IfModule>
