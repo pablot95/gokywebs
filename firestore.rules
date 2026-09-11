@@ -62,5 +62,14 @@ service cloud.firestore {
                     && (!('otros' in request.resource.data) || (request.resource.data.otros is string && request.resource.data.otros.size() <= 300));
       allow read, update, delete: if isAdmin();
     }
+    match /paletas/{doc} {
+      // El banner "Cambiar colores" de cada demo escribe sin login (ver snippets_canonicos_demos §10).
+      allow create: if request.resource.data.keys().hasOnly(['slug', 'negocio', 'paletaNombre', 'paletaVars', 'url', 'createdAt', 'visto'])
+                    && request.resource.data.slug is string
+                    && request.resource.data.paletaNombre is string && request.resource.data.paletaNombre.size() <= 40
+                    && request.resource.data.paletaVars is map
+                    && request.resource.data.paletaVars.keys().hasOnly(['--color-bg', '--color-bg-alt', '--color-text', '--color-text-muted', '--color-primary', '--color-secondary', '--color-cta', '--color-cta-text']);
+      allow read, update, delete: if isAdmin();
+    }
   }
 }

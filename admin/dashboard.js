@@ -935,6 +935,7 @@ let tareas = [];
 let mantenimiento = [];
 let presupuestoFunnel = [];
 let resenas = [];
+let paletasElegidas = [];
 
 // --- Botón nuevo cliente desde seguimientos ---
 document.getElementById("openModalBtnSeg")?.addEventListener("click", () => openModal());
@@ -1346,6 +1347,23 @@ function initRealtime() {
     }, (err) => {
         console.error("Reseñas error:", err);
     });
+
+    // ── Paletas elegidas con el banner "Cambiar colores" (snippets_canonicos_demos §10) ──
+    // A diferencia de reseñas, el registro puede vivir todavía en Bocetos (propuestas)
+    // o ya en Seguimiento (clientes) — se matchea por slug en los dos, nunca por ID
+    // (ver proyecto_paletas_elegidas_admin: presentarPropuesta() borra la propuesta
+    // original al pasar a cliente, así que un ID de propuesta no sobrevive el pase).
+    const qPaletas = query(collection(db, "paletas"), orderBy("createdAt", "desc"));
+    onSnapshot(qPaletas, (snap) => {
+        paletasElegidas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        _updatePaletasBadge();
+        const openId = document.getElementById("clientId")?.value;
+        if (openId && modal && !modal.hidden) renderPaletasEnModal(openId);
+        const openPropId = propuestaForm?.dataset.propId;
+        if (openPropId && propuestaModal && !propuestaModal.hidden) renderPaletasEnPropuestaModal(openPropId);
+    }, (err) => {
+        console.error("Paletas error:", err);
+    });
 }
 
 /* Badge rojo tipo notificación (distinto del .pill-count neutro que ya
@@ -1425,6 +1443,96 @@ async function renderResenasEnModal(clientId) {
             console.error("No se pudo marcar la reseña como vista:", err);
         }
     }
+}
+
+/* Burbuja de paletas sin ver, en los 3 tabs donde el registro puede vivir
+   según el estado del pipeline (Bocetos, Clientes, Seguimientos) — mismo
+   criterio de _updateResenasBadge: cuenta global, sin cruzar con clientes. */
+function _updatePaletasBadge() {
+    const sinVer = paletasElegidas.filter(p => !p.visto).length;
+    ["badgePaletasClientes", "badgePaletasSeg", "badgePaletasBocetos"].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = sinVer > 99 ? "99+" : String(sinVer);
+        el.hidden = sinVer === 0;
+    });
+}
+
+function paletasParaCliente(c) {
+    const slugCliente = slugNegocio(c.proyecto || c.nombre || "");
+    if (!slugCliente) return [];
+    return paletasElegidas.filter(p => slugNegocio(p.slug || "") === slugCliente);
+}
+
+function paletasParaPropuesta(p) {
+    const slugBoceto = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio || "");
+    if (!slugBoceto) return [];
+    return paletasElegidas.filter(pal => slugNegocio(pal.slug || "") === slugBoceto);
+}
+
+/* Compartida entre el modal de Boceto y el de Cliente/Seguimiento: el mismo
+   registro (matcheado por slug) puede aparecer en cualquiera de los dos según
+   el estado del pipeline. Marca visto:true apenas se pinta, en cualquiera de
+   los dos modales — no hay botón "marcar leído" aparte, igual que reseñas. */
+async function pintarPaletas(section, body, summary, lista) {
+    if (!section || !body) return;
+    if (!lista.length) {
+        section.style.display = "none";
+        body.innerHTML = "";
+        return;
+    }
+    const sinVer = lista.filter(p => !p.visto).length;
+    section.style.display = "";
+    if (summary) summary.textContent = `🎨 Paletas enviadas desde la demo (${lista.length}${sinVer ? `, ${sinVer} nueva${sinVer > 1 ? "s" : ""}` : ""})`;
+    section.querySelector("details")?.toggleAttribute("open", sinVer > 0);
+
+    body.innerHTML = lista.map(p => {
+        const chips = Object.values(p.paletaVars || {})
+            .map(v => `<span class="paleta-chip" style="background:${escapeHtml(v)}"></span>`)
+            .join("");
+        const fecha = p.createdAt?.toDate
+            ? p.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "";
+        return `
+            <div class="resena-card${p.visto ? "" : " resena-card--nueva"}">
+                <div class="paleta-preview">${chips}</div>
+                <p class="resena-mensaje"><strong>${escapeHtml(p.paletaNombre || "Paleta")}</strong></p>
+                <div class="resena-meta">${escapeHtml(fecha)}${!p.visto ? ' <span class="resena-nueva-tag">Nueva</span>' : ""}</div>
+            </div>`;
+    }).join("");
+
+    const sinVerIds = lista.filter(p => !p.visto).map(p => p.id);
+    if (sinVerIds.length) {
+        try {
+            const batch = writeBatch(db);
+            sinVerIds.forEach(id => batch.update(doc(db, "paletas", id), { visto: true }));
+            await batch.commit();
+        } catch (err) {
+            console.error("No se pudo marcar la paleta como vista:", err);
+        }
+    }
+}
+
+async function renderPaletasEnModal(clientId) {
+    const c = clients.find(x => x.id === clientId);
+    if (!c) return;
+    await pintarPaletas(
+        document.getElementById("paletasInfoSection"),
+        document.getElementById("paletasInfoBody"),
+        document.getElementById("paletasInfoSummary"),
+        paletasParaCliente(c)
+    );
+}
+
+async function renderPaletasEnPropuestaModal(propId) {
+    const p = propuestas.find(x => x.id === propId);
+    if (!p) return;
+    await pintarPaletas(
+        document.getElementById("paletasPropInfoSection"),
+        document.getElementById("paletasPropInfoBody"),
+        document.getElementById("paletasPropInfoSummary"),
+        paletasParaPropuesta(p)
+    );
 }
 
 function _updateClientCounters() {
@@ -2130,6 +2238,7 @@ function openModal(id = null) {
         }
 
         renderResenasEnModal(c.id);
+        renderPaletasEnModal(c.id);
     } else {
         modalTitle.textContent = "Nuevo cliente";
         cargarPlanEnModal(null);
@@ -2140,6 +2249,8 @@ function openModal(id = null) {
         document.getElementById("presupuestoInfoBody").innerHTML = "";
         document.getElementById("resenasInfoSection").style.display = "none";
         document.getElementById("resenasInfoBody").innerHTML = "";
+        document.getElementById("paletasInfoSection").style.display = "none";
+        document.getElementById("paletasInfoBody").innerHTML = "";
         modalTareas = {};
     }
     renderTareasChecklist();
@@ -2957,6 +3068,7 @@ function openPropuestaModal(id) {
     propuestaForm.dataset.copyObjectives = getPropuestaObjetivosTexto(p);
     propuestaDirty = false;
     propuestaModal.hidden = false;
+    renderPaletasEnPropuestaModal(p.id);
     setTimeout(() => {
         propuestaForm.querySelectorAll("input, select, textarea").forEach(el => {
             el.addEventListener("input", () => { propuestaDirty = true; }, { once: false });
