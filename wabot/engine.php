@@ -349,7 +349,10 @@ function wabot_cierre_sin_presion_tipo($texto) {
         || (!$ordenaMomento && preg_match('/\bno\b.{0,26}\b' . $bajaEscribir . '\b.{0,18}\b(mas|nunca|nada|jamas)\b/u', $t))
         || (!$ordenaMomento && preg_match('/\bno\b.{0,12}\b(mas|nunca|jamas)\b.{0,18}\b' . $bajaEscribir . '\b/u', $t))
         // Y el pedido explícito de baja, que no necesita contexto.
-        || preg_match('/\b(borrame|borren mi numero|eliminame|eliminen mi|sacame de la lista|sacarme de la lista|darme de baja|dar de baja|desuscribir|desuscribirme|bloquear|bloqueame|no quiero recibir mas)\b/u', $t)
+        || preg_match('/\b(borrame|borren mi numero|eliminame|eliminen mi numero|sacame de la lista|sacarme de la lista|darme de baja|desuscribir|desuscribirme|bloqueame|no quiero recibir mas)\b/u', $t)
+        // La baja necesita un objeto de contacto o un pedido sin objeto.
+        // Dar de baja una propiedad / bloquear un usuario son tareas del panel.
+        || preg_match('/\b(dar de baja|bloquear)\s*(?:(por favor|gracias)\s*$|$|(mi numero|mi contacto|este numero|este contacto|el contacto comercial)\b)/u', $t)
     )) {
         return 'baja';
     }
@@ -862,6 +865,7 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
 
     if ($modo === 'turno') {
         $mensajes = wabot_demo_siempre_gratis($mensajes, $cfg);
+        $mensajes = wabot_salida_sin_cta_repetida($mensajes, $conv);
         $mensajes = wabot_sin_repetidos_consecutivos($mensajes);
         $mensajes = wabot_una_sola_pregunta($mensajes);
     }
@@ -888,6 +892,31 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     }
 
     return array_values($mensajes);
+}
+
+/** Una consulta después de la oferta merece su respuesta, sin otra invitación. */
+function wabot_salida_sin_cta_repetida($mensajes, $conv) {
+    if (!in_array($conv['fase'] ?? '', ['precio', 'prediseno'], true)
+        || !wabot_cta_muestra_ya_ofrecida($conv)
+        || !wabot_mensaje_pregunta_algo(wabot_ultimo_texto_cliente($conv))) return $mensajes;
+
+    $out = [];
+    foreach ($mensajes as $mensaje) {
+        // Quitar solo una pregunta de invitación completa; conservar montos,
+        // enlaces, explicaciones sobre la demo y preguntas necesarias del brief.
+        $limpio = preg_replace_callback('/(?:^|(?<=[.!?\n]))\s*[^.!?\n]*\?/u', function ($m) {
+            $t = wabot_normalizar_frase($m[0]);
+            $invita = preg_match('/^(queres|quieren|te gustaria|les gustaria|te parece|les parece)\b/u', $t)
+                && preg_match('/\b(demo|muestra|prediseno)\b/u', $t)
+                && preg_match('/\b(preparemos|preparamos|prepararte|prepare|preparo|armemos|armamos|armarte|arme|armo|ver|veas|avancemos)\b/u', $t);
+            return $invita ? '' : $m[0];
+        }, $mensaje);
+        $limpio = trim($limpio);
+        if ($limpio !== '') $out[] = $limpio;
+    }
+    // Si solo vino una invitación, no dejar al cliente sin respuesta: el
+    // resto del pipeline conserva su recuperación de respuestas sin avance.
+    return $out ?: $mensajes;
 }
 
 /**
@@ -1515,6 +1544,8 @@ function wabot_info_clave_tiene_rastro($clave, $texto, $conv = null) {
         'fotos_propiedad'=> '(foto|fotos|imagen|imagenes|video|videos|galeria)',
         'exclusividad'  => '(exclusiv|unico|unica|repetid|igual a otra|misma web|otro cliente del rubro|competencia)',
         'internet'      => '(internet|conexion|offline|sin señal|sin senal|wifi|se corta)',
+        'cupones'       => '(cupon|cupones|codigo de descuento|codigos de descuento)',
+        'cobros_tienda' => '(mercado pago|mercadopago)',
     ];
     if (!isset($rastros[$clave])) return true;   // clave ancha: no se controla
 
@@ -1854,6 +1885,13 @@ function wabot_temas_perseguibles() {
         'envios'          => '\b(envio|envios|correo|andreani|despacho|flete)\w*',
         'formularios'     => '\b(formulario|formularios|encuesta)\w*',
         'maps'            => '\b(mapa|maps|ubicacion)\w*',
+        'turnos'          => '\b(turno|turnos|reserva|reservas|agenda)\w*',
+        'usuarios'        => '\b(usuario|usuarios|alumnos|cuenta|registr)\w*',
+        'bilingue'        => '\b(idiomas|ingles|portugues|tradu)\w*',
+        'dominio_com'     => '\b(com|comar|renovacion)\b',
+        'estadisticas'    => '\b(estadistica|visitas|analytics|metricas)\w*',
+        'cupones'         => '\b(cupon|cupones|codigo de descuento)\w*',
+        'cobros_tienda'   => '\bmercado ?pago\b',
     ];
 }
 
@@ -1896,7 +1934,9 @@ function wabot_preguntas_del_mensaje($texto, $conv, $fase = null) {
     $perseguibles = wabot_temas_perseguibles();
     // Se corta por oración y también por los conectores con los que la gente
     // encadena preguntas en un audio ("y si...", "también quería saber...").
-    $partes = preg_split('/[?.;!\n]+|,| y | o | si | tambien | también | ademas | además /iu', $crudo);
+    // Conserva el ? en su pregunta y el punto de .com: ambos son señales
+    // necesarias para reconocer las dudas sobre las funciones nuevas.
+    $partes = preg_split('/(?<=[?])|[;!\n]+|\.(?=\s|$)|,| y | o | si | tambien | también | ademas | además /iu', $crudo);
 
     $claves = [];
     foreach ((array)$partes as $parte) {
@@ -2223,6 +2263,19 @@ function wabot_texto_pregunta_cuanto_anticipo($texto) {
         || preg_match('/\b(hay que|tengo que|debo|se deja|se necesita)\b.{0,25}\b(dejar|poner|adelantar|depositar|pagar)\b/u', $t));
 }
 
+/** Consulta por el costo de VER la demo, no por contratar después de verla. */
+function wabot_texto_pregunta_pago_demo($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    $demo = '(demo|muestra|prediseno)';
+    if (!preg_match('/\b' . $demo . '\b/u', $t)) return false;
+    if (preg_match('/\b(ya pague|ya abone|mis clientes|mis alumnos)\b/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(pagar|abonar|pago|abono|cobran)\b.{0,24}\b(para|por|antes de)\b.{0,22}\b' . $demo . '\b/u', $t)
+        || preg_match('/\b(cuanto (sale|cuesta|vale)|que precio tiene)\b\s+(la |una |esa )?' . $demo . '\b/u', $t)
+        || preg_match('/\b' . $demo . '\b\s+(es gratis|se paga|se abona|tiene (un )?(costo|precio)|cuanto (sale|cuesta))\b/u', $t)
+    );
+}
+
 function wabot_texto_pregunta_cuando_se_paga($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
@@ -2283,7 +2336,7 @@ function wabot_handoff_causa_explicita($texto) {
      * técnico" no matcheaba ninguna de estas y el bot siguió preguntando el
      * rubro. Ni "prefiero" estaba entre los verbos de intención, ni "hablarlo"
      * entra en un \bhablar\b. */
-    if (preg_match('/\b(quiero|queria|quisiera|necesito|prefiero|preferiria|puedo|podria|podrias|podes|se puede|quiero que me)\b.{0,35}\b(hablar|hablarlo|hablarla|comunicar|atender|llamar|pasar)\b.{0,35}\b' . $humano . '\b/u', $t)
+    if (preg_match('/\b(quiero|queria|quisiera|me gustaria|nos gustaria|necesito|prefiero|preferiria|puedo|podria|podrias|podes|se puede|quiero que me)\b.{0,35}\b(hablar|hablarlo|hablarla|comunicar|atender|llamar|pasar)\b.{0,35}\b' . $humano . '\b/u', $t)
         || preg_match('/\b(pasame|derivame|comunicate)\b.{0,25}\b' . $humano . '\b/u', $t)
         || preg_match('/\bme\s+(pasas|derivas|comunicas)\b.{0,25}\b' . $humano . '\b/u', $t)
         || preg_match('/\b(hablar|hablarlo|hablarla|comunicarme|contactarme|charlar)\s+con\s+(un[ao]?\s+)?' . $humano . '\b/u', $t)
@@ -3557,6 +3610,13 @@ function wabot_info_por_palabras($texto, $fase = null) {
      * pregunta. "tengo que" no cuenta como contar el negocio. */
     $cuentaSuNegocio = preg_match('/\b(vendo|vendemos|tengo(?! que)|tenemos(?! que)|hago|hacemos|ofrezco|ofrecemos|soy|somos|manejo|manejamos|me dedico|nos dedicamos|trabajo (de|en)|fabrico|fabricamos|acepto|aceptamos|cobro|cobramos)\b/u', $t);
     $tienePregunta = strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false;
+    if (preg_match('/\bmercado ?pago\b/u', $t)
+        && preg_match('/\b(mis clientes|los clientes|la gente|que (me )?paguen|cobrar|cobrarles|en mi tienda)\b/u', $t)
+        && ($tienePregunta || preg_match('/\b(quiero|necesito|puedo|se puede)\b/u', $t))) return 'cobros_tienda';
+    // El descuento que ofrece SU tienda no es un descuento en nuestro precio.
+    if (preg_match('/\b(cupones?|codigos? de descuento)\b/u', $t)
+        && ($tienePregunta || preg_match('/\b(puedo|podemos|se puede|permite|incluye|quiero|necesito)\b/u', $t))
+        && !preg_match('/\b(me (haces|das|dan|ofreces)|para (contratar|pagar) (la|mi) (web|pagina))\b/u', $t)) return 'cupones';
     /* Cómo se da de baja el plan y si hace falta cuenta de Mercado Pago (Pablo,
      * 11-sep). Antes que el plan mensual, que agarraría "dar de baja el plan
      * mensual". La baja tiene que ser del plan o la suscripción: "dar de baja
@@ -3610,7 +3670,7 @@ function wabot_info_por_palabras($texto, $fase = null) {
             . '|(tiene|tienen|incluye|hay) (sistema de )?(turnos|reservas))\b/u', $t)) return 'turnos';
     if ($formaDePregunta
         && preg_match('/\b(usuarios?|registrarse|registrar(se)? (a )?(los|mis|tus) clientes|se (pueden|puede) registrar|crear (una |su )?cuenta|cuentas? de (clientes|usuarios|socios|alumnos)'
-            . '|area (de|para) (socios|clientes|miembros|alumnos|usuarios)|zona de (socios|clientes|miembros)|login|iniciar sesion|inicio de sesion|con (su|un) usuario)\b/u', $t)
+            . '|acceso (de|para) (los |mis )?(alumnos|clientes|usuarios|socios)|area (de|para) (socios|clientes|miembros|alumnos|usuarios)|zona de (socios|clientes|miembros)|login|iniciar sesion|inicio de sesion|con (su|un) usuario)\b/u', $t)
         && !preg_match('/\b(usuario y contrasena|credenciales|cpanel|ftp|hosting|admin|administrador|administrar|panel)\b/u', $t)) return 'usuarios';
     if (preg_match('/\b(estadisticas?|metricas?|analiticas?|cuanta gente (entra|visita|ve|me visita|mira|la ve)|cuantas visitas|cuantos (entran|visitan|me visitan)'
             . '|cantidad de visitas|visitas (de|a|en) (la|mi) (web|pagina|tienda)|trafico de la (web|pagina))\b/u', $t)
@@ -4299,7 +4359,10 @@ function wabot_texto_pregunta_upgrade($texto, $tipoActual) {
           . 'anadir|anadirle|anado|'
           . 'habilitar|habilito|activar|activo|'
           . 'tener|tuviera|tuviese|llevar)\b/u';
-    if (!preg_match($suma, $t)) return null;
+    if (!preg_match($suma, $t) && !preg_match('/\b(ademas|tambien) quiero\b/u', $t)) return null;
+    // Cursos, propiedades o sistemas propios combinados sí requieren alcance
+    // a medida; no caben en el precio de una tienda de productos.
+    if (preg_match('/\b(cursos|propiedades|inmobiliaria|sistema de gestion)\b/u', $t)) return null;
 
     $vender = '/\b(venta|ventas|vender|carrito|cobro|cobrar|cobros|pago online|pagos online|pagar online|comprar online|tienda online|ecommerce|e commerce)\b/u';
     if (!preg_match($vender, $t)) return null;
@@ -4316,7 +4379,9 @@ function wabot_upgrade_texto($destino, $conv, $cfg) {
     $actual = (string)($conv['tipo'] ?? '');
     if ($actual === '' || !isset($cfg['tipos'][$destino]) || !isset($cfg['tipos'][$actual])) return null;
 
-    $precioNuevo = wabot_precio_frase(wabot_precio_vigente(null, $cfg, $destino));
+    $pendiente = $conv['upgrade_pendiente'] ?? null;
+    $precioNuevo = wabot_precio_frase(is_array($pendiente) && ($pendiente['tipo'] ?? '') === $destino
+        ? $pendiente : wabot_precio_vigente(null, $cfg, $destino));
     $precioViejo = wabot_precio_frase(wabot_precio_vigente($conv, $cfg));
     if ($precioNuevo === '') return null;
 
@@ -4442,6 +4507,9 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * estadísticas de la tienda. */
     $variante = is_array($conv) ? wabot_info_variante_por_tipo($clave, (string)($conv['tipo'] ?? '')) : null;
     if ($variante !== null && trim((string)($cfg['info'][$variante] ?? '')) !== '') $texto = (string)$cfg['info'][$variante];
+    /* info.proceso son los tres pasos, y desde el 11-sep su paso 2 dice el
+     * primer pago de lo cotizado: sin charla cotizada, el monto se cae solo. */
+    if ($clave === 'proceso') $texto = wabot_tres_pasos_precio($texto, $conv, $cfg);
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
@@ -4919,7 +4987,33 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
     $t = trim((string)($cfg['msg_tres_pasos'] ?? ''));
     if ($t === '' && function_exists('wabot_tres_pasos_default')) $t = wabot_tres_pasos_default();
+    $t = wabot_tres_pasos_precio($t, $conv, $cfg);
     if ($conPregunta && $t !== '') $t .= "\n" . wabot_tres_pasos_pregunta();
+    return $t;
+}
+
+/**
+ * El primer pago dentro del paso 2 (Pablo, 11-sep): "se hace un primer pago de
+ * $60.000". Es el monto congelado de ESTA charla, nunca el de lista si todavía
+ * no se cotizó: al que pregunta cómo trabajamos antes de tener precio se le cae
+ * el monto y queda "se hace un primer pago y con eso avanzamos…".
+ */
+function wabot_tres_pasos_precio($texto, $conv, $cfg) {
+    $t = (string)$texto;
+    if (strpos($t, '{precio}') === false) return $t;
+    $primerPago = '';
+    if (is_array($conv) && !empty($conv['precio_dado'])) {
+        $v = wabot_precio_vigente($conv, $cfg);
+        // La charla del pago único no tiene "primer pago": ahí el monto no va.
+        if (($v['modelo'] ?? '') !== 'unico') {
+            $primerPago = trim((string)$v['precio']);
+        }
+    }
+    foreach (['{precio}' => $primerPago] as $marca => $monto) {
+        $t = $monto !== ''
+            ? str_replace($marca, $monto, $t)
+            : trim(preg_replace('/\s*de ' . preg_quote($marca, '/') . '/u', '', $t));
+    }
     return $t;
 }
 
@@ -5132,8 +5226,10 @@ function wabot_rubro_valido($rubro, $conv) {
     if (preg_match('/[\d$%{}]|https?:|www\.|\.com\b/iu', $r)) return '';
     $norm = wabot_normalizar_frase($r);
     $palabras = array_values(array_filter(explode(' ', $norm)));
-    // Siete y no seis desde el 11-sep: el "tu" o "tus" de adelante también cuenta.
-    if (count($palabras) < 1 || count($palabras) > 7) return '';
+    // La expresión "tu servicio de alquiler de sonido e iluminación" tiene
+    // ocho palabras. El límite de siete sigue rigiendo para los otros rubros.
+    $maxPalabras = preg_match('/^(tu|mi|nuestro) servicio de alquiler\b/u', $norm) ? 9 : 7;
+    if (count($palabras) < 1 || count($palabras) > $maxPalabras) return '';
     // Ni terminar en una preposición o un artículo: "productos de limpieza a".
     if (preg_match('/^(a|al|de|del|la|las|el|los|en|para|con|y|o|e|u|un|una|por|sin)$/u', end($palabras))) return '';
     /* "alquilamos sonido e iluminación para eventos" es lo que HACE dicho con
@@ -5170,6 +5266,7 @@ function wabot_rubro_valido($rubro, $conv) {
     $r = preg_replace('/^(mi|nuestro|nuestra)\s+/iu', 'tu ', $r);
     $r = preg_replace('/^(mis|nuestros|nuestras)\s+/iu', 'tus ', $r);
     if (!$hayPropio) $r = mb_strtolower(mb_substr($r, 0, 1)) . mb_substr($r, 1);
+    $r = preg_replace('/^tu alquiler de\b/iu', 'tu servicio de alquiler de', $r);
     return $r;
 }
 
@@ -5611,18 +5708,18 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* EL TURNO DEL PRECIO SON DOS MENSAJES: el precio y, atrás, LOS TRES PASOS
-     * (demo gratis, primer pago, plan mensual a los 30 días), dictados por
-     * Pablo el 10-sep. Sin nada en el medio (Pablo, 2-sep: "sacá todo lo que
-     * sea 'si te cierra', 'si va por ahí'"). El link del formulario ya NO va
-     * pegado acá: sale recién cuando el cliente contesta que sí (case
-     * 'prediseno' del motor, o consultar_info('prediseno') del agente). Es el
-     * mismo texto haya link o no, así Instagram y el que ya completó el form
-     * reciben el mismo segundo mensaje. */
+    /* EL TURNO DEL PRECIO ES UN SOLO MENSAJE (Pablo, 11-sep): lo que le podemos
+     * hacer con el precio y el link, y pegados abajo LOS TRES PASOS (demo
+     * gratis, primer pago, plan mensual a los 30 días). Hasta ese día iban en
+     * dos globos y el segundo llegaba unos segundos después; partido en dos se
+     * leía como dos mensajes sueltos. Sin nada en el medio (Pablo, 2-sep:
+     * "sacá todo lo que sea 'si te cierra', 'si va por ahí'"). El link del
+     * formulario ya NO va acá: sale recién cuando el cliente contesta que sí
+     * (case 'prediseno' del motor, o consultar_info('prediseno') del agente). */
     $conv['fase'] = 'prediseno';
     $conv['cta_muestra'] = true;
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
-    return [$precioTexto, wabot_tres_pasos_texto($conv, $cfg)];
+    return [$precioTexto . "\n\n" . wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -5731,7 +5828,7 @@ function wabot_precio($tipo, &$conv, $cfg) {
     // El precio sale con el mismo texto que en el pitch (el formato de Pablo
     // del 11-sep): el que preguntó "cuánto sale" antes de contar su rubro
     // recibía otra redacción, la de msg_precio.
-    $out = [wabot_pitch_precio_texto($tipo, $cfg, $conv)];
+    $precioSolo = wabot_pitch_precio_texto($tipo, $cfg, $conv);
     $conv['fase'] = 'prediseno';
     $conv['cta_muestra'] = true;
     // "Ofrecida", no "aceptada": todavía no sabemos si el cliente la quiere,
@@ -5740,13 +5837,14 @@ function wabot_precio($tipo, &$conv, $cfg) {
     // contesta con sus datos, dice que sí).
     $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-    /* Detrás del precio van los tres pasos (Pablo, 10-sep), con o sin link:
-     * el formulario o el listado de datos salen recién con el sí del cliente,
-     * igual que en el camino del pitch. Salvo que ya haya pedido la demo al
-     * entrar ("quiero la demo gratis"): ese sí ya está dicho, así que el
-     * formulario va en el mismo turno, y los tres pasos sin la pregunta. */
+    /* Los tres pasos van pegados al precio, en el mismo mensaje (Pablo,
+     * 11-sep), con o sin link: el formulario o el listado de datos salen recién
+     * con el sí del cliente, igual que en el camino del pitch. Salvo que ya
+     * haya pedido la demo al entrar ("quiero la demo gratis"): ese sí ya está
+     * dicho, así que el formulario va en el mismo turno —en su propio globo,
+     * porque lleva el link— y los pasos van sin la pregunta. */
     $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
-    $out[] = wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '');
+    $out = [$precioSolo . "\n\n" . wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
     if ($pedidoDemo !== '') $out[] = $pedidoDemo;
     return $out;
 }
@@ -5909,6 +6007,7 @@ function wabot_postdemo_pregunta_como_pagar($texto) {
         preg_match('/\b(como|donde|cuando|de que forma)\b.{0,22}\b(te pago|les pago|te abono|hago para pagar|hago el pago|se paga|se abona|te transfiero|te deposito|deposito)\b/u', $t)
         || preg_match('/\b(cuanto|que)\b.{0,20}\b(hay que|tengo que|debo|se)\b.{0,14}\b(dejar|pagar|abonar|adelantar)\b/u', $t)
         || preg_match('/\b(sena|seña|anticipo|adelanto)\b/u', $t)
+        || preg_match('/\b(primer pago|pago inicial)\b/u', $t)
         || preg_match('/\b(formas?|medios?|metodos?)\b.{0,12}\b(de pago)\b/u', $t)
     );
 }
@@ -6010,7 +6109,7 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
          * ya es interés real: ahí sale el aviso y la pregunta no se repite
          * ("está perfecta" es a la vez la respuesta y otro elogio). */
         if (!$interes) {
-            $especifico = (string)($cfg['postdemo_elogio'] ?? '');
+            $especifico = wabot_postdemo_texto_elogio($conv, $cfg);
             $conv['postdemo_pregunto_cambios'] = true;
         }
     } elseif (wabot_postdemo_duda($texto) && empty($conv['videollamada_ofrecida'])) {
@@ -6048,12 +6147,22 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
     $conv['postdemo_avisado'] = true;
     wabot_handoff_marcar($conv, 'postdemo_respuesta');
     $aviso = (string)($cfg['postdemo_derivar'] ?? '');
+    if (wabot_postdemo_pregunta_como_pagar($texto) || wabot_texto_pregunta_cuanto_anticipo($texto)
+        || wabot_prefiere_tarjeta($texto)) {
+        $aviso = (string)($cfg['postdemo_derivar_pago'] ?? $aviso);
+    }
     if (trim($aviso) === '') return wabot_postdemo_componer($especifico, $info);
     // Si la respuesta deja una pregunta abierta, el aviso la contradice.
     if (strpos($especifico, '?') !== false) return wabot_postdemo_componer($especifico, $info);
     $out = wabot_postdemo_componer($especifico, $info) ?? [];
     $out[] = $aviso;
     return $out;
+}
+
+function wabot_postdemo_texto_elogio($conv, $cfg) {
+    $clave = trim((string)($conv['cambios_pedidos'] ?? '')) !== ''
+        ? 'postdemo_elogio_con_cambios' : 'postdemo_elogio';
+    return (string)($cfg[$clave] ?? $cfg['postdemo_elogio'] ?? '');
 }
 
 /**
@@ -6090,7 +6199,7 @@ function wabot_postdemo_preguntas_extra($texto, &$conv, $cfg) {
     $vacio = ['hay' => false, 'info' => ''];
     if ($crudo === '') return $vacio;
 
-    $partes = preg_split('/[?.;!\n]+|,| y | o | pero | si | tambien | también | ademas | además /iu', $crudo);
+    $partes = preg_split('/(?<=[?])|[;!\n]+|\.(?=\s|$)|,| y | o | pero | si | tambien | también | ademas | además /iu', $crudo);
     $hay = false; $pidePrecio = false;
     foreach ((array)$partes as $parte) {
         $parte = trim((string)$parte);
@@ -6497,6 +6606,13 @@ function wabot_dice_que_completo_form($texto) {
     return (bool)preg_match('/\b(formulario|form|link|datos)\b.{0,20}\b(completo|completado|completados|enviado|enviados|mandado|mandados|cargado|cargados|listo)\b/u', $t);
 }
 
+/** El ? de "ya completé todo, te llegó?" pregunta por la recepción. */
+function wabot_form_pregunta_recepcion($texto) {
+    $t = wabot_normalizar_frase($texto);
+    return (bool)preg_match('/^(?:(ya|recien|ahi|listo) (lo )?(complete|llene|envie|mande|termine|rellene)( todo| el formulario| el form| los datos)? )?'
+        . '(te llego|les llego|lo recibiste|lo recibieron|recibiste el formulario|lo tenes)( bien| todo)?$/u', $t);
+}
+
 /**
  * ¿Está la charla esperando el sí a la demo? Es el turno que sigue a los tres
  * pasos: precio dado, demo ofrecida, formulario activo y el link todavía sin
@@ -6548,9 +6664,11 @@ function wabot_form_ya_recibido_texto() {
  * al agente o al motor como siempre.
  */
 function wabot_form_enviado_responder($texto, &$conv, $cfg) {
+    $avisoCompleto = wabot_dice_que_completo_form($texto)
+        && (mb_strpos((string)$texto, '?') === false || wabot_form_pregunta_recepcion($texto));
     // El formulario ya llegó: "ya lo completé, fijate" se confirma una vez.
     if ((int)($conv['form_completado_ts'] ?? 0) > 0) {
-        if (!wabot_dice_que_completo_form($texto) || mb_strpos((string)$texto, '?') !== false) return null;
+        if (!$avisoCompleto) return null;
         if (!empty($conv['form_recibido_confirmado'])) return [];
         $conv['form_recibido_confirmado'] = true;
         return [wabot_personalizar(wabot_form_ya_recibido_texto(), $conv)];
@@ -6579,7 +6697,7 @@ function wabot_form_enviado_responder($texto, &$conv, $cfg) {
 
     // Dice que ya lo llenó: se mira si llegó. La segunda vez algo anda mal con
     // el formulario, y eso lo tiene que ver una persona.
-    if (wabot_dice_que_completo_form($texto) && mb_strpos((string)$texto, '?') === false) {
+    if ($avisoCompleto) {
         $avisos = (int)($conv['form_no_llego_avisos'] ?? 0);
         $conv['form_no_llego_avisos'] = $avisos + 1;
         if ($avisos >= 1) {

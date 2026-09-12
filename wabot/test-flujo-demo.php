@@ -108,14 +108,14 @@ echo "— 2. Los tres pasos terminan preguntando si la quiere —\n";
 
 $c = conv_fd('5491188880001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
-caso('los tres pasos arrancan con la primera entrega gratis', strpos($r[1] ?? '', '1. La primera entrega es gratis') !== false);
-caso('y cierran con la pregunta de la demo', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1] ?? '') === 1, $r[1] ?? '');
+caso('los tres pasos arrancan con la primera entrega gratis', strpos($r[0] ?? '', '1. La primera entrega es gratis') !== false);
+caso('y cierran con la pregunta de la demo', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[0] ?? '') === 1, $r[0] ?? '');
 caso('sin el link: ese sale con el sí', !tiene_form($r));
 
 $c = conv_fd('5491188880002TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
 caso('quien la pidió al entrar recibe los tres pasos SIN la pregunta y el formulario atrás',
-    count($r) === 3 && strpos($r[1], 'Querés que preparemos') === false && tiene_form([$r[2] ?? '']),
+    count($r) === 2 && strpos($r[0], 'Querés que preparemos') === false && tiene_form([$r[1] ?? '']),
     json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 3. El motor manda el link solo con el sí (V05) —\n";

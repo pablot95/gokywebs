@@ -1,0 +1,112 @@
+[
+  {
+    "id": "AUD11A01",
+    "titulo": "Psicóloga: contexto, turnos, idiomas y aceptación",
+    "esperado": "Sitio profesional 60.000 + 20.000/mes; no deriva por atender por videollamada. Responde turnos e idiomas sin adicionales. El formulario llega al aceptar.",
+    "turnos": [
+      "Hola, soy psicóloga, atiendo por videollamada y quiero una web para mostrar mis servicios",
+      "Se pueden reservar turnos online? Y puede estar en español e inglés?",
+      "Sí, dale, quiero ver la demo",
+      "No tengo logo todavía, puedo completar igual?"
+    ]
+  },
+  {
+    "id": "AUD11A02",
+    "titulo": "Tienda: cupones del cliente, estadísticas y cobros",
+    "esperado": "Tienda 90.000 + 30.000/mes. Cupones no es regateo. Estadísticas corresponden a tienda. Mercado Pago de compradores no es el pago de la web.",
+    "turnos": [
+      "Buenas, vendo ropa de bebé, necesito vender y cobrar desde la página",
+      "Puedo poner cupones de descuento para mis clientes?",
+      "Y tiene estadísticas para ver cuánta gente entra y cuánto vendo?",
+      "Quiero que mis clientes paguen por Mercado Pago, se puede?"
+    ]
+  },
+  {
+    "id": "AUD11A03",
+    "titulo": "Wix y pastelería: continúa la venta y aclara el plan",
+    "esperado": "Explica plataforma y continúa cotizando tienda. No promete un plan opcional ni pago único. Duda de plan no cierra como rechazo.",
+    "turnos": [
+      "Hola, me pueden hacer una página en Wix para mi pastelería? Vendo tortas y budines por encargo",
+      "El mantenimiento es opcional o tengo que pagar todos los meses?",
+      "Y si un mes dejo de pagar, pierdo la página?",
+      "Entiendo, sí, quiero la demo gratis"
+    ]
+  },
+  {
+    "id": "AUD11A04",
+    "titulo": "Alquiler de sonido: datos por chat después del formulario",
+    "esperado": "No pregunta qué eventos organiza; cotiza servicios. Acepta datos por chat, conserva la marca y colores y no confunde Buen Valor con precio.",
+    "turnos": [
+      "Hola, alquilamos sonido e iluminación para fiestas y eventos",
+      "Dale, preparen la demo",
+      "Prefiero pasarte los datos por acá: soy Martín, el negocio se llama Buen Valor, alquilamos equipos de sonido e iluminación y los colores son negro y naranja",
+      "No tengo más nada que agregar, con eso está bien"
+    ]
+  },
+  {
+    "id": "AUD11A05",
+    "titulo": "Cursos grabados: alumnos, dominio y costo de entrada",
+    "esperado": "Plataforma de cursos 90.000 + 30.000/mes; área de alumnos incluida. Dominio .com distingue renovación 40.000 anual. Aclara que la demo es gratis y cuándo se abona.",
+    "turnos": [
+      "Hola, quiero vender mis cursos grabados de pastelería y que cada alumno entre con su usuario a ver los videos",
+      "El acceso de alumnos está incluido? Y el dominio puede ser .com?",
+      "Cuánto tengo que pagar ahora para ver la demo?",
+      "Sí, hagamos la demo"
+    ]
+  },
+  {
+    "id": "AUD11A06",
+    "titulo": "Inmobiliaria: editar propiedades y titularidad",
+    "esperado": "Inmobiliaria 90.000 + 30.000/mes. Dar de baja una propiedad no responde cancelar el plan. Titularidad aclara los 12 meses.",
+    "turnos": [
+      "Hola, tengo una inmobiliaria y necesito publicar casas en venta y departamentos en alquiler",
+      "Puedo dar de baja una propiedad cuando se vende y cargar otra yo mismo?",
+      "La web y el dominio quedan a mi nombre?",
+      "Dale, mandame el formulario para la demo"
+    ]
+  },
+  {
+    "id": "AUD11A07",
+    "titulo": "Cambio de alcance: estética suma venta online",
+    "esperado": "Cotiza servicios y al sumar venta aclara precio de tienda sin sumar dos planes. Mantiene coherencia del tipo para estadísticas y formulario.",
+    "turnos": [
+      "Hola, tengo un centro de estética y quiero mostrar los tratamientos y recibir reservas",
+      "Y si además quiero vender productos de skincare y cobrarlos online, cuánto sale todo junto?",
+      "Entonces serían 90 mil de primer pago y 30 mil por mes en total, no los dos planes juntos?",
+      "Sí, quiero la demo con la tienda y los turnos"
+    ]
+  },
+  {
+    "id": "AUD11A08",
+    "titulo": "Postdemo: cambio visual junto a pregunta y pago",
+    "esperado": "Anota cambio y contesta pregunta en el mismo turno. No deriva con elogio simple; deriva con voluntad de pago. No pide formulario de nuevo.",
+    "estado": {"fase":"postdemo","tipo":"landing","precio_dado":true,"precio_modelo":"mensual","precio_cotizado":"$60.000","mensualidad_cotizada":"$20.000","presentado_ts":"@ahora","lead_creado":true,"descripcion":"Servicio de psicología","pitch_hecho":true,"link_form_enviado":true,"form_completado_ts":"@ahora","cta_muestra":true},
+    "turnos": [
+      "Me gustó la demo, pero podés cambiar el fondo a beige? Y los turnos online están incluidos?",
+      "Buenísimo, quedó muy linda la idea",
+      "Quiero contratarla, cómo hago el primer pago?"
+    ]
+  },
+  {
+    "id": "AUD11A09",
+    "titulo": "Consulta de precio y rechazo solo a la videollamada",
+    "esperado": "Contesta precio inicial sin rubro; veterinaria no es ininteligible. No cierra por rechazar videollamada; pedido explícito de asesor sí deriva.",
+    "turnos": [
+      "Hola, no quiero molestar, cuánto sale una página web?",
+      "Veterinaria",
+      "No me interesa la videollamada, prefiero por acá. Qué incluye el plan?",
+      "Me gustaría hablar por acá con un asesor antes de decidir"
+    ]
+  },
+  {
+    "id": "AUD11A10",
+    "titulo": "Formulario pendiente: no inventa recepción ni se apaga ante reclamo",
+    "esperado": "Formulario al sí. No afirma recepción sin envío registrado. Reclamo no es baja ni deriva automáticamente. Reenvía el link al pedirlo.",
+    "turnos": [
+      "Hola, soy electricista matriculado y quiero una web para mostrar mis trabajos",
+      "Sí dale, armenla",
+      "Ya completé todo, te llegó?",
+      "No me mandaron nada todavía, me pasás de nuevo el formulario?"
+    ]
+  }
+]

@@ -126,18 +126,19 @@ echo "— 3. El turno del precio: dos mensajes, los tres pasos sin link —\n";
 
 $c = conv_mm('5491177770001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
-caso('son dos mensajes', count($r) === 2);
-caso('el primero dice el primer pago y el plan por mes, pegados, como los dictó Pablo (11-sep)',
+caso('es un solo mensaje (11-sep)', count($r) === 1);
+caso('el precio dice el primer pago y el plan mensual cotizados',
     preg_match('/Empezás con un primer pago de \$60\.000\. A los 30 días de ese pago comienza el plan de \$20\.000 por mes/u', $r[0]) === 1, $r[0]);
-caso('el segundo son los tres pasos, textuales, y la pregunta de la demo (11-sep)',
-    ($r[1] ?? '') === wabot_tres_pasos_default() . "\n" . wabot_tres_pasos_pregunta());
-caso('con el plazo de la demo que pidió Pablo', mb_stripos($r[1] ?? '', 'menos de 24 horas') !== false);
-caso('y sin el link del formulario', strpos($r[1] ?? '', 'gokywebs.com/form/') === false);
+caso('abajo van los tres pasos, textuales con los dos montos resueltos, y la pregunta de la demo (11-sep)',
+    mb_strpos($r[0], "\n\n" . str_replace('{precio}', '$60.000', wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta()) !== false, $r[0]);
+caso('con el plazo de la demo que pidió Pablo', mb_stripos($r[0], 'menos de 24 horas') !== false);
+caso('y sin el link del formulario', strpos($r[0], 'gokywebs.com/form/') === false);
 caso('el precio queda congelado en la charla',
     ($c['precio_cotizado'] ?? '') === '$60.000' && ($c['mensualidad_cotizada'] ?? '') === '$20.000'
     && ($c['precio_modelo'] ?? '') === 'mensual');
 caso('el link todavía no se marcó como enviado', empty($c['link_form_enviado']));
-caso('los tres pasos se reconocen como el mensaje de la demo (demora de 2 segundos)', wabot_es_texto_demo($r[1] ?? '', $cfg));
+caso('el mensaje del precio ya nombra la demo, así que no hay segundo globo que demorar',
+    count($r) === 1 && mb_stripos($r[0], 'demo') !== false);
 
 echo "— 4. El link del formulario sale con el sí —\n";
 
@@ -175,8 +176,10 @@ caso('pero una pregunta no cuenta como sí: no se le manda el formulario en luga
 
 $c = conv_mm('5491177770032TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
-caso('quien pidió la demo al entrar recibe precio, tres pasos y formulario en el mismo turno',
-    count($r) === 3 && ($r[1] ?? '') === wabot_tres_pasos_default() && strpos($r[2] ?? '', 'gokywebs.com/form/') !== false,
+caso('quien pidió la demo al entrar recibe precio con los tres pasos y, atrás, el formulario',
+    count($r) === 2
+    && mb_strpos($r[0], "\n\n" . str_replace('{precio}', '$60.000', wabot_tres_pasos_default())) !== false
+    && strpos($r[1] ?? '', 'gokywebs.com/form/') !== false,
     json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 5. El precio congelado no cambia si cambia la lista —\n";

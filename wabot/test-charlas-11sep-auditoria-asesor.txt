@@ -1,0 +1,30 @@
+Bateria conversacional wabot — 1 escenarios, modo agente, motor 1971b6b3fd
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO AUD11A09 — Consulta de precio y rechazo solo a la videollamada
+ESPERADO: Contesta precio inicial sin rubro; veterinaria no es ininteligible. No cierra por rechazar videollamada; pedido explícito de asesor sí deriva.
+>>> CLIENTE: Hola, no quiero molestar, cuánto sale una página web?
+<<< BOT [242c]: Sitio profesional: primer pago de $60.000 y después $20.000 por mes. Tienda online, plataforma de cursos o inmobiliaria: primer pago de $90.000 y después $30.000 por mes.
+           Contame qué vendés o qué servicio das y te confirmo cuál sería el tuyo.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Veterinaria
+<<< BOT [874c]: Para tu veterinaria podemos hacer una web donde muestres los servicios y tus clientes reserven turnos online.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No me interesa la videollamada, prefiero por acá. Qué incluye el plan?
+<<< BOT [271c]: Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte y un cambio por mes. No tenés que ocuparte de nada.
+           Si querés más de un cambio por mes, son $10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me gustaría hablar por acá con un asesor antes de decidir
+<<< BOT [131c]: Perfecto. A partir de acá sigue el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

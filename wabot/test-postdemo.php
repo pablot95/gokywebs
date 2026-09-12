@@ -45,8 +45,8 @@ function responder($texto, array $extra = []) {
 }
 
 function tiene_aviso($out) {
-    global $AVISO;
-    foreach ((array)$out as $t) if (trim((string)$t) === trim($AVISO)) return true;
+    global $AVISO, $cfg;
+    foreach ((array)$out as $t) if (in_array(trim((string)$t), [$AVISO, $cfg['postdemo_derivar_pago']], true)) return true;
     return false;
 }
 
@@ -109,7 +109,7 @@ caso('avisa que pagó: queda marcado el pago', (int)($conv['pago_avisado_ts'] ??
 echo "\n=== El aviso, una sola vez y sin nombre propio ===\n";
 
 caso('el aviso es el texto corto pedido',
-    $AVISO === 'Para seguir con el proyecto te va a escribir el desarrollador desde otro número.', $AVISO);
+    $AVISO === 'Para seguir con el proyecto te va a escribir el desarrollador desde nuestro número de proyectos.', $AVISO);
 
 $conNombre = [];
 array_walk_recursive($cfg, function ($v, $k) use (&$conNombre) {
@@ -145,7 +145,7 @@ $viejo = [
 ];
 wabot_config_migrar($viejo);
 caso('el aviso viejo se reemplaza por el corto',
-    $viejo['postdemo_derivar'] === 'Para seguir con el proyecto te va a escribir el desarrollador desde otro número.',
+    $viejo['postdemo_derivar'] === 'Para seguir con el proyecto te va a escribir el desarrollador desde nuestro número de proyectos.',
     $viejo['postdemo_derivar']);
 caso('el elogio deja de proponer avanzar',
     mb_stripos($viejo['postdemo_elogio'], 'avanzamos') === false, $viejo['postdemo_elogio']);

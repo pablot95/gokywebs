@@ -91,28 +91,32 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va un sitio profesional: \$60.000 de primer pago y \$20.000 por mes desde los 30 días. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional y te hacemos un prediseño gratis antes de que decidas.";
+    return "Mirá, para lo tuyo va un sitio profesional a medida. El primer pago es de \$60.000 y a los 30 días empieza el plan de \$20.000 por mes. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('modo natural → manda la versión redactada del primero',
-    count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
+caso('modo natural → manda la versión redactada de la parte del precio',
+    count($r) === 1 && strpos($r[0], 'Mirá, para lo tuyo') === 0
     && strpos($r[0], '$60.000') !== false);
-caso('los tres pasos van aparte, SIN el link (sale con el sí del cliente), y NO se reescriben',
-    stripos($r[1], 'tres pasos') !== false && strpos($r[1], 'gokywebs.com/form/') === false);
+/* Los tres pasos viajan pegados al precio desde el 11-sep, pero son texto
+ * dictado: se reescribe lo de arriba y ellos vuelven tal cual. */
+caso('los tres pasos van pegados abajo, SIN el link (sale con el sí del cliente), y NO se reescriben',
+    mb_stripos($r[0], "\n\nAsí trabajamos, en tres pasos") !== false
+    && strpos($r[0], 'gokywebs.com/form/') === false
+    && mb_substr(rtrim($r[0]), -mb_strlen(wabot_tres_pasos_pregunta())) === wabot_tres_pasos_pregunta());
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 2 && strpos($r[0], '$60.000') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 1 && strpos($r[0], '$60.000') !== false && strpos($r[0], 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[0], '$60.000') !== false);
+caso('redactor caído → cae al texto fijo', count($r) === 1 && strpos($r[0], '$60.000') !== false);
 
 // La derivación nunca se reescribe.
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
@@ -309,7 +313,8 @@ caso('un "cómo pago?" post-demo NO recibe el CBU ni el alias',
     && mb_stripos($textoPagoPD, 'pablotravis') === false);
 // Preguntar cómo se paga ES interés real: ahí sí sale el aviso, una vez.
 caso('se le avisa que lo sigue el desarrollador, y queda derivado',
-    mb_stripos($textoPagoPD, 'te va a escribir el desarrollador') !== false
+    mb_stripos($textoPagoPD, 'El desarrollador te va a escribir') !== false
+    && mb_stripos($textoPagoPD, 'coordinar el primer pago') !== false
     && mb_stripos($textoPagoPD, 'Pablo') === false
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 

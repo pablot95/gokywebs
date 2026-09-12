@@ -1,0 +1,266 @@
+Bateria conversacional wabot — 10 escenarios, modo agente, motor b9fc63ebbd
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO AUD11A01 — Psicóloga: contexto, turnos, idiomas y aceptación
+ESPERADO: Sitio profesional 60.000 + 20.000/mes; no deriva por atender por videollamada. Responde turnos e idiomas sin adicionales. El formulario llega al aceptar.
+>>> CLIENTE: Hola, soy psicóloga, atiendo por videollamada y quiero una web para mostrar mis servicios
+<<< BOT [896c]: Para tu servicio de psicología podemos hacer una web donde muestres tus servicios y te consulten por las sesiones por videollamada.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Se pueden reservar turnos online? Y puede estar en español e inglés?
+<<< BOT [260c]: Sí, está incluido: la web puede tener turnos online, donde tus pacientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.
+
+           Y también está incluido el tema de los idiomas: la web se puede traducir hasta a 3 idiomas, sin costo aparte.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sí, dale, quiero ver la demo
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=VY
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No tengo logo todavía, puedo completar igual?
+<<< BOT [205c]: Sí, por supuesto. No es un problema, se puede avanzar igual: armamos la web con tu nombre y una identidad visual acorde al rubro. Si más adelante conseguís un logo, lo agregamos sin tener que rehacer nada.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A02 — Tienda: cupones del cliente, estadísticas y cobros
+ESPERADO: Tienda 90.000 + 30.000/mes. Cupones no es regateo. Estadísticas corresponden a tienda. Mercado Pago de compradores no es el pago de la web.
+>>> CLIENTE: Buenas, vendo ropa de bebé, necesito vender y cobrar desde la página
+<<< BOT [872c]: Para tu tienda de ropa de bebé podemos hacer una web donde tus clientes vean las prendas, compren y paguen online.
+
+           Empezás con un primer pago de $90.000. A los 30 días de ese pago comienza el plan de $30.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $90.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Puedo poner cupones de descuento para mis clientes?
+<<< BOT [220c]: Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y tiene estadísticas para ver cuánta gente entra y cuánto vendo?
+<<< BOT [132c]: Sí, tu panel trae estadísticas: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Quiero que mis clientes paguen por Mercado Pago, se puede?
+<<< BOT [142c]: Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A03 — Wix y pastelería: continúa la venta y aclara el plan
+ESPERADO: Explica plataforma y continúa cotizando tienda. No promete un plan opcional ni pago único. Duda de plan no cierra como rechazo.
+>>> CLIENTE: Hola, me pueden hacer una página en Wix para mi pastelería? Vendo tortas y budines por encargo
+<<< BOT [278c]: Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia web, a medida.
+           Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.
+<<< BOT [875c]: Para tu pastelería podemos hacer una web donde tus clientes vean las tortas y budines y te hagan los encargos online.
+
+           Empezás con un primer pago de $90.000. A los 30 días de ese pago comienza el plan de $30.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/ecommerce
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $90.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: El mantenimiento es opcional o tengo que pagar todos los meses?
+<<< BOT [175c]: El plan mensual es obligatorio: es lo que mantiene la web online, con hosting, dominio, soporte y un cambio por mes. Eso sí, no hay permanencia: lo das de baja cuando quieras.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y si un mes dejo de pagar, pierdo la página?
+<<< BOT [424c]: No hay permanencia: el plan lo das de baja cuando quieras, desde Mercado Pago. Si te suscribiste sin cuenta de Mercado Pago (se puede, con cualquier tarjeta), la baja se hace llamando al banco de esa tarjeta.
+
+           Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si se da de baja o dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Entiendo, sí, quiero la demo gratis
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=ZW
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A04 — Alquiler de sonido: datos por chat después del formulario
+ESPERADO: No pregunta qué eventos organiza; cotiza servicios. Acepta datos por chat, conserva la marca y colores y no confunde Buen Valor con precio.
+>>> CLIENTE: Hola, alquilamos sonido e iluminación para fiestas y eventos
+<<< BOT [880c]: Podemos hacer una web donde muestres los equipos de sonido e iluminación y te consulten para sus fiestas y eventos.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, preparen la demo
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=A8
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Prefiero pasarte los datos por acá: soy Martín, el negocio se llama Buen Valor, alquilamos equipos de sonido e iluminación y los colores son negro y naranja
+<<< BOT [245c]: Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.
+    [fase=prediseno_ref tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No tengo más nada que agregar, con eso está bien
+<<< BOT [238c]: Listo Martín, ya tenemos los datos para preparar la demo y te la mandamos por acá mañana. Si tenés el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo, mandámelos para personalizarla; podemos empezar igual si todavía no los tenés.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=prediseno]
+
+########## ESCENARIO AUD11A05 — Cursos grabados: alumnos, dominio y costo de entrada
+ESPERADO: Plataforma de cursos 90.000 + 30.000/mes; área de alumnos incluida. Dominio .com distingue renovación 40.000 anual. Aclara que la demo es gratis y cuándo se abona.
+>>> CLIENTE: Hola, quiero vender mis cursos grabados de pastelería y que cada alumno entre con su usuario a ver los videos
+<<< BOT [892c]: Para tus cursos de pastelería podemos hacer una web donde los alumnos compren online y accedan a ver los videos con su propio usuario.
+
+           Empezás con un primer pago de $90.000. A los 30 días de ese pago comienza el plan de $30.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/elearning
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $90.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: El acceso de alumnos está incluido? Y el dominio puede ser .com?
+<<< BOT [287c]: Sí, está incluido: la web puede tener usuarios, así tus clientes se registran y entran con su cuenta. No se paga aparte.
+
+           Y con respecto al dominio, sí, se puede. El dominio que viene incluido en el plan es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuánto tengo que pagar ahora para ver la demo?
+<<< BOT [189c]: La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar se abona el primer pago para arrancar. A los 30 días de ese primer pago comienza el plan mensual.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sí, hagamos la demo
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=Q7
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=elearning precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A06 — Inmobiliaria: editar propiedades y titularidad
+ESPERADO: Inmobiliaria 90.000 + 30.000/mes. Dar de baja una propiedad no responde cancelar el plan. Titularidad aclara los 12 meses.
+>>> CLIENTE: Hola, tengo una inmobiliaria y necesito publicar casas en venta y departamentos en alquiler
+<<< BOT [857c]: Para tu inmobiliaria podemos hacer una web donde publiques tus propiedades con fotos y detalles.
+
+           Empezás con un primer pago de $90.000. A los 30 días de ese pago comienza el plan de $30.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/inmobiliaria
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $90.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Puedo dar de baja una propiedad cuando se vende y cargar otra yo mismo?
+<<< BOT [175c]: Sí, totalmente. La web inmobiliaria viene con un panel de administración propio para que puedas cargar, modificar o dar de baja las propiedades vos mismo de forma súper fácil.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: La web y el dominio quedan a mi nombre?
+<<< BOT [218c]: Mientras dure el plan, la web y el dominio están a nombre de Gokywebs: por eso el hosting, el dominio y el soporte van incluidos.
+
+           A los 12 meses de plan podés reclamar el código y la propiedad de la web y del dominio.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, mandame el formulario para la demo
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=WJ
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A07 — Cambio de alcance: estética suma venta online
+ESPERADO: Cotiza servicios y al sumar venta aclara precio de tienda sin sumar dos planes. Mantiene coherencia del tipo para estadísticas y formulario.
+>>> CLIENTE: Hola, tengo un centro de estética y quiero mostrar los tratamientos y recibir reservas
+<<< BOT [883c]: Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y si además quiero vender productos de skincare y cobrarlos online, cuánto sale todo junto?
+<<< BOT [245c]: Con venta y cobro online ya sería una tienda online: $90.000 de primer pago y $30.000 por mes. No es un adicional sobre lo que te coticé ($60.000 de primer pago y $20.000 por mes): te queda la web completa, con el carrito y los pagos integrados.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Entonces serían 90 mil de primer pago y 30 mil por mes en total, no los dos planes juntos?
+<<< BOT [245c]: Con venta y cobro online ya sería una tienda online: $90.000 de primer pago y $30.000 por mes. No es un adicional sobre lo que te coticé ($60.000 de primer pago y $20.000 por mes): te queda la web completa, con el carrito y los pagos integrados.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sí, quiero la demo con la tienda y los turnos
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=DK
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD11A08 — Postdemo: cambio visual junto a pregunta y pago
+ESPERADO: Anota cambio y contesta pregunta en el mismo turno. No deriva con elogio simple; deriva con voluntad de pago. No pide formulario de nuevo.
+ESTADO PREVIO: fase=postdemo tipo=landing presentado=si
+>>> CLIENTE: Me gustó la demo, pero podés cambiar el fondo a beige? Y los turnos online están incluidos?
+<<< BOT [62c]: Perfecto, anoto esos cambios para aplicarlos cuando avancemos.
+<<< BOT [148c]: Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.
+    [fase=postdemo tipo=landing precio_dado=1 handoff=0 lead=1 cierre=-]
+>>> CLIENTE: Buenísimo, quedó muy linda la idea
+<<< BOT [104c]: Me alegro de que te haya gustado. Los cambios que pediste ya quedaron anotados. Querés ajustar algo más?
+    [fase=postdemo tipo=landing precio_dado=1 handoff=0 lead=1 cierre=-]
+>>> CLIENTE: Quiero contratarla, cómo hago el primer pago?
+<<< BOT [112c]: El desarrollador te va a escribir desde nuestro número de proyectos para coordinar el primer pago y los cambios.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=1 cierre=derivacion]
+
+########## ESCENARIO AUD11A09 — Consulta de precio y rechazo solo a la videollamada
+ESPERADO: Contesta precio inicial sin rubro; veterinaria no es ininteligible. No cierra por rechazar videollamada; pedido explícito de asesor sí deriva.
+>>> CLIENTE: Hola, no quiero molestar, cuánto sale una página web?
+<<< BOT [242c]: Sitio profesional: primer pago de $60.000 y después $20.000 por mes. Tienda online, plataforma de cursos o inmobiliaria: primer pago de $90.000 y después $30.000 por mes.
+           Contame qué vendés o qué servicio das y te confirmo cuál sería el tuyo.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Veterinaria
+<<< BOT [881c]: Para tu veterinaria podemos hacer una web donde muestres tus servicios y tus clientes puedan reservar turnos online.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No me interesa la videollamada, prefiero por acá. Qué incluye el plan?
+<<< BOT [374c]: Perfecto, nos manejamos por acá, no hay problema.
+
+           El plan mensual no es opcional, es parte del servicio: son $20.000 por mes e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Se actualiza una vez al año.
+           Si necesitás más de un cambio por mes, son $10.000 más por mes y pasás a un plan con varios cambios.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me gustaría hablar por acá con un asesor antes de decidir
+<<< BOT [127c]: Dale. A partir de acá sigue el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.
+    [fase=derivado tipo=landing precio_dado=1 handoff=1 lead=0 cierre=derivacion]
+
+########## ESCENARIO AUD11A10 — Formulario pendiente: no inventa recepción ni se apaga ante reclamo
+ESPERADO: Formulario al sí. No afirma recepción sin envío registrado. Reclamo no es baja ni deriva automáticamente. Reenvía el link al pedirlo.
+>>> CLIENTE: Hola, soy electricista matriculado y quiero una web para mostrar mis trabajos
+<<< BOT [900c]: Para tu trabajo de electricista matriculado podemos hacer una web donde muestres tus trabajos y te consulten directamente por WhatsApp.
+
+           Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.
+           En este enlace podés verlo bien detallado: gokywebs.com/presupuestos/sitioprofesional
+
+           Así trabajamos, en tres pasos:
+           1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.
+           3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sí dale, armenla
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=FS
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ya completé todo, te llegó?
+<<< BOT [206c]: Todavía no me llegó el formulario. Fijate que al final hayas tocado Enviar:
+           https://gokywebs.com/form/?c=FS
+           Si te trabó, mandame por acá el nombre del negocio y los colores que te gustan y la armamos igual.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: No me mandaron nada todavía, me pasás de nuevo el formulario?
+<<< BOT [184c]: Dale, la demo sale del formulario que te pasé:
+           https://gokywebs.com/form/?c=FS
+           Si algo no te anda, mandame por acá el nombre del negocio y los colores que te gustan y la armamos igual.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## FIN — borrar wabot/data/conv/QATEST*.json despues de revisar

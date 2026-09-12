@@ -244,10 +244,10 @@ caso('link_form_enviado y form_completado_ts también', empty($cR['link_form_env
 caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
-caso('el precio del que vuelve sale con descripción y en dos mensajes (los tres pasos, sin link)',
-    count($rR) === 2 && wabot_texto_arranca_con_propuesta($rR[0]) && stripos($rR[0], 'que presente tu negocio') !== false
-    && stripos($rR[1], 'tres pasos') !== false
-    && strpos($rR[1], 'gokywebs.com/form/') === false,
+caso('el precio del que vuelve sale con descripción y con los tres pasos pegados (sin link)',
+    count($rR) === 1 && wabot_texto_arranca_con_propuesta($rR[0]) && stripos($rR[0], 'que presente tu negocio') !== false
+    && stripos($rR[0], 'tres pasos') !== false
+    && strpos($rR[0], 'gokywebs.com/form/') === false,
     json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 16. Contar cómo cobra uno no pregunta cuándo se paga —\n";
@@ -264,27 +264,27 @@ caso('el motor levanta la baja ante "quiero una web"', (function () use ($cfg) {
     return ($c['cierre'] ?? '') !== 'baja' && empty($c['bot_off']);
 })());
 
-echo "— 18. El segundo mensaje del precio son los tres pasos (Pablo, 10-sep) —\n";
+echo "— 18. Los tres pasos van pegados al precio, en el mismo mensaje (Pablo, 11-sep) —\n";
 $cPaso = wabot_conv_load('999FPTEST'); $cPaso['transcript'] = []; $cPaso['tel'] = '5491100000000TEST';
 $cPaso['channel_user_id'] = '5491100000000TEST'; $cPaso['canal'] = 'whatsapp';
 $rPaso = wabot_pitch('landing', $cPaso, $cfg);
-caso('son dos mensajes y el segundo arranca con los pasos', count($rPaso) === 2 && strpos($rPaso[1], 'Así trabajamos, en tres pasos:') === 0);
-caso('paso 1: la primera entrega es gratis (Pablo, 11-sep)', preg_match('/1\. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría\./u', $rPaso[1]) === 1);
-caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/1\. .*La tenés en menos de 24 horas\./u', $rPaso[1]) === 1);
-caso('paso 2: el primer pago si le gusta, textual y sin monto',
-    preg_match('/2\. Si te gusta y querés avanzar, hacés el primer pago y trabajamos en la versión final\./u', $rPaso[1]) === 1
-    && !preg_match('/\$\s?\d/u', $rPaso[1]));
-caso('paso 3: a los 30 días, el plan mensual', preg_match('/3\. A los 30 días del primer pago comienza el plan mensual\./u', $rPaso[1]) === 1);
-caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[1]) === 1);
+caso('es un solo mensaje y los pasos arrancan después del precio',
+    count($rPaso) === 1 && mb_strpos($rPaso[0], "\n\nAsí trabajamos, en tres pasos:") !== false);
+caso('paso 1: la primera entrega es gratis (Pablo, 11-sep)', preg_match('/1\. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría\./u', $rPaso[0]) === 1);
+caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/1\. .*La tenés en menos de 24 horas\./u', $rPaso[0]) === 1);
+caso('paso 2: el primer pago con su monto y para qué es (Pablo, 11-sep)',
+    preg_match('/2\. Si te gusta y querés avanzar, se hace un primer pago de \$60\.000 y con eso avanzamos hacia el desarrollo completo\./u', $rPaso[0]) === 1);
+caso('paso 3: a los 30 días, el plan mensual con su monto y para qué sirve',
+    preg_match('/3\. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada\./u', $rPaso[0]) === 1);
+caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[0]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
-    strpos($rPaso[1], 'gokywebs.com/form/') === false);
+    strpos($rPaso[0], 'gokywebs.com/form/') === false);
 caso('el bot reconoce ese mensaje como demo ya ofrecida',
-    wabot_cta_muestra_ya_ofrecida(['session_started_ts' => time() - 100, 'transcript' => [['q' => 'bot', 't' => $rPaso[1], 'ts' => time()]]]) === true);
-caso('y como el texto de la demo, para la demora fija de 2 segundos', wabot_es_texto_demo($rPaso[1], $cfg) === true);
+    wabot_cta_muestra_ya_ofrecida(['session_started_ts' => time() - 100, 'transcript' => [['q' => 'bot', 't' => $rPaso[0], 'ts' => time()]]]) === true);
 caso('pasa entero por el punto único de salida, con el primer pago y el plan mensual',
     (function () use ($cfg, $rPaso, $cPaso) { $c = $cPaso; $out = wabot_salida_preparar($rPaso, $c, $cfg);
-        return count($out) === 2 && stripos($out[1], 'primer pago') !== false && stripos($out[1], 'plan mensual') !== false
-            && stripos($out[1], 'seña') === false; })());
+        return count($out) === 1 && stripos($out[0], 'primer pago') !== false && stripos($out[0], 'plan mensual') !== false
+            && stripos($out[0], 'seña') === false; })());
 
 @unlink(WABOT_DATA . '/conv/999FPTEST.json');
 echo "\n" . ($fallas ? "FALLAS: $fallas de $total" : "TODO OK — $total casos") . "\n";

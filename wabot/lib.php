@@ -223,6 +223,33 @@ function wabot_config_migrar(&$cfg) {
      * con seña, saldo y pago único, así que cualquier otro orden dejaría la
      * config a medio migrar. */
     wabot_config_modelo_mensual($cfg);
+    wabot_config_textos_auditoria($cfg);
+}
+
+/** Ajustes de redacción aprobados el 11-sep; también corrigen configs guardadas. */
+function wabot_config_textos_auditoria(&$cfg) {
+    foreach (['que_incluye', 'que_incluye_sin_productos'] as $clave) {
+        if (isset($cfg['info'][$clave])) {
+            $cfg['info'][$clave] = str_replace('No tenés que ocuparte de nada.',
+                'Nos ocupamos del armado y de lo técnico.', $cfg['info'][$clave]);
+        }
+    }
+    $viejo = (string)($cfg['prediseno_completo'] ?? '');
+    if ($viejo === '' || strpos($viejo, 'Para que la demo sea tuya de verdad') !== false) {
+        $cfg['prediseno_completo'] = 'Listo {nombre}, ya tenemos los datos para preparar la demo y te la mandamos por acá {entrega}. Si tenés {imagenes}, mandámelos para personalizarla; podemos empezar igual si todavía no los tenés.';
+    }
+    $soloLogo = (string)($cfg['prediseno_completo_solo_logo'] ?? '');
+    if ($soloLogo === '' || strpos($soloLogo, 'y con eso te la dejo lista') !== false) {
+        $cfg['prediseno_completo_solo_logo'] = 'Listo {nombre}, el logo ya lo tengo y te mandamos la demo por acá {entrega}. Si tenés {imagenes}, mandámelas para personalizarla; podemos empezar igual sin ellas.';
+    }
+    if (trim((string)($cfg['postdemo_elogio_con_cambios'] ?? '')) === '') {
+        $cfg['postdemo_elogio_con_cambios'] = 'Me alegro de que te haya gustado. Los cambios que pediste ya quedaron anotados. Querés ajustar algo más?';
+    }
+    $cfg['postdemo_elogio'] = str_replace('Me alegro que', 'Me alegro de que', (string)($cfg['postdemo_elogio'] ?? ''));
+    $cfg['postdemo_derivar'] = str_replace('desde otro número', 'desde nuestro número de proyectos', (string)($cfg['postdemo_derivar'] ?? ''));
+    if (trim((string)($cfg['postdemo_derivar_pago'] ?? '')) === '') {
+        $cfg['postdemo_derivar_pago'] = 'El desarrollador te va a escribir desde nuestro número de proyectos para coordinar el primer pago y los cambios.';
+    }
 }
 
 /** Circuit breaker compartido: evita duplicar llamadas cuando Gemini ya falló. */
@@ -1284,7 +1311,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
      * 11-sep: dos líneas. "Gratis", "sin compromiso" y las 24 horas ya
      * estaban en los tres pasos del turno anterior, y el cliente acaba de
      * decir que sí: repetírselo amontonaba el mensaje (batería del 10-sep). */
-    $linkNuevo = "Dale. Para preparar la demo completá este formulario, no te lleva más de un minuto:
+    $linkNuevo = "Dale. Para preparar la demo completá este formulario cortito:
 {link}
 Si algo no te queda claro, escribime por acá y te ayudo.";
     $linksViejos = [
@@ -1965,8 +1992,8 @@ function wabot_precio_anterior_de($tipo, $cfg) {
 function wabot_tres_pasos_default() {
     return "Así trabajamos, en tres pasos:\n"
          . "1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.\n"
-         . "2. Si te gusta y querés avanzar, hacés el primer pago y trabajamos en la versión final.\n"
-         . "3. A los 30 días del primer pago comienza el plan mensual.";
+         . "2. Si te gusta y querés avanzar, se hace un primer pago de {precio} y con eso avanzamos hacia el desarrollo completo.\n"
+         . "3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.";
 }
 
 /** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
@@ -2632,7 +2659,7 @@ function wabot_config_modelo_mensual(&$cfg) {
                 // "Depende del tipo" es la respuesta que Pablo retiró el 1-sep.
                 . '|depende del tipo de (p[áa]gina|web)'
                 // La propiedad a los 18 meses pasó a 12 el 11-sep.
-                . '|18 meses/iu';
+                . '|18 meses|Adicionales hay solo dos|El [úu]nico adicional/iu';
     $forzar = function ($actual, $nuevo, $requiere = null) use ($huelaVieja) {
         $a = trim((string)$actual);
         if ($a === '') return $nuevo;
@@ -2653,7 +2680,7 @@ function wabot_config_modelo_mensual(&$cfg) {
     $infoNueva = [
         // El requisito es el paso 1 del 11-sep: el texto del 10-sep traía "tres
         // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
-        'proceso' => [$tresPasos, ['primera entrega es gratis']],
+        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo']],
         /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
          * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
@@ -2681,9 +2708,12 @@ function wabot_config_modelo_mensual(&$cfg) {
          * "reservas online" le llegaba la carga de 10 productos y los $500
          * (batería del 10-sep). Esa versión la elige wabot_texto_info(). */
         'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
-                 . "Adicionales hay solo dos: \$500 por cada producto arriba de 10, y \$10.000 por mes si querés más de un cambio mensual. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+                 . "Si querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Si necesitás más de un cambio mensual, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
         'que_incluye_sin_productos' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte y un cambio por mes. No tenés que ocuparte de nada.\n"
-                 . "El único adicional es si querés más de un cambio por mes: son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+                 . "Si querés más de un cambio por mes, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+        // Función documentada en paneladmin/index.html, sección Promociones.
+        'cupones' => ['Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.', ['cupones', 'panel']],
+        'cobros_tienda' => ['Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.', ['Mercado Pago', 'pedido']],
         /* Incluidos en todos los planes, y SOLO si el cliente pregunta (Pablo,
          * 11-sep): turnos online, creación de usuarios y la traducción hasta
          * 3 idiomas. */
@@ -4416,7 +4446,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
               'form_recordatorio_enviado', 'form_recibido_confirmado'] as $k) $conv[$k] = false;
     $conv['tres_pasos_repreguntas'] = 0;
     $conv['form_no_llego_avisos'] = 0;
-    foreach (['pitch_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
+    foreach (['pitch_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'upgrade_pendiente', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
     $conv['turnos_sin_avance'] = 0;
@@ -6558,7 +6588,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, turnos, usuarios, dominio_com, estadisticas, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {

@@ -71,17 +71,17 @@ $cPitch = convNueva('AGPITCH1');
 unset($cPitch['pitch_hecho']);
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
 /* Desde el 1-sep la línea del pitch no pregunta: ofrece el próximo paso. */
-/* Desde el 2-sep el turno del precio son DOS mensajes: el precio y, dos
- * segundos después, la demo. Sin ninguna línea en el medio. */
-caso('la primera llamada da el precio y, aparte, la demo con el formulario',
+/* Desde el 11-sep el turno del precio es UN SOLO mensaje: el precio y, pegados
+ * abajo, los tres pasos con la demo. Sin ninguna línea en el medio. */
+caso('la primera llamada da el precio con los tres pasos adentro, en un solo mensaje',
     !empty($r['exacta']) && strpos($r['texto'], '$90.000') !== false
     && stripos($r['texto'], 'ecommerce') !== false && strpos($r['texto'], 'presupuestos/ecommerce') !== false
-    && !empty($r['aparte']) && wabot_es_texto_demo((string)$r['aparte'], $cfg)
+    && mb_stripos($r['texto'], 'Así trabajamos, en tres pasos') !== false && empty($r['aparte'])
     && $cPitch['fase'] === 'prediseno' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 caso('y no queda ninguna línea de "si te cierra" en el medio',
-    stripos((string)$r['aparte'], 'si te cierra') === false
-    && stripos((string)$r['aparte'], 'si va por ah') === false
-    && stripos((string)$r['aparte'], 'si te sirve') === false);
+    stripos((string)$r['texto'], 'si te cierra') === false
+    && stripos((string)$r['texto'], 'si va por ah') === false
+    && stripos((string)$r['texto'], 'si te sirve') === false);
 /* Y si el modelo vuelve a llamar dar_precio, sale el resumen corto: el total y
  * el link, sin re-pegar el bloque entero ni el formulario de nuevo. */
 $r2 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg);
@@ -111,7 +111,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
 $c = convNueva();
 $r = wabot_responder('soy plomero', $c, $cfg);
 caso('agente devuelve null → contesta el motor de reglas',
-    count($r) === 2 && strpos($r[0], '$60.000') !== false && $c['tipo'] === 'landing');
+    count($r) === 1 && strpos($r[0], '$60.000') !== false && $c['tipo'] === 'landing');
 
 $GLOBALS['WABOT_TEST_AGENTE'] = function ($m, $conv, $cfg) {
     return ['Dale, para lo tuyo va una landing. Te paso el precio y el link.'];
@@ -473,15 +473,15 @@ caso('bot apagado global → silencio asegurado',
 
 unset($GLOBALS['WABOT_TEST_AGENTE'], $GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
-echo "— El precio y la oferta del prediseño van en dos mensajes —\n";
+echo "— El precio y la oferta del prediseño van en el mismo mensaje (11-sep) —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $c, $cfg);
-caso('dar_precio devuelve los tres pasos como mensaje aparte, SIN el link del formulario (10-sep)',
-    ($r['aparte'] ?? '') !== '' && stripos($r['aparte'], 'tres pasos') !== false
-    && strpos($r['aparte'], 'gokywebs.com/form/') === false);
-caso('y le avisa al modelo que no los escriba él',
-    stripos($r['nota'], 'no menciones la demo') !== false);
+caso('dar_precio devuelve los tres pasos dentro del mismo texto, SIN el link del formulario (11-sep)',
+    ($r['aparte'] ?? '') === '' && stripos($r['texto'], 'tres pasos') !== false
+    && strpos($r['texto'], 'gokywebs.com/form/') === false);
+caso('y le avisa al modelo que lo mande entero, sin reescribir los pasos',
+    stripos($r['nota'], 'no vuelvas a escribir los pasos') !== false || stripos($r['nota'], 'no los reescribas') !== false);
 caso('el texto del precio no trae la oferta pegada',
     stripos($r['texto'], 'predise') === false);
 
@@ -772,8 +772,8 @@ caso('una empresa de limpieza o de fletes es landing, no institucional',
 caso('manda tienda online para todo comercio', strpos($sistema, 'COMERCIOS: SIEMPRE TIENDA ONLINE') !== false);
 caso('y prohíbe expresamente la pregunta de carrito vs WhatsApp',
     stripos($sistema, 'Esa pregunta está prohibida') !== false);
-caso('el playbook explica el turno del precio: un solo llamado y los tres pasos salen solos',
-    stripos($sistema, 'UN SOLO LLAMADO Y LOS TRES PASOS SALEN SOLOS') !== false
+caso('el playbook explica el turno del precio: un solo llamado y un solo mensaje',
+    stripos($sistema, 'UN SOLO LLAMADO Y UN SOLO MENSAJE') !== false
     && stripos($sistema, 'esperá su respuesta antes de') === false);
 caso('avisa que no hay que fusionar dos webs distintas en un solo tipo',
     strpos($sistema, 'MÁS DE UN NEGOCIO O MÁS DE UNA WEB') !== false
@@ -1793,7 +1793,7 @@ $rV01 = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu
     'para_que' => 'muestres los equipos que alquilás y te pidan presupuesto por WhatsApp'], $cV01, $cfg, 'Hola, alquilamos sonido e iluminación para eventos');
 caso('y dar_precio cotiza derecho, nombrando lo que dijo (V01)',
     !empty($cV01['precio_dado']) && empty($cV01['paraguas_preguntado'])
-    && strpos(wabot_personalizar($rV01['texto'], $cV01), 'Para tu alquiler de sonido e iluminación podemos hacer una web donde muestres los equipos que alquilás y te pidan presupuesto por WhatsApp.') === 0);
+    && strpos(wabot_personalizar($rV01['texto'], $cV01), 'Para tu servicio de alquiler de sonido e iluminación podemos hacer una web donde muestres los equipos que alquilás y te pidan presupuesto por WhatsApp.') === 0);
 
 $cRub = convNueva(); unset($cRub['pitch_hecho']);
 $cRub['transcript'] = [['q' => 'cliente', 't' => 'Quiero una página web para mi negocio', 'ts' => time()], ['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
@@ -1832,12 +1832,15 @@ $rEst = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu
 $pitchEst = wabot_personalizar($rEst['texto'], $cEst);
 caso('el precio arranca con el rubro y lo que va a poder hacer, como lo dictó Pablo',
     strpos($pitchEst, "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\n") === 0);
-caso('y sigue con el primer pago y el plan por mes, en su párrafo, y el link',
-    strpos($pitchEst, 'Empezás con un primer pago de $60.000. A los 30 días de ese pago comienza el plan de $20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.') !== false
-    && strpos($pitchEst, 'gokywebs.com/presupuestos/') !== false);
+caso('y sigue con el link y los pasos, que son los que llevan los montos (11-sep)',
+    strpos($pitchEst, 'gokywebs.com/presupuestos/') !== false
+    && strpos($pitchEst, 'se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.') !== false
+    && strpos($pitchEst, 'comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.') !== false);
 caso('el para_que queda guardado con su tipo', $cEst['pitch_para_que_tipo'] === 'landing'
     && $cEst['pitch_para_que'] === 'muestres los tratamientos y tus clientas reserven turno online');
-caso('los tres pasos siguen saliendo aparte', !empty($rEst['aparte']) && mb_stripos($rEst['aparte'], 'tres pasos') !== false);
+caso('los tres pasos van pegados abajo, en el mismo mensaje (11-sep)',
+    empty($rEst['aparte']) && mb_stripos($pitchEst, "\n\nAsí trabajamos, en tres pasos") !== false
+    && mb_substr(rtrim($pitchEst), -mb_strlen(wabot_tres_pasos_pregunta())) === wabot_tres_pasos_pregunta());
 caso('ni una línea de reconocimiento adelante: el precio ya arranca reconociendo',
     wabot_agente_prefijo_acuse('Entonces necesitás una web donde tus clientas reserven turno online', $rEst['texto'], $cEst, $cfg) === $rEst['texto']);
 
@@ -1870,8 +1873,8 @@ $cAlq = ['transcript' => [['q' => 'cliente', 't' => 'Hola, alquilamos sonido e i
 caso('"alquilamos sonido e iluminación" no es un rubro: el verbo no va detrás de "Para"',
     wabot_rubro_valido('alquilamos sonido e iluminacion para eventos', $cAlq) === ''
     && wabot_rubro_desde_contexto($cAlq) === '');
-caso('"tu alquiler de sonido e iluminación" sí',
-    wabot_rubro_valido('tu alquiler de sonido e iluminación', $cAlq) === 'tu alquiler de sonido e iluminación');
+caso('"tu alquiler de sonido e iluminación" se redacta como servicio',
+    wabot_rubro_valido('tu alquiler de sonido e iluminación', $cAlq) === 'tu servicio de alquiler de sonido e iluminación');
 $cTor = ['transcript' => [['q' => 'cliente', 't' => 'Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', 'ts' => time()]]];
 caso('"tu negocio de tortas" dice cuál es: pasa (batería del 11-sep)',
     wabot_rubro_valido('tu negocio de tortas', $cTor) === 'tu negocio de tortas');

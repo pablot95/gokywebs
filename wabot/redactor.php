@@ -64,6 +64,21 @@ function wabot_responder($texto, &$conv, $cfg) {
         }
     }
 
+    // El pedido de una persona precede a cualquier aceptación de demo:
+    // "me gustaría hablar por acá con un asesor" no autoriza el formulario.
+    if (!in_array(($conv['fase'] ?? ''), ['derivado', 'postdemo'], true)
+        && wabot_handoff_causa_explicita($texto) === 'pide_humano'
+        && !wabot_pide_llamada($texto)) {
+        return wabot_derivar($conv, $cfg, 'pide_humano');
+    }
+
+    // AUD11A05: preguntar cuánto pagar PARA VER la demo no debe recibir el
+    // primer pago del desarrollo. Vale en todos los modos, antes del modelo.
+    if (empty($conv['presentado_ts']) && wabot_texto_pregunta_pago_demo($texto)) {
+        wabot_evento_sesion($conv, 'pago_demo_aclarado');
+        return [wabot_texto_sin_modelo_viejo((string)$cfg['pago_antes_o_despues'])];
+    }
+
     /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
      * es fijo: wabot_postdemo_responder() contesta lo que el cliente dijo
      * —elogio, pedido de cambio, "no me cerró", que la va a mirar— (Pablo,
@@ -175,6 +190,32 @@ function wabot_responder($texto, &$conv, $cfg) {
         }
     }
 
+    /* La consulta no cambia el tipo contratado. Conservamos la alternativa
+     * cotizada y la aplicamos recién cuando acepta, antes de mandar el form. */
+    $pendiente = $conv['upgrade_pendiente'] ?? null;
+    if (is_array($pendiente) && !empty($conv['precio_dado']) && empty($conv['presentado_ts'])
+        && empty($conv['lead_creado']) && isset($cfg['tipos'][$pendiente['tipo'] ?? ''])) {
+        $normal = wabot_normalizar_frase($texto);
+        if (preg_match('/\b(prefiero|me quedo con|quiero|mejor)\b.{0,20}\b(sitio profesional|sin tienda|solo servicios|web anterior)\b/u', $normal)) {
+            unset($conv['upgrade_pendiente']);
+        } elseif (!wabot_mensaje_pregunta_algo($texto) && wabot_acepta_demo($texto)
+            && !preg_match('/\b(cursos|inmobiliaria|sistema de gestion)\b/u', $normal)) {
+            $conv['tipo'] = $pendiente['tipo'];
+            $conv['precio_cotizado'] = $pendiente['precio'];
+            $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
+            $conv['precio_modelo'] = $pendiente['modelo'];
+            $conv['precio_cotizado_ts'] = time();
+            $conv['pitch_tipo'] = $pendiente['tipo'];
+            unset($conv['upgrade_pendiente'], $conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
+            wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
+            return [wabot_prediseno_texto($conv, $cfg)];
+        } elseif (wabot_mensaje_pregunta_algo($texto)
+            && preg_match('/\b(entonces|total|dos planes|juntos|serian)\b/u', $normal)
+            && preg_match('/\b(pago|planes|por mes|precio|cuanto|mil)\b|\$/u', $normal)) {
+            return [wabot_upgrade_texto($pendiente['tipo'], $conv, $cfg)];
+        }
+    }
+
     /* "Cuánto cuesta agregar venta y cobro online?" con una landing ya
      * cotizada: la respuesta son dos precios que el bot ya tiene. A Aberturas
      * le preguntó si era el mismo proyecto y le repitió el precio de la
@@ -185,6 +226,10 @@ function wabot_responder($texto, &$conv, $cfg) {
         if ($destino !== null) {
             $upgrade = wabot_upgrade_texto($destino, $conv, $cfg);
             if ($upgrade !== null) {
+                if (empty($conv['presentado_ts']) && empty($conv['lead_creado'])
+                    && ($conv['upgrade_pendiente']['tipo'] ?? '') !== $destino) {
+                    $conv['upgrade_pendiente'] = wabot_precio_vigente(null, $cfg, $destino);
+                }
                 wabot_evento_sesion($conv, 'upgrade_consultado', ['de' => (string)$conv['tipo'], 'a' => $destino]);
                 return [$upgrade];
             }
@@ -401,11 +446,24 @@ function wabot_responder($texto, &$conv, $cfg) {
     if ($conv['fase'] === 'derivado') return $base;
 
     // Solo se reescribe el primero. Los que van detrás son mensajes aparte
-    // —el ofrecimiento del prediseño— y tienen que llegar como están, en su
-    // propio globo: si se los juntara para reescribirlos, se pierde el corte.
-    $libre = wabot_redactar($texto, $base[0], $conv, $cfg);
+    // —el formulario— y tienen que llegar como están, en su propio globo: si
+    // se los juntara para reescribirlos, se pierde el corte.
+    /* Y dentro del primero, tampoco los TRES PASOS: desde el 11-sep viajan
+     * pegados al precio en el mismo mensaje, pero son texto dictado por Pablo.
+     * Se reescribe la parte de arriba y los pasos se vuelven a pegar tal cual. */
+    $precioParte = $base[0];
+    $pasosParte  = '';
+    $cabezaPasos = trim((string)strstr(trim((string)($cfg['msg_tres_pasos'] ?? '')) . "\n", "\n", true));
+    if ($cabezaPasos !== '') {
+        $corte = mb_strpos($base[0], "\n\n" . $cabezaPasos);
+        if ($corte !== false) {
+            $precioParte = mb_substr($base[0], 0, $corte);
+            $pasosParte  = mb_substr($base[0], $corte);
+        }
+    }
+    $libre = wabot_redactar($texto, $precioParte, $conv, $cfg);
     if ($libre === null) return $base;
-    $base[0] = $libre;
+    $base[0] = $libre . $pasosParte;
     return $base;
 }
 

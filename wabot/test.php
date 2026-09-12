@@ -73,20 +73,21 @@ caso('rubro en el primer mensaje → precio directo sin menú: primer pago y pla
     && $c['fase'] === 'prediseno' && $c['tipo'] === 'landing');
 caso('el precio lleva el link del presupuesto para verlo en detalle (Pablo, 2-sep)',
     strpos($r[0], 'gokywebs.com/presupuestos/sitioprofesional') !== false);
-caso('el precio llega en DOS mensajes: el precio y, dos segundos después, los tres pasos SIN el formulario (Pablo, 10-sep)',
-    count($r) === 2 && stripos($r[1], 'tres pasos') !== false && strpos($r[1], 'gokywebs.com/form/') === false);
-caso('los tres pasos: primera entrega gratis en menos de 24 horas, primer pago, plan mensual a los 30 días (11-sep)',
-    preg_match('/1\. La primera entrega es gratis.*menos de 24 horas/u', $r[1]) === 1 && preg_match('/2\. .*primer pago/u', $r[1]) === 1
-    && preg_match('/3\. A los 30 días del primer pago comienza el plan mensual/u', $r[1]) === 1);
+caso('el precio llega en UN SOLO mensaje, con los tres pasos pegados y SIN el formulario (Pablo, 11-sep)',
+    count($r) === 1 && stripos($r[0], 'tres pasos') !== false && strpos($r[0], 'gokywebs.com/form/') === false);
+caso('los tres pasos: primera entrega gratis en menos de 24 horas, el primer pago y el plan con sus montos (11-sep)',
+    preg_match('/1\. La primera entrega es gratis.*menos de 24 horas/u', $r[0]) === 1
+    && preg_match('/2\. Si te gusta y querés avanzar, se hace un primer pago de \$60\.000 y con eso avanzamos hacia el desarrollo completo/u', $r[0]) === 1
+    && preg_match('/3\. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada/u', $r[0]) === 1);
 caso('y terminan preguntando si quiere la demo: su sí es lo que manda el formulario (11-sep)',
-    preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1]) === 1);
+    preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[0]) === 1);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
     stripos(implode(' ', $r), 'si te cierra') === false && stripos(implode(' ', $r), 'si va por ahí') === false
     && stripos(implode(' ', $r), 'si te sirve') === false);
 caso('el mensaje del precio ya no trae pegada la oferta del prediseño',
     stripos($r[0], 'predise') === false);
-caso('la demo va en su propio mensaje',
-    stripos($r[1], 'demo') !== false || stripos($r[1], 'muestra') !== false);
+caso('la demo se nombra en ese mismo mensaje',
+    stripos($r[0], 'demo') !== false || stripos($r[0], 'muestra') !== false);
 
 $c = conv_nueva();
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
@@ -383,7 +384,7 @@ caso('Gemini caído en el primer mensaje → menú igual', $r === [$cfg['menu']]
 
 $r = wabot_engine('soy abogado', $c, $cfg);
 caso('Gemini caído después → reconoce un rubro claro y vende sin derivar',
-    count($r) === 2 && strpos($r[0], '$60.000') !== false
+    count($r) === 1 && strpos($r[0], '$60.000') !== false
     && $c['fase'] === 'prediseno' && $c['tipo'] === 'landing' && empty($c['handoff_pendiente']));
 
 $cPitchCaido = conv_nueva();
@@ -571,8 +572,9 @@ function conv_sin_pitch() {
 $cP = conv_sin_pitch();
 clasifica(['rubro_comercio']);
 $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
-caso('el turno A trae DOS mensajes: precio+desc primero, la demo después',
-    count($rP) === 2 && strpos($rP[0], '$90.000') !== false && wabot_es_texto_demo($rP[1], $cfg));
+caso('el turno A es UN mensaje: precio+desc y, pegados abajo, los tres pasos con la demo',
+    count($rP) === 1 && strpos($rP[0], '$90.000') !== false && mb_stripos($rP[0], 'tres pasos') !== false
+    && mb_stripos($rP[0], 'demo') !== false);
 caso('y el link del presupuesto para verlo detallado', strpos($rP[0], 'presupuestos/ecommerce') !== false);
 caso('el primer mensaje es el texto fijo del ecommerce, con su panel de productos y pedidos',
     stripos($rP[0], 'ecommerce') !== false && stripos($rP[0], 'panel tuyo para cargar productos y ver los pedidos') !== false);
@@ -597,9 +599,9 @@ foreach (['landing' => 'rubro_landing',
     $cx = conv_sin_pitch();
     clasifica([$accP]);
     $rx = wabot_engine('cuento mi rubro', $cx, $cfg);
-    caso("$tipoP también manda precio y demo en dos mensajes",
+    caso("$tipoP también manda precio y demo en un solo mensaje",
         $cx['fase'] === 'prediseno' && $cx['tipo'] === $tipoP && $cx['precio_dado'] === true
-        && count($rx) === 2 && strpos($rx[0], '$') !== false && wabot_es_texto_demo($rx[1], $cfg));
+        && count($rx) === 1 && strpos($rx[0], '$') !== false && mb_stripos($rx[0], 'tres pasos') !== false);
     caso("$tipoP linkea su presupuesto en ese primer mensaje",
         strpos($rx[0], 'gokywebs.com/presupuestos/') !== false);
 }
@@ -631,16 +633,17 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
              (string)$cfg['tipos'][$tipoFijo]['mensualidad'], (string)$cfg['tipos'][$tipoFijo]['link']],
             $plantillaFija), '');
     caso("$tipoFijo: el texto del precio sale tal cual, con la propuesta, el primer pago, la mensualidad y el link resueltos",
-        wabot_personalizar($rFijo[0], $cFijo) === $esperado);
-    caso("$tipoFijo: dice primer pago y plan por mes, nunca pago único (11-sep)",
-        stripos($rFijo[0], 'Empezás con un primer pago de $') !== false
-        && preg_match('/comienza el plan de \$[\d.]+ por mes/u', $rFijo[0])
+        strpos(wabot_personalizar($rFijo[0], $cFijo), $esperado . "\n\n") === 0);
+    caso("$tipoFijo: dice el primer pago y el plan mensual en los pasos, nunca pago único (11-sep)",
+        preg_match('/Empezás con un primer pago de \$[\d.]+/u', $rFijo[0]) === 1
+        && preg_match('/plan de \$[\d.]+ por mes/u', $rFijo[0]) === 1
         && stripos($rFijo[0], 'pago único') === false);
     caso("$tipoFijo: linkea el presupuesto para verlo en detalle (2-sep)",
         strpos($rFijo[0], 'gokywebs.com/presupuestos/') !== false);
     caso("$tipoFijo: y ya no lleva la línea del portfolio, que vive dentro del presupuesto",
         stripos($rFijo[0], 'portfolio') === false);
-    caso("$tipoFijo: la demo llega en el segundo mensaje", count($rFijo) === 2 && wabot_es_texto_demo($rFijo[1], $cfg));
+    caso("$tipoFijo: los tres pasos van pegados, en el mismo mensaje (11-sep)",
+        count($rFijo) === 1 && mb_stripos($rFijo[0], 'Así trabajamos, en tres pasos') !== false);
 }
 
 echo "— Los tipos retirados (2-sep): no se ofrecen, pero las charlas viejas conservan el suyo —
@@ -781,8 +784,8 @@ $r = wabot_engine('como se manejan ustedes?', $c, $cfg);
 caso('explica el proceso completo', $r === [wabot_texto_info('proceso', $cfg)]);
 caso('arranca por la primera entrega gratis (11-sep)', stripos($r[0], '1. La primera entrega es gratis') !== false);
 caso('NO nombra la seña', stripos($r[0], 'seña') === false && stripos($r[0], 'sena') === false);
-caso('el paso 2 es el primer pago, si le gusta',
-    stripos($r[0], 'Si te gusta y querés avanzar, hacés el primer pago') !== false);
+caso('el paso 2 es el primer pago, si le gusta, y sin monto porque todavía no cotizó (11-sep)',
+    stripos($r[0], 'Si te gusta y querés avanzar, se hace un primer pago y con eso avanzamos hacia el desarrollo completo') !== false);
 caso('y el paso 3, el plan mensual a los 30 días',
     stripos($r[0], '30 días del primer pago comienza el plan mensual') !== false);
 caso('contestando "cómo trabajan" no pregunta si quiere la demo: eso es del turno del precio',
@@ -1380,17 +1383,18 @@ caso('velocidad en cero no divide por cero', wabot_demora_tipeo($medio, $roto) =
 $alReves = array_merge($t, ['demora_minima' => 5, 'demora_maxima' => 2]);
 caso('piso mayor que el techo no rompe', wabot_demora_tipeo($corto, $alReves) === 5.0);
 
-// Los dos mensajes del precio tienen que tardar distinto entre sí. Sin techo,
-// para no toparse con el clamp de $t y que dos mensajes largos den lo mismo.
+// El precio con sus pasos y el formulario posterior tienen distinto largo.
+// Sin techo, para no comparar dos demoras recortadas al mismo máximo.
 $c = conv_nueva();
 clasifica(['rubro_ecommerce']);
 $r = wabot_engine('vendo mates', $c, $cfg);
+$formDemora = wabot_prediseno_texto($c, $cfg);
 $sinTecho = array_merge($t, ['demora_maxima' => 999]);
 $d0Real = wabot_demora_tipeo($r[0], $sinTecho);
-$d1Real = wabot_demora_tipeo($r[1], $sinTecho);
-caso('el precio y la oferta no tardan lo mismo, porque no miden lo mismo', $d0Real !== $d1Real);
+$d1Real = wabot_demora_tipeo($formDemora, $sinTecho);
+caso('el precio y el formulario no tardan lo mismo, porque no miden lo mismo', $d0Real !== $d1Real);
 $d0 = wabot_demora_tipeo($r[0], $t);
-$d1 = wabot_demora_tipeo($r[1], $t);
+$d1 = wabot_demora_tipeo($formDemora, $t);
 caso('las dos demoras caen entre el piso y el techo',
     $d0 >= 1.2 && $d0 <= 7 && $d1 >= 1.2 && $d1 <= 7);
 
@@ -1810,8 +1814,8 @@ caso('la charla cotizada antes del 10-sep (sin precio congelado) conserva su pag
 caso('con tipo puesto pero SIN precio dado, sale la tabla general y nunca la seña',
     wabot_texto_pago(['tipo' => 'catalogo'], $cfg) === wabot_texto_pago_generico($cfg)
     && stripos(wabot_texto_pago(['tipo' => 'catalogo'], $cfg), 'seña') === false);
-caso('los $90.000 salen como primer pago, nunca como seña (el bug de los $90.000)',
-    strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), '$90.000') !== false
+caso('el primer pago del ecommerce sale como primer pago, nunca como seña (el bug de los $90.000)',
+    strpos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), '$60.000') !== false
     && stripos(wabot_texto_pago(['tipo' => 'ecommerce'], $cfg), 'seña') === false);
 caso('sin tipo todavía, va la tabla completa',
     wabot_texto_pago(['tipo' => null], $cfg) === wabot_texto_pago_generico($cfg));
@@ -2269,7 +2273,7 @@ echo "— Volver a preguntar el precio no re-pega el bloque completo —\n";
 $c = conv_nueva(); $c['chat_started_ts'] = time();
 clasifica(['rubro_landing']);
 $r1 = wabot_engine('soy gasista', $c, $cfg);
-caso('la primera cotización sale completa en dos globos', count($r1) === 2 && strpos($r1[0], '$60.000') !== false);
+caso('la primera cotización sale completa en un globo', count($r1) === 1 && strpos($r1[0], '$60.000') !== false);
 clasifica(['otro']);
 $r2 = wabot_engine('cuanto sale?', $c, $cfg);
 caso('la re-cotización del mismo tipo es UN resumen corto con el total',
@@ -3452,19 +3456,19 @@ $rDemo = wabot_precio('landing', $cvDemo, $cfg);
 /* 10-sep: el segundo mensaje son los tres pasos, y el link sale con el sí.
  * Quien pidió la demo al entrar ya dijo que sí: el formulario va en el mismo
  * turno, como tercer mensaje, sin re-ofrecer. */
-caso('tras el precio van los tres pasos y, como ya pidió la demo, el link del form en el mismo turno',
-    count($rDemo) === 3 && mb_stripos($rDemo[1], 'tres pasos') !== false
-    && strpos($rDemo[2], 'gokywebs.com/form/') !== false && mb_stripos($rDemo[2], 'Querés que') === false);
+caso('el precio ya trae los tres pasos y, como ya pidió la demo, el link del form va atrás',
+    count($rDemo) === 2 && mb_stripos($rDemo[0], 'tres pasos') !== false
+    && strpos($rDemo[1], 'gokywebs.com/form/') !== false && mb_stripos($rDemo[0], 'Querés que') === false);
 caso('y el del formulario es su propio mensaje, sin los pasos repetidos',
-    mb_stripos($rDemo[2], 'formulario') !== false && mb_stripos($rDemo[2], 'tres pasos') === false);
+    mb_stripos($rDemo[1], 'formulario') !== false && mb_stripos($rDemo[1], 'tres pasos') === false);
 caso('y la fase queda en prediseño', $cvDemo['fase'] === 'prediseno');
 
 $cvNormal = conv_nueva();
 $cvNormal['chat_started_ts'] = time();
 $rNormal = wabot_precio('landing', $cvNormal, $cfg);
-caso('sin ese pedido, van el precio y los tres pasos, sin el formulario ni el listado de datos',
-    count($rNormal) === 2 && mb_stripos($rNormal[1], 'tres pasos') !== false
-    && strpos($rNormal[1], 'gokywebs.com/form/') === false && mb_stripos($rNormal[1], 'Necesito') === false);
+caso('sin ese pedido, un solo mensaje con el precio y los tres pasos, sin el formulario ni el listado de datos',
+    count($rNormal) === 1 && mb_stripos($rNormal[0], 'tres pasos') !== false
+    && strpos($rNormal[0], 'gokywebs.com/form/') === false && mb_stripos($rNormal[0], 'Necesito') === false);
 
 echo "— TANDA 1: el precio llega comprando algo (beneficio antes del número) —\n";
 
@@ -3745,8 +3749,8 @@ echo "— Los mensajes del hueco ahora piden respuesta —\n";
 // La charla se enfriaba porque los tres mensajes seguidos eran afirmaciones:
 // nada que contestar, y sin respuesta del cliente la ventana de Meta cierra.
 $cierreEcom = wabot_texto_prediseno_completo(['tipo' => 'ecommerce', 'imagenes_recibidas' => 0], $cfg);
-caso('el cierre de la recolección pide material, que es lo que filtra al curioso',
-    mb_stripos($cierreEcom, 'mandame') !== false);
+caso('el cierre de la recolección pide material como opcional',
+    mb_stripos($cierreEcom, 'mandámelos') !== false && mb_stripos($cierreEcom, 'podemos empezar igual') !== false);
 caso('y pide fotos del rubro que corresponde, no genéricas',
     mb_stripos($cierreEcom, 'fotos de tus productos') !== false);
 caso('la línea de espera NO repite esa misma pregunta', mb_stripos($cfg['espera_prediseno'], 'destacar') === false);
@@ -3808,10 +3812,10 @@ caso('sin tipo tampoco queda vacío',
     trim(wabot_imagenes_a_pedir([], $cfg)) !== '');
 
 $cierreSinFotos = wabot_texto_prediseno_completo(['tipo' => 'catalogo', 'imagenes_recibidas' => 0], $cfg);
-caso('el cierre pide el material', mb_stripos($cierreSinFotos, 'mandame') !== false);
+caso('el cierre pide el material opcional', mb_stripos($cierreSinFotos, 'mandámelos') !== false);
 caso('y no deja el placeholder crudo', mb_strpos($cierreSinFotos, '{imagenes}') === false);
 caso('explica POR QUÉ lo pide, no lo pide a secas',
-    mb_stripos($cierreSinFotos, 'tuya de verdad') !== false);
+    mb_stripos($cierreSinFotos, 'para personalizarla') !== false);
 
 $cierreConFotos = wabot_texto_prediseno_completo(['tipo' => 'catalogo', 'imagenes_recibidas' => 3], $cfg);
 caso('si ya mandó fotos, NO se las vuelve a pedir', mb_stripos($cierreConFotos, 'mandame') === false);
@@ -4885,12 +4889,14 @@ foreach (wabot_tipos_ofrecibles($cfg) as $tipo) {
 
 $convPitch = conv_sin_pitch();
 $salidaPitch = (array)wabot_pitch('ecommerce', $convPitch, $cfg);
-caso('el turno del pitch manda el precio con el presupuesto Y la demo',
-    count($salidaPitch) === 2
+caso('el turno del pitch manda el precio con el presupuesto Y la demo, en un solo mensaje',
+    count($salidaPitch) === 1
     && strpos($salidaPitch[0], 'gokywebs.com/presupuestos/ecommerce') !== false
-    && wabot_es_texto_demo($salidaPitch[1], $cfg));
-caso('el link del presupuesto va último, cerrando el mensaje',
-    substr(trim($salidaPitch[0]), -strlen('gokywebs.com/presupuestos/ecommerce'))
+    && mb_stripos($salidaPitch[0], 'Así trabajamos, en tres pasos') !== false);
+$partesPitch = explode("\n\nAsí trabajamos", $salidaPitch[0]);
+caso('el link del presupuesto cierra la parte del precio, justo antes de los pasos',
+    count($partesPitch) === 2
+    && substr(trim($partesPitch[0]), -strlen('gokywebs.com/presupuestos/ecommerce'))
         === 'gokywebs.com/presupuestos/ecommerce');
 
 echo "\n— SL: cuando suena el celular (28-ago) —\n";
@@ -4949,16 +4955,6 @@ $slResponde2['transcript'][] = ['q' => 'cliente', 't' => 'Genial, y el logo?', '
 caso('si el cliente contesta de nuevo, vuelve a SL', wabot_conv_es_sl($slResponde2) === true);
 caso('y deja de ser RTA', wabot_conv_rta($slResponde2) === false);
 
-// RTA no aplica a una charla que el bot lleva solo: ahí un mensaje humano no
-// tiene el mismo peso (no es "Pablo destrabando algo que el bot no podía").
-$slCharlaHumano = $slCharla;
-$slCharlaHumano['transcript'][] = ['q' => 'humano', 't' => 'te contesto yo esta', 'ts' => $ahoraSL2 + 1];
-caso('un chat que lleva el bot no es RTA aunque Pablo escriba algo suelto',
-    wabot_conv_rta($slCharlaHumano) === false);
-
-// Un chat archivado tampoco es RTA: Pablo ya lo sacó de la vista de trabajo.
-caso('un chat archivado nunca es RTA', wabot_conv_rta($slArchivado) === false);
-
 // El derivado también entra en RTA una vez contestado.
 $slDerivadoResp = $slDerivado;
 $slDerivadoResp['transcript'][] = ['q' => 'humano', 't' => 'Ya te explico como seguimos', 'ts' => $ahoraSL2 + 1];
@@ -4977,6 +4973,13 @@ caso('una charla que lleva el bot NO es SL', wabot_conv_es_sl($slCharla) === fal
 $slArchivado = $slDemo;
 $slArchivado['archivado'] = true;
 caso('un chat archivado nunca es SL', wabot_conv_es_sl($slArchivado) === false);
+
+// Estas comprobaciones necesitan las conversaciones definidas arriba.
+$slCharlaHumano = $slCharla;
+$slCharlaHumano['transcript'][] = ['q' => 'humano', 't' => 'te contesto yo esta', 'ts' => $ahoraSL2 + 1];
+caso('un chat que lleva el bot no es RTA aunque Pablo escriba algo suelto',
+    wabot_conv_rta($slCharlaHumano) === false);
+caso('un chat archivado nunca es RTA', wabot_conv_rta($slArchivado) === false);
 
 // Avisó que pagó: lo mas urgente del panel.
 $slPago = $slDemo;
@@ -5802,14 +5805,14 @@ $c2 = conv_nueva(); $c2['precio_dado'] = true; $c2['tipo'] = null; $c2['pitch_ti
 $c2['transcript'] = [['q' => 'cliente', 't' => $tecnico, 'ts' => time()]];
 $r2 = wabot_precio('landing', $c2, $cfgOff);
 caso('con el form apagado trae el precio y los tres pasos, no el listado de datos (10-sep)',
-    count($r2) === 2 && strpos($r2[0], '$60.000') !== false && strpos($r2[1], '- Tu nombre') === false
-    && mb_stripos($r2[1], 'tres pasos') !== false);
+    count($r2) === 1 && strpos($r2[0], '$60.000') !== false && strpos($r2[0], '- Tu nombre') === false
+    && mb_stripos($r2[0], 'tres pasos') !== false);
 caso('y queda en prediseño esperando el sí', $c2['fase'] === 'prediseno' && !empty($c2['cta_muestra']));
 $c2b = conv_nueva(); $c2b['precio_dado'] = true; $c2b['tipo'] = null; $c2b['pitch_tipo'] = 'ecommerce'; $c2b['fase'] = 'desempate_hibrido';
 $c2b['tel'] = '5491100000000TEST'; $c2b['channel_user_id'] = '5491100000000TEST'; $c2b['canal'] = 'whatsapp';
 $r2b = wabot_precio('landing', $c2b, $cfg);
 caso('con el form activo, lo mismo: el link sale recién con el sí del cliente',
-    count($r2b) === 2 && mb_stripos($r2b[1], 'tres pasos') !== false && strpos($r2b[1], 'gokywebs.com/form/') === false);
+    count($r2b) === 1 && mb_stripos($r2b[0], 'tres pasos') !== false && strpos($r2b[0], 'gokywebs.com/form/') === false);
 
 echo "— 1-sep: {rubro}, el pitch nombra al cliente —\n";
 $cR = conv_nueva();
@@ -5855,13 +5858,9 @@ wabot_config_simplificar_tipos($cfgOfertaVieja);
 caso('las ofertas que estaban en producción el 1-sep migran solas',
     $cfgOfertaVieja['msg_prediseno_oferta_variantes'] === $cfg['msg_prediseno_oferta_variantes']
     && $cfgOfertaVieja['msg_prediseno_oferta'] === $cfg['msg_prediseno_oferta']);
-caso('la línea post-precio dice qué hay del otro lado (ver su web) y sigue sin preguntar', (function () use ($cfg) {
-    foreach ((array)$cfg['tipos']['landing']['pitch_pregunta_variantes'] as $v) {
-        if (strpos($v, '?') !== false) return false;
-        if (mb_stripos($v, 'web') === false && mb_stripos($v, 'verla') === false && mb_stripos($v, 'la ves') === false) return false;
-    }
-    return true;
-})());
+caso('la oferta actual explica la demo y los pasos, sin variantes retiradas',
+    strpos($cfg['msg_tres_pasos'], 'demo de tu web') !== false
+    && strpos($cfg['msg_tres_pasos'], 'plan mensual') !== false);
 
 $cfgPitchViejo = wabot_config_load();
 $cfgPitchViejo['tipos']['landing']['precio_ideal'] = "Lo ideal sería una landing profesional, para mostrar claramente lo que hacés, generar confianza y llevar a los clientes directo a WhatsApp. Tiene un precio de {precio}. Es el valor total del desarrollo, sin abono mensual.\nY acá podés ver {portfolio_texto}: {portfolio}";
@@ -5971,20 +5970,22 @@ foreach (wabot_tipos_ofrecibles($cfg) as $tipoSL) {
 $cSL = conv_sin_pitch();
 $cSL['tel'] = '5491133333333TEST'; $cSL['channel_user_id'] = '5491133333333TEST'; $cSL['canal'] = 'whatsapp';
 $rSL = wabot_pitch('ecommerce', $cSL, $cfg);
-caso('el turno del precio son dos mensajes: precio y demo',
-    count($rSL) === 2 && strpos($rSL[0], '$90.000') !== false && wabot_es_texto_demo($rSL[1], $cfg));
-caso('el segundo son los tres pasos que dictó Pablo, con el primer pago y sin el formulario (10-sep)',
-    strpos($rSL[1], 'gokywebs.com/form/') === false
-    && mb_stripos($rSL[1], 'tres pasos') !== false
-    && mb_stripos($rSL[1], 'primer pago') !== false && mb_stripos($rSL[1], 'seña') === false);
+caso('el turno del precio es un solo mensaje: precio y demo',
+    count($rSL) === 1 && strpos($rSL[0], '$90.000') !== false && mb_stripos($rSL[0], 'demo') !== false);
+caso('con los tres pasos que dictó Pablo adentro, con el primer pago y sin el formulario (11-sep)',
+    strpos($rSL[0], 'gokywebs.com/form/') === false
+    && mb_stripos($rSL[0], 'tres pasos') !== false
+    && mb_stripos($rSL[0], 'primer pago') !== false && mb_stripos($rSL[0], 'seña') === false);
 caso('y en ninguno de los dos aparece la línea vieja',
     preg_match('/si te cierra|si va por ah|si te sirve|si te gusta la idea/iu', implode(' ', $rSL)) === 0);
 caso('la demo queda ofrecida en el mismo turno, sin esperar respuesta',
     $cSL['fase'] === 'prediseno' && !empty($cSL['cta_muestra']));
 
-/* La demo sale dos segundos después, no siete: por largo le tocaría el techo. */
-caso('el mensaje de la demo tiene demora fija de 2 segundos',
-    abs(wabot_demora_tipeo($rSL[1], $cfg) - (float)$cfg['demora_entre_mensajes']) < 0.01);
+/* El formulario posterior conserva su demora corta. El precio y los pasos
+ * ya están juntos: no existe $rSL[1]. Usamos una copia para no marcar el link. */
+$cDemoraForm = $cSL;
+caso('el mensaje del formulario tiene demora fija de 2 segundos',
+    abs(wabot_demora_tipeo(wabot_prediseno_texto($cDemoraForm, $cfg), $cfg) - (float)$cfg['demora_entre_mensajes']) < 0.01);
 caso('mientras el precio sigue tardando lo que tarda escribirlo',
     wabot_demora_tipeo($rSL[0], $cfg) > (float)$cfg['demora_entre_mensajes']);
 
@@ -6090,7 +6091,7 @@ echo "— 2-sep, auditoría: el desempate del híbrido acepta lo que el bot pide
 foreach (['trabajos' => 'hibrido_trabajos', 'la primera' => 'hibrido_trabajos',
           'vender' => 'hibrido_vender', 'la segunda' => 'hibrido_vender',
           'venta online' => 'hibrido_vender'] as $resp => $esperado) {
-    caso("«$resp» se entiende en el desempate del híbrido",
+    caso("«{$resp}» se entiende en el desempate del híbrido",
         wabot_desempate_por_palabras('desempate_hibrido', $resp) === $esperado);
 }
 caso('pero un saludo sigue sin decidir nada',
@@ -6121,7 +6122,7 @@ caso('"qué hacen ustedes?" tampoco lista los retirados',
 
 /* Y la plata: los rangos decían "desde $200.000 (una landing) hasta $320.000",
  * precios de antes del recorte. Ahora salen de los tipos vigentes. */
-list($minVig, $maxVig) = wabot_rangos_min_max($cfg);
+['min' => $minVig, 'max' => $maxVig] = wabot_rangos_min_max($cfg);
 caso('el rango de precios sale de los tipos vigentes, no escrito a mano',
     strpos(wabot_texto_info('rangos', $cfg), (string)$minVig) !== false
     && strpos(wabot_texto_info('rangos', $cfg), (string)$maxVig) !== false);
