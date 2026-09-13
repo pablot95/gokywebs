@@ -890,6 +890,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'conv_eliminar' && !empty($_POST['tel'])) {
         @unlink(wabot_conv_path($_POST['tel']));
+        // La pestaña live borra por fetch y solo necesita saber si salió.
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => !is_file(wabot_conv_path($_POST['tel']))]); exit;
+        }
         header('Location: admin.php?tab=conversaciones'); exit;
     }
     // Red manual para cuando el cierre automático no se disparó: crea el lead
@@ -962,7 +967,7 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .live-punto.caido { background:var(--bad); animation:none; }
 @keyframes livePulso { 0% { box-shadow:0 0 0 0 rgba(62,207,142,.55); } 70% { box-shadow:0 0 0 8px rgba(62,207,142,0); } 100% { box-shadow:0 0 0 0 rgba(62,207,142,0); } }
 .live-board { flex:1; min-height:360px; display:grid; grid-auto-flow:column; gap:10px;
-  grid-auto-columns:calc((100% - 4 * 10px) / 5); overflow-x:auto; overflow-y:hidden; padding-bottom:8px; }
+  grid-auto-columns:calc((100% - 3 * 10px) / 4); overflow-x:auto; overflow-y:hidden; padding-bottom:8px; }
 body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-col { display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
 .live-col.movio { animation:liveMovio 1.6s ease-out; }
@@ -974,13 +979,16 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
 .live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
 .live-abrir:hover { color:var(--tx); }
+.live-eliminar { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
+.live-eliminar:hover, .live-eliminar:focus-visible { color:var(--bad); border-color:var(--bad); }
+.live-eliminar:disabled { opacity:.5; cursor:default; }
 .live-chat { flex:1; min-height:0; overflow-y:auto; padding:10px 9px; display:flex; flex-direction:column; gap:6px; }
 .live-chat .burb { max-width:94%; font-size:12.5px; padding:7px 10px; line-height:1.4; }
 .live-chat .burb .meta { font-size:10.5px; }
 .live-media { display:block; font-size:11.5px; color:var(--dim); margin-top:3px; }
 .live-vacio { color:var(--dim); font-size:13px; padding:30px 4px; }
-@media (max-width: 1280px) { .live-board { grid-auto-columns:calc((100% - 3 * 10px) / 4); } }
-@media (max-width: 1000px) { .live-board { grid-auto-columns:calc((100% - 2 * 10px) / 3); } }
+@media (max-width: 1100px) { .live-board { grid-auto-columns:calc((100% - 2 * 10px) / 3); } }
+@media (max-width: 860px)  { .live-board { grid-auto-columns:calc((100% - 10px) / 2); } }
 @media (max-width: 700px)  { .live-board { grid-auto-columns:88%; scroll-snap-type:x mandatory; } .live-col { scroll-snap-align:start; } }
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
 label { display:block; font-size:13px; color:var(--dim); margin:12px 0 4px; }
@@ -3287,6 +3295,31 @@ body.embed { min-height: 0; }
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
                 a.textContent = 'Abrir ↗';
                 sub.appendChild(a);
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'live-eliminar';
+                del.textContent = 'Eliminar';
+                del.title = 'Eliminar esta conversación';
+                del.addEventListener('click', () => eliminar(it.tel, nombre, del));
+                sub.appendChild(del);
+            }
+
+            async function eliminar(tel, nombre, boton) {
+                if (!confirm('Eliminar la conversación con ' + nombre + ' para siempre? No se puede deshacer.')) return;
+                boton.disabled = true;
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'conv_eliminar', tel, ajax: '1' }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error('no se borró');
+                } catch (e) {
+                    boton.disabled = false;
+                    alert('No se pudo eliminar la conversación. Probá de nuevo.');
+                    return;
+                }
+                const c = cols.get(tel);
+                if (c) { c.el.remove(); cols.delete(tel); }
+                refrescar();
             }
 
             function pintarChat(c, it) {
