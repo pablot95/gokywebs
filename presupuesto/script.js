@@ -523,7 +523,7 @@ function renderStep3Context() {
     const { primerPago, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Primer pago de <strong style="color:black">${fmt(primerPago)}</strong> y después <strong style="color:black">${fmt(mensualidad)} por mes</strong>, con todo incluido. El plan mensual arranca a los 30 días del primer pago.`;
+        : `Primer pago de <strong style="color:black">${fmt(primerPago)}</strong> y después <strong style="color:black">${fmt(mensualidad)} por mes</strong>, con todo incluido. El plan mensual arranca a los 7 días del primer pago.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -717,7 +717,7 @@ function mensajeMuestraWsp(nombreNegocio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
         lineas.push(`💰 Primer pago: ${fmt(state.primerPago)}`);
-        lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes (arranca a los 30 días)`);
+        lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes (arranca a los 7 días)`);
     }
     lineas.push('', 'Gracias!');
     return lineas.join('\n');
@@ -739,11 +739,11 @@ function getSiteType() {
 }
 
 /* Modelo comercial (10-sep-2026): primer pago + plan mensual obligatorio que
-   arranca a los 30 días. Ya no hay pago único ni adicionales en la
+   arranca a los 7 días. Ya no hay pago único ni adicionales en la
    calculadora. Son DOS números que nunca se suman entre sí. El monto que
    cobra Mercado Pago se recalcula server-side en api/crear-preferencia.php a
    partir del siteType: PRIMER_PAGO tiene que coincidir con lo que hay ahí. */
-const PRIMER_PAGO = { landing: 60000, ecommerce: 90000, inmobiliaria: 90000, elearning: 90000 };
+const PRIMER_PAGO = { landing: 40000, ecommerce: 60000, inmobiliaria: 60000, elearning: 60000 };
 const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget() y

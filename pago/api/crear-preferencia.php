@@ -24,11 +24,11 @@ $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-PAGO-' . time() .
 // Monto dinámico (?monto= en pago/index.html → enviado acá en el body). Se recalcula
 // server-side por seguridad (nunca confiar en el unit_price que mandaría el cliente
 // sin validar): entero, dentro de un rango razonable; si falta o es inválido, cae al
-// default de $90.000 (primer pago de tienda online, cursos e inmobiliaria; el sitio
-// profesional va con ?monto=60000).
+// default de $60.000 (primer pago de tienda online, cursos e inmobiliaria; el sitio
+// profesional va con ?monto=40000).
 $montoRaw = $body['monto'] ?? null;
-$monto    = is_numeric($montoRaw) ? (int) $montoRaw : 90000;
-if ($monto < 1000 || $monto > 5000000) $monto = 90000;
+$monto    = is_numeric($montoRaw) ? (int) $montoRaw : 60000;
+if ($monto < 1000 || $monto > 5000000) $monto = 60000;
 
 $descripcion = 'Primer pago para arrancar el proyecto' . ($whatsapp !== '' ? ' (' . $whatsapp . ')' : '');
 
@@ -48,7 +48,7 @@ $preference = [
     'back_urls' => [
         'success' => $BASE_URL . '/exito.html?monto=' . $monto,
         // Lleva el monto también en el retry, si no el que reintenta después de un pago
-        // fallido cae al default $90.000 en vez del monto real que estaba pagando.
+        // fallido cae al default $60.000 en vez del monto real que estaba pagando.
         'failure' => $BASE_URL . '/?pago=fallido&monto=' . $monto,
         'pending' => $BASE_URL . '/exito.html?status=pending&monto=' . $monto
     ],

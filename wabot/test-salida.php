@@ -245,7 +245,7 @@ caso('y aclara que no es un adicional sobre lo ya cotizado',
 // El camino entero, como lo ve el cliente.
 // Cotizada con el modelo nuevo: el precio congelado es el de hoy (10-sep).
 $c = conv_de('precio', ['tipo' => 'landing', 'precio_dado' => true, 'pitch_hecho' => true,
-    'precio_cotizado' => '$60.000', 'mensualidad_cotizada' => '$20.000', 'precio_modelo' => 'mensual']);
+    'precio_cotizado' => '$40.000', 'mensualidad_cotizada' => '$20.000', 'precio_modelo' => 'mensual']);
 $r = wabot_responder('Cuánto cuesta agregar venta y cobro online?', $c, $cfg);
 caso('Aberturas: la consulta se contesta con el precio del ecommerce, sin repreguntar el proyecto',
     is_array($r) && count($r) === 1

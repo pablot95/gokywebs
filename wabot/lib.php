@@ -1936,24 +1936,19 @@ function wabot_precio_ideal_defaults() {
      * detalle. Un solo link, el del presupuesto: los trabajos del rubro ya
      * están enlazados adentro de esa página.
      *
-     * 10-sep-2026: el precio son DOS números y van en la misma oración. El
-     * primer pago solo se leía como "lo que sale la web", así que la
-     * mensualidad tiene que llegar pegada y con lo que incluye al lado: si va
-     * en un renglón aparte o más abajo, se lee como letra chica. {precio} y
-     * {mensualidad} los resuelve wabot_precio_placeholders() con el precio
-     * congelado de la charla (ver wabot_precio_vigente en engine.php).
+     * 10-sep-2026: el precio son DOS números, el primer pago y la mensualidad.
      *
-     * 11-sep: el formato es el que dictó Pablo. "Para tu centro de estética
-     * podemos hacer una web donde muestres los tratamientos y tus clientas
-     * reserven turno online." y, en un párrafo aparte, el primer pago y el
-     * plan. La primera oración sale de lo que escribió el cliente: {propuesta}
-     * la arma wabot_propuesta_texto() (engine.php) con el argumento para_que
-     * de dar_precio, o con la frase fija del tipo si no llegó. Por eso el texto
-     * es el mismo para los cuatro tipos. La línea del link se queda: el 2-sep
-     * Pablo pidió que todo mensaje de precio la lleve. */
-    $texto = "Para {rubro} podemos hacer {propuesta}.\n\n"
-           . "Empezás con un primer pago de {precio}. A los 30 días de ese pago comienza el plan de {mensualidad} por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.\n"
-           . "En este enlace podés verlo bien detallado: {link}";
+     * 11-sep, tercera versión y la vigente (Pablo, viéndolo en vivo): este
+     * texto es SOLO la oferta y el link —"Para tu barbería podemos hacer una
+     * web donde… Podés ver los detalles en {link}"—, y los montos viven en los
+     * tres pasos, que van pegados abajo en el mismo mensaje
+     * (wabot_tres_pasos_default: el primer pago en el paso 2, el plan mensual
+     * en el 3). El párrafo suelto del precio se fue: repetía lo que dicen los
+     * pasos. La primera oración sale de lo que escribió el cliente:
+     * {propuesta} la arma wabot_propuesta_texto() (engine.php) con el
+     * argumento para_que de dar_precio, o con la frase fija del tipo si no
+     * llegó. Por eso el texto es el mismo para los cuatro tipos. */
+    $texto = "Para {rubro} podemos hacer {propuesta}. Podés ver los detalles en {link}";
     return ['landing' => $texto, 'ecommerce' => $texto, 'inmobiliaria' => $texto, 'elearning' => $texto];
 }
 
@@ -1990,10 +1985,16 @@ function wabot_precio_anterior_de($tipo, $cfg) {
  * recibe exactamente lo mismo.
  */
 function wabot_tres_pasos_default() {
+    /* 11-sep, segunda y tercera vuelta de Pablo: los pasos van PEGADOS a la
+     * oferta, en el mismo mensaje, explayados, y son el ÚNICO lugar donde
+     * están los montos: el primer pago en el paso 2 y el plan mensual en el 3.
+     * {precio} y {mensualidad} los resuelve wabot_tres_pasos_texto() con lo
+     * congelado de la charla; sin tipo cotizado —"¿cómo trabajan?" antes del
+     * precio— los montos se caen solos y la frase sigue cerrando. */
     return "Así trabajamos, en tres pasos:\n"
          . "1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.\n"
-         . "2. Si te gusta y querés avanzar, se hace un primer pago de {precio} y con eso avanzamos hacia el desarrollo completo.\n"
-         . "3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.";
+         . "2. Si te gusta y querés avanzar, se hace un primer pago de {precio}, con eso avanzamos hacia el desarrollo completo\n"
+         . "3. A los 7 días del primer pago comienza el plan mensual de {mensualidad}, para mantener tu web funcionando correctamente y actualizada.";
 }
 
 /** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
@@ -2325,7 +2326,7 @@ function wabot_config_simplificar_tipos(&$cfg) {
     if (!isset($cfg['tipos']['lms'])) {
         $base = $cfg['tipos']['elearning'] ?? [];
         $cfg['tipos']['lms'] = array_merge($base, [
-            'label' => 'Plataforma LMS', 'precio' => '$90.000', 'mensualidad' => '$30.000',
+            'label' => 'Plataforma LMS', 'precio' => '$60.000', 'mensualidad' => '$30.000',
             'precio_anterior' => '$330.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
@@ -2559,7 +2560,7 @@ function wabot_config_sin_frases_retiradas(&$cfg) {
  * EL MODELO COMERCIAL NUEVO (Pablo, 10-sep-2026). Corre ÚLTIMA en la cadena.
  *
  * Se terminó el pago único: ahora cada web tiene un PRIMER PAGO y un PLAN
- * MENSUAL obligatorio que arranca a los 30 días. Esta función es la que
+ * MENSUAL obligatorio que arranca a los 7 días. Esta función es la que
  * garantiza que ningún texto siga vendiendo el modelo viejo, y está escrita
  * por CONTENIDO y no por lista de redacciones exactas: bot-config.json lo
  * reescribe el panel en el server, diverge de la local, y todas las
@@ -2580,26 +2581,35 @@ function wabot_config_modelo_mensual(&$cfg) {
      * Solo se pisa un precio que sea del modelo viejo o esté vacío: el que
      * Pablo escriba desde el panel se respeta, que es para lo que está el
      * campo. */
+    /* 11-sep, segunda baja del primer pago (Pablo): el sitio profesional pasó
+     * de $60.000 a $40.000 y el resto de $90.000 a $60.000. `previo` es el
+     * valor que tenía antes de esta baja: se pisa igual que un precio del
+     * modelo viejo, así la config de producción converge sola. Las charlas ya
+     * cotizadas conservan su número, que está congelado en la conversación. */
     $nuevos = [
-        'landing'       => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
-        'turnos'        => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
-        'institucional' => ['precio' => '$60.000', 'mensualidad' => '$20.000'],
-        'ecommerce'     => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
-        'elearning'     => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
-        'inmobiliaria'  => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
-        'catalogo'      => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
-        'lms'           => ['precio' => '$90.000', 'mensualidad' => '$30.000'],
+        'landing'       => ['precio' => '$40.000', 'mensualidad' => '$20.000', 'previo' => '$60.000'],
+        'turnos'        => ['precio' => '$40.000', 'mensualidad' => '$20.000', 'previo' => '$60.000'],
+        'institucional' => ['precio' => '$40.000', 'mensualidad' => '$20.000', 'previo' => '$60.000'],
+        'ecommerce'     => ['precio' => '$60.000', 'mensualidad' => '$30.000', 'previo' => '$90.000'],
+        'elearning'     => ['precio' => '$60.000', 'mensualidad' => '$30.000', 'previo' => '$90.000'],
+        'inmobiliaria'  => ['precio' => '$60.000', 'mensualidad' => '$30.000', 'previo' => '$90.000'],
+        'catalogo'      => ['precio' => '$60.000', 'mensualidad' => '$30.000', 'previo' => '$90.000'],
+        'lms'           => ['precio' => '$60.000', 'mensualidad' => '$30.000', 'previo' => '$90.000'],
     ];
     foreach ($nuevos as $tipo => $d) {
         if (!isset($cfg['tipos'][$tipo])) continue;
         $t =& $cfg['tipos'][$tipo];
         $actual = trim((string)($t['precio'] ?? ''));
         // Un precio de seis cifras (o con "+ $500 por producto") es del modelo
-        // viejo: el primer pago nuevo está entre $10.000 y $99.999.
+        // viejo: el primer pago nuevo está entre $10.000 y $99.999. Y el precio
+        // de la primera lista mensual (11-sep) también se pisa por el de hoy.
         $esViejo = $actual === '' || wabot_monto_a_numero($actual) >= 100000
-                || stripos($actual, 'por producto') !== false;
+                || stripos($actual, 'por producto') !== false
+                || $actual === $d['previo'];
         if ($esViejo) {
-            if ($actual !== '' && trim((string)($t['precio_anterior'] ?? '')) === '') {
+            /* `precio_anterior` es el PAGO ÚNICO de antes del 10-sep, que usan
+             * las charlas viejas: la baja del 11-sep no lo toca. */
+            if ($actual !== '' && $actual !== $d['previo'] && trim((string)($t['precio_anterior'] ?? '')) === '') {
                 /* $160.000 y $200.000 eran valores guardados de antes del 2-sep
                  * que wabot_config_simplificar_tipos() llevaba a $180.000 en
                  * cada carga: lo que se cotizó de verdad hasta el 10-sep. */
@@ -2659,7 +2669,9 @@ function wabot_config_modelo_mensual(&$cfg) {
                 // "Depende del tipo" es la respuesta que Pablo retiró el 1-sep.
                 . '|depende del tipo de (p[áa]gina|web)'
                 // La propiedad a los 18 meses pasó a 12 el 11-sep.
-                . '|18 meses|Adicionales hay solo dos|El [úu]nico adicional/iu';
+                . '|18 meses|Adicionales hay solo dos|El [úu]nico adicional'
+                // Y el plan mensual arranca a los 7 días, no a los 30 (11-sep).
+                . '|los 30 d[íi]as/iu';
     $forzar = function ($actual, $nuevo, $requiere = null) use ($huelaVieja) {
         $a = trim((string)$actual);
         if ($a === '') return $nuevo;
@@ -2680,14 +2692,16 @@ function wabot_config_modelo_mensual(&$cfg) {
     $infoNueva = [
         // El requisito es el paso 1 del 11-sep: el texto del 10-sep traía "tres
         // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
-        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo']],
+        // {mensualidad} entre los requisitos: es lo último que se sumó (el plan
+        // en el paso 3), así que cualquier versión anterior converge sola.
+        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo', '{mensualidad}']],
         /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
          * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
-                 . "El plan mensual de {mensualidad} arranca a los 30 días del primer pago y va por suscripción automática de Mercado Pago, así se debita solo. No hace falta tener cuenta de Mercado Pago: te podés suscribir con cualquier tarjeta.", ['{mensualidad}', 'cualquier tarjeta']],
+                 . "El plan mensual de {mensualidad} arranca a los 7 días del primer pago y va por suscripción automática de Mercado Pago, así se debita solo. No hace falta tener cuenta de Mercado Pago: te podés suscribir con cualquier tarjeta.", ['{mensualidad}', 'cualquier tarjeta']],
         'mantenimiento' => ["El plan mensual no es opcional, es parte del servicio: son {mensualidad} por mes e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Se actualiza una vez al año.\n"
                  . "Si necesitás más de un cambio por mes, son \$10.000 más por mes y pasás a un plan con varios cambios.", ['{mensualidad}']],
-        'mantenimiento_ambos' => ["El plan mensual no es opcional, es parte del servicio: incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 30 días del primer pago y se actualiza una vez al año.\n"
+        'mantenimiento_ambos' => ["El plan mensual no es opcional, es parte del servicio: incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 7 días del primer pago y se actualiza una vez al año.\n"
                  . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}']],
         /* El dominio que va incluido es .com.ar (Pablo, 11-sep). El .com tiene
          * su propia respuesta, dominio_com, y sale solo si lo pregunta. */
@@ -2734,12 +2748,12 @@ function wabot_config_modelo_mensual(&$cfg) {
         'carga' => ["Depende del tipo de web. En la tienda online los primeros 10 productos los cargamos nosotros, para que arranques con la tienda lista; de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros, o los cargás vos desde tu panel, que es sencillo y trae un video explicativo.\n"
                  . "La inmobiliaria y la plataforma de cursos también traen panel propio para cargar las propiedades o los cursos. El sitio profesional no trae panel para editar el contenido: los cambios los hacemos nosotros, y el plan incluye un cambio por mes.", ['$500 por producto', 'sitio profesional']],
         'rangos' => ["{tabla_precios}\n"
-                 . "En todos los casos el plan mensual arranca a los 30 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
+                 . "En todos los casos el plan mensual arranca a los 7 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
         'precio_sin_rubro' => ["{tabla_precios}\n"
                  . "Contame qué vendés o qué servicio das y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
         'pago_generico' => ["{tabla_precios}\n"
-                 . "El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 30 días por suscripción automática de Mercado Pago.", ['{tabla_precios}']],
-        'pago_sin_precio' => ['El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. El plan mensual arranca a los 30 días del primer pago, por suscripción automática de Mercado Pago.', ['plan mensual']],
+                 . "El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 7 días por suscripción automática de Mercado Pago.", ['{tabla_precios}']],
+        'pago_sin_precio' => ['El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. El plan mensual arranca a los 7 días del primer pago, por suscripción automática de Mercado Pago.', ['plan mensual']],
         'plazos' => ["La web queda lista en unos 7 días desde el primer pago y la entrega del contenido.\n"
                  . "La demo gratis te la mandamos en menos de 24 horas desde que pasás los datos.", ['primer pago']],
         'demo_vigencia' => ['La demo queda disponible 5 días, por una cuestión de espacio en el servidor. Dentro de ese plazo mirala con tranquilidad y contame qué te parece.', ['5 días']],
@@ -2785,13 +2799,13 @@ function wabot_config_modelo_mensual(&$cfg) {
                  . 'Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.', ['no trabajamos', 'a medida']],
         // El portfolio filtrado se queda en el resumen: es lo único que agrega
         // cuando vuelven a preguntar el precio (Pablo, 2-sep).
-        'precio_resumen' => ["El primer pago es de {precio} y el plan mensual, que arranca a los 30 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}", ['{mensualidad}', '{portfolio}']],
-        'msg_precio' => ["Perfecto, para lo tuyo va {desc}. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\n"
+        'precio_resumen' => ["El primer pago es de {precio} y el plan mensual, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}", ['{mensualidad}', '{portfolio}']],
+        'msg_precio' => ["Perfecto, para lo tuyo va {desc}. El primer pago es de {precio} y a los 7 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\n"
                  . 'En este enlace podés verlo bien detallado: {link}', ['{mensualidad}', '{link}']],
-        'msg_precio_tras_pitch' => ["El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\n"
+        'msg_precio_tras_pitch' => ["El primer pago es de {precio} y a los 7 días arranca el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\n"
                  . 'En este enlace podés verlo bien detallado: {link}', ['{mensualidad}', '{link}']],
-        'pago_antes_o_despues' => ['La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar se abona el primer pago para arrancar. A los 30 días de ese primer pago comienza el plan mensual.', ['primer pago']],
-        'pago_cuanto_anticipo' => ['El primer pago es {precio} y es lo que se abona para arrancar con los cambios y dejar la web funcionando. A los 30 días comienza el plan mensual de {mensualidad}.', ['{mensualidad}']],
+        'pago_antes_o_despues' => ['La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar se abona el primer pago para arrancar. A los 7 días de ese primer pago comienza el plan mensual.', ['primer pago']],
+        'pago_cuanto_anticipo' => ['El primer pago es {precio} y es lo que se abona para arrancar con los cambios y dejar la web funcionando. A los 7 días comienza el plan mensual de {mensualidad}.', ['{mensualidad}']],
         'postdemo_transferencia' => ["El primer pago es de {precio} y con eso arrancamos con los cambios.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.", ['{precio}']],
         'postdemo_tarjeta' => ["Te dejo el link para abonar el primer pago de {precio} con tarjeta, en un pago o hasta en 12 cuotas con interés:\n{link}", ['{precio}']],
         'respuesta_plan_obligatorio' => ['El plan mensual es obligatorio: es lo que mantiene la web online, con hosting, dominio, soporte y un cambio por mes. Eso sí, no hay permanencia: lo das de baja cuando quieras.', ['obligatorio']],
@@ -2808,9 +2822,9 @@ function wabot_config_modelo_mensual(&$cfg) {
      * así que otra redacción cambiaba en la carga siguiente. */
     $variantesPrecio = [
         (string)$cfg['msg_precio'],
-        "Por lo que me contás, te conviene {desc}. Arrancás con un primer pago de {precio}, y a los 30 días empieza el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
-        "En este caso iría {desc}. El primer pago es de {precio}; después, desde los 30 días, el plan mensual es de {mensualidad} e incluye hosting, dominio, soporte y un cambio por mes.\nEn este enlace podés verlo bien detallado: {link}",
-        "La opción que mejor encaja es {desc}. Son {precio} de primer pago y, a partir de los 30 días, {mensualidad} por mes, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
+        "Por lo que me contás, te conviene {desc}. Arrancás con un primer pago de {precio}, y a los 7 días empieza el plan mensual de {mensualidad}, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
+        "En este caso iría {desc}. El primer pago es de {precio}; después, desde los 7 días, el plan mensual es de {mensualidad} e incluye hosting, dominio, soporte y un cambio por mes.\nEn este enlace podés verlo bien detallado: {link}",
+        "La opción que mejor encaja es {desc}. Son {precio} de primer pago y, a partir de los 7 días, {mensualidad} por mes, con el hosting, el dominio, el soporte y un cambio por mes incluidos.\nEn este enlace podés verlo bien detallado: {link}",
     ];
     $variantesActuales = array_values(array_filter((array)($cfg['msg_precio_variantes'] ?? []), 'is_string'));
     $algunaVieja = !$variantesActuales;
@@ -2884,17 +2898,28 @@ function wabot_textos_problemas($cfg) {
         if (strpos($texto, '{link}') === false) {
             $problemas[] = "El mensaje del precio de $etiqueta no lleva el link del presupuesto.";
         }
-        if (strpos($texto, '{precio}') === false) {
-            $problemas[] = "El mensaje del precio de $etiqueta no lleva el precio.";
-        }
-        if (strpos($texto, '{mensualidad}') === false) {
-            $problemas[] = "El mensaje del precio de $etiqueta no nombra el plan mensual.";
+        if (strpos($texto, '{propuesta}') === false) {
+            $problemas[] = "El mensaje del precio de $etiqueta no dice qué le podemos hacer.";
         }
         if (stripos($texto, 'portfolio') !== false) {
             $problemas[] = "El mensaje del precio de $etiqueta todavía cuelga la línea del portfolio.";
         }
         if (trim((string)($cfg['tipos'][$tipo]['mensualidad'] ?? '')) === '') {
             $problemas[] = "$etiqueta no tiene cargada la mensualidad: el bot va a cotizar sin el plan mensual.";
+        }
+    }
+
+    /* Desde el 11-sep los montos viven en los tres pasos, que van pegados al
+     * mensaje del precio: si se caen de ahí, el bot cotiza sin decir cuánto. */
+    $pasos = trim((string)($cfg['msg_tres_pasos'] ?? ''));
+    if ($pasos === '') {
+        $problemas[] = 'Los tres pasos, que son la segunda mitad del mensaje del precio, están vacíos.';
+    } else {
+        if (strpos($pasos, '{precio}') === false) {
+            $problemas[] = 'El paso 2 no lleva el primer pago.';
+        }
+        if (strpos($pasos, '{mensualidad}') === false) {
+            $problemas[] = 'El paso 3 no lleva el plan mensual.';
         }
     }
 

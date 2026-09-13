@@ -3,11 +3,11 @@
    Pago (ver "Auto-redirect" al final del archivo); la página completa con
    los dos medios (transferencia o form manual de MP) queda de fallback.
 
-   Monto dinámico por link: gokywebs.com/pago?monto=60000 cobra exactamente
+   Monto dinámico por link: gokywebs.com/pago?monto=40000 cobra exactamente
    ese valor (Pablo arma el link con el primer pago de cada cliente: 60.000
    para sitio profesional, 90.000 para tienda online, cursos e inmobiliaria,
    o cualquier otro importe puntual — adicional, carga de productos, etc.).
-   Sin el parámetro, cae al default $90.000. El plan mensual NO se cobra por
+   Sin el parámetro, cae al default $60.000. El plan mensual NO se cobra por
    acá: va por suscripción de Mercado Pago (/mantenimientomensual y
    /mantenimientoweb).
    OJO: es "monto", no "pago" — "?pago=fallido" ya existe en esta misma
@@ -16,7 +16,7 @@
 
 const WHATSAPP_NUMBER = '5491125068578'; // número real de Gokywebs (mismo que el resto del sitio)
 const ALIAS = 'pablotravis';
-const MONTO_DEFAULT = 90000;
+const MONTO_DEFAULT = 60000;
 
 function getMontoFromQuery() {
     const raw = new URLSearchParams(window.location.search).get('monto');

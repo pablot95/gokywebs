@@ -170,7 +170,7 @@
     <div id="mainContent">
         <p class="exito-badge">✓ Primer pago confirmado</p>
         <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
-        <p class="exito-desc">Ya recibimos tu primer pago<span id="primerPagoDesc"></span>. El plan mensual<span id="mensualidadDesc"></span> arranca a los 30 días y va por suscripción automática de Mercado Pago. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.</p>
+        <p class="exito-desc">Ya recibimos tu primer pago<span id="primerPagoDesc"></span>. El plan mensual<span id="mensualidadDesc"></span> arranca a los 7 días y va por suscripción automática de Mercado Pago. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.</p>
 
         <div class="payment-pill">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -327,7 +327,7 @@ const presupuesto    = presupuestoRaw ? JSON.parse(presupuestoRaw) : {};
 // Si el draft no los trae se deducen del siteType (mismos montos que PRIMER_PAGO /
 // MENSUALIDAD de script.js y que api/crear-preferencia.php); si tampoco hay
 // siteType no se muestra ningún monto, antes que afirmar uno que no se leyó.
-const PRIMER_PAGO = { landing: 60000, ecommerce: 90000, inmobiliaria: 90000, elearning: 90000 };
+const PRIMER_PAGO = { landing: 40000, ecommerce: 60000, inmobiliaria: 60000, elearning: 60000 };
 const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const primerPagoVal  = Number(presupuesto.primerPago)  || PRIMER_PAGO[presupuesto.siteType] || 0;
@@ -473,7 +473,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
             /* Los textos de estos dos mails viven en el panel de EmailJS, no en el
                repo (template_1mq1gt7 al cliente, template_xugoxum al admin). Desde
                el 10-sep-2026 reciben primer_pago y mensualidad (montos sueltos, ej.
-               "$60.000" y "$20.000") en lugar de sena_paid / sena / remaining: los
+               "$40.000" y "$20.000") en lugar de sena_paid / sena / remaining: los
                dos templates hay que editarlos allá. total_price ahora vale el
                primer pago. */
             const totalFmt     = '$' + Number(briefData.totalPrice).toLocaleString('es-AR');

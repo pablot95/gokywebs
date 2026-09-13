@@ -51,7 +51,7 @@
 <div class="exito-wrap">
     <p class="exito-badge">✓ Primer pago confirmado</p>
     <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
-    <p class="exito-desc">Ya recibimos tu primer pago de <span id="montoExito">$90.000</span>. Nos ponemos en contacto por WhatsApp para arrancar hoy mismo con las modificaciones y todo lo que necesita tu web.</p>
+    <p class="exito-desc">Ya recibimos tu primer pago de <span id="montoExito">$60.000</span>. Nos ponemos en contacto por WhatsApp para arrancar hoy mismo con las modificaciones y todo lo que necesita tu web.</p>
 
     <div id="pendingBox" class="pending-box" style="display:none">
         <h2>⏳ Pago en proceso</h2>
@@ -84,7 +84,7 @@
             <div class="timeline-step">
                 <div class="timeline-num">4</div>
                 <div class="timeline-body">
-                    <h3>A los 30 días arranca tu plan mensual</h3>
+                    <h3>A los 7 días arranca tu plan mensual</h3>
                     <p>Se cobra por <strong>suscripción automática de Mercado Pago</strong> e incluye hosting, dominio, soporte y un cambio por mes.</p>
                 </div>
             </div>
@@ -114,7 +114,7 @@
     // El monto real viaja en la URL de vuelta de Mercado Pago (crear-preferencia.php lo agrega
     // a success/pending) — con eso alcanza, no depende de que el localStorage siga vivo.
     const montoParam = Math.floor(Number(params.get('monto')));
-    const monto = (Number.isFinite(montoParam) && montoParam >= 1000) ? montoParam : 90000;
+    const monto = (Number.isFinite(montoParam) && montoParam >= 1000) ? montoParam : 60000;
     const montoFmt = '$' + monto.toLocaleString('es-AR');
     const montoEl = document.getElementById('montoExito');
     if (montoEl) montoEl.textContent = montoFmt;

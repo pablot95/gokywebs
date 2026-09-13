@@ -701,7 +701,7 @@ function renderEmbudoPresupuesto() {
                firestore.rules lo rechazaría): un total en 0 con precioAt ya
                registrado solo puede ser una sesión vieja del catálogo de +100
                productos. Desde el 10-sep-2026 la calculadora guarda como total el
-               primer pago ($60.000 o $90.000), que es lo que se vio en pantalla. */
+               primer pago ($40.000 o $60.000), que es lo que se vio en pantalla. */
             const precio = fmtPrecioOACotizar(s.totalPrice, Number(s.totalPrice) === 0);
             out += `<a class="funnel-leak-item" href="https://wa.me/${s.phone.replace(/\D/g, "")}" target="_blank" rel="noopener" title="Abrir WhatsApp">
                 <span class="funnel-leak-phone">${escapeHtml(s.phone)}</span>
@@ -972,7 +972,7 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 
 /* ═══════════════════════════════════════════════════════════
    PLAN MENSUAL — modelo comercial del 10-sep-2026
-   Primer pago + plan mensual obligatorio, que arranca a los 30 días del
+   Primer pago + plan mensual obligatorio, que arranca a los 7 días del
    primer pago y se cobra por suscripción de Mercado Pago. Mismos montos que
    PRIMER_PAGO / MENSUALIDAD de /presupuesto/script.js (mantener sincronizados).
    Ya no hay saldo: en `clientes` los campos nuevos (planLabel, primerPago,
@@ -981,16 +981,16 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    pago, `abono`), que quedan por compatibilidad con los docs anteriores.
    ═══════════════════════════════════════════════════════════ */
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    primerPago: 60000, mensual: 20000 },
-    ecommerce:    { label: "Ecommerce",            primerPago: 90000, mensual: 30000 },
-    cursos:       { label: "Plataforma de cursos", primerPago: 90000, mensual: 30000 },
-    inmobiliaria: { label: "Inmobiliaria",         primerPago: 90000, mensual: 30000 },
-    noticias:     { label: "Portal de noticias",   primerPago: 90000, mensual: 30000 },
+    profesional:  { label: "Sitio profesional",    primerPago: 40000, mensual: 20000 },
+    ecommerce:    { label: "Ecommerce",            primerPago: 60000, mensual: 30000 },
+    cursos:       { label: "Plataforma de cursos", primerPago: 60000, mensual: 30000 },
+    inmobiliaria: { label: "Inmobiliaria",         primerPago: 60000, mensual: 30000 },
+    noticias:     { label: "Portal de noticias",   primerPago: 60000, mensual: 30000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { primerPago: 90000, mensual: 30000 };
+const PLAN_RESTO = { primerPago: 60000, mensual: 30000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
-const DIAS_HASTA_EL_PLAN = 30;
+const DIAS_HASTA_EL_PLAN = 7;
 
 function _num(v) {
     const n = Number(v);
@@ -1070,7 +1070,7 @@ function _sumarDias(fecha, dias) {
 /* Cómo se ve la suscripción de un cliente en el tab Clientes. Una baja cargada
    a mano manda; si no, un suscriptor activo en Mantenimiento la vuelve
    'activa'; si no, vale lo guardado ('pendiente' por defecto). El inicio es el
-   guardado, o el primer pago + 30 días, o el alta en Mercado Pago. */
+   guardado, o el primer pago + 7 días, o el alta en Mercado Pago. */
 function suscripcionDe(c) {
     const plan = planDe(c, propuestaDeCliente(c));
     const mant = mantenimientoDeCliente(c);
@@ -1339,7 +1339,6 @@ function initRealtime() {
     const qResenas = query(collection(db, "resenas"), orderBy("createdAt", "desc"));
     onSnapshot(qResenas, (snap) => {
         resenas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        _updateResenasBadge();
         // Si el modal de un cliente está abierto, refrescarle la sección de
         // reseñas por si llegó una nueva mientras Pablo lo tenía a la vista.
         const openId = document.getElementById("clientId")?.value;
@@ -1363,20 +1362,6 @@ function initRealtime() {
         if (openPropId && propuestaModal && !propuestaModal.hidden) renderPaletasEnPropuestaModal(openPropId);
     }, (err) => {
         console.error("Paletas error:", err);
-    });
-}
-
-/* Badge rojo tipo notificación (distinto del .pill-count neutro que ya
-   traían los tabs) en los tabs Clientes y Seguimientos: cuenta reseñas con
-   visto:false en TODA la colección, sin cruzar con clientes — no hace falta
-   saber a quién pertenece cada una para saber que hay algo nuevo sin ver. */
-function _updateResenasBadge() {
-    const sinVer = resenas.filter(r => !r.visto).length;
-    ["badgeResenasClientes", "badgeResenasSeg"].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.textContent = sinVer > 99 ? "99+" : String(sinVer);
-        el.hidden = sinVer === 0;
     });
 }
 
@@ -1446,8 +1431,10 @@ async function renderResenasEnModal(clientId) {
 }
 
 /* Burbuja de paletas sin ver, en los 3 tabs donde el registro puede vivir
-   según el estado del pipeline (Bocetos, Clientes, Seguimientos) — mismo
-   criterio de _updateResenasBadge: cuenta global, sin cruzar con clientes. */
+   según el estado del pipeline (Bocetos, Clientes, Seguimientos): cuenta
+   global, sin cruzar con clientes. Es la única burbuja roja de esos tabs: la
+   de devoluciones se sacó el 13-sep porque se pisaba con esta y el número
+   salía dos veces (Pablo). Las devoluciones se siguen viendo en el modal. */
 function _updatePaletasBadge() {
     const sinVer = paletasElegidas.filter(p => !p.visto).length;
     ["badgePaletasClientes", "badgePaletasSeg", "badgePaletasBocetos"].forEach(id => {
@@ -2055,7 +2042,7 @@ async function setStatus(id, value) {
         };
 
         /* Pasar a Cliente = pagó el primer pago (modelo del 10-sep-2026). Se fija el
-           plan y se registra el primer pago; el plan mensual arranca a los 30 días.
+           plan y se registra el primer pago; el plan mensual arranca a los 7 días.
            La sugerencia sale del boceto (primerPago / mensualidad de la calculadora o
            del alta manual; en los bocetos viejos, `sena`) o, si no, del tipo de web. */
         if (value === "cliente" && prevEstado !== "cliente" && c) {
@@ -2353,7 +2340,7 @@ document.getElementById("planCliente").addEventListener("change", (e) => {
 });
 document.getElementById("primerPagoAt").addEventListener("change", sincronizarDesdeAuto);
 
-/* "El plan arranca el" sigue a la fecha del primer pago (+30 días) mientras no
+/* "El plan arranca el" sigue a la fecha del primer pago (+7 días) mientras no
    se la haya tocado a mano. */
 function sincronizarDesdeAuto() {
     const pago = _fechaDeInput(document.getElementById("primerPagoAt").value);

@@ -4569,7 +4569,7 @@ function wabot_texto_rangos($cfg) {
     }
     // Sin "depende" adelante: era la respuesta que Pablo retiró el 1-sep.
     return $tabla
-        . "\nEn todos los casos el plan mensual arranca a los 30 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+        . "\nEn todos los casos el plan mensual arranca a los 7 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
 }
 
 /**
@@ -4581,7 +4581,7 @@ function wabot_texto_pago_generico($cfg) {
     $tabla = wabot_tabla_precios_texto($cfg);
     if ($tabla === '') return wabot_texto_sin_modelo_viejo(trim((string)($cfg['info']['pago_generico'] ?? '')));
     return $tabla
-        . "\nEl primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 30 días por suscripción automática de Mercado Pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+        . "\nEl primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 7 días por suscripción automática de Mercado Pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
 }
 
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
@@ -4703,7 +4703,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 30 días por suscripción automática de Mercado Pago.';
+        return 'El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 7 días por suscripción automática de Mercado Pago.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['modelo'] === 'unico') {
@@ -4760,7 +4760,7 @@ function wabot_sena_de($conv, $cfg) {
  *
  * Pablo cambió el modelo comercial el 10-sep: se terminó el pago único. Ahora
  * cada tipo tiene un PRIMER PAGO (tipos[].precio) y un PLAN MENSUAL obligatorio
- * (tipos[].mensualidad) que arranca a los 30 días. Dos cosas que el código
+ * (tipos[].mensualidad) que arranca a los 7 días. Dos cosas que el código
  * tiene que garantizar:
  *
  *  1) Un cliente ya cotizado sigue viendo SU precio aunque la lista cambie.
@@ -4925,8 +4925,8 @@ function wabot_lista_o($nombres) {
 }
 
 /**
- * "Sitio profesional: primer pago de $60.000 y después $20.000 por mes.
- *  Tienda online, plataforma de cursos o inmobiliaria: primer pago de $90.000
+ * "Sitio profesional: primer pago de $40.000 y después $20.000 por mes.
+ *  Tienda online, plataforma de cursos o inmobiliaria: primer pago de $60.000
  *  y después $30.000 por mes."
  */
 function wabot_tabla_precios_texto($cfg) {
@@ -5000,16 +5000,18 @@ function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
  */
 function wabot_tres_pasos_precio($texto, $conv, $cfg) {
     $t = (string)$texto;
-    if (strpos($t, '{precio}') === false) return $t;
+    if (strpos($t, '{precio}') === false && strpos($t, '{mensualidad}') === false) return $t;
     $primerPago = '';
+    $mensual    = '';
     if (is_array($conv) && !empty($conv['precio_dado'])) {
         $v = wabot_precio_vigente($conv, $cfg);
         // La charla del pago único no tiene "primer pago": ahí el monto no va.
         if (($v['modelo'] ?? '') !== 'unico') {
             $primerPago = trim((string)$v['precio']);
+            $mensual    = trim((string)$v['mensualidad']);
         }
     }
-    foreach (['{precio}' => $primerPago] as $marca => $monto) {
+    foreach (['{precio}' => $primerPago, '{mensualidad}' => $mensual] as $marca => $monto) {
         $t = $monto !== ''
             ? str_replace($marca, $monto, $t)
             : trim(preg_replace('/\s*de ' . preg_quote($marca, '/') . '/u', '', $t));
@@ -5159,7 +5161,7 @@ function wabot_precio_resumen($conv, $cfg) {
     }
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "El primer pago es de {precio} y el plan mensual, que arranca a los 30 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "El primer pago es de {precio} y el plan mensual, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace(['{sena}', '{precio}'], ['', $precio], $plantilla), $conv, $cfg);
 }
@@ -5710,7 +5712,7 @@ function wabot_pitch($tipo, &$conv, $cfg) {
 
     /* EL TURNO DEL PRECIO ES UN SOLO MENSAJE (Pablo, 11-sep): lo que le podemos
      * hacer con el precio y el link, y pegados abajo LOS TRES PASOS (demo
-     * gratis, primer pago, plan mensual a los 30 días). Hasta ese día iban en
+     * gratis, primer pago, plan mensual a los 7 días). Hasta ese día iban en
      * dos globos y el segundo llegaba unos segundos después; partido en dos se
      * leía como dos mensajes sueltos. Sin nada en el medio (Pablo, 2-sep:
      * "sacá todo lo que sea 'si te cierra', 'si va por ahí'"). El link del

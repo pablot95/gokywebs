@@ -712,6 +712,27 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['items' => wabot_lista_items()], JSON_UNESCAPED_UNICODE);
         exit;
     }
+    /* Conversaciones live (13-sep): las charlas con movimiento, la más reciente
+     * primero, cada una con su tramo final de mensajes. Solo lee: no las marca
+     * como leídas (eso lo hace abrirla en Conversaciones). */
+    if ($a === 'live') {
+        header('Content-Type: application/json; charset=utf-8');
+        $items = array_values(array_filter(wabot_lista_items(), function ($it) {
+            return stripos((string)$it['tel'], 'TEST') === false && (int)($it['ts'] ?? 0) > 0;
+        }));
+        usort($items, function ($x, $y) { return (int)$y['ts'] <=> (int)$x['ts']; });
+        $items = array_slice($items, 0, 30);
+        foreach ($items as &$it) {
+            $cv = wabot_conv_load($it['tel']);
+            $it['transcript'] = array_map(function ($l) {
+                return ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
+                        'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
+            }, array_slice(array_values((array)($cv['transcript'] ?? [])), -40));
+        }
+        unset($it);
+        echo json_encode(['items' => $items, 'ahora' => time()], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     // Busca DENTRO de los mensajes, no en los datos de contacto: recorre cada
     // conversación completa (lo vivo + lo archivado en historial/, ver
     // wabot_transcript_completo) y devuelve las que tienen al menos un mensaje
@@ -926,6 +947,41 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .tabs a { padding:7px 13px; border:1px solid transparent; border-radius:8px; color:var(--dim); font-size:13.5px; }
 .tabs a:hover { background:var(--card); color:var(--tx); }
 .tabs a.on { background:var(--card-2); color:var(--tx); border-color:var(--line-fuerte); font-weight:500; }
+/* Navegación en botones (13-sep): antes era un desplegable. */
+.tabs-nav { margin-bottom:12px; }
+.tabs-nav a { border-color:var(--line); }
+.tabs-nav a.tabs-aparte { border:0; padding:0 2px; }
+@media (max-width: 700px) {
+  .tabs-nav { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .tabs-nav::-webkit-scrollbar { display:none; }
+  .tabs-nav a { white-space:nowrap; flex:0 0 auto; }
+}
+/* Conversaciones live: 5 columnas por pantalla de compu, scroll horizontal. */
+.live-bar { display:flex; align-items:center; gap:10px; margin-bottom:8px; color:var(--dim); font-size:12.5px; }
+.live-punto { width:8px; height:8px; border-radius:50%; background:var(--ac, #3ecf8e); box-shadow:0 0 0 0 rgba(62,207,142,.6); animation:livePulso 2s infinite; }
+.live-punto.caido { background:var(--bad); animation:none; }
+@keyframes livePulso { 0% { box-shadow:0 0 0 0 rgba(62,207,142,.55); } 70% { box-shadow:0 0 0 8px rgba(62,207,142,0); } 100% { box-shadow:0 0 0 0 rgba(62,207,142,0); } }
+.live-board { flex:1; min-height:360px; display:grid; grid-auto-flow:column; gap:10px;
+  grid-auto-columns:calc((100% - 4 * 10px) / 5); overflow-x:auto; overflow-y:hidden; padding-bottom:8px; }
+body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
+.live-col { display:flex; flex-direction:column; min-width:0; min-height:0; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.live-col.movio { animation:liveMovio 1.6s ease-out; }
+@keyframes liveMovio { 0% { border-color:var(--ac, #3ecf8e); box-shadow:0 0 0 2px rgba(62,207,142,.35); } 100% { border-color:var(--line); box-shadow:none; } }
+.live-head { padding:9px 11px 8px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:4px; }
+.live-fila { display:flex; align-items:center; gap:6px; min-width:0; }
+.live-nombre { flex:1; min-width:0; font-weight:600; font-size:13.5px; color:var(--tx); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.live-hace { flex:0 0 auto; font-size:11.5px; color:var(--dim); }
+.live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
+.live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
+.live-abrir:hover { color:var(--tx); }
+.live-chat { flex:1; min-height:0; overflow-y:auto; padding:10px 9px; display:flex; flex-direction:column; gap:6px; }
+.live-chat .burb { max-width:94%; font-size:12.5px; padding:7px 10px; line-height:1.4; }
+.live-chat .burb .meta { font-size:10.5px; }
+.live-media { display:block; font-size:11.5px; color:var(--dim); margin-top:3px; }
+.live-vacio { color:var(--dim); font-size:13px; padding:30px 4px; }
+@media (max-width: 1280px) { .live-board { grid-auto-columns:calc((100% - 3 * 10px) / 4); } }
+@media (max-width: 1000px) { .live-board { grid-auto-columns:calc((100% - 2 * 10px) / 3); } }
+@media (max-width: 700px)  { .live-board { grid-auto-columns:88%; scroll-snap-type:x mandatory; } .live-col { scroll-snap-align:start; } }
 .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:16px; }
 label { display:block; font-size:13px; color:var(--dim); margin:12px 0 4px; }
 input[type=text], input[type=password], input[type=number], textarea, select {
@@ -1080,18 +1136,6 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .conv-chip-item:hover { background:var(--card); color:var(--tx); }
 .conv-chip-item.on { background:var(--info); color:#0b1424; font-weight:600; }
 
-.tabs-mini { display:flex; align-items:center; justify-content:flex-end; gap:8px; margin-bottom:10px; }
-.tabs-menu { position:relative; }
-.tabs-menu-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--line);
-    border-radius:8px; background:var(--card); color:var(--dim); font:inherit; font-size:13px; cursor:pointer; }
-.tabs-menu-btn:hover, .tabs-menu-btn[aria-expanded="true"] { border-color:var(--line-fuerte); color:var(--tx); }
-.tabs-menu-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:40; min-width:180px; padding:5px;
-    background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px;
-    box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
-.tabs-menu-panel[hidden] { display:none; }
-.tabs-menu-panel a { padding:8px 10px; border-radius:7px; color:var(--dim); font-size:13px; }
-.tabs-menu-panel a:hover { background:var(--card); color:var(--tx); }
-.tabs-menu-panel a.on { background:var(--card); color:var(--tx); font-weight:600; }
 
 .estado-tag { display:inline-block; flex-shrink:0; padding:1px 6px; border-radius:5px; font-size:10px;
     font-weight:800; letter-spacing:.04em; vertical-align:middle; background:var(--card-2); color:var(--dim); }
@@ -1329,8 +1373,9 @@ body.embed .wrap { padding-top: 10px; }
 body.embed { min-height: 0; }
 </style>
 </head>
-<body class="<?= $embed ? 'embed ' : '' ?><?= $tab === 'conversaciones' ? 'conv-full' : '' ?>">
-<div class="wrap <?= $tab === 'conversaciones' ? 'wrap--wide' : '' ?>">
+<?php $pantallaCompleta = in_array($tab, ['conversaciones', 'live'], true); ?>
+<body class="<?= $embed ? 'embed ' : '' ?><?= $pantallaCompleta ? 'conv-full' : '' ?>">
+<div class="wrap <?= $pantallaCompleta ? 'wrap--wide' : '' ?>">
 
 <?php if (!$logueado): ?>
     <h1>Bot WhatsApp — <span>Gokywebs</span></h1>
@@ -1353,6 +1398,7 @@ body.embed { min-height: 0; }
     <?php
     $navTabs = [
         'conversaciones' => 'Conversaciones',
+        'live'           => 'Conversaciones live',
         'embudo'         => 'Embudo',
         'probar'         => 'Probar',
         'textos'         => 'Textos',
@@ -1360,38 +1406,17 @@ body.embed { min-height: 0; }
         'estado'         => 'Estado',
     ];
     ?>
-    <div class="tabs-mini">
+    <?php /* Botones a lo largo, no un desplegable (Pablo, 13-sep): las
+     * pestañas se ven todas de un vistazo. En el celular la fila scrollea. */ ?>
+    <nav class="tabs tabs-nav" aria-label="Secciones del bot">
+        <?php foreach ($navTabs as $k => $v): ?>
+            <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= $v ?></a>
+        <?php endforeach; ?>
         <?php if ($embed): ?>
             <span class="pill <?= !empty($cfg['activo']) ? 'on' : 'off' ?>"><?= !empty($cfg['activo']) ? 'BOT ACTIVO' : 'BOT APAGADO' ?></span>
             <a href="admin.php?embed=0" target="_blank" rel="noopener" class="tabs-aparte">Abrir aparte ↗</a>
         <?php endif; ?>
-        <div class="tabs-menu">
-            <button type="button" class="tabs-menu-btn" id="tabsMenuBtn" aria-expanded="false" aria-controls="tabsMenuPanel">
-                <?= $e($navTabs[$tab] ?? 'Menú') ?> <span aria-hidden="true">▾</span>
-            </button>
-            <nav class="tabs-menu-panel" id="tabsMenuPanel" hidden>
-                <?php foreach ($navTabs as $k => $v): ?>
-                    <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"><?= $v ?></a>
-                <?php endforeach; ?>
-            </nav>
-        </div>
-    </div>
-    <script>
-    (function () {
-        var btn = document.getElementById('tabsMenuBtn'), panel = document.getElementById('tabsMenuPanel');
-        if (!btn || !panel) return;
-        btn.addEventListener('click', function () {
-            var abrir = panel.hidden;
-            panel.hidden = !abrir;
-            btn.setAttribute('aria-expanded', abrir ? 'true' : 'false');
-        });
-        document.addEventListener('click', function (ev) {
-            if (panel.hidden || btn.contains(ev.target) || panel.contains(ev.target)) return;
-            panel.hidden = true;
-            btn.setAttribute('aria-expanded', 'false');
-        });
-    })();
-    </script>
+    </nav>
 
     <?php if (isset($_GET['ok'])) echo '<p class="ok">Guardado.</p>'; ?>
     <?php if (isset($_GET['boceto_ok'])) echo '<p class="ok">Boceto creado: ya aparece en la pestaña Bocetos.</p>'; ?>
@@ -1771,7 +1796,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plan mensual</h2>
-            <p class="meta" style="margin-bottom:8px">Obligatorio desde el 10-sep: arranca a los 30 días del primer pago. El monto que cotiza el bot es el de cada tipo, en la sección Precio (casillero "por mes"); acá quedan los montos de referencia y el link de la página de cada plan.</p>
+            <p class="meta" style="margin-bottom:8px">Obligatorio desde el 10-sep: arranca a los 7 días del primer pago. El monto que cotiza el bot es el de cada tipo, en la sección Precio (casillero "por mes"); acá quedan los montos de referencia y el link de la página de cada plan.</p>
             <?php
             $etiquetasPlan = ['landing' => 'Sitio profesional', 'otros' => 'Ecommerce, cursos e inmobiliaria'];
             foreach (($cfg['mantenimiento_planes'] ?? []) as $k => $plan): ?>
@@ -3196,6 +3221,167 @@ body.embed { min-height: 0; }
         setInterval(refrescar, 5000);
         </script>
         <?php endif; ?>
+
+    <?php elseif ($tab === 'live'): ?>
+        <?php /* Conversaciones live (Pablo, 13-sep): varias charlas a la vez, 5 por
+         * pantalla de compu, con scroll horizontal. La que tuvo el último mensaje
+         * —del cliente, del bot o tuyo— pasa sola al primer lugar. */ ?>
+        <div class="live-bar">
+            <span class="live-punto" id="livePunto" aria-hidden="true"></span>
+            <span id="liveEstado">Conectando…</span>
+            <span style="margin-left:auto">La charla con el último mensaje va primero, a la izquierda.</span>
+        </div>
+        <p class="live-vacio" id="liveVacio">Cargando conversaciones…</p>
+        <div class="live-board" id="liveBoard"></div>
+        <script>
+        (function () {
+            const board  = document.getElementById('liveBoard');
+            const vacio  = document.getElementById('liveVacio');
+            const punto  = document.getElementById('livePunto');
+            const estado = document.getElementById('liveEstado');
+            const cols = new Map();   // tel -> { el, firma, ts, pintado }
+            const dd = n => String(n).padStart(2, '0');
+            let cargando = false;
+
+            function hace(ts, ahora) {
+                const s = Math.max(0, ahora - ts);
+                if (s < 60) return 'recién';
+                if (s < 3600) return 'hace ' + Math.floor(s / 60) + ' min';
+                if (s < 86400) return 'hace ' + Math.floor(s / 3600) + ' h';
+                const f = new Date(ts * 1000);
+                return dd(f.getDate()) + '/' + dd(f.getMonth() + 1);
+            }
+
+            function crearColumna() {
+                const el = document.createElement('section');
+                el.className = 'live-col';
+                el.innerHTML = '<header class="live-head"><div class="live-fila"><span class="live-nombre"></span>'
+                    + '<span class="live-hace"></span></div><div class="live-sub"></div></header><div class="live-chat"></div>';
+                return { el, firma: '', ts: 0, pintado: false };
+            }
+
+            function pintarCabecera(c, it, ahora) {
+                const nombre = it.nombre_agenda || it.nombre || it.nombre_negocio || it.tel;
+                const nom = c.el.querySelector('.live-nombre');
+                nom.textContent = nombre;
+                nom.title = it.nombre_negocio && it.nombre_negocio !== nombre ? nombre + ' · ' + it.nombre_negocio : nombre;
+                c.el.querySelector('.live-hace').textContent = hace(it.ts, ahora);
+                const sub = c.el.querySelector('.live-sub');
+                sub.textContent = '';
+                const pill = (txt, cls) => {
+                    const s = document.createElement('span');
+                    s.className = 'pill ' + cls; s.textContent = txt; sub.appendChild(s);
+                };
+                pill(it.canal === 'instagram' ? 'Instagram' : 'WhatsApp', 'tipo');
+                if (it.estado === 'apagado') pill('bot apagado', 'off');
+                else if (it.estado === 'pausado') pill('pausado', 'pausa');
+                else pill('bot', 'on');
+                if (it.handoff_pendiente) pill('te espera', 'pausa');
+                if (it.fase) {
+                    const f = document.createElement('span');
+                    f.textContent = String(it.fase).replace(/_/g, ' ');
+                    sub.appendChild(f);
+                }
+                const a = document.createElement('a');
+                a.className = 'live-abrir';
+                a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
+                a.textContent = 'Abrir ↗';
+                sub.appendChild(a);
+            }
+
+            function pintarChat(c, it) {
+                const firma = JSON.stringify(it.transcript || []);
+                if (firma === c.firma) return;
+                c.firma = firma;
+                const chat = c.el.querySelector('.live-chat');
+                chat.textContent = '';
+                for (const t of it.transcript || []) {
+                    const d = document.createElement('div');
+                    d.className = 'burb ' + t.q;
+                    d.textContent = t.t;
+                    if (t.media) {
+                        const md = document.createElement('span');
+                        md.className = 'live-media';
+                        md.textContent = '📎 ' + t.media;
+                        d.appendChild(md);
+                    }
+                    const m = document.createElement('div');
+                    m.className = 'meta';
+                    const f = new Date(t.ts * 1000);
+                    m.textContent = (t.q === 'humano' ? 'vos · ' : '') + dd(f.getHours()) + ':' + dd(f.getMinutes());
+                    d.appendChild(m);
+                    chat.appendChild(d);
+                }
+            }
+
+            async function refrescar() {
+                if (cargando) return;
+                cargando = true;
+                let j = null;
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'live' }) });
+                    j = await r.json();
+                } catch (e) {
+                    punto.classList.add('caido');
+                    estado.textContent = 'Sin conexión, reintentando…';
+                    cargando = false;
+                    return;
+                }
+                cargando = false;
+                punto.classList.remove('caido');
+                const items = Array.isArray(j && j.items) ? j.items : [];
+                const ahora = (j && j.ahora) || Math.floor(Date.now() / 1000);
+                const hoy = new Date();
+                estado.textContent = items.length + ' conversaciones · actualizado ' + dd(hoy.getHours()) + ':' + dd(hoy.getMinutes()) + ':' + dd(hoy.getSeconds());
+                vacio.hidden = items.length > 0;
+                if (!items.length) vacio.textContent = 'Todavía no hay conversaciones.';
+
+                // Mover una columna en el DOM le resetea el scroll: se guarda antes.
+                const scrolls = new Map();
+                cols.forEach((c, tel) => {
+                    const ch = c.el.querySelector('.live-chat');
+                    scrolls.set(tel, { top: ch.scrollTop, abajo: ch.scrollHeight - ch.scrollTop - ch.clientHeight < 60 });
+                });
+                const primeraAntes = board.firstElementChild;
+                const pegadoIzquierda = board.scrollLeft < 40;
+
+                const vivas = new Set();
+                for (const it of items) {
+                    vivas.add(it.tel);
+                    let c = cols.get(it.tel);
+                    const nueva = !c;
+                    if (nueva) { c = crearColumna(); cols.set(it.tel, c); }
+                    const movio = !nueva && it.ts > c.ts;
+                    c.ts = it.ts;
+                    pintarCabecera(c, it, ahora);
+                    pintarChat(c, it);
+                    if (movio) { c.el.classList.remove('movio'); void c.el.offsetWidth; c.el.classList.add('movio'); }
+                }
+                cols.forEach((c, tel) => { if (!vivas.has(tel)) { c.el.remove(); cols.delete(tel); } });
+
+                // El orden del tablero sigue al de la respuesta: la más reciente primero.
+                let cursor = board.firstElementChild;
+                for (const it of items) {
+                    const el = cols.get(it.tel).el;
+                    if (el === cursor) cursor = cursor.nextElementSibling;
+                    else board.insertBefore(el, cursor);
+                }
+
+                cols.forEach((c, tel) => {
+                    const ch = c.el.querySelector('.live-chat');
+                    const s = scrolls.get(tel);
+                    ch.scrollTop = (!s || s.abajo) ? ch.scrollHeight : s.top;
+                });
+                // Si estabas mirando el principio, la charla que se movió queda a la vista.
+                if (pegadoIzquierda && board.firstElementChild !== primeraAntes) board.scrollLeft = 0;
+            }
+
+            refrescar();
+            setInterval(() => { if (!document.hidden) refrescar(); }, 4000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) refrescar(); });
+        })();
+        </script>
 
     <?php elseif ($tab === 'probar'): ?>
         <?php $convT = wabot_conv_load('TEST'); ?>

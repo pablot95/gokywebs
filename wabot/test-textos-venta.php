@@ -47,21 +47,21 @@ $c = conv_tv('5491166660001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
 $precio = wabot_personalizar($r[0], $c);
 caso('sin rubro ni para_que arranca "Podemos hacer" con la frase fija del sitio profesional',
-    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.\n\n") === 0, $precio);
-caso('el primer pago y el plan van en su párrafo, con las palabras de Pablo',
-    strpos($precio, "\n\nEmpezás con un primer pago de \$60.000. A los 30 días de ese pago comienza el plan de \$20.000 por mes, esto incluye todo lo necesario para mantener tu web funcionando correctamente y actualizada, sin que tengas que ocuparte de lo técnico.\n") !== false, $precio);
-caso('y termina en el link del presupuesto',
-    preg_match('/\nEn este enlace podés verlo bien detallado: gokywebs\.com\/presupuestos\/\S+\n\nAsí trabajamos, en tres pasos:/u', $precio) === 1, $precio);
+    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp. Podés ver los detalles en ") === 0, $precio);
+caso('YA NO hay párrafo suelto de montos: eso lo dicen los pasos (11-sep, tercera versión)',
+    mb_stripos($precio, 'Empezás con un primer pago') === false, $precio);
+caso('el link del presupuesto va pegado a la oferta, justo antes de los pasos',
+    preg_match('/ Podés ver los detalles en gokywebs\.com\/presupuestos\/\S+\n\nAsí trabajamos, en tres pasos:/u', $precio) === 1, $precio);
 caso('"primer pago", nunca "pago inicial"', mb_stripos($precio, 'pago inicial') === false);
-/* 11-sep, segunda vuelta: todo en UN mensaje, con los pasos
- * explayados y el primer pago en el paso 2. */
+/* 11-sep, segunda y tercera vuelta: todo en UN mensaje, con los pasos
+ * explayados y los montos adentro de los pasos. */
 caso('es un solo mensaje, con los tres pasos y la pregunta pegados abajo',
     count($r) === 1
-    && mb_strpos($precio, "\n\n" . str_replace('{precio}', '$60.000', wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta()) !== false, $precio);
+    && mb_strpos($precio, "\n\n" . str_replace(['{precio}', '{mensualidad}'], ['$40.000', '$20.000'], wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta()) !== false, $precio);
 caso('el paso 2 dice el primer pago de lo cotizado y para qué es',
-    mb_strpos($precio, '2. Si te gusta y querés avanzar, se hace un primer pago de $60.000 y con eso avanzamos hacia el desarrollo completo.') !== false);
+    mb_strpos($precio, '2. Si te gusta y querés avanzar, se hace un primer pago de $40.000, con eso avanzamos hacia el desarrollo completo') !== false);
 caso('y el paso 3, el plan mensual con su monto y para qué sirve',
-    mb_strpos($precio, '3. A los 30 días del primer pago comienza el plan mensual, para mantener tu web funcionando correctamente y actualizada.') !== false);
+    mb_strpos($precio, '3. A los 7 días del primer pago comienza el plan mensual de $20.000, para mantener tu web funcionando correctamente y actualizada.') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
@@ -69,7 +69,7 @@ $c['pitch_para_que'] = 'muestres los tratamientos y tus clientas reserven turno 
 $c['pitch_para_que_tipo'] = 'landing';
 $r = wabot_pitch('landing', $c, $cfg);
 caso('con rubro y para_que sale la oración que dictó Pablo, con el link pegado',
-    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nEmpezás con un primer pago de \$60.000.") === 0,
+    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online. Podés ver los detalles en gokywebs.com/presupuestos/sitioprofesional\n\nAsí trabajamos") === 0,
     wabot_personalizar($r[0], $c));
 
 foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una web para publicar tus propiedades',
@@ -77,9 +77,9 @@ foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una we
     $c = conv_tv('5491166660003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar($r[0], $c);
-    caso("$tipo: la frase fija de su tipo y \$90.000 + \$30.000 por mes",
-        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'primer pago de $90.000') !== false
-        && strpos($t, 'plan de $30.000 por mes') !== false, $t);
+    caso("$tipo: la frase fija de su tipo y \$60.000 + \$30.000 por mes",
+        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'primer pago de $60.000') !== false
+        && strpos($t, 'plan mensual de $30.000') !== false, $t);
 }
 
 /* El que pregunta "cuánto sale" antes de decir el rubro entra por el camino
@@ -227,7 +227,7 @@ $prod['info']['que_incluye'] = "Está todo incluido: el desarrollo completo a me
 unset($prod['info']['turnos'], $prod['info']['usuarios'], $prod['info']['dominio_com'], $prod['info']['estadisticas'],
       $prod['info']['estadisticas_tienda'], $prod['info']['estadisticas_sitio'], $prod['info']['que_incluye_sin_productos']);
 $prod['prediseno_link'] = "Perfecto. Para armarte la demo completá este formulario con el nombre del negocio, qué ofrecés y los colores que te gustan:\n{link}\nNo te lleva más de un minuto, y en menos de 24 horas la tenés lista.";
-$prod['tipos']['landing']['precio_ideal'] = "Perfecto, para {rubro} sería un sitio profesional. El primer pago es de {precio} y a los 30 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEn este enlace podés verlo bien detallado: {link}";
+$prod['tipos']['landing']['precio_ideal'] = "Perfecto, para {rubro} sería un sitio profesional. El primer pago es de {precio} y a los 7 días arranca el plan mensual de {mensualidad}, que incluye el hosting, el dominio, el soporte y un cambio por mes.\nEn este enlace podés verlo bien detallado: {link}";
 wabot_config_migrar($prod);
 foreach (['bilingue', 'hosting', 'que_incluye', 'turnos', 'usuarios', 'dominio_com', 'estadisticas', 'estadisticas_tienda',
           'estadisticas_sitio', 'que_incluye_sin_productos'] as $k) {

@@ -23,19 +23,19 @@ $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' 
 
 // Primer pago (modelo 10-sep-2026: primer pago + plan mensual obligatorio). Se
 // recalcula server-side a partir del siteType, nunca se confía en un monto mandado
-// desde el cliente: sitio profesional (clave 'landing') $60.000 · ecommerce,
-// inmobiliaria y elearning $90.000. Tiene que coincidir con PRIMER_PAGO de
+// desde el cliente: sitio profesional (clave 'landing') $40.000 · ecommerce,
+// inmobiliaria y elearning $60.000. Tiene que coincidir con PRIMER_PAGO de
 // presupuesto/script.js y de presupuesto/exito.html.
 $siteType   = trim($body['siteType'] ?? '');
-$primerPago = ($siteType === 'landing') ? 60000 : 90000;
+$primerPago = ($siteType === 'landing') ? 40000 : 60000;
 
 // TODO (Pablo): el plan mensual NO se crea acá. Es una suscripción automática de
-// Mercado Pago (preapproval) que arranca a los 30 días del primer pago: $20.000/mes
+// Mercado Pago (preapproval) que arranca a los 7 días del primer pago: $20.000/mes
 // sitio profesional, $30.000/mes el resto. Se da de alta desde la cuenta de MP de
 // Gokywebs y las altas las procesa mantenimiento/api/webhook-mp.php (crea el
 // suscriptor en Firestore /mantenimiento; ahí falta pegar los ids de los dos
-// planes nuevos). Para que el primer débito caiga a los 30 días, el plan tiene que
-// tener un mes de prueba (free_trial) o el link se manda a los 30 días.
+// planes nuevos). Para que el primer débito caiga a los 7 días, el plan tiene que
+// tener un mes de prueba (free_trial) o el link se manda a los 7 días.
 // Si algún día se crea por API: sin preapproval_plan_id (con plan, MP exige
 // card_token_id) y cancelando el preapproval anterior antes de crear otro.
 
@@ -43,7 +43,7 @@ $preference = [
     'items' => [[
         'id'          => 'primer-pago-web-gokywebs',
         'title'       => 'Primer pago — Desarrollo Web Gokywebs',
-        'description' => 'Primer pago para el desarrollo de tu sitio web. El plan mensual arranca a los 30 días.',
+        'description' => 'Primer pago para el desarrollo de tu sitio web. El plan mensual arranca a los 7 días.',
         'quantity'    => 1,
         'currency_id' => 'ARS',
         'unit_price'  => $primerPago

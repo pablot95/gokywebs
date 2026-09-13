@@ -91,13 +91,15 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
     return ['acciones'=>['rubro_landing'],'info_keys'=>[],'descripcion'=>null,'colores'=>null];
 };
 $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
-    return "Mirá, para lo tuyo va un sitio profesional a medida. El primer pago es de \$60.000 y a los 30 días empieza el plan de \$20.000 por mes. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional";
+    /* Sin montos: desde el 11-sep el precio vive en los tres pasos, que NO se
+     * reescriben; si el modelo mete un número acá, es inventado y se rechaza. */
+    return "Mirá, para lo tuyo va un sitio profesional a medida. Todo el detalle está acá: gokywebs.com/presupuestos/sitioprofesional";
 };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada de la parte del precio',
     count($r) === 1 && strpos($r[0], 'Mirá, para lo tuyo') === 0
-    && strpos($r[0], '$60.000') !== false);
+    && strpos($r[0], '$40.000') !== false);
 /* Los tres pasos viajan pegados al precio desde el 11-sep, pero son texto
  * dictado: se reescribe lo de arriba y ellos vuelven tal cual. */
 caso('los tres pasos van pegados abajo, SIN el link (sale con el sí del cliente), y NO se reescriben',
@@ -110,13 +112,13 @@ $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 1 && strpos($r[0], '$60.000') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 1 && strpos($r[0], '$40.000') !== false && strpos($r[0], 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('redactor caído → cae al texto fijo', count($r) === 1 && strpos($r[0], '$60.000') !== false);
+caso('redactor caído → cae al texto fijo', count($r) === 1 && strpos($r[0], '$40.000') !== false);
 
 // La derivación nunca se reescribe.
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
@@ -159,9 +161,9 @@ $c = convNueva();
 $r = wabot_responder('vendo ropa', $c, $cfgFijo);
 caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
-    && strpos($r[0], '$90.000') !== false);
+    && strpos($r[0], '$60.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $90.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
+    wabot_validar_redaccion('Sale $60.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/ecommerce',
@@ -227,15 +229,15 @@ echo "— Dos artículos pegados: \"iría un una página\" (salió así en produ
 
 $basePrecio = wabot_msg_precio_texto('landing', $cfg);
 caso('"un una" se rechaza y cae al texto fijo',
-    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('"la un" también',
-    wabot_validar_redaccion('Te queda la un página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Te queda la un página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $60.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y una redacción que se come la mensualidad NO pasa: los dos montos van siempre juntos (10-sep)',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $60.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 
 echo "— Tras un cierre sin presión, el acuse recibe silencio (caso 👍 si, 21-ago) —\n";
 
