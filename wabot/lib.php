@@ -1255,7 +1255,7 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
          * el comodín del desarrollador. Cada una había nacido de una venta
          * frenada (21-ago) y habían vuelto a quedar sin respuesta. */
         'que_hacemos' => 'En Gokywebs diseñamos y desarrollamos páginas web a medida: landings, tiendas online, webs con turnos, institucionales, inmobiliarias y plataformas de cursos, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.',
-        'internet' => 'La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web sigue funcionando normalmente (y el panel también, si tu plan lo incluye).',
+        'internet' => 'La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web y tu panel siguen funcionando normalmente.',
         'pixel' => 'Sí, la web queda lista para conectarle el pixel de Meta, Google Analytics o el código de seguimiento que uses en tus campañas. Google Analytics y Search Console te los podemos vincular nosotros.',
         'confianza' => 'Entiendo perfectamente la desconfianza, pasa seguido en este rubro. Por eso trabajamos al revés: primero te armamos una demo gratis de tu web, sin pagar nada, y recién si te gusta se deja una seña; el saldo se abona con la web terminada y online. En gokywebs.com/portfolio podés ver los proyectos entregados: son negocios reales y públicos, así que podés escribirles por tu cuenta.',
     ];
@@ -1277,9 +1277,11 @@ Si preferís pagar con tarjeta, avisame y te paso el link.',
 
     /* El saludo dictado por Pablo el 2-sep. El de antes preguntaba sin
      *    decir para qué: 66 de 237 conversaciones murieron ahí en una semana.
-     *    Este dice primero qué gana el cliente si contesta. */
-    $menuNuevo = 'Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.';
+     *    Este dice primero qué gana el cliente si contesta. El 13-sep Pablo lo
+     *    corrigió: "asesorarte bien" en lugar de "pasarte el valor exacto". */
+    $menuNuevo = 'Hola, cómo estás? Para poder asesorarte bien, contame brevemente a qué te dedicás o para qué tipo de negocio es';
     $menusViejos = [
+        'Hola, cómo estás? Para poder pasarte el valor exacto de tu web, contame brevemente a qué te dedicás o qué tipo de negocio tenés.',
         'Hola 👋 Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
         'Hola Contame qué vendés o qué servicio ofrecés y te digo qué tipo de web te conviene.',
         'Hola, cómo estás? Contame un poco para qué necesitarías la web',
@@ -1994,7 +1996,7 @@ function wabot_tres_pasos_default() {
     return "Así trabajamos, en tres pasos:\n"
          . "1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.\n"
          . "2. Si te gusta y querés avanzar, se hace un primer pago de {precio}, con eso avanzamos hacia el desarrollo completo\n"
-         . "3. A los 7 días del primer pago comienza el plan mensual de {mensualidad}, para mantener tu web funcionando correctamente y actualizada.";
+         . "3. A los 7 días la web queda terminada y comienza el plan mensual de {mensualidad}, para mantener tu web funcionando correctamente y actualizada.";
 }
 
 /** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
@@ -2694,7 +2696,7 @@ function wabot_config_modelo_mensual(&$cfg) {
         // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
         // {mensualidad} entre los requisitos: es lo último que se sumó (el plan
         // en el paso 3), así que cualquier versión anterior converge sola.
-        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo', '{mensualidad}']],
+        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo', '{mensualidad}', 'queda terminada']],
         /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
          * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
@@ -2721,10 +2723,13 @@ function wabot_config_modelo_mensual(&$cfg) {
          * y los cursos no tienen productos que cargar: a una consulta de
          * "reservas online" le llegaba la carga de 10 productos y los $500
          * (batería del 10-sep). Esa versión la elige wabot_texto_info(). */
-        'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
-                 . "Si querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Si necesitás más de un cambio mensual, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
-        'que_incluye_sin_productos' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte y un cambio por mes. No tenés que ocuparte de nada.\n"
-                 . "Si querés más de un cambio por mes, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido']],
+        /* Desde el 13-sep todas las webs traen un panel para editar los textos
+         * y las imágenes, sin subir el precio (Pablo: "empiezan a ser
+         * autogestionables"). Es el token que hace converger las configs. */
+        'que_incluye' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un panel para editar vos mismo los textos y las imágenes, un cambio por mes y la carga de hasta 10 productos. No tenés que ocuparte de nada.\n"
+                 . "Si querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Si necesitás más de un cambio mensual, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido', 'los textos y las imágenes']],
+        'que_incluye_sin_productos' => ["Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte, un panel para editar vos mismo los textos y las imágenes y un cambio por mes. No tenés que ocuparte de nada.\n"
+                 . "Si querés más de un cambio por mes, son \$10.000 más por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.", ['todo incluido', 'te digo si está incluido', 'los textos y las imágenes']],
         // Función documentada en paneladmin/index.html, sección Promociones.
         'cupones' => ['Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.', ['cupones', 'panel']],
         'cobros_tienda' => ['Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.', ['Mercado Pago', 'pedido']],
@@ -2741,12 +2746,14 @@ function wabot_config_modelo_mensual(&$cfg) {
                  . 'En el sitio profesional y en la web inmobiliaria te vinculamos Google Analytics, así ves las visitas igual.', ['Google Analytics', 'cuánta gente entra']],
         'estadisticas_tienda' => ['Sí, tu panel trae estadísticas: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.', ['cuánta gente entra']],
         'estadisticas_sitio' => ['Sí: te vinculamos Google Analytics, así ves cuánta gente entra a la web, de dónde llega y qué mira.', ['Google Analytics']],
-        /* Por tipo, como antes: la contadora que pregunta "¿lo puedo editar
-         * yo?" tiene que leer que el sitio profesional no trae panel (N05). Lo
-         * nuevo es la carga de hasta 10 productos incluida y los $500 por
+        /* Hasta el 12-sep el sitio profesional no traía panel (N05: la
+         * contadora que preguntaba "¿lo puedo editar yo?"). Desde el 13-sep
+         * todas las webs traen uno para los textos y las imágenes, sin costo
+         * extra. La carga de productos sigue igual: 10 incluidos y $500 por
          * producto que carguemos nosotros de ahí en más. */
-        'carga' => ["Depende del tipo de web. En la tienda online los primeros 10 productos los cargamos nosotros, para que arranques con la tienda lista; de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros, o los cargás vos desde tu panel, que es sencillo y trae un video explicativo.\n"
-                 . "La inmobiliaria y la plataforma de cursos también traen panel propio para cargar las propiedades o los cursos. El sitio profesional no trae panel para editar el contenido: los cambios los hacemos nosotros, y el plan incluye un cambio por mes.", ['$500 por producto', 'sitio profesional']],
+        'carga' => ["Sí. Todas nuestras webs traen un panel de administración donde editás vos mismo los textos y las imágenes cuando quieras, sin costo extra.\n"
+                 . "En la tienda online, además, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista; de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros, o los cargás vos desde tu panel, que es sencillo y trae un video explicativo. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\n"
+                 . "Y para lo que vaya más allá de textos e imágenes, el plan incluye un cambio por mes.", ['$500 por producto', 'los textos y las imágenes']],
         'rangos' => ["{tabla_precios}\n"
                  . "En todos los casos el plan mensual arranca a los 7 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{tabla_precios}']],
         'precio_sin_rubro' => ["{tabla_precios}\n"
@@ -2773,7 +2780,8 @@ function wabot_config_modelo_mensual(&$cfg) {
                  . "Si necesitás un acceso puntual, al panel o por FTP, decímelo y lo vemos.", ['incluido en el plan']],
         'entrega_codigo' => ['Mientras dure el plan la web corre por nuestra cuenta. A los 12 meses de plan podés reclamar el código y la propiedad de la web. Y si lo que te preocupa es quedar atado, no hay permanencia: el plan lo das de baja cuando quieras.', ['12 meses']],
         'licencias' => ['Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Tu contenido —textos, fotos, productos— es tuyo siempre.', null],
-        'manual' => ['No entregamos un manual de uso. Las webs que traen panel propio (tienda, inmobiliaria y cursos) están pensadas para que las cargues sin instructivo, y los cambios de contenido los hacemos nosotros: el plan incluye un cambio por mes.', ['un cambio por mes']],
+        'manual' => ['No entregamos un manual de uso. Todas las webs traen un panel para editar los textos y las imágenes, pensado para usarlo sin instructivo (en la tienda, la inmobiliaria y los cursos también cargás ahí lo tuyo), y para cambios más grandes el plan incluye un cambio por mes.', ['un cambio por mes', 'los textos y las imágenes']],
+        'internet' => ['La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web y tu panel siguen funcionando normalmente.', ['tu panel']],
         'emails' => ['Este plan no incluye casillas de correo corporativas. Se pueden sumar aparte: decime si te interesa y lo vemos.', null],
         /* Sin precio: Pablo dijo que está todo incluido salvo los productos
          * arriba de 10 y los cambios de más (10-sep). Y el 11-sep lo cerró: la
@@ -2796,7 +2804,7 @@ function wabot_config_modelo_mensual(&$cfg) {
          * mensual— murió el 10-sep: ahora el diferenciador es quién arma la
          * página. */
         'plataformas' => ["Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia web, a medida.\n"
-                 . 'Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.', ['no trabajamos', 'a medida']],
+                 . 'Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros, te queda un panel para editar los textos y las imágenes cuando quieras, y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.', ['no trabajamos', 'a medida', 'los textos y las imágenes']],
         // El portfolio filtrado se queda en el resumen: es lo único que agrega
         // cuando vuelven a preguntar el precio (Pablo, 2-sep).
         'precio_resumen' => ["El primer pago es de {precio} y el plan mensual, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}", ['{mensualidad}', '{portfolio}']],

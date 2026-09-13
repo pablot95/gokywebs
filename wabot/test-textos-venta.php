@@ -61,7 +61,7 @@ caso('es un solo mensaje, con los tres pasos y la pregunta pegados abajo',
 caso('el paso 2 dice el primer pago de lo cotizado y para qué es',
     mb_strpos($precio, '2. Si te gusta y querés avanzar, se hace un primer pago de $40.000, con eso avanzamos hacia el desarrollo completo') !== false);
 caso('y el paso 3, el plan mensual con su monto y para qué sirve',
-    mb_strpos($precio, '3. A los 7 días del primer pago comienza el plan mensual de $20.000, para mantener tu web funcionando correctamente y actualizada.') !== false);
+    mb_strpos($precio, '3. A los 7 días la web queda terminada y comienza el plan mensual de $20.000, para mantener tu web funcionando correctamente y actualizada.') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';

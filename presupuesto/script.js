@@ -250,7 +250,8 @@ const BUSINESS_TYPES = [
    dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Arriba de
    todo va el argumento del modelo — todo incluido, el cliente se olvida de
    todo — y al final lo que el modelo incluye en cualquier tipo de web: carga
-   de hasta 10 productos y un cambio por mes. */
+   de hasta 10 productos, el panel para editar textos e imágenes (13-sep) y
+   un cambio por mes. */
 const INCLUDES = {
     landing: [
         '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu plan</strong>',
@@ -262,6 +263,7 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
+        'Panel de administración para editar vos mismo textos e imágenes',
         'Un cambio por mes incluido, siempre'
     ],
     ecommerce: [
@@ -275,6 +277,7 @@ const INCLUDES = {
         'SEO optimizado para e-commerce',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
+        'Panel de administración para editar vos mismo textos e imágenes',
         'Un cambio por mes incluido, siempre'
     ],
     inmobiliaria: [
@@ -288,6 +291,7 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
+        'Panel de administración para editar vos mismo textos e imágenes',
         'Un cambio por mes incluido, siempre'
     ],
     elearning: [
@@ -303,6 +307,7 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
+        'Panel de administración para editar vos mismo textos e imágenes',
         'Un cambio por mes incluido, siempre'
     ]
 };

@@ -1674,7 +1674,9 @@ function wabot_contexto_es_portal_contenido($contexto) {
         || preg_match('/\b(medio de (prensa|comunicacion)|periodistic\w+|revista (digital|online))\b/u', $t)
         || preg_match('/\b(publicar|subir|cargar|actualizar|redactar|escribir|difundir)\b.{0,40}\b(noticias?|notas?|articulos?|novedades|entrevistas?|cronicas?)\b/u', $t)
         || preg_match('/\b(noticias?|novedades|entrevistas?)\b.{0,30}\b(locales|del? la (zona|localidad|ciudad|region)|del (pueblo|barrio|departamento|municipio))\b/u', $t)
-        || preg_match('/\bautoadministrable\b/u', $t)
+        /* "autoadministrable" solo ya no alcanza: desde el 13-sep todas las
+         * webs traen panel para editar textos e imágenes (Pablo). Portal es
+         * el que publica contenido nuevo todo el tiempo (las reglas de arriba). */
         /* Contenido que cargan los USUARIOS, no el dueño: reseñas, opiniones,
          * foros, clasificados, directorios. Necesita cuentas, moderación y
          * panel, o sea un desarrollo a medida — nunca una landing. Sin esto,

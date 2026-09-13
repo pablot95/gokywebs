@@ -78,7 +78,7 @@ caso('el precio llega en UN SOLO mensaje, con los tres pasos pegados y SIN el fo
 caso('los tres pasos: primera entrega gratis en menos de 24 horas, el primer pago y el plan con sus montos (11-sep)',
     preg_match('/1\. La primera entrega es gratis.*menos de 24 horas/u', $r[0]) === 1
     && preg_match('/2\. Si te gusta y querés avanzar, se hace un primer pago de \$40\.000, con eso avanzamos hacia el desarrollo completo/u', $r[0]) === 1
-    && preg_match('/3\. A los 7 días del primer pago comienza el plan mensual de \$20\.000, para mantener tu web funcionando correctamente y actualizada/u', $r[0]) === 1);
+    && preg_match('/3\. A los 7 días la web queda terminada y comienza el plan mensual de \$20\.000, para mantener tu web funcionando correctamente y actualizada/u', $r[0]) === 1);
 caso('y terminan preguntando si quiere la demo: su sí es lo que manda el formulario (11-sep)',
     preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[0]) === 1);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
@@ -787,7 +787,7 @@ caso('NO nombra la seña', stripos($r[0], 'seña') === false && stripos($r[0], '
 caso('el paso 2 es el primer pago, si le gusta, y sin monto porque todavía no cotizó (11-sep)',
     stripos($r[0], 'Si te gusta y querés avanzar, se hace un primer pago, con eso avanzamos hacia el desarrollo completo') !== false);
 caso('y el paso 3, el plan mensual a los 7 días',
-    stripos($r[0], '7 días del primer pago comienza el plan mensual') !== false);
+    stripos($r[0], '7 días la web queda terminada y comienza el plan mensual') !== false);
 caso('contestando "cómo trabajan" no pregunta si quiere la demo: eso es del turno del precio',
     stripos($r[0], 'Querés que preparemos') === false);
 caso('NO dice ningún monto', strpos($r[0], '$') === false);
@@ -1829,8 +1829,9 @@ caso('institucional ya no promete panel propio: eso es solo de ecommerce, elearn
 caso('la respuesta sobre quién carga el contenido nombra las 3 excepciones con panel',
     stripos($cfg['info']['carga'], 'tienda') !== false && stripos($cfg['info']['carga'], 'inmobiliaria') !== false
     && stripos($cfg['info']['carga'], 'cursos') !== false);
-caso('y aclara que el sitio profesional no trae panel: los cambios los hacemos nosotros',
-    stripos($cfg['info']['carga'], 'no trae panel') !== false);
+caso('y que todas las webs traen panel para editar los textos y las imágenes (13-sep)',
+    stripos($cfg['info']['carga'], 'Todas nuestras webs traen un panel') !== false
+    && stripos($cfg['info']['carga'], 'no trae panel') === false);
 caso('y la carga de hasta 10 productos incluida, con los $500 por producto de ahí en más (10-sep)',
     stripos($cfg['info']['carga'], '10 productos') !== false && strpos($cfg['info']['carga'], '$500 por producto') !== false);
 
@@ -3043,10 +3044,12 @@ caso('y que el resto lo carga el cliente desde el panel, o nosotros a $500 por p
     stripos($cfg['info']['carga'], 'desde tu panel') !== false && strpos($cfg['info']['carga'], '$500 por producto') !== false);
 caso('con el video explicativo del panel',
     strpos($cfg['info']['carga'], 'video explicativo') !== false);
-caso('inmobiliaria y cursos traen panel propio para cargar lo suyo',
-    stripos($cfg['info']['carga'], 'inmobiliaria y la plataforma de cursos también traen panel propio') !== false);
-caso('el sitio profesional no trae panel: los cambios los hacemos nosotros',
-    stripos($cfg['info']['carga'], 'sitio profesional no trae panel') !== false);
+caso('inmobiliaria y cursos cargan lo suyo desde su panel',
+    stripos($cfg['info']['carga'], 'inmobiliaria y la plataforma de cursos también cargan') !== false);
+caso('todas las webs, sitio profesional incluido, editan textos e imágenes desde su panel (13-sep)',
+    stripos($cfg['info']['carga'], 'los textos y las imágenes') !== false
+    && stripos($cfg['info']['que_incluye_sin_productos'], 'los textos y las imágenes') !== false
+    && stripos($cfg['info']['manual'], 'los textos y las imágenes') !== false);
 
 $cargaVieja = wabot_config_load();
 $cargaVieja['info']['carga'] = 'Depende del tipo de web: en Ecommerce cargás y editás tus productos vos mismo desde un panel propio, en Inmobiliaria hacés lo mismo con las propiedades, y en Plataforma de cursos con tus cursos. En el resto (landing, turnos, institucional, catálogo) no incluye un panel para que edites el contenido o el diseño de la página vos mismo: los cambios y actualizaciones los hacemos nosotros.';
@@ -3553,8 +3556,8 @@ caso('el cierre suave viejo de producción migra solo', $cierreViejo['cierre_sua
 // 27-ago: 14 de 32 charlas del día murieron en el saludo, sin una sola
 // respuesta. "Para qué rubro necesitás la web" obliga a traducir el propio
 // negocio a la palabra "rubro"; preguntar qué vende se contesta solo.
-caso('el saludo dice para qué sirve contestar antes de preguntar (2-sep)',
-    stripos($cfg['menu'], 'valor exacto de tu web') !== false
+caso('el saludo dice para qué sirve contestar antes de preguntar (2-sep; "asesorarte bien" desde el 13-sep)',
+    $cfg['menu'] === 'Hola, cómo estás? Para poder asesorarte bien, contame brevemente a qué te dedicás o para qué tipo de negocio es'
     && stripos($cfg['menu'], 'a qué te dedicás') !== false
     && stripos($cfg['menu'], 'rubro') === false);
 $menuRubro = wabot_config_load();
@@ -4239,8 +4242,8 @@ caso('"solo que sea para las noticias locales" es un portal de contenido',
     wabot_contexto_es_portal_contenido('Solo que sea para las noticias locales.') === true);
 caso('"cargar noticias y novedades seguido" también',
     wabot_contexto_es_portal_contenido('quiero poder cargar noticias y novedades seguido') === true);
-caso('"autoadministrable" también',
-    wabot_contexto_es_portal_contenido('la quiero autoadministrable') === true);
+caso('"autoadministrable" solo ya no: todas las webs traen panel para textos e imágenes (13-sep)',
+    wabot_contexto_es_portal_contenido('la quiero autoadministrable') === false);
 caso('una landing común no', wabot_contexto_es_portal_contenido('Soy abogada, quiero mostrar mis servicios') === false);
 caso('un club que quiere mostrar sus novedades tampoco',
     wabot_contexto_es_portal_contenido('Tengo un club y quiero mostrar las novedades del equipo') === false);
@@ -5351,7 +5354,7 @@ caso('el mensaje del precio es la oferta con el link, sin párrafo de montos (11
     && stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'pago único') === false);
 caso('y los montos están en los pasos: el primer pago en el 2, el plan en el 3',
     strpos((string)$cfg['msg_tres_pasos'], '2. Si te gusta y querés avanzar, se hace un primer pago de {precio},') !== false
-    && strpos((string)$cfg['msg_tres_pasos'], '3. A los 7 días del primer pago comienza el plan mensual de {mensualidad},') !== false);
+    && strpos((string)$cfg['msg_tres_pasos'], '3. A los 7 días la web queda terminada y comienza el plan mensual de {mensualidad},') !== false);
 caso('y no vuelve la coletilla ", pago único." al final',
     stripos((string)$cfg['tipos']['landing']['precio_ideal'], ', pago único') === false);
 $cfgPU = wabot_config_load();

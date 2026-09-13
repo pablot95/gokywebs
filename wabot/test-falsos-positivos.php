@@ -275,7 +275,7 @@ caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_
 caso('paso 2: el primer pago con su monto y para qué es (Pablo, 11-sep)',
     preg_match('/2\. Si te gusta y querés avanzar, se hace un primer pago de \$40\.000, con eso avanzamos hacia el desarrollo completo/u', $rPaso[0]) === 1);
 caso('paso 3: a los 7 días, el plan mensual con su monto y para qué sirve',
-    preg_match('/3\. A los 7 días del primer pago comienza el plan mensual de \$20\.000, para mantener tu web funcionando correctamente y actualizada\./u', $rPaso[0]) === 1);
+    preg_match('/3\. A los 7 días la web queda terminada y comienza el plan mensual de \$20\.000, para mantener tu web funcionando correctamente y actualizada\./u', $rPaso[0]) === 1);
 caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[0]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
     strpos($rPaso[0], 'gokywebs.com/form/') === false);

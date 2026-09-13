@@ -855,7 +855,7 @@ caso('avisa cuándo llega la muestra, sin prometer plazos vagos',
 caso('y la línea de espera sí aclara que llega por acá',
     stripos($cfg['espera_prediseno'], 'por acá') !== false);
 caso('la bienvenida dice para qué sirve contestar, sin menú de opciones ni "rubro"',
-    stripos($cfg['menu'], 'valor exacto de tu web') !== false
+    stripos($cfg['menu'], 'Para poder asesorarte bien') !== false
     && stripos($cfg['menu'], 'a qué te dedicás') !== false
     && stripos($cfg['menu'], 'Landing (') === false && stripos($cfg['menu'], 'rubro') === false);
 
