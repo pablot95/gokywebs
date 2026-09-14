@@ -98,27 +98,27 @@ $GLOBALS['WABOT_TEST_REDACTOR'] = function ($msg, $base, $conv, $cfg) {
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('modo natural → manda la versión redactada de la parte del precio',
-    count($r) === 1 && strpos($r[0], 'Mirá, para lo tuyo') === 0
-    && strpos($r[0], '$40.000') !== false);
-/* Los tres pasos viajan pegados al precio desde el 11-sep, pero son texto
- * dictado: se reescribe lo de arriba y ellos vuelven tal cual. */
-caso('los tres pasos van pegados abajo, SIN el link (sale con el sí del cliente), y NO se reescriben',
-    mb_stripos($r[0], "\n\nAsí trabajamos, en tres pasos") !== false
-    && strpos($r[0], 'gokywebs.com/form/') === false
-    && mb_substr(rtrim($r[0]), -mb_strlen(wabot_tres_pasos_pregunta())) === wabot_tres_pasos_pregunta());
+    count($r) === 2 && strpos($r[0], 'Mirá, para lo tuyo') === 0
+    && strpos($r[1], '$40.000') !== false);
+/* Los tres pasos van en su propio mensaje desde el 14-sep y son texto
+ * dictado: se reescribe el precio y ellos salen tal cual. */
+caso('los tres pasos van en su propio mensaje, SIN el link (sale con el sí del cliente), y NO se reescriben',
+    mb_stripos($r[1], "Así trabajamos, en tres pasos") === 0
+    && strpos(implode("\n", $r), 'gokywebs.com/form/') === false
+    && mb_substr(rtrim($r[1]), -mb_strlen(wabot_tres_pasos_pregunta())) === wabot_tres_pasos_pregunta());
 
 // Si el redactor se manda una macana, tiene que salir el texto fijo.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return "Te sale carísimo, andá a otro lado 🤑 mirá tiendanube.com"; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
 caso('redacción inválida → cae al texto fijo del motor',
-    count($r) === 1 && strpos($r[0], '$40.000') !== false && strpos($r[0], 'tiendanube') === false);
+    count($r) === 2 && strpos($r[1], '$40.000') !== false && strpos(implode("\n", $r), 'tiendanube') === false);
 
 // Si Gemini se cae (null), también.
 $GLOBALS['WABOT_TEST_REDACTOR'] = function () { return null; };
 $c = convNueva();
 $r = wabot_responder('soy abogado', $c, $cfg);
-caso('redactor caído → cae al texto fijo', count($r) === 1 && strpos($r[0], '$40.000') !== false);
+caso('redactor caído → cae al texto fijo', count($r) === 2 && strpos($r[1], '$40.000') !== false);
 
 // La derivación nunca se reescribe.
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () {
@@ -161,7 +161,7 @@ $c = convNueva();
 $r = wabot_responder('vendo ropa', $c, $cfgFijo);
 caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
-    && strpos($r[0], '$60.000') !== false);
+    && strpos(implode("\n", (array)$r), '$60.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
     wabot_validar_redaccion('Sale $60.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);

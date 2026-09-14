@@ -448,9 +448,10 @@ function wabot_responder($texto, &$conv, $cfg) {
     // Solo se reescribe el primero. Los que van detrás son mensajes aparte
     // —el formulario— y tienen que llegar como están, en su propio globo: si
     // se los juntara para reescribirlos, se pierde el corte.
-    /* Y dentro del primero, tampoco los TRES PASOS: desde el 11-sep viajan
-     * pegados al precio en el mismo mensaje, pero son texto dictado por Pablo.
-     * Se reescribe la parte de arriba y los pasos se vuelven a pegar tal cual. */
+    /* Los TRES PASOS son texto dictado por Pablo: desde el 14-sep van en su
+     * propio globo (el segundo) y no se tocan. El corte de abajo queda de red
+     * por si alguno vuelve a llegar pegado al precio: se reescribe la parte de
+     * arriba y los pasos se vuelven a pegar tal cual. */
     $precioParte = $base[0];
     $pasosParte  = '';
     $cabezaPasos = trim((string)strstr(trim((string)($cfg['msg_tres_pasos'] ?? '')) . "\n", "\n", true));

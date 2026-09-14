@@ -568,7 +568,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             if (!empty($res['exacta']))   $exacta       = $res['texto'];
             // Se lo sacamos antes de devolvérselo al modelo: si lo ve, lo copia
             // dentro de su mensaje y el segundo globo llega repetido.
-            if (!empty($res['aparte'])) { $aparte[] = $res['aparte']; }
+            // Puede venir más de uno: el precio trae los tres pasos y, si pidió
+            // la demo al entrar, también el formulario.
+            foreach ((array)($res['aparte'] ?? []) as $a) {
+                if (trim((string)$a) !== '') $aparte[] = $a;
+            }
             unset($res['aparte']);
             $respuestas[] = ['functionResponse' => [
                 'name'     => $ll['name'] ?? '',
@@ -1878,7 +1882,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if ($eraPitch) {
                 return [
                     'texto' => $precio[0], 'exacta' => true,
-                    'nota'  => 'Mandá este texto tal cual, entero y sin nada adelante ni atrás: es UN solo mensaje que ya trae lo que le podemos hacer, el precio (primer pago y plan mensual), el link del presupuesto y los tres pasos con la pregunta de la demo. No los reescribas ni los resumas. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
+                    'nota'  => 'Mandá este texto tal cual, entero y sin nada adelante ni atrás: es lo que le podemos hacer con el link del presupuesto. Los tres pasos (con los montos y la pregunta de la demo) salen solos en un segundo mensaje: no los escribas vos. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
+                    'aparte' => array_slice($precio, 1),
                 ];
             }
             if ($soloFaltaDemo) {
@@ -1904,8 +1909,8 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             }
             return [
                 'texto' => $precio[0],
-                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo, con los montos idénticos y respetando los saltos de línea: es UN solo mensaje con el precio y los tres pasos adentro. NO le agregues introducciones ni frases de beneficio, y no vuelvas a escribir los pasos: ya están.',
-                'aparte' => $precio[1] ?? '',
+                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo y respetando los saltos de línea. Los tres pasos (con los montos) salen solos en un segundo mensaje: NO le agregues introducciones ni frases de beneficio, y no escribas los pasos vos.',
+                'aparte' => array_slice($precio, 1),
             ];
 
         case 'consultar_info':
@@ -2780,8 +2785,8 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 - Tratalo como SISTEMAS DE GESTIÓN A MEDIDA: llamá a anotar_sistema apenas lo detectes, con el problema anotado como el panel de contenido que necesita ("necesita publicar noticias/contenido seguido con un panel propio"), y seguí el mismo flujo (problema, usuarios, método actual) hasta cerrar con guardar_sistema. NUNCA lo cotices con dar_precio como sitio profesional, y no lo hagas encajar a la fuerza en el árbol de tipos de web de arriba solo porque el rubro se parece a alguno de esos casos.
 - No inventes un precio para esto: como cualquier sistema a medida, no tiene precio de lista y lo cotiza el desarrollador con el brief que dejaste anotado.
 
-EL TURNO DEL PRECIO: UN SOLO LLAMADO Y UN SOLO MENSAJE
-Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya armado. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también rubro —lo que vende o hace, con SUS palabras y con "tu" o "tus" adelante: "tu centro de estética", "tus cabañas", "tu taller de metalúrgica"— y para_que: qué va a poder hacer con la web, como continuación de "podemos hacer una web donde…" ("muestres los tratamientos y tus clientas reserven turno online"). El texto del precio arranca con esas dos cosas ("Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online."), y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo en UN SOLO MENSAJE: el texto trae los dos montos (el primer pago y el plan mensual), el link del presupuesto y, pegados abajo, los tres pasos (demo gratis, primer pago, plan mensual a los 7 días) terminando con la pregunta de si quiere la demo. Mandalo entero y tal cual: no lo partas en dos mensajes, no reescribas los pasos, no los resumas y no metas nada en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
+EL TURNO DEL PRECIO: UN SOLO LLAMADO, DOS MENSAJES QUE MANDA EL SISTEMA
+Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya armado. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también rubro —lo que vende o hace, con SUS palabras y con "tu" o "tus" adelante: "tu centro de estética", "tus cabañas", "tu taller de metalúrgica"— y para_que: qué va a poder hacer con la web, como continuación de "podemos hacer una web donde…" ("muestres los tratamientos y tus clientas reserven turno online"). El texto del precio arranca con esas dos cosas ("Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online."), y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo en DOS MENSAJES: el texto que te devuelve es el primero (lo que le podemos hacer y el link del presupuesto), y el sistema manda solo, 2 segundos después, el segundo: los tres pasos (demo gratis, primer pago, plan mensual) con los montos y la pregunta de si quiere la demo. Mandá el primero entero y tal cual: no le agregues los pasos, no los reescribas, no los resumas y no metas nada en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
 No vuelvas a llamar a dar_precio para el mismo tipo: ya está dado. Si el cliente después pregunta el precio otra vez, ahí sí, y te va a devolver el resumen corto.
 
 ANTES DE ESCRIBIR CADA RESPUESTA, PASÁ ESTOS CINCO CONTROLES

@@ -5712,18 +5712,18 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* EL TURNO DEL PRECIO ES UN SOLO MENSAJE (Pablo, 11-sep): lo que le podemos
-     * hacer con el precio y el link, y pegados abajo LOS TRES PASOS (demo
-     * gratis, primer pago, plan mensual a los 7 días). Hasta ese día iban en
-     * dos globos y el segundo llegaba unos segundos después; partido en dos se
-     * leía como dos mensajes sueltos. Sin nada en el medio (Pablo, 2-sep:
+    /* EL TURNO DEL PRECIO SON DOS MENSAJES (Pablo, 14-sep): primero lo que le
+     * podemos hacer con el link del presupuesto, y 2 segundos después LOS TRES
+     * PASOS (demo gratis, primer pago, plan mensual). Del 11 al 13-sep fueron
+     * un solo globo; wabot_demora_tipeo() le da a los pasos sus 2 segundos
+     * fijos. Sin nada en el medio (Pablo, 2-sep:
      * "sacá todo lo que sea 'si te cierra', 'si va por ahí'"). El link del
      * formulario ya NO va acá: sale recién cuando el cliente contesta que sí
      * (case 'prediseno' del motor, o consultar_info('prediseno') del agente). */
     $conv['fase'] = 'prediseno';
     $conv['cta_muestra'] = true;
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
-    return [$precioTexto . "\n\n" . wabot_tres_pasos_texto($conv, $cfg)];
+    return [$precioTexto, wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -5841,14 +5841,14 @@ function wabot_precio($tipo, &$conv, $cfg) {
     // contesta con sus datos, dice que sí).
     $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-    /* Los tres pasos van pegados al precio, en el mismo mensaje (Pablo,
-     * 11-sep), con o sin link: el formulario o el listado de datos salen recién
+    /* Los tres pasos van en su propio mensaje, detrás del precio (Pablo,
+     * 14-sep), con o sin link: el formulario o el listado de datos salen recién
      * con el sí del cliente, igual que en el camino del pitch. Salvo que ya
      * haya pedido la demo al entrar ("quiero la demo gratis"): ese sí ya está
      * dicho, así que el formulario va en el mismo turno —en su propio globo,
      * porque lleva el link— y los pasos van sin la pregunta. */
     $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
-    $out = [$precioSolo . "\n\n" . wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
+    $out = [$precioSolo, wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
     if ($pedidoDemo !== '') $out[] = $pedidoDemo;
     return $out;
 }

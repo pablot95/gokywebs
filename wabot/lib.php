@@ -1943,8 +1943,8 @@ function wabot_precio_ideal_defaults() {
      * 11-sep, tercera versión y la vigente (Pablo, viéndolo en vivo): este
      * texto es SOLO la oferta y el link —"Para tu barbería podemos hacer una
      * web donde… Podés ver los detalles en {link}"—, y los montos viven en los
-     * tres pasos, que van pegados abajo en el mismo mensaje
-     * (wabot_tres_pasos_default: el primer pago en el paso 2, el plan mensual
+     * tres pasos, que desde el 14-sep salen en un segundo mensaje, 2 segundos
+     * después (wabot_tres_pasos_default: el primer pago en el paso 2, el plan mensual
      * en el 3). El párrafo suelto del precio se fue: repetía lo que dicen los
      * pasos. La primera oración sale de lo que escribió el cliente:
      * {propuesta} la arma wabot_propuesta_texto() (engine.php) con el
@@ -6585,6 +6585,11 @@ function wabot_demora_tipeo($texto, $cfg) {
      * 2-sep). Por largo le tocarían 7 segundos —el techo— y el cliente se
      * queda mirando la pantalla justo en el momento que decide. Es el único
      * mensaje con demora fija, y sale de demora_entre_mensajes. */
+    /* Los tres pasos, detrás del precio: 2 segundos fijos (Pablo, 14-sep:
+     * "y 2 segundos después, el otro mensaje"). No sale de
+     * demora_entre_mensajes porque en el panel puede estar en otro valor. */
+    $cabezaPasos = trim((string)strstr(trim((string)($cfg['msg_tres_pasos'] ?? '')) . "\n", "\n", true));
+    if ($cabezaPasos !== '' && mb_strpos(trim((string)$texto), $cabezaPasos) === 0) return 2.0;
     if (wabot_es_texto_demo($texto, $cfg)) return (float)($cfg['demora_entre_mensajes'] ?? 2);
     if (empty($cfg['demora_por_longitud'])) return (float)($cfg['demora_entre_mensajes'] ?? 2);
 
