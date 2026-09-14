@@ -1,0 +1,12 @@
+[
+  { "file": "hero-pelicula*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/2893694/", "usage": "Hero" },
+  { "file": "mundo-cinta*.webp, formato-video*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/3391934/", "usage": "Sección firma (antes), formato video y pieza del hero" },
+  { "file": "mundo-familia*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/7925191/", "usage": "Sección firma (después)" },
+  { "file": "formato-diapositivas*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/16730702/", "usage": "Pieza del hero" },
+  { "file": "formato-pelicula*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/3921045/", "usage": "Formato película" },
+  { "file": "formato-audio*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/8382082/", "usage": "Formato cintas de audio" },
+  { "file": "formato-vinilo*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/5249570/", "usage": "Formato discos" },
+  { "file": "formato-fotos*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/34384406/", "usage": "Formato fotografía y parte 1 del video" },
+  { "file": "estudio*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/8102676/", "usage": "Estudio y parte 2 del video" },
+  { "file": "entrega-pendrive*.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/36511002/", "usage": "Parte 3 del video" }
+]
