@@ -1691,6 +1691,41 @@ function wabot_contexto_es_portal_contenido($contexto) {
     );
 }
 
+/**
+ * "Y si quisiera hacerlo en un solo pago para la creación y encargarme yo de
+ * mantenerla?" (14-sep). Hace falta la idea de pagar una vez Y algo del plan o
+ * de mantenerla: "no puedo pagar todo junto, en cuotas?" es otra cosa.
+ */
+function wabot_pide_un_solo_pago($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    $unaVez = '/\b(un solo pago|pago unico|unico pago|una sola vez|de una sola vez|todo de una|pagar(la|lo)? de una|pagar(la|lo)? todo junto)\b/u';
+    $propio = '/\b(encargarme|me encargo|mantener\w*|mantengo|mantenimiento|por mi cuenta|mi propio hosting|mi hosting|hostear\w*|plan|mensual\w*|por mes|abono|mensualidad|creacion|desarrollo)\b/u';
+    return (bool)(
+        (preg_match($unaVez, $t) && preg_match($propio, $t))
+        || preg_match('/\b(pagar solo (la creacion|el desarrollo)|comprar la (web|pagina|tienda) (y|para) (mantenerla|encargarme))\b/u', $t)
+    );
+}
+
+/**
+ * "No me interesa el mantenimiento… no creo que sea necesario mensualmente"
+ * (14-sep). No pregunta por el plan: lo rechaza como si fuera un servicio que
+ * se paga cuando se usa. La respuesta es que el plan ES el servicio.
+ */
+function wabot_rechaza_plan_mensual($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    $plan = '(mantenimiento|plan|abono|mensualidad|pago mensual|cuota mensual|suscripcion)';
+    $cadaMes = '(mensual\w*|todos los meses|cada mes|por mes|al mes)';
+    return (bool)(
+        preg_match('/\bno (me )?(interesa|quiero|necesito|hace falta)\b.{0,20}\b' . $plan . '\b/u', $t)
+        || preg_match('/\bno (creo que )?(sea|es|seria|va a ser|haga) (falta|necesario)\b.{0,30}\b' . $cadaMes . '/u', $t)
+        || preg_match('/\b(no (lo )?necesito|no me hace falta)\b.{0,15}\b' . $cadaMes . '/u', $t)
+        || (preg_match('/\b(de vez en cuando|cada tanto|cuando (lo )?necesite|cuando haga falta|cuando sea necesario|a demanda|solo cuando)\b/u', $t)
+            && preg_match('/\b' . $plan . '\b|\b' . $cadaMes . '/u', $t))
+    );
+}
+
 function wabot_pidio_institucional_explicito($contexto) {
     $t = wabot_normalizar_frase($contexto);
     return (bool)(
@@ -3594,6 +3629,17 @@ function wabot_info_por_palabras($texto, $fase = null) {
     $t = wabot_normalizar_frase(preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', wabot_texto_sin_urls((string)$texto)));
     if ($t === '') return null;
 
+    /* Pagar la creación una sola vez y mantenerla él (Pablo, 14-sep): tiene sus
+     * propios valores. Y el que rechaza el plan porque "no hace falta todos
+     * los meses" no pregunta por el plan: cree que es un servicio a demanda.
+     * Antes del corte por largo de abajo: el caso real era un párrafo sin
+     * signo de pregunta ("Déjame que consulte... No me interesa el
+     * mantenimiento…"), y los dos patrones son demasiado específicos para
+     * confundirse con alguien que cuenta su negocio. Y antes que
+     * 'mantenimiento', que se los llevaba por la palabra. */
+    if (wabot_pide_un_solo_pago($t)) return 'un_solo_pago';
+    if (wabot_rechaza_plan_mensual($t)) return 'plan_es_servicio';
+
     // Este matcher es el respaldo local para PREGUNTAS cortas. Un párrafo largo
     // sin signo de pregunta casi siempre es el cliente describiendo su negocio o
     // su sistema, y ahí una palabra suelta manda a la clave equivocada: "que
@@ -4515,6 +4561,14 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
+    if ($clave === 'un_solo_pago') {
+        // La charla cotizada antes del 10-sep ya tenía su pago único.
+        if (is_array($conv) && !empty($conv['tipo']) && !empty($conv['precio_dado'])
+            && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
+            return wabot_texto_pago($conv, $cfg);
+        }
+        return str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv), $texto);
+    }
     // {min}/{max}: el rango real de la lista de precios, puesto por el código.
     // "Depende del tipo de página" era la respuesta a "¿cuánto cuesta?" del
     // anuncio y 3 de 10 no volvieron a escribir (1-sep).
@@ -4536,6 +4590,29 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * de `info.*`, que es justo lo que Pablo edita desde el panel: así también
      * queda cubierta la redacción que escriba mañana. */
     return wabot_texto_sin_modelo_viejo($texto);
+}
+
+/**
+ * La creación en un solo pago, para el que quiere mantener la web por su
+ * cuenta (Pablo, 14-sep): $200.000 el sitio profesional, $330.000 la tienda
+ * online, $290.000 la inmobiliaria y $330.000 la plataforma de cursos.
+ */
+function wabot_precios_un_solo_pago() {
+    return ['landing' => '$200.000', 'ecommerce' => '$330.000', 'inmobiliaria' => '$290.000', 'elearning' => '$330.000'];
+}
+
+function wabot_precio_un_solo_pago_texto($conv) {
+    $p = wabot_precios_un_solo_pago();
+    $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
+    $alias = ['turnos' => 'landing', 'institucional' => 'landing', 'catalogo' => 'ecommerce', 'lms' => 'elearning'];
+    $tipo = $alias[$tipo] ?? $tipo;
+    $nombres = ['landing' => 'el sitio profesional', 'ecommerce' => 'la tienda online',
+                'inmobiliaria' => 'la web inmobiliaria', 'elearning' => 'la plataforma de cursos'];
+    if (isset($p[$tipo])) {
+        return $nombres[$tipo] . ' en un solo pago sale ' . $p[$tipo] . '.';
+    }
+    return 'en un solo pago, el sitio profesional sale ' . $p['landing'] . ', la tienda online ' . $p['ecommerce']
+        . ', la web inmobiliaria ' . $p['inmobiliaria'] . ' y la plataforma de cursos ' . $p['elearning'] . '.';
 }
 
 /** El precio más bajo y el más alto de la lista de tipos, como "$160.000". */

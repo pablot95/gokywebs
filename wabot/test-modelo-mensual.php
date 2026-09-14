@@ -325,6 +325,68 @@ $cR2 = array_merge($cL, ['ultimo_ts' => time() - 30 * 86400]);
 wabot_conv_reset_si_vieja($cR2, $cfg, time());
 caso('el reset de sesión limpia el estilo y lo que quería incluir', empty($cR2['estilo']) && empty($cR2['incluir']));
 
+echo "— 12. El que no quiere el plan todos los meses, o quiere pagar una sola vez (Pablo, 14-sep) —\n";
+
+$realRechazo = 'Déjame que consulte... No me interesa el mantenimiento. Si poder hacerlo de vez en cuando si es necesario pero no creo que sea necesario mensualmente. Son 4 productos solamente';
+$realUnaVez  = 'Y si quisiera hacerlo en un solo pago para ls creación y encargarme yo de mantenerla?';
+foreach ([$realRechazo, 'no creo que sea necesario pagar todos los meses', 'el mantenimiento lo quiero solo cuando lo necesite',
+          'no necesito un plan mensual', 'no me hace falta todos los meses'] as $p) {
+    $k = wabot_info_por_palabras($p, 'prediseno');
+    caso('"' . mb_substr($p, 0, 48) . '" → plan_es_servicio', $k === 'plan_es_servicio', (string)$k);
+}
+foreach ([$realUnaVez, 'puedo pagar la web de una sola vez sin el plan mensual?',
+          'se puede hacer en un solo pago y yo me encargo del hosting?'] as $p) {
+    $k = wabot_info_por_palabras($p, 'prediseno');
+    caso('"' . mb_substr($p, 0, 48) . '" → un_solo_pago', $k === 'un_solo_pago', (string)$k);
+}
+foreach (['el mantenimiento es obligatorio?', 'hay algo mensual?', 'cuanto es por mes?'] as $p) {
+    $k = wabot_info_por_palabras($p, 'prediseno');
+    caso("\"$p\" sigue siendo mantenimiento", $k === 'mantenimiento', (string)$k);
+}
+foreach (['no puedo pagar todo junto, se puede en cuotas?', 'como doy de baja el plan?', 'hay permanencia?'] as $p) {
+    $k = wabot_info_por_palabras($p, 'prediseno');
+    caso("\"$p\" no es ninguna de las dos", !in_array($k, ['plan_es_servicio', 'un_solo_pago'], true), (string)$k);
+}
+
+$serv = wabot_texto_info('plan_es_servicio', $cfg);
+caso('explica que el plan es la forma de trabajar, un servicio que se abona todos los meses',
+    mb_stripos($serv, 'forma en que trabajamos') !== false && mb_stripos($serv, 'todos los meses') !== false, $serv);
+caso('sin plataformas de streaming y sin el detalle de los cambios extra',
+    mb_stripos($serv, 'netflix') === false && strpos($serv, '$10.000') === false);
+caso('y aclara que no hay permanencia', mb_stripos($serv, 'permanencia') !== false);
+
+$cU = array_merge(conv_mm('5491177770090TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true,
+    'precio_cotizado' => '$60.000', 'mensualidad_cotizada' => '$30.000', 'precio_modelo' => 'mensual']);
+$u = wabot_texto_info('un_solo_pago', $cfg, $cU);
+caso('la tienda en un solo pago sale $330.000, con hosting y dominio el primer año',
+    strpos($u, '$330.000') !== false && strpos($u, '$200.000') === false
+    && mb_stripos($u, 'hosting y el dominio durante el primer año') !== false, $u);
+caso('sin la frase "pago único", que el filtro final borraría', mb_stripos($u, 'pago único') === false);
+$cU['tipo'] = 'landing';
+caso('el sitio profesional en un solo pago sale $200.000', strpos(wabot_texto_info('un_solo_pago', $cfg, $cU), '$200.000') !== false);
+$uSin = wabot_texto_info('un_solo_pago', $cfg);
+caso('sin tipo cotizado, los cuatro valores',
+    strpos($uSin, '$200.000') !== false && strpos($uSin, '$330.000') !== false && strpos($uSin, '$290.000') !== false, $uSin);
+$cU['tipo'] = 'inmobiliaria';
+caso('la inmobiliaria en un solo pago sale $290.000', strpos(wabot_texto_info('un_solo_pago', $cfg, $cU), '$290.000') !== false);
+$cU['tipo'] = 'elearning';
+$uCursos = wabot_texto_info('un_solo_pago', $cfg, $cU);
+caso('y la plataforma de cursos, $330.000', strpos($uCursos, 'plataforma de cursos en un solo pago sale $330.000') !== false, $uCursos);
+caso('las dos claves están en consultar_info', wabot_info_clave_del_enum('plan_es_servicio') && wabot_info_clave_del_enum('un_solo_pago'));
+
+$cA = array_merge(conv_mm('5491177770091TEST'), ['fase' => 'prediseno', 'tipo' => 'ecommerce', 'precio_dado' => true,
+    'cta_muestra' => true, 'precio_cotizado' => '$60.000', 'mensualidad_cotizada' => '$30.000', 'precio_modelo' => 'mensual']);
+$rA = wabot_agente_intento($realUnaVez, $cA, $cfg);
+$sA = is_array($rA) ? wabot_salida_preparar($rA, $cA, $cfg) : [];
+caso('el caso real por el agente: los $330.000 de un solo pago, no el detalle del plan',
+    count($sA) === 1 && strpos($sA[0], '$330.000') !== false && mb_stripos($sA[0], 'no es opcional') === false,
+    json_encode($sA, JSON_UNESCAPED_UNICODE));
+$rB = wabot_agente_intento($realRechazo, $cA, $cfg);
+$sB = is_array($rB) ? wabot_salida_preparar($rB, $cA, $cfg) : [];
+caso('y el que no lo cree necesario todos los meses: que el plan es el servicio',
+    count($sB) === 1 && mb_stripos($sB[0], 'forma en que trabajamos') !== false && strpos($sB[0], '$10.000') === false,
+    json_encode($sB, JSON_UNESCAPED_UNICODE));
+
 foreach (glob(WABOT_DATA . '/conv/54911777700*TEST.json') ?: [] as $f) @unlink($f);
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 

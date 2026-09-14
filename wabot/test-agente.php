@@ -1836,7 +1836,7 @@ caso('el precio arranca con el rubro y lo que va a poder hacer, como lo dictó P
 caso('y sigue con el link y los pasos, que son los que llevan los montos (11-sep)',
     strpos($pitchEst, 'gokywebs.com/presupuestos/') !== false
     && strpos($pasosEst, 'se hace un primer pago de $40.000, con eso avanzamos hacia el desarrollo completo') !== false
-    && strpos($pasosEst, 'comienza el plan mensual de $20.000, para mantener tu web funcionando correctamente y actualizada.') !== false);
+    && strpos($pasosEst, 'comienza el plan mensual de $20.000, esto incluye todo lo necesario para tener la web funcionando correctamente y actualizada') !== false);
 caso('el para_que queda guardado con su tipo', $cEst['pitch_para_que_tipo'] === 'landing'
     && $cEst['pitch_para_que'] === 'muestres los tratamientos y tus clientas reserven turno online');
 caso('los tres pasos van aparte, en su propio mensaje (14-sep)',

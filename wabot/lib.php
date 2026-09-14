@@ -403,7 +403,7 @@ function wabot_config_ventas(&$cfg) {
         'desempate_turnos_alojamiento' => 'Te hago una pregunta que cambia bastante la web: querés que tus huéspedes puedan reservar solos desde la página, eligiendo las fechas y viendo la disponibilidad, o alcanza con que te consulten por WhatsApp y lo coordinás vos?',
         'hosting_renovacion' => 'Después del primer año, el hosting y el dominio se renuevan una vez al año. Como el valor puede cambiar según el dominio y el plan vigente, antes del vencimiento te confirmamos el importe actualizado.',
         'seguimiento_precio'=> 'Hola {nombre}, te escribo por tu consulta de la web. Si te ayuda a decidir, te preparo la demo gratis así ves cómo quedaría antes de definir nada. La armamos?',
-        'seguimiento_datos' => 'Hola {nombre}, quedó pendiente tu consulta de la web. Cuando puedas seguimos por acá y lo dejamos encaminado.',
+        'seguimiento_datos' => 'Hola {nombre}, cómo estás? Si te quedó alguna duda, escribime por acá y lo vemos.',
         'sistema_pregunta'  => 'Sí, también desarrollamos sistemas de gestión a medida. Contame qué necesitás que resuelva y qué problema querés ordenar.',
         'sistema_pregunta_usuarios' => 'Perfecto. Aproximadamente cuántas personas usarían el sistema?',
         'sistema_pregunta_actual' => 'Y hoy cómo lo manejan: en papel, con Excel o con otro sistema?',
@@ -1996,7 +1996,7 @@ function wabot_tres_pasos_default() {
     return "Así trabajamos, en tres pasos:\n"
          . "1. La primera entrega es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.\n"
          . "2. Si te gusta y querés avanzar, se hace un primer pago de {precio}, con eso avanzamos hacia el desarrollo completo\n"
-         . "3. A los 7 días la web queda terminada y comienza el plan mensual de {mensualidad}, para mantener tu web funcionando correctamente y actualizada.";
+         . "3. A los 7 días la web queda terminada y comienza el plan mensual de {mensualidad}, esto incluye todo lo necesario para tener la web funcionando correctamente y actualizada";
 }
 
 /** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
@@ -2696,7 +2696,7 @@ function wabot_config_modelo_mensual(&$cfg) {
         // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
         // {mensualidad} entre los requisitos: es lo último que se sumó (el plan
         // en el paso 3), así que cualquier versión anterior converge sola.
-        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo', '{mensualidad}', 'queda terminada']],
+        'proceso' => [$tresPasos, ['primera entrega es gratis', 'desarrollo completo', '{mensualidad}', 'queda terminada', 'esto incluye todo lo necesario']],
         /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
          * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El primer pago de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
@@ -2771,6 +2771,17 @@ function wabot_config_modelo_mensual(&$cfg) {
          * suscribió sin cuenta, llamando al banco de la tarjeta. */
         'baja_del_plan' => ["No hay permanencia: el plan lo das de baja cuando quieras, desde Mercado Pago. Si te suscribiste sin cuenta de Mercado Pago (se puede, con cualquier tarjeta), la baja se hace llamando al banco de esa tarjeta.\n"
                  . "Lo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si se da de baja o dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.", ['permanencia', 'banco']],
+        /* "No me interesa el mantenimiento, no creo que sea necesario todos los
+         * meses" (Pablo, 14-sep): lo que compra es un servicio mensual, no un
+         * mantenimiento que se paga cuando se usa. Sin nombrar plataformas. */
+        'plan_es_servicio' => ["Te entiendo, pero el plan mensual no es un mantenimiento que se contrata cuando hace falta: es la forma en que trabajamos. Lo que contratás es un servicio mensual completo —tu web a medida funcionando, el hosting, el dominio, el soporte, tu panel y un cambio por mes— y se abona igual todos los meses, lo uses mucho o poco. No hay meses con plan y meses sin plan.\n"
+                 . 'Eso sí, no hay permanencia: si en algún momento no lo querés más, lo das de baja cuando quieras (la web funciona mientras el plan esté activo).', ['forma en que trabajamos']],
+        /* "Y si quisiera hacerlo en un solo pago para la creación y encargarme
+         * yo de mantenerla?" (Pablo, 14-sep): los valores los pone
+         * wabot_precio_un_solo_pago_texto(), e incluye hosting y dominio el
+         * primer año. "Un solo pago" y no "pago único": esa frase la borra
+         * wabot_texto_sin_modelo_viejo(). */
+        'un_solo_pago' => ['Sí, se puede: {precio_un_solo_pago} Incluye el hosting y el dominio durante el primer año.', ['{precio_un_solo_pago}', 'durante el primer año']],
         /* Con /portfolio y "escribirles por tu cuenta", como el default del
          * 29-ago: sin eso wabot_config_portfolio() lo reescribía en la carga
          * siguiente y la config no convergía en un solo pase. */
@@ -2821,6 +2832,13 @@ function wabot_config_modelo_mensual(&$cfg) {
     ];
     foreach ($topNueva as $clave => $d) {
         $cfg[$clave] = $forzar($cfg[$clave] ?? '', $d[0], $d[1]);
+    }
+    /* El seguimiento es genérico (Pablo, 14-sep): el que habla de datos
+     * pendientes o de preparar la demo apura al cliente. Por contenido, así se
+     * respeta otra redacción genérica que Pablo escriba en el panel. */
+    $seguimiento = trim((string)($cfg['seguimiento_datos'] ?? ''));
+    if ($seguimiento === '' || preg_match('/pendiente|preparar la (demo|muestra)|la armamos|te preparo/iu', $seguimiento)) {
+        $cfg['seguimiento_datos'] = 'Hola {nombre}, cómo estás? Si te quedó alguna duda, escribime por acá y lo vemos.';
     }
     /* Las variantes del mensaje del precio: si alguna es del modelo viejo o no
      * nombra la mensualidad, se reemplazan TODAS por las del modelo nuevo. Los
@@ -6626,7 +6644,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_institucional, rubro_comercio, rubro_hibrido, rubro_sistema, servicio_con_turnos, turnos_si, turnos_no, comercio_vender, comercio_mostrar, hibrido_trabajos, hibrido_catalogo, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, plan_es_servicio, un_solo_pago, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
 
     $ejemplos = '';
     foreach (($cfg['ejemplos'] ?? []) as $ej) {
@@ -7376,30 +7394,12 @@ function wabot_seguimiento_pregunta_pendiente($cv) {
 }
 
 function wabot_seguimiento_texto($cv, $cfg) {
-    $esPrecio = ($cv['fase'] ?? '') === 'precio'
-        || (($cv['fase'] ?? '') === 'pitch' && !empty($cv['precio_dado']));
-    if ($esPrecio) return (string)($cfg['seguimiento_precio'] ?? '');
-
-    /* Los datos del prediseño son lo único que de verdad "queda pendiente" del
-     * lado del cliente. Todo lo demás caía igual en ese texto: a Ferrari le
-     * llegó cuando lo único que faltaba era contestar qué producto vende
-     * (Pablo, 28-ago: "desperdicia el seguimiento"). */
-    $esDatos = in_array(($cv['fase'] ?? ''), ['prediseno', 'prediseno_ref', 'prediseno_wsp'], true);
-    if (!$esDatos) {
-        $pendiente = wabot_seguimiento_pregunta_pendiente($cv);
-        if ($pendiente !== null) {
-            $base = trim((string)($cfg['seguimiento_pregunta'] ?? ''));
-            if ($base !== '') {
-                $texto = str_replace('{pregunta}', $pendiente, $base);
-                // El gancho de la muestra solo si todavía no se ofreció.
-                $gancho = trim((string)($cfg['seguimiento_pregunta_gancho'] ?? ''));
-                if ($gancho !== '' && empty($cv['cta_muestra']) && empty($cv['precio_dado'])) {
-                    $texto = rtrim($texto) . ' ' . $gancho;
-                }
-                return $texto;
-            }
-        }
-    }
+    /* UN solo seguimiento, genérico, sea cual sea el estado de la charla
+     * (Pablo, 14-sep). "Nos habían quedado pendiente los datos para preparar
+     * la demo" le llegaba a cualquiera a las pocas horas de no contestar, y
+     * "queda re mal, lo está re apurando". Hasta ese día había uno para el
+     * precio, uno para los datos y otro que le repetía la pregunta abierta
+     * con el gancho de la muestra: los tres empujaban. */
     return (string)($cfg['seguimiento_datos'] ?? '');
 }
 

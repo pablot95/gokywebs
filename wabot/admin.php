@@ -1774,7 +1774,7 @@ body.embed { min-height: 0; }
                     : 'todavía no se registró ninguna ejecución' ?>
             </p>
             <label>Seguimiento después de dar el precio</label><textarea name="seguimiento_precio" rows="3"><?= $e($cfg['seguimiento_precio'] ?? '') ?></textarea>
-            <label>Seguimiento cuando faltan datos</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
+            <label>Mensaje de seguimiento (genérico, sale en cualquier estado del chat)</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
             <label>Seguimiento cuando quedó una pregunta sin contestar</label><textarea name="seguimiento_pregunta" rows="2"><?= $e($cfg['seguimiento_pregunta'] ?? '') ?></textarea>
             <p class="meta" style="margin-top:-6px">{pregunta} se reemplaza por la pregunta que el bot dejó abierta. Si no quedó ninguna, sale el texto de arriba.</p>
             <label>Gancho que se suma a ese seguimiento</label><textarea name="seguimiento_pregunta_gancho" rows="2"><?= $e($cfg['seguimiento_pregunta_gancho'] ?? '') ?></textarea>

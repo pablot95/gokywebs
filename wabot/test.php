@@ -79,7 +79,7 @@ caso('el precio llega en DOS mensajes: la oferta con el link y, aparte, los tres
 caso('los tres pasos: primera entrega gratis en menos de 24 horas, el primer pago y el plan con sus montos (11-sep)',
     preg_match('/1\. La primera entrega es gratis.*menos de 24 horas/u', $r[1]) === 1
     && preg_match('/2\. Si te gusta y querés avanzar, se hace un primer pago de \$40\.000, con eso avanzamos hacia el desarrollo completo/u', $r[1]) === 1
-    && preg_match('/3\. A los 7 días la web queda terminada y comienza el plan mensual de \$20\.000, para mantener tu web funcionando correctamente y actualizada/u', $r[1]) === 1);
+    && preg_match('/3\. A los 7 días la web queda terminada y comienza el plan mensual de \$20\.000, esto incluye todo lo necesario para tener la web funcionando correctamente y actualizada/u', $r[1]) === 1);
 caso('y terminan preguntando si quiere la demo: su sí es lo que manda el formulario (11-sep)',
     preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1]) === 1);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
@@ -637,7 +637,7 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
         strpos(wabot_personalizar($rFijo[0], $cFijo), $esperado) === 0);
     caso("$tipoFijo: dice el primer pago y el plan mensual en los pasos, nunca pago único (11-sep)",
         preg_match('/se hace un primer pago de \$[\d.]+, con eso avanzamos/u', $rFijo[1]) === 1
-        && preg_match('/comienza el plan mensual de \$[\d.]+, para mantener tu web/u', $rFijo[1]) === 1
+        && preg_match('/comienza el plan mensual de \$[\d.]+, esto incluye todo lo necesario/u', $rFijo[1]) === 1
         && stripos($rFijo[0], 'pago único') === false);
     caso("$tipoFijo: linkea el presupuesto para verlo en detalle (2-sep)",
         strpos($rFijo[0], 'gokywebs.com/presupuestos/') !== false);
@@ -5153,18 +5153,20 @@ $sgFerrari = ['fase'=>'menu','transcript'=>[
     ['q'=>'bot','t'=>'Hola! Contame, qué producto vendés?'],
 ]];
 $sgTexto = wabot_seguimiento_texto($sgFerrari, $cfg);
-caso('el seguimiento repite la pregunta que quedó abierta',
-    strpos($sgTexto, 'qué producto vendés?') !== false);
-caso('y suma el gancho de la muestra si todavía no se ofreció',
-    stripos($sgTexto, 'muestra gratis') !== false);
-
-$sgOfrecida = $sgFerrari; $sgOfrecida['cta_muestra'] = true;
-caso('con la muestra ya ofrecida, no la repite',
-    stripos(wabot_seguimiento_texto($sgOfrecida, $cfg), 'muestra gratis') === false);
-
-caso('con el precio dado sigue el seguimiento de precio',
+/* 14-sep (Pablo): el seguimiento es UNO y genérico, sea cual sea el estado.
+ * Repetir la pregunta abierta o los "datos pendientes" apuraba al cliente. */
+caso('el seguimiento ya no repite la pregunta que quedó abierta ni ofrece la muestra',
+    $sgTexto === $cfg['seguimiento_datos'] && strpos($sgTexto, 'qué producto vendés?') === false
+    && stripos($sgTexto, 'muestra') === false);
+caso('y no habla de datos pendientes ni de preparar la demo',
+    !preg_match('/pendiente|preparar la (demo|muestra)/iu', $cfg['seguimiento_datos']), $cfg['seguimiento_datos']);
+caso('con el precio dado, el mismo texto genérico',
     wabot_seguimiento_texto(['fase'=>'precio','precio_dado'=>true,
-        'transcript'=>[['q'=>'bot','t'=>'Sale $200.000']]], $cfg) === $cfg['seguimiento_precio']);
+        'transcript'=>[['q'=>'bot','t'=>'Sale $200.000']]], $cfg) === $cfg['seguimiento_datos']);
+$sgViejo = $cfg; $sgViejo['seguimiento_datos'] = 'Hola {nombre}, cómo estás? Nos habían quedado pendiente los datos para preparar la demo. Cuando puedas seguimos por acá.';
+wabot_config_migrar($sgViejo);
+caso('el texto que tenía producción converge solo al genérico',
+    $sgViejo['seguimiento_datos'] === 'Hola {nombre}, cómo estás? Si te quedó alguna duda, escribime por acá y lo vemos.', $sgViejo['seguimiento_datos']);
 caso('esperando los datos del prediseño, el texto de siempre',
     wabot_seguimiento_texto(['fase'=>'prediseno',
         'transcript'=>[['q'=>'bot','t'=>'Me pasás el nombre y los colores?']]], $cfg) === $cfg['seguimiento_datos']);
