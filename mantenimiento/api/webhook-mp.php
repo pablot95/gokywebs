@@ -27,15 +27,18 @@
 // "preapproval_plan_id" del link de suscripción: el del sitio profesional
 // ($20.000/mes, link viejo mpago.la/1pfejMG) y el del resto ($30.000/mes). Desde el
 // 14-sep-2026 la web ofrece los planes nuevos mpago.la/1hYAiTM ($15.000/mes) y
-// mpago.la/28VK7Ev ($25.000/mes): entran por el respaldo por importe hasta sumar
-// su preapproval_plan_id a este mapa. Los ids de abajo quedan para los suscriptores viejos.
+// mpago.la/28VK7Ev ($25.000/mes), con los ids de abajo. Los planes viejos siguen
+// en el mapa para sus suscriptores.
 // Un plan que no esté en este mapa cae al respaldo por importe.
-const MP_PLAN_ID_SITIO_PROFESIONAL = 'ea40c15059ec42a7ac5b6293d77ae148';   // plan viejo, $20.000/mes
-const MP_PLAN_ID_RESTO             = '36a67a7e42e7404989beb99703a0569b';   // plan viejo, $30.000/mes
+const MP_PLAN_ID_SITIO_PROFESIONAL = 'b7d653f4f61a445ba8859ae497e7ca66';   // $15.000/mes, mpago.la/1hYAiTM (14-sep-2026)
+const MP_PLAN_ID_RESTO             = '56340e241c87402c81c02d43ce472fd7';   // $25.000/mes, mpago.la/28VK7Ev (14-sep-2026)
 
 $MP_PLANES = [
     MP_PLAN_ID_SITIO_PROFESIONAL => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
     MP_PLAN_ID_RESTO             => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
+    // Planes de $20.000 y $30.000 (10 al 14-sep-2026): sus suscriptores siguen entrando igual.
+    'ea40c15059ec42a7ac5b6293d77ae148' => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
+    '36a67a7e42e7404989beb99703a0569b' => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
     // Plan viejo de 15.000/mes: ya no se ofrece en la web, pero sus suscriptores
     // existentes siguen entrando como 'mensual'.
     '17321dd1a34e4ea0979175293297d60f' => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
