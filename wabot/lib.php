@@ -2004,7 +2004,7 @@ function wabot_tres_pasos_default() {
     return "Así trabajamos:\n"
          . "1. Te hacemos una demo gratis para que veas cómo sería tu web. La tenés en menos de 24 horas.\n"
          . "2. Si querés avanzar, se abona un pago inicial de {precio}.\n"
-         . "3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de {mensualidad}, que mantiene la web activa e incluye hosting, dominio, soporte y un cambio por mes. Si el abono se da de baja, la web deja de estar publicada.";
+         . "3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de {mensualidad}, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico. Si el abono se da de baja, la web deja de estar publicada.";
 }
 
 /** La pregunta con la que cierran los tres pasos: su sí es lo que manda el formulario (11-sep). */
@@ -2709,15 +2709,19 @@ function wabot_config_modelo_mensual(&$cfg) {
         // pasos" y "plan mensual" igual, así que con esos tokens no convergía.
         // {mensualidad} entre los requisitos: es lo último que se sumó (el plan
         // en el paso 3), así que cualquier versión anterior converge sola.
-        'proceso' => [$tresPasos, ['se abona un pago inicial', '{mensualidad}', 'ya estaría subida y funcionando']],
+        'proceso' => [$tresPasos, ['se abona un pago inicial', '{mensualidad}', 'ya estaría subida y funcionando', 'Tiendanube']],
         /* Sin cuenta de Mercado Pago también se puede suscribir, con cualquier
          * tarjeta (Pablo, 11-sep). Es la duda que frena al que no la tiene. */
         'pago' => ["El pago inicial de {precio} se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta.\n"
                  . "El abono mensual obligatorio de {mensualidad} arranca a los 7 días del pago inicial y va por suscripción automática de Mercado Pago, así se debita solo. No hace falta tener cuenta de Mercado Pago: te podés suscribir con cualquier tarjeta.", ['{mensualidad}', 'cualquier tarjeta', 'pago inicial']],
-        'mantenimiento' => ["El abono mensual es obligatorio, es parte del servicio: son {mensualidad} por mes para mantener tu web publicada y funcionando, e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Si el abono se da de baja, la web deja de estar publicada. Se actualiza una vez al año.\n"
-                 . "Si necesitás más de un cambio por mes, son \$10.000 más por mes.", ['{mensualidad}', 'publicada y funcionando']],
-        'mantenimiento_ambos' => ["El abono mensual es obligatorio, es parte del servicio: mantiene tu web publicada y funcionando e incluye el hosting, el dominio, el soporte y un cambio por mes, que puede ser un cambio grande y no solo un retoque. Arranca a los 7 días del pago inicial y se actualiza una vez al año.\n"
-                 . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}', 'publicada y funcionando']],
+        /* 14-sep (Pablo): "la gente no entiende pagarme a mí por mes, pero sí
+         * entiende hacerlo con Tiendanube". El abono se presenta como el plan
+         * de la web, nunca como mantenimiento ni como un pago por cambios: el
+         * que cree que paga por cambios concluye que no lo necesita. */
+        'mantenimiento' => ["Los {mensualidad} por mes son el abono de la web, igual que el plan que pagarías en Tiendanube o Wix: es lo que la mantiene online y funcionando, con hosting, dominio, soporte técnico y actualizaciones. Arranca a los 7 días del pago inicial, se actualiza una vez al año y, si se da de baja, la web deja de estar publicada.\n"
+                 . "No es un pago por cambios: el día a día lo manejás vos desde tu panel, y si alguna vez necesitás que hagamos un cambio nosotros, tenés uno por mes incluido.", ['{mensualidad}', 'Tiendanube']],
+        'mantenimiento_ambos' => ["El abono mensual es el de la web, igual que el plan que pagarías en Tiendanube o Wix: es lo que la mantiene online y funcionando, con hosting, dominio, soporte técnico y actualizaciones. Arranca a los 7 días del pago inicial y se actualiza una vez al año.\n"
+                 . "Son {mensualidades}. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{mensualidades}', 'Tiendanube']],
         /* El dominio que va incluido es .com.ar (Pablo, 11-sep). El .com tiene
          * su propia respuesta, dominio_com, y sale solo si lo pregunta. */
         'hosting' => ["El hosting y el dominio .com.ar están incluidos mientras dure el plan: van dentro de la mensualidad, sin costo aparte.\n"
@@ -2764,9 +2768,9 @@ function wabot_config_modelo_mensual(&$cfg) {
          * todas las webs traen uno para los textos y las imágenes, sin costo
          * extra. La carga de productos sigue igual: 10 incluidos y $500 por
          * producto que carguemos nosotros de ahí en más. */
-        'carga' => ["Sí. Todas nuestras webs traen un panel de administración donde editás vos mismo los textos y las imágenes cuando quieras, sin costo extra.\n"
-                 . "En la tienda online, además, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista; de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros, o los cargás vos desde tu panel, que es sencillo y trae un video explicativo. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\n"
-                 . "Y para lo que vaya más allá de textos e imágenes, el plan incluye un cambio por mes.", ['$500 por producto', 'los textos y las imágenes']],
+        'carga' => ["Sí, lo manejás vos. Todas nuestras webs traen un panel de administración donde editás los textos y las imágenes cuando quieras, sin costo extra.\n"
+                 . "En la tienda online cargás vos desde tu panel los productos, precios, stock, fotos y descripciones todas las veces que necesites, también sin costo extra, y el panel trae un video explicativo. Si preferís, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista, y de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\n"
+                 . "El abono mensual no es por cargar productos ni por hacer cambios: es lo que mantiene la web online, como el plan de Tiendanube.", ['$500 por producto', 'los textos y las imágenes', 'Tiendanube']],
         'rangos' => ["{tabla_precios}\n"
                  . "En todos los casos el abono mensual obligatorio arranca a los 7 días del pago inicial. Contame a qué te dedicás y te confirmo cuál sería el tuyo.", ['{tabla_precios}', 'pago inicial']],
         'precio_sin_rubro' => ["{tabla_precios}\n"
@@ -2787,8 +2791,8 @@ function wabot_config_modelo_mensual(&$cfg) {
         /* "No me interesa el mantenimiento, no creo que sea necesario todos los
          * meses" (Pablo, 14-sep): lo que compra es un servicio mensual, no un
          * mantenimiento que se paga cuando se usa. Sin nombrar plataformas. */
-        'plan_es_servicio' => ["Te entiendo, pero el plan mensual no es un mantenimiento que se contrata cuando hace falta: es la forma en que trabajamos. Lo que contratás es un servicio mensual completo —tu web a medida funcionando, el hosting, el dominio, el soporte, tu panel y un cambio por mes— y se abona igual todos los meses, lo uses mucho o poco. No hay meses con plan y meses sin plan.\n"
-                 . 'Eso sí, no hay permanencia: si en algún momento no lo querés más, lo das de baja cuando quieras (la web funciona mientras el plan esté activo).', ['forma en que trabajamos']],
+        'plan_es_servicio' => ["Te entiendo, pero el abono mensual no es un mantenimiento que se contrata cuando hace falta: es igual que el plan que pagarías en Tiendanube o Wix, lo que mantiene la web online y funcionando, con hosting, dominio y soporte, y se abona todos los meses, la uses mucho o poco. Es la forma en que trabajamos: no hay meses con abono y meses sin abono.\n"
+                 . 'Eso sí, no hay permanencia: si en algún momento no lo querés más, lo das de baja cuando quieras (la web funciona mientras el abono esté activo).', ['forma en que trabajamos', 'Tiendanube']],
         /* "Y si quisiera hacerlo en un solo pago para la creación y encargarme
          * yo de mantenerla?" (Pablo, 14-sep): los valores los pone
          * wabot_precio_un_solo_pago_texto(), e incluye hosting y dominio el
@@ -2820,15 +2824,15 @@ function wabot_config_modelo_mensual(&$cfg) {
 
     /* 5. Los textos de venta que viven fuera de `info`. */
     $topNueva = [
-        'caro' => ["Con {precio} de pago inicial arrancás, en lugar de pagar una web entera de una vez, y no es una plantilla que armás vos: es una web hecha a medida. Después, el abono mensual obligatorio de {mensualidad} mantiene tu web publicada y funcionando, con hosting, dominio, soporte y un cambio por mes.\n"
-                 . 'El pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. En el link del presupuesto tenés el detalle de todo lo que incluye.', ['{mensualidad}', 'pago inicial']],
+        'caro' => ["Con {precio} de pago inicial arrancás, en lugar de pagar una web entera de una vez, y no es una plantilla que armás vos: es una web hecha a medida. Después, el abono mensual de {mensualidad} es igual que el plan que pagarías en Tiendanube o Wix para tenerla online, con hosting, dominio y soporte, con la diferencia de que la web te la hacemos nosotros.\n"
+                 . 'El pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. En el link del presupuesto tenés el detalle de todo lo que incluye.', ['{mensualidad}', 'pago inicial', 'Tiendanube']],
         /* Arranca contestando la pregunta concreta (27-ago: un cliente preguntó
          * si le armábamos la tienda EN Tiendanube y se llevó los argumentos sin
          * un sí o un no). El argumento viejo —pago único contra alquiler
          * mensual— murió el 10-sep: ahora el diferenciador es quién arma la
          * página. */
-        'plataformas' => ["Sobre Tiendanube, Shopify o Wix no trabajamos: lo que hacemos es tu propia web, a medida.\n"
-                 . 'Allá la página la armás vos, con una plantilla, y el abono mensual lo pagás igual. Acá te la hacemos nosotros, te queda un panel para editar los textos y las imágenes cuando quieras, y después nos ocupamos de todo: hosting, dominio, soporte y un cambio por mes.', ['no trabajamos', 'a medida', 'los textos y las imágenes']],
+        'plataformas' => ["No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. Pero el abono mensual funciona igual que allá: es lo que mantiene la web online.\n"
+                 . 'La diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio y el soporte.', ['a medida', 'los textos y las imágenes', 'funciona igual que allá']],
         // El portfolio filtrado se queda en el resumen: es lo único que agrega
         // cuando vuelven a preguntar el precio (Pablo, 2-sep).
         'precio_resumen' => ["El pago inicial es de {precio} y el abono mensual obligatorio, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}", ['{mensualidad}', '{portfolio}', 'pago inicial']],
@@ -2840,7 +2844,7 @@ function wabot_config_modelo_mensual(&$cfg) {
         'pago_cuanto_anticipo' => ['El pago inicial es de {precio}. A los 7 días comienza el abono mensual obligatorio de {mensualidad}, que mantiene tu web publicada y funcionando.', ['{mensualidad}', 'pago inicial']],
         'postdemo_transferencia' => ["El pago inicial es de {precio} y con eso arrancamos con los cambios.\n\nBanco Santander\nCBU: {cbu}\nAlias: {alias}\nTitular de la cuenta: {titular}\nDocumento: {documento}\n\nSi preferís abonar con tarjeta avisame y te paso el link.", ['{precio}', 'pago inicial']],
         'postdemo_tarjeta' => ["Te dejo el link para abonar el pago inicial de {precio} con tarjeta, en un pago o hasta en 12 cuotas con interés:\n{link}", ['{precio}', 'pago inicial']],
-        'respuesta_plan_obligatorio' => ['El abono mensual es obligatorio: es lo que mantiene la web publicada y funcionando, con hosting, dominio, soporte y un cambio por mes. Eso sí, no hay permanencia: lo das de baja cuando quieras.', ['obligatorio', 'publicada']],
+        'respuesta_plan_obligatorio' => ['Sí, el abono mensual es parte del servicio, igual que el plan de Tiendanube o Wix: mantiene la web online, con hosting, dominio y soporte. No hay permanencia: lo das de baja cuando quieras.', ['Tiendanube', 'No hay permanencia']],
         'respuesta_esta_incluido' => ['Está incluido en el plan, no se paga aparte.', null],
     ];
     foreach ($topNueva as $clave => $d) {

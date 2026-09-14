@@ -244,7 +244,7 @@ caso('un porcentaje sigue sin salir nunca',
 $cObl = ['transcript' => [['q' => 'bot', 't' => wabot_texto_mantenimiento(['tipo' => 'landing'], $cfg), 'ts' => time()]]];
 caso('"es obligatorio?" después del plan: sí, sin permanencia',
     ($ro = wabot_respuesta_obligatorio($cObl, $cfg, 'es obligatorio?')) !== null
-    && mb_stripos($ro, 'obligatorio') !== false && mb_stripos($ro, 'permanencia') !== false);
+    && mb_strpos($ro, 'Sí, el abono mensual es parte del servicio') === 0 && mb_stripos($ro, 'permanencia') !== false);
 
 echo "— 8. Ningún texto sale con un marcador crudo ni con el modelo viejo —\n";
 

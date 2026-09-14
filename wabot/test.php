@@ -79,7 +79,7 @@ caso('el precio llega en DOS mensajes: la oferta con el link y, aparte, los tres
 caso('los tres pasos: demo gratis en menos de 24 horas, el pago inicial y el abono mensual obligatorio con sus montos (14-sep)',
     preg_match('/1\. Te hacemos una demo gratis.*menos de 24 horas/u', $r[1]) === 1
     && preg_match('/2\. Si querés avanzar, se abona un pago inicial de \$40\.000\./u', $r[1]) === 1
-    && preg_match('/3\. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de \$15\.000, que mantiene la web activa e incluye hosting, dominio, soporte y un cambio por mes\. Si el abono se da de baja, la web deja de estar publicada\./u', $r[1]) === 1);
+    && preg_match('/3\. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de \$15\.000, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico\. Si el abono se da de baja, la web deja de estar publicada\./u', $r[1]) === 1);
 caso('y terminan preguntando si quiere la demo: su sí es lo que manda el formulario (11-sep)',
     preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1]) === 1);
 caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)',
@@ -637,7 +637,7 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
         strpos(wabot_personalizar($rFijo[0], $cFijo), $esperado) === 0);
     caso("$tipoFijo: dice el pago inicial y el abono mensual obligatorio en los pasos, nunca pago único (14-sep)",
         preg_match('/se abona un pago inicial de \$[\d.]+/u', $rFijo[1]) === 1
-        && preg_match('/abono mensual de \$[\d.]+, que mantiene la web activa/u', $rFijo[1]) === 1
+        && preg_match('/abono mensual de \$[\d.]+, igual que el plan que se paga en Tiendanube/u', $rFijo[1]) === 1
         && stripos($rFijo[0], 'pago único') === false);
     caso("$tipoFijo: linkea el presupuesto para verlo en detalle (2-sep)",
         strpos($rFijo[0], 'gokywebs.com/presupuestos/') !== false);
@@ -770,8 +770,8 @@ foreach (['turnos' => '$15.000', 'institucional' => '$15.000', 'ecommerce' => '$
     caso("$t → $montoPlan por mes", strpos($r[0], $montoPlan) !== false && strpos($r[0], '{') === false);
 }
 
-caso('el texto de mantenimiento aclara que NO es opcional',
-    stripos($cfg['info']['mantenimiento'], 'es obligatorio') !== false);
+caso('el texto de mantenimiento lo presenta como el abono de la web, como Tiendanube, y no como un pago por cambios (14-sep)',
+    stripos($cfg['info']['mantenimiento'], 'Tiendanube') !== false && stripos($cfg['info']['mantenimiento'], 'No es un pago por cambios') !== false);
 
 echo "— Cómo trabajamos: los tres pasos de Pablo (10-sep) —\n";
 
@@ -1701,7 +1701,7 @@ clasifica(['otro']);
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $r = wabot_engine('Y por mes cuanto pago', $c, $cfg);
 caso('de punta a punta: la pregunta de mantenimiento se contesta aunque el clasificador diga "otro"',
-    stripos($r[0], 'abono mensual') !== false || strpos($r[0], 'mantenimiento') !== false);
+    stripos($r[0], 'abono') !== false || strpos($r[0], 'mantenimiento') !== false);
 
 // El respaldo NUNCA pisa una acción que el clasificador sí reconoció. Bug real:
 // la foto de un logo describía "Mandó el logo…" y esa palabra "logo" activaba
@@ -3782,8 +3782,9 @@ caso('una web propia en WordPress sí',
     wabot_info_por_palabras('mi web esta en wordpress') === 'ya_tiene_plataforma');
 caso('y "ya tengo una pagina" también',
     wabot_info_por_palabras('ya tengo una pagina') === 'ya_tiene_plataforma');
-caso('la objeción de plataformas sigue existiendo aparte, con el diferenciador nuevo (10-sep)',
-    stripos($cfg['plataformas'], 'no trabajamos') !== false && stripos($cfg['plataformas'], 'plantilla') !== false);
+caso('la objeción de plataformas sigue existiendo aparte: no la armamos ahí, el abono funciona igual y la diferencia es la plantilla (14-sep)',
+    stripos($cfg['plataformas'], 'No la armamos sobre Tiendanube') !== false && stripos($cfg['plataformas'], 'funciona igual que allá') !== false
+    && stripos($cfg['plataformas'], 'plantilla') !== false);
 caso('ya_tiene_plataforma no promete trabajar sobre la web existente',
     stripos($cfg['info']['ya_tiene_plataforma'], 'no trabajamos sobre webs ya hechas') !== false);
 caso('y no contradice a info.tecnologia',

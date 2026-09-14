@@ -466,8 +466,8 @@ caso('con el precio ya dado, la objeción sola, como antes',
 
 echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube) —\n";
 
-caso('el texto abre diciendo que sobre esas plataformas no se trabaja',
-    preg_match('/^Sobre Tiendanube[^.]*no trabajamos/u', (string)$cfg['plataformas']) === 1);
+caso('el texto abre contestando que no se arma sobre esas plataformas (14-sep)',
+    preg_match('/^No la armamos sobre Tiendanube/u', (string)$cfg['plataformas']) === 1);
 
 /* 10-sep: el argumento del pago único murió con el modelo viejo. El que queda
  * es quién arma la página: allá una plantilla que arma el cliente, acá una web

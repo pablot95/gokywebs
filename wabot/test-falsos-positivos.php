@@ -275,7 +275,7 @@ caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_
 caso('paso 2: el pago inicial con su monto y para qué es (Pablo, 14-sep)',
     preg_match('/2\. Si querés avanzar, se abona un pago inicial de \$40\.000\./u', $rPaso[1]) === 1);
 caso('paso 3: el abono mensual obligatorio con su monto, qué incluye y que sin abono la web se da de baja (14-sep)',
-    preg_match('/3\. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de \$15\.000, que mantiene la web activa e incluye hosting, dominio, soporte y un cambio por mes\. Si el abono se da de baja, la web deja de estar publicada\./u', $rPaso[1]) === 1);
+    preg_match('/3\. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de \$15\.000, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico\. Si el abono se da de baja, la web deja de estar publicada\./u', $rPaso[1]) === 1);
 caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[1]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
     strpos($rPaso[0], 'gokywebs.com/form/') === false);

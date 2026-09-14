@@ -558,7 +558,7 @@ caso('landing → el plan de $15.000 por mes (10-sep)',
 $c = convNueva(); $c['tipo'] = 'ecommerce';
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'mantenimiento'], $c, $cfg);
 caso('ecommerce → el plan de $25.000 por mes',
-    strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$25.000') !== false && stripos($r['texto'], 'es obligatorio') !== false);
+    strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$25.000') !== false && stripos($r['texto'], 'Tiendanube') !== false);
 
 caso('ya no queda ningún {precio} sin reemplazar', strpos($r['texto'], '{') === false);
 
@@ -1836,7 +1836,7 @@ caso('el precio arranca con el rubro y lo que va a poder hacer, como lo dictó P
 caso('y sigue con el link y los pasos, que son los que llevan los montos (11-sep)',
     strpos($pitchEst, 'gokywebs.com/presupuestos/') !== false
     && strpos($pasosEst, 'se abona un pago inicial de $40.000') !== false
-    && strpos($pasosEst, 'abono mensual de $15.000, que mantiene la web activa') !== false);
+    && strpos($pasosEst, 'abono mensual de $15.000, igual que el plan que se paga en Tiendanube') !== false);
 caso('el para_que queda guardado con su tipo', $cEst['pitch_para_que_tipo'] === 'landing'
     && $cEst['pitch_para_que'] === 'muestres los tratamientos y tus clientas reserven turno online');
 caso('los tres pasos van aparte, en su propio mensaje (14-sep)',
@@ -2041,11 +2041,11 @@ caso('pero una pregunta abierta no',
  * prohíbe, justo en la pregunta que decide la venta. */
 $cOpc = ['transcript' => [['q' => 'bot', 't' => 'El plan mensual no es opcional, es parte del servicio: son $15.000 por mes e incluye el hosting, el dominio, el soporte y un cambio por mes.', 'ts' => time()]]];
 caso('con el plan mensual en el último mensaje, contesta corto que ES obligatorio (10-sep)',
-    ($r = wabot_respuesta_obligatorio($cOpc, $cfg)) !== null && mb_stripos($r, 'obligatorio') !== false
+    ($r = wabot_respuesta_obligatorio($cOpc, $cfg)) !== null && mb_strpos($r, 'Sí, el abono mensual es parte del servicio') === 0
     && mb_stripos($r, 'es opcional') === false && mb_strlen($r) < 220);
 $cOpcTextoViejo = ['transcript' => [['q' => 'bot', 't' => 'El mantenimiento es opcional e incluye un cambio por mes, además del soporte. Sale $10.000 por mes.', 'ts' => time()]]];
 caso('aunque el último mensaje sea el texto viejo que decía "opcional", sin cotización vieja la respuesta es que es obligatorio',
-    ($rV = wabot_respuesta_obligatorio($cOpcTextoViejo, $cfg)) !== null && mb_stripos($rV, 'obligatorio') !== false);
+    ($rV = wabot_respuesta_obligatorio($cOpcTextoViejo, $cfg)) !== null && mb_strpos($rV, 'Sí, el abono mensual es parte del servicio') === 0);
 $cOpcLegacy = $cOpcTextoViejo + ['tipo' => 'landing', 'precio_dado' => true];
 caso('pero a la charla cotizada antes del 10-sep, con el mantenimiento opcional, se le sostiene lo que se le dijo',
     ($rL = wabot_respuesta_obligatorio($cOpcLegacy, $cfg)) !== null && mb_stripos($rL, 'opcional') !== false);

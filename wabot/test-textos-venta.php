@@ -63,7 +63,7 @@ caso('son dos mensajes: el segundo, los tres pasos con la pregunta, textuales',
 caso('el paso 2 dice el pago inicial de lo cotizado y para qué es',
     mb_strpos($pasos, '2. Si querés avanzar, se abona un pago inicial de $40.000.') !== false);
 caso('y el paso 3, el abono mensual obligatorio con su monto, qué incluye y que sin abono la web se da de baja',
-    mb_strpos($pasos, '3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de $15.000, que mantiene la web activa e incluye hosting, dominio, soporte y un cambio por mes. Si el abono se da de baja, la web deja de estar publicada.') !== false);
+    mb_strpos($pasos, '3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de $15.000, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico. Si el abono se da de baja, la web deja de estar publicada.') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
