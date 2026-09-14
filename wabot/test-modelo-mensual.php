@@ -387,6 +387,66 @@ caso('y el que no lo cree necesario todos los meses: que el plan es el servicio'
     count($sB) === 1 && mb_stripos($sB[0], 'forma en que trabajamos') !== false && strpos($sB[0], '$10.000') === false,
     json_encode($sB, JSON_UNESCAPED_UNICODE));
 
+echo "— 13. Tienda + cursos se cotiza, no se deriva (Pablo, 14-sep) —\n";
+
+$msgTaller = "Tengo un taller donde se dictan clases de artesanias\n.. velas\n. Yeso ceramico..m macrame... etc...\nEs para hacer una página online para ve der.insumos.. y mas adelante cargar cursos online tambien";
+
+// Por el motor: el clasificador dice productos_y_cursos.
+$cTM = conv_mm('5491177770095TEST');
+wabot_conv_transcript($cTM, 'cliente', $msgTaller);
+clasifica(['productos_y_cursos']);
+$rTM = wabot_engine($msgTaller, $cTM, $cfg);
+caso('el motor cotiza tienda + cursos en vez de derivar',
+    empty($cTM['handoff_pendiente']) && ($cTM['tipo'] ?? '') === 'ecommerce' && !empty($cTM['combo_cursos'])
+    && strpos(implode("\n", (array)$rTM), 'gokywebs.com/presupuestos/ecommerceelearning') !== false
+    && strpos(implode("\n", (array)$rTM), '$50.000') !== false, json_encode($rTM, JSON_UNESCAPED_UNICODE));
+caso('con la frase del combinado y sin el aviso de "el precio no sale de la lista"',
+    mb_stripos(implode("\n", (array)$rTM), 'plataforma para tus cursos') !== false
+    && mb_stripos(implode("\n", (array)$rTM), 'no sale de la lista') === false);
+
+// Por el agente: el modelo pide derivar → se le frena; cotiza con con_cursos.
+$cTA = conv_mm('5491177770096TEST');
+wabot_conv_transcript($cTA, 'cliente', $msgTaller);
+$rDer = wabot_agente_ejecutar('derivar', ['causa' => 'productos_y_cursos', 'motivo' => 'vende insumos y cursos'], $cTA, $cfg, $msgTaller);
+caso('el agente no puede derivar tienda + cursos: se le pide cotizar', isset($rDer['error'])
+    && stripos($rDer['nota'] ?? '', 'con_cursos') !== false && empty($cTA['handoff_pendiente']));
+$rDP = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'con_cursos' => true, 'rubro' => 'tu taller de artesanías',
+    'para_que' => 'vendas tus insumos online y más adelante cargues tus cursos'], $cTA, $cfg, $msgTaller);
+$todoDP = (string)($rDP['texto'] ?? '') . "\n" . implode("\n", (array)($rDP['aparte'] ?? []));
+caso('dar_precio con con_cursos: el presupuesto combinado, al precio de la tienda',
+    !empty($cTA['combo_cursos']) && ($cTA['tipo'] ?? '') === 'ecommerce'
+    && strpos($todoDP, 'gokywebs.com/presupuestos/ecommerceelearning') !== false
+    && strpos($todoDP, '$50.000') !== false && strpos($todoDP, '$25.000') !== false, $todoDP);
+caso('el resumen del precio también manda el combinado',
+    strpos(wabot_precio_resumen($cTA, $cfg), 'presupuestos/ecommerceelearning') !== false);
+caso('y el boceto dice que es tienda + cursos',
+    mb_stripos((string)reset(wabot_lead_campos($cTA, $cfg, false)['tipoDetectadoLabel']), 'cursos') !== false);
+
+// Si el modelo se olvida del argumento, el contexto alcanza.
+$cTO = conv_mm('5491177770097TEST');
+wabot_conv_transcript($cTO, 'cliente', $msgTaller);
+wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'tu taller de artesanías', 'para_que' => 'vendas tus insumos online'], $cTO, $cfg, $msgTaller);
+caso('sin con_cursos pero con productos y cursos en la charla, igual va el combinado', !empty($cTO['combo_cursos']));
+
+// El atajo del agente: el caso real se cotiza sin pasar por el modelo.
+$cTX = conv_mm('5491177770099TEST');
+$cTX['fase'] = 'menu';
+wabot_conv_transcript($cTX, 'cliente', $msgTaller);
+$rTX = wabot_agente_intento($msgTaller, $cTX, $cfg);
+$sTX = is_array($rTX) ? wabot_salida_preparar($rTX, $cTX, $cfg) : [];
+caso('el caso real por el agente: precio del combinado y los tres pasos, sin derivar ni el texto de la carga',
+    count($sTX) === 2 && !empty($cTX['combo_cursos']) && empty($cTX['handoff_pendiente'])
+    && strpos($sTX[0], 'presupuestos/ecommerceelearning') !== false && mb_strpos($sTX[1], 'Así trabajamos') === 0
+    && mb_stripos(implode("\n", $sTX), 'Todas nuestras webs traen un panel') === false, json_encode($sTX, JSON_UNESCAPED_UNICODE));
+
+// Una tienda sola sigue siendo tienda sola.
+$cTS = conv_mm('5491177770098TEST');
+wabot_conv_transcript($cTS, 'cliente', 'Tengo una tienda de ropa y quiero vender online');
+$rTS = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce', 'rubro' => 'tu tienda de ropa', 'para_que' => 'vendas tu ropa online'], $cTS, $cfg, 'Tengo una tienda de ropa y quiero vender online');
+caso('una tienda sin cursos sigue con su presupuesto de siempre', empty($cTS['combo_cursos'])
+    && strpos((string)($rTS['texto'] ?? ''), 'gokywebs.com/presupuestos/ecommerce') !== false
+    && strpos((string)($rTS['texto'] ?? ''), 'ecommerceelearning') === false);
+
 foreach (glob(WABOT_DATA . '/conv/54911777700*TEST.json') ?: [] as $f) @unlink($f);
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 

@@ -4424,7 +4424,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
               // Paso 2 del formulario (10-sep): son del proyecto viejo.
-              'estilo','incluir'] as $k) {
+              'estilo','incluir','combo_cursos'] as $k) {
         $conv[$k] = null;
     }
     $conv['fase'] = 'nuevo';
@@ -6236,11 +6236,22 @@ function wabot_texto_util($texto) {
  * tipo no tiene link configurado, se saca la oración entera en vez de prometer
  * algo que no se puede cumplir.
  */
+/**
+ * El link del presupuesto de un tipo para ESTA charla. La tienda que además
+ * vende cursos (Pablo, 14-sep) tiene su presupuesto combinado.
+ */
+function wabot_link_presupuesto_tipo($tipo, $conv, $cfg) {
+    if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
+        return 'gokywebs.com/presupuestos/ecommerceelearning';
+    }
+    return trim((string)($cfg['tipos'][(string)$tipo]['link'] ?? ''));
+}
+
 function wabot_link_presupuesto_completar($texto, $conv, $cfg) {
     $t = trim((string)$texto);
     if ($t === '' || !preg_match('/\blink del presupuesto\b/iu', $t)) return $t;
 
-    $link = trim((string)($cfg['tipos'][(string)($conv['tipo'] ?? '')]['link'] ?? ''));
+    $link = wabot_link_presupuesto_tipo((string)($conv['tipo'] ?? ''), $conv, $cfg);
     if ($link === '') {
         $oraciones = preg_split('/(?<=\.)\s+/u', $t);
         $limpias = array_filter($oraciones, function ($o) {
@@ -7915,6 +7926,7 @@ function wabot_transcript_texto($conv, $maxChars = 12000) {
 function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $tipo  = $conv['tipo'] ?? '';
     $label = wabot_tipo_label($tipo, $cfg);
+    if ($tipo === 'ecommerce' && !empty($conv['combo_cursos'])) $label .= ' + cursos online';
     $ahora = gmdate('Y-m-d\TH:i:s\Z');
     $fecha = (new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires')))->format('d/n/Y, H:i:s');
 

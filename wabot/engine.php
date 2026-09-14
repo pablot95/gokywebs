@@ -49,7 +49,7 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
         if ($vieja) {
             foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
                       'ultimo_bot','sistema_problema','sistema_actual','sistema_usuarios','productos_cantidad',
-                      'estilo','incluir'] as $k) {
+                      'estilo','incluir','combo_cursos'] as $k) {
                 $conv[$k] = null;
             }
             foreach (['referencia_preguntada','cta_muestra','seguimiento_enviado','espera_avisada',
@@ -206,7 +206,7 @@ function wabot_ejes_mixtos($texto) {
     // "vendo los kits", "vendo lana" no caían en ningún eje.
     if (!$ventaEsDelCurso
         && preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
-        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
+        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*|insumo\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
     if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
 
     return count($ejes) >= 2 ? $ejes : null;
@@ -1982,6 +1982,14 @@ function wabot_preguntas_del_mensaje($texto, $conv, $fase = null) {
         $k = wabot_info_por_palabras($parte, $fase);
         if ($k === null || !isset($perseguibles[$k])) continue;
         if (!wabot_info_clave_tiene_rastro($k, $parte, $conv)) continue;
+        /* "Y más adelante cargar cursos online también" cuenta lo que quiere,
+         * no pregunta quién carga el contenido: le salía el texto de la carga
+         * de productos pegado al precio (taller de artesanías, 14-sep). La
+         * carga solo cuenta como duda si está preguntada. */
+        if ($k === 'carga' && strpos($parte, '?') === false
+            && !preg_match('/\b(puedo|podemos|podria|se puede|quien|como|yo|lo hago|los cargo|las cargo|lo cargo|los subo)\b/u', wabot_normalizar_frase($parte))) {
+            continue;
+        }
         if (!in_array($k, $claves, true)) $claves[] = $k;
         if (count($claves) >= 4) break;
     }
@@ -3037,6 +3045,17 @@ function wabot_engine($texto, &$conv, $cfg) {
     $has  = function ($a) use ($acc) { return in_array($a, $acc, true); };
 
     /* ── Cortes globales (valen en cualquier fase) ── */
+    /* Tienda + cursos es un producto de lista desde el 14-sep (Pablo): se
+     * cotiza como tienda con el presupuesto combinado, en vez de derivar. Con
+     * otro tipo ya cotizado sigue el camino de siempre: no se le cambia el
+     * precio que tiene. */
+    if ($has('productos_y_cursos') && !$has('pide_humano') && !$has('quiere_avanzar')
+        && (empty($conv['precio_dado']) || ($conv['tipo'] ?? '') === 'ecommerce')) {
+        $conv['combo_cursos'] = true;
+        wabot_evento_sesion($conv, 'combo_tienda_cursos');
+        if (!empty($conv['precio_dado'])) return [wabot_precio_resumen($conv, $cfg)];
+        return wabot_precio('ecommerce', $conv, $cfg);
+    }
     if ($has('pide_humano') || $has('quiere_avanzar') || $has('productos_y_cursos')) {
         $causa = wabot_handoff_causa_explicita($texto);
         if ($causa === null && $has('productos_y_cursos')) $causa = 'productos_y_cursos';
@@ -5048,7 +5067,7 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
         ['{precio}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
         [$v['precio'] !== '' ? $v['precio'] : 'el pago inicial',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
-         (string)($d['link'] ?? ''), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
+         wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades],
         $t
     );
@@ -5624,6 +5643,10 @@ function wabot_propuesta_texto($tipo, $conv) {
     $paraQue = is_array($conv) && (string)($conv['pitch_para_que_tipo'] ?? '') === (string)$tipo
         ? trim((string)($conv['pitch_para_que'] ?? '')) : '';
     if ($paraQue !== '') return 'una web donde ' . $paraQue;
+    // Tienda + cursos (Pablo, 14-sep): se cotiza como tienda, con su propia frase.
+    if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
+        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con el acceso de cada alumno y el cobro online';
+    }
     $fijas = [
         'landing'      => 'una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp',
         'ecommerce'    => 'una web para vender online, con tu catálogo, carrito y cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos',
@@ -5861,6 +5884,11 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * a landing más arriba, y con precio_dado este guard no corre. */
     if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])) {
         $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));
+        // Tienda + cursos tiene precio de lista (14-sep): esos dos ejes solos no son mixtos.
+        if ($ejes !== null && !empty($conv['combo_cursos'])
+            && !array_diff(array_keys($ejes), ['productos', 'cursos'])) {
+            $ejes = null;
+        }
         $textoMixto = $ejes !== null ? wabot_texto_mixto($ejes, $cfg) : null;
         if ($textoMixto !== null) {
             $conv['mixto_avisado'] = true;

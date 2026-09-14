@@ -357,6 +357,21 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         return [wabot_texto_info($clavePlan, $cfg, $conv)];
     }
 
+    /* TIENDA + CURSOS, sin pasar por el modelo (Pablo, 14-sep). El taller de
+     * artesanías que quería vender insumos y más adelante cursos online se
+     * llevó "a partir de acá sigue el desarrollador", y en la batería el
+     * modelo a veces cotizaba y a veces le preguntaba si lo quería todo
+     * integrado. Tiene precio de lista: se cotiza siempre igual. */
+    if (empty($conv['precio_dado']) && empty($conv['tipo'])
+        && in_array($faseAtajo, ['nuevo', 'menu', 'algo_diferente'], true)) {
+        $ejesCombo = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv) . ' ' . (string)$mensaje);
+        if ($ejesCombo !== null && count($ejesCombo) === 2 && !array_diff(array_keys($ejesCombo), ['productos', 'cursos'])) {
+            $conv['combo_cursos'] = true;
+            wabot_evento_sesion($conv, 'combo_tienda_cursos', ['origen' => 'atajo']);
+            return wabot_precio('ecommerce', $conv, $cfg);
+        }
+    }
+
     /* Pregunta cerrada sobre algo que el bot acaba de explicar: la respuesta
      * concreta primero, y nada más. A Ana Sloog le repitió el bloque entero del
      * mantenimiento para contestarle si era opcional, cuando ese mismo bloque
@@ -1605,6 +1620,10 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
                         'type' => 'string',
                         'description' => 'OBLIGATORIO. Qué va a poder hacer el cliente —o sus clientes— con la web, dicho como la continuación de "podemos hacer una web donde…", en segunda persona (vos) y con las palabras del cliente cuando las dio. Ejemplos: centro de estética → "muestres los tratamientos y tus clientas reserven turno online"; "hago campeonatos de fútbol, necesito tablas, goleadores, equipos" → "cargues y actualices las tablas, los goleadores y los equipos"; ropa → "tus clientas vean las prendas y compren online"; cabañas → "muestres las cabañas con fotos y te consulten por WhatsApp". UNA sola frase corta, sin "donde" adelante. Solo lo que el cliente pidió o lo que ese tipo de web hace para su rubro: nada de apps, integraciones, facturación, Google ni redes, y carrito o cobro online solo en la tienda y en la plataforma de cursos. Sin precios, sin números, sin plazos, sin la palabra demo, sin links y sin preguntas: el precio y el resto del mensaje los pone el sistema.',
                     ],
+                    'con_cursos' => [
+                        'type' => 'boolean',
+                        'description' => 'true si el cliente vende productos Y ADEMÁS quiere cursos online, ahora o más adelante (va con tipo ecommerce): se cotiza tienda + cursos, con su presupuesto combinado y al mismo precio que la tienda.',
+                    ],
                 ],
                 /* rubro pasa a ser obligatorio (3-sep). Antes era opcional y el
                  * modelo lo omitía seguido: Henry (enfermería domiciliaria),
@@ -1759,6 +1778,23 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 && !(!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo)) {
                 $tipo = wabot_tipo_absorbido($tipo, $cfg);
             }
+            /* Tienda + cursos (Pablo, 14-sep): se cotiza como tienda, con el
+             * presupuesto combinado. Nunca le cambia el tipo a una charla ya
+             * cotizada con otro. */
+            if (!empty($args['con_cursos']) && in_array($tipo, ['ecommerce', 'elearning'], true)
+                && (empty($conv['precio_dado']) || ($conv['tipo'] ?? '') === 'ecommerce')) {
+                $tipo = 'ecommerce';
+                $conv['combo_cursos'] = true;
+            }
+            /* Y si el modelo se olvidó del argumento pero el cliente nombró las
+             * dos cosas —vender productos y dar cursos—, es el mismo caso. */
+            if (empty($conv['combo_cursos']) && empty($conv['precio_dado']) && in_array($tipo, ['ecommerce', 'elearning'], true)) {
+                $ejesCombo = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv) . ' ' . (string)$mensaje);
+                if ($ejesCombo !== null && count($ejesCombo) === 2 && !array_diff(array_keys($ejesCombo), ['productos', 'cursos'])) {
+                    $tipo = 'ecommerce';
+                    $conv['combo_cursos'] = true;
+                }
+            }
             /* El paraguas ("diseño", "eventos", "salud"...) va ANTES de cotizar.
              * El empujón que lo hacía después reemplazaba el globo del precio
              * por la pregunta pero dejaba el estado del pitch avanzado: Ximena
@@ -1825,6 +1861,11 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])
                 && !in_array($tipo, ['institucional'], true)) {
                 $ejesMixtos = wabot_ejes_mixtos($contextoCliente);
+                // Tienda + cursos tiene precio de lista desde el 14-sep: esos dos solos no frenan.
+                if ($ejesMixtos !== null && !empty($conv['combo_cursos'])
+                    && !array_diff(array_keys($ejesMixtos), ['productos', 'cursos'])) {
+                    $ejesMixtos = null;
+                }
                 if ($ejesMixtos !== null) {
                     $conv['mixto_avisado'] = true;
                     wabot_evento_sesion($conv, 'necesidad_mixta');
@@ -2456,6 +2497,12 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             return ['texto' => (string)($cfg['postdemo_pago_avisado'] ?? ''), 'terminal' => true];
 
         case 'derivar':
+            /* Tienda + cursos ya no se deriva (Pablo, 14-sep): tiene precio de lista. */
+            if (($args['causa'] ?? '') === 'productos_y_cursos'
+                && (empty($conv['precio_dado']) || ($conv['tipo'] ?? '') === 'ecommerce')) {
+                return ['error' => 'No derives: tienda + cursos es un producto de lista, con precio.',
+                        'nota' => "Cotizalo con dar_precio(tipo='ecommerce', con_cursos=true), con su rubro y para_que."];
+            }
             $causa = wabot_agente_handoff_causa($conv, $args);
             if ($causa === null) {
                 wabot_evento_o_diferir($conv, 'handoff_rechazado', [
@@ -2770,7 +2817,7 @@ Si da o vende cursos, antes de cotizar preguntale si quiere venderlos desde la w
 
 MÁS DE UN NEGOCIO O MÁS DE UNA WEB
 Si el cliente menciona que necesita una web para más de un negocio distinto, o dos sitios con propósitos totalmente distintos (por ejemplo "tengo una ferretería y también un local de ropa", "necesito una landing para mi consultorio y otra página para un emprendimiento aparte"), NO elijas uno solo y descartes el otro en silencio. Decile que cada web se cotiza por separado y preguntale con cuál arrancan primero. Cotizá esa con dar_precio como siempre. Si más adelante en la misma charla pide el precio de la otra, llamá a dar_precio de nuevo para ese segundo tipo — nunca sumes ni mezcles dos tipos en un mismo llamado.
-Esto es distinto de vender productos y cursos EN LA MISMA web (ese caso sigue yendo a productos_y_cursos): acá son negocios o sitios realmente separados.
+Esto es distinto de vender productos y cursos EN LA MISMA web (ese caso se cotiza con dar_precio(tipo='ecommerce', con_cursos=true)): acá son negocios o sitios realmente separados.
 Si llega al prediseño y pide uno para cada web, avanzá con el primero como siempre; para el segundo llamá a derivar aclarando que hay una segunda web pendiente de cotizar — un solo prediseño automático es por conversación, el resto lo coordina Pablo directo.
 
 EMPRESA O INSTITUCIÓN
@@ -2811,7 +2858,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Los precios los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes. El texto que te devuelve ya trae el link del presupuesto: mandalo completo, no lo recortes. Si más adelante te pide que se lo repitas, usá consultar_info('precio_cotizado').
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
-- Si vende productos Y ADEMÁS cursos online, no cotices: solicitá derivar con causa productos_y_cursos.
+- Si vende productos Y ADEMÁS quiere cursos online, ahora o más adelante (una tienda de insumos y los cursos de su taller), NO derives: es un producto de lista, tienda + cursos. Cotizalo con dar_precio(tipo='ecommerce', con_cursos=true): sale al mismo precio que la tienda y con su presupuesto combinado.
 - Las dudas sobre cómo trabajamos, pago, plazos, hosting, el plan mensual y si es obligatorio (mantenimiento), qué pasa si deja de pagar o si hay permanencia (baja_del_plan), carga de productos, logo, marketing, reuniones, tecnología, si hacemos páginas web (que_hacemos), si funciona sin internet (internet), pixel/analytics (pixel), desconfianza o pedido de referencias (confianza), el rango general de precios (rangos), de dónde somos o si tenemos oficina (ubicacion), los accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), las casillas de correo corporativas (emails), si entregamos el código o un backup (entrega_codigo), las licencias de plugins o SDK (licencias), si hay manual de uso (manual), si la web puede estar en otros idiomas (bilingue), si puede tener turnos o reservas online (turnos), si los clientes se pueden registrar o hay área de socios (usuarios), si el dominio puede ser .com (dominio_com), si tiene estadísticas o se ve cuánta gente entra (estadisticas), si tenemos ejemplos o trabajos de un rubro para mostrar (ejemplos), si pasamos el contenido de su web actual (migracion), si se pueden hacer formularios o encuestas (formularios), si la web lleva imágenes (imagenes_web), cómo se manejan los envíos y si la tienda calcula sola el costo (envios), cómo cobrarles a sus clientes con Mercado Pago (cobros_tienda), cómo crear cupones de descuento para sus clientes (cupones), cómo funciona la tienda de punta a punta —el cliente compra y él despacha— (como_funciona_tienda), qué más se le puede incluir a la web (que_incluye) y si hace falta estar inscripto o tener monotributo (inscripcion) se contestan llamando a consultar_info.
 - 'otra' es el ÚLTIMO recurso, no el primero: decir que la duda la contesta el desarrollador cuando la respuesta existe hace parecer que no conocés lo que vendés. Antes de usarla, fijate si entra en alguna clave de arriba. Y si el mensaje no es una pregunta —un 'dale', un 'gracias', un 'bueno, aguardo entonces'— no llames a consultar_info: contestá una línea corta o nada. Nunca de memoria. Elegí la clave por el sentido de la pregunta, no por la palabra exacta: la gente escribe con errores y a su manera.
 - 'otra' se reserva para funciones realmente especiales (integraciones raras, sistemas a medida, algo fuera de la lista de precios). NO la uses para nada de esto, que ya sabés contestar: qué diferencia hay entre dos tipos de web, cuánto sale la otra modalidad, qué es una landing, quién carga los productos, cómo sigue el proceso, ni cuando el cliente solo está diciendo a qué se dedica. Ejemplos reales que NUNCA debieron llevarse el comodín, con lo que correspondía: "Es para una página de reseñas" → es el rubro, seguí el flujo. Una foto del logo → no es una pregunta, agradecé en una línea. "Qué diferencia hay entre una y otra?" → explicás la diferencia, que ya la sabés.

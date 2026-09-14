@@ -183,7 +183,9 @@ caso('solo mostrarlos → landing', strpos(implode("\n", (array)$r), '$40.000') 
 $c = conv_nueva();
 clasifica(['productos_y_cursos']);
 $r = wabot_engine('vendo velas y doy talleres', $c, $cfg);
-caso('productos + cursos → deriva sin precio', $r === [$cfg['derivar']] && $c['fase'] === 'derivado');
+caso('productos + cursos → cotiza tienda + cursos, no deriva (Pablo, 14-sep)',
+    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['combo_cursos']) && $c['fase'] !== 'derivado'
+    && strpos(implode("\n", (array)$r), 'presupuestos/ecommerceelearning') !== false);
 
 echo "— Después del precio —\n";
 
