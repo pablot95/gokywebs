@@ -1,0 +1,47 @@
+[
+  {
+    "file": "san-roque.webp",
+    "source": "https://commons.wikimedia.org/wiki/File:Lago_San_Roque_-_C%C3%B3rdoba.jpg",
+    "author": "LuigiStudio",
+    "license": "CC BY-SA 4.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "use": "Fotografía real del lago; no representa la vista exacta desde el alojamiento.",
+    "modifications": "Redimensionado y convertido a WebP; recorte visual con object-fit en la página."
+  },
+  {
+    "file": "refugio.webp",
+    "source": "https://www.pexels.com/photo/modern-wooden-cabin-in-forest-setting-at-dusk-34148338/",
+    "author": "Fernanda Neitzel",
+    "license": "Pexels",
+    "license_url": "https://www.pexels.com/license/",
+    "use": "Exterior de referencia, no pertenece al alojamiento.",
+    "modifications": "Redimensionado y convertido a WebP; recorte visual con object-fit en la página."
+  },
+  {
+    "file": "descanso.webp",
+    "source": "https://www.pexels.com/photo/cozy-a-frame-cabin-bedroom-interior-with-forest-view-34944273/",
+    "author": null,
+    "license": "Pexels",
+    "license_url": "https://www.pexels.com/license/",
+    "use": "Dormitorio de referencia, no pertenece al alojamiento.",
+    "modifications": "Redimensionado y convertido a WebP; recorte visual con object-fit en la página."
+  },
+  {
+    "file": "terraza.webp",
+    "source": "https://www.pexels.com/photo/table-on-a-terrace-9433045/",
+    "author": null,
+    "license": "Pexels",
+    "license_url": "https://www.pexels.com/license/",
+    "use": "Terraza de referencia, no pertenece al alojamiento.",
+    "modifications": "Redimensionado y convertido a WebP; recorte visual con object-fit en la página."
+  },
+  {
+    "file": "interior.webp",
+    "source": "https://www.pexels.com/photo/inside-a-wooden-cabin-9056669/",
+    "author": null,
+    "license": "Pexels",
+    "license_url": "https://www.pexels.com/license/",
+    "use": "Interior de referencia, no pertenece al alojamiento.",
+    "modifications": "Redimensionado y convertido a WebP; recorte visual con object-fit en la página."
+  }
+]
