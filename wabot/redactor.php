@@ -454,7 +454,8 @@ function wabot_responder($texto, &$conv, $cfg) {
      * arriba y los pasos se vuelven a pegar tal cual. */
     $precioParte = $base[0];
     $pasosParte  = '';
-    $cabezaPasos = trim((string)strstr(trim((string)($cfg['msg_tres_pasos'] ?? '')) . "\n", "\n", true));
+    // Desde el 14-sep lo que no se reescribe es el servicio mensual con lo que incluye.
+    $cabezaPasos = 'Trabajamos con un servicio mensual';
     if ($cabezaPasos !== '') {
         $corte = mb_strpos($base[0], "\n\n" . $cabezaPasos);
         if ($corte !== false) {

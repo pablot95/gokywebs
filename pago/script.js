@@ -1,22 +1,22 @@
-/* Página del primer pago — sin wizard, para el cliente que ya vio la muestra
-   y quiere avanzar. Con ?monto= en la URL va derecho al checkout de Mercado
-   Pago (ver "Auto-redirect" al final del archivo); la página completa con
-   los dos medios (transferencia o form manual de MP) queda de fallback.
+/* Página de pago puntual — sin wizard. Con ?monto= en la URL va derecho al
+   checkout de Mercado Pago (ver "Auto-redirect" al final del archivo); la
+   página completa con los dos medios (transferencia o form manual de MP)
+   queda de fallback.
 
-   Monto dinámico por link: gokywebs.com/pago?monto=40000 cobra exactamente
-   ese valor (Pablo arma el link con el primer pago de cada cliente: 40.000
-   para sitio profesional, 50.000 para tienda online, cursos e inmobiliaria,
-   o cualquier otro importe puntual — adicional, carga de productos, etc.).
-   Sin el parámetro, cae al default $50.000. El plan mensual NO se cobra por
-   acá: va por suscripción de Mercado Pago (/mantenimientomensual y
-   /mantenimientoweb).
+   Monto dinámico por link: gokywebs.com/pago?monto=15000 cobra exactamente
+   ese valor, por única vez (Pablo arma el link con el importe puntual de cada
+   cliente: carga de productos, un pago único que pidió el cliente, etc.).
+   Desde el 14-sep-2026 no hay monto por defecto (el que había era el del
+   modelo anterior): sin ?monto= válido no se ofrece el pago con
+   Mercado Pago, porque no hay importe que cobrar, y quedan la transferencia y
+   los links de suscripción. El servicio mensual NO se cobra por acá: va por
+   suscripción de Mercado Pago (/mantenimientomensual y /mantenimientoweb).
    OJO: es "monto", no "pago" — "?pago=fallido" ya existe en esta misma
    página para el aviso de pago rechazado (ver checkFailedPayment más abajo);
    reusar esa clave para el monto lo pisaría. */
 
 const WHATSAPP_NUMBER = '5491125068578'; // número real de Gokywebs (mismo que el resto del sitio)
 const ALIAS = 'pablotravis';
-const MONTO_DEFAULT = 50000;
 
 function getMontoFromQuery() {
     const raw = new URLSearchParams(window.location.search).get('monto');
@@ -28,14 +28,30 @@ function getMontoFromQuery() {
 }
 
 const MONTO_PARAM = getMontoFromQuery(); // null si no vino ?monto= o vino inválido
-const MONTO = MONTO_PARAM ?? MONTO_DEFAULT;
-const MONTO_FMT = '$' + MONTO.toLocaleString('es-AR');
+const MONTO = MONTO_PARAM; // sin default: sin monto no hay nada que cobrar por Mercado Pago
+const MONTO_FMT = MONTO !== null ? '$' + MONTO.toLocaleString('es-AR') : '';
 
 function pintarMonto() {
-    ['montoTitle', 'montoTransfer', 'montoTimeline', 'montoRedirect'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = MONTO_FMT;
-    });
+    if (MONTO === null) {
+        // Sin monto el form de Mercado Pago no tiene qué cobrar: se oculta (con
+        // style, porque el form trae display:flex inline y le gana a `hidden`) y
+        // queda el aviso para pedir el link por WhatsApp.
+        const form = document.getElementById('mpForm');
+        if (form) form.style.display = 'none';
+        const aviso = document.getElementById('mpSinMonto');
+        if (aviso) aviso.hidden = false;
+        return;
+    }
+    const title = document.getElementById('montoTitle');
+    if (title) title.textContent = 'los ' + MONTO_FMT;
+    const transfer = document.getElementById('montoTransfer');
+    if (transfer) transfer.textContent = ' · ' + MONTO_FMT;
+    const redirect = document.getElementById('montoRedirect');
+    if (redirect) {
+        const monto = document.createElement('strong');
+        monto.textContent = MONTO_FMT;
+        redirect.replaceChildren(' para pagar ', monto);
+    }
 }
 pintarMonto();
 
@@ -71,9 +87,10 @@ document.getElementById('btnCopyAlias')?.addEventListener('click', async () => {
    si no, un mensaje genérico igual de válido. */
 function updateTransferLink() {
     const nombre = document.getElementById('mp-nombre')?.value.trim();
+    const transferi = MONTO_FMT ? `Transferí ${MONTO_FMT}` : 'Hice la transferencia';
     const lines = nombre
-        ? [`Hola! Soy ${nombre}.`, `Transferí ${MONTO_FMT} para mi proyecto, ya te paso el comprobante.`]
-        : [`Hola! Transferí ${MONTO_FMT} para mi proyecto, ya te paso el comprobante.`];
+        ? [`Hola! Soy ${nombre}.`, `${transferi} para mi proyecto, ya te paso el comprobante.`]
+        : [`Hola! ${transferi} para mi proyecto, ya te paso el comprobante.`];
     const link = document.getElementById('btnWspTransfer');
     if (link) link.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join(' '))}`;
 }
@@ -118,6 +135,7 @@ function validateForm() {
 
 async function handlePayment(e) {
     e.preventDefault();
+    if (MONTO === null) { toast('Pedinos por WhatsApp el link con el monto a pagar.', 'error'); return; }
     if (!validateForm()) { toast('Completá tu nombre y WhatsApp', 'error'); return; }
 
     const nombre   = document.getElementById('mp-nombre').value.trim();

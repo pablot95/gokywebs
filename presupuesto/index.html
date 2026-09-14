@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculá tu plan web | Gokywebs</title>
     <link rel="icon" type="image/png" href="../logo.png">
-    <meta name="description" content="Respondé 3 preguntas y conocé al instante el primer pago y el plan mensual de tu web a medida, con hosting, dominio y soporte incluidos.">
+    <meta name="description" content="Respondé 3 preguntas y conocé al instante el servicio mensual de tu web a medida, con hosting, dominio, soporte y mantenimiento incluidos.">
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,9 +45,9 @@
     </div>
 
     <div class="live-budget" id="liveBudget" aria-live="polite">
-        <span class="live-budget-label">Primer pago</span>
+        <span class="live-budget-label">Servicio mensual</span>
         <strong id="liveBudgetTotal">$0</strong>
-        <small id="liveBudgetDetail">Después $0/mes</small>
+        <small id="liveBudgetDetail">por mes, todo incluido</small>
     </div>
 
     <div class="step-card active" id="step-1">
@@ -123,7 +123,7 @@
     <div class="step-card" id="step-3">
         <p class="step-label">Paso 3 de 3</p>
         <h2 class="step-question">Todo esto viene incluido</h2>
-        <!-- Lo llena renderStep3Context(): lista de INCLUDES[tipo] + primer pago y mensualidad. -->
+        <!-- Lo llena renderStep3Context(): lista de INCLUDES[tipo] + el servicio mensual. -->
         <div id="func-included" style="margin-bottom:1.5rem;padding:1rem 1.1rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)"></div>
         <p class="form-helper" style="margin-top:0;margin-bottom:0.9rem">Necesitás algo que no está en la lista? Contanos y lo vemos juntos.</p>
         <div class="custom-request-wrap" style="margin-top:0">
@@ -146,19 +146,15 @@
                 <p class="includes-title">Tu web incluye</p>
                 <ul class="includes-list" id="includesList"></ul>
                 <div class="price-totals">
-                    <!-- Dos filas del mismo peso: el primer pago y el plan mensual son
-                         cosas distintas y nunca se suman en un total. -->
+                    <!-- Un solo número (modelo 14-sep-2026): el servicio mensual. No hay
+                         pago inicial; el primer débito de la suscripción arranca la web. -->
                     <div class="price-final-group">
-                        <div class="price-final-row">
-                            <span class="label">Primer pago</span>
-                            <span class="value" id="priceFinal">$0</span>
-                        </div>
                         <div class="price-final-row price-final-mensual">
-                            <span class="label">Plan mensual <small>arranca a los 7 días</small></span>
-                            <span class="value" id="priceMensual">$0/mes</span>
+                            <span class="label">Servicio mensual <small>sin pago inicial, todo incluido</small></span>
+                            <span class="value" id="priceFinal">$0/mes</span>
                         </div>
                     </div>
-                    <p class="plan-note">El primer pago se hace por transferencia o con tarjeta, hasta en 12 cuotas con interés. El plan mensual va por suscripción automática de Mercado Pago, incluye hosting, dominio, soporte y un cambio por mes, y se actualiza una vez al año. Sin permanencia: lo das de baja cuando quieras; la web funciona mientras el plan esté activo.</p>
+                    <p class="plan-note">Se cobra por suscripción automática de Mercado Pago: con el primer débito arrancamos con el desarrollo y en unos 7 días tu web queda publicada. Incluye hosting, dominio, el panel para editar vos mismo los textos y las imágenes y un cambio por mes. Incluye el mantenimiento técnico de la web: actualizaciones de sistemas, plugins, SDKs e integraciones externas, corrección de errores, compatibilidad con servicios de terceros, seguridad, soporte y los ajustes necesarios para que la página se mantenga operativa y actualizada. Sin permanencia: la cancelás cuando quieras; si se cancela la suscripción, la web deja de estar publicada. El valor se actualiza una vez al año.</p>
                 </div>
                 <button type="button" class="btn-muestra" id="btnMuestraGratis" style="margin-top:0.75rem">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -188,8 +184,8 @@
     <div class="checkout-section" id="checkoutSection">
         <div class="checkout-card">
             <div class="checkout-header">
-                <h2>Completá tus datos para el primer pago</h2>
-                <p>Tu información está protegida. El pago se procesa con Mercado Pago.</p>
+                <h2>Completá tus datos para suscribirte</h2>
+                <p>Tu información está protegida. La suscripción se procesa con Mercado Pago.</p>
             </div>
             <div class="checkout-body">
                 <div class="checkout-summary">
@@ -198,11 +194,7 @@
                         <p class="cs-value" id="summTypeName">—</p>
                     </div>
                     <div>
-                        <p class="cs-label">Primer pago (hoy)</p>
-                        <p class="cs-primer-pago" id="summPrimerPago">—</p>
-                    </div>
-                    <div>
-                        <p class="cs-label">Plan mensual (arranca a los 7 días)</p>
+                        <p class="cs-label">Servicio mensual (sin pago inicial)</p>
                         <p class="cs-mensualidad" id="summMensualidad">—</p>
                     </div>
                 </div>
@@ -255,9 +247,9 @@
 
                     <button type="submit" class="btn-pay" id="btnPay">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        Abonar el primer pago con Mercado Pago
+                        <span id="btnPayLabel">Suscribirme al servicio mensual</span>
                     </button>
-                    <p class="cs-note">Este es el primer pago. Con tarjeta podés hacerlo hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta. El plan mensual arranca a los 7 días, por suscripción automática de Mercado Pago.</p>
+                    <p class="cs-note">Te llevamos a la suscripción de Mercado Pago: podés suscribirte aunque no tengas cuenta. Con el primer débito arrancamos con el desarrollo y en unos 7 días tu web queda publicada. Sin permanencia: la cancelás cuando quieras desde Mercado Pago, o llamando al banco emisor de la tarjeta si te suscribiste sin cuenta.</p>
                     <div class="mp-seal">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         Pago 100% seguro · SSL encriptado · Mercado Pago
@@ -314,16 +306,16 @@
             <div class="ctm-step">
                 <div class="ctm-step-num">2</div>
                 <div class="ctm-step-body">
-                    <h3>Primer pago</h3>
-                    <p>Luego se abona el primer pago para arrancar con los cambios y dejar la web totalmente funcional. Se hace por transferencia o con tarjeta, hasta en 12 cuotas con interés. La web queda lista en unos <strong>7 días</strong> desde el primer pago y la entrega del contenido.</p>
+                    <h3>Servicio mensual</h3>
+                    <p>Si te gusta, te suscribís al servicio mensual por Mercado Pago. No hay pago inicial: con ese primer débito arrancamos con los cambios y dejamos la web totalmente funcional.</p>
                 </div>
             </div>
 
             <div class="ctm-step">
                 <div class="ctm-step-num">3</div>
                 <div class="ctm-step-body">
-                    <h3>Plan mensual</h3>
-                    <p>Luego a los 7 días comienza el plan mensual, por suscripción automática de Mercado Pago. Incluye hosting, dominio, soporte, un panel para editar vos mismo los textos y las imágenes y <strong>un cambio por mes</strong>. Sin permanencia: lo das de baja cuando quieras; la web funciona mientras el plan esté activo.</p>
+                    <h3>Web publicada</h3>
+                    <p>En unos <strong>7 días</strong> tu web queda publicada y funcionando. El servicio incluye hosting, dominio, soporte, un panel para editar vos mismo los textos y las imágenes, <strong>un cambio por mes</strong> y el mantenimiento técnico. Sin permanencia: lo cancelás cuando quieras; si se cancela la suscripción, la web deja de estar publicada.</p>
                 </div>
             </div>
 
@@ -348,7 +340,7 @@
                 <span class="ctm-info-icon">🔒</span>
                 <div>
                     <strong>Nos ocupamos de todo</strong>
-                    <span>Hosting, dominio, soporte y cambios corren por nuestra cuenta mientras dure tu plan. Vos te olvidás de todo.</span>
+                    <span>Hosting, dominio, soporte y cambios corren por nuestra cuenta mientras dure tu suscripción. Vos te olvidás de todo.</span>
                 </div>
             </div>
         </div>
@@ -358,7 +350,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 Contratar ahora
             </button>
-            <p class="ctm-cta-note">Te llevamos al formulario del primer pago</p>
+            <p class="ctm-cta-note">Te llevamos al formulario de suscripción</p>
         </div>
 
     </div>
@@ -407,6 +399,6 @@
     </div>
 </div>
 
-<script type="module" src="script.js?v=20260910"></script>
+<script type="module" src="script.js?v=20260914"></script>
 </body>
 </html>

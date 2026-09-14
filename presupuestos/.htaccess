@@ -16,4 +16,5 @@ RedirectMatch 301 ^/presupuestos/Noticias/?$         /presupuestos/noticias/
 # ecommerceelearning y noticias) siguen teniendo su página para los
 # presupuestos ya entregados: no se borran ni se redirigen, porque el cliente
 # que la abre tiene que ver lo que le cotizamos. Las cinco se migraron igual
-# al modelo nuevo de primer pago + plan mensual (10-sep-2026).
+# al modelo de primer pago + plan mensual (10-sep-2026) y después al servicio
+# mensual por suscripción, sin pago inicial (14-sep-2026).

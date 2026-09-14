@@ -1,4 +1,11 @@
 <?php
+/* SIN USO desde el 14-sep-2026. El modelo pasó a servicio mensual por
+   suscripción, sin pago inicial: el paso de pago de la calculadora
+   (presupuesto/script.js → handlePayment) ya no llama a este archivo, manda
+   al link de suscripción de Mercado Pago del tipo de web. Queda en su lugar
+   para que una pestaña que todavía tenga el script viejo no reciba un error.
+   Los montos y textos de abajo son los del modelo anterior (primer pago): no
+   volver a usarlo sin revisarlos. */
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');

@@ -242,8 +242,8 @@ input, select, textarea { font-family: var(--font); }
     color: #111827;
 }
 
-/* La mensualidad va al lado del primer pago (nunca sumada) y se ve también
-   en mobile: antes este detalle se ocultaba en pantallas chicas. */
+/* Detalle chico al lado del monto del servicio mensual ("por mes, todo
+   incluido"). Se ve también en mobile: antes se ocultaba en pantallas chicas. */
 .live-budget small {
     font-size: 0.78rem;
     font-weight: 700;
@@ -357,9 +357,8 @@ input, select, textarea { font-family: var(--font); }
 .include-item .inc-label { font-weight: 500; color: #111827; }
 
 .price-totals { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 1.25rem; }
-/* Primer pago y plan mensual (10-sep-2026): dos filas con el MISMO peso
-   visual y nunca sumadas en un total. La mensualidad va en azul para que se
-   lea como lo recurrente, con el mismo tamaño que el primer pago. */
+/* Servicio mensual (14-sep-2026, sin pago inicial): queda una sola fila, la
+   de .price-final-mensual, en azul para que se lea como lo recurrente. */
 .price-final-group { display: flex; flex-direction: column; gap: 0.55rem; }
 .price-final-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
 .price-final-row .label { font-size: 1rem; font-weight: 700; color: #111827; }

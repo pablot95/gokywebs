@@ -48,30 +48,30 @@ $r = wabot_pitch('landing', $c, $cfg);
 $precio = wabot_personalizar($r[0], $c);
 $pasos = wabot_personalizar($r[1] ?? '', $c);
 caso('sin rubro ni para_que arranca "Podemos hacer" con la frase fija del sitio profesional',
-    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp. Podés ver los detalles en ") === 0, $precio);
+    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.\n\nTrabajamos con un servicio mensual") === 0, $precio);
 caso('YA NO hay párrafo suelto de montos: eso lo dicen los pasos (11-sep, tercera versión)',
     mb_stripos($precio, 'Empezás con un primer pago') === false, $precio);
-caso('el link del presupuesto cierra el primer mensaje; los pasos arrancan el segundo (14-sep)',
-    preg_match('/ Podés ver los detalles en gokywebs\.com\/presupuestos\/\S+$/u', $precio) === 1
-    && mb_strpos($pasos, 'Así trabajamos:') === 0, $precio);
+caso('la oferta termina en el punto, abajo va el servicio mensual sin link y la demo arranca el segundo mensaje (14-sep)',
+    preg_match('/\.\n\nTrabajamos con un servicio mensual/u', $precio) === 1 && strpos($precio, 'presupuestos/') === false
+    && mb_strpos($pasos, 'El primer paso es gratis:') === 0, $precio);
 caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos($precio . $pasos, 'primer pago') === false);
 /* 14-sep: los pasos explayados, con los montos adentro, van en un segundo
  * mensaje, 2 segundos después del precio. */
 caso('son dos mensajes: el segundo, los tres pasos con la pregunta, textuales',
     count($r) === 2
     && $pasos === str_replace(['{precio}', '{mensualidad}'], ['$40.000', '$15.000'], wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta(), $pasos);
-caso('el paso 2 dice el pago inicial de lo cotizado y para qué es',
-    mb_strpos($pasos, '2. Si querés avanzar, se abona un pago inicial de $40.000.') !== false);
-caso('y el paso 3, el abono mensual obligatorio con su monto, qué incluye y que sin abono la web se da de baja',
-    mb_strpos($pasos, '3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de $15.000, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico. Si el abono se da de baja, la web deja de estar publicada.') !== false);
+caso('el primer mensaje dice el servicio mensual con su monto',
+    mb_strpos($precio, 'Trabajamos con un servicio mensual: para un sitio profesional son $20.000 por mes') !== false);
+caso('y el mantenimiento técnico, con las palabras de Pablo',
+    mb_strpos($precio, 'actualizaciones de sistemas, plugins, SDKs e integraciones externas') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
 $c['pitch_para_que'] = 'muestres los tratamientos y tus clientas reserven turno online';
 $c['pitch_para_que_tipo'] = 'landing';
 $r = wabot_pitch('landing', $c, $cfg);
-caso('con rubro y para_que sale la oración que dictó Pablo, con el link pegado',
-    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online. Podés ver los detalles en gokywebs.com/presupuestos/sitioprofesional") === 0,
+caso('con rubro y para_que sale la oración que dictó Pablo, sin link (14-sep)',
+    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nTrabajamos con un servicio mensual") === 0,
     wabot_personalizar($r[0], $c));
 
 foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una web para publicar tus propiedades',
@@ -79,9 +79,8 @@ foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una we
     $c = conv_tv('5491166660003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
-    caso("$tipo: la frase fija de su tipo y \$50.000 + \$25.000 por mes",
-        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'pago inicial de $50.000') !== false
-        && strpos($t, 'abono mensual de $25.000') !== false, $t);
+    caso("$tipo: la frase fija de su tipo y \$30.000 por mes",
+        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'son $30.000 por mes') !== false, $t);
 }
 
 /* El que pregunta "cuánto sale" antes de decir el rubro entra por el camino
@@ -94,14 +93,14 @@ $r = wabot_precio('ecommerce', $c, $cfg);
 caso('el que pidió el precio de entrada recibe el mismo formato',
     strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería podemos hacer una web para vender online') === 0
     && mb_stripos($r[0], 'para lo tuyo va') === false, $r[0]);
-caso('con los tres pasos en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'Así trabajamos') !== false);
+caso('con los tres pasos en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'El primer paso es gratis') !== false);
 
 $c = conv_tv('5491166660005TEST');
 $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
 caso('el que pidió la demo al entrar: precio con los tres pasos sin la pregunta, y el formulario atrás',
     count($r) === 3 && wabot_texto_arranca_con_propuesta($r[0]) && strpos($r[1], wabot_tres_pasos_pregunta()) === false
-    && mb_stripos($r[1], 'Así trabajamos') !== false
+    && mb_stripos($r[1], 'El primer paso es gratis') !== false
     && strpos($r[2], 'gokywebs.com/form/') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 /* Cotizada antes del 10-sep, sin precio congelado: conserva su pago único y

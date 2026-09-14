@@ -932,7 +932,8 @@ let presupuestos = [];
 let leads = [];
 let completados = [];
 let tareas = [];
-let mantenimiento = [];
+let mantenimiento = [];          // suscriptores (sin los avisos de baja / pausa)
+let mantenimientoAvisos = [];    // avisos de baja / pausa que deja el webhook de MP en la misma colección
 let presupuestoFunnel = [];
 let resenas = [];
 let paletasElegidas = [];
@@ -971,25 +972,27 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PLAN MENSUAL — modelo comercial del 10-sep-2026
-   Primer pago + plan mensual obligatorio, que arranca a los 7 días del
-   primer pago y se cobra por suscripción de Mercado Pago. Mismos montos que
-   PRIMER_PAGO / MENSUALIDAD de /presupuesto/script.js (mantener sincronizados).
-   Ya no hay saldo: en `clientes` los campos nuevos (planLabel, primerPago,
-   primerPagoAt, montoMensual, estadoSuscripcion, suscripcionDesde,
-   preapprovalId) se escriben ADEMÁS de los viejos (`valorTotal` = primer
-   pago, `abono`), que quedan por compatibilidad con los docs anteriores.
+   PLAN MENSUAL — modelo comercial del 14-sep-2026
+   Sin pago inicial y sin permanencia: solo la suscripción mensual de Mercado
+   Pago, que arranca cuando el cliente se suscribe. Misma mensualidad que
+   /presupuesto/script.js (mantener sincronizados).
+   Del modelo del 10-sep-2026 (primer pago + plan mensual) quedan en `clientes`
+   primerPago / primerPagoAt: en los docs nuevos van en 0 / null y el panel los
+   muestra, como "modelo anterior", solo en los docs que los traen cargados.
+   Los campos viejos `valorTotal` y `abono` siguen por compatibilidad.
    ═══════════════════════════════════════════════════════════ */
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    primerPago: 40000, mensual: 15000 },
-    ecommerce:    { label: "Ecommerce",            primerPago: 50000, mensual: 25000 },
-    cursos:       { label: "Plataforma de cursos", primerPago: 50000, mensual: 25000 },
-    inmobiliaria: { label: "Inmobiliaria",         primerPago: 50000, mensual: 25000 },
-    noticias:     { label: "Portal de noticias",   primerPago: 50000, mensual: 25000 },
+    profesional:  { label: "Sitio profesional",    primerPago: 0, mensual: 20000 },
+    ecommerce:    { label: "Ecommerce",            primerPago: 0, mensual: 30000 },
+    cursos:       { label: "Plataforma de cursos", primerPago: 0, mensual: 30000 },
+    inmobiliaria: { label: "Inmobiliaria",         primerPago: 0, mensual: 30000 },
+    noticias:     { label: "Portal de noticias",   primerPago: 0, mensual: 30000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { primerPago: 50000, mensual: 25000 };
+const PLAN_RESTO = { primerPago: 0, mensual: 30000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
+// Modelo del 10-sep-2026: el plan arrancaba a los 7 días del primer pago. Solo
+// cuenta para los clientes que tienen el primer pago registrado.
 const DIAS_HASTA_EL_PLAN = 7;
 
 function _num(v) {
@@ -1047,14 +1050,17 @@ function propuestaDeCliente(c) {
 
 /* Suscriptor de Mantenimiento (lo escribe el webhook de Mercado Pago) que
    corresponde a un cliente: por ID de la suscripción, email o WhatsApp. Las
-   colecciones no se fusionan; solo se cruzan al pintar. */
+   colecciones no se fusionan; solo se cruzan al pintar. Por email o WhatsApp
+   puede haber más de una suscripción (se dio de baja y se volvió a suscribir):
+   manda la que no tiene baja. */
 function mantenimientoDeCliente(c) {
     const pre = String(c.preapprovalId || "").trim();
     const email = String(c.email || "").trim().toLowerCase();
     const tel = cleanArgPhone(c.telefono);
+    const vigente = lista => lista.find(m => avisoMantDe(m)?.tipoEvento !== "baja") || lista[0] || null;
     return (pre && mantenimiento.find(m => m.id === pre || String(m.preapprovalId || "").trim() === pre))
-        || (email && mantenimiento.find(m => String(m.email || "").trim().toLowerCase() === email))
-        || (tel.length >= 8 && mantenimiento.find(m => cleanArgPhone(m.whatsapp) === tel))
+        || (email && vigente(mantenimiento.filter(m => String(m.email || "").trim().toLowerCase() === email)))
+        || (tel.length >= 8 && vigente(mantenimiento.filter(m => cleanArgPhone(m.whatsapp) === tel)))
         || null;
 }
 
@@ -1067,30 +1073,37 @@ function _sumarDias(fecha, dias) {
     return new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate() + dias, 12);
 }
 
-/* Cómo se ve la suscripción de un cliente en el tab Clientes. Una baja cargada
-   a mano manda; si no, un suscriptor activo en Mantenimiento la vuelve
-   'activa'; si no, vale lo guardado ('pendiente' por defecto). El inicio es el
-   guardado, o el primer pago + 7 días, o el alta en Mercado Pago. */
+/* Cómo se ve la suscripción de un cliente en el tab Clientes. Una baja manda:
+   la cargada a mano o el aviso de baja que deja el webhook cuando la suscripción
+   se cancela en Mercado Pago. Si no, un suscriptor activo en Mantenimiento (sin
+   aviso de pausa) la vuelve 'activa'; si no, vale lo guardado ('pendiente' por
+   defecto). El inicio es el guardado, o el primer pago + 7 días (modelo
+   anterior), o el alta en Mercado Pago. */
 function suscripcionDe(c) {
     const plan = planDe(c, propuestaDeCliente(c));
     const mant = mantenimientoDeCliente(c);
+    const aviso = avisoMantDe(mant || c);
     const primerPagoAt = mantToDate(c.primerPagoAt);
     const inicio = mantToDate(c.suscripcionDesde)
         || (primerPagoAt ? _sumarDias(primerPagoAt, DIAS_HASTA_EL_PLAN) : null)
         || mantToDate(mant?.createdAt);
     const desde = inicio ? new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate()) : null;
-    const mantActivo = !!mant && (mant.estado || "activo") === "activo";
-    const estado = c.estadoSuscripcion === "baja" ? "baja"
+    const mantActivo = !!mant && !aviso && (mant.estado || "activo") === "activo";
+    const estado = (c.estadoSuscripcion === "baja" || aviso?.tipoEvento === "baja") ? "baja"
         : (mantActivo || c.estadoSuscripcion === "activa") ? "activa"
         : "pendiente";
     return {
         plan,
         mensual: _num(c.montoMensual) || _num(mant?.monto) || plan.mensual,
-        primerPago: plan.primerPago,
+        // Sin pago inicial desde el 14-sep-2026: solo el que el doc tiene cargado
+        // (modelo anterior), nunca uno sugerido por el boceto.
+        primerPago: _num(c.primerPago) || (primerPagoAt ? plan.primerPago : 0),
         primerPagoAt,
         desde,
         estado,
         mant,
+        // Aviso de baja / pausa de Mercado Pago que dejó el webhook, o null.
+        aviso,
         porActivar: estado === "pendiente" && !!desde && desde <= new Date(),
         preapprovalId: String(c.preapprovalId || mant?.preapprovalId || "").trim(),
         // Lo abonado con el modelo anterior, para no perderlo de vista.
@@ -1098,12 +1111,13 @@ function suscripcionDe(c) {
     };
 }
 
-/* Filas del plan para los detalles (brief, boceto, presupuesto): el primer
-   pago y la mensualidad van por separado, nunca sumados. */
+/* Filas del plan para los detalles (brief, boceto, presupuesto). Sin pago
+   inicial desde el 14-sep-2026: el primer pago solo aparece, como modelo
+   anterior, en los docs que lo traen; nunca se suma a la mensualidad. */
 function _planRowsHTML(plan) {
     return `<div class="prop-row"><span class="prop-label">Plan</span><span style="font-weight:700;color:#4ade80">${escapeHtml(plan.label || "Sin definir")}</span></div>
-        <div class="prop-row"><span class="prop-label">Primer pago</span><span>${fmtMoney(plan.primerPago)}</span></div>
-        <div class="prop-row"><span class="prop-label">Plan mensual</span><span>${fmtMoney(plan.mensual)}/mes, arranca a los ${DIAS_HASTA_EL_PLAN} días del primer pago</span></div>`;
+        ${plan.primerPago ? `<div class="prop-row"><span class="prop-label">Primer pago (modelo anterior)</span><span>${fmtMoney(plan.primerPago)}</span></div>` : ""}
+        <div class="prop-row"><span class="prop-label">Plan mensual</span><span>${fmtMoney(plan.mensual)}/mes${plan.primerPago ? `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago` : ", sin pago inicial"}</span></div>`;
 }
 
 // Los adicionales de /presupuesto/ se guardan como slug (`calendario`, `login`…).
@@ -1246,7 +1260,7 @@ function initRealtime() {
         if (enMetrica("stats")) renderStats();
     }, (err) => {
         console.error(err);
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="6">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
     });
 
     // ── Propuestas realtime (Bocetos) ──
@@ -1322,15 +1336,19 @@ function initRealtime() {
         console.error("Embudo presupuesto error:", err);
     });
 
-    // ── Mantenimiento (suscriptores) ──
+    // ── Mantenimiento (suscriptores + avisos de baja / pausa) ──
     const qMant = query(collection(db, "mantenimiento"), orderBy("createdAt", "desc"));
     onSnapshot(qMant, (snap) => {
-        mantenimiento = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const docsMant = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // El webhook de MP deja en la misma colección los avisos de baja / pausa
+        // (tipoEvento): no son suscriptores y se cruzan con ellos al pintar. Un
+        // tipoEvento desconocido no se muestra ni como suscriptor ni como aviso.
+        mantenimientoAvisos = docsMant.filter(d => d.tipoEvento === "baja" || d.tipoEvento === "pausa");
+        mantenimiento = docsMant.filter(d => !d.tipoEvento);
+        // Pinta la tabla y el contador del tab (suscriptores activos, sin las bajas).
         renderMantenimiento();
-        // Clientes cruza la suscripción con Mantenimiento (estado, ID de Mercado Pago).
+        // Clientes cruza la suscripción con Mantenimiento (estado, ID de Mercado Pago, bajas).
         if (clientesCargados) render();
-        const el = document.getElementById("countMantenimiento");
-        if (el) el.textContent = mantenimiento.filter(m => (m.estado || "activo") === "activo").length;
     }, (err) => {
         console.error("Mantenimiento error:", err);
     });
@@ -1638,13 +1656,15 @@ function _bindTableListeners(tbodyEl) {
     });
 }
 
-/* Fila de Clientes con la misma forma que Mantenimiento (modelo del 10-sep-2026):
-   plan y cuánto paga por mes, primer pago, suscripción y el cambio del mes. Las
-   notas se editan desde el modal; acá solo se ve la primera línea. */
+/* Fila de Clientes con la misma forma que Mantenimiento: plan y cuánto paga por
+   mes, suscripción y el cambio del mes. Sin pago inicial desde el 14-sep-2026: el
+   primer pago solo se ve, abajo del plan, en los clientes que lo tienen cargado
+   (modelo anterior). Las notas se editan desde el modal; acá solo se ve la
+   primera línea. */
 const ESTADO_SUSCRIPCION_HTML = {
     activa:    `<span style="color:#4ade80;font-weight:700">● Activa</span>`,
     pendiente: `<span style="color:#F59E0B;font-weight:700">○ Pendiente</span>`,
-    baja:      `<span style="color:#9CA3AF;font-weight:600">Baja</span>`,
+    baja:      `<span style="color:var(--danger);font-weight:700">✕ Dio de baja</span>`,
 };
 
 function _clientRow(c) {
@@ -1656,15 +1676,21 @@ function _clientRow(c) {
         ? `<span class="phone-copy" data-phone-copy="${escapeHtml(c.telefono)}" title="Copiar número" style="cursor:pointer;font-size:12px">${escapeHtml(c.telefono)}</span>`
         : '';
 
-    const primerPago = s.primerPagoAt
-        ? `<div style="color:#4ade80;font-weight:700">✓ Cobrado</div>
-           <div class="muted" style="font-size:12px;white-space:nowrap">${mantLongDate(s.primerPagoAt)} · ${fmtMoney(s.primerPago)}</div>`
-        : `<div style="color:#F59E0B;font-weight:600">Sin registrar</div>
-           <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.primerPago)}</div>
-           ${s.abonoAnterior ? `<div class="muted" style="font-size:11px">abonó ${fmtMoney(s.abonoAnterior)} con el modelo anterior</div>` : ""}`;
+    // Modelo anterior: el primer pago (10 al 14-sep-2026) o lo abonado antes del
+    // 10-sep-2026. Los clientes sin pago inicial no muestran nada.
+    const modeloAnterior = (s.primerPago || s.primerPagoAt)
+        ? `<div class="muted" style="font-size:11px;white-space:nowrap">primer pago${s.primerPago ? ` ${fmtMoney(s.primerPago)}` : ""} ${s.primerPagoAt ? `cobrado el ${mantLongDate(s.primerPagoAt)}` : "sin registrar"} (modelo anterior)</div>`
+        : s.abonoAnterior ? `<div class="muted" style="font-size:11px">abonó ${fmtMoney(s.abonoAnterior)} con el modelo anterior</div>` : "";
+
+    // Aviso del webhook cuando la suscripción se cancela o se pausa en Mercado Pago.
+    const fechaAviso = s.aviso ? (mantToDate(s.aviso.fechaBaja) || mantToDate(s.aviso.createdAt)) : null;
+    const avisoMp = s.aviso
+        ? `<div style="font-size:12px;font-weight:600;white-space:nowrap;color:${s.aviso.tipoEvento === "baja" ? "var(--danger)" : "#9CA3AF"}">${s.aviso.tipoEvento === "baja" ? "canceló" : "pausó"} en Mercado Pago${fechaAviso ? ` el ${mantLongDate(fechaAviso)}` : ""}</div>`
+        : "";
 
     const suscripcion = `
         <div>${ESTADO_SUSCRIPCION_HTML[s.estado]}</div>
+        ${avisoMp}
         <div class="muted" style="font-size:12px;white-space:nowrap">${s.desde ? `desde ${mantLongDate(s.desde)}` : "sin fecha de inicio"}</div>
         ${s.porActivar ? `<div style="font-size:12px;font-weight:600;color:#F59E0B">por activar en Mercado Pago</div>` : ""}
         ${s.mant ? `<div class="muted" style="font-size:11px">vía Mercado Pago</div>` : ""}
@@ -1703,8 +1729,8 @@ function _clientRow(c) {
             <td>
                 <div>${escapeHtml(s.plan.label || "Plan sin definir")}</div>
                 <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.mensual)}/mes</div>
+                ${modeloAnterior}
             </td>
-            <td>${primerPago}</td>
             <td>${suscripcion}</td>
             <td class="center">${cambios}</td>
             <td class="actions-col">
@@ -1729,7 +1755,7 @@ function _segRow(c) {
             <td class="col-telefono">${phoneDisplay}</td>
             <td>
                 <div>${escapeHtml(plan.label || "Plan sin definir")}</div>
-                <div class="muted" style="font-size:12px;white-space:nowrap">primer pago ${fmtMoney(plan.primerPago)} · ${fmtMoney(plan.mensual)}/mes</div>
+                <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(plan.mensual)}/mes</div>
             </td>
             <td class="center">
                 <select class="inline-status-select ${estado}" data-status-id="${c.id}">
@@ -1941,7 +1967,7 @@ function render() {
 
     tbody.innerHTML = ordered.length
         ? ordered.map(_clientRow).join("")
-        : `<tr class="empty-row"><td colspan="6">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        : `<tr class="empty-row"><td colspan="5">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
@@ -2041,38 +2067,18 @@ async function setStatus(id, value) {
             updatedAt: serverTimestamp()
         };
 
-        /* Pasar a Cliente = pagó el primer pago (modelo del 10-sep-2026). Se fija el
-           plan y se registra el primer pago; el plan mensual arranca a los 7 días.
-           La sugerencia sale del boceto (primerPago / mensualidad de la calculadora o
-           del alta manual; en los bocetos viejos, `sena`) o, si no, del tipo de web. */
+        /* Pasar a Cliente (modelo del 14-sep-2026): sin pago inicial, así que no se
+           pregunta ni se registra ningún primer pago. Se fija el plan y la mensualidad
+           (del boceto: `mensualidad` de la calculadora o del alta manual; si no, del
+           tipo de web) y la suscripción queda pendiente hasta que se suscribe en
+           Mercado Pago. Lo que el doc ya tenga del modelo anterior (primerPago,
+           primerPagoAt, valorTotal, abono) no se toca. */
         if (value === "cliente" && prevEstado !== "cliente" && c) {
             const plan = planDe(c, propuestaDeCliente(c));
             if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
             if (!_num(c.montoMensual)) updateData.montoMensual = plan.mensual;
-            if (!_num(c.primerPago)) updateData.primerPago = plan.primerPago;
             if (!c.estadoSuscripcion) updateData.estadoSuscripcion = "pendiente";
             if (typeof c.preapprovalId !== "string") updateData.preapprovalId = "";
-
-            // Se registra una sola vez: si vuelve a Seguimiento y regresa, conserva el original.
-            if (!c.primerPagoAt) {
-                const montoInput = prompt(
-                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente.\n\n` +
-                    `Plan ${plan.label || "sin definir"}: ${fmtMoney(plan.mensual)}/mes, arranca a los ${DIAS_HASTA_EL_PLAN} días del primer pago.\n\n` +
-                    `Cuánto cobraste de primer pago? Si cancelás, pasa igual a Cliente y el primer pago queda sin registrar.`,
-                    String(plan.primerPago)
-                );
-                const monto = montoInput === null ? 0 : Number(String(montoInput).replace(/\D/g, "")) || 0;
-                if (monto) {
-                    updateData.primerPago = monto;
-                    updateData.primerPagoAt = serverTimestamp();
-                    updateData.suscripcionDesde = _sumarDias(new Date(), DIAS_HASTA_EL_PLAN);
-                    // Campos viejos, por compatibilidad: sin saldo, lo abonado es el primer pago.
-                    updateData.valorTotal = monto;
-                    updateData.abono = monto;
-                    // Sello que usaban las stats antes del 10-sep-2026 (compatibilidad).
-                    if (!c.senaAt) updateData.senaAt = serverTimestamp();
-                }
-            }
         }
 
         // (sin auto-avance de fecha entre seguimientos)
@@ -2318,30 +2324,25 @@ function renderTareasChecklist() {
 document.getElementById("estadoCliente").addEventListener("change", () => {
     syncEstadoSelect();
     toggleTareasSection();
-    // Pasar a Cliente = cobró el primer pago: se propone hoy como fecha (editable).
-    const pagoEl = document.getElementById("primerPagoAt");
-    if (document.getElementById("estadoCliente").value === "cliente" && !pagoEl.value) {
-        pagoEl.value = mantDateKey(new Date());
-        sincronizarDesdeAuto();
-    }
 });
 
-// ── Plan y suscripción en el modal de cliente (modelo del 10-sep-2026) ──
+// ── Plan y suscripción en el modal de cliente (modelo del 14-sep-2026, sin pago inicial) ──
 // Las opciones salen de PLANES: una sola fuente para los montos.
 document.getElementById("planCliente").innerHTML = `<option value="">Sin definir</option>` + Object.values(PLANES)
-    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.primerPago)} y ${fmtMoney(p.mensual)}/mes</option>`)
+    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.mensual)}/mes</option>`)
     .join("");
 
+// Cambiar el plan solo propone la mensualidad: un primer pago del modelo anterior no se toca.
 document.getElementById("planCliente").addEventListener("change", (e) => {
     const plan = PLANES[PLAN_POR_LABEL[e.target.value]];
     if (!plan) return;
-    document.getElementById("primerPago").value = plan.primerPago;
     document.getElementById("montoMensual").value = plan.mensual;
 });
 document.getElementById("primerPagoAt").addEventListener("change", sincronizarDesdeAuto);
 
 /* "El plan arranca el" sigue a la fecha del primer pago (+7 días) mientras no
-   se la haya tocado a mano. */
+   se la haya tocado a mano. Solo aplica a los clientes con primer pago del
+   modelo anterior. */
 function sincronizarDesdeAuto() {
     const pago = _fechaDeInput(document.getElementById("primerPagoAt").value);
     const desdeEl = document.getElementById("suscripcionDesde");
@@ -2352,14 +2353,19 @@ function sincronizarDesdeAuto() {
 
 /* Carga el plan y la suscripción en el modal. Muestra lo efectivo (lo guardado
    o, en los docs anteriores al 10-sep-2026, lo que sale del boceto y del tipo de
-   web): al guardar queda escrito en los campos nuevos. */
+   web): al guardar queda escrito en los campos nuevos. El primer pago y su fecha
+   solo se muestran si el doc los trae (modelo anterior); si no, quedan ocultos y
+   se guardan en 0 / null. */
 function cargarPlanEnModal(c) {
     const $ = id => document.getElementById(id);
     const s = c ? suscripcionDe(c) : null;
 
     $("planCliente").value = s ? s.plan.label : "";
     if ($("planCliente").selectedIndex < 0) $("planCliente").value = "";
-    $("primerPago").value = s ? s.primerPago : "";
+    const conPrimerPago = !!(s && (s.primerPago || s.primerPagoAt));
+    $("primerPagoField").hidden = !conPrimerPago;
+    $("primerPagoAtField").hidden = !conPrimerPago;
+    $("primerPago").value = conPrimerPago ? (s.primerPago || "") : "";
     $("montoMensual").value = s ? s.mensual : "";
 
     const pagoAt = s?.primerPagoAt ? mantDateKey(s.primerPagoAt) : "";
@@ -2377,17 +2383,21 @@ function cargarPlanEnModal(c) {
     $("preapprovalId").value = s ? s.preapprovalId : "";
 
     const notaMp = $("suscripcionNota");
+    const notas = [];
     if (s?.mant) {
         const alta = mantToDate(s.mant.createdAt);
         const estadoMant = s.mant.estado || "activo";
-        notaMp.textContent = `Figura en Mantenimiento (${s.mant.email || s.mant.whatsapp || s.mant.nombre || "Mercado Pago"})`
+        notas.push(`Figura en Mantenimiento (${s.mant.email || s.mant.whatsapp || s.mant.nombre || "Mercado Pago"})`
             + (alta ? `, suscripto desde el ${mantLongDate(alta)}` : "")
-            + (estadoMant === "activo" ? "." : `, con estado "${estadoMant}".`);
-        notaMp.hidden = false;
-    } else {
-        notaMp.textContent = "";
-        notaMp.hidden = true;
+            + (estadoMant === "activo" ? "." : `, con estado "${estadoMant}".`));
     }
+    // Aviso del webhook: la suscripción se canceló o se pausó en Mercado Pago.
+    if (s?.aviso) {
+        const fechaAviso = mantToDate(s.aviso.fechaBaja) || mantToDate(s.aviso.createdAt);
+        notas.push(`${s.aviso.tipoEvento === "baja" ? "Canceló" : "Pausó"} la suscripción en Mercado Pago${fechaAviso ? ` el ${mantLongDate(fechaAviso)}` : ""}.`);
+    }
+    notaMp.textContent = notas.join(" ");
+    notaMp.hidden = notas.length === 0;
 
     // Importes de un proyecto del modelo anterior: no se pisan y quedan a la vista como referencia.
     const notaAnterior = $("modeloAnteriorNota");
@@ -2410,7 +2420,10 @@ form.addEventListener("submit", async (e) => {
     const id = document.getElementById("clientId").value;
     const actual = id ? clients.find(x => x.id === id) : null;
     const estadoCliente = document.getElementById("estadoCliente").value;
-    const primerPago = Number(document.getElementById("primerPago").value) || 0;
+    // Sin pago inicial: el campo solo está visible en los docs con primer pago del modelo anterior.
+    const primerPago = document.getElementById("primerPagoField").hidden
+        ? 0
+        : Number(document.getElementById("primerPago").value) || 0;
     const data = {
         nombre: document.getElementById("nombre").value.trim(),
         proyecto: document.getElementById("proyecto").value.trim(),
@@ -2419,7 +2432,7 @@ form.addEventListener("submit", async (e) => {
         notas: document.getElementById("notasCliente").value.trim(),
         estadoCliente,
         hablarleElDia: document.getElementById("hablarleElDia").value || "",
-        // ── Plan mensual (modelo del 10-sep-2026) ──
+        // ── Plan mensual (modelo del 14-sep-2026; primerPago solo en los docs del modelo anterior) ──
         planLabel: document.getElementById("planCliente").value,
         primerPago,
         montoMensual: Number(document.getElementById("montoMensual").value) || 0,
@@ -3569,9 +3582,10 @@ async function abrirFacturaModal(cliente, opts = {}) {
     document.getElementById("facturaModalTitulo").textContent =
         facturaEsAdhoc ? "Emitir factura" : "Emitir factura y marcar entregada";
     document.getElementById("facturaCliente").textContent = etiquetaCliente(cliente);
-    // Al entregar se factura lo cobrado al arrancar: el primer pago (`valorTotal` lo
-    // refleja; en los proyectos del modelo anterior es el valor total del proyecto).
-    campoFactura("Total").value = facturaEsAdhoc ? "" : (_num(cliente.valorTotal) || planDe(cliente, propuestaDeCliente(cliente)).primerPago);
+    // Al entregar se factura lo cobrado al arrancar: el primer pago del modelo anterior
+    // (`valorTotal` lo refleja; en los proyectos anteriores al 10-sep-2026 es el valor
+    // total del proyecto). Sin pago inicial (14-sep-2026) queda vacío para cargar el importe.
+    campoFactura("Total").value = facturaEsAdhoc ? "" : (_num(cliente.valorTotal) || _num(cliente.primerPago) || "");
     campoFactura("Comprobante").textContent = "Consultando a ARCA…";
     campoFactura("EntornoAviso").hidden = true;
     campoFactura("EmitirBtn").disabled = true;
@@ -3845,16 +3859,16 @@ async function presentarPropuesta(propId) {
             telefono:        p.telefono || p.contacto_cel || "",
             estadoCliente:   "seguimiento1",
             hablarleElDia,
-            // ── Plan mensual (modelo del 10-sep-2026); el primer pago se registra al pasar a Cliente ──
+            // ── Plan mensual (modelo del 14-sep-2026): sin pago inicial, arranca cuando se suscribe en Mercado Pago ──
             planLabel:         plan.label,
-            primerPago:        plan.primerPago,
+            primerPago:        0,
             primerPagoAt:      null,
             montoMensual:      plan.mensual,
             estadoSuscripcion: "pendiente",
             suscripcionDesde:  null,
             preapprovalId:     "",
-            // Campos viejos, por compatibilidad: valorTotal = primer pago, todavía sin nada abonado.
-            valorTotal:      plan.primerPago,
+            // Campos viejos, por compatibilidad: sin pago inicial no hay nada que cobrar al arrancar.
+            valorTotal:      0,
             abono:           0,
             notas:           "",
             // ── Brief original completo (fuente de verdad para la vista de detalle) ──
@@ -4047,6 +4061,8 @@ async function presupuestoToCliente(id) {
     // registros anteriores al 10-sep-2026 figura como `sena`; compatibilidad).
     const plan = planDe(p);
     const pagadoAt = p.paymentStatus === "approved" ? (mantToDate(p.createdAt) || new Date()) : null;
+    // Sin pago inicial desde el 14-sep-2026: solo queda registrado el primer pago que se cobró de verdad.
+    const primerPago = pagadoAt ? plan.primerPago : 0;
     try {
         await addDoc(collection(db, "clientes"), {
             nombre:         p.nombre || p.negocio || "",
@@ -4056,15 +4072,15 @@ async function presupuestoToCliente(id) {
             estadoCliente:  "seguimiento1",
             hablarleElDia:  "",
             planLabel:         plan.label,
-            primerPago:        plan.primerPago,
+            primerPago,
             primerPagoAt:      pagadoAt,
             montoMensual:      plan.mensual,
             estadoSuscripcion: "pendiente",
             suscripcionDesde:  pagadoAt ? _sumarDias(pagadoAt, DIAS_HASTA_EL_PLAN) : null,
             preapprovalId:     "",
             // Campos viejos, por compatibilidad: valorTotal = primer pago; abono = lo cobrado.
-            valorTotal:     plan.primerPago,
-            abono:          pagadoAt ? plan.primerPago : 0,
+            valorTotal:     primerPago,
+            abono:          primerPago,
             notas:          "",
             presupuestoId:  id,
             siteType:        p.siteType || "",
@@ -4147,7 +4163,7 @@ function renderLeads() {
                 <td>${escapeHtml(typeLabel)}</td>
                 <td>
                     <div>${escapeHtml(plan.label || "Sin definir")}</div>
-                    <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(plan.primerPago)} · ${fmtMoney(plan.mensual)}/mes</div>
+                    <div class="muted" style="font-size:12px;white-space:nowrap">${plan.primerPago ? `${fmtMoney(plan.primerPago)} · ` : ""}${fmtMoney(plan.mensual)}/mes</div>
                 </td>
                 <td class="center">${bocetoBadge}</td>
                 <td class="actions-col">
@@ -4708,8 +4724,8 @@ document.getElementById("addTareaHoyBtn")?.addEventListener("click", () => {
    Pegás lo que te pasó el cliente → autocompleta → elegís tipo → guarda
    el doc en la colección `propuestas` con el MISMO esquema que usaba el
    form, así el boceto se ve y se convierte igual que los de antes.
-   Los montos (primer pago y plan mensual) salen de PLANES según el tipo: el
-   tamaño y las reservas ya no cambian el precio (modelo del 10-sep-2026).
+   El plan mensual sale de PLANES según el tipo (sin pago inicial desde el
+   14-sep-2026): el tamaño y las reservas no cambian el precio.
    ═══════════════════════════════════════════════════════════════════ */
 
 // Etiqueta comercial por tipo (idéntica a PRICING de form/script.js)
@@ -4780,7 +4796,7 @@ function nbTipoKey(base, reservas) {
         const tipoKey = nbTipoKey(base, reservasCb.checked);
         const plan = planDe({ tipoDetectado: tipoKey });
         $("nbPriceType").textContent       = `${NB_LABEL[tipoKey] || '—'} · plan ${plan.label}`;
-        $("nbPricePrimerPago").textContent = fmtMoney(plan.primerPago);
+        // Sin pago inicial (14-sep-2026): el boceto solo muestra el plan mensual.
         $("nbPriceMensual").textContent    = `${fmtMoney(plan.mensual)}/mes`;
         return { tipoKey, tipoPagina, plan };
     }
@@ -4885,9 +4901,9 @@ function nbTipoKey(base, reservas) {
             tipoDetectado:       tipoKey,
             tipoDetectadoLabel:  NB_LABEL[tipoKey] || "",
             que_incluye:         NB_INCLUYE[tipoKey] || NB_INCLUYE.landing,
-            // Mismos campos que escribe la calculadora (/presupuesto/script.js):
-            // primer pago y plan mensual, nunca un total.
-            primerPago:          plan.primerPago,
+            // Mismos campos que escribe la calculadora (/presupuesto/script.js). Sin
+            // pago inicial desde el 14-sep-2026: primerPago va en 0 y manda la mensualidad.
+            primerPago:          0,
             mensualidad:         plan.mensual,
             notas:               $("nbNotas").value.trim(),
             confirmoMuestra:     true,   // vino por WhatsApp y aceptó la muestra → ya calificado
@@ -5014,10 +5030,11 @@ function parseChatBoceto(texto) {
    número de día en que se dio de alta el suscriptor.
    ═══════════════════════════════════════════════════════════ */
 /* Claves del campo `plan` que escribe el webhook (mantenimiento/api/webhook-mp.php):
-   se conservaron 'landing' / 'mensual' para los planes del 10-sep-2026. Solo son el
-   respaldo de los docs que no traen planLabel / monto propios. */
+   se conservaron 'landing' / 'mensual' para los planes del 14-sep-2026 (sin pago
+   inicial: $20.000 y $30.000 por mes). Solo son el respaldo de los docs que no
+   traen planLabel / monto propios. */
 const MANT_PLAN_LABELS = { landing: "Plan mensual sitio profesional", mensual: "Plan mensual tienda online, cursos e inmobiliaria" };
-const MANT_PLAN_MONTO  = { landing: 15000, mensual: 25000 };
+const MANT_PLAN_MONTO  = { landing: 20000, mensual: 30000 };
 
 function mantToDate(value) {
     if (value?.toDate) return value.toDate();
@@ -5109,32 +5126,171 @@ function mantDomainLink(raw) {
 const searchMantInput = document.getElementById("searchMant");
 if (searchMantInput) searchMantInput.addEventListener("input", renderMantenimiento);
 
+// Viñetas de Mantenimiento (Todos / Activos / Pausados / Bajas), mismo patrón que Seguimientos.
+let mantVista = "todas";
+document.querySelectorAll("#mantViews .seg-chip").forEach(b => {
+    b.addEventListener("click", () => {
+        document.querySelectorAll("#mantViews .seg-chip").forEach(x => x.classList.remove("active"));
+        b.classList.add("active");
+        mantVista = b.dataset.mantview;
+        renderMantenimiento();
+    });
+});
+
+/* ── Avisos de baja / pausa de Mercado Pago ──
+   Cuando una suscripción se cancela o se pausa en MP, el webhook no puede tocar
+   el doc del suscriptor (las reglas públicas de "mantenimiento" solo dejan crear):
+   deja un aviso aparte en la misma colección, con tipoEvento "baja" / "pausa" e
+   ID "baja_<preapprovalId>" / "pausa_<preapprovalId>". Acá se cruzan. */
+
+/* ¿El aviso `a` es de `ref` (un suscriptor de Mantenimiento o un cliente)? Por
+   preapprovalId; si `ref` no tiene ID (alta manual), por email, siempre que el
+   aviso no sea de otro suscriptor con ID y no sea anterior al alta de `ref`. */
+function _avisoEsDe(a, ref) {
+    const preAviso = String(a.preapprovalId || "").trim();
+    const pre = String(ref?.preapprovalId || "").trim();
+    if (pre) return preAviso === pre;
+    const email = String(ref?.email || "").trim().toLowerCase();
+    if (!email || String(a.email || "").trim().toLowerCase() !== email) return false;
+    if (preAviso && mantenimiento.some(m => String(m.preapprovalId || "").trim() === preAviso)) return false;
+    const alta = mantToDate(ref.createdAt);
+    const fecha = mantToDate(a.fechaBaja) || mantToDate(a.createdAt);
+    return !alta || !fecha || fecha >= alta;
+}
+
+// Aviso que le corresponde a un suscriptor o a un cliente: la baja manda sobre la pausa.
+function avisoMantDe(ref) {
+    if (!ref) return null;
+    const avisos = mantenimientoAvisos.filter(a => _avisoEsDe(a, ref));
+    return avisos.find(a => a.tipoEvento === "baja") || avisos.find(a => a.tipoEvento === "pausa") || null;
+}
+
+/* Filas de la tabla: cada suscriptor con su estado efectivo (un aviso manda sobre
+   el estado guardado) y, además, los avisos que no cruzan con ningún suscriptor
+   (el alta nunca llegó o se borró), uno por suscripción. `clave`: activo /
+   pausado / baja, la misma que usan las viñetas. */
+function _mantFilas() {
+    const filas = mantenimiento.map(m => {
+        const aviso = avisoMantDe(m);
+        const clave = aviso?.tipoEvento === "baja" ? "baja"
+            : (aviso || (m.estado || "activo") !== "activo") ? "pausado"
+            : "activo";
+        return { m, aviso, clave, alta: mantToDate(m.createdAt) };
+    });
+    const sueltos = new Map();
+    mantenimientoAvisos
+        .filter(a => !mantenimiento.some(m => _avisoEsDe(a, m)))
+        .forEach(a => {
+            const key = String(a.preapprovalId || a.id);
+            const previo = sueltos.get(key);
+            if (!previo || (previo.tipoEvento !== "baja" && a.tipoEvento === "baja")) sueltos.set(key, a);
+        });
+    sueltos.forEach(a => filas.push({
+        m: null,
+        aviso: a,
+        clave: a.tipoEvento === "baja" ? "baja" : "pausado",
+        alta: mantToDate(a.fechaAlta),
+    }));
+    return filas;
+}
+
+// Celda Estado: el estado efectivo y, si vino de Mercado Pago, la fecha del aviso.
+function _mantEstadoHTML(fila) {
+    const { m, aviso, clave } = fila;
+    const badge = clave === "baja"
+        ? `<span style="color:var(--danger);font-weight:700">✕ Dio de baja</span>`
+        : clave === "pausado"
+            ? `<span style="color:#9CA3AF;font-weight:600">⏸ Pausado</span>`
+            : `<span style="color:#4ade80;font-weight:700">● Activo</span>`;
+    if (!aviso) return badge;
+    const fecha = mantToDate(aviso.fechaBaja) || mantToDate(aviso.createdAt);
+    return `${badge}
+                    <div class="muted" style="font-size:12px;white-space:nowrap">${fecha ? `el ${mantLongDate(fecha)} · ` : ""}en Mercado Pago</div>
+                    ${m ? `<button class="btn-ghost" data-mant-aviso-del="${escapeHtml(aviso.id)}" style="font-size:11px;padding:2px 8px;margin-top:4px" title="Borra el aviso de ${aviso.tipoEvento === "baja" ? "baja" : "pausa"}, por ejemplo si reactivaste la suscripción. El suscriptor queda como estaba.">Quitar aviso</button>` : ""}`;
+}
+
+// Fila de un aviso de baja / pausa que no cruza con ningún suscriptor de la lista.
+function _mantFilaAvisoHTML(fila) {
+    const a = fila.aviso;
+    const alta = fila.alta
+        ? fila.alta.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+        : "—";
+    const planLabel = a.planLabel || MANT_PLAN_LABELS[a.plan] || a.plan || "—";
+    const monto = Number(a.monto ?? MANT_PLAN_MONTO[a.plan] ?? 0);
+    return `
+            <tr class="client-row">
+                <td>${escapeHtml(alta)}</td>
+                <td>
+                    <div style="font-weight:600">${escapeHtml(a.email || "—")}</div>
+                    <div class="muted" style="font-size:12px">sin alta registrada en Mantenimiento</div>
+                </td>
+                <td>
+                    <div>${escapeHtml(planLabel)}</div>
+                    <div class="muted" style="font-size:12px">${fmtMoney(monto)}/mes · <span class="muted" style="font-size:11px">vía Mercado Pago</span></div>
+                </td>
+                <td class="col-telefono"><span class="muted">—</span></td>
+                <td><span class="muted">—</span></td>
+                <td class="center">${_mantEstadoHTML(fila)}</td>
+                <td class="center"><span class="muted">—</span></td>
+                <td class="actions-col">
+                    <button class="icon-btn delete" data-mant-aviso-del="${escapeHtml(a.id)}" title="Quitar el aviso">🗑</button>
+                </td>
+            </tr>`;
+}
+
+async function removeAvisoMant(id) {
+    const a = mantenimientoAvisos.find(x => x.id === id);
+    if (!a) return;
+    const que = a.tipoEvento === "baja" ? "baja" : "pausa";
+    if (!confirm(`¿Quitar el aviso de ${que} de "${a.email || a.preapprovalId || "esta suscripción"}"? Hacelo solo si la suscripción sigue vigente en Mercado Pago (por ejemplo, si la reactivaste).`)) return;
+    try {
+        await deleteDoc(doc(db, "mantenimiento", id));
+    } catch (err) {
+        console.error(err);
+        alert("Error al quitar el aviso: " + err.message);
+    }
+}
+
 function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
     const term = (searchMantInput?.value || "").trim().toLowerCase();
 
-    const list = term
-        ? mantenimiento.filter(m =>
-            (m.nombre   || "").toLowerCase().includes(term) ||
-            (m.email    || "").toLowerCase().includes(term) ||
-            (m.whatsapp || "").toLowerCase().includes(term))
-        : mantenimiento;
+    const filas = _mantFilas();
+    const conteo = { todas: filas.length, activo: 0, pausado: 0, baja: 0 };
+    filas.forEach(f => { conteo[f.clave]++; });
+    Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja" })
+        .forEach(([clave, id]) => { const el = document.getElementById(id); if (el) el.textContent = conteo[clave]; });
+    // El número del tab: suscriptores activos (sin bajas ni pausas).
+    const tabCount = document.getElementById("countMantenimiento");
+    if (tabCount) tabCount.textContent = conteo.activo;
+
+    let list = mantVista === "todas" ? filas : filas.filter(f => f.clave === mantVista);
+    if (term) list = list.filter(f => {
+        const d = f.m || f.aviso;
+        return [d.nombre, d.email, d.whatsapp].some(v => String(v || "").toLowerCase().includes(term));
+    });
+    // Más reciente primero: por alta y, en Bajas, por la fecha de la baja.
+    const fechaOrden = f => (mantVista === "baja"
+        ? (mantToDate(f.aviso?.fechaBaja) || mantToDate(f.aviso?.createdAt))
+        : f.alta)?.getTime() || 0;
+    list = [...list].sort((a, b) => fechaOrden(b) - fechaOrden(a));
 
     if (list.length === 0) {
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay suscriptores${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
+        const vacio = { todas: "suscriptores", activo: "suscriptores activos", pausado: "suscripciones pausadas", baja: "bajas" }[mantVista] || "suscriptores";
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay ${vacio}${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(m => {
+    tbody.innerHTML = list.map(fila => {
+        if (!fila.m) return _mantFilaAvisoHTML(fila);
+        const m = fila.m;
         const alta = m.createdAt?.toDate
             ? m.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
             : "—";
         const planLabel = m.planLabel || MANT_PLAN_LABELS[m.plan] || m.plan || "—";
         const monto = Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0);
-        const estado = (m.estado || "activo") === "activo"
-            ? `<span style="color:#4ade80;font-weight:700">● Activo</span>`
-            : `<span style="color:#9CA3AF;font-weight:600">⏸ Pausado</span>`;
+        const estado = _mantEstadoHTML(fila);
         const origen = m.origen === "mp-webhook"
             ? `<span class="muted" style="font-size:11px">vía Mercado Pago</span>`
             : m.origen === "completados"
@@ -5168,11 +5324,12 @@ function renderMantenimiento() {
                 <td>${dominio}</td>
                 <td class="center">${estado}</td>
                 <td class="center">
+                    ${fila.clave === "baja" ? `<span class="muted">—</span>` : `
                     <label title="Se habilita nuevamente el ${escapeHtml(proximoReinicio)}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;justify-content:center">
                         <input type="checkbox" data-mant-check="${m.id}" ${pidio ? "checked" : ""} style="width:18px;height:18px;cursor:pointer;accent-color:#2563eb">
                     </label>
                     <div style="font-size:12px;font-weight:600;color:#93b4e8;margin-top:4px;white-space:nowrap">${escapeHtml(franja)}</div>
-                    <div class="muted" style="font-size:11px;white-space:nowrap">ciclo de ${diasCiclo} días · se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>
+                    <div class="muted" style="font-size:11px;white-space:nowrap">ciclo de ${diasCiclo} días · se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>`}
                 </td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-mant-edit="${m.id}" style="font-size:13px">✎ Editar</button>
@@ -5189,6 +5346,10 @@ function renderMantenimiento() {
     });
     tbody.querySelectorAll("[data-mant-del]").forEach(btn => {
         btn.addEventListener("click", () => removeMant(btn.dataset.mantDel));
+    });
+    // "Quitar aviso" (celda Estado) y el tacho de las filas de avisos sin suscriptor.
+    tbody.querySelectorAll("[data-mant-aviso-del]").forEach(btn => {
+        btn.addEventListener("click", () => removeAvisoMant(btn.dataset.mantAvisoDel));
     });
 }
 
@@ -5400,7 +5561,8 @@ function _statsBocetoDates() {
 }
 
 function _statsPrimerPagoEntries() {
-    const todos = _statsProyectos();
+    // Los clientes sin pago inicial (14-sep-2026) no tienen primer pago que graficar ni que reclamar.
+    const todos = _statsProyectos().filter(c => !_statsSinPagoInicial(c));
     const dates = todos.map(c => _parseSketchDate(c.primerPagoAt) || _parseSketchDate(c.senaAt)).filter(Boolean);
     return { dates, total: todos.length, sinFecha: todos.length - dates.length };
 }
@@ -5437,15 +5599,22 @@ function _statsSinFecha() {
     return { count: fuera.length, total: fuera.reduce((s, c) => s + _statsTotalProyecto(c), 0) };
 }
 
+/* Cliente sin pago inicial (modelo del 14-sep-2026): primerPago guardado en 0, sin fecha de
+   cobro ni valor total. Suma $0 a propósito, así que no es un "valor total sin cargar". */
+function _statsSinPagoInicial(c) {
+    return c.primerPago === 0 && !c.primerPagoAt && !_num(c.valorTotal);
+}
+
 function _statsSemanas() {
     const porSemana = new Map();
     _statsProyectos().forEach(c => {
         const week = _weekForDate(_statsFechaSemana(c), "");
         if (week.key === "undated") return;   // sin ninguna fecha: no se lista
-        if (!porSemana.has(week.key)) porSemana.set(week.key, { week, total: 0, count: 0 });
+        if (!porSemana.has(week.key)) porSemana.set(week.key, { week, total: 0, count: 0, sinPagoInicial: 0 });
         const grupo = porSemana.get(week.key);
         grupo.total += _statsTotalProyecto(c);
         grupo.count++;
+        if (_statsSinPagoInicial(c)) grupo.sinPagoInicial++;
     });
     if (!porSemana.size) return [];
 
@@ -5456,7 +5625,7 @@ function _statsSemanas() {
     const cursor = new Date(desde);
     while (cursor.getTime() <= hasta) {
         const week = _weekForDate(new Date(cursor), "");
-        if (!porSemana.has(week.key)) porSemana.set(week.key, { week, total: 0, count: 0 });
+        if (!porSemana.has(week.key)) porSemana.set(week.key, { week, total: 0, count: 0, sinPagoInicial: 0 });
         cursor.setDate(cursor.getDate() + 7);
     }
 
@@ -5470,14 +5639,15 @@ function _statsSemanasHTML() {
     }
     /* El count se muestra para poder distinguir una semana SIN proyectos (gris, $0) de una
        semana CON proyectos que suman $0 porque tienen el valor total sin cargar — que es lo
-       que pasa cuando el boceto no traía precio calculado (ver `valorTotal` al convertir). */
+       que pasa cuando el boceto no traía precio calculado (ver `valorTotal` al convertir).
+       Los clientes sin pago inicial (14-sep-2026) suman $0 a propósito y no disparan el aviso. */
     const filas = semanas.map(s => {
-        const sinValor = s.count > 0 && s.total === 0;
+        const sinValor = s.count > s.sinPagoInicial && s.total === 0;
         const clases = ["stats-week-row"];
         if (!s.count) clases.push("stats-week-row--vacia");
         if (sinValor) clases.push("stats-week-row--sin-valor");
         const detalle = s.count
-            ? `<small>${s.count} proyecto${s.count === 1 ? "" : "s"}${sinValor ? " sin valor total cargado" : ""}</small>`
+            ? `<small>${s.count} proyecto${s.count === 1 ? "" : "s"}${sinValor ? " sin valor total cargado" : ""}${s.sinPagoInicial ? ` · ${s.sinPagoInicial} sin pago inicial` : ""}</small>`
             : "";
         return `
         <div class="${clases.join(" ")}">
@@ -5543,7 +5713,7 @@ function renderStats() {
             <div class="sketch-stats-col sketch-stats-col--hours">
                 <div class="sketch-stats-title">Total por semana — primeros pagos</div>
                 <div class="stats-weeks">${_statsSemanasHTML()}</div>
-                <p class="stats-note">Los proyectos del modelo anterior suman su valor total. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
+                <p class="stats-note">Los proyectos anteriores al 10-sep-2026 suman su valor total. Desde el 14-sep-2026 no hay pago inicial: esos clientes suman $0. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
             </div>
         </div>`;
 }

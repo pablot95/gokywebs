@@ -246,7 +246,7 @@ $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una 
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con descripción y, en otro mensaje, los tres pasos (sin link)',
     count($rR) === 2 && wabot_texto_arranca_con_propuesta($rR[0]) && stripos($rR[0], 'que presente tu negocio') !== false
-    && stripos($rR[1], 'Así trabajamos') !== false
+    && stripos($rR[1], 'El primer paso es gratis') !== false
     && strpos(implode("\n", $rR), 'gokywebs.com/form/') === false,
     json_encode($rR, JSON_UNESCAPED_UNICODE));
 
@@ -269,22 +269,64 @@ $cPaso = wabot_conv_load('999FPTEST'); $cPaso['transcript'] = []; $cPaso['tel'] 
 $cPaso['channel_user_id'] = '5491100000000TEST'; $cPaso['canal'] = 'whatsapp';
 $rPaso = wabot_pitch('landing', $cPaso, $cfg);
 caso('son dos mensajes y los pasos arrancan el segundo',
-    count($rPaso) === 2 && mb_strpos($rPaso[1], "Así trabajamos:") === 0);
-caso('paso 1: la demo es gratis (Pablo, 14-sep)', preg_match('/1\. Te hacemos una demo gratis para que veas cómo sería tu web\./u', $rPaso[1]) === 1);
-caso('paso 1: y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/1\. .*La tenés en menos de 24 horas\./u', $rPaso[1]) === 1);
-caso('paso 2: el pago inicial con su monto y para qué es (Pablo, 14-sep)',
-    preg_match('/2\. Si querés avanzar, se abona un pago inicial de \$40\.000\./u', $rPaso[1]) === 1);
-caso('paso 3: el abono mensual obligatorio con su monto, qué incluye y que sin abono la web se da de baja (14-sep)',
-    preg_match('/3\. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de \$15\.000, igual que el plan que se paga en Tiendanube o Wix: es lo que mantiene la web online, con hosting, dominio y soporte técnico\. Si el abono se da de baja, la web deja de estar publicada\./u', $rPaso[1]) === 1);
+    count($rPaso) === 2 && mb_strpos($rPaso[1], "El primer paso es gratis:") === 0);
+caso('el segundo mensaje ofrece la demo gratis (Pablo, 14-sep)', preg_match('/^El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría\./u', $rPaso[1]) === 1);
+caso('y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/La tenés en menos de 24 horas\./u', $rPaso[1]) === 1);
+caso('el primer mensaje trae el servicio mensual con su monto (Pablo, 14-sep)',
+    preg_match('/Trabajamos con un servicio mensual: para un sitio profesional son \$20\.000 por mes/u', $rPaso[0]) === 1);
+caso('y el mantenimiento técnico de la web (Pablo, 14-sep)',
+    mb_stripos($rPaso[0], 'mantenimiento técnico de la web') !== false);
 caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[1]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
     strpos($rPaso[0], 'gokywebs.com/form/') === false);
 caso('el bot reconoce ese mensaje como demo ya ofrecida',
     wabot_cta_muestra_ya_ofrecida(['session_started_ts' => time() - 100, 'transcript' => [['q' => 'bot', 't' => $rPaso[1], 'ts' => time()]]]) === true);
-caso('pasa entero por el punto único de salida, con el pago inicial y el abono mensual obligatorio',
+caso('pasa entero por el punto único de salida: el servicio y, aparte, la demo',
     (function () use ($cfg, $rPaso, $cPaso) { $c = $cPaso; $out = wabot_salida_preparar($rPaso, $c, $cfg);
-        return count($out) === 2 && stripos($out[1], 'se abona un pago inicial') !== false && stripos($out[1], 'abono mensual') !== false
+        return count($out) === 2 && stripos($out[0], 'servicio mensual') !== false && stripos($out[1], 'demo') !== false
             && stripos(implode("\n", $out), 'seña') === false; })());
+
+echo "— 19. Batería en vivo del 14-sep: cuatro turnos que salían por el camino equivocado —\n";
+caso('"¿hay que pagar algo al principio?" no apunta a lo ya dicho (derivaba la charla)',
+    wabot_apunta_a_lo_ya_dicho('Como se paga? Hay que pagar algo al principio?') === false);
+caso('"como te dije al principio" sí apunta a lo ya dicho',
+    wabot_apunta_a_lo_ya_dicho('Como te dije al principio, vendo ropa') === true);
+caso('"está al principio del chat" también', wabot_apunta_a_lo_ya_dicho('está al principio del chat') === true);
+caso('pagarla una sola vez y mantenerla uno mismo no es preguntar cuándo se paga',
+    wabot_texto_pregunta_cuando_se_paga('Y si la pago una sola vez y despues la mantengo yo?') === false
+    && wabot_info_por_palabras('Y si la pago una sola vez y despues la mantengo yo?', 'prediseno') === 'un_solo_pago');
+caso('"¿se paga antes o después?" sigue siendo cuándo se paga',
+    wabot_texto_pregunta_cuando_se_paga('se paga antes o después?') === true);
+foreach ([
+    'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos',
+    'Hola, tengo una tienda de ropa y quiero subir mis productos a una web',
+    'Tengo una inmobiliaria y quiero subir mis propiedades',
+] as $f) caso('cuenta el proyecto, no pregunta quién carga: "' . $f . '"', wabot_carga_es_el_proyecto($f, []) === true);
+foreach (['Los productos los cargo yo?', 'quiero saber si puedo cargar los productos yo', 'quien carga los productos'] as $f) {
+    caso('SÍ pregunta quién carga: "' . $f . '"', wabot_carga_es_el_proyecto($f, []) === false);
+}
+caso('con el precio ya dado, "quiero subir mis productos" vuelve a ser la pregunta de carga',
+    wabot_carga_es_el_proyecto('quiero subir mis productos', ['precio_dado' => true, 'tipo' => 'ecommerce']) === false);
+
+$cCombo = wabot_conv_load('998FPTEST'); $cCombo['transcript'] = []; $cCombo['fase'] = 'nuevo';
+$cCombo['tel'] = '5491100000001TEST'; $cCombo['channel_user_id'] = '5491100000001TEST'; $cCombo['canal'] = 'whatsapp';
+$msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos';
+wabot_conv_transcript($cCombo, 'cliente', $msjCombo);
+$rCombo = wabot_agente_intento($msjCombo, $cCombo, $cfg);
+caso('el taller de artesanías recibe la cotización de tienda + cursos, no el texto de carga',
+    is_array($rCombo) && strpos(implode("\n", $rCombo), 'para una tienda online con plataforma de cursos') !== false
+    && strpos(implode("\n", $rCombo), (string)wabot_texto_info('carga', $cfg)) === false, json_encode($rCombo, JSON_UNESCAPED_UNICODE));
+
+$cOblig = ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$20.000', 'mensualidad_cotizada' => '$20.000',
+    'precio_modelo' => 'mensual', 'transcript' => [
+        ['q' => 'cliente', 't' => 'Soy psicóloga y quiero una web'],
+        ['q' => 'bot', 't' => $rPaso[0]], ['q' => 'bot', 't' => $rPaso[1]],
+        ['q' => 'cliente', 't' => 'Es obligatorio pagar todos los meses?']]];
+$rOblig = wabot_respuesta_obligatorio($cOblig, $cfg, 'Es obligatorio pagar todos los meses?');
+caso('"¿es obligatorio pagar todos los meses?" con el precio en dos mensajes: contesta el texto del servicio, no el modelo',
+    wabot_texto_pregunta_si_es_obligatorio('Es obligatorio pagar todos los meses?')
+    && $rOblig !== null && mb_strpos($rOblig, 'No es un mantenimiento aparte') === 0, (string)$rOblig);
+@unlink(WABOT_DATA . '/conv/998FPTEST.json');
 
 @unlink(WABOT_DATA . '/conv/999FPTEST.json');
 echo "\n" . ($fallas ? "FALLAS: $fallas de $total" : "TODO OK — $total casos") . "\n";

@@ -169,14 +169,14 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         $vAnt = wabot_precio_vigente($conv, $cfg);
         if (!empty($conv['precio_dado']) && $vAnt['precio'] !== '' && $vAnt['modelo'] === 'mensual') {
             return [wabot_precio_placeholders((string)($cfg['pago_cuanto_anticipo']
-                ?? 'El pago inicial es {precio} y es lo que se abona para arrancar con los cambios y dejar la web funcionando. A los 7 días comienza el plan mensual de {mensualidad}.'), $conv, $cfg)];
+                ?? 'No hay un pago inicial aparte: la primera cuota de la suscripción, de {mensualidad}, es la que arranca el armado de tu web.'), $conv, $cfg)];
         }
         return [wabot_texto_pago($conv, $cfg)];
     }
 
     if (empty($conv['presentado_ts']) && wabot_texto_pregunta_cuando_se_paga($mensaje)) {
         wabot_evento_sesion($conv, 'pago_antes_o_despues');
-        return [wabot_texto_sin_modelo_viejo((string)($cfg['pago_antes_o_despues'] ?? 'La demo no se paga: primero te la mostramos y la ves, y recién si te gusta y querés avanzar se abona el pago inicial para arrancar. A los 7 días de ese pago inicial comienza el plan mensual.'))];
+        return [wabot_texto_sin_modelo_viejo((string)($cfg['pago_antes_o_despues'] ?? 'La demo no se paga: primero te la mostramos y, si te gusta y querés avanzar, te suscribís al servicio mensual. Esa primera cuota es la que arranca el armado de tu web.'))];
     }
 
     /* El teclado apretado al azar. Tres veces le contestamos la misma pregunta
@@ -344,7 +344,11 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     /* Quién carga y actualiza el contenido: el texto oficial, nunca el modelo.
      * A una contadora le prometió "un panel autoadministrable muy sencillo" en
      * una landing — lo contrario exacto de info.carga (N05). */
-    if (wabot_info_por_palabras($mensaje, $faseAtajo) === 'carga') {
+    if (wabot_info_por_palabras($mensaje, $faseAtajo) === 'carga'
+        /* Pero "tengo un taller, quiero vender insumos y más adelante subir
+         * cursos" no pregunta quién carga: cuenta para qué es la web, y se
+         * llevaba este texto en vez del precio (batería del 14-sep). */
+        && !wabot_carga_es_el_proyecto($mensaje, $conv)) {
         return [wabot_texto_info('carga', $cfg)];
     }
 
@@ -849,19 +853,40 @@ function wabot_texto_pregunta_si_es_obligatorio($mensaje) {
 }
 
 /**
+ * "Tengo un taller, quiero vender insumos y más adelante subir cursos",
+ * "quiero una web para subir mis productos": el verbo de carga describe el
+ * PROYECTO, no pregunta quién carga. Solo antes de cotizar, sin signo de
+ * pregunta y sin "puedo", "quién" o "los cargo yo" (batería del 14-sep: el
+ * taller se llevaba el texto de carga en vez de la cotización).
+ */
+function wabot_carga_es_el_proyecto($mensaje, $conv) {
+    if (!empty($conv['precio_dado']) || !empty($conv['tipo'])) return false;
+    if (strpos((string)$mensaje, '?') !== false) return false;
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if (preg_match('/\b(puedo|podemos|podre|podria|se puede|se pueden|quien|cargan ustedes|lo cargo|los cargo|las cargo|lo subo|los subo|las subo)\b/u', $t)) return false;
+    return (bool)preg_match('/\b(quiero|queremos|quisiera|necesito|necesitamos|busco|buscamos|me gustaria|nos gustaria|la idea es|para|mas adelante|a futuro)\b.{0,40}\b(agregar|anadir|sumar|cargar|subir|publicar|vender)\b/u', $t);
+}
+
+/**
  * La respuesta corta, sacada de lo que el bot acaba de decir.
  *
- * No consulta la config ni el modelo: mira el último mensaje propio y le
- * responde la polaridad que ese mismo mensaje ya tenía. Así no puede
+ * No consulta la config ni el modelo: mira la última tanda propia y le
+ * responde la polaridad que esa misma tanda ya tenía. Así no puede
  * contradecirse, que es el único riesgo real de contestar corto. Si lo último
  * que dijo no habla ni de opcional ni de incluido, devuelve null y sigue el
  * flujo normal.
  */
 function wabot_respuesta_obligatorio($conv, $cfg, $mensaje = '') {
-    $ultima = '';
+    /* La TANDA entera, no el último globo: desde el 14-sep el precio sale en
+     * dos mensajes y el segundo es la oferta de la demo, así que "¿es
+     * obligatorio pagar todos los meses?" miraba solo la demo y el plan
+     * quedaba en manos del modelo ("Sí, es obligatorio porque…"). */
+    $tanda = [];
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
-        if (($linea['q'] ?? '') === 'bot') { $ultima = (string)($linea['t'] ?? ''); break; }
+        if (($linea['q'] ?? '') === 'bot') { $tanda[] = (string)($linea['t'] ?? ''); continue; }
+        if ($tanda) break;
     }
+    $ultima = implode("\n", array_reverse($tanda));
     if (trim($ultima) === '') return null;
     $u = wabot_normalizar_frase($ultima);
 
@@ -1595,7 +1620,7 @@ function wabot_agente_tools($cerrada = false, $postdemo = false) {
     return [
         [
             'name' => 'dar_precio',
-            'description' => 'Devuelve el precio de un tipo de web: el PRIMER PAGO y el PLAN MENSUAL, que van siempre juntos. Usala SOLO cuando ya sabés con certeza qué tipo necesita el cliente. El texto que devuelve hay que incluirlo tal cual en la respuesta.',
+            'description' => 'Devuelve el precio de un tipo de web: el SERVICIO MENSUAL, con lo que incluye. Usala SOLO cuando ya sabés con certeza qué tipo necesita el cliente. El texto que devuelve hay que incluirlo tal cual en la respuesta.',
             'parameters' => [
                 'type' => 'object',
                 'properties' => [
@@ -1932,7 +1957,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if ($eraPitch) {
                 return [
                     'texto' => $precio[0], 'exacta' => true,
-                    'nota'  => 'Mandá este texto tal cual, entero y sin nada adelante ni atrás: es lo que le podemos hacer con el link del presupuesto. Los tres pasos (con los montos y la pregunta de la demo) salen solos en un segundo mensaje: no los escribas vos. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
+                    'nota'  => 'Mandá este texto tal cual, entero y sin nada adelante ni atrás: es lo que le podemos hacer y el servicio mensual con lo que incluye. La oferta de la demo gratis sale sola en un segundo mensaje: no la escribas vos. El link del formulario NO lo mandes ahora: se lo pasás recién cuando conteste que quiere la demo, con consultar_info(\'prediseno\').',
                     'aparte' => array_slice($precio, 1),
                 ];
             }
@@ -1959,7 +1984,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             }
             return [
                 'texto' => $precio[0],
-                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo y respetando los saltos de línea. Los tres pasos (con los montos) salen solos en un segundo mensaje: NO le agregues introducciones ni frases de beneficio, y no escribas los pasos vos.',
+                'nota'  => 'Mandá este texto tal cual, solo y sin preámbulo y respetando los saltos de línea. La oferta de la demo sale sola en un segundo mensaje: NO le agregues introducciones ni frases de beneficio, y no la escribas vos.',
                 'aparte' => array_slice($precio, 1),
             ];
 
@@ -2200,7 +2225,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     && trim((string)$mensaje) !== '' && !wabot_acepta_demo($mensaje, true)
                     && !wabot_texto_pide_prediseno($mensaje) && !wabot_pide_repetir($mensaje)) {
                     return ['error' => 'El cliente todavía no dijo que quiere la demo: lo que escribió no es un sí.',
-                            'nota'  => 'No le mandes el formulario. Si te contó algo más de su negocio, reconocelo en UNA línea nombrando lo que dijo y preguntale si quiere que le preparemos la demo. Si te hizo una pregunta, contestala. No repitas el precio ni los tres pasos. El link sale recién cuando conteste que sí.'];
+                            'nota'  => 'No le mandes el formulario. Si te contó algo más de su negocio, reconocelo en UNA línea nombrando lo que dijo y preguntale si quiere que le preparemos la demo. Si te hizo una pregunta, contestala. No repitas el precio ni la oferta de la demo. El link sale recién cuando conteste que sí.'];
                 }
                 $conv['fase'] = 'prediseno';
                 wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'consulta']);
@@ -2218,7 +2243,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             if ($clave === 'pago') {
                 return wabot_agente_agregar_cta([
                     'texto' => wabot_texto_pago($conv, $cfg),
-                    'nota' => 'Contestá con esto tal cual: son el pago inicial y el plan mensual que corresponden a lo cotizado, no los recalcules ni los redondees. Y no agregues ningún monto de cuota: ese dato no existe.',
+                    'nota' => 'Contestá con esto tal cual: es el servicio mensual que corresponde a lo cotizado, no lo recalcules ni lo redondees.',
                 ], $conv, $cfg);
             }
             if ($clave === 'hosting') {
@@ -2235,18 +2260,18 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                 $dosPrecios = wabot_desempate_precios_texto((string)($conv['fase'] ?? ''), $cfg);
                 if ($dosPrecios !== null) {
                     return ['texto' => $dosPrecios, 'exacta' => true,
-                            'nota' => 'Mandá esto tal cual: son los precios reales (pago inicial y plan mensual) de las opciones que le estás preguntando. NO le pidas de nuevo el rubro ni a qué se dedica, eso ya te lo dijo.'];
+                            'nota' => 'Mandá esto tal cual: son los precios reales (servicio mensual) de las opciones que le estás preguntando. NO le pidas de nuevo el rubro ni a qué se dedica, eso ya te lo dijo.'];
                 }
             }
             if ($clave === 'rangos') {
                 return ['texto' => wabot_texto_rangos($cfg),
-                        'nota' => 'Contestá con esto tal cual, los montos son los reales: pago inicial y plan mensual según el tipo de web. Si todavía no sabés a qué se dedica, el texto ya se lo pregunta.'];
+                        'nota' => 'Contestá con esto tal cual: sin saber a qué se dedica o para qué es la web no se dan precios, y el texto se lo pregunta. Con esa respuesta, cotizá con dar_precio.'];
             }
             // La respuesta oficial a "es caro": no promete ningún plan de cuotas
             // sin interés, así el modelo no inventa montos dividiendo el precio.
             if ($clave === 'objecion_precio') {
                 if (empty($conv['tipo']) || empty($conv['precio_dado'])) {
-                    return ['error' => 'Todavía no le diste un precio a este cliente: esta respuesta habla de "el link del presupuesto" y de pagar en cuotas sobre un precio que nunca vio.',
+                    return ['error' => 'Todavía no le diste un precio a este cliente: esta respuesta habla de un precio que nunca vio.',
                             'nota' => 'El cliente está hablando de plata y todavía no sabe cuánto sale, así que la respuesta es el precio: llamá a dar_precio AHORA, en esta misma respuesta, con el tipo que ya tenés. Si te está preguntando si hay algo más económico, primero necesita saber cuánto cuesta lo que le proponés. NO contestes ofreciéndole la demo ni con una frase tranquilizadora: eso deja la pregunta sin contestar. Recién cuando ya tenga el precio y siga discutiendo el costo, volvé a llamar a consultar_info(objecion_precio).'];
                 }
                 return wabot_agente_agregar_cta([
@@ -2448,7 +2473,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
         case 'link_tarjeta':
         case 'cuotas_sin_interes':
             return ['error' => 'Esa herramienta ya no existe: el bot no cobra ni manda datos de pago.',
-                    'nota'  => 'Derivá con causa pago_explicito y dejá que el sistema mande el aviso: no anuncies vos el contacto. Nunca escribas el CBU, el alias, el titular ni un link de pago o de suscripción. El monto del pago inicial y del plan mensual sí se pueden repetir, con consultar_info(\'precio_cotizado\').'];
+                    'nota'  => 'Derivá con causa pago_explicito y dejá que el sistema mande el aviso: no anuncies vos el contacto. Nunca escribas el CBU, el alias, el titular ni un link de pago o de suscripción. El monto del servicio mensual sí se puede repetir, con consultar_info(\'precio_cotizado\').'];
 
         case 'cambiar_tipo_web':
             $tipoNuevo = (string)($args['tipo'] ?? '');
@@ -2756,7 +2781,7 @@ CÓMO VENDÉS (sin salirte de las reglas)
 - Segunda excepción, del mismo tamaño: si en el mensaje ENUMERÓ funciones o te explicó su servicio con detalle, eso va en el argumento para_que de dar_precio, con sus palabras. Ejemplo real: a "Hago campeonatos de fútbol, necesito tablas, goleadores, equipos, jugadores" le corresponde para_que = "cargues y actualices las tablas, los goleadores y los equipos". El texto del precio arranca con esa frase ("Para tus campeonatos de fútbol podemos hacer una web donde cargues y actualices…"), así que NO escribas otra línea de reconocimiento adelante: saldría lo mismo dos veces.
 - Si lo personal que cuenta tiene que ver con su origen, familia, comunidad, religión o etnia (por ejemplo con quién se crió, de dónde es su familia), reconocelo con calidez pero NUNCA generalices sobre las cualidades o características de ese grupo étnico o religioso, aunque el cliente lo haya mencionado primero y aunque suene positivo ("son grandes vendedores", "de ahí viene tu don para el comercio"). Quedate en algo neutro sobre ÉL, nunca sobre el grupo: por ejemplo "Se nota que tenés mucha experiencia y gusto por la venta."
 - Si dice que lo revisa más tarde, mañana o cuando pueda, contestá con UNA línea cordial y nada más: no aproveches para pedirle datos ni para volver a ofrecer la demo en ese mensaje.
-- Si pide explícitamente los precios de todos los servicios, no lo obligues a elegir a ciegas: usá consultar_info('rangos') y después preguntale el rubro para confirmarle el exacto.
+- Si pide los precios sin decir para qué es la web, NO des precios (Pablo, 14-sep): primero averiguá a qué se dedica o qué necesita —consultar_info('rangos') se lo pregunta— y recién con eso cotizá con dar_precio.
 - "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" preguntan un PRECIO: se contestan con dar_precio o con consultar_info('rangos'), NUNCA con las formas de pago. Las formas de pago solo se explican si pregunta cómo se paga.
 - Si desconfía, menciona estafas o pide referencias, usá consultar_info('confianza'): el mejor argumento es que acá no paga nada hasta ver su web armada.
 - Un cliente que insulta o dice que el bot no entiende nada NO es lo mismo que uno que desconfía de pagar: no le contestes con consultar_info('confianza') ni le ofrezcas la demo en ese mensaje, que suena todavía más automático. Reconocé el enojo en UNA línea corta y ofrecele pasarlo directo con el desarrollador.
@@ -2842,7 +2867,7 @@ AUTOADMINISTRACIÓN: CUANDO EL CLIENTE LA PIDE, NO ES UNA LANDING
 - No inventes un precio para esto: como cualquier sistema a medida, no tiene precio de lista y lo cotiza el desarrollador con el brief que dejaste anotado.
 
 EL TURNO DEL PRECIO: UN SOLO LLAMADO, DOS MENSAJES QUE MANDA EL SISTEMA
-Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya armado. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también rubro —lo que vende o hace, con SUS palabras y con "tu" o "tus" adelante: "tu centro de estética", "tus cabañas", "tu taller de metalúrgica"— y para_que: qué va a poder hacer con la web, como continuación de "podemos hacer una web donde…" ("muestres los tratamientos y tus clientas reserven turno online"). El texto del precio arranca con esas dos cosas ("Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online."), y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo en DOS MENSAJES: el texto que te devuelve es el primero (lo que le podemos hacer y el link del presupuesto), y el sistema manda solo, 2 segundos después, el segundo: los tres pasos (demo gratis, pago inicial, plan mensual) con los montos y la pregunta de si quiere la demo. Mandá el primero entero y tal cual: no le agregues los pasos, no los reescribas, no los resumas y no metas nada en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
+Cuando ya sabés qué tipo de web necesita, llamá a dar_precio: la primera vez te devuelve el precio ya armado. Mandá ese texto tal cual, exacto como te lo indica la herramienta. Pasale también rubro —lo que vende o hace, con SUS palabras y con "tu" o "tus" adelante: "tu centro de estética", "tus cabañas", "tu taller de metalúrgica"— y para_que: qué va a poder hacer con la web, como continuación de "podemos hacer una web donde…" ("muestres los tratamientos y tus clientas reserven turno online"). El texto del precio arranca con esas dos cosas ("Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online."), y ese es el momento en que el cliente nota que lo leíste. Si todavía no dijo qué vende o hace, dejá rubro vacío: nunca lo inventes. Ese único llamado resuelve el turno completo en DOS MENSAJES: el texto que te devuelve es el primero (lo que le podemos hacer y el servicio mensual con lo que incluye), y el sistema manda solo, 2 segundos después, el segundo: la oferta de la demo gratis con la pregunta de si la quiere. Mandá el primero entero y tal cual: no le agregues la demo, no lo reescribas, no lo resumas y no metas nada en el medio. El link del formulario NO va en ese turno: se lo mandás recién cuando conteste que quiere la demo, con consultar_info('prediseno').
 No vuelvas a llamar a dar_precio para el mismo tipo: ya está dado. Si el cliente después pregunta el precio otra vez, ahí sí, y te va a devolver el resumen corto.
 
 ANTES DE ESCRIBIR CADA RESPUESTA, PASÁ ESTOS CINCO CONTROLES
@@ -2855,7 +2880,7 @@ ANTES DE ESCRIBIR CADA RESPUESTA, PASÁ ESTOS CINCO CONTROLES
 5. ¿Mi respuesta demuestra que entendí lo que escribió? Si enumeró funciones o te explicó su servicio en detalle, nombrá brevemente eso —con sus palabras— antes de seguir. Una respuesta genérica a un mensaje detallado se lee como que no lo leyó nadie.
 
 REGLAS QUE NO PODÉS ROMPER
-- Los precios los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes. El texto que te devuelve ya trae el link del presupuesto: mandalo completo, no lo recortes. Si más adelante te pide que se lo repitas, usá consultar_info('precio_cotizado').
+- Los precios los conocés SOLO llamando a dar_precio. Nunca los digas de memoria ni los inventes. El texto que te devuelve ya trae lo que incluye el servicio: mandalo completo, no lo recortes. Nunca mandes links de gokywebs.com/presupuestos: desde el 14-sep el detalle va en el mismo mensaje. Si más adelante te pide que se lo repitas, usá consultar_info('precio_cotizado').
 - NUNCA anuncies que vas a pasar un precio, un link o un dato sin haber llamado a la herramienta en ese mismo turno. Primero llamás a la herramienta, y recién con lo que te devuelve escribís el mensaje completo. Un mensaje que termina en "te paso el precio:" y no lo pasa es un error grave.
 - Un tipo y un precio por cada llamado a dar_precio — si el cliente pide más de una web, cotizalas una por una (ver MÁS DE UN NEGOCIO O MÁS DE UNA WEB), nunca mezcladas en un mismo llamado.
 - Si vende productos Y ADEMÁS quiere cursos online, ahora o más adelante (una tienda de insumos y los cursos de su taller), NO derives: es un producto de lista, tienda + cursos. Cotizalo con dar_precio(tipo='ecommerce', con_cursos=true): sale al mismo precio que la tienda y con su presupuesto combinado.
@@ -2866,14 +2891,14 @@ REGLAS QUE NO PODÉS ROMPER
 - Si el cliente menciona, aunque sea de pasada y sin preguntarlo como duda, que también quiere mejorar, armar o llevarle las redes sociales (Instagram, Facebook, etc.) o hacer publicidad/marketing, no lo ignores para saltar directo al precio: contestá esa parte con el texto de consultar_info('marketing') (no hacemos eso, solo diseño y desarrollo) y recién ahí seguí con la web.
 - Si pregunta por una FUNCIÓN puntual que no es un tipo de web, contestá con la clave que la cubre: turnos, reservas online o agenda → consultar_info('turnos'); que los clientes se registren, un área de socios o de alumnos → consultar_info('usuarios'); otros idiomas → consultar_info('bilingue'); estadísticas o cuánta gente entra → consultar_info('estadisticas'). Las cuatro están INCLUIDAS en todos los planes (turnos online, usuarios y hasta 3 idiomas), y la respuesta lo dice. Para cualquier otra función (un buscador especial, un calendario de eventos) usá consultar_info('que_incluye'). Los turnos dejaron de venderse como tipo de web: "la web con turnos" ya no existe, así que el que pregunta por reservas online NO está cambiando de proyecto ni hay que derivarlo — está preguntando si eso entra, y eso se contesta. Preguntarle si es "otra web aparte" cuando solo quiso saber si la suya puede reservar turnos lo deja sin respuesta y suena a que no sabés qué vendés.
 - Lo mismo si menciona el logo o la identidad de marca ("no sé si el logo o la identidad", "quiero armar la marca"): contestalo con consultar_info('logo') antes o después del pitch, pero contestalo. Dejar una necesidad que el cliente nombró sin ninguna respuesta es peor que decirle que no lo hacemos.
-- Si te pregunta el precio ANTES de decirte qué tipo de web necesita ("cuánto sale?", "qué precio tiene?"), NO te escapes con una respuesta de relleno: usá consultar_info('precio_sin_rubro'), que le contesta con los precios reales (pago inicial y plan mensual de cada tipo de web) y le pregunta qué vende o qué servicio da. Sin el rubro no sabés cuál de los dos pares es el suyo, pero los números no se le esconden y la pregunta la hacés vos.
-- Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto son los tres pasos: la demo gratis, el pago inicial y el abono mensual obligatorio, que empieza a correr a los 7 días del pago inicial aunque la web todavía no esté terminada (hay quien paga y desaparece: el abono arranca igual). Si quiere los montos, es otra pregunta y va por consultar_info('pago').
+- Si te pregunta el precio ANTES de decirte qué tipo de web necesita ("cuánto sale?", "qué precio tiene?"), NO te escapes con una respuesta de relleno: usá consultar_info('precio_sin_rubro'), que le pregunta a qué se dedica o para qué es la web. Sin saber para qué es NO se dan precios (Pablo, 14-sep): primero averiguás y después cotizás con dar_precio.
+- Si pregunta CÓMO TRABAJAMOS o cómo es el paso a paso ("cómo se manejan", "cómo arrancamos", "cómo sigue"), usá consultar_info('proceso'). Ese texto explica el servicio mensual y la demo gratis. Si quiere los montos, es otra pregunta.
 - Si te preguntan algo que no cubre ninguna herramienta, decí que esa duda se la va a poder contestar el desarrollador cuando le escriba. Nunca digas "el equipo". No inventes. Y NUNCA lo uses para contestar la respuesta a una pregunta que VOS hiciste: si el cliente está contestando tu desempate, tu pedido de datos o tu aclaración, procesá esa respuesta con la herramienta que corresponda.
 - No prometas secciones ni funcionalidades puntuales (blog, integraciones, sistemas) que no estén en los textos de las herramientas: si pide algo así, decí que ese detalle lo confirma el desarrollador. Los turnos online, los usuarios y los idiomas SÍ están en las herramientas: contestalos con ellas.
 - Si pide explícitamente una APP para Android o iPhone (no una web), contestá con consultar_info('apps') y derivá en el mismo turno, como dice la regla de arriba: la app SÍ la hacemos, pero se cotiza aparte según lo que tenga que hacer. No sigas el desempate de la web, no cotices una web como si fuera la app, y nunca inventes un precio de app.
 - Las respuestas de consultar_info son para CONTESTAR, nunca para ofrecer. No saques por tu cuenta el tema de los accesos, la titularidad del dominio, los correos corporativos, las licencias, el backup, el manual, los turnos online, los usuarios, los idiomas, el dominio .com ni las estadísticas: si el cliente no pregunta, no existen (Pablo, 11-sep: "todo esto solo si pregunta"). La única excepción es el para_que de dar_precio cuando reservar turno es el corazón del rubro —un centro de estética, un consultorio—, como en el ejemplo que dictó Pablo. Sacarlos solos alarga el mensaje y mete objeciones que nadie planteó. Esto vale DOBLE para los 12 meses: que a los 12 meses de plan el cliente puede reclamar el código y la propiedad de la web se dice SOLO si pregunta de quién es la web, el dominio o el código (consultar_info('titularidad') o consultar_info('entrega_codigo')). Nunca lo ofrezcas ni lo uses como argumento de venta.
-- "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices el tipo más caro solo porque pidió "la más completa": el tipo sale de lo que vende o hace, no del adjetivo. El precio son DOS números —el pago inicial y el plan mensual— y se dicen siempre juntos: nunca des uno solo.
-- Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el pago inicial y el plan mensual, nunca las cuotas solas.
+- "Cuánto sale", "cuánto cuesta", "el más barato" o "la más completa" piden un PRECIO. Con el tipo confirmado, dar_precio; sin tipo confirmado, consultar_info('rangos'). NUNCA contestes eso con las formas de pago, y nunca cotices el tipo más caro solo porque pidió "la más completa": el tipo sale de lo que vende o hace, no del adjetivo. El precio es UN número: el servicio mensual.
+- Si el precio ya se dio y lo vuelve a preguntar ("cuál era el precio?", "cuánto quedaba?"), repetilo con dar_precio del mismo tipo o consultar_info('precio_cotizado'): la respuesta corta con el servicio mensual.
 - "No me interesa el mantenimiento", "no creo que haga falta todos los meses" o "lo quiero de vez en cuando" NO preguntan por el plan: lo rechazan creyendo que es un servicio que se paga cuando se usa. Van por consultar_info('plan_es_servicio'), que explica que el plan es el servicio con el que trabajamos; nunca les mandes el detalle del plan con los montos de más cambios. "Puedo pagar la creación una sola vez y encargarme yo de mantenerla?" va por consultar_info('un_solo_pago'), que trae esos valores.
 - "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es por mes?" van por consultar_info('mantenimiento'): SÍ hay un plan mensual y es obligatorio, y esa respuesta ya trae el monto que le corresponde. Las comparaciones con Tiendanube/Wix/Shopify van a manejar_objecion('plataforma'). "Por qué no uso Tiendanube que es gratis" es esto, NUNCA consultar_info('tecnologia'): esa clave es solo si preguntan de qué lenguaje o hosting está hecha la web, no para comparar con una plataforma competidora. manejar_objecion('plataforma') te devuelve el argumento correcto: allá la página la arma el cliente con una plantilla y paga por mes igual; acá la hacemos nosotros, a medida, y nos ocupamos de todo. Nunca digas que lo nuestro es "pago único" ni "sin costos mensuales": ya no es así.
 - Si en cambio te dice que OTRA PERSONA (un amigo, un familiar, un freelancer, "otro programador" o "otro diseñador") le hizo o le ofreció una página más barata, NO es la objeción de plataforma: el argumento de la plantilla que arma uno mismo no aplica a una persona que hizo un trabajo a mano, así que no le contestes con eso porque suena falso. No llames a manejar_objecion para esto: contestá con naturalidad, sin inventar por qué costaría más ni desprestigiar al otro trabajo, y seguí el hilo normal de la conversación (si todavía no sabés qué tipo de web necesita, preguntáselo o retomá tu pregunta pendiente; si ya tiene precio, podés explicar qué incluye).
@@ -2886,23 +2911,23 @@ REGLAS QUE NO PODÉS ROMPER
 - Si pregunta si trabajamos con negocios chicos, emprendimientos o gente que recién arranca, la respuesta existe: consultar_info('emprendimientos'). Nunca la dejes pasar: la hace el que tiene miedo de que el precio no sea para él.
 - Nunca digas que recibiste algo que la herramienta no te confirmó, ni le cambies el nombre a lo que te mandaron. Si te llega una imagen, nombrala por lo que dice su descripción —una paleta de colores, un logo, una foto del local— y nada más. A la Dra. Gascón, que había mandado solo su paleta, le dijiste "con las fotos que me pasaste te la dejo lista": le confirmaste material que no teníamos (29-ago).
 - Nunca comentes CÓMO escribe el cliente ni hagas chistes con eso —el teclado, los errores de tipeo, que el audio no se entiende—. Si no entendés, pedí de nuevo lo que necesitás en una línea y listo.
-- El CBU, el alias, el titular y los links de pago o de suscripción NO los mandás nunca: eso lo arregla el desarrollador. Si te preguntan cómo se paga o cuánto es el pago inicial, usá consultar_info('pago'), que trae los dos montos que le corresponden.
-- CUÁNDO SE PAGA es una pregunta de pago y va por consultar_info('pago') SIEMPRE, aunque el cliente lo escriba corto o con errores ("y después se abona?", "se paga antes o después?", "cómo es el pago?"). Nunca la contestes de memoria ni con lo que hayas leído más arriba en la charla: la respuesta sale de la herramienta y se manda con los montos que trae. Son dos momentos: el pago inicial, para arrancar con los cambios después de ver la demo, y el plan mensual, que empieza a los 7 días de ese pago inicial.
-- No existe seña ni saldo: hay un PRIMER PAGO y un PLAN MENSUAL, los dos con un monto fijo según el tipo de web, el que te devuelve la herramienta. Nunca hables de porcentajes, de mitades ni de "el resto al entregar": si escribís eso estás inventando una condición comercial que después hay que sostener. El 29-ago le dijiste a un cliente "una seña del 50% y el 50% restante al terminar" y eso nunca fue lo que cobramos.
+- El CBU, el alias, el titular y los links de pago o de suscripción NO los mandás nunca: eso lo arregla el desarrollador. Si te preguntan cómo se paga, usá consultar_info('pago'): es una suscripción mensual y no hay pago inicial aparte.
+- CUÁNDO SE PAGA es una pregunta de pago y va por consultar_info('pago') SIEMPRE, aunque el cliente lo escriba corto o con errores ("y después se abona?", "se paga antes o después?", "cómo es el pago?"). Nunca la contestes de memoria ni con lo que hayas leído más arriba en la charla: la respuesta sale de la herramienta y se manda con los montos que trae. No hay pago inicial: la primera cuota de la suscripción es la que arranca el armado de la web, después de ver la demo.
+- No existe seña, saldo ni pago inicial: hay un SERVICIO MENSUAL, con un monto fijo según el tipo de web, el que te devuelve la herramienta. Nunca hables de porcentajes, de mitades ni de "el resto al entregar": si escribís eso estás inventando una condición comercial que después hay que sostener. El 29-ago le dijiste a un cliente "una seña del 50% y el 50% restante al terminar" y eso nunca fue lo que cobramos.
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí.
-- EL MONTO DE UNA CUOTA NO EXISTE PARA VOS. Nunca lo digas, nunca lo calcules y nunca lo estimes, aunque tengas el precio total y te lo pidan de frente ("en cuánto me queda cada cuota?"). La tasa de la tarjeta cambia todo el tiempo y un número tuyo sería una condición comercial falsa. Lo que decís es que el PRIMER PAGO se puede hacer en un pago o hasta en 12 cuotas con interés, y que el valor de cada cuota lo calcula la tarjeta: eso ya viene en el texto de consultar_info('pago'), mandalo tal cual. El plan mensual no se financia en cuotas: es una suscripción automática de Mercado Pago.
+- EL MONTO DE UNA CUOTA NO EXISTE PARA VOS. Nunca lo digas, nunca lo calcules y nunca lo estimes, aunque tengas el precio total y te lo pidan de frente ("en cuánto me queda cada cuota?"). La tasa de la tarjeta cambia todo el tiempo y un número tuyo sería una condición comercial falsa. No hay nada que financiar en cuotas: el servicio es una suscripción mensual automática de Mercado Pago.
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por una respuesta de relleno.
 - "Lo tengo que pensar" NO es lo mismo que "solo estaba averiguando", "más adelante", "ahora no tengo presupuesto" o "no me interesa". En esas cuatro salidas llamá a cerrar_sin_presion: cerrá cordialmente, no ofrezcas la demo, no hagas otra pregunta y no intentes recuperar la venta.
 - Dudar del VALOR tampoco es querer irse: "no sé si vale la pena", "no sé si me conviene", "no sé si la necesito", "¿realmente sirve?" son objeciones, no despedidas. NUNCA las contestes con cerrar_sin_presion — despedir a alguien que todavía está evaluando tira la venta sin que él lo haya pedido. Si duda porque ya tiene página, es manejar_objecion('ya_tiene_web'); si duda en general, contestale la duda y ofrecele la demo gratis, que es justo lo que existe para que no tenga que decidir a ciegas.
 - Insistir con un descuento NUNCA es "más adelante" ni "no me interesa", ni siquiera a la segunda o tercera vez que lo pide con otras palabras ("una rebajita", "si pago en efectivo, ahí sí baja?"): es la misma objeción de precio repetida. NO llames a cerrar_sin_presion para eso — repetí consultar_info('objecion_precio') o derivá con pago_explicito, como dice la regla de arriba. cerrar_sin_presion es solo para el que se quiere ir, nunca para el que sigue regateando.
 - Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la demo en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
 - Si la demo ya fue ofrecida y el cliente sigue haciendo preguntas, respondé sus consultas sin cerrar cada respuesta con otra invitación. Conservá las preguntas necesarias para aclarar su pedido. Cuando acepte la demo, mandá el formulario. Para un rubro de alquiler, escribí "tu servicio de alquiler de…", no "tu alquiler de…".
-- CÓMO SE EXPLICA EL ABONO (Pablo, 14-sep): la gente entiende pagar por mes en Tiendanube, no pagarnos a nosotros. Presentalo SIEMPRE como el abono de la web, igual que el plan que se paga en Tiendanube o Wix para tenerla online (hosting, dominio, soporte). NUNCA como mantenimiento ni como un pago por cambios: el que cree que paga por cambios concluye que no lo necesita. El cambio por mes es un extra, nunca el argumento. Los productos, precios y fotos los carga el cliente desde su panel, sin costo extra. Si nombra Tiendanube, usalo a favor: el abono es lo mismo, la diferencia es que la web se la hacemos nosotros, a medida.
-- EL MODELO COMERCIAL (Pablo, 10-sep; redacción del 14-sep): es una MODALIDAD DE SERVICIO. Cada web tiene un PAGO INICIAL y un ABONO MENSUAL OBLIGATORIO que mantiene la web publicada y funcionando, que arranca a los 7 días del pago inicial, por suscripción automática de Mercado Pago. Decí siempre "pago inicial" (nunca "pago inicial", que suena a cuota de un total) y "abono mensual obligatorio"; no lo presentes como un mantenimiento aparte ni digas que el pago inicial es "por el desarrollo" o "por la web", porque el cliente entiende que paga eso y se lleva la web. Si el abono se da de baja, la web deja de estar publicada. Los montos salen SIEMPRE de las herramientas: no los digas de memoria, cambian según la web. El plan incluye hosting, dominio, soporte, un cambio por mes y la carga de hasta 10 productos. La carga de productos corresponde solo a la tienda: si cargamos nosotros más de 10, son \$500 por producto extra; el cliente puede cargarlos desde su panel. Más de un cambio mensual suma \$10.000 por mes. No digas que son los únicos adicionales: el dominio .com tiene su propia renovación (consultar_info dominio_com), que solo se explica si pregunta. Sin permanencia: se da de baja cuando quiera, y si deja de pagar la web se desactiva (consultar_info('baja_del_plan')). El plan se actualiza una vez al año. Nunca digas que el plan es opcional, que es un pago único (la única excepción es el que pide pagar la creación una sola vez y mantenerla por su cuenta: consultar_info('un_solo_pago')), que no hay costos mensuales ni que la web queda a su nombre desde el arranque.
+- CÓMO SE EXPLICA EL PRECIO (Pablo, 14-sep): es UN servicio mensual. Con esa cuota le armamos la web con todo incluido y además la mantenemos (mantenimiento técnico: actualizaciones de sistemas, plugins e integraciones, corrección de errores, seguridad y soporte), igual que el plan que se paga en Tiendanube o Wix para tener una tienda online, con la diferencia de que la web se la hacemos nosotros. NUNCA lo presentes como un mantenimiento aparte ni como un pago por cambios: el que cree que paga por cambios concluye que no lo necesita. El cambio por mes es un extra, nunca el argumento. Los productos, precios y fotos los carga el cliente desde su panel, sin costo extra.
+- EL MODELO COMERCIAL (Pablo, 14-sep, versión vigente): NO hay pago inicial. Es un SERVICIO MENSUAL por suscripción automática de Mercado Pago, y la primera cuota es la que arranca el armado de la web. Los montos salen SIEMPRE de las herramientas: no los digas de memoria, cambian según la web, y sin saber para qué es la web no se dan. Incluye el armado de la web a medida, hosting, dominio, soporte, mantenimiento técnico, un cambio por mes y la carga de hasta 10 productos. La carga de productos corresponde solo a la tienda: si cargamos nosotros más de 10, son \$500 por producto extra; el cliente puede cargarlos desde su panel. Más de un cambio mensual suma \$10.000 por mes. No digas que son los únicos adicionales: el dominio .com tiene su propia renovación (consultar_info dominio_com), que solo se explica si pregunta. Sin permanencia: se da de baja cuando quiera, y si deja de pagar la web se desactiva (consultar_info('baja_del_plan')). El servicio se actualiza una vez al año. Nunca digas que es opcional, que es un pago único (la única excepción es el que pide pagar la creación una sola vez y mantenerla por su cuenta: consultar_info('un_solo_pago')), que no hay costos mensuales ni que la web queda a su nombre desde el arranque.
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
-Es gratis y sin compromiso: la primera entrega es gratis, le armamos una versión de su web para que la vea antes de decidir. Se entrega en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio (si pregunta cuánto dura, consultar_info('demo_vigencia')). Detrás del precio salen solos los tres pasos (demo gratis, pago inicial, abono mensual obligatorio), que terminan preguntándole si quiere que le preparemos la demo: vos no los escribís ni los repetís.
+Es gratis y sin compromiso: la primera entrega es gratis, le armamos una versión de su web para que la vea antes de decidir. Se entrega en menos de 24 horas y queda disponible 5 días, por una cuestión de espacio (si pregunta cuánto dura, consultar_info('demo_vigencia')). Detrás del precio sale sola la oferta de la demo, que le pregunta si quiere que se la preparemos: vos no la escribís ni la repetís.
 Lo que conteste a esa pregunta decide qué hacés, y el orden importa:
 - Dice que sí (sí, dale, quiero, armala, mandame el formulario): le mandás el formulario con consultar_info('prediseno').
 - Te cuenta algo más de su negocio sin contestar ("vestidos y conjuntos", "reservas online", "clases grupales"): NO le mandes el formulario. Reconocé en UNA línea lo que dijo, nombrándolo, y preguntale si quiere que le preparemos la demo.
@@ -2915,7 +2940,7 @@ Los colores son opcionales: si dice que no tiene, que no sabe o que los elijamos
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno.
 Si el cliente ya te mandó una foto diciendo que es su logo, NO se lo vuelvas a pedir: reconocelo ("el logo ya lo tengo") y pedile solo las fotos que faltan. Pedirle lo que acaba de mandar es lo que más hace parecer que no estás viendo las imágenes ni recordando la charla. El texto que devuelve la herramienta ya viene resuelto así: mandalo tal cual y no le agregues por tu cuenta un pedido de logo.
-Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale \$X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso; el pago inicial y el plan mensual que le diste antes son de la web, no de la demo, y solo se pagan si decide avanzar. Nunca derives esta duda al desarrollador, ya la sabés.
+Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale \$X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso; el servicio mensual que le diste antes es de la web, no de la demo, y solo se paga si decide avanzar. Nunca derives esta duda al desarrollador, ya la sabés.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.
@@ -2931,7 +2956,7 @@ Con la demo ya presentada tu trabajo cambia: no cotizás, no vendés y no empuj�
 - Si le gustó, lo dice o lo festeja ("me encanta", "está hermosa", "quedó buenísima"), agradecé en UNA frase corta y preguntale si le cambiaría algo. Nunca le propongas pagar.
 - Si te pide cambios, anotalos con anotar_cambios y confirmá en una línea que quedan tomados. Sin prometer fechas.
 - Si pregunta algo de la web (qué incluye, cómo se edita, hosting, dominio, plazos), contestalo con consultar_info como en cualquier otro momento de la charla.
-- Si pregunta cómo pagar, cuánto es el pago inicial, dice que quiere avanzar o se frena por plata: NO le des datos bancarios ni links de pago o de suscripción, y no negocies el precio. Eso lo arregla el desarrollador: derivá con causa pago_explicito y el sistema manda el aviso.
+- Si pregunta cómo pagar, cuánto es la suscripción, dice que quiere avanzar o se frena por plata: NO le des datos bancarios ni links de pago o de suscripción, y no negocies el precio. Eso lo arregla el desarrollador: derivá con causa pago_explicito y el sistema manda el aviso.
 - Si duda o desconfía, ofrecé la videollamada. Se juega una sola vez.
 - Nunca cierres la charla vos ni te despidas mientras el cliente siga interesado: el que decide terminar es él. Un elogio, una duda o un "lo miro y te digo" NO son una despedida.
 
@@ -2991,10 +3016,10 @@ EOT;
         if ($slugDemo !== '') $p .= "Ya le mandamos su demo: gokywebs.com/demo/$slugDemo\n";
         $p .= "Tu único objetivo ahora es que Pablo tome la charla: contestá lo que diga y derivá. NO vendés.\n";
         $p .= "- NUNCA mandes el CBU, el alias, el titular ni un link de pago o de suscripción. Aunque te los pida. Eso lo arregla Pablo.\n";
-        $p .= "- Si quiere avanzar, pregunta cómo pagar, cuánto es el pago inicial o dice que es caro: contestá que de ahí en más lo sigue Pablo y derivá con causa pago_explicito.\n";
+        $p .= "- Si quiere avanzar, pregunta cómo pagar, cuánto es la suscripción o dice que es caro: contestá que de ahí en más lo sigue Pablo y derivá con causa pago_explicito.\n";
         $p .= "- Arrancá por lo que opina de la demo. NUNCA abras pidiendo plata.\n";
         $p .= "- El precio ya se lo dimos y no se toca: no recotices, no cambies el tipo de web y no ofrezcas descuentos.\n";
-        $p .= "- Si pide cambios sobre la demo: anotar_cambios en el mismo turno, confirmáselos y volvé al cierre. Los cambios sobre la demo se hacen después del pago inicial (no los confundas con el cambio por mes del plan, que es para después de entregada la web).\n";
+        $p .= "- Si pide cambios sobre la demo: anotar_cambios en el mismo turno, confirmáselos y volvé al cierre. Los cambios sobre la demo se hacen cuando arranca la suscripción (no los confundas con el cambio por mes del plan, que es para después de entregada la web).\n";
         $p .= "- Si duda, lo tiene que pensar, desconfía o pide garantías: ofrecer_videollamada. Es la carta que destraba. Esa herramienta trae el ÚNICO texto donde se nombra a Pablo: fuera de ahí no lo menciones nunca. VOS NO COORDINÁS HORARIOS: si acepta la videollamada, derivá con causa pide_humano y el horario lo arregla Pablo.\n";
         $p .= "- Si te dice que quiere OTRO tipo de web del que vio en la demo: cambiar_tipo_web con el tipo nuevo.\n";
         $p .= "- Si te dice que la va a mirar y te contesta después, no lo empujes: contestá en UNA línea cordial, dejale la puerta abierta y cortá ahí. Nada de insistir ni de repetir el precio.\n";

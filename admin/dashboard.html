@@ -53,14 +53,13 @@
                         <tr>
                             <th>Cliente</th>
                             <th>Plan</th>
-                            <th>Primer pago</th>
                             <th>Suscripción</th>
                             <th class="center">Cambios del mes</th>
                             <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="clientsTbody">
-                        <tr class="empty-row"><td colspan="6">Cargando...</td></tr>
+                        <tr class="empty-row"><td colspan="5">Cargando...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -304,9 +303,15 @@
             <div class="panel-header">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <p class="muted">Suscripciones del plan mensual por Mercado Pago. Se cargan solas cuando alguien se suscribe, o agregalas a mano. Si coinciden con un cliente por email, WhatsApp o ID, en Clientes la suscripción figura activa. El check de "pidió cambios" se reinicia según el día de alta de cada suscripción.</p>
+                    <p class="muted">Suscripciones del plan mensual por Mercado Pago. Se cargan solas cuando alguien se suscribe, o agregalas a mano. Si alguien cancela o pausa la suscripción en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha. Si coinciden con un cliente por email, WhatsApp o ID, en Clientes la suscripción figura activa (o de baja). El check de "pidió cambios" se reinicia según el día de alta de cada suscripción.</p>
                 </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
+            </div>
+            <div class="seg-views" id="mantViews">
+                <button class="seg-chip active" data-mantview="todas">Todos <span class="seg-chip-count" id="mantCountTodas">0</span></button>
+                <button class="seg-chip" data-mantview="activo">Activos <span class="seg-chip-count" id="mantCountActivo">0</span></button>
+                <button class="seg-chip" data-mantview="pausado">Pausados <span class="seg-chip-count" id="mantCountPausado">0</span></button>
+                <button class="seg-chip" data-mantview="baja">Bajas <span class="seg-chip-count" id="mantCountBaja">0</span></button>
             </div>
             <div style="margin:0 0 14px">
                 <input type="search" id="searchMant" placeholder="Buscar por nombre, email o WhatsApp…" autocomplete="off" style="width:100%;max-width:320px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
@@ -569,7 +574,6 @@
                     <div class="nb-price" id="nbPriceBox">
                         <div class="nb-price-type" id="nbPriceType">—</div>
                         <div class="nb-price-grid">
-                            <div><span>Primer pago</span><strong id="nbPricePrimerPago">$0</strong></div>
                             <div><span>Plan mensual</span><strong id="nbPriceMensual">$0</strong></div>
                         </div>
                     </div>
@@ -655,7 +659,7 @@
                     <input type="text" id="mantPlan" maxlength="120" required placeholder="Ej.: Plan mensual ecommerce">
 
                     <label for="mantMonto">Precio mensual *</label>
-                    <input type="number" id="mantMonto" min="0" step="1" inputmode="numeric" required placeholder="Ej.: 25000">
+                    <input type="number" id="mantMonto" min="0" step="1" inputmode="numeric" required placeholder="Ej.: 30000">
 
                     <label for="mantEstado">Estado</label>
                     <select id="mantEstado">
@@ -696,15 +700,17 @@
                 <label for="emailCliente">Email <span class="muted">(opcional)</span></label>
                 <input type="text" id="emailCliente" maxlength="160" inputmode="email" autocomplete="off" placeholder="El que usa en Mercado Pago">
 
-                <!-- Modelo del 10-sep-2026: primer pago + plan mensual obligatorio.
-                     Las opciones del plan las carga dashboard.js desde PLANES. -->
+                <!-- Modelo del 14-sep-2026: sin pago inicial, solo el plan mensual por
+                     Mercado Pago. Las opciones del plan las carga dashboard.js desde PLANES.
+                     El primer pago y su fecha quedan ocultos: dashboard.js los muestra solo
+                     en los clientes que los tienen cargados (modelo del 10-sep-2026). -->
                 <label for="planCliente">Plan</label>
                 <select id="planCliente"></select>
 
                 <div class="grid-2">
-                    <div>
-                        <label for="primerPago">Primer pago</label>
-                        <input type="number" id="primerPago" min="0" step="1" inputmode="numeric" required>
+                    <div id="primerPagoField" hidden>
+                        <label for="primerPago">Primer pago <span class="muted">(modelo anterior)</span></label>
+                        <input type="number" id="primerPago" min="0" step="1" inputmode="numeric">
                     </div>
                     <div>
                         <label for="montoMensual">Plan mensual</label>
@@ -729,8 +735,8 @@
                 <!-- Suscripción al plan mensual (solo clientes) -->
                 <div id="suscripcionSection" style="display:none">
                     <div class="grid-2">
-                        <div>
-                            <label for="primerPagoAt">Fecha del primer pago</label>
+                        <div id="primerPagoAtField" hidden>
+                            <label for="primerPagoAt">Fecha del primer pago <span class="muted">(modelo anterior)</span></label>
                             <input type="date" id="primerPagoAt">
                         </div>
                         <div>
@@ -927,6 +933,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260911"></script>
+    <script type="module" src="dashboard.js?v=20260914-bajas"></script>
 </body>
 </html>

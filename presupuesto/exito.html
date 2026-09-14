@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Primer pago confirmado. Completá tu brief | Gokywebs</title>
+    <title>Suscripción confirmada. Completá tu brief | Gokywebs</title>
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -163,18 +163,18 @@
 <div class="exito-wrap">
 
     <div id="pendingBox" class="pending-box" style="display:none">
-        <h2>⏳ Pago en proceso</h2>
-        <p>Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.</p>
+        <h2>⏳ Suscripción en proceso</h2>
+        <p>Tu suscripción está siendo verificada por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.</p>
     </div>
 
     <div id="mainContent">
-        <p class="exito-badge">✓ Primer pago confirmado</p>
+        <p class="exito-badge">✓ Suscripción confirmada</p>
         <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
-        <p class="exito-desc">Ya recibimos tu primer pago<span id="primerPagoDesc"></span>. El plan mensual<span id="mensualidadDesc"></span> arranca a los 7 días y va por suscripción automática de Mercado Pago. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.</p>
+        <p class="exito-desc">Ya te suscribiste al servicio mensual<span id="mensualidadDesc"></span>. Con ese primer débito arrancamos con el desarrollo y en unos 7 días tu web queda publicada y funcionando. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.</p>
 
         <div class="payment-pill">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            Pago ID: <strong id="paymentIdDisplay">—</strong> &nbsp;·&nbsp; Primer pago: <strong id="primerPagoPill">✓</strong>
+            ID de Mercado Pago: <strong id="paymentIdDisplay">—</strong> &nbsp;·&nbsp; Servicio mensual: <strong id="mensualidadPill">✓</strong>
         </div>
 
         <div class="brief-card" id="briefCard">
@@ -297,7 +297,9 @@ const firebaseConfig = {
 };
 
 const params        = new URLSearchParams(window.location.search);
-const paymentId     = params.get('payment_id') || '—';
+// Desde el 14-sep-2026 se vuelve de una suscripción de Mercado Pago, que trae
+// preapproval_id; payment_id queda por si vuelve un pago de antes.
+const paymentId     = params.get('preapproval_id') || params.get('payment_id') || '—';
 const paymentStatus = params.get('status') || 'approved';
 
 document.getElementById('paymentIdDisplay').textContent = paymentId;
@@ -321,26 +323,20 @@ try {
 const presupuestoRaw = localStorage.getItem('gky_presupuesto');
 const presupuesto    = presupuestoRaw ? JSON.parse(presupuestoRaw) : {};
 
-// Primer pago y plan mensual de este presupuesto (modelo 10-sep-2026). Los guarda
-// script.js en `gky_presupuesto` antes del redirect a Mercado Pago, con las claves
-// `primerPago` y `mensualidad`: si se renombran allá, hay que renombrarlas acá.
-// Si el draft no los trae se deducen del siteType (mismos montos que PRIMER_PAGO /
-// MENSUALIDAD de script.js y que api/crear-preferencia.php); si tampoco hay
+// Servicio mensual de este presupuesto (modelo 14-sep-2026: sin pago inicial, el
+// primer cobro es el primer débito de la suscripción). Lo guarda script.js en
+// `gky_presupuesto` antes del redirect a Mercado Pago, con la clave `mensualidad`:
+// si se renombra allá, hay que renombrarla acá. Si el draft no la trae se deduce
+// del siteType (mismos montos que MENSUALIDAD de script.js); si tampoco hay
 // siteType no se muestra ningún monto, antes que afirmar uno que no se leyó.
-const PRIMER_PAGO = { landing: 40000, ecommerce: 50000, inmobiliaria: 50000, elearning: 50000 };
-const MENSUALIDAD = { landing: 15000, ecommerce: 25000, inmobiliaria: 25000, elearning: 25000 };
+const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
-const primerPagoVal  = Number(presupuesto.primerPago)  || PRIMER_PAGO[presupuesto.siteType] || 0;
 const mensualidadVal = Number(presupuesto.mensualidad) || MENSUALIDAD[presupuesto.siteType] || 0;
-const primerPagoFmt  = primerPagoVal  ? fmtARS(primerPagoVal)  : '—';
 const mensualidadFmt = mensualidadVal ? fmtARS(mensualidadVal) : '—';
-if (primerPagoVal) {
-    document.getElementById('primerPagoDesc')?.replaceChildren(document.createTextNode(' de ' + primerPagoFmt));
-    const primerPagoPillEl = document.getElementById('primerPagoPill');
-    if (primerPagoPillEl) primerPagoPillEl.textContent = primerPagoFmt + ' ✓';
-}
 if (mensualidadVal) {
-    document.getElementById('mensualidadDesc')?.replaceChildren(document.createTextNode(' de ' + mensualidadFmt));
+    document.getElementById('mensualidadDesc')?.replaceChildren(document.createTextNode(' de ' + mensualidadFmt + ' por mes'));
+    const mensualidadPillEl = document.getElementById('mensualidadPill');
+    if (mensualidadPillEl) mensualidadPillEl.textContent = mensualidadFmt + '/mes ✓';
 }
 
 /* ── Guardar en admin apenas carga la página (sin esperar el brief) ── */
@@ -352,8 +348,8 @@ if (db && presupuesto.reference) {
         reference:       presupuesto.reference       || '—',
         siteType:        presupuesto.siteType         || '—',
         totalPrice:      presupuesto.totalPrice       || 0,
-        sena:            primerPagoVal, // compat: el admin sigue leyendo p.sena
-        primerPago:      primerPagoVal,
+        sena:            0, // sin pago inicial: el admin (planDe) toma sena/primerPago como el primer pago del modelo anterior
+        primerPago:      0,
         mensualidad:     mensualidadVal,
         businessType:    presupuesto.businessType     || '—',
         objectives:      presupuesto.objectives       || [],
@@ -433,8 +429,8 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
         reference:       presupuesto.reference       || '—',
         siteType:        presupuesto.siteType         || '—',
         totalPrice:      presupuesto.totalPrice       || 0,
-        sena:            primerPagoVal, // compat: el admin sigue leyendo p.sena
-        primerPago:      primerPagoVal,
+        sena:            0, // sin pago inicial: el admin (planDe) toma sena/primerPago como el primer pago del modelo anterior
+        primerPago:      0,
         mensualidad:     mensualidadVal,
         businessType:    presupuesto.businessType     || '—',
         objectives:      presupuesto.objectives       || [],
@@ -471,11 +467,12 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
             emailjs.init('pGNjMv6kEjZEWWdIi');
 
             /* Los textos de estos dos mails viven en el panel de EmailJS, no en el
-               repo (template_1mq1gt7 al cliente, template_xugoxum al admin). Desde
-               el 10-sep-2026 reciben primer_pago y mensualidad (montos sueltos, ej.
-               "$40.000" y "$15.000") en lugar de sena_paid / sena / remaining: los
-               dos templates hay que editarlos allá. total_price ahora vale el
-               primer pago. */
+               repo (template_1mq1gt7 al cliente, template_xugoxum al admin). Reciben
+               primer_pago y mensualidad (montos sueltos, ej. "$20.000"). Desde el
+               14-sep-2026 no hay pago inicial: primer_pago y total_price valen lo
+               mismo que mensualidad (el primer débito de la suscripción), así los
+               templates no se rompen. Si un template dice "primer pago", ese texto
+               hay que corregirlo allá. */
             const totalFmt     = '$' + Number(briefData.totalPrice).toLocaleString('es-AR');
             const pagesLabel   = { '1': '1 pagina (hasta 5 secciones)', '2-4': '2 a 4 paginas', 'mas5': 'mas de 5 paginas' };
             const pagesText    = pagesLabel[briefData.pages] || briefData.pages || '—';
@@ -488,7 +485,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
                 to_email:     briefData.email,
                 project_type: briefData.siteType,
                 total_price:  totalFmt,
-                primer_pago:  primerPagoFmt,
+                primer_pago:  mensualidadFmt,
                 mensualidad:  mensualidadFmt,
                 negocio:      briefData.negocio || briefData.businessType,
                 payment_id:   paymentId
@@ -503,7 +500,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
                 business_type:   briefData.businessType,
                 site_type:       briefData.siteType,
                 total_price:     totalFmt,
-                primer_pago:     primerPagoFmt,
+                primer_pago:     mensualidadFmt,
                 mensualidad:     mensualidadFmt,
                 payment_id:      paymentId,
                 payment_status:  briefData.paymentStatus || 'approved',

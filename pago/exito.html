@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Primer pago confirmado — Gokywebs</title>
+    <title>Pago confirmado — Gokywebs</title>
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,9 +49,9 @@
 </header>
 
 <div class="exito-wrap">
-    <p class="exito-badge">✓ Primer pago confirmado</p>
+    <p class="exito-badge">✓ Pago confirmado</p>
     <h1 class="exito-title">¡Arrancamos! <span>Tu proyecto está en marcha.</span></h1>
-    <p class="exito-desc">Ya recibimos tu primer pago de <span id="montoExito">$50.000</span>. Nos ponemos en contacto por WhatsApp para arrancar hoy mismo con las modificaciones y todo lo que necesita tu web.</p>
+    <p class="exito-desc">Ya recibimos tu pago<span id="montoExito"></span>. Nos ponemos en contacto por WhatsApp para seguir con tu proyecto.</p>
 
     <div id="pendingBox" class="pending-box" style="display:none">
         <h2>⏳ Pago en proceso</h2>
@@ -63,29 +63,15 @@
             <div class="timeline-step">
                 <div class="timeline-num">✓</div>
                 <div class="timeline-body">
-                    <h3>Primer pago abonado</h3>
+                    <h3>Pago abonado</h3>
                     <p>Ya lo recibimos, gracias.</p>
                 </div>
             </div>
             <div class="timeline-step">
                 <div class="timeline-num">2</div>
                 <div class="timeline-body">
-                    <h3>Aplicamos tus modificaciones</h3>
-                    <p>Arrancamos con los cambios sobre la muestra y todo lo que tu web necesita.</p>
-                </div>
-            </div>
-            <div class="timeline-step">
-                <div class="timeline-num">3</div>
-                <div class="timeline-body">
-                    <h3>Web lista en unos 7 días</h3>
-                    <p>Desde el primer pago y la entrega del contenido.</p>
-                </div>
-            </div>
-            <div class="timeline-step">
-                <div class="timeline-num">4</div>
-                <div class="timeline-body">
-                    <h3>A los 7 días arranca tu plan mensual</h3>
-                    <p>Se cobra por <strong>suscripción automática de Mercado Pago</strong> e incluye hosting, dominio, soporte y un cambio por mes.</p>
+                    <h3>Te escribimos por WhatsApp</h3>
+                    <p>Confirmamos el pago y seguimos con lo que corresponde a tu proyecto.</p>
                 </div>
             </div>
         </div>
@@ -112,15 +98,16 @@
     try { pago = JSON.parse(localStorage.getItem('gky_pago') || '{}'); } catch (e) {}
 
     // El monto real viaja en la URL de vuelta de Mercado Pago (crear-preferencia.php lo agrega
-    // a success/pending) — con eso alcanza, no depende de que el localStorage siga vivo.
+    // a success/pending) — con eso alcanza, no depende de que el localStorage siga vivo. Sin
+    // un monto válido no se muestra ninguno: desde el 14-sep-2026 ya no hay monto por defecto.
     const montoParam = Math.floor(Number(params.get('monto')));
-    const monto = (Number.isFinite(montoParam) && montoParam >= 1000) ? montoParam : 50000;
-    const montoFmt = '$' + monto.toLocaleString('es-AR');
+    const monto = (Number.isFinite(montoParam) && montoParam >= 1000) ? montoParam : 0;
+    const montoFmt = monto ? '$' + monto.toLocaleString('es-AR') : '';
     const montoEl = document.getElementById('montoExito');
-    if (montoEl) montoEl.textContent = montoFmt;
+    if (montoEl && montoFmt) montoEl.textContent = ' de ' + montoFmt;
 
     const nombre = pago.nombre ? `Soy ${pago.nombre}. ` : '';
-    const msg = `Hola! ${nombre}Acabo de abonar ${montoFmt} por Mercado Pago para mi proyecto.`;
+    const msg = `Hola! ${nombre}Acabo de abonar ${montoFmt ? montoFmt + ' ' : ''}por Mercado Pago para mi proyecto.`;
     document.getElementById('btnWspFinal').href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
 
     localStorage.removeItem('gky_pago');

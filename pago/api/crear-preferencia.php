@@ -21,34 +21,35 @@ $nombre    = htmlspecialchars(trim($body['nombre']    ?? ''), ENT_QUOTES);
 $whatsapp  = htmlspecialchars(trim($body['whatsapp']  ?? ''), ENT_QUOTES);
 $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-PAGO-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
 
-// Monto dinámico (?monto= en pago/index.html → enviado acá en el body). Se recalcula
+// Monto dinámico (?monto= en pago/index.html → enviado acá en el body). Se valida
 // server-side por seguridad (nunca confiar en el unit_price que mandaría el cliente
-// sin validar): entero, dentro de un rango razonable; si falta o es inválido, cae al
-// default de $50.000 (primer pago de tienda online, cursos e inmobiliaria; el sitio
-// profesional va con ?monto=40000).
+// sin validar): entero, dentro de un rango razonable. Desde el 14-sep-2026 no hay
+// monto por defecto (el que había era el del modelo anterior): sin un monto válido
+// no se crea la preferencia. El servicio mensual no pasa por acá: va por
+// suscripción de Mercado Pago.
 $montoRaw = $body['monto'] ?? null;
-$monto    = is_numeric($montoRaw) ? (int) $montoRaw : 50000;
-if ($monto < 1000 || $monto > 5000000) $monto = 50000;
+$monto    = is_numeric($montoRaw) ? (int) $montoRaw : 0;
+if ($monto < 1000 || $monto > 5000000) { http_response_code(400); echo json_encode(['error' => 'Monto inválido']); exit; }
 
-$descripcion = 'Primer pago para arrancar el proyecto' . ($whatsapp !== '' ? ' (' . $whatsapp . ')' : '');
+$descripcion = 'Pago a Gokywebs' . ($whatsapp !== '' ? ' (' . $whatsapp . ')' : '');
 
 $preference = [
     'items' => [[
-        'id'          => 'primer-pago-web-gokywebs',
-        'title'       => 'Primer pago — Desarrollo Web Gokywebs',
+        'id'          => 'pago-web-gokywebs',
+        'title'       => 'Pago — Gokywebs',
         'description' => $descripcion,
         'quantity'    => 1,
         'currency_id' => 'ARS',
         'unit_price'  => $monto
     ]],
-    // El primer pago se puede hacer con tarjeta hasta en 12 cuotas (con interés: el
-    // valor de cada cuota lo calcula la tarjeta, acá no se escribe nunca).
+    // Con tarjeta se puede pagar hasta en 12 cuotas (con interés: el valor de cada
+    // cuota lo calcula la tarjeta, acá no se escribe nunca).
     'payment_methods' => ['installments' => 12],
     'payer' => ['name' => $nombre],
     'back_urls' => [
         'success' => $BASE_URL . '/exito.html?monto=' . $monto,
-        // Lleva el monto también en el retry, si no el que reintenta después de un pago
-        // fallido cae al default $50.000 en vez del monto real que estaba pagando.
+        // Lleva el monto también en el retry: sin él, el que reintenta después de un
+        // pago fallido volvería a una página sin monto y no podría pagar con Mercado Pago.
         'failure' => $BASE_URL . '/?pago=fallido&monto=' . $monto,
         'pending' => $BASE_URL . '/exito.html?status=pending&monto=' . $monto
     ],

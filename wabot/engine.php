@@ -2324,6 +2324,10 @@ function wabot_texto_pregunta_pago_demo($texto) {
 function wabot_texto_pregunta_cuando_se_paga($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
+    /* "Y si la pago una sola vez y después la mantengo yo?" no pregunta el
+     * orden del pago: pide pagar la creación una sola vez (batería del 14-sep,
+     * se llevaba "la demo no se paga"). */
+    if (wabot_pide_un_solo_pago($texto)) return false;
     /* "tengo que pagarles mantenimiento todos los meses?" pregunta por un costo
      * recurrente, no por el orden del pago: contestar la sena ahi es contestar
      * otra cosa (C02, 1-sep). "despues" + "pagar" solos no alcanzan. */
@@ -4576,7 +4580,13 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     if ($variante !== null && trim((string)($cfg['info'][$variante] ?? '')) !== '') $texto = (string)$cfg['info'][$variante];
     /* info.proceso son los tres pasos, y desde el 11-sep su paso 2 dice el
      * primer pago de lo cotizado: sin charla cotizada, el monto se cae solo. */
-    if ($clave === 'proceso') $texto = wabot_tres_pasos_precio($texto, $conv, $cfg);
+    if ($clave === 'proceso') {
+        $texto = wabot_tres_pasos_precio($texto, $conv, $cfg);
+        // Con el precio ya dado no se le vuelve a preguntar a qué se dedica.
+        if (is_array($conv) && !empty($conv['precio_dado'])) {
+            $texto = trim(preg_replace('/\s*El valor depende del tipo de web:[^\n]*$/u', '', $texto));
+        }
+    }
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
@@ -4658,16 +4668,13 @@ function wabot_rangos_min_max($cfg) {
  * la redacción de respaldo, también armada desde la lista.
  */
 function wabot_texto_rangos($cfg) {
-    $tabla = wabot_tabla_precios_texto($cfg);
-    if ($tabla === '') return trim((string)($cfg['info']['rangos'] ?? $cfg['info']['otra'] ?? ''));
+    /* 14-sep (Pablo): "si pregunta cuánto sale, el bot primero tiene que
+     * averiguar para qué es: no puede dar precios si no sabe de qué trata". */
     $texto = trim((string)($cfg['info']['rangos'] ?? ''));
-    if ($texto !== '' && strpos($texto, '{tabla_precios}') !== false) {
-        return wabot_texto_sin_modelo_viejo(str_replace(['{tabla_precios}', '{mensualidades}'],
-            [$tabla, wabot_mensualidades_texto($cfg)], $texto));
+    if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
+        $texto = 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.';
     }
-    // Sin "depende" adelante: era la respuesta que Pablo retiró el 1-sep.
-    return $tabla
-        . "\nEn todos los casos el abono mensual obligatorio arranca a los 7 días del pago inicial. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+    return wabot_texto_sin_modelo_viejo($texto);
 }
 
 /**
@@ -4676,10 +4683,12 @@ function wabot_texto_rangos($cfg) {
  * demo; con el modelo nuevo el primer pago es un número público y se dice.
  */
 function wabot_texto_pago_generico($cfg) {
-    $tabla = wabot_tabla_precios_texto($cfg);
-    if ($tabla === '') return wabot_texto_sin_modelo_viejo(trim((string)($cfg['info']['pago_generico'] ?? '')));
-    return $tabla
-        . "\nEl pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el abono mensual obligatorio arranca a los 7 días por suscripción automática de Mercado Pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+    // Sin tipo cotizado no se dan montos (14-sep): cómo se paga y la pregunta.
+    $texto = trim((string)($cfg['info']['pago_generico'] ?? ''));
+    if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
+        $texto = 'Es una suscripción mensual por Mercado Pago: se debita sola, con cualquier tarjeta, y no hace falta tener cuenta de Mercado Pago. No hay un pago inicial aparte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
+    }
+    return wabot_texto_sin_modelo_viejo($texto);
 }
 
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
@@ -4747,11 +4756,11 @@ function wabot_texto_sin_sena($texto) {
  * Ningún texto sale hablando del modelo viejo (10-sep-2026).
  *
  * Pablo cambió el modelo comercial: ya no hay pago único, ni seña, ni saldo al
- * entregar. Hay un primer pago y un plan mensual. Los textos de `info.*` los
+ * entregar: desde el 14-sep es un servicio mensual. Los textos de `info.*` los
  * edita él desde el panel, así que producción siempre tiene alguna redacción
  * que ninguna migración por texto exacto conoce: acá se corrige por CONTENIDO,
  * como wabot_frase_retirada(). Sustituye en vez de borrar —"se abona una seña"
- * pasa a "se abona el primer pago"— y tira las oraciones que hablan del saldo,
+ * pasa a "se abona la primera cuota"— y tira las oraciones que hablan del saldo,
  * que no tienen reemplazo. Es la red final; la redacción buena la ponen las
  * migraciones de wabot_config_modelo_mensual().
  */
@@ -4777,11 +4786,13 @@ function wabot_texto_sin_modelo_viejo($texto) {
         $t = implode("\n", $renglones);
     }
 
-    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde el pago inicial', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+/iu', 'el pago inicial de ', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'el pago inicial', $t);
-    $t = preg_replace('/\bse[ñn]a\b|\bsenia\b/iu', 'pago inicial', $t);
-    $t = preg_replace('/\bEs pago [úu]nico\b/u', 'Es un pago inicial', $t);
+    /* 14-sep: ya no hay pago inicial. Lo que un texto viejo llama seña es,
+     * en el servicio mensual, la primera cuota de la suscripción. */
+    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde la primera cuota', $t);
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+/iu', 'la primera cuota de ', $t);
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'la primera cuota', $t);
+    $t = preg_replace('/\bse[ñn]a\b|\bsenia\b/iu', 'primera cuota', $t);
+    $t = preg_replace('/\bEs pago [úu]nico\b/u', 'Es la primera cuota', $t);
     $t = preg_replace('/,?\s*(pago [úu]nico|en un [úu]nico pago)\b/iu', '', $t);
     $t = preg_replace('/,?\s*sin (abono|costos?|cuotas?) mensual(es)?( de plataforma)?/iu', '', $t);
     $t = preg_replace('/\bla web queda a tu nombre y es a medida\b/iu', 'la web es a medida', $t);
@@ -4801,7 +4812,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'El pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el abono mensual obligatorio arranca a los 7 días por suscripción automática de Mercado Pago.';
+        return 'Es una suscripción mensual por Mercado Pago: se debita sola, con cualquier tarjeta, y no hace falta tener cuenta de Mercado Pago. No hay un pago inicial aparte.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['modelo'] === 'unico') {
@@ -4876,12 +4887,12 @@ function wabot_sena_de($conv, $cfg) {
 /** Los textos del modelo viejo, para las charlas cotizadas antes del 10-sep. */
 function wabot_modelo_unico_textos() {
     return [
-        'msg_precio'     => "Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés.\nEn este enlace podés verlo bien detallado: {link}",
-        'msg_precio_tras_pitch' => "El desarrollo completo tiene un valor de {precio}.\nEn este enlace podés verlo bien detallado: {link}",
-        'precio_resumen' => "El total es {precio} por todo el desarrollo, y el detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}",
+        'msg_precio'     => "Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés.",
+        'msg_precio_tras_pitch' => "El desarrollo completo tiene un valor de {precio}.",
+        'precio_resumen' => "El total es {precio} por todo el desarrollo.\nY acá podés ver {portfolio_texto}: {portfolio}",
         'pago'           => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total. Para arrancar se deja una parte y el saldo al entregar la web.',
         'pago_catalogo'  => 'El total cotizado es {precio}. Se abona por transferencia, con una parte para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.',
-        'caro'           => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés. En el link del presupuesto tenés el detalle de todo lo que incluye.',
+        'caro'           => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés.',
         'mantenimiento'  => 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Sale {precio} por mes y acá lo podés ver en detalle: {link}',
         'hosting'        => 'Hosting y dominio están incluidos en el precio, con el primer año cubierto. Después se renuevan una vez al año, y antes del vencimiento te confirmamos el importe actualizado. Si tenés el plan de mantenimiento activo, no la pagás: el hosting y el dominio ya están incluidos.',
         'obligatorio'    => 'Es opcional. La web es tuya igual: lo contratás solo si lo querés, y lo podés dar de baja cuando quieras.',
@@ -4976,7 +4987,8 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if (($v['modelo'] ?? '') === 'unico' || $v['mensualidad'] === '') return $v['precio'];
-    return $v['precio'] . ' de pago inicial y ' . $v['mensualidad'] . ' por mes';
+    // Una charla cotizada con pago inicial (antes del 14-sep) conserva sus dos números.
+    return $v['precio'] !== $v['mensualidad'] ? $v['precio'] . ' de pago inicial y ' . $v['mensualidad'] . ' por mes' : $v['mensualidad'] . ' por mes';
 }
 
 /** El nombre de cada tipo como se dice en la tabla de precios. */
@@ -5032,8 +5044,7 @@ function wabot_tabla_precios_texto($cfg) {
     foreach (wabot_precio_grupos($cfg) as $g) {
         $nombres = wabot_lista_o($g['nombres']);
         $linea = mb_strtoupper(mb_substr($nombres, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($nombres, 1, null, 'UTF-8')
-               . ': pago inicial de ' . $g['precio'];
-        if ($g['mensualidad'] !== '') $linea .= ' y abono mensual obligatorio de ' . $g['mensualidad'];
+               . ': ' . ($g['mensualidad'] !== '' ? $g['mensualidad'] . ' por mes' : $g['precio']);
         $lineas[] = $linea . '.';
     }
     return implode(' ', $lineas);
@@ -5065,7 +5076,7 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
         ['{precio}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
-        [$v['precio'] !== '' ? $v['precio'] : 'el pago inicial',
+        [$v['precio'] !== '' ? $v['precio'] : 'el valor del servicio',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades],
@@ -5088,6 +5099,25 @@ function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
     $t = wabot_tres_pasos_precio($t, $conv, $cfg);
     if ($conPregunta && $t !== '') $t .= "\n" . wabot_tres_pasos_pregunta();
     return $t;
+}
+
+/**
+ * El servicio mensual con lo que incluye, que va debajo de lo que le podemos
+ * hacer en el primer mensaje del precio (Pablo, 14-sep). Con la mensualidad
+ * congelada de la charla. La charla del pago único no lo lleva.
+ */
+function wabot_servicio_texto($tipo, $conv, $cfg) {
+    $v = wabot_precio_vigente($conv, $cfg, $tipo);
+    if (($v['modelo'] ?? '') === 'unico') return '';
+    $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']));
+    $mensual = trim((string)($v['mensualidad'] ?? ''));
+    return $mensual !== '' ? str_replace('{mensualidad}', $mensual, $t)
+        : trim(preg_replace('/ son \{mensualidad\} por mes/u', '', $t));
+}
+
+function wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg) {
+    $servicio = wabot_servicio_texto($tipo, $conv, $cfg);
+    return $servicio === '' ? $precioTexto : rtrim((string)$precioTexto) . "\n\n" . $servicio;
 }
 
 /**
@@ -5259,7 +5289,7 @@ function wabot_precio_resumen($conv, $cfg) {
     }
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "El pago inicial es de {precio} y el abono mensual obligatorio, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "Son {mensualidad} por mes, con todo incluido: el armado de la web, hosting, dominio, soporte y mantenimiento técnico.\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace(['{sena}', '{precio}'], ['', $precio], $plantilla), $conv, $cfg);
 }
@@ -5617,8 +5647,8 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
     // La charla cotizada con el pago único conserva su redacción: el formato
     // del 11-sep habla de primer pago y plan, que para ella no existen.
     if ($fijo !== '' && wabot_precio_vigente($conv, $cfg, $tipo)['modelo'] !== 'unico') {
-        // {link} desde el 2-sep: el mensaje del precio termina en el link del
-        // presupuesto, que es donde el cliente ve el detalle y los trabajos.
+        // Sin {link} desde el 14-sep (Pablo): lo que incluye va en el mismo
+        // mensaje, así que el link del presupuesto no se manda más.
         // {precio} y {mensualidad} salen del precio vigente de la charla.
         $fijo = str_replace('{propuesta}', wabot_propuesta_texto($tipo, $conv), $fijo);
         return wabot_precio_placeholders($fijo, $conv, $cfg, $tipo);
@@ -5812,9 +5842,9 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* EL TURNO DEL PRECIO SON DOS MENSAJES (Pablo, 14-sep): primero lo que le
-     * podemos hacer con el link del presupuesto, y 2 segundos después LOS TRES
-     * PASOS (demo gratis, primer pago, plan mensual). Del 11 al 13-sep fueron
+    /* EL TURNO DEL PRECIO SON DOS MENSAJES (Pablo, 14-sep, versión vigente):
+     * primero lo que le podemos hacer con el link y el SERVICIO MENSUAL con lo
+     * que incluye, y 2 segundos después la oferta de la demo gratis. Del 11 al 13-sep fueron
      * un solo globo; wabot_demora_tipeo() le da a los pasos sus 2 segundos
      * fijos. Sin nada en el medio (Pablo, 2-sep:
      * "sacá todo lo que sea 'si te cierra', 'si va por ahí'"). El link del
@@ -5823,7 +5853,7 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['fase'] = 'prediseno';
     $conv['cta_muestra'] = true;
     wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
-    return [$precioTexto, wabot_tres_pasos_texto($conv, $cfg)];
+    return [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -5953,7 +5983,7 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * dicho, así que el formulario va en el mismo turno —en su propio globo,
      * porque lleva el link— y los pasos van sin la pregunta. */
     $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
-    $out = [$precioSolo, wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
+    $out = [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
     if ($pedidoDemo !== '') $out[] = $pedidoDemo;
     return $out;
 }
@@ -6568,7 +6598,11 @@ function wabot_apunta_a_lo_ya_dicho($texto) {
                 'la de arriba', 'el de arriba', 'la anterior', 'el anterior',
                 'ya la mande', 'ya lo mande', 'ya la pase', 'ya lo pase',
                 'esa misma', 'la misma', 'la que dije', 'mas arriba', 'fijate arriba',
-                'en el chat', 'al principio', 'ya esta arriba',
+                'en el chat', 'ya esta arriba',
+                /* "al principio" suelto no: "¿hay que pagar algo al principio?"
+                 * derivaba la charla por datos ya dados (batería del 14-sep). */
+                'dije al principio', 'puse al principio', 'escribi al principio', 'conte al principio',
+                'mande al principio', 'pase al principio', 'esta al principio', 'fijate al principio',
                 // Clínica de Mar (27-ago): "Está todo en lo que te mandé" no
                 // matcheaba ninguna de las de arriba —tienen el pronombre
                 // pegado al verbo ("te LO mandé")— y el bot siguió pidiendo
