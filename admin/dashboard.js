@@ -701,7 +701,7 @@ function renderEmbudoPresupuesto() {
                firestore.rules lo rechazaría): un total en 0 con precioAt ya
                registrado solo puede ser una sesión vieja del catálogo de +100
                productos. Desde el 10-sep-2026 la calculadora guarda como total el
-               primer pago ($40.000 o $60.000), que es lo que se vio en pantalla. */
+               primer pago ($40.000 o $50.000), que es lo que se vio en pantalla. */
             const precio = fmtPrecioOACotizar(s.totalPrice, Number(s.totalPrice) === 0);
             out += `<a class="funnel-leak-item" href="https://wa.me/${s.phone.replace(/\D/g, "")}" target="_blank" rel="noopener" title="Abrir WhatsApp">
                 <span class="funnel-leak-phone">${escapeHtml(s.phone)}</span>
@@ -981,14 +981,14 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    pago, `abono`), que quedan por compatibilidad con los docs anteriores.
    ═══════════════════════════════════════════════════════════ */
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    primerPago: 40000, mensual: 20000 },
-    ecommerce:    { label: "Ecommerce",            primerPago: 60000, mensual: 30000 },
-    cursos:       { label: "Plataforma de cursos", primerPago: 60000, mensual: 30000 },
-    inmobiliaria: { label: "Inmobiliaria",         primerPago: 60000, mensual: 30000 },
-    noticias:     { label: "Portal de noticias",   primerPago: 60000, mensual: 30000 },
+    profesional:  { label: "Sitio profesional",    primerPago: 40000, mensual: 15000 },
+    ecommerce:    { label: "Ecommerce",            primerPago: 50000, mensual: 25000 },
+    cursos:       { label: "Plataforma de cursos", primerPago: 50000, mensual: 25000 },
+    inmobiliaria: { label: "Inmobiliaria",         primerPago: 50000, mensual: 25000 },
+    noticias:     { label: "Portal de noticias",   primerPago: 50000, mensual: 25000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { primerPago: 60000, mensual: 30000 };
+const PLAN_RESTO = { primerPago: 50000, mensual: 25000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
 const DIAS_HASTA_EL_PLAN = 7;
 
@@ -5017,7 +5017,7 @@ function parseChatBoceto(texto) {
    se conservaron 'landing' / 'mensual' para los planes del 10-sep-2026. Solo son el
    respaldo de los docs que no traen planLabel / monto propios. */
 const MANT_PLAN_LABELS = { landing: "Plan mensual sitio profesional", mensual: "Plan mensual tienda online, cursos e inmobiliaria" };
-const MANT_PLAN_MONTO  = { landing: 20000, mensual: 30000 };
+const MANT_PLAN_MONTO  = { landing: 15000, mensual: 25000 };
 
 function mantToDate(value) {
     if (value?.toDate) return value.toDate();

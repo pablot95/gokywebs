@@ -4648,7 +4648,7 @@ function wabot_texto_rangos($cfg) {
     }
     // Sin "depende" adelante: era la respuesta que Pablo retiró el 1-sep.
     return $tabla
-        . "\nEn todos los casos el plan mensual arranca a los 7 días del primer pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+        . "\nEn todos los casos el abono mensual obligatorio arranca a los 7 días del pago inicial. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
 }
 
 /**
@@ -4660,7 +4660,7 @@ function wabot_texto_pago_generico($cfg) {
     $tabla = wabot_tabla_precios_texto($cfg);
     if ($tabla === '') return wabot_texto_sin_modelo_viejo(trim((string)($cfg['info']['pago_generico'] ?? '')));
     return $tabla
-        . "\nEl primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 7 días por suscripción automática de Mercado Pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
+        . "\nEl pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el abono mensual obligatorio arranca a los 7 días por suscripción automática de Mercado Pago. Contame a qué te dedicás y te confirmo cuál sería el tuyo.";
 }
 
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
@@ -4741,7 +4741,7 @@ function wabot_texto_sin_modelo_viejo($texto) {
     if ($t === '') return $t;
     // "mantenimiento es opcional" y no "es opcional" suelto: el texto nuevo
     // dice "no es opcional", y eso no se toca.
-    if (!preg_match('/se[ñn]a|senia|\bsaldo\b|pago [úu]nico|[úu]nico pago|abono mensual|costos? mensual|queda a tu nombre|mantenimiento es opcional/iu', $t)) return $t;
+    if (!preg_match('/se[ñn]a|senia|\bsaldo\b|pago [úu]nico|[úu]nico pago|sin abono mensual|costos? mensual|queda a tu nombre|mantenimiento es opcional/iu', $t)) return $t;
 
     /* Las oraciones del saldo se van enteras: no hay saldo en el modelo nuevo.
      * Renglón por renglón, para no juntar en uno los párrafos del texto. */
@@ -4758,11 +4758,11 @@ function wabot_texto_sin_modelo_viejo($texto) {
         $t = implode("\n", $renglones);
     }
 
-    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde el primer pago', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+/iu', 'el primer pago de ', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'el primer pago', $t);
-    $t = preg_replace('/\bse[ñn]a\b|\bsenia\b/iu', 'primer pago', $t);
-    $t = preg_replace('/\bEs pago [úu]nico\b/u', 'Es un primer pago', $t);
+    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde el pago inicial', $t);
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+/iu', 'el pago inicial de ', $t);
+    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'el pago inicial', $t);
+    $t = preg_replace('/\bse[ñn]a\b|\bsenia\b/iu', 'pago inicial', $t);
+    $t = preg_replace('/\bEs pago [úu]nico\b/u', 'Es un pago inicial', $t);
     $t = preg_replace('/,?\s*(pago [úu]nico|en un [úu]nico pago)\b/iu', '', $t);
     $t = preg_replace('/,?\s*sin (abono|costos?|cuotas?) mensual(es)?( de plataforma)?/iu', '', $t);
     $t = preg_replace('/\bla web queda a tu nombre y es a medida\b/iu', 'la web es a medida', $t);
@@ -4782,7 +4782,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'El primer pago se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el plan mensual arranca a los 7 días por suscripción automática de Mercado Pago.';
+        return 'El pago inicial se puede hacer por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés, y el abono mensual obligatorio arranca a los 7 días por suscripción automática de Mercado Pago.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['modelo'] === 'unico') {
@@ -4957,7 +4957,7 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if (($v['modelo'] ?? '') === 'unico' || $v['mensualidad'] === '') return $v['precio'];
-    return $v['precio'] . ' de primer pago y ' . $v['mensualidad'] . ' por mes';
+    return $v['precio'] . ' de pago inicial y ' . $v['mensualidad'] . ' por mes';
 }
 
 /** El nombre de cada tipo como se dice en la tabla de precios. */
@@ -5013,8 +5013,8 @@ function wabot_tabla_precios_texto($cfg) {
     foreach (wabot_precio_grupos($cfg) as $g) {
         $nombres = wabot_lista_o($g['nombres']);
         $linea = mb_strtoupper(mb_substr($nombres, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($nombres, 1, null, 'UTF-8')
-               . ': primer pago de ' . $g['precio'];
-        if ($g['mensualidad'] !== '') $linea .= ' y después ' . $g['mensualidad'] . ' por mes';
+               . ': pago inicial de ' . $g['precio'];
+        if ($g['mensualidad'] !== '') $linea .= ' y abono mensual obligatorio de ' . $g['mensualidad'];
         $lineas[] = $linea . '.';
     }
     return implode(' ', $lineas);
@@ -5046,7 +5046,7 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
         ['{precio}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
-        [$v['precio'] !== '' ? $v['precio'] : 'el primer pago',
+        [$v['precio'] !== '' ? $v['precio'] : 'el pago inicial',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          (string)($d['link'] ?? ''), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades],
@@ -5240,7 +5240,7 @@ function wabot_precio_resumen($conv, $cfg) {
     }
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "El primer pago es de {precio} y el plan mensual, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "El pago inicial es de {precio} y el abono mensual obligatorio, que arranca a los 7 días, es de {mensualidad}.\nEl detalle completo está acá: {link}\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace(['{sena}', '{precio}'], ['', $precio], $plantilla), $conv, $cfg);
 }

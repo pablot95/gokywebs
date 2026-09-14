@@ -103,7 +103,7 @@ caso('modo natural → manda la versión redactada de la parte del precio',
 /* Los tres pasos van en su propio mensaje desde el 14-sep y son texto
  * dictado: se reescribe el precio y ellos salen tal cual. */
 caso('los tres pasos van en su propio mensaje, SIN el link (sale con el sí del cliente), y NO se reescriben',
-    mb_stripos($r[1], "Así trabajamos, en tres pasos") === 0
+    mb_stripos($r[1], "Así trabajamos") === 0
     && strpos(implode("\n", $r), 'gokywebs.com/form/') === false
     && mb_substr(rtrim($r[1]), -mb_strlen(wabot_tres_pasos_pregunta())) === wabot_tres_pasos_pregunta());
 
@@ -161,12 +161,12 @@ $c = convNueva();
 $r = wabot_responder('vendo ropa', $c, $cfgFijo);
 caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
-    && strpos(implode("\n", (array)$r), '$60.000') !== false);
+    && strpos(implode("\n", (array)$r), '$50.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $60.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
+    wabot_validar_redaccion('Sale $50.000 de primer pago y $25.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
-    wabot_validar_redaccion('Sale $290.000 por todo, con seña de $60.000, mirá gokywebs.com/presupuestos/ecommerce',
+    wabot_validar_redaccion('Sale $290.000 por todo, con seña de $50.000, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) === null);
 caso('tampoco puede colar 3 pagos: ya no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, o en 3 pagos de $100.000, mirá gokywebs.com/presupuestos/ecommerce',
@@ -229,13 +229,13 @@ echo "— Dos artículos pegados: \"iría un una página\" (salió así en produ
 
 $basePrecio = wabot_msg_precio_texto('landing', $cfg);
 caso('"un una" se rechaza y cae al texto fijo',
-    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Para lo tuyo iría un una página a medida: $40.000 de primer pago y $15.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('"la un" también',
-    wabot_validar_redaccion('Te queda la un página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
+    wabot_validar_redaccion('Te queda la un página a medida: $40.000 de primer pago y $15.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000 de primer pago y $15.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $40.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $40.000 de primer pago y $15.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y una redacción que se come la mensualidad NO pasa: los dos montos van siempre juntos (10-sep)',
     wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 
@@ -316,7 +316,7 @@ caso('un "cómo pago?" post-demo NO recibe el CBU ni el alias',
 // Preguntar cómo se paga ES interés real: ahí sí sale el aviso, una vez.
 caso('se le avisa que lo sigue el desarrollador, y queda derivado',
     mb_stripos($textoPagoPD, 'El desarrollador te va a escribir') !== false
-    && mb_stripos($textoPagoPD, 'coordinar el primer pago') !== false
+    && mb_stripos($textoPagoPD, 'coordinar el pago inicial') !== false
     && mb_stripos($textoPagoPD, 'Pablo') === false
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 

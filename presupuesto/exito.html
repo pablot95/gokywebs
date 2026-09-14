@@ -327,8 +327,8 @@ const presupuesto    = presupuestoRaw ? JSON.parse(presupuestoRaw) : {};
 // Si el draft no los trae se deducen del siteType (mismos montos que PRIMER_PAGO /
 // MENSUALIDAD de script.js y que api/crear-preferencia.php); si tampoco hay
 // siteType no se muestra ningún monto, antes que afirmar uno que no se leyó.
-const PRIMER_PAGO = { landing: 40000, ecommerce: 60000, inmobiliaria: 60000, elearning: 60000 };
-const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
+const PRIMER_PAGO = { landing: 40000, ecommerce: 50000, inmobiliaria: 50000, elearning: 50000 };
+const MENSUALIDAD = { landing: 15000, ecommerce: 25000, inmobiliaria: 25000, elearning: 25000 };
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const primerPagoVal  = Number(presupuesto.primerPago)  || PRIMER_PAGO[presupuesto.siteType] || 0;
 const mensualidadVal = Number(presupuesto.mensualidad) || MENSUALIDAD[presupuesto.siteType] || 0;
@@ -473,7 +473,7 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
             /* Los textos de estos dos mails viven en el panel de EmailJS, no en el
                repo (template_1mq1gt7 al cliente, template_xugoxum al admin). Desde
                el 10-sep-2026 reciben primer_pago y mensualidad (montos sueltos, ej.
-               "$40.000" y "$20.000") en lugar de sena_paid / sena / remaining: los
+               "$40.000" y "$15.000") en lugar de sena_paid / sena / remaining: los
                dos templates hay que editarlos allá. total_price ahora vale el
                primer pago. */
             const totalFmt     = '$' + Number(briefData.totalPrice).toLocaleString('es-AR');

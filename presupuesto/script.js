@@ -748,8 +748,8 @@ function getSiteType() {
    calculadora. Son DOS números que nunca se suman entre sí. El monto que
    cobra Mercado Pago se recalcula server-side en api/crear-preferencia.php a
    partir del siteType: PRIMER_PAGO tiene que coincidir con lo que hay ahí. */
-const PRIMER_PAGO = { landing: 40000, ecommerce: 60000, inmobiliaria: 60000, elearning: 60000 };
-const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
+const PRIMER_PAGO = { landing: 40000, ecommerce: 50000, inmobiliaria: 50000, elearning: 50000 };
+const MENSUALIDAD = { landing: 15000, ecommerce: 25000, inmobiliaria: 25000, elearning: 25000 };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget() y
 // renderResult() necesitan los mismos dos números. `sinPrecio` queda por

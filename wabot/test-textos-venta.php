@@ -53,17 +53,17 @@ caso('YA NO hay párrafo suelto de montos: eso lo dicen los pasos (11-sep, terce
     mb_stripos($precio, 'Empezás con un primer pago') === false, $precio);
 caso('el link del presupuesto cierra el primer mensaje; los pasos arrancan el segundo (14-sep)',
     preg_match('/ Podés ver los detalles en gokywebs\.com\/presupuestos\/\S+$/u', $precio) === 1
-    && mb_strpos($pasos, 'Así trabajamos, en tres pasos:') === 0, $precio);
-caso('"primer pago", nunca "pago inicial"', mb_stripos($precio, 'pago inicial') === false);
+    && mb_strpos($pasos, 'Así trabajamos:') === 0, $precio);
+caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos($precio . $pasos, 'primer pago') === false);
 /* 14-sep: los pasos explayados, con los montos adentro, van en un segundo
  * mensaje, 2 segundos después del precio. */
 caso('son dos mensajes: el segundo, los tres pasos con la pregunta, textuales',
     count($r) === 2
-    && $pasos === str_replace(['{precio}', '{mensualidad}'], ['$40.000', '$20.000'], wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta(), $pasos);
-caso('el paso 2 dice el primer pago de lo cotizado y para qué es',
-    mb_strpos($pasos, '2. Si te gusta y querés avanzar, se hace un primer pago de $40.000, con eso avanzamos hacia el desarrollo completo') !== false);
-caso('y el paso 3, el plan mensual con su monto y para qué sirve',
-    mb_strpos($pasos, '3. A los 7 días la web queda terminada y comienza el plan mensual de $20.000, esto incluye todo lo necesario para tener la web funcionando correctamente y actualizada') !== false);
+    && $pasos === str_replace(['{precio}', '{mensualidad}'], ['$40.000', '$15.000'], wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta(), $pasos);
+caso('el paso 2 dice el pago inicial de lo cotizado y para qué es',
+    mb_strpos($pasos, '2. Si querés avanzar, se abona un pago inicial de $40.000.') !== false);
+caso('y el paso 3, el abono mensual obligatorio con su monto, qué incluye y que sin abono la web se da de baja',
+    mb_strpos($pasos, '3. A los 7 días ya estaría subida y funcionando, ahí comienza el abono mensual de $15.000, que mantiene la web activa e incluye hosting, dominio, soporte y un cambio por mes. Si el abono se da de baja, la web deja de estar publicada.') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
@@ -79,9 +79,9 @@ foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una we
     $c = conv_tv('5491166660003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
-    caso("$tipo: la frase fija de su tipo y \$60.000 + \$30.000 por mes",
-        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'primer pago de $60.000') !== false
-        && strpos($t, 'plan mensual de $30.000') !== false, $t);
+    caso("$tipo: la frase fija de su tipo y \$50.000 + \$25.000 por mes",
+        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'pago inicial de $50.000') !== false
+        && strpos($t, 'abono mensual de $25.000') !== false, $t);
 }
 
 /* El que pregunta "cuánto sale" antes de decir el rubro entra por el camino
@@ -94,14 +94,14 @@ $r = wabot_precio('ecommerce', $c, $cfg);
 caso('el que pidió el precio de entrada recibe el mismo formato',
     strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería podemos hacer una web para vender online') === 0
     && mb_stripos($r[0], 'para lo tuyo va') === false, $r[0]);
-caso('con los tres pasos en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'tres pasos') !== false);
+caso('con los tres pasos en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'Así trabajamos') !== false);
 
 $c = conv_tv('5491166660005TEST');
 $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
 caso('el que pidió la demo al entrar: precio con los tres pasos sin la pregunta, y el formulario atrás',
     count($r) === 3 && wabot_texto_arranca_con_propuesta($r[0]) && strpos($r[1], wabot_tres_pasos_pregunta()) === false
-    && mb_stripos($r[1], 'tres pasos') !== false
+    && mb_stripos($r[1], 'Así trabajamos') !== false
     && strpos($r[2], 'gokywebs.com/form/') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 /* Cotizada antes del 10-sep, sin precio congelado: conserva su pago único y

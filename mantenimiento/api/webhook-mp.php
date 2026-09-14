@@ -8,8 +8,8 @@
  * monto, y crea el suscriptor en la colección Firestore "mantenimiento" vía REST.
  *
  * Planes vigentes (modelo del 10-sep-2026):
- *   - plan 'landing' → plan mensual del sitio profesional ($20.000/mes)
- *   - plan 'mensual' → plan mensual de tienda online, cursos e inmobiliaria ($30.000/mes)
+ *   - plan 'landing' → plan mensual del sitio profesional ($15.000/mes desde el 14-sep-2026; antes $20.000)
+ *   - plan 'mensual' → plan mensual de tienda online, cursos e inmobiliaria ($25.000/mes desde el 14-sep-2026; antes $30.000)
  *   Los valores 'landing' / 'mensual' del campo `plan` se conservan porque el
  *   panel admin los usa como claves.
  *
@@ -24,11 +24,14 @@
 
 // --- Mapa de planes de Mercado Pago (preapproval_plan_id → plan) ---
 // Los dos planes del modelo nuevo (10-sep-2026). El id es el valor de
-// "preapproval_plan_id" del link de suscripción: el de $20.000 es el que abre
-// mpago.la/1pfejMG (/mantenimientomensual) y el de $30.000 el de /mantenimientoweb.
+// "preapproval_plan_id" del link de suscripción: el del sitio profesional
+// ($20.000/mes, link viejo mpago.la/1pfejMG) y el del resto ($30.000/mes). Desde el
+// 14-sep-2026 la web ofrece los planes nuevos mpago.la/1hYAiTM ($15.000/mes) y
+// mpago.la/28VK7Ev ($25.000/mes): entran por el respaldo por importe hasta sumar
+// su preapproval_plan_id a este mapa. Los ids de abajo quedan para los suscriptores viejos.
 // Un plan que no esté en este mapa cae al respaldo por importe.
-const MP_PLAN_ID_SITIO_PROFESIONAL = 'ea40c15059ec42a7ac5b6293d77ae148';   // $20.000/mes
-const MP_PLAN_ID_RESTO             = '36a67a7e42e7404989beb99703a0569b';   // $30.000/mes
+const MP_PLAN_ID_SITIO_PROFESIONAL = 'ea40c15059ec42a7ac5b6293d77ae148';   // plan viejo, $20.000/mes
+const MP_PLAN_ID_RESTO             = '36a67a7e42e7404989beb99703a0569b';   // plan viejo, $30.000/mes
 
 $MP_PLANES = [
     MP_PLAN_ID_SITIO_PROFESIONAL => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
@@ -107,16 +110,19 @@ if ($status !== 'authorized') {
 //    importe, que cambia con la actualización anual del plan.
 // 2) Respaldo por el monto, para planes que todavía no están en el mapa. Se
 //    conservan los importes viejos para los suscriptores de los planes anteriores:
-//    20.000 (nuevo) / 7.000 y 10.000 (viejos) → landing;
-//    30.000 (nuevo) / 15.000 (viejo) → mensual.
+//    15.000 (vigente desde el 14-sep-2026) / 20.000, 7.000 y 10.000 (viejos) → landing;
+//    25.000 (vigente desde el 14-sep-2026) / 30.000 y 15.000 (viejos) → mensual.
+//    Ojo: 15.000 figura en las dos listas; como landing se evalúa primero, un
+//    suscriptor viejo del plan 'mensual' de 15.000 que no esté en $MP_PLANES
+//    caería como landing (el plan viejo de 15.000 sí está en el mapa).
 $planId = (string)($pre['preapproval_plan_id'] ?? '');
 if ($planId !== '' && isset($MP_PLANES[$planId])) {
     $plan      = $MP_PLANES[$planId]['plan'];
     $planLabel = $MP_PLANES[$planId]['label'];
-} elseif (in_array($amount, [20000, 7000, 10000], true)) {
+} elseif (in_array($amount, [15000, 20000, 7000, 10000], true)) {
     $plan      = 'landing';
     $planLabel = $MP_PLANES[MP_PLAN_ID_SITIO_PROFESIONAL]['label'];
-} elseif (in_array($amount, [30000, 15000], true)) {
+} elseif (in_array($amount, [25000, 30000, 15000], true)) {
     $plan      = 'mensual';
     $planLabel = $MP_PLANES[MP_PLAN_ID_RESTO]['label'];
 } else {

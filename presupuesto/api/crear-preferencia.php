@@ -24,14 +24,14 @@ $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' 
 // Primer pago (modelo 10-sep-2026: primer pago + plan mensual obligatorio). Se
 // recalcula server-side a partir del siteType, nunca se confía en un monto mandado
 // desde el cliente: sitio profesional (clave 'landing') $40.000 · ecommerce,
-// inmobiliaria y elearning $60.000. Tiene que coincidir con PRIMER_PAGO de
+// inmobiliaria y elearning $50.000. Tiene que coincidir con PRIMER_PAGO de
 // presupuesto/script.js y de presupuesto/exito.html.
 $siteType   = trim($body['siteType'] ?? '');
-$primerPago = ($siteType === 'landing') ? 40000 : 60000;
+$primerPago = ($siteType === 'landing') ? 40000 : 50000;
 
 // TODO (Pablo): el plan mensual NO se crea acá. Es una suscripción automática de
-// Mercado Pago (preapproval) que arranca a los 7 días del primer pago: $20.000/mes
-// sitio profesional, $30.000/mes el resto. Se da de alta desde la cuenta de MP de
+// Mercado Pago (preapproval) que arranca a los 7 días del primer pago: $15.000/mes
+// sitio profesional, $25.000/mes el resto. Se da de alta desde la cuenta de MP de
 // Gokywebs y las altas las procesa mantenimiento/api/webhook-mp.php (crea el
 // suscriptor en Firestore /mantenimiento; ahí falta pegar los ids de los dos
 // planes nuevos). Para que el primer débito caiga a los 7 días, el plan tiene que
