@@ -465,4 +465,25 @@ caso('aceptar después de consultar entrega el formulario, sin prometer un minut
 foreach (['999FPTEST', 'QATESTREG11SEP', 'QATESTTEXTOS11SEP', 'QATESTSIS1', 'QATESTSIS2', 'igQATESTSIS3'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
+echo "\n-- La forma de pago que eligió el cliente va al boceto (15-sep) --\n";
+foreach (['Prefiero pagarla una sola vez' => 'unico', 'Vamos con el pago unico, me pasas el CBU?' => 'unico',
+          'No me interesa el mensual' => 'unico', 'Quiero avanzar con el pago mensual' => 'mensual',
+          'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual'] as $f => $esperada) {
+    caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
+}
+foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Quiero saber del pago unico',
+          'Cual me conviene mas, pagar una vez o por mes?', 'dale vamos de una'] as $f) {
+    caso('no elige nada: "' . $f . '"', wabot_modalidad_elegida_en($f) === null, (string)wabot_modalidad_elegida_en($f));
+}
+$cMod = conv_nueva('999MODTEST', ['tipo' => 'ecommerce', 'precio_dado' => true, 'fase' => 'prediseno']);
+wabot_precio_congelar($cMod, 'ecommerce', $cfg);
+$cMod['modalidad_elegida'] = ''; $cMod['modalidad_sincronizada'] = ''; $cMod['lead_creado'] = false; $cMod['lead_doc'] = null;
+caso('anota la forma elegida', wabot_modalidad_anotar('Prefiero pagarla una sola vez', $cMod, $cfg) === true && $cMod['modalidad_elegida'] === 'unico');
+caso('y el boceto la lleva en modalidad', strpos(json_encode(wabot_lead_campos($cMod, $cfg)), '"modalidad":{"stringValue":"unico"}') !== false);
+$cMod['lead_creado'] = true; $cMod['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/abc'; $cMod['modalidad_sincronizada'] = 'unico';
+caso('si después cambia de idea, se completa en el boceto que ya existe',
+    wabot_modalidad_anotar('Mejor quiero el mensual', $cMod, $cfg) === true
+    && $cMod['modalidad_elegida'] === 'mensual' && $cMod['modalidad_sincronizada'] === 'mensual');
+@unlink(WABOT_DATA . '/conv/999MODTEST.json');
+
 todo_ok();
