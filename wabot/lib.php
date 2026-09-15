@@ -4930,6 +4930,8 @@ function wabot_logo_sincronizar(&$conv) {
  */
 function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!function_exists('wabot_modalidad_elegida_en')) return false;
+    if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
+        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
     $elegida = wabot_modalidad_elegida_en($texto);
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;
