@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Elegí la mejor versión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230E5C4A'/%3E%3Ctext x='16' y='22' font-family='Arial,sans-serif' font-weight='700' font-size='14' fill='%23fff' text-anchor='middle'%3ERS%3C/text%3E%3C/svg%3E">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Space Grotesk",system-ui,sans-serif;background:#EEF3F1;color:#16302B;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.2rem;gap:2.6rem}
+  h1{font-weight:600;font-size:clamp(1.8rem,4vw,2.6rem);letter-spacing:-.02em;text-align:center}
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:1.6rem;width:min(1000px,100%)}
+  .card{display:block;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 22px 50px -26px rgba(14,92,74,.5);transition:transform .35s cubic-bezier(0.16,1,0.3,1),box-shadow .35s;text-decoration:none;color:inherit}
+  .card:hover,.card:focus-visible{transform:translateY(-8px);box-shadow:0 32px 62px -26px rgba(14,92,74,.6)}
+  .card:focus-visible{outline:3px solid #0E5C4A;outline-offset:3px}
+  .card .thumb{aspect-ratio:16/9;width:100%;background:#D3E6DD;overflow:hidden}
+  .card .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .label{padding:1rem 1.3rem;font-size:1.15rem;font-weight:600}
+  @media (max-width:640px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <h1>Elegí la mejor versión.</h1>
+  <div class="cards">
+    <a class="card" href="version-1/">
+      <span class="thumb"><img src="previews/version-1.webp" alt="Versión 1 — dirección editorial premium, navy y bronce" width="1440" height="810"></span>
+      <span class="label">Versión 1</span>
+    </a>
+    <a class="card" href="version-2/">
+      <span class="thumb"><img src="previews/version-2.webp" alt="Versión 2 — dirección clara y moderna, teal y menta" width="1440" height="810"></span>
+      <span class="label">Versión 2</span>
+    </a>
+  </div>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>

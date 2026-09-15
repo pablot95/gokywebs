@@ -1,0 +1,16 @@
+{
+  "proyecto": "Gisele esencia resiliente — V2 Consciencia",
+  "banco": "Pexels (licencia libre, sin atribución obligatoria)",
+  "imagenes": [
+    { "archivo": "dunes.jpg", "pexelsId": 28638786, "url": "https://www.pexels.com/photo/28638786/", "uso": "seccion atmosférica — dunas tierra (el camino)" },
+    { "archivo": "sky.jpg", "pexelsId": 4870969, "url": "https://www.pexels.com/photo/4870969/", "uso": "seccion — cielo terracota (presente / paz)" },
+    { "archivo": "crystal-photo.jpg", "pexelsId": 2942855, "url": "https://www.pexels.com/photo/2942855/", "uso": "pilar sticky — cuarzo rosa macro" },
+    { "archivo": "medit-earthy.jpg", "pexelsId": 6945081, "url": "https://www.pexels.com/photo/6945081/", "uso": "seccion — meditación / distinciones" },
+    { "archivo": "about-gisele.jpg", "pexelsId": 33991279, "url": "https://www.pexels.com/photo/33991279/", "uso": "retrato sobre Gisele (PLACEHOLDER — reemplazar por foto real)" },
+    { "archivo": "bowl-photo.jpg", "pexelsId": 6962426, "url": "https://www.pexels.com/photo/6962426/", "uso": "seccion — cuenco / sonoterapia (membresía)" },
+    { "archivo": "v2-crystal.webp", "pexelsId": 4040600, "url": "https://www.pexels.com/photo/4040600/", "uso": "recorte protagonista — obelisco de cuarzo rosa" },
+    { "archivo": "v2-moon.webp", "pexelsId": 20036330, "url": "https://www.pexels.com/photo/20036330/", "uso": "recorte — luna (ciclos)" },
+    { "archivo": "v2-sage.webp", "pexelsId": 35654885, "url": "https://www.pexels.com/photo/35654885/", "uso": "recorte — atado de salvia" },
+    { "archivo": "v2-bowl.webp", "pexelsId": 11889659, "url": "https://www.pexels.com/photo/11889659/", "uso": "recorte — cuenco tibetano" }
+  ]
+}

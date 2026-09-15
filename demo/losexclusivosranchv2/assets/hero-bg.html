@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Los Exclusivos Ranch</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; }
+  body {
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: linear-gradient(165deg, #150d09 0%, #341c11 52%, #6d4a22 100%);
+    color: #f0e2cf;
+  }
+  #bg {
+    position: fixed; inset: 0;
+    width: 100vw; height: 100vh;
+    display: block; z-index: 0;
+  }
+  #spacer { position: relative; width: 100%; height: 500vh; z-index: 1; pointer-events: none; }
+  .vignette {
+    position: fixed; inset: 0; z-index: 2; pointer-events: none;
+    background: radial-gradient(125% 95% at 50% 46%, rgba(0,0,0,0) 42%, rgba(9,5,3,0.62) 100%);
+    mix-blend-mode: multiply;
+  }
+</style>
+</head>
+<body>
+  <canvas id="bg"></canvas>
+  <div class="vignette"></div>
+  <div id="spacer"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+  (function () {
+    "use strict";
+
+    var canvas = document.getElementById("bg");
+
+    // ---- WebGL availability + Three.js presence ----
+    function webglOK() {
+      try {
+        var c = document.createElement("canvas");
+        return !!(window.WebGLRenderingContext &&
+          (c.getContext("webgl") || c.getContext("experimental-webgl")));
+      } catch (e) { return false; }
+    }
+    if (typeof THREE === "undefined" || !webglOK()) {
+      canvas.style.display = "none"; // reveal CSS gradient fallback on <body>
+      return;
+    }
+
+    // ---- helpers ----
+    function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function smoothstep(e0, e1, x) {
+      var t = clamp((x - e0) / (e1 - e0), 0, 1);
+      return t * t * (3 - 2 * t);
+    }
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = (a + 0x6D2B79F5) | 0;
+        var t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    var rand = mulberry32(20260716);
+
+    var reduced = window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var idleMotion = reduced ? 0 : 1;
+
+    var isSmall = Math.min(window.innerWidth, window.innerHeight) < 620 ||
+                  window.innerWidth < 820;
+
+    try {
+    // ---- renderer / scene / camera ----
+    var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !isSmall, alpha: false, preserveDrawingBuffer: true });
+    renderer.setClearColor(0x150d09, 1);
+    var dprCap = isSmall ? 1.5 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
+
+    var scene = new THREE.Scene();
+    var fog = new THREE.FogExp2(0x1b120d, 0.032);
+    scene.fog = fog;
+
+    var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+    camera.position.set(0, 0.6, 9.5);
+
+    // ---- palette (sRGB hex, linear default pipeline: WYSIWYG-ish) ----
+    var GOLD = new THREE.Color(0xd8b06a);
+    var PALETTE = [0x9e3b28, 0x7c2a1e, 0xc8933f, 0xb98a52, 0x5a3820,
+                   0x6b6a34, 0xc8933f, 0x3f2517, 0xd8b06a, 0x5c5a2e];
+
+    // ---- gradient sky dome ----
+    var skyUniforms = {
+      topColor:    { value: new THREE.Color(0x160e0a) },
+      bottomColor: { value: new THREE.Color(0x241610) },
+      offset:      { value: 9.0 },
+      expo:        { value: 0.9 }
+    };
+    var sky = new THREE.Mesh(
+      new THREE.SphereGeometry(70, 32, 16),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide, depthWrite: false, fog: false,
+        uniforms: skyUniforms,
+        vertexShader:
+          "varying vec3 vP; void main(){ vec4 w = modelMatrix * vec4(position,1.0);" +
+          " vP = w.xyz; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);}",
+        fragmentShader:
+          "uniform vec3 topColor; uniform vec3 bottomColor; uniform float offset; uniform float expo;" +
+          " varying vec3 vP; void main(){ float h = normalize(vP + vec3(0.0, offset, 0.0)).y;" +
+          " float t = pow(clamp(h*0.5+0.5, 0.0, 1.0), expo);" +
+          " gl_FragColor = vec4(mix(bottomColor, topColor, t), 1.0);}"
+      })
+    );
+    scene.add(sky);
+
+    // ---- lights ----
+    var ambient = new THREE.AmbientLight(0x3a2418, 0.35);
+    scene.add(ambient);
+    var keyLight = new THREE.DirectionalLight(0xd69a58, 0.7);
+    keyLight.position.set(4.5, 8, 6);
+    scene.add(keyLight);
+    var fillLight = new THREE.DirectionalLight(0x6a4a30, 0.25);
+    fillLight.position.set(-6, 2.5, 4);
+    scene.add(fillLight);
+    var rimLight = new THREE.PointLight(0x7a2a18, 0.15, 60, 2);
+    rimLight.position.set(0, 1.2, -7);
+    scene.add(rimLight);
+
+    // ---- column system (stacked-disc "provisions": salami + cheese wheels) ----
+    var Z_ROWS  = isSmall ? [1.0, -3.0, -6.5]       : [1.0, -2.2, -5.4, -8.6];
+    var X_SLOTS = isSmall ? [2.8, 4.6]              : [2.7, 4.1, 5.7];
+    var RADIAL  = isSmall ? 18 : 28;
+    var GRIDC   = isSmall ? 2 : 3;
+    var DISC_H  = 0.15;
+
+    var cols = [];
+    var totalDiscs = 0;
+    var SIDES = [-1, 1];
+    for (var si = 0; si < SIDES.length; si++) {
+      var side = SIDES[si];
+      var inSide = 0;
+      for (var zi = 0; zi < Z_ROWS.length; zi++) {
+        for (var xi = 0; xi < X_SLOTS.length; xi++) {
+          var n = isSmall ? (3 + Math.floor(rand() * 3)) : (4 + Math.floor(rand() * 4));
+          var radius = 0.22 + rand() * 0.28;
+          var gx = inSide % GRIDC, gy = Math.floor(inSide / GRIDC);
+          var rowFrac = Z_ROWS.length > 1 ? zi / (Z_ROWS.length - 1) : 0;
+          var col = {
+            x: side * (X_SLOTS[xi] + (rand() - 0.5) * 0.5),
+            z: Z_ROWS[zi] + (rand() - 0.5) * 0.8,
+            y: -0.4 + (rand() - 0.5) * 1.1 + zi * 0.12,
+            n: n,
+            r: radius,
+            maxGap: 0.26 + rand() * 0.18,
+            tilt: 0.72 + rand() * 0.28,
+            yaw: (rand() - 0.5) * 0.5 + (side < 0 ? 0.16 : -0.16),
+            roll: (rand() - 0.5) * 0.22,
+            appearStart: (zi === 0) ? -0.3 : (0.04 + rowFrac * 0.20),
+            sw: 0.45 + rand() * 0.5,
+            ph: rand() * 6.283,
+            hex: PALETTE[Math.floor(rand() * PALETTE.length)],
+            fx: side * (2.9 + gx * 1.5),
+            fy: 2.4 - gy * 1.7,
+            fz: -1.4 - gx * 0.7,
+            base: totalDiscs
+          };
+          cols.push(col);
+          totalDiscs += n;
+          inSide++;
+        }
+      }
+    }
+
+    var discGeo = new THREE.CylinderGeometry(1, 1, 1, RADIAL, 1, false);
+    var discMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff, roughness: 0.58, metalness: 0.0,
+      emissive: new THREE.Color(0x3a2410), emissiveIntensity: 0.0
+    });
+    var discMesh = new THREE.InstancedMesh(discGeo, discMat, totalDiscs);
+    discMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(discMesh);
+
+    // per-disc colors (outer discs nudged toward gold = "cut face")
+    var tmpCol = new THREE.Color();
+    for (var c = 0; c < cols.length; c++) {
+      var co = cols[c];
+      for (var k = 0; k < co.n; k++) {
+        tmpCol.setHex(co.hex);
+        if (k === 0 || k === co.n - 1) tmpCol.lerp(GOLD, 0.28);
+        discMesh.setColorAt(co.base + k, tmpCol);
+      }
+    }
+    discMesh.instanceColor.needsUpdate = true;
+
+    // ---- suspension threads ----
+    var threadGeo = new THREE.CylinderGeometry(1, 1, 1, 6, 1, false);
+    var threadMat = new THREE.MeshStandardMaterial({
+      color: 0x2c1c12, roughness: 0.9, metalness: 0.0, transparent: true, opacity: 1
+    });
+    var threadMesh = new THREE.InstancedMesh(threadGeo, threadMat, cols.length);
+    threadMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    var THREAD_R = isSmall ? 0.02 : 0.014;
+    var ANCHOR_Y = 6.6;
+    scene.add(threadMesh);
+
+    // ---- atmospheric dust (purposeful, minimal) ----
+    var dustN = isSmall ? 50 : 140;
+    var dustPos = new Float32Array(dustN * 3);
+    for (var d = 0; d < dustN; d++) {
+      dustPos[d * 3]     = (rand() - 0.5) * 28;
+      dustPos[d * 3 + 1] = -6 + rand() * 16;
+      dustPos[d * 3 + 2] = -14 + rand() * 18;
+    }
+    var dustGeo = new THREE.BufferGeometry();
+    dustGeo.setAttribute("position", new THREE.BufferAttribute(dustPos, 3));
+    var dust = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+      color: 0xcaa06a, size: 0.05, sizeAttenuation: true,
+      transparent: true, opacity: 0.16, depthWrite: false, fog: true
+    }));
+    scene.add(dust);
+
+    // ---- env / camera keyframes across 4 acts ----
+    var P4 = [0, 0.34, 0.63, 1.0];
+    function segT(p) {
+      p = clamp(p, 0, 1);
+      if (p <= P4[1]) return { i: 0, t: smoothstep(P4[0], P4[1], p) };
+      if (p <= P4[2]) return { i: 1, t: smoothstep(P4[1], P4[2], p) };
+      return { i: 2, t: smoothstep(P4[2], P4[3], p) };
+    }
+    function toColors(arr) { return arr.map(function (h) { return new THREE.Color(h); }); }
+    var S_skyTop  = toColors([0x1a110c, 0x1d1109, 0x180b09, 0x2a1a0d]);
+    var S_skyBot  = toColors([0x2c1a12, 0x33361c, 0x48160f, 0xc39a54]);
+    var S_fog     = toColors([0x1b120d, 0x242a17, 0x2a0f0b, 0x5e3f20]);
+    var S_key     = toColors([0xd69a58, 0xe0a95f, 0xe2673a, 0xf4c87d]);
+    var S_amb     = toColors([0x3a2418, 0x39401f, 0x3a1512, 0x6e5030]);
+    var S_rim     = toColors([0x7a2a18, 0x8a2f1c, 0xc0431f, 0x8a5a26]);
+    var S_fogD    = [0.032, 0.030, 0.034, 0.016];
+    var S_keyI    = [0.95, 1.05, 1.28, 1.15];
+    var S_ambI    = [0.50, 0.48, 0.36, 0.78];
+    var S_rimI    = [0.15, 0.30, 0.95, 0.35];
+    var S_emI     = [0.00, 0.02, 0.06, 0.52];
+
+    function scal(arr, s) { return arr[s.i] + (arr[s.i + 1] - arr[s.i]) * s.t; }
+
+    // camera path: frontal → lateral reveal → 3/4 slice reveal → wide calm resolution
+    var CAM_POS = [[0, 0.6, 9.5], [-3.6, 1.4, 7.6], [3.0, 2.6, 5.8], [0.2, 1.8, 12.6]];
+    var CAM_TGT = [[0, 0.2, -1], [0.6, 0.1, -3], [-0.2, 0.6, -2], [0, 0.7, -3]];
+
+    // ---- responsive layout ----
+    var layout = { fov: 42, distMult: 1.0, spread: 1.0, zMult: 1.0, tgtY: 0.0 };
+    function applyLayout(a) {
+      if (a < 0.8)      layout = { fov: 60, distMult: 1.42, spread: 0.64, zMult: 0.9,  tgtY: 0.2 };
+      else if (a < 1.2) layout = { fov: 50, distMult: 1.18, spread: 0.84, zMult: 0.95, tgtY: 0.1 };
+      else              layout = { fov: 42, distMult: 1.0,  spread: 1.0,  zMult: 1.0,  tgtY: 0.0 };
+      camera.fov = layout.fov;
+      camera.aspect = a;
+      camera.updateProjectionMatrix();
+    }
+    function computeLayout() { applyLayout(window.innerWidth / window.innerHeight); }
+
+    function resize() {
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
+      computeLayout();
+    }
+    window.addEventListener("resize", resize);
+    computeLayout();
+    resize();
+
+    // ---- preallocated scratch (no allocation in loop) ----
+    var dummy = new THREE.Object3D();
+    var td = new THREE.Object3D();
+    var qCol = new THREE.Quaternion();
+    var eCol = new THREE.Euler();
+    var axis = new THREE.Vector3();
+    var cVec = new THREE.Vector3();
+    var topVec = new THREE.Vector3();
+    var anchorVec = new THREE.Vector3();
+    var midVec = new THREE.Vector3();
+    var dirVec = new THREE.Vector3();
+    var UP = new THREE.Vector3(0, 1, 0);
+    var camPos = new THREE.Vector3();
+    var camTgt = new THREE.Vector3();
+    var rawPos = new THREE.Vector3();
+    var rawTgt = new THREE.Vector3();
+
+    // ---- scene update from normalized progress p ----
+    function updateScene(p) {
+      var s = segT(p);
+
+      // environment
+      skyUniforms.topColor.value.lerpColors(S_skyTop[s.i], S_skyTop[s.i + 1], s.t);
+      skyUniforms.bottomColor.value.lerpColors(S_skyBot[s.i], S_skyBot[s.i + 1], s.t);
+      fog.color.lerpColors(S_fog[s.i], S_fog[s.i + 1], s.t);
+      fog.density = scal(S_fogD, s);
+      keyLight.color.lerpColors(S_key[s.i], S_key[s.i + 1], s.t);
+      keyLight.intensity = scal(S_keyI, s);
+      ambient.color.lerpColors(S_amb[s.i], S_amb[s.i + 1], s.t);
+      ambient.intensity = scal(S_ambI, s);
+      rimLight.color.lerpColors(S_rim[s.i], S_rim[s.i + 1], s.t);
+      rimLight.intensity = scal(S_rimI, s);
+      discMat.emissiveIntensity = scal(S_emI, s);
+
+      // act drivers
+      var fan   = smoothstep(0.50, 0.72, p);
+      var tilt  = smoothstep(0.50, 0.70, p) * (1 - smoothstep(0.82, 1.0, p) * 0.55);
+      var reorg = smoothstep(0.76, 0.96, p);
+      var dense = smoothstep(0.24, 0.50, p);
+
+      var inst = 0;
+      for (var i = 0; i < cols.length; i++) {
+        var co = cols[i];
+        var appear = smoothstep(co.appearStart, co.appearStart + 0.18, p);
+
+        // position (rest -> reorg grid), with descent from above
+        var restX = co.x * layout.spread;
+        var restZ = co.z * layout.zMult;
+        var fxX = co.fx * layout.spread;
+        var fzZ = co.fz * layout.zMult;
+        var cx = lerp(restX, fxX, reorg);
+        var cz = lerp(restZ, fzZ, reorg);
+        var restY = co.y;
+        var cy = restY + (1 - appear) * 6.5 + (co.fy - restY) * reorg;
+
+        var swayX = Math.sin(now * 0.001 * co.sw + co.ph) * (0.02 + dense * 0.04) * idleMotion;
+
+        var gap = DISC_H + fan * co.maxGap;
+        var colTilt = co.tilt * tilt;
+
+        eCol.set(colTilt, co.yaw, co.roll);
+        qCol.setFromEuler(eCol);
+        axis.set(0, 1, 0).applyQuaternion(qCol);
+        cVec.set(cx + swayX, cy, cz);
+
+        var mid = (co.n - 1) / 2;
+        for (var k = 0; k < co.n; k++) {
+          var off = (k - mid) * gap;
+          dummy.position.copy(cVec).addScaledVector(axis, off);
+          dummy.quaternion.copy(qCol);
+          dummy.scale.set(co.r, DISC_H, co.r);
+          dummy.updateMatrix();
+          discMesh.setMatrixAt(co.base + k, dummy.matrix);
+        }
+
+        // thread: fixed ceiling anchor -> current column top
+        var topOff = mid * gap + DISC_H * 0.5;
+        topVec.copy(cVec).addScaledVector(axis, topOff);
+        anchorVec.set(restX, ANCHOR_Y, restZ);
+        midVec.copy(anchorVec).add(topVec).multiplyScalar(0.5);
+        dirVec.copy(topVec).sub(anchorVec);
+        var len = dirVec.length() || 0.0001;
+        dirVec.multiplyScalar(1 / len);
+        td.position.copy(midVec);
+        td.quaternion.setFromUnitVectors(UP, dirVec);
+        td.scale.set(THREAD_R, len, THREAD_R);
+        td.updateMatrix();
+        threadMesh.setMatrixAt(i, td.matrix);
+        inst++;
+      }
+      discMesh.instanceMatrix.needsUpdate = true;
+      threadMesh.instanceMatrix.needsUpdate = true;
+      threadMat.opacity = clamp(1 - fan * 1.25, 0, 1);
+      threadMesh.visible = threadMat.opacity > 0.02;
+
+      // idle dust drift
+      dust.rotation.y = now * 0.00001;
+      dust.position.y = Math.sin(now * 0.00006) * 0.25 * idleMotion;
+    }
+
+    function updateCamera(p) {
+      var s = segT(p);
+      rawPos.set(
+        lerp(CAM_POS[s.i][0], CAM_POS[s.i + 1][0], s.t),
+        lerp(CAM_POS[s.i][1], CAM_POS[s.i + 1][1], s.t),
+        lerp(CAM_POS[s.i][2], CAM_POS[s.i + 1][2], s.t)
+      );
+      rawTgt.set(
+        lerp(CAM_TGT[s.i][0], CAM_TGT[s.i + 1][0], s.t),
+        lerp(CAM_TGT[s.i][1], CAM_TGT[s.i + 1][1], s.t),
+        lerp(CAM_TGT[s.i][2], CAM_TGT[s.i + 1][2], s.t)
+      );
+      camTgt.copy(rawTgt); camTgt.y += layout.tgtY;
+      camPos.copy(rawPos).sub(rawTgt).multiplyScalar(layout.distMult).add(rawTgt);
+
+      // cursor parallax (damped) + near-imperceptible breathing
+      camPos.x += px * 0.6;
+      camPos.y += -py * 0.35;
+      camTgt.x += px * 0.22;
+      camPos.y += Math.sin(now * 0.0004) * 0.05 * idleMotion;
+      camPos.x += Math.cos(now * 0.00033) * 0.04 * idleMotion;
+
+      camera.position.copy(camPos);
+      camera.lookAt(camTgt);
+    }
+
+    // ---- progress input: scroll (standalone) or postMessage (iframe) ----
+    var targetProgress = 0, progress = 0;
+    var externalControl = false;
+    var mx = 0, my = 0, px = 0, py = 0;
+    var now = performance.now(), last = now;
+    var paused = false, started = false;
+
+    function onScroll() {
+      if (externalControl) return;
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      targetProgress = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    window.addEventListener("message", function (e) {
+      var m = e.data;
+      if (m && m.type === "scroll" && typeof m.progress === "number" && isFinite(m.progress)) {
+        externalControl = true;
+        targetProgress = clamp(m.progress, 0, 1);
+      }
+    });
+
+    if (!reduced) {
+      window.addEventListener("pointermove", function (e) {
+        mx = (e.clientX / window.innerWidth) * 2 - 1;
+        my = (e.clientY / window.innerHeight) * 2 - 1;
+      }, { passive: true });
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      paused = document.hidden;
+      if (!paused) { last = performance.now(); }
+    });
+
+    // ---- render loop ----
+    function frame() {
+      requestAnimationFrame(frame);
+      if (paused) return;
+      now = performance.now();
+      var dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      var kp = 1 - Math.exp(-dt / 0.16);   // progress damping
+      progress += (targetProgress - progress) * kp;
+      var kc = 1 - Math.exp(-dt / 0.22);   // parallax damping
+      px += (mx - px) * kc;
+      py += (my - py) * kc;
+
+      updateScene(progress);
+      updateCamera(progress);
+      renderer.render(scene, camera);
+    }
+
+    // first paint at p=0, then run
+    onScroll();
+    progress = targetProgress;
+    updateScene(progress);
+    updateCamera(progress);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+    } catch (err) {
+      canvas.style.display = "none"; // reveal CSS gradient fallback
+    }
+  })();
+  </script>
+</body>
+</html>

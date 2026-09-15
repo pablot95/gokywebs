@@ -1,0 +1,76 @@
+{
+  "banco": "Pexels",
+  "licencia": "Pexels License - uso libre, sin atribucion obligatoria",
+  "archivos": [
+    {
+      "file": "hero-ruta-1920x1080.webp",
+      "source": "Pexels",
+      "id": "315938",
+      "url": "https://www.pexels.com/photo/light-trails-on-highway-at-night-315938/",
+      "usage": "fondo del hero - ruta nocturna con estelas de luz"
+    },
+    {
+      "file": "cta-ruta-1920x1080.webp",
+      "source": "Pexels",
+      "id": "27973791",
+      "url": "https://www.pexels.com/photo/a-long-exposure-photograph-of-a-highway-at-night-27973791/",
+      "usage": "cierre CTA full-bleed"
+    },
+    {
+      "file": "combi-1600x1300.webp",
+      "source": "Pexels",
+      "id": "31374505",
+      "url": "https://www.pexels.com/photo/minibus-navigating-a-serene-rural-road-bend-31374505/",
+      "usage": "card de servicio minibus / grupos"
+    },
+    {
+      "file": "aeropuerto-1600x1300.webp",
+      "source": "Pexels",
+      "id": "32176053",
+      "url": "https://www.pexels.com/photo/man-with-luggage-in-airport-terminal-32176053/",
+      "usage": "card de servicio aeropuertos"
+    },
+    {
+      "file": "terminal-1200x1600.webp",
+      "source": "Pexels",
+      "id": "13404735",
+      "url": "https://www.pexels.com/photo/woman-at-the-airport-13404735/",
+      "usage": "composicion de la seccion Armar viaje"
+    },
+    {
+      "file": "flete-1200x1600.webp",
+      "source": "Pexels",
+      "id": "6169660",
+      "url": "https://www.pexels.com/photo/man-pushing-trolley-with-big-boxes-6169660/",
+      "usage": "card de servicio mini fletes"
+    },
+    {
+      "file": "ruta-trafico-1600x1300.webp",
+      "source": "Pexels",
+      "id": "14958174",
+      "url": "https://www.pexels.com/photo/long-exposure-of-cars-on-a-highway-at-night-14958174/",
+      "usage": "card de servicio larga distancia"
+    },
+    {
+      "file": "mascota-auto-1600x1300.webp",
+      "source": "Pexels",
+      "id": "13702948",
+      "url": "https://www.pexels.com/photo/dog-looking-out-the-car-window-13702948/",
+      "usage": "seccion mascotas - foto editorial"
+    },
+    {
+      "file": "perro-recorte.webp",
+      "source": "Pexels",
+      "id": "17492142",
+      "url": "https://www.pexels.com/photo/a-beagle-on-a-leash-standing-on-a-grass-field-17492142/",
+      "usage": "recorte protagonista del hero (rembg isnet-general-use)"
+    },
+    {
+      "file": "pasajero-recorte.webp",
+      "source": "Pexels",
+      "id": "1381415",
+      "url": "https://www.pexels.com/photo/man-holding-luggage-bag-1381415/",
+      "usage": "recorte secundario seccion proceso (rembg isnet-general-use)"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+[
+  { "file": "hero.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/19208249/", "author": "Pexels", "usage": "Hero V1 (puffer negro + hoodie blanco)" },
+  { "file": "hero-v2.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/34956383/", "author": "Pexels", "usage": "Hero V2 (hoodie negro pared blanca)" },
+  { "file": "editorial.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/29660402/", "author": "Pexels", "usage": "Editorial / about (total white nocturno)" },
+  { "file": "cta.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/29817596/", "author": "Pexels", "usage": "CTA final (nocturno cap)" },
+  { "file": "zap-chunky-runner.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/11324518/", "author": "Pexels", "usage": "Producto: Chunky Runner" },
+  { "file": "zap-urban-low.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/30186699/", "author": "Pexels", "usage": "Producto: Urban Low OG" },
+  { "file": "zap-retro-low.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/13560373/", "author": "Pexels", "usage": "Producto: Retro Low Canvas" },
+  { "file": "zap-minimal-low.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/11513443/", "author": "Pexels", "usage": "Producto: Minimal Low" },
+  { "file": "buzo-hoodie-blackout.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/15127546/", "author": "Pexels", "usage": "Producto: Hoodie Oversize Boxy" },
+  { "file": "buzo-hoodie-bone.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/7479830/", "author": "Pexels", "usage": "Producto: Hoodie Heavyweight Bone" },
+  { "file": "buzo-crewneck-total.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/10077948/", "author": "Pexels", "usage": "Producto: Buzo Crewneck Total Black" },
+  { "file": "buzo-hoodie-grey.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/6995877/", "author": "Pexels", "usage": "Producto: Buzo Washed Grey" },
+  { "file": "rem-heavyweight-blanco.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/4066288/", "author": "Pexels", "usage": "Producto: Remera Heavyweight Blanco" },
+  { "file": "rem-oversize-negra.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/4066292/", "author": "Pexels", "usage": "Producto: Remera Oversize Negra" },
+  { "file": "rem-boxy-hanger.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/8532616/", "author": "Pexels", "usage": "Producto: Remera Boxy Premium" },
+  { "file": "camp-varsity.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/14090402/", "author": "Pexels", "usage": "Producto: Campera Varsity" },
+  { "file": "camp-puffer.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/7147889/", "author": "Pexels", "usage": "Producto: Campera Puffer Cropped" },
+  { "file": "camp-coach.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/6033023/", "author": "Pexels", "usage": "Producto: Campera Coach" },
+  { "file": "acc-gorra.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/9493397/", "author": "Pexels", "usage": "Producto: Gorra Curved" },
+  { "file": "acc-bandolera.webp", "source": "Pexels", "sourceUrl": "https://www.pexels.com/photo/32498610/", "author": "Pexels", "usage": "Producto: Bandolera Crossbody" }
+]

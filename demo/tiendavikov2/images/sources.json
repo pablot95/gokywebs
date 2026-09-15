@@ -1,0 +1,23 @@
+{
+  "proyecto": "Tiendaviko — catalogo administrable V1",
+  "fuente": "Pexels (Unsplash bloqueado por anti-bot)",
+  "criterio": "Lifestyle de estudio sobre fondo blanco para hero/editorial; tomas de producto sobre fondo claro para las cards del catalogo (ratio 4:5).",
+  "imagenes": [
+    { "archivo": "hero-sportswear-1400x1600.jpg", "id": "28774867", "uso": "Hero split", "url": "https://www.pexels.com/photo/modern-women-s-sportswear-studio-photoshoot-28774867/" },
+    { "archivo": "editorial-calzas-1920x1000.jpg", "id": "7894597", "uso": "Banda editorial (momento firma)", "url": "https://www.pexels.com/photo/legs-of-women-in-sportswear-7894597/" },
+    { "archivo": "prod-top-lila-1000x1250.jpg", "id": "3927384", "uso": "Producto — top deportivo", "url": "https://www.pexels.com/photo/pink-brassiere-on-white-table-3927384/" },
+    { "archivo": "prod-buzo-pastel-1000x1250.jpg", "id": "9594422", "uso": "Producto — buzo", "url": "https://www.pexels.com/photo/white-crew-neck-shirt-on-white-table-9594422/" },
+    { "archivo": "prod-jogger-gris-1000x1250.jpg", "id": "31961165", "uso": "Producto — jogger", "url": "https://www.pexels.com/photo/stylish-assorted-sweatpants-flat-lay-31961165/" },
+    { "archivo": "prod-sweater-crema-1000x1250.jpg", "id": "13889763", "uso": "Producto — sweater crema", "url": "https://www.pexels.com/photo/stack-of-sweaters-13889763/" },
+    { "archivo": "prod-jean-1000x1250.jpg", "id": "4109797", "uso": "Producto — jean", "url": "https://www.pexels.com/photo/folded-denim-jeans-4109797/" },
+    { "archivo": "prod-remera-blanca-1000x1250.jpg", "id": "8408556", "uso": "Producto — remera", "url": "https://www.pexels.com/photo/clothes-and-a-boot-on-white-surface-8408556/" },
+    { "archivo": "prod-sweater-tejido-1000x1250.jpg", "id": "30569741", "uso": "Producto — sweater tejido", "url": "https://www.pexels.com/photo/stack-of-folded-sweaters-on-white-background-30569741/" }
+  ],
+  "descartadas": [
+    "3944690 y 33633245: flat lays sobre fondo oscuro, rompian la cohesion clara/pastel del set"
+  ],
+  "candidatas_no_usadas": [
+    { "id": "28774695", "descripcion": "Mujer en pose de yoga con ropa deportiva, fondo blanco de estudio", "url": "https://www.pexels.com/photo/young-woman-performing-yoga-pose-in-sportswear-28774695/", "nota": "Descargada y descartada por quedar huerfana; sirve si se agrega una seccion deportiva con imagen." }
+  ],
+  "nota": "Fotos de stock. Cuando Caro pase fotos reales de sus prendas, reemplazan a estas (siempre mejor)."
+}

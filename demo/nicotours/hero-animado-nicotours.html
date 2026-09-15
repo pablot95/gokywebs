@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="dark"/>
+<title>Nico Tours</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;overflow-x:hidden}
+  body{height:500vh;background:#0c1017}
+  /* Atmósfera nocturna slate con recepción cálida al frente:
+     es el telón permanente Y el fallback sin WebGL. */
+  #fallback{
+    position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(120% 78% at 50% 88%, rgba(196,146,78,0.20) 0%, rgba(196,146,78,0) 46%),
+      radial-gradient(120% 96% at 50% 30%, rgba(88,104,124,0.16) 0%, rgba(88,104,124,0) 55%),
+      linear-gradient(180deg,#0a0e14 0%,#0c1017 46%,#0f131b 74%,#12130f 100%);
+  }
+  #bg{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1}
+</style>
+</head>
+<body>
+<div id="fallback"></div>
+<canvas id="bg"></canvas>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('bg');
+
+/* ---------- capability check ---------- */
+function webglOK(){
+  try{
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  }catch(e){ return false; }
+}
+if(!webglOK()){ canvas.style.display='none'; }
+else { try{ boot(); }catch(err){ canvas.style.display='none'; } }
+
+/* =====================================================================
+   CONCEPTO VISUAL — NICO TOURS  (transporte / recepción en el aeropuerto)
+   Gramática propia: un CORREDOR DE RUTA. Paredes-cinta que ondulan siguiendo
+   la traza de un recorrido, flanqueando un CARRIL CENTRAL abierto; sobre los
+   bordes exteriores se apilan ESTRATOS TOPOGRÁFICOS (curvas de nivel de un
+   mapa) y a lo largo de la ruta aparecen ROMBOS-BALIZA (pines de waypoint).
+   La cámara viaja hacia adelante por el eje despejado del corredor: el centro
+   queda estructuralmente libre (todo el peso vive en los laterales, arriba,
+   abajo y en la profundidad). Reconocible en gris por las cintas convergentes
+   y las balizas, no por el color. El viaje evoluciona en 4 zonas:
+     Z0 partida    — corredor angosto, paredes bajas, slate frío, terminal
+     Z1 ruta abierta— el corredor se ensancha, paredes altas, cámara surca alto
+     Z2 la red     — el corredor converge, niebla honda, balizas por todos lados
+     Z3 arribo     — se abre a un claro, cámara baja al piso, luz ámbar de recibida
+   ===================================================================== */
+function boot(){
+  const isMobile = window.matchMedia('(max-width:820px)').matches || ('ontouchstart' in window);
+  const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TAU = Math.PI*2;
+
+  /* ---------- helpers ---------- */
+  const clamp = (v)=>Math.min(1,Math.max(0,v));
+  const damp  = (a,b,l,dt)=> b + (a-b)*Math.exp(-l*dt);
+  function sampleNum(p, arr){
+    const n = arr.length-1; const t = clamp(p)*n;
+    const i = Math.min(Math.floor(t), n-1); const f = t-i; const s = f*f*(3-2*f);
+    return arr[i]*(1-s) + arr[i+1]*s;
+  }
+  function sampleColor(p, cols, out){
+    const n = cols.length-1; const t = clamp(p)*n;
+    const i = Math.min(Math.floor(t), n-1); const f = t-i; const s = f*f*(3-2*f);
+    return out.copy(cols[i]).lerp(cols[i+1], s);
+  }
+  let seed = 71473191;
+  const rnd = ()=>{ seed = (seed*1664525 + 1013904223) & 0xffffffff; return (seed>>>0)/4294967296; };
+  const rrange = (a,b)=> a + (b-a)*rnd();
+
+  /* ---------- keyframes de marca (5 paradas = 4 zonas que evolucionan) ---------- */
+  const WID    = [7.0, 12.5, 8.5, 15.5, 19.0];        // semi-ancho del corredor -> carril central
+  const HGT    = [0.66, 1.30, 1.00, 1.55, 1.15];      // altura de las paredes-cinta a lo largo de la ruta
+  const FOGD   = [0.0170, 0.0104, 0.0208, 0.0092, 0.0055];
+  const KEY    = [0.86, 1.05, 0.80, 1.12, 1.24];
+  const HEMI   = [0.66, 0.82, 0.58, 0.86, 0.98];
+  const CAMY   = [0.4, 1.35, 0.7, -0.35, -1.05];       // sube a surcar, baja al arribo (recepción a nivel de piso)
+  const FOGCOL = ['#0d121a','#101725','#0a0e15','#15121a','#181410'].map(h=>new THREE.Color(h));
+  const camStartZ = 20, camEndZ = -560;
+  const zHead = 10, zTail = -540;
+
+  /* ---------- renderer / scene / camera ---------- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:!isMobile, alpha:true, powerPreference:'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isMobile?1.5:2));
+  renderer.setClearAlpha(0);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(FOGCOL[0].clone(), FOGD[0]);
+
+  const camera = new THREE.PerspectiveCamera(54, 1, 0.1, 1600);
+  scene.add(camera);
+
+  /* ---------- luces (mate, sobrias, premium — noche + recibimiento cálido) ---------- */
+  const hemi = new THREE.HemisphereLight(0xb9c6d6, 0x0a0d12, HEMI[0]); scene.add(hemi);
+  const key  = new THREE.DirectionalLight(0xdfe7f2, KEY[0]); key.position.set(-0.6,0.85,0.5); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xc7d1df, 0.26); fill.position.set(0.75,0.15,0.35); scene.add(fill);
+  const warm = new THREE.DirectionalLight(0xe6b878, 0.0);  warm.position.set(0.0,-0.35,-0.95); scene.add(warm); // luz de arribo (se enciende al final)
+
+  /* ---------- pool de materiales ---------- */
+  const mk = (hex, rough, opts={}) => new THREE.MeshStandardMaterial(Object.assign(
+    { color:new THREE.Color(hex), roughness:rough, metalness:0.0, side:THREE.DoubleSide, fog:true }, opts));
+  const matSlate = mk('#39424f', 0.74);
+  const matSteel = mk('#586472', 0.70);
+  const matPale  = mk('#7f8b98', 0.66);
+  const matWarm  = mk('#b98a4e', 0.58);
+  const matNode  = mk('#c79a5c', 0.52);
+  const matInst  = mk('#ffffff', 0.72);   // base blanca para instancing (color real via instanceColor)
+
+  const cCool1 = new THREE.Color('#39424f'), cCool2 = new THREE.Color('#586472'),
+        cCool3 = new THREE.Color('#2c343f'), cWarmA = new THREE.Color('#8a6a3e');
+
+  /* ---------- geometría propia: PARED-CINTA (tira vertical delgada que sigue la traza) ----------
+     Construida a lo largo de +Z; el ancho es la ALTURA de la pared. La línea de
+     centro ondula en X (respiración del corredor) y en Y, con banking sutil hacia
+     el centro para captar la luz. Profundidad radial mínima -> nunca invade el eje. */
+  const RSEG = isMobile?110:190;
+  function buildRibbon(o){
+    const pos=[], idx=[];
+    for(let i=0;i<=RSEG;i++){
+      const s=i/RSEG;
+      const z=THREE.MathUtils.lerp(zHead,zTail,s);
+      const halfW = sampleNum(s, WID);
+      const cx = o.side*(halfW*o.magF) + o.xAmp*Math.sin(s*o.freqX*TAU + o.phase);
+      const cy = o.yBase + o.yAmp*Math.sin(s*o.freqY*TAU + o.phase*1.7);
+      const taper = 1 - o.taper*Math.abs(2*s-1);
+      const hh = 0.5 * o.height * sampleNum(s,HGT) * Math.max(0.18, taper);
+      const bank = o.side*0.14;
+      const ux = Math.sin(bank), uy = Math.cos(bank);
+      pos.push(cx-ux*hh, cy-uy*hh, z,  cx+ux*hh, cy+uy*hh, z);
+      if(i<RSEG){ const k=i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); }
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  }
+
+  const world = new THREE.Group(); scene.add(world);
+
+  /* --- paredes-cinta: bandas superior / media / inferior en ambos lados --- */
+  const bands = [ {yBase:0.0, yAmp:1.4}, {yBase:5.2, yAmp:2.2}, {yBase:-5.0, yAmp:2.0} ];
+  for(const side of [-1,1]){
+    for(let b=0;b<bands.length;b++){
+      const nPer = isMobile?1:2;
+      for(let k=0;k<nPer;k++){
+        const warmRibbon = rnd()<0.20;
+        const g = buildRibbon({
+          side, magF: rrange(0.92,1.16) + b*0.06,
+          yBase: bands[b].yBase + rrange(-1.0,1.0),
+          yAmp:  bands[b].yAmp * rrange(0.8,1.2),
+          xAmp:  rrange(1.6,3.4), freqX: rrange(1.4,2.6), freqY: rrange(1.2,2.4),
+          phase: rnd()*TAU, height: rrange(2.4,4.2), taper: rrange(0.0,0.45)
+        });
+        const mat = warmRibbon ? matWarm : (rnd()<0.5?matSlate:(rnd()<0.6?matSteel:matPale));
+        world.add(new THREE.Mesh(g, mat));
+      }
+    }
+  }
+
+  /* --- estratos topográficos: barras finas apiladas en los bordes exteriores --- */
+  const boxGeo = new THREE.BoxGeometry(1,1,1);
+  const contourN = isMobile?70:130;
+  const contours = new THREE.InstancedMesh(boxGeo, matInst, contourN);
+  const dummy = new THREE.Object3D();
+  for(let i=0;i<contourN;i++){
+    const side = i%2? 1:-1;
+    const s = rnd();
+    const z = THREE.MathUtils.lerp(zHead,zTail,s) + rrange(-6,6);
+    const halfW = sampleNum(s, WID);
+    const x = side*(halfW*rrange(1.35,2.7) + rrange(0,4));
+    const y = rrange(-11,11);
+    dummy.position.set(x,y,z);
+    dummy.rotation.set(rrange(-0.05,0.05), rrange(-0.12,0.12), rrange(-0.06,0.06));
+    dummy.scale.set(rrange(0.4,1.2), rrange(0.10,0.34), rrange(6,17));
+    dummy.updateMatrix();
+    contours.setMatrixAt(i, dummy.matrix);
+    const c = rnd()<0.14 ? cWarmA : (rnd()<0.5?cCool1:(rnd()<0.6?cCool2:cCool3));
+    contours.setColorAt(i, c);
+  }
+  contours.instanceColor.needsUpdate = true;
+  world.add(contours);
+
+  /* --- balizas / waypoints: rombos a lo largo de la ruta, más densos en la zona "red" --- */
+  const octGeo = new THREE.OctahedronGeometry(1,0);
+  const wpN = isMobile?60:120;
+  const waypoints = new THREE.InstancedMesh(octGeo, matNode, wpN);
+  for(let i=0;i<wpN;i++){
+    const side = i%2? 1:-1;
+    const s = clamp(0.12 + 0.86*Math.pow(rnd(),0.7));   // sesgo hacia la mitad-final del recorrido
+    const z = THREE.MathUtils.lerp(zHead,zTail,s) + rrange(-5,5);
+    const halfW = sampleNum(s, WID);
+    const x = side*(halfW*rrange(1.05,1.7));
+    const y = rrange(-7,7);
+    dummy.position.set(x,y,z);
+    dummy.rotation.set(rrange(0,TAU), rrange(0,TAU), rrange(0,TAU));
+    dummy.scale.setScalar(rrange(0.24,0.66));
+    dummy.updateMatrix();
+    waypoints.setMatrixAt(i, dummy.matrix);
+  }
+  world.add(waypoints);
+
+  /* --- piso: retícula tenue de puntos que recede (el mapa / el suelo) --- */
+  const gpts=[]; const gStepX=6, gStepZ=14;
+  for(let z=zHead; z>=zTail; z-=gStepZ){
+    for(let x=-48; x<=48; x+=gStepX){ gpts.push(x + rrange(-1,1), -9.4 + rrange(-0.3,0.3), z + rrange(-2,2)); }
+  }
+  const ggeo = new THREE.BufferGeometry();
+  ggeo.setAttribute('position', new THREE.Float32BufferAttribute(gpts,3));
+  const gmat = new THREE.PointsMaterial({ color:new THREE.Color('#54606f'), size:isMobile?0.5:0.38,
+    sizeAttenuation:true, transparent:true, opacity:0.5, depthWrite:false, fog:true });
+  world.add(new THREE.Points(ggeo, gmat));
+
+  /* --- polvo/luz de arribo: destellos cálidos muy sutiles, encendidos al final --- */
+  const dustN = isMobile?120:300;
+  const dpos = new Float32Array(dustN*3);
+  for(let i=0;i<dustN;i++){
+    const side = i%2?1:-1, s=rnd();
+    dpos[i*3]   = side*(sampleNum(s,WID)*rrange(0.6,2.2));
+    dpos[i*3+1] = rrange(-9,10);
+    dpos[i*3+2] = THREE.MathUtils.lerp(-540,-200,rnd());
+  }
+  const dgeo = new THREE.BufferGeometry();
+  dgeo.setAttribute('position', new THREE.BufferAttribute(dpos,3));
+  const dmat = new THREE.PointsMaterial({ color:new THREE.Color('#e2b478'), size:isMobile?0.9:0.7,
+    sizeAttenuation:true, transparent:true, opacity:0.0, depthWrite:false, fog:true });
+  world.add(new THREE.Points(dgeo, dmat));
+
+  /* ---------- control por scroll / iframe ---------- */
+  let target=0, prog=0, externalControl=false;
+  const internalProgress = ()=>{ const max=document.body.scrollHeight-window.innerHeight; return max>0?clamp(window.scrollY/max):0; };
+  target = prog = internalProgress();
+  addEventListener('scroll', ()=>{ if(!externalControl) target=internalProgress(); }, {passive:true});
+  addEventListener('message', (e)=>{
+    const d=e.data;
+    if(d && d.type==='scroll' && typeof d.progress==='number' && isFinite(d.progress)){ externalControl=true; target=clamp(d.progress); }
+  });
+
+  /* ---------- microinteracción de cursor (off en touch/mobile) ---------- */
+  let pmx=0,pmy=0,mx=0,my=0;
+  const PAR=(isMobile?0:1)*(motionOK?1:0.15);
+  addEventListener('pointermove', (e)=>{ if(e.pointerType==='touch') return;
+    pmx=(e.clientX/window.innerWidth-0.5)*2; pmy=(e.clientY/window.innerHeight-0.5)*2; }, {passive:true});
+
+  /* ---------- resize / encuadre responsive ---------- */
+  function resize(){
+    const w=window.innerWidth,h=window.innerHeight,a=w/h;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isMobile?1.5:2));
+    renderer.setSize(w,h,false);
+    camera.aspect=a;
+    camera.fov=THREE.MathUtils.clamp(54*(1+0.58*Math.max(0,1-a)),54,86);  // ensancha en 9:16, mantiene el carril
+    camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- loop de render ---------- */
+  const MICRO = motionOK ? 0.11 : 0.0;
+  const tmpFog = new THREE.Color();
+  let last=performance.now(), raf=0, running=false;
+
+  function frame(now){
+    raf=requestAnimationFrame(frame);
+    const dt=Math.min(0.05,(now-last)/1000); last=now; const t=now*0.001;
+
+    prog=damp(target,prog,motionOK?6.0:12.0,dt);
+    mx=damp(pmx,mx,3.5,dt); my=damp(pmy,my,3.5,dt);
+
+    const e=prog*prog*(3-2*prog);
+    const camZ=THREE.MathUtils.lerp(camStartZ,camEndZ,e);
+    const camYb=sampleNum(prog,CAMY);
+
+    camera.position.set(mx*PAR*1.6 + Math.sin(t*0.17)*MICRO,
+                        camYb + my*PAR*0.9 + Math.sin(t*0.23)*MICRO, camZ);
+    camera.lookAt(-mx*PAR*0.5, camYb - my*PAR*0.3, camZ-40);
+
+    scene.fog.density=sampleNum(prog,FOGD);
+    sampleColor(prog,FOGCOL,tmpFog); scene.fog.color.copy(tmpFog);
+    key.intensity=sampleNum(prog,KEY); hemi.intensity=sampleNum(prog,HEMI);
+    warm.intensity=sampleNum(prog,[0.0,0.0,0.10,0.55,0.92]);
+    dmat.opacity=sampleNum(prog,[0.0,0.05,0.14,0.34,0.48]);
+    gmat.opacity=sampleNum(prog,[0.55,0.5,0.42,0.34,0.24]);
+
+    renderer.render(scene,camera);
+  }
+  function start(){ if(!running){ running=true; last=performance.now(); raf=requestAnimationFrame(frame); } }
+  function stop(){ running=false; cancelAnimationFrame(raf); }
+  document.addEventListener('visibilitychange', ()=> document.hidden?stop():start());
+  start();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "banco": "Pexels",
+  "licencia": "Pexels License (uso libre, sin atribucion obligatoria)",
+  "nota": "Ninguna foto es de Claudio Moabre. Son imagenes de referencia hasta tener material real del cliente.",
+  "imagenes": [
+    { "archivo": "recorte-mago-1244x1600.webp", "pexelsId": "6255295", "url": "https://www.pexels.com/photo/6255295/", "usage": "recorte protagonista del hero" },
+    { "archivo": "recorte-cartas-1400x1400.webp", "pexelsId": "3290047", "url": "https://www.pexels.com/photo/3290047/", "usage": "recorte secundario (abanico de cartas)" },
+    { "archivo": "escenario-luces-1920x1080.webp", "pexelsId": "33625502", "url": "https://www.pexels.com/photo/33625502/", "usage": "fondo del capitulo El seguidor" },
+    { "archivo": "telon-rojo-1920x1080.webp", "pexelsId": "713149", "url": "https://www.pexels.com/photo/713149/", "usage": "cierre / CTA final" },
+    { "archivo": "show-recepcion-1600x1300.webp", "pexelsId": "10994584", "url": "https://www.pexels.com/photo/10994584/", "usage": "show de magia de recepcion" },
+    { "archivo": "mentalismo-1600x1300.webp", "pexelsId": "6255266", "url": "https://www.pexels.com/photo/6255266/", "usage": "show de mentalismo" },
+    { "archivo": "show-escenario-1600x1300.webp", "pexelsId": "11634143", "url": "https://www.pexels.com/photo/11634143/", "usage": "show teatral / ventriloquia" },
+    { "archivo": "magia-infantil-1600x1300.webp", "pexelsId": "8422098", "url": "https://www.pexels.com/photo/8422098/", "usage": "magia infantil" },
+    { "archivo": "corporativo-1600x1300.webp", "pexelsId": "14724165", "url": "https://www.pexels.com/photo/14724165/", "usage": "eventos corporativos" },
+    { "archivo": "retrato-mago-1200x1500.webp", "pexelsId": "10994589", "url": "https://www.pexels.com/photo/10994589/", "usage": "retrato de referencia (NO es Claudio, se reemplaza con foto real)" }
+  ]
+}

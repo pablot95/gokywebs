@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Demo de tienda online para Lisboa Men, indumentaria oversize para jóvenes.">
+  <meta name="theme-color" content="#080808">
+  <title>Lisboa Men | Indumentaria Oversize</title>
+  <link rel="icon" href="images/logoredondo.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#catalogo">Ir al catálogo</a>
+  <div class="announcement">Envíos a todo el país · 3 cuotas sin interés</div>
+
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="Lisboa Men, inicio">
+      <img src="images/logoredondo.jpeg" alt="" width="52" height="52">
+      <span>LISBOA MEN</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Navegación principal">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#drop">Drop 01</a>
+      <a href="#marca">La marca</a>
+      <a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">Instagram</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button cart-header" type="button" data-open-cart aria-label="Abrir carrito">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h15l-2 8H8L6 3H3M9 20h.01M18 20h.01"/></svg>
+        <span data-cart-count hidden>0</span>
+      </button>
+      <button id="menu-button" class="icon-button menu-button" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <nav id="mobile-menu" class="mobile-menu" aria-label="Navegación móvil">
+      <a href="#catalogo">Catálogo</a>
+      <a href="#drop">Drop 01</a>
+      <a href="#marca">La marca</a>
+      <a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">Instagram</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="inicio" class="hero">
+      <img class="hero-image" src="images/hero-editorial.png" alt="Modelo con remera oversize negra Lisboa Men" width="1536" height="1024" fetchpriority="high">
+      <div class="hero-shade"></div>
+      <div class="hero-content">
+        <p class="eyebrow">Drop 01 · Otoño / Invierno</p>
+        <h1>El fit que cambia todo.</h1>
+        <p>Oversize real. Prendas pesadas, cómodas y pensadas para ocupar espacio sin pedir permiso.</p>
+        <a class="primary-link" href="#catalogo">Explorar el drop <span aria-hidden="true">→</span></a>
+      </div>
+      <a class="hero-scroll" href="#beneficios">Deslizar <span aria-hidden="true">↓</span></a>
+    </section>
+
+    <section id="beneficios" class="benefits" aria-label="Beneficios de compra">
+      <div><strong>Envíos nacionales</strong><span>Llegamos a todo el país</span></div>
+      <div><strong>Compra simple</strong><span>Finalizá por WhatsApp</span></div>
+      <div><strong>Cambios fáciles</strong><span>Dentro de los 30 días</span></div>
+      <div><strong>Atención directa</strong><span>Sin respuestas automáticas</span></div>
+    </section>
+
+    <section id="drop" class="drop-intro">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Selección Lisboa</p>
+        <h2>Construí tu uniforme.</h2>
+      </div>
+      <div class="category-editorial">
+        <a href="#catalogo" data-jump-category="Remeras" class="category-block reveal"><span>01</span><strong>Remeras</strong><small>Caída amplia</small></a>
+        <a href="#catalogo" data-jump-category="Hoodies" class="category-block reveal"><span>02</span><strong>Hoodies</strong><small>Alto gramaje</small></a>
+        <a href="#catalogo" data-jump-category="Pantalones" class="category-block reveal"><span>03</span><strong>Cargos</strong><small>Silueta wide</small></a>
+        <a href="#catalogo" data-jump-category="Bermudas" class="category-block reveal"><span>04</span><strong>Bermudas</strong><small>Largo urbano</small></a>
+      </div>
+    </section>
+
+    <section id="catalogo" class="catalog-section">
+      <div class="catalog-header">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Tienda online</p>
+          <h2>Catálogo</h2>
+        </div>
+        <p id="result-count" class="result-count" aria-live="polite">16 productos</p>
+      </div>
+
+      <div class="catalog-tools" aria-label="Herramientas del catálogo">
+        <label class="search-field" for="catalog-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <span class="sr-only">Buscar productos</span>
+          <input id="catalog-search" type="search" placeholder="Buscar por nombre o prenda..." autocomplete="off">
+        </label>
+        <div class="category-filters" aria-label="Filtrar por categoría">
+          <button type="button" class="active" data-category="Todos">Todos</button>
+          <button type="button" data-category="Remeras">Remeras</button>
+          <button type="button" data-category="Hoodies">Hoodies</button>
+          <button type="button" data-category="Pantalones">Pantalones</button>
+          <button type="button" data-category="Bermudas">Bermudas</button>
+        </div>
+        <div class="select-filters">
+          <label><span class="sr-only">Filtrar por talle</span><select id="size-filter"><option value="">Todos los talles</option><option>S</option><option>M</option><option>L</option><option>XL</option></select></label>
+          <label><span class="sr-only">Filtrar por precio</span><select id="price-filter"><option value="">Cualquier precio</option><option value="under40">Hasta $40.000</option><option value="40to55">$40.000 a $55.000</option><option value="over55">Más de $55.000</option></select></label>
+          <label><span class="sr-only">Ordenar productos</span><select id="sort-filter"><option value="featured">Destacados</option><option value="price-asc">Menor precio</option><option value="price-desc">Mayor precio</option><option value="name">Nombre A–Z</option></select></label>
+          <button id="clear-filters" class="text-button" type="button">Limpiar</button>
+        </div>
+      </div>
+
+      <div id="product-grid" class="product-grid"></div>
+      <div class="load-more-wrap"><button id="load-more" class="secondary-button" type="button">Ver más productos</button></div>
+    </section>
+
+    <section id="marca" class="brand-story">
+      <div class="story-image reveal"><img src="images/hero-editorial.png" alt="Editorial de Lisboa Men" loading="lazy" width="900" height="700"></div>
+      <div class="story-copy reveal">
+        <p class="eyebrow">Lisboa Men</p>
+        <h2>Menos ruido.<br>Más presencia.</h2>
+        <p>Nacimos para quienes encuentran identidad en una buena silueta. Diseñamos prendas oversize fáciles de combinar, con materiales que se sienten desde el primer uso.</p>
+        <a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">Seguir @lisboamen <span aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+
+    <section class="newsletter">
+      <div>
+        <p class="eyebrow">Comunidad Lisboa</p>
+        <h2>Enterate antes del próximo drop.</h2>
+      </div>
+      <a class="primary-link" href="https://wa.me/5493424226186?text=Hola%20Lisboa%20Men%2C%20quiero%20recibir%20novedades%20de%20los%20pr%C3%B3ximos%20drops" target="_blank" rel="noopener noreferrer">Sumarme por WhatsApp <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-brand"><img src="images/logoredondo.jpeg" alt="Lisboa Men" width="72" height="72"><p>Indumentaria oversize.<br>Santa Fe, Argentina.</p></div>
+    <div><strong>Comprar</strong><a href="#catalogo">Catálogo</a><a href="#drop">Drop 01</a><a href="#marca">Guía de estilo</a></div>
+    <div><strong>Contacto</strong><a href="https://wa.me/5493424226186" target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">@lisboamen</a></div>
+    <p class="footer-bottom">© <span id="year"></span> Lisboa Men · Demo desarrollada y diseñada por Gokywebs con asistencia de IA</p>
+  </footer>
+
+  <div id="cart-overlay" class="cart-overlay"></div>
+  <aside id="cart-drawer" class="cart-drawer" aria-hidden="true" aria-labelledby="cart-title">
+    <div class="drawer-header"><h2 id="cart-title">Tu carrito</h2><button id="close-cart" class="icon-button" type="button" aria-label="Cerrar carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="drawer-footer"><div class="cart-total"><span>Total estimado</span><strong id="cart-total">$ 0</strong></div><p>El stock y los medios de pago se confirman por WhatsApp.</p><button id="checkout-whatsapp" class="checkout-button" type="button">Finalizar por WhatsApp</button></div>
+  </aside>
+
+  <dialog id="product-modal" class="product-modal">
+    <button id="close-modal" class="icon-button modal-close" type="button" aria-label="Cerrar detalle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <div class="modal-layout">
+      <img id="modal-image" src="images/product-tee-black.png" alt="" width="700" height="700">
+      <div class="modal-copy"><p id="modal-category" class="product-category"></p><h2 id="modal-title"></h2><p id="modal-price" class="modal-price"></p><p id="modal-description"></p><span class="option-label">Elegí tu talle</span><div id="modal-sizes" class="modal-sizes"></div><span class="option-label">Cantidad</span><div class="modal-buy"><div class="quantity-control"><button id="modal-minus" type="button" aria-label="Restar unidad">−</button><input id="modal-quantity" type="number" min="1" max="10" value="1" readonly><button id="modal-plus" type="button" aria-label="Sumar unidad">+</button></div><button id="modal-add" class="add-button" type="button">Agregar al carrito</button></div></div>
+    </div>
+  </dialog>
+
+  <button class="floating-cart" type="button" data-open-cart aria-label="Abrir carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h15l-2 8H8L6 3H3M9 20h.01M18 20h.01"/></svg><span data-cart-count hidden>0</span></button>
+  <a class="floating-whatsapp" href="https://wa.me/5493424226186?text=Hola%20Lisboa%20Men%2C%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.3-4.7A8.5 8.5 0 1 1 20.5 11.7Z"/><path d="M8.2 7.7c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.7c.1.3 0 .5-.2.7l-.5.6c-.2.2-.1.4 0 .6.5 1 1.3 1.8 2.3 2.3.2.1.4.2.6 0l.7-.8c.2-.2.4-.2.7-.1l1.7.8c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.8-.6.5-1.4.7-2.3.4-1.2-.4-2.8-1-4.4-2.5-1.3-1.3-2.2-2.9-2.5-4.1-.3-.8 0-1.5.4-1.9Z"/></svg></a>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>

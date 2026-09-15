@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light"/>
+<title>Essen con Leti</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;overflow-x:hidden}
+  body{height:500vh;background:#f3ede4}
+  /* Warm-white kitchen atmosphere: the permanent backdrop AND the no-WebGL fallback.
+     The transparent canvas renders the vessel rims on top of this. */
+  #fallback{
+    position:fixed;inset:0;z-index:0;
+    background:
+      radial-gradient(120% 90% at 50% 42%, rgba(0,0,0,0) 55%, rgba(74,42,32,0.06) 100%),
+      linear-gradient(180deg,#f8f3ec 0%,#f5efe6 46%,#f1e9df 80%,#ece2d6 100%);
+  }
+  #bg{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1}
+</style>
+</head>
+<body>
+<div id="fallback"></div>
+<canvas id="bg"></canvas>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+const canvas = document.getElementById('bg');
+
+/* ---------- capability check ---------- */
+function webglOK(){
+  try{
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  }catch(e){ return false; }
+}
+if(!webglOK()){ canvas.style.display='none'; }        /* backdrop gradient remains as fallback */
+else { try{ boot(); }catch(err){ canvas.style.display='none'; } }
+
+/* =====================================================================
+   CONCEPTO VISUAL — ESSEN CON LETI  (venta de ollas Essen)
+   Gramática propia: un CORREDOR DE AROS. Bordes de vasija —los rebordes
+   redondeados y las ranuras concéntricas del difusor de las ollas Essen—
+   suspendidos en luz cálida. Aros ovalados, ligeramente irregulares,
+   agrupados en racimos concéntricos (como el fondo de una olla o una pila
+   de tapas). La cámara VUELA a través del centro abierto de los aros: el
+   medio queda despejado para el texto y el peso visual se apoya en los
+   bordes, los laterales y la profundidad. Reconocible en escala de grises
+   por la estructura de aros anidados, no por el color. Recorrido en 4 zonas:
+     Z0 reposo íntimo   — pocos aros pequeños, blancos, luz alta y aire
+     Z1 aproximación    — racimos crecen, primeros rojos, más ritmo
+     Z2 el salón        — aros enormes que enmarcan los bordes, rojo hondo, niebla
+     Z3 vapor / ascenso — los aros se alejan y suben filamentos de vapor, aireado
+   ===================================================================== */
+function boot(){
+  const isMobile = window.matchMedia('(max-width:820px)').matches || ('ontouchstart' in window);
+  const motionOK = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- helpers ---------- */
+  const clamp = (v)=>Math.min(1,Math.max(0,v));
+  const damp  = (a,b,l,dt)=> b + (a-b)*Math.exp(-l*dt);   // b -> a
+  function sampleNum(p, arr){
+    const n = arr.length-1; const t = clamp(p)*n;
+    const i = Math.min(Math.floor(t), n-1); const f = t-i; const s = f*f*(3-2*f);
+    return arr[i]*(1-s) + arr[i+1]*s;
+  }
+  function sampleColor(p, cols, out){
+    const n = cols.length-1; const t = clamp(p)*n;
+    const i = Math.min(Math.floor(t), n-1); const f = t-i; const s = f*f*(3-2*f);
+    return out.copy(cols[i]).lerp(cols[i+1], s);
+  }
+  let seed = 20260714;
+  const rnd = ()=>{ seed = (seed*1664525 + 1013904223) & 0xffffffff; return (seed>>>0)/4294967296; };
+  const rrange = (a,b)=> a + (b-a)*rnd();
+
+  /* ---------- brand keyframes (5 stops = 4 evolving zones) ---------- */
+  const FOGD   = [0.008, 0.012, 0.018, 0.013, 0.0072];     // niebla: clímax densa, llegada despejada
+  const KEY    = [0.90, 1.00, 1.12, 1.00, 0.95];           // luz principal
+  const HEMI   = [1.00, 0.96, 0.86, 0.98, 1.14];           // luz ambiental (más aire al final)
+  const CAMY   = [0.3, 0.6, 1.0, 0.5, -0.2];               // altura del ojo
+  const FOGCOL = ['#efe7db','#f0e9de','#f6f2ea'].map(h=>new THREE.Color(h));
+  const camStartZ = 18, camEndZ = -560;
+  const zHead = 8, zTail = -540;                            // reparto de los racimos en profundidad
+
+  /* ---------- renderer / scene / camera ---------- */
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias:!isMobile, alpha:true, powerPreference:'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isMobile?1.5:2));
+  renderer.setClearAlpha(0);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(FOGCOL[0].clone(), FOGD[0]);
+
+  const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 1500);
+  scene.add(camera);
+
+  /* ---------- lights (soft, matte, premium — enamel not chrome) ---------- */
+  const hemi = new THREE.HemisphereLight(0xfff8f0, 0xd9ccbb, HEMI[0]);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xfff6ec, KEY[0]);
+  key.position.set(-0.55, 0.92, 0.4); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xf3e7e2, 0.30);
+  fill.position.set(0.7, 0.1, 0.4); scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffe6df, 0.26);
+  rim.position.set(0.1, -0.65, -0.75); scene.add(rim);
+
+  /* ---------- material pool (reused across all rims) ---------- */
+  const mk = (hex, rough, opts={}) => new THREE.MeshStandardMaterial(Object.assign(
+    { color:new THREE.Color(hex), roughness:rough, metalness:0.0, side:THREE.DoubleSide, fog:true }, opts));
+  const matWhite = mk('#f9f4ec', 0.58);
+  const matCream = mk('#f0e8da', 0.62);
+  const matWarm  = mk('#e2d6c4', 0.66);              // shadow tone so the whites read against a light bg
+  const matRed   = mk('#c62f28', 0.50);
+  const matDeep  = mk('#8f201c', 0.52);
+  const matRose  = mk('#ecc9c1', 0.60);
+  const matGhost = mk('#f3ece1', 0.72, { transparent:true, opacity:0.42, depthWrite:false });
+  const matSteam = mk('#f7f1e8', 0.90, { transparent:true, opacity:0.16, depthWrite:false });
+
+  function chooseMat(s){
+    if(s>0.62 && rnd()<0.14) return matGhost;
+    const redP = sampleNum(s,[0.02,0.16,0.44,0.40,0.12]);
+    if(rnd()<redP){
+      const deepP = sampleNum(s,[0.25,0.40,0.62,0.50,0.20]);
+      return rnd()<deepP ? matDeep : matRed;
+    }
+    if(s>0.68 && rnd()<0.42) return matRose;
+    const r = rnd();
+    return r<0.5 ? matWhite : (r<0.8 ? matCream : matWarm);
+  }
+
+  /* ---------- geometry: irregular vessel rim (tube swept around a wobbly ellipse) ---------- */
+  const radSeg = isMobile?7:10, tubSeg = isMobile?60:110;
+  function buildRim(tube, wob, wobF){
+    const path=[];
+    for(let i=0;i<tubSeg;i++){
+      const a=i/tubSeg*Math.PI*2;
+      const r=1 + wob*Math.sin(a*wobF) + wob*0.4*Math.sin(a*(wobF*2+1)+1.3);
+      path.push(new THREE.Vector3(Math.cos(a)*r, Math.sin(a)*r, 0));
+    }
+    const pos=[],nor=[],idx=[];
+    const T=new THREE.Vector3(), N1=new THREE.Vector3(), N2=new THREE.Vector3(0,0,1);
+    for(let i=0;i<tubSeg;i++){
+      const C=path[i], Cn=path[(i+1)%tubSeg], Cp=path[(i-1+tubSeg)%tubSeg];
+      T.subVectors(Cn,Cp).normalize();
+      N1.crossVectors(T,N2).normalize();               // in-plane radial-ish axis
+      for(let j=0;j<radSeg;j++){
+        const ph=j/radSeg*Math.PI*2, c=Math.cos(ph), s=Math.sin(ph);
+        const nx=N1.x*c+N2.x*s, ny=N1.y*c+N2.y*s, nz=N1.z*c+N2.z*s;
+        pos.push(C.x+nx*tube, C.y+ny*tube, C.z+nz*tube);
+        nor.push(nx,ny,nz);
+      }
+    }
+    for(let i=0;i<tubSeg;i++) for(let j=0;j<radSeg;j++){
+      const a=i*radSeg+j, b=((i+1)%tubSeg)*radSeg+j, cc=i*radSeg+((j+1)%radSeg), d=((i+1)%tubSeg)*radSeg+((j+1)%radSeg);
+      idx.push(a,b,d, a,d,cc);
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
+    g.setIndex(idx); return g;
+  }
+  const rims = [
+    buildRim(0.050,0.03,3), buildRim(0.080,0.05,2), buildRim(0.035,0.07,5),
+    buildRim(0.110,0.02,4), buildRim(0.060,0.09,6), buildRim(0.045,0.04,3)
+  ];
+
+  /* ---------- geometry: rising steam wisp (reused, scaled per instance) ---------- */
+  function buildSteam(){
+    const segs=18, pos=[], nor=[], idx=[];
+    for(let i=0;i<=segs;i++){
+      const t=i/segs;
+      const sway=Math.sin(t*Math.PI*1.2)*0.12;
+      const hw=0.5*Math.max(0.02,(1-t*0.9))*(0.55+0.45*Math.sin(t*Math.PI));
+      pos.push(sway-hw, t, 0,  sway+hw, t, 0);
+      nor.push(0,0,1, 0,0,1);
+      if(i<segs){ const k=i*2; idx.push(k,k+1,k+2, k+1,k+3,k+2); }
+    }
+    const g=new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+    g.setAttribute('normal',   new THREE.Float32BufferAttribute(nor,3));
+    g.setIndex(idx); return g;
+  }
+  const steamGeo = buildSteam();
+
+  /* ---------- author the corridor: concentric rim clusters across the 4 zones ---------- */
+  const world = new THREE.Group(); scene.add(world);
+  const clusters = isMobile?11:18;
+  for(let ci=0; ci<clusters; ci++){
+    const s = ci/(clusters-1);
+    const cz = THREE.MathUtils.lerp(zHead, zTail, s) + rrange(-8,8);
+    const off = sampleNum(s,[1.2,2.2,3.8,3.2,2.0]);            // side-weight grows toward the climax
+    const cx = rrange(-off,off)*1.3;
+    const cy = rrange(-off,off)*0.7 + sampleNum(s,[0.2,0.5,0.9,0.4,-0.3]);
+    const grp = new THREE.Group();
+    grp.position.set(cx,cy,cz);
+    grp.rotation.set(rrange(-0.35,0.35), rrange(-0.40,0.40), rrange(-0.5,0.5));
+    const baseR = sampleNum(s,[2.3,3.5,6.4,9.2,5.2]) * rrange(0.85,1.15);
+    const nR = isMobile ? (2+Math.floor(rnd()*2)) : (2+Math.floor(rnd()*4));  // nested grooves
+    const step = rrange(0.38,0.60);
+    for(let k=0;k<nR;k++){
+      const R = baseR*(0.5 + k*step);
+      const m = new THREE.Mesh(rims[Math.floor(rnd()*rims.length)], chooseMat(s));
+      m.scale.set(R*rrange(0.90,1.12), R*rrange(0.82,1.05), R);   // ovalado, como un reborde visto en ángulo
+      m.rotation.set(rrange(-0.30,0.30), rrange(-0.35,0.35), rrange(0,6.28));
+      grp.add(m);
+    }
+    world.add(grp);
+  }
+
+  /* ---------- steam field (dominant at the airy arrival, Z3) ---------- */
+  const steamGrp = new THREE.Group(); world.add(steamGrp);
+  const steamN = isMobile?7:14;
+  for(let i=0;i<steamN;i++){
+    const side = rnd()<0.5?-1:1;
+    const y = rrange(-6,-1), h = rrange(14,34), w = rrange(0.5,1.6);
+    const m = new THREE.Mesh(steamGeo, matSteam);
+    m.position.set(side*rrange(3,20), y, THREE.MathUtils.lerp(-380,-600,rnd()));
+    m.scale.set(w,h,1);
+    m.rotation.set(0, rrange(-0.4,0.4), rrange(-0.15,0.15));
+    m.userData = { phase:rnd()*6.283, baseY:y, sway:rrange(0.02,0.06) };
+    steamGrp.add(m);
+  }
+
+  /* ---------- scroll / iframe control ---------- */
+  let target = 0, prog = 0, externalControl = false;
+  const internalProgress = ()=>{
+    const max = (document.body.scrollHeight - window.innerHeight);
+    return max>0 ? clamp(window.scrollY / max) : 0;
+  };
+  target = prog = internalProgress();
+  addEventListener('scroll', ()=>{ if(!externalControl) target = internalProgress(); }, {passive:true});
+  addEventListener('message', (e)=>{
+    const d = e.data;
+    if(d && d.type==='scroll' && typeof d.progress==='number' && isFinite(d.progress)){
+      externalControl = true;
+      target = clamp(d.progress);
+    }
+  });
+
+  /* ---------- cursor micro-interaction (parallax; disabled on touch/mobile) ---------- */
+  let pmx=0, pmy=0, mx=0, my=0;
+  const PAR = (isMobile?0:1) * (motionOK?1:0.15);
+  addEventListener('pointermove', (e)=>{
+    if(e.pointerType==='touch') return;
+    pmx = (e.clientX/window.innerWidth  - 0.5)*2;
+    pmy = (e.clientY/window.innerHeight - 0.5)*2;
+  }, {passive:true});
+
+  /* ---------- resize / responsive framing ---------- */
+  function resize(){
+    const w = window.innerWidth, h = window.innerHeight, a = w/h;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, isMobile?1.5:2));
+    renderer.setSize(w, h, false);
+    camera.aspect = a;
+    // widen FOV in portrait so the lateral rims stay framed without cropping the safe centre
+    camera.fov = THREE.MathUtils.clamp(50 * (1 + 0.62*Math.max(0, 1 - a)), 50, 84);
+    camera.updateProjectionMatrix();
+  }
+  addEventListener('resize', resize); resize();
+
+  /* ---------- render loop ---------- */
+  const MICRO = motionOK ? 0.12 : 0.0;
+  const tmpFog = new THREE.Color();
+  let last = performance.now(), raf = 0, running = false;
+
+  function frame(now){
+    raf = requestAnimationFrame(frame);
+    const dt = Math.min(0.05, (now-last)/1000); last = now;
+    const t = now*0.001;
+
+    prog = damp(target, prog, motionOK?6.0:12.0, dt);
+    mx   = damp(pmx, mx, 3.5, dt);
+    my   = damp(pmy, my, 3.5, dt);
+
+    const e = prog*prog*(3-2*prog);                 // easeInOut: avance rápido en el medio del viaje
+    const camZ = THREE.MathUtils.lerp(camStartZ, camEndZ, e);
+    const camYb = sampleNum(prog, CAMY);
+
+    camera.position.set(
+      mx*PAR*1.6 + Math.sin(t*0.19)*MICRO,
+      camYb + my*PAR*0.9 + Math.sin(t*0.25)*MICRO,
+      camZ
+    );
+    camera.lookAt(-mx*PAR*0.5, camYb - my*PAR*0.3, camZ - 30);
+
+    scene.fog.density = sampleNum(prog, FOGD);
+    sampleColor(prog, FOGCOL, tmpFog); scene.fog.color.copy(tmpFog);
+    key.intensity  = sampleNum(prog, KEY);
+    hemi.intensity = sampleNum(prog, HEMI);
+
+    if(motionOK){                                    // deriva mínima, casi imperceptible (solo el vapor)
+      for(const m of steamGrp.children){
+        const u=m.userData;
+        m.position.y = u.baseY + Math.sin(t*0.18+u.phase)*0.5;
+        m.rotation.z = Math.sin(t*0.12+u.phase)*u.sway;
+      }
+    }
+
+    renderer.render(scene, camera);
+  }
+  function start(){ if(!running){ running=true; last=performance.now(); raf=requestAnimationFrame(frame); } }
+  function stop(){ running=false; cancelAnimationFrame(raf); }
+  document.addEventListener('visibilitychange', ()=> document.hidden ? stop() : start());
+  start();
+}
+</script>
+</body>
+</html>

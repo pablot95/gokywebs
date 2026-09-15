@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cabañas Don Juvenal — Alojamiento, paseo y pesca</title>
+  <meta name="description" content="Cabañas frente al río en Santa Rosa de Calchines, Santa Fe. Pesca de surubí y dorado, paseos por las islas, galería con asador y fogón bajo las estrellas. Reservá por WhatsApp.">
+  <meta name="robots" content="noindex">
+  <meta property="og:title" content="Cabañas Don Juvenal — Tu lugar frente al río">
+  <meta property="og:description" content="Alojamiento, paseo y pesca en Santa Rosa de Calchines, Santa Fe. Reservá tu estadía por WhatsApp.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="images/frente-cabana_1x1.webp">
+  <meta name="theme-color" content="#F6EFE2">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F6EFE2'/%3E%3Ccircle cx='32' cy='36' r='12' fill='%23C8801F'/%3E%3Crect x='8' y='36' width='48' height='4' rx='2' fill='%232F5138'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Grand+Hotel&family=Raleway:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=1">
+  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}[data-hero]{opacity:1!important;transform:none!important}</style></noscript>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Cabañas Don Juvenal",
+    "description": "Cabañas frente al río con pesca, paseos por las islas y galería con asador en Santa Rosa de Calchines, Santa Fe.",
+    "telephone": "+54 9 3404 41-5605",
+    "address": { "@type": "PostalAddress", "addressLocality": "Santa Rosa de Calchines", "addressRegion": "Santa Fe", "addressCountry": "AR" },
+    "geo": { "@type": "GeoCoordinates", "latitude": -31.4203, "longitude": -60.3328 },
+    "amenityFeature": [
+      { "@type": "LocationFeatureSpecification", "name": "Galería con asador" },
+      { "@type": "LocationFeatureSpecification", "name": "Muelle de pesca" },
+      { "@type": "LocationFeatureSpecification", "name": "Cocina equipada" }
+    ]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      { "@type": "Question", "name": "¿A qué hora son el check-in y el check-out?", "acceptedAnswer": { "@type": "Answer", "text": "El check-in es a partir de las 14:00 y el check-out hasta las 10:00. Si la cabaña está libre, coordinamos horarios flexibles sin cargo." } },
+      { "@type": "Question", "name": "¿Puedo ir con mi perro?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, avisando al reservar. Hay parque abierto para que corra; adentro de la cabaña, con su manta propia." } },
+      { "@type": "Question", "name": "¿Necesito llevar equipo de pesca?", "acceptedAnswer": { "@type": "Answer", "text": "Podés traer el tuyo y pescar desde el muelle, o coordinar una salida guiada en lancha con equipo y carnada incluidos." } },
+      { "@type": "Question", "name": "¿Qué incluye la cabaña?", "acceptedAnswer": { "@type": "Answer", "text": "Ropa blanca, cocina equipada, aire acondicionado, galería con asador propio y acceso al muelle. Traé lo que quieras cocinar y nada más." } }
+    ]
+  }
+  </script>
+</head>
+<body id="top">
+  <a class="skip-link" href="#cabanas">Saltar al contenido</a>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="Cabañas Don Juvenal — inicio">
+        <span class="brand-pre">cabañas</span>
+        <span class="brand-script">Don Juvenal</span>
+      </a>
+      <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+        <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#cabanas">Las cabañas</a>
+        <a href="#pesca">Pesca y paseos</a>
+        <a href="#dia">Un día acá</a>
+        <a href="#reservas">Reservas</a>
+        <a href="#ubicacion">Ubicación</a>
+      </nav>
+      <a class="btn btn-cta header-cta" href="#reservas">Reservá</a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" aria-label="Presentación">
+      <div class="hero-cielo" aria-hidden="true"></div>
+      <div class="hero-sol" aria-hidden="true" data-layer="0.5"></div>
+      <div class="container hero-top">
+        <p class="eyebrow" data-hero><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Santa Rosa de Calchines · Ruta de la Costa · Santa Fe</p>
+        <h1 data-hero>Despertate <span class="script-accent">frente al río</span>,<br>volvé con historias de pesca.</h1>
+        <p class="hero-sub" data-hero>Cabañas de madera sobre la ribera, muelle propio, asador en la galería y el monte de las islas ahí nomás. Para el que busca desconectar en serio.</p>
+        <div class="hero-ctas" data-hero>
+          <a class="btn btn-cta" href="https://wa.me/5493404415605?text=Hola%20Caba%C3%B1as%20Don%20Juvenal%2C%20quiero%20consultar%20disponibilidad%20para%20una%20estad%C3%ADa." target="_blank" rel="noopener">Consultá disponibilidad</a>
+          <a class="btn btn-linea" href="#reservas">Armá tu estadía</a>
+        </div>
+      </div>
+      <div class="hero-escena" aria-hidden="true">
+        <div class="hero-franja" data-hero>
+          <img src="images/cabana-ribera_2.8x1.webp" alt="" width="1920" height="686" fetchpriority="high">
+        </div>
+        <figure class="hero-marco" data-layer="1.4" data-hero>
+          <img src="images/pesca-al-amanecer_9x16.webp" alt="" width="941" height="1672" loading="lazy">
+          <figcaption>06:30 · sale la lancha</figcaption>
+        </figure>
+        <div class="parte-rio" data-layer="1" data-hero>
+          <p class="parte-titulo"><span class="parte-dot"></span>Parte del río · hoy</p>
+          <ul>
+            <li><span>Viento</span><strong>NE 9 km/h</strong></li>
+            <li><span>Agua</span><strong>En baja, clara</strong></li>
+            <li class="pica"><span>Pique</span><strong>Dorado activo</strong></li>
+          </ul>
+        </div>
+        <div class="sello" data-layer="1.8" data-hero>
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <defs><path id="selloPath" d="M60 12a48 48 0 1 1 0 96 48 48 0 1 1 0-96"/></defs>
+            <circle cx="60" cy="60" r="58" fill="none" stroke="currentColor" stroke-width="1.4"/>
+            <circle cx="60" cy="60" r="40" fill="none" stroke="currentColor" stroke-width="0.8"/>
+            <text font-size="12.5" letter-spacing="2.6"><textPath href="#selloPath">RÍO SAN JAVIER · PESCA · MONTE · </textPath></text>
+            <circle cx="60" cy="66" r="9" fill="currentColor"/>
+            <path d="M40 78h40" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="cabanas" id="cabanas">
+      <div class="container">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Las cabañas</p>
+        <h2 data-animate style="opacity:0;transform:translateY(30px)">Madera, río y <span class="script-accent">nada que te apure</span></h2>
+        <p class="section-lead" data-animate style="opacity:0;transform:translateY(30px)">Cabañas equipadas para 2 a 6 personas, todas con galería, asador propio y el verde hasta el agua.</p>
+        <div class="bento">
+          <figure class="bento-item b-frente" data-animate="circulo" style="opacity:0;clip-path:circle(14% at 35% 65%)">
+            <img src="images/frente-cabana_1x1.webp" alt="Frente de la cabaña de madera con camino de piedra entre cortaderas" width="1254" height="1254" loading="lazy">
+            <figcaption>El frente, al caer la tarde</figcaption>
+          </figure>
+          <figure class="bento-item b-habitacion" data-animate="alba" style="opacity:0;transform:translateY(34px);filter:sepia(.55) saturate(1.3) brightness(1.07)">
+            <img src="images/habitacion-rustica_4x5.webp" alt="Habitación rústica con cama con mantas verdes y salida a la galería" width="1122" height="1402" loading="lazy">
+            <figcaption>Dormís mirando el río</figcaption>
+          </figure>
+          <figure class="bento-item b-living" data-animate="alba" style="opacity:0;transform:translateY(34px);filter:sepia(.55) saturate(1.3) brightness(1.07)">
+            <img src="images/living-rustico_1x1.webp" alt="Living rústico con sillones claros y hogar a leña encendido" width="1254" height="1254" loading="lazy">
+            <figcaption>Hogar a leña para el invierno</figcaption>
+          </figure>
+          <figure class="bento-item b-cocina" data-animate="alba" style="opacity:0;transform:translateY(34px);filter:sepia(.55) saturate(1.3) brightness(1.07)">
+            <img src="images/cocina-rustica_1x1.webp" alt="Cocina rústica equipada con mesa de madera maciza" width="1254" height="1254" loading="lazy">
+            <figcaption>Cocina completa, mesa larga</figcaption>
+          </figure>
+          <figure class="bento-item b-galeria" data-animate="circulo" style="opacity:0;clip-path:circle(14% at 60% 50%)">
+            <img src="images/galeria-con-asador_1x1.webp" alt="Galería con asador, mesa servida y vista al río" width="1254" height="1254" loading="lazy">
+            <figcaption>La galería con asador, el corazón de la casa</figcaption>
+          </figure>
+          <div class="bento-item b-lista" data-animate="lateral-l" style="opacity:0;transform:translateX(-44px)">
+            <h3>Toda cabaña incluye</h3>
+            <ul>
+              <li>Ropa blanca y toallas</li>
+              <li>Cocina equipada y vajilla</li>
+              <li>Aire acondicionado frío/calor</li>
+              <li>Galería con asador propio</li>
+              <li>Acceso al muelle de pesca</li>
+              <li>Cochera dentro del predio</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="pesca" id="pesca">
+      <div class="container split">
+        <div class="split-media" data-animate="circulo" style="opacity:0;clip-path:circle(14% at 40% 60%)">
+          <img src="images/muelle-de-pesca_1x1.webp" alt="Muelle de madera con sillones, cañas y la lancha amarrada" width="1254" height="1254" loading="lazy">
+        </div>
+        <div class="split-body">
+          <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Pesca</p>
+          <h2 data-animate style="opacity:0;transform:translateY(30px)">Surubí, dorado y pacú <span class="script-accent">a metros de la cama</span></h2>
+          <p data-animate style="opacity:0;transform:translateY(28px)">Tirás la línea desde el muelle apenas te levantás, o salís embarcado con guía local que conoce cada correntada del San Javier. Equipo y carnada incluidos si no traés el tuyo.</p>
+          <ul class="check-lista" data-animate-stagger>
+            <li data-animate style="opacity:0;transform:translateX(44px)">Muelle propio iluminado, para pescar a cualquier hora</li>
+            <li data-animate style="opacity:0;transform:translateX(44px)">Salidas guiadas en lancha, medio día o día completo</li>
+            <li data-animate style="opacity:0;transform:translateX(44px)">Devolución del pez recomendada: el río se cuida entre todos</li>
+          </ul>
+          <a class="btn btn-verde" data-animate style="opacity:0;transform:translateY(26px)" href="https://wa.me/5493404415605?text=Hola%20Caba%C3%B1as%20Don%20Juvenal%2C%20quiero%20consultar%20por%20una%20salida%20de%20pesca%20guiada." target="_blank" rel="noopener">Consultá por pesca guiada</a>
+        </div>
+      </div>
+      <div class="container split split-invertido">
+        <div class="split-body">
+          <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Paseos</p>
+          <h2 data-animate style="opacity:0;transform:translateY(30px)">Las islas, <span class="script-accent">de puerta para afuera</span></h2>
+          <p data-animate style="opacity:0;transform:translateY(28px)">Paseos en lancha entre riachos y albardones, avistaje de aves del monte, atardeceres que no entran en el teléfono. El guía arma el recorrido según el día y el agua.</p>
+          <ul class="check-lista" data-animate-stagger>
+            <li data-animate style="opacity:0;transform:translateX(-44px)">Recorridos por las islas y riachos del San Javier</li>
+            <li data-animate style="opacity:0;transform:translateX(-44px)">Avistaje de aves: martín pescador, garzas, chajás</li>
+            <li data-animate style="opacity:0;transform:translateX(-44px)">Paseo del atardecer, el favorito de los que vuelven</li>
+          </ul>
+        </div>
+        <div class="split-media" data-animate="circulo" style="opacity:0;clip-path:circle(14% at 60% 40%)">
+          <img src="images/vista-aerea-cabana_5x3.webp" alt="Vista aérea de la cabaña entre el verde, con el muelle y la lancha sobre el río" width="1619" height="971" loading="lazy">
+        </div>
+      </div>
+    </section>
+
+    <section class="dia" id="dia" aria-label="Un día en Don Juvenal">
+      <div class="dia-pin">
+        <div class="container">
+          <div class="dia-head">
+            <p class="eyebrow eyebrow-clara"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Un día en Don Juvenal</p>
+            <h2>De la bruma del amanecer <span class="script-accent script-clara">al fogón</span></h2>
+          </div>
+          <div class="dia-grid">
+            <div class="dia-escena" aria-hidden="true">
+              <div class="cielo-stop cielo-alba"></div>
+              <div class="cielo-stop cielo-dia"></div>
+              <div class="cielo-stop cielo-tarde"></div>
+              <div class="cielo-stop cielo-noche"></div>
+              <div class="estrellas" id="estrellas"></div>
+              <div class="astro-sol" id="astroSol"></div>
+              <div class="astro-luna" id="astroLuna"></div>
+              <svg class="silueta" viewBox="0 0 800 240" preserveAspectRatio="none">
+                <path d="M0 168 L60 150 L110 162 L170 140 L230 158 L300 148 L330 152 L330 118 L345 118 L345 100 L352 100 L352 118 L370 118 L420 92 L470 118 L470 152 L520 146 L580 156 L640 142 L700 158 L760 148 L800 158 L800 240 L0 240 Z" fill="#132318"/>
+                <rect x="392" y="122" width="18" height="14" rx="1.5" class="ventana" id="ventanaCabana"/>
+                <path d="M340 168 L460 168 L460 174 L340 174 Z M355 174 L355 196 M395 174 L395 200 M435 174 L435 196" stroke="#0D1A12" stroke-width="5" fill="#0D1A12"/>
+              </svg>
+              <div class="agua"></div>
+              <div class="fogata" id="fogata"></div>
+              <div class="dia-reloj"><span id="diaHora">06:30</span></div>
+            </div>
+            <ol class="dia-momentos">
+              <li class="momento" data-momento="0"><span class="m-hora">06:30</span><div><strong>Mate en el muelle</strong><span>La bruma sobre el agua y el primer pique del día.</span></div></li>
+              <li class="momento" data-momento="1"><span class="m-hora">08:00</span><div><strong>Salida de pesca</strong><span>Embarcados con el guía, buscando el dorado.</span></div></li>
+              <li class="momento" data-momento="2"><span class="m-hora">13:00</span><div><strong>Asado en la galería</strong><span>Brasas propias, mesa larga, siesta opcional.</span></div></li>
+              <li class="momento" data-momento="3"><span class="m-hora">17:30</span><div><strong>Paseo por las islas</strong><span>Riachos, aves y el atardecer desde el agua.</span></div></li>
+              <li class="momento" data-momento="4"><span class="m-hora">21:30</span><div><strong>Fogón y cielo abierto</strong><span>Guitarra si hay, estrellas seguro.</span></div></li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="reservas" id="reservas">
+      <div class="container">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Reservas</p>
+        <h2 data-animate style="opacity:0;transform:translateY(30px)">Armá tu estadía <span class="script-accent">en un minuto</span></h2>
+        <p class="section-lead" data-animate style="opacity:0;transform:translateY(30px)">Elegí cabaña, fechas y extras: te respondemos por WhatsApp con disponibilidad y cómo señar. Sin cuentas, sin tarjeta, sin vueltas.</p>
+        <form class="reserva-card" id="reservaForm" novalidate data-animate="sello" style="opacity:0;transform:rotate(-2deg) scale(.93)">
+          <div class="reserva-grid">
+            <div class="form-row">
+              <label for="r-cabana">Cabaña</label>
+              <select id="r-cabana" name="cabana" required>
+                <option value="">Elegí una cabaña</option>
+                <option value="muelle">Del Muelle · 2 a 3 personas</option>
+                <option value="timbo">Del Timbó · 4 a 5 personas</option>
+                <option value="monte">Del Monte · hasta 6 personas</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="r-llegada">Llegada</label>
+              <input type="date" id="r-llegada" name="llegada" required>
+            </div>
+            <div class="form-row">
+              <label for="r-salida">Salida</label>
+              <input type="date" id="r-salida" name="salida" required>
+            </div>
+            <div class="form-row">
+              <label for="r-huespedes">Huéspedes</label>
+              <div class="stepper">
+                <button type="button" class="step-btn" id="menosHuespedes" aria-label="Quitar un huésped">−</button>
+                <input type="text" id="r-huespedes" name="huespedes" value="2" inputmode="numeric" readonly aria-live="polite">
+                <button type="button" class="step-btn" id="masHuespedes" aria-label="Sumar un huésped">+</button>
+              </div>
+            </div>
+          </div>
+          <fieldset class="extras">
+            <legend>Extras para la estadía</legend>
+            <label class="extra-chip"><input type="checkbox" name="extra-pesca" value="Salida de pesca guiada"><span>Salida de pesca guiada</span></label>
+            <label class="extra-chip"><input type="checkbox" name="extra-lena" value="Leña y parrilla listas"><span>Leña y parrilla listas</span></label>
+            <label class="extra-chip"><input type="checkbox" name="extra-desayuno" value="Desayuno de campo"><span>Desayuno de campo</span></label>
+          </fieldset>
+          <div class="reserva-pie">
+            <p class="resumen" id="resumenReserva" aria-live="polite">Elegí cabaña y fechas para ver el resumen.</p>
+            <button type="submit" class="btn btn-cta">
+              <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+              Consultar por WhatsApp
+            </button>
+          </div>
+          <p class="reserva-nota">Esto no confirma la reserva: es una consulta directa. Te respondemos con disponibilidad real y el detalle de la seña.</p>
+        </form>
+      </div>
+    </section>
+
+    <section class="voces" aria-label="Huéspedes">
+      <div class="container voces-grid">
+        <figure class="voz" data-animate="lateral-l" style="opacity:0;transform:translateX(-44px)">
+          <blockquote>«Saqué mi primer surubí a veinte metros de la cama. El guía sabía exactamente dónde parar la lancha.»</blockquote>
+          <figcaption>Huésped pescador · Rosario</figcaption>
+        </figure>
+        <figure class="voz" data-animate="lateral-r" style="opacity:0;transform:translateX(44px)">
+          <blockquote>«Fuimos por dos noches y nos quedamos cuatro. El asado en la galería mirando el río no se explica, se vive.»</blockquote>
+          <figcaption>Familia huésped · Santa Fe capital</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="ubicacion" id="ubicacion">
+      <div class="container">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Ubicación</p>
+        <h2 data-animate style="opacity:0;transform:translateY(30px)">A 40 minutos de Santa Fe, <span class="script-accent">a un mundo de distancia</span></h2>
+        <div class="ubicacion-grid">
+          <div class="ubicacion-info" data-animate-stagger>
+            <p data-animate style="opacity:0;transform:translateY(26px)">Estamos en Santa Rosa de Calchines, sobre la Ruta de la Costa (RP 1), el corredor de pesca más conocido de Santa Fe. Venís por asfalto hasta la puerta.</p>
+            <ul class="como-llegar">
+              <li data-animate style="opacity:0;transform:translateX(-40px)"><strong>Desde Santa Fe capital</strong><span>RP 1 hacia el norte, 45 km por la costa.</span></li>
+              <li data-animate style="opacity:0;transform:translateX(-40px)"><strong>Desde Paraná</strong><span>Túnel subfluvial + RP 1, poco más de una hora.</span></li>
+              <li data-animate style="opacity:0;transform:translateX(-40px)"><strong>Desde Rosario</strong><span>AP 01 hasta Santa Fe y seguís por la RP 1.</span></li>
+            </ul>
+            <p class="ubicacion-nota" data-animate style="opacity:0;transform:translateY(26px)">Al reservar te mandamos la ubicación exacta por WhatsApp.</p>
+          </div>
+          <div class="mapa-wrap" data-animate="sello" style="opacity:0;transform:rotate(-2deg) scale(.93)">
+            <div id="mapa"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <div class="container">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(26px)"><svg class="horizonte-ico" viewBox="0 0 34 14" aria-hidden="true"><path d="M10 11a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2"/><line x1="1" y1="12" x2="33" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Preguntas frecuentes</p>
+        <h2 data-animate style="opacity:0;transform:translateY(30px)">Antes de armar el bolso</h2>
+        <div class="faq-list" data-animate-stagger>
+          <details data-animate style="opacity:0;transform:translateY(26px)">
+            <summary>¿A qué hora son el check-in y el check-out?<span class="faq-icon" aria-hidden="true"></span></summary>
+            <p>El check-in es a partir de las 14:00 y el check-out hasta las 10:00. Si la cabaña está libre, coordinamos horarios flexibles sin cargo.</p>
+          </details>
+          <details data-animate style="opacity:0;transform:translateY(26px)">
+            <summary>¿Puedo ir con mi perro?<span class="faq-icon" aria-hidden="true"></span></summary>
+            <p>Sí, avisando al reservar. Hay parque abierto para que corra; adentro de la cabaña, con su manta propia.</p>
+          </details>
+          <details data-animate style="opacity:0;transform:translateY(26px)">
+            <summary>¿Necesito llevar equipo de pesca?<span class="faq-icon" aria-hidden="true"></span></summary>
+            <p>Podés traer el tuyo y pescar desde el muelle, o coordinar una salida guiada en lancha con equipo y carnada incluidos.</p>
+          </details>
+          <details data-animate style="opacity:0;transform:translateY(26px)">
+            <summary>¿Qué incluye la cabaña?<span class="faq-icon" aria-hidden="true"></span></summary>
+            <p>Ropa blanca, cocina equipada, aire acondicionado, galería con asador propio y acceso al muelle. Traé lo que quieras cocinar y nada más.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="cierre" id="contacto">
+      <div class="cierre-bg" aria-hidden="true">
+        <img src="images/cabana-nocturna_1x1.webp" alt="" width="1254" height="1254" loading="lazy">
+      </div>
+      <div class="container cierre-inner">
+        <h2 data-animate style="opacity:0;transform:translateY(30px)">El río de noche <span class="script-accent script-clara">también es un plan</span></h2>
+        <p data-animate style="opacity:0;transform:translateY(28px)">Fogón encendido, cielo sin luces de ciudad y la cabaña esperándote con la cama hecha. Escribinos y buscá fecha.</p>
+        <div class="cierre-ctas" data-animate style="opacity:0;transform:translateY(26px)">
+          <a class="btn btn-cta" href="https://wa.me/5493404415605?text=Hola%20Caba%C3%B1as%20Don%20Juvenal%2C%20quiero%20reservar%20una%20estad%C3%ADa%20frente%20al%20r%C3%ADo." target="_blank" rel="noopener">Reservá tu estadía</a>
+          <a class="btn btn-linea btn-linea-clara" href="#reservas">Ver cabañas y fechas</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <span class="brand-pre">cabañas</span>
+        <span class="brand-script">Don Juvenal</span>
+        <p>Alojamiento, paseo y pesca en Santa Rosa de Calchines, Santa Fe.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Secciones">
+        <a href="#cabanas">Las cabañas</a>
+        <a href="#pesca">Pesca y paseos</a>
+        <a href="#dia">Un día acá</a>
+        <a href="#reservas">Reservas</a>
+        <a href="#ubicacion">Ubicación</a>
+      </nav>
+      <div class="footer-contacto">
+        <a class="footer-tel" href="https://wa.me/5493404415605?text=Hola%20Caba%C3%B1as%20Don%20Juvenal%2C%20quiero%20consultar%20por%20una%20estad%C3%ADa." target="_blank" rel="noopener">3404 41-5605</a>
+        <a class="footer-mail" href="mailto:hola@cabanasdonjuvenal.com">hola@cabanasdonjuvenal.com</a>
+        <span class="footer-ig" title="Instagram: Cabañas Don Juvenal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
+          <span>Cabañas Don Juvenal</span>
+        </span>
+      </div>
+    </div>
+    <div class="container footer-legal">
+      <p>© 2026 Cabañas Don Juvenal. Todos los derechos reservados.</p>
+      <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+    </div>
+  </footer>
+
+  <a class="wsp-float" id="wsp-float" href="https://wa.me/5493404415605?text=Hola%20Caba%C3%B1as%20Don%20Juvenal%2C%20quiero%20consultar%20por%20una%20estad%C3%ADa." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+
+  <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="reserva-core.js?v=1"></script>
+  <script src="script.js?v=2"></script>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>

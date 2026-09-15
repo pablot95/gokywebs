@@ -1,0 +1,31 @@
+{
+  "banco": "Pexels",
+  "licencia": "Pexels License (uso comercial libre, sin atribucion obligatoria)",
+  "nota": "Set sin personas posadas: por pedido de Pablo (28-jul) se sacaron los tres recortes de personas del hero, contacto y packs, y las dos fotos con gente. Todas son marcadores de stock: al pasar a produccion se reemplazan por fotos reales del estudio y de los edificios administrados.",
+  "imagenes": [
+    {
+      "archivo": "escritorio-luz-1600x1300.webp",
+      "origen": "https://www.pexels.com/photo/1128207/",
+      "id": 1128207,
+      "usage": "split editorial - que cambia cuando delegas"
+    },
+    {
+      "archivo": "sala-reunion-1200x1600.webp",
+      "origen": "https://www.pexels.com/photo/8453806/",
+      "id": 8453806,
+      "usage": "seccion VIALCO / casos de exito"
+    },
+    {
+      "archivo": "edificio-fachada-1600x1300.webp",
+      "origen": "https://www.pexels.com/photo/18153132/",
+      "id": 18153132,
+      "usage": "seccion administracion de consorcios"
+    },
+    {
+      "archivo": "escritorio-documentos-1600x1300.webp",
+      "origen": "https://www.pexels.com/photo/6779565/",
+      "id": 6779565,
+      "usage": "banda de la seccion planes monotributo (va bajo un scrim navy con texto encima; se ven dos manos, no hay rostros)"
+    }
+  ]
+}

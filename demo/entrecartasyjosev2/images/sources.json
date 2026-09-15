@@ -1,0 +1,42 @@
+{
+  "proyecto": "Entre Cartas y Jose",
+  "banco": "Pexels",
+  "licencia": "Pexels License (uso libre, sin atribucion obligatoria)",
+  "imagenes": [
+    {
+      "archivo": "hero-cartas-tendidas-1920x1080.jpg",
+      "pexelsId": "32831016",
+      "url": "https://www.pexels.com/photo/32831016/",
+      "descripcion": "Tendida completa de cartas de tarot Rider-Waite sobre superficie clara",
+      "uso": "Hero full-bleed V1 / V2"
+    },
+    {
+      "archivo": "abanico-cartas-1600x1300.jpg",
+      "pexelsId": "36116207",
+      "url": "https://www.pexels.com/photo/36116207/",
+      "descripcion": "Manos sosteniendo un abanico de cartas con dorso de estrella",
+      "uso": "Seccion firma / servicios (gesto de la lectura)"
+    },
+    {
+      "archivo": "sesion-lectura-1600x1300.jpg",
+      "pexelsId": "7181711",
+      "url": "https://www.pexels.com/photo/7181711/",
+      "descripcion": "Vista cenital de una sesion de lectura sobre terciopelo rojo",
+      "uso": "Seccion experiencia / como es una sesion"
+    },
+    {
+      "archivo": "arcano-sacerdotisa-1200x1500.jpg",
+      "pexelsId": "34445809",
+      "url": "https://www.pexels.com/photo/34445809/",
+      "descripcion": "Mano sosteniendo la carta La Sacerdotisa sobre pano estrellado",
+      "uso": "Seccion noche / atmosfera"
+    },
+    {
+      "archivo": "mesa-copa-1600x1300.jpg",
+      "pexelsId": "6979594",
+      "url": "https://www.pexels.com/photo/6979594/",
+      "descripcion": "Cartas y copa sobre mesa elegante con luz calida",
+      "uso": "Seccion eventos sociales y corporativos"
+    }
+  ]
+}

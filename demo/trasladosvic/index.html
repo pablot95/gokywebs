@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Traslados Vic — Traslados de pasajeros y mascotas en Campana</title>
+<meta name="description" content="Traslados puerta a puerta desde Campana: aeropuertos Ezeiza y Aeroparque, larga distancia, países limítrofes, minibús para grupos y mini fletes. Con tu mascota a bordo, las 24 horas.">
+<meta name="theme-color" content="#070c14">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Traslados Vic — Traslados de pasajeros y mascotas en Campana">
+<meta property="og:description" content="Aeropuertos, larga distancia y países limítrofes. Salimos de Campana a la hora que pidas, con tu mascota a bordo.">
+<meta property="og:image" content="images/hero-ruta-1920x1080.webp">
+<meta property="og:locale" content="es_AR">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070c14'/%3E%3Cpath d='M16 20h9l7 19 7-19h9L38 48h-12z' fill='%233b86ff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=clash-display@600&f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Traslados Vic",
+  "description": "Traslados de pasajeros y mascotas puerta a puerta desde Campana: aeropuertos, larga distancia, países limítrofes, minibús para grupos y mini fletes.",
+  "telephone": "+5493489323365",
+  "priceRange": "$$",
+  "image": "images/hero-ruta-1920x1080.webp",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Campana",
+    "addressRegion": "Buenos Aires",
+    "addressCountry": "AR"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": -34.1637, "longitude": -58.9594 },
+  "openingHoursSpecification": {
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+    "opens": "00:00",
+    "closes": "23:59"
+  },
+  "areaServed": [
+    { "@type": "City", "name": "Campana" },
+    { "@type": "AdministrativeArea", "name": "Zona Norte del Gran Buenos Aires" },
+    { "@type": "Country", "name": "Argentina" },
+    { "@type": "Country", "name": "Uruguay" },
+    { "@type": "Country", "name": "Chile" },
+    { "@type": "Country", "name": "Brasil" },
+    { "@type": "Country", "name": "Paraguay" },
+    { "@type": "Country", "name": "Bolivia" }
+  ],
+  "sameAs": ["https://www.instagram.com/trasladosvic"],
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Servicios de traslado",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Traslado de pasajeros puerta a puerta" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Traslado de mascotas" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Traslados a Ezeiza y Aeroparque" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Minibús para grupos" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Mini fletes" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Larga distancia y países limítrofes" } }
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "¿Con cuánta anticipación conviene reservar el viaje?", "acceptedAnswer": { "@type": "Answer", "text": "Para vuelos y larga distancia, cuanto antes mejor: el horario queda agendado y salimos con margen. También tomamos viajes del día según disponibilidad; escribinos por WhatsApp y te confirmamos en el momento." } },
+    { "@type": "Question", "name": "¿Cómo viaja mi mascota?", "acceptedAnswer": { "@type": "Answer", "text": "En su transportín o asegurada en el asiento, con paradas para agua y descanso en los viajes largos. Antes de salir nos contás tamaño, raza y temperamento para preparar el vehículo." } },
+    { "@type": "Question", "name": "¿Hacen viajes a países limítrofes?", "acceptedAnswer": { "@type": "Answer", "text": "Sí: Uruguay, Brasil, Chile, Paraguay y Bolivia. Coordinamos horarios y el cruce de frontera. La documentación de pasajeros y la sanitaria de la mascota las prepara cada dueño con su veterinario y el organismo correspondiente." } },
+    { "@type": "Question", "name": "¿Qué es un mini flete y qué entra?", "acceptedAnswer": { "@type": "Answer", "text": "Mudanzas chicas y traslado de muebles, electrodomésticos o mercadería. Contanos qué hay que mover y desde dónde, y te decimos si entra en el vehículo o conviene otra opción." } },
+    { "@type": "Question", "name": "¿Trabajan de madrugada?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, las 24 horas. Los viajes a Ezeiza y Aeroparque para vuelos temprano se programan de noche o de madrugada sin recargo por horario." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#servicios">Saltar al contenido</a>
+<div class="scroll-progress" id="scroll-progress"></div>
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="brand" href="#inicio" aria-label="Traslados Vic, inicio">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="25" r="3.4"/><path d="M11 25h11.6a4.6 4.6 0 0 0 0-9.2H10.4a4.6 4.6 0 0 1 0-9.2H21"/><circle cx="26" cy="7" r="3.4"/></svg>
+      </span>
+      <span class="brand__name">Traslados <em>Vic</em></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Navegación principal">
+      <a href="#servicios">Servicios</a>
+      <a href="#ruta">Destinos</a>
+      <a href="#mascotas">Mascotas</a>
+      <a href="#faq">Preguntas</a>
+      <a class="btn btn--primary btn--sm" href="#viaje">Pedir presupuesto</a>
+    </nav>
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<main id="inicio">
+
+  <section class="hero">
+    <div class="hero__bg">
+      <img src="images/hero-ruta-1920x1080.webp" alt="Ruta de noche con estelas de luz de los autos" width="1920" height="1080" fetchpriority="high" decoding="async">
+    </div>
+    <div class="hero__scrim"></div>
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <p class="eyebrow" data-hero="1">Campana · Zona Norte · 24 horas</p>
+        <h1 class="hero__title" data-hero="2">Traslados puerta a puerta, <span>con tu mascota a bordo</span></h1>
+        <p class="hero__lead" data-hero="3">Aeropuertos, larga distancia y países limítrofes. Salimos de Campana a la hora que pidas, con el viaje coordinado de punta a punta.</p>
+        <div class="hero__cta" data-hero="4">
+          <a class="btn btn--primary" href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener">
+            Pedí tu presupuesto
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+          <a class="btn btn--ghost" href="#servicios">Ver qué trasladamos</a>
+        </div>
+        <ul class="hero__tags" data-hero="5">
+          <li>Ezeiza y Aeroparque</li>
+          <li>Todo el país</li>
+          <li>Países limítrofes</li>
+        </ul>
+      </div>
+
+      <div class="hero__scene" id="hero-scene">
+        <div class="scene__field" data-hero="3"></div>
+        <svg class="scene__arc" viewBox="0 0 420 420" fill="none" aria-hidden="true" data-hero="4">
+          <circle cx="210" cy="210" r="196" stroke="currentColor" stroke-width="1" stroke-dasharray="2 10" opacity=".55"/>
+          <circle cx="210" cy="210" r="150" stroke="currentColor" stroke-width="1" stroke-dasharray="2 14" opacity=".3"/>
+        </svg>
+        <img class="scene__dog" src="images/perro-recorte.webp" alt="Perro listo para viajar" width="700" height="640" decoding="async" data-hero="5">
+        <article class="tripcard" data-hero="6">
+          <p class="tripcard__label">Viaje programado</p>
+          <p class="tripcard__route"><span>Campana</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg><span>Ezeiza</span></p>
+          <dl class="tripcard__data">
+            <div><dt>Salida</dt><dd>04:30</dd></div>
+            <div><dt>Duración</dt><dd>1 h 40 aprox.</dd></div>
+            <div><dt>Viajan</dt><dd>2 personas + 1 mascota</dd></div>
+          </dl>
+          <p class="tripcard__status"><span class="dot"></span> Chofer asignado</p>
+        </article>
+        <p class="scene__coords" data-hero="6">34°09'S · 58°57'O — Campana, Buenos Aires</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee__track" id="marquee-track">
+      <span>Ezeiza</span><i></i><span>Aeroparque</span><i></i><span>Rosario</span><i></i><span>Córdoba</span><i></i><span>Mar del Plata</span><i></i><span>Mendoza</span><i></i><span>Colonia</span><i></i><span>Montevideo</span><i></i><span>Encarnación</span><i></i><span>Foz de Iguazú</span><i></i>
+    </div>
+  </div>
+
+  <section class="section services" id="servicios">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate="wipe" style="opacity:0">01 — Servicios</p>
+        <h2 class="sec-title" data-animate="wipe" style="opacity:0">Movemos personas, mascotas y cosas. En el mismo viaje si hace falta.</h2>
+        <p class="sec-lead" data-animate="up" style="transform:translateY(24px);opacity:0">Cada traslado se arma a medida del tramo: horario, cantidad de pasajeros, equipaje y si viaja un animal. Lo definimos antes de salir, por WhatsApp.</p>
+      </header>
+
+      <div class="svc-grid">
+        <article class="svc svc--photo svc--wide" data-animate="up" data-animate-stagger="0" style="transform:translateY(40px);opacity:0">
+          <div class="svc__media"><img src="images/aeropuerto-1600x1300.webp" alt="Pasajero con valija en la terminal del aeropuerto" width="1600" height="1300" loading="lazy" decoding="async"></div>
+          <div class="svc__body">
+            <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22h20"/><path d="M6.36 17.4 4 17l-2-4 1.1-.55a2 2 0 0 1 1.8 0l.17.1a2 2 0 0 0 1.8 0L8 12 5 6l.9-.45a2 2 0 0 1 2.09.2l4.02 3a2 2 0 0 0 2.1.2l4.19-2.06a2.41 2.41 0 0 1 1.73-.17L21 7a1.4 1.4 0 0 1 .87 1.99l-.38.76c-.23.46-.6.84-1.07 1.08L7.58 17.2a2 2 0 0 1-1.22.18Z"/></svg></span>
+            <h3>Aeropuertos</h3>
+            <p>Ezeiza y Aeroparque a cualquier hora. Te pasamos a buscar por la dirección y esperamos el vuelo si se demora.</p>
+            <a class="svc__link" href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20necesito%20un%20traslado%20al%20aeropuerto." target="_blank" rel="noopener">Consultar horario <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+          </div>
+        </article>
+
+        <article class="svc" data-animate="up" data-animate-stagger="1" style="transform:translateY(40px);opacity:0">
+          <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <h3>Traslados de pasajeros</h3>
+          <p>Puerta a puerta, particulares y empresas. Turnos médicos, eventos, viajes de trabajo y regresos de madrugada.</p>
+        </article>
+
+        <article class="svc svc--accent" data-animate="up" data-animate-stagger="2" style="transform:translateY(40px);opacity:0">
+          <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg></span>
+          <h3>Traslados de mascotas</h3>
+          <p>Tu perro o gato viaja acompañado, con transportín asegurado y paradas de descanso. También sin vos, si no podés hacer el viaje.</p>
+        </article>
+
+        <article class="svc svc--photo" data-animate="up" data-animate-stagger="3" style="transform:translateY(40px);opacity:0">
+          <div class="svc__media"><img src="images/combi-1600x1300.webp" alt="Minibús blanco recorriendo una ruta" width="1600" height="1300" loading="lazy" decoding="async"></div>
+          <div class="svc__body">
+            <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg></span>
+            <h3>Minibús para grupos</h3>
+            <p>Familias, delegaciones y equipos de trabajo que se mueven juntos, con espacio real para el equipaje.</p>
+          </div>
+        </article>
+
+        <article class="svc svc--photo" data-animate="up" data-animate-stagger="4" style="transform:translateY(40px);opacity:0">
+          <div class="svc__media"><img src="images/flete-1200x1600.webp" alt="Hombre cargando cajas en una camioneta" width="1200" height="1600" loading="lazy" decoding="async"></div>
+          <div class="svc__body">
+            <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+            <h3>Mini fletes</h3>
+            <p>Mudanzas chicas, muebles, electrodomésticos y mercadería. Decinos qué hay que mover y te confirmamos si entra.</p>
+          </div>
+        </article>
+
+        <article class="svc svc--photo" data-animate="up" data-animate-stagger="5" style="transform:translateY(40px);opacity:0">
+          <div class="svc__media"><img src="images/ruta-trafico-1600x1300.webp" alt="Ruta de larga distancia con tránsito nocturno" width="1600" height="1300" loading="lazy" decoding="async"></div>
+          <div class="svc__body">
+            <span class="svc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
+            <h3>Larga distancia e internacional</h3>
+            <p>Todo el país y países limítrofes. Si el tramo se hace en avión, coordinamos igual el traslado de punta a punta.</p>
+            <p class="svc__note">Uruguay · Brasil · Chile · Paraguay · Bolivia</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section route" id="ruta">
+    <div class="route__pin" id="route-pin">
+      <div class="container route__inner">
+        <header class="route__head">
+          <p class="eyebrow" data-animate="wipe" style="opacity:0">02 — Hasta dónde llegamos</p>
+          <h2 class="sec-title" data-animate="wipe" style="opacity:0">La hoja de ruta</h2>
+        </header>
+
+        <div class="route__stage">
+          <div class="route__map">
+            <svg class="routemap" viewBox="0 0 1200 620" fill="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="routeGrad" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stop-color="#3b86ff"/>
+                  <stop offset="1" stop-color="#8fc0ff"/>
+                </linearGradient>
+              </defs>
+              <g class="routemap__grid">
+                <path d="M0 130H1200M0 260H1200M0 390H1200M0 520H1200"/>
+                <path d="M200 0V620M440 0V620M680 0V620M920 0V620"/>
+              </g>
+              <path class="routemap__ghost" d="M110 520C250 505 320 470 430 430C545 388 640 360 760 300C880 240 970 205 1080 140"/>
+              <path class="routemap__line" id="routemap-line" d="M110 520C250 505 320 470 430 430C545 388 640 360 760 300C880 240 970 205 1080 140"/>
+              <g class="routemap__stops">
+                <g class="wp is-active" data-stop="0" transform="translate(110 520)"><circle class="wp__halo" r="26"/><circle class="wp__dot" r="9"/></g>
+                <g class="wp" data-stop="1" transform="translate(430 430)"><circle class="wp__halo" r="26"/><circle class="wp__dot" r="9"/></g>
+                <g class="wp" data-stop="2" transform="translate(760 300)"><circle class="wp__halo" r="26"/><circle class="wp__dot" r="9"/></g>
+                <g class="wp" data-stop="3" transform="translate(1080 140)"><circle class="wp__halo" r="26"/><circle class="wp__dot" r="9"/></g>
+              </g>
+              <g id="routemap-van" class="routemap__van">
+                <g transform="translate(-54 -26)">
+                  <path class="van__shadow" d="M8 52h96v6H8z"/>
+                  <path class="van__body" d="M4 44V19c0-4 3-7 7-7h56c3 0 6 1 8 4l14 17c2 2 3 5 3 8v3c0 2-2 4-4 4H8c-2 0-4-2-4-4Z"/>
+                  <path class="van__glass" d="M14 22h18v12H14zM38 22h20v12H38zM64 22h6l9 12H64z"/>
+                  <circle class="van__wheel" cx="26" cy="47" r="7"/>
+                  <circle class="van__wheel" cx="74" cy="47" r="7"/>
+                  <path class="van__light" d="M88 36h6v5h-6z"/>
+                </g>
+              </g>
+            </svg>
+          </div>
+
+          <div class="route__panel">
+            <ol class="stops" id="stops">
+              <li class="stop is-active" data-stop="0">
+                <p class="stop__idx">01</p>
+                <div>
+                  <h3>Campana — base</h3>
+                  <p>Salimos de acá a cualquier hora y coordinamos el punto exacto de retiro: casa, trabajo, hotel o veterinaria.</p>
+                  <p class="stop__meta"><span class="km" data-km="0">0</span> km · punto de partida</p>
+                </div>
+              </li>
+              <li class="stop" data-stop="1">
+                <p class="stop__idx">02</p>
+                <div>
+                  <h3>Ezeiza y Aeroparque</h3>
+                  <p>El clásico: vuelo temprano, salida de madrugada y llegada con margen. Volvemos a buscarte cuando aterrizás.</p>
+                  <p class="stop__meta"><span class="km" data-km="120">0</span> km aprox. · 1 h 40 de viaje</p>
+                </div>
+              </li>
+              <li class="stop" data-stop="2">
+                <p class="stop__idx">03</p>
+                <div>
+                  <h3>Interior del país</h3>
+                  <p>Rosario, Córdoba, Mar del Plata, Mendoza y todo lo que haya en el medio. Viaje programado, con paradas para estirar las piernas.</p>
+                  <p class="stop__meta"><span class="km" data-km="1050">0</span> km hasta Mendoza · viaje directo</p>
+                </div>
+              </li>
+              <li class="stop" data-stop="3">
+                <p class="stop__idx">04</p>
+                <div>
+                  <h3>Países limítrofes</h3>
+                  <p>Uruguay, Brasil, Chile, Paraguay y Bolivia. Coordinamos horarios y el cruce; la documentación la prepara cada pasajero.</p>
+                  <p class="stop__meta"><span class="km" data-km="470">0</span> km hasta Montevideo · cruce coordinado</p>
+                </div>
+              </li>
+            </ol>
+            <a class="btn btn--primary btn--block" href="#viaje">Calcular mi viaje</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section trust">
+    <div class="container trust__grid">
+      <article data-animate="up" data-animate-stagger="0" style="transform:translateY(30px);opacity:0">
+        <span class="trust__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5v4.3M6.5 15.2l3.8-2M17.5 15.2l-3.8-2"/></svg></span>
+        <h3>Un solo chofer, todo el viaje</h3>
+        <p>Nada de combis compartidas ni cambios de vehículo a mitad de camino: quien te busca es quien te deja.</p>
+      </article>
+      <article data-animate="up" data-animate-stagger="1" style="transform:translateY(30px);opacity:0">
+        <span class="trust__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M9 13.2 11 15l4-4.4"/></svg></span>
+        <h3>Precio cerrado antes de salir</h3>
+        <p>Te lo confirmamos por escrito en el chat de WhatsApp. Lo que se acuerda es lo que se cobra, sin sorpresas al llegar.</p>
+      </article>
+      <article data-animate="up" data-animate-stagger="2" style="transform:translateY(30px);opacity:0">
+        <span class="trust__icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="8.2" r="1.5"/><circle cx="11.6" cy="6" r="1.5"/><circle cx="16" cy="8.2" r="1.5"/><circle cx="18.1" cy="12.6" r="1.5"/><path d="M8.6 14a4 4 0 0 1 6.9 0c.9 1.5 2.5 2 2.5 3.9a3 3 0 0 1-3 3c-1.2 0-1.7-.6-3-.6s-1.8.6-3 .6a3 3 0 0 1-3-3c0-1.9 1.6-2.4 2.6-3.9Z"/></svg></span>
+        <h3>Tu mascota, sin cargo sorpresa</h3>
+        <p>El traslado de tu perro o gato se cotiza junto con el tuyo, no como un adicional aparte.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section pets" id="mascotas">
+    <div class="container pets__inner">
+      <figure class="pets__media" data-animate="mask" style="opacity:0">
+        <img src="images/mascota-auto-1600x1300.webp" alt="Perro asomado a la ventanilla durante un viaje" width="1600" height="1300" loading="lazy" decoding="async">
+        <figcaption>Viaje de Campana a Pilar, con parada de agua a mitad de camino.</figcaption>
+      </figure>
+      <div class="pets__copy">
+        <p class="eyebrow" data-animate="wipe" style="opacity:0">03 — Mascotas</p>
+        <h2 class="sec-title" data-animate="wipe" style="opacity:0">Tu perro viaja como pasajero, no como encomienda</h2>
+        <p class="sec-lead" data-animate="up" style="transform:translateY(24px);opacity:0">La mayoría de los remises no lleva animales y las empresas de carga los tratan como bulto. Nosotros preparamos el vehículo antes de salir y el viaje se hace a su ritmo.</p>
+        <ul class="checklist">
+          <li data-animate="up" data-animate-stagger="0" style="transform:translateY(20px);opacity:0"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Transportín asegurado o cinturón con arnés, según el tamaño</li>
+          <li data-animate="up" data-animate-stagger="1" style="transform:translateY(20px);opacity:0"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Paradas para agua y descanso en los tramos largos</li>
+          <li data-animate="up" data-animate-stagger="2" style="transform:translateY(20px);opacity:0"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Aire acondicionado y ventilación controlada todo el viaje</li>
+          <li data-animate="up" data-animate-stagger="3" style="transform:translateY(20px);opacity:0"><span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> Si no viajás con él, te mandamos avisos durante el trayecto</li>
+        </ul>
+        <p class="pets__note">Para viajes internacionales, la documentación sanitaria (certificado, vacunas, permisos) la gestiona el dueño con su veterinario. Nosotros coordinamos horarios y el cruce para que los tiempos cierren.</p>
+        <a class="btn btn--primary" href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20consultar%20por%20el%20traslado%20de%20mi%20mascota." target="_blank" rel="noopener">Consultar por mi mascota</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section steps">
+    <div class="container">
+      <header class="sec-head sec-head--split">
+        <div>
+          <p class="eyebrow" data-animate="wipe" style="opacity:0">04 — Cómo se arma</p>
+          <h2 class="sec-title" data-animate="wipe" style="opacity:0">De la consulta al viaje, en cuatro pasos</h2>
+        </div>
+        <p class="sec-lead" data-animate="up" style="transform:translateY(24px);opacity:0">Sin llamadas eternas ni precios que cambian al llegar: todo queda escrito en el mismo chat.</p>
+      </header>
+      <ol class="steplist">
+        <li data-animate="side" data-animate-stagger="0" style="transform:translateX(-32px);opacity:0"><span class="steplist__n">01</span><h3>Contanos el tramo</h3><p>Origen, destino, día y horario. Cuántos viajan y si va una mascota o carga.</p></li>
+        <li data-animate="side" data-animate-stagger="1" style="transform:translateX(-32px);opacity:0"><span class="steplist__n">02</span><h3>Te pasamos el precio</h3><p>Cerrado y por escrito antes de salir, con el vehículo que corresponde a ese viaje.</p></li>
+        <li data-animate="side" data-animate-stagger="2" style="transform:translateX(-32px);opacity:0"><span class="steplist__n">03</span><h3>Queda agendado</h3><p>Confirmás y el horario se reserva. Si es de madrugada, te avisamos la noche anterior.</p></li>
+        <li data-animate="side" data-animate-stagger="3" style="transform:translateX(-32px);opacity:0"><span class="steplist__n">04</span><h3>Salimos</h3><p>Pasamos por la dirección acordada y te avisamos cuando llegamos a destino.</p></li>
+      </ol>
+      <img class="steps__cut" src="images/pasajero-recorte.webp" alt="" width="480" height="320" loading="lazy" decoding="async" aria-hidden="true">
+    </div>
+  </section>
+
+  <section class="section trip" id="viaje">
+    <div class="container trip__inner">
+      <div class="trip__copy">
+        <p class="eyebrow" data-animate="wipe" style="opacity:0">05 — Presupuesto</p>
+        <h2 class="sec-title" data-animate="wipe" style="opacity:0">Armá tu viaje y mandalo por WhatsApp</h2>
+        <p class="sec-lead" data-animate="up" style="transform:translateY(24px);opacity:0">Completá los datos y el mensaje se escribe solo, con todo lo que necesitamos para cotizarte sin ida y vuelta.</p>
+        <div class="trip__row">
+          <div class="trip__contact">
+            <p><span>WhatsApp</span> <a href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener">+54 9 3489 32-3365</a></p>
+            <p><span>Instagram</span> <a href="https://www.instagram.com/trasladosvic" target="_blank" rel="noopener">@trasladosvic</a></p>
+            <p><span>Base</span> Campana, Buenos Aires — salidas a todo el país</p>
+          </div>
+          <figure class="trip__photo" data-animate="mask" style="opacity:0">
+            <img src="images/terminal-1200x1600.webp" alt="Pasajera con valija esperando en el aeropuerto" width="1200" height="1600" loading="lazy" decoding="async">
+          </figure>
+        </div>
+        <div class="trip__map" id="map" role="img" aria-label="Mapa de Campana, Buenos Aires"></div>
+      </div>
+
+      <form class="tripform" id="tripform" novalidate>
+        <div class="field">
+          <label for="f-servicio">¿Qué necesitás?</label>
+          <select id="f-servicio" name="servicio">
+            <option value="Traslado de pasajeros">Traslado de pasajeros</option>
+            <option value="Traslado al aeropuerto">Traslado al aeropuerto</option>
+            <option value="Traslado de mascota">Traslado de mascota</option>
+            <option value="Minibús para grupo">Minibús para grupo</option>
+            <option value="Mini flete">Mini flete</option>
+            <option value="Larga distancia o país limítrofe">Larga distancia o país limítrofe</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-origen">Desde</label>
+            <input type="text" id="f-origen" name="origen" value="Campana" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="f-destino">Hasta</label>
+            <input type="text" id="f-destino" name="destino" placeholder="Ezeiza, Rosario, Montevideo…" autocomplete="off" required>
+            <p class="field__error" id="err-destino">Contanos a dónde vas.</p>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-fecha">Día</label>
+            <input type="date" id="f-fecha" name="fecha">
+          </div>
+          <div class="field">
+            <label for="f-hora">Horario</label>
+            <input type="time" id="f-hora" name="hora">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="f-pasajeros">Pasajeros</label>
+            <input type="number" id="f-pasajeros" name="pasajeros" min="0" max="20" value="2">
+          </div>
+          <div class="field">
+            <label for="f-mascotas">Mascotas</label>
+            <input type="number" id="f-mascotas" name="mascotas" min="0" max="6" value="0">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-detalle">Algo más que tengamos que saber</label>
+          <textarea id="f-detalle" name="detalle" rows="3" placeholder="Perro grande en transportín, dos valijas, vuelo 06:40…"></textarea>
+        </div>
+        <button class="btn btn--primary btn--block" type="submit">
+          Pedir presupuesto por WhatsApp
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+        </button>
+        <p class="tripform__note">Se abre WhatsApp con el mensaje ya escrito. Vos revisás antes de enviarlo.</p>
+      </form>
+    </div>
+  </section>
+
+  <section class="section faq" id="faq">
+    <div class="container faq__inner">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate="wipe" style="opacity:0">06 — Preguntas</p>
+        <h2 class="sec-title" data-animate="wipe" style="opacity:0">Lo que nos preguntan antes de reservar</h2>
+      </header>
+      <div class="faq__list">
+        <details data-animate="up" data-animate-stagger="0" style="transform:translateY(20px);opacity:0">
+          <summary>¿Con cuánta anticipación conviene reservar?<span class="faq__plus" aria-hidden="true"></span></summary>
+          <p>Para vuelos y larga distancia, cuanto antes mejor: el horario queda agendado y salimos con margen. También tomamos viajes del día según disponibilidad; escribinos y te confirmamos en el momento.</p>
+        </details>
+        <details data-animate="up" data-animate-stagger="1" style="transform:translateY(20px);opacity:0">
+          <summary>¿Cómo viaja mi mascota?<span class="faq__plus" aria-hidden="true"></span></summary>
+          <p>En su transportín o asegurada en el asiento con arnés, con paradas para agua y descanso en los viajes largos. Antes de salir nos contás tamaño, raza y temperamento para preparar el vehículo.</p>
+        </details>
+        <details data-animate="up" data-animate-stagger="2" style="transform:translateY(20px);opacity:0">
+          <summary>¿Hacen viajes a países limítrofes?<span class="faq__plus" aria-hidden="true"></span></summary>
+          <p>Sí: Uruguay, Brasil, Chile, Paraguay y Bolivia. Coordinamos horarios y el cruce de frontera. La documentación de los pasajeros y la sanitaria de la mascota las prepara cada dueño con su veterinario y el organismo que corresponda.</p>
+        </details>
+        <details data-animate="up" data-animate-stagger="3" style="transform:translateY(20px);opacity:0">
+          <summary>¿Qué entra en un mini flete?<span class="faq__plus" aria-hidden="true"></span></summary>
+          <p>Mudanzas chicas y traslado de muebles, electrodomésticos o mercadería. Contanos qué hay que mover, desde dónde y hasta dónde, y te decimos si entra en el vehículo o conviene otra opción.</p>
+        </details>
+        <details data-animate="up" data-animate-stagger="4" style="transform:translateY(20px);opacity:0">
+          <summary>¿Trabajan de madrugada?<span class="faq__plus" aria-hidden="true"></span></summary>
+          <p>Sí, las 24 horas. Los viajes a Ezeiza y Aeroparque para vuelos temprano se programan de noche o de madrugada, sin recargo por horario.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <img class="closing__bg" src="images/cta-ruta-1920x1080.webp" alt="" width="1920" height="1080" loading="lazy" decoding="async" aria-hidden="true">
+    <div class="container closing__inner">
+      <p class="eyebrow" data-animate="wipe" style="opacity:0">Traslados Vic · Campana</p>
+      <h2 data-animate="wipe" style="opacity:0">Decinos a dónde vas. El viaje lo ponemos nosotros.</h2>
+      <p data-animate="up" style="transform:translateY(24px);opacity:0">Contestamos por WhatsApp a cualquier hora, también de madrugada.</p>
+      <a class="btn btn--primary btn--lg" href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener" data-animate="up" style="transform:translateY(24px);opacity:0">Escribinos ahora</a>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <p class="brand__name">Traslados <em>Vic</em></p>
+      <p>Traslados de pasajeros y mascotas, mini fletes y minibús. Campana, Buenos Aires — a todo el país y países limítrofes.</p>
+    </div>
+    <nav class="footer__nav" aria-label="Navegación del pie">
+      <a href="#servicios">Servicios</a>
+      <a href="#ruta">Destinos</a>
+      <a href="#mascotas">Mascotas</a>
+      <a href="#viaje">Presupuesto</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+    <div class="footer__contact">
+      <a href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener">+54 9 3489 32-3365</a>
+      <a href="https://www.instagram.com/trasladosvic" target="_blank" rel="noopener" class="footer__ig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="20" x="2" y="2" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37"/><path d="M17.5 6.5h.01"/></svg>
+        @trasladosvic
+      </a>
+    </div>
+  </div>
+  <div class="container footer__legal">
+    <p>© <span id="year">2026</span> Traslados Vic. Campana, Buenos Aires.</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5493489323365?text=Hola%20Traslados%20Vic%2C%20quiero%20pedir%20un%20presupuesto%20para%20un%20viaje." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

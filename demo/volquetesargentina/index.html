@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Volquetes Argentina — Alquiler de volquetes en CABA y GBA</title>
+<meta name="description" content="Alquiler de volquetes en CABA y GBA para escombro, obra, poda y mudanzas. Medidas de 3, 5 y 7 m³, entrega en el día. Pedí el tuyo por WhatsApp.">
+<meta name="theme-color" content="#2563eb">
+<link rel="canonical" href="https://volquetesargentina.com.ar/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Volquetes Argentina">
+<meta property="og:title" content="Volquetes Argentina — Alquiler de volquetes en CABA y GBA">
+<meta property="og:description" content="Elegís la medida, nos decís la dirección y lo dejamos donde te sirva. Volquetes de 3, 5 y 7 m³ para escombro, poda y mudanzas.">
+<meta property="og:image" content="images/entrega-volquete-urbano.webp">
+<meta property="og:url" content="https://volquetesargentina.com.ar/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232563eb'/%3E%3Cpath d='M10 22h44l-8 24H18z' fill='%23fff'/%3E%3Cpath d='M8 18h48v6H8z' fill='%23ffc400'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="images/entrega-volquete-urbano.webp">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css?v=20260814165201">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "name": "Volquetes Argentina",
+  "description": "Alquiler de volquetes de 3, 5 y 7 m³ para escombro de obra, poda, mudanzas y limpieza de terrenos en Ciudad de Buenos Aires y Gran Buenos Aires.",
+  "image": "https://volquetesargentina.com.ar/images/logo-volquetes-argentina.webp",
+  "url": "https://volquetesargentina.com.ar/",
+  "telephone": "+5491171369947",
+  "priceRange": "$$",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Ciudad Autónoma de Buenos Aires",
+    "addressRegion": "CABA",
+    "addressCountry": "AR"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": -34.6037, "longitude": -58.3816 },
+  "areaServed": [
+    { "@type": "City", "name": "Ciudad Autónoma de Buenos Aires" },
+    { "@type": "AdministrativeArea", "name": "Gran Buenos Aires" }
+  ],
+  "openingHoursSpecification": [{
+    "@type": "OpeningHoursSpecification",
+    "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+    "opens": "07:00", "closes": "20:00"
+  }],
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Alquiler de volquetes",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Volquete de 3 m³ para escombro" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Volquete de 5 m³ para obra y refacción" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Volquete de 7 m³ para demolición y limpieza de terreno" } }
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "¿Cuánto tiempo puedo tener el volquete en la puerta?", "acceptedAnswer": { "@type": "Answer", "text": "El alquiler estándar es por 48 horas y se puede extender avisándonos por WhatsApp. Si la obra va lenta, coordinamos el retiro para el día que te sirva." } },
+    { "@type": "Question", "name": "¿Necesito permiso para dejar el volquete en la calle?", "acceptedAnswer": { "@type": "Answer", "text": "Depende del municipio y de la cuadra. En CABA y en varios partidos del GBA hace falta permiso municipal cuando el volquete ocupa la calzada. Te decimos qué corresponde en tu dirección antes de la entrega." } },
+    { "@type": "Question", "name": "¿Qué medida de volquete me conviene?", "acceptedAnswer": { "@type": "Answer", "text": "El de 3 m³ alcanza para un baño o una cocina demolidos. El de 5 m³ es el más pedido para refacciones completas con contrapiso y revoques. El de 7 m³ es para demolición grande, obra nueva o limpieza de terreno." } },
+    { "@type": "Question", "name": "¿Qué puedo tirar y qué no?", "acceptedAnswer": { "@type": "Answer", "text": "Va escombro de obra, restos de demolición, tierra, poda, muebles, colchones, madera, chapa y cartón. No va líquido, pintura, solventes, fibrocemento con amianto, garrafas, aerosoles, neumáticos, heladeras con gas, pilas ni residuos patológicos." } },
+    { "@type": "Question", "name": "¿Cuánto sale un volquete?", "acceptedAnswer": { "@type": "Answer", "text": "El precio depende de la medida, la zona y el tipo de carga. Escribinos por WhatsApp con la dirección y qué vas a tirar, y te pasamos el precio cerrado en el momento." } },
+    { "@type": "Question", "name": "¿Con cuánta anticipación tengo que pedirlo?", "acceptedAnswer": { "@type": "Answer", "text": "Si nos escribís temprano, en general lo dejamos el mismo día. Para obras con fecha fija conviene reservarlo con 24 horas de anticipación." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+<header class="site-header" id="top">
+  <div class="container header-inner">
+    <a class="brand" href="#inicio" aria-label="Volquetes Argentina — inicio">
+      <img src="images/logo-volquetes-argentina.webp" alt="Volquetes Argentina" width="900" height="763" fetchpriority="high">
+    </a>
+
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#medidas">Medidas</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#zonas">Zonas</a>
+      <a href="#faq">Preguntas</a>
+      <a class="nav-cta" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete." target="_blank" rel="noopener">Pedir por WhatsApp</a>
+    </nav>
+
+    <a class="btn btn-primary header-cta" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete." target="_blank" rel="noopener">
+      <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+      <span>11 7136-9947</span>
+    </a>
+
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+  <div class="hazard" aria-hidden="true"></div>
+</header>
+
+<main id="contenido">
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="hero-block" aria-hidden="true"></div>
+    <div class="container hero-inner">
+      <p class="eyebrow hero-eyebrow" data-animate style="transform:translateY(14px);opacity:0">Volquetes en CABA y Gran Buenos Aires</p>
+      <h1 class="hero-title">
+        <span class="line" data-animate style="transform:translateY(26px);opacity:0">Tu volquete</span>
+        <span class="line" data-animate style="transform:translateY(26px);opacity:0">en la puerta,</span>
+        <span class="line accent" data-animate style="transform:translateY(26px);opacity:0">hoy.</span>
+      </h1>
+      <p class="hero-lead" data-animate style="transform:translateY(18px);opacity:0">Elegís la medida, nos pasás la dirección y lo dejamos donde te sirva. Cuando lo tenés lleno, lo retiramos y lo llevamos a descarga autorizada.</p>
+      <div class="hero-cta" data-animate style="transform:translateY(18px);opacity:0">
+        <a class="btn btn-primary btn-lg" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete.%20Mi%20direcci%C3%B3n%20es%3A" target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span>Pedir mi volquete</span>
+        </a>
+        <a class="btn btn-ghost btn-lg" href="#medidas">Ver qué medida necesito</a>
+      </div>
+    </div>
+
+    <div class="hero-figura" aria-hidden="true">
+      <img src="images/volquete-recorte.webp" alt="" width="1188" height="556" fetchpriority="high" class="hero-skip" data-animate style="transform:translateY(36px) rotate(-2deg);opacity:0">
+      <div class="hero-sello" data-animate style="transform:translateY(20px) rotate(-8deg);opacity:0"><b>3 · 5 · 7</b><span>m³</span></div>
+    </div>
+
+    <div class="hero-banda">
+      <div class="hazard" aria-hidden="true"></div>
+      <div class="hero-foto">
+        <img src="images/entrega-volquete-urbano.webp" alt="Camión de Volquetes Argentina bajando un volquete azul frente a una casa" width="1920" height="686">
+      </div>
+      <ul class="hero-chips container">
+        <li data-animate style="transform:translateX(-24px);opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Entrega en el día</li>
+        <li data-animate style="transform:translateX(-24px);opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>CABA y Gran Buenos Aires</li>
+        <li data-animate style="transform:translateX(-24px);opacity:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M3 6h13l5 5v7h-3"/><path d="M3 18h3"/><circle cx="8" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg>Escombro · Poda · Mudanzas</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <section class="marquee-band" aria-hidden="true">
+    <div class="marquee-track" id="marqueeTrack">
+      <div class="marquee-run">
+        <span>Volquetes Argentina</span><i></i><span>11 7136-9947</span><i></i><span>Escombro de obra</span><i></i><img src="images/logo-volquetes-argentina.webp" alt="" width="900" height="763"><i></i><span>Poda y ramas</span><i></i><span>Mudanzas</span><i></i><span>CABA y GBA</span><i></i>
+      </div>
+      <div class="marquee-run">
+        <span>Volquetes Argentina</span><i></i><span>11 7136-9947</span><i></i><span>Escombro de obra</span><i></i><img src="images/logo-volquetes-argentina.webp" alt="" width="900" height="763"><i></i><span>Poda y ramas</span><i></i><span>Mudanzas</span><i></i><span>CABA y GBA</span><i></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEDIDAS -->
+  <section class="medidas" id="medidas">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">01 — La medida</p>
+        <h2 data-animate style="transform:translateY(20px);opacity:0">¿Cuánto escombro tenés?</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Tocá una medida y mirá cuánto ocupa en la vereda. La persona del dibujo mide 1,75 m: está a escala.</p>
+      </header>
+
+      <div class="medidor" data-animate style="transform:translateY(24px);opacity:0">
+        <div class="medidor-tabs" role="tablist" aria-label="Medidas de volquete">
+          <button type="button" class="chapa" role="tab" id="tab-3" aria-controls="panel-medida" aria-selected="false" data-medida="3"><b>3</b><span>m³</span></button>
+          <button type="button" class="chapa is-on" role="tab" id="tab-5" aria-controls="panel-medida" aria-selected="true" data-medida="5"><b>5</b><span>m³</span></button>
+          <button type="button" class="chapa" role="tab" id="tab-7" aria-controls="panel-medida" aria-selected="false" data-medida="7"><b>7</b><span>m³</span></button>
+        </div>
+
+        <div class="medidor-escena">
+          <div class="escena-fila">
+            <div class="skip-wrap" id="skipWrap">
+              <svg class="skip" viewBox="0 0 440 209" role="img" aria-labelledby="skipMedTitle">
+                <title id="skipMedTitle">Volquete visto de costado</title>
+                <defs>
+                  <clipPath id="skipBodyMed"><path d="M18 64H422l-70 132H88Z"/></clipPath>
+                  <linearGradient id="skipShadeMed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#ffffff" stop-opacity=".16"/>
+                    <stop offset="1" stop-color="#0a1220" stop-opacity=".28"/>
+                  </linearGradient>
+                </defs>
+                <ellipse class="skip-sombra" cx="230" cy="203" rx="176" ry="5"/>
+                <path class="skip-cuerpo" d="M18 64H422l-70 132H88Z"/>
+                <g clip-path="url(#skipBodyMed)" class="skip-ribs">
+                  <rect x="112" y="58" width="13" height="150"/>
+                  <rect x="212" y="58" width="13" height="150"/>
+                  <rect x="312" y="58" width="13" height="150"/>
+                </g>
+                <path clip-path="url(#skipBodyMed)" d="M18 64H422l-70 132H88Z" fill="url(#skipShadeMed)"/>
+                <path class="skip-labio" d="M6 44h428l-9 22H15Z"/>
+                <rect class="skip-barra" x="150" y="150" width="140" height="9" rx="4.5"/>
+                <rect class="skip-barra" x="152" y="118" width="10" height="38" rx="3"/>
+                <rect class="skip-barra" x="278" y="118" width="10" height="38" rx="3"/>
+                <rect class="skip-pata" x="98" y="196" width="26" height="10" rx="3"/>
+                <rect class="skip-pata" x="316" y="196" width="26" height="10" rx="3"/>
+              </svg>
+            </div>
+            <svg class="persona" viewBox="0 0 60 200" aria-hidden="true">
+              <circle cx="30" cy="21" r="13"/>
+              <rect x="19" y="38" width="22" height="60" rx="9"/>
+              <rect x="8" y="43" width="9" height="45" rx="4.5"/>
+              <rect x="43" y="43" width="9" height="45" rx="4.5"/>
+              <rect x="20" y="94" width="9.5" height="100" rx="4.75"/>
+              <rect x="30.5" y="94" width="9.5" height="100" rx="4.75"/>
+            </svg>
+          </div>
+          <p class="escena-cota">
+            <svg viewBox="0 0 32 12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 6h30M5 2 1 6l4 4M27 2l4 4-4 4"/></svg>
+            <span id="cotaTxt">3,30 m de frente</span>
+          </p>
+        </div>
+
+        <div class="medidor-ficha" id="panel-medida" role="tabpanel" aria-labelledby="tab-5">
+          <h3 id="medidaNombre">5 m³ — el más pedido</h3>
+          <p id="medidaTexto">Refacción completa de un departamento o un PH: contrapiso, revoques, cerámicos y carpinterías viejas. Es el que más sale porque cubre casi toda obra de casa.</p>
+          <dl class="ficha-datos">
+            <div><dt>Mide</dt><dd id="datoFrente">3,30 × 1,70 × 0,95 m</dd></div>
+            <div><dt>Equivale a</dt><dd id="datoBolsas">unas 120 bolsas de escombro</dd></div>
+            <div><dt>Ideal para</dt><dd id="datoIdeal">refacción de PH o departamento</dd></div>
+          </dl>
+          <a class="btn btn-primary" id="medidaCta" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20un%20volquete%20de%205%20m3." target="_blank" rel="noopener">
+            <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span id="medidaCtaTxt">Pedir el de 5 m³</span>
+          </a>
+          <p class="ficha-nota">¿No estás seguro? Mandanos una foto de lo que tenés que sacar y te decimos cuál entra.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CICLO -->
+  <section class="ciclo" id="como">
+    <div class="container ciclo-head">
+      <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">02 — Cómo funciona</p>
+      <h2 data-animate style="transform:translateY(20px);opacity:0">Llega, se llena, se va.</h2>
+    </div>
+    <div class="ciclo-stage" id="ciclo-stage">
+      <div class="container ciclo-grid">
+        <div class="ciclo-escena" id="cicloEscena">
+          <div class="escena-skip" id="escenaSkip">
+            <div class="escena-cadena" id="escenaCadena" aria-hidden="true">
+              <svg viewBox="0 0 440 140" preserveAspectRatio="none"><path d="M220 0v44"/><path d="M220 44 10 140"/><path d="M220 44l210 96"/></svg>
+            </div>
+            <svg class="skip skip-dark" viewBox="0 0 440 209" role="img" aria-labelledby="skipCicloTitle">
+              <title id="skipCicloTitle">Volquete que baja, se llena y se retira</title>
+              <defs>
+                <clipPath id="skipBodyCiclo"><path d="M18 64H422l-70 132H88Z"/></clipPath>
+                <clipPath id="skipInnerCiclo"><path d="M26 68H414l-66 124H94Z"/></clipPath>
+                <pattern id="escombroPat" patternUnits="userSpaceOnUse" x="0" y="0" width="440" height="66">
+                  <image href="images/escombro-textura.webp" x="0" y="0" width="440" height="63" preserveAspectRatio="xMidYMid slice"/>
+                </pattern>
+                <linearGradient id="skipShadeCiclo" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#ffffff" stop-opacity=".18"/>
+                  <stop offset="1" stop-color="#000000" stop-opacity=".34"/>
+                </linearGradient>
+              </defs>
+              <path class="skip-cuerpo" d="M18 64H422l-70 132H88Z"/>
+              <g clip-path="url(#skipBodyCiclo)" class="skip-ribs">
+                <rect x="112" y="58" width="13" height="150"/>
+                <rect x="212" y="58" width="13" height="150"/>
+                <rect x="312" y="58" width="13" height="150"/>
+              </g>
+              <g clip-path="url(#skipInnerCiclo)">
+                <g id="escenaFill" transform="translate(0,215)">
+                  <path d="M10 6c40-16 72-11 112-17s70 9 108 1 72-14 112-2 78 12 98 6v14H10Z" fill="url(#escombroPat)"/>
+                  <rect x="10" y="18" width="420" height="160" fill="url(#escombroPat)"/>
+                </g>
+              </g>
+              <path clip-path="url(#skipBodyCiclo)" d="M18 64H422l-70 132H88Z" fill="url(#skipShadeCiclo)"/>
+              <path class="skip-labio" d="M6 44h428l-9 22H15Z"/>
+              <rect class="skip-barra" x="150" y="150" width="140" height="9" rx="4.5"/>
+              <rect class="skip-pata" x="98" y="196" width="26" height="10" rx="3"/>
+              <rect class="skip-pata" x="316" y="196" width="26" height="10" rx="3"/>
+            </svg>
+          </div>
+
+          <div class="escena-piso" id="escenaPiso" aria-hidden="true"><span></span></div>
+
+          <div class="escena-medidor" aria-hidden="true">
+            <div class="medidor-tubo"><div class="medidor-nivel" id="medidorNivel"></div></div>
+            <p class="medidor-cifra"><b id="medidorNum">0,0</b> m³</p>
+          </div>
+
+          <div class="escena-sello" id="escenaSello" aria-hidden="true">
+            <span>Descarga en<br>planta autorizada</span>
+          </div>
+        </div>
+
+        <div class="ciclo-texto">
+          <ol class="ciclo-pasos" id="cicloPasos">
+            <li class="paso is-on"><span class="paso-n">01</span><h3>Nos escribís</h3><p>Un mensaje con la dirección, la medida y qué vas a tirar. Te confirmamos el precio y el horario en el momento, sin vueltas.</p></li>
+            <li class="paso"><span class="paso-n">02</span><h3>Te lo dejamos donde digas</h3><p>El camión baja el volquete en el frente, sobre la vereda o la calzada, cuidando el cordón y los autos de al lado.</p></li>
+            <li class="paso"><span class="paso-n">03</span><h3>Lo llenás a tu ritmo</h3><p>Tenés 48 horas incluidas. Si la obra se estira, avisás por WhatsApp y lo dejamos los días que necesites.</p></li>
+            <li class="paso"><span class="paso-n">04</span><h3>Lo retiramos</h3><p>Nos avisás que está lleno y lo levantamos. La carga termina en planta de descarga autorizada, no en un baldío.</p></li>
+          </ol>
+          <div class="ciclo-rail" id="cicloRail" aria-hidden="true"><i class="is-on"></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section class="servicios" id="servicios">
+    <div class="container">
+      <header class="sec-head sec-head-row">
+        <div>
+          <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">03 — Para qué se pide</p>
+          <h2 data-animate style="transform:translateY(20px);opacity:0">Cuatro motivos,<br>un mismo volquete.</h2>
+        </div>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Trabajamos con particulares, maestros mayores de obra, consorcios y empresas constructoras. Cambia el volumen, no el trato.</p>
+      </header>
+
+      <div class="serv-grid" data-animate-stagger>
+        <article class="serv-card" data-animate style="transform:translateY(42px) scale(.94);opacity:0">
+          <div class="serv-media"><img src="images/volquete-con-escombros.webp" alt="Volquete cargado con escombro de demolición frente a una obra" width="1122" height="1402" loading="lazy"></div>
+          <div class="serv-body">
+            <span class="serv-n">01</span>
+            <h3>Obra y refacción</h3>
+            <p>Contrapisos, revoques, cerámicos, ladrillo y restos de demolición. Lo más pedido: reformas de baño, cocina y ampliaciones.</p>
+          </div>
+        </article>
+        <article class="serv-card" data-animate style="transform:translateY(42px) scale(.94);opacity:0">
+          <div class="serv-media"><img src="images/colocacion-volquete-obra.webp" alt="Operario guiando la colocación de un volquete frente a una casa en refacción" width="941" height="1672" loading="lazy"></div>
+          <div class="serv-body">
+            <span class="serv-n">02</span>
+            <h3>Vaciado y mudanzas</h3>
+            <p>Muebles viejos, colchones, cajas y todo lo que quedó de años. Ideal para vaciar una casa antes de entregarla o venderla.</p>
+          </div>
+        </article>
+        <article class="serv-card" data-animate style="transform:translateY(42px) scale(.94);opacity:0">
+          <div class="serv-media"><img src="images/retiro-volquete-lleno.webp" alt="Camión retirando un volquete lleno de escombro en una calle de barrio" width="1254" height="1254" loading="lazy"></div>
+          <div class="serv-body">
+            <span class="serv-n">03</span>
+            <h3>Poda y terrenos</h3>
+            <p>Ramas, tierra, pasto y restos de limpieza de lote. Para jardines grandes coordinamos dos volquetes seguidos el mismo día.</p>
+          </div>
+        </article>
+        <article class="serv-card" data-animate style="transform:translateY(42px) scale(.94);opacity:0">
+          <div class="serv-media"><img src="images/volquete-azul-vacio.webp" alt="Volquete azul vacío recién colocado en la calle" width="1254" height="1254" loading="lazy"></div>
+          <div class="serv-body">
+            <span class="serv-n">04</span>
+            <h3>Empresas y consorcios</h3>
+            <p>Obras con varias etapas, administraciones y locales. Dejamos el volquete fijo y lo cambiamos cada vez que se llena.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- REGLAS -->
+  <section class="reglas" id="reglas">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">04 — Qué va y qué no</p>
+        <h2 data-animate style="transform:translateY(20px);opacity:0">Antes de cargarlo,<br>mirá esto.</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">La planta de descarga no recibe todo. Si en el volquete aparece algo de la columna derecha, el camión no lo puede levantar.</p>
+      </header>
+      <div class="reglas-grid">
+        <div class="regla regla-si" data-animate style="transform:translateX(-34px);opacity:0">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Va sin problema</h3>
+          <ul>
+            <li>Escombro de obra: ladrillo, revoque, contrapiso</li>
+            <li>Restos de demolición y cerámicos</li>
+            <li>Tierra, arena y cascotes</li>
+            <li>Poda, ramas y pasto</li>
+            <li>Muebles, colchones y cajas</li>
+            <li>Madera, chapa y cartón</li>
+          </ul>
+        </div>
+        <div class="regla regla-no" data-animate style="transform:translateX(34px);opacity:0">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>No lo podemos llevar</h3>
+          <ul>
+            <li>Líquidos, pintura y solventes</li>
+            <li>Fibrocemento con amianto</li>
+            <li>Garrafas, aerosoles y matafuegos</li>
+            <li>Neumáticos</li>
+            <li>Heladeras y equipos con gas</li>
+            <li>Pilas, baterías y residuos patológicos</li>
+          </ul>
+        </div>
+      </div>
+      <p class="reglas-nota" data-animate style="transform:translateY(16px);opacity:0">¿Tenés una duda con algo puntual? Mandá una foto por WhatsApp y te decimos si entra antes de que lo cargues.</p>
+    </div>
+  </section>
+
+  <!-- COBERTURA -->
+  <section class="cobertura" id="zonas">
+    <div class="container cobertura-grid">
+      <div class="cobertura-texto">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">05 — Dónde llegamos</p>
+        <h2 data-animate style="transform:translateY(20px);opacity:0">CABA y Gran<br>Buenos Aires.</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Salimos todos los días con recorridos por zona. Si tu dirección no está en la lista, escribinos igual: casi siempre llegamos.</p>
+        <div class="zonas" data-animate-stagger>
+          <div class="zona" data-animate style="transform:translateY(24px);filter:blur(9px);opacity:0"><h3>CABA</h3><p>Todos los barrios, de Villa Devoto a La Boca.</p></div>
+          <div class="zona" data-animate style="transform:translateY(24px);filter:blur(9px);opacity:0"><h3>Zona Sur</h3><p>Avellaneda, Lanús, Lomas de Zamora, Quilmes, Berazategui, Almirante Brown.</p></div>
+          <div class="zona" data-animate style="transform:translateY(24px);filter:blur(9px);opacity:0"><h3>Zona Oeste</h3><p>La Matanza, Morón, Ituzaingó, Merlo, Moreno, Tres de Febrero.</p></div>
+          <div class="zona" data-animate style="transform:translateY(24px);filter:blur(9px);opacity:0"><h3>Zona Norte</h3><p>Vicente López, San Isidro, San Martín, San Miguel, Tigre, San Fernando.</p></div>
+        </div>
+      </div>
+      <div class="cobertura-mapa">
+        <div id="mapa" class="mapa" role="img" aria-label="Mapa de la zona de cobertura de Volquetes Argentina en el AMBA"></div>
+        <p class="mapa-nota">Radio aproximado de trabajo diario.</p>
+      </div>
+    </div>
+    <img class="cobertura-camion" src="images/camion-recorte.webp" alt="" width="1450" height="514" loading="lazy" data-animate style="transform:translateX(70px);opacity:0" aria-hidden="true">
+  </section>
+
+  <!-- FLOTA -->
+  <section class="flota">
+    <div class="flota-foto">
+      <img src="images/flota-volquetes-deposito.webp" alt="Playa de volquetes azules y camión de Volquetes Argentina en el depósito" width="1619" height="971" loading="lazy">
+    </div>
+    <div class="container flota-panel">
+      <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">06 — La flota</p>
+      <h2 data-animate style="transform:translateY(20px);opacity:0">Volquetes propios,<br>camiones propios.</h2>
+      <p data-animate style="transform:translateY(18px);opacity:0">No tercerizamos el retiro. Eso es lo que nos deja confirmarte un horario y cumplirlo, y llevar la carga a planta de descarga autorizada.</p>
+      <ul class="flota-datos" data-animate-stagger>
+        <li data-animate style="transform:translateY(22px);opacity:0"><b data-count="10" data-suffix="+">10+</b><span>años trabajando en el AMBA</span></li>
+        <li data-animate style="transform:translateY(22px);opacity:0"><b>3 · 5 · 7</b><span>medidas en m³ disponibles</span></li>
+        <li data-animate style="transform:translateY(22px);opacity:0"><b data-count="48" data-suffix=" h">48 h</b><span>de alquiler incluidas</span></li>
+        <li data-animate style="transform:translateY(22px);opacity:0"><b>0</b><span>volquetes descargados en baldíos</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- OPINIONES -->
+  <section class="opiniones">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">07 — Clientes</p>
+        <h2 data-animate style="transform:translateY(20px);opacity:0">Obras que ya pasaron por acá.</h2>
+      </header>
+      <div class="op-grid" data-animate-stagger>
+        <blockquote data-animate style="transform:translateY(36px) rotate(-1.4deg);opacity:0">
+          <p>Pedí el de 5 m³ un martes a la mañana y a las dos de la tarde ya estaba en la puerta. Rompimos todo el contrapiso del PH y entró justo.</p>
+          <cite><b>Marcela D.</b><span>Refacción de PH — Villa Crespo</span></cite>
+        </blockquote>
+        <blockquote data-animate style="transform:translateY(36px) rotate(-1.4deg);opacity:0">
+          <p>Trabajo con ellos en obras chicas hace años. Lo que más valoro es que avisan el horario y lo cumplen: no me frenan la cuadrilla esperando el camión.</p>
+          <cite><b>Sergio A.</b><span>Maestro mayor de obra — Lomas de Zamora</span></cite>
+        </blockquote>
+        <blockquote data-animate style="transform:translateY(36px) rotate(-1.4deg);opacity:0">
+          <p>Vaciamos la casa de mi viejo: muebles, colchones y años de cosas. Me explicaron qué no podía tirar y me evitaron un problema con el consorcio.</p>
+          <cite><b>Carla V.</b><span>Vaciado de casa — San Miguel</span></cite>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq" id="faq">
+    <div class="container faq-grid">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">08 — Dudas frecuentes</p>
+        <h2 data-animate style="transform:translateY(20px);opacity:0">Lo que siempre<br>nos preguntan.</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Si tu duda no está acá, mandala por WhatsApp: contestamos nosotros, no un bot.</p>
+      </header>
+      <div class="faq-lista" data-animate-stagger>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Cuánto tiempo puedo tener el volquete en la puerta?</summary>
+          <div><p>El alquiler estándar es por 48 horas y se puede extender avisándonos por WhatsApp. Si la obra va lenta, coordinamos el retiro para el día que te sirva.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Necesito permiso para dejarlo en la calle?</summary>
+          <div><p>Depende del municipio y de la cuadra. En CABA y en varios partidos del GBA hace falta permiso municipal cuando el volquete ocupa la calzada. Te decimos qué corresponde en tu dirección antes de la entrega.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Cuánto sale?</summary>
+          <div><p>Depende de la medida, la zona y el tipo de carga. Escribinos con la dirección y qué vas a tirar, y te pasamos el precio cerrado en el momento, sin costos que aparecen después.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Con cuánta anticipación tengo que pedirlo?</summary>
+          <div><p>Si nos escribís temprano, en general lo dejamos el mismo día. Para obras con fecha fija conviene reservarlo con 24 horas de anticipación.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Hasta dónde lo puedo llenar?</summary>
+          <div><p>Hasta el borde superior, sin copete. Si la carga pasa el nivel del volquete no se puede trasladar por normativa de tránsito y el camión tiene que volver.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Dónde termina el escombro?</summary>
+          <div><p>En planta de descarga autorizada, con el comprobante correspondiente. Nunca en un terreno baldío ni en la banquina.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- CIERRE -->
+  <section class="cierre" id="contacto">
+    <div class="hazard" aria-hidden="true"></div>
+    <div class="container cierre-grid">
+      <div class="cierre-texto">
+        <h2 data-animate style="transform:translateY(22px);opacity:0">Decinos la dirección<br>y la medida.</h2>
+        <p data-animate style="transform:translateY(18px);opacity:0">El resto lo hacemos nosotros. Contestamos de lunes a sábado, de 7 a 20 h.</p>
+        <a class="cierre-tel" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete." target="_blank" rel="noopener" data-animate style="transform:translateY(18px);opacity:0">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span>11 7136-9947</span>
+        </a>
+        <p class="cierre-nota" data-animate style="transform:translateY(16px);opacity:0">Tocá el número y se abre el chat.</p>
+      </div>
+
+      <form class="cierre-form" id="contactoForm" novalidate data-animate style="transform:translateY(26px);opacity:0">
+        <p class="form-titulo">O dejanos los datos y te escribimos</p>
+        <div class="campo">
+          <label for="f-nombre">Nombre</label>
+          <input type="text" id="f-nombre" name="nombre" autocomplete="name" placeholder="Cómo te llamás" required>
+          <span class="error" id="err-f-nombre" data-error-for="f-nombre"></span>
+        </div>
+        <div class="campo">
+          <label for="f-tel">WhatsApp</label>
+          <input type="tel" id="f-tel" name="tel" inputmode="tel" autocomplete="tel" placeholder="11 5555-5555" required>
+          <span class="error" id="err-f-tel" data-error-for="f-tel"></span>
+        </div>
+        <div class="campo">
+          <label for="f-zona">Dirección o barrio</label>
+          <input type="text" id="f-zona" name="zona" autocomplete="address-level2" placeholder="Ej.: Flores, CABA" required>
+          <span class="error" id="err-f-zona" data-error-for="f-zona"></span>
+        </div>
+        <div class="campo">
+          <label for="f-medida">Medida</label>
+          <select id="f-medida" name="medida">
+            <option value="3">3 m³ — chico</option>
+            <option value="5" selected>5 m³ — el más pedido</option>
+            <option value="7">7 m³ — grande</option>
+            <option value="0">No sé cuál necesito</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-signal btn-lg" id="formBtn">Pedir presupuesto</button>
+        <p class="form-nota">Te contestamos por WhatsApp el mismo día.</p>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-marca">
+      <img src="images/logo-volquetes-argentina.webp" alt="Volquetes Argentina" width="900" height="763" loading="lazy">
+      <p>Alquiler de volquetes en Ciudad de Buenos Aires y Gran Buenos Aires. Escombro de obra, poda, mudanzas y limpieza de terrenos.</p>
+    </div>
+    <nav class="footer-nav" aria-label="Secciones">
+      <h3>Secciones</h3>
+      <a href="#medidas">Medidas</a>
+      <a href="#como">Cómo funciona</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#reglas">Qué va y qué no</a>
+      <a href="#zonas">Zonas</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+    <div class="footer-contacto">
+      <h3>Contacto</h3>
+      <a href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete." target="_blank" rel="noopener">WhatsApp 11 7136-9947</a>
+      <a href="mailto:hola@volquetesargentina.com">hola@volquetesargentina.com</a>
+      <p>Lunes a sábado, de 7 a 20 h</p>
+    </div>
+  </div>
+  <div class="hazard" aria-hidden="true"></div>
+  <div class="container footer-legal">
+    <p>© <span id="anio">2026</span> Volquetes Argentina. Todos los derechos reservados.</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491171369947?text=Hola%20Volquetes%20Argentina%2C%20quiero%20pedir%20un%20volquete." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js" defer></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+<script src="script.js?v=20260814165201" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+{
+  "banco": "Pexels (licencia gratuita, uso comercial permitido, sin atribución obligatoria)",
+  "nota": "Fotos de stock para la demo de RED MILENIUM. Se reemplazan por material real de la academia (aula, docentes, alumnos) al pasar a producción.",
+  "imagenes": [
+    {
+      "archivo": "oratoria.webp",
+      "url": "https://www.pexels.com/photo/8761336/",
+      "uso": "portada curso Oratoria y Coaching por Valores + portada del área Desarrollo Personal",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "coachingemp.webp",
+      "url": "https://www.pexels.com/photo/8424488/",
+      "uso": "portada curso Coaching Empresarial",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "coachingeq.webp",
+      "url": "https://www.pexels.com/photo/17724731/",
+      "uso": "portada curso Coaching para Equipos",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "diplomadp.webp",
+      "url": "https://www.pexels.com/photo/4968703/",
+      "uso": "portada Diplomatura en Desarrollo Personal",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "iaabogados.webp",
+      "url": "https://www.pexels.com/photo/7875842/",
+      "uso": "portada curso IA para Abogados",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "agentesatencion.webp",
+      "url": "https://www.pexels.com/photo/7709148/",
+      "uso": "portada curso Agentes de IA para Atención al Público",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "iaemprendedores.webp",
+      "url": "https://www.pexels.com/photo/7552726/",
+      "uso": "portada curso IA para Emprendedores",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "agentessalud.webp",
+      "url": "https://www.pexels.com/photo/4269206/",
+      "uso": "portada curso Agentes de IA para Instituciones y Centros de Salud",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "diplomaia.webp",
+      "url": "https://www.pexels.com/photo/8386369/",
+      "uso": "portada Diplomatura en IA Aplicada + portada del área IA Aplicada",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "excel.webp",
+      "url": "https://www.pexels.com/photo/8296982/",
+      "uso": "portada curso Excel Medio y Avanzado",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "marketingia.webp",
+      "url": "https://www.pexels.com/photo/6592690/",
+      "uso": "portada curso Marketing Digital + IA y portada del área Marketing y Tecnología",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "contenidos.webp",
+      "url": "https://www.pexels.com/photo/12433033/",
+      "uso": "portada curso Creación de Contenidos con IA",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "metaads.webp",
+      "url": "https://www.pexels.com/photo/7641426/",
+      "uso": "portada curso Meta Ads",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "googleads.webp",
+      "url": "https://www.pexels.com/photo/577210/",
+      "uso": "portada curso Google Ads",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "workspace.webp",
+      "url": "https://www.pexels.com/photo/6914022/",
+      "uso": "portada curso Google Workspace + sección del aula",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "gastronomia.webp",
+      "url": "https://www.pexels.com/photo/4253133/",
+      "uso": "portada curso Gastronomía",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "cuidado.webp",
+      "url": "https://www.pexels.com/photo/339620/",
+      "uso": "portada curso Cuidado de Adultos Mayores",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "farmacia.webp",
+      "url": "https://www.pexels.com/photo/14797855/",
+      "uso": "portada curso Auxiliar en Farmacia",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "panaderia.webp",
+      "url": "https://www.pexels.com/photo/5947600/",
+      "uso": "portada curso Panadería y Pastelería",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "barberia.webp",
+      "url": "https://www.pexels.com/photo/4625626/",
+      "uso": "portada curso Barbería y Peluquería",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "electricidad.webp",
+      "url": "https://www.pexels.com/photo/34054464/",
+      "uso": "portada curso Electricidad",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "plomeria.webp",
+      "url": "https://www.pexels.com/photo/29226620/",
+      "uso": "portada curso Plomería",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "soldadura.webp",
+      "url": "https://www.pexels.com/photo/3678228/",
+      "uso": "portada curso Soldadura + portada del área Oficios for Export",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "refrigeracion.webp",
+      "url": "https://www.pexels.com/photo/5463575/",
+      "uso": "portada curso Refrigeración",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "solares.webp",
+      "url": "https://www.pexels.com/photo/9875418/",
+      "uso": "portada curso Paneles Solares",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "hero.webp",
+      "url": "https://www.pexels.com/photo/6768023/",
+      "uso": "foto enmarcada de la escena del hero",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "aula.webp",
+      "url": "https://www.pexels.com/photo/5905716/",
+      "uso": "sección Cómo se cursa",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "doc-1.webp",
+      "url": "https://www.pexels.com/photo/37409445/",
+      "uso": "docente demo Sergio Villalba",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "doc-2.webp",
+      "url": "https://www.pexels.com/photo/8171180/",
+      "uso": "docente demo Carla Nieva",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "doc-3.webp",
+      "url": "https://www.pexels.com/photo/6209567/",
+      "uso": "docente demo Matías Rearte",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "doc-4.webp",
+      "url": "https://www.pexels.com/photo/36712868/",
+      "uso": "docente demo Paula Argañaraz",
+      "tipo": "foto"
+    },
+    {
+      "archivo": "cut-headset.webp",
+      "url": "https://www.pexels.com/photo/3394650/",
+      "uso": "recorte cut-headset.webp (hero)",
+      "tipo": "recorte con alpha (rembg isnet-general-use)"
+    },
+    {
+      "archivo": "cut-libros.webp",
+      "url": "https://www.pexels.com/photo/32046501/",
+      "uso": "recorte cut-libros.webp (reserva)",
+      "tipo": "recorte con alpha (rembg isnet-general-use)"
+    },
+    {
+      "archivo": "og.jpg",
+      "url": "https://www.pexels.com/photo/5905716/",
+      "uso": "imagen Open Graph (recorte 1200x630 de aula)",
+      "tipo": "foto"
+    }
+  ]
+}

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ADF Construcciones — Materiales para tu obra</title>
+<meta name="description" content="Corralón de materiales: cemento, ladrillos, hierro, cerámicos y PVC. Stock real, entrega en obra y asesoramiento para saber cuánto comprar.">
+<meta name="theme-color" content="#f9fafb">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:title" content="ADF Construcciones — Materiales para tu obra">
+<meta property="og:description" content="Todo para tu obra, con la cuenta ya hecha. Entrega en obra y precio por volumen.">
+<meta property="og:image" content="images/corralon-de-materiales-con-autoelevador_2.8x1.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23111318'/%3E%3Ctext x='16' y='21' font-family='Arial Black,Arial,sans-serif' font-weight='900' font-size='13' fill='%23f9fafb' text-anchor='middle'%3EADF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=20260804175737">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#destacados">Saltar al contenido</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="#inicio" aria-label="ADF Construcciones, inicio">
+      <span class="brand-mark">ADF</span>
+      <span class="brand-word">Construcciones</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#destacados">Productos</a>
+      <a href="#rubros">Rubros</a>
+      <a href="#calculadora">Calculadora</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <div class="header-actions">
+      <button type="button" class="cart-button" id="cartToggle" aria-label="Ver carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true">
+          <circle cx="9" cy="20" r="1.6" fill="currentColor" stroke="none"/>
+          <circle cx="18" cy="20" r="1.6" fill="currentColor" stroke="none"/>
+          <path d="M2 3h3l2.4 12.2a1.5 1.5 0 0 0 1.5 1.2h8.4a1.5 1.5 0 0 0 1.5-1.2L22 7H6"/>
+        </svg>
+        <span class="cart-count" data-cart-count>0</span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="inicio">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <img src="images/corralon-de-materiales-con-autoelevador_2.8x1.webp" alt="" width="1536" height="1024">
+    </div>
+    <div class="container hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Corralón de materiales</p>
+        <h1>Todo para tu obra.<br><em>Y la cuenta ya hecha.</em></h1>
+        <p class="hero-lead">Materiales con stock, entrega en obra y alguien que te dice cuánto necesitás antes de que compres de más.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#destacados">Ver materiales</a>
+          <a class="btn btn-ghost" href="#calculadora">Calcular cuánto necesito</a>
+        </div>
+      </div>
+      <div class="hero-cota" aria-hidden="true">
+        <span class="cota-linea"></span>
+        <span class="cota-txt">stock real</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DESTACADOS — primera sección después del hero ══ -->
+  <section class="section destacados" id="destacados">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow"><span class="num">01</span> Lo que más sale</p>
+          <h2>Los materiales de <em>todos los días</em></h2>
+        </div>
+        <p class="section-note">Lo que se lleva la mayoría de las obras. Precio por unidad de venta, sin letra chica.</p>
+      </div>
+      <div class="grid-destacados" id="gridDestacados"></div>
+    </div>
+  </section>
+
+  <!-- ══ Trust bar ══ -->
+  <section class="trust" aria-label="Por qué comprarnos">
+    <div class="container trust-inner">
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <b>Entrega en obra</b><span>Coordinamos día y horario de descarga</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 11H5a2 2 0 0 0-2 2v7h18v-7a2 2 0 0 0-2-2h-4M9 11V5a3 3 0 0 1 6 0v6M9 11h6"/></svg>
+        <b>Te decimos cuánto</b><span>Calculamos el material de tu obra</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 3h18v6H3zM3 9v12h18V9M9 21V9"/></svg>
+        <b>Precio por volumen</b><span>Cotizamos aparte pedidos grandes</span>
+      </div>
+      <div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        <b>Stock a la vista</b><span>Si figura disponible, está en el depósito</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ RUBROS — rail horizontal arrastrable ══ -->
+  <section class="section rubros" id="rubros">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow"><span class="num">02</span> Rubros</p>
+          <h2>Buscá por <em>rubro</em></h2>
+        </div>
+        <p class="section-note">Arrastrá para recorrer. Tocá un rubro y te lleva al catálogo ya filtrado.</p>
+      </div>
+    </div>
+    <div class="rail-wrap">
+      <section class="rail" id="rail" aria-label="Rubros de materiales" tabindex="0"></section>
+    </div>
+  </section>
+
+  <!-- ══ LA COTA — coreografía mayor (sticky + scrub) ══ -->
+  <section class="cota" id="cota">
+    <div class="cota-stage">
+      <div class="container cota-grid">
+        <div class="cota-copy">
+          <p class="eyebrow"><span class="num">03</span> Cómo sacamos la cuenta</p>
+          <h2>Una pared. <em>Tres materiales.</em></h2>
+          <ol class="cota-pasos">
+            <li><b>La pared</b><span>Lo que querés levantar.</span></li>
+            <li><b>El largo</b><span>4,00 m de frente.</span></li>
+            <li><b>La altura</b><span>2,60 m hasta el encadenado.</span></li>
+            <li><b>Los metros</b><span>10,4 m² de mampostería.</span></li>
+            <li><b>La lista</b><span>Con el 10% de desperdicio incluido.</span></li>
+          </ol>
+        </div>
+
+        <div class="cota-visual">
+          <svg viewBox="0 0 560 400" role="img" aria-label="Una pared de 4 por 2,60 metros y los materiales que necesita: 184 ladrillos, 2 bolsas de cemento y 2 de cal.">
+            <defs>
+              <clipPath id="cotaClip"><rect id="cotaClipRect" x="100" y="285" width="380" height="0"/></clipPath>
+            </defs>
+            <g id="cotaLadrillos" clip-path="url(#cotaClip)"></g>
+            <rect id="cotaMuro" x="100" y="35" width="380" height="250" fill="none" stroke="currentColor" stroke-width="2"/>
+            <g class="cota-svg-linea" id="cotaGrupoH">
+              <path id="cotaHoriz" d="M100 332 H480" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <path class="cota-tick" d="M100 325 v14 M480 325 v14" stroke="currentColor" stroke-width="1.2"/>
+              <text id="cotaHorizTxt" x="290" y="356" text-anchor="middle">4,00 m</text>
+            </g>
+            <g class="cota-svg-linea" id="cotaGrupoV">
+              <path id="cotaVert" d="M62 285 V35" fill="none" stroke="currentColor" stroke-width="1.2"/>
+              <path class="cota-tick" d="M55 285 h14 M55 35 h14" stroke="currentColor" stroke-width="1.2"/>
+              <text id="cotaVertTxt" x="62" y="160" text-anchor="middle" transform="rotate(-90 62 160)">2,60 m</text>
+            </g>
+            <text id="cotaArea" x="290" y="168" text-anchor="middle">10,4 m²</text>
+          </svg>
+
+          <ul class="cota-lista">
+            <li><b data-cota-num="184">0</b><span>ladrillos huecos 12×18×33</span></li>
+            <li><b data-cota-num="2">0</b><span>bolsas de cemento de albañilería</span></li>
+            <li><b data-cota-num="2">0</b><span>bolsas de cal hidratada</span></li>
+          </ul>
+          <p class="cota-pie">Esto es lo que hace la calculadora de abajo con <em>tus</em> medidas.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CALCULADORA — momento firma ══ -->
+  <section class="calc" id="calculadora">
+    <div class="container calc-grid">
+      <div class="calc-copy">
+        <p class="eyebrow"><span class="num">04</span> La cuenta hecha</p>
+        <h2>¿Cuánto material <em>necesito?</em></h2>
+        <p>La pregunta que más nos hacen. Poné los metros y te decimos qué llevar — y si querés, te lo cargamos al carrito de una.</p>
+        <p class="calc-aviso">Los resultados son orientativos e incluyen un 10% de desperdicio. Para una obra grande, confirmalo con nosotros antes de comprar.</p>
+      </div>
+
+      <div class="calc-panel">
+        <div class="calc-tabs" role="tablist" aria-label="Tipo de cálculo">
+          <button type="button" class="calc-tab is-on" role="tab" aria-selected="true" data-calc="pared">Pared</button>
+          <button type="button" class="calc-tab" role="tab" aria-selected="false" data-calc="piso">Piso</button>
+          <button type="button" class="calc-tab" role="tab" aria-selected="false" data-calc="contrapiso">Contrapiso</button>
+        </div>
+
+        <div class="calc-form" id="calcForm">
+          <div class="calc-campos">
+            <label>Superficie
+              <span class="campo"><input type="number" id="calcM2" min="1" max="10000" step="0.5" value="20" inputmode="decimal"><i>m²</i></span>
+            </label>
+            <label data-campo-espesor hidden>Espesor
+              <span class="campo"><input type="number" id="calcEsp" min="5" max="30" step="1" value="10" inputmode="numeric"><i>cm</i></span>
+            </label>
+          </div>
+          <p class="calc-hint" data-calc-hint>Pared de ladrillo hueco 12×18×33 con mortero de asiento.</p>
+        </div>
+
+        <div class="calc-resultado" id="calcResultado" aria-live="polite"></div>
+
+        <button class="btn btn-primary btn-block" type="button" id="calcAlCarrito">Agregar todo al carrito</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CATÁLOGO ══ -->
+  <section class="section catalogo" id="catalogo">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow"><span class="num">05</span> Catálogo</p>
+          <h2>Todo el <em>depósito</em></h2>
+        </div>
+        <p class="section-note">Buscá por nombre o filtrá por rubro. Los precios son por unidad de venta.</p>
+      </div>
+
+      <div class="filtros">
+        <label class="buscador">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="search" id="buscar" placeholder="Buscar material, medida o marca" aria-label="Buscar materiales">
+        </label>
+        <div class="chips" id="chipsRubro" role="group" aria-label="Filtrar por rubro"></div>
+        <div class="filtros-pie">
+          <span id="contadorResultados" aria-live="polite"></span>
+          <button type="button" class="link-btn" id="limpiarFiltros" hidden>Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div class="grid-catalogo" id="gridCatalogo"></div>
+      <div class="vermas-wrap"><button class="btn btn-ghost" type="button" id="verMas" hidden>Ver más materiales</button></div>
+    </div>
+  </section>
+
+  <!-- ══ Editorial ══ -->
+  <section class="editorial">
+    <div class="container editorial-grid">
+      <figure class="editorial-media" data-animate style="transform:translateY(26px);opacity:0">
+        <img src="images/asesoramiento-en-showroom-de-materiales_4x5.webp" alt="Asesoramiento sobre materiales en el showroom" width="1122" height="1402" loading="lazy">
+      </figure>
+      <div class="editorial-copy">
+        <p class="eyebrow"><span class="num">06</span> El corralón</p>
+        <h2>El que sabe <em>te dice que compres menos</em></h2>
+        <p>Nos pasa todos los días: alguien viene a comprar material para toda la obra y termina llevándose lo de esta etapa nomás. Vender de más es fácil; que vuelvas es lo que nos importa.</p>
+        <p>Trabajamos con obra chica y con constructoras. La diferencia la hacemos en dos cosas: que el material esté cuando lo pedís y que llegue al pie de la obra.</p>
+        <div class="editorial-datos">
+          <span><b>Lun a Vie</b>7:30 a 17:30</span>
+          <span><b>Sábados</b>8 a 13</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ Entrega ══ -->
+  <section class="entrega">
+    <img src="images/descarga-de-materiales-en-obra_5x3.webp" alt="Descarga de materiales en obra" width="1619" height="971" loading="lazy">
+    <div class="entrega-copy">
+      <p class="eyebrow">Logística</p>
+      <h2>Lo llevamos <em>al pie de la obra</em></h2>
+      <p>Coordinamos día y franja de descarga. Si hay que subir material, avisanos antes para mandar la cuadrilla.</p>
+    </div>
+  </section>
+
+  <!-- ══ FAQ ══ -->
+  <section class="section faq" id="faq">
+    <div class="container faq-inner">
+      <div class="faq-head">
+        <p class="eyebrow"><span class="num">07</span> Preguntas</p>
+        <h2>Antes de <em>hacer el pedido</em></h2>
+      </div>
+      <div class="faq-list">
+        <details class="qa" open>
+          <summary>¿Hacen entregas? ¿Cuánto cuesta?<span aria-hidden="true"></span></summary>
+          <div class="qa-body"><p>Sí, entregamos en obra. El costo depende de la distancia y del volumen; en pedidos grandes suele ir bonificado. Te lo confirmamos al cerrar el pedido, nunca después.</p></div>
+        </details>
+        <details class="qa">
+          <summary>¿El precio de la web es el precio final?<span aria-hidden="true"></span></summary>
+          <div class="qa-body"><p>Es el precio de lista por unidad de venta. Para volumen cotizamos aparte y casi siempre mejora. Si tu pedido es grande, escribinos antes de cargarlo.</p></div>
+        </details>
+        <details class="qa">
+          <summary>¿Puedo retirar por el corralón?<span aria-hidden="true"></span></summary>
+          <div class="qa-body"><p>Sí. Coordinamos el retiro y te lo dejamos preparado para que no esperes en el mostrador. Vení con el vehículo acorde al volumen.</p></div>
+        </details>
+        <details class="qa">
+          <summary>Me sobró material, ¿lo puedo devolver?<span aria-hidden="true"></span></summary>
+          <div class="qa-body"><p>Los materiales sin abrir y en buen estado se pueden devolver dentro de los plazos que te indicamos al comprar. Las bolsas de cemento mojadas o rotas no, por eso conviene calcular bien antes.</p></div>
+        </details>
+        <details class="qa">
+          <summary>¿La calculadora es exacta?<span aria-hidden="true"></span></summary>
+          <div class="qa-body"><p>Es orientativa y ya suma un 10% de desperdicio. Sirve muy bien para saber cuánto pedir, pero no reemplaza el cómputo de un profesional en obras grandes.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ Cierre ══ -->
+  <section class="cierre" id="contacto">
+    <div class="container cierre-inner">
+      <p class="eyebrow">Hablemos</p>
+      <h2>Pasanos tu lista y <em>te cotizamos</em></h2>
+      <p>Mandanos el listado o una foto del plano. Te armamos el presupuesto con lo que necesitás de verdad.</p>
+      <a class="wsp-line" href="https://wa.me/5491168396276?text=Hola%20ADF%2C%20quiero%20cotizar%20materiales%20para%20mi%20obra." target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+        <span>11 6839-6276</span>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <span class="brand-mark">ADF</span>
+      <p>Materiales para la construcción.<br>Entrega en obra y asesoramiento.</p>
+    </div>
+    <nav class="footer-col" aria-label="Secciones">
+      <h2>Comprar</h2>
+      <a href="#destacados">Destacados</a>
+      <a href="#rubros">Rubros</a>
+      <a href="#catalogo">Catálogo</a>
+      <a href="#calculadora">Calculadora</a>
+    </nav>
+    <div class="footer-col">
+      <h2>Contacto</h2>
+      <a href="https://wa.me/5491168396276?text=Hola%20ADF%2C%20tengo%20una%20consulta." target="_blank" rel="noopener noreferrer">WhatsApp 11 6839-6276</a>
+      <a href="mailto:ventas@adfconstrucciones.com.ar">ventas@adfconstrucciones.com.ar</a>
+      <span>Lun a Vie 7:30-17:30 · Sáb 8-13</span>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© <span id="year">2026</span> ADF Construcciones</p>
+    <p>Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Gokywebs</a></p>
+  </div>
+</footer>
+
+<!-- ══ Drawer del carrito ══ -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="cart-drawer" id="cartDrawer" aria-label="Carrito" inert>
+  <div class="cart-head">
+    <h2>Tu pedido</h2>
+    <button type="button" class="icon-btn" id="cartClose" aria-label="Cerrar carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cart-envio" id="cartEnvio"></div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-foot">
+    <div class="cart-total"><span>Total</span><strong id="cartTotal">$0</strong></div>
+    <p class="cart-nota">El costo de entrega se confirma al coordinar el pedido.</p>
+    <button class="btn btn-primary btn-block" type="button" id="cartCheckout" disabled>Finalizar compra</button>
+  </div>
+</aside>
+
+<!-- ══ Vista rápida ══ -->
+<dialog class="prod-dialog" id="prodDialog" aria-labelledby="prodTitulo">
+  <button type="button" class="icon-btn prod-close" id="prodClose" aria-label="Cerrar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="prod-cuerpo">
+    <div class="prod-media"><img id="prodImg" src="images/sacos-de-cemento-en-pallet_1x1.webp" alt="" width="1254" height="1254"></div>
+    <div class="prod-info">
+      <span class="prod-rubro" id="prodRubro">Rubro</span>
+      <h2 id="prodTitulo">Producto</h2>
+      <p class="prod-unidad" id="prodUnidad"></p>
+      <p class="prod-desc" id="prodDesc"></p>
+      <ul class="prod-specs" id="prodSpecs"></ul>
+      <div class="prod-precio" id="prodPrecio"></div>
+      <div class="prod-acciones">
+        <div class="stepper">
+          <button type="button" data-prod-menos aria-label="Quitar uno">−</button>
+          <input type="number" id="prodQty" value="1" min="1" max="999" aria-label="Cantidad" inputmode="numeric">
+          <button type="button" data-prod-mas aria-label="Sumar uno">+</button>
+        </div>
+        <button class="btn btn-ghost" type="button" id="prodAgregar">Agregar</button>
+        <button class="btn btn-primary" type="button" id="prodComprar">Comprar ahora</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491168396276?text=Hola%20ADF%2C%20quiero%20consultar%20por%20materiales." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="data.js"></script>
+<script src="script.js?v=20260804175737"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

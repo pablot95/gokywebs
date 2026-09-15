@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Rojo 4x4 — Turismo aventura en la cordillera nevada</title>
+<meta name="description" content="Excursiones 4x4 en montañas nevadas de Neuquén, armadas a tu medida: guiada o completa con alojamiento, desayuno, almuerzo en la montaña y cena. Subí al Rojo.">
+<meta name="theme-color" content="#E63946">
+<link rel="canonical" href="https://gokywebs.com/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="El Rojo 4x4 — Turismo aventura en la cordillera nevada">
+<meta property="og:description" content="Excursiones 4x4 a medida en la cordillera neuquina: guiada o completa con alojamiento y comidas. Coordiná tu salida por WhatsApp.">
+<meta property="og:image" content="images/aventura-4x4-en-montana-nevada_2.8x1.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23E63946'/%3E%3Ctext x='32' y='44' font-family='Arial Narrow,sans-serif' font-weight='700' font-size='34' fill='%23fff' text-anchor='middle'%3ER%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}</style></noscript>
+</head>
+<body>
+<a href="#main" class="skip-link">Saltar al contenido</a>
+
+<header class="site-header">
+  <div class="container header-row">
+    <a href="#top" class="brand" aria-label="El Rojo 4x4, inicio">
+      <span class="brand-el">EL</span>
+      <span class="brand-rojo">ROJO</span>
+      <span class="brand-4x4">4x4</span>
+    </a>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round"/></svg>
+    </button>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round"/></svg>
+      </button>
+      <a href="#modalidades">Modalidades</a>
+      <a href="#eljeep">El Jeep</a>
+      <a href="#galeria">La experiencia</a>
+      <a href="#faq">Preguntas</a>
+      <a href="#zona">Zona</a>
+      <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20una%20excursi%C3%B3n%20con%20El%20Rojo%204x4" target="_blank" rel="noopener" class="btn btn-cta header-cta">Escribinos</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero" id="top">
+    <div class="hero-photo">
+      <picture>
+        <source media="(min-width: 760px)" srcset="images/aventura-4x4-en-montana-nevada_2.8x1.webp">
+        <img src="images/jeep-rojo-en-nieve_9x16.webp" width="900" height="1600" alt="Jeep Wrangler rojo recorriendo la cordillera nevada" loading="eager">
+      </picture>
+    </div>
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="hero-content">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow" data-animate="up" style="transform:translateY(18px);opacity:0">Turismo aventura · Cordillera neuquina</span>
+            <h1 data-animate="up" style="transform:translateY(34px);opacity:0" data-delay=".05">Subí al <em>Rojo</em> y conocé la cordillera a tu manera</h1>
+            <p class="hero-sub" data-animate="up" style="transform:translateY(26px);opacity:0" data-delay=".12">Excursiones 4x4 en montañas nevadas armadas a tu medida: guiada, o completa con alojamiento, desayuno, almuerzo en la montaña y cena en el complejo.</p>
+            <div class="hero-ctas" data-animate="up" style="transform:translateY(22px);opacity:0" data-delay=".2">
+              <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20una%20excursi%C3%B3n%20con%20El%20Rojo%204x4" target="_blank" rel="noopener" class="btn btn-cta">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Consultá tu excursión
+              </a>
+              <a href="#modalidades" class="btn btn-outline on-dark">Ver modalidades</a>
+            </div>
+          </div>
+          <div class="hero-bitacora" data-animate="up" style="transform:translateY(24px);opacity:0" data-delay=".3">
+            <span class="hero-bitacora-title">Ficha de ruta</span>
+            <div class="hero-bitacora-grid">
+              <div class="hero-bitacora-item"><strong>Neuquén</strong><span>ZONA</span></div>
+              <div class="hero-bitacora-item"><strong>Wrangler</strong><span>VEHÍCULO</span></div>
+              <div class="hero-bitacora-item"><strong>A medida</strong><span>MODALIDAD</span></div>
+              <div class="hero-bitacora-item"><strong>Jorge</strong><span>GUÍA LOCAL</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue" aria-hidden="true">
+      <span>Scrolleá</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12l7 7 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </section>
+
+  <section class="modalidades" id="modalidades">
+    <div class="container" style="position:relative">
+      <svg class="route-line route-seam-1" viewBox="0 0 260 140" aria-hidden="true"><path id="routePath1" d="M4 8 C 90 8, 60 130, 256 120"/></svg>
+      <div class="section-head">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Dos formas de subir</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">Elegí cómo vivís la montaña</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".08">Cada excursión se arma según el grupo, el tiempo y las ganas. Estas son las dos bases de partida — el resto lo charlamos por WhatsApp.</p>
+      </div>
+      <div class="modo-grid" data-animate-stagger>
+        <div class="modo-card modo-guiada" data-animate="scale" style="transform:scale(.95) translateY(20px);opacity:0">
+          <div class="modo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2 3 7l9 5 9-5-9-5Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12l9 5 9-5M3 17l9 5 9-5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="modo-tag">Modalidad 01</span>
+          <h3>Excursión guiada</h3>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Recorrido 4x4 por senderos de montaña con nieve</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Jorge maneja y guía todo el trayecto</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Paradas fotográficas en los miradores</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Ida y vuelta en el día</li>
+          </ul>
+          <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20la%20excursi%C3%B3n%20guiada" target="_blank" rel="noopener" class="btn">Consultar excursión guiada</a>
+        </div>
+        <div class="modo-card modo-completa" data-animate="scale" style="transform:scale(.95) translateY(20px);opacity:0" data-delay=".12">
+          <div class="modo-badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5 12 3l9 6.5V21H3V9.5Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 21v-7h6v7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <span class="modo-tag">Modalidad 02</span>
+          <h3>Excursión completa</h3>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Todo lo de la excursión guiada</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Alojamiento en el complejo de montaña</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Desayuno y cena incluidos</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>Almuerzo servido en plena montaña</li>
+          </ul>
+          <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20la%20excursi%C3%B3n%20completa" target="_blank" rel="noopener" class="btn">Consultar excursión completa</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="eljeep" id="eljeep">
+    <div class="container eljeep-grid">
+      <div class="eljeep-copy">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">El protagonista</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0" data-delay=".05">El Rojo, conocido en toda la montaña</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".1">Es el Jeep Wrangler que Jorge maneja hace años por los caminos de la cordillera — lo reconocen en cada paraje, cada puesto y cada mirador de la zona.</p>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".16">Equipado para nieve, barro y piedra suelta, sube donde otros vehículos no llegan. Cada excursión arranca y termina con él.</p>
+        <div class="eljeep-facts" data-animate="up" style="transform:translateY(14px);opacity:0" data-delay=".24">
+          <div class="eljeep-fact"><strong>4x4</strong><span>Tracción integral</span></div>
+          <div class="eljeep-fact"><strong>Nieve</strong><span>Preparado para</span></div>
+          <div class="eljeep-fact"><strong>Cordillera</strong><span>Conocido en</span></div>
+        </div>
+      </div>
+      <div class="eljeep-visual" data-animate="scale" style="transform:scale(.92);opacity:0">
+        <div class="eljeep-visual-block" aria-hidden="true"></div>
+        <img src="recorte-jeep-perfil.webp" width="993" height="900" alt="Jeep Wrangler rojo de El Rojo 4x4, visto de perfil sobre fondo neutro">
+        <div class="eljeep-stamp stamp" aria-hidden="true"><span class="big">4x4</span><span class="small">Cordillera<br>Neuquina</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee-band" aria-hidden="true">
+    <div class="marquee-track">
+      <span>Cordillera Neuquina</span><span>Pasos de montaña</span><span>Bosques de lenga</span><span>Miradores de altura</span><span>Rutas de nieve</span>
+      <span>Cordillera Neuquina</span><span>Pasos de montaña</span><span>Bosques de lenga</span><span>Miradores de altura</span><span>Rutas de nieve</span>
+    </div>
+  </div>
+
+  <section class="galeria" id="galeria">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">La experiencia</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">Así se vive una salida con El Rojo</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".08">Grupos que vuelven, paisajes que no se olvidan y una parada de mate a mitad de camino.</p>
+      </div>
+      <div class="galeria-grid" data-animate-stagger>
+        <div class="gal-item gal-1" data-animate="scale" style="transform:scale(.95);opacity:0">
+          <img src="images/experiencia-grupal-4x4_1x1.webp" width="1200" height="1200" alt="Grupo alrededor del fuego junto al Jeep rojo, al atardecer en la montaña, durante una excursión de El Rojo 4x4" loading="lazy">
+          <span class="gal-caption">Fogata al atardecer</span>
+        </div>
+        <div class="gal-item gal-2" data-animate="scale" style="transform:scale(.95);opacity:0" data-delay=".1">
+          <img src="images/almuerzo-en-la-montana_1x1.webp" width="1200" height="1200" alt="Mate, termo y pan casero servidos en la montaña durante una excursión" loading="lazy">
+          <span class="gal-caption">Almuerzo en la montaña</span>
+        </div>
+        <div class="gal-item gal-3" data-animate="scale" style="transform:scale(.95);opacity:0" data-delay=".18">
+          <img src="images/aventura-4x4-en-montana-nevada_2.8x1.webp" width="1400" height="500" alt="Jeep rojo detenido en un mirador con vista panorámica a lagos y cordillera nevada" loading="lazy" style="object-position:50% 40%">
+          <span class="gal-caption">Vista desde el mirador</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tablero" id="tablero">
+    <div class="container tablero-inner">
+      <div class="section-head">
+        <span class="eyebrow on-dark" data-animate="up" style="transform:translateY(16px);opacity:0">En números</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">El tablero de El Rojo</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".08">Los números que el odómetro fue sumando en cada subida a la montaña.</p>
+      </div>
+      <div class="tablero-grid">
+        <div class="gauge-wrap" data-animate="scale" style="transform:scale(.9);opacity:0">
+          <svg class="gauge" id="gaugeSvg" viewBox="0 0 300 300">
+            <circle cx="150" cy="150" r="128" fill="none" stroke="rgba(242,240,234,.12)" stroke-width="14"></circle>
+            <path d="M 39.4 227.6 A 128 128 0 1 1 260.6 227.6" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round"></path>
+            <defs>
+              <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#457B9D"></stop>
+                <stop offset="100%" stop-color="#E63946"></stop>
+              </linearGradient>
+            </defs>
+            <g id="gaugeTicks" stroke="rgba(242,240,234,.4)" stroke-width="3" stroke-linecap="round"></g>
+            <g class="gauge-needle" id="gaugeNeedle">
+              <line x1="150" y1="150" x2="150" y2="48" stroke="#E63946" stroke-width="5" stroke-linecap="round"></line>
+              <circle cx="150" cy="150" r="12" fill="#F2F0EA"></circle>
+              <circle cx="150" cy="150" r="5" fill="#12181F"></circle>
+            </g>
+            <text x="150" y="200" class="gauge-center-label" fill="#F2F0EA" font-size="22">4x4</text>
+          </svg>
+        </div>
+        <div>
+          <div class="stats-grid" data-animate-stagger>
+            <div class="stat-item" data-animate="up" style="transform:translateY(14px);opacity:0">
+              <div class="stat-value"><span data-counter="12">0</span><span class="suffix">+</span></div>
+              <span class="stat-label">Años en la montaña</span>
+            </div>
+            <div class="stat-item" data-animate="up" style="transform:translateY(14px);opacity:0" data-delay=".08">
+              <div class="stat-value"><span data-counter="350">0</span><span class="suffix">+</span></div>
+              <span class="stat-label">Excursiones guiadas</span>
+            </div>
+            <div class="stat-item" data-animate="up" style="transform:translateY(14px);opacity:0" data-delay=".16">
+              <div class="stat-value"><span data-counter="1200">0</span><span class="suffix">+</span></div>
+              <span class="stat-label">Viajeros subieron al Rojo</span>
+            </div>
+            <div class="stat-item" data-animate="up" style="transform:translateY(14px);opacity:0" data-delay=".24">
+              <div class="stat-value"><span data-counter="3100">0</span><span class="suffix">m</span></div>
+              <span class="stat-label">Altitud máxima alcanzada</span>
+            </div>
+          </div>
+          <div class="dash-lights" id="dashLights">
+            <div class="dash-light" data-light="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M2 12h20" stroke-linecap="round"/></svg></div>
+            <div class="dash-light" data-light="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 20 12 4l9 16H3Z" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="dash-light" data-light="2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round"/></svg></div>
+            <div class="dash-light" data-light="3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2 3 7l9 5 9-5-9-5Z" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12l9 5 9-5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alojamiento" id="alojamiento">
+    <div class="container alojamiento-grid">
+      <div class="alojamiento-copy">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Para quedarse</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0" data-delay=".05">Una noche en la montaña, después de la aventura</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".1">En la excursión completa, el día termina en el complejo: cena caliente, cama cómoda y la cordillera de fondo para cuando amanezca.</p>
+        <ul class="alojamiento-list" data-animate="up" style="transform:translateY(14px);opacity:0" data-delay=".18">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5 12 3l9 6.5V21H3V9.5Z" stroke-linecap="round" stroke-linejoin="round"/></svg>Alojamiento en cabaña de montaña</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19h16M6 19V9l6-4 6 4v10" stroke-linecap="round" stroke-linejoin="round"/></svg>Desayuno y cena incluidos</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9.5 12 3l9 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 11v10h14V11" stroke-linecap="round" stroke-linejoin="round"/></svg>Almuerzo servido en plena excursión</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2c3 4-1 5-1 8a4 4 0 0 0 8 0c0-2-1-3-1-3s1 5-2 5-2-3-2-3-3 1-3-3c0-2 1-3 1-4Z" stroke-linecap="round" stroke-linejoin="round"/></svg>Ambiente con calefacción a leña</li>
+        </ul>
+      </div>
+      <div class="alojamiento-media" data-animate="scale" style="transform:scale(.94);opacity:0">
+        <img src="images/alojamiento-de-montana_4x5.webp" width="1200" height="1500" alt="Habitación cálida de una cabaña de montaña, con vista a la cordillera desde la ventana" loading="lazy">
+        <div class="alojamiento-tag">
+          <strong>Incluido</strong>
+          <span>en la excursión completa</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="testimonios" id="testimonios">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Lo que dicen</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">Grupos que subieron al Rojo</h2>
+      </div>
+      <div class="testi-grid" data-animate-stagger>
+        <div class="testi-card" data-animate="up" style="transform:translateY(20px);opacity:0">
+          <span class="testi-quote-mark" aria-hidden="true">“</span>
+          <p>Fuimos con toda la familia y Jorge se acomodó a nuestro ritmo. Los chicos no se olvidan más de la nieve.</p>
+          <div class="testi-who"><span class="testi-avatar">M</span><div><strong>Marina S.</strong><span>Neuquén</span></div></div>
+        </div>
+        <div class="testi-card" data-animate="up" style="transform:translateY(20px);opacity:0" data-delay=".1">
+          <span class="testi-quote-mark" aria-hidden="true">“</span>
+          <p>Subimos con amigos para pasar el día y terminamos quedándonos a dormir. La cena en el complejo fue un golazo.</p>
+          <div class="testi-who"><span class="testi-avatar">N</span><div><strong>Nicolás R.</strong><span>Zapala</span></div></div>
+        </div>
+        <div class="testi-card" data-animate="up" style="transform:translateY(20px);opacity:0" data-delay=".2">
+          <span class="testi-quote-mark" aria-hidden="true">“</span>
+          <p>Conozco la cordillera hace años y nunca la había visto desde esos miradores. El Rojo sube a todos lados.</p>
+          <div class="testi-who"><span class="testi-avatar">D</span><div><strong>Diego P.</strong><span>San Martín de los Andes</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Antes de escribir</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">Preguntas frecuentes</h2>
+      </div>
+      <div class="faq-list" data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".08">
+        <details class="faq-item">
+          <summary>¿La excursión se adapta a mi grupo?<span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></span></summary>
+          <div class="faq-body">Sí, cada salida se arma según el grupo, la edad de los chicos si hay, el tiempo disponible y lo que quieran ver. Lo coordinamos por WhatsApp antes de confirmar.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Hace falta experiencia en montaña?<span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></span></summary>
+          <div class="faq-body">No, las excursiones están pensadas para cualquier persona. Vos te subís al Rojo y disfrutás — de manejar y guiar se encarga Jorge.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué diferencia hay entre la excursión guiada y la completa?<span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></span></summary>
+          <div class="faq-body">La guiada es de ida y vuelta en el día. La completa suma alojamiento, desayuno, almuerzo en la montaña y cena en el complejo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿Qué tengo que llevar?<span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></span></summary>
+          <div class="faq-body">Ropa de abrigo, calzado cerrado y ganas de andar en la nieve. El resto — el vehículo, la guía y las comidas de la excursión completa — corre por cuenta de El Rojo.</div>
+        </details>
+        <details class="faq-item">
+          <summary>¿En qué época del año se puede hacer?<span class="faq-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14" stroke-linecap="round"/></svg></span></summary>
+          <div class="faq-body">La montaña cambia según la temporada, así que la ruta se ajusta según la época del año. Escribí por WhatsApp y coordinamos la mejor fecha.</div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="zona" id="zona">
+    <div class="container zona-grid">
+      <div class="zona-copy">
+        <span class="eyebrow" data-animate="up" style="transform:translateY(16px);opacity:0">Dónde estamos</span>
+        <h2 data-animate="up" style="transform:translateY(20px);opacity:0">Salimos desde la cordillera neuquina</h2>
+        <p data-animate="up" style="transform:translateY(16px);opacity:0" data-delay=".08">Coordiná el punto de encuentro y arrancamos la subida directo a la montaña.</p>
+        <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20coordinar%20el%20punto%20de%20encuentro%20para%20una%20excursi%C3%B3n" target="_blank" rel="noopener" class="btn btn-outline" data-animate="up" style="margin-top:1.4rem;transform:translateY(16px);opacity:0" data-delay=".16">Coordinar por WhatsApp</a>
+      </div>
+      <div id="mapaZona" data-animate="scale" style="transform:scale(.96);opacity:0" data-delay=".1" role="img" aria-label="Mapa de la zona de partida de las excursiones, cordillera neuquina"></div>
+    </div>
+  </section>
+
+  <section class="cierre">
+    <div class="container cierre-inner">
+      <span class="eyebrow" style="justify-content:center;color:#fff">Última parada</span>
+      <h2 data-animate="up" style="transform:translateY(18px);opacity:0">La cordillera está esperando. ¿Subimos?</h2>
+      <p>Contale a Jorge qué tenés en mente y armamos la excursión juntos.</p>
+      <div class="cierre-ctas">
+        <a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20armar%20una%20excursi%C3%B3n%20con%20El%20Rojo%204x4" target="_blank" rel="noopener" class="btn btn-cta">Escribir por WhatsApp</a>
+        <a href="#modalidades" class="btn btn-outline">Ver modalidades</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="#top" class="brand">
+          <span class="brand-el">EL</span>
+          <span class="brand-rojo">ROJO</span>
+          <span class="brand-4x4">4x4</span>
+        </a>
+        <p>Excursiones 4x4 a medida en la cordillera neuquina: guiada o completa con alojamiento y comidas.</p>
+      </div>
+      <div class="footer-col">
+        <h3>Recorré</h3>
+        <ul>
+          <li><a href="#modalidades">Modalidades</a></li>
+          <li><a href="#eljeep">El Jeep</a></li>
+          <li><a href="#galeria">La experiencia</a></li>
+          <li><a href="#faq">Preguntas frecuentes</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h3>Contacto</h3>
+        <ul>
+          <li><a href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20una%20excursi%C3%B3n%20con%20El%20Rojo%204x4" target="_blank" rel="noopener">WhatsApp</a></li>
+          <li><a href="mailto:hola@elrojo4x4.com">hola@elrojo4x4.com</a></li>
+          <li><a href="#" aria-label="Instagram de El Rojo 4x4">Instagram</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 El Rojo 4x4. Todos los derechos reservados.</span>
+      <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+    </div>
+  </div>
+</footer>
+
+<div class="nav-backdrop" id="navBackdrop"></div>
+
+<a class="wsp-float" id="wspFloat" href="https://wa.me/5492994223819?text=Hola%20Jorge%2C%20quiero%20consultar%20por%20una%20excursi%C3%B3n%20con%20El%20Rojo%204x4" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <span class="pulse-ring" aria-hidden="true"></span>
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/DrawSVGPlugin.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js?v=2"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

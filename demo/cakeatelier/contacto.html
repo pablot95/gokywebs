@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Contacto — Alejandra Santillán Cake Atelier</title>
+<meta name="description" content="Escribinos por WhatsApp o dejanos tu consulta para cotizar tu torta o anotarte a una clase en Baigorrita, Buenos Aires.">
+<meta property="og:title" content="Contacto — Alejandra Santillán Cake Atelier">
+<meta property="og:description" content="Cotizá tu torta o anotate a una clase en Baigorrita, Buenos Aires.">
+<meta property="og:image" content="images/hero-1920x1080.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#c05f7d">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23c05f7d'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='34' fill='%23fff' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+</head>
+<body data-hero="animado">
+<a href="#main" class="skip-link">Saltar al contenido</a>
+<div class="grain" aria-hidden="true"></div>
+<div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+<header class="site-header">
+  <a href="index.html" class="brand" aria-label="Alejandra Santillán Cake Atelier — inicio">
+    <img src="images/logoredondo.png" alt="Alejandra Santillán, cake atelier">
+  </a>
+  <nav class="nav-desktop" aria-label="Navegación principal">
+    <ul class="nav-links">
+      <li><a href="index.html">Inicio</a></li>
+      <li><a href="clases.html">Clases</a></li>
+      <li><a href="eventos.html">Tortas para eventos</a></li>
+      <li><a href="contacto.html" aria-current="page">Contacto</a></li>
+    </ul>
+    <a class="btn btn-primary" href="https://wa.me/5492364342890?text=Hola!%20Quiero%20consultar%20por%20una%20torta%20a%20medida" target="_blank" rel="noopener">Escribinos</a>
+  </nav>
+  <button class="nav-toggle" id="navToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Menú de navegación">
+  <div class="mobile-menu-panel">
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Cerrar menú">&times;</button>
+    <a href="index.html">Inicio</a>
+    <a href="clases.html">Clases</a>
+    <a href="eventos.html">Tortas para eventos</a>
+    <a href="contacto.html">Contacto</a>
+    <a class="btn btn-primary" style="margin-top:1rem" href="https://wa.me/5492364342890?text=Hola!%20Quiero%20consultar%20por%20una%20torta%20a%20medida" target="_blank" rel="noopener">Escribinos</a>
+  </div>
+</div>
+
+<section class="hero-page" style="background-image:url('images/about-1200x1600.jpg')" aria-label="Contacto">
+  <div class="hero-page-scrim" aria-hidden="true"></div>
+  <div class="hero-page-inner">
+    <p class="kicker">Contacto</p>
+    <h1>Hablemos de tu próxima torta</h1>
+    <p>Escribinos por WhatsApp o dejanos tu consulta acá abajo — te respondemos a la brevedad.</p>
+  </div>
+</section>
+
+<main id="main">
+
+  <section aria-label="Formulario y datos de contacto">
+    <div class="container contact-grid">
+
+      <div data-animate="fade-left">
+        <p class="kicker">Escribinos</p>
+        <h2>Dejanos tu consulta</h2>
+        <form class="form-card" id="contactForm" style="margin-top:var(--sp-5)" novalidate>
+          <div class="field">
+            <input type="text" id="nombre" name="nombre" placeholder=" " required autocomplete="name">
+            <label for="nombre">Nombre</label>
+            <span class="field-error-msg">Contanos tu nombre.</span>
+          </div>
+          <div class="field">
+            <input type="tel" id="telefono" name="telefono" placeholder=" " required autocomplete="tel">
+            <label for="telefono">WhatsApp</label>
+            <span class="field-error-msg">Dejanos un teléfono de contacto.</span>
+          </div>
+          <div class="field">
+            <input type="email" id="email" name="email" placeholder=" " autocomplete="email">
+            <label for="email">Email (opcional)</label>
+          </div>
+          <div class="field">
+            <textarea id="mensaje" name="mensaje" placeholder=" " required></textarea>
+            <label for="mensaje">Contanos qué estás festejando</label>
+            <span class="field-error-msg">Contanos un poco más para poder ayudarte.</span>
+          </div>
+          <button type="submit" class="btn btn-primary form-submit">Enviar consulta</button>
+          <p class="form-note">El envío de mensajes se activa al pasar la web a producción. Mientras tanto, escribinos directo por WhatsApp.</p>
+        </form>
+      </div>
+
+      <div data-animate="fade-right">
+        <p class="kicker">Encontranos</p>
+        <h2>Atelier en Baigorrita</h2>
+        <div id="map" style="margin-top:var(--sp-5)" role="img" aria-label="Mapa de ubicación aproximada en Baigorrita, Buenos Aires"></div>
+        <div class="contact-info-list">
+          <div class="contact-info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5a2 2 0 0 1 2-2h3.28a1 1 0 0 1 .97.76l1.1 4.4a1 1 0 0 1-.5 1.11l-2.2 1.1a16 16 0 0 0 6.1 6.1l1.1-2.2a1 1 0 0 1 1.11-.5l4.4 1.1a1 1 0 0 1 .76.97V19a2 2 0 0 1-2 2h-1C9.16 21 3 14.84 3 7V5z"/></svg>
+            <div><strong>WhatsApp</strong><a href="https://wa.me/5492364342890" target="_blank" rel="noopener">+54 9 2364 34-2890</a></div>
+          </div>
+          <div class="contact-info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+            <div><strong>Instagram</strong><a href="https://instagram.com/alesantillan_cakes" target="_blank" rel="noopener">@alesantillan_cakes</a></div>
+          </div>
+          <div class="contact-info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div><strong>Zona</strong><span>Baigorrita, provincia de Buenos Aires</span></div>
+          </div>
+          <div class="contact-info-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <div><strong>Atención</strong><span>Coordinamos día y horario por WhatsApp</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="section-alt" aria-label="Contacto directo">
+    <div class="cta-final" data-animate="fade-up" style="background:linear-gradient(120deg, rgba(61,20,35,.72), rgba(61,20,35,.48)), url('images/cta-1920x1080.jpg') center 35% / cover">
+      <p class="kicker">¿Preferís algo más rápido?</p>
+      <h2>Escribinos directo por WhatsApp</h2>
+      <p>Es la vía más rápida para coordinar fecha, presupuesto y todos los detalles.</p>
+      <a class="btn btn-light" href="https://wa.me/5492364342890?text=Hola!%20Quiero%20consultar%20por%20una%20torta%20a%20medida" target="_blank" rel="noopener">Abrir WhatsApp</a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <img src="images/logoredondo.png" alt="Alejandra Santillán Cake Atelier">
+      <p>Pastelería creativa y clases de repostería en Baigorrita, provincia de Buenos Aires.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navegación</h4>
+      <a href="index.html">Inicio</a>
+      <a href="clases.html">Clases</a>
+      <a href="eventos.html">Tortas para eventos</a>
+      <a href="contacto.html">Contacto</a>
+    </div>
+    <div class="footer-col">
+      <h4>Contacto</h4>
+      <a href="https://wa.me/5492364342890" target="_blank" rel="noopener">+54 9 2364 34-2890</a>
+      <a href="https://instagram.com/alesantillan_cakes" target="_blank" rel="noopener">@alesantillan_cakes</a>
+      <span>Baigorrita, Buenos Aires</span>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Alejandra Santillán Cake Atelier</span>
+    <span>Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a> <span class="credit-ia">· con asistencia de IA</span></span>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5492364342890?text=Hola!%20Quiero%20consultar%20por%20una%20torta%20a%20medida" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

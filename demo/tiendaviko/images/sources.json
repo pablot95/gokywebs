@@ -1,0 +1,71 @@
+{
+  "proyecto": "Tiendaviko — v4 (reskin negro + verde lima según referencia del cliente, 22-jul-2026)",
+  "fuente": "Pexels (Unsplash sigue bloqueado por anti-bot; IDs encontrados vía búsqueda web + WebFetch de páginas de búsqueda de Pexels)",
+  "criterio": "Referencia del cliente: estética deportiva negro + lima neón. Indumentaria negra sobre fondos blancos/grises de estudio para que las cards claras contrasten con la UI oscura. Ratio 4:5 en productos, 16:12.5 en hero.",
+  "imagenes": [
+    {
+      "archivo": "hero-grupo-activewear-1600x1250.jpg",
+      "id": "7894386",
+      "uso": "Hero editorial (grupo entrenando de negro, fondo blanco)",
+      "url": "https://www.pexels.com/photo/7894386/"
+    },
+    {
+      "archivo": "editorial-calzas-1920x1000.jpg",
+      "id": "7894597",
+      "uso": "Banda editorial de calzas (heredada de v3: ya era negra sobre blanco, misma serie que el hero)",
+      "url": "https://www.pexels.com/photo/legs-of-women-in-sportswear-7894597/"
+    },
+    {
+      "archivo": "prod-top-negro-1000x1250.jpg",
+      "id": "6311497",
+      "uso": "Producto — top deportivo negro",
+      "url": "https://www.pexels.com/photo/6311497/"
+    },
+    {
+      "archivo": "prod-musculosa-negra-1000x1250.jpg",
+      "id": "13137332",
+      "uso": "Producto — musculosa de entrenamiento negra",
+      "url": "https://www.pexels.com/photo/13137332/"
+    },
+    {
+      "archivo": "prod-remera-negra-1000x1250.jpg",
+      "id": "8532616",
+      "uso": "Producto — remera básica negra en percha",
+      "url": "https://www.pexels.com/photo/8532616/"
+    },
+    {
+      "archivo": "prod-calza-tiro-alto-1000x1250.jpg",
+      "id": "16701763",
+      "uso": "Producto — calza tiro alto (frente)",
+      "url": "https://www.pexels.com/photo/16701763/"
+    },
+    {
+      "archivo": "prod-calza-soft-1000x1250.jpg",
+      "id": "16701764",
+      "uso": "Producto — calza soft touch (espalda, misma sesión que la anterior)",
+      "url": "https://www.pexels.com/photo/16701764/"
+    },
+    {
+      "archivo": "prod-buzo-negro-1000x1250.jpg",
+      "id": "6311629",
+      "uso": "Producto — buzo canguro negro (misma serie 6311xxx que el top)",
+      "url": "https://www.pexels.com/photo/6311629/"
+    },
+    {
+      "archivo": "prod-zapatillas-negras-1000x1250.jpg",
+      "id": "9666619",
+      "uso": "Producto — zapatilla negra levitando sobre mano (sin marca visible, verificado con zoom)",
+      "url": "https://www.pexels.com/photo/9666619/"
+    },
+    {
+      "archivo": "prod-conjunto-negro-1000x1250.jpg",
+      "id": "30500819",
+      "uso": "Producto — conjunto top + calza (modelo con lentes espejados)",
+      "url": "https://www.pexels.com/photo/30500819/"
+    }
+  ],
+  "descartadas": [
+    "11559288 (zapatilla PUMA legible), 30128844/4271700/847371/4271563/4271584/8079829/12969390 (Converse/Vans), 9391902/14037876 (bolsos Herschel/Nike), 29720713 (short con logo Ri y encuadre no catálogo), 18186105 (pack remeras con sello de marca en pecho), 14139813 (dúo de estudio pero con short rojo que rompe paleta), 28758300-302/28744566 (shorts blancos, no negros), 19035587 (moda no deportiva), 9558567 (remera usada: crop cortaba la cara, la reemplazó la de percha)"
+  ],
+  "nota": "Set v3 pastel (hero rosa, buzo pastel, jean, jogger gris, sweaters, top lila, remera blanca) eliminado el 22-jul-2026 con el reskin; los IDs quedan en el sources.json de git/backup si hiciera falta. No se encontró en Pexels ningún short deportivo negro ni bolso negro sin marca: por eso el catálogo usa Tops/Remeras/Calzas/Buzos/Zapatillas/Conjuntos. Fotos de stock: cuando Caro pase fotos reales, reemplazan a estas."
+}

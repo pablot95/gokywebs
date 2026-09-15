@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zen Masajes — Bajá un cambio en una hora</title>
+<meta name="description" content="Masajes descontracturantes, relajantes, piedras calientes, reflexología y limpiezas faciales profundas en Buenos Aires. Reservá tu turno por WhatsApp.">
+<meta name="theme-color" content="#070f1e">
+<link rel="canonical" href="https://zenmasajes.com/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:title" content="Zen Masajes — Bajá un cambio en una hora">
+<meta property="og:description" content="Masajes descontracturantes, relajantes, piedras calientes, reflexología y limpiezas faciales profundas. Turnos por WhatsApp.">
+<meta property="og:image" content="images/masaje-relajante.webp">
+<meta property="og:url" content="https://zenmasajes.com/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070f1e'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='%2300ffff' stroke-width='2' opacity='.45'/%3E%3Ctext x='32' y='41' font-family='Georgia,serif' font-size='26' fill='%2300ffff' text-anchor='middle'%3EZ%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B%5D=clash-display@400,500&f%5B%5D=satoshi@400,500,700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#servicios">Ir al contenido</a>
+<div class="progress-bar" id="progressBar" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead-top">
+    <a class="brand" href="#inicio" aria-label="Zen Masajes, inicio">
+      <span class="brand-zen">Zen</span>
+      <span class="brand-sub">Masajes</span>
+    </a>
+  </div>
+  <div class="seam" aria-hidden="true"></div>
+  <div class="masthead-bar">
+    <div class="masthead-inner">
+      <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+        <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#servicios">Tratamientos</a>
+        <a href="#respirar">Respirá</a>
+        <a href="#sala">La sala</a>
+        <a href="#voces">Voces</a>
+        <a href="#faq">Preguntas</a>
+      </nav>
+      <a class="btn btn-cta btn-sm masthead-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener">Reservá tu turno</a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="inicio">
+
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <span class="hero-wordmark" aria-hidden="true">Zen</span>
+    <div class="hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">Masajes y limpiezas faciales</p>
+        <h1 class="hero-title">
+          <span class="line"><span data-animate="mask" style="transform:translateY(100%);opacity:0">Bajá un cambio</span></span>
+          <span class="line"><span data-animate="mask" style="transform:translateY(100%);opacity:0">en una hora.</span></span>
+        </h1>
+        <p class="hero-lead" data-animate style="transform:translateY(18px);opacity:0">Descontracturantes, relajantes, piedras calientes, reflexología y limpiezas faciales. Las toallas, los aceites y el silencio los ponemos nosotros.</p>
+        <div class="hero-actions" data-animate style="transform:translateY(18px);opacity:0">
+          <a class="btn btn-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener">Reservá tu turno</a>
+          <a class="btn btn-ghost" href="#servicios">Ver tratamientos</a>
+        </div>
+        <p class="hero-note" data-animate style="transform:translateY(18px);opacity:0"><span class="dot" aria-hidden="true"></span>Turnos por WhatsApp, respuesta el mismo día</p>
+      </div>
+
+      <div class="hero-scene">
+        <svg class="rings" viewBox="0 0 400 400" aria-hidden="true">
+          <circle class="ring" cx="200" cy="200" r="70"/>
+          <circle class="ring" cx="200" cy="200" r="112"/>
+          <circle class="ring" cx="200" cy="200" r="154"/>
+          <circle class="ring" cx="200" cy="200" r="196"/>
+        </svg>
+        <figure class="hero-photo" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+          <img src="images/sala-spa.webp" alt="Sala de masajes de Zen Masajes en penumbra, con camilla preparada, velas encendidas y luz azul" width="1122" height="1402" fetchpriority="high" decoding="async">
+        </figure>
+        <span class="hero-tag" data-animate style="transform:translateY(14px);opacity:0">Aceites tibios<br>y luz baja</span>
+      </div>
+    </div>
+    <img class="hero-cutout" src="images/recorte-frascos.webp" alt="" width="561" height="900" aria-hidden="true" decoding="async" data-animate style="transform:translateY(38px) scale(.94);opacity:0">
+  </section>
+
+  <section class="servicios" id="servicios">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">01 — Tratamientos</p>
+        <h2 class="sec-title" data-animate style="transform:translateY(22px);opacity:0">Elegí qué necesita el cuerpo hoy</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Cinco tratamientos, uno por vez. Si no sabés cuál te sirve, escribinos qué te duele y lo definimos juntos.</p>
+      </header>
+
+      <ol class="serv-list">
+        <li class="serv" data-animate style="transform:translateY(26px);opacity:0">
+          <span class="serv-line" aria-hidden="true"></span>
+          <span class="serv-num">01</span>
+          <div class="serv-body">
+            <h3 class="serv-name">Masaje descontracturante</h3>
+            <p class="serv-desc">Trabajo profundo sobre cervicales, dorsales y lumbares. Para la espalda que aguanta ocho horas de escritorio y avisa a la noche.</p>
+          </div>
+          <span class="chip">50 min</span>
+          <a class="serv-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno%20de%20masaje%20descontracturante." target="_blank" rel="noopener" aria-label="Reservar masaje descontracturante por WhatsApp">
+            Reservar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+        <li class="serv" data-animate style="transform:translateY(26px);opacity:0">
+          <span class="serv-line" aria-hidden="true"></span>
+          <span class="serv-num">02</span>
+          <div class="serv-body">
+            <h3 class="serv-name">Masaje relajante</h3>
+            <p class="serv-desc">Maniobras largas y parejas de cuerpo entero, sin presión fuerte. El que se elige cuando la cabeza no para y el sueño viene cortado.</p>
+          </div>
+          <span class="chip">60 min</span>
+          <a class="serv-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno%20de%20masaje%20relajante." target="_blank" rel="noopener" aria-label="Reservar masaje relajante por WhatsApp">
+            Reservar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+        <li class="serv" data-animate style="transform:translateY(26px);opacity:0">
+          <span class="serv-line" aria-hidden="true"></span>
+          <span class="serv-num">03</span>
+          <div class="serv-body">
+            <h3 class="serv-name">Piedras calientes</h3>
+            <p class="serv-desc">Basalto a temperatura apoyado sobre los puntos de tensión. El calor abre camino y las manos entran donde solas tardarían el doble.</p>
+          </div>
+          <span class="chip">70 min</span>
+          <a class="serv-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno%20de%20masaje%20con%20piedras%20calientes." target="_blank" rel="noopener" aria-label="Reservar masaje con piedras calientes por WhatsApp">
+            Reservar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+        <li class="serv" data-animate style="transform:translateY(26px);opacity:0">
+          <span class="serv-line" aria-hidden="true"></span>
+          <span class="serv-num">04</span>
+          <div class="serv-body">
+            <h3 class="serv-name">Reflexología podal</h3>
+            <p class="serv-desc">Presión sostenida sobre los puntos del pie, zona por zona. Para quien pasa el día parada o llega con las piernas pesadas.</p>
+          </div>
+          <span class="chip">40 min</span>
+          <a class="serv-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno%20de%20reflexolog%C3%ADa%20podal." target="_blank" rel="noopener" aria-label="Reservar reflexología podal por WhatsApp">
+            Reservar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+        <li class="serv" data-animate style="transform:translateY(26px);opacity:0">
+          <span class="serv-line" aria-hidden="true"></span>
+          <span class="serv-num">05</span>
+          <div class="serv-body">
+            <h3 class="serv-name">Limpieza facial profunda</h3>
+            <p class="serv-desc">Higiene, extracción y máscara elegida según tu piel, con lupa y sin apuro. Salís con la cara liviana y sin brillo.</p>
+          </div>
+          <span class="chip">60 min</span>
+          <a class="serv-cta" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno%20de%20limpieza%20facial%20profunda." target="_blank" rel="noopener" aria-label="Reservar limpieza facial profunda por WhatsApp">
+            Reservar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="respirar" id="respirar">
+    <div class="respirar-stage" id="respStage">
+      <div class="respirar-grid">
+        <div class="respirar-visual">
+          <div class="resp-scene">
+            <svg class="resp-rings" viewBox="0 0 400 400" aria-hidden="true">
+              <circle class="rring" cx="200" cy="200" r="90"/>
+              <circle class="rring" cx="200" cy="200" r="130"/>
+              <circle class="rring" cx="200" cy="200" r="170"/>
+              <circle class="rring" cx="200" cy="200" r="198"/>
+            </svg>
+            <div class="resp-core" id="respCore" aria-hidden="true"></div>
+            <div class="resp-read" aria-hidden="true">
+              <span class="resp-phase" id="respPhase">Inhalá</span>
+              <span class="resp-sec" id="respSec">0"</span>
+            </div>
+          </div>
+        </div>
+        <div class="respirar-text">
+          <p class="eyebrow">02 — Probá ahora</p>
+          <h2 class="sec-title">Una respiración, antes de seguir</h2>
+          <p class="sec-lead">Scrolleá despacio. El círculo marca el ritmo que usamos al empezar cada sesión: inhalás cuatro, sostenés cuatro, exhalás seis. Nada más que eso.</p>
+          <ol class="resp-steps" id="respSteps">
+            <li class="is-on"><span class="resp-step-n">4"</span><div><h3>Inhalá por la nariz</h3><p>El aire entra hasta la panza, sin levantar los hombros. El círculo se abre con vos.</p></div></li>
+            <li><span class="resp-step-n">4"</span><div><h3>Sostené</h3><p>No aprietes. Solo esperá con el aire adentro mientras el círculo se queda quieto.</p></div></li>
+            <li><span class="resp-step-n">6"</span><div><h3>Exhalá por la boca</h3><p>Largo y lento, más que la inhalación. Ahí es donde el cuerpo afloja de verdad.</p></div></li>
+          </ol>
+          <p class="resp-foot">Si te salió, imaginate una hora entera así.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sala" id="sala">
+    <figure class="sala-banda" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+      <img src="images/masaje-relajante.webp" alt="Masajista trabajando la espalda de una clienta sobre la camilla, con velas y luz azul alrededor" width="1920" height="686" decoding="async" loading="lazy">
+    </figure>
+    <div class="container sala-grid">
+      <div class="sala-copy">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">03 — La sala</p>
+        <h2 class="sec-title" data-animate style="transform:translateY(22px);opacity:0">Un ambiente pensado para que te olvides del afuera</h2>
+        <p class="sec-lead" data-animate style="transform:translateY(18px);opacity:0">Luz baja, temperatura estable y una sola persona por turno. No compartís sala, no escuchás la recepción y nadie te apura para liberar la camilla.</p>
+        <ul class="sala-list" data-animate-stagger>
+          <li data-animate style="transform:translateY(20px);opacity:0"><span aria-hidden="true"></span>Toallas, sábanas y bata limpias por persona</li>
+          <li data-animate style="transform:translateY(20px);opacity:0"><span aria-hidden="true"></span>Aceites neutros e hipoalergénicos, sin perfume fuerte</li>
+          <li data-animate style="transform:translateY(20px);opacity:0"><span aria-hidden="true"></span>Diez minutos de charla antes para saber qué te duele</li>
+          <li data-animate style="transform:translateY(20px);opacity:0"><span aria-hidden="true"></span>Música baja o silencio, como prefieras</li>
+        </ul>
+        <img class="sala-cutout" src="images/recorte-toallas.webp" alt="" width="760" height="636" aria-hidden="true" decoding="async" loading="lazy" data-animate style="transform:translateY(30px) scale(.95);opacity:0">
+      </div>
+      <div class="sala-media">
+        <figure class="sala-photo sala-photo-a" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+          <img src="images/masaje-piedras-calientes.webp" alt="Masajista apoyando piedras calientes sobre la espalda de una clienta en la sala de Zen Masajes" width="1619" height="971" decoding="async" loading="lazy">
+        </figure>
+        <figure class="sala-photo sala-photo-c" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+          <img src="images/reflexologia-pies.webp" alt="Sesión de reflexología podal en el sillón de Zen Masajes, con la clienta recostada en bata" width="1254" height="1254" decoding="async" loading="lazy">
+        </figure>
+        <figure class="sala-photo sala-photo-b" data-animate="mask" style="clip-path:inset(0 0 100% 0);opacity:0">
+          <img src="images/limpieza-facial.webp" alt="Sesión de limpieza facial profunda con lupa y algodones en Zen Masajes" width="941" height="1672" decoding="async" loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="voces" id="voces">
+    <div class="voces-marquee" aria-hidden="true">
+      <div class="voces-track">
+        <span>Reflexología</span><span aria-hidden="true">·</span><span>Piedras calientes</span><span aria-hidden="true">·</span><span>Descontracturante</span><span aria-hidden="true">·</span><span>Limpieza facial</span><span aria-hidden="true">·</span><span>Relajante</span><span aria-hidden="true">·</span>
+        <span>Reflexología</span><span aria-hidden="true">·</span><span>Piedras calientes</span><span aria-hidden="true">·</span><span>Descontracturante</span><span aria-hidden="true">·</span><span>Limpieza facial</span><span aria-hidden="true">·</span><span>Relajante</span><span aria-hidden="true">·</span>
+      </div>
+    </div>
+    <div class="container">
+      <header class="sec-head sec-head-center">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">04 — Voces</p>
+        <h2 class="sec-title" data-animate style="transform:translateY(22px);opacity:0">Lo que cuentan al salir</h2>
+      </header>
+      <div class="voces-grid">
+        <blockquote class="voz" data-animate style="transform:translateX(-28px);opacity:0">
+          <p>«Llegué con la cervical dura de tres semanas frente a la compu. A la segunda sesión pude girar la cabeza sin acordarme de que me dolía.»</p>
+          <footer><strong>Carolina R.</strong><span>Viene una vez por mes</span></footer>
+        </blockquote>
+        <blockquote class="voz" data-animate style="transform:translateY(28px);opacity:0">
+          <p>«Me hice la limpieza facial antes del casamiento de mi hermana. Tres días después seguía teniendo la piel igual de linda en las fotos.»</p>
+          <footer><strong>Vanina T.</strong><span>Primera vez en un facial</span></footer>
+        </blockquote>
+        <blockquote class="voz" data-animate style="transform:translateX(28px);opacity:0">
+          <p>«Escribí un martes a las once de la noche pensando que me contestaban al otro día. Tenía el turno confirmado en diez minutos.»</p>
+          <footer><strong>Diego M.</strong><span>Viene cada quince días</span></footer>
+        </blockquote>
+      </div>
+    </div>
+    <a class="sello" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener" aria-label="Reservar turno por WhatsApp">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <defs><path id="selloPath" d="M60,60 m-42,0 a42,42 0 1,1 84,0 a42,42 0 1,1 -84,0"/></defs>
+        <text><textPath href="#selloPath" startOffset="0">Zen Masajes · turnos por WhatsApp · Zen Masajes · turnos por WhatsApp · </textPath></text>
+      </svg>
+      <span class="sello-core" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </span>
+    </a>
+  </section>
+
+  <section class="faq" id="faq">
+    <div class="container faq-inner">
+      <header class="sec-head">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">05 — Preguntas</p>
+        <h2 class="sec-title" data-animate style="transform:translateY(22px);opacity:0">Lo que nos preguntan antes de venir</h2>
+      </header>
+      <div class="faq-list" data-animate-stagger>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Tengo que llevar algo?<span class="faq-ico" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>No. Toallas, sábanas, bata y aceites los ponemos nosotros. Vení con ropa cómoda y, si querés, un rato antes para no llegar corriendo.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Cuánto dura en total?<span class="faq-ico" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>La sesión dura entre 40 y 70 minutos según el tratamiento. Sumale unos diez minutos para la charla del principio y para vestirte tranquila al final.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Cómo saco turno?<span class="faq-ico" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>Por WhatsApp. Contanos qué tratamiento te interesa y qué días te quedan cómodos, y lo cerramos en la misma conversación.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>¿Cuántas sesiones voy a necesitar?<span class="faq-ico" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>Depende de qué traigas. Una contractura puntual suele aflojar en dos o tres sesiones seguidas; después, la mayoría vuelve una vez por mes para mantenimiento.</p></div>
+        </details>
+        <details data-animate style="transform:translateY(20px);opacity:0">
+          <summary>Estoy embarazada, ¿puedo hacerme un masaje?<span class="faq-ico" aria-hidden="true"></span></summary>
+          <div class="faq-body"><p>Sí, a partir del segundo trimestre, con la posición y las maniobras adaptadas. Avisanos al reservar así preparamos la camilla, y si tenés indicación médica particular, contanos cuál.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre" id="turnos">
+    <div class="container cierre-grid">
+      <div class="cierre-copy">
+        <p class="eyebrow" data-animate style="transform:translateY(14px);opacity:0">06 — Turnos</p>
+        <h2 class="cierre-title" data-animate style="transform:translateY(24px);opacity:0">Escribinos y elegimos el horario juntos</h2>
+        <p class="cierre-lead" data-animate style="transform:translateY(18px);opacity:0">Sin formularios ni esperas: mandás un mensaje, te decimos qué hay disponible esta semana y queda reservado.</p>
+        <a class="wsp-number" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener" data-animate style="transform:translateY(20px);opacity:0">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span>11 3688-9520</span>
+        </a>
+        <dl class="cierre-datos" data-animate style="transform:translateY(20px);opacity:0">
+          <div><dt>Horarios</dt><dd>Lunes a viernes de 9 a 20 h<br>Sábados de 9 a 14 h</dd></div>
+          <div><dt>Dónde</dt><dd>Buenos Aires<br>Dirección exacta al confirmar el turno</dd></div>
+        </dl>
+      </div>
+      <div class="cierre-mapa" data-animate style="transform:translateY(24px);opacity:0">
+        <div id="mapa" role="img" aria-label="Mapa con la zona de atención de Zen Masajes en Buenos Aires"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-zen">Zen</span>
+      <span class="brand-sub">Masajes</span>
+      <p>Masajes y limpiezas faciales en Buenos Aires.</p>
+    </div>
+    <nav class="footer-nav" aria-label="Pie de página">
+      <a href="#servicios">Tratamientos</a>
+      <a href="#respirar">Respirá</a>
+      <a href="#sala">La sala</a>
+      <a href="#faq">Preguntas</a>
+      <a href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener">WhatsApp</a>
+    </nav>
+    <div class="footer-legal">
+      <p>© <span id="year">2026</span> Zen Masajes</p>
+      <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+    </div>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491136889520?text=Hola%20Zen%20Masajes%2C%20quiero%20reservar%20un%20turno." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "DaySpa",
+  "name": "Zen Masajes",
+  "description": "Masajes descontracturantes, relajantes, piedras calientes, reflexología podal y limpiezas faciales profundas.",
+  "url": "https://zenmasajes.com/",
+  "image": "https://zenmasajes.com/images/masaje-relajante.webp",
+  "telephone": "+5491136889520",
+  "priceRange": "$$",
+  "address": { "@type": "PostalAddress", "addressLocality": "Buenos Aires", "addressCountry": "AR" },
+  "areaServed": "Buenos Aires",
+  "openingHoursSpecification": [
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "09:00", "closes": "20:00" },
+    { "@type": "OpeningHoursSpecification", "dayOfWeek": "Saturday", "opens": "09:00", "closes": "14:00" }
+  ],
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Tratamientos",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Masaje descontracturante" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Masaje relajante" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Masaje con piedras calientes" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Reflexología podal" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Limpieza facial profunda" } }
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "¿Tengo que llevar algo?", "acceptedAnswer": { "@type": "Answer", "text": "No. Toallas, sábanas, bata y aceites los ponemos nosotros. Vení con ropa cómoda." } },
+    { "@type": "Question", "name": "¿Cuánto dura en total?", "acceptedAnswer": { "@type": "Answer", "text": "La sesión dura entre 40 y 70 minutos según el tratamiento, más unos diez minutos de charla inicial." } },
+    { "@type": "Question", "name": "¿Cómo saco turno?", "acceptedAnswer": { "@type": "Answer", "text": "Por WhatsApp: contanos qué tratamiento te interesa y qué días te quedan cómodos." } },
+    { "@type": "Question", "name": "¿Cuántas sesiones voy a necesitar?", "acceptedAnswer": { "@type": "Answer", "text": "Una contractura puntual suele aflojar en dos o tres sesiones seguidas; después la mayoría vuelve una vez por mes." } },
+    { "@type": "Question", "name": "Estoy embarazada, ¿puedo hacerme un masaje?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, a partir del segundo trimestre, con la posición y las maniobras adaptadas. Avisanos al reservar." } }
+  ]
+}
+</script>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

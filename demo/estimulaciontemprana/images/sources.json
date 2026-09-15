@@ -1,0 +1,16 @@
+{
+  "banco": "Pexels",
+  "licencia": "Pexels License (uso libre, sin atribucion obligatoria)",
+  "imagenes": [
+    { "archivo": "recorte-nina-ukelele-1358x1600.webp", "pexelsId": "3662760", "url": "https://www.pexels.com/photo/3662760/", "usage": "recorte protagonista hero" },
+    { "archivo": "recorte-xilofono-1194x255.webp", "pexelsId": "6274915", "url": "https://www.pexels.com/photo/6274915/", "usage": "recorte secundario hero y capitulo de la nana" },
+    { "archivo": "nana-mama-bebe-1200x1600.webp", "pexelsId": "6414708", "url": "https://www.pexels.com/photo/6414708/", "usage": "foto enmarcada del hero" },
+    { "archivo": "curso-sueno-1400x1050.webp", "pexelsId": "20311399", "url": "https://www.pexels.com/photo/20311399/", "usage": "portada curso de sueno" },
+    { "archivo": "curso-canciones-1400x1050.webp", "pexelsId": "6274946", "url": "https://www.pexels.com/photo/6274946/", "usage": "portada curso de canciones" },
+    { "archivo": "curso-arte-1400x1050.webp", "pexelsId": "5442658", "url": "https://www.pexels.com/photo/5442658/", "usage": "portada curso de arteterapia" },
+    { "archivo": "curso-juego-1400x1050.webp", "pexelsId": "7491112", "url": "https://www.pexels.com/photo/7491112/", "usage": "portada curso de juego y estimulacion" },
+    { "archivo": "curso-emociones-1400x1050.webp", "pexelsId": "6274681", "url": "https://www.pexels.com/photo/6274681/", "usage": "portada curso de emociones" },
+    { "archivo": "arteterapia-taller-1600x1300.webp", "pexelsId": "5442656", "url": "https://www.pexels.com/photo/5442656/", "usage": "seccion arteterapia" },
+    { "archivo": "acompanamiento-1600x1300.webp", "pexelsId": "7296495", "url": "https://www.pexels.com/photo/7296495/", "usage": "seccion asesorias 1 a 1" }
+  ]
+}

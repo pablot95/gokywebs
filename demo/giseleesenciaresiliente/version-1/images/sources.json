@@ -1,0 +1,12 @@
+{
+  "proyecto": "Gisele esencia resiliente — V1 Respiro",
+  "banco": "Pexels (licencia libre, sin atribución obligatoria)",
+  "imagenes": [
+    { "archivo": "hero-medit.jpg", "pexelsId": 15791582, "url": "https://www.pexels.com/photo/15791582/", "uso": "hero split — mujer serena ojos cerrados luz cálida" },
+    { "archivo": "about-gisele.jpg", "pexelsId": 30215477, "url": "https://www.pexels.com/photo/30215477/", "uso": "retrato sobre Gisele (PLACEHOLDER — reemplazar por foto real)" },
+    { "archivo": "journaling.jpg", "pexelsId": 9031745, "url": "https://www.pexels.com/photo/9031745/", "uso": "seccion el camino — journaling terapéutico" },
+    { "archivo": "v1-euca2.webp", "pexelsId": 5797909, "url": "https://www.pexels.com/photo/5797909/", "uso": "recorte protagonista — rama de eucalipto" },
+    { "archivo": "v1-stones.webp", "pexelsId": 7352016, "url": "https://www.pexels.com/photo/7352016/", "uso": "recorte secundario — piedras zen (equilibrio)" },
+    { "archivo": "v1-flower.webp", "pexelsId": 5957563, "url": "https://www.pexels.com/photo/5957563/", "uso": "recorte secundario — pampas seco (cierre)" }
+  ]
+}

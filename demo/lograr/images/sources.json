@@ -1,0 +1,21 @@
+{
+  "_nota": "Imágenes de stock de Pexels (licencia Pexels, uso libre). Portadas de curso y retratos de docentes son demostrativos. El logo del header/footer es una RECREACIÓN en SVG del logo real de LOGRAR; reemplazar por el archivo original cuando esté disponible.",
+  "hero-formacion-1200x1400.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/8199249/", "uso": "hero" },
+  "curso-administrativo-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/6538437/", "uso": "portada curso" },
+  "curso-sueldos-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/8297016/", "uso": "portada curso" },
+  "curso-ventas-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/36730430/", "uso": "portada curso" },
+  "curso-marketing-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/15097793/", "uso": "portada curso" },
+  "curso-seguridad-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/8961146/", "uso": "portada curso" },
+  "curso-excel-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/8653648/", "uso": "portada curso" },
+  "curso-rrhh-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/5439455/", "uso": "portada curso" },
+  "curso-liderazgo-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/7495291/", "uso": "portada curso" },
+  "curso-ingles-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/5649522/", "uso": "portada curso" },
+  "curso-community-1600x1200.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/6333749/", "uso": "portada curso" },
+  "docente-gabriela-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/7468194/", "uso": "retrato docente (demostrativo)" },
+  "docente-hernan-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/12311564/", "uso": "retrato docente (demostrativo)" },
+  "docente-paola-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/31869537/", "uso": "retrato docente (demostrativo)" },
+  "docente-diego-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/10417388/", "uso": "retrato docente (demostrativo)" },
+  "docente-luciana-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/26989515/", "uso": "retrato docente (demostrativo)" },
+  "docente-sergio-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/30496625/", "uso": "retrato docente (demostrativo)" },
+  "docente-andrea-800x800.jpg": { "origen": "Pexels", "url": "https://www.pexels.com/photo/11655430/", "uso": "retrato docente (demostrativo)" }
+}

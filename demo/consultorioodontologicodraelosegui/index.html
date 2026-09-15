@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Dra. Elosegui — Consultorio odontológico en Viedma | Turnos online</title>
+    <meta name="description" content="Odontología integral en Viedma, Río Negro: prevención, estética, ortodoncia y urgencias. Sacá tu turno desde la web y confirmalo por WhatsApp.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Dra. Elosegui — Consultorio odontológico en Viedma">
+    <meta property="og:description" content="Sacá tu turno desde la web: prevención, estética, ortodoncia y urgencias en Viedma.">
+    <meta property="og:image" content="images/ed-recepcion.webp">
+    <meta name="theme-color" content="#0C3A37">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230C3A37'/%3E%3Cpath d='M22 14c-6 0-9 5-9 11 0 9 4 12 5 21 .5 4 2 6 4 6s3-2 3.2-5c.3-4 1.6-9 6.8-9s6.5 5 6.8 9c.2 3 1.2 5 3.2 5s3.5-2 4-6c1-9 5-12 5-21 0-6-3-11-9-11-4 0-6 2-10 2s-6-2-10-2z' fill='none' stroke='%237FD6CC' stroke-width='3.4' stroke-linejoin='round'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="styles.css">
+    <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}</style></noscript>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Dentist",
+      "name": "Consultorio Odontológico Dra. Elosegui",
+      "description": "Odontología integral: prevención, estética, ortodoncia, implantes y urgencias.",
+      "address": { "@type": "PostalAddress", "addressLocality": "Viedma", "addressRegion": "Río Negro", "addressCountry": "AR" },
+      "telephone": "+54 9 342 519-4242",
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "09:00", "closes": "13:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Friday"], "opens": "16:00", "closes": "20:00" }
+      ]
+    }
+    </script>
+</head>
+<body>
+
+<a class="skip-link" href="#turnos">Saltar a los turnos</a>
+
+<header class="site-header">
+    <div class="header-inner">
+        <a href="#inicio" class="brand" aria-label="Dra. Elosegui, inicio">
+            <svg class="brand-tooth" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 12c-7 0-10 6-10 12 0 10 4.5 13 5.6 23 .5 4.6 2.2 7 4.6 7s3.4-2.3 3.7-5.7c.4-4.4 1.8-10 6.1-10s5.7 5.6 6.1 10c.3 3.4 1.3 5.7 3.7 5.7s4.1-2.4 4.6-7c1.1-10 5.6-13 5.6-23 0-6-3-12-10-12-4.4 0-6.6 2.2-10 2.2S26.4 12 22 12z" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/></svg>
+            <span class="brand-text"><b>Dra. Elosegui</b><i>Odontología · Viedma</i></span>
+        </a>
+        <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+            <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+            <a href="#servicios">Servicios</a>
+            <a href="#odontograma">Tratamientos</a>
+            <a href="#turnos">Turnos</a>
+            <a href="#doctora">La doctora</a>
+            <a href="#consultorio">El consultorio</a>
+        </nav>
+        <div class="header-actions">
+            <a class="btn btn-primary btn-sm header-cta" href="#turnos">Sacar turno</a>
+            <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main id="inicio">
+
+    <section class="hero" id="hero">
+        <div class="hero-cross-pattern" aria-hidden="true"></div>
+        <div class="container hero-grid">
+            <div class="hero-copy">
+                <p class="eyebrow hero-eyebrow">Odontología integral · Viedma, Río Negro</p>
+                <h1 class="hero-title">
+                    <span class="line"><span class="line-inner">Tu próximo turno,</span></span>
+                    <span class="line"><span class="line-inner"><em>a un toque.</em></span></span>
+                </h1>
+                <p class="hero-sub">Prevención, estética, ortodoncia y urgencias en un consultorio pensado para que venir al dentista deje de ser un trámite. Elegí día y horario acá mismo.</p>
+                <div class="hero-cta">
+                    <a class="btn btn-primary" href="#turnos">Sacar mi turno</a>
+                    <a class="btn btn-ghost" href="https://wa.me/5493425194242?text=Hola%20Dra.%20Elosegui!%20Quiero%20sacar%20un%20turno." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+                </div>
+                <p class="hero-note">Lunes a viernes · Urgencias con prioridad en el día</p>
+            </div>
+            <div class="hero-stage" aria-hidden="true">
+                <div class="hero-arc"></div>
+                <img class="hero-cut" src="images/cut-bienvenida.webp" alt="" width="697" height="1200" fetchpriority="high">
+                <svg class="hero-tooth-line" viewBox="0 0 64 64"><path d="M22 12c-7 0-10 6-10 12 0 10 4.5 13 5.6 23 .5 4.6 2.2 7 4.6 7s3.4-2.3 3.7-5.7c.4-4.4 1.8-10 6.1-10s5.7 5.6 6.1 10c.3 3.4 1.3 5.7 3.7 5.7s4.1-2.4 4.6-7c1.1-10 5.6-13 5.6-23 0-6-3-12-10-12-4.4 0-6.6 2.2-10 2.2S26.4 12 22 12z" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>
+            </div>
+        </div>
+        <div class="ficha-turno" id="fichaTurno" aria-hidden="true">
+            <span class="ficha-kicker">Ficha de turno</span>
+            <span class="ficha-row">Día <i>· · · · · · ·</i></span>
+            <span class="ficha-row">Hora <i>· · · · · · ·</i></span>
+            <span class="ficha-sello">Disponible</span>
+            <span class="ficha-cta">Completala abajo ↓</span>
+        </div>
+    </section>
+
+    <section class="franja" aria-label="Por qué elegirnos">
+        <div class="container franja-grid" data-animate-stagger>
+            <div class="franja-item" data-animate style="opacity:0;transform:translateX(-36px)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 22s8-4 8-10V6l-8-3-8 3v6c0 6 8 10 8 10z"/></svg>
+                <h3>Urgencias en el día</h3>
+                <p>Si hay dolor, no hay lista de espera: escribinos y te hacemos un lugar.</p>
+            </div>
+            <div class="franja-item" data-animate style="opacity:0;transform:translateX(-36px)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <h3>Turnos sin llamadas</h3>
+                <p>Elegís día, horario y motivo desde la web; se confirma por WhatsApp.</p>
+            </div>
+            <div class="franja-item" data-animate style="opacity:0;transform:translateX(-36px)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M21 10h-6"/><path d="M18 7v6"/></svg>
+                <h3>Toda la familia</h3>
+                <p>De la primera consulta de los chicos al mantenimiento de los grandes.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section servicios" id="servicios">
+        <div class="container">
+            <div class="section-head" data-animate style="opacity:0;transform:translateY(28px)">
+                <p class="eyebrow">Servicios</p>
+                <h2>Todo lo que tu boca necesita, en un solo lugar.</h2>
+            </div>
+            <div class="serv-grid" data-animate-stagger>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">01</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                    <h3>Consulta y diagnóstico</h3>
+                    <p>Revisión completa con plan de tratamiento claro y sin sorpresas.</p>
+                </article>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">02</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v18M5 8c2-3 5-3 7 0 2-3 5-3 7 0M5 16c2 3 5 3 7 0 2 3 5 3 7 0"/></svg>
+                    <h3>Limpieza y prevención</h3>
+                    <p>La visita que evita todas las demás: sarro, controles y sellantes.</p>
+                </article>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">03</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.9 5.8L20 10.7l-5 3.9 1.8 6.1L12 17l-4.8 3.7L9 14.6l-5-3.9 6.1-.9L12 3z"/></svg>
+                    <h3>Estética dental</h3>
+                    <p>Blanqueamientos y carillas para la sonrisa que querés mostrar.</p>
+                </article>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">04</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 12h16M4 12c0-4 3.6-7 8-7s8 3 8 7M4 12c0 4 3.6 7 8 7s8-3 8-7"/><path d="M8 9.5v5M12 9v6M16 9.5v5"/></svg>
+                    <h3>Ortodoncia</h3>
+                    <p>Brackets y alineadores con seguimiento mes a mes, a tu ritmo.</p>
+                </article>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">05</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 3h6l-1 7h-4L9 3z"/><path d="M10 10h4l-.6 8.5a1.4 1.4 0 0 1-2.8 0L10 10z"/><path d="M8.5 6.5h7"/></svg>
+                    <h3>Implantes y prótesis</h3>
+                    <p>Recuperá piezas perdidas con soluciones fijas que se sienten propias.</p>
+                </article>
+                <article class="serv-card" data-animate style="opacity:0;transform:translateY(42px)">
+                    <span class="serv-num">06</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M6 21c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M10 8h4"/></svg>
+                    <h3>Odontopediatría</h3>
+                    <p>Primeras visitas sin miedo: los chicos salen queriendo volver.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="odo" id="odontograma">
+        <div class="container odo-grid">
+            <div class="odo-visual-wrap">
+                <div class="odo-visual" id="odoVisual">
+                    <p class="odo-kicker">Ficha clínica · Odontograma</p>
+                    <svg id="odoSvg" viewBox="0 0 640 400" aria-label="Odontograma: mapa dental que muestra cada tratamiento"></svg>
+                    <p class="odo-caption" id="odoCaption">Deslizá: cada tratamiento ilumina su parte del mapa.</p>
+                </div>
+            </div>
+            <div class="odo-steps">
+                <div class="odo-head" data-animate style="opacity:0;transform:translateY(26px)">
+                    <p class="eyebrow eyebrow-light">Tratamientos</p>
+                    <h2>Tu boca, leída como un mapa.</h2>
+                    <p class="odo-intro">El odontograma es la ficha con la que trabajamos cada boca. Así se ve lo que podemos hacer por la tuya.</p>
+                </div>
+                <ol class="odo-list">
+                    <li class="odo-step" data-step="0">
+                        <span class="odo-step-num">01</span>
+                        <h3>Prevención total</h3>
+                        <p>Limpieza y control de las 28 piezas, una por una. La base de todo.</p>
+                    </li>
+                    <li class="odo-step" data-step="1">
+                        <span class="odo-step-num">02</span>
+                        <h3>Ortodoncia</h3>
+                        <p>Los frontales se alinean con brackets o alineadores. El mapa se ordena.</p>
+                    </li>
+                    <li class="odo-step" data-step="2">
+                        <span class="odo-step-num">03</span>
+                        <h3>Implantes</h3>
+                        <p>La pieza 36 que faltaba vuelve a la ficha: fija, funcional y para siempre.</p>
+                    </li>
+                    <li class="odo-step" data-step="3">
+                        <span class="odo-step-num">04</span>
+                        <h3>Estética final</h3>
+                        <p>Blanqueamiento y pulido: el mapa completo, brillando.</p>
+                        <a class="btn btn-primary" href="#turnos">Empezar por mi turno</a>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <section class="section turnos" id="turnos">
+        <div class="container">
+            <div class="turnos-grid">
+                <div class="turnos-widget">
+                    <div class="section-head" data-animate style="opacity:0;transform:translateY(28px)">
+                        <p class="eyebrow">Turnos online</p>
+                        <h2>Elegí tu turno acá mismo.</h2>
+                        <p class="turnos-sub">Tres pasos y listo: el turno te queda armado y lo confirmamos por WhatsApp en el momento.</p>
+                    </div>
+                    <div class="paso-turno" data-animate style="opacity:0;transform:translateY(30px)">
+                        <p class="paso-label"><b>1</b> Elegí el día <span class="paso-hint">Lunes a viernes</span></p>
+                        <div class="dias-rail" id="diasRail" role="group" aria-label="Elegir día"></div>
+                    </div>
+                    <div class="paso-turno" data-animate style="opacity:0;transform:translateY(30px)">
+                        <p class="paso-label"><b>2</b> Elegí el horario</p>
+                        <div class="horas-grid" id="horasGrid" role="group" aria-label="Elegir horario"></div>
+                    </div>
+                    <div class="paso-turno" data-animate style="opacity:0;transform:translateY(30px)">
+                        <p class="paso-label"><b>3</b> Contanos el motivo</p>
+                        <div class="motivos-grid" id="motivosGrid" role="group" aria-label="Elegir motivo"></div>
+                        <label class="nombre-field">
+                            <span>Tu nombre (opcional)</span>
+                            <input type="text" id="turnoNombre" placeholder="Ej: Mariana" autocomplete="name" maxlength="60">
+                        </label>
+                    </div>
+                    <div class="turno-resumen" id="turnoResumen" data-animate style="opacity:0;transform:translateY(30px)">
+                        <p id="resumenTexto">Elegí día, horario y motivo para armar tu turno.</p>
+                        <a class="btn btn-primary btn-lg" id="turnoBtn" href="#" target="_blank" rel="noopener">Confirmar turno por WhatsApp</a>
+                        <p class="turno-nota">Sin registro ni contraseñas: se confirma con un mensaje.</p>
+                    </div>
+                </div>
+                <figure class="turnos-ph" data-animate style="opacity:0;clip-path:inset(0 0 0 100%)">
+                    <img src="images/ed-reserva.webp" alt="Coordinando un turno en la recepción del consultorio" loading="lazy" width="1122" height="1402">
+                    <figcaption>La agenda, siempre a mano.</figcaption>
+                </figure>
+            </div>
+        </div>
+    </section>
+
+    <section class="section doctora" id="doctora">
+        <div class="container doctora-grid">
+            <figure class="doctora-ph" data-animate style="opacity:0;clip-path:inset(0 100% 0 0)">
+                <img src="images/ed-bienvenida.webp" alt="La Dra. Elosegui recibiendo a una paciente en el consultorio" loading="lazy" width="941" height="1672">
+            </figure>
+            <div class="doctora-copy" data-animate style="opacity:0;transform:translateY(30px)">
+                <p class="eyebrow">La doctora</p>
+                <h2>Atiende la misma persona que te recibe.</h2>
+                <p>La Dra. Elosegui atiende cada consulta de principio a fin: la primera revisión, el tratamiento y los controles. Sin rotación de profesionales ni empezar de cero en cada visita.</p>
+                <p>Su consultorio en Viedma combina equipamiento actual con algo que no se compra: tiempo para explicarte qué tenés, qué opciones hay y cuánto cuesta cada una, antes de empezar.</p>
+                <ul class="doctora-puntos">
+                    <li>Plan de tratamiento por escrito desde la primera consulta</li>
+                    <li>Recordatorio de turno por WhatsApp, sin llamadas</li>
+                    <li>Controles incluidos en cada tratamiento</li>
+                </ul>
+                <a class="btn btn-outline" href="#turnos">Conocela en tu primera consulta</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section consultorio" id="consultorio">
+        <div class="container">
+            <div class="section-head" data-animate style="opacity:0;transform:translateY(28px)">
+                <p class="eyebrow">El consultorio</p>
+                <h2>Un lugar que no parece un consultorio.</h2>
+            </div>
+            <div class="consul-grid">
+                <figure class="consul-ph consul-ph-recepcion" data-animate style="opacity:0;clip-path:inset(0 0 100% 0)">
+                    <img src="images/ed-recepcion.webp" alt="Recepción del consultorio odontológico" loading="lazy" width="1920" height="686">
+                </figure>
+                <figure class="consul-ph consul-ph-atencion" data-animate style="opacity:0;clip-path:inset(0 100% 0 0)">
+                    <img src="images/ed-atencion.webp" alt="Atención odontológica en el sillón del consultorio" loading="lazy" width="1600" height="960">
+                </figure>
+                <div class="consul-info" data-animate style="opacity:0;transform:translateY(30px)">
+                    <h3>Info práctica</h3>
+                    <dl class="info-lista">
+                        <div><dt>Horarios</dt><dd>Lun a vie · 9:00–13:00 y 16:00–20:00</dd></div>
+                        <div><dt>Zona</dt><dd>Centro de Viedma, Río Negro <span class="info-nota">(te pasamos la dirección exacta al confirmar)</span></dd></div>
+                        <div><dt>WhatsApp</dt><dd><a href="https://wa.me/5493425194242?text=Hola%20Dra.%20Elosegui!%20Quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">342 519-4242</a></dd></div>
+                        <div><dt>Urgencias</dt><dd>Prioridad en el día, escribinos directo</dd></div>
+                    </dl>
+                    <div class="faq">
+                        <details>
+                            <summary>¿Atienden obras sociales?</summary>
+                            <p>Consultanos por la tuya al sacar el turno: te confirmamos cobertura y diferencias antes de la primera visita.</p>
+                        </details>
+                        <details>
+                            <summary>¿Puedo pagar en cuotas?</summary>
+                            <p>Sí, los tratamientos largos se pueden abonar por etapas. Cada plan de tratamiento incluye su esquema de pagos por escrito.</p>
+                        </details>
+                        <details>
+                            <summary>¿Atienden chicos?</summary>
+                            <p>Sí, desde la primera consulta pediátrica. La primera visita es de adaptación: conocen el sillón jugando.</p>
+                        </details>
+                    </div>
+                </div>
+            </div>
+            <div class="mapa-wrap" data-animate style="opacity:0;transform:translateY(30px)">
+                <div id="mapa" aria-label="Mapa de Viedma, Río Negro"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section testimonios" id="testimonios">
+        <div class="container">
+            <div class="section-head" data-animate style="opacity:0;transform:translateY(28px)">
+                <p class="eyebrow">Pacientes</p>
+                <h2>Sonrisas con nombre propio.</h2>
+            </div>
+            <div class="testi-grid" data-animate-stagger>
+                <blockquote class="testi-card" data-animate style="opacity:0;transform:translateX(-36px)">
+                    <p>“Llegué con un dolor terrible un martes a la mañana y a la tarde ya estaba atendida. No me olvido más.”</p>
+                    <footer><b>Marcela F.</b><span>Urgencia · Viedma</span></footer>
+                </blockquote>
+                <blockquote class="testi-card" data-animate style="opacity:0;transform:translateY(36px)">
+                    <p>“Mi hijo de 6 pidió volver al dentista. VOLVER. Eso solo ya lo dice todo.”</p>
+                    <footer><b>Luciano P.</b><span>Odontopediatría</span></footer>
+                </blockquote>
+                <blockquote class="testi-card" data-animate style="opacity:0;transform:translateX(36px)">
+                    <p>“Me explicó cada paso del tratamiento con la ficha adelante. Primera vez que entiendo qué me hacen en la boca.”</p>
+                    <footer><b>Andrea S.</b><span>Ortodoncia</span></footer>
+                </blockquote>
+            </div>
+        </div>
+        <div class="sello-wrap" aria-hidden="true">
+            <svg class="sello" viewBox="0 0 120 120">
+                <defs><path id="selloPath" d="M60 12a48 48 0 1 1 0 96 48 48 0 1 1 0-96"/></defs>
+                <circle cx="60" cy="60" r="58" fill="none" stroke="currentColor" stroke-width="1.4"/>
+                <circle cx="60" cy="60" r="30" fill="none" stroke="currentColor" stroke-width="1"/>
+                <text font-size="11.6" letter-spacing="2.4"><textPath href="#selloPath">DRA. ELOSEGUI · ODONTOLOGÍA · VIEDMA ·</textPath></text>
+                <path d="M52 52c-2.6 0-3.8 2.2-3.8 4.5 0 3.8 1.7 4.9 2.1 8.6.2 1.7.8 2.6 1.7 2.6s1.3-.9 1.4-2.1c.2-1.7.7-3.8 2.3-3.8s2.1 2.1 2.3 3.8c.1 1.2.5 2.1 1.4 2.1s1.5-.9 1.7-2.6c.4-3.7 2.1-4.8 2.1-8.6 0-2.3-1.2-4.5-3.8-4.5-1.7 0-2.5.8-3.7.8s-2-.8-3.7-.8z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" transform="translate(4.5 1)"/>
+            </svg>
+        </div>
+    </section>
+
+    <section class="cta-final">
+        <div class="container cta-inner">
+            <h2 data-animate style="opacity:0;filter:blur(10px)">Tu sonrisa no se agenda sola.</h2>
+            <p data-animate style="opacity:0;transform:translateY(22px)">Elegí día y horario ahora: mañana ya podés estar sentado en el sillón, tranquilo.</p>
+            <div class="cta-actions" data-animate style="opacity:0;transform:translateY(24px)">
+                <a class="btn btn-light btn-lg" href="#turnos">Sacar mi turno</a>
+                <a class="btn btn-ghost-light btn-lg" href="https://wa.me/5493425194242?text=Hola%20Dra.%20Elosegui!%20Quiero%20sacar%20un%20turno." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+            </div>
+        </div>
+        <img class="cta-cut" src="images/cut-paciente.webp" alt="" width="900" height="810" loading="lazy" aria-hidden="true">
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-grid">
+        <div class="footer-brand">
+            <svg class="brand-tooth" viewBox="0 0 64 64" aria-hidden="true"><path d="M22 12c-7 0-10 6-10 12 0 10 4.5 13 5.6 23 .5 4.6 2.2 7 4.6 7s3.4-2.3 3.7-5.7c.4-4.4 1.8-10 6.1-10s5.7 5.6 6.1 10c.3 3.4 1.3 5.7 3.7 5.7s4.1-2.4 4.6-7c1.1-10 5.6-13 5.6-23 0-6-3-12-10-12-4.4 0-6.6 2.2-10 2.2S26.4 12 22 12z" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/></svg>
+            <p><b>Consultorio Odontológico Dra. Elosegui</b><br>Prevención, estética y urgencias en Viedma, Río Negro.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Secciones</h4>
+            <a href="#servicios">Servicios</a>
+            <a href="#odontograma">Tratamientos</a>
+            <a href="#turnos">Turnos</a>
+            <a href="#consultorio">El consultorio</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contacto</h4>
+            <a href="https://wa.me/5493425194242?text=Hola%20Dra.%20Elosegui!" target="_blank" rel="noopener">342 519-4242</a>
+            <a href="mailto:hola@draelosegui.com">hola@draelosegui.com</a>
+            <span>Instagram</span>
+            <span>Centro de Viedma · Río Negro</span>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>© 2026 Dra. Elosegui</span>
+        <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+    </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5493425194242?text=Hola%20Dra.%20Elosegui!%20Quiero%20sacar%20un%20turno." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

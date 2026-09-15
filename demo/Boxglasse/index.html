@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BOXGLASSE — estamos renovando nuestro sitio. Volvemos muy pronto.">
+  <title>BOXGLASSE | Volvemos pronto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #10292d;
+      --muted: #5d7377;
+      --water: #dff7f2;
+      --sky: #bfe8f7;
+      --aqua: #36b9ad;
+      --deep: #07363c;
+      --white: #f8ffff;
+      --display: "Space Grotesk", sans-serif;
+      --body: "Manrope", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100dvh;
+      max-width: 100vw;
+      overflow-x: hidden;
+      color: var(--ink);
+      font-family: var(--body);
+      background:
+        radial-gradient(circle at 18% 18%, rgba(191, 232, 247, 0.55), transparent 34%),
+        radial-gradient(circle at 82% 88%, rgba(54, 185, 173, 0.22), transparent 40%),
+        linear-gradient(135deg, var(--water), var(--sky));
+    }
+
+    .wrap {
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 32px 20px;
+    }
+
+    .card {
+      width: min(560px, 100%);
+      text-align: center;
+      background: rgba(255, 255, 255, 0.62);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      border-radius: 20px;
+      box-shadow: 0 24px 70px rgba(7, 54, 60, 0.16);
+      padding: clamp(32px, 6vw, 56px) clamp(24px, 5vw, 48px);
+    }
+
+    .logo {
+      display: block;
+      width: auto;
+      height: 52px;
+      margin: 0 auto 28px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--deep);
+      background: rgba(54, 185, 173, 0.16);
+      border: 1px solid rgba(54, 185, 173, 0.3);
+      border-radius: 999px;
+      padding: 8px 16px;
+      margin-bottom: 22px;
+    }
+
+    .badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--aqua);
+      box-shadow: 0 0 0 0 rgba(54, 185, 173, 0.6);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(54, 185, 173, 0.55); }
+      70%  { box-shadow: 0 0 0 10px rgba(54, 185, 173, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(54, 185, 173, 0); }
+    }
+
+    h1 {
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: clamp(28px, 6vw, 40px);
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      margin: 0 0 16px;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: clamp(15px, 2.4vw, 17px);
+      line-height: 1.6;
+      margin: 0 auto;
+      max-width: 42ch;
+    }
+
+    .rule {
+      width: 64px;
+      height: 3px;
+      border-radius: 3px;
+      background: var(--aqua);
+      margin: 28px auto 0;
+    }
+
+    .foot {
+      margin-top: 30px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .foot a { color: var(--deep); text-decoration: none; font-weight: 600; }
+    .foot a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .badge .dot { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <img class="logo" src="images/logo.png" alt="BOXGLASSE">
+      <span class="badge"><span class="dot"></span>Volvemos pronto</span>
+      <h1>Estamos renovando el sitio</h1>
+      <p>Seguimos fabricando e instalando mamparas, vidrios y espejos a medida. En unos días vas a poder ver el sitio completo acá mismo.</p>
+      <div class="rule"></div>
+    </section>
+  </main>
+</body>
+</html>

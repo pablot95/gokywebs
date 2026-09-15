@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Demo alternativa de tienda online para Lisboa Men, indumentaria oversize.">
+  <meta name="theme-color" content="#d9d9d6">
+  <title>Lisboa Men | Oversize Studio</title>
+  <link rel="icon" href="images/logoredondo.jpeg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#catalogo">Ir al catálogo</a>
+  <header class="site-header">
+    <a class="brand" href="#inicio" aria-label="Lisboa Men, inicio">
+      <img src="images/logoredondo.jpeg" alt="" width="54" height="54">
+      <span>LISBOA<br>MEN</span>
+    </a>
+    <nav class="desktop-nav" aria-label="Navegación principal">
+      <a href="#catalogo">Shop</a>
+      <a href="#manifiesto">Concepto</a>
+      <a href="#info">Info</a>
+      <a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">IG ↗</a>
+    </nav>
+    <div class="header-meta">SANTA FE · ARG<br>DROP_001 / 2026</div>
+    <div class="header-actions">
+      <button class="cart-header" type="button" data-open-cart aria-label="Abrir carrito">CARRITO <span data-cart-count hidden>0</span></button>
+      <button id="menu-button" class="icon-button menu-button" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobile-menu"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg></button>
+    </div>
+    <nav id="mobile-menu" class="mobile-menu" aria-label="Navegación móvil">
+      <a href="#catalogo">Shop</a><a href="#manifiesto">Concepto</a><a href="#info">Info</a><a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">Instagram ↗</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="inicio" class="hero">
+      <div class="hero-photo"><img src="images/hero-studio.png" alt="Modelo con conjunto oversize gris Lisboa Men" width="1536" height="1024" fetchpriority="high"><span>LOOK_04</span></div>
+      <div class="hero-copy">
+        <p class="micro">LISBOA MEN® · OVERSIZE PROJECT</p>
+        <h1>MOVE<br>OUTSIDE<br>THE LINE.</h1>
+        <p class="hero-description">Siluetas amplias para moverte como querés. Diseñadas para jóvenes que no necesitan encajar.</p>
+        <a class="block-link" href="#catalogo">VER COLECCIÓN <span>↓</span></a>
+        <div class="hero-index"><span>01</span><span>04</span></div>
+      </div>
+    </section>
+
+    <div class="ticker" aria-hidden="true"><div>OVERSIZE REAL · ALGODÓN PESADO · ENVÍOS A TODO EL PAÍS · COMPRA DIRECTA · OVERSIZE REAL · ALGODÓN PESADO · ENVÍOS A TODO EL PAÍS · COMPRA DIRECTA ·</div></div>
+
+    <section id="manifiesto" class="manifesto">
+      <p class="micro reveal">MANIFIESTO / 001</p>
+      <h2 class="reveal">NO HACEMOS ROPA<br>PARA PASAR<br>DESAPERCIBIDO.</h2>
+      <div class="manifesto-note reveal"><span>LA IDEA</span><p>Prendas simples. Proporciones distintas. Un guardarropa que funciona todos los días sin volverse igual a todo.</p></div>
+    </section>
+
+    <section class="category-strip" aria-label="Categorías">
+      <a href="#catalogo"><span>01</span> REMERAS <small>7 PIEZAS</small></a>
+      <a href="#catalogo"><span>02</span> HOODIES <small>4 PIEZAS</small></a>
+      <a href="#catalogo"><span>03</span> CARGOS <small>3 PIEZAS</small></a>
+      <a href="#catalogo"><span>04</span> BERMUDAS <small>2 PIEZAS</small></a>
+    </section>
+
+    <section id="catalogo" class="catalog-section">
+      <div class="catalog-title reveal"><span>SHOP_ALL</span><h2>DROP 001</h2><p id="result-count" aria-live="polite">16 productos</p></div>
+
+      <div class="catalog-tools">
+        <label class="search-field" for="catalog-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><span class="sr-only">Buscar productos</span><input id="catalog-search" type="search" placeholder="BUSCAR POR PALABRA..." autocomplete="off"></label>
+        <div class="category-filters" aria-label="Filtrar por categoría">
+          <button type="button" class="active" data-category="Todos">TODO</button>
+          <button type="button" data-category="Remeras">REMERAS</button>
+          <button type="button" data-category="Hoodies">HOODIES</button>
+          <button type="button" data-category="Pantalones">PANTALONES</button>
+          <button type="button" data-category="Bermudas">BERMUDAS</button>
+        </div>
+        <div class="select-filters">
+          <label><span>TALLE</span><select id="size-filter"><option value="">TODOS</option><option>S</option><option>M</option><option>L</option><option>XL</option></select></label>
+          <label><span>PRECIO</span><select id="price-filter"><option value="">TODOS</option><option value="under40">HASTA $40.000</option><option value="40to55">$40.000–$55.000</option><option value="over55">MÁS DE $55.000</option></select></label>
+          <label><span>ORDEN</span><select id="sort-filter"><option value="featured">DESTACADOS</option><option value="price-asc">MENOR PRECIO</option><option value="price-desc">MAYOR PRECIO</option><option value="name">NOMBRE A–Z</option></select></label>
+          <button id="clear-filters" class="text-button" type="button">RESET</button>
+        </div>
+      </div>
+
+      <div id="product-grid" class="product-grid"></div>
+      <div class="load-more-wrap"><button id="load-more" class="secondary-button" type="button">CARGAR MÁS [ + ]</button></div>
+    </section>
+
+    <section id="info" class="service-grid">
+      <div class="service-title"><p class="micro">CÓMO COMPRAR</p><h2>DIRECTO.<br>SIMPLE.<br>HUMANO.</h2></div>
+      <div class="service-item reveal"><span>01</span><h3>ELEGÍ TU FIT</h3><p>Buscá, filtrá y sumá al carrito las prendas con su talle.</p></div>
+      <div class="service-item reveal"><span>02</span><h3>ARMÁ EL PEDIDO</h3><p>Modificá cantidades y revisá el total antes de continuar.</p></div>
+      <div class="service-item reveal"><span>03</span><h3>HABLEMOS</h3><p>Enviá el pedido por WhatsApp. Confirmamos stock, pago y entrega.</p></div>
+    </section>
+
+    <section class="closing">
+      <img src="images/hero-editorial.png" alt="Campaña Lisboa Men" loading="lazy" width="1400" height="900">
+      <div><p class="micro">FOLLOW THE DROP</p><h2>@LISBOAMEN</h2><a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">ABRIR INSTAGRAM ↗</a></div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-logo"><img src="images/logoredondo.jpeg" alt="Lisboa Men" width="92" height="92"><strong>LISBOA MEN</strong></div>
+    <div><span>CONTACTO</span><a href="https://wa.me/5493424226186" target="_blank" rel="noopener noreferrer">WHATSAPP ↗</a><a href="https://instagram.com/lisboamen" target="_blank" rel="noopener noreferrer">INSTAGRAM ↗</a></div>
+    <div><span>INFO</span><a href="#catalogo">CATÁLOGO</a><a href="#info">CÓMO COMPRAR</a></div>
+    <p>© <span id="year"></span> LISBOA MEN · DEMO DESARROLLADA Y DISEÑADA POR GOKYWEBS CON ASISTENCIA DE IA</p>
+  </footer>
+
+  <div id="cart-overlay" class="cart-overlay"></div>
+  <aside id="cart-drawer" class="cart-drawer" aria-hidden="true" aria-labelledby="cart-title">
+    <div class="drawer-header"><div><span>ORDER_PREVIEW</span><h2 id="cart-title">CARRITO</h2></div><button id="close-cart" class="icon-button" type="button" aria-label="Cerrar carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button></div>
+    <div id="cart-items" class="cart-items"></div>
+    <div class="drawer-footer"><div class="cart-total"><span>TOTAL ESTIMADO</span><strong id="cart-total">$ 0</strong></div><p>STOCK Y MEDIOS DE PAGO A CONFIRMAR.</p><button id="checkout-whatsapp" class="checkout-button" type="button">ENVIAR PEDIDO POR WHATSAPP ↗</button></div>
+  </aside>
+
+  <dialog id="product-modal" class="product-modal">
+    <button id="close-modal" class="icon-button modal-close" type="button" aria-label="Cerrar detalle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"/></svg></button>
+    <div class="modal-layout"><div class="modal-image-wrap"><span>PRODUCT_VIEW</span><img id="modal-image" src="images/product-tee-black.png" alt="" width="700" height="700"></div><div class="modal-copy"><p id="modal-category" class="product-category"></p><h2 id="modal-title"></h2><p id="modal-price" class="modal-price"></p><p id="modal-description"></p><span class="option-label">SELECCIONAR TALLE</span><div id="modal-sizes" class="modal-sizes"></div><span class="option-label">CANTIDAD</span><div class="modal-buy"><div class="quantity-control"><button id="modal-minus" type="button" aria-label="Restar unidad">−</button><input id="modal-quantity" type="number" min="1" max="10" value="1" readonly><button id="modal-plus" type="button" aria-label="Sumar unidad">+</button></div><button id="modal-add" class="add-button" type="button">AGREGAR</button></div></div></div>
+  </dialog>
+
+  <button class="floating-cart" type="button" data-open-cart aria-label="Abrir carrito"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h15l-2 8H8L6 3H3M9 20h.01M18 20h.01"/></svg><span data-cart-count hidden>0</span></button>
+  <a class="floating-whatsapp" href="https://wa.me/5493424226186?text=Hola%20Lisboa%20Men%2C%20quiero%20hacer%20una%20consulta" target="_blank" rel="noopener noreferrer" aria-label="Consultar por WhatsApp"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.3-4.7A8.5 8.5 0 1 1 20.5 11.7Z"/><path d="M8.2 7.7c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.7 1.7c.1.3 0 .5-.2.7l-.5.6c-.2.2-.1.4 0 .6.5 1 1.3 1.8 2.3 2.3.2.1.4.2.6 0l.7-.8c.2-.2.4-.2.7-.1l1.7.8c.3.1.4.3.4.5 0 .4-.2 1.3-.8 1.8-.6.5-1.4.7-2.3.4-1.2-.4-2.8-1-4.4-2.5-1.3-1.3-2.2-2.9-2.5-4.1-.3-.8 0-1.5.4-1.9Z"/></svg></a>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+  <script src="/demo/track.js" defer></script>
+</body>
+</html>

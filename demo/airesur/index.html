@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIRESUR — Climatización y refrigeración comercial en AMBA</title>
+<meta name="description" content="40 años en climatización y frío comercial. Mantenimiento, instalación y proyectos de split, VRF, rooftop, chillers y cámaras de frío en CABA y GBA. Pedí tu visita técnica.">
+<link rel="canonical" href="https://airesur.com.ar/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AIRESUR — Climatización y refrigeración comercial">
+<meta property="og:description" content="Mantenemos la temperatura que tu negocio no puede perder. De un split de oficina a la central de frío de un supermercado.">
+<meta property="og:image" content="https://airesur.com.ar/images/tecnicos-reparando-hvac_2.8-1.webp">
+<meta property="og:locale" content="es_AR">
+<meta name="theme-color" content="#0B1015">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B1015'/%3E%3Cpath d='M9 23V9M9 9h9a4.5 4.5 0 0 1 0 9H9' stroke='%2322D3EE' stroke-width='3' fill='none' stroke-linecap='square'/%3E%3Cpath d='M15 18l8 5' stroke='%23FF3B2F' stroke-width='3' stroke-linecap='square'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<div class="thermo" id="thermo" aria-hidden="true">
+  <div class="thermo-scale"><span class="thermo-fill" id="thermoFill"></span></div>
+  <div class="thermo-read"><b id="thermoValue">−22</b><i>°C</i></div>
+  <p class="thermo-label" id="thermoLabel">Cámaras de congelado</p>
+</div>
+<div class="thermo-mobile" id="thermoMobile" aria-hidden="true">
+  <div class="thermo-read"><b id="thermoValueM">−22</b><i>°C</i></div>
+  <div class="thermo-scale"><span class="thermo-fill" id="thermoFillM"></span></div>
+  <p class="thermo-label" id="thermoLabelM">Cámaras de congelado</p>
+</div>
+
+<header class="masthead">
+  <div class="masthead-top container">
+    <a class="brand" href="#inicio" aria-label="AIRESUR — inicio">
+      <img src="images/logo-airesur.webp" width="714" height="186" alt="AIRESUR">
+    </a>
+    <p class="masthead-meta">
+      <span class="led"></span>Climatización y frío comercial · 40 años
+    </p>
+  </div>
+  <div class="masthead-bar">
+    <div class="masthead-bar-inner container">
+      <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+        <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <a href="#rango">El rango</a>
+        <a href="#servicios">Servicios</a>
+        <a href="#proceso">Cómo trabajamos</a>
+        <a href="#equipos">Equipos</a>
+        <a href="#obras">Dónde trabajamos</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <a class="masthead-phone" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20climatizaci%C3%B3n." target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+        <span>011 4026-1111</span>
+      </a>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <section class="hero" id="inicio" data-temp="-22" data-zone="Cámaras de congelado">
+    <div class="hero-bg">
+      <img src="images/tecnicos-reparando-hvac_2.8-1.webp" width="1920" height="686" alt="Dos técnicos de AIRESUR trabajando sobre un equipo de climatización en la azotea de un edificio">
+    </div>
+    <div class="hero-inner container">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tick"></span>Climatización y refrigeración · AMBA</p>
+        <h1>Mantenemos la temperatura que tu negocio <em>no puede perder</em></h1>
+        <p class="hero-lead">De un split de oficina a la central de frío de un supermercado. Mantenimiento, instalación y proyectos, con el mismo equipo técnico desde hace 40 años.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20coordinar%20una%20visita%20t%C3%A9cnica.%20Te%20cuento%20qu%C3%A9%20equipo%20tengo%3A" target="_blank" rel="noopener noreferrer">Pedí tu visita técnica</a>
+          <a class="btn btn-ghost" href="#servicios">Ver servicios</a>
+        </div>
+        <dl class="hero-data">
+          <div><dt>Rango operativo</dt><dd>−22 °C a +45 °C</dd></div>
+          <div><dt>Años de oficio</dt><dd><span data-count="40">40</span> años</dd></div>
+          <div><dt>Cobertura</dt><dd>CABA y GBA</dd></div>
+        </dl>
+      </div>
+      <div class="hero-scene">
+        <img class="hero-unit" src="images/cutout-vrf.webp" width="1005" height="896" alt="Batería de unidades exteriores VRF instaladas en azotea">
+      </div>
+    </div>
+    <div class="seal" aria-hidden="true">
+      <svg viewBox="0 0 200 200">
+        <defs><path id="sealPath" d="M100,100 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0"/></defs>
+        <text><textPath href="#sealPath" startOffset="0">AIRESUR · CLIMATIZACIÓN Y FRÍO · 40 AÑOS · AMBA · </textPath></text>
+      </svg>
+      <span class="seal-core">40</span>
+    </div>
+  </section>
+
+  <section class="rango" id="rango" data-temp="-8" data-zone="Conservación y fresco">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="folio">01</span><span class="tick"></span>El rango</p>
+        <h2>No vendemos aire: sostenemos una escala</h2>
+        <p class="sec-lead">La misma empresa que enfría una cámara de congelado a −22 °C climatiza el salón de al lado y mantiene el rooftop trabajando con 45 °C de azotea. Ese rango completo es lo que hacemos.</p>
+      </header>
+
+      <ol class="scale" data-animate-stagger>
+        <li data-animate style="transform:translateY(26px);opacity:0" data-scale-stop="0">
+          <span class="scale-temp">−22 °C</span>
+          <h3>Congelado</h3>
+          <p>Cámaras de congelado y centrales de frío multi-compresor para supermercados, frigoríficos y distribución.</p>
+        </li>
+        <li data-animate style="transform:translateY(26px);opacity:0" data-scale-stop="1">
+          <span class="scale-temp">+2 °C</span>
+          <h3>Conservación</h3>
+          <p>Cámaras de fresco, góndolas refrigeradas y exhibidoras. Donde una hora sin frío es mercadería perdida.</p>
+        </li>
+        <li data-animate style="transform:translateY(26px);opacity:0" data-scale-stop="2">
+          <span class="scale-temp">+22 °C</span>
+          <h3>Confort</h3>
+          <p>Oficinas, locales, consultorios y edificios: split, piso techo, cassette y sistemas VRF por piso.</p>
+        </li>
+        <li data-animate style="transform:translateY(26px);opacity:0" data-scale-stop="3">
+          <span class="scale-temp">+45 °C</span>
+          <h3>Azotea en verano</h3>
+          <p>Rooftop, chillers y unidades exteriores trabajando al límite cuando más se los necesita.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="servicios" id="servicios" data-temp="4" data-zone="Servicio técnico">
+    <div class="container servicios-grid">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="folio">02</span><span class="tick"></span>Servicios</p>
+        <h2>Cuatro frentes, un solo interlocutor</h2>
+        <p class="sec-lead">No tercerizamos el corazón del trabajo. El técnico que releva tu instalación es el mismo que la mantiene después.</p>
+      </header>
+
+      <div class="servicios-media">
+        <figure class="servicios-foto" data-animate style="transform:translateY(34px);opacity:0">
+          <img src="images/sala-de-maquinas-chiller_5-3.webp" width="1619" height="971" alt="Sala de máquinas con chiller, cañerías de agua fría y tableros de control" loading="lazy">
+          <figcaption>Sala de máquinas · puesta en marcha de chiller</figcaption>
+        </figure>
+      </div>
+
+      <ol class="serv-list">
+        <li data-animate style="transform:translateY(24px);opacity:0">
+          <span class="serv-n">01</span>
+          <div>
+            <h3>Mantenimiento</h3>
+            <p>Contratos preventivos con frecuencia pactada, informe por equipo y guardia para urgencias. Tomamos instalaciones que no hicimos nosotros.</p>
+            <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20cotizar%20un%20contrato%20de%20mantenimiento.%20Tengo%3A" target="_blank" rel="noopener noreferrer">Cotizar mantenimiento</a>
+          </div>
+        </li>
+        <li data-animate style="transform:translateY(24px);opacity:0">
+          <span class="serv-n">02</span>
+          <div>
+            <h3>Instalación</h3>
+            <p>Desde un split en oficina hasta VRF por piso o una cámara modular. Cañería, soportería, drenajes y puesta en marcha documentada.</p>
+            <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20necesito%20presupuesto%20de%20instalaci%C3%B3n.%20El%20lugar%20es%3A" target="_blank" rel="noopener noreferrer">Pedir presupuesto</a>
+          </div>
+        </li>
+        <li data-animate style="transform:translateY(24px);opacity:0">
+          <span class="serv-n">03</span>
+          <div>
+            <h3>Proyectos e ingeniería</h3>
+            <p>Cálculo de cargas térmicas, selección de equipos y proyecto ejecutivo para obra nueva o reforma. Trabajamos con estudios y contratistas.</p>
+            <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20un%20proyecto%20de%20climatizaci%C3%B3n." target="_blank" rel="noopener noreferrer">Consultar proyecto</a>
+          </div>
+        </li>
+        <li data-animate style="transform:translateY(24px);opacity:0">
+          <span class="serv-n">04</span>
+          <div>
+            <h3>Refrigeración comercial</h3>
+            <p>Cámaras, exhibidoras, centrales de frío y equipos de gastronomía. El frío que sostiene el stock, no el confort.</p>
+            <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20consulto%20por%20refrigeraci%C3%B3n%20comercial.%20Mi%20equipo%20es%3A" target="_blank" rel="noopener noreferrer">Consultar frío comercial</a>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="proceso" id="proceso" data-temp="18" data-zone="Obra y puesta en marcha">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="folio">03</span><span class="tick"></span>Cómo trabajamos</p>
+        <h2>Del relevamiento a la guardia</h2>
+      </header>
+    </div>
+    <div class="stage container" id="stage">
+      <div class="stage-grid">
+        <div class="stage-visual">
+          <div class="stage-frame">
+            <img class="stage-img is-on" data-step-img="0" src="images/inspeccion-de-camara-frigorifica_4-5.webp" width="1122" height="1402" alt="Técnico revisando el evaporador dentro de una cámara frigorífica" loading="lazy">
+            <img class="stage-img" data-step-img="1" src="images/chiller-industrial-con-tuberias_1-1.webp" width="1254" height="1254" alt="Chiller industrial con cañerías de agua fría en sala de máquinas" loading="lazy">
+            <img class="stage-img" data-step-img="2" src="images/mantenimiento-de-aire-split_9-16.webp" width="941" height="1672" alt="Técnico instalando un equipo split de pared en un living" loading="lazy">
+            <img class="stage-img" data-step-img="3" src="images/aire-casete-en-showroom_1-1.webp" width="1254" height="1254" alt="Equipo cassette de cuatro vías instalado en el cielorraso de una oficina" loading="lazy">
+            <div class="stage-hud">
+              <span class="led"></span>
+              <b id="stageHud">Relevamiento</b>
+            </div>
+          </div>
+        </div>
+        <ol class="stage-steps" id="stageSteps">
+          <li class="is-on"><span class="serv-n">01</span><h3>Relevamiento</h3><p>Vamos al lugar, medimos y miramos la instalación real: equipos, cañería, alimentación eléctrica y qué se rompió antes. Sin eso, cualquier número es un invento.</p></li>
+          <li><span class="serv-n">02</span><h3>Propuesta</h3><p>Te llega por escrito qué equipo entra, por qué ese y no otro, qué incluye la mano de obra y en cuánto tiempo. Si hay dos caminos, te mostramos los dos.</p></li>
+          <li><span class="serv-n">03</span><h3>Ejecución</h3><p>Coordinamos horarios con tu operación —de noche o fin de semana si hace falta— y dejamos la obra limpia. Puesta en marcha con mediciones anotadas.</p></li>
+          <li><span class="serv-n">04</span><h3>Mantenimiento</h3><p>Entramos al plan preventivo con frecuencia pactada e informe por equipo. Ahí es donde 40 años se notan: conocemos tu instalación de memoria.</p></li>
+        </ol>
+      </div>
+    </div>
+    <div class="seam-seal" aria-hidden="true"><span>AIRESUR</span></div>
+  </section>
+
+  <section class="equipos" id="equipos" data-temp="24" data-zone="Venta de equipos">
+    <div class="container">
+      <header class="sec-head sec-head-row">
+        <div>
+          <p class="eyebrow"><span class="folio">04</span><span class="tick"></span>Equipos</p>
+          <h2>Qué vendemos e instalamos</h2>
+        </div>
+        <p class="sec-lead">Consultá por el equipo que necesitás y te pasamos precio con instalación incluida. Trabajamos con las marcas que después podemos mantener.</p>
+      </header>
+    </div>
+    <div class="rail-wrap">
+      <ul class="rail" id="rail" tabindex="0" aria-label="Equipos que vendemos e instalamos">
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="6" y="12" width="52" height="15" rx="4"/><path d="M6 22h52M10 16h30"/><path d="M18 31v5M32 31v8M46 31v5" stroke-dasharray="3 3"/><path d="M14 36l4 4 4-4M28 39l4 4 4-4M42 36l4 4 4-4"/>
+            </svg>
+          </div>
+          <h3>Split de pared</h3>
+          <p class="eq-use">Oficinas, consultorios, locales chicos y hogares.</p>
+          <p class="eq-spec">Frío/calor inverter · 2.200 a 6.000 frigorías</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20precio%20de%20un%20split%20de%20pared%20con%20instalaci%C3%B3n.%20El%20ambiente%20mide%3A" target="_blank" rel="noopener noreferrer">Pedir precio</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="5" y="14" width="54" height="20" rx="3"/><path d="M5 29h54M11 19h20M11 23h20"/><path d="M12 34v4M52 34v4"/><circle cx="47" cy="22" r="5"/><path d="M47 19v6"/>
+            </svg>
+          </div>
+          <h3>Piso techo</h3>
+          <p class="eq-use">Salones, showrooms y locales con techo alto.</p>
+          <p class="eq-spec">6.000 a 18.000 frigorías · montaje en piso o cielorraso</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20precio%20de%20un%20equipo%20piso%20techo.%20El%20local%20mide%3A" target="_blank" rel="noopener noreferrer">Pedir precio</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="16" y="8" width="32" height="32" rx="3"/><rect x="23" y="15" width="18" height="18" rx="2"/><path d="M25 18h14M25 21h14M25 24h14M25 27h14M25 30h14" stroke-dasharray="2 2"/><path d="M12 12l-6-4M52 12l6-4M12 36l-6 4M52 36l6 4"/>
+            </svg>
+          </div>
+          <h3>Cassette 4 vías</h3>
+          <p class="eq-use">Oficinas con cielorraso suspendido y reparto parejo.</p>
+          <p class="eq-spec">Descarga en cuatro direcciones · drenaje con bomba</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20precio%20de%20un%20cassette%20de%204%20v%C3%ADas.%20La%20oficina%20mide%3A" target="_blank" rel="noopener noreferrer">Pedir precio</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="6" y="10" width="15" height="28" rx="2"/><rect x="24" y="10" width="15" height="28" rx="2"/><rect x="42" y="10" width="15" height="28" rx="2"/><circle cx="13.5" cy="21" r="5"/><circle cx="31.5" cy="21" r="5"/><circle cx="49.5" cy="21" r="5"/><path d="M6 33h51"/>
+            </svg>
+          </div>
+          <h3>Sistema VRF / VRV</h3>
+          <p class="eq-use">Edificios, pisos completos y oficinas con muchas zonas.</p>
+          <p class="eq-spec">Caudal de refrigerante variable · control por ambiente</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20un%20sistema%20VRF.%20El%20edificio%20tiene%3A" target="_blank" rel="noopener noreferrer">Consultar VRF</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <path d="M14 16l8-6h30v24H14z"/><rect x="30" y="14" width="22" height="16"/><path d="M34 14v16M38 14v16M42 14v16M46 14v16"/><path d="M6 34h52M18 34v5M50 34v5"/>
+            </svg>
+          </div>
+          <h3>Rooftop</h3>
+          <p class="eq-use">Supermercados, plantas, galpones y grandes superficies.</p>
+          <p class="eq-spec">Equipo compacto de azotea · conductos y difusores</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20un%20equipo%20rooftop.%20La%20superficie%20es%3A" target="_blank" rel="noopener noreferrer">Consultar rooftop</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="10" y="18" width="40" height="14" rx="7"/><rect x="50" y="14" width="8" height="22" rx="2"/><path d="M14 18v-6h10v6M32 32v6h10v-6"/><circle cx="54" cy="20" r="2"/><path d="M52 26h4M52 29h4"/>
+            </svg>
+          </div>
+          <h3>Chiller</h3>
+          <p class="eq-use">Instalaciones grandes que trabajan con agua helada.</p>
+          <p class="eq-spec">Enfriadora + fan coils · circuito hidráulico completo</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20un%20chiller.%20La%20instalaci%C3%B3n%20es%3A" target="_blank" rel="noopener noreferrer">Consultar chiller</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="14" y="12" width="36" height="24" rx="2"/><path d="M20 12v24M20 16l8 4-8 4 8 4-8 4"/><circle cx="40" cy="24" r="6"/><path d="M40 18v12M34 24h12"/><path d="M4 24h10M50 24h10M8 20l-4 4 4 4M56 20l4 4-4 4"/>
+            </svg>
+          </div>
+          <h3>UTA</h3>
+          <p class="eq-use">Renovación de aire y filtrado en locales con mucha gente.</p>
+          <p class="eq-spec">Unidad de tratamiento de aire · filtros y caudal regulable</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20una%20UTA%20para%20renovaci%C3%B3n%20de%20aire." target="_blank" rel="noopener noreferrer">Consultar UTA</a>
+        </li>
+        <li class="eq">
+          <div class="eq-art">
+            <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+              <rect x="8" y="8" width="48" height="32" rx="2"/><path d="M34 8v32"/><rect x="12" y="12" width="18" height="7" rx="1"/><circle cx="17" cy="15.5" r="1.6"/><circle cx="22" cy="15.5" r="1.6"/><circle cx="27" cy="15.5" r="1.6"/><path d="M38 22h2M12 26h18M12 30h12"/>
+            </svg>
+          </div>
+          <h3>Cámara de frío</h3>
+          <p class="eq-use">Gastronomía, distribución, supermercados y frigoríficos.</p>
+          <p class="eq-spec">Modular o a medida · fresco o congelado hasta −22 °C</p>
+          <a class="link-arrow" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20consultar%20por%20una%20c%C3%A1mara%20de%20fr%C3%ADo.%20Necesito%3A" target="_blank" rel="noopener noreferrer">Consultar cámara</a>
+        </li>
+      </ul>
+      <p class="rail-hint"><span class="tick"></span>Arrastrá para ver los ocho equipos</p>
+    </div>
+  </section>
+
+  <section class="marquee-band" aria-hidden="true">
+    <div class="marquee"><div class="marquee-row" id="marqueeRow"><span>AIRESUR</span><span>·</span><span>Climatización</span><span>·</span><span>AIRESUR</span><span>·</span><span>Refrigeración</span><span>·</span></div></div>
+  </section>
+
+  <section class="obras" id="obras" data-temp="38" data-zone="Azoteas y grandes superficies">
+    <div class="container">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="folio">05</span><span class="tick"></span>Dónde trabajamos</p>
+        <h2>Los lugares donde el frío no puede fallar</h2>
+      </header>
+
+      <div class="obras-grid">
+        <article class="obra obra-wide" data-animate style="transform:translateY(30px);opacity:0">
+          <div class="obra-media"><img src="images/camara-fria-comercial_1-1.webp" width="1254" height="1254" alt="Cámara de frío y góndolas refrigeradas en un supermercado" loading="lazy"></div>
+          <div class="obra-txt">
+            <h3>Supermercados y autoservicios</h3>
+            <p>Centrales de frío, cámaras, góndolas y la climatización del salón. Todo bajo un mismo contrato, con guardia para los días que no perdonan.</p>
+          </div>
+        </article>
+        <article class="obra" data-animate style="transform:translateY(30px);opacity:0">
+          <div class="obra-media"><img src="images/aire-split-en-living-moderno_1-1.webp" width="1254" height="1254" alt="Equipo split instalado sobre la pared de un ambiente moderno" loading="lazy"></div>
+          <div class="obra-txt">
+            <h3>Oficinas y consultorios</h3>
+            <p>Split, cassette y VRF por zona, con la obra coordinada fuera del horario de atención.</p>
+          </div>
+        </article>
+        <article class="obra" data-animate style="transform:translateY(30px);opacity:0">
+          <div class="obra-media"><img src="images/cutout-rooftop.webp" width="907" height="467" alt="Equipo rooftop compacto instalado sobre la azotea de un edificio" loading="lazy"></div>
+          <div class="obra-txt">
+            <h3>Plantas, depósitos y galpones</h3>
+            <p>Rooftop y chillers para superficies grandes, donde el equipo tiene que aguantar 45 °C de azotea en enero.</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="cifras">
+        <div><b><span data-count="40">40</span></b><span>años sosteniendo instalaciones en AMBA</span></div>
+        <div><b>+<span data-count="1200">1200</span></b><span>equipos bajo contrato de mantenimiento</span></div>
+        <div><b><span data-count="24">24</span> h</b><span>de respuesta en contratos con guardia</span></div>
+      </div>
+
+      <div class="testimonios">
+        <blockquote data-animate style="transform:translateY(24px);opacity:0">
+          <p>“Teníamos una central de frío que paraba dos veces por mes y nadie encontraba la falla. AIRESUR la relevó, cambió el criterio de control y hace dos temporadas que no perdemos mercadería.”</p>
+          <cite>Jefe de mantenimiento · cadena de autoservicios, zona sur</cite>
+        </blockquote>
+        <blockquote data-animate style="transform:translateY(24px);opacity:0">
+          <p>“Nos hicieron el VRF de los tres pisos trabajando de noche para no cortarnos la atención. Terminaron en la fecha que dijeron, que es lo que uno menos espera.”</p>
+          <cite>Administración · edificio de oficinas, Vicente López</cite>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <section class="zona" id="zona" data-temp="41" data-zone="Cobertura AMBA">
+    <div class="container zona-grid">
+      <div class="zona-copy">
+        <p class="eyebrow"><span class="folio">06</span><span class="tick"></span>Cobertura</p>
+        <h2>Trabajamos en CABA y Gran Buenos Aires</h2>
+        <p class="sec-lead">Atendemos toda la Ciudad y el conurbano norte, oeste y sur. Contanos dónde está la instalación y te confirmamos la visita.</p>
+        <ul class="zona-list">
+          <li><span class="tick"></span>Ciudad Autónoma de Buenos Aires</li>
+          <li><span class="tick"></span>Zona norte · Vicente López, San Isidro, Tigre</li>
+          <li><span class="tick"></span>Zona oeste · Morón, Ramos Mejía, Ituzaingó</li>
+          <li><span class="tick"></span>Zona sur · Avellaneda, Lomas, Quilmes</li>
+        </ul>
+      </div>
+      <div class="zona-map" id="map" role="img" aria-label="Mapa del área metropolitana de Buenos Aires, zona de cobertura de AIRESUR"></div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq" data-temp="43" data-zone="Preguntas frecuentes">
+    <div class="container faq-grid">
+      <header class="sec-head">
+        <p class="eyebrow"><span class="folio">07</span><span class="tick"></span>Preguntas frecuentes</p>
+        <h2>Lo que nos preguntan antes de llamarnos</h2>
+      </header>
+      <div class="faq-list">
+        <details><summary>¿Toman equipos que instaló otra empresa?</summary><div><p>Sí. Es la mitad de lo que hacemos. Relevamos la instalación, te decimos en qué estado está y desde ahí armamos el plan de mantenimiento. No hace falta que hayamos hecho la obra.</p></div></details>
+        <details><summary>¿Trabajan con consorcios y administraciones?</summary><div><p>Sí, con contrato de mantenimiento y presupuesto por escrito para presentar en asamblea. También hacemos el relevamiento inicial del edificio sin cargo.</p></div></details>
+        <details><summary>¿Cuánto tarda una visita de urgencia?</summary><div><p>En contratos con guardia, dentro de las 24 horas. Sin contrato, coordinamos según agenda: contanos qué pasó por WhatsApp y te decimos en el momento cuándo podemos ir.</p></div></details>
+        <details><summary>¿Venden el equipo o solo instalan?</summary><div><p>Las dos cosas. Vendemos e instalamos con la misma factura, y trabajamos con marcas de las que después conseguimos repuesto. Si ya compraste el equipo, también lo instalamos.</p></div></details>
+        <details><summary>¿Hacen el cálculo de qué equipo necesito?</summary><div><p>Sí. Calculamos la carga térmica del ambiente según superficie, orientación, vidriado y cuánta gente lo usa. Poner un equipo chico es el error más caro que vemos.</p></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cierre" id="contacto" data-temp="45" data-zone="Azotea a pleno sol">
+    <div class="container cierre-grid">
+      <div class="cierre-copy">
+        <p class="eyebrow"><span class="tick"></span>Hablemos</p>
+        <h2>Contanos qué equipo tenés y te decimos qué necesita</h2>
+        <p class="sec-lead">Mandanos una foto de la unidad o del tablero por WhatsApp. Con eso solo ya podemos orientarte, y si hace falta coordinamos la visita.</p>
+        <a class="wa-number" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20te%20escribo%20desde%20la%20web.%20Mi%20consulta%20es%3A" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+          <span>011 4026-1111</span>
+        </a>
+        <p class="cierre-note">Lunes a viernes de 8 a 18 h · Guardia para contratos, todo el año.</p>
+      </div>
+
+      <form class="form" id="contactForm" novalidate>
+        <h3>O dejanos tus datos</h3>
+        <div class="field">
+          <label for="f-nombre">Nombre y apellido</label>
+          <input id="f-nombre" name="nombre" type="text" autocomplete="name" placeholder="Cómo te llamás" required>
+          <span class="err" data-err-for="f-nombre"></span>
+        </div>
+        <div class="field">
+          <label for="f-tel">Teléfono</label>
+          <input id="f-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="11 5555-5555" required>
+          <span class="err" data-err-for="f-tel"></span>
+        </div>
+        <div class="field">
+          <label for="f-tipo">¿Qué necesitás?</label>
+          <select id="f-tipo" name="tipo">
+            <option>Mantenimiento</option>
+            <option>Instalación</option>
+            <option>Proyecto e ingeniería</option>
+            <option>Refrigeración comercial</option>
+            <option>Comprar un equipo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="f-msg">Contanos un poco</label>
+          <textarea id="f-msg" name="mensaje" rows="3" placeholder="Qué equipo tenés, dónde está y qué le pasa"></textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Enviar consulta</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <img src="images/logo-airesur.webp" width="714" height="186" alt="AIRESUR" loading="lazy">
+      <p>Climatización, refrigeración comercial y proyectos. 40 años en el Área Metropolitana de Buenos Aires.</p>
+    </div>
+    <nav class="footer-nav" aria-label="Secciones">
+      <a href="#rango">El rango</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#proceso">Cómo trabajamos</a>
+      <a href="#equipos">Equipos</a>
+      <a href="#obras">Dónde trabajamos</a>
+      <a href="#faq">Preguntas frecuentes</a>
+    </nav>
+    <div class="footer-contacto">
+      <a href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20te%20escribo%20desde%20la%20web." target="_blank" rel="noopener noreferrer">011 4026-1111</a>
+      <a href="mailto:hola@airesur.com.ar">hola@airesur.com.ar</a>
+      <span>CABA y Gran Buenos Aires</span>
+    </div>
+  </div>
+  <div class="footer-legal container">
+    <span>© <span id="year">2026</span> AIRESUR. Todos los derechos reservados.</span>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491140261111?text=Hola%20AIRESUR%2C%20quiero%20hacer%20una%20consulta%20sobre%20climatizaci%C3%B3n." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"HVACBusiness","name":"AIRESUR","description":"Climatización y refrigeración comercial: mantenimiento, instalación y proyectos de split, VRF, rooftop, chillers y cámaras de frío.","url":"https://airesur.com.ar/","telephone":"+5491140261111","email":"hola@airesur.com.ar","image":"https://airesur.com.ar/images/tecnicos-reparando-hvac_2.8-1.webp","foundingDate":"1986","areaServed":[{"@type":"City","name":"Ciudad Autónoma de Buenos Aires"},{"@type":"AdministrativeArea","name":"Gran Buenos Aires"}],"address":{"@type":"PostalAddress","addressLocality":"Ciudad Autónoma de Buenos Aires","addressCountry":"AR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday"],"opens":"08:00","closes":"18:00"}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"¿Toman equipos que instaló otra empresa?","acceptedAnswer":{"@type":"Answer","text":"Sí. Relevamos la instalación, indicamos en qué estado está y desde ahí se arma el plan de mantenimiento. No hace falta que la obra la hayamos hecho nosotros."}},
+{"@type":"Question","name":"¿Trabajan con consorcios y administraciones?","acceptedAnswer":{"@type":"Answer","text":"Sí, con contrato de mantenimiento y presupuesto por escrito para presentar en asamblea. El relevamiento inicial del edificio es sin cargo."}},
+{"@type":"Question","name":"¿Cuánto tarda una visita de urgencia?","acceptedAnswer":{"@type":"Answer","text":"En contratos con guardia, dentro de las 24 horas. Sin contrato se coordina según agenda."}},
+{"@type":"Question","name":"¿Venden el equipo o solo instalan?","acceptedAnswer":{"@type":"Answer","text":"Las dos cosas: venta e instalación con la misma factura. Si el equipo ya está comprado, también se instala."}},
+{"@type":"Question","name":"¿Hacen el cálculo de qué equipo necesito?","acceptedAnswer":{"@type":"Answer","text":"Sí. Se calcula la carga térmica del ambiente según superficie, orientación, vidriado y ocupación."}}
+]}
+</script>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+<script src="script.js" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

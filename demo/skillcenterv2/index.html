@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Skillcenter — Empresa de limpieza para oficinas, fábricas y consorcios en Lanús</title>
+<meta name="description" content="Skillcenter S.R.L. brinda servicios de limpieza profesional para oficinas, fábricas, consorcios y edificios en Buenos Aires y Lanús. Pedí tu presupuesto sin cargo.">
+<meta name="theme-color" content="#1b6fb3">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Skillcenter — Limpieza profesional para empresas">
+<meta property="og:description" content="Oficinas, fábricas, consorcios y edificios. Pedí tu presupuesto sin cargo.">
+<meta property="og:image" content="images/sk-hero-v2.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%231b6fb3'/%3E%3Ctext x='50' y='72' font-family='Arial,sans-serif' font-size='60' font-weight='bold' fill='%23fff' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="styles.css">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ProfessionalService","name":"Skillcenter S.R.L.","description":"Empresa de limpieza para oficinas, fábricas, consorcios y edificios.","image":"images/sk-hero-v2.webp","telephone":"+5491123421266","address":{"@type":"PostalAddress","addressLocality":"Lanús","addressRegion":"Buenos Aires","addressCountry":"AR"},"areaServed":"Buenos Aires","sameAs":["https://instagram.com/skillcenter_on"]}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<header class="header">
+  <div class="wrap">
+    <div class="header__inner">
+      <a class="brand" href="#main">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7l6-3 6 3M4 14l6 3 6-3M20 21V10l-4-2M14 5l3-1.5L20 5v5"/><path d="M4 14 2 8l5-2 3 1.5"/></svg>
+        Skill<b>center</b>
+      </a>
+      <nav class="nav" aria-label="Principal">
+        <a href="#servicios">Servicios</a>
+        <a href="#proceso">Cómo trabajamos</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+      <div class="header__cta">
+        <a class="btn btn--primary" href="#contacto">Pedir presupuesto</a>
+        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-mobile">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="nav-mobile" id="nav-mobile" aria-label="Menú móvil">
+  <a href="#servicios">Servicios</a>
+  <a href="#proceso">Cómo trabajamos</a>
+  <a href="#nosotros">Nosotros</a>
+  <a href="#contacto">Contacto</a>
+  <a class="btn btn--primary" href="#contacto">Pedir presupuesto</a>
+</nav>
+
+<main id="main">
+  <!-- HERO SPLIT -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero__grid">
+        <div class="hero__copy">
+          <span class="eyebrow" data-animate="up">Empresa de limpieza · Buenos Aires y Lanús</span>
+          <h1 class="hero__title" data-animate="up" style="--i:1">Espacios de trabajo <em>siempre impecables.</em></h1>
+          <p class="hero__lead" data-animate="up" style="--i:2">Skillcenter se ocupa de la limpieza de oficinas, fábricas, consorcios y edificios con personal capacitado y la frecuencia que necesitás.</p>
+          <div class="hero__cta" data-animate="up" style="--i:3">
+            <a class="btn btn--primary btn--lg" href="#contacto">Pedí tu presupuesto</a>
+            <a class="btn btn--ghost btn--lg" href="https://wa.me/5491123421266?text=%C2%A1Hola%20Skillcenter!%20Quiero%20un%20presupuesto%20de%20limpieza." target="_blank" rel="noopener">Consultar por WhatsApp</a>
+          </div>
+          <div class="hero__chips" data-animate="up" style="--i:4">
+            <span>Oficinas</span><span>Fábricas</span><span>Consorcios</span><span>Edificios</span>
+          </div>
+        </div>
+        <div class="hero__media" data-animate="clip">
+          <img src="images/sk-hero-v2.webp" alt="Operarios de Skillcenter limpiando vidrios de un edificio" width="1600" height="1200" fetchpriority="high">
+          <span class="hero__badge"><span class="dot"></span> Presupuesto sin cargo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRUST -->
+  <section class="section section--alt">
+    <div class="wrap">
+      <div class="trust">
+        <div class="trust__item" data-animate="up">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <h4>Personal capacitado</h4><p>Equipo uniformado y entrenado.</p>
+        </div>
+        <div class="trust__item" data-animate="up" style="--i:1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 4H8zM8 7l-2 8a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4l-2-8"/></svg>
+          <h4>Productos profesionales</h4><p>Insumos y maquinaria de calidad.</p>
+        </div>
+        <div class="trust__item" data-animate="up" style="--i:2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          <h4>Cobertura y seguros</h4><p>Personal con ART y seguros al día.</p>
+        </div>
+        <div class="trust__item" data-animate="up" style="--i:3">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <h4>Frecuencia flexible</h4><p>Diaria, semanal o por evento.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICIOS -->
+  <section class="section" id="servicios">
+    <div class="wrap">
+      <div class="section__head">
+        <span class="eyebrow" data-animate="up">Servicios</span>
+        <h2 data-animate="up" style="--i:1">Cubrimos cada tipo de espacio</h2>
+        <p data-animate="up" style="--i:2">Adaptamos el equipo, los productos y la frecuencia según lo que necesita tu empresa o edificio.</p>
+      </div>
+      <div class="servicios">
+        <a class="servicio" href="#contacto" data-animate="up">
+          <img src="images/sk-oficinas.webp" alt="Limpieza de oficinas" width="1200" height="1400" loading="lazy">
+          <div class="servicio__body"><h3>Oficinas</h3><p>Escritorios, pisos y vidrios impecables para trabajar mejor.</p><span class="servicio__link">Pedir presupuesto →</span></div>
+        </a>
+        <a class="servicio" href="#contacto" data-animate="up" style="--i:1">
+          <img src="images/sk-fabricas.webp" alt="Limpieza de fábricas" width="1200" height="1400" loading="lazy">
+          <div class="servicio__body"><h3>Fábricas</h3><p>Limpieza industrial con protocolos y seguridad en cada planta.</p><span class="servicio__link">Pedir presupuesto →</span></div>
+        </a>
+        <a class="servicio" href="#contacto" data-animate="up" style="--i:2">
+          <img src="images/sk-consorcios.webp" alt="Limpieza de consorcios" width="1200" height="1400" loading="lazy">
+          <div class="servicio__body"><h3>Consorcios</h3><p>Palieres, escaleras y espacios comunes siempre presentables.</p><span class="servicio__link">Pedir presupuesto →</span></div>
+        </a>
+        <a class="servicio" href="#contacto" data-animate="up" style="--i:3">
+          <img src="images/sk-edificios.webp" alt="Limpieza de edificios y superficies en altura" width="1200" height="1400" loading="lazy">
+          <div class="servicio__body"><h3>Edificios</h3><p>Fachadas, vidrios y superficies en altura, con seguridad.</p><span class="servicio__link">Pedir presupuesto →</span></div>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESO -->
+  <section class="section section--blue" id="proceso">
+    <div class="wrap">
+      <div class="section__head">
+        <span class="eyebrow" data-animate="up">Cómo trabajamos</span>
+        <h2 data-animate="up" style="--i:1">Un servicio ordenado, de principio a fin</h2>
+      </div>
+      <div class="proceso">
+        <div class="paso" data-animate="up">
+          <div class="paso__num">01</div><h3>Nos contactás</h3><p>Contanos qué espacio hay que limpiar y con qué frecuencia.</p>
+        </div>
+        <div class="paso" data-animate="up" style="--i:1">
+          <div class="paso__num">02</div><h3>Coordinamos</h3><p>Visitamos el lugar y armamos el presupuesto, sin cargo.</p>
+        </div>
+        <div class="paso" data-animate="up" style="--i:2">
+          <div class="paso__num">03</div><h3>Plan a medida</h3><p>Definimos equipo, productos y frecuencia según el sector.</p>
+        </div>
+        <div class="paso" data-animate="up" style="--i:3">
+          <div class="paso__num">04</div><h3>Limpieza con seguimiento</h3><p>Ejecutamos y supervisamos cada servicio.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NOSOTROS -->
+  <section class="section" id="nosotros">
+    <div class="wrap">
+      <div class="editorial editorial--flip">
+        <div class="editorial__media" data-animate="clip">
+          <img src="images/sk-editorial.webp" alt="Operario de Skillcenter trabajando en altura" width="1600" height="1300" loading="lazy">
+        </div>
+        <div class="editorial__body" data-animate="left">
+          <span class="eyebrow">Sobre Skillcenter</span>
+          <h2>Un equipo que cuida cada detalle</h2>
+          <p>Somos Skillcenter S.R.L., una empresa de limpieza que acompaña a oficinas, fábricas, consorcios y edificios de Buenos Aires y Lanús. Trabajamos con procesos claros para que confíes en el resultado.</p>
+          <ul class="editorial__list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg> Personal capacitado y uniformado</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg> Productos e insumos profesionales</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12l4 4 10-10"/></svg> Personal con ART y seguros al día</li>
+          </ul>
+          <div class="sectores">
+            <span>Oficinas</span><span>Fábricas</span><span>Consorcios</span><span>Edificios</span><span>Locales</span><span>Depósitos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESEÑAS -->
+  <section class="section section--alt">
+    <div class="wrap">
+      <div class="section__head center">
+        <span class="eyebrow" data-animate="up">Clientes</span>
+        <h2 data-animate="up" style="--i:1">Empresas que confían en nosotros</h2>
+      </div>
+      <div class="resenas">
+        <div class="resena" data-animate="up">
+          <div class="resena__stars" aria-label="5 de 5 estrellas">★★★★★</div>
+          <p>"Contratamos a Skillcenter para el consorcio y el cambio se notó enseguida. Cumplen con los horarios y el trato es excelente."</p>
+          <div class="resena__who"><span class="resena__ava">R</span><div><strong>Roberto M.</strong><span>Administrador de consorcio</span></div></div>
+        </div>
+        <div class="resena" data-animate="up" style="--i:1">
+          <div class="resena__stars" aria-label="5 de 5 estrellas">★★★★★</div>
+          <p>"La oficina quedó impecable y el equipo es súper prolijo. Responden rápido y se adaptan a nuestros horarios."</p>
+          <div class="resena__who"><span class="resena__ava">L</span><div><strong>Lucía F.</strong><span>Oficina en Lanús</span></div></div>
+        </div>
+        <div class="resena" data-animate="up" style="--i:2">
+          <div class="resena__stars" aria-label="5 de 5 estrellas">★★★★★</div>
+          <p>"Se ocupan de la limpieza de la planta con toda la seguridad. Profesionales y confiables, los recomiendo."</p>
+          <div class="resena__who"><span class="resena__ava">M</span><div><strong>Martín S.</strong><span>Jefe de planta</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACTO -->
+  <section class="section" id="contacto">
+    <div class="wrap">
+      <div class="contacto">
+        <div class="contacto__info" data-animate="left">
+          <span class="eyebrow">Contacto</span>
+          <h2>Pedí tu presupuesto sin cargo</h2>
+          <p>Contanos qué necesitás limpiar y coordinamos una visita para pasarte una propuesta a medida.</p>
+          <div class="contacto__data">
+            <a href="https://wa.me/5491123421266" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-4A8.4 8.4 0 1 1 21 11.5z"/></svg>
+              <div>+54 9 11 2342-1266<span>WhatsApp · respondemos rápido</span></div>
+            </a>
+            <a href="https://instagram.com/skillcenter_on" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg>
+              <div>@skillcenter_on<span>Seguinos en Instagram</span></div>
+            </a>
+            <div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+              <div>Buenos Aires · Lanús<span>Cobertura en CABA y GBA</span></div>
+            </div>
+          </div>
+        </div>
+        <form class="form" id="contact-form" novalidate data-animate="right">
+          <div class="field"><label for="c-nombre">Nombre</label><input id="c-nombre" name="nombre" type="text" required placeholder="Tu nombre"></div>
+          <div class="field"><label for="c-empresa">Empresa / consorcio</label><input id="c-empresa" name="empresa" type="text" placeholder="Nombre de tu empresa (opcional)"></div>
+          <div class="field"><label for="c-tel">Teléfono</label><input id="c-tel" name="telefono" type="tel" required placeholder="Ej: 11 2342-1266"></div>
+          <div class="field"><label for="c-serv">Tipo de servicio</label>
+            <select id="c-serv" name="servicio">
+              <option>Oficinas</option><option>Fábricas</option><option>Consorcios</option><option>Edificios</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="field"><label for="c-msg">Mensaje</label><textarea id="c-msg" name="mensaje" required placeholder="Contanos qué necesitás limpiar y con qué frecuencia"></textarea></div>
+          <button class="btn btn--primary btn--block btn--lg" type="submit">Solicitar presupuesto</button>
+        </form>
+      </div>
+      <div class="ubic" style="margin-top:2.4rem">
+        <div class="ubic__body" data-animate="up">
+          <span class="eyebrow">Dónde estamos</span>
+          <h2>Cerca de tu empresa</h2>
+          <p>Trabajamos en Lanús y toda la zona de Buenos Aires. Coordinamos la visita en el día y horario que te quede cómodo.</p>
+          <a class="btn btn--primary" href="https://wa.me/5491123421266" target="_blank" rel="noopener">Coordinar una visita</a>
+        </div>
+        <div id="map" data-lat="-34.7061" data-lng="-58.3936" data-zoom="14" data-marker="#1b6fb3" role="img" aria-label="Mapa de la zona de cobertura en Lanús" data-animate="right"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA BAND -->
+  <section class="section">
+    <div class="wrap">
+      <div class="ctaband" data-animate="zoom">
+        <img src="images/sk-cta.webp" alt="Servicio de limpieza profesional Skillcenter" width="1920" height="1080" loading="lazy">
+        <div class="ctaband__inner">
+          <span class="eyebrow">Empecemos</span>
+          <h2>Tu espacio impecable, sin que te ocupes de nada</h2>
+          <p>Pedí tu presupuesto sin cargo y coordinamos la primera visita.</p>
+          <a class="btn btn--light btn--lg" href="https://wa.me/5491123421266?text=%C2%A1Hola%20Skillcenter!%20Quiero%20coordinar%20una%20visita%20para%20un%20presupuesto." target="_blank" rel="noopener">Pedir presupuesto por WhatsApp</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__top">
+      <div class="footer__brand">
+        <span class="brand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7l6-3 6 3M4 14l6 3 6-3M20 21V10l-4-2M14 5l3-1.5L20 5v5"/><path d="M4 14 2 8l5-2 3 1.5"/></svg> Skill<b>center</b></span>
+        <p>Skillcenter S.R.L. · Empresa de limpieza para oficinas, fábricas, consorcios y edificios en Buenos Aires y Lanús.</p>
+      </div>
+      <div class="footer__col">
+        <h4>Servicios</h4>
+        <a href="#servicios">Oficinas</a>
+        <a href="#servicios">Fábricas</a>
+        <a href="#servicios">Consorcios</a>
+        <a href="#servicios">Edificios</a>
+      </div>
+      <div class="footer__col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/5491123421266" target="_blank" rel="noopener">WhatsApp</a>
+        <a href="https://instagram.com/skillcenter_on" target="_blank" rel="noopener">Instagram</a>
+        <a href="#contacto">Pedir presupuesto</a>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <p>© <span data-year>2026</span> Skillcenter S.R.L. · Buenos Aires</p>
+      <p class="footer__credit"><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a> <span class="ai">· con asistencia de IA</span></p>
+    </div>
+  </div>
+</footer>
+
+<div class="overlay" id="overlay"></div>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491123421266?text=%C2%A1Hola%20Skillcenter!%20Quiero%20un%20presupuesto%20de%20limpieza." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "banco": "Material provisto por el cliente (10 imagenes PNG en DemosEnProceso/cabañasdonjuvenal/images, convertidas a WebP con optimize-images.py, originales intactos). Sin stock: pedido explicito de Pablo (28-jul-2026).",
+  "imagenes": [
+    { "archivo": "cabana-ribera_2.8x1.webp", "origen": "cliente", "uso": "hero - franja panoramica del rio" },
+    { "archivo": "pesca-al-amanecer_9x16.webp", "origen": "cliente", "uso": "hero - foto vertical enmarcada" },
+    { "archivo": "frente-cabana_1x1.webp", "origen": "cliente", "uso": "seccion cabanas (bento) + og:image" },
+    { "archivo": "habitacion-rustica_4x5.webp", "origen": "cliente", "uso": "seccion cabanas (bento)" },
+    { "archivo": "living-rustico_1x1.webp", "origen": "cliente", "uso": "seccion cabanas (bento)" },
+    { "archivo": "cocina-rustica_1x1.webp", "origen": "cliente", "uso": "seccion cabanas (bento)" },
+    { "archivo": "galeria-con-asador_1x1.webp", "origen": "cliente", "uso": "seccion cabanas (bento)" },
+    { "archivo": "muelle-de-pesca_1x1.webp", "origen": "cliente", "uso": "seccion pesca (split)" },
+    { "archivo": "vista-aerea-cabana_5x3.webp", "origen": "cliente", "uso": "seccion paseos (split)" },
+    { "archivo": "cabana-nocturna_1x1.webp", "origen": "cliente", "uso": "fondo CTA final nocturno" }
+  ],
+  "descartes": [
+    { "intento": "lancha-cutout (recorte rembg de pesca-al-amanecer)", "motivo": "la bruma dorada no da borde separable: sujeto semitransparente (alpha ~9). Protagonista del hero reemplazado por objetos HTML/SVG (sol, parte del rio, sello)." }
+  ]
+}

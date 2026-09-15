@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 215" role="img" aria-labelledby="title desc">
+  <title id="title">N A Gestoría Integral</title>
+  <desc id="desc">Gestoría automotor e inmobiliaria</desc>
+  <g fill="#FFFFFF">
+    <path d="M72 108V20h14l101 70V20h15v88h-14L87 38v70H72Z"/>
+    <rect x="245" y="8" width="8" height="112" rx="4"/>
+    <path fill-rule="evenodd" d="M300 108 348 20h16l49 88h-17l-12-23h-56l-12 23h-16Zm35-37h42l-21-39-21 39Z"/>
+    <rect x="60" y="124" width="153" height="4" rx="2"/>
+    <rect x="291" y="124" width="153" height="4" rx="2"/>
+    <rect x="67" y="172" width="366" height="2" rx="1"/>
+    <text x="250" y="162" font-family="Arial, Helvetica, sans-serif" font-size="31" font-weight="400" letter-spacing="4" text-anchor="middle">GESTORÍA INTEGRAL</text>
+    <text x="250" y="202" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="600" letter-spacing="4.2" text-anchor="middle">AUTOMOTOR E INMOBILIARIA</text>
+  </g>
+</svg>

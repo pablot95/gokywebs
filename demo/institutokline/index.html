@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Instituto Kline — Elegí la mejor versión</title>
+<meta name="theme-color" content="#0b1f42">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23215d9e'/%3E%3Ctext x='16' y='22' font-family='Georgia,serif' font-size='16' fill='white' text-anchor='middle' font-weight='700'%3EK%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100dvh;font-family:"Manrope",Arial,sans-serif;background:#0b1f42;color:#eaf2fc;
+    background-image:radial-gradient(60% 50% at 80% 0%,rgba(91,157,255,.16),transparent 60%),radial-gradient(55% 50% at 10% 100%,rgba(47,127,224,.14),transparent 60%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:clamp(1.5rem,5vw,4rem)}
+  h1{font-size:clamp(1.6rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;text-align:center;margin-bottom:clamp(1.8rem,4vw,3rem)}
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1rem,3vw,2rem);width:min(100%,1000px)}
+  .card{display:block;background:rgba(255,255,255,.04);border:1px solid rgba(150,180,235,.22);border-radius:18px;overflow:hidden;
+    transition:transform .3s cubic-bezier(.23,1,.32,1),box-shadow .3s,border-color .3s;text-decoration:none;color:inherit}
+  .card:hover,.card:focus-visible{transform:translateY(-6px);border-color:rgba(91,157,255,.6);box-shadow:0 24px 60px rgba(0,0,0,.4)}
+  .card:focus-visible{outline:3px solid #5b9dff;outline-offset:3px}
+  .thumb{aspect-ratio:16/9;overflow:hidden;background:#123063}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .label{padding:1rem 1.3rem;font-weight:700;font-size:1.05rem;display:flex;align-items:center;justify-content:space-between}
+  .label svg{width:20px;height:20px;color:#5b9dff}
+  @media (max-width:640px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <h1>Elegí la mejor versión.</h1>
+  <div class="cards">
+    <a class="card" href="version-1/">
+      <div class="thumb"><img src="previews/version-1.webp" width="1440" height="810" alt="Vista previa de la Versión 1 de Instituto Kline, dirección clara y cálida"></div>
+      <div class="label">Versión 1 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+    </a>
+    <a class="card" href="version-2/">
+      <div class="thumb"><img src="previews/version-2.webp" width="1440" height="810" alt="Vista previa de la Versión 2 de Instituto Kline, dirección oscura y estructurada"></div>
+      <div class="label">Versión 2 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+    </a>
+  </div>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

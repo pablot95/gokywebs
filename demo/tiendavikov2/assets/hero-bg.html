@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tiendaviko — Fondo hero</title>
+<link rel="icon" href="data:,">
+<!--
+  TIENDAVIKO — Fondo hero WebGL (Three.js) — sin textos ni UI.
+  Concepto: "TELA EN MOVIMIENTO" — cientos de puntadas de tela pastel que se reorganizan:
+  hilos sueltos -> tejido (trama y urdimbre) -> cintas que fluyen -> percha giratoria
+  -> drapeado -> floracion final. Una prenda protagonista se despliega en el climax.
+  ATMOSFERA CLARA DE PUNTA A PUNTA (crema -> lila -> celeste -> dorado suave): NUNCA oscurece,
+  por eso el sitio usa texto oscuro con velo claro.
+
+  4 actos / 11 hitos (progress 0->1):
+  ~.02 hilos sueltos flotando   ~.10 se ordenan en trama    ~.20 el tejido se cierra y respira
+  ~.30 la trama se suelta en cintas  ~.42 las cintas giran y forman la percha
+  ~.50 CLIMAX: se despliega la prenda protagonista + los botones entran
+  ~.62 la percha colapsa en drapeado  ~.72 amanece celeste, el drapeado ondula
+  ~.82 el drapeado florece hacia afuera  ~.92 los botones se alinean  ~.98 resolucion dorada
+
+  USO EN IFRAME: el padre envia postMessage {type:'scroll'|'hero-progress', progress:0..1}
+  y {type:'hero-active', active:bool}. Si no llegan mensajes usa su propio scroll (300vh).
+-->
+<style>
+  html{scroll-behavior:auto}
+  body{margin:0;height:300vh;background:#fdf6f4;overflow-x:hidden}
+  .bg,#hero-canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+  .bg{z-index:0}
+  #hero-canvas{z-index:5}
+  .bg-base{background:radial-gradient(120% 100% at 50% 30%, #fffdfc 0%, #fdf6f4 44%, #f6ecf2 100%)}
+  .bg-lila{opacity:0;background:linear-gradient(168deg,#f6effc 0%,#ece2f8 56%,#e2d6f3 100%)}
+  .bg-cel{opacity:0;background:radial-gradient(80% 70% at 62% 30%, rgba(168,217,240,.62) 0%, rgba(168,217,240,0) 70%)}
+  .bg-oro{opacity:0;background:linear-gradient(0deg, rgba(224,198,138,.5) 0%, rgba(224,198,138,.12) 34%, rgba(255,255,255,0) 62%)}
+  .bg-vig{opacity:.1;z-index:6;background:radial-gradient(92% 80% at 50% 46%, rgba(255,255,255,0) 56%, rgba(120,100,130,.16) 100%)}
+  .no-webgl .bg-lila{opacity:.5}
+</style>
+</head>
+<body>
+<div class="bg bg-base" aria-hidden="true"></div>
+<div class="bg bg-lila" id="bgLila" aria-hidden="true"></div>
+<div class="bg bg-cel" id="bgCel" aria-hidden="true"></div>
+<div class="bg bg-oro" id="bgOro" aria-hidden="true"></div>
+<div class="bg bg-vig" id="bgVig" aria-hidden="true"></div>
+<canvas id="hero-canvas" aria-hidden="true"></canvas>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+
+/* ---------- utilidades ---------- */
+const clamp01=v=>v<0?0:v>1?1:v;
+const sm=t=>t*t*(3-2*t);
+const E={lin:t=>t,c3o:t=>1-Math.pow(1-t,3),c3io:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,bko:t=>{const c=1.5;return 1+(c+1)*Math.pow(t-1,3)+c*Math.pow(t-1,2)}};
+const seg=(p,a,b,e)=>{if(p<=a)return 0;if(p>=b)return 1;const t=(p-a)/(b-a);return e?e(t):sm(t)};
+const H=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+function tN(k){return p=>{const n=k.length;if(p<=k[0][0])return k[0][1];if(p>=k[n-1][0])return k[n-1][1];let j=0;while(p>k[j+1][0])j++;const a=k[j],b=k[j+1],t=sm((p-a[0])/(b[0]-a[0]));return a[1]+(b[1]-a[1])*t;};}
+function tV(k){const o=new THREE.Vector3();return p=>{const n=k.length;let A=k[0][1],B=k[n-1][1];if(p<=k[0][0])return o.set(A[0],A[1],A[2]);if(p>=k[n-1][0])return o.set(B[0],B[1],B[2]);let j=0;while(p>k[j+1][0])j++;A=k[j][1];B=k[j+1][1];const t=sm((p-k[j][0])/(k[j+1][0]-k[j][0]));return o.set(A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t);};}
+function tC(k){const o=new THREE.Color();const ks=k.map(e=>[e[0],new THREE.Color(e[1])]);return p=>{const n=ks.length;if(p<=ks[0][0])return o.copy(ks[0][1]);if(p>=ks[n-1][0])return o.copy(ks[n-1][1]);let j=0;while(p>ks[j+1][0])j++;const t=sm((p-ks[j][0])/(ks[j+1][0]-ks[j][0]));return o.copy(ks[j][1]).lerp(ks[j+1][1],t);};}
+
+/* ---------- entorno ---------- */
+const isM=matchMedia('(pointer:coarse)').matches||innerWidth<720;
+const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas=document.getElementById('hero-canvas');
+let renderer=null;
+try{
+  renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true,powerPreference:'high-performance'});
+}catch(err){renderer=null;}
+if(!renderer){document.body.classList.add('no-webgl');}
+else{
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,isM?1.5:2));
+renderer.setClearColor(0x000000,0);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.18;
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.Fog(0xfdf6f4,16,54);
+const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,120);
+const world=new THREE.Group();scene.add(world);
+
+/* ---------- luces (claras, difusas) ---------- */
+const hemi=new THREE.HemisphereLight(0xffffff,0xefe4f2,1.15);scene.add(hemi);
+const dir=new THREE.DirectionalLight(0xfff6f2,1.6);dir.position.set(5,9,7);scene.add(dir);
+const fill=new THREE.PointLight(0xc9b6ee,14,52,1.5);fill.position.set(-8,3,6);scene.add(fill);
+const warm=new THREE.PointLight(0xe0c68a,0,50,1.4);warm.position.set(5,-2,3);scene.add(warm);
+const amb=new THREE.AmbientLight(0xffffff,.5);scene.add(amb);
+
+/* ---------- geometrias / materiales ---------- */
+const stitchGeo=new THREE.BoxGeometry(.52,.1,.04);   // "puntada" de tela
+const sphereGeo=new THREE.SphereGeometry(1,28,18);
+const stMat=new THREE.MeshStandardMaterial({roughness:.72,metalness:.03});
+
+/* ---------- formaciones ---------- */
+const N=isM?240:420;
+const H1=new Float32Array(N),H2=new Float32Array(N),H3=new Float32Array(N);
+for(let i=0;i<N;i++){H1[i]=H(i);H2[i]=H(i+9001);H3[i]=H(i+70003);}
+const F={};
+function mkF(){return{pos:new Float32Array(N*3),quat:new Float32Array(N*4),scl:new Float32Array(N).fill(1)};}
+const _e=new THREE.Euler(),_q=new THREE.Quaternion(),_v=new THREE.Vector3();
+function put(f,i,x,y,z,rx,ry,rz,s){f.pos[i*3]=x;f.pos[i*3+1]=y;f.pos[i*3+2]=z;
+  _e.set(rx,ry,rz);_q.setFromEuler(_e);
+  f.quat[i*4]=_q.x;f.quat[i*4+1]=_q.y;f.quat[i*4+2]=_q.z;f.quat[i*4+3]=_q.w;f.scl[i]=s;}
+
+/* hilos sueltos */
+F.THREADS=mkF();
+for(let i=0;i<N;i++){const a=H1[i]*Math.PI*2,r=3.5+H2[i]*8.5;
+  put(F.THREADS,i,Math.cos(a)*r,(H3[i]-.5)*12,Math.sin(a)*r*.65-3,
+    H1[i]*6.28,H2[i]*6.28,H3[i]*6.28,.7+H2[i]*.6);}
+
+/* tejido: trama y urdimbre */
+F.WEAVE=mkF();
+{const cols=Math.ceil(Math.sqrt(N)),sp=.62;
+ for(let i=0;i<N;i++){const cx=i%cols,cy=Math.floor(i/cols);
+   const par=(cx+cy)%2===0;
+   const x=(cx-cols/2)*sp,y=(cy-cols/2)*sp+.6;
+   const z=-1.5+Math.sin(cx*.7)*.18+Math.cos(cy*.7)*.18;
+   put(F.WEAVE,i,x,y,z,0,0,par?0:Math.PI/2,1);}}
+
+/* cintas que fluyen */
+F.RIBBON=mkF();
+for(let i=0;i<N;i++){const band=i%5,idx=Math.floor(i/5),per=Math.ceil(N/5),t=per>1?idx/(per-1):0;
+  const u=t*Math.PI*2.4;
+  const x=-8+t*16,y=Math.sin(u+band*1.1)*2.2+(band-2)*1.05,z=Math.cos(u*.8+band)*2.4-2;
+  const tang=Math.cos(u+band*1.1);
+  put(F.RIBBON,i,x,y,z,0,0,Math.atan2(tang*2.2,16/ (per||1) *4),.95+H1[i]*.3);}
+
+/* percha giratoria: paneles verticales en cilindro */
+const RC=new THREE.Vector3(0,.6,-1.6);
+F.RACK=mkF();
+for(let i=0;i<N;i++){const ring=i%3,idx=Math.floor(i/3),per=Math.ceil(N/3);
+  const a=(idx/per)*Math.PI*2+ring*.24,r=4.2+ring*1.15;
+  const x=RC.x+Math.cos(a)*r,z=RC.z+Math.sin(a)*r;
+  const y=RC.y+(H1[i]-.5)*4.6;
+  put(F.RACK,i,x,y,z,0,-a,Math.PI/2,.9+H2[i]*.35);}
+
+/* drapeado: cupula suave */
+const DC=new THREE.Vector3(0,-.6,-1.2);
+F.DRAPE=mkF();
+for(let i=0;i<N;i++){const y1=(i+.5)/N,th=Math.acos(1-y1*1.15),ph=i*2.39996,r=5.4;
+  const x=DC.x+Math.sin(th)*Math.cos(ph)*r,y=DC.y+Math.cos(th)*r*.85,z=DC.z+Math.sin(th)*Math.sin(ph)*r*.8;
+  put(F.DRAPE,i,x,y,z,th*.7,ph,Math.sin(ph)*.5,.85+H3[i]*.3);}
+
+/* floracion final */
+const BC=new THREE.Vector3(0,1,-2);
+F.BLOOM=mkF();
+for(let i=0;i<N;i++){const petal=i%7,idx=Math.floor(i/7),per=Math.ceil(N/7),t=per>1?idx/(per-1):0;
+  const a=(petal/7)*Math.PI*2,rr=1.4+t*6.4,lift=Math.sin(t*Math.PI)*2.2;
+  const x=BC.x+Math.cos(a)*rr,y=BC.y+lift+(t-.5)*1.6,z=BC.z+Math.sin(a)*rr*.7;
+  put(F.BLOOM,i,x,y,z,t*1.2,-a,Math.PI/2-t*.8,.6+t*.8);}
+
+/* ---------- cronograma de morphs ---------- */
+const SEGS=[
+  {a:.03,b:.16,A:F.THREADS,B:F.WEAVE,e:E.c3o,st:.5,lift:1.6},
+  {a:.24,b:.37,A:F.WEAVE,B:F.RIBBON,e:E.c3io,st:.45,lift:2.4},
+  {a:.42,b:.55,A:F.RIBBON,B:F.RACK,e:E.c3io,st:.4,lift:1.8},
+  {a:.61,b:.73,A:F.RACK,B:F.DRAPE,e:E.c3o,st:.5,lift:1.5},
+  {a:.81,b:.95,A:F.DRAPE,B:F.BLOOM,e:E.bko,st:.4,lift:1.2}
+];
+
+/* ---------- malla instanciada ---------- */
+const st=new THREE.InstancedMesh(stitchGeo,stMat,N);
+st.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+st.frustumCulled=false;world.add(st);
+const PAL=[['#f3d9e4',.22],['#e6d8f5',.20],['#a8d9f0',.16],['#ffffff',.16],['#e0c68a',.12],['#cbb6e8',.09],['#8fc7e4',.05]];
+const _c=new THREE.Color();
+for(let i=0;i<N;i++){let a=0,pick=PAL[0][0];const h=H2[i];for(const[cc,w]of PAL){a+=w;if(h<=a){pick=cc;break;}}st.setColorAt(i,_c.set(pick));}
+st.instanceColor.needsUpdate=true;
+
+const aP=new THREE.Vector3(),bP=new THREE.Vector3(),aQ=new THREE.Quaternion(),bQ=new THREE.Quaternion(),sV=new THREE.Vector3(),mM=new THREE.Matrix4(),tumQ=new THREE.Quaternion();
+const AXN=16,axes=[];for(let k=0;k<AXN;k++)axes.push(new THREE.Vector3(H(k+3)-.5,H(k+33)-.5,H(k+77)-.5).normalize());
+function sampleF(f,i,P,Q){P.fromArray(f.pos,i*3);Q.fromArray(f.quat,i*4);return f.scl[i];}
+function updateStitches(p){
+  for(let i=0;i<N;i++){
+    let A=F.THREADS,B=null,sg=null,tt=0;
+    for(let k=0;k<SEGS.length;k++){const s=SEGS[k];
+      if(p>=s.b){A=s.B;continue;}
+      if(p>s.a){sg=s;A=s.A;B=s.B;const raw=(p-s.a)/(s.b-s.a),stg=s.st*H1[i];tt=s.e(clamp01((raw-stg)/Math.max(1e-4,1-stg)));}
+      break;}
+    let sc=sampleF(A,i,aP,aQ);
+    if(sg&&tt>0){const sb=sampleF(B,i,bP,bQ);
+      if(tt>=1){aP.copy(bP);aQ.copy(bQ);sc=sb;}
+      else{aP.lerp(bP,tt);aQ.slerp(bQ,clamp01(tt));sc=sc+(sb-sc)*tt;
+        const w=Math.sin(Math.min(1,tt)*Math.PI);
+        aP.y+=w*sg.lift*(.3+H1[i]*1.1);
+        aP.x+=w*(H2[i]-.5)*sg.lift*1.5;
+        aP.z+=w*(H3[i]-.5)*sg.lift*1.3;
+        tumQ.setFromAxisAngle(axes[i%AXN],w*(H2[i]-.5)*3.6);aQ.premultiply(tumQ);}}
+    mM.compose(aP,aQ,sV.set(sc,sc,sc));
+    st.setMatrixAt(i,mM);
+  }
+  st.instanceMatrix.needsUpdate=true;
+}
+
+/* ---------- protagonista: la prenda que se despliega ---------- */
+const prenda=new THREE.Group();world.add(prenda);
+const prendaMat=new THREE.MeshStandardMaterial({color:'#ffffff',roughness:.6,metalness:.02,side:THREE.DoubleSide,transparent:true,opacity:0});
+const panelGeo=new THREE.PlaneGeometry(2.5,3.2,1,1);
+const pMid=new THREE.Mesh(panelGeo,prendaMat);prenda.add(pMid);
+const alaMat=new THREE.MeshStandardMaterial({color:'#f3d9e4',roughness:.62,metalness:.02,side:THREE.DoubleSide,transparent:true,opacity:0});
+const alaL=new THREE.Mesh(new THREE.PlaneGeometry(1.5,3.2,1,1),alaMat);alaL.position.x=-1.25;prenda.add(alaL);
+const alaR=new THREE.Mesh(new THREE.PlaneGeometry(1.5,3.2,1,1),alaMat);alaR.position.x=1.25;prenda.add(alaR);
+const trimMat=new THREE.MeshStandardMaterial({color:'#e0c68a',roughness:.4,metalness:.25,transparent:true,opacity:0});
+const trim=new THREE.Mesh(new THREE.TorusGeometry(.62,.035,10,48),trimMat);trim.position.y=1.35;prenda.add(trim);
+const prendaPos=tV([[.44,[-1.2,-1.4,-3]],[.52,[.2,.5,.6]],[.64,[.6,1,1.2]],[.78,[1.4,1.6,-.5]],[.92,[2.2,2.2,-3]],[1,[2.6,2.6,-4.5]]]);
+const prendaScl=tN([[.44,.02],[.52,1],[.68,1.15],[1,.9]]);
+const prendaYaw=tN([[.44,-1.2],[.54,-.12],[.78,.22],[1,.42]]);
+const prendaOp=tN([[.44,0],[.5,.95],[.86,.9],[1,.72]]);
+function updatePrenda(p){
+  if(p<.43){prenda.visible=false;return;}
+  prenda.visible=true;
+  prenda.position.copy(prendaPos(p));
+  prenda.rotation.set(.06,prendaYaw(p),0);
+  prenda.scale.setScalar(prendaScl(p));
+  const op=prendaOp(p);prendaMat.opacity=op;alaMat.opacity=op*.92;trimMat.opacity=op*.9;
+  // revelacion: las alas se despliegan como una prenda que se abre
+  const open=seg(p,.5,.62,E.c3io);
+  alaL.rotation.y=(1-open)*1.35;alaR.rotation.y=-(1-open)*1.35;
+  alaL.position.x=-1.25+(1-open)*.7;alaR.position.x=1.25-(1-open)*.7;
+  trim.scale.setScalar(.6+open*.6);
+}
+
+/* ---------- secundarios: botones que orbitan y se alinean ---------- */
+const botones=[];
+for(let i=0;i<3;i++){
+  const m=new THREE.Mesh(sphereGeo,new THREE.MeshStandardMaterial({color:i===1?'#e0c68a':'#a8d9f0',roughness:.35,metalness:.15}));
+  m.scale.setScalar(.001);world.add(m);botones.push(m);
+}
+const botSlots=[[-4.4,3.4,-4],[-2.8,4.1,-5],[-1.2,4.8,-6]];
+const botAp=tN([[.3,0],[.44,1],[1,1]]);
+function updateBotones(p){
+  const ap=botAp(p),al=seg(p,.86,.96,E.c3io);
+  for(let i=0;i<3;i++){
+    const m=botones[i];
+    if(ap<=.01){m.visible=false;continue;}
+    m.visible=true;
+    const a=1.1+i*2.1+seg(p,.3,1,E.lin)*(1.6+i*.5)*3;
+    const orb=new THREE.Vector3(Math.cos(a)*6.6,1.4+Math.sin(a*1.4)*1.4,Math.sin(a)*3.4-2);
+    const slot=new THREE.Vector3(botSlots[i][0],botSlots[i][1],botSlots[i][2]);
+    m.position.copy(orb.lerp(slot,al));
+    m.scale.setScalar((.24+i*.05)*ap);
+  }
+}
+
+/* ---------- props: aros y cintas de primer plano ---------- */
+const props=[];
+function prop(mesh,cfg){mesh.material.transparent=true;world.add(mesh);const o=Object.assign({mesh,mat:mesh.material},cfg);props.push(o);return o;}
+function aro(r,col){return new THREE.Mesh(new THREE.TorusGeometry(r,.055,10,72),new THREE.MeshStandardMaterial({color:col,roughness:.5,metalness:.1}));}
+prop(aro(3.6,'#cbb6e8'),{pos:tV([[0,[-6.5,1,-8]],[.2,[-7.4,1.6,-6]],[.44,[-9,2.6,-9]],[.6,[-6,-2.6,-10]],[.82,[-5.4,-2,-8.5]],[1,[-5,-1.6,-8]]]),
+  rot:tV([[0,[.3,.5,.2]],[.44,[.9,.3,.9]],[.6,[1.4,0,.2]],[1,[1.2,-.2,.4]]]),
+  op:tN([[0,.75],[.4,.7],[.5,0],[.66,.6],[1,.7]]),scl:tN([[0,1],[.6,1.15],[1,1.3]])});
+prop(aro(4.6,'#a8d9f0'),{pos:tV([[.12,[7,.6,-9]],[.34,[8.2,1.6,-7]],[.6,[9.4,3,-11]],[1,[7.4,4,-13]]]),
+  rot:tV([[.12,[.2,-.5,-.3]],[.6,[.9,-.3,-1]],[1,[1.3,0,-.5]]]),
+  op:tN([[.12,0],[.22,.6],[.7,.55],[1,.4]]),scl:tN([[0,1],[1,1.2]])});
+function cintaFG(col){const m=new THREE.Mesh(new THREE.BoxGeometry(9,.22,.05),new THREE.MeshStandardMaterial({color:col,roughness:.6}));m.material.transparent=true;world.add(m);const o={mesh:m,mat:m.material,fg:true};props.push(o);return o;}
+Object.assign(cintaFG('#f3d9e4'),{pos:tV([[0,[-5,-4.5,6]],[.18,[-4,-1.4,6.2]],[.34,[-6,2.6,6.4]]]),rot:tV([[0,[0,.2,.35]],[.34,[0,.4,.7]]]),op:tN([[0,.8],[.26,.7],[.36,0]]),scl:tN([[0,1]])});
+Object.assign(cintaFG('#e0c68a'),{pos:tV([[.56,[6,-4.5,5.8]],[.72,[5,-1,6]],[.9,[7,3,6.2]]]),rot:tV([[.56,[0,-.2,-.4]],[.9,[0,-.4,-.75]]]),op:tN([[.56,0],[.64,.7],[.84,.6],[.92,0]]),scl:tN([[0,1]])});
+function updateProps(p){
+  for(const o of props){const op=o.op?o.op(p):1;
+    if(op<=.004){o.mesh.visible=false;continue;}
+    o.mesh.visible=true;o.mat.opacity=op;
+    o.mesh.position.copy(o.pos(p));
+    if(o.rot){const r=o.rot(p);o.mesh.rotation.set(r.x,r.y,r.z);}
+    const s=o.scl?o.scl(p):1;o.mesh.scale.setScalar(s);}
+}
+
+/* ---------- pistas globales ---------- */
+const camPos=tV([[0,[0,1.6,13]],[.1,[1.4,1,11.6]],[.2,[.2,.6,9]],[.3,[-2.2,1.6,10.6]],[.42,[-.6,2.6,11.4]],[.52,[.4,1.2,9.6]],[.62,[2.4,1.4,10.8]],[.72,[.8,2.6,12.4]],[.82,[-.8,2,13.6]],[.92,[0,3,15.6]],[1,[0,3.6,17.4]]]);
+const camLook=tV([[0,[0,.6,-2]],[.2,[0,.4,-3]],[.3,[-.5,.6,-2.5]],[.42,[0,.8,-2]],[.52,[0,.8,-1.2]],[.62,[0,.6,-1.6]],[.72,[0,1,-2]],[.82,[0,1.4,-3]],[1,[0,2,-6]]]);
+const camFov=tN([[0,52],[.2,62],[.4,54],[.52,50],[.72,56],[1,60]]);
+const hemiSky=tC([[0,'#ffffff'],[.35,'#f6effc'],[.62,'#eaf5fc'],[.85,'#fff4e4'],[1,'#fff8ec']]);
+const hemiInt=tN([[0,1.15],[.5,1.05],[1,1.2]]);
+const dirCol=tC([[0,'#fff6f2'],[.4,'#f0e6ff'],[.7,'#e6f4ff'],[1,'#fff0d8']]);
+const dirInt=tN([[0,1.6],[.45,1.4],[.75,1.7],[1,1.9]]);
+const dirPos=tV([[0,[5,9,7]],[.4,[-5,7,3]],[.7,[-3,8,-5]],[1,[4,10,-2]]]);
+const fillInt=tN([[0,14],[.45,20],[.8,14],[1,9]]);
+const fillCol=tC([[0,'#c9b6ee'],[.6,'#a8d9f0'],[1,'#e0c68a']]);
+const warmInt=tN([[.6,0],[.82,26],[1,20]]);
+const fogCol=tC([[0,'#fdf6f4'],[.4,'#f2ecfa'],[.7,'#eaf4fb'],[1,'#fdf4e6']]);
+const fogNear=tN([[0,16],[.5,12],[1,18]]);
+const fogFar=tN([[0,54],[.5,46],[1,64]]);
+const expo=tN([[0,1.18],[.5,1.22],[.8,1.26],[1,1.2]]);
+const opLila=tN([[0,.08],[.3,.55],[.55,.5],[.78,.2],[1,.05]]);
+const opCel=tN([[.4,0],[.62,.5],[.8,.6],[1,.3]]);
+const opOro=tN([[.72,0],[.9,.55],[1,.8]]);
+const opVig=tN([[0,.1],[.5,.14],[1,.2]]);
+const elLila=document.getElementById('bgLila'),elCel=document.getElementById('bgCel'),elOro=document.getElementById('bgOro'),elVig=document.getElementById('bgVig');
+const bgCache={l:-1,c:-1,o:-1,v:-1};
+function updateBG(p){
+  const l=opLila(p),c=opCel(p),o=opOro(p),v=opVig(p);
+  if(Math.abs(l-bgCache.l)>.004){elLila.style.opacity=l;bgCache.l=l;}
+  if(Math.abs(c-bgCache.c)>.004){elCel.style.opacity=c;bgCache.c=c;}
+  if(Math.abs(o-bgCache.o)>.004){elOro.style.opacity=o;bgCache.o=o;}
+  if(Math.abs(v-bgCache.v)>.004){elVig.style.opacity=v;bgCache.v=v;}
+  scene.fog.color.copy(fogCol(p));scene.fog.near=fogNear(p);scene.fog.far=fogFar(p);
+  renderer.toneMappingExposure=expo(p);
+}
+function updateLights(p){
+  hemi.color.copy(hemiSky(p));hemi.intensity=hemiInt(p);
+  dir.color.copy(dirCol(p));dir.intensity=dirInt(p);dir.position.copy(dirPos(p));
+  fill.intensity=fillInt(p);fill.color.copy(fillCol(p));
+  warm.intensity=warmInt(p);
+}
+let pf=0;const lookV=new THREE.Vector3();
+function updateCamera(p){
+  const cp=camPos(p);
+  camera.position.set(cp.x*(1-pf*.2)+mxs*.55,cp.y-mys*.3,cp.z*(1+pf*.4)+pf*2);
+  const cl=camLook(p);lookV.set(cl.x+mxs*.18,cl.y-mys*.1,cl.z);camera.lookAt(lookV);
+  camera.fov=camFov(p)+pf*10;camera.updateProjectionMatrix();
+}
+
+/* ---------- entrada ---------- */
+let PT=0,PR=0,external=false,MX=0,MY=0,mxs=0,mys=0;
+function readScroll(){if(external)return;const m=document.documentElement.scrollHeight-innerHeight;PT=m>0?clamp01((window.scrollY||document.documentElement.scrollTop||0)/m):0;}
+addEventListener('scroll',readScroll,{passive:true});
+addEventListener('message',ev=>{const d=ev&&ev.data;if(!d||typeof d!=='object')return;
+  if((d.type==='scroll'||d.type==='hero-progress')&&typeof d.progress==='number'&&isFinite(d.progress)){external=true;PT=clamp01(d.progress);}
+  if(d.type==='hero-active'){if(d.active){if(!raf){lastT=0;raf=requestAnimationFrame(loop);}}else if(raf){cancelAnimationFrame(raf);raf=null;}}});
+if(matchMedia('(hover:hover) and (pointer:fine)').matches){addEventListener('pointermove',e=>{MX=(e.clientX/innerWidth)*2-1;MY=(e.clientY/innerHeight)*2-1;},{passive:true});}
+function onResize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h);camera.aspect=w/h;pf=clamp01((1.05-w/h)/.5);world.scale.setScalar(1-pf*.14);}
+addEventListener('resize',onResize);onResize();readScroll();PR=PT;
+
+/* ---------- bucle ---------- */
+let raf=null,lastT=0;
+function renderAt(p){
+  updateBG(p);updateLights(p);
+  updateStitches(p);updatePrenda(p);updateBotones(p);updateProps(p);
+  updateCamera(p);
+  renderer.render(scene,camera);
+}
+function loop(t){
+  raf=requestAnimationFrame(loop);
+  const dt=lastT?Math.min(.05,(t-lastT)/1000):.016;lastT=t;
+  PR+=(PT-PR)*(1-Math.exp(-dt*(rm?18:7)));
+  mxs+=(MX-mxs)*(1-Math.exp(-dt*4));mys+=(MY-mys)*(1-Math.exp(-dt*4));
+  renderAt(PR);
+}
+try{renderer.compile(scene,camera);}catch(e){}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){if(raf){cancelAnimationFrame(raf);raf=null;lastT=0;}}
+  else if(!raf){raf=requestAnimationFrame(loop);}
+});
+raf=requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>

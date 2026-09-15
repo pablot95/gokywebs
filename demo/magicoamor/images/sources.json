@@ -1,0 +1,32 @@
+{
+  "banco": "Pexels (licencia gratuita, uso comercial permitido, sin atribución obligatoria)",
+  "nota": "Fotos de stock para el demo. Se reemplazan por las fotos reales de los productos de Mágico amor al pasar a producción.",
+  "imagenes": [
+    { "archivo": "col-nube.webp", "url": "https://www.pexels.com/photo/3433368/", "uso": "producto: Colchoneta Nube" },
+    { "archivo": "col-reversible.webp", "url": "https://www.pexels.com/photo/11060021/", "uso": "producto: Colchoneta Reversible" },
+    { "archivo": "col-antipelo.webp", "url": "https://www.pexels.com/photo/8473715/", "uso": "producto: Colchoneta Antipelo" },
+    { "archivo": "somier.webp", "url": "https://www.pexels.com/photo/5938110/", "uso": "producto: Somier de Pino Elevado" },
+    { "archivo": "almohadon.webp", "url": "https://www.pexels.com/photo/8229711/", "uso": "producto: Almohadón Acolchado" },
+    { "archivo": "mantita.webp", "url": "https://www.pexels.com/photo/12503321/", "uso": "producto: Mantita Polar" },
+    { "archivo": "nidito.webp", "url": "https://www.pexels.com/photo/2248516/", "uso": "producto: Nidito Redondo" },
+    { "archivo": "moises.webp", "url": "https://www.pexels.com/photo/7615529/", "uso": "producto: Moisés Ovalado + foto enmarcada del hero" },
+    { "archivo": "iglu.webp", "url": "https://www.pexels.com/photo/1839753/", "uso": "producto: Iglú Carpita + card de categoría Niditos" },
+    { "archivo": "buzo.webp", "url": "https://www.pexels.com/photo/11125925/", "uso": "producto: Buzo Polar + card de categoría Ropa + og.jpg" },
+    { "archivo": "sweater.webp", "url": "https://www.pexels.com/photo/4062213/", "uso": "producto: Sweater Tejido" },
+    { "archivo": "piloto.webp", "url": "https://www.pexels.com/photo/8499241/", "uso": "producto: Piloto Impermeable" },
+    { "archivo": "camperita.webp", "url": "https://www.pexels.com/photo/11926950/", "uso": "producto: Camperita Acolchada" },
+    { "archivo": "chaleco.webp", "url": "https://www.pexels.com/photo/1726969/", "uso": "producto: Chaleco Rayado" },
+    { "archivo": "collar.webp", "url": "https://www.pexels.com/photo/5705543/", "uso": "producto: Collar Clásico + card de categoría Paseo" },
+    { "archivo": "bandana.webp", "url": "https://www.pexels.com/photo/9428205/", "uso": "producto: Bandana Cuadrillé" },
+    { "archivo": "set-paseo.webp", "url": "https://www.pexels.com/photo/10994369/", "uso": "producto: Set Collar + Correa" },
+    { "archivo": "bandana-fiesta.webp", "url": "https://www.pexels.com/photo/8554264/", "uso": "producto: Bandana Estampada" },
+    { "archivo": "taller.webp", "url": "https://www.pexels.com/photo/4621910/", "uso": "sección Nosotros: máquina de coser" },
+    { "archivo": "costura.webp", "url": "https://www.pexels.com/photo/9983579/", "uso": "reserva editorial (costura en detalle)" },
+    { "archivo": "nosotros.webp", "url": "https://www.pexels.com/photo/7788649/", "uso": "sección Nosotros: clienta con su perro" },
+    { "archivo": "mayorista.webp", "url": "https://www.pexels.com/photo/776142/", "uso": "sección Pet shops" },
+    { "archivo": "og.jpg", "url": "https://www.pexels.com/photo/11125925/", "uso": "meta og:image (1200x630)" },
+    { "archivo": "cut-buzo.webp", "url": "https://www.pexels.com/photo/11125925/", "uso": "recorte hero: protagonista con buzo (rembg isnet-general-use)" },
+    { "archivo": "cut-bandana.webp", "url": "https://www.pexels.com/photo/9428205/", "uso": "recorte hero secundario + cierre (rembg isnet-general-use)" },
+    { "archivo": "cut-pom.webp", "url": "https://www.pexels.com/photo/8473715/", "uso": "recorte capítulo del taller: el perro que estrena el nidito (rembg isnet-general-use)" }
+  ]
+}

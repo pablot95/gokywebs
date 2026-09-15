@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pinturería Litoral — Pintura para tu casa y tu obra</title>
+<meta name="description" content="Látex, esmaltes, impermeabilizantes y accesorios. Te tintometramos el color exacto en el momento. Envíos y atención a obras en CABA y GBA.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pinturería Litoral — Pintura para tu casa y tu obra">
+<meta property="og:description" content="Látex, esmaltes, impermeabilizantes y accesorios. Te tintometramos el color exacto en el momento.">
+<meta property="og:image" content="images/og-1200x630.jpg">
+<meta property="og:locale" content="es_AR">
+<meta name="theme-color" content="#123D2D">
+<link rel="icon" type="image/png" href="images/favicon-64.png">
+<link rel="preconnect" href="https://api.fontshare.com">
+<link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@700,500&f[]=general-sans@400,500,600,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HardwareStore",
+  "name": "Pinturería Litoral",
+  "description": "Pinturería con venta de látex, esmaltes, impermeabilizantes y accesorios para el hogar y la obra.",
+  "url": "https://pinturerialitoral.com",
+  "image": "https://pinturerialitoral.com/images/og-1200x630.jpg",
+  "telephone": "+54 9 11 7066-5567",
+  "address": { "@type": "PostalAddress", "addressLocality": "CABA / GBA", "addressCountry": "AR" },
+  "priceRange": "$$"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "¿Puedo llevar una muestra de color para que me la igualen?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Traé un pedacito de pared, una lata vieja o incluso una tela y te tintometramos el color exacto con la máquina, mientras esperás." } },
+    { "@type": "Question", "name": "¿Atienden pedidos para obra?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, trabajamos con contratistas y arquitectos: precio por cantidad, despacho coordinado y asesoramiento en el momento de la compra." } },
+    { "@type": "Question", "name": "¿Hacen envíos?", "acceptedAnswer": { "@type": "Answer", "text": "Sí, a CABA y GBA. También podés retirar en el local." } },
+    { "@type": "Question", "name": "¿Cómo pago?", "acceptedAnswer": { "@type": "Answer", "text": "Efectivo, transferencia y tarjetas en cuotas. El pago online se habilita cuando la tienda pase a producción." } }
+  ]
+}
+</script>
+</head>
+<body data-hero="animado">
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<div class="header-wrap" style="width:min(1240px,92vw);margin-inline:auto">
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html"><img src="images/logo-header.png" alt="Pinturería Litoral" width="200" height="221"></a>
+      <nav class="nav" aria-label="Principal">
+        <a href="index.html" aria-current="page">Inicio</a>
+        <a href="catalogo.html">Catálogo</a>
+        <a href="catalogo.html?cat=interior">Interior</a>
+        <a href="catalogo.html?cat=exterior">Exterior</a>
+      </nav>
+      <div class="header-actions">
+        <button class="icon-btn" data-cart-open aria-label="Ver carrito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <span class="cart-badge" aria-hidden="true">0</span>
+        </button>
+        <button class="menu-toggle" id="menu-toggle" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menú">
+          <svg class="ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <svg class="ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+</div>
+
+<div class="menu-backdrop" id="menu-backdrop"></div>
+<nav class="mobile-menu" id="mobile-menu" aria-label="Menú móvil">
+  <a href="index.html" aria-current="page">Inicio</a>
+  <a href="catalogo.html">Catálogo</a>
+  <a href="catalogo.html?cat=interior">Interior</a>
+  <a href="catalogo.html?cat=exterior">Exterior</a>
+  <a href="catalogo.html?cat=accesorios">Accesorios</a>
+  <a class="btn btn-primary" href="https://wa.me/5491170665567?text=Hola%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+</nav>
+
+<iframe id="hero-bg" data-src="assets/hero-bg.html" title="" aria-hidden="true" tabindex="-1"></iframe>
+<div class="hero-scrim" aria-hidden="true"></div>
+
+<section class="hero" id="hero" aria-label="Presentación">
+  <div class="hero-stage" id="hero-stage">
+
+    <figure class="float-card float-near" id="float-near" aria-hidden="true">
+      <img src="images/float-near-1200x1600.jpg" width="1200" height="1600" alt="">
+    </figure>
+    <figure class="float-card float-far" id="float-far" aria-hidden="true">
+      <img src="images/float-far-1200x1600.jpg" width="1200" height="1600" alt="">
+    </figure>
+
+    <div class="beat" data-beat="1">
+      <div class="beat-inner">
+        <p class="kicker">Pinturería Litoral · Hogar y obra</p>
+        <h1>Tu color, mezclado en el momento.</h1>
+        <p class="hero-lead">Látex, esmaltes, impermeabilizantes y accesorios. Traé tu muestra y te tintometramos el tono exacto mientras esperás.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="catalogo.html">Ver productos
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="#elegi-color" style="border-color:rgba(255,255,255,.5);color:#fff">Elegí tu color</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" data-beat="2">
+      <div class="beat-inner">
+        <p class="beat-big">No te llevás "un verde parecido". Te llevás <em>tu verde</em>.</p>
+        <p class="hero-lead">Con la máquina tintométrica igualamos cualquier muestra: una pared vieja, una lata, una tela. Sin límite de tonalidades.</p>
+      </div>
+    </div>
+
+    <div class="beat" data-beat="3">
+      <div class="beat-inner">
+        <p class="beat-big">Interior, exterior o los dos.</p>
+        <div class="beat-cards">
+          <a class="beat-card" href="catalogo.html?cat=interior"><div class="ph"><img src="images/cat-interior-1600x1300.jpg" width="1600" height="1300" alt="" loading="lazy"></div><b>Interiores</b><span>Ver categoría</span></a>
+          <a class="beat-card" href="catalogo.html?cat=exterior"><div class="ph"><img src="images/cat-exterior-1600x1300.jpg" width="1600" height="1300" alt="" loading="lazy"></div><b>Exteriores</b><span>Ver categoría</span></a>
+          <a class="beat-card" href="catalogo.html?cat=esmaltes"><div class="ph"><img src="images/cat-esmaltes-1600x1300.jpg" width="1600" height="1300" alt="" loading="lazy"></div><b>Esmaltes</b><span>Ver categoría</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" data-beat="4">
+      <div class="beat-inner">
+        <p class="beat-big">A tu obra la atendemos como a tu casa.</p>
+        <p class="hero-lead">Precio por cantidad, cuenta corriente para contratistas habituales y despacho coordinado con la obra. Sin vueltas.</p>
+      </div>
+    </div>
+
+    <div class="beat" data-beat="5">
+      <div class="beat-inner">
+        <p class="beat-big">Lo que más se lleva esta semana.</p>
+        <div class="beat-cards">
+          <a class="beat-card" href="producto/index.html?id=latex-exterior-frentes"><div class="ph"><img src="images/prod-exterior-frentes-1200x1200.jpg" width="1200" height="1200" alt="" loading="lazy"></div><b>Látex Exterior 20L</b><span>$69.900</span></a>
+          <a class="beat-card" href="producto/index.html?id=set-pinceles-profesional"><div class="ph"><img src="images/prod-pinceles-1200x1200.jpg" width="1200" height="1200" alt="" loading="lazy"></div><b>Set de Pinceles x5</b><span>$11.500</span></a>
+          <a class="beat-card" href="producto/index.html?id=rodillo-antigota-bandeja"><div class="ph"><img src="images/prod-rodillo-1200x1200.jpg" width="1200" height="1200" alt="" loading="lazy"></div><b>Rodillo + Bandeja</b><span>$5.520</span></a>
+        </div>
+      </div>
+    </div>
+
+    <div class="beat" data-beat="6">
+      <div class="beat-inner">
+        <p class="beat-big">Contanos qué querés pintar.</p>
+        <p class="hero-lead">Por WhatsApp te asesoramos sin vueltas: cuánto litraje necesitás y con qué terminación.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="catalogo.html">Ver el catálogo completo
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-hint" aria-hidden="true"><span>Scroll</span><i></i></div>
+  </div>
+</section>
+
+<section class="hero-clasico" id="hero-clasico" aria-label="Presentación">
+  <div class="hero-clasico-bg">
+    <img src="images/hero-clasico-1920x1080.jpg" width="1920" height="1080" alt="Pintor terminando la fachada de una casa blanca">
+  </div>
+  <div class="hero-clasico-scrim" aria-hidden="true"></div>
+  <div class="hero-clasico-inner">
+    <p class="kicker" data-animate="up" style="transform:translateY(24px);opacity:0">Pinturería Litoral · Hogar y obra</p>
+    <h1 data-animate="clip" style="clip-path:inset(0 0 100% 0);opacity:0">Tu color, mezclado en el momento.</h1>
+    <p class="hero-lead" data-animate="up" data-delay=".12" style="transform:translateY(30px);opacity:0">Látex, esmaltes, impermeabilizantes y accesorios. Traé tu muestra y te tintometramos el tono exacto mientras esperás.</p>
+    <div class="hero-actions" data-animate="up" data-delay=".22" style="transform:translateY(30px);opacity:0">
+      <a class="btn btn-primary" href="catalogo.html">Ver productos
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="#elegi-color" style="border-color:rgba(255,255,255,.5);color:#fff">Elegí tu color</a>
+    </div>
+  </div>
+</section>
+
+<main id="contenido">
+
+  <section class="trust-bar">
+    <div class="container trust-grid" data-animate-stagger>
+      <div class="trust-item">
+        <span class="trust-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span>
+        <div><b>Envíos a CABA y GBA</b><span>O retirás en el local</span></div>
+      </div>
+      <div class="trust-item">
+        <span class="trust-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg></span>
+        <div><b>Pagás como quieras</b><span>Efectivo, transferencia o tarjeta</span></div>
+      </div>
+      <div class="trust-item">
+        <span class="trust-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></span>
+        <div><b>Asesoramiento en el local</b><span>Te ayudamos a elegir</span></div>
+      </div>
+      <div class="trust-item">
+        <span class="trust-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M13 21V11l6 3v7"/></svg></span>
+        <div><b>Atendemos obra y particular</b><span>Precio por cantidad</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="swatch-section" id="elegi-color" aria-labelledby="h-swatch">
+    <div class="container">
+      <div class="section-head" style="margin-bottom:0">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Nuestra firma</p>
+        <h2 id="h-swatch" data-animate="up" style="transform:translateY(40px);opacity:0">Elegí tu color</h2>
+        <p data-animate="up" data-delay=".08" style="transform:translateY(30px);opacity:0">Estos son algunos de los tonos que más pedimos tintometrar. Tocá uno para verlo.</p>
+      </div>
+      <div class="swatch-strip" id="swatch-strip" data-animate-stagger>
+        <button type="button" class="swatch active" data-tint="#EAF3EE" data-name="Blanco Roble" data-desc="El más pedido para paredes de interior — cálido, no frío."><span class="swatch-dot" style="--sw:#F2EDE0"></span><span>Blanco Roble</span></button>
+        <button type="button" class="swatch" data-tint="#DCEEF3" data-name="Celeste Litoral" data-desc="El celeste del cielo sobre el río — fresco para dormitorios."><span class="swatch-dot" style="--sw:#6FB6D9"></span><span>Celeste Litoral</span></button>
+        <button type="button" class="swatch" data-tint="#E4F1EC" data-name="Verde Yacaré" data-desc="Verde profundo de monte — ideal para un living con carácter."><span class="swatch-dot" style="--sw:#1F6E52"></span><span>Verde Yacaré</span></button>
+        <button type="button" class="swatch" data-tint="#FBEFE3" data-name="Terracota Atardecer" data-desc="El naranja del sol cayendo sobre el agua — para un frente que se note."><span class="swatch-dot" style="--sw:#E8722E"></span><span>Terracota Atardecer</span></button>
+        <button type="button" class="swatch" data-tint="#F1EDE3" data-name="Gris Piedra" data-desc="Neutro versátil — el más elegido para frentes modernos."><span class="swatch-dot" style="--sw:#8A9490"></span><span>Gris Piedra</span></button>
+        <button type="button" class="swatch" data-tint="#FBF6E3" data-name="Amarillo Sol" data-desc="Alegre y luminoso — para una puerta o un detalle que alegre la fachada."><span class="swatch-dot" style="--sw:#F0B93A"></span><span>Amarillo Sol</span></button>
+        <button type="button" class="swatch" data-tint="#E9EDF3" data-name="Azul Río" data-desc="Azul profundo de agua de fondo — clásico en aberturas y rejas."><span class="swatch-dot" style="--sw:#2E5C8A"></span><span>Azul Río</span></button>
+        <button type="button" class="swatch" data-tint="#F3E7E7" data-name="Bordo Vino" data-desc="Un acento fuerte — perfecto para una puerta de entrada."><span class="swatch-dot" style="--sw:#7A2B34"></span><span>Bordo Vino</span></button>
+      </div>
+      <div class="swatch-preview" id="swatch-preview" style="--sw-bg:#EAF3EE">
+        <div class="swatch-preview-text"><b>Blanco Roble</b><span>El más pedido para paredes de interior — cálido, no frío.</span></div>
+        <a class="btn btn-dark btn-sm" href="https://wa.me/5491170665567?text=Hola%2C%20quiero%20tintometrar%20un%20color%20para%20mi%20casa." target="_blank" rel="noopener">Consultar este color</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-alt" aria-labelledby="h-cat">
+    <div class="container">
+      <div class="section-head">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Categorías</p>
+        <h2 id="h-cat" data-animate="up" style="transform:translateY(40px);opacity:0">Todo lo que necesitás, en un solo lugar</h2>
+      </div>
+      <div class="cat-scroll">
+        <a class="cat-card" href="catalogo.html?cat=interior"><div class="ph"><img src="images/cat-interior-1600x1300.jpg" width="1600" height="1300" alt="Rodillo pintando una pared celeste de interior" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Interiores</b><span>Látex y lavables</span></div></a>
+        <a class="cat-card" href="catalogo.html?cat=exterior"><div class="ph"><img src="images/cat-exterior-1600x1300.jpg" width="1600" height="1300" alt="Fachada colorida de casas exteriores" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Exteriores</b><span>Frentes y elastoméricos</span></div></a>
+        <a class="cat-card" href="catalogo.html?cat=esmaltes"><div class="ph"><img src="images/cat-esmaltes-1600x1300.jpg" width="1600" height="1300" alt="Aplicación de barniz sobre madera" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Esmaltes y Barnices</b><span>Metal y madera</span></div></a>
+        <a class="cat-card" href="catalogo.html?cat=impermeabilizantes"><div class="ph"><img src="images/cat-impermeabilizantes-1600x1300.jpg" width="1600" height="1300" alt="Techo de casa con tejas" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Impermeabilizantes</b><span>Techos y terrazas</span></div></a>
+        <a class="cat-card" href="catalogo.html?cat=preparacion"><div class="ph"><img src="images/cat-preparacion-1600x1300.jpg" width="1600" height="1300" alt="Herramientas de preparación sobre madera" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Fondos y Preparación</b><span>Fijadores y selladores</span></div></a>
+        <a class="cat-card" href="catalogo.html?cat=accesorios"><div class="ph"><img src="images/cat-accesorios-1600x1300.jpg" width="1600" height="1300" alt="Pinceles y herramientas de pintor" loading="lazy" decoding="async"></div><div class="cat-card-label"><b>Accesorios</b><span>Pinceles, rodillos y cintas</span></div></a>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-destacados">
+    <div class="container">
+      <div class="section-head">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Destacados</p>
+        <h2 id="h-destacados" data-animate="up" style="transform:translateY(40px);opacity:0">Los productos que más se llevan</h2>
+      </div>
+      <div class="splide destacados" id="destacados-splide" aria-label="Productos destacados">
+        <div class="splide__track">
+          <ul class="splide__list" id="destacados-list"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-deep" aria-labelledby="h-uso">
+    <div class="container">
+      <div class="section-head">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Hogar y obra</p>
+        <h2 id="h-uso" data-animate="up" style="transform:translateY(40px);opacity:0">Atendemos los dos lados del mostrador</h2>
+      </div>
+      <div class="uso-grid" data-animate-stagger>
+        <article class="uso-card">
+          <span class="uso-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg></span>
+          <h3>Para tu casa</h3>
+          <p>Venís con una idea o una duda y salís con el litraje justo, el color exacto y sin pagar de más por comprar mal.</p>
+          <ul class="uso-list">
+            <li>Tintometrado en el momento</li>
+            <li>Te decimos cuánto litraje necesitás según los m²</li>
+            <li>Cambios sin vueltas si el color no convenció</li>
+          </ul>
+        </article>
+        <article class="uso-card">
+          <span class="uso-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="15" rx="2"/><path d="M17 6V4a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></span>
+          <h3>Para tu obra</h3>
+          <p>Contratistas y arquitectos que compran seguido tienen precio por cantidad y un solo interlocutor para toda la obra.</p>
+          <ul class="uso-list">
+            <li>Precio diferencial por volumen</li>
+            <li>Cuenta corriente para clientes habituales</li>
+            <li>Despacho coordinado con el cronograma de obra</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-oficio">
+    <div class="container">
+      <div class="editorial">
+        <div class="ph editorial-media" data-animate="scale" style="transform:translateY(36px) scale(.94);opacity:0">
+          <img src="images/editorial-1600x1300.jpg" width="1600" height="1300" alt="Dos personas pintando una pared en colores rojo y azul" loading="lazy" decoding="async">
+        </div>
+        <div>
+          <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Nuestro oficio</p>
+          <h2 data-animate="up" style="transform:translateY(40px);opacity:0">Sabemos de pintura porque la vendemos hace más de una década.</h2>
+          <p class="editorial-quote" data-animate="up" data-delay=".08" style="transform:translateY(32px);opacity:0">No te vendemos una lata. Te ayudamos a <em>no equivocarte de color</em>.</p>
+          <p data-animate="up" data-delay=".14" style="transform:translateY(30px);opacity:0">Pinturería Litoral nació como un local de barrio y sigue siéndolo: atendemos nosotros mismos, conocemos las marcas que vendemos y probamos cada mezcla antes de entregarla. Eso no cambia aunque la tienda ahora también sea online.</p>
+          <div class="nums">
+            <div><p class="num-big"><span data-counter="12">12</span>+</p><p class="num-lbl">años en el barrio</p></div>
+            <div><p class="num-big"><span data-counter="3400">3400</span>+</p><p class="num-lbl">hogares y obras pintados</p></div>
+            <div><p class="num-big"><span data-counter="180">180</span>+</p><p class="num-lbl">tonos tintometrados por mes</p></div>
+            <div><p class="num-big"><span data-counter="98">98</span><span>%</span></p><p class="num-lbl">vuelve a comprar con nosotros</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-alt" aria-labelledby="h-testi">
+    <div class="container">
+      <div class="section-head">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Lo que dicen</p>
+        <h2 id="h-testi" data-animate="up" style="transform:translateY(40px);opacity:0">Clientes de casa y de obra</h2>
+      </div>
+      <div class="testi-grid" data-animate-stagger>
+        <figure class="testi">
+          <p class="testi-mark" aria-hidden="true">&ldquo;</p>
+          <blockquote>Fui a comprar dos latas para el living y terminé pintando la casa entera con la mezcla que me armaron. Quedó igual al color que tenía en la cabeza.</blockquote>
+          <figcaption><b>Marina Suárez</b>Clienta particular</figcaption>
+        </figure>
+        <figure class="testi">
+          <p class="testi-mark" aria-hidden="true">&ldquo;</p>
+          <blockquote>Trabajamos con ellos en tres obras seguidas. Siempre tienen el litraje que necesito y el precio por cantidad es real, no de catálogo.</blockquote>
+          <figcaption><b>Diego Ferreiro</b>Contratista · Obras Ferreiro</figcaption>
+        </figure>
+        <figure class="testi">
+          <p class="testi-mark" aria-hidden="true">&ldquo;</p>
+          <blockquote>Le llevé un pedacito de la pared vieja y me tintometraron el color exacto. Me ahorré un viaje entero de ida y vuelta.</blockquote>
+          <figcaption><b>Vanesa Ríos</b>Clienta particular</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-faq">
+    <div class="container">
+      <div class="section-head">
+        <p class="kicker" data-animate="up" style="transform:translateY(20px);opacity:0">Preguntas</p>
+        <h2 id="h-faq" data-animate="up" style="transform:translateY(40px);opacity:0">Antes de comprar</h2>
+      </div>
+      <div class="faq">
+        <details>
+          <summary>¿Puedo llevar una muestra de color para que me la igualen?</summary>
+          <p class="faq-a">Sí. Traé un pedacito de pared, una lata vieja o incluso una tela y te tintometramos el color exacto con la máquina, mientras esperás.</p>
+        </details>
+        <details>
+          <summary>¿Atienden pedidos para obra?</summary>
+          <p class="faq-a">Sí, trabajamos con contratistas y arquitectos: precio por cantidad, despacho coordinado y asesoramiento en el momento de la compra.</p>
+        </details>
+        <details>
+          <summary>¿Hacen envíos?</summary>
+          <p class="faq-a">Sí, a CABA y GBA. También podés retirar en el local.</p>
+        </details>
+        <details>
+          <summary>¿Cómo pago?</summary>
+          <p class="faq-a">Efectivo, transferencia y tarjetas en cuotas. El pago online se habilita cuando la tienda pase a producción.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-final" id="cta-final">
+    <div class="cta-bg"><img src="images/cta-1920x1080.jpg" width="1920" height="1080" alt="" loading="lazy" decoding="async"></div>
+    <div class="cta-scrim" aria-hidden="true"></div>
+    <div class="container cta-inner">
+      <h2 data-animate="up" style="transform:translateY(40px);opacity:0">¿Empezamos por el color?</h2>
+      <p data-animate="up" data-delay=".1" style="transform:translateY(30px);opacity:0">Mirá el catálogo completo o escribinos y te ayudamos a calcular cuánto necesitás.</p>
+      <div class="cta-actions" data-animate="up" data-delay=".18" style="transform:translateY(30px);opacity:0">
+        <a class="btn btn-primary" href="catalogo.html">Ver el catálogo
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" style="border-color:rgba(255,255,255,.4);color:#fff" href="https://wa.me/5491170665567?text=Hola%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">Escribinos por WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a class="brand" href="index.html"><img src="images/logo-header.png" alt="Pinturería Litoral" width="200" height="221"></a>
+        <p>Pintura para tu casa y tu obra. Látex, esmaltes, impermeabilizantes y accesorios, con tintometrado a medida.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Categorías</h4>
+        <a href="catalogo.html?cat=interior">Interiores</a>
+        <a href="catalogo.html?cat=exterior">Exteriores</a>
+        <a href="catalogo.html?cat=esmaltes">Esmaltes y Barnices</a>
+        <a href="catalogo.html?cat=accesorios">Accesorios</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contacto</h4>
+        <a href="https://wa.me/5491170665567?text=Hola%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">11 7066-5567</a>
+        <a href="mailto:hola@pinturerialitoral.com">hola@pinturerialitoral.com</a>
+        <span>Envíos a CABA y GBA</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Pinturería Litoral. CABA y GBA, Argentina.</p>
+      <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a> <span class="footer-ia">· con asistencia de IA</span></p>
+    </div>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491170665567?text=Hola%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<div class="cart-backdrop" id="cart-backdrop"></div>
+<aside class="cart-drawer" id="cart-drawer" role="dialog" aria-modal="true" aria-label="Carrito de compras" aria-hidden="true">
+  <div class="cart-head">
+    <h2>Tu carrito</h2>
+    <button class="cart-close" id="cart-close" aria-label="Cerrar carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="cart-body" id="cart-body"></div>
+  <div class="cart-foot">
+    <div class="envio-bar" id="envio-bar">
+      <span class="envio-text"></span>
+      <div class="envio-track"><div class="envio-fill" style="width:0%"></div></div>
+    </div>
+    <div class="cart-total"><span>Total</span><span id="cart-total-amount">$0</span></div>
+    <button type="button" class="btn btn-primary btn-block" id="btn-checkout">Finalizar compra</button>
+  </div>
+</aside>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="script.js"></script>
+<script>
+(function () {
+  var destacadosIds = ['latex-interior-blanco', 'latex-exterior-frentes', 'esmalte-sintetico-brillante', 'impermeabilizante-techos', 'set-pinceles-profesional', 'rodillo-antigota-bandeja', 'elastomerico-premium', 'barniz-marino'];
+  var list = document.getElementById('destacados-list');
+  if (list && window.PinturaShop) {
+    list.innerHTML = destacadosIds.map(function (id) {
+      var pr = window.PinturaShop.getProducto(id);
+      return pr ? '<li class="splide__slide">' + window.PinturaShop.productCardHTML(pr) + '</li>' : '';
+    }).join('');
+    window.PinturaShop.initQtyControls(list);
+  }
+})();
+</script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>

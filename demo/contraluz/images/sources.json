@@ -1,0 +1,34 @@
+{
+  "proyecto": "contraluz",
+  "nota": "Todo el material es de stock (Pexels, licencia libre) usado como marcador de la obra real del artista. Al pasar a produccion se reemplaza por fotos y videos propios del cliente.",
+  "imagenes": [
+    { "archivo": "hero-contraluz-1400x1750.webp", "origen": "Pexels", "id": 9422833, "url": "https://www.pexels.com/photo/9422833/", "uso": "hero — foto enmarcada a contraluz" },
+    { "archivo": "super8-recorte-1600x893.webp", "origen": "Pexels", "id": 3945336, "url": "https://www.pexels.com/photo/3945336/", "uso": "recorte hero — camara Super 8 en manos (rembg)" },
+    { "archivo": "retrato-bn-luz-1200x1500.webp", "origen": "Pexels", "id": 30743711, "url": "https://www.pexels.com/photo/30743711/", "uso": "obra — Retrato" },
+    { "archivo": "retrato-bn-barba-1200x1500.webp", "origen": "Pexels", "id": 37266091, "url": "https://www.pexels.com/photo/37266091/", "uso": "obra — Retrato" },
+    { "archivo": "retrato-rojo-1200x1500.webp", "origen": "Pexels", "id": 30902411, "url": "https://www.pexels.com/photo/30902411/", "uso": "obra — Retrato" },
+    { "archivo": "retrato-ventana-1200x1500.webp", "origen": "Pexels", "id": 14175330, "url": "https://www.pexels.com/photo/14175330/", "uso": "obra — Retrato" },
+    { "archivo": "paisaje-cumbres-1200x1500.webp", "origen": "Pexels", "id": 12903004, "url": "https://www.pexels.com/photo/12903004/", "uso": "obra — Paisaje" },
+    { "archivo": "paisaje-amanecer-1200x1500.webp", "origen": "Pexels", "id": 34742289, "url": "https://www.pexels.com/photo/34742289/", "uso": "obra — Paisaje" },
+    { "archivo": "paisaje-bruma-bn-1200x1500.webp", "origen": "Pexels", "id": 8494231, "url": "https://www.pexels.com/photo/8494231/", "uso": "obra — Paisaje" },
+    { "archivo": "urbano-semaforo-1200x1500.webp", "origen": "Pexels", "id": 16061367, "url": "https://www.pexels.com/photo/16061367/", "uso": "obra — Urbano" },
+    { "archivo": "urbano-vidriera-1200x1500.webp", "origen": "Pexels", "id": 18885203, "url": "https://www.pexels.com/photo/18885203/", "uso": "obra — Urbano" },
+    { "archivo": "urbano-niebla-1200x1500.webp", "origen": "Pexels", "id": 17955862, "url": "https://www.pexels.com/photo/17955862/", "uso": "obra — Urbano" },
+    { "archivo": "producto-bodegon-1200x1500.webp", "origen": "Pexels", "id": 8297183, "url": "https://www.pexels.com/photo/8297183/", "uso": "obra — Producto" },
+    { "archivo": "producto-labial-1200x1500.webp", "origen": "Pexels", "id": 29175402, "url": "https://www.pexels.com/photo/29175402/", "uso": "obra — Producto" },
+    { "archivo": "autor-retrato-1200x1500.webp", "origen": "Pexels", "id": 15422160, "url": "https://www.pexels.com/photo/15422160/", "uso": "seccion Quien soy — retrato del autor" }
+  ],
+  "videos": [
+    { "archivo": "../video/reel-humo.mp4", "poster": "../video/reel-humo-poster.webp", "origen": "Pexels Videos", "id": 2328902, "url": "https://www.pexels.com/video/2328902/", "uso": "obra Video + capitulo firma (recortado a 7 s, 1280x720, sin audio)" },
+    { "archivo": "../video/reel-ciudad.mp4", "poster": "../video/reel-ciudad-poster.webp", "origen": "Pexels Videos", "id": 13569632, "url": "https://www.pexels.com/video/13569632/", "uso": "obra — Video" },
+    { "archivo": "../video/reel-cafe.mp4", "poster": "../video/reel-cafe-poster.webp", "origen": "Pexels Videos", "id": 20768221, "url": "https://www.pexels.com/video/20768221/", "uso": "obra — Video" },
+    { "archivo": "../video/reel-retrato.mp4", "poster": "../video/reel-retrato-poster.webp", "origen": "Pexels Videos", "id": 8973872, "url": "https://www.pexels.com/video/8973872/", "uso": "obra — Video" }
+  ],
+  "descartados": [
+    { "id": 36979007, "motivo": "recorte limpio pero con logo Nikon visible dos veces — marca ajena" },
+    { "id": 17687308, "motivo": "botella Baileys — marca ajena" },
+    { "id": 14621628, "motivo": "logo Nike visible en la remera — marca ajena" },
+    { "id": 13686563, "motivo": "video de persona fumando — no corresponde en demo de cliente" },
+    { "id": 6533032, "motivo": "video de cigarrillo encendido — no corresponde en demo de cliente" }
+  ]
+}

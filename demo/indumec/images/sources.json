@@ -1,0 +1,24 @@
+{
+  "banco": "Pexels (busquedas via navegador por challenge Cloudflare en scrape; descargas directas del CDN images.pexels.com)",
+  "imagenes": [
+    { "archivo": "tecnico-tablero-1600x1300.webp", "origen": "Pexels", "id": "21812143", "url": "https://www.pexels.com/photo/21812143/", "uso": "pilar mantenimiento electrico" },
+    { "archivo": "nave-corte-laser-1600x1300.webp", "origen": "Pexels", "id": "29988965", "url": "https://www.pexels.com/photo/29988965/", "uso": "pilar mantenimiento mecanico" },
+    { "archivo": "soldadura-herreria-1600x1300.webp", "origen": "Pexels", "id": "16243157", "url": "https://www.pexels.com/photo/16243157/", "uso": "obras de intendencia - herreria" },
+    { "archivo": "pintura-intendencia-1600x1200.webp", "origen": "Pexels", "id": "36153946", "url": "https://www.pexels.com/photo/36153946/", "uso": "obras de intendencia - pintura" },
+    { "archivo": "diagnostico-tecnico-1600x1300.webp", "origen": "Pexels", "id": "33694032", "url": "https://www.pexels.com/photo/33694032/", "uso": "seccion como trabajamos" },
+    { "archivo": "nave-puente-grua-1920x1080.webp", "origen": "Pexels", "id": "10031804", "url": "https://www.pexels.com/photo/10031804/", "uso": "seccion por que indumec" },
+    { "archivo": "planta-oscura-1920x1080.webp", "origen": "Pexels", "id": "35792107", "url": "https://www.pexels.com/photo/35792107/", "uso": "fondo CTA final" },
+    { "archivo": "tecnico-cutout.webp", "origen": "Pexels", "id": "32845697", "url": "https://www.pexels.com/photo/32845697/", "usage": "recorte hero (protagonista)" },
+    { "archivo": "casco-cutout.webp", "origen": "Pexels", "id": "34965713", "url": "https://www.pexels.com/photo/34965713/", "usage": "recorte seccion proceso" },
+    { "archivo": "llave-cutout.webp", "origen": "Pexels", "id": "210881", "url": "https://www.pexels.com/photo/210881/", "usage": "recorte hero (secundario)" }
+  ],
+  "descartes": [
+    { "id": "5600225", "motivo": "recorte fallido: manometro oscuro sobre fondo oscuro, rembg dejo el sujeto semitransparente" },
+    { "id": "14319099", "motivo": "recorte fallido: multimetro oscuro sobre fondo oscuro, mismo problema" },
+    { "id": "33751679", "motivo": "marca ajena visible (ELITE Power Group)" },
+    { "id": "30592246", "motivo": "texto NFINITY en el casco" },
+    { "id": "8243023", "motivo": "fuera de tema (nena pintando)" },
+    { "id": "7031624", "motivo": "fuera de tema (nena pintando)" },
+    { "id": "6368952", "motivo": "fuera de tema (pinceles de arte)" }
+  ]
+}
