@@ -1,0 +1,11 @@
+[
+  { "archivo": "flota-aerea-1920x1440.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/35501727/", "uso": "Hero" },
+  { "archivo": "control-documentacion-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/6870324/", "uso": "Sección firma, capítulo Documentación y vencimientos" },
+  { "archivo": "service-elevador-1200x1800.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/8986119/", "uso": "Sección firma, capítulo Services y mantenimiento" },
+  { "archivo": "evaluacion-proveedor-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/6720538/", "uso": "Sección firma, capítulo Talleres y proveedores" },
+  { "archivo": "tablero-kilometraje-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/8786461/", "uso": "Sección firma, capítulo Seguimiento de la flota" },
+  { "archivo": "taller-amplio-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/33814736/", "uso": "Talleres, foto principal. Marca y modelo del auto y marca de una máquina difuminados" },
+  { "archivo": "revision-frenos-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/6870319/", "uso": "Talleres, revisión de frenos" },
+  { "archivo": "inspeccion-elevador-1600x1067.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/8985604/", "uso": "Talleres, inspección en el elevador" },
+  { "archivo": "control-trabajo-1200x1500.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/33036006/", "uso": "Talleres, control del trabajo terminado" }
+]
