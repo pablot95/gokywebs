@@ -2816,7 +2816,7 @@ function wabot_config_modelo_mensual(&$cfg) {
          * producto que carguemos nosotros de ahí en más. */
         'carga' => ["Sí, lo manejás vos. Todas nuestras webs traen un panel de administración donde editás los textos y las imágenes cuando quieras, sin costo extra.\n"
                  . "En la tienda online cargás vos desde tu panel los productos, precios, stock, fotos y descripciones todas las veces que necesites, también sin costo extra, y el panel trae un video explicativo. Si preferís, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista, y de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\n"
-                 . "El servicio mensual no es por cargar productos ni por hacer cambios: es lo que mantiene la web online, como el plan de Tiendanube.", ['$500 por producto', 'los textos y las imágenes', 'servicio mensual no es por cargar']],
+                 . "El servicio mensual no es por cargar productos ni por hacer cambios: cubre el hosting, el dominio, el soporte y el mantenimiento técnico.", ['$500 por producto', 'los textos y las imágenes', 'servicio mensual no es por cargar']],
         'rangos' => ['Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.', ['primero contame a qué te dedicás']],
         'precio_sin_rubro' => ['Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.', ['primero contame a qué te dedicás']],
         'pago_generico' => ['Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.', ['dos formas de pagarla', 'depende del tipo de web']],
@@ -2862,6 +2862,25 @@ function wabot_config_modelo_mensual(&$cfg) {
     if (!isset($cfg['info']) || !is_array($cfg['info'])) $cfg['info'] = [];
     foreach ($infoNueva as $clave => $d) {
         $cfg['info'][$clave] = $forzar($cfg['info'][$clave] ?? '', $d[0], $d[1]);
+    }
+    /* info.carga terminaba con que el servicio mensual "es lo que mantiene la
+     * web online", del modelo de solo mensual (auditoría del 15-sep): con el
+     * pago único la web también queda online. */
+    if (isset($cfg['info']['carga']) && is_string($cfg['info']['carga'])) {
+        $cfg['info']['carga'] = str_replace('es lo que mantiene la web online, como el plan de Tiendanube.',
+            'cubre el hosting, el dominio, el soporte y el mantenimiento técnico.', $cfg['info']['carga']);
+    }
+    // Textos que decían "el plan" como si hubiera una sola forma (auditoría del 15-sep).
+    foreach (['manual'      => ['para cambios más grandes el plan incluye un cambio por mes', 'para cambios más grandes, el servicio mensual incluye un cambio por mes'],
+              'accesos'     => ['viene incluido en el plan', 'viene incluido'],
+              'dominio_com' => ['viene incluido en el plan', 'viene incluido']] as $claveInfo => $par) {
+        if (isset($cfg['info'][$claveInfo]) && is_string($cfg['info'][$claveInfo])) {
+            $cfg['info'][$claveInfo] = str_replace($par[0], $par[1], $cfg['info'][$claveInfo]);
+        }
+    }
+    // "Ya me suscribí" también recibe este acuse: no siempre es una transferencia.
+    if (isset($cfg['postdemo_pago_avisado']) && is_string($cfg['postdemo_pago_avisado'])) {
+        $cfg['postdemo_pago_avisado'] = str_replace('revisamos la transferencia', 'revisamos el pago', $cfg['postdemo_pago_avisado']);
     }
 
     /* 5. Los textos de venta que viven fuera de `info`. */

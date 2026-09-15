@@ -196,6 +196,12 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
         if ($falla) {
             $conv['ininteligibles'] = $yaFallo + 1;
             if ($conv['ininteligibles'] === 1) {
+                /* "Te lo pregunto de otra forma" sin haber preguntado nada:
+                 * "asdfgh" como primer mensaje se lo llevaba (15-sep). */
+                if (wabot_ultimo_texto_bot($conv) === '') {
+                    $primero = trim((string)($cfg['ininteligible_primero'] ?? ''));
+                    return [$primero !== '' ? $primero : 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.'];
+                }
                 return [(string)($cfg['contame_2'] ?? $cfg['contame'] ?? '')];
             }
             if ($conv['ininteligibles'] === 2) {
@@ -338,7 +344,31 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
     if (empty($conv['precio_dado']) && empty($conv['tipo'])
         && in_array($faseAtajo, ['nuevo', 'menu', 'algo_diferente'], true)
         && wabot_info_por_palabras($mensaje, $faseAtajo) === 'precio_sin_rubro') {
-        return [wabot_texto_info('precio_sin_rubro', $cfg)];
+        /* Con el rubro ya dicho no se le vuelve a preguntar a qué se dedica:
+         * "doy clases de yoga y quiero vender mis cursos grabados" y después
+         * "cuánto sale?" se llevaba "primero contame a qué te dedicás" (F04,
+         * 15-sep). Cursos: los dos precios del desempate. Un tipo claro: su
+         * precio. Lo demás (sistema, híbrido) lo resuelve el modelo. */
+        // Solo lo que dijo ANTES: "cuánto sale una web para mostrar mis
+        // servicios y cuánto una tienda?" no es un rubro dicho (Q07, 15-sep).
+        $convPrevio = $conv;
+        $trPrevio = (array)($convPrevio['transcript'] ?? []);
+        $ultPrevio = end($trPrevio);
+        if ($ultPrevio && ($ultPrevio['q'] ?? '') === 'cliente') {
+            array_pop($trPrevio);
+            $convPrevio['transcript'] = $trPrevio;
+        }
+        $rubroDicho = wabot_fallback_rubro_local(wabot_contexto_cliente_texto($convPrevio));
+        if ($rubroDicho === null) return [wabot_texto_info('precio_sin_rubro', $cfg)];
+        if ($rubroDicho === 'cursos') {
+            $dosPreciosCursos = wabot_desempate_precios_texto('desempate_cursos', $cfg);
+            if ($dosPreciosCursos !== null) {
+                $conv['fase'] = 'desempate_cursos';
+                return [$dosPreciosCursos];
+            }
+        } elseif (isset($cfg['tipos'][$rubroDicho]) && wabot_tipo_ofrecible($rubroDicho, $cfg)) {
+            return wabot_precio($rubroDicho, $conv, $cfg);
+        }
     }
 
     /* Quién carga y actualiza el contenido: el texto oficial, nunca el modelo.
@@ -488,8 +518,13 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
 
             /* Un monto de cuota no sale ni con herramienta: el bot no lo sabe
              * (Pablo, 2-sep). Cae al motor de reglas, que dice lo correcto. */
-            if (wabot_texto_dice_monto_de_cuota($texto)) {
+            if (wabot_texto_dice_monto_de_cuota($texto, $cfg)) {
                 wabot_log('error', ['donde' => 'agente', 'msg' => 'monto de cuota inventado', 'texto' => mb_substr($texto, 0, 140)]);
+                return null;
+            }
+
+            if (wabot_texto_mezcla_formas($texto, $cfg)) {
+                wabot_log('error', ['donde' => 'agente', 'msg' => 'mezcla las dos formas', 'texto' => mb_substr($texto, 0, 140)]);
                 return null;
             }
 
@@ -555,7 +590,7 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return null;
             }
 
-            $limpio = wabot_validar_redaccion($texto, implode("\n", $pendientes), $cfg);
+            $limpio = wabot_validar_redaccion($texto, implode("\n", $pendientes), $cfg, false);
             if ($limpio === null) return null;
             wabot_agente_marcar_nombre_usado($limpio, $conv);
             $salida = array_merge([$limpio], wabot_agente_filtrar_aparte($limpio, $aparte));
@@ -746,9 +781,24 @@ function wabot_texto_inventa_pago($texto, $pendientes) {
  * al texto de reglas. El total financiado ("$60.000 en 12 cuotas") y la
  * mensualidad ("$30.000 por mes") no son el valor de una cuota.
  */
-function wabot_texto_dice_monto_de_cuota($texto) {
+function wabot_texto_dice_monto_de_cuota($texto, $cfg = null) {
     $t = (string)$texto;
     if ($t === '') return false;
+    /* La cuota del servicio mensual ES la mensualidad, un monto público:
+     * "pagás únicamente la primera cuota de $20.000" se descartaba y el
+     * respaldo repetía el texto de pago entero (F01, 15-sep). Pasa solo ese
+     * monto, en singular y con el servicio mensual nombrado. */
+    if (is_array($cfg) && preg_match('/\b(mensual\w*|por mes|suscripci\w*)\b/iu', $t)) {
+        $mensualidades = [];
+        foreach ((array)($cfg['tipos'] ?? []) as $d) {
+            $n = (int)wabot_monto_a_numero((string)($d['mensualidad'] ?? ''));
+            if ($n > 0) $mensualidades[$n] = true;
+        }
+        $t = preg_replace_callback('/\b(primera|la|tu|su|esa)\s+cuota(\s+mensual)?\s*,?\s*(de|es de|queda en|sale)?\s*,?\s*\$\s?([\d.]+)/iu',
+            function ($m) use ($mensualidades) {
+                return isset($mensualidades[(int)str_replace('.', '', $m[4])]) ? 'la mensualidad' : $m[0];
+            }, $t);
+    }
     return (bool)(
         preg_match('/\bcuotas?\s+(fijas\s+)?(de|por|a)\s+\$?\s?\d/iu', $t)
         || preg_match('/\bcada\s+cuota\b[^.\n]{0,20}\$\s?\d/iu', $t)
@@ -758,10 +808,78 @@ function wabot_texto_dice_monto_de_cuota($texto) {
     );
 }
 
+/**
+ * Las dos formas mezcladas (auditoría del 15-sep). Ningún guard lo miraba:
+ * pasaban "con el servicio mensual arrancás con una seña de $40.000", "el pago
+ * único de $20.000", "el mantenimiento es obligatorio", "tiene una permanencia
+ * mínima de 12 meses" y "el saldo en 8 pagos de $30.000". Se mira oración por
+ * oración; la que nombra las dos formas se deja pasar.
+ */
+function wabot_texto_mezcla_formas($texto, $cfg) {
+    $crudo = (string)$texto;
+    if (trim($crudo) === '') return false;
+    if (preg_match('/\b\d{1,2}\s+(pagos|cuotas)\s+(de|por)\s+\$/iu', $crudo)) return true;
+
+    // Montos con formato de miles; "$10.000 más por mes" es un adicional, no la mensualidad.
+    $montos = function ($s) {
+        $out = [];
+        if (preg_match_all('/\$\s?(\d{1,3}(?:\.\d{3})+)(?!\d)(?!\s*(pesos\s*)?m[aá]s\b)/u', $s, $m)) {
+            foreach ($m[1] as $x) $out[] = (int)str_replace('.', '', $x);
+        }
+        return $out;
+    };
+    $mensualidades = [];
+    $delUnico = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $d) {
+        $n = (int)wabot_monto_a_numero((string)($d['mensualidad'] ?? ''));
+        if ($n > 0) $mensualidades[$n] = true;
+        foreach (['precio', 'sena'] as $k) {
+            $p = (int)wabot_monto_a_numero((string)($d[$k] ?? ''));
+            if ($p > 0) $delUnico[$p] = true;
+        }
+    }
+
+    foreach (preg_split('/(?<=[.!?\n])\s+/u', $crudo) as $oracion) {
+        $n = wabot_normalizar_frase($oracion);
+        if ($n === '') continue;
+        $mensual = (bool)preg_match('/\b(servicio mensual|el mensual|suscripcion|mensualidad|abono mensual|plan mensual)\b/u', $n);
+        $unico   = (bool)preg_match('/\b(pago unico|un solo pago|unico pago|una sola vez)\b/u', $n);
+
+        if (preg_match('/\bobligatori\w*/u', $n) && preg_match('/\b(mensual\w*|plan|mantenimiento|abono|suscripcion)\b/u', $n)
+            && !preg_match('/\b(no|ni|nada|tampoco)\b.{0,12}\bobligatori/u', $n)) return true;
+        if (preg_match('/\bpermanencia\b/u', $n)
+            && !preg_match('/\b(sin|no hay|no tiene|no tenes|no tenemos|no lleva|ninguna|cero)\b.{0,15}\bpermanencia\b/u', $n)) return true;
+
+        if ($mensual && !$unico) {
+            if (preg_match('/\b(sena|senia|saldo)\b/u', $n) && !preg_match('/\b(sin|no hay|no tiene|no lleva|ni)\b.{0,10}\b(sena|senia|saldo)\b/u', $n)) return true;
+            if (preg_match('/\bpago inicial\b/u', $n) && !preg_match('/\b(sin|no hay|no tiene|no lleva|ningun|ni)\b.{0,12}\bpago inicial\b/u', $n)) return true;
+            if (preg_match('/\b(la web es tuya|es tuya desde|queda a tu nombre)\b/u', $n) && !preg_match('/\b12 meses\b/u', $n)) return true;
+            foreach ($montos($oracion) as $monto) {
+                if (!isset($mensualidades[$monto])) return true;
+            }
+        }
+        if ($unico && !$mensual) {
+            foreach ($montos($oracion) as $monto) {
+                if (isset($mensualidades[$monto]) && !isset($delUnico[$monto])) return true;
+            }
+        }
+    }
+    return false;
+}
+
 function wabot_texto_promete_info_sin_entregar($texto) {
     if (preg_match('/[:：]\s*$/u', trim($texto))) return true;
     if (preg_match('/\$\d|gokywebs\.com/u', $texto)) return false;
-    return (bool)preg_match('/\b(te paso|te muestro|te comparto|te env[ií]o|te dejo|aca va|aca tenes|aca esta)\b.{0,40}\b(precio|detalle|informacion|el link|todo lo que incluye|presupuesto|el valor)\b/u', wabot_normalizar_frase($texto));
+    $t = wabot_normalizar_frase($texto);
+    /* "Si me contás a qué te dedicás, te paso el presupuesto exacto" no promete
+     * algo que falte mandar: pide el dato para poder darlo. Se descartaba y el
+     * respaldo terminó derivando la charla (F06, 15-sep). */
+    $pide = '(si me (contas|decis|pasas|comentas|indicas|contestas)|contame|decime|pasame|comentame|(cuando|apenas|en cuanto) me (digas|cuentes|pases|contes))';
+    if (preg_match('/\b' . $pide . '\b.{0,70}\b(te paso|te muestro|te comparto|te envio|te dejo)\b/u', $t)
+        || preg_match('/\b(te paso|te muestro|te comparto|te envio|te dejo)\b.{0,60}\b' . $pide . '\b/u', $t)) {
+        return false;
+    }
+    return (bool)preg_match('/\b(te paso|te muestro|te comparto|te env[ií]o|te dejo|aca va|aca tenes|aca esta)\b.{0,40}\b(precio|detalle|informacion|el link|todo lo que incluye|presupuesto|el valor)\b/u', $t);
 }
 
 /**
@@ -904,7 +1022,7 @@ function wabot_respuesta_obligatorio($conv, $cfg, $mensaje = '') {
      * la venta, las dos frases que el modelo nuevo prohíbe. Ahora, si lo
      * último que dijo el bot habla del plan, se contesta respuesta_plan_obligatorio:
      * desde el 15-sep, que no, que es una de las dos formas de contratar. */
-    if (preg_match('/\b(plan mensual|mensualidad|mantenimiento|por mes|suscripcion)\b/u', $u)) {
+    if (preg_match('/\b(plan mensual|servicio mensual|abono mensual|mensualidad|mantenimiento|por mes|suscripcion)\b/u', $u)) {
         /* La charla cotizada con el pago único (antes del 10-sep) tenía el
          * mantenimiento opcional: a esa se le sostiene lo que se le dijo. */
         if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
@@ -1537,7 +1655,7 @@ function wabot_agente_historial($conv, $mensaje) {
 function wabot_agente_tools($cerrada = false, $postdemo = false) {
     $consultar = [
         'name' => 'consultar_info',
-        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "que es desarrollo web?" también es que_hacemos (no es una pregunta sin respuesta: explicá qué es y de paso qué hacemos, nunca la derives al desarrollador sin probar esto primero), "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza). "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es el plan?" es mantenimiento (el plan mensual obligatorio); "y si dejo de pagar?", "hay permanencia?" o "lo puedo dar de baja?" es baja_del_plan; "no me interesa el mantenimiento" o "no creo que haga falta todos los meses" es plan_es_servicio; "puedo pagar la creación una sola vez y mantenerla yo?" es un_solo_pago; "de quién es la web?" o "el dominio queda a mi nombre?" es titularidad. "Se pueden sacar turnos online?" o "tiene reservas?" es turnos; "los clientes se pueden registrar?" o "tiene área de socios?" es usuarios; "se puede en inglés?" o "cuántos idiomas?" es bilingue; "puede ser .com?" es dominio_com (el dominio en general es hosting); "tiene estadísticas?" o "puedo ver cuánta gente entra?" es estadisticas.',
+        'description' => 'Trae la respuesta oficial a una duda del cliente. Usala SIEMPRE antes de contestar sobre estos temas: nunca los contestes de memoria. Elegí la clave por el SENTIDO de la pregunta, no por palabras exactas: "cpn el hostin" es hosting, "crean pag web?" es que_hacemos, "que es desarrollo web?" también es que_hacemos (no es una pregunta sin respuesta: explicá qué es y de paso qué hacemos, nunca la derives al desarrollador sin probar esto primero), "me estafaron" es confianza, "le copian el diseño a otro cliente?" es exclusividad (NO confianza). "Hay algo mensual?", "el mantenimiento es obligatorio?" o "cuánto es el plan?" es mantenimiento (el servicio mensual, una de las dos formas); "y si dejo de pagar?", "hay permanencia?" o "lo puedo dar de baja?" es baja_del_plan; "no me interesa el mantenimiento" o "no creo que haga falta todos los meses" es plan_es_servicio; "puedo pagar la creación una sola vez y mantenerla yo?" es un_solo_pago; "de quién es la web?" o "el dominio queda a mi nombre?" es titularidad. "Se pueden sacar turnos online?" o "tiene reservas?" es turnos; "los clientes se pueden registrar?" o "tiene área de socios?" es usuarios; "se puede en inglés?" o "cuántos idiomas?" es bilingue; "puede ser .com?" es dominio_com (el dominio en general es hosting); "tiene estadísticas?" o "puedo ver cuánta gente entra?" es estadisticas.',
         'parameters' => [
             'type' => 'object',
             'properties' => [
@@ -2275,6 +2393,17 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
                     return ['error' => 'Todavía no le diste un precio a este cliente: esta respuesta habla de un precio que nunca vio.',
                             'nota' => 'El cliente está hablando de plata y todavía no sabe cuánto sale, así que la respuesta es el precio: llamá a dar_precio AHORA, en esta misma respuesta, con el tipo que ya tenés. Si te está preguntando si hay algo más económico, primero necesita saber cuánto cuesta lo que le proponés. NO contestes ofreciéndole la demo ni con una frase tranquilizadora: eso deja la pregunta sin contestar. Recién cuando ya tenga el precio y siga discutiendo el costo, volvé a llamar a consultar_info(objecion_precio).'];
                 }
+                /* "Hay descuento?" se contesta con el no y las dos formas
+                 * (15-sep), igual que en wabot_regateo_responder(). */
+                if (preg_match('/\b(descuento|descuentos|rebaja|rebajita|bonificacion)\b/u', wabot_normalizar_frase($mensaje))
+                    && !wabot_regateo_es_contraoferta($mensaje)
+                    // La charla del pago único viejo conserva su respuesta (Pablo, 15-sep).
+                    && wabot_precio_vigente($conv, $cfg)['modelo'] !== 'unico') {
+                    $conv['objecion_dicha'] = (array)($conv['objecion_dicha'] ?? []);
+                    $conv['objecion_dicha']['descuento'] = true;
+                    return ['texto' => wabot_texto_descuento($conv, $cfg), 'exacta' => true,
+                            'nota' => 'Mandá esto tal cual: no hay descuentos, y ahí están las dos formas con sus montos. No agregues ningún número.'];
+                }
                 return wabot_agente_agregar_cta([
                     'texto' => wabot_objecion_texto('caro', $cfg['caro'], $conv, $cfg),
                     'nota' => 'Contestá con esto tal cual. No inventes ningún plan de cuotas ni descuento, y no agregues números que no estén acá.',
@@ -2474,7 +2603,7 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
         case 'link_tarjeta':
         case 'cuotas_sin_interes':
             return ['error' => 'Esa herramienta ya no existe: el bot no cobra ni manda datos de pago.',
-                    'nota'  => 'Derivá con causa pago_explicito y dejá que el sistema mande el aviso: no anuncies vos el contacto. Nunca escribas el CBU, el alias, el titular ni un link de pago o de suscripción. El monto del servicio mensual sí se puede repetir, con consultar_info(\'precio_cotizado\').'];
+                    'nota'  => 'Derivá con causa pago_explicito y dejá que el sistema mande el aviso: no anuncies vos el contacto. Nunca escribas el CBU, el alias, el titular ni un link de pago o de suscripción. Los montos del pago único, la seña y el servicio mensual sí se pueden repetir, con consultar_info(\'precio_cotizado\').'];
 
         case 'cambiar_tipo_web':
             $tipoNuevo = (string)($args['tipo'] ?? '');
@@ -2915,6 +3044,7 @@ REGLAS QUE NO PODÉS ROMPER
 - El CBU, el alias, el titular y los links de pago o de suscripción NO los mandás nunca: eso lo arregla el desarrollador. Si te preguntan cómo se paga, usá consultar_info('pago'): trae las dos formas con sus montos.
 - CUÁNDO SE PAGA es una pregunta de pago y va por consultar_info('pago') SIEMPRE, aunque el cliente lo escriba corto o con errores ("y después se abona?", "se paga antes o después?", "cómo es el pago?"). Nunca la contestes de memoria ni con lo que hayas leído más arriba en la charla: la respuesta sale de la herramienta y se manda con los montos que trae. Con el pago único se arranca con una seña y el saldo va al entregar la web; con el servicio mensual no hay pago inicial y la primera cuota arranca el armado. Las dos, después de ver la demo.
 - La seña del pago único es un MONTO FIJO según el tipo de web (el que te devuelve la herramienta), nunca un porcentaje ni una mitad: si escribís "50%" o "la mitad" estás inventando una condición comercial que después hay que sostener. El 29-ago le dijiste a un cliente "una seña del 50% y el 50% restante al terminar" y eso nunca fue lo que cobramos.
+- Si el cliente confunde los montos ("entonces pago 40 mil por mes?", "son 30 mil y listo?"), empezá con un no y los montos de la herramienta: la seña es del pago único y se paga una sola vez; la mensualidad es del servicio mensual. Tampoco inventes condiciones para devolver la seña ni para pasarse más adelante de una forma a la otra: eso lo confirma el desarrollador.
 - Si dice que es caro, regatea o duda por la plata, llamá a consultar_info('objecion_precio') y contestá con ese texto tal cual. No inventes ningún plan de cuotas ni descuento que no esté ahí.
 - EL MONTO DE UNA CUOTA NO EXISTE PARA VOS. Nunca lo digas, nunca lo calcules y nunca lo estimes, aunque tengas el precio total y te lo pidan de frente ("en cuánto me queda cada cuota?"). La tasa de la tarjeta cambia todo el tiempo y un número tuyo sería una condición comercial falsa. Si pregunta por cuotas, contestá con consultar_info('pago').
 - Si dice "lo tengo que pensar", usá manejar_objecion('pensarlo'). Si lo habla con un socio, 'socio'. Si ya tiene página, 'ya_tiene_web'. Si compara con Wix, Tiendanube, Shopify u otra plataforma, 'plataforma'. Esas respuestas conducen a la demo gratis; no las reemplaces por una respuesta de relleno.
@@ -2924,7 +3054,7 @@ REGLAS QUE NO PODÉS ROMPER
 - Después de una duda caliente en fase precio, consultar_info puede devolverte una invitación a la demo en un globo aparte. No la copies dentro de tu texto y no vuelvas a ofrecerla después: el código la permite una sola vez.
 - Si la demo ya fue ofrecida y el cliente sigue haciendo preguntas, respondé sus consultas sin cerrar cada respuesta con otra invitación. Conservá las preguntas necesarias para aclarar su pedido. Cuando acepte la demo, mandá el formulario. Para un rubro de alquiler, escribí "tu servicio de alquiler de…", no "tu alquiler de…".
 - CÓMO SE EXPLICA EL PRECIO (Pablo, 15-sep): son DOS formas de contratar la misma web, y ninguna es mejor que la otra: PAGO ÚNICO (la web queda paga; el hosting y el dominio van incluidos el primer año y después se renuevan una vez al año) o SERVICIO MENSUAL (sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tenga el servicio incluye hosting, dominio, soporte y mantenimiento técnico). Al que no quiere pagar por mes, el pago único; al que el pago único le parece mucho, el mensual. El monto de la renovación del hosting se dice SOLO si lo pregunta (consultar_info('hosting')). Los productos, precios y fotos los carga el cliente desde su panel, sin costo extra.
-- EL MODELO COMERCIAL (Pablo, 15-sep, versión vigente): pago único con una SEÑA fija para arrancar y el saldo al entregar la web, por transferencia o con tarjeta; o servicio mensual por suscripción automática de Mercado Pago, sin permanencia. Los montos salen SIEMPRE de las herramientas: no los digas de memoria, cambian según la web, y sin saber para qué es la web no se dan. Las dos incluyen la web a medida, hosting, dominio y la carga de hasta 10 productos; el servicio mensual suma soporte, mantenimiento técnico y un cambio por mes. La carga de productos corresponde solo a la tienda: si cargamos nosotros más de 10, son \$500 por producto extra; el cliente puede cargarlos desde su panel. Más de un cambio mensual suma \$10.000 por mes. No digas que son los únicos adicionales: el dominio .com tiene su propia renovación (consultar_info dominio_com), que solo se explica si pregunta. El servicio mensual no tiene permanencia: se da de baja cuando quiera, y si deja de pagar la web se desactiva (consultar_info('baja_del_plan')); se actualiza una vez al año. Nunca digas que el servicio mensual es obligatorio: es una de las dos formas. Con el pago único la web es del cliente cuando la termina de pagar.
+- EL MODELO COMERCIAL (Pablo, 15-sep, versión vigente): pago único con una SEÑA fija para arrancar y el saldo al entregar la web, por transferencia o con tarjeta; o servicio mensual por suscripción automática de Mercado Pago, sin permanencia. Los montos salen SIEMPRE de las herramientas: no los digas de memoria, cambian según la web, y sin saber para qué es la web no se dan. Las dos incluyen la web a medida, hosting, dominio, soporte y la carga de hasta 10 productos (con el pago único, el hosting y el dominio van el primer año); el servicio mensual suma el mantenimiento técnico y un cambio por mes. La carga de productos corresponde solo a la tienda: si cargamos nosotros más de 10, son \$500 por producto extra; el cliente puede cargarlos desde su panel. Más de un cambio mensual suma \$10.000 por mes. No digas que son los únicos adicionales: el dominio .com tiene su propia renovación (consultar_info dominio_com), que solo se explica si pregunta. El servicio mensual no tiene permanencia: se da de baja cuando quiera, y si deja de pagar la web se desactiva (consultar_info('baja_del_plan')); se actualiza una vez al año. Nunca digas que el servicio mensual es obligatorio: es una de las dos formas. Con el pago único la web es del cliente cuando la termina de pagar.
 - Si dice que no le interesa, cerrá cordial y sin insistir.
 
 EL PREDISEÑO
@@ -2941,7 +3071,7 @@ Los colores son opcionales: si dice que no tiene, que no sabe o que los elijamos
 Si el cliente ya te había pasado el nombre del negocio o una referencia antes de que se la pidieras, dala por contestada: anotala y no se la preguntes.
 Lo mismo con la descripción: si en la charla ya te contó a qué se dedica ("soy entrenador personal y funcional", "vendo plantas y macetas"), ESO es la descripción. Anotala con anotar_prediseno.
 Si el cliente ya te mandó una foto diciendo que es su logo, NO se lo vuelvas a pedir: reconocelo ("el logo ya lo tengo") y pedile solo las fotos que faltan. Pedirle lo que acaba de mandar es lo que más hace parecer que no estás viendo las imágenes ni recordando la charla. El texto que devuelve la herramienta ya viene resuelto así: mandalo tal cual y no le agregues por tu cuenta un pedido de logo.
-Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale \$X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso; el servicio mensual que le diste antes es de la web, no de la demo, y solo se paga si decide avanzar. Nunca derives esta duda al desarrollador, ya la sabés.
+Si pregunta si el prediseño/la demo tiene costo ("¿la demo me la cobran?", "¿eso también sale \$X?", "¿el prediseño es aparte?"), aclarale que NO: es gratis y sin compromiso; el precio que le diste antes (pago único o servicio mensual) es de la web, no de la demo, y solo se paga si decide avanzar. Nunca derives esta duda al desarrollador, ya la sabés.
 
 HANDOFF: ÚLTIMO RECURSO, CON GUARDA DE CÓDIGO
 - Solo llamá a derivar si el cliente pide hablar con una persona, muestra intención concreta de pagar/contratar, vende productos y cursos a la vez, o si ya hiciste aclaraciones concretas y sigue siendo imposible entenderlo.
@@ -3020,7 +3150,7 @@ EOT;
         $p .= "- Si quiere avanzar, pregunta cómo pagar, cuánto es la suscripción o dice que es caro: contestá que de ahí en más lo sigue Pablo y derivá con causa pago_explicito.\n";
         $p .= "- Arrancá por lo que opina de la demo. NUNCA abras pidiendo plata.\n";
         $p .= "- El precio ya se lo dimos y no se toca: no recotices, no cambies el tipo de web y no ofrezcas descuentos.\n";
-        $p .= "- Si pide cambios sobre la demo: anotar_cambios en el mismo turno, confirmáselos y volvé al cierre. Los cambios sobre la demo se hacen cuando arranca la suscripción (no los confundas con el cambio por mes del plan, que es para después de entregada la web).\n";
+        $p .= "- Si pide cambios sobre la demo: anotar_cambios en el mismo turno, confirmáselos y volvé al cierre. Los cambios sobre la demo se hacen cuando arranca el proyecto, con la seña o con la primera mensualidad (no los confundas con el cambio por mes del servicio mensual, que es para después de entregada la web).\n";
         $p .= "- Si duda, lo tiene que pensar, desconfía o pide garantías: ofrecer_videollamada. Es la carta que destraba. Esa herramienta trae el ÚNICO texto donde se nombra a Pablo: fuera de ahí no lo menciones nunca. VOS NO COORDINÁS HORARIOS: si acepta la videollamada, derivá con causa pide_humano y el horario lo arregla Pablo.\n";
         $p .= "- Si te dice que quiere OTRO tipo de web del que vio en la demo: cambiar_tipo_web con el tipo nuevo.\n";
         $p .= "- Si te dice que la va a mirar y te contesta después, no lo empujes: contestá en UNA línea cordial, dejale la puerta abierta y cortá ahí. Nada de insistir ni de repetir el precio.\n";

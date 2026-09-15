@@ -79,6 +79,13 @@ function wabot_responder($texto, &$conv, $cfg) {
         return [wabot_texto_sin_modelo_viejo((string)$cfg['pago_antes_o_despues'])];
     }
 
+    /* Dudas de pago con respuesta fija (batería del 15-sep), en todos los modos
+     * y antes del modelo: montos confundidos, lo que queda para pagar después,
+     * la devolución de la seña, pasarse de una forma a la otra y cuál de las
+     * dos conviene. Cada una se llevaba otra respuesta. Ver engine.php. */
+    $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
+    if ($pagoFijo !== null) return $pagoFijo;
+
     /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
      * es fijo: wabot_postdemo_responder() contesta lo que el cliente dijo
      * —elogio, pedido de cambio, "no me cerró", que la va a mirar— (Pablo,
@@ -211,8 +218,17 @@ function wabot_responder($texto, &$conv, $cfg) {
             wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
             return [wabot_prediseno_texto($conv, $cfg)];
         } elseif (wabot_mensaje_pregunta_algo($texto)
+            && preg_match('/\b(sena|senia|anticipo|adelanto|para arrancar|pago inicial|como (se )?(paga|abona)|formas? de pago|cuotas?)\b/u', $normal)
+            && (preg_match('/\b(entonces|seria|serian|la tienda|con (la )?tienda|con (el )?carrito|asi)\b/u', $normal)
+                || wabot_ultimo_bot_es_upgrade($conv))) {
+            /* "Y la seña cuánto sería entonces?" después de la tienda (Q01,
+             * 15-sep): se llevaba otra vez el texto del upgrade. Se contesta
+             * con los montos de la tienda, no con los del sitio cotizado. */
+            return [wabot_upgrade_pago_texto($pendiente, $conv, $cfg)];
+        } elseif (wabot_mensaje_pregunta_algo($texto)
             && preg_match('/\b(entonces|total|dos planes|juntos|serian)\b/u', $normal)
             && preg_match('/\b(pago|planes|por mes|precio|cuanto|mil)\b|\$/u', $normal)) {
+            // "No es un adicional" contesta justo esto: si se suman los dos.
             return [wabot_upgrade_texto($pendiente['tipo'], $conv, $cfg)];
         }
     }
@@ -227,12 +243,17 @@ function wabot_responder($texto, &$conv, $cfg) {
         if ($destino !== null) {
             $upgrade = wabot_upgrade_texto($destino, $conv, $cfg);
             if ($upgrade !== null) {
+                /* La misma consulta otra vez ("y si agrego una tienda para
+                 * vender libros?", O08, 15-sep): el texto idéntico lo callaba
+                 * el anti-repetición y el cliente se quedaba sin respuesta. */
+                $yaConsultado = is_array($conv['upgrade_pendiente'] ?? null)
+                    && ($conv['upgrade_pendiente']['tipo'] ?? '') === $destino;
                 if (empty($conv['presentado_ts']) && empty($conv['lead_creado'])
                     && ($conv['upgrade_pendiente']['tipo'] ?? '') !== $destino) {
                     $conv['upgrade_pendiente'] = wabot_precio_vigente(null, $cfg, $destino);
                 }
                 wabot_evento_sesion($conv, 'upgrade_consultado', ['de' => (string)$conv['tipo'], 'a' => $destino]);
-                return [$upgrade];
+                return [$yaConsultado ? wabot_upgrade_confirmacion_texto($conv['upgrade_pendiente'], $conv, $cfg) : $upgrade];
             }
         }
     }
@@ -607,7 +628,7 @@ function wabot_castellanizar($texto) {
  * Controles sobre lo que devolvió el modelo. Devuelve el texto limpio, o null
  * si falla algo importante (y entonces se usa el texto fijo del motor).
  */
-function wabot_validar_redaccion($salida, $base, $cfg) {
+function wabot_validar_redaccion($salida, $base, $cfg, $exigirTodos = true) {
     $s = trim($salida);
     if ($s === '') return null;
 
@@ -644,8 +665,15 @@ function wabot_validar_redaccion($salida, $base, $cfg) {
     $preciosBase = [];
     if (preg_match_all('/\$?\s?\d{1,3}(?:\.\d{3})+(?!\d)/u', $base, $m)) {
         $preciosBase = array_unique($m[0]);
-        foreach ($preciosBase as $precio) {
-            if (mb_strpos($s, $precio) === false) return null;
+        /* En modo agente la base son los textos de las herramientas del turno,
+         * y el modelo contesta lo que le preguntaron: "la seña es de $40.000"
+         * no tiene por qué repetir el precio y la mensualidad, y exigirlo tiraba
+         * respuestas correctas al respaldo (auditoría del 15-sep). Ahí alcanza
+         * con que no aparezca ningún monto que no esté en la base (abajo). */
+        if ($exigirTodos) {
+            foreach ($preciosBase as $precio) {
+                if (mb_strpos($s, $precio) === false) return null;
+            }
         }
     }
 

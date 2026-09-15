@@ -336,6 +336,206 @@ caso('empresa de mantenimiento cuenta su negocio: no es la pregunta por el plan'
 caso('pero la pregunta por el mantenimiento sigue siendo mantenimiento',
     wabot_info_por_palabras('el mantenimiento es obligatorio?', 'menu') === 'mantenimiento');
 
+echo "-- 21. Auditoría del modelo doble (batería del 15-sep) --\n";
+$c21 = wabot_conv_load('997FPTEST'); $c21['transcript'] = [];
+$c21['tel'] = '5491100000002TEST'; $c21['channel_user_id'] = '5491100000002TEST'; $c21['canal'] = 'whatsapp';
+$c21['tipo'] = 'landing'; $c21['precio_dado'] = true; $c21['fase'] = 'prediseno';
+wabot_precio_congelar($c21, 'landing', $cfg);
+$v21 = wabot_precio_vigente($c21, $cfg);
+
+foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Si pago la seña y despues no me gusta, me la devuelven?', 'Y no se puede pagar de una?'] as $f) {
+    caso('no es la pregunta del orden del pago: "' . $f . '"', wabot_texto_pregunta_cuando_se_paga($f) === false);
+}
+caso('"¿no se puede pagar de una?" pide el pago único', wabot_pide_un_solo_pago('Y no se puede pagar de una?') === true);
+caso('"no puedo pagar todo junto, en cuotas?" no lo pide', wabot_pide_un_solo_pago('no puedo pagar todo junto, en cuotas?') === false);
+$fCambio = 'Si arranco con el mensual y despues me quiero pasar al pago unico se puede?';
+caso('pasarse del mensual al pago único no es pedir el pago único',
+    wabot_pide_un_solo_pago($fCambio) === false && wabot_texto_pregunta_cambio_modalidad($fCambio) === true);
+caso('cambiar los textos más adelante no es cambiar de forma de pago',
+    wabot_texto_pregunta_cambio_modalidad('con el mensual puedo cambiar los textos despues?') === false);
+
+$rCostos = wabot_respuesta_pago_fija('Con el pago unico despues tengo que pagar algo mas?', $c21, $cfg);
+caso('lo que queda para después con el pago único: la renovación, sin la demo',
+    is_array($rCostos) && mb_stripos($rCostos[0], 'renovar el hosting') !== false && mb_stripos($rCostos[0], 'demo') === false,
+    json_encode($rCostos, JSON_UNESCAPED_UNICODE));
+$c21b = $c21;
+$rDev = wabot_respuesta_pago_fija('Si pago la seña y despues no me gusta, me la devuelven?', $c21b, $cfg);
+caso('la devolución no se inventa y queda para el desarrollador',
+    is_array($rDev) && mb_stripos($rDev[0], 'te lo confirma el desarrollador') !== false && !empty($c21b['handoff_pendiente']));
+caso('las devoluciones de SU tienda no son esto',
+    wabot_texto_pregunta_devolucion('la tienda permite devoluciones de productos a mis clientes?') === false);
+$rCambio = wabot_respuesta_pago_fija($fCambio, $c21, $cfg);
+caso('pasarse de forma: sin prometer que se puede',
+    is_array($rCambio) && mb_stripos($rCambio[0], 'se puede') === false && mb_stripos($rCambio[0], 'desarrollador') !== false,
+    json_encode($rCambio, JSON_UNESCAPED_UNICODE));
+$rCual = wabot_respuesta_pago_fija('Cual me conviene mas, pagar una vez o por mes?', $c21, $cfg);
+caso('"cuál conviene": las dos formas con los montos de la charla, sin elegir por él',
+    is_array($rCual) && mb_strpos($rCual[0], $v21['precio']) !== false && mb_strpos($rCual[0], $v21['mensualidad']) !== false
+    && mb_stripos($rCual[0], 'entonces te conviene') === false, json_encode($rCual, JSON_UNESCAPED_UNICODE));
+$cSin = wabot_conv_load('996FPTEST'); $cSin['transcript'] = [];
+$cSin['tel'] = '5491100000003TEST'; $cSin['channel_user_id'] = '5491100000003TEST'; $cSin['canal'] = 'whatsapp';
+wabot_conv_transcript($cSin, 'cliente', 'Doy clases de yoga y quiero vender mis cursos grabados');
+$rCualSin = wabot_respuesta_pago_fija('Cual me conviene mas, pagar una vez o por mes?', $cSin, $cfg);
+caso('"cuál conviene" sin tipo: sin montos y sin volver a pedir el rubro ya dicho',
+    is_array($rCualSin) && mb_strpos($rCualSin[0], '$') === false && mb_stripos($rCualSin[0], 'a qué te dedicás') === false,
+    json_encode($rCualSin, JSON_UNESCAPED_UNICODE));
+
+$sena21 = $v21['sena']; $mens21 = $v21['mensualidad'];
+$senaMil = (int)(wabot_monto_a_numero($sena21) / 1000);
+$mensMil = (int)(wabot_monto_a_numero($mens21) / 1000);
+$rSena = wabot_respuesta_pago_fija("Entonces pago $senaMil mil por mes?", $c21, $cfg);
+caso('la seña leída como mensualidad se corrige con un no',
+    is_array($rSena) && mb_strpos($rSena[0], 'No: los ' . $sena21 . ' son la seña') === 0 && mb_strpos($rSena[0], $mens21) !== false,
+    json_encode($rSena, JSON_UNESCAPED_UNICODE));
+$rMens = wabot_respuesta_pago_fija("Ah o sea que son $mensMil mil y listo, pago una sola vez?", $c21, $cfg);
+caso('la mensualidad leída como pago único también',
+    is_array($rMens) && mb_strpos($rMens[0], 'No: los ' . $mens21 . ' son por mes') === 0 && mb_strpos($rMens[0], $v21['precio']) !== false,
+    json_encode($rMens, JSON_UNESCAPED_UNICODE));
+caso('entenderlo bien no dispara la corrección', wabot_texto_confusion_montos("Los $mensMil mil por mes incluyen el hosting?", $c21, $cfg) === null);
+$rInicio = wabot_respuesta_pago_fija('Y si elijo el mensual cuánto pago al principio?', $c21, $cfg);
+caso('"con el mensual cuánto pago al principio?": no hay pago inicial, con la mensualidad',
+    is_array($rInicio) && mb_strpos($rInicio[0], 'no hay pago inicial') !== false && mb_strpos($rInicio[0], $mens21) !== false
+    && mb_strpos($rInicio[0], $v21['precio']) === false, json_encode($rInicio, JSON_UNESCAPED_UNICODE));
+caso('"cuánto es la seña para arrancar?" sigue siendo la seña del pago único',
+    wabot_texto_pregunta_inicio_mensual('Cuánto es la seña para arrancar?') === false);
+
+$c21d = $c21;
+$rDesc = wabot_regateo_responder('Con transferencia hay descuento?', $c21d, $cfg);
+caso('"¿hay descuento?" se contesta con el no y las dos formas, no con el texto de caro',
+    is_array($rDesc) && mb_strpos($rDesc[0], 'No manejamos descuentos') === 0 && mb_strpos($rDesc[0], $v21['precio']) !== false
+    && mb_strpos($rDesc[0], $mens21) !== false, json_encode($rDesc, JSON_UNESCAPED_UNICODE));
+wabot_regateo_responder('Dejamelo en 150 mil y cerramos', $c21d, $cfg);
+caso('y si después regatea con un número, lo toma el desarrollador', ($c21d['fase'] ?? '') === 'derivado');
+caso('"no hay forma de que me lo dejes en 150?" es contraoferta', wabot_regateo_es_contraoferta('no hay forma de que me lo dejes en 150?') === true);
+caso('"si pago todo junto me hacés descuento?" no lo es', wabot_regateo_es_contraoferta('Si pago todo junto me haces descuento?') === false);
+
+caso('"contame a qué te dedicás y te paso el valor" no es una promesa sin entregar',
+    wabot_texto_promete_info_sin_entregar('Si me contás brevemente a qué te dedicás, te paso el presupuesto exacto al toque.') === false
+    && wabot_texto_promete_info_sin_entregar('Contame a qué te dedicás y te paso el valor.') === false);
+caso('la primera cuota del servicio mensual, con su monto, no es un monto de cuota inventado',
+    wabot_texto_dice_monto_de_cuota('Para arrancar con el servicio mensual pagás únicamente la primera cuota de ' . $mens21 . ', no hay pago inicial.', $cfg) === false);
+caso('pero 12 cuotas con monto se sigue cortando aunque haya cfg',
+    wabot_texto_dice_monto_de_cuota('Se puede en 12 cuotas de $20.135', $cfg) === true);
+
+$cUp = $c21;
+$cUp['upgrade_pendiente'] = wabot_precio_vigente(null, $cfg, 'ecommerce');
+$vUp = $cUp['upgrade_pendiente'];
+wabot_conv_transcript($cUp, 'bot', (string)wabot_upgrade_texto('ecommerce', $cUp, $cfg));
+$rUpSena = wabot_upgrade_pago_texto($vUp, $cUp, $cfg);
+caso('la seña después del upgrade es la de la tienda, no la del sitio',
+    mb_strpos($rUpSena, $vUp['sena']) !== false && mb_strpos($rUpSena, $v21['sena']) === false, $rUpSena);
+caso('la tienda consultada de nuevo se confirma corta, no con el mismo texto',
+    wabot_upgrade_confirmacion_texto($vUp, $cUp, $cfg) !== wabot_upgrade_texto('ecommerce', $cUp, $cfg));
+
+caso('"doy clases de yoga y quiero vender mis cursos grabados" es cursos, no el yoga de la lista',
+    wabot_fallback_rubro_local('Doy clases de yoga y quiero vender mis cursos grabados') === 'cursos');
+caso('un estudio de yoga solo sigue siendo sitio profesional', wabot_fallback_rubro_local('Tengo un estudio de yoga') === 'landing');
+echo "-- 22. Auditoría estática del modelo doble (15-sep) --\n";
+require_once __DIR__ . '/redactor.php';
+caso('"no me interesa el mensual" no cierra la venta', wabot_cierre_sin_presion_tipo('no me interesa el mensual') === null);
+caso('"no me interesa" solo sigue siendo rechazo', wabot_cierre_sin_presion_tipo('no me interesa') === 'rechazo');
+$rRechMens = wabot_respuesta_pago_fija('No me interesa el mensual', $c21, $cfg);
+caso('rechazar el mensual ofrece el pago único', is_array($rRechMens) && mb_stripos($rRechMens[0], 'pago único') !== false,
+    json_encode($rRechMens, JSON_UNESCAPED_UNICODE));
+$rRechUnico = wabot_respuesta_pago_fija('no me interesa el pago unico', $c21, $cfg);
+caso('rechazar el pago único ofrece el mensual con su monto', is_array($rRechUnico) && mb_strpos($rRechUnico[0], $mens21) !== false,
+    json_encode($rRechUnico, JSON_UNESCAPED_UNICODE));
+caso('"cuánto sale?" repetido sin rubro se repregunta con otras palabras, no se deriva',
+    wabot_texto_reformulado([wabot_texto_info('precio_sin_rubro', $cfg)], $cfg) === (string)$cfg['contame_2']);
+
+foreach (['el pago unico incluye lo mismo que el mensual?', 'con el pago unico tengo que pagar mantenimiento?',
+          'el mensual a la larga no sale mas caro que el pago unico?', 'el pago unico incluye el desarrollo completo?'] as $f) {
+    caso('compara o pregunta qué trae, no pide el pago único: "' . $f . '"', wabot_pide_un_solo_pago($f) === false);
+}
+caso('"tienen pago único?" sí lo pide', wabot_pide_un_solo_pago('tienen pago unico?') === true);
+caso('"puedo pagarla una sola vez?" también', wabot_pide_un_solo_pago('puedo pagarla una sola vez?') === true);
+caso('"la diferencia entre las dos formas" es la pregunta de cuál conviene',
+    wabot_texto_pregunta_cual_forma_conviene('cual es la diferencia entre las dos formas?') === true);
+
+$cFall = $c21;
+$cFall['cta_muestra'] = true; $cFall['link_form_enviado'] = false; $cFall['lead_creado'] = false;
+$cFall['form_completado_ts'] = 0; $cFall['presentado_ts'] = 0; $cFall['prediseno_pedido'] = []; $cFall['handoff_pendiente'] = false;
+$cfgForm = $cfg; $cfgForm['form_activo'] = true;
+$rFall = wabot_fallback_ia('me pasas el link para suscribirme?', $cFall, $cfgForm);
+caso('sin IA, una pregunta en el prediseño no se lleva el formulario',
+    is_array($rFall) && strpos(implode(' ', $rFall), 'gokywebs.com/form') === false && !empty($cFall['handoff_pendiente']),
+    json_encode($rFall, JSON_UNESCAPED_UNICODE));
+
+foreach (['vamos con el pago unico', 'me pasas el CBU?', 'como me suscribo?', 'prefiero pagarla una sola vez', 'quiero el mensual'] as $f) {
+    caso('después de la demo es interés real: "' . $f . '"', wabot_postdemo_avance_explicito($f) === true);
+}
+caso('"ya me suscribí" avisa el pago', wabot_dice_que_pago('ya me suscribi') === true);
+caso('"¿tienen factura?" va a facturación', wabot_info_por_palabras('tienen factura?', 'prediseno') === 'facturacion');
+caso('"¿con el mensual a los cuántos meses la web es mía?" va a titularidad',
+    wabot_info_por_palabras('con el mensual a los cuantos meses la web es mia?', 'prediseno') === 'titularidad');
+
+foreach (['Con el servicio mensual arrancás con una seña de $40.000 y el resto al entregar.',
+          'El pago único es de $20.000 y listo.',
+          'El mantenimiento es obligatorio: son $20.000 por mes.',
+          'El servicio mensual tiene una permanencia mínima de 12 meses.',
+          'El saldo lo pagás en 8 pagos de $30.000.'] as $mal) {
+    caso('mezcla las dos formas: "' . mb_substr($mal, 0, 50) . '"', wabot_texto_mezcla_formas($mal, $cfg) === true);
+}
+foreach ([wabot_texto_pago($c21, $cfg), wabot_texto_mantenimiento($c21, $cfg), wabot_texto_caro($c21, $cfg),
+          wabot_texto_info('titularidad', $cfg, $c21), wabot_texto_info('baja_del_plan', $cfg, $c21),
+          wabot_texto_info('que_incluye', $cfg, $c21), wabot_texto_descuento($c21, $cfg), (string)wabot_texto_saldo_cuando($c21, $cfg),
+          'No, el servicio mensual no es obligatorio y no tiene permanencia.'] as $bien) {
+    caso('texto correcto no se toma como mezcla: "' . mb_substr($bien, 0, 50) . '"', wabot_texto_mezcla_formas($bien, $cfg) === false);
+}
+
+$cObl2 = $c21;
+$cObl2['transcript'] = [['q' => 'cliente', 't' => 'Es obligatorio pagar todos los meses?'],
+    ['q' => 'bot', 't' => (string)$cfg['respuesta_plan_obligatorio']], ['q' => 'cliente', 't' => 'O sea que no es obligatorio?']];
+caso('"¿o sea que no es obligatorio?" después de la respuesta también se contesta fijo',
+    wabot_respuesta_obligatorio($cObl2, $cfg, 'O sea que no es obligatorio?') !== null);
+
+$rSaldo = wabot_respuesta_pago_fija('el saldo cuando se paga?', $c21, $cfg);
+caso('"¿el saldo cuándo se paga?": al entregar, con el monto', is_array($rSaldo) && mb_strpos($rSaldo[0], $v21['saldo']) !== false,
+    json_encode($rSaldo, JSON_UNESCAPED_UNICODE));
+$rAntes = wabot_respuesta_pago_fija('Pasame el link de mercado pago para suscribirme al mensual', $c21, $cfg);
+caso('pedir el link de pago antes de la demo: primero va la demo gratis', is_array($rAntes) && mb_strpos($rAntes[0], 'Primero va la demo') === 0,
+    json_encode($rAntes, JSON_UNESCAPED_UNICODE));
+
+$baseDos = wabot_texto_pago($c21, $cfg);
+caso('en modo agente, "la seña es de $X" alcanza sin repetir los otros montos',
+    wabot_validar_redaccion('La seña es de ' . $sena21 . '.', $baseDos, $cfg, false) !== null
+    && wabot_validar_redaccion('La seña es de ' . $sena21 . '.', $baseDos, $cfg) === null);
+caso('pero un monto que no está en la base se sigue cortando', wabot_validar_redaccion('La seña es de $35.000.', $baseDos, $cfg, false) === null);
+
+$cQ07 = wabot_conv_load('995FPTEST'); $cQ07['transcript'] = []; $cQ07['fase'] = 'nuevo';
+$cQ07['tel'] = '5491100000004TEST'; $cQ07['channel_user_id'] = '5491100000004TEST'; $cQ07['canal'] = 'whatsapp';
+$mQ07 = 'Cuanto sale una web para mostrar mis servicios y cuanto una tienda online?';
+wabot_conv_transcript($cQ07, 'cliente', $mQ07);
+$rQ07 = wabot_agente_intento($mQ07, $cQ07, $cfg);
+caso('dos tipos en la pregunta y sin rubro dicho antes: pide el rubro, no cotiza uno solo',
+    $rQ07 === [wabot_texto_info('precio_sin_rubro', $cfg)], json_encode($rQ07, JSON_UNESCAPED_UNICODE));
+$cF04 = wabot_conv_load('994FPTEST'); $cF04['transcript'] = []; $cF04['fase'] = 'nuevo';
+$cF04['tel'] = '5491100000005TEST'; $cF04['channel_user_id'] = '5491100000005TEST'; $cF04['canal'] = 'whatsapp';
+wabot_conv_transcript($cF04, 'cliente', 'Doy clases de yoga y quiero vender mis cursos grabados');
+wabot_conv_transcript($cF04, 'bot', 'Buenísimo. Querés que los alumnos compren y vean los cursos desde la web, o que te consulten por WhatsApp?');
+wabot_conv_transcript($cF04, 'cliente', 'Cuanto sale?');
+$rF04 = wabot_agente_intento('Cuanto sale?', $cF04, $cfg);
+caso('con el rubro dicho antes, "cuánto sale?" da los dos precios del desempate de cursos',
+    is_array($rF04) && strpos(implode(' ', $rF04), 'Cuál de las dos te sirve más') !== false && ($cF04['fase'] ?? '') === 'desempate_cursos',
+    json_encode($rF04, JSON_UNESCAPED_UNICODE));
+
+// Lo viejo no se toca (Pablo, 15-sep): la charla del pago único de antes del 10-sep sigue igual.
+$cViejo = $c21;
+$cViejo['precio_cotizado'] = '$160.000'; $cViejo['sena_cotizada'] = ''; $cViejo['mensualidad_cotizada'] = ''; $cViejo['precio_modelo'] = 'unico';
+caso('la charla con el pago único viejo no recibe las respuestas fijas nuevas',
+    wabot_precio_vigente($cViejo, $cfg)['modelo'] === 'unico'
+    && wabot_respuesta_pago_fija('Con el pago unico despues tengo que pagar algo mas?', $cViejo, $cfg) === null
+    && wabot_respuesta_pago_fija('cual es la diferencia entre las dos formas?', $cViejo, $cfg) === null);
+$cViejoD = $cViejo;
+$rViejoD = wabot_regateo_responder('Con transferencia hay descuento?', $cViejoD, $cfg);
+caso('y a su "¿hay descuento?" le llega la respuesta de siempre',
+    is_array($rViejoD) && $rViejoD[0] === wabot_texto_caro($cViejo, $cfg), json_encode($rViejoD, JSON_UNESCAPED_UNICODE));
+
+@unlink(WABOT_DATA . '/conv/997FPTEST.json');
+@unlink(WABOT_DATA . '/conv/996FPTEST.json');
+@unlink(WABOT_DATA . '/conv/995FPTEST.json');
+@unlink(WABOT_DATA . '/conv/994FPTEST.json');
+
 @unlink(WABOT_DATA . '/conv/999FPTEST.json');
 echo "\n" . ($fallas ? "FALLAS: $fallas de $total" : "TODO OK — $total casos") . "\n";
 exit($fallas ? 1 : 0);

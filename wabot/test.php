@@ -2383,7 +2383,7 @@ echo "— Parte 2: la respuesta tras la demo depende de lo que dijo el cliente �
 $esperadoPostdemo = [
     'me gusto mucho, como sigo?'          => 'el desarrollador',     // quiere avanzar → derivar
     'prefiero con tarjeta'                => 'el desarrollador',     // el pago no lo arregla el bot
-    'ya te transferi la seña'             => 'revisamos la transferencia',
+    'ya te transferi la seña'             => 'revisamos el pago',
     'mmm no se, lo tengo que pensar bien' => 'videollamada',         // duda: sigue abierta
     'uh, es mucha plata para mi ahora'    => 'el desarrollador',     // no se ofrecen cuotas
     'dale, la voy a mirar'                => 'miralo tranquilo',

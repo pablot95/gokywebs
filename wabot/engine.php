@@ -371,7 +371,9 @@ function wabot_cierre_sin_presion_tipo($texto) {
             . '(mantenimiento|videollamada|video llamada|llamada|reunion|hosting|dominio|logo|redes|marketing|publicidad|carrito|tienda online'
             . '|cobro|cobrar|pagos? online|formulario|mapa|blog|seo|posicionamiento|google|pixel|bilingue|ingles|idioma|catalogo|panel|app'
             . '|demo|muestra|predise\w*|cuotas|tarjeta|transferencia|abono|plan|sena|senia|ecommerce|e commerce|plataforma|curso|cursos'
-            . '|turnos|reservas|chat|bot|vender|cobrar|comprar)\b/u';
+            . '|turnos|reservas|chat|bot|vender|cobrar|comprar'
+            // Las dos formas de contratar (15-sep): "no me interesa el mensual" elige la otra, no se va.
+            . '|mensual\w*|servicio mensual|suscripcion|mensualidad|pago unico|un solo pago|unico pago|pagar\w*|por mes|todo junto)\b/u';
         if ($restoRechazo === '' || !preg_match($parteDelServicio, $restoRechazo)) return 'rechazo';
     }
     if (preg_match('/\bdejalo ahi\b/u', $t) || preg_match('/\bgracias pero no(?: gracias)?$/u', $t)) {
@@ -453,7 +455,18 @@ function wabot_regateo_responder($texto, &$conv, $cfg) {
     if (!wabot_es_regateo($texto)) return null;
     if (empty($conv['precio_dado'])) return null;
     $dichas = (array)($conv['objecion_dicha'] ?? []);
-    if (empty($dichas['caro']) && !in_array('caro', $dichas, true)) {
+    if (empty($dichas['caro']) && !in_array('caro', $dichas, true) && empty($dichas['descuento'])) {
+        /* "Con transferencia hay descuento?" y "si pago todo junto me hacés
+         * descuento?" preguntan si existe: la respuesta empieza por el no, con
+         * las dos formas (batería del 15-sep). El texto de 'caro' ofrecía el
+         * mensual sin contestarla. La contraoferta con número sigue igual. */
+        // La charla del pago único viejo conserva su respuesta (Pablo, 15-sep).
+        $modeloViejo = !empty($conv['tipo']) && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico';
+        if (!wabot_regateo_es_contraoferta($texto) && !$modeloViejo) {
+            $conv['objecion_dicha'] = $dichas;
+            $conv['objecion_dicha']['descuento'] = true;
+            return [wabot_texto_descuento($conv, $cfg)];
+        }
         return [wabot_objecion_texto('caro', $cfg['caro'], $conv, $cfg)];
     }
     return wabot_derivar($conv, $cfg, 'pago_explicito');
@@ -734,7 +747,14 @@ function wabot_anti_repeticion($mensajes, &$conv, $cfg) {
      * veces seguidas —el caso que motivó el guard— sigue cortándose. */
     $ultimoCliente = wabot_ultimo_texto_cliente($conv);
     $pideInfo = $ultimoCliente !== '' && wabot_info_por_palabras($ultimoCliente, $conv['fase'] ?? null) !== null;
-    if ($pideInfo && !wabot_salida_ya_pregunta($mensajes)) {
+    /* Y cualquier PREGUNTA del cliente, aunque el router no la conozca: "y si
+     * agrego una tienda para vender libros?" recibía otra vez la tienda y más
+     * abajo se callaba, porque la demo estaba ofrecida (O08, 15-sep). El
+     * comodín del desarrollador queda afuera: es el caso que motivó el guard. */
+    $comodinN = wabot_normalizar_frase((string)($cfg['info']['otra'] ?? ''));
+    $pregunta = $ultimoCliente !== '' && wabot_mensaje_pregunta_algo($ultimoCliente)
+        && ($comodinN === '' || $huella !== $comodinN);
+    if (($pideInfo || $pregunta) && !wabot_salida_ya_pregunta($mensajes)) {
         wabot_evento_sesion($conv, 'repeticion_legitima');
         $conv['repeticiones_seguidas'] = 0;
         return $mensajes;
@@ -822,10 +842,21 @@ function wabot_texto_reformulado($mensajes, $cfg) {
         'desempate_turnos'  => 'desempate_turnos_2',
         'desempate_comercio' => 'desempate_comercio_2',
         'desempate_cursos'  => 'desempate_cursos_2',
+        /* Las respuestas que piden el rubro para dar el valor (auditoría del
+         * 15-sep): dos "cuánto sale?" o dos "cómo se paga?" sin rubro
+         * derivaban la charla sin tipo y sin precio. */
+        'info.precio_sin_rubro'    => 'contame_2',
+        'info.rangos'              => 'contame_2',
+        'info.pago_generico'       => 'contame_2',
+        'info.mantenimiento_ambos' => 'contame_2',
     ];
+    $leer = function ($clave) use ($cfg) {
+        return strpos($clave, 'info.') === 0 ? (string)($cfg['info'][substr($clave, 5)] ?? '') : (string)($cfg[$clave] ?? '');
+    };
     foreach ($pares as $original => $alterno) {
-        if (trim((string)($cfg[$original] ?? '')) === '' || trim((string)($cfg[$alterno] ?? '')) === '') continue;
-        if (wabot_normalizar_frase((string)$cfg[$original]) === $uno) return (string)$cfg[$alterno];
+        $txtOriginal = $leer($original);
+        if (trim($txtOriginal) === '' || trim($leer($alterno)) === '') continue;
+        if (wabot_normalizar_frase($txtOriginal) === $uno) return $leer($alterno);
     }
     return null;
 }
@@ -1701,12 +1732,376 @@ function wabot_contexto_es_portal_contenido($contexto) {
 function wabot_pide_un_solo_pago($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
+    /* "Si arranco con el mensual y después me quiero pasar al pago único, se
+     * puede?" no pide el pago único: pregunta por el cambio (batería del
+     * 15-sep, se llevaba "Sí, se puede: la web en un pago único"). */
+    if (wabot_texto_pregunta_cambio_modalidad($texto)) return false;
+    /* "¿El pago único incluye lo mismo que el mensual?", "¿con el pago único
+     * tengo que pagar mantenimiento?" o "¿a la larga no sale más caro?"
+     * preguntan qué trae o comparan: no piden pagarla de una (auditoría del
+     * 15-sep, se llevaban "Sí, se puede: la web en un pago único"). */
+    if (preg_match('/\b(incluye|incluido|incluida|trae|lo mismo|igual que|como con|tambien tengo|tengo que pagar|hay que pagar|sale mas|mas caro|mas barato|a la larga|conviene\w*|diferencia\w*|es mejor|comparad\w*)\b/u', $t)) return false;
     $unaVez = '/\b(un solo pago|pago unico|unico pago|una sola vez|de una sola vez|todo de una|pagar(la|lo)? de una|pagar(la|lo)? todo junto)\b/u';
     $propio = '/\b(encargarme|me encargo|mantener\w*|mantengo|mantenimiento|por mi cuenta|mi propio hosting|mi hosting|hostear\w*|plan|mensual\w*|por mes|abono|mensualidad|creacion|desarrollo)\b/u';
     return (bool)(
         (preg_match($unaVez, $t) && preg_match($propio, $t))
         || preg_match('/\b(pagar solo (la creacion|el desarrollo)|comprar la (web|pagina|tienda) (y|para) (mantenerla|encargarme))\b/u', $t)
+        /* "¿No se puede pagar de una?" (batería del 15-sep): pagarla entera,
+         * sin nombrar el plan. "No puedo pagar todo junto" es lo contrario. */
+        || (preg_match('/\b(se puede|puedo|podria|podemos|hay forma de|hay manera de|es posible|aceptan)\b.{0,15}\b(pagar(la|lo)?|abonar(la|lo)?)\b.{0,12}\b(de una( sola)?( vez)?|(en )?una sola vez|todo junto|toda junta|todo de una|al contado|de contado|en un (solo )?pago)\b/u', $t)
+            && !preg_match('/\bno (puedo|podemos|llego|me alcanza)\b/u', $t))
+        || preg_match('/\b(tienen|hay|manejan|trabajan con|ofrecen)\b.{0,10}\b(pago unico|un solo pago|unico pago)\b/u', $t)
     );
+}
+
+/* ───────────── Dudas de pago con respuesta fija (batería del 15-sep) ─────────────
+ *
+ * Cinco preguntas del modelo doble que se llevaban otra respuesta: el cliente
+ * que confunde los montos, lo que queda para pagar después, la devolución de
+ * la seña, pasarse más adelante de una forma a la otra y cuál de las dos le
+ * conviene. Las contesta wabot_respuesta_pago_fija(), en el borde común de
+ * wabot_responder(), antes del modelo y en todos los modos.
+ */
+
+/**
+ * "Si arranco con el mensual y después me quiero pasar al pago único, se
+ * puede?". Cambiar de forma más adelante no tiene condiciones escritas: se
+ * contesta sin inventarlas.
+ */
+function wabot_texto_pregunta_cambio_modalidad($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    if (!preg_match('/\b(pasar\w*|cambiar\w*|migrar\w*|me paso|nos pasamos|me cambio|nos cambiamos)\b.{0,12}\b(al|a la|a|del|de la|de)\s+(servicio |plan )?(mensual\w*|pago unico|un solo pago|unico pago|suscripcion)\b/u', $t)) return false;
+    $ambas = preg_match('/\b(mensual\w*|suscripcion|por mes)\b/u', $t) && preg_match('/\b(pago unico|un solo pago|unico pago)\b/u', $t);
+    return (bool)($ambas || preg_match('/\b(despues|mas adelante|luego|en el futuro|a futuro|con el tiempo)\b/u', $t));
+}
+
+function wabot_texto_cambio_modalidad($cfg) {
+    $t = trim((string)($cfg['cambio_modalidad'] ?? ''));
+    return $t !== '' ? $t : 'Arrancás con la forma que más te sirva hoy. Si más adelante querés pasarte de una a la otra, las condiciones de ese cambio las coordinás con el desarrollador.';
+}
+
+/**
+ * "Con el pago único, después tengo que pagar algo más?": lo que queda para
+ * después de contratarla. Se llevaba "la demo no se paga".
+ */
+function wabot_texto_pregunta_costos_despues($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 200) return false;
+    // El costo de la demo y el pago para arrancar son otras preguntas.
+    if (preg_match('/\b(demo|muestra|prediseno)\b/u', $t)) return false;
+    if (preg_match('/\b(para (empezar|arrancar)|al principio|de entrada|inicial|por adelantado)\b/u', $t)) return false;
+    $pagar  = '\b(paga\w*|abona\w*|pago|pagos|costo\w*|gasto\w*|cobra\w*)\b';
+    $extra  = '\b(algo mas|algo aparte|aparte|extra|adicional\w*|otra cosa|otro gasto|otro costo)\b';
+    $cuando = '\b(despues|luego|mas adelante|a futuro|con el tiempo|cada ano|por ano|al ano|anual\w*|ademas|hay que|tengo que|tendria que|voy a tener que)\b';
+    return (bool)(
+        (preg_match('/' . $pagar . '/u', $t) && preg_match('/' . $extra . '/u', $t) && preg_match('/' . $cuando . '/u', $t))
+        || preg_match('/\b(costos?|gastos?|pagos?|cargos?) (ocultos?|extras?|adicionales|fijos?)\b/u', $t)
+    );
+}
+
+function wabot_texto_costos_despues($texto, $conv, $cfg) {
+    $t = wabot_normalizar_frase((string)$texto);
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    $unico = 'Con el pago único la web queda paga: lo que queda para después es renovar el hosting y el dominio una vez al año, a partir del segundo año.';
+    if ($v !== null && $v['modelo'] === 'unico') return $unico;
+    $monto = ($v !== null && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] : '';
+    $mensual = 'Con el servicio mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte y el mantenimiento.';
+    $nombraUnico = (bool)preg_match('/\b(pago unico|un solo pago|unico pago|una sola vez|de una)\b/u', $t);
+    $nombraMensual = (bool)preg_match('/\b(mensual\w*|por mes|suscripcion|abono)\b/u', $t);
+    if ($nombraUnico && !$nombraMensual) return $unico;
+    if ($nombraMensual && !$nombraUnico) return $mensual;
+    return $unico . "\n" . $mensual;
+}
+
+/**
+ * "Si pago la seña y después no me gusta, me la devuelven?". La política de
+ * devolución no está escrita: se dice lo que sí se sabe —la seña se paga
+ * después de ver la demo— y la duda queda marcada para el desarrollador.
+ * Las devoluciones de SU tienda son otra cosa.
+ */
+function wabot_texto_pregunta_devolucion($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    if (preg_match('/\b(cliente|clientes|comprador|compradores|producto|productos|pedido|pedidos|mis ventas)\b/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(devuelv\w*|devolucion\w*|reembols\w*|reintegr\w*)\b/u', $t)
+        && preg_match('/\b(sena|senia|plata|dinero|pago|pague|pagado|abone|no me gusta|no me convence|me arrepiento)\b/u', $t)
+    );
+}
+
+function wabot_texto_devolucion($cfg) {
+    $t = trim((string)($cfg['devolucion'] ?? ''));
+    return $t !== '' ? $t : 'La seña se paga recién después de ver la demo gratis, cuando ya viste cómo queda tu web y decidiste avanzar. Lo de una devolución te lo confirma el desarrollador.';
+}
+
+/**
+ * El cliente repite un monto con la frecuencia cambiada: "entonces pago 40 mil
+ * por mes?" (la seña leída como mensualidad) o "o sea que son 30 mil y listo,
+ * pago una sola vez?" (la mensualidad leída como pago único). El primero se
+ * llevaba otra vez el texto de pago entero, sin el "no". Se corrige con los
+ * montos de ESTA charla.
+ */
+function wabot_texto_confusion_montos($texto, $conv, $cfg) {
+    if (empty($conv['tipo']) || empty($conv['precio_dado'])) return null;
+    $v = wabot_precio_vigente($conv, $cfg);
+    if ($v['modelo'] !== 'doble' || $v['precio'] === '' || $v['sena'] === '' || $v['mensualidad'] === '') return null;
+    $precio  = (int)wabot_monto_a_numero($v['precio']);
+    $sena    = (int)wabot_monto_a_numero($v['sena']);
+    $mensual = (int)wabot_monto_a_numero($v['mensualidad']);
+    if ($precio <= 0 || $sena <= 0 || $mensual <= 0 || $sena === $mensual) return null;
+
+    $crudo = mb_strtolower((string)$texto, 'UTF-8');
+    if (mb_strlen($crudo) > 200) return null;
+    $t = wabot_normalizar_frase($crudo);
+    if (!wabot_mensaje_pregunta_algo($texto) && !preg_match('/\b(entonces|o sea|osea|es decir)\b/u', $t)) return null;
+
+    $montos = [];
+    if (preg_match_all('/(\d{1,3}(?:[.,]\d{3})+|\d+)\s*(mil|lucas|k)?\b/u', $crudo, $m, PREG_SET_ORDER)) {
+        foreach ($m as $x) {
+            $n = (int)preg_replace('/\D/', '', $x[1]);
+            if (!empty($x[2])) $n *= 1000;
+            if ($n >= 1000) $montos[] = $n;
+        }
+    }
+    if (!$montos) return null;
+
+    $porMes = (bool)preg_match('/\b(por mes|al mes|cada mes|mensual\w*|todos los meses|x mes)\b/u', $t);
+    $unaVez = (bool)preg_match('/\b(una (sola )?vez|de una|y listo|y ya|nada mas|en total|total|pago unico|unico pago|un solo pago)\b/u', $t);
+    foreach ($montos as $n) {
+        if ($n === $sena && $porMes) {
+            return 'No: los ' . $v['sena'] . ' son la seña del pago único, para arrancar (el saldo va al entregar la web). Con el servicio mensual pagás ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
+        }
+        if ($n === $precio && $porMes) {
+            return 'No: los ' . $v['precio'] . ' son el pago único, una sola vez (con una seña de ' . $v['sena'] . ' y el saldo al entregar). El servicio mensual es de ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
+        }
+        if ($n === $mensual && $unaVez && !$porMes) {
+            return 'No: los ' . $v['mensualidad'] . ' son por mes, con el servicio mensual. Si preferís pagarla una sola vez, el pago único es de ' . $v['precio'] . ', con una seña de ' . $v['sena'] . ' y el saldo al entregar.';
+        }
+    }
+    return null;
+}
+
+/**
+ * "Cuál me conviene más, pagar una vez o por mes?". El modelo contestaba bien
+ * y un guard lo descartaba por volver a pedir el rubro; el respaldo mandó dos
+ * textos pegados, uno diciendo "entonces te conviene el pago único". Ninguna
+ * es mejor (Pablo, 15-sep): se explica en qué cambia cada una.
+ */
+function wabot_texto_pregunta_cual_forma_conviene($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 220) return false;
+    if (!preg_match('/\b(conviene\w*|es mejor|me recomendas|recomendas|me sugeris|me aconsejas|diferencia\w*|ventaja\w*)\b/u', $t)) return false;
+    // "La diferencia entre las dos formas" nombra las dos sin decir cuáles.
+    if (preg_match('/\b(las dos|ambas|las 2) (formas|opciones|modalidades)\b/u', $t)) return true;
+    return (bool)(
+        preg_match('/\b(una (sola )?vez|pago unico|un solo pago|unico pago|de una|todo junto|pagarla entera)\b/u', $t)
+        && preg_match('/\b(por mes|mensual\w*|todos los meses|cada mes|suscripcion|mensualidad)\b/u', $t)
+    );
+}
+
+function wabot_texto_cual_forma_conviene($conv, $cfg) {
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    // La charla cotizada con el pago único viejo no tiene dos formas.
+    if ($v !== null && $v['modelo'] === 'unico') return null;
+    $montos = $v !== null && $v['precio'] !== '' && $v['sena'] !== '' && $v['mensualidad'] !== '';
+    $unico = $montos
+        ? '• Pago único de ' . $v['precio'] . ': arrancás con una seña de ' . $v['sena'] . ', el saldo va al entregar y después solo renovás el hosting y el dominio una vez al año.'
+        : '• Pago único: arrancás con una seña, el saldo va al entregar y después solo renovás el hosting y el dominio una vez al año.';
+    $mensual = $montos
+        ? '• Servicio mensual de ' . $v['mensualidad'] . ': no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.'
+        : '• Servicio mensual: no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.';
+    $texto = "Las dos te dan la misma web; cambia cómo la pagás:\n" . $unico . "\n" . $mensual
+        . "\nSi preferís no tener un gasto fijo, te conviene el pago único; si preferís no hacer un pago grande al principio, el mensual.";
+    // Sin montos se piden los datos para darlos, salvo que el rubro ya esté dicho.
+    if (!$montos && wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv)) === null) {
+        $texto .= "\n\nContame a qué te dedicás y te paso los valores de las dos.";
+    }
+    return $texto;
+}
+
+/**
+ * "Y si elijo el mensual, cuánto pago al principio?" o "el mensual tiene
+ * seña?": se llevaba el texto de pago entero, con el pago único adelante.
+ * La respuesta es una línea: no hay pago inicial.
+ */
+function wabot_texto_pregunta_inicio_mensual($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 200) return false;
+    return (bool)(
+        preg_match('/\b(mensual\w*|suscripcion|por mes)\b/u', $t)
+        && !preg_match('/\b(pago unico|un solo pago|unico pago)\b/u', $t)
+        && preg_match('/\b(al principio|para arrancar|para empezar|de entrada|pago inicial|al inicio|inicialmente|por adelantado|adelantar|sena|senia|anticipo)\b/u', $t)
+    );
+}
+
+function wabot_texto_inicio_mensual($conv, $cfg) {
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    if ($v !== null && $v['modelo'] === 'unico') return null;
+    $monto = ($v !== null && $v['mensualidad'] !== '') ? ', de ' . $v['mensualidad'] : '';
+    return 'Con el servicio mensual no hay pago inicial: arrancás con la primera mensualidad' . $monto . ', y con eso armamos la web y la dejamos funcionando.';
+}
+
+/**
+ * "No me interesa el mensual" / "no quiero pagar por mes" eligen la otra
+ * forma: se cerraba la venta con "gracias por escribirnos" (auditoría del
+ * 15-sep). Devuelve 'mensual' (rechaza el mensual), 'unico' o null.
+ */
+function wabot_texto_rechaza_una_forma($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 160) return null;
+    $no = '\bno (me |nos )?(interesa|interesan|quiero|queremos|me sirve|nos sirve|me conviene|necesito)\b.{0,15}';
+    if (preg_match('/' . $no . '\b(el mensual|el servicio mensual|lo mensual|la suscripcion|pagar (por mes|todos los meses|mensualmente)|pago mensual|un abono|abono mensual)\b/u', $t)) return 'mensual';
+    if (preg_match('/' . $no . '\b(el pago unico|un pago unico|pagar(la|lo)? (todo )?(junto|de una)|pagarla entera|un solo pago|pagar todo)\b/u', $t)) return 'unico';
+    return null;
+}
+
+function wabot_texto_ofrece_mensual($conv, $cfg) {
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    if ($v !== null && ($v['modelo'] === 'unico' || $v['mensualidad'] === '')) return null;
+    $monto = $v !== null ? ' de ' . $v['mensualidad'] : '';
+    return 'Dale, entonces está el servicio mensual' . $monto . ': sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando, y no hay permanencia.';
+}
+
+/**
+ * Pedir el link de pago, el CBU o suscribirse ANTES de la demo: primero va la
+ * demo gratis. Se llevaba el formulario sin una palabra (batería del 15-sep).
+ */
+function wabot_texto_pide_pagar_antes_de_demo($texto, $conv) {
+    if (!empty($conv['presentado_ts']) || in_array(($conv['fase'] ?? ''), ['postdemo', 'derivado'], true)) return false;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 160) return false;
+    if (preg_match('/\b(demo|muestra|prediseno)\b/u', $t)) return false;
+    return (bool)(
+        preg_match('/\b(pasame|pasas|pasarias|mandame|mandas|dame|me das|enviame|necesito)\b.{0,20}\b(el link|link|el cbu|cbu|el alias|alias|los datos)\b.{0,30}\b(pag\w*|suscrib\w*|transfer\w*|mercado ?pago|abon\w*|mensual)\b/u', $t)
+        || preg_match('/\b(pasame|pasas|mandame|mandas|dame|me das)\b.{0,12}\b(el cbu|el alias)\b/u', $t)
+        || preg_match('/\b(quiero|como hago para|como)\b.{0,8}\b(suscribirme|me suscribo|pagar ya|pagarte ya|abonar ya)\b/u', $t)
+    );
+}
+
+function wabot_texto_pagar_antes_de_demo($conv) {
+    if (!empty($conv['link_form_enviado'])) {
+        return 'Primero va la demo, que es gratis: completá el formulario que te pasé y te la armamos. Si te gusta, ahí coordinamos el pago con la forma que elijas.';
+    }
+    return 'Primero va la demo, que es gratis: te la armamos para que veas cómo queda tu web, y si te gusta, ahí coordinamos el pago con la forma que elijas. Querés que la preparemos?';
+}
+
+/**
+ * "¿El saldo cuándo se paga?" o "¿el pago único se paga todo antes?": la
+ * respuesta de la demo gratis no dice cuándo va cada parte.
+ */
+function wabot_texto_pregunta_saldo_cuando($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 160) return false;
+    return (bool)(
+        (preg_match('/\b(saldo|resto|lo que falta|lo demas|la otra parte)\b/u', $t)
+            && preg_match('/\b(cuando|en que momento|antes|despues|al final|al entregar|se paga|se abona)\b/u', $t))
+        || preg_match('/\b(se paga|se abona|hay que pagar|pago)\b.{0,6}\btodo\b.{0,10}\b(antes|por adelantado|al principio)\b/u', $t)
+    );
+}
+
+function wabot_texto_saldo_cuando($conv, $cfg) {
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    if ($v !== null && $v['modelo'] === 'unico') return null;
+    if ($v !== null && $v['sena'] !== '' && $v['saldo'] !== '' && $v['mensualidad'] !== '') {
+        return 'Con el pago único no se paga todo antes: la seña de ' . $v['sena'] . ' es para arrancar y el saldo, ' . $v['saldo']
+            . ', se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad de ' . $v['mensualidad'] . '.';
+    }
+    return 'Con el pago único no se paga todo antes: la seña es para arrancar y el saldo se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad.';
+}
+
+/** El punto de entrada: la respuesta fija que corresponde, o null. */
+function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
+    if (trim((string)$texto) === '') return null;
+    /* La charla cotizada con el pago único viejo (antes del 10-sep) sigue con
+     * sus textos de siempre: "lo viejo no toques nada" (Pablo, 15-sep). */
+    if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
+        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return null;
+    $confusion = wabot_texto_confusion_montos($texto, $conv, $cfg);
+    if ($confusion !== null) {
+        wabot_evento_sesion($conv, 'montos_confundidos');
+        return [$confusion];
+    }
+    $rechazo = wabot_texto_rechaza_una_forma($texto);
+    if ($rechazo === 'mensual') {
+        wabot_evento_sesion($conv, 'rechaza_mensual');
+        return [wabot_texto_info('plan_es_servicio', $cfg, $conv)];
+    }
+    if ($rechazo === 'unico') {
+        $ofreceMensual = wabot_texto_ofrece_mensual($conv, $cfg);
+        if ($ofreceMensual !== null) {
+            wabot_evento_sesion($conv, 'rechaza_pago_unico');
+            return [$ofreceMensual];
+        }
+    }
+    if (wabot_texto_pide_pagar_antes_de_demo($texto, $conv)) {
+        wabot_evento_sesion($conv, 'pago_antes_de_demo');
+        return [wabot_texto_pagar_antes_de_demo($conv)];
+    }
+    if (wabot_texto_pregunta_saldo_cuando($texto)) {
+        $saldoCuando = wabot_texto_saldo_cuando($conv, $cfg);
+        if ($saldoCuando !== null) {
+            wabot_evento_sesion($conv, 'saldo_cuando');
+            return [$saldoCuando];
+        }
+    }
+    if (wabot_texto_pregunta_devolucion($texto)) {
+        // La duda queda para el desarrollador, como el comodín.
+        $conv['handoff_pendiente'] = true;
+        wabot_evento_sesion($conv, 'duda_sin_respuesta');
+        return [wabot_texto_devolucion($cfg)];
+    }
+    if (wabot_texto_pregunta_costos_despues($texto)) {
+        wabot_evento_sesion($conv, 'costos_despues');
+        return [wabot_texto_costos_despues($texto, $conv, $cfg)];
+    }
+    if (wabot_texto_pregunta_inicio_mensual($texto)) {
+        $inicio = wabot_texto_inicio_mensual($conv, $cfg);
+        if ($inicio !== null) {
+            wabot_evento_sesion($conv, 'inicio_mensual');
+            return [$inicio];
+        }
+    }
+    if (wabot_texto_pregunta_cambio_modalidad($texto)) {
+        wabot_evento_sesion($conv, 'cambio_modalidad');
+        return [wabot_texto_cambio_modalidad($cfg)];
+    }
+    if (wabot_texto_pregunta_cual_forma_conviene($texto)) {
+        $cual = wabot_texto_cual_forma_conviene($conv, $cfg);
+        if ($cual !== null) {
+            wabot_evento_sesion($conv, 'cual_forma_conviene');
+            return [$cual];
+        }
+    }
+    return null;
+}
+
+/**
+ * ¿Pide un descuento o hace una contraoferta? "Con transferencia hay
+ * descuento?" pregunta si existe; "dejámelo en 150 mil" o "un 10% y cierro"
+ * ya negocian con un número.
+ */
+function wabot_regateo_es_contraoferta($texto) {
+    $crudo = mb_strtolower((string)$texto, 'UTF-8');
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '') return false;
+    return (bool)(
+        preg_match('/\b(dejas|dejes|dejarias|dejaras|dejamelo|dejalo|doy|pago|cierro|cerramos|haces)\b.{0,12}\b(en|a|por)\s+\d/u', $t)
+        || preg_match('/\b\d+\s*(mil|lucas|k)\b/u', $t)
+        || preg_match('/\b\d{1,2}\s?(por ciento|porciento)\b/u', $t)
+        || preg_match('/(?<!\d)\d{1,2}\s?%|\$\s?\d/u', $crudo)
+    );
+}
+
+/** No hay descuentos, y las dos formas con los montos de esta charla (15-sep). */
+function wabot_texto_descuento($conv, $cfg) {
+    $base = trim((string)($cfg['descuento'] ?? ''));
+    if ($base === '') $base = 'No manejamos descuentos: el valor es el mismo por transferencia o con tarjeta.';
+    if (empty($conv['tipo']) || empty($conv['precio_dado'])) return $base;
+    $v = wabot_precio_vigente($conv, $cfg);
+    if ($v['modelo'] === 'unico' || $v['precio'] === '' || $v['mensualidad'] === '') return $base;
+    $unico = 'pago único de ' . $v['precio'] . ($v['sena'] !== '' ? ', con una seña de ' . $v['sena'] . ' y el saldo al entregar' : '');
+    return $base . ' Lo que sí podés elegir es la forma: ' . $unico . ', o servicio mensual de ' . $v['mensualidad'] . ', sin pago inicial.';
 }
 
 /**
@@ -1717,7 +2112,7 @@ function wabot_pide_un_solo_pago($texto) {
 function wabot_rechaza_plan_mensual($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
-    $plan = '(mantenimiento|plan|abono|mensualidad|pago mensual|cuota mensual|suscripcion)';
+    $plan = '(mantenimiento|plan|abono|mensualidad|mensual|servicio mensual|pago mensual|cuota mensual|suscripcion|pagar por mes|pago por mes)';
     $cadaMes = '(mensual\w*|todos los meses|cada mes|por mes|al mes)';
     return (bool)(
         preg_match('/\bno (me )?(interesa|quiero|necesito|hace falta)\b.{0,20}\b' . $plan . '\b/u', $t)
@@ -1913,8 +2308,9 @@ function wabot_contexto_consulta($texto, $conv = null) {
  */
 function wabot_temas_perseguibles() {
     return [
-        'mantenimiento'   => '\b(mantenimiento|abono mensual|mensualidad|cuota mensual)\w*',
-        'plazos'          => '\b(plazo|plazos|tarda|demora|entrega|dias habiles|semanas)\w*',
+        // "servicio mensual" y "7 días" también cuentan como contestado (15-sep).
+        'mantenimiento'   => '\b(mantenimiento|abono mensual|mensualidad|cuota mensual|servicio mensual|mensual)\w*',
+        'plazos'          => '\b(plazo|plazos|tarda|demora|entrega|dias habiles|semanas|\d+ dias)\w*',
         'hosting'         => '\b(hosting|dominio|alojamiento|renovacion)\w*',
         'emprendimientos' => '\b(emprendimiento|emprendedor|negocio chico|negocios chicos|grandes empresas|recien (arranc|empie|est))\w*',
         'carga'           => '\b(cargar|carga|subir|actualizar)\w*',
@@ -2336,13 +2732,20 @@ function wabot_texto_pregunta_cuando_se_paga($texto) {
     if (preg_match('/\b(mantenimiento|mensual\w*|por mes|todos los meses|cada mes|abono)\b/u', $t)) return false;
     // "Hago pagos con mercado pago en mi local, primero..." cuenta su negocio (9-sep).
     if (preg_match('/\b(acepto|aceptamos|cobro|cobramos|hago pagos|hacemos pagos|recibo pagos|recibimos pagos|mis clientes|los clientes me|en mi (local|negocio|tienda))\b/u', $t)) return false;
+    /* Tres que no preguntan el orden y se llevaban "la demo no se paga"
+     * (batería del 15-sep): "con el pago único después tengo que pagar algo
+     * más?" (lo que queda para después), "si pago la seña y después no me
+     * gusta, me la devuelven?" (la devolución) y "no se puede pagar de una?"
+     * (pagarla entera: ya la descarta wabot_pide_un_solo_pago, y "de una" dejó
+     * de contar como "ya mismo"). */
+    if (wabot_texto_pregunta_costos_despues($texto) || wabot_texto_pregunta_devolucion($texto)) return false;
     $pago = '\b(se abona|se paga|abono|pago|pagar|abonar|sena)\w*\b';
     if (!preg_match('/' . $pago . '/u', $t)) return false;
     return (bool)(
         preg_match('/\b(antes|antez|despues|luego|primero|después)\b/u', $t)
         || preg_match('/\bcuando\b.{0,20}' . $pago . '/u', $t)
         || preg_match('/' . $pago . '.{0,20}\bcuando\b/u', $t)
-        || preg_match('/\b(ya mismo|de una|en que momento)\b/u', $t)
+        || preg_match('/\b(ya mismo|en que momento)\b/u', $t)
     );
 }
 
@@ -2708,6 +3111,27 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
         case 'prediseno':
             $noSabeComo = wabot_prediseno_no_sabe_como($texto, $conv, $cfg);
             if ($noSabeComo !== null) return $noSabeComo;
+            /* Sin IA el formulario también sale solo con el sí (auditoría del
+             * 15-sep): "¿hay que pagar algo por año?" o "¿me pasás el link para
+             * suscribirme?" se llevaban el link de la demo. La pregunta que el
+             * router no conoce queda para el desarrollador, como el comodín. */
+            if (wabot_espera_si_a_la_demo($conv, $cfg)) {
+                if (wabot_acepta_demo($texto)) {
+                    wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'fallback_tres_pasos']);
+                    return [wabot_prediseno_texto($conv, $cfg)];
+                }
+                if (wabot_es_negativa($texto)) return wabot_cerrar_sin_presion($conv, $cfg, 'consulta');
+                if (wabot_mensaje_pregunta_algo($texto)) {
+                    $conv['handoff_pendiente'] = true;
+                    wabot_evento_sesion($conv, 'duda_sin_respuesta');
+                    return [(string)$cfg['info']['otra']];
+                }
+                $vezFallback = (int)($conv['tres_pasos_repreguntas'] ?? 0);
+                $conv['tres_pasos_repreguntas'] = $vezFallback + 1;
+                if ($vezFallback === 0) return [wabot_tres_pasos_repregunta_texto()];
+                if ($vezFallback === 1) return ['Buenísimo. Cuando quieras que te armemos la demo, avisame y te paso el formulario.'];
+                return [];
+            }
             $tp = trim($texto);
             if (empty($conv['descripcion']) && mb_strlen($tp) >= 15
                 && strpos($tp, '?') === false && !wabot_fallback_respuesta_vacia($texto)
@@ -2792,6 +3216,11 @@ function wabot_fallback_rubro_local($t) {
         return 'ecommerce';
     }
     if (wabot_contexto_es_hibrido($t)) return 'hibrido_pendiente';
+    /* "Doy clases de yoga y quiero vender mis cursos grabados" es cursos, no el
+     * yoga de la lista de abajo (F04, 15-sep). */
+    if (preg_match('/\b(vender|vendo|vendemos|venta de|comercializar)\b.{0,25}\b(cursos?|clases grabadas|clases online|capacitaciones)\b|\bcursos? (grabados|online|virtuales|en video|a distancia)\b/u', $t)) {
+        return 'cursos';
+    }
     /* Los rubros que trabajan con turno ya no abren ningún desempate: turnos
      * se retiró el 2-sep y todos van a sitio profesional. En una semana la
      * pregunta tocó a doce clientes, solo tres terminaron cotizados como
@@ -3487,6 +3916,13 @@ function wabot_engine($texto, &$conv, $cfg) {
                     elseif ($vez === 1) $out[] = 'Buenísimo. Cuando quieras que te armemos la demo, avisame y te paso el formulario.';
                     break;
                 }
+                /* Y una pregunta que nada de lo anterior supo contestar tampoco
+                 * se lleva el formulario: nadie dijo que sí (auditoría del
+                 * 15-sep). Queda para el desarrollador, como el comodín. */
+                $out[] = (string)$cfg['info']['otra'];
+                $conv['handoff_pendiente'] = true;
+                wabot_evento_sesion($conv, 'duda_sin_respuesta');
+                break;
             }
 
             if ($conv['descripcion'] !== null && $conv['colores'] !== null) {
@@ -3701,6 +4137,9 @@ function wabot_info_por_palabras($texto, $fase = null) {
         || preg_match('/\b(cuenta (de|en) mercado ?pago|no tengo mercado ?pago|sin mercado ?pago|tener mercado ?pago)\b/u', $t)) {
         return 'baja_del_plan';
     }
+    /* "Con el mensual la web es mía?" pregunta de quién es, no por el plan
+     * (auditoría del 15-sep): va antes que las dos de abajo. */
+    if (preg_match('/\b(la web|el sitio|la pagina|la tienda|el dominio|el codigo)\b.{0,25}\b(es mia|es mio|queda a mi nombre|me pertenece|queda mia|queda mio)\b|\b(a los cuantos meses|cuando)\b.{0,25}\b(es mia|es mio|queda a mi nombre)\b/u', $t)) return 'titularidad';
     // "Soy técnico de mantenimiento" cuenta su negocio, no pregunta por el plan (14-sep).
     if (preg_match('/\bmantenimiento\b/u', $t) && !($cuentaSuNegocio && !$tienePregunta)) return 'mantenimiento';
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)
@@ -3801,7 +4240,7 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // Qué factura emitimos (solo C) va ANTES de 'inscripcion', que contesta si
     // el CLIENTE tiene que estar inscripto: son dos preguntas distintas y la
     // palabra "factura" aparece en las dos.
-    if (preg_match('/\b(hacen|emiten|dan|manejan|trabajan con|me hacen|nos hacen|puedo tener|dan de)\b.{0,20}\bfactura\b/u', $t)
+    if (preg_match('/\b(hacen|emiten|dan|manejan|trabajan con|me hacen|nos hacen|puedo tener|dan de|tienen|entregan|hay)\b.{0,20}\bfactura\b/u', $t)
         || preg_match('/\bfactura\s*[abc]\b/u', $t)
         || preg_match('/\b(que tipo de factura|iva discriminado|responsable inscripto)\b/u', $t)) return 'facturacion';
     if (preg_match('/\b(inscripto|inscripcion|monotributo|monotributista|afip|arca|factura\w*|cuit|habilitacion municipal)\b/u', $t)) return 'inscripcion';
@@ -4470,6 +4909,61 @@ function wabot_upgrade_texto($destino, $conv, $cfg) {
     return $texto;
 }
 
+/** ¿Lo último que dijo el bot fue el texto del upgrade? */
+function wabot_ultimo_bot_es_upgrade($conv) {
+    return (bool)preg_match('/^con venta y cobro online ya seria/u', wabot_normalizar_frase(wabot_ultimo_texto_bot($conv)));
+}
+
+/** ¿El texto del upgrade salió entre los últimos mensajes del bot? */
+function wabot_upgrade_ya_dicho($conv) {
+    $vistos = 0;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $m) {
+        if (($m['q'] ?? '') !== 'bot') continue;
+        if (preg_match('/^con venta y cobro online ya seria/u', wabot_normalizar_frase((string)($m['t'] ?? '')))) return true;
+        if (++$vistos >= 6) break;
+    }
+    return false;
+}
+
+/**
+ * La tienda ya consultada, dicha corta. El texto entero otra vez lo callaba el
+ * anti-repetición (O08, 15-sep); al cliente le sirve que se lo confirmen.
+ */
+function wabot_upgrade_confirmacion_texto($pendiente, $conv, $cfg) {
+    $destino = (string)($pendiente['tipo'] ?? '');
+    if (!wabot_upgrade_ya_dicho($conv)) {
+        $completo = wabot_upgrade_texto($destino, $conv, $cfg);
+        if ($completo !== null) return $completo;
+    }
+    $frase = wabot_precio_frase(is_array($pendiente) && isset($pendiente['precio']) ? $pendiente : wabot_precio_vigente(null, $cfg, $destino));
+    $nombre = wabot_tipo_nombre_precio($destino, $cfg['tipos'][$destino] ?? []);
+    return 'Sí, eso ya entra en la ' . $nombre . ' que te comenté: ' . $frase . ', con el carrito y los pagos incluidos.';
+}
+
+/**
+ * Cómo se paga el tipo al que apunta el upgrade, con SUS montos: "y la seña
+ * cuánto sería entonces?" después de la tienda recibía otra vez el texto del
+ * upgrade, y el tipo cotizado todavía es el sitio (Q01, 15-sep).
+ */
+function wabot_upgrade_pago_texto($pendiente, $conv, $cfg) {
+    $destino = (string)($pendiente['tipo'] ?? '');
+    $c = $conv;
+    $c['tipo'] = $destino;
+    $c['precio_dado'] = true;
+    $c['precio_cotizado'] = (string)($pendiente['precio'] ?? '');
+    $c['sena_cotizada'] = (string)($pendiente['sena'] ?? '');
+    $c['mensualidad_cotizada'] = (string)($pendiente['mensualidad'] ?? '');
+    $c['precio_modelo'] = (string)($pendiente['modelo'] ?? 'doble');
+    $v = wabot_precio_vigente($c, $cfg);
+    $nombre = wabot_tipo_nombre_precio($destino, $cfg['tipos'][$destino] ?? []);
+    if ($v['modelo'] === 'doble' && $v['sena'] !== '' && $v['mensualidad'] !== '') {
+        return 'Con la ' . $nombre . ', depende de cómo la contrates: con el pago único de ' . $v['precio']
+            . ' arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar; con el servicio mensual de '
+            . $v['mensualidad'] . ' no hay pago inicial.';
+    }
+    return wabot_texto_pago($c, $cfg);
+}
+
 /**
  * "Me pueden hacer una página en Wix/Tiendanube/Shopify?" — el pedido de
  * ARMAR la web sobre otra plataforma, no de comparar precios con ella.
@@ -4715,9 +5209,13 @@ function wabot_texto_hosting($conv, $cfg, $mensaje = '') {
     if ($renovacion === '' || mb_stripos($base, $renovacion) !== false) return $base;
     /* El monto de la renovación del pago único sale SOLO si pregunta cuánto
      * sale renovar (Pablo, 15-sep: "monto solo si pregunta"). */
-    $m = wabot_normalizar_frase((string)$mensaje);
+    // Los caminos del motor no pasan el mensaje: vale el último del cliente.
+    $m = wabot_normalizar_frase((string)($mensaje !== '' ? $mensaje : wabot_ultimo_texto_cliente($conv)));
     $preguntaRenovacion = $m !== '' && preg_match('/\brenov\w*|\b(cuanto|precio|valor|costo|sale|cuesta)\b.{0,30}\b(hosting|dominio)\b|\b(hosting|dominio)\b.{0,30}\b(cuanto|precio|valor|costo|sale|cuesta)\b|\b(despues del primer ano|segundo ano|al ano siguiente)\b/u', $m);
-    return $preguntaRenovacion ? trim($base . "\n" . $renovacion) : $base;
+    /* Si pregunta cuánto sale renovar, la respuesta es la renovación sola: con
+     * el texto general adelante, "después se renuevan una vez al año" salía
+     * dos veces seguidas (batería del 15-sep). */
+    return $preguntaRenovacion ? $renovacion : $base;
 }
 
 /**
@@ -5179,6 +5677,8 @@ function wabot_dice_que_pago($texto) {
         || preg_match('/\b(ya )?(te )?(transferi|deposite|pague|abone)\b/u', $t)
         || preg_match('/\b(listo|hecho|ya esta)\b.{0,20}\b(transferencia|transferi|pague|deposito|deposite)\b/u', $t)
         || preg_match('/\bcomprobante\b/u', $t)
+        // "Ya me suscribí" / "me adherí al plan" (auditoría del 15-sep).
+        || preg_match('/\b(ya )?(me )?(suscribi|adheri|subscribi)\b/u', $t)
     );
 }
 
@@ -6423,6 +6923,12 @@ function wabot_postdemo_avance_explicito($texto) {
         || preg_match('/\b(como|donde|cuando)\b.{0,15}\b(pago|abono|deposito|transfiero|se paga)\b/u', $t)
         || preg_match('/\b(cuanto|cual)\b.{0,12}\b(senia|sena|deposito|anticipo)\b/u', $t)
         || preg_match('/\b(mandame|pasame|necesito)\b.{0,15}\b(el cbu|los datos|el alias|el link de pago)\b/u', $t)
+        /* Elegir la forma o pedir cómo pagar con voseo (auditoría del 15-sep):
+         * "vamos con el pago único", "prefiero pagarla una sola vez", "me pasás
+         * el CBU?", "cómo me suscribo?" pasaban como charla. */
+        || preg_match('/\b(quiero|queremos|me quedo con|nos quedamos con|elijo|elegimos|vamos con|voy con|prefiero|preferimos|arranco con|arrancamos con)\b.{0,12}\b(el mensual|el servicio mensual|la suscripcion|el pago unico|un solo pago|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto))\b/u', $t)
+        || preg_match('/\b(me|nos)\s+(pasas|pasarias|das|mandas|envias)\b.{0,12}\b(el cbu|cbu|el alias|alias|los datos|el link)\b/u', $t)
+        || preg_match('/\bcomo\b.{0,10}\b(me suscribo|me adhiero|nos suscribimos|hago la suscripcion|contrato el mensual|pago la sena)\b/u', $t)
     );
 }
 
