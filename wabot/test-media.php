@@ -5,25 +5,10 @@
  * al motor, sin llamar a la red.
  */
 
-if (php_sapi_name() !== 'cli') { http_response_code(404); exit; }
+require_once __DIR__ . '/test-lib.php';
 
-require_once __DIR__ . '/redactor.php';
-
-$GLOBALS['WABOT_TEST_SIN_RED'] = true;
 $cfg = wabot_config_load();
-
-$fallas = 0; $total = 0;
-function caso($nombre, $ok) {
-    global $fallas, $total; $total++;
-    echo ($ok ? "  ✓ " : "  ✗ ") . $nombre . "\n";
-    if (!$ok) $fallas++;
-}
-function convNueva() {
-    return ['tel'=>'MEDIA','fase'=>'nuevo','tipo'=>null,'descripcion'=>null,'colores'=>null,
-        'colores_hex'=>null,'referencia'=>null,'espera_avisada'=>false,'no_texto_avisado'=>false,
-        'bot_off'=>false,'pausado_hasta'=>0,'lead_creado'=>false,'msgs'=>[],'ultimo_ts'=>0,
-        'ultimo_cliente_ts'=>0,'transcript'=>[],'pitch_hecho'=>true];
-}
+function convNueva() { return conv_nueva('MEDIATEST'); }
 
 echo "— Conversión de media a texto —\n";
 
@@ -464,5 +449,5 @@ caso('el panel carga esa librería y graba con "mantener apretado"',
 caso('y ya no queda el botón viejo de "Enviar nota de voz"',
     strpos($adminSrc, 'grabarEnviar') === false);
 
-echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
-exit($fallas === 0 ? 0 : 1);
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR'], $GLOBALS['WABOT_TEST_MEDIA']);
+todo_ok();

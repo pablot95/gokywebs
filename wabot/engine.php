@@ -2108,6 +2108,25 @@ function wabot_texto_es_duda_de_valor($texto) {
     );
 }
 
+/**
+ * "¿Cuánto sale una web para mostrar mis servicios y cuánto una tienda online?"
+ * nombra DOS tipos de web: es una comparación, no un rubro. El matcher local
+ * leería "tienda online" como ecommerce y cotizaría sin saber a qué se dedica.
+ */
+function wabot_texto_compara_tipos($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    $grupos = [
+        '/\b(tienda online|tienda virtual|ecommerce|e commerce|con carrito|vender online)\b/u',
+        '/\b(sitio profesional|landing|pagina (comun|simple|basica|normal|web)|web (comun|simple|basica|normal)|para mostrar (mis|los|nuestros) servicios|web de servicios)\b/u',
+        '/\b(plataforma de cursos|campus virtual|aula virtual|vender (los |mis )?cursos)\b/u',
+        '/\b(web )?inmobiliaria\b/u',
+    ];
+    $n = 0;
+    foreach ($grupos as $re) if (preg_match($re, $t)) $n++;
+    return $n >= 2;
+}
+
 function wabot_texto_pide_precio($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
@@ -2762,16 +2781,6 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             // feedback en vez de dejarlo sin respuesta.
             $rPost = wabot_postdemo_responder($texto, $conv, $cfg);
             if ($rPost !== null) return $rPost;
-            /* Null con texto fijo pendiente = había una pregunta que solo el
-             * agente podía contestar y el agente no está (o falló). El peor
-             * caso es el de siempre: sale el texto fijo y la pregunta queda
-             * para el desarrollador, que la ve en el panel como pendiente. */
-            $prefijo = trim((string)($conv['_postdemo_prefijo'] ?? ''));
-            unset($conv['_postdemo_prefijo']);
-            if ($prefijo !== '') {
-                wabot_evento_sesion($conv, 'postdemo_pregunta_sin_contestar');
-                return [$prefijo];
-            }
             return [(string)($cfg['postdemo_apertura'] ?? '')];
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
@@ -3164,6 +3173,9 @@ function wabot_engine($texto, &$conv, $cfg) {
     // leía como la pregunta "qué logo incluye" y pisaba el dato real.
     $sinNada = !$acc || $acc === ['otro'];
     $infoLocal = $sinNada ? wabot_info_por_palabras($texto, $conv['fase']) : null;
+    // "Dale, mandame el formulario para la demo" es el sí a la demo, no una
+    // pregunta por los formularios de la web.
+    if ($infoLocal === 'formularios' && wabot_espera_si_a_la_demo($conv, $cfg) && wabot_acepta_demo($texto)) $infoLocal = null;
     if ($infoLocal !== null) { $acc[] = 'pregunta_info'; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
     if ($has('pregunta_info')) {
         $keys = $c['info_keys'] ?: [];
@@ -3181,7 +3193,9 @@ function wabot_engine($texto, &$conv, $cfg) {
         $preciosDesempate = (in_array('rangos', $keys, true) || in_array('precio_sin_rubro', $keys, true))
             ? wabot_desempate_precios_texto($conv['fase'], $cfg) : null;
 
-        $rubroParaPrecio = wabot_rubro_de($acc) ?? wabot_fallback_rubro_local($texto);
+        // "¿Cuánto sale una web para mostrar mis servicios y cuánto una tienda?"
+        // compara tipos, no cuenta un rubro: sin actividad no hay montos.
+        $rubroParaPrecio = wabot_rubro_de($acc) ?? (wabot_texto_compara_tipos($texto) ? null : wabot_fallback_rubro_local($texto));
         $precioConRubroEnTurno = empty($conv['precio_dado']) && $rubroParaPrecio !== null
             && in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true);
 
@@ -3226,7 +3240,7 @@ function wabot_engine($texto, &$conv, $cfg) {
      * que vio la charla entera y no una sola frase. */
     if (in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true)
         && wabot_rubro_de($acc) === null) {
-        $rubroLocal = wabot_fallback_rubro_local($texto);
+        $rubroLocal = wabot_texto_compara_tipos($texto) ? null : wabot_fallback_rubro_local($texto);
         if ($rubroLocal !== null) {
             $etiquetas = [
                 'cursos' => 'rubro_cursos',
@@ -5713,12 +5727,13 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
 
     if (!$interes) {
         if ($extra['hay'] && $info === '') {
-            /* Hay una pregunta y el bot no tiene texto oficial para ella: la
-             * contesta el agente. El texto fijo no se pierde: viaja en una
-             * clave transitoria y el agente lo pone adelante (o el motor lo
-             * manda solo si el agente falla). */
-            if (trim($especifico) !== '') $conv['_postdemo_prefijo'] = $especifico;
-            return null;
+            /* Hay una pregunta y el bot no tiene texto oficial para ella: sale
+             * el texto fijo que corresponde (el elogio, el pedido de cambios…)
+             * con el comodín del desarrollador, y la duda queda marcada para
+             * que la vea en el panel. */
+            $conv['handoff_pendiente'] = true;
+            wabot_evento_sesion($conv, 'duda_sin_respuesta');
+            $info = (string)($cfg['info']['otra'] ?? '');
         }
         // Sigue mirando: el bot queda disponible para la próxima.
         return wabot_postdemo_componer($especifico, $info);

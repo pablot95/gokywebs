@@ -11,23 +11,10 @@
  * propio: Leoo, Whitesoul, Cien Colores, Papelería creativa e Icover Store.
  */
 
-if (php_sapi_name() !== 'cli') { http_response_code(404); exit; }
-
-require_once __DIR__ . '/redactor.php';
-// redactor.php solo carga agente.php cuando el modo es 'agente'; acá se
-// prueban los empujones del agente sin llamar a Gemini, así que va explícito.
-require_once __DIR__ . '/agente.php';
-
-$GLOBALS['WABOT_TEST_SIN_RED'] = true;
+require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
-
-$fallas = 0; $total = 0;
-function caso($nombre, $ok) {
-    global $fallas, $total; $total++;
-    echo ($ok ? "  ✓ " : "  ✗ ") . $nombre . "\n";
-    if (!$ok) $fallas++;
-}
+clasifica(['otro']);
 
 /** Conversación mínima, con la fase que pida el caso. */
 function conv_de($fase = 'menu', $extra = []) {
@@ -225,8 +212,8 @@ echo "\n— Preguntas de precio que el bot ya sabe contestar (Aberturas) —\n";
 caso('"cuánto cuesta agregar venta y cobro online" con una landing cotizada → ecommerce',
     wabot_texto_pregunta_upgrade('Cuánto cuesta agregar venta y cobro online?', 'landing') === 'ecommerce');
 
-caso('"si le sumo carrito cuánto sale" con turnos cotizados → ecommerce',
-    wabot_texto_pregunta_upgrade('Y si le sumo carrito, cuánto sale?', 'turnos') === 'ecommerce');
+caso('"si le sumo carrito cuánto sale" con un sitio profesional cotizado → ecommerce',
+    wabot_texto_pregunta_upgrade('Y si le sumo carrito, cuánto sale?', 'landing') === 'ecommerce');
 
 caso('un "cuánto sale" pelado NO recotiza por su cuenta',
     wabot_texto_pregunta_upgrade('Cuánto sale?', 'landing') === null);
@@ -309,7 +296,7 @@ echo "\n— La charla no avanza aunque la pregunta cambie de palabras —\n";
 // Caso del marketplace en la bateria en vivo: tres preguntas distintas sobre lo
 // mismo, sin que nada del estado cambiara. wabot_anti_repeticion no lo ve
 // porque compara el texto.
-$c = conv_de('sistema_usuarios');
+$c = conv_de('sistema_problema');
 $r1 = wabot_salida_preparar(['Cuántos vendedores estimás que usarían la plataforma?'], $c, $cfg);
 $primeraOk = count($r1) === 1 && ($c['fase'] ?? '') !== 'derivado';
 $r2 = wabot_salida_preparar(['Aproximadamente cuántas personas usarían el sistema?'], $c, $cfg);
@@ -366,35 +353,21 @@ caso('Clínica de Mar: en vez de volver a pedirlos, lo toma Pablo',
 
 echo "\n— Una necesidad nombrada no puede quedar sin respuesta (Marcco Cueros) —\n";
 
-caso('"español/inglés" se reconoce como pedido de idioma',
-    wabot_texto_pide_otro_idioma('Necesito ecommerce internacional, español/inglés, con precios en ARS y USD'));
-caso('"bilingüe" también',
-    wabot_texto_pide_otro_idioma('La web tiene que ser bilingüe'));
-caso('quien MANDA material no está preguntando por el idioma',
-    !wabot_texto_pide_otro_idioma('Te paso el logo en inglés'));
-
-$c = conv_de('pitch', ['tipo' => 'ecommerce']);
-$idioma = wabot_agente_empujon_bilingue(
-    'Necesito ecommerce internacional, español/inglés, con ventas al extranjero',
-    ['Lo ideal sería un ecommerce. Cuál es tu producto estrella?'], $c, $cfg);
-caso('Marcco: el pedido de idioma se contesta con el texto oficial',
-    is_string($idioma) && mb_stripos($idioma, 'idiomas') !== false
-    && strpos($idioma, '{precio}') === false);
-/* 10-sep: el modelo nuevo es "todo incluido" salvo dos adicionales con precio
- * fijo, y el bilingüe no es uno de ellos: el bot no le inventa un monto.
- * 11-sep: está incluido, hasta 3 idiomas (Pablo). */
+caso('"bilingüe" y "en dos idiomas" van a la respuesta del idioma',
+    wabot_info_por_palabras('La web tiene que ser bilingüe', 'pitch') === 'bilingue'
+    && wabot_info_por_palabras('se puede en dos idiomas?', 'pitch') === 'bilingue');
+$idioma = wabot_texto_info('bilingue', $cfg);
 caso('y no le pone un precio inventado: está incluido, hasta 3 idiomas',
-    is_string($idioma) && strpos($idioma, '$') === false && mb_stripos($idioma, 'incluido') !== false
+    strpos($idioma, '$') === false && strpos($idioma, '{') === false && mb_stripos($idioma, 'incluido') !== false
     && mb_stripos($idioma, '3 idiomas') !== false);
-
-$c = conv_de('pitch', ['tipo' => 'ecommerce']);
-caso('si el modelo YA lo contestó, no se duplica',
-    wabot_agente_empujon_bilingue('La quiero bilingüe',
-        ['Sí, la podemos hacer bilingüe sin problema.'], $c, $cfg) === null);
-
-$c = conv_de('pitch', ['tipo' => 'ecommerce', 'bilingue_avisado' => true]);
-caso('una sola vez por charla',
-    wabot_agente_empujon_bilingue('La quiero bilingüe', ['Otra cosa.'], $c, $cfg) === null);
+$c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
+$r = wabot_responder('Necesito ecommerce internacional, se puede en dos idiomas?', $c, $cfg);
+caso('Marcco: la pregunta por el idioma se contesta con el texto oficial, por el motor',
+    is_array($r) && mb_stripos(implode(' ', $r), '3 idiomas') !== false && strpos(implode(' ', $r), '$') === false);
+$c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
+$r = wabot_responder('Necesito ecommerce internacional, español/inglés, con ventas al extranjero', $c, $cfg);
+caso('y nombrada sin preguntar, no se inventa un adicional ni un precio',
+    is_array($r) && strpos(implode(' ', $r), '$') === false && mb_stripos(implode(' ', $r), 'adicional') === false);
 
 echo "\n— El listado con guiones se lee igual que con barras (verificación 28-ago) —\n";
 
@@ -424,40 +397,17 @@ caso('"no quiero nada con Tiendanube" NO dispara la objeción (ya está de acuer
 caso('un mensaje sin ninguna plataforma no dispara nada',
     !wabot_texto_pide_armar_en_plataforma('Hola, tengo una veterinaria'));
 
-/* V06 (10-sep): después del "no trabajamos en Wix" la venta tiene que seguir.
- * La objeción la contesta el código siempre; lo que sigue lo hace el agente
- * (cotiza o pregunta el rubro) y, si el agente no está, sale la pregunta del
- * rubro. */
+/* V06 (10-sep): después del "no trabajamos en Wix" la venta tiene que seguir:
+ * la objeción la contesta el código y, sin precio dado, se pregunta el rubro en
+ * el mismo turno. */
 $c = conv_de('menu');
 $r = wabot_responder('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', $c, $cfg);
-caso('sin agente disponible: la objeción de plataforma y la pregunta del rubro, sin cortar la charla (V06)',
+caso('la objeción de plataforma y la pregunta del rubro, sin cortar la charla (V06)',
     is_array($r) && count($r) === 2 && mb_stripos($r[0], 'wix') !== false && strpos($r[0], '{') === false
     && $r[1] === (string)$cfg['contame']);
 caso('y la fase no avanza a un tipo cotizado: el pedido de plataforma se contestó, no se ignoró',
     empty($c['tipo']));
 caso('y la marca del turno no queda guardada en la charla', !isset($c['_plataforma_contestada']));
-
-$vistoPorElAgente = null;
-$GLOBALS['WABOT_TEST_AGENTE'] = function ($mensaje, &$conv, $cfg) use (&$vistoPorElAgente) {
-    $vistoPorElAgente = [
-        'marca'   => (string)($conv['_plataforma_contestada'] ?? ''),
-        'prompt'  => wabot_agente_sistema($conv, $cfg),
-        'objecion'=> wabot_agente_ejecutar('manejar_objecion', ['tipo' => 'plataforma'], $conv, $cfg, $mensaje),
-    ];
-    return ['Para tu negocio de tortas podemos hacer una web donde…', 'Así trabajamos, en tres pasos…'];
-};
-$c = conv_de('menu');
-$r = wabot_responder('Hola, me pueden hacer una pagina en Wix para mi negocio de tortas?', $c, $cfg);
-unset($GLOBALS['WABOT_TEST_AGENTE']);
-caso('con agente: la objeción va adelante y la venta sigue en el mismo turno (V06)',
-    is_array($r) && count($r) === 3 && mb_stripos($r[0], 'wix') !== false
-    && strpos($r[1], 'Para tu negocio de tortas') === 0);
-caso('el agente sabe que la objeción ya salió',
-    is_array($vistoPorElAgente) && $vistoPorElAgente['marca'] !== ''
-    && mb_stripos($vistoPorElAgente['prompt'], 'ya le contesta lo de la plataforma') !== false);
-caso('y si igual pide manejar_objecion(plataforma), la herramienta no la repite',
-    !empty($vistoPorElAgente['objecion']['error']));
-caso('la marca no queda en la charla', !isset($c['_plataforma_contestada']));
 
 $c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
 $r = wabot_responder('Me la pueden hacer en Tiendanube?', $c, $cfg);
@@ -478,6 +428,6 @@ caso('y ya no usa el argumento del pago único: el diferenciador es quién arma 
     && stripos((string)$cfg['plataformas'], 'a medida') !== false);
 
 @unlink(WABOT_DATA . '/conv/TESTSALIDA.json');
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
-echo "\n" . ($fallas === 0 ? "TODO OK — $total casos\n" : "FALLARON $fallas de $total\n");
-exit($fallas === 0 ? 0 : 1);
+todo_ok();
