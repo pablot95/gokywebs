@@ -1962,6 +1962,39 @@ function wabot_texto_rechaza_una_forma($texto) {
     return null;
 }
 
+/**
+ * La forma de pago que el cliente ELIGIÓ, dicha en afirmativo (Pablo, 15-sep:
+ * que el boceto se cargue con la forma que eligió, si la eligió). Devuelve
+ * 'unico', 'mensual' o null. Se mira frase por frase: "vamos con el pago
+ * único, me pasás el CBU?" elige, pero "¿puedo pagarla una sola vez?" y
+ * "¿y si no quiero pagar todo junto?" preguntan, no eligen. Si en el mismo
+ * mensaje cambia de idea, vale la última.
+ */
+function wabot_modalidad_elegida_en($texto) {
+    $crudo = trim((string)$texto);
+    if ($crudo === '' || mb_strlen($crudo) > 300) return null;
+    $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
+           . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
+    $unico   = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto))\b';
+    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
+    $elegida = null;
+    foreach (preg_split('/(?<=[?.!;,\n])/u', $crudo) as $frase) {
+        if (trim($frase) === '' || mb_strpos($frase, '?') !== false || mb_strpos($frase, '¿') !== false) continue;
+        $t = wabot_normalizar_frase($frase);
+        // Preguntar por una forma no es elegirla: "quiero saber del pago único".
+        if ($t === '' || preg_match('/\b(saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?)\b/u', $t)) continue;
+        // Rechazar una forma es elegir la otra.
+        $rechazo = wabot_texto_rechaza_una_forma($frase);
+        if ($rechazo === 'mensual') { $elegida = 'unico'; continue; }
+        if ($rechazo === 'unico') { $elegida = 'mensual'; continue; }
+        $u = preg_match('/' . $elige . $unico . '/u', $t);
+        $m = preg_match('/' . $elige . $mensual . '/u', $t);
+        if ($u && !$m) $elegida = 'unico';
+        elseif ($m && !$u) $elegida = 'mensual';
+    }
+    return $elegida;
+}
+
 function wabot_texto_ofrece_mensual($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     if ($v !== null && ($v['modelo'] === 'unico' || $v['mensualidad'] === '')) return null;

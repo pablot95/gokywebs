@@ -4264,6 +4264,8 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
               'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno',
               // El paso 2 del formulario viaja con el resto de lo que completó.
               'estilo', 'incluir',
+              // La forma de pago que eligió también (15-sep).
+              'modalidad_elegida',
               // El precio congelado viaja con el tipo (10-sep): sin él, la
               // punta nueva de la charla cotizaba con otra lista.
               'precio_cotizado', 'sena_cotizada', 'mensualidad_cotizada', 'precio_modelo', 'precio_cotizado_ts'] as $k) {
@@ -4391,6 +4393,10 @@ function wabot_conv_load($clave) {
         // logo: permiten completarlo si el cliente lo pasa después.
         'lead_doc'         => null,
         'logo_sincronizado'=> null,
+        // La forma de pago que eligió el cliente ('unico' o 'mensual') y la que
+        // ya quedó escrita en su boceto (15-sep).
+        'modalidad_elegida'      => '',
+        'modalidad_sincronizada' => '',
         'origen_prediseno'            => null,
         'form_completado_ts'          => 0,
         'codigo'                      => '',
@@ -4532,6 +4538,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['lead_creado'] = false;
     $conv['lead_doc'] = null;
     $conv['logo_sincronizado'] = null;
+    $conv['modalidad_elegida'] = '';
+    $conv['modalidad_sincronizada'] = '';
     $conv['sistema_lead_creado'] = false;
     $conv['lead_recibido_evento'] = false;
     $conv['handoff_pendiente'] = false;
@@ -8085,7 +8093,9 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'sena'               => ['integerValue' => $montoLead($vLead['sena'] ?? '')],
         'saldo'              => ['integerValue' => $montoLead($vLead['saldo'] ?? '')],
         'mensualidad'        => ['integerValue' => $montoLead($vLead['mensualidad'] ?? '')],
-        'modalidad'          => ['stringValue' => ''],
+        // La forma que eligió por chat, si eligió (15-sep); vacía, el admin muestra las dos.
+        'modalidad'          => ['stringValue' => in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual'], true)
+                                    ? (string)$conv['modalidad_elegida'] : ''],
         'primerPago'         => ['integerValue' => '0'],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],
@@ -8364,6 +8374,8 @@ function wabot_firestore_lead(&$conv, $cfg) {
     $nombreDoc = json_decode((string)$res, true)['name'] ?? '';
     if ($nombreDoc !== '') $conv['lead_doc'] = $nombreDoc;
     $conv['logo_sincronizado'] = wabot_logo_cliente($conv);
+    // La forma elegida ya viajó en el alta: no hace falta completarla después.
+    $conv['modalidad_sincronizada'] = (string)($conv['modalidad_elegida'] ?? '');
 
     wabot_log('lead', ['clave' => wabot_conversation_key($conv), 'tipo' => (string)($conv['tipo'] ?? '')]);
     wabot_evento($conv, $esSistema ? 'sistema_calificado' : 'muestra_aceptada');
@@ -8415,5 +8427,64 @@ function wabot_logo_sincronizar(&$conv) {
     }
     $conv['logo_sincronizado'] = $archivo;
     wabot_log('logo_agregado', ['clave' => wabot_conversation_key($conv), 'archivo' => $archivo]);
+    return true;
+}
+
+/**
+ * Anota la forma de pago que el cliente eligió (Pablo, 15-sep) y, si su boceto
+ * ya existe, se la completa. La charla cotizada con el pago único viejo (antes
+ * del 10-sep) no se toca: ahí no hay dos formas.
+ */
+function wabot_modalidad_anotar($texto, &$conv, $cfg) {
+    if (!function_exists('wabot_modalidad_elegida_en')) return false;
+    if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
+        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
+    $elegida = wabot_modalidad_elegida_en($texto);
+    if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
+    $conv['modalidad_elegida'] = $elegida;
+    wabot_modalidad_sincronizar($conv);
+    return true;
+}
+
+/**
+ * La forma elegida DESPUÉS de crear el boceto: se completa `modalidad` en el
+ * documento que ya existe, igual que el logo. Con currentDocument.exists: si el
+ * boceto ya pasó a Clientes, su documento no existe más y no se vuelve a crear.
+ * Se intenta una vez por elección. Necesita que la regla de `propuestas` en
+ * firestore.rules deje escribir `modalidad` sin login.
+ */
+function wabot_modalidad_sincronizar(&$conv) {
+    $modalidad = (string)($conv['modalidad_elegida'] ?? '');
+    if (empty($conv['lead_creado']) || !in_array($modalidad, ['unico', 'mensual'], true)) return false;
+    if ($modalidad === (string)($conv['modalidad_sincronizada'] ?? '')) return false;
+    $doc = trim((string)($conv['lead_doc'] ?? ''));
+    if ($doc === '') return false;
+    $conv['modalidad_sincronizada'] = $modalidad;
+
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) return true;
+
+    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=modalidad&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'modalidad' => ['stringValue' => $modalidad],
+            'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+        ]], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        // 404: el boceto ya pasó a Clientes o se borró, no hay nada que completar.
+        if ($code !== 404) wabot_log('error', ['donde' => 'firestore_modalidad', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        return false;
+    }
+    wabot_log('modalidad_elegida', ['clave' => wabot_conversation_key($conv), 'modalidad' => $modalidad]);
     return true;
 }

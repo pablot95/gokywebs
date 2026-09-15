@@ -25,7 +25,10 @@ service cloud.firestore {
         'tipoDetectado', 'tipoDetectadoLabel', 'precioTotal', 'sena', 'saldo', 'presupuestoId',
         // Modelo primer pago + plan mensual (10-sep-2026). Los viejos se siguen
         // escribiendo (sena = primer pago, saldo = 0) para que el admin no rompa.
-        'primerPago', 'mensualidad'
+        'primerPago', 'mensualidad',
+        // La forma de pago que el cliente eligió por WhatsApp, si la eligió
+        // después de que se creara el boceto (wabot, 15-sep-2026).
+        'modalidad'
       ]);
     }
     match /presupuestos/{doc}  {

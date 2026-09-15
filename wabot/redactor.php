@@ -43,6 +43,10 @@ function wabot_responder($texto, &$conv, $cfg) {
      * cero y no hay nada que marcar). Ver wabot_presentado_marcar_respuesta(). */
     wabot_presentado_marcar_respuesta($conv);
 
+    /* La forma de pago que el cliente eligió va a su boceto (Pablo, 15-sep).
+     * Se anota con cada mensaje, conteste quien conteste el turno. */
+    wabot_modalidad_anotar($texto, $conv, $cfg);
+
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg, $conv);
