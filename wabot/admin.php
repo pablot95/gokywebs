@@ -1249,6 +1249,29 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 
 .conv-main { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; min-width:0; min-height:0; }
 .conv-main .chat { flex:1 1 0; min-height:0; max-height:none; overflow-y:auto; }
+
+/* Respuestas rápidas: columna de pestañas flotante sobre el borde derecho de
+   la ventana. position:fixed (no depende de .conv-main) para no quedar
+   atrapada por el overflow del chat; se esconde en pantallas angostas, donde
+   no hay hover de verdad y la tapa tapa la única columna disponible. */
+.rr-panel { position:fixed; right:10px; top:50%; transform:translateY(-50%); z-index:40; display:flex; flex-direction:column; gap:5px; }
+.rr-tab { position:relative; }
+.rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:default; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
+.rr-tab-ico { font-size:14px; line-height:1; }
+.rr-tab:hover .rr-tab-btn, .rr-tab.rr-abierto .rr-tab-btn { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
+.rr-flyout { position:absolute; right:100%; top:50%; transform:translateY(-50%) translateX(6px); margin-right:2px; width:300px; max-height:min(60vh, 420px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:6px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
+/* Un margen invisible entre la pestaña y el flyout: sin esto, el pequeño hueco
+   entre los dos (right:100%) hace que el mouse "salga" del :hover a mitad de
+   camino y el panel se cierra antes de llegar a un ítem. */
+.rr-tab::before { content:''; position:absolute; right:100%; top:0; bottom:0; width:14px; }
+.rr-tab:hover .rr-flyout, .rr-tab.rr-abierto .rr-flyout { visibility:visible; opacity:1; pointer-events:auto; }
+.rr-flyout-tit { padding:6px 8px 5px; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
+.rr-item { display:block; width:100%; text-align:left; padding:8px 9px; border:0; border-radius:7px; background:transparent; color:var(--tx); font:inherit; font-size:12.5px; line-height:1.4; cursor:pointer; }
+.rr-item:hover, .rr-item:focus-visible { background:var(--card); outline:0; }
+.rr-item-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); font-size:11.5px; margin-top:2px; }
+@media (max-width: 1180px), (hover: none) {
+  .rr-panel { display:none; }
+}
 .conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
 .conv-head form { display:inline; }
 .conv-acciones { gap:6px; flex-shrink:0; }
@@ -2140,6 +2163,15 @@ body.embed { min-height: 0; }
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
                 </div>
+
+                <!-- Respuestas rápidas (Pablo, 15-sep): pestañitas flotantes a la
+                     derecha del chat, una por categoría. Con el mouse encima se
+                     despliega la lista de esa categoría; un clic en un mensaje lo
+                     escribe en #respTexto y lo manda solo, sin reescribir nada.
+                     Solo en pantalla grande (con hover de verdad): en el celular
+                     no hay dónde "pasar el mouse", así que ahí queda oculto y se
+                     sigue escribiendo a mano. -->
+                <nav class="rr-panel" id="rrPanel" aria-label="Respuestas rápidas"></nav>
             <?php else: ?>
                 <div class="conv-nada">
                     <?= $items ? 'Elegí una conversación de la izquierda para leerla y responder.' : 'Todavía no hay conversaciones. Cuando alguien le escriba al bot, va a aparecer acá.' ?>
@@ -2806,6 +2838,113 @@ body.embed { min-height: 0; }
         const btn  = document.getElementById('respEnviar');
         const est  = document.getElementById('respEstado');
         let ultimoRender = '';
+
+        /* Respuestas rápidas (Pablo, 15-sep): "estructura de posibles
+         * respuestas... categorías... clic y se envía automáticamente, así no
+         * repito siempre lo mismo". Son mensajes en primera persona, para
+         * mandar tal cual o retocar antes. Para sumar uno: agregá un string
+         * más al array de la categoría — no hace falta tocar el resto. */
+        const RESPUESTAS_RAPIDAS = [
+            { ico: '💰', tit: 'Precio y pago', items: [
+                'Te paso los datos para la seña: [ALIAS o CBU]. En cuanto la veas acreditada, arrancamos.',
+                'Te mando el link de Mercado Pago para la suscripción, así arrancamos con la primera mensualidad: [LINK]',
+                '¡Recibido! Ya arrancamos con tu web, en unos días te muestro los primeros avances.',
+                'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
+                'No manejamos descuentos, pero tenés las dos formas: pago único o mensual sin pago inicial, para que elijas la que te convenga.',
+                'Sí, se puede cambiar de una forma a la otra cuando quieras. Avisame y te cuento cómo seguimos.',
+            ] },
+            { ico: '🙅', tit: 'Objeciones', items: [
+                'Entiendo. Si el pago único te queda grande, tenés el mensual: arrancás sin poner nada de entrada.',
+                'Dale, sin problema. Cualquier duda que te vaya surgiendo, quedo por acá.',
+                'Totalmente válido. Nosotros nos diferenciamos en que no solo te la armamos: seguimos con el soporte y el mantenimiento después. La propuesta queda en pie para cuando quieras.',
+                'Ahí armás vos la página con una plantilla y pagás por mes igual. Acá te la hacemos nosotros a medida y nos ocupamos de todo lo técnico.',
+                'Ningún problema, no hay apuro ni vencimiento. Cuando quieras arrancar, escribime.',
+                'Se puede mejorar o rehacer sin drama. Contame qué te gustaría cambiar y vemos qué te conviene.',
+            ] },
+            { ico: '📋', tit: 'Ya dijo que sí', items: [
+                'Perfecto! Para arrancar necesito: el logo (si tenés), 5-6 fotos de tu negocio o productos, los textos que quieras que aparezcan y los colores que te gustan.',
+                'No hay problema si no tenés logo todavía, arrancamos igual y lo sumamos después.',
+                '¿Ya tenés pensado el nombre para tu dominio? Por ejemplo tumarca.com.ar.',
+                'En unos días te muestro los primeros avances. La web completa suele estar lista en una semana.',
+                'Buenísimo, bienvenido/a a Gokywebs! Vamos a armar algo que te represente.',
+            ] },
+            { ico: '⏰', tit: 'Seguimiento', items: [
+                'Hola! ¿Seguís con ganas de avanzar con tu web? Quedo atento.',
+                'Che, ¿pudiste ver la propuesta que te pasé? Cualquier duda, la resolvemos.',
+                'Hola! Te paso de nuevo los datos para la seña, por si se te traspapeló: [DATOS]',
+                'Quedo disponible para cuando quieras retomar, no hay drama.',
+            ] },
+            { ico: '🎨', tit: 'Diseño', items: [
+                'Sí, se puede ajustar. Contame qué te gustaría cambiar (colores, orden, textos) y lo vemos.',
+                'El diseño principal se puede rehacer hasta 2 veces. Una vez que lo elegís, tenés 3 devoluciones para ajustar el resto.',
+                'Tranquilo/a, lo volvemos a armar. Contame qué NO te cerró para ir por otro lado.',
+                '¿Tenés alguna web que te guste como referencia de estilo? Me ayuda mucho para afinar el diseño.',
+            ] },
+            { ico: '❓', tit: 'Preguntas técnicas', items: [
+                'El hosting y el dominio están incluidos mientras tengas el servicio (con el pago único, el primer año).',
+                'Sí, se integra Mercado Pago para que tus clientes paguen directo desde la web.',
+                'Tenés un panel para vos, para cargar y editar productos, textos e imágenes cuando quieras.',
+                'La web queda preparada técnicamente para Google. La posición en el buscador depende de otros factores, no te puedo prometer un puesto.',
+            ] },
+            { ico: '👋', tit: 'Cierre y trato', items: [
+                'Gracias a vos por la confianza! Cualquier cosa que necesites, estoy por acá.',
+                'Buenísimo, cualquier duda me escribís. Que tengas buen día!',
+                'Ya está publicada tu web! Fijate y contame qué te parece.',
+            ] },
+        ];
+
+        (function armarRespuestasRapidas() {
+            const panel = document.getElementById('rrPanel');
+            if (!panel) return;
+            panel.innerHTML = RESPUESTAS_RAPIDAS.map((cat, i) => `
+                <div class="rr-tab" data-cat="${i}">
+                    <button type="button" class="rr-tab-btn" aria-haspopup="true" aria-expanded="false">
+                        <span class="rr-tab-ico" aria-hidden="true">${cat.ico}</span>${cat.tit}
+                    </button>
+                    <div class="rr-flyout" role="menu">
+                        <p class="rr-flyout-tit">${cat.tit}</p>
+                        ${cat.items.map(msg => `<button type="button" class="rr-item" role="menuitem">${
+                            msg.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                        }</button>`).join('')}
+                    </div>
+                </div>`).join('');
+
+            // Clic en un mensaje: lo escribe y lo manda solo, como pidió Pablo
+            // ("que nos envía automáticamente, así no estoy siempre
+            // reescribiendo y repitiendo lo mismo"). El texto entre corchetes
+            // ([ALIAS o CBU], [LINK], [DATOS]) es un recordatorio para
+            // completar a mano — si queda, Enviar lo manda igual, así que
+            // conviene revisar antes de tocar el ítem si tiene uno.
+            panel.addEventListener('click', ev => {
+                const item = ev.target.closest('.rr-item');
+                if (!item) return;
+                txt.value = item.textContent;
+                txt.dispatchEvent(new Event('input', { bubbles: true }));
+                enviar();
+                txt.focus();
+            });
+
+            // Táctil (tablet sin mouse real): un toque abre/cierra el flyout en
+            // vez de depender del :hover, que ahí no existe.
+            panel.querySelectorAll('.rr-tab-btn').forEach(b => {
+                b.addEventListener('click', ev => {
+                    ev.stopPropagation();
+                    const tab = b.closest('.rr-tab');
+                    const yaAbierto = tab.classList.contains('rr-abierto');
+                    panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
+                        t.classList.remove('rr-abierto');
+                        t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
+                    });
+                    if (!yaAbierto) { tab.classList.add('rr-abierto'); b.setAttribute('aria-expanded', 'true'); }
+                });
+            });
+            document.addEventListener('click', () => {
+                panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
+                    t.classList.remove('rr-abierto');
+                    t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
+                });
+            });
+        })();
 
         function pintar(lineas) {
             const firma = JSON.stringify(lineas);
