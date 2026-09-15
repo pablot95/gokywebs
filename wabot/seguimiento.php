@@ -1,16 +1,18 @@
 <?php
 /**
- * wabot/seguimiento.php — dispara el seguimiento comercial, el archivado de
- * demos presentadas sin confirmar y la confirmación por plantilla a las 48 h.
- * Lo llama un cron.
+ * wabot/seguimiento.php — los dos únicos automatismos por cron que quedan:
+ *   - la "última llamada" a las 23 h del último mensaje del cliente, antes de
+ *     que cierre la ventana de 24 h de Meta (wabot_ultima_llamada_correr);
+ *   - la confirmación por plantilla a las 48 h de presentar la demo
+ *     (wabot_confirmacion_demo_correr).
  *
  * Desde Hostinger (hPanel → Avanzado → Cron Jobs), cada 30 minutos:
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
  * o por URL, con el verify token como clave:
  *   https://gokywebs.com/wabot/seguimiento.php?clave=VERIFY_TOKEN
  *
- * Correrlo de más no duplica nada: cada conversación recibe un solo
- * seguimiento y una sola confirmación de demo en su vida.
+ * Correrlo de más no duplica nada: cada conversación recibe una sola última
+ * llamada y una sola confirmación de demo en su vida.
  */
 
 // engine.php, no lib.php: los textos de los crons también pasan por el punto
@@ -31,37 +33,15 @@ if (php_sapi_name() !== 'cli') {
     header('Content-Type: application/json; charset=utf-8');
 }
 
-// El aviso de "retomar vencido" sale por push: sin esto la función no existe
-// en este proceso y la tarea vence en silencio.
-require_once __DIR__ . '/push.php';
-
 $cfg = wabot_config_load();
-$res = wabot_seguimiento_correr($cfg);
-$presentados = wabot_presentados_correr($cfg);
 $confirmacionDemo = wabot_confirmacion_demo_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
-$retomar = wabot_retomar_correr($cfg);
 
 echo json_encode([
-    'revisadas' => $res['revisadas'],
-    'enviados'  => $res['enviados'],
-    'fallidos'  => $res['fallidos'],
-    'detalle'   => $res['detalle'],
-    'retomar' => [
-        'revisadas' => $retomar['revisadas'],
-        'enviados'  => $retomar['enviados'],
-        'vencidos'  => $retomar['vencidos'],
-        'detalle'   => $retomar['detalle'],
-    ],
     'ultima_llamada' => [
         'revisadas' => $ultima['revisadas'],
         'enviados'  => $ultima['enviados'],
         'detalle'   => $ultima['detalle'],
-    ],
-    'presentados' => [
-        'revisadas'  => $presentados['revisadas'],
-        'archivados' => $presentados['archivados'],
-        'detalle'    => $presentados['detalle'],
     ],
     'confirmacion_demo' => [
         'revisadas' => $confirmacionDemo['revisadas'],
