@@ -83,8 +83,12 @@ function wabot_responder($texto, &$conv, $cfg) {
      * y antes del modelo: montos confundidos, lo que queda para pagar después,
      * la devolución de la seña, pasarse de una forma a la otra y cuál de las
      * dos conviene. Cada una se llevaba otra respuesta. Ver engine.php. */
-    $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
-    if ($pagoFijo !== null) return $pagoFijo;
+    // Con una alternativa recién cotizada, primero se resuelve a qué precio
+    // apunta la pregunta. Usar acá el tipo anterior mezclaba las modalidades.
+    if (empty($conv['upgrade_pendiente'])) {
+        $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
+        if ($pagoFijo !== null) return $pagoFijo;
+    }
 
     /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
      * es fijo: wabot_postdemo_responder() contesta lo que el cliente dijo
@@ -206,7 +210,8 @@ function wabot_responder($texto, &$conv, $cfg) {
         if (preg_match('/\b(prefiero|me quedo con|quiero|mejor)\b.{0,20}\b(sitio profesional|sin tienda|solo servicios|web anterior)\b/u', $normal)) {
             unset($conv['upgrade_pendiente']);
         } elseif (!wabot_mensaje_pregunta_algo($texto) && wabot_acepta_demo($texto)
-            && !preg_match('/\b(cursos|inmobiliaria|sistema de gestion)\b/u', $normal)) {
+            && !preg_match('/\b(inmobiliaria|sistema de gestion)\b/u', $normal)
+            && (!preg_match('/\bcursos\b/u', $normal) || $pendiente['tipo'] === 'elearning')) {
             $conv['tipo'] = $pendiente['tipo'];
             $conv['precio_cotizado'] = $pendiente['precio'];
             $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
@@ -226,11 +231,34 @@ function wabot_responder($texto, &$conv, $cfg) {
              * con los montos de la tienda, no con los del sitio cotizado. */
             return [wabot_upgrade_pago_texto($pendiente, $conv, $cfg)];
         } elseif (wabot_mensaje_pregunta_algo($texto)
-            && preg_match('/\b(entonces|total|dos planes|juntos|serian)\b/u', $normal)
+            && preg_match('/\b(entonces|total|dos planes|juntos|serian|suman|sumar|adicional|mas)\b/u', $normal)
             && preg_match('/\b(pago|planes|por mes|precio|cuanto|mil)\b|\$/u', $normal)) {
             // "No es un adicional" contesta justo esto: si se suman los dos.
             return [wabot_upgrade_texto($pendiente['tipo'], $conv, $cfg)];
+        } elseif (wabot_texto_pide_precio($texto)) {
+            return [wabot_upgrade_texto($pendiente['tipo'], $conv, $cfg)];
         }
+        // Las dudas de pago posteriores corresponden a la última alternativa,
+        // sin confirmar el cambio ni sobrescribir la cotización anterior.
+        if (isset($conv['upgrade_pendiente'])
+            && !preg_match('/\b(sitio profesional|precio anterior|sin tienda|sin cursos)\b/u', $normal)) {
+            $consulta = $conv;
+            $consulta['tipo'] = $pendiente['tipo'];
+            foreach (['precio' => 'precio_cotizado', 'sena' => 'sena_cotizada',
+                      'mensualidad' => 'mensualidad_cotizada', 'modelo' => 'precio_modelo'] as $origen => $campo) {
+                $consulta[$campo] = $pendiente[$origen] ?? '';
+            }
+            $pagoAlternativa = wabot_respuesta_pago_fija($texto, $consulta, $cfg);
+            if ($pagoAlternativa !== null) {
+                if (!empty($consulta['handoff_pendiente'])) $conv['handoff_pendiente'] = true;
+                return $pagoAlternativa;
+            }
+        }
+    }
+
+    if (!empty($pendiente)) {
+        $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
+        if ($pagoFijo !== null) return $pagoFijo;
     }
 
     /* "Cuánto cuesta agregar venta y cobro online?" con una landing ya

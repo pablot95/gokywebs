@@ -1796,6 +1796,8 @@ function wabot_texto_pregunta_costos_despues($texto) {
     $cuando = '\b(despues|luego|mas adelante|a futuro|con el tiempo|cada ano|por ano|al ano|anual\w*|ademas|hay que|tengo que|tendria que|voy a tener que)\b';
     return (bool)(
         (preg_match('/' . $pagar . '/u', $t) && preg_match('/' . $extra . '/u', $t) && preg_match('/' . $cuando . '/u', $t))
+        || (preg_match('/\b(seguir (pagando|abonando)|que (gastos|pagos) quedan)\b/u', $t)
+            && preg_match('/\b(despues|luego|pago unico|un solo pago|mensual\w*)\b/u', $t))
         || preg_match('/\b(costos?|gastos?|pagos?|cargos?) (ocultos?|extras?|adicionales|fijos?)\b/u', $t)
     );
 }
@@ -1868,6 +1870,10 @@ function wabot_texto_confusion_montos($texto, $conv, $cfg) {
 
     $porMes = (bool)preg_match('/\b(por mes|al mes|cada mes|mensual\w*|todos los meses|x mes)\b/u', $t);
     $unaVez = (bool)preg_match('/\b(una (sola )?vez|de una|y listo|y ya|nada mas|en total|total|pago unico|unico pago|un solo pago)\b/u', $t);
+    if (count(array_unique($montos)) === 1 && $montos[0] === $mensual
+        && preg_match('/\b(sena|senia|anticipo)\b/u', $t) && !$porMes) {
+        return 'No: los ' . $v['mensualidad'] . ' son la mensualidad del servicio mensual, sin pago inicial. La seña de ' . $v['sena'] . ' corresponde solamente al pago único de ' . $v['precio'] . ', y el saldo de ' . $v['saldo'] . ' va al entregar. Elegís una de las dos formas, no se suman.';
+    }
     foreach ($montos as $n) {
         if ($n === $sena && $porMes) {
             return 'No: los ' . $v['sena'] . ' son la seña del pago único, para arrancar (el saldo va al entregar la web). Con el servicio mensual pagás ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
@@ -2017,6 +2023,18 @@ function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
      * sus textos de siempre: "lo viejo no toques nada" (Pablo, 15-sep). */
     if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return null;
+    $tPago = wabot_normalizar_frase($texto);
+    if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
+        && mb_strlen($tPago) <= 220
+        && preg_match('/\b(pago unico|un solo pago|una sola vez)\b/u', $tPago)
+        && preg_match('/\b(cuanto|de cuanto)\b/u', $tPago)
+        && preg_match('/\b(sena|senia|empezar|arrancar|entregar|saldo)\b/u', $tPago)
+        && !wabot_texto_pregunta_devolucion($texto)) {
+        $vPago = wabot_precio_vigente($conv, $cfg);
+        if ($vPago['modelo'] === 'doble' && $vPago['sena'] !== '' && $vPago['saldo'] !== '') {
+            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar, después de aprobar la demo, y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
+        }
+    }
     $confusion = wabot_texto_confusion_montos($texto, $conv, $cfg);
     if ($confusion !== null) {
         wabot_evento_sesion($conv, 'montos_confundidos');
@@ -2420,7 +2438,7 @@ function wabot_info_lineas($keys, $conv, $cfg) {
         $lineas[] = $k === 'mantenimiento' ? wabot_texto_mantenimiento($conv, $cfg)
             : ($k === 'pago' ? wabot_texto_pago($conv, $cfg)
             : ($k === 'hosting' ? wabot_texto_hosting($conv, $cfg)
-            : ($k === 'rangos' ? wabot_texto_rangos($cfg)
+            : ($k === 'rangos' ? wabot_texto_info('rangos', $cfg, $conv)
             : ($k === 'plazos' ? wabot_texto_plazos($conv, $cfg) : wabot_texto_info($k, $cfg, $conv)))));
     }
     $lineas = array_values(array_filter($lineas, function ($l) { return trim((string)$l) !== ''; }));
@@ -3575,8 +3593,15 @@ function wabot_engine($texto, &$conv, $cfg) {
         $preciosDesempate = (in_array('rangos', $keys, true) || in_array('precio_sin_rubro', $keys, true))
             ? wabot_desempate_precios_texto($conv['fase'], $cfg) : null;
 
+        $rubroParaPrecio = wabot_rubro_de($acc) ?? wabot_fallback_rubro_local($texto);
+        $precioConRubroEnTurno = empty($conv['precio_dado']) && $rubroParaPrecio !== null
+            && in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true);
+
         $lineas = [];
         foreach ($keys as $k) {
+            // El flujo de abajo ya va a cotizar o preguntar la función que
+            // falta. No anteponerle una pregunta por el rubro recién reconocido.
+            if ($precioConRubroEnTurno && in_array($k, ['rangos', 'precio_sin_rubro'], true)) continue;
             if ($preciosDesempate !== null && in_array($k, ['rangos', 'precio_sin_rubro'], true)) {
                 $lineas[] = $preciosDesempate;
                 continue;
@@ -3586,7 +3611,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             $una = wabot_info_lineas([$k], $conv, $cfg);
             if ($una !== '') $lineas[] = $una;
         }
-        if (!$lineas) $lineas[] = $cfg['info']['otra'];
+        if (!$lineas && !$precioConRubroEnTurno) $lineas[] = $cfg['info']['otra'];
         // "Ese detalle te lo confirma Pablo" es una promesa: si sale, la duda
         // queda pendiente de verdad — Pablo la ve en el panel y ni el
         // seguimiento ni la última llamada persiguen una charla con una
@@ -3597,7 +3622,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             $conv['handoff_pendiente'] = true;
             wabot_evento_sesion($conv, 'duda_sin_respuesta');
         }
-        $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
+        if ($lineas) $out[] = count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
     }
 
     /* Respaldo determinista del rubro, igual que ya se hace en los desempates.
@@ -4858,6 +4883,17 @@ function wabot_texto_pregunta_upgrade($texto, $tipoActual) {
     // Solo tiene sentido desde un tipo que todavía NO cobra online.
     if (!in_array((string)$tipoActual, ['landing', 'turnos', 'institucional', 'inmobiliaria'], true)) return null;
 
+    // Pasar de presentar clases a vender cursos con acceso de alumnos cambia
+    // el producto. No confundirlo con sumar fotos/textos al sitio ya cotizado.
+    if (in_array((string)$tipoActual, ['landing', 'turnos', 'institucional'], true)
+        && preg_match('/\b(cursos?|clases)\b/u', $t)
+        && preg_match('/\b(quiero|necesito|agregar|sumar|incluir|poner)\b/u', $t)
+        && preg_match('/\b(vender|venta|cobrar|comprar)\b/u', $t)
+        && preg_match('/\b(grabados?|online|usuario|alumnos|acceso)\b/u', $t)
+        && !preg_match('/\b(tienda|productos|insumos|propiedades|sistema|no quiero|sin vender|sin cobrar)\b/u', $t)) {
+        return 'elearning';
+    }
+
     /* Hace falta el verbo de sumar algo: un "cuánto sale" pelado ya tiene su
      * propio camino y no puede terminar recotizando otro tipo por su cuenta.
      *
@@ -4898,20 +4934,22 @@ function wabot_upgrade_texto($destino, $conv, $cfg) {
     $precioViejo = wabot_precio_frase(wabot_precio_vigente($conv, $cfg));
     if ($precioNuevo === '') return null;
 
-    $texto = 'Con venta y cobro online ya sería una tienda online: ' . $precioNuevo . '.';
+    $esCursos = $destino === 'elearning';
+    $texto = ($esCursos ? 'Con venta de cursos y acceso de alumnos ya sería una plataforma de cursos: '
+        : 'Con venta y cobro online ya sería una tienda online: ') . $precioNuevo . '.';
     if ($precioViejo !== '') {
         /* Sin nombrar el tipo viejo con artículo: "en vez de la sitio
          * profesional" salía así desde que landing pasó a llamarse sitio
          * profesional (10-sep). */
         $texto .= ' No es un adicional sobre lo que te coticé (' . $precioViejo . '): te queda la web completa,'
-                . ' con el carrito y los pagos integrados.';
+                . ($esCursos ? ' con los cursos, el acceso de alumnos y los pagos integrados.' : ' con el carrito y los pagos integrados.');
     }
     return $texto;
 }
 
 /** ¿Lo último que dijo el bot fue el texto del upgrade? */
 function wabot_ultimo_bot_es_upgrade($conv) {
-    return (bool)preg_match('/^con venta y cobro online ya seria/u', wabot_normalizar_frase(wabot_ultimo_texto_bot($conv)));
+    return (bool)preg_match('/^con (venta y cobro online|venta de cursos y acceso de alumnos) ya seria/u', wabot_normalizar_frase(wabot_ultimo_texto_bot($conv)));
 }
 
 /** ¿El texto del upgrade salió entre los últimos mensajes del bot? */
@@ -4919,7 +4957,7 @@ function wabot_upgrade_ya_dicho($conv) {
     $vistos = 0;
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $m) {
         if (($m['q'] ?? '') !== 'bot') continue;
-        if (preg_match('/^con venta y cobro online ya seria/u', wabot_normalizar_frase((string)($m['t'] ?? '')))) return true;
+        if (preg_match('/^con (venta y cobro online|venta de cursos y acceso de alumnos) ya seria/u', wabot_normalizar_frase((string)($m['t'] ?? '')))) return true;
         if (++$vistos >= 6) break;
     }
     return false;
@@ -4937,7 +4975,8 @@ function wabot_upgrade_confirmacion_texto($pendiente, $conv, $cfg) {
     }
     $frase = wabot_precio_frase(is_array($pendiente) && isset($pendiente['precio']) ? $pendiente : wabot_precio_vigente(null, $cfg, $destino));
     $nombre = wabot_tipo_nombre_precio($destino, $cfg['tipos'][$destino] ?? []);
-    return 'Sí, eso ya entra en la ' . $nombre . ' que te comenté: ' . $frase . ', con el carrito y los pagos incluidos.';
+    return 'Sí, eso ya entra en la ' . $nombre . ' que te comenté: ' . $frase
+        . ($destino === 'elearning' ? ', con los cursos, el acceso de alumnos y los pagos incluidos.' : ', con el carrito y los pagos incluidos.');
 }
 
 /**
@@ -5069,6 +5108,10 @@ function wabot_texto_mantenimiento($conv, $cfg) {
 
 /** Un texto de info con sus placeholders resueltos. */
 function wabot_texto_info($clave, $cfg, $conv = null) {
+    if (in_array($clave, ['rangos', 'precio_sin_rubro'], true)
+        && is_array($conv) && !empty($conv['tipo']) && !empty($conv['precio_dado'])) {
+        return wabot_precio_resumen($conv, $cfg);
+    }
     $texto = (string)($cfg['info'][$clave] ?? '');
     /* Con el tipo cotizado, la versión que le toca (11-sep): al sitio
      * profesional no le corresponde la carga de productos ni el panel de
@@ -5949,9 +5992,9 @@ function wabot_rubro_desde_contexto($conv) {
     /* Palabras que no dicen nada del rubro. "Tenemos un local donde hacemos
      * uñas" daba "un local", que en el pitch se lee igual de genérico que "tu
      * negocio" y encima suena raro ("para un local sería un ecommerce"). */
-    $vacias = '/^(un |una |el |la |los |las |mi |mis )?(local|negocio|negocios|emprendimiento|empresa|comercio'
+    $vacias = '/^(?:es |soy |somos )?(un |una |el |la |los |las |mi |mis )?(local|negocio|negocios|emprendimiento|empresa|comercio'
             . '|marca|tienda|proyecto|rubro|servicio|servicios|producto|productos|pagina|paginas|web|sitio'
-            . '|cliente|clientes|persona|gente|cosas|todo|algo'
+            . '|cliente|clientes|persona|gente|cosas|todo|algo|profesional|profesionales|emprendedor|emprendedora'
             // Saludos y muletillas: son el primer segmento de casi todo mensaje.
             . '|hola|holaa+|buenas|buen dia|buenas tardes|buenas noches|gracias|consulta|consultas'
             . '|informacion|información|info|precio|precios|presupuesto|presupuestos|ayuda|idea)$/iu';

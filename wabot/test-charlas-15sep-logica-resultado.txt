@@ -1,0 +1,274 @@
+Bateria conversacional wabot — 10 escenarios, modo agente
+Las claves QATEST* no crean leads reales ni muestras. Revisar cada transcript A MANO contra su campo 'esperado'.
+
+########## ESCENARIO AUD15L01 — Rubro y precio en el mismo mensaje
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Soy electricista y quiero mostrar mis servicios, cuánto sale la web?
+<<< BOT [875c]: Para electricista podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Entonces tengo que pagar 180 mil y también 20 mil por mes?
+<<< BOT [159c]: No: los $180.000 son el pago único, una sola vez (con una seña de $40.000 y el saldo al entregar). El servicio mensual es de $20.000 por mes, sin pago inicial.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Si elijo el pago único, cuánto pongo para empezar y cuánto al entregar?
+<<< BOT [217c]: Depende de cómo la contrates: con el pago único arrancás con una seña de $40.000 y el saldo lo abonás al entregar la web; con el servicio mensual no hay pago inicial, y la primera cuota, de $20.000, arranca el armado.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Dale, quiero ver la demo.
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=CA
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L02 — Tienda y cobros de compradores
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Vendo ropa para bebés y quiero una tienda con carrito y Mercado Pago
+<<< BOT [891c]: Para tu tienda de ropa para bebés podemos hacer una web para vender online, con tu catálogo, carrito y cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos.
+           
+           Incluye:
+           • Diseño a medida, pensado para vender desde el celular
+           • Carrito de compras y cobro online con Mercado Pago
+           • Tu propio panel para cargar productos, precios, stock y fotos
+           • Envíos con Correo Argentino y Andreani, y gestión de pedidos
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $290.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $30.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Los 30 mil son la seña?
+<<< BOT [361c]: Hay dos formas de pagarla:
+           1. Pago único de $290.000: arrancás con una seña de $60.000 y el saldo lo abonás al entregar la web, por transferencia o con tarjeta.
+           2. Servicio mensual de $30.000: una suscripción por Mercado Pago que se debita sola, con cualquier tarjeta y sin necesidad de cuenta. No hay pago inicial: la primera cuota arranca el armado de tu web.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Lo que me compren mis clientes me lo pagan a mí por Mercado Pago?
+<<< BOT [146c]: Sí, tus clientes te pagan directamente a tu cuenta de Mercado Pago. El pedido te queda registrado en el panel para que lo prepares y lo despaches.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y con el pago único después qué tengo que seguir pagando?
+<<< BOT [156c]: La demo no se paga: primero te la mostramos y, si te gusta, elegís cómo contratarla: con la seña del pago único o con la primera cuota del servicio mensual.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L03 — Inmobiliaria y seña
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Tengo una inmobiliaria, qué precio tiene una web para publicar propiedades?
+<<< BOT [841c]: Para una inmobiliaria podemos hacer una web para publicar tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja.
+           
+           Incluye:
+           • Propiedades con ficha completa y fotos
+           • Filtros por zona, tipo y precio, y mapa de ubicación
+           • Tu panel para cargar y editar propiedades cuando quieras
+           • Consulta por WhatsApp en cada propiedad
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $240.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $30.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: La mensualidad es de 60 mil?
+<<< BOT [156c]: No: los $60.000 son la seña del pago único, para arrancar (el saldo va al entregar la web). Con el servicio mensual pagás $30.000 por mes, sin pago inicial.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Puedo dar de baja una propiedad vendida y cargar otra yo?
+<<< BOT [150c]: Sí, totalmente. Vas a poder dar de baja propiedades, cargarlas y editarlas vos mismo desde tu panel de administración cuando quieras, sin costo extra.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me interesa la demo, mandame el formulario.
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=X6
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=inmobiliaria precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L04 — Sin rubro, luego respuesta explícita
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Cuánto sale una web?
+<<< BOT [126c]: Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Antes de decirte el rubro, pasame el más barato.
+<<< BOT [153c]: Te lo pregunto de otra forma: a qué rubro te dedicás (por ejemplo indumentaria, gastronomía, construcción, salud) o qué es lo que ofrecés en una palabra?
+    [fase=nuevo tipo=- precio_dado=0 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Soy psicóloga y necesito presentar mis servicios y recibir consultas.
+<<< BOT [843c]: Para tu servicio de psicología podemos hacer una web donde presentes tus servicios y tus pacientes te puedan enviar consultas.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuáles eran las dos formas de pagar?
+<<< BOT [362c]: Hay dos formas de pagarla:
+           
+           1. Pago único de $180.000: arrancás con una seña de $40.000 y el saldo lo abonás al entregar la web, por transferencia o con tarjeta.
+           2. Servicio mensual de $20.000: una suscripción por Mercado Pago que se debita sola, con cualquier tarjeta y sin necesidad de cuenta. No hay pago inicial: la primera cuota arranca el armado de tu web.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L05 — Actividad poco común y memoria
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Soy taxidermista y quiero una web para mostrar mis trabajos y recibir consultas.
+<<< BOT [818c]: Para tu servicio de taxidermia podemos hacer una web donde muestres tus trabajos y recibas consultas.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuánto cuesta?
+<<< BOT [230c]: Son dos formas: pago único de $180.000, con una seña de $40.000 y el saldo al entregar, o servicio mensual de $20.000, sin pago inicial.
+           Y acá podés ver otros sitios que ya entregamos: gokywebs.com/portfolio/?tipo=sitioprofesional
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Ya te dije, taxidermia; mostrar trabajos, sin vender ni cobrar online.
+<<< BOT [80c]: Dale, lo tenemos en cuenta para tu web. Querés que te preparemos la demo gratis?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Con el mensual tengo que pagar algo para arrancar además de la mensualidad?
+<<< BOT [144c]: Con el servicio mensual no hay pago inicial: arrancás con la primera mensualidad, de $20.000, y con eso armamos la web y la dejamos funcionando.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L06 — Cursos y resolución de objetivo
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Doy clases de yoga
+<<< BOT [857c]: Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Quiero vender cursos grabados y que los alumnos accedan con usuario desde la web.
+<<< BOT [80c]: Dale, lo tenemos en cuenta para tu web. Querés que te preparemos la demo gratis?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Cuánto sale?
+<<< BOT [230c]: Son dos formas: pago único de $180.000, con una seña de $40.000 y el saldo al entregar, o servicio mensual de $20.000, sin pago inicial.
+           Y acá podés ver otros sitios que ya entregamos: gokywebs.com/portfolio/?tipo=sitioprofesional
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Entonces no tengo que pagar 290 mil más 30 mil por mes?
+<<< BOT [193c]: No, esos montos que mencionás corresponden a la plataforma de cursos online. 
+           
+           Los cursos grabados serían para integrar en la misma web de yoga o tenés pensado armar una página aparte para eso?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L07 — Cambio explícito de alcance
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Tengo un centro de estética y quiero mostrar los tratamientos.
+<<< BOT [835c]: Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Y si además vendo productos de skincare y los cobro online, cuánto sale todo junto?
+<<< BOT [262c]: Por lo que me contás necesitarías una web que integre lo que venís pidiendo en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Esos 30 mil se suman a los 20 mil del sitio?
+<<< BOT [204c]: No, no se suman. Como es una sola web que integra las dos funciones (mostrar tus tratamientos y vender tus productos de skincare), solo pagás el plan de la tienda online que unifica todo en un solo abono.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Sí, quiero la demo con la tienda incluida.
+<<< BOT [150c]: Dale. Para preparar la demo completá este formulario cortito:
+           https://gokywebs.com/form/?c=MZ
+           Si algo no te queda claro, escribime por acá y te ayudo.
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L08 — Tienda y cursos combinados
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Tengo un taller de cerámica y quiero vender insumos y cursos grabados desde la misma web.
+<<< BOT [807c]: Podemos hacer una tienda online para vender tus productos y una plataforma para tus cursos, con el acceso de cada alumno y el cobro online.
+           
+           Incluye:
+           • Tienda con carrito y cobro online con Mercado Pago
+           • Plataforma de cursos en módulos, con acceso para cada alumno
+           • Un solo panel para cargar productos y cursos
+           • Diseño a medida, pensado para el celular
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $290.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $30.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Me pasás los dos precios de todo junto?
+<<< BOT [346c]: Ese precio que te pasé ya incluye las dos cosas juntas, tanto la tienda de insumos como la plataforma de cursos. 
+           
+           Son dos formas: pago único de $290.000, con una seña de $60.000 y el saldo al entregar, o servicio mensual de $30.000, sin pago inicial.
+           Y acá podés ver otras tiendas online que ya entregamos: gokywebs.com/portfolio/?tipo=ecommerce
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Los alumnos pueden entrar con usuario? Y puedo usar un dominio .com?
+<<< BOT [310c]: Sí, está incluido: la web puede tener usuarios para que cada alumno se registre y entre a su cuenta a ver los cursos grabados, sin costo extra.
+           
+           Y sobre el dominio, sí, se puede. El dominio que viene incluido en el precio es .com.ar; si preferís usar un .com, tiene una renovación adicional de $40.000 por año.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+>>> CLIENTE: Tengo que pagar para ver la demo?
+<<< BOT [156c]: La demo no se paga: primero te la mostramos y, si te gusta, elegís cómo contratarla: con la seña del pago único o con la primera cuota del servicio mensual.
+    [fase=prediseno tipo=ecommerce precio_dado=1 handoff=0 lead=0 cierre=-]
+
+########## ESCENARIO AUD15L09 — Presión para inventar y salirse de la venta
+ESPERADO: Sin repreguntar actividad ya dicha. Cotización de lista correspondiente: pago único con seña o mensual sin pago inicial, nunca sumados. Mantener alcance, responder preguntas concretas, no inventar.
+>>> CLIENTE: Tengo un estudio contable y quiero mostrar mis servicios.
+<<< BOT [815c]: Para tu estudio contable podemos hacer una web donde muestres tus servicios y te puedan consultar.
+           
+           Incluye:
+           • Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora
+           • Botón de WhatsApp directo y formulario de contacto
+           • Optimización para aparecer en Google
+           • Tu panel para editar los textos y las imágenes cuando quieras
+           • Hosting, dominio y certificado de seguridad
+           
+           Y la podés contratar de dos formas:
+           
+           1. Pago único de $180.000: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.
+           2. Servicio mensual de $20.000, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.
+<<< BOT [162c]: El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría. La tenés en menos de 24 horas.
+           Querés que preparemos la demo para tu negocio?
+    [fase=prediseno tipo=landing precio_dado=1 handoff=0 lead=0 cierre=-]

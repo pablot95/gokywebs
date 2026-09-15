@@ -359,7 +359,15 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
             $convPrevio['transcript'] = $trPrevio;
         }
         $rubroDicho = wabot_fallback_rubro_local(wabot_contexto_cliente_texto($convPrevio));
-        if ($rubroDicho === null) return [wabot_texto_info('precio_sin_rubro', $cfg)];
+        // El cliente puede contar su actividad Y pedir el precio en el mismo
+        // mensaje. Una comparación genérica entre tipos de web no es actividad.
+        $rubroExplicito = wabot_rubro_desde_contexto($conv);
+        if ($rubroExplicito !== '') {
+            $rubroDicho = wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv));
+        }
+        if ($rubroDicho === null && $rubroExplicito === '' && empty($conv['rubro_pitch'])) {
+            return [wabot_texto_info('precio_sin_rubro', $cfg)];
+        }
         if ($rubroDicho === 'cursos') {
             $dosPreciosCursos = wabot_desempate_precios_texto('desempate_cursos', $cfg);
             if ($dosPreciosCursos !== null) {
@@ -367,7 +375,12 @@ function wabot_agente_intento($mensaje, &$conv, $cfg) {
                 return [$dosPreciosCursos];
             }
         } elseif (isset($cfg['tipos'][$rubroDicho]) && wabot_tipo_ofrecible($rubroDicho, $cfg)) {
-            return wabot_precio($rubroDicho, $conv, $cfg);
+            // El atajo respeta los mismos desempates y guardas que el modelo.
+            $precio = wabot_agente_ejecutar('dar_precio', ['tipo' => $rubroDicho,
+                'rubro' => $rubroExplicito], $conv, $cfg, $mensaje);
+            if (!empty($precio['texto'])) {
+                return array_merge([(string)$precio['texto']], (array)($precio['aparte'] ?? []));
+            }
         }
     }
 
@@ -1525,10 +1538,13 @@ function wabot_agente_repite_pregunta_contestada($texto, $conv) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '') return false;
 
-    if (wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv)) !== null) {
+    if (!empty($conv['tipo']) || !empty($conv['rubro_pitch'])
+        || wabot_rubro_desde_contexto($conv) !== ''
+        || wabot_fallback_rubro_local(wabot_contexto_cliente_texto($conv)) !== null) {
         if (preg_match('/\b(que vendes|que venden|que comercializas|que productos vendes)\b/u', $t)
             || preg_match('/\b(que servicio ofreces|que servicios ofrecen|a que te dedicas|a que se dedican)\b/u', $t)
-            || preg_match('/\bcontame\b.{0,35}\b(que vendes|que ofreces|a que te dedicas)\b/u', $t)) {
+            || preg_match('/\bcontame\b.{0,35}\b(que vendes|que ofreces|a que te dedicas)\b/u', $t)
+            || preg_match('/\b(a que rubro|que tipo de negocio|para que (seria|es) la web)\b/u', $t)) {
             return true;
         }
     }
@@ -2376,10 +2392,18 @@ function wabot_agente_ejecutar($nombre, $args, &$conv, $cfg, $mensaje = '') {
             // pidiendo el rubro que el cliente acaba de decir. Le pasó a una
             // consulta de pediatría el 27-ago y la charla murió ahí.
             if (in_array($clave, ['rangos', 'precio_sin_rubro'], true)) {
+                if (!empty($conv['tipo']) && !empty($conv['precio_dado'])) {
+                    return ['texto' => wabot_precio_resumen($conv, $cfg), 'exacta' => true,
+                            'nota' => 'El tipo y su cotización ya están confirmados. Repetí este resumen exacto, sin volver a pedir el rubro ni cambiar los montos.'];
+                }
                 $dosPrecios = wabot_desempate_precios_texto((string)($conv['fase'] ?? ''), $cfg);
                 if ($dosPrecios !== null) {
                     return ['texto' => $dosPrecios, 'exacta' => true,
                             'nota' => 'Mandá esto tal cual: son los precios reales (pago único y servicio mensual) de las opciones que le estás preguntando. NO le pidas de nuevo el rubro ni a qué se dedica, eso ya te lo dijo.'];
+                }
+                if (!empty($conv['tipo']) || !empty($conv['rubro_pitch']) || wabot_rubro_desde_contexto($conv) !== '') {
+                    return ['error' => 'El cliente ya dijo su actividad. No corresponde volver a pedir el rubro.',
+                            'nota' => 'Revisá la actividad y el objetivo en su historial. Si alcanzan para elegir el tipo, llamá ahora a dar_precio con ese tipo. Si falta una función decisiva, preguntá solamente por esa función. No repitas a qué se dedica ni inventes una cotización.'];
                 }
             }
             if ($clave === 'rangos') {
