@@ -77,9 +77,8 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
 }
 
 /**
- * Emite cada hito comercial una sola vez por sesión. Durante una ejecución del
- * agente los eventos quedan en la copia transaccional y recién se escriben si
- * la respuesta completa se confirma.
+ * Marca cada hito comercial una sola vez por sesión (queda en la conversación,
+ * en eventos_emitidos_sesion: el anti-repetición y el panel lo leen de ahí).
  */
 function wabot_evento_sesion(&$conv, $evento, $datos = []) {
     if (empty($conv['session_id'])) {
@@ -93,11 +92,6 @@ function wabot_evento_sesion(&$conv, $evento, $datos = []) {
     $emitidos = (array)($conv['eventos_emitidos_sesion'] ?? []);
     if (($emitidos[$evento] ?? null) === $sesion) return false;
     $conv['eventos_emitidos_sesion'][$evento] = $sesion;
-
-    if (!empty($conv['_eventos_diferir'])) {
-        $conv['_eventos_pendientes'][] = ['evento' => $evento, 'datos' => (array)$datos];
-        return true;
-    }
     return true;
 }
 
@@ -2956,10 +2950,6 @@ function wabot_handoff_intentar($texto, &$conv, $cfg, $causaSugerida = null, $po
 
     if ($causa === null) $causa = wabot_handoff_ambiguedad($conv, $texto);
     if ($causa === null) {
-        wabot_evento_o_diferir($conv, 'handoff_rechazado', [
-            'motivo' => 'sin evidencia',
-            'aclaraciones_fallidas' => (int)($conv['aclaraciones_fallidas'] ?? 0),
-        ]);
         if (($porCambioTipo || in_array($conv['fase'], ['precio', 'prediseno'], true)) && !empty($conv['tipo'])
             && in_array($conv['fase'], ['precio', 'prediseno', 'prediseno_ref', 'prediseno_wsp'], true)) {
             $conv['fase_previa_cambio'] = $conv['fase'];
@@ -2969,13 +2959,6 @@ function wabot_handoff_intentar($texto, &$conv, $cfg, $causaSugerida = null, $po
         return [wabot_texto_aclaracion($conv, $cfg)];
     }
     return wabot_derivar_contestando($texto, $conv, $cfg, $causa);
-}
-
-function wabot_evento_o_diferir(&$conv, $evento, $datos = []) {
-    if (!empty($conv['_eventos_diferir'])) {
-        $conv['_eventos_pendientes'][] = ['evento' => $evento, 'datos' => (array)$datos];
-        return;
-    }
 }
 
 /**
