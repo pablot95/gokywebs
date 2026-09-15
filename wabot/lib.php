@@ -8096,6 +8096,9 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         // La forma que eligió por chat, si eligió (15-sep); vacía, el admin muestra las dos.
         'modalidad'          => ['stringValue' => in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual'], true)
                                     ? (string)$conv['modalidad_elegida'] : ''],
+        // Vio el precio y afirmó una forma de pago: el bot se apagó acá y
+        // queda para que Pablo siga la venta a mano (15-sep).
+        'esProspecto'        => ['booleanValue' => !empty($conv['prospecto'])],
         'primerPago'         => ['integerValue' => '0'],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
         'sistema_actual'     => ['stringValue' => (string)($conv['sistema_actual'] ?? '')],
@@ -8486,5 +8489,82 @@ function wabot_modalidad_sincronizar(&$conv) {
         return false;
     }
     wabot_log('modalidad_elegida', ['clave' => wabot_conversation_key($conv), 'modalidad' => $modalidad]);
+    return true;
+}
+
+/**
+ * Prospecto (Pablo, 15-sep): sin demo, cuando el cliente ya vio el precio y
+ * afirma una forma de pago —"vamos con el pago único", "prefiero el
+ * mensual"— el bot deja de responder y queda para que Pablo siga la venta a
+ * mano. Reusa wabot_modalidad_elegida_en, que ya distingue elegir de
+ * preguntar (frase por frase, sin el "?").
+ *
+ * PENDIENTE (a propósito, no es un olvido): Pablo también quiere que dispare
+ * con un "ok"/"dale"/"me gusta" corto y genérico apenas contestó el precio.
+ * Eso necesita saber si este es el PRIMER mensaje después del precio —si no,
+ * un "dale" al final de una charla larga no significa lo mismo— y hoy no hay
+ * ningún contador de turnos desde que se cotizó. Agregarlo sin ese contador
+ * detectaría el "dale" en cualquier punto de la charla, no solo recién dado
+ * el precio: mismo riesgo que evitar (el bot se calla con un cliente real
+ * todavía preguntando). Queda para cuando se sume `mensajes_desde_precio`.
+ */
+function wabot_prospecto_detectar($texto, $conv, $cfg) {
+    if (!empty($conv['prospecto']) || !empty($conv['bot_off'])) return false;
+    if (empty($conv['tipo']) || empty($conv['precio_dado'])) return false;
+    if (in_array(($conv['cierre'] ?? ''), ['baja'], true)) return false;
+    // La charla cotizada con el pago único viejo no tiene "dos formas" que elegir.
+    if (function_exists('wabot_precio_vigente') && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
+
+    return function_exists('wabot_modalidad_elegida_en') && wabot_modalidad_elegida_en($texto) !== null;
+}
+
+/**
+ * Marca la charla como prospecto: apaga el bot acá (reusa bot_off, así el
+ * resto del sistema —seguimiento, recordatorios— ya lo trata como charla
+ * tomada por una persona) y crea o completa el boceto en Firestore con
+ * esProspecto=true, para que se vea en el panel donde antes se veían los
+ * bocetos.
+ */
+function wabot_prospecto_marcar(&$conv, $cfg) {
+    $conv['prospecto'] = true;
+    $conv['prospecto_ts'] = time();
+    $conv['prospecto_forma'] = (string)($conv['modalidad_elegida'] ?? '');
+    $conv['bot_off'] = true;
+
+    if (empty($conv['lead_creado'])) {
+        $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
+        wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
+        return;
+    }
+    wabot_prospecto_sincronizar($conv);
+}
+
+function wabot_prospecto_sincronizar(&$conv) {
+    $doc = trim((string)($conv['lead_doc'] ?? ''));
+    if ($doc === '') return false;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) return true;
+
+    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=esProspecto&updateMask.fieldPaths=prospectoAt&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'esProspecto' => ['booleanValue' => true],
+            'prospectoAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+            'updatedAt'   => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+        ]], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $res  = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    if ($code < 200 || $code >= 300) {
+        if ($code !== 404) wabot_log('error', ['donde' => 'firestore_prospecto', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        return false;
+    }
+    wabot_log('prospecto_sincronizado', ['clave' => wabot_conversation_key($conv)]);
     return true;
 }

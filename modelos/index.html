@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Modelos de web | Cómo se puede ordenar tu página — GokyWebs</title>
+<meta name="description" content="Elegí una estructura de web para tu negocio. Explorá modelos por tipo y rubro, miralos en computadora o celular y compartí el que más te guste.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#f8fafc">
+<link rel="canonical" href="https://www.gokywebs.com/modelos/">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.gokywebs.com/modelos/">
+<meta property="og:title" content="Modelos de web GokyWebs | Elegí cómo se ordena tu página">
+<meta property="og:description" content="Tiendas, sitios profesionales, inmobiliarias y cursos: mirá cada modelo en computadora y en celular.">
+<meta property="og:image" content="https://www.gokywebs.com/logo.png">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="GokyWebs">
+
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+
+<header class="pf-header">
+    <a class="brand" href="/" aria-label="GokyWebs, inicio">
+        <img src="/logo.png" alt="" aria-hidden="true">
+        <span>GokyWebs</span>
+    </a>
+    <a class="btn-back" href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Volver al inicio</span>
+    </a>
+</header>
+
+<main class="md-main">
+
+    <div class="md-intro">
+        <h1>Modelos de web</h1>
+        <p>Elegí una estructura para tu negocio. Cada muestra indica dónde irían la portada, los productos o servicios y el contacto. Después la adaptamos con tus fotos, textos y colores.</p>
+    </div>
+
+    <div class="md-filtros" id="filtrosTipo" role="group" aria-label="Filtrar por tipo de web"></div>
+
+    <div class="md-herramientas">
+        <label class="md-busqueda"><span>Buscar un modelo</span><input id="buscarModelo" type="search" placeholder="Ej.: hotel, turnos, mayorista" autocomplete="off"></label>
+        <label class="md-rubro"><span>Rubro</span><select id="filtroRubro"><option value="all">Todos los rubros</option></select></label>
+        <p id="mdResultado" class="md-resultado" role="status" aria-live="polite"></p>
+    </div>
+
+    <div class="md-grid" id="mdGrid"></div>
+    <p class="md-vacio" id="mdVacio" hidden>No hay modelos con esa búsqueda. Probá otro rubro o palabra.</p>
+
+    <section class="md-cierre">
+        <h2>¿Cuál te gustó?</h2>
+        <p>Decinos la letra del modelo por WhatsApp y armamos tu web sobre esa estructura.</p>
+        <div class="md-cierre-btns">
+            <a class="btn-wsp" href="https://wa.me/5491140688675?text=Hola!%20Me%20gust%C3%B3%20un%20modelo%20de%20web" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.6-4.8A8.5 8.5 0 1 1 7.8 19.4z"/></svg>
+                Escribinos por WhatsApp
+            </a>
+            <a class="link-azul" href="/portfolio/">Ver webs reales en el portfolio →</a>
+        </div>
+    </section>
+
+</main>
+
+<footer class="pf-footer">
+    <p>© <span id="anio"></span> GokyWebs · Argentina · <a href="/">gokywebs.com</a></p>
+</footer>
+
+<script src="modelos.js?v=2"></script>
+<script src="nuevos.js?v=2"></script>
+<script src="wire.js?v=2"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>

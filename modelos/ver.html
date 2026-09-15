@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Modelo de web — GokyWebs</title>
+<meta name="description" content="Mirá el modelo de web completo, en computadora y en celular, con el nombre de cada parte.">
+<meta name="robots" content="noindex, follow">
+<meta name="theme-color" content="#f8fafc">
+
+<link rel="icon" type="image/png" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body class="ver">
+
+<header class="pf-header">
+    <a class="brand" href="/" aria-label="GokyWebs, inicio">
+        <img src="/logo.png" alt="" aria-hidden="true">
+        <span>GokyWebs</span>
+    </a>
+    <a class="btn-back" href="./" id="verVolver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        <span>Todos los modelos</span>
+    </a>
+</header>
+
+<div class="ver-barra">
+    <div class="ver-barra-in">
+        <h1 class="ver-titulo"><b id="verLetra">A</b><span id="verNombre">Modelo</span></h1>
+        <span class="ver-rubro" id="verRubro"></span>
+        <div class="ver-seg" role="group" aria-label="Cómo verlo">
+            <button type="button" data-vista="pc" aria-pressed="true">Computadora</button>
+            <button type="button" data-vista="celular" aria-pressed="false">Celular</button>
+        </div>
+        <label class="ver-partes"><input type="checkbox" id="verPartes" checked> Nombres de las partes</label>
+    </div>
+</div>
+
+<main class="ver-main">
+    <dl class="ver-claves" id="verClaves"></dl>
+    <div class="ver-escenario" id="verEscenario"></div>
+
+    <section class="md-cierre">
+        <h2 id="verPregunta">¿Te gusta este modelo?</h2>
+        <p>Decinos la letra por WhatsApp y armamos tu web sobre esta estructura, con tus colores, tus fotos y tus textos.</p>
+        <div class="md-cierre-btns">
+            <a class="btn-wsp" id="verWsp" href="https://wa.me/5491140688675" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.6-4.8A8.5 8.5 0 1 1 7.8 19.4z"/></svg>
+                Quiero este modelo
+            </a>
+            <a class="link-azul" href="/portfolio/">Ver webs reales en el portfolio →</a>
+        </div>
+    </section>
+
+    <nav class="ver-nav" aria-label="Otros modelos">
+        <a id="verAnt" href="#"><span>← Anterior</span><b></b></a>
+        <a id="verSig" class="sig" href="#"><span>Siguiente →</span><b></b></a>
+    </nav>
+</main>
+
+<footer class="pf-footer">
+    <p>© <span id="anio"></span> GokyWebs · Argentina · <a href="/">gokywebs.com</a></p>
+</footer>
+
+<script src="modelos.js?v=2"></script>
+<script src="nuevos.js?v=2"></script>
+<script src="wire.js?v=2"></script>
+<script src="ver.js?v=2"></script>
+</body>
+</html>

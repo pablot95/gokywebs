@@ -1817,10 +1817,9 @@ function wabot_texto_costos_despues($texto, $conv, $cfg) {
 }
 
 /**
- * "Si pago la seña y después no me gusta, me la devuelven?". La política de
- * devolución no está escrita: se dice lo que sí se sabe —la seña se paga
- * después de ver la demo— y la duda queda marcada para el desarrollador.
- * Las devoluciones de SU tienda son otra cosa.
+ * "Si pago la seña y después no me gusta, me la devuelven?". Pablo, 15-sep:
+ * la seña no se devuelve; si el diseño no convence, se vuelve a hacer (hasta
+ * dos veces). Las devoluciones de SU tienda son otra cosa.
  */
 function wabot_texto_pregunta_devolucion($texto) {
     $t = wabot_normalizar_frase((string)$texto);
@@ -1834,7 +1833,34 @@ function wabot_texto_pregunta_devolucion($texto) {
 
 function wabot_texto_devolucion($cfg) {
     $t = trim((string)($cfg['devolucion'] ?? ''));
-    return $t !== '' ? $t : 'La seña se paga recién después de ver la demo gratis, cuando ya viste cómo queda tu web y decidiste avanzar. Lo de una devolución te lo confirma el desarrollador.';
+    return $t !== '' ? $t : 'La seña no se devuelve. Si el diseño principal no te convence lo volvemos a hacer, hasta dos veces; una vez elegido, tenés hasta tres devoluciones para ajustar el resto.';
+}
+
+/**
+ * "¿Cuántos cambios puedo pedir?" / "¿y si no me gusta el diseño?" fuera de
+ * la pregunta de la seña. Pablo, 15-sep: no son cambios ilimitados —el
+ * diseño principal se rehace hasta 2 veces y, elegido, hay 3 devoluciones
+ * para ajustar el resto (colores, textos, distribución). Con el pago único,
+ * un cambio DESPUÉS de entregada la web se cotiza aparte.
+ */
+function wabot_texto_pregunta_ajustes($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 160) return false;
+    return (bool)(
+        preg_match('/\b(cuantos|cuantas)\b.{0,15}\b(cambios?|ajustes?|correcciones?|retoques?|devoluciones?|vueltas?)\b/u', $t)
+        || preg_match('/\b(cambios?|ajustes?|correcciones?|retoques?) (ilimitados|infinitos|sin limite)\b/u', $t)
+        || (preg_match('/\bno me (gusta|convence|termina de convencer)\b/u', $t)
+            && preg_match('/\b(diseno|dise[nñ]o|resultado|como quedo|como qued[oó])\b/u', $t))
+    );
+}
+
+function wabot_texto_ajustes($conv, $cfg) {
+    $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    $base = 'El diseño principal se puede rehacer hasta 2 veces. Una vez que lo elegís, tenés 3 devoluciones para ajustar el resto: colores, textos, imágenes y distribución.';
+    if ($v !== null && $v['modelo'] === 'unico') {
+        return $base . ' Con el pago único, un cambio que pidas después de entregada la web se cotiza aparte.';
+    }
+    return $base;
 }
 
 /**

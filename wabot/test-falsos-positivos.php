@@ -559,5 +559,43 @@ caso('la charla del pago único viejo no se toca',
     wabot_modalidad_anotar('Quiero el mensual', $cModViejo, $cfg) === false && $cModViejo['modalidad_elegida'] === '');
 
 @unlink(WABOT_DATA . '/conv/999FPTEST.json');
+
+echo "-- 24. Prospecto: eligió una forma después del precio, el bot se calla (15-sep) --\n";
+$c24 = wabot_conv_load('993FPTEST'); $c24['transcript'] = [];
+$c24['tel'] = '5491100000006TEST'; $c24['channel_user_id'] = '5491100000006TEST'; $c24['canal'] = 'whatsapp';
+$c24['tipo'] = 'landing'; $c24['precio_dado'] = true; $c24['fase'] = 'prediseno';
+$c24['bot_off'] = false; $c24['prospecto'] = false; $c24['cierre'] = null;
+wabot_precio_congelar($c24, 'landing', $cfg);
+// Forzado a 'doble' por si el bot-config de este entorno de test no tiene
+// mensualidad cargada para 'landing' (wabot_precio_congelar cae a 'unico'
+// cuando eso pasa): el caso que este bloque prueba es justo el de las dos
+// formas, así que no puede depender de que el config del entorno la tenga.
+$c24['precio_modelo'] = 'doble';
+if ($c24['mensualidad_cotizada'] === '') $c24['mensualidad_cotizada'] = '$20.000';
+if ($c24['sena_cotizada'] === '') $c24['sena_cotizada'] = '$40.000';
+if ($c24['precio_cotizado'] === '') $c24['precio_cotizado'] = '$180.000';
+
+caso('elegir el pago único ya cotizado dispara prospecto', wabot_prospecto_detectar('Vamos con el pago único', $c24, $cfg) === true);
+caso('preguntar (sin elegir) no dispara prospecto', wabot_prospecto_detectar('¿Puedo pagarla de una sola vez?', $c24, $cfg) === false);
+$cSinPrecio = $c24; $cSinPrecio['precio_dado'] = false;
+caso('sin precio dado, no dispara aunque elija', wabot_prospecto_detectar('Vamos con el mensual', $cSinPrecio, $cfg) === false);
+$cYa = $c24; $cYa['prospecto'] = true;
+caso('ya marcado como prospecto, no vuelve a disparar', wabot_prospecto_detectar('Vamos con el pago único', $cYa, $cfg) === false);
+$cOff = $c24; $cOff['bot_off'] = true;
+caso('con el bot ya apagado acá, no vuelve a disparar', wabot_prospecto_detectar('Vamos con el pago único', $cOff, $cfg) === false);
+
+$cResp = $c24;
+$out24 = wabot_responder('Prefiero pagarla una sola vez', $cResp, $cfg);
+caso('el bot no contesta nada (se calla)', $out24 === [], json_encode($out24, JSON_UNESCAPED_UNICODE));
+caso('la charla queda marcada como prospecto', !empty($cResp['prospecto']));
+caso('se apaga el bot acá (reusa bot_off)', !empty($cResp['bot_off']));
+caso('guarda la forma que eligió', $cResp['prospecto_forma'] === 'unico');
+caso('y el boceto la lleva en esProspecto', strpos(json_encode(wabot_lead_campos($cResp, $cfg)), '"esProspecto":{"booleanValue":true}') !== false);
+
+$cViejoProsp = $cViejo; $cViejoProsp['prospecto'] = false; $cViejoProsp['bot_off'] = false;
+caso('la charla del pago único viejo no tiene "dos formas" para elegir',
+    wabot_prospecto_detectar('Vamos con el pago único', $cViejoProsp, $cfg) === false);
+
+@unlink(WABOT_DATA . '/conv/993FPTEST.json');
 echo "\n" . ($fallas ? "FALLAS: $fallas de $total" : "TODO OK — $total casos") . "\n";
 exit($fallas ? 1 : 0);

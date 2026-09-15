@@ -47,6 +47,16 @@ function wabot_responder($texto, &$conv, $cfg) {
      * Se anota con cada mensaje, conteste quien conteste el turno. */
     wabot_modalidad_anotar($texto, $conv, $cfg);
 
+    /* Prospecto (Pablo, 15-sep): ya vio el precio y afirmó una forma de pago
+     * → el bot se calla y queda para que Pablo siga la venta a mano. Va
+     * antes de cualquier otra respuesta, para que no se le escape un mensaje
+     * más antes de callarse. */
+    if (function_exists('wabot_prospecto_detectar') && wabot_prospecto_detectar($texto, $conv, $cfg)) {
+        wabot_prospecto_marcar($conv, $cfg);
+        wabot_evento_sesion($conv, 'prospecto_marcado');
+        return [];
+    }
+
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
         return wabot_muestra_presentar_textos((string)($conv['presentado_slug'] ?? ''), $cfg, $conv);

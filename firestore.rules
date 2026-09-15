@@ -28,7 +28,10 @@ service cloud.firestore {
         'primerPago', 'mensualidad',
         // La forma de pago que el cliente eligió por WhatsApp, si la eligió
         // después de que se creara el boceto (wabot, 15-sep-2026).
-        'modalidad'
+        'modalidad',
+        // Marca esta ficha como prospecto: el cliente vio el precio y afirmó
+        // una forma de pago, el bot dejó de responder (wabot, 15-sep-2026).
+        'esProspecto', 'prospectoAt'
       ]);
     }
     match /presupuestos/{doc}  {
