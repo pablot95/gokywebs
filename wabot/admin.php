@@ -427,9 +427,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'guardar_entrenamiento') {
         $cfg['indicaciones'] = str_replace("\r", '', trim((string)($_POST['indicaciones'] ?? '')));
-        $modo = $_POST['modo_redaccion'] ?? 'fijo';
-        $cfg['modo_redaccion'] = in_array($modo, ['fijo', 'natural', 'agente'], true) ? $modo : 'fijo';
-        $cfg['indicaciones_estilo'] = str_replace("\r", '', trim((string)($_POST['indicaciones_estilo'] ?? '')));
         $ejemplos = [];
         $textos   = (array)($_POST['ej_texto'] ?? []);
         $acciones = (array)($_POST['ej_accion'] ?? []);

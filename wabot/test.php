@@ -4825,15 +4825,7 @@ caso('"De todo tenés alguna para ver" ahora sí se reconoce',
 caso('sin comerse otras preguntas con "alguna"',
     wabot_info_por_palabras('tenes alguna forma de pago') === 'pago');
 
-echo "\n— Portugués filtrado en la redacción (26-ago) —\n";
-
 require_once __DIR__ . '/redactor.php';
-caso('"si não tenés" se corrige a "si no tenés"',
-    wabot_castellanizar('y si não tenés no pasa nada') === 'y si no tenés no pasa nada');
-caso('respeta la mayúscula inicial', wabot_castellanizar('Não hay problema') === 'No hay problema');
-caso('un texto en español correcto no se toca',
-    wabot_castellanizar('Contame los colores de tu marca y armamos la demo.') === 'Contame los colores de tu marca y armamos la demo.');
-
 echo "\n— El precio manda el portfolio prefiltrado (28-ago) —\n";
 
 // Pablo, 28-ago: con el precio va gokywebs.com/portfolio/ ya filtrado por el
