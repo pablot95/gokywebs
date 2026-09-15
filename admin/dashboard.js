@@ -930,6 +930,7 @@ dayModal.addEventListener("click", (e) => { if (e.target === dayModal && !window
 let clients = [];
 let clientesCargados = false;   // hasta el primer snapshot, Clientes muestra "Cargando..."
 let propuestas = [];
+let propuestasCargadas = false;   // hasta el primer snapshot no se sabe a qué tab va cada paleta
 let propuestasListaVisible = [];  // lo que renderPropuestas() dejó filtrado; lo usa "Copiar carpetas"
 let presupuestos = [];
 let leads = [];
@@ -1343,6 +1344,7 @@ function initRealtime() {
         clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         clientesCargados = true;
         render();
+        _updatePaletasBadge();
         if (activeTab === "seguimientos") renderSeg();
         if (activeTab === "calendario") renderCal();
         if (enMetrica("stats")) renderStats();
@@ -1355,8 +1357,10 @@ function initRealtime() {
     const qProp = query(collection(db, "propuestas"), orderBy("createdAt", "desc"));
     onSnapshot(qProp, (snap) => {
         propuestas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        propuestasCargadas = true;
         renderFechaChips();
         renderPropuestas();
+        _updatePaletasBadge(); // las paletas se reparten por tab según dónde vive el negocio
         renderLeads(); // actualizar badges de bocetos en la tabla de presupuestos
         if (activeTab === "clientes") render();
         if (activeTab === "completados") renderCompletados();
@@ -1462,6 +1466,12 @@ function initRealtime() {
     onSnapshot(qPaletas, (snap) => {
         paletasElegidas = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         _updatePaletasBadge();
+        // La marca "🎨 Paleta nueva" de cada fila se prende y se apaga con esto.
+        if (propuestasCargadas) renderPropuestas();
+        if (clientesCargados) {
+            render();
+            if (activeTab === "seguimientos") renderSeg();
+        }
         const openId = document.getElementById("clientId")?.value;
         if (openId && modal && !modal.hidden) renderPaletasEnModal(openId);
         const openPropId = propuestaForm?.dataset.propId;
@@ -1536,18 +1546,100 @@ async function renderResenasEnModal(clientId) {
     }
 }
 
-/* Burbuja de paletas sin ver, en los 3 tabs donde el registro puede vivir
-   según el estado del pipeline (Bocetos, Clientes, Seguimientos): cuenta
-   global, sin cruzar con clientes. Es la única burbuja roja de esos tabs: la
-   de devoluciones se sacó el 13-sep porque se pisaba con esta y el número
-   salía dos veces (Pablo). Las devoluciones se siguen viendo en el modal. */
+/* Burbuja de paletas sin ver, cada una SOLO en el tab donde vive su negocio
+   (Pablo, 15-sep: la misma cuenta global salía repetida en Clientes, Bocetos y
+   Seguimientos, y no decía dónde mirar). Se matchea por slug, igual que en los
+   modales; la fila del negocio lleva la marca "🎨 Paleta nueva" y al abrirlo se
+   marcan vistas. Las que no coinciden con ningún negocio cuentan en Bocetos y
+   se listan arriba de su tabla (renderPaletasSueltas). La de devoluciones se
+   sacó el 13-sep porque se pisaba con esta y el número salía dos veces. */
+function _paletasSinVerAgrupadas() {
+    const grupos = { bocetos: [], clientes: [], seguimientos: [], sueltas: [] };
+    const slugsBoceto = new Set(propuestas
+        .map(p => slugNegocio(getPropuestaNegocioFields(p).nombreNegocio || ""))
+        .filter(Boolean));
+    const estadoPorSlug = new Map();
+    clients.forEach(c => {
+        const s = slugNegocio(c.proyecto || c.nombre || "");
+        if (s && !estadoPorSlug.has(s)) estadoPorSlug.set(s, getEstado(c));
+    });
+    paletasElegidas.filter(p => !p.visto).forEach(p => {
+        const s = slugNegocio(p.slug || "");
+        if (s && estadoPorSlug.has(s)) grupos[estadoPorSlug.get(s) === "cliente" ? "clientes" : "seguimientos"].push(p);
+        else if (s && slugsBoceto.has(s)) grupos.bocetos.push(p);
+        else grupos.sueltas.push(p);
+    });
+    return grupos;
+}
+
 function _updatePaletasBadge() {
-    const sinVer = paletasElegidas.filter(p => !p.visto).length;
-    ["badgePaletasClientes", "badgePaletasSeg", "badgePaletasBocetos"].forEach(id => {
+    // Sin clientes y bocetos cargados no se sabe a qué tab va cada una.
+    const listo = clientesCargados && propuestasCargadas;
+    const g = listo ? _paletasSinVerAgrupadas() : { bocetos: [], clientes: [], seguimientos: [], sueltas: [] };
+    const pintar = (id, n) => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.textContent = sinVer > 99 ? "99+" : String(sinVer);
-        el.hidden = sinVer === 0;
+        el.textContent = n > 99 ? "99+" : String(n);
+        el.hidden = n === 0;
+    };
+    pintar("badgePaletasClientes", g.clientes.length);
+    pintar("badgePaletasSeg", g.seguimientos.length);
+    pintar("badgePaletasBocetos", g.bocetos.length + g.sueltas.length);
+    renderPaletasSueltas(g.sueltas);
+}
+
+/* La marca de la fila: el negocio mandó colores desde la demo y todavía no se
+   abrió. Al abrir el boceto o el cliente se ven en el modal y se apaga. */
+function _chipPaletaNueva(lista) {
+    const n = lista.filter(p => !p.visto).length;
+    if (!n) return "";
+    return `<div style="margin-top:5px"><span style="background:rgba(59,130,246,.13);color:#60A5FA;border:1px solid rgba(59,130,246,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Mandó colores desde la demo: abrilo para verlos">🎨 ${n === 1 ? "Paleta nueva" : `${n} paletas nuevas`}</span></div>`;
+}
+
+/* Paletas de una demo cuyo slug no coincide con ningún boceto ni cliente: no
+   tienen modal donde aparecer, así que se muestran arriba de la tabla de
+   Bocetos, con un botón para darlas por vistas. */
+function renderPaletasSueltas(sueltas) {
+    const cont = document.getElementById("paletasSueltas");
+    if (!cont) return;
+    if (!sueltas.length) {
+        cont.hidden = true;
+        cont.innerHTML = "";
+        return;
+    }
+    const filas = sueltas.map(p => {
+        const chips = Object.values(p.paletaVars || {})
+            .map(v => `<span class="paleta-chip" style="background:${escapeHtml(v)}"></span>`)
+            .join("");
+        const fecha = p.createdAt?.toDate
+            ? p.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
+            : "";
+        const url = /^https?:\/\//i.test(String(p.url || "")) ? String(p.url) : "";
+        return `
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08)">
+                <strong>${escapeHtml(p.negocio || p.slug || "Sin nombre")}</strong>
+                <span class="muted" style="font-size:12px">${escapeHtml(p.paletaNombre || "Paleta")}${fecha ? ` · ${escapeHtml(fecha)}` : ""}</span>
+                <div class="paleta-preview">${chips}</div>
+                ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;text-decoration:none">Ver demo ↗</a>` : ""}
+            </div>`;
+    }).join("");
+    cont.hidden = false;
+    cont.innerHTML = `
+        <div class="resena-card resena-card--nueva" style="margin:0 0 14px">
+            <p class="resena-mensaje"><strong>🎨 ${sueltas.length === 1 ? "Llegó una paleta" : `Llegaron ${sueltas.length} paletas`} de una demo que no coincide con ningún boceto ni cliente</strong></p>
+            <div class="resena-meta">El nombre de la demo no es igual al del negocio cargado, así que no aparece en ningún detalle. Acá están los colores que eligió.</div>
+            ${filas}
+            <button type="button" class="btn-ghost" id="paletasSueltasVistasBtn" style="margin-top:8px">Ya las vi</button>
+        </div>`;
+    document.getElementById("paletasSueltasVistasBtn")?.addEventListener("click", async () => {
+        try {
+            const batch = writeBatch(db);
+            sueltas.forEach(p => batch.update(doc(db, "paletas", p.id), { visto: true }));
+            await batch.commit();
+        } catch (err) {
+            console.error("No se pudo marcar la paleta como vista:", err);
+            alert("No se pudieron marcar como vistas: " + err.message);
+        }
     });
 }
 
@@ -1831,6 +1923,7 @@ function _clientRow(c) {
             <td>
                 <div class="client-name-cell">
                     <span style="font-weight:600">${escapeHtml(c.nombre)}</span>
+                    ${_chipPaletaNueva(paletasParaCliente(c))}
                     ${mostrarProyecto ? `<small class="muted" style="font-size:12px">${escapeHtml(proyecto)}</small>` : ""}
                     ${phoneDisplay}
                     ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
@@ -1864,7 +1957,7 @@ function _segRow(c) {
         : '';
     return `
         <tr class="client-row" data-row-id="${c.id}">
-            <td>${escapeHtml(c.nombre)}</td>
+            <td>${escapeHtml(c.nombre)}${_chipPaletaNueva(paletasParaCliente(c))}</td>
             <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
             <td class="col-telefono">${phoneDisplay}</td>
             <td>
@@ -2977,6 +3070,7 @@ function renderPropuestas() {
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
+                    ${_chipPaletaNueva(paletasParaPropuesta(p))}
                     ${p.confirmoMuestra === false
                         ? `<div style="margin-top:5px"><span style="background:rgba(245,158,11,.13);color:#F59E0B;border:1px solid rgba(245,158,11,.4);border-radius:99px;padding:1px 8px;font-size:10px;font-weight:700;white-space:nowrap" title="Vio el precio pero no confirmó — priorizá los verdes">Solo vio precio</span></div>`
                         : ""}
