@@ -2,9 +2,9 @@
    modelos/modelos.js — Catálogo de modelos de estructura.
 
    Un modelo NO es una web terminada: es el orden de las partes
-   (primera pantalla, catálogo, servicios, contacto…) dibujado con
-   bloques grises, sin fotos. El cliente elige la letra y los
-   colores, las fotos y los textos van con su marca.
+   (primera pantalla, catálogo, servicios, contacto…) mostrado con
+   fotos de ejemplo. El cliente elige la letra y los colores, las
+   fotos y los textos finales van con su marca.
 
    Campos:
      id        letra en minúscula; es el deep-link (?m=c, #c)
@@ -44,6 +44,7 @@ const GW_MODELOS = [
             ['banners-doble', 'Promociones'],
             ['productos-grilla', 'Grilla de productos', { titulo: 'Novedades', cols: 4, filas: 2 }],
             ['beneficios', 'Beneficios'],
+            ['pasos-rubro', 'Cómo comprar', { items: ['Elegí tus productos', 'Pagá de forma segura', 'Recibí tu pedido'] }],
             ['newsletter', 'Suscripción'],
             ['footer-completo', 'Pie de página']
         ]
@@ -59,6 +60,7 @@ const GW_MODELOS = [
             ['header-buscador', 'Encabezado con buscador'],
             ['hero-corto', 'Título del catálogo'],
             ['productos-filtros', 'Catálogo con filtros'],
+            ['productos-carrusel', 'Productos recomendados', { titulo: 'También te puede interesar' }],
             ['beneficios', 'Beneficios'],
             ['footer-completo', 'Pie de página']
         ]
@@ -78,6 +80,7 @@ const GW_MODELOS = [
             ['productos-mosaico', 'Productos en mosaico'],
             ['productos-carrusel', 'Carrusel de productos', { titulo: 'Lo nuevo', estilo: 'foto' }],
             ['historia', 'Historia de la marca', { eyebrow: 'Nuestra marca', titulo: 'La historia detrás de cada prenda' }],
+            ['beneficios', 'Envíos y medios de pago'],
             ['instagram', 'Instagram'],
             ['footer-simple', 'Pie de página']
         ]
@@ -93,6 +96,7 @@ const GW_MODELOS = [
             ['aviso', 'Barra de aviso', { texto: 'Compra mínima $00.000 · Precios por bulto' }],
             ['header-buscador', 'Encabezado con buscador'],
             ['lista-mayorista', 'Lista de productos y pedido'],
+            ['pasos-rubro', 'Cómo hacer el pedido', { items: ['Buscá productos', 'Indicá cantidades', 'Coordiná el reparto'] }],
             ['beneficios', 'Beneficios', { items: [
                 ['camion', 'Reparto a comercios'], ['tarjeta', 'Cuenta corriente'],
                 ['reloj', 'Pedido en el día'], ['wsp', 'Atención por WhatsApp']
@@ -111,6 +115,7 @@ const GW_MODELOS = [
             ['header-comida', 'Encabezado'],
             ['hero-comida', 'Portada del local'],
             ['menu-comida', 'Menú y pedido'],
+            ['beneficios', 'Delivery, retiro y pagos'],
             ['footer-simple', 'Pie de página']
         ]
     },
@@ -126,6 +131,7 @@ const GW_MODELOS = [
             ['hero-dividido', 'Primera pantalla'],
             ['servicios-tarjetas', 'Servicios', { titulo: 'Qué hacemos' }],
             ['historia', 'Quiénes somos', { eyebrow: 'Quiénes somos', titulo: 'Años resolviendo lo que necesitás', invertir: true }],
+            ['pasos-rubro', 'Cómo trabajamos', { items: ['Nos contás tu necesidad', 'Preparamos una propuesta', 'La llevamos adelante'] }],
             ['testimonios', 'Opiniones'],
             ['faq', 'Preguntas frecuentes'],
             ['contacto', 'Contacto'],
@@ -143,6 +149,7 @@ const GW_MODELOS = [
             ['header-simple', 'Encabezado', { boton: 'WhatsApp' }],
             ['hero-centrado', 'Primera pantalla'],
             ['zigzag', 'Foto y texto alternados'],
+            ['oferta-rubro', 'Formas de trabajar', { items: ['Sesiones', 'Proyectos', 'Colaboraciones'] }],
             ['numeros', 'Números'],
             ['testimonios', 'Opiniones'],
             ['cta-banda', 'Llamado a la acción', { titulo: '¿Empezamos?', boton: 'Escribime por WhatsApp' }],
@@ -163,6 +170,7 @@ const GW_MODELOS = [
             ['galeria', 'Galería de trabajos'],
             ['equipo', 'Equipo'],
             ['turnos', 'Agenda de turnos'],
+            ['faq', 'Dudas antes de reservar'],
             ['contacto', 'Contacto y ubicación'],
             ['footer-simple', 'Pie de página']
         ]
@@ -179,6 +187,7 @@ const GW_MODELOS = [
             ['hero-inmo', 'Primera pantalla con buscador'],
             ['propiedades', 'Propiedades destacadas'],
             ['servicios-tarjetas', 'Servicios', { titulo: 'Cómo te ayudamos', items: ['Comprar', 'Vender', 'Alquilar'] }],
+            ['pasos-rubro', 'Cómo seguimos', { items: ['Buscá', 'Visitá', 'Decidí'] }],
             ['cta-banda', 'Tasaciones', { titulo: '¿Querés vender o alquilar tu propiedad?', boton: 'Pedir tasación' }],
             ['contacto', 'Contacto'],
             ['footer-completo', 'Pie de página']
@@ -195,6 +204,7 @@ const GW_MODELOS = [
             ['header-inmo', 'Encabezado'],
             ['mapa-lista', 'Listado y mapa'],
             ['cta-banda', 'Tasaciones', { titulo: '¿Querés publicar tu propiedad con nosotros?', boton: 'Pedir tasación' }],
+            ['contacto', 'Consulta y contacto'],
             ['footer-simple', 'Pie de página']
         ]
     },
@@ -210,6 +220,7 @@ const GW_MODELOS = [
             ['hero-video', 'Primera pantalla con video'],
             ['cursos-grilla', 'Cursos'],
             ['temario', 'Temario e inscripción'],
+            ['pasos-rubro', 'Cómo se aprende', { items: ['Inscribite', 'Mirá las clases', 'Ponelo en práctica'] }],
             ['historia', 'Docente', { eyebrow: 'Quién enseña', titulo: 'Tu docente', circulo: true }],
             ['testimonios', 'Opiniones de alumnos'],
             ['faq', 'Preguntas frecuentes'],

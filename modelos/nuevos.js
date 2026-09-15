@@ -82,7 +82,7 @@ const GW_NUEVOS = [
         ['Estudio de confianza', 'landing', 'Áreas de práctica y credenciales', 'Estudios jurídicos y contables', 'Asesoramiento para decisiones importantes', 'Solicitar consulta', 'dividido', [
             ['servicios-tarjetas', 'Áreas de práctica', { titulo: 'Cómo podemos ayudarte', items: ['Familia', 'Empresas', 'Contabilidad'] }], ['equipo', 'Profesionales'], ['pasos-rubro', 'La consulta', { items: ['Contanos tu caso', 'Evaluamos opciones', 'Te acompañamos'] }]]],
         ['Consulta puntual', 'landing', 'Respuestas frecuentes y formulario claro', 'Profesionales independientes', 'Una respuesta clara para tu caso', 'Hacer una consulta', 'compacto', [
-            ['oferta-rubro', 'Consultas frecuentes', { items: ['Contratos', 'Trámites', 'Impuestos'] }], ['faq', 'Dudas habituales'], ['reserva-rubro', 'Solicitar consulta', { titulo: 'Contanos qué necesitás', campos: ['Tema', 'Nombre', 'Contacto'] }]]]
+            ['oferta-rubro', 'Consultas frecuentes', { items: ['Contratos', 'Trámites', 'Impuestos'], fotos: true }], ['faq', 'Dudas habituales'], ['reserva-rubro', 'Solicitar consulta', { titulo: 'Contanos qué necesitás', campos: ['Tema', 'Nombre', 'Contacto'] }]]]
     ]],
     ['finanzas', [
         ['Planes comparables', 'landing', 'Comparar opciones antes de cotizar', 'Seguros y servicios financieros', 'Elegí la cobertura que va con vos', 'Cotizar ahora', 'dividido', [

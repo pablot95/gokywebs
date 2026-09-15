@@ -1,9 +1,9 @@
 /* ============================================================
-   modelos/wire.js — Dibuja un modelo con bloques grises.
+   modelos/wire.js — Dibuja las muestras con fotos de ejemplo.
 
    GW_WIRE.render(modelo) devuelve el HTML de la página entera.
-   Sin fotos: cada imagen es un bloque gris con un ícono, y los
-   textos largos son rayas. Lo que se lee (títulos, botones,
+   Las fotos son ejemplos reutilizables, y los textos largos son
+   rayas. Lo que se lee (títulos, botones,
    precios) va escrito para que se entienda qué es cada parte.
 
    Computadora y celular salen del MISMO HTML: .wf es un
@@ -24,6 +24,38 @@ var GW_WIRE = (function () {
         for (var i = 0; i < n; i++) h += fn(i);
         return h;
     }
+
+    var fotosPorRubro = {
+        comercios: ['productos', 'hogar', 'moda'],
+        gastronomia: ['gastronomia'],
+        moda: ['moda'],
+        hogar: ['hogar'],
+        belleza: ['bienestar', 'productos'],
+        salud: ['bienestar', 'oficina'],
+        legales: ['oficina'],
+        finanzas: ['oficina'],
+        inmobiliaria: ['hogar', 'turismo'],
+        educacion: ['educacion'],
+        tecnologia: ['tecnologia', 'productos'],
+        industria: ['industria', 'tecnologia'],
+        servicios: ['oficina', 'tecnologia', 'industria'],
+        automotor: ['automotor', 'tecnologia'],
+        deportes: ['deportes', 'productos'],
+        arte: ['arte', 'educacion'],
+        turismo: ['turismo', 'hogar']
+    };
+    var rubroModelosOriginales = {
+        a: 'comercios', b: 'comercios', c: 'moda', d: 'comercios',
+        e: 'gastronomia', f: 'legales', g: 'salud', h: 'belleza',
+        i: 'inmobiliaria', j: 'inmobiliaria', k: 'educacion'
+    };
+    var fotosPorModelo = {
+        'Eventos con reserva': ['eventos'],
+        'Portfolio de artista': ['artista'],
+        'Agenda de espectáculos': ['arte'],
+        'Repuestos por vehículo': ['repuestos']
+    };
+    var modeloActual, seccionActual, fotoNumero;
 
     /* ── Piezas ── */
     var IC = {
@@ -51,7 +83,17 @@ var GW_WIRE = (function () {
         return '<svg class="wf-ic' + (clase ? ' ' + clase : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (IC[nombre] || '') + '</svg>';
     }
     function img(clase, ratio) {
-        return '<div class="wf-img' + (clase ? ' ' + clase : '') + '"' + (ratio ? ' style="aspect-ratio:' + ratio + '"' : '') + '></div>';
+        var rubro = modeloActual && modeloActual.rubros && modeloActual.rubros[0] ||
+            rubroModelosOriginales[modeloActual && modeloActual.id] || 'comercios';
+        var fotos = fotosPorModelo[modeloActual && modeloActual.nombre] ||
+            fotosPorRubro[rubro] || fotosPorRubro.comercios;
+        var foto = fotos[/^hero|^banner/.test(seccionActual || '') ? 0 : fotoNumero % fotos.length];
+        var posiciones = ['center', '40% center', '60% center', 'center'];
+        var estilo = (ratio ? 'aspect-ratio:' + ratio + ';' : '') +
+            '--wf-foto:url(/modelos/assets/' + foto + '.webp);' +
+            '--wf-pos:' + posiciones[fotoNumero % posiciones.length];
+        fotoNumero++;
+        return '<div class="wf-img' + (clase ? ' ' + clase : '') + '" style="' + estilo + '" aria-hidden="true"></div>';
     }
     function lineas(n, clase) {
         return '<div class="wf-lineas' + (clase ? ' ' + clase : '') + '">' +
@@ -623,16 +665,21 @@ var GW_WIRE = (function () {
     function render(modelo) {
         var color = /^#[0-9a-fA-F]{6}$/.test(modelo.acento || '') ? modelo.acento : '#2563eb';
         var oscuro = /^#[0-9a-fA-F]{6}$/.test(modelo.oscuro || '') ? modelo.oscuro : '#1e293b';
-        return '<div class="wf" data-modelo="' + esc(modelo.id) + '" style="--wf-acento:' + color + ';--wf-oscuro:' + oscuro + '">' +
+        modeloActual = modelo;
+        var html = '<div class="wf" data-modelo="' + esc(modelo.id) + '" style="--wf-acento:' + color + ';--wf-oscuro:' + oscuro + '">' +
             modelo.secciones.map(function (s) {
                 var fn = S[s[0]];
                 if (!fn) return '';
+                seccionActual = s[0];
+                fotoNumero = 0;
                 /* wf-s-<clave> y no wf-<clave>: varias secciones tienen adentro un
                    bloque con el mismo nombre (wf-beneficios, wf-faq…) y los
                    estilos de uno le pegaban al otro. */
                 return '<section class="wf-s wf-s-' + esc(s[0]) + '" data-parte="' + esc(s[1] || '') + '">' + fn(s[2] || {}) + '</section>';
             }).join('') +
             '</div>';
+        modeloActual = null;
+        return html;
     }
 
     /* Achica un lienzo de `ancho` px para que entre en `caja`. El transform no
