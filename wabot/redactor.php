@@ -202,6 +202,7 @@ function wabot_responder($texto, &$conv, $cfg) {
             && !preg_match('/\b(cursos|inmobiliaria|sistema de gestion)\b/u', $normal)) {
             $conv['tipo'] = $pendiente['tipo'];
             $conv['precio_cotizado'] = $pendiente['precio'];
+            $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
             $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
             $conv['precio_modelo'] = $pendiente['modelo'];
             $conv['precio_cotizado_ts'] = time();
@@ -454,8 +455,8 @@ function wabot_responder($texto, &$conv, $cfg) {
      * arriba y los pasos se vuelven a pegar tal cual. */
     $precioParte = $base[0];
     $pasosParte  = '';
-    // Desde el 14-sep lo que no se reescribe es el servicio mensual con lo que incluye.
-    $cabezaPasos = 'Trabajamos con un servicio mensual';
+    // Desde el 15-sep lo que no se reescribe es lo que incluye y las dos formas de contratarla.
+    $cabezaPasos = 'Incluye:';
     if ($cabezaPasos !== '') {
         $corte = mb_strpos($base[0], "\n\n" . $cabezaPasos);
         if ($corte !== false) {

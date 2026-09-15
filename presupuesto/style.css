@@ -242,12 +242,26 @@ input, select, textarea { font-family: var(--font); }
     color: #111827;
 }
 
-/* Detalle chico al lado del monto del servicio mensual ("por mes, todo
-   incluido"). Se ve también en mobile: antes se ocultaba en pantallas chicas. */
+/* Pago único y servicio mensual (15-sep-2026): cada monto con su detalle chico
+   al lado ("pago único", "por mes") y una "o" en el medio, con el mismo peso.
+   Se ve también en mobile: antes el detalle se ocultaba en pantallas chicas. */
+.live-budget-opcion {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
 .live-budget small {
     font-size: 0.78rem;
     font-weight: 700;
     color: var(--blue);
+}
+
+.live-budget-o {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #6B7280;
 }
 
 @keyframes liveBudgetIn {
@@ -357,16 +371,16 @@ input, select, textarea { font-family: var(--font); }
 .include-item .inc-label { font-weight: 500; color: #111827; }
 
 .price-totals { border-top: 1px solid rgba(0,0,0,0.07); padding-top: 1.25rem; }
-/* Servicio mensual (14-sep-2026, sin pago inicial): queda una sola fila, la
-   de .price-final-mensual, en azul para que se lea como lo recurrente. */
+/* Pago único y servicio mensual (15-sep-2026): dos filas con el MISMO peso
+   visual y el mismo color, que nunca se suman en un total. Son dos formas de
+   contratar la misma web y ninguna se destaca sobre la otra. */
 .price-final-group { display: flex; flex-direction: column; gap: 0.55rem; }
 .price-final-row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; }
 .price-final-row .label { font-size: 1rem; font-weight: 700; color: #111827; }
 .price-final-row .label small { display: block; font-size: 0.75rem; font-weight: 500; color: #6B7280; margin-top: 0.15rem; }
 .price-final-row .value { font-size: 1.4rem; font-weight: 800; color: #111827; white-space: nowrap; }
-.price-final-mensual .label,
-.price-final-mensual .value { color: var(--blue); }
 .plan-note { font-size: 0.78rem; color: #6B7280; line-height: 1.6; margin-top: 0.9rem; }
+.plan-note strong { color: #111827; }
 
 .result-actions { display: flex; flex-direction: column; gap: 1.6rem; margin-top: 1.75rem; }
 .btn-contratar {
@@ -498,7 +512,7 @@ input, select, textarea { font-family: var(--font); }
 }
 .checkout-summary .cs-label { font-size: 0.8rem; color: #6B7280; }
 .checkout-summary .cs-value { font-size: 0.88rem; font-weight: 700; color: #111827; }
-.checkout-summary .cs-primer-pago,
+.checkout-summary .cs-pago-unico,
 .checkout-summary .cs-mensualidad { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
 .cs-note { font-size: 0.78rem; color: #6B7280; line-height: 1.6; margin-top: 0.85rem; text-align: center; }
 
@@ -562,6 +576,10 @@ input, select, textarea { font-family: var(--font); }
 .btn-pay:hover { transform: translateY(-2px); box-shadow: 0 10px 32px rgba(0,158,227,0.55); }
 .btn-pay:disabled { opacity: 0.6; pointer-events: none; }
 .btn-pay svg { width: 18px; height: 18px; }
+/* Checkout con dos botones del mismo peso (15-sep-2026): la seña del pago
+   único y la suscripción del servicio mensual. */
+.pay-options { display: grid; gap: 0.75rem; margin-top: 0.5rem; }
+.pay-options .btn-pay { margin-top: 0; }
 
 .mp-seal {
     display: flex; align-items: center; justify-content: center; gap: 0.4rem;

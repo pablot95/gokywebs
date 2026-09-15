@@ -66,7 +66,7 @@ foreach (['agente', 'fijo'] as $modo) {
         $c = charla_textos(); $c['fase'] = 'postdemo'; $c['presentado_ts'] = time(); $c['lead_creado'] = true;
         wabot_conv_transcript($c, 'cliente', $p);
         $r = wabot_salida_preparar(wabot_responder($p, $c, $conf), $c, $conf);
-        caso("$modo aclara el motivo del contacto: $p", strpos(implode(' ', $r ?? []), 'para coordinar la suscripción y los cambios') !== false
+        caso("$modo aclara el motivo del contacto: $p", strpos(implode(' ', $r ?? []), 'para coordinar el pago y los cambios') !== false
             && !empty($c['handoff_pendiente']));
     }
 }

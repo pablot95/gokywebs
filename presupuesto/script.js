@@ -48,11 +48,21 @@ function _pfOnce(flag, fn) {
     fn();
 }
 
-async function _trackFunnel(fields) {
+/* `permitidos` (opcional): la misma escritura, recortada a los campos que ya
+   acepta el allowlist de `presupuesto_funnel` en firestore.rules. Si la regla
+   todavía no suma los campos nuevos (15-sep-2026: precioUnico, sena, saldo y
+   modalidad), Firestore rechaza el update entero con permission-denied: se
+   reintenta con esos campos para no perder el hito del embudo. */
+async function _trackFunnel(fields, permitidos = null) {
     if (!_leadDb) return; // Firebase no disponible — falla silencioso
     try {
         const ref = doc(_leadDb, 'presupuesto_funnel', _pfSessionId());
-        await setDoc(ref, { ...fields, updatedAt: serverTimestamp() }, { merge: true });
+        try {
+            await setDoc(ref, { ...fields, updatedAt: serverTimestamp() }, { merge: true });
+        } catch (err) {
+            if (!permitidos || err.code !== 'permission-denied') throw err;
+            await setDoc(ref, { ...permitidos, updatedAt: serverTimestamp() }, { merge: true });
+        }
     } catch (err) {
         console.warn('[GKY] No se pudo trackear el embudo:', err.code || err.message);
     }
@@ -73,17 +83,22 @@ async function _guardarLead(st) {
             objectives:      st.objectives      || [],
             functionalities: st.functionalities || [],
             pages:           st.pages           || '',
-            /* Modelo 14-sep-2026 (servicio mensual, sin pago inicial):
-               basePrice/totalPrice valen la mensualidad y extrasPrice 0;
-               sena y primerPago van en 0, porque el admin (planDe) los toma
-               como el primer pago del modelo anterior. Siguen porque la
-               ficha de lead del admin (dashboard.js) los pinta. */
-            basePrice:       st.basePrice       || 0,
+            /* Dos formas de contratar la misma web (15-sep-2026), con los
+               nombres que lee el admin: precioUnico, sena (la seña del pago
+               único), saldo (precioUnico - sena), mensualidad y modalidad (''
+               acá, porque todavía no eligió; 'unico' o 'mensual' lo escribe
+               exito.html). totalPrice y basePrice valen el precio único: el
+               admin toma totalPrice 0 como "a cotizar". primerPago es del modelo
+               del 10 al 14-sep y va siempre en 0. */
+            basePrice:       st.precioUnico     || 0,
             extrasPrice:     st.extrasPrice     || 0,
-            totalPrice:      st.totalPrice      || 0,
+            totalPrice:      st.precioUnico     || 0,
+            precioUnico:     st.precioUnico     || 0,
             sena:            st.sena            || 0,
-            primerPago:      st.primerPago      || 0,
+            saldo:           st.saldo           || 0,
             mensualidad:     st.mensualidad     || 0,
+            modalidad:       st.modalidad       || '',
+            primerPago:      0,
             sinPrecio:       !!st.sinPrecio,
             extras:          st.extras          || [],
             createdAt:       serverTimestamp(),
@@ -105,13 +120,12 @@ async function _guardarLead(st) {
      quiere lograr", que se ve en el modal del boceto y sale en Copiar/Design);
      NO en "notas" (apuntes internos de Pablo) ni solo en "extra" (esa fila
      recién se ve al convertir a cliente).
-   · precio → precioTotal/sena/saldo siguen siendo los nombres canónicos de
-     `propuestas` (el admin los copia al pasar el boceto a Seguimiento);
-     totalPrice NO lo lee nadie en el admin. Desde el 14-sep-2026 (servicio
-     mensual, sin pago inicial) precioTotal vale la mensualidad y sena, saldo y
-     `primerPago` van en 0: planDe() del admin toma primerPago/sena como el
-     primer pago del modelo anterior. Nunca sacar los viejos mientras el admin
-     los lea.
+   · precio → precioTotal/sena/saldo son los nombres canónicos de `propuestas`
+     (el admin los copia al pasar el boceto a Seguimiento). Desde el 15-sep-2026
+     (dos formas de contratar la misma web) precioTotal, totalPrice y basePrice
+     valen el precio único; sena es la seña del pago único y saldo el resto al
+     entregar, y van también precioUnico, mensualidad y modalidad ('' hasta que
+     elige, en exito.html). primerPago es del modelo del 10 al 14-sep: siempre 0.
    · adicionales elegidos → campo propio `adicionales_texto` (31-jul-2026:
      antes se mezclaban dentro de productos_servicios, que en /form/ significa
      otra cosa — quedaban pegados en medio del párrafo de "Sobre el negocio"). */
@@ -146,13 +160,16 @@ async function _guardarBoceto(nombreNegocio, colorPrincipal, colorSecundario, co
             adicionales_texto:   adicionalesTexto,
             objectives:          state.objectives || [],
             functionalities:     state.functionalities || [],
-            basePrice:           state.basePrice || 0,
+            basePrice:           state.precioUnico || 0,
             extrasPrice:         state.extrasPrice || 0,
-            precioTotal:         state.totalPrice || 0,
+            totalPrice:          state.precioUnico || 0,
+            precioTotal:         state.precioUnico || 0,
+            precioUnico:         state.precioUnico || 0,
             sena:                state.sena || 0,
-            saldo:               0,
-            primerPago:          state.primerPago || 0,
+            saldo:               state.saldo || 0,
             mensualidad:         state.mensualidad || 0,
+            modalidad:           state.modalidad || '',
+            primerPago:          0,
             sinPrecio:           !!state.sinPrecio,
             extras:              state.extras || [],
             color_principal:     colorPrincipal,
@@ -249,14 +266,15 @@ const BUSINESS_TYPES = [
 
 /* Qué incluye cada tipo de web (10-sep-2026). Es UNA sola lista por tipo y
    la usan tanto el panel del paso 3 como la tarjeta de resultado (antes había
-   dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Arriba de
-   todo va el argumento del modelo — todo incluido, el cliente se olvida de
-   todo — y al final lo que el modelo incluye en cualquier tipo de web: carga
-   de hasta 10 productos, el panel para editar textos e imágenes (13-sep) y
-   un cambio por mes. */
+   dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Desde el
+   15-sep-2026 la lista vale para las dos formas de contratar: arriba va el
+   hosting y el dominio de cada una (el primer año con el pago único, mientras
+   dure el servicio mensual) y al final la carga de hasta 10 productos, el
+   panel para editar textos e imágenes (13-sep) y el cambio por mes, que es
+   del servicio mensual. */
 const INCLUDES = {
     landing: [
-        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu suscripción</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
         'Diseño personalizado y responsive',
         'Hasta 5 secciones optimizadas para conversión',
         'SEO básico y meta etiquetas',
@@ -266,10 +284,10 @@ const INCLUDES = {
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
         'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes incluido, siempre'
+        'Un cambio por mes con el servicio mensual'
     ],
     ecommerce: [
-        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu suscripción</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
         'Tienda online completa y responsive',
         'Catálogo de productos con filtros',
         'Carrito de compras y proceso de pago',
@@ -280,10 +298,10 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes incluido, siempre'
+        'Un cambio por mes con el servicio mensual'
     ],
     inmobiliaria: [
-        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu suscripción</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
         'Sitio inmobiliaria profesional y responsive',
         'Listado de propiedades con filtros avanzados',
         'Ficha de propiedad con galería de fotos',
@@ -294,10 +312,10 @@ const INCLUDES = {
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
         'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes incluido, siempre'
+        'Un cambio por mes con el servicio mensual'
     ],
     elearning: [
-        '<strong>Desarrollo a medida, hosting, dominio y soporte incluidos mientras dure tu suscripción</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
         'Plataforma LMS completa y responsive',
         'Login y panel propio para tus alumnos',
         'Cursos organizados en módulos con videos',
@@ -310,7 +328,7 @@ const INCLUDES = {
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
         'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes incluido, siempre'
+        'Un cambio por mes con el servicio mensual'
     ]
 };
 
@@ -416,10 +434,13 @@ const state = {
     siteType: '',
     basePrice: 0,
     extrasPrice: 0,
-    totalPrice: 0,
-    primerPago: 0,
+    totalPrice: 0,     // = precioUnico (el admin toma 0 como "a cotizar")
+    precioUnico: 0,
+    sena: 0,           // seña del pago único
+    saldo: 0,          // precioUnico - sena, se abona al entregar la web
     mensualidad: 0,
-    sena: 0, // compat admin: sin pago inicial queda en 0, igual que primerPago
+    modalidad: '',     // 'unico' | 'mensual' recién al tocar un botón del checkout
+    primerPago: 0,     // campo del modelo del 10 al 14-sep: siempre 0
     sinPrecio: false, // precio a cotizar en vez de $0 real — el admin lo necesita para no mostrarlo como plata
     extras: [],
     clientData: {}
@@ -522,15 +543,15 @@ function _restorePills(containerId, values) {
 /* Paso 3 (10-sep-2026): ya no hay pills de adicionales — el modelo es "todo
    incluido" y los dos únicos adicionales (productos arriba de 10, más de un
    cambio por mes) se coordinan por WhatsApp. El paso queda como el panel de
-   qué incluye la web + el servicio mensual (un solo número desde el 14-sep). */
+   qué incluye la web + las dos formas de contratarla (15-sep-2026). */
 function renderStep3Context() {
     const type     = getSiteType();
     const items    = INCLUDES[type] || INCLUDES.landing;
     const included = document.getElementById('func-included');
-    const { mensualidad, sinPrecio } = getPlanInfo(type);
+    const { precioUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Servicio mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, con todo incluido y sin pago inicial: te armamos la web y nos ocupamos del mantenimiento técnico. Con el primer débito arrancamos y en unos 7 días tu web queda publicada.`;
+        : `Pago único de <strong style="color:black">${fmt(precioUnico)}</strong>, con una seña de ${fmt(sena)} para arrancar y el saldo al entregar la web, o servicio mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando. Es la misma web con las dos formas, y con cualquiera queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -718,10 +739,12 @@ function mensajeMuestraWsp(nombreNegocio) {
     lineas.push(`🏢 Negocio: ${nombreNegocio}`);
     if (state.businessInput) lineas.push(`📌 Rubro: ${state.businessInput}`);
     if (TYPE_NAMES[state.siteType]) lineas.push(`🌐 Tipo de web: ${TYPE_NAMES[state.siteType]}`);
-    // Un solo número desde el 14-sep-2026: el servicio mensual, sin pago inicial.
+    // Dos líneas y nunca un total (15-sep-2026): el pago único y el servicio
+    // mensual son dos formas de contratar la misma web.
     if (state.sinPrecio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
+        lineas.push(`💰 Pago único: ${fmt(state.precioUnico)} (seña de ${fmt(state.sena)})`);
         lineas.push(`💰 Servicio mensual: ${fmt(state.mensualidad)}/mes`);
     }
     lineas.push('', 'Gracias!');
@@ -743,24 +766,38 @@ function getSiteType() {
     return 'landing';
 }
 
-/* Modelo comercial (14-sep-2026): no hay pago inicial. El servicio es una
-   suscripción mensual de Mercado Pago y el primer débito es el que arranca el
-   desarrollo: $20.000/mes el sitio profesional (clave 'landing') y $30.000/mes
-   el resto. El paso de pago ya no crea una preferencia de pago único (quedó
-   sin uso api/crear-preferencia.php): manda al link de suscripción del tipo
-   de web, así que MENSUALIDAD tiene que coincidir con el monto de esos dos
-   planes de Mercado Pago y con MENSUALIDAD de exito.html. */
-const MENSUALIDAD = { landing: 20000, ecommerce: 30000, inmobiliaria: 30000, elearning: 30000 };
+/* Modelo comercial (15-sep-2026): la misma web se contrata de dos formas, y
+   ninguna es "mejor" que la otra.
+   · Pago único: una seña para arrancar y el saldo al entregar la web. La seña
+     se cobra con Checkout Pro y el monto lo recalcula server-side
+     api/crear-preferencia.php a partir del siteType: SENA tiene que coincidir
+     con lo que hay ahí y con SENA de exito.html.
+   · Servicio mensual: suscripción de Mercado Pago, sin pago inicial; con la
+     primera mensualidad armamos la web. MENSUALIDAD tiene que coincidir con el
+     monto de los dos planes de Mercado Pago y con MENSUALIDAD de exito.html.
+   Son montos que nunca se suman entre sí. Clave 'landing' = sitio profesional. */
+const PRECIO_UNICO = { landing: 180000, ecommerce: 290000, inmobiliaria: 240000, elearning: 290000 };
+const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
+const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
 const SUSCRIPCION_20K = 'https://mpago.la/1pfejMG';
 const SUSCRIPCION_30K = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b';
 const SUSCRIPCION_LINK = { landing: SUSCRIPCION_20K, ecommerce: SUSCRIPCION_30K, inmobiliaria: SUSCRIPCION_30K, elearning: SUSCRIPCION_30K };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget(),
-// renderResult() y handlePayment() necesitan el mismo monto y el mismo link.
+// renderResult() y handlePayment() necesitan los mismos montos y el mismo link.
 // `sinPrecio` queda por compatibilidad con el admin (siempre false: todos los
 // tipos tienen precio fijo).
 function getPlanInfo(type) {
-    return { mensualidad: MENSUALIDAD[type], linkSuscripcion: SUSCRIPCION_LINK[type], sinPrecio: false };
+    const precioUnico = PRECIO_UNICO[type] || 0;
+    const sena        = SENA[type] || 0;
+    return {
+        precioUnico,
+        sena,
+        saldo: Math.max(precioUnico - sena, 0),
+        mensualidad: MENSUALIDAD[type] || 0,
+        linkSuscripcion: SUSCRIPCION_LINK[type],
+        sinPrecio: false
+    };
 }
 
 function updateLiveBudget() {
@@ -777,13 +814,13 @@ function updateLiveBudget() {
     }
 
     const type = getSiteType();
-    const { mensualidad } = getPlanInfo(type);
+    const { precioUnico, mensualidad } = getPlanInfo(type);
 
-    // Un solo número: el servicio mensual (no hay pago inicial).
-    const totalEl = document.getElementById('liveBudgetTotal');
-    const detailEl = document.getElementById('liveBudgetDetail');
-    if (totalEl) totalEl.textContent = fmt(mensualidad);
-    if (detailEl) detailEl.textContent = 'por mes, todo incluido';
+    // Los dos montos con el mismo peso y nunca sumados: pago único o por mes.
+    const unicoEl = document.getElementById('liveBudgetUnico');
+    const mensualEl = document.getElementById('liveBudgetMensual');
+    if (unicoEl) unicoEl.textContent = fmt(precioUnico);
+    if (mensualEl) mensualEl.textContent = fmt(mensualidad);
 
     bubble.classList.add('visible');
     bubble.classList.remove('bump');
@@ -795,30 +832,34 @@ function renderResult() {
     const type = getSiteType();
     state.siteType = type;
 
-    const { mensualidad, sinPrecio } = getPlanInfo(type);
+    const { precioUnico, sena, saldo, mensualidad, sinPrecio } = getPlanInfo(type);
+    /* Dos formas de contratar la misma web (15-sep-2026). Campos que lee el
+       admin: precioUnico, sena, saldo, mensualidad y modalidad; totalPrice y
+       basePrice valen el precio único y nunca pueden quedar en 0 con precio
+       real, porque el admin toma totalPrice 0 como "a cotizar". La modalidad
+       queda en '' hasta que toca un botón del checkout. primerPago es del
+       modelo del 10 al 14-sep: siempre 0. */
+    state.precioUnico = sinPrecio ? 0 : precioUnico;
+    state.sena        = sinPrecio ? 0 : sena;
+    state.saldo       = sinPrecio ? 0 : saldo;
     state.mensualidad = sinPrecio ? 0 : mensualidad;
-    /* Campos que el admin sigue leyendo (precioTotal en `propuestas`,
-       totalPrice/basePrice/extrasPrice en `presupuestos`): desde el 14-sep-2026
-       valen la mensualidad y no hay adicionales. totalPrice nunca puede quedar
-       en 0 con precio real: el admin lo usa para detectar "a cotizar".
-       primerPago y sena van en 0 porque NO hay pago inicial: planDe() del admin
-       los lee como el primer pago del modelo anterior, y con la mensualidad
-       adentro mostraba "Primer pago (modelo anterior) $30.000". */
+    state.modalidad   = '';
     state.primerPago  = 0;
-    state.basePrice   = state.mensualidad;
+    state.basePrice   = state.precioUnico;
     state.extrasPrice = 0;
-    state.totalPrice  = state.mensualidad;
+    state.totalPrice  = state.precioUnico;
     state.extras      = [];
-    state.sena        = 0;
     state.sinPrecio   = sinPrecio;
 
     const badge = document.getElementById('typeBadge');
     badge.className = 'result-type-badge ' + TYPE_BADGE_CLASSES[type];
     badge.textContent = TYPE_NAMES[type];
 
-    // Una sola fila: el servicio mensual.
+    // Dos filas del mismo peso: pago único y servicio mensual. Nunca un total.
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setT('priceFinal', sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
+    setT('pricePagoUnico',        sinPrecio ? 'A coordinar' : fmt(precioUnico));
+    setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y saldo al entregar la web' : `seña de ${fmt(sena)} y saldo de ${fmt(saldo)} al entregar la web`);
+    setT('priceMensual',          sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
 
     const includesList = document.getElementById('includesList');
     const items = INCLUDES[type] || INCLUDES.landing;
@@ -834,9 +875,11 @@ function renderResult() {
         `<div class="que-es-bullet"><span class="que-es-bullet-icon">✓</span><span>${b}</span></div>`
     ).join('');
 
-    setT('summTypeName',    TYPE_NAMES[type]);
-    setT('summMensualidad', sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
-    setT('btnPayLabel',     sinPrecio ? 'Suscribirme al servicio mensual' : `Suscribirme al servicio de ${fmt(mensualidad)} por mes`);
+    setT('summTypeName',       TYPE_NAMES[type]);
+    setT('summPagoUnico',      sinPrecio ? 'A coordinar' : fmt(precioUnico));
+    setT('summMensualidad',    sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
+    setT('btnPaySenaLabel',    etiquetaPagarSena());
+    setT('btnPayMensualLabel', etiquetaSuscribirme());
 
     document.getElementById('resultSection').classList.add('visible');
     document.getElementById('liveBudget')?.classList.remove('visible', 'bump');
@@ -900,9 +943,12 @@ function resetCalculator() {
     state.basePrice      = 0;
     state.extrasPrice    = 0;
     state.totalPrice     = 0;
-    state.primerPago     = 0;
-    state.mensualidad    = 0;
+    state.precioUnico    = 0;
     state.sena           = 0;
+    state.saldo          = 0;
+    state.mensualidad    = 0;
+    state.modalidad      = '';
+    state.primerPago     = 0;
     state.sinPrecio      = false;
     state.extras         = [];
     state.clientData     = {};
@@ -998,20 +1044,23 @@ function validateCheckout() {
     return ok;
 }
 
-/* Paso de pago (modelo 14-sep-2026): ya no se crea una preferencia de pago
-   único (api/crear-preferencia.php quedó sin uso), se manda al link de
-   suscripción de Mercado Pago del tipo de web: $20.000/mes el sitio
-   profesional y $30.000/mes el resto. No hay pago inicial: el primer débito de
-   la suscripción es el que arranca el desarrollo. Los datos quedan en
-   `gky_presupuesto` para exito.html, que es a donde vuelve Mercado Pago solo si
-   el plan tiene esa URL de retorno configurada (eso se define en el plan, en
-   la cuenta de Mercado Pago, no acá). */
-function handlePayment() {
+/* Paso de pago (15-sep-2026): la misma web se contrata de dos formas y el
+   checkout tiene un botón para cada una.
+   · 'unico'   → la seña del pago único por Checkout Pro: api/crear-preferencia.php
+     recalcula la seña a partir del siteType y Mercado Pago vuelve a exito.html
+     con payment_id. El saldo se abona al entregar la web, fuera de esta página.
+   · 'mensual' → el link de suscripción del plan del tipo de web: $20.000/mes el
+     sitio profesional y $30.000/mes el resto. Mercado Pago vuelve a exito.html
+     con preapproval_id solo si el plan tiene esa URL de retorno configurada
+     (eso se define en el plan, en la cuenta de Mercado Pago, no acá).
+   Los datos quedan en `gky_presupuesto` para exito.html, con la modalidad. */
+async function handlePayment(modalidad) {
+    if (modalidad !== 'unico' && modalidad !== 'mensual') return;
     if (!validateCheckout()) { toast('Completá todos los campos requeridos', 'error'); return; }
 
     const type = state.siteType || getSiteType();
     const { linkSuscripcion } = getPlanInfo(type);
-    if (!linkSuscripcion) {
+    if (modalidad === 'mensual' && !linkSuscripcion) {
         toast('No pudimos abrir la suscripción. Escribinos por WhatsApp.', 'error');
         return;
     }
@@ -1025,6 +1074,7 @@ function handlePayment() {
 
     const reference = 'GKY-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7).toUpperCase();
 
+    state.modalidad = modalidad;
     const presupuestoData = {
         reference,
         businessType: state.businessInput,
@@ -1036,21 +1086,67 @@ function handlePayment() {
         basePrice: state.basePrice,
         extrasPrice: state.extrasPrice,
         totalPrice: state.totalPrice,
+        // Los lee exito.html con estos mismos nombres (modalidad, precioUnico,
+        // sena, saldo, mensualidad) para pintar la confirmación, guardar en el
+        // admin y armar los mails: si se renombran acá, hay que renombrarlos
+        // allá en el mismo commit. primerPago va en 0 (modelo del 10 al 14-sep).
+        modalidad,
+        precioUnico: state.precioUnico,
         sena: state.sena,
-        // Los lee exito.html (`presupuesto.mensualidad`; `primerPago` queda por
-        // compatibilidad, en 0) para pintar la confirmación y armar
-        // los mails: si se renombran acá hay que renombrarlos allá en el mismo commit.
-        primerPago: state.primerPago,
+        saldo: state.saldo,
         mensualidad: state.mensualidad,
+        primerPago: 0,
         extras: state.extras,
         clientData: { nombre, email, telefono: pais + ' ' + tel, cuit, negocio }
     };
     localStorage.setItem('gky_presupuesto', JSON.stringify(presupuestoData));
 
-    // La navegación es inmediata (no hay fetch de por medio), así que el botón
-    // no se deshabilita: si el cliente vuelve atrás desde Mercado Pago, sigue andando.
-    _clearPresState(); // suscripción en curso — borrar borrador
-    window.location.href = linkSuscripcion;
+    if (modalidad === 'mensual') {
+        // La navegación es inmediata (no hay fetch de por medio), así que los
+        // botones no se deshabilitan: si el cliente vuelve atrás, siguen andando.
+        _clearPresState(); // suscripción en curso — borrar borrador
+        window.location.href = linkSuscripcion;
+        return;
+    }
+
+    setPayButtonsBusy(true);
+    try {
+        const res = await fetch('api/crear-preferencia.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, email, reference, siteType: type })
+        });
+        const data = await res.json();
+        if (data.init_point) {
+            _clearPresState(); // pago en curso — borrar borrador
+            window.location.href = data.init_point;
+        } else {
+            throw new Error(data.message || data.error || 'Error al crear preferencia');
+        }
+    } catch (err) {
+        console.error(err);
+        toast('Error al conectar con Mercado Pago. Intentá de nuevo.', 'error');
+        setPayButtonsBusy(false);
+    }
+}
+
+function etiquetaPagarSena() {
+    return state.sena ? `Pagar la seña de ${fmt(state.sena)}` : 'Pagar la seña';
+}
+
+function etiquetaSuscribirme() {
+    return state.mensualidad ? `Suscribirme al servicio de ${fmt(state.mensualidad)} por mes` : 'Suscribirme al servicio mensual';
+}
+
+// Mientras se crea la preferencia de la seña los dos botones quedan trabados,
+// para que no se abran dos pagos ni se mezcle con la suscripción.
+function setPayButtonsBusy(busy) {
+    ['btnPaySena', 'btnPayMensual'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = busy;
+    });
+    const label = document.getElementById('btnPaySenaLabel');
+    if (label) label.textContent = busy ? 'Procesando…' : etiquetaPagarSena();
 }
 
 function checkFailedPayment() {
@@ -1138,25 +1234,41 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('calcBtn').addEventListener('click', () => {
         renderResult();
         _guardarLead(state); // solo cuando el usuario aprieta "Calcular precio"
-        /* ⚠️ NO agregar campos acá sin sumarlos ANTES al allowlist de
-           `presupuesto_funnel` en firestore.rules: el update usa hasOnly([...]),
-           así que un solo campo de más hace que Firestore rechace la escritura
-           ENTERA y se pierde el hito (falla silenciosa, solo un console.warn).
+        /* ⚠️ `presupuesto_funnel` tiene un allowlist (hasOnly) en firestore.rules:
+           un solo campo de más hace que Firestore rechace el update ENTERO. Los
+           campos de las dos formas de contratar (precioUnico, sena, saldo y
+           modalidad, 15-sep-2026) van en la escritura completa y, si la regla
+           todavía no los acepta, _trackFunnel reintenta solo con `permitidos`,
+           que ya están en la regla, para no perder el hito. Cualquier otro campo
+           nuevo tiene que sumarse ANTES al allowlist.
            El caso "a cotizar" no manda un flag propio: se deduce en el admin de
            totalPrice === 0, que es imposible en un presupuesto real. */
+        const permitidos = {
+            precioAt:    serverTimestamp(),
+            siteType:    state.siteType || '',
+            totalPrice:  state.totalPrice || 0, // = precioUnico
+            mensualidad: state.mensualidad || 0,
+            primerPago:  0,
+        };
         _pfOnce('gky_pf_precio', () => _trackFunnel({
-            precioAt:   serverTimestamp(),
-            siteType:   state.siteType || '',
-            totalPrice: state.totalPrice || 0,
-        }));
+            ...permitidos,
+            precioUnico: state.precioUnico || 0,
+            sena:        state.sena || 0,
+            saldo:       state.saldo || 0,
+            modalidad:   '',
+        }, permitidos));
     });
 
     document.getElementById('btnResetCalc').addEventListener('click', resetCalculator);
 
-    document.getElementById('checkoutForm').addEventListener('submit', (e) => {
-        e.preventDefault();
-        handlePayment();
-    });
+    // Dos botones, uno por forma de contratar: son type="button", así que el
+    // form no se envía solo (un Enter en un campo no inicia ningún pago).
+    document.getElementById('checkoutForm').addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('btnPaySena')?.addEventListener('click', () => handlePayment('unico'));
+    document.getElementById('btnPayMensual')?.addEventListener('click', () => handlePayment('mensual'));
+    // Si el cliente vuelve atrás desde Mercado Pago y el navegador restaura la
+    // página de la caché, los botones no pueden quedar trabados en "Procesando…".
+    window.addEventListener('pageshow', (e) => { if (e.persisted) setPayButtonsBusy(false); });
 
     // El overlay "¿Cómo trabajamos?" y su modal siguen en el HTML sin tocar,
     // pero ya no tienen botón que los abra (se sacó "¿Cómo trabajamos?" del

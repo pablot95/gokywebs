@@ -1,11 +1,11 @@
 <?php
-/* SIN USO desde el 14-sep-2026. El modelo pasó a servicio mensual por
-   suscripción, sin pago inicial: el paso de pago de la calculadora
-   (presupuesto/script.js → handlePayment) ya no llama a este archivo, manda
-   al link de suscripción de Mercado Pago del tipo de web. Queda en su lugar
-   para que una pestaña que todavía tenga el script viejo no reciba un error.
-   Los montos y textos de abajo son los del modelo anterior (primer pago): no
-   volver a usarlo sin revisarlos. */
+/* Seña del pago único de la calculadora /presupuesto/ (15-sep-2026). La misma
+   web se contrata de dos formas: pago único (una seña para arrancar y el saldo
+   al entregar la web) o servicio mensual por suscripción de Mercado Pago. Este
+   archivo arma la preferencia de Checkout Pro solo para la seña: la llama
+   handlePayment('unico') de presupuesto/script.js y Mercado Pago vuelve a
+   exito.html con payment_id. La suscripción no pasa por acá: script.js manda
+   directo al link del plan. Estuvo sin uso del 14 al 15-sep-2026. */
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -28,32 +28,28 @@ $nombre    = htmlspecialchars(trim($body['nombre']    ?? ''), ENT_QUOTES);
 $email     = filter_var(trim($body['email']           ?? ''), FILTER_SANITIZE_EMAIL);
 $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
 
-// Primer pago (modelo 10-sep-2026: primer pago + plan mensual obligatorio). Se
-// recalcula server-side a partir del siteType, nunca se confía en un monto mandado
-// desde el cliente: sitio profesional (clave 'landing') $40.000 · ecommerce,
-// inmobiliaria y elearning $50.000. Tiene que coincidir con PRIMER_PAGO de
-// presupuesto/script.js y de presupuesto/exito.html.
-$siteType   = trim($body['siteType'] ?? '');
-$primerPago = ($siteType === 'landing') ? 40000 : 50000;
+// Seña del pago único, recalculada server-side a partir del siteType: nunca se
+// confía en un monto mandado desde el cliente. Sitio profesional (clave 'landing')
+// $40.000 · ecommerce, inmobiliaria y elearning $60.000. Tiene que coincidir con
+// SENA de presupuesto/script.js y de presupuesto/exito.html. Un tipo desconocido
+// no cobra nada, antes que cobrar una seña que no corresponde.
+$SENAS    = ['landing' => 40000, 'ecommerce' => 60000, 'inmobiliaria' => 60000, 'elearning' => 60000];
+$siteType = is_string($body['siteType'] ?? null) ? trim($body['siteType']) : '';
+if (!isset($SENAS[$siteType])) { http_response_code(400); echo json_encode(['error' => 'Tipo de web inválido']); exit; }
+$sena = $SENAS[$siteType];
 
-// TODO (Pablo): el plan mensual NO se crea acá. Es una suscripción automática de
-// Mercado Pago (preapproval) que arranca a los 7 días del primer pago: $15.000/mes
-// sitio profesional, $25.000/mes el resto. Se da de alta desde la cuenta de MP de
-// Gokywebs y las altas las procesa mantenimiento/api/webhook-mp.php (crea el
-// suscriptor en Firestore /mantenimiento; ahí falta pegar los ids de los dos
-// planes nuevos). Para que el primer débito caiga a los 7 días, el plan tiene que
-// tener un mes de prueba (free_trial) o el link se manda a los 7 días.
-// Si algún día se crea por API: sin preapproval_plan_id (con plan, MP exige
-// card_token_id) y cancelando el preapproval anterior antes de crear otro.
+// El servicio mensual no se cobra acá: es una suscripción de Mercado Pago
+// (preapproval) y el link del plan lo abre directo presupuesto/script.js. Las altas
+// y las bajas las procesa mantenimiento/api/webhook-mp.php.
 
 $preference = [
     'items' => [[
-        'id'          => 'primer-pago-web-gokywebs',
-        'title'       => 'Primer pago — Desarrollo Web Gokywebs',
-        'description' => 'Primer pago para el desarrollo de tu sitio web. El plan mensual arranca a los 7 días.',
+        'id'          => 'sena-web-gokywebs',
+        'title'       => 'Seña — Desarrollo Web Gokywebs',
+        'description' => 'Seña del pago único de tu sitio web. El saldo se abona al entregar la web.',
         'quantity'    => 1,
         'currency_id' => 'ARS',
-        'unit_price'  => $primerPago
+        'unit_price'  => $sena
     ]],
     'payer' => ['name' => $nombre, 'email' => $email],
     // Con tarjeta, hasta 12 cuotas con interés: el valor de cada cuota lo calcula

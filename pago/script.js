@@ -5,7 +5,9 @@
 
    Monto dinámico por link: gokywebs.com/pago?monto=15000 cobra exactamente
    ese valor, por única vez (Pablo arma el link con el importe puntual de cada
-   cliente: carga de productos, un pago único que pidió el cliente, etc.).
+   cliente: la seña o el saldo del pago único, una carga de productos, etc.).
+   Los botones "Pagar la seña" de /presupuestos/* traen ?monto= con la seña del
+   tipo de web (40000, 60000 o 90000), y la tabla de esta página los repite.
    Desde el 14-sep-2026 no hay monto por defecto (el que había era el del
    modelo anterior): sin ?monto= válido no se ofrece el pago con
    Mercado Pago, porque no hay importe que cobrar, y quedan la transferencia y

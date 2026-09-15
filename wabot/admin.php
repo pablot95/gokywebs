@@ -374,6 +374,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             if (isset($_POST['precio_' . $t])) $cfg['tipos'][$t]['precio'] = trim((string)$_POST['precio_' . $t]);
             // El plan mensual de cada tipo (10-sep). Sin esta línea, el primer
             // guardado desde el panel lo borraba y el bot cotizaba sin él.
+            if (isset($_POST['sena_' . $t])) $cfg['tipos'][$t]['sena'] = trim((string)$_POST['sena_' . $t]);
             if (isset($_POST['mensualidad_' . $t])) $cfg['tipos'][$t]['mensualidad'] = trim((string)$_POST['mensualidad_' . $t]);
             if (isset($_POST['link_' . $t]))   $cfg['tipos'][$t]['link']   = trim((string)$_POST['link_' . $t]);
             if (isset($_POST['desc_' . $t]))   $cfg['tipos'][$t]['desc']   = str_replace("\r", '', trim((string)$_POST['desc_' . $t]));
@@ -1690,7 +1691,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Precio</h2>
-            <label>Plantilla del mensaje de precio ({desc} y {mensualidad} = servicio mensual del tipo se reemplazan; {precio} vale lo mismo que {mensualidad}; el link del presupuesto ya no va) <span style="color:#b45309">· desde el 11-sep el primer precio sale con el texto fijo de cada tipo ("Para tu … podemos hacer una web donde…"); esta queda para el cambio de tipo después de la demo</span></label>
+            <label>Plantilla del mensaje de precio ({desc}, {precio} = pago único, {sena} = seña y {mensualidad} = servicio mensual se reemplazan; el link del presupuesto ya no va) <span style="color:#b45309">· desde el 11-sep el primer precio sale con el texto fijo de cada tipo ("Para tu … podemos hacer una web donde…"); esta queda para el cambio de tipo después de la demo</span></label>
             <textarea name="msg_precio" rows="3"><?= $e($cfg['msg_precio']) ?></textarea>
             <label>Mismo mensaje, pero cuando ya se presentó la web con el pitch (sin repetir {desc}, que el cliente ya leyó)</label>
             <textarea name="msg_precio_tras_pitch" rows="3"><?= $e($cfg['msg_precio_tras_pitch'] ?? '') ?></textarea>
@@ -1701,7 +1702,9 @@ body.embed { min-height: 0; }
             <?php foreach ($cfg['tipos'] as $t => $d): ?>
                 <div class="fila" style="margin-top:12px<?= !empty($d["retirado"]) ? ";opacity:.55" : "" ?>">
                     <strong class="campo-etiqueta"><?= $e($d['label']) ?><?php if (!empty($d['retirado'])): ?> <span style="font-weight:400;color:#b45309">· retirado, no se ofrece</span><?php endif; ?></strong>
-                    <input type="text" name="mensualidad_<?= $t ?>" value="<?= $e($d['mensualidad'] ?? '') ?>" title="Servicio mensual: desde el 14-sep no hay pago inicial, el precio es este" placeholder="por mes" style="width:110px">
+                    <input type="text" name="precio_<?= $t ?>" value="<?= $e($d['precio']) ?>" title="Pago único" placeholder="pago único" style="width:110px">
+                    <input type="text" name="sena_<?= $t ?>" value="<?= $e($d['sena'] ?? '') ?>" title="Seña del pago único (el saldo va al entregar)" placeholder="seña" style="width:100px">
+                    <input type="text" name="mensualidad_<?= $t ?>" value="<?= $e($d['mensualidad'] ?? '') ?>" title="Servicio mensual" placeholder="por mes" style="width:110px">
                     <input type="text" name="link_<?= $t ?>" value="<?= $e($d['link']) ?>" style="flex:1;min-width:220px">
                 </div>
                 <textarea name="desc_<?= $t ?>" rows="2" placeholder="Qué es (reemplaza {desc} en el mensaje del precio)" style="margin-top:4px"><?= $e($d['desc'] ?? '') ?></textarea>
@@ -1795,15 +1798,15 @@ body.embed { min-height: 0; }
             <?php foreach ($cfg['info'] as $k => $v): ?>
                 <label><?= $e($k) ?><?= $k === 'mantenimiento' ? ' — {mensualidad} sale del tipo cotizado y {link} del plan de abajo'
                     : ($k === 'mantenimiento_ambos' ? ' — se usa SOLO si todavía no se cotizó ningún tipo; {mensualidades} arma los montos de cada tipo'
-                    : (in_array($k, ['rangos', 'precio_sin_rubro', 'pago_generico'], true) ? ' — sin rubro no se dicen montos; {tabla_precios} arma el servicio mensual de cada tipo' : '')) ?></label>
+                    : (in_array($k, ['rangos', 'precio_sin_rubro', 'pago_generico'], true) ? ' — sin rubro no se dicen montos; {tabla_precios} arma el pago único y el mensual de cada tipo' : '')) ?></label>
                 <textarea name="info_<?= $e($k) ?>" rows="2"><?= $e($v) ?></textarea>
             <?php endforeach; ?>
-            <label>Renovación de hosting y dominio · retirada el 10-sep: van incluidos en el plan mensual, dejala vacía</label>
+            <label>Renovación de hosting y dominio del pago único · se dice solo si preguntan cuánto sale renovar</label>
             <textarea name="hosting_renovacion" rows="3"><?= $e($cfg['hosting_renovacion'] ?? '') ?></textarea>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plan mensual</h2>
-            <p class="meta" style="margin-bottom:8px">Es el servicio (14-sep): no hay pago inicial, la primera cuota de la suscripción arranca el armado de la web y no hay permanencia. El monto que cotiza el bot es el de cada tipo, en la sección Precio (casillero "por mes"); acá quedan los montos de referencia y el link de la página de cada plan.</p>
+            <p class="meta" style="margin-bottom:8px">Desde el 15-sep es una de las dos formas de contratar la web (la otra es el pago único con seña): sin pago inicial y sin permanencia. El monto que cotiza el bot es el de cada tipo, en la sección Precio (casillero "por mes"); acá quedan los montos de referencia y el link de la página de cada plan.</p>
             <?php
             $etiquetasPlan = ['landing' => 'Sitio profesional', 'otros' => 'Ecommerce, cursos e inmobiliaria'];
             foreach (($cfg['mantenimiento_planes'] ?? []) as $k => $plan): ?>
@@ -1879,7 +1882,7 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Después de presentar la demo</h2>
-            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Después sigue contestando normal —dudas, elogios, pedidos de cambio, "la miro y te digo"— sin vender ni pedir la suscripción. Recién cuando el cliente muestra interés real (pregunta cómo sigue, pregunta por el pago, discute el precio, acepta la videollamada o confirma que no le cambiaría nada) manda una sola vez «Para seguir con el proyecto te va a escribir el desarrollador desde otro número», la charla queda con vos y ese aviso no se repite nunca más. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
+            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Después sigue contestando normal —dudas, elogios, pedidos de cambio, "la miro y te digo"— sin vender ni pedir el pago. Recién cuando el cliente muestra interés real (pregunta cómo sigue, pregunta por el pago, discute el precio, acepta la videollamada o confirma que no le cambiaría nada) manda una sola vez «Para seguir con el proyecto te va a escribir el desarrollador desde otro número», la charla queda con vos y ese aviso no se repite nunca más. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>

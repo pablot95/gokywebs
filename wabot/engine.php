@@ -816,6 +816,8 @@ function wabot_texto_reformulado($mensajes, $cfg) {
     if (count($mensajes) !== 1) return null;
     $uno = wabot_normalizar_frase((string)$mensajes[0]);
     $pares = [
+        // El saludo repetido por el modelo se reformula en vez de derivar (14-sep).
+        'menu'              => 'contame',
         'contame'           => 'contame_2',
         'desempate_turnos'  => 'desempate_turnos_2',
         'desempate_comercio' => 'desempate_comercio_2',
@@ -3699,7 +3701,8 @@ function wabot_info_por_palabras($texto, $fase = null) {
         || preg_match('/\b(cuenta (de|en) mercado ?pago|no tengo mercado ?pago|sin mercado ?pago|tener mercado ?pago)\b/u', $t)) {
         return 'baja_del_plan';
     }
-    if (preg_match('/\bmantenimiento\b/u', $t)) return 'mantenimiento';
+    // "Soy técnico de mantenimiento" cuenta su negocio, no pregunta por el plan (14-sep).
+    if (preg_match('/\bmantenimiento\b/u', $t) && !($cuentaSuNegocio && !$tienePregunta)) return 'mantenimiento';
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)
         && !($cuentaSuNegocio && !$tienePregunta)) return 'mantenimiento';
     if (preg_match('/\b(hasta cuando|por cuanto tiempo|cuanto tiempo|cuantos dias|se vence|vence|caduca|se cae|se borra|sigue disponible|va a estar disponible|expira)\b.{0,30}\b(demo|muestra|link|pagina de prueba)\b/u', $t)
@@ -4596,7 +4599,15 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
             && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
             return wabot_texto_pago($conv, $cfg);
         }
-        return str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv), $texto);
+        $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
+        // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
+        if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
+        return $texto;
+    }
+    if ($clave === 'plan_es_servicio' && strpos($texto, '{precio_un_solo_pago}') !== false) {
+        $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
+        if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
+        return $texto;
     }
     // {min}/{max}: el rango real de la lista de precios, puesto por el código.
     // "Depende del tipo de página" era la respuesta a "¿cuánto cuesta?" del
@@ -4622,26 +4633,27 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
 }
 
 /**
- * La creación en un solo pago, para el que quiere mantener la web por su
- * cuenta (Pablo, 14-sep): $200.000 el sitio profesional, $330.000 la tienda
- * online, $290.000 la inmobiliaria y $330.000 la plataforma de cursos.
+ * El pago único (Pablo, 15-sep) sale de tipos[].precio y tipos[].sena de la
+ * config, con los montos congelados de la charla. Esta lista es el respaldo
+ * para cuando no hay config a mano.
  */
 function wabot_precios_un_solo_pago() {
-    return ['landing' => '$200.000', 'ecommerce' => '$330.000', 'inmobiliaria' => '$290.000', 'elearning' => '$330.000'];
+    return ['landing' => '$180.000', 'ecommerce' => '$290.000', 'inmobiliaria' => '$240.000', 'elearning' => '$290.000'];
 }
 
-function wabot_precio_un_solo_pago_texto($conv) {
-    $p = wabot_precios_un_solo_pago();
+/** " ($290.000: arrancás con una seña de $60.000 y el saldo va al entregar)", o '' sin tipo. */
+function wabot_precio_un_solo_pago_texto($conv, $cfg = null) {
     $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
-    $alias = ['turnos' => 'landing', 'institucional' => 'landing', 'catalogo' => 'ecommerce', 'lms' => 'elearning'];
-    $tipo = $alias[$tipo] ?? $tipo;
-    $nombres = ['landing' => 'el sitio profesional', 'ecommerce' => 'la tienda online',
-                'inmobiliaria' => 'la web inmobiliaria', 'elearning' => 'la plataforma de cursos'];
-    if (isset($p[$tipo])) {
-        return $nombres[$tipo] . ' en un solo pago sale ' . $p[$tipo] . '.';
+    if ($tipo === '') return '';
+    if (is_array($cfg) && isset($cfg['tipos'][$tipo])) {
+        $v = wabot_precio_vigente($conv, $cfg, $tipo);
+        if ($v['precio'] === '') return '';
+        return ' (' . $v['precio'] . ($v['sena'] !== '' ? ': arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar' : '') . ')';
     }
-    return 'en un solo pago, el sitio profesional sale ' . $p['landing'] . ', la tienda online ' . $p['ecommerce']
-        . ', la web inmobiliaria ' . $p['inmobiliaria'] . ' y la plataforma de cursos ' . $p['elearning'] . '.';
+    $alias = ['turnos' => 'landing', 'institucional' => 'landing', 'catalogo' => 'ecommerce', 'lms' => 'elearning'];
+    $p = wabot_precios_un_solo_pago();
+    $tipo = $alias[$tipo] ?? $tipo;
+    return isset($p[$tipo]) ? ' (' . $p[$tipo] . ')' : '';
 }
 
 /** El precio más bajo y el más alto de la lista de tipos, como "$160.000". */
@@ -4686,13 +4698,13 @@ function wabot_texto_pago_generico($cfg) {
     // Sin tipo cotizado no se dan montos (14-sep): cómo se paga y la pregunta.
     $texto = trim((string)($cfg['info']['pago_generico'] ?? ''));
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
-        $texto = 'Es una suscripción mensual por Mercado Pago: se debita sola, con cualquier tarjeta, y no hace falta tener cuenta de Mercado Pago. No hay un pago inicial aparte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
+        $texto = 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
     }
     return wabot_texto_sin_modelo_viejo($texto);
 }
 
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
-function wabot_texto_hosting($conv, $cfg) {
+function wabot_texto_hosting($conv, $cfg, $mensaje = '') {
     // La charla cotizada con el pago único conserva lo que se le prometió.
     if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
@@ -4700,11 +4712,12 @@ function wabot_texto_hosting($conv, $cfg) {
     }
     $base = trim(wabot_texto_sin_modelo_viejo((string)($cfg['info']['hosting'] ?? '')));
     $renovacion = trim((string)($cfg['hosting_renovacion'] ?? ''));
-    if ($renovacion === '') return $base;
-    // Una renovación anual pagada por el cliente es del modelo viejo: no se pega.
-    if (preg_match('/renuev|renovaci|\$\s?\d/iu', $renovacion)) return $base;
-    if (mb_stripos($base, $renovacion) !== false) return $base;
-    return trim($base . "\n" . $renovacion);
+    if ($renovacion === '' || mb_stripos($base, $renovacion) !== false) return $base;
+    /* El monto de la renovación del pago único sale SOLO si pregunta cuánto
+     * sale renovar (Pablo, 15-sep: "monto solo si pregunta"). */
+    $m = wabot_normalizar_frase((string)$mensaje);
+    $preguntaRenovacion = $m !== '' && preg_match('/\brenov\w*|\b(cuanto|precio|valor|costo|sale|cuesta)\b.{0,30}\b(hosting|dominio)\b|\b(hosting|dominio)\b.{0,30}\b(cuanto|precio|valor|costo|sale|cuesta)\b|\b(despues del primer ano|segundo ano|al ano siguiente)\b/u', $m);
+    return $preguntaRenovacion ? trim($base . "\n" . $renovacion) : $base;
 }
 
 /**
@@ -4767,37 +4780,14 @@ function wabot_texto_sin_sena($texto) {
 function wabot_texto_sin_modelo_viejo($texto) {
     $t = (string)$texto;
     if ($t === '') return $t;
-    // "mantenimiento es opcional" y no "es opcional" suelto: el texto nuevo
-    // dice "no es opcional", y eso no se toca.
-    if (!preg_match('/se[ñn]a|senia|\bsaldo\b|pago [úu]nico|[úu]nico pago|sin abono mensual|costos? mensual|queda a tu nombre|mantenimiento es opcional/iu', $t)) return $t;
-
-    /* Las oraciones del saldo se van enteras: no hay saldo en el modelo nuevo.
-     * Renglón por renglón, para no juntar en uno los párrafos del texto. */
-    $saldo = '/\bsaldo\b|\bel resto (lo|se) (pag|abon)/iu';
-    if (preg_match($saldo, $t)) {
-        $renglones = [];
-        foreach (preg_split('/\R/u', $t) as $renglon) {
-            $oraciones = array_filter(preg_split('/(?<=[.!?])\s+/u', $renglon), function ($o) use ($saldo) {
-                return !preg_match($saldo, $o);
-            });
-            $renglon = trim(implode(' ', $oraciones));
-            if ($renglon !== '') $renglones[] = $renglon;
-        }
-        $t = implode("\n", $renglones);
-    }
-
-    /* 14-sep: ya no hay pago inicial. Lo que un texto viejo llama seña es,
-     * en el servicio mensual, la primera cuota de la suscripción. */
-    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde la primera cuota', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+/iu', 'la primera cuota de ', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'la primera cuota', $t);
-    $t = preg_replace('/\bse[ñn]a\b|\bsenia\b/iu', 'primera cuota', $t);
-    $t = preg_replace('/\bEs pago [úu]nico\b/u', 'Es la primera cuota', $t);
-    $t = preg_replace('/,?\s*(pago [úu]nico|en un [úu]nico pago)\b/iu', '', $t);
-    $t = preg_replace('/,?\s*sin (abono|costos?|cuotas?) mensual(es)?( de plataforma)?/iu', '', $t);
-    $t = preg_replace('/\bla web queda a tu nombre y es a medida\b/iu', 'la web es a medida', $t);
-    $t = preg_replace('/\bEl mantenimiento es opcional\b/u', 'El plan mensual es parte del servicio', $t);
-    $t = preg_replace('/\s*:\s*\./u', '.', $t);
+    /* 15-sep (Pablo): vuelven la seña, el saldo y el pago único, así que ya no
+     * se corrigen. Lo único que no existe en ninguna de las dos formas es el
+     * "primer pago" del modelo del 10 al 14-sep: pasa a ser la seña. */
+    if (!preg_match('/primer pago/iu', $t)) return $t;
+    $t = preg_replace('/\bun primer pago\b/iu', 'una seña', $t);
+    $t = preg_replace('/\bdel primer pago\b/iu', 'de la seña', $t);
+    $t = preg_replace('/\bel primer pago\b/iu', 'la seña', $t);
+    $t = preg_replace('/\bprimer pago\b/iu', 'seña', $t);
     return trim(preg_replace('/[ \t]{2,}/u', ' ', $t));
 }
 
@@ -4812,7 +4802,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'Es una suscripción mensual por Mercado Pago: se debita sola, con cualquier tarjeta, y no hace falta tener cuenta de Mercado Pago. No hay un pago inicial aparte.';
+        return 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['modelo'] === 'unico') {
@@ -4826,7 +4816,7 @@ function wabot_texto_pago($conv, $cfg) {
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
      * cuota (Pablo, 2-sep). Si quedó alguno en un texto editado a mano, sale
      * la frase sin el número en vez de un {cuotas_12} crudo. */
-    $texto = str_replace(['{sena}', '{cuotas_12}', '{cuotas_6}', '{cuotas_3}'], '', (string)($cfg['info']['pago'] ?? ''));
+    $texto = str_replace(['{cuotas_12}', '{cuotas_6}', '{cuotas_3}'], '', (string)($cfg['info']['pago'] ?? ''));
     $texto = preg_replace('/:?\s*12 cuotas de\s*,?\s*6 de\s*,?\s*(o\s*)?3 de\s*/u', '', $texto);
     $texto = wabot_precio_placeholders($texto, $conv, $cfg);
     $texto = trim(preg_replace('/[ \t]{2,}/u', ' ', $texto));
@@ -4917,8 +4907,10 @@ function wabot_texto_caro($conv, $cfg) {
 function wabot_precio_congelar(&$conv, $tipo, $cfg) {
     $t = $cfg['tipos'][$tipo] ?? [];
     $conv['precio_cotizado']      = trim((string)($t['precio'] ?? ''));
+    $conv['sena_cotizada']        = trim((string)($t['sena'] ?? ''));
     $conv['mensualidad_cotizada'] = trim((string)($t['mensualidad'] ?? ''));
-    $conv['precio_modelo']        = $conv['mensualidad_cotizada'] !== '' ? 'mensual' : 'unico';
+    // 15-sep: las dos formas (pago único con seña, o servicio mensual).
+    $conv['precio_modelo']        = $conv['mensualidad_cotizada'] !== '' ? 'doble' : 'unico';
     $conv['precio_cotizado_ts']   = time();
 }
 
@@ -4942,6 +4934,7 @@ function wabot_precio_sembrar(&$conv, $cfg) {
     }
     if ($dicho === '') return;
     $conv['precio_cotizado']      = $dicho;
+    $conv['sena_cotizada']        = '';
     $conv['mensualidad_cotizada'] = '';
     $conv['precio_modelo']        = 'unico';
     $conv['precio_cotizado_ts']   = (int)($conv['ultimo_ts'] ?? 0) ?: time();
@@ -4959,36 +4952,47 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
     $v = [
         'tipo'        => $tipo,
         'precio'      => trim((string)($t['precio'] ?? '')),
+        'sena'        => trim((string)($t['sena'] ?? '')),
         'mensualidad' => trim((string)($t['mensualidad'] ?? '')),
-        'modelo'      => 'mensual',
+        'modelo'      => 'doble',
     ];
     if (is_array($conv) && (string)($conv['tipo'] ?? '') === $tipo && $tipo !== '') {
-        if (!empty($conv['precio_cotizado'])) {
+        $modelo = (string)($conv['precio_modelo'] ?? '');
+        if (!empty($conv['precio_cotizado']) && $modelo === 'doble') {
             $v['precio']      = trim((string)$conv['precio_cotizado']);
+            $v['sena']        = trim((string)($conv['sena_cotizada'] ?? '')) ?: $v['sena'];
             $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? ''));
-            $v['modelo']      = (string)($conv['precio_modelo'] ?? '');
+        } elseif (!empty($conv['precio_cotizado']) && $modelo === 'mensual') {
+            /* Cotizada del 10 al 14-sep, con primer pago o solo la mensualidad:
+             * conserva SU mensualidad y desde el 15-sep se le ofrece también el
+             * pago único de lista. */
+            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
+        } elseif (!empty($conv['precio_cotizado'])) {
+            $v['precio']      = trim((string)$conv['precio_cotizado']);
+            $v['sena']        = '';
+            $v['mensualidad'] = '';
+            $v['modelo']      = 'unico';
         } elseif (!empty($conv['precio_dado'])) {
-            /* Cotizada y SIN precio congelado: eso solo pasa con las charlas
-             * cotizadas antes del 10-sep, porque desde ese día toda
-             * cotización congela el suyo (wabot_precio_congelar). Se le
-             * respeta el pago único de entonces. wabot_precio_sembrar() lo
-             * afina con el monto exacto del transcript cuando lo encuentra. */
+            /* Cotizada y SIN precio congelado: solo las charlas de antes del
+             * 10-sep. Se le respeta el pago único de entonces
+             * (wabot_precio_sembrar lo afina con el monto del transcript). */
             $v['precio']      = wabot_precio_anterior_de($tipo, $cfg);
+            $v['sena']        = '';
             $v['mensualidad'] = '';
             $v['modelo']      = 'unico';
         }
     }
-    if ($v['modelo'] !== 'unico' && $v['mensualidad'] === '') $v['modelo'] = 'unico';
-    if ($v['modelo'] !== 'unico') $v['modelo'] = 'mensual';
+    if ($v['modelo'] === 'doble' && $v['mensualidad'] === '') $v['modelo'] = 'unico';
+    $v['saldo'] = ($v['precio'] !== '' && $v['sena'] !== '')
+        ? wabot_moneda(max(0, wabot_monto_a_numero($v['precio']) - wabot_monto_a_numero($v['sena']))) : '';
     return $v;
 }
 
-/** "$90.000 de primer pago y $30.000 por mes", o el pago único si es una charla vieja. */
+/** "$290.000 en un pago único o $30.000 por mes", o solo el pago único si es una charla vieja. */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if (($v['modelo'] ?? '') === 'unico' || $v['mensualidad'] === '') return $v['precio'];
-    // Una charla cotizada con pago inicial (antes del 14-sep) conserva sus dos números.
-    return $v['precio'] !== $v['mensualidad'] ? $v['precio'] . ' de pago inicial y ' . $v['mensualidad'] . ' por mes' : $v['mensualidad'] . ' por mes';
+    return $v['precio'] . ' en un pago único o ' . $v['mensualidad'] . ' por mes';
 }
 
 /** El nombre de cada tipo como se dice en la tabla de precios. */
@@ -5044,7 +5048,7 @@ function wabot_tabla_precios_texto($cfg) {
     foreach (wabot_precio_grupos($cfg) as $g) {
         $nombres = wabot_lista_o($g['nombres']);
         $linea = mb_strtoupper(mb_substr($nombres, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($nombres, 1, null, 'UTF-8')
-               . ': ' . ($g['mensualidad'] !== '' ? $g['mensualidad'] . ' por mes' : $g['precio']);
+               . ': ' . ($g['mensualidad'] !== '' ? $g['precio'] . ' en un pago único o ' . $g['mensualidad'] . ' por mes' : $g['precio']);
         $lineas[] = $linea . '.';
     }
     return implode(' ', $lineas);
@@ -5052,10 +5056,23 @@ function wabot_tabla_precios_texto($cfg) {
 
 /** "$20.000 por mes en sitio profesional y $30.000 en tienda online, plataforma de cursos o inmobiliaria". */
 function wabot_mensualidades_texto($cfg) {
-    $partes = [];
-    foreach (wabot_precio_grupos($cfg) as $i => $g) {
+    // Por mensualidad y no por par (15-sep): dos tipos con distinto pago único
+    // comparten el mismo servicio mensual.
+    $orden = ['sitio profesional', 'tienda online', 'plataforma de cursos', 'inmobiliaria'];
+    $porMes = [];
+    foreach (wabot_precio_grupos($cfg) as $g) {
         if ($g['mensualidad'] === '') continue;
-        $partes[] = $g['mensualidad'] . ($i === 0 ? ' por mes' : '') . ' en ' . wabot_lista_o($g['nombres']);
+        $porMes[$g['mensualidad']] = array_merge($porMes[$g['mensualidad']] ?? [], $g['nombres']);
+    }
+    uksort($porMes, function ($a, $b) { return wabot_monto_a_numero($a) <=> wabot_monto_a_numero($b); });
+    $partes = [];
+    $i = 0;
+    foreach ($porMes as $monto => $nombres) {
+        usort($nombres, function ($a, $b) use ($orden) {
+            $ia = array_search($a, $orden, true); $ib = array_search($b, $orden, true);
+            return ($ia === false ? 99 : $ia) <=> ($ib === false ? 99 : $ib);
+        });
+        $partes[] = $monto . ($i++ === 0 ? ' por mes' : '') . ' en ' . wabot_lista_o($nombres);
     }
     if (!$partes) return '';
     if (count($partes) === 1) return $partes[0];
@@ -5075,8 +5092,8 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $d = $cfg['tipos'][$v['tipo']] ?? [];
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
-        ['{precio}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
-        [$v['precio'] !== '' ? $v['precio'] : 'el valor del servicio',
+        ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
+        [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades],
@@ -5102,17 +5119,19 @@ function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
 }
 
 /**
- * El servicio mensual con lo que incluye, que va debajo de lo que le podemos
- * hacer en el primer mensaje del precio (Pablo, 14-sep). Con la mensualidad
- * congelada de la charla. La charla del pago único no lo lleva.
+ * Lo que incluye y las dos formas de contratarla, debajo de lo que le podemos
+ * hacer en el primer mensaje del precio (Pablo, 15-sep). Con los montos
+ * congelados de la charla. La charla vieja del pago único no lo lleva.
  */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     if (($v['modelo'] ?? '') === 'unico') return '';
     $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']));
+    $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
-    return $mensual !== '' ? str_replace('{mensualidad}', $mensual, $t)
-        : trim(preg_replace('/ son \{mensualidad\} por mes/u', '', $t));
+    // Sin los dos montos no se ofrecen las dos formas: queda lo que incluye.
+    if ($precio === '' || $mensual === '') return trim(explode("\n\nY la podés contratar", $t)[0]);
+    return str_replace(['{precio}', '{mensualidad}'], [$precio, $mensual], $t);
 }
 
 function wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg) {
@@ -5289,9 +5308,9 @@ function wabot_precio_resumen($conv, $cfg) {
     }
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "Son {mensualidad} por mes, con todo incluido: el armado de la web, hosting, dominio, soporte y mantenimiento técnico.\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "Son dos formas: pago único de {precio}, con una seña de {sena} y el saldo al entregar, o servicio mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
-    return wabot_precio_placeholders(str_replace(['{sena}', '{precio}'], ['', $precio], $plantilla), $conv, $cfg);
+    return wabot_precio_placeholders(str_replace('{precio}', $precio, $plantilla), $conv, $cfg);
 }
 
 function wabot_aporta_descripcion($texto) {
@@ -6035,7 +6054,8 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
         : (is_array($conv)
             ? wabot_plantilla_variante('msg_precio', 'msg_precio_variantes', $conv, $cfg)
             : (string)$cfg['msg_precio']);
-    return wabot_precio_placeholders(str_replace(['{desc}', '{sena}'], [$desc, ''], $plantilla), $conv, $cfg, $tipo);
+    // {sena} ya no se borra (15-sep): es la seña del pago único y la resuelve wabot_precio_placeholders.
+    return wabot_precio_placeholders(str_replace('{desc}', $desc, $plantilla), $conv, $cfg, $tipo);
 }
 
 function wabot_catalogo_preguntar(&$conv, $cfg) {
@@ -6520,7 +6540,10 @@ function wabot_cerrada($texto, &$conv, $cfg) {
             $out[] = wabot_texto_caro($conv, $cfg);
         } elseif ($has('menciona_plataforma')) {
             $out[] = $cfg['plataformas'];
-        } elseif ($acc && !$has('saludo') && !$has('no_interesa') && $conv['espera_avisada']) {
+        } elseif ($acc && !$has('saludo') && !$has('no_interesa') && $conv['espera_avisada']
+            // El que cuenta a qué se dedica no recibe el comodín (14-sep, lead 5735).
+            && wabot_texto_no_es_consulta($texto) !== 'rubro'
+            && !preg_match('/\b(me dedico|nos dedicamos|se dedica|brindamos|ofrecemos|es una empresa|somos una empresa|tengo una empresa)\b/u', wabot_normalizar_frase($texto))) {
             // Cualquier otra cosa —incluso "y si mejor hago una landing?"— se
             // contesta con el escape al equipo. Callarse ahí parece un cuelgue;
             // el único silencio válido es ante un saludo o un agradecimiento.

@@ -118,13 +118,13 @@ foreach (['agente', 'fijo'] as $modo) {
     $p = 'Entonces serían 90 mil de primer pago y 30 mil por mes en total, no los dos planes juntos?';
     wabot_conv_transcript($c, 'cliente', $p);
     $r = wabot_salida_preparar(wabot_responder($p, $c, $conf), $c, $conf);
-    caso("$modo aclara total sin sumar planes ni volver al anterior", strpos(implode(' ', $r ?? []), 'tienda online: $30.000') !== false
+    caso("$modo aclara total sin sumar planes ni volver al anterior", strpos(implode(' ', $r ?? []), 'tienda online: $290.000 en un pago único o $30.000 por mes') !== false
         && strpos(implode(' ', $r ?? []), 'No es un adicional') !== false);
     $p = 'Sí, quiero la demo con la tienda y los turnos';
     wabot_conv_transcript($c, 'cliente', $p);
     $r = wabot_salida_preparar(wabot_responder($p, $c, $conf), $c, $conf);
     caso("$modo acepta tienda con cotización y formulario coherentes", $c['tipo'] === 'ecommerce'
-        && $c['precio_cotizado'] === '$30.000' && $c['mensualidad_cotizada'] === '$30.000'
+        && $c['precio_cotizado'] === '$290.000' && $c['mensualidad_cotizada'] === '$30.000'
         && strpos(implode(' ', $r ?? []), 'gokywebs.com/form/') !== false && empty($c['handoff_pendiente']));
 }
 caso('combinar tienda y cursos conserva el alcance especial',

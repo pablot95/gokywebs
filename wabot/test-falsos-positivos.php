@@ -272,10 +272,10 @@ caso('son dos mensajes y los pasos arrancan el segundo',
     count($rPaso) === 2 && mb_strpos($rPaso[1], "El primer paso es gratis:") === 0);
 caso('el segundo mensaje ofrece la demo gratis (Pablo, 14-sep)', preg_match('/^El primer paso es gratis: te armamos una demo de tu web para que veas cómo quedaría\./u', $rPaso[1]) === 1);
 caso('y la demo está lista en menos de 24 horas (Pablo, 10-sep)', preg_match('/La tenés en menos de 24 horas\./u', $rPaso[1]) === 1);
-caso('el primer mensaje trae el servicio mensual con su monto (Pablo, 14-sep)',
-    preg_match('/Trabajamos con un servicio mensual: para un sitio profesional son \$20\.000 por mes/u', $rPaso[0]) === 1);
-caso('y el mantenimiento técnico de la web (Pablo, 14-sep)',
-    mb_stripos($rPaso[0], 'mantenimiento técnico de la web') !== false);
+caso('el primer mensaje trae las dos formas con sus montos (Pablo, 15-sep)',
+    preg_match('/1\. Pago único de \$180\.000: la web queda paga/u', $rPaso[0]) === 1);
+caso('y el mensual con soporte y mantenimiento técnico (Pablo, 15-sep)',
+    mb_stripos($rPaso[0], 'soporte y mantenimiento técnico') !== false);
 caso('y cierra preguntando si quiere la demo (11-sep)', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $rPaso[1]) === 1);
 caso('y NO lleva el link del formulario: ese sale cuando el cliente contesta que sí',
     strpos($rPaso[0], 'gokywebs.com/form/') === false);
@@ -314,7 +314,7 @@ $msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online
 wabot_conv_transcript($cCombo, 'cliente', $msjCombo);
 $rCombo = wabot_agente_intento($msjCombo, $cCombo, $cfg);
 caso('el taller de artesanías recibe la cotización de tienda + cursos, no el texto de carga',
-    is_array($rCombo) && strpos(implode("\n", $rCombo), 'para una tienda online con plataforma de cursos') !== false
+    is_array($rCombo) && strpos(implode("\n", $rCombo), 'Plataforma de cursos en módulos') !== false
     && strpos(implode("\n", $rCombo), (string)wabot_texto_info('carga', $cfg)) === false, json_encode($rCombo, JSON_UNESCAPED_UNICODE));
 
 $cOblig = ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$20.000', 'mensualidad_cotizada' => '$20.000',
@@ -325,8 +325,16 @@ $cOblig = ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$20
 $rOblig = wabot_respuesta_obligatorio($cOblig, $cfg, 'Es obligatorio pagar todos los meses?');
 caso('"¿es obligatorio pagar todos los meses?" con el precio en dos mensajes: contesta el texto del servicio, no el modelo',
     wabot_texto_pregunta_si_es_obligatorio('Es obligatorio pagar todos los meses?')
-    && $rOblig !== null && mb_strpos($rOblig, 'No es un mantenimiento aparte') === 0, (string)$rOblig);
+    && $rOblig !== null && mb_strpos($rOblig, 'No: el servicio mensual es una de las dos formas') === 0, (string)$rOblig);
 @unlink(WABOT_DATA . '/conv/998FPTEST.json');
+
+echo "-- 20. El saludo repetido y la empresa de mantenimiento (lead 5735, 14-sep) --\n";
+caso('el saludo repetido por el modelo se reformula en vez de derivar',
+    wabot_texto_reformulado([(string)$cfg['menu']], $cfg) === (string)$cfg['contame']);
+caso('empresa de mantenimiento cuenta su negocio: no es la pregunta por el plan',
+    wabot_info_por_palabras('Soy tecnico de mantenimiento y tengo una empresa de servicio de mantenimiento', 'menu') === null);
+caso('pero la pregunta por el mantenimiento sigue siendo mantenimiento',
+    wabot_info_por_palabras('el mantenimiento es obligatorio?', 'menu') === 'mantenimiento');
 
 @unlink(WABOT_DATA . '/conv/999FPTEST.json');
 echo "\n" . ($fallas ? "FALLAS: $fallas de $total" : "TODO OK — $total casos") . "\n";

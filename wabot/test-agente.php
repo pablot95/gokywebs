@@ -39,9 +39,9 @@ echo "— Herramientas —\n";
 
 $c = convNueva();
 $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing'], $c, $cfg);
-caso('dar_precio(landing) → texto exacto, con el servicio mensual y lo que incluye, sin link (14-sep)',
+caso('dar_precio(landing) → texto exacto, con lo que incluye y las dos formas, sin link (15-sep)',
     strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$20.000') !== false && strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$20.000') !== false
-    && strpos($r['texto'], 'para un sitio profesional son $20.000 por mes') !== false && strpos($r['texto'], 'presupuestos/') === false
+    && strpos($r['texto'], '1. Pago único de $180.000') !== false && strpos($r['texto'], '2. Servicio mensual de $20.000') !== false && strpos($r['texto'], 'presupuestos/') === false
     && $c['tipo'] === 'landing' && $c['fase'] === 'prediseno');
 caso('precio y oferta quedan medidos una sola vez por sesión',
     ($c['eventos_emitidos_sesion']['precio_dado'] ?? '') === $c['session_id']
@@ -75,7 +75,7 @@ $r = wabot_agente_ejecutar('dar_precio', ['tipo' => 'ecommerce'], $cPitch, $cfg)
  * abajo, los tres pasos con la demo. Sin ninguna línea en el medio. */
 caso('la primera llamada da la oferta y deja los tres pasos para un segundo mensaje (14-sep)',
     !empty($r['exacta']) && strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$30.000') !== false
-    && stripos($r['texto'], 'tienda online') !== false && strpos($r['texto'], 'presupuestos/') === false
+    && stripos($r['texto'], 'Pago único de $290.000') !== false && strpos($r['texto'], 'presupuestos/') === false
     && mb_stripos($r['texto'], 'El primer paso es gratis') === false && mb_stripos(implode("\n", (array)($r['aparte'] ?? [])), 'El primer paso es gratis') === 0
     && $cPitch['fase'] === 'prediseno' && !empty($cPitch['pitch_hecho']) && $cPitch['precio_dado'] === true);
 caso('y no queda ninguna línea de "si te cierra" en el medio',
@@ -557,8 +557,8 @@ caso('landing → el plan de $20.000 por mes (10-sep)',
 
 $c = convNueva(); $c['tipo'] = 'ecommerce';
 $r = wabot_agente_ejecutar('consultar_info', ['clave' => 'mantenimiento'], $c, $cfg);
-caso('ecommerce → el plan de $30.000 por mes',
-    strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$30.000') !== false && stripos($r['texto'], 'Tiendanube') !== false);
+caso('ecommerce → el servicio mensual de $30.000, como una de las dos formas',
+    strpos((string)($r['texto'] ?? '') . "\n" . implode("\n", (array)($r['aparte'] ?? [])), '$30.000') !== false && stripos($r['texto'], 'una de las dos formas') !== false);
 
 caso('ya no queda ningún {precio} sin reemplazar', strpos($r['texto'], '{') === false);
 
@@ -822,7 +822,7 @@ foreach ([true, false] as $cerrada) {
 }
 
 caso('el prompt describe el proceso con los tres pasos de Pablo, sin seña',
-    stripos(wabot_agente_sistema($c, $cfg), 'Ese texto explica el servicio mensual y la demo gratis') !== false);
+    stripos(wabot_agente_sistema($c, $cfg), 'Ese texto explica la demo gratis y las dos formas de contratar la web') !== false);
 
 echo "— Aprende de lo que contesta Pablo —\n";
 
@@ -1830,10 +1830,10 @@ $rEst = wabot_agente_ejecutar('dar_precio', ['tipo' => 'landing', 'rubro' => 'tu
 $pitchEst = wabot_personalizar($rEst['texto'], $cEst);
 $pasosEst = wabot_personalizar(implode("\n", (array)($rEst['aparte'] ?? [])), $cEst);
 caso('el precio arranca con el rubro y lo que va a poder hacer, como lo dictó Pablo',
-    strpos($pitchEst, "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nTrabajamos con un servicio mensual") === 0);
-caso('y sigue con el servicio mensual y su monto, sin link (14-sep)',
+    strpos($pitchEst, "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nIncluye:") === 0);
+caso('y sigue con las dos formas y sus montos, sin link (15-sep)',
     strpos($pitchEst, 'gokywebs.com/presupuestos/') === false
-    && strpos($pitchEst, 'Trabajamos con un servicio mensual: para un sitio profesional son $20.000 por mes') !== false);
+    && strpos($pitchEst, '2. Servicio mensual de $20.000, sin pago inicial') !== false);
 caso('el para_que queda guardado con su tipo', $cEst['pitch_para_que_tipo'] === 'landing'
     && $cEst['pitch_para_que'] === 'muestres los tratamientos y tus clientas reserven turno online');
 caso('los tres pasos van aparte, en su propio mensaje (14-sep)',
@@ -2037,12 +2037,12 @@ caso('pero una pregunta abierta no',
  * "Es opcional. La web es tuya igual…", las dos frases que el modelo nuevo
  * prohíbe, justo en la pregunta que decide la venta. */
 $cOpc = ['transcript' => [['q' => 'bot', 't' => 'El plan mensual no es opcional, es parte del servicio: son $15.000 por mes e incluye el hosting, el dominio, el soporte y un cambio por mes.', 'ts' => time()]]];
-caso('con el plan mensual en el último mensaje, contesta corto que ES obligatorio (10-sep)',
-    ($r = wabot_respuesta_obligatorio($cOpc, $cfg)) !== null && mb_strpos($r, 'No es un mantenimiento aparte') === 0
+caso('con el plan mensual en el último mensaje, contesta corto que no: es una de las dos formas (15-sep)',
+    ($r = wabot_respuesta_obligatorio($cOpc, $cfg)) !== null && mb_strpos($r, 'No: el servicio mensual es una de las dos formas') === 0
     && mb_stripos($r, 'es opcional') === false && mb_strlen($r) < 220);
 $cOpcTextoViejo = ['transcript' => [['q' => 'bot', 't' => 'El mantenimiento es opcional e incluye un cambio por mes, además del soporte. Sale $10.000 por mes.', 'ts' => time()]]];
-caso('aunque el último mensaje sea el texto viejo que decía "opcional", sin cotización vieja la respuesta es que es obligatorio',
-    ($rV = wabot_respuesta_obligatorio($cOpcTextoViejo, $cfg)) !== null && mb_strpos($rV, 'No es un mantenimiento aparte') === 0);
+caso('aunque el último mensaje sea el texto viejo que decía "opcional", sin cotización vieja la respuesta es la de las dos formas',
+    ($rV = wabot_respuesta_obligatorio($cOpcTextoViejo, $cfg)) !== null && mb_strpos($rV, 'No: el servicio mensual es una de las dos formas') === 0);
 $cOpcLegacy = $cOpcTextoViejo + ['tipo' => 'landing', 'precio_dado' => true];
 caso('pero a la charla cotizada antes del 10-sep, con el mantenimiento opcional, se le sostiene lo que se le dijo',
     ($rL = wabot_respuesta_obligatorio($cOpcLegacy, $cfg)) !== null && mb_stripos($rL, 'opcional') !== false);

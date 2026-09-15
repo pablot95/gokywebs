@@ -34,7 +34,25 @@ service cloud.firestore {
 
 ## Modelo de datos (`clientes`)
 
-Desde el 14-sep-2026 se vende **solo la suscripción mensual de Mercado Pago, sin pago inicial y sin permanencia**: sitio profesional $20.000/mes, tienda online, cursos, inmobiliaria y noticias $30.000/mes. El plan arranca cuando el cliente se suscribe. Del modelo del 10-sep-2026 (primer pago + plan mensual) quedan `primerPago` y `primerPagoAt`: en los clientes nuevos van en 0 / null y el panel solo los muestra, marcados como modelo anterior, en los docs que los traen cargados. Los campos nuevos se escriben **además** de los viejos, nunca en lugar de ellos: `valorTotal` y `abono` se conservan para no romper los documentos anteriores, pero el panel ya no muestra saldo pendiente.
+Desde el 15-sep-2026 la misma web se contrata de **dos maneras**, y cada cliente guarda cuál eligió en `modalidad`:
+
+- **Pago único** (`'unico'`): una seña para arrancar y el saldo al entregar.
+- **Servicio mensual** (`'mensual'`): la suscripción de Mercado Pago, sin pago inicial y sin permanencia. El plan arranca cuando el cliente se suscribe.
+
+Los montos salen de `PLANES` en `dashboard.js` (una sola fuente; iguales a los de `/presupuesto/script.js`). El saldo es siempre precio único menos seña:
+
+| Plan (`planLabel`)     | Pago único | Seña    | Saldo al entregar | Mensual |
+|------------------------|------------|---------|-------------------|---------|
+| `Sitio profesional`    | 180000     | 40000   | 140000            | 20000   |
+| `Ecommerce`            | 290000     | 60000   | 230000            | 30000   |
+| `Plataforma de cursos` | 290000     | 60000   | 230000            | 30000   |
+| `Inmobiliaria`         | 240000     | 60000   | 180000            | 30000   |
+| `Portal de noticias`   | 350000     | 90000   | 260000            | 30000   |
+| Tipo sin reconocer     | 290000     | 60000   | 230000            | 30000   |
+
+`Portal de noticias` usa el pago único y la seña de su presupuesto anterior al 10-sep-2026 (`presupuestos/noticias`).
+
+Del modelo del 10 al 14-sep-2026 (primer pago + plan mensual) quedan `primerPago` y `primerPagoAt`: el panel solo los muestra, marcados como modelo anterior, en los docs que los traen cargados. Guardar un cliente escribe los campos de la modalidad elegida y **nunca borra** los de la otra ni los del modelo anterior.
 
 | Campo               | Tipo              | Descripción |
 |---------------------|-------------------|-------------|
@@ -43,32 +61,75 @@ Desde el 14-sep-2026 se vende **solo la suscripción mensual de Mercado Pago, si
 | `telefono`          | string            | Teléfono de contacto |
 | `email`             | string            | Email; sirve para cruzarlo con la suscripción de Mercado Pago |
 | `estadoCliente`     | string            | Embudo: `seguimiento1` / `ultimo-mensaje` / `standby` / `cliente` |
-| `planLabel`         | string            | `Sitio profesional` / `Ecommerce` / `Plataforma de cursos` / `Inmobiliaria` (`Portal de noticias` solo para el presupuesto viejo). `""` = sin definir |
-| `primerPago`        | number            | Modelo anterior (10 al 14-sep-2026): primer pago de 40000 (sitio profesional) o 50000 (el resto). En los clientes nuevos, 0 |
+| `planLabel`         | string            | `Sitio profesional` / `Ecommerce` / `Plataforma de cursos` / `Inmobiliaria` / `Portal de noticias`. `""` = sin definir |
+| `modalidad`         | string            | `unico` (pago único) / `mensual` (servicio mensual). `""` solo en un prospecto que todavía no eligió: pasar a Cliente siempre la fija. Sin el campo (docs anteriores al 15-sep-2026) el panel la deduce: ver "Modalidad de los docs anteriores" |
+| `valorTotal`        | number            | Pago único: el precio único acordado. En un cliente mensual es el primer pago del modelo anterior (0 si no tuvo) |
+| `abono`             | number            | Pago único: lo cobrado (la seña y lo que se cobre después); saldo pendiente = `valorTotal` − `abono`. En un cliente mensual, lo cobrado del primer pago del modelo anterior |
+| `senaAt`            | timestamp o null  | Pago único: cuándo se cobró la seña (editable). Antes del 10-sep-2026 era el mismo sello; del 10 al 14-sep se escribía junto con `primerPagoAt` |
+| `primerPago`        | number            | Modelo anterior (10 al 14-sep-2026): primer pago del plan mensual. En los clientes nuevos, 0 o sin el campo |
 | `primerPagoAt`      | timestamp o null  | Cuándo se cobró ese primer pago (null = sin registrar, o cliente sin pago inicial) |
-| `montoMensual`      | number            | Plan mensual: 20000 (sitio profesional) o 30000 (el resto) |
-| `estadoSuscripcion` | string            | `pendiente` / `activa` / `baja`. En Clientes también figura de baja si Mercado Pago avisó que se canceló (ver "Bajas de Mercado Pago") |
-| `suscripcionDesde`  | timestamp o null  | Cuándo arranca el plan (editable). Sin pago inicial queda vacío y vale el alta en Mercado Pago; con primer pago del modelo anterior, `primerPagoAt` + 7 días |
-| `preapprovalId`     | string            | ID de la suscripción en Mercado Pago; vacío hasta que lo carga el webhook o se pega a mano |
-| `cambiosPeriodo`    | string            | Inicio (`AAAA-MM-DD`) del ciclo en que pidió el cambio del mes; mismo criterio que Mantenimiento |
+| `montoMensual`      | number            | Servicio mensual: 20000 (sitio profesional) o 30000 (el resto) |
+| `estadoSuscripcion` | string            | Servicio mensual: `pendiente` / `activa` / `baja`. En Clientes también figura de baja si Mercado Pago avisó que se canceló (ver "Bajas de Mercado Pago") |
+| `suscripcionDesde`  | timestamp o null  | Servicio mensual: cuándo arranca el plan (editable). Sin pago inicial queda vacío y vale el alta en Mercado Pago; con primer pago del modelo anterior, `primerPagoAt` + 7 días |
+| `preapprovalId`     | string            | Servicio mensual: ID de la suscripción en Mercado Pago; vacío hasta que lo carga el webhook o se pega a mano |
+| `cambiosPeriodo`    | string            | Servicio mensual: inicio (`AAAA-MM-DD`) del ciclo en que pidió el cambio del mes; mismo criterio que Mantenimiento |
 | `entregadoAt`       | timestamp         | Cuándo se marcó la web como entregada (el cliente sigue en `clientes`) |
 | `completadoId`      | string            | ID de la copia de la entrega en `completados` (esa copia guarda `clienteId`) |
-| `valorTotal`        | number            | Compatibilidad: = primer pago (0 en los clientes sin pago inicial). En los docs anteriores al 10-sep-2026 es el valor total del proyecto y no se pisa |
-| `abono`             | number            | Compatibilidad: lo cobrado del primer pago. En los docs del modelo anterior, lo abonado |
 | `notas`             | string            | Notas internas |
 | `createdAt`         | timestamp         | Fecha de creación |
 | `updatedAt`         | timestamp         | Última modificación |
 | `createdBy`         | string            | UID del admin creador |
 
-Campos que quedan en los documentos anteriores y el panel ya no muestra: `sena`, `saldo` y `precioTotal` (copias del boceto) y `senaAt` (sello del primer cobro antes del 10-sep-2026; las stats lo usan cuando falta `primerPagoAt`).
+Campos de los documentos anteriores que el panel ya no edita: `sena`, `saldo` y `precioTotal` (copias del boceto al pasarlo a Seguimiento).
+
+### Modalidad de los docs anteriores
+
+Los clientes (y las copias de `completados`) guardados antes del 15-sep-2026 no tienen `modalidad`. El panel la deduce al pintar, sin escribir nada, en este orden (`_modalidadDeducida` en `dashboard.js`):
+
+1. `primerPagoAt` cargado → `mensual` (primer pago del 10 al 14-sep-2026).
+2. `valorTotal` de 100000 o más → `unico`: es un proyecto de antes del 10-sep-2026 (el primer pago nunca pasó de 90000 y desde el 14-sep va en 0). El `primerPago` / `montoMensual` que pueda traer lo sugirió el modal de esos días al guardarlo.
+3. `primerPago` o `montoMensual` → `mensual`, con la nota "primer pago … (modelo anterior)" si lo tiene.
+4. `sena`, `senaAt` o `abono` → `unico`.
+5. Nada de eso → sin definir: la fila se ve como el servicio mensual, igual que hasta el 14-sep.
+
+Al abrir y guardar un cliente, la modalidad que muestra el modal (la deducida) queda escrita en el doc. En un prospecto de Seguimiento el modal muestra solo la modalidad elegida; pasar a Cliente la pregunta y sugiere la elegida en el doc, el boceto o la calculadora o, si no hay, la deducida.
+
+### Contrato con la calculadora, los bocetos y el bot (`presupuestos` / `propuestas`)
+
+Desde el 15-sep-2026 la calculadora (`/presupuesto/`), "+ Nuevo boceto" y los bocetos del bot (`origen` `whatsapp-bot` / `instagram-bot`) guardan los montos de las dos modalidades:
+
+| Campo                     | Descripción |
+|---------------------------|-------------|
+| `precioUnico`             | Precio del pago único |
+| `sena`                    | Seña del pago único |
+| `saldo`                   | `precioUnico` − `sena` |
+| `mensualidad`             | Servicio mensual |
+| `modalidad`               | `unico` / `mensual` / `""` (todavía no eligió) |
+| `totalPrice`, `basePrice` | = `precioUnico` (`presupuestos`) |
+| `precioTotal`             | = `precioUnico` (`propuestas`) |
+| `primerPago`              | Siempre 0 |
+| `presupuesto_cotizado`    | Solo los del bot: el texto que se le cotizó, por ejemplo "Pago único $290.000 (seña $60.000) o $30.000 por mes" |
+
+- Un doc nuevo se reconoce por `precioUnico` o `modalidad`: ahí `sena` es la seña del pago único. En los anteriores, `primerPago` y `sena` se siguen leyendo como el primer pago del modelo anterior.
+- Si un doc no trae los montos (los bocetos viejos del bot solo traen `tipoDetectado`), salen de `PLANES` según el tipo de web.
+- Los detalles (boceto, lead, presupuesto, brief del cliente) muestran la modalidad elegida o, si todavía no eligió, las dos.
+- Un doc de `presupuestos` con `paymentStatus` `approved` pagó la seña del pago único, salvo que traiga `modalidad` `mensual` o que sea anterior al contrato y traiga `primerPago` / `mensualidad` (primer pago del 10 al 14-sep o suscripción del 14-sep): esos son del servicio mensual.
 
 ## Clientes ≈ Mantenimiento
 
-El tab **Clientes** se ve como **Mantenimiento**: una fila por cliente con su plan (y cuánto paga por mes), la suscripción (estado y desde cuándo corre) y el check del cambio del mes (1 cambio por mes incluido; el ciclo se reinicia el mismo día del mes en que arrancó el plan). Si el cliente tiene cargado un primer pago del modelo anterior, se ve abajo del plan. Arriba hay dos números: **Mensualidad activa** (suma de `montoMensual` de las suscripciones activas) y **Por activar** (suscripciones pendientes cuya fecha de inicio ya pasó).
+El tab **Clientes** se ve como **Mantenimiento**: una fila por cliente con su plan, el cobro y el check del cambio del mes.
 
-- `mantenimiento` la sigue escribiendo el webhook de Mercado Pago y no se fusiona con `clientes`: se cruzan al pintar. Si un suscriptor coincide con un cliente por `preapprovalId`, email o WhatsApp, en Clientes la suscripción figura **activa** (salvo que el cliente esté marcado como baja o que Mercado Pago haya avisado la baja o la pausa) y se ve su ID.
-- Pasar un prospecto a Cliente ya no pide primer pago: fija el plan y la mensualidad (20000 o 30000 según el tipo de web, o lo que traiga el boceto en `mensualidad`) y deja la suscripción pendiente hasta que se suscribe en Mercado Pago.
-- Marcar la web como entregada (el tacho de un cliente, con factura o sin factura) ya **no borra** el cliente: se marca `entregadoAt` y queda en Clientes con su suscripción. En `completados` queda una copia como registro de la entrega.
+- **Pago único**: abajo del plan, el precio único. En Cobro, la seña cobrada con su fecha (o "Seña sin registrar") y el saldo pendiente; "Pagado" cuando ya no queda saldo. No lleva cambio del mes.
+- **Servicio mensual**: abajo del plan, cuánto paga por mes (y el primer pago del modelo anterior, si lo tiene). En Cobro, la suscripción: estado, desde cuándo corre y las bajas y pausas de Mercado Pago. El check del cambio del mes (1 por mes incluido) se reinicia el mismo día del mes en que arrancó el plan.
+
+Arriba hay tres números: **Mensualidad activa** (suma de `montoMensual` de las suscripciones activas de los clientes mensuales), **Por activar** (suscripciones pendientes cuya fecha de inicio ya pasó) y **Saldo pendiente** (suma de `valorTotal` − `abono` de los clientes de pago único; los "a cotizar" no suman).
+
+- `mantenimiento` la sigue escribiendo el webhook de Mercado Pago y no se fusiona con `clientes`: se cruzan al pintar. Si un suscriptor coincide con un cliente mensual por `preapprovalId`, email o WhatsApp, en Clientes la suscripción figura **activa** (salvo que el cliente esté marcado como baja o que Mercado Pago haya avisado la baja o la pausa) y se ve su ID.
+- **Pasar un prospecto a Cliente** pregunta la modalidad (1 = pago único, 2 = servicio mensual) y sugiere la del boceto o la calculadora; si se cancela, sigue en Seguimiento. Pago único: fija `valorTotal` con el precio único y pregunta cuánto se cobró de seña (sugiere la del plan) → `abono` y `senaAt`. Servicio mensual: fija la mensualidad y deja la suscripción pendiente hasta que se suscribe en Mercado Pago.
+- En el modal de cliente, **Modalidad** muestra solo los campos de la elegida. Un Cliente no se guarda sin modalidad.
+- "→ Cliente" de un presupuesto pagado por Mercado Pago lo pasa a Seguimiento. Si pagó la seña: `modalidad` `unico`, `valorTotal` = el precio único, `abono` = la seña y `senaAt` = la fecha del pago. Si fue la suscripción (o un pago del 10 al 14-sep), queda `mensual`, como se explica en el contrato de arriba.
+- Marcar la web como entregada (el tacho de un cliente, con factura o sin factura) **no borra** el cliente: se marca `entregadoAt` y queda en Clientes. En `completados` queda una copia como registro de la entrega. La factura propone lo cobrado del pago único (o su seña); en el servicio mensual queda vacía, salvo el primer pago de un cliente del modelo anterior.
+- **Stats → Total por semana**: los clientes de pago único suman su `valorTotal`, como antes del 10-sep-2026; los mensuales suman el primer pago del modelo anterior o $0, sin el aviso de "valor total sin cargar".
 - `import-completados.html` es un importador histórico del modelo viejo: no usarlo con clientes del plan mensual.
 
 ## Bajas de Mercado Pago

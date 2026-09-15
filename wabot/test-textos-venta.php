@@ -48,11 +48,11 @@ $r = wabot_pitch('landing', $c, $cfg);
 $precio = wabot_personalizar($r[0], $c);
 $pasos = wabot_personalizar($r[1] ?? '', $c);
 caso('sin rubro ni para_que arranca "Podemos hacer" con la frase fija del sitio profesional',
-    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.\n\nTrabajamos con un servicio mensual") === 0, $precio);
+    strpos($precio, "Podemos hacer una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp.\n\nIncluye:") === 0, $precio);
 caso('YA NO hay párrafo suelto de montos: eso lo dicen los pasos (11-sep, tercera versión)',
     mb_stripos($precio, 'Empezás con un primer pago') === false, $precio);
-caso('la oferta termina en el punto, abajo va el servicio mensual sin link y la demo arranca el segundo mensaje (14-sep)',
-    preg_match('/\.\n\nTrabajamos con un servicio mensual/u', $precio) === 1 && strpos($precio, 'presupuestos/') === false
+caso('la oferta termina en el punto, abajo va lo que incluye sin link y la demo arranca el segundo mensaje (15-sep)',
+    preg_match('/\.\n\nIncluye:\n•/u', $precio) === 1 && strpos($precio, 'presupuestos/') === false
     && mb_strpos($pasos, 'El primer paso es gratis:') === 0, $precio);
 caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos($precio . $pasos, 'primer pago') === false);
 /* 14-sep: los pasos explayados, con los montos adentro, van en un segundo
@@ -60,10 +60,10 @@ caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos($precio . $pasos
 caso('son dos mensajes: el segundo, los tres pasos con la pregunta, textuales',
     count($r) === 2
     && $pasos === str_replace(['{precio}', '{mensualidad}'], ['$40.000', '$15.000'], wabot_tres_pasos_default()) . "\n" . wabot_tres_pasos_pregunta(), $pasos);
-caso('el primer mensaje dice el servicio mensual con su monto',
-    mb_strpos($precio, 'Trabajamos con un servicio mensual: para un sitio profesional son $20.000 por mes') !== false);
-caso('y el mantenimiento técnico, con las palabras de Pablo',
-    mb_strpos($precio, 'actualizaciones de sistemas, plugins, SDKs e integraciones externas') !== false);
+caso('el primer mensaje dice las dos formas con sus montos (15-sep)',
+    mb_strpos($precio, '1. Pago único de $180.000: la web queda paga y listo.') !== false && mb_strpos($precio, '2. Servicio mensual de $20.000, sin pago inicial') !== false);
+caso('y el mensual con soporte y mantenimiento técnico',
+    mb_strpos($precio, 'hosting, dominio, soporte y mantenimiento técnico') !== false);
 
 $c = conv_tv('5491166660002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
@@ -71,7 +71,7 @@ $c['pitch_para_que'] = 'muestres los tratamientos y tus clientas reserven turno 
 $c['pitch_para_que_tipo'] = 'landing';
 $r = wabot_pitch('landing', $c, $cfg);
 caso('con rubro y para_que sale la oración que dictó Pablo, sin link (14-sep)',
-    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nTrabajamos con un servicio mensual") === 0,
+    strpos(wabot_personalizar($r[0], $c), "Para tu centro de estética podemos hacer una web donde muestres los tratamientos y tus clientas reserven turno online.\n\nIncluye:") === 0,
     wabot_personalizar($r[0], $c));
 
 foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una web para publicar tus propiedades',
@@ -79,8 +79,8 @@ foreach (['ecommerce' => 'una web para vender online', 'inmobiliaria' => 'una we
     $c = conv_tv('5491166660003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
-    caso("$tipo: la frase fija de su tipo y \$30.000 por mes",
-        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, 'son $30.000 por mes') !== false, $t);
+    caso("$tipo: la frase fija de su tipo y las dos formas",
+        strpos($t, 'Podemos hacer ' . $arranque) === 0 && strpos($t, '2. Servicio mensual de $30.000, sin pago inicial') !== false, $t);
 }
 
 /* El que pregunta "cuánto sale" antes de decir el rubro entra por el camino

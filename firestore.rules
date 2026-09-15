@@ -43,7 +43,8 @@ service cloud.firestore {
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'step1At', 'step2At', 'step3At', 'precioAt', 'muestraAt', 'confirmoAt',
         'customObjAt',
-        'phone', 'siteType', 'totalPrice', 'primerPago', 'mensualidad', 'updatedAt'
+        'phone', 'siteType', 'totalPrice', 'primerPago', 'mensualidad',
+        'precioUnico', 'sena', 'saldo', 'modalidad', 'updatedAt'
       ]);
       allow read, delete: if isAdmin();
     }

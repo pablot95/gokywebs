@@ -163,7 +163,7 @@ caso('modo fijo → el redactor ni se llama',
     strpos($r[0], 'algo totalmente distinto') === false
     && strpos(implode("\n", (array)$r), '$30.000') !== false);
 caso('el punto final de la oración no forma parte del precio exigido',
-    wabot_validar_redaccion('Sale $30.000 de primer pago y $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
+    wabot_validar_redaccion('Son dos formas: pago único de $290.000, con una seña de $60.000, o $30.000 por mes, mirá gokywebs.com/presupuestos/ecommerce',
         wabot_msg_precio_texto('ecommerce', $cfg), $cfg) !== null);
 caso('en la parte 1 el redactor no puede colar la seña: no está en el base',
     wabot_validar_redaccion('Sale $290.000 por todo, con seña de $50.000, mirá gokywebs.com/presupuestos/ecommerce',
@@ -233,9 +233,9 @@ caso('"un una" se rechaza y cae al texto fijo',
 caso('"la un" también',
     wabot_validar_redaccion('Te queda la un página a medida: $40.000 de primer pago y $15.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 caso('pero una redacción bien escrita sigue pasando',
-    wabot_validar_redaccion('Para lo tuyo va una página a medida: $20.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Para lo tuyo va una página a medida: pago único de $180.000, con una seña de $40.000, o $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y "una web" con un artículo solo no se confunde con el error',
-    wabot_validar_redaccion('Te armamos una web a medida por $20.000 de primer pago y $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
+    wabot_validar_redaccion('Te armamos una web a medida por $180.000 en un pago único, con una seña de $40.000, o $20.000 por mes. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) !== null);
 caso('y una redacción que se come la mensualidad NO pasa: los dos montos van siempre juntos (10-sep)',
     wabot_validar_redaccion('Para lo tuyo va una página a medida: $40.000. gokywebs.com/presupuestos/sitioprofesional', $basePrecio, $cfg) === null);
 
@@ -316,7 +316,7 @@ caso('un "cómo pago?" post-demo NO recibe el CBU ni el alias',
 // Preguntar cómo se paga ES interés real: ahí sí sale el aviso, una vez.
 caso('se le avisa que lo sigue el desarrollador, y queda derivado',
     mb_stripos($textoPagoPD, 'El desarrollador te va a escribir') !== false
-    && mb_stripos($textoPagoPD, 'coordinar la suscripción') !== false
+    && mb_stripos($textoPagoPD, 'coordinar el pago') !== false
     && mb_stripos($textoPagoPD, 'Pablo') === false
     && $convPD['fase'] === 'derivado' && $convPD['presentado_confirmado'] === true);
 
