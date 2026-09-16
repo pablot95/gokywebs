@@ -53,4 +53,16 @@ foreach ($esperados as $tipo => $frase) {
         && count($salida) === 2 && !empty($ct['bot_off']));
 }
 
+// Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
+// agregaba cinco trabajos y modelos después de la pregunta mostrar/vender.
+$cf = conv_nueva('549110000FABRICATEST', ['fase' => 'desempate_hibrido']);
+wabot_conv_transcript($cf, 'cliente', 'Fábrica de máquinas para emprendimientos');
+$pregunta = (string)$cfg['desempate_hibrido'];
+$salidaFabrica = wabot_salida_preparar([$pregunta], $cf, $cfg);
+caso('una pregunta de aclaración sale sola, sin portfolio ni modelos',
+    $salidaFabrica === [$pregunta]
+    && mb_stripos(implode("\n", $salidaFabrica), 'cinco trabajos') === false
+    && mb_stripos(implode("\n", $salidaFabrica), 'modelos') === false,
+    implode(' | ', $salidaFabrica));
+
 todo_ok();

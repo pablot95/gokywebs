@@ -1754,6 +1754,7 @@ body.embed { min-height: 0; }
                         <span class="conv-chips-sep" aria-hidden="true"></span>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">No leídos <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya abriste el chat, pero el último mensaje sigue siendo del cliente: todavía no le contestaste.">No contestados</button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="por_vencer" title="Chats donde todavía podés responder, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Por vencer</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -1960,7 +1961,12 @@ body.embed { min-height: 0; }
         }
 
         function alternarFiltro(grupo) {
-            if (FILTROS_COMBINABLES.has(grupo)) {
+            if (grupo === 'por_vencer') {
+                const estabaActivo = filtrosActivos.has(grupo);
+                filtrosActivos.clear();
+                if (!estabaActivo) filtrosActivos.add(grupo);
+            } else if (FILTROS_COMBINABLES.has(grupo)) {
+                filtrosActivos.delete('por_vencer');
                 if (filtrosActivos.has(grupo)) {
                     filtrosActivos.delete(grupo);
                 } else {
@@ -1972,6 +1978,7 @@ body.embed { min-height: 0; }
             } else if (filtrosActivos.has(grupo)) {
                 filtrosActivos.delete(grupo);
             } else {
+                filtrosActivos.delete('por_vencer');
                 for (const f of [...filtrosActivos]) if (!FILTROS_COMBINABLES.has(f)) filtrosActivos.delete(f);
                 filtrosActivos.add(grupo);
             }
@@ -2079,6 +2086,7 @@ body.embed { min-height: 0; }
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'no_contestados') return esNoContestado(it);
+            if (filtro === 'por_vencer') return Number(it.ventana || 0) > 0;
             // Las dos pestañas principales (15-sep, sin demo gratis): el bot
             // sigue hablando, o ya no —eligió pagar, avisó que pagó, quedó
             // esperando la muestra o que confirme algo—. Para Pablo es la
@@ -2115,6 +2123,16 @@ body.embed { min-height: 0; }
             if (filtrosActivos.has('no_leidos') && !esNoLeido(it)) return false;
             if (filtrosActivos.has('no_contestados') && !esNoContestado(it)) return false;
             return true;
+        }
+
+        function tiempoParaVencer(segundos) {
+            const s = Math.max(0, Number(segundos || 0));
+            if (s < 60) return 'vence en menos de 1 min';
+            const totalMinutos = Math.ceil(s / 60);
+            if (totalMinutos < 60) return 'vence en ' + totalMinutos + ' min';
+            const horas = Math.floor(totalMinutos / 60);
+            const minutos = totalMinutos % 60;
+            return 'vence en ' + horas + ' h' + (minutos ? ' ' + minutos + ' min' : '');
         }
 
         function renderFechasChats() {
@@ -2197,7 +2215,10 @@ body.embed { min-height: 0; }
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
-            for (const it of items) {
+            const itemsOrdenados = filtrosActivos.has('por_vencer')
+                ? [...items].sort((a, b) => Number(a.ventana || 0) - Number(b.ventana || 0))
+                : items;
+            for (const it of itemsOrdenados) {
                 const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
@@ -2306,6 +2327,12 @@ body.embed { min-height: 0; }
                     p2.className = 'pill tipo';
                     p2.textContent = it.tipo;
                     pills.appendChild(p2);
+                }
+                if (filtrosActivos.has('por_vencer')) {
+                    const vence = document.createElement('span');
+                    vence.className = 'pill pausa';
+                    vence.textContent = tiempoParaVencer(it.ventana);
+                    pills.appendChild(vence);
                 }
                 // Marcar "ya le contesté" sin abrir el chat: el caso de uso es
                 // barrer varias de un saque después de haber contestado por el

@@ -869,18 +869,12 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     $mensajes = array_values(array_filter((array)$mensajes, function ($m) {
         return trim((string)$m) !== '';
     }));
-    if ($modo === 'turno' && empty($conv['portfolio_mostrado']) && empty($conv['esProspecto'])
-        && empty($conv['bot_off']) && !empty($mensajes)) {
-        $yaIncluido = strpos(implode("\n", $mensajes), 'cinco trabajos reales') !== false;
-        if ($yaIncluido) $conv['portfolio_mostrado'] = true;
-        elseif (empty($conv['precio_dado'])) {
-            $ultimo = wabot_ultimo_texto_cliente($conv);
-            if (wabot_rubro_detectar($ultimo) !== null) {
-                $sugerencias = wabot_rubro_sugerencias($ultimo, (string)($conv['tipo'] ?? ''));
-                if ($sugerencias) { $mensajes[] = $sugerencias['texto']; $conv['portfolio_mostrado'] = true; }
-            }
-        }
-    }
+    /* El portfolio ya forma parte del cierre de la cotización. Antes había un
+     * agregado global que, apenas reconocía un rubro, anexaba cinco trabajos
+     * incluso cuando la respuesta era una pregunta de aclaración. Eso producía
+     * tandas como "¿querés mostrar o vender?" + cinco links sin esperar la
+     * respuesta. Ningún contenido comercial se agrega acá: este punto solo
+     * limpia y valida lo que decidió el flujo. */
     if (!$mensajes) return $mensajes;
 
     $mensajes = wabot_salida_limpiar($mensajes);

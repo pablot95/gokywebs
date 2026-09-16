@@ -2585,6 +2585,10 @@ function wabot_lista_items() {
             'quien'  => $ult['q'] ?? '',
             'ts'     => $ult['ts'] ?? 0,
             'inicio_ts' => $inicio,
+            // Para la vista "Por vencer": segundos restantes desde el último
+            // mensaje del cliente. Al llegar a cero sale de esa vista, pero la
+            // conversación sigue existiendo normalmente.
+            'ventana' => wabot_ventana_restante($cv),
             'estado' => !empty($cv['bot_off']) ? 'apagado'
                       : (((int)$cv['pausado_hasta'] > time()) ? 'pausado'
                       : ((($cv['fase'] ?? '') === 'derivado') ? 'pausado' : 'bot')),
