@@ -1134,6 +1134,11 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     font-size:10.5px; font-weight:800; text-align:center; }
 .conv-chip.on .conv-chip-n { background:rgb(0 0 0 / .22); color:#0b1424; }
 .conv-chip--sl:not(.tiene) .conv-chip-n, .conv-chip--rta:not(.tiene) .conv-chip-n { background:var(--card); color:var(--tenue); }
+/* Las dos pestañas principales (Interesados / Bot activo) van un poco más
+   marcadas que los filtros chicos (SL, RTA, RT): son la elección de fondo,
+   no un agregado. */
+.conv-chip--principal { font-size:12.5px; border-color:var(--line-fuerte); }
+.conv-chip--principal.on { background:var(--ac); border-color:var(--ac); color:#0b1424; }
 .conv-chips-mas { position:relative; margin-left:auto; }
 .conv-chip--mas { padding:0 9px; font-size:11px; }
 .conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
@@ -1148,9 +1153,10 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 
 .estado-tag { display:inline-block; flex-shrink:0; padding:1px 6px; border-radius:5px; font-size:10px;
     font-weight:800; letter-spacing:.04em; vertical-align:middle; background:var(--card-2); color:var(--dim); }
-.estado-tag--de { background:var(--info-tenue); color:var(--info); }
-.estado-tag--d { background:var(--warn-tenue); color:var(--warn); }
 .estado-tag--rta { background:var(--ac-tenue); color:var(--ac); }
+/* Prospecto: eligió cómo pagar, el bot se calló. Mismo color que "Pagaron"
+   en la fila (pago-avisado): las dos son "hay que actuar ya". */
+.estado-tag--prosp { background:var(--ac-tenue); color:var(--ac); }
 .estado-tag--cod { background:rgba(255,255,255,.07); color:var(--dim); letter-spacing:.06em; }
 /* Le contestaste por afuera: ni SL ni RTA. Verde apagado, que no compita con
    los tags de trabajo pendiente. */
@@ -2057,19 +2063,25 @@ body.embed { min-height: 0; }
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
+                    <!-- Sin demo gratis (15-sep) ya no hay cola de "armar la demo" ni
+                         "demo entregada": DE, DEI y D quedaron inútiles y se sacaron.
+                         Quedan dos pestañas principales — el bot todavía contestando,
+                         o el cliente ya interesado y esperando que actúes vos — más
+                         los filtros de siempre (SL, RTA, RT) y los nuevos, abajo. -->
                     <div class="conv-chips" id="convChips">
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="interesados" title="El bot ya no está llevando la charla: eligió cómo pagar, avisó que pagó, o quedó esperando una respuesta suya.">Interesados</button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="activo" title="El bot todavía está contestando esta charla.">Bot activo</button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">SL <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip" data-grupo="presentados" title="Demo entregada: le mandaste la demo y todavía no contestó nada.">DE</button>
-                        <button type="button" class="conv-chip" data-grupo="dei" title="Demo entregada + interesado: le entregaste la demo y contestó algo.">DEI</button>
                         <button type="button" class="conv-chip conv-chip--rta" data-grupo="rta" title="Ya le contestaste vos a mano: queda esperando al cliente.">RTA <span class="conv-chip-n" id="cuentaRta">0</span></button>
                         <button type="button" class="conv-chip conv-chip--retomar" data-grupo="retomar" title="Retomar: pidieron que les escribas en una fecha, o dijeron que escribían y no lo hicieron. Vencidas y las que vencen en 2 días.">RT <span class="conv-chip-n" id="cuentaRetomar">0</span></button>
-                        <button type="button" class="conv-chip" data-grupo="muestra" title="Demos: ya pasaron los datos y falta diseñarles la demo.">D</button>
-                        <button type="button" class="conv-chip" data-grupo="interesado_chat" title="Vieron precio + todas las demás conversaciones: la charla que todavía no llegó a nada concreto.">VP · T</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
+                                <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
+                                <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
+                                <button type="button" class="conv-chip-item" data-grupo="whatsapp">Solo WhatsApp</button>
                                 <button type="button" class="conv-chip-item" data-grupo="archivado">Archivados</button>
                             </div>
                         </div>
@@ -2188,7 +2200,11 @@ body.embed { min-height: 0; }
         // cruza todas las columnas. Entra un chat SOLO si el último mensaje es
         // del cliente — si el bot (o vos) ya contestó, no cuenta como pendiente,
         // aunque nunca hayas abierto esa respuesta.
-        const GRUPOS_VALIDOS = new Set(['pago', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
+        const GRUPOS_VALIDOS = new Set(['pago', 'prospecto', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
+        // Los que ya no dependen de que el bot siga hablando: eligió cómo
+        // pagar, avisó que pagó, le mandaste la muestra, o pasó los datos y
+        // falta diseñarle algo. La otra pestaña (activo) es lo contrario.
+        const GRUPOS_INTERESADOS = ['prospecto', 'pago', 'muestra', 'presentados', 'presentadas_48'];
         /* Sin leer es una lista de trabajo, no un inbox: solo los chats donde el
            bot dejó de contestar, el cliente respondió igual, y no lo abriste.
            Las tres condiciones juntas, y ninguna alcanza sola:
@@ -2197,7 +2213,7 @@ body.embed { min-height: 0; }
             - Que el último mensaje sea del cliente: si el bot ya le contestó,
               está atendido.
             - Que no lo hayas abierto desde ese mensaje. */
-        const GRUPOS_SIN_LEER = ['pago', 'presentados', 'presentadas_48', 'muestra'];
+        const GRUPOS_SIN_LEER = ['pago', 'prospecto', 'presentados', 'presentadas_48', 'muestra'];
         function esNoLeido(it) {
             // La regla la resuelve el server (wabot_conv_es_sl): es la MISMA
             // que dispara la notificación push, y con dos copias terminaban
@@ -2211,6 +2227,7 @@ body.embed { min-height: 0; }
         const SUBGRUPOS_NO_LEIDOS = [
             { clave: 'derivado',    titulo: 'Te derivó la consulta' },
             { clave: 'pago',        titulo: 'Pagaron' },
+            { clave: 'prospecto',   titulo: 'Eligieron cómo pagar' },
             { clave: 'presentados', titulo: 'Con la demo entregada' },
             { clave: 'muestra',     titulo: 'Con demo por presentar' },
         ];
@@ -2218,6 +2235,7 @@ body.embed { min-height: 0; }
             if (GRUPOS_SIN_LEER.includes(it.grupo)) {
                 if (it.grupo === 'presentados' || it.grupo === 'presentadas_48') return 'presentados';
                 if (it.grupo === 'pago') return 'pago';
+                if (it.grupo === 'prospecto') return 'prospecto';
                 return 'muestra';
             }
             // Lo que entró por el otro camino: el bot dejó de contestar.
@@ -2237,7 +2255,7 @@ body.embed { min-height: 0; }
         const fechaChipsEl = document.getElementById('convFechaChips');
         const fechaCuentaEl = document.getElementById('convFechaCuenta');
 
-        const GRUPOS_POR_DEFECTO = ['muestra', 'presentados', 'presentadas_48'];
+        const GRUPOS_POR_DEFECTO = GRUPOS_INTERESADOS;
         let filtrosGuardados = [];
         try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
         const filtrosActivos = new Set(Array.isArray(filtrosGuardados) ? filtrosGuardados : []);
@@ -2333,10 +2351,6 @@ body.embed { min-height: 0; }
                 .some(v => v.includes(digitos));
         }
 
-        function esDEI(it) {
-            return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !!it.con_interes;
-        }
-
         // Resuelto en el server (wabot_conv_rta): mismo criterio en todos lados.
         function esRTA(it) {
             return !!it.rta;
@@ -2381,15 +2395,20 @@ body.embed { min-height: 0; }
 
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
-            if (filtro === 'dei') return esDEI(it);
-            if (filtro === 'presentados') return (it.grupo === 'presentados' || it.grupo === 'presentadas_48') && !it.con_interes;
-            // VP (vieron precio) y T (el resto de las charlas) van juntas en un
-            // solo chip: para Pablo son la misma categoría de trabajo, la charla
-            // que todavía no llegó a nada concreto.
-            if (filtro === 'interesado_chat') {
+            // Las dos pestañas principales (15-sep, sin demo gratis): el bot
+            // sigue hablando, o ya no —eligió pagar, avisó que pagó, quedó
+            // esperando la muestra o que confirme algo—. Para Pablo es la
+            // misma pregunta de siempre ("¿esto lo tengo que mirar yo?"), ya
+            // no separada por DE/DEI/D.
+            if (filtro === 'activo') {
                 const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 return g === 'interesado' || g === 'chat';
             }
+            if (filtro === 'interesados') {
+                return GRUPOS_INTERESADOS.includes(it.grupo);
+            }
+            if (filtro === 'instagram') return it.canal === 'instagram';
+            if (filtro === 'whatsapp') return it.canal !== 'instagram';
             if (filtro === 'rta') return esRTA(it);
             if (filtro === 'retomar') return esRetomar(it);
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
@@ -2526,10 +2545,7 @@ body.embed { min-height: 0; }
                 tel.textContent = it.nombre_agenda || it.nombre || contacto;
                 if (it.nombre_agenda || it.nombre) tel.title = contacto;
                 nombreBox.appendChild(tel);
-                const etiqueta = esDEI(it) ? { txt: 'DEI', cls: 'de', tit: 'Demo entregada · contestó' }
-                    : (it.grupo === 'presentados' || it.grupo === 'presentadas_48')
-                        ? { txt: 'DE', cls: 'de', tit: 'Demo entregada' }
-                        : (it.grupo === 'muestra' ? { txt: 'D', cls: 'd', tit: 'Demo por armar' } : null);
+                const etiqueta = it.grupo === 'prospecto' ? { txt: 'PROSP', cls: 'prosp', tit: 'Eligió cómo pagar: el bot se calló, seguí la venta a mano.' } : null;
                 if (etiqueta) {
                     const tag = document.createElement('span');
                     tag.className = 'estado-tag estado-tag--' + etiqueta.cls;

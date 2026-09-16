@@ -5502,6 +5502,8 @@ function wabot_lista_items() {
 /**
  * En qué columna de Conversaciones va cada chat. Excluyentes y por prioridad.
  *
+ * pago        → avisó que pagó: verificar la transferencia y arrancar.
+ * prospecto   → eligió una forma de pago; el bot se calló, cierra Pablo.
  * presentados → ya se le mandó la muestra, esperando que confirme algo.
  * muestra     → pidió el prediseño y ya pasó los datos: es cola de trabajo.
  * interesado  → vio el precio y no llegó a pedir la demo.
@@ -5523,6 +5525,11 @@ function wabot_conv_grupo($cv) {
     // Avisó que pagó: es lo más urgente de todo el panel — hay que verificar la
     // transferencia y arrancar. Gana sobre cualquier otra columna.
     if (!empty($cv['pago_avisado_ts'])) return 'pago';
+
+    // Ya eligió una forma de pago después de ver el precio: el bot se calló
+    // solo (wabot_prospecto_marcar, 15-sep) y esto queda para que Pablo cierre
+    // la venta a mano. Segundo más urgente, justo debajo de "ya pagó".
+    if (!empty($cv['prospecto'])) return 'prospecto';
 
     /* Entregada la demo, la conversación NO vuelve nunca a la cola de diseño.
      *
