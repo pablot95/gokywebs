@@ -193,11 +193,13 @@ body.ver { padding-top: 64px; }
     background: #fff; font-size: 0.72rem; color: var(--text-light);
 }
 .ver-cel {
-    width: 390px; border-radius: 46px; padding: 12px;
+    width: 454px; border-radius: 54px; padding: 12px;
     background: #0f172a; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
 }
+/* Tamaño de un teléfono grande (430 × 932), sin atarlo al alto de la ventana:
+   con 100vh quedaba chato y chico apenas la ventana era baja (16-sep). */
 .ver-cel-pantalla {
-    height: min(780px, calc(100vh - 230px)); min-height: 520px;
+    height: 932px;
     border-radius: 34px; overflow-y: auto; overflow-x: hidden;
     background: #fff; scrollbar-width: none;
 }
@@ -224,7 +226,7 @@ body.ver { padding-top: 64px; }
     .ver-titulo span { white-space: normal; }
 }
 /* En un celular de verdad el marco de teléfono sobra: el modelo ocupa el ancho. */
-@media (max-width: 460px) {
+@media (max-width: 520px) {
     .ver-cel { width: 100%; padding: 0; border-radius: 0; background: none; box-shadow: none; }
     .ver-cel-pantalla { height: auto; min-height: 0; overflow: visible; border-radius: 12px; border: 1px solid var(--border); }
 }
