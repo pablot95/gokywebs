@@ -2627,7 +2627,8 @@ function wabot_lista_items() {
             'ts'     => $ult['ts'] ?? 0,
             'inicio_ts' => $inicio,
             'estado' => !empty($cv['bot_off']) ? 'apagado'
-                      : (((int)$cv['pausado_hasta'] > time()) ? 'pausado' : 'bot'),
+                      : (((int)$cv['pausado_hasta'] > time()) ? 'pausado'
+                      : ((($cv['fase'] ?? '') === 'derivado') ? 'pausado' : 'bot')),
             'grupo'  => wabot_conv_grupo($cv),
             'espera' => wabot_conv_espera_respuesta($cv),
             'handoff_pendiente' => !empty($cv['handoff_pendiente']),

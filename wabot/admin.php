@@ -1598,7 +1598,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip conv-chip--principal" data-grupo="interesados" title="El bot ya no está llevando la charla: eligió cómo pagar, avisó que pagó, o quedó esperando una respuesta suya.">Yo</button>
                         <span class="conv-chips-sep" aria-hidden="true"></span>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">No leídos <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="El último mensaje es del cliente: todavía no le contestaste, lo hayas abierto o no.">No contestados</button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya abriste el chat, pero el último mensaje sigue siendo del cliente: todavía no le contestaste.">No contestados</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -1725,34 +1725,24 @@ body.embed { min-height: 0; }
         const SEL = <?= json_encode($ver) ?>;
 
         /* ── Lista de la izquierda ── */
-        // "No leídos" no es un grupo excluyente como los demás: es una vista que
-        // cruza todas las columnas. Entra un chat SOLO si el último mensaje es
-        // del cliente — si el bot (o vos) ya contestó, no cuenta como pendiente,
-        // aunque nunca hayas abierto esa respuesta.
+        // "No leídos" y "No contestados" no son grupos excluyentes como los
+        // demás: son vistas que cruzan todas las columnas. Entra un chat SOLO
+        // si el último mensaje es del cliente y le toca a Pablo (wabot_conv_
+        // espera_respuesta, campo "espera") — si el bot ya contestó, no cuenta
+        // como pendiente. Ese universo se parte en dos, sin superponerse
+        // (Pablo, 16-sep): no leídos = todavía no abriste el chat desde ese
+        // mensaje (campo "no_leido", que sí mira panel_visto_ts); no
+        // contestados = ya lo abriste, pero seguís sin contestarle.
         const GRUPOS_VALIDOS = new Set(['pago', 'prospecto', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
         // Los que ya no dependen de que el bot siga hablando: eligió cómo
         // pagar, avisó que pagó, le mandaste la muestra, o pasó los datos y
         // falta diseñarle algo. La otra pestaña (activo) es lo contrario.
         const GRUPOS_INTERESADOS = ['prospecto', 'pago', 'muestra', 'presentados', 'presentadas_48'];
-        /* Sin leer es una lista de trabajo, no un inbox: solo los chats donde el
-           bot dejó de contestar, el cliente respondió igual, y no lo abriste.
-           Las tres condiciones juntas, y ninguna alcanza sola:
-            - Solo la parte 2 y la cola de demos. Los de la parte 1 los está
-              llevando el bot y no necesitan que mires nada.
-            - Que el último mensaje sea del cliente: si el bot ya le contestó,
-              está atendido.
-            - Que no lo hayas abierto desde ese mensaje. */
+        // Solo para agrupar los encabezados dentro de la vista "No leídos".
         const GRUPOS_SIN_LEER = ['pago', 'prospecto', 'presentados', 'presentadas_48', 'muestra'];
-        function esNoLeido(it) {
-            // La regla la resuelve el server (wabot_conv_es_sl): una sola
-            // copia del criterio, y con dos terminaban diciendo cosas
-            // distintas. El cálculo viejo queda de respaldo por si llega un
-            // item de una versión anterior sin el campo.
-            if (typeof it.sl === 'boolean') return it.sl;
-            if (it.grupo === 'archivado') return false;
-            if (!GRUPOS_SIN_LEER.includes(it.grupo) && !it.espera && !it.handoff_pendiente) return false;
-            return !!it.no_leido;
-        }
+        function necesitaRespuesta(it) { return !!it.espera; }
+        function esNoLeido(it) { return necesitaRespuesta(it) && !!it.no_leido; }
+        function esNoContestado(it) { return necesitaRespuesta(it) && !it.no_leido; }
         const SUBGRUPOS_NO_LEIDOS = [
             { clave: 'derivado',    titulo: 'Te derivó la consulta' },
             { clave: 'pago',        titulo: 'Pagaron' },
@@ -1909,11 +1899,15 @@ body.embed { min-height: 0; }
             return b;
         }
 
-        // El último mensaje es del cliente, lo hayas abierto o no (server:
-        // wabot_conv_espera_respuesta). "No leídos" es el subconjunto más
-        // angosto de esto —además no lo abriste—; "No contestados" es el
-        // universo entero de "todavía te toca contestar".
-        function esNoContestado(it) { return !!it.espera; }
+        // El grupo del embudo (wabot_conv_grupo) no se mueve porque el bot se
+        // haya callado — moverlo resucitaba el bug de Claudio, donde un boceto
+        // recién cerrado desaparecía de Muestras (ver wabot/test.php). Así que
+        // Bot/Yo no pueden mirar solo el grupo: un chat en 'chat'/'interesado'
+        // pero con el bot apagado, pausado o derivado (it.estado !== 'bot', o
+        // it.handoff_pendiente) ya no lo está llevando el bot y es de Pablo,
+        // aunque el grupo diga lo contrario (Pablo, 16-sep: mostraba "te toca
+        // a vos" en la pestaña Bot).
+        function boLlevaLaCharla(it) { return it.estado === 'bot' && !it.handoff_pendiente; }
 
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
@@ -1925,10 +1919,12 @@ body.embed { min-height: 0; }
             // no separada por DE/DEI/D.
             if (filtro === 'activo') {
                 const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
-                return g === 'interesado' || g === 'chat';
+                return (g === 'interesado' || g === 'chat') && boLlevaLaCharla(it);
             }
             if (filtro === 'interesados') {
-                return GRUPOS_INTERESADOS.includes(it.grupo);
+                const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
+                if (GRUPOS_INTERESADOS.includes(it.grupo)) return true;
+                return (g === 'interesado' || g === 'chat') && !boLlevaLaCharla(it);
             }
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
@@ -2141,9 +2137,10 @@ body.embed { min-height: 0; }
                 }
                 // Marcar "ya le contesté" sin abrir el chat: el caso de uso es
                 // barrer varias de un saque después de haber contestado por el
-                // otro WhatsApp. Solo donde tiene sentido: lo que está en SL o
-                // RTA, más lo ya marcado para poder sacarle la marca.
-                if (esNoLeido(it) || esRTA(it) || it.contestado) {
+                // otro WhatsApp. Solo donde tiene sentido: lo que está en SL,
+                // no contestados o RTA, más lo ya marcado para poder sacarle
+                // la marca.
+                if (esNoLeido(it) || esNoContestado(it) || esRTA(it) || it.contestado) {
                     pills.appendChild(botonContestado(it));
                 }
 
