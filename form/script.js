@@ -1,8 +1,5 @@
 const FORM_LEAD_URL = '/wabot/form-lead.php';
 
-const WSP_NUM = '5491140688675';
-const wspLink = msg => `https://wa.me/${WSP_NUM}?text=${encodeURIComponent(msg)}`;
-
 const TRACK_URL = '/form/track.php';
 
 const _sid = (() => {
@@ -740,7 +737,7 @@ async function enviarFormulario() {
 
         track('success');
         clearDraft();
-        showSuccess(payload.nombre, payload.nombre_negocio);
+        showSuccess();
     } catch (err) {
         console.error('Error al enviar el formulario:', err);
         mostrarErrorEnvio('No pudimos enviar el formulario. Revisá tu conexión y probá de nuevo; si sigue fallando, escribinos por WhatsApp.');
@@ -748,28 +745,10 @@ async function enviarFormulario() {
     }
 }
 
-/* Sin emojis a propósito.
- *
- * Los dos que había (🙋 y 🏢) son caracteres de 4 bytes, y en 3 de 23 envíos
- * reales del 3-sep llegaron a WhatsApp como "�": la clienta de Secretos
- * Compartidos vio "� Nombre" y "� Negocio" en el mensaje que ella misma
- * mandaba. El texto sale bien de acá (el archivo es UTF-8 y el link se arma con
- * encodeURIComponent): lo rompe el WhatsApp del cliente al levantar el ?text=,
- * y no siempre — a la mayoría le llega intacto, así que no hay nada que
- * corregir de este lado más que no depender de eso. Con texto ASCII el mensaje
- * llega igual en todos los dispositivos. */
-function mensajeFormWsp(nombre, nombreNegocio) {
-    const lineas = [`Hola! Acabo de completar el formulario para mi web.`, ''];
-    lineas.push(`Nombre: ${nombre || 'sin nombre'}`);
-    lineas.push(`Negocio: ${nombreNegocio || 'sin nombre'}`);
-    lineas.push('', 'Quedo atento/a!');
-    return lineas.join('\n');
-}
-
-function showSuccess(nombre, nombreNegocio) {
+/* Al terminar no se abre WhatsApp (16-sep, pedido de Pablo): los datos ya
+ * llegaron al prospecto y lo contactamos nosotros. */
+function showSuccess() {
     const card = document.getElementById('formCard');
-    const url = wspLink(mensajeFormWsp(nombre, nombreNegocio));
-    window.open(url, '_blank', 'noopener');
     document.body.classList.remove('paso-modelos');
     try { sessionStorage.removeItem('gw-modelos'); } catch (_) {}
     card.innerHTML = `
@@ -778,9 +757,8 @@ function showSuccess(nombre, nombreNegocio) {
             <h2 class="success-title">Listo, recibimos tus datos!</h2>
             <span class="success-badge">Recibimos tus preferencias</span>
             <p class="success-desc">
-                Vamos a revisar tus datos y los modelos que elegiste. Te abrimos WhatsApp para coordinar los próximos pasos; si no se abrió, tocá el botón de abajo.
+                Vamos a revisar tus datos y los modelos que elegiste. Te escribimos por WhatsApp para coordinar los próximos pasos.
             </p>
-            <a href="${url}" class="btn-wsp-form" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>
             <a href="https://www.gokywebs.com" class="success-link">Mientras tanto, explorá nuestros trabajos →</a>
         </div>
     `;
