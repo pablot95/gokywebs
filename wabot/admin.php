@@ -1139,6 +1139,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
    no un agregado. */
 .conv-chip--principal { font-size:12.5px; border-color:var(--line-fuerte); }
 .conv-chip--principal.on { background:var(--ac); border-color:var(--ac); color:#0b1424; }
+.conv-chips-sep { width:1px; height:18px; background:var(--line-fuerte); margin:0 2px; flex-shrink:0; }
 .conv-chips-mas { position:relative; margin-left:auto; }
 .conv-chip--mas { padding:0 9px; font-size:11px; }
 .conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
@@ -2064,21 +2065,23 @@ body.embed { min-height: 0; }
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
                     <!-- Sin demo gratis (15-sep) ya no hay cola de "armar la demo" ni
-                         "demo entregada": DE, DEI y D quedaron inútiles y se sacaron.
-                         Quedan dos pestañas principales — el bot todavía contestando,
-                         o el cliente ya interesado y esperando que actúes vos — más
-                         los filtros de siempre (SL, RTA, RT) y los nuevos, abajo. -->
+                         "demo entregada". Pablo, 16-sep: solo quedan dos pestañas
+                         — Bot (la está llevando el bot) y Yo (te toca a vos) — con
+                         dos subfiltros en cada una: No leídos y No contestados. Lo
+                         demás (Prospectos, Pagaron, RTA, Retomar…) va en "más". -->
                     <div class="conv-chips" id="convChips">
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="interesados" title="El bot ya no está llevando la charla: eligió cómo pagar, avisó que pagó, o quedó esperando una respuesta suya.">Interesados</button>
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="activo" title="El bot todavía está contestando esta charla.">Bot activo</button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">SL <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--rta" data-grupo="rta" title="Ya le contestaste vos a mano: queda esperando al cliente.">RTA <span class="conv-chip-n" id="cuentaRta">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--retomar" data-grupo="retomar" title="Retomar: pidieron que les escribas en una fecha, o dijeron que escribían y no lo hicieron. Vencidas y las que vencen en 2 días.">RT <span class="conv-chip-n" id="cuentaRetomar">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="activo" title="El bot todavía está contestando esta charla.">Bot</button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="interesados" title="El bot ya no está llevando la charla: eligió cómo pagar, avisó que pagó, o quedó esperando una respuesta suya.">Yo</button>
+                        <span class="conv-chips-sep" aria-hidden="true"></span>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">No leídos <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="El último mensaje es del cliente: todavía no le contestaste, lo hayas abierto o no.">No contestados</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
                                 <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
+                                <button type="button" class="conv-chip-item" data-grupo="rta">Ya contestaste (RTA)</button>
+                                <button type="button" class="conv-chip-item" data-grupo="retomar">Retomar</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
                                 <button type="button" class="conv-chip-item" data-grupo="whatsapp">Solo WhatsApp</button>
@@ -2262,7 +2265,7 @@ body.embed { min-height: 0; }
         // SL y RTA son "combinables": no reemplazan un filtro de grupo (Demos,
         // Presentados…), se le suman. Elegir "Demos" + "RTA" muestra las demos
         // MÁS todo lo que ya respondiste, no la intersección de las dos cosas.
-        const FILTROS_COMBINABLES = new Set(['no_leidos', 'rta']);
+        const FILTROS_COMBINABLES = new Set(['no_leidos', 'no_contestados']);
         let itemsCache = [];
         let sincronizado = false;
         let firmaLista = '';
@@ -2393,8 +2396,15 @@ body.embed { min-height: 0; }
             return b;
         }
 
+        // El último mensaje es del cliente, lo hayas abierto o no (server:
+        // wabot_conv_espera_respuesta). "No leídos" es el subconjunto más
+        // angosto de esto —además no lo abriste—; "No contestados" es el
+        // universo entero de "todavía te toca contestar".
+        function esNoContestado(it) { return !!it.espera; }
+
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
+            if (filtro === 'no_contestados') return esNoContestado(it);
             // Las dos pestañas principales (15-sep, sin demo gratis): el bot
             // sigue hablando, o ya no —eligió pagar, avisó que pagó, quedó
             // esperando la muestra o que confirme algo—. Para Pablo es la
@@ -2415,16 +2425,16 @@ body.embed { min-height: 0; }
         }
 
         function entraEnGrupoActivo(it) {
+            // Pablo, 16-sep: "No leídos" y "No contestados" son SUBfiltros de
+            // Bot/Yo —angostan la vista activa, no la suman— así que van con Y,
+            // no con O como antes SL/RTA (que hoy además cambiaron de sentido:
+            // ver el chip movido a "más filtros").
             const grupoFiltro = [...filtrosActivos].find(f => !FILTROS_COMBINABLES.has(f));
-            const slActivo = filtrosActivos.has('no_leidos');
-            const rtaActivo = filtrosActivos.has('rta');
-            if (grupoFiltro) {
-                return cumpleFiltro(it, grupoFiltro)
-                    || (slActivo && esNoLeido(it))
-                    || (rtaActivo && esRTA(it));
-            }
-            if (slActivo || rtaActivo) return (slActivo && esNoLeido(it)) || (rtaActivo && esRTA(it));
-            return GRUPOS_POR_DEFECTO.includes(it.grupo);
+            const base = grupoFiltro ? cumpleFiltro(it, grupoFiltro) : GRUPOS_POR_DEFECTO.includes(it.grupo);
+            if (!base) return false;
+            if (filtrosActivos.has('no_leidos') && !esNoLeido(it)) return false;
+            if (filtrosActivos.has('no_contestados') && !esNoContestado(it)) return false;
+            return true;
         }
 
         function renderFechasChats() {
@@ -2861,6 +2871,14 @@ body.embed { min-height: 0; }
          * mandar tal cual o retocar antes. Para sumar uno: agregá un string
          * más al array de la categoría — no hace falta tocar el resto. */
         const RESPUESTAS_RAPIDAS = [
+            { ico: '🧭', tit: 'Arrancar la charla', items: [
+                'Hola, ¿cómo estás? Contame a qué te dedicás o para qué tipo de negocio sería la web, así te paso el valor.',
+                'Perdón, no llegué a entender bien de qué se trata tu negocio — ¿vendés productos, ofrecés un servicio, es inmobiliaria, o son cursos?',
+                'Che, disculpá la demora. Contame de nuevo con tus palabras a qué te dedicás y seguimos por acá.',
+                'Te dejo cinco trabajos reales de tu rubro: [LINKS]. Y podés ver todo el portfolio en gokywebs.com/portfolio/',
+                'Ahí tenés algunos modelos de estructura para elegir uno como punto de partida: gokywebs.com/modelos/',
+                '¿Te gustó alguno? Si querés arrancamos, decime y te paso el formulario.',
+            ] },
             { ico: '💰', tit: 'Precio y pago', items: [
                 'Te paso los datos para la seña: [ALIAS o CBU]. En cuanto la veas acreditada, arrancamos.',
                 'Te mando el link de Mercado Pago para la suscripción, así arrancamos con la primera mensualidad: [LINK]',
@@ -2878,11 +2896,13 @@ body.embed { min-height: 0; }
                 'Se puede mejorar o rehacer sin drama. Contame qué te gustaría cambiar y vemos qué te conviene.',
             ] },
             { ico: '📋', tit: 'Ya dijo que sí', items: [
+                'Dale! Te paso el formulario para arrancar: [LINK]. Ahí me contás el nombre de tu negocio, una descripción corta, los colores que te gustan y si tenés logo o fotos, los subís ahí.',
                 'Perfecto! Para arrancar necesito: el logo (si tenés), 5-6 fotos de tu negocio o productos, los textos que quieras que aparezcan y los colores que te gustan.',
                 'No hay problema si no tenés logo todavía, arrancamos igual y lo sumamos después.',
                 '¿Ya tenés pensado el nombre para tu dominio? Por ejemplo tumarca.com.ar.',
                 'En unos días te muestro los primeros avances. La web completa suele estar lista en una semana.',
                 'Buenísimo, bienvenido/a a Gokywebs! Vamos a armar algo que te represente.',
+                'Perfecto, ya con el formulario completo arrancamos con tu web. Cualquier cosa que necesites mientras tanto, quedate tranquilo y escribime por acá.',
             ] },
             { ico: '⏰', tit: 'Seguimiento', items: [
                 'Hola! ¿Seguís con ganas de avanzar con tu web? Quedo atento.',
