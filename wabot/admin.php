@@ -371,6 +371,25 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_config_save($cfg);
         header('Location: admin.php?tab=ajustes&ok=1'); exit;
     }
+    if ($a === 'enviar_template_72h' && !empty($_POST['tel'])) {
+        $tel = (string)$_POST['tel'];
+        $conv = wabot_conv_load($tel);
+        $resultado = 'template_72_error';
+        if (wabot_canal($conv) === 'instagram') {
+            $resultado = 'template_72_canal';
+        } elseif (empty($conv['presentado_ts'])) {
+            $resultado = 'template_72_sin_demo';
+        } elseif (!empty($conv['confirmacion_demo_enviada'])) {
+            $resultado = 'template_72_ya';
+        } elseif (wabot_enviar_plantilla($conv, 'confirmacion_demo_48h', $cfg)) {
+            $conv['confirmacion_demo_enviada'] = true;
+            $conv['confirmacion_demo_ts'] = time();
+            wabot_conv_save($conv);
+            wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $tel, 'clave' => $tel]);
+            $resultado = 'template_72_ok';
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $resultado . '=1'); exit;
+    }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $texto = trim((string)($_POST['texto'] ?? ''));
@@ -414,20 +433,19 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         $conv = wabot_conv_load($clave);
 
-        // NO se pausa el bot: presentar la demo abre la parte 2 de la venta, y
-        // ahí el bot sigue trabajando (aclara dudas, pasa la seña, ofrece la
-        // videollamada). Antes esto lo dejaba mudo 24 h y la venta se frenaba.
-        $conv['pausado_hasta'] = 0;
-        $conv['handoff_pendiente'] = false;
-        $conv['fase'] = 'postdemo';
-        $conv['cierre'] = null;
-        $conv['espera_avisada'] = false;
+        // Presentar abre la parte 2 de la venta y vuelve a encender el bot.
+        // La cotización final lo había dejado en bot_off para que Pablo tomara
+        // el chat; si no se limpia acá, la fase dice postdemo pero nadie
+        // contesta las respuestas posteriores del cliente.
+        wabot_conv_activar_postdemo($conv);
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $slug;
         $conv['presentado_confirmado'] = false;
         $conv['presentado_via_bot'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
+        $conv['confirmacion_demo_enviada'] = false;
+        $conv['confirmacion_demo_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
 
         /* Se manda mensaje por mensaje y se mira CADA uno por separado.
@@ -438,7 +456,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
          * "se envió bien el mensaje pero el aviso decía que no se pudo".
          *
          * El PRIMERO es el que lleva el link: ese es el que define si la demo
-         * llegó, y por lo tanto si corresponde el recordatorio de 48 h. El
+         * llegó. El seguimiento posterior queda disponible como botón manual. El
          * segundo (el pedido de feedback) es un extra; que falle no cambia que
          * el cliente ya tiene la demo.
          *
@@ -485,18 +503,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     if ($a === 'marcar_entregada' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $negocio = trim((string)($conv['nombre_negocio'] ?? ''));
-        $conv['pausado_hasta'] = 0;
-        $conv['handoff_pendiente'] = false;
-        $conv['fase'] = 'postdemo';
-        $conv['cierre'] = null;
-        $conv['espera_avisada'] = false;
+        wabot_conv_activar_postdemo($conv);
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $negocio !== '' ? wabot_slug_demo($negocio) : '';
         $conv['presentado_confirmado'] = false;
-        // Entregada por fuera del bot: nunca dispara el recordatorio de 48 h.
+        // Entregada por fuera del bot: también habilita el botón manual.
         $conv['presentado_via_bot'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
+        $conv['confirmacion_demo_enviada'] = false;
+        $conv['confirmacion_demo_ts'] = 0;
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
@@ -797,6 +813,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (!empty($_POST['ajax'])) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['ok' => true, 'contestado' => wabot_conv_contestada($conv)]);
+            exit;
+        }
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
+    }
+    if ($a === 'conv_favorito' && !empty($_POST['tel'])) {
+        $conv = wabot_conv_load($_POST['tel']);
+        $conv['favorito'] = empty($conv['favorito']);
+        wabot_conv_save($conv);
+        if (!empty($_POST['ajax'])) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['ok' => true, 'favorito' => !empty($conv['favorito'])]);
             exit;
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($_POST['tel'])); exit;
@@ -1156,6 +1183,10 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .conv-item.sin-leer.on { border-left-color:var(--ac); }
 .conv-item-punto { width:7px; height:7px; border-radius:50%; background:var(--info); flex-shrink:0; }
 .conv-item-derecha { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.conv-favorito { width:25px; height:25px; display:grid; place-items:center; padding:0; border:0; border-radius:6px; background:transparent; color:var(--tenue); font-size:18px; line-height:1; cursor:pointer; }
+.conv-favorito:hover, .conv-favorito:focus-visible { background:var(--card-2); color:#facc15; outline:0; }
+.conv-favorito.on { color:#facc15; }
+.conv-favorito:disabled { opacity:.5; cursor:default; }
 .conv-sub-header { padding:11px 13px 5px; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--tenue); background:var(--card); position:sticky; top:0; z-index:1; }
 .conv-list[data-grupo="pago"] .conv-list-head { color:var(--ac); }
 .conv-item.pago-avisado { border-left-color:var(--ac); background:var(--ac-tenue); }
@@ -1404,6 +1435,11 @@ body.embed { min-height: 0; }
     <?php if (isset($_GET['reenvio_error'])) echo '<p class="ok" style="color:var(--bad)">WhatsApp rechazó el envío. Revisá el log en wabot/data/log/.</p>'; ?>
     <?php if (isset($_GET['reenvio_sin_slug'])) echo '<p class="ok" style="color:var(--bad)">Esta conversación no tiene guardado el link de la demo. Presentala de nuevo desde Bocetos.</p>'; ?>
     <?php if (isset($_GET['boceto_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo crear el boceto: Firestore rechazó el alta. Quedó guardado igual en Estado → "Prediseños que no llegaron a Bocetos". Revisá el log en wabot/data/log/.</p>'; ?>
+    <?php if (isset($_GET['template_72_ok'])) echo '<p class="ok">Template de 72 h enviado correctamente.</p>'; ?>
+    <?php if (isset($_GET['template_72_ya'])) echo '<p class="ok" style="color:var(--warn)">Ese template ya fue enviado en esta conversación.</p>'; ?>
+    <?php if (isset($_GET['template_72_sin_demo'])) echo '<p class="ok" style="color:var(--bad)">Primero tenés que presentar la demo.</p>'; ?>
+    <?php if (isset($_GET['template_72_canal'])) echo '<p class="ok" style="color:var(--bad)">Este template es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
+    <?php if (isset($_GET['template_72_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó el template o no está activo en Ajustes.</p>'; ?>
 
     <?php if ($tab === 'estado'): ?>
         <div class="card">
@@ -1681,9 +1717,9 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
-            <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas. La de 48 h sale solo si la demo se presentó desde el bot y el cliente nunca contestó.</p>
+            <p class="meta" style="margin-top:0">Las plantillas permiten escribir con la ventana de 24 h cerrada y deben estar aprobadas por Meta. El seguimiento de 72 h ya no se envía automáticamente: se manda únicamente desde el botón del chat.</p>
             <?php $plantillasLabels = [
-                'confirmacion_demo_48h' => 'Seguimiento a las 48 h de presentar la demo, si el cliente nunca contestó',
+                'confirmacion_demo_48h' => 'Template manual de seguimiento de 72 h',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -1761,6 +1797,7 @@ body.embed { min-height: 0; }
                                 <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="rta">Ya contestaste (RTA)</button>
+                                <button type="button" class="conv-chip-item" data-grupo="favorito">⭐ Favoritos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="retomar">Retomar</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
@@ -1789,6 +1826,17 @@ body.embed { min-height: 0; }
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
                     <div class="fila conv-acciones">
+                        <form method="post"><input type="hidden" name="accion" value="conv_favorito"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"><?= !empty($conv['favorito']) ? '★ Quitar favorito' : '☆ Marcar favorito' ?></button></form>
+                        <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['presentado_ts'])):
+                            $template72Enviado = !empty($conv['confirmacion_demo_enviada']);
+                            $template72Activo = wabot_plantilla_config('confirmacion_demo_48h', $cfg) !== null;
+                        ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora el template de seguimiento de 72 h?')">
+                            <input type="hidden" name="accion" value="enviar_template_72h"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= ($template72Enviado || !$template72Activo) ? ' disabled' : '' ?> title="<?= $e($template72Enviado ? 'Ya fue enviado en esta conversación.' : (!$template72Activo ? 'Activá y configurá el template en Ajustes.' : 'Envía manualmente la plantilla aprobada por Meta.')) ?>"><?= $template72Enviado ? '✓ Template 72 h enviado' : 'Enviar template 72 h' ?></button>
+                        </form>
+                        <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_toggle"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['bot_off']) ? 'Encender bot acá' : 'Apagar bot acá' ?></button></form>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
@@ -2073,6 +2121,31 @@ body.embed { min-height: 0; }
             return b;
         }
 
+        function botonFavorito(it) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'conv-favorito' + (it.favorito ? ' on' : '');
+            b.textContent = it.favorito ? '★' : '☆';
+            b.title = it.favorito ? 'Quitar de favoritos' : 'Marcar como favorito';
+            b.setAttribute('aria-label', b.title);
+            b.setAttribute('aria-pressed', it.favorito ? 'true' : 'false');
+            b.addEventListener('click', async ev => {
+                ev.preventDefault();
+                ev.stopPropagation();
+                b.disabled = true;
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'conv_favorito', tel: it.tel, ajax: '1' }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error('No se pudo guardar.');
+                    await refrescarLista();
+                } catch (e) {
+                    b.disabled = false;
+                }
+            });
+            return b;
+        }
+
         // El grupo del embudo (wabot_conv_grupo) no se mueve porque el bot se
         // haya callado — moverlo resucitaba el bug de Claudio, donde un boceto
         // recién cerrado desaparecía de Muestras (ver wabot/test.php). Así que
@@ -2087,6 +2160,7 @@ body.embed { min-height: 0; }
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'no_contestados') return esNoContestado(it);
             if (filtro === 'por_vencer') return Number(it.ventana || 0) > 0;
+            if (filtro === 'favorito') return !!it.favorito;
             // Las dos pestañas principales (15-sep, sin demo gratis): el bot
             // sigue hablando, o ya no —eligió pagar, avisó que pagó, quedó
             // esperando la muestra o que confirme algo—. Para Pablo es la
@@ -2286,6 +2360,7 @@ body.embed { min-height: 0; }
                 }
                 const derecha = document.createElement('span');
                 derecha.className = 'conv-item-derecha';
+                derecha.appendChild(botonFavorito(it));
                 const h = document.createElement('span');
                 h.className = 'conv-item-hora';
                 h.textContent = hora(it.ts);

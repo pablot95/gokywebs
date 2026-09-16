@@ -3336,9 +3336,12 @@ function wabot_engine($texto, &$conv, $cfg) {
 
         $lineas = [];
         foreach ($keys as $k) {
-            // El flujo de abajo ya va a cotizar o preguntar la función que
-            // falta. No anteponerle una pregunta por el rubro recién reconocido.
-            if ($precioConRubroEnTurno && in_array($k, ['rangos', 'precio_sin_rubro'], true)) continue;
+            // Si este mismo turno ya permite cotizar, la salida aprobada son
+            // únicamente los dos mensajes finales (recomendación + precio, y
+            // portfolio). No se anteponen explicaciones generales de proceso,
+            // plazos, modelos ni formularios aunque el cliente también haya
+            // preguntado "cómo sería": la cotización ya explica cómo contratar.
+            if ($precioConRubroEnTurno) continue;
             if ($preciosDesempate !== null && in_array($k, ['rangos', 'precio_sin_rubro'], true)) {
                 $lineas[] = $preciosDesempate;
                 continue;
@@ -5019,9 +5022,9 @@ function wabot_monto_por_mes_texto($v, $cfg, $campo) {
     return implode(', ', $partes) . ' y ' . $ultimo;
 }
 
-/** Segundo y último mensaje automático: el portfolio general. */
+/** Segundo y último mensaje automático: invitación a la demo gratuita. */
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
-    return 'Podés ver todos nuestros trabajos terminados y funcionando en: gokywebs.com/portfolio';
+    return 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form';
 }
 
 /** Las dos formas breves de contratarla, con los montos de esta charla. */
@@ -5041,7 +5044,7 @@ function wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg) {
 }
 
 /**
- * Después de la recomendación, las dos formas de pago y el portfolio termina
+ * Después de la recomendación, las dos formas de pago y la invitación a la demo termina
  * la intervención automática. El siguiente mensaje queda visible y pendiente
  * para que lo continúe una persona, sin avisos ni seguimientos del bot.
  */
@@ -5555,8 +5558,8 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* Dos mensajes cerrados: recomendación + precios y el portfolio general.
-     * No hay CTA, demo, modelos ni formulario. */
+    /* Dos mensajes cerrados: recomendación + precios, y demo con formulario.
+     * Después de eso el bot se detiene para que continúe una persona. */
     $conv['cta_muestra'] = false;
     $salida = [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
     wabot_cotizacion_finalizar($conv);
@@ -5773,17 +5776,16 @@ function wabot_postdemo_sin_cambios($texto) {
  * El cliente escribió con la demo ya entregada.
  *
  * `presentado_confirmado` significa exactamente eso —contestó algo, lo que
- * sea— y de ahí cuelgan tres automatismos: el recordatorio por plantilla a
- * las 48 h (wabot_confirmacion_demo_corresponde), el archivado a los 7 días
+ * sea— y de ahí cuelgan el archivado a los 7 días
  * (wabot_presentado_archivar_corresponde) y la columna "presentadas sin
- * respuesta" del panel.
+ * respuesta" del panel. El template de seguimiento se envía manualmente.
  *
  * Vive en el BORDE COMÚN de wabot_responder() y no adentro del corte de
  * postdemo, que es donde estaba: cualquier corte anterior que conteste y
  * termine el turno —el de retomar, agregado el 8-sep— dejaba el flag apagado
  * y el cliente que había contestado "dale, la miro y te escribo el lunes"
- * recibía igual la plantilla de las 48 h. Marcarlo donde entra el mensaje y
- * no donde se decide la respuesta es lo único que no se rompe con el próximo
+ * seguía figurando como si nunca hubiera respondido. Marcarlo donde entra el
+ * mensaje y no donde se decide la respuesta es lo único que no se rompe con el próximo
  * corte que se agregue arriba.
  */
 function wabot_presentado_marcar_respuesta(&$conv) {

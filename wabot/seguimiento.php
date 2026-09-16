@@ -1,18 +1,18 @@
 <?php
 /**
- * wabot/seguimiento.php — los dos únicos automatismos por cron que quedan:
+ * wabot/seguimiento.php — automatismos por cron:
  *   - la "última llamada" a las 23 h del último mensaje del cliente, antes de
- *     que cierre la ventana de 24 h de Meta (wabot_ultima_llamada_correr);
- *   - la confirmación por plantilla a las 48 h de presentar la demo
- *     (wabot_confirmacion_demo_correr).
+ *     que cierre la ventana de 24 h de Meta (wabot_ultima_llamada_correr).
+ *
+ * La plantilla seguimiento_demo_72h ya NO sale desde este cron: se envía
+ * únicamente con el botón manual de la conversación.
  *
  * Desde Hostinger (hPanel → Avanzado → Cron Jobs), cada 30 minutos:
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
  * o por URL, con el verify token como clave:
  *   https://gokywebs.com/wabot/seguimiento.php?clave=VERIFY_TOKEN
  *
- * Correrlo de más no duplica nada: cada conversación recibe una sola última
- * llamada y una sola confirmación de demo en su vida.
+ * Correrlo de más no duplica la última llamada.
  */
 
 // engine.php, no lib.php: los textos de los crons también pasan por el punto
@@ -34,7 +34,6 @@ if (php_sapi_name() !== 'cli') {
 }
 
 $cfg = wabot_config_load();
-$confirmacionDemo = wabot_confirmacion_demo_correr($cfg);
 $ultima = wabot_ultima_llamada_correr($cfg);
 
 echo json_encode([
@@ -44,8 +43,9 @@ echo json_encode([
         'detalle'   => $ultima['detalle'],
     ],
     'confirmacion_demo' => [
-        'revisadas' => $confirmacionDemo['revisadas'],
-        'enviados'  => $confirmacionDemo['enviados'],
-        'detalle'   => $confirmacionDemo['detalle'],
+        'automatico' => false,
+        'revisadas' => 0,
+        'enviados'  => 0,
+        'detalle'   => [],
     ],
 ], JSON_UNESCAPED_UNICODE) . "\n";

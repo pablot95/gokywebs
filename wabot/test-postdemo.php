@@ -40,6 +40,19 @@ function tiene_aviso($out) {
     return false;
 }
 
+$reactivada = conv_postdemo([
+    'fase' => 'derivado', 'bot_off' => true, 'pausado_hasta' => time() + 86400,
+    'handoff_pendiente' => true, 'seguimiento_bloqueado' => true,
+    'contestado_ts' => time(), 'cierre' => 'cotizacion_final', 'espera_avisada' => true,
+]);
+wabot_conv_activar_postdemo($reactivada);
+caso('Presentar reactiva el bot y abre la etapa postdemo',
+    ($reactivada['fase'] ?? '') === 'postdemo'
+    && empty($reactivada['bot_off']) && empty($reactivada['pausado_hasta'])
+    && empty($reactivada['handoff_pendiente']) && empty($reactivada['seguimiento_bloqueado'])
+    && empty($reactivada['contestado_ts']) && empty($reactivada['cierre'])
+    && empty($reactivada['espera_avisada']));
+
 echo "\n=== El aviso NO sale mientras el cliente está mirando ===\n";
 
 foreach ([
@@ -206,16 +219,16 @@ caso('y la última llamada respeta lo mismo',
         'transcript' => [['q' => 'cliente', 't' => 'precio?', 'ts' => time() - 23.2 * 3600], ['q' => 'bot', 't' => 'Sale $190.000. gokywebs.com/presupuestos/Landing', 'ts' => time() - 23.1 * 3600]]],
         array_merge($cfg, ['activo' => true, 'ultima_llamada_activa' => true]), time()) === false);
 
-/* ─── La plantilla de las 48 h es SOLO para el que nunca contestó ───
+/* ─── Elegibilidad histórica del template manual ───
  *
- * De `presentado_confirmado` cuelgan tres automatismos: la plantilla de las
- * 48 h, el archivado a los 7 días y la columna "presentadas sin respuesta".
+ * `presentado_confirmado` también permite distinguir a quienes nunca
+ * contestaron después de recibir la demo.
  * El flag se marcaba adentro del corte de postdemo, así que cualquier corte
  * anterior que contestara y terminara el turno lo dejaba apagado: el de
- * retomar (8-sep) hacía que "dale, la miro y te escribo el lunes" recibiera
- * igual la plantilla. Ahora se marca en el borde común de wabot_responder().
+ * retomar (8-sep) hacía que "dale, la miro y te escribo el lunes" siguiera
+ * figurando sin respuesta. Ahora se marca en el borde común de wabot_responder().
  */
-echo "\n=== La plantilla de 48 h no le llega al que contestó ===\n";
+echo "\n=== Elegibilidad del template manual de seguimiento ===\n";
 
 $cfg48 = array_merge($cfg, ['activo' => true]);
 function conv48($texto) {
@@ -249,16 +262,21 @@ foreach ([
     clasifica(['otro']);
     wabot_responder($texto, $c, $cfg48);
     caso("$nombre: queda marcado como que contestó", !empty($c['presentado_confirmado']));
-    caso("$nombre: NO se le manda la plantilla de 48 h", wabot_confirmacion_demo_corresponde($c, $cfg48) === false);
+    caso("$nombre: no queda pendiente de seguimiento", wabot_confirmacion_demo_corresponde($c, $cfg48) === false);
 }
 
 $mudo = ['tel' => 'TEST48MUDO', 'canal' => 'whatsapp', 'fase' => 'postdemo', 'tipo' => 'landing',
          'presentado_ts' => time() - 49 * 3600, 'presentado_via_bot' => true,
          'transcript' => [['q' => 'bot', 't' => 'Acá está tu demo', 'ts' => time() - 49 * 3600]]];
-caso('el que NUNCA contestó sí la recibe', wabot_confirmacion_demo_corresponde($mudo, $cfg48) === true);
-caso('a las 47 h todavía no', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_ts' => time() - 47 * 3600]), $cfg48) === false);
-caso('si la demo no la mandó el bot, nunca', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_via_bot' => false]), $cfg48) === false);
-caso('y una sola vez por conversación', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['confirmacion_demo_enviada' => true]), $cfg48) === false);
+caso('el que nunca contestó queda identificado', wabot_confirmacion_demo_corresponde($mudo, $cfg48) === true);
+caso('a las 47 h todavía no queda identificado', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_ts' => time() - 47 * 3600]), $cfg48) === false);
+caso('si la demo no la mandó el bot, no queda pendiente', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['presentado_via_bot' => false]), $cfg48) === false);
+caso('un template ya enviado no vuelve a quedar pendiente', wabot_confirmacion_demo_corresponde(array_merge($mudo, ['confirmacion_demo_enviada' => true]), $cfg48) === false);
+$cronTemplate = wabot_confirmacion_demo_correr($cfg48);
+caso('el cron ya no envía el template: queda exclusivamente manual',
+    ($cronTemplate['automatico'] ?? null) === false
+    && ($cronTemplate['revisadas'] ?? -1) === 0
+    && ($cronTemplate['enviados'] ?? -1) === 0);
 
 $sinDemo = ['tel' => 'TEST48SIN', 'fase' => 'menu', 'transcript' => []];
 caso('sin demo entregada no hay nada que marcar', wabot_presentado_marcar_respuesta($sinDemo) === false && empty($sinDemo['presentado_confirmado']));

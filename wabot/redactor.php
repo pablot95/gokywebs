@@ -69,8 +69,8 @@ function wabot_responder($texto, &$conv, $cfg) {
     unset($conv['_postdemo_prefijo']);
 
     /* Con la demo ya entregada, ESTE mensaje es la respuesta del cliente: se
-     * marca acá, antes de cualquier corte, porque de ese flag dependen la
-     * plantilla de las 48 h, el archivado y la columna del panel. Va después
+     * marca acá, antes de cualquier corte, porque de ese flag dependen el
+     * archivado y la columna del panel. Va después
      * del reset de sesión (si la charla era vieja, presentado_ts ya quedó en
      * cero y no hay nada que marcar). Ver wabot_presentado_marcar_respuesta(). */
     wabot_presentado_marcar_respuesta($conv);

@@ -26,18 +26,18 @@ caso('las formas de contratación son breves y tienen los valores correctos',
     strpos($visible[0] ?? '', "1. Pago único de $290.000. Incluye mantenimiento el primer año.") !== false
     && strpos($visible[0] ?? '', "2. Suscripción mensual de $25.000, todo incluido mientras dure la suscripción.") !== false);
 caso('ya no enumera el bloque Incluye', mb_stripos($todo, "Incluye:\n") === false);
-caso('el segundo y último mensaje es solo el portfolio general',
-    ($visible[1] ?? '') === 'Podés ver todos nuestros trabajos terminados y funcionando en: gokywebs.com/portfolio',
+caso('el segundo y último mensaje ofrece la demo con el formulario',
+    ($visible[1] ?? '') === 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form',
     $visible[1] ?? '');
-caso('no ofrece modelos, demo, formulario ni pregunta si arrancamos',
-    preg_match('/modelos|demo|formulario|arrancamos/iu', $todo) === 0);
+caso('no agrega modelos, portfolio ni otra pregunta',
+    preg_match('/modelos|portfolio|arrancamos/iu', $todo) === 0);
 caso('la charla queda apagada y pendiente para una persona',
     !empty($c['bot_off']) && !empty($c['handoff_pendiente'])
     && !empty($c['seguimiento_bloqueado']) && ($c['cierre'] ?? '') === 'cotizacion_final');
 
 clasifica(['otro']);
 $despues = turno('Me gusta el pago único', $c, $cfg);
-caso('después del portfolio el bot no manda ningún mensaje más', $despues === []);
+caso('después de ofrecer la demo el bot no manda ningún mensaje más', $despues === []);
 
 $esperados = [
     'landing' => 'un sitio profesional para presentar tu negocio, mostrar tus servicios o trabajos y recibir consultas directas por WhatsApp',
@@ -64,5 +64,17 @@ caso('una pregunta de aclaración sale sola, sin portfolio ni modelos',
     && mb_stripos(implode("\n", $salidaFabrica), 'cinco trabajos') === false
     && mb_stripos(implode("\n", $salidaFabrica), 'modelos') === false,
     implode(' | ', $salidaFabrica));
+
+// Regresión 16-sep: si en el mismo mensaje pregunta el procedimiento y deja
+// claro que necesita ecommerce, no se antepone info.proceso a la cotización.
+$cc = conv_nueva('549110000COSMETICATEST', ['fase' => 'menu']);
+clasifica(['pregunta_info', 'rubro_ecommerce'], ['info_keys' => ['proceso']]);
+$salidaCosmeticos = turno('Consulto por precios y cómo sería el procedimiento. Quiero un catálogo de cosméticos con producto, stock y precio.', $cc, $cfg);
+$textoCosmeticos = implode("\n", $salidaCosmeticos);
+caso('procedimiento + rubro claro manda solamente cotización y demo',
+    count($salidaCosmeticos) === 2
+    && mb_stripos($textoCosmeticos, 'Primero mirás trabajos') === false
+    && ($salidaCosmeticos[1] ?? '') === 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form',
+    implode(' | ', $salidaCosmeticos));
 
 todo_ok();

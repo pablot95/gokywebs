@@ -168,7 +168,7 @@ function wabot_gemini_modelo($cfg = null) {
  * Los textos del bot viven en textos.php (wabot_textos_default): se editan en
  * el código y se publican con el deploy. bot-config.json guarda SOLO los
  * ajustes que se tocan desde el panel (tiempos de respuesta, modelo de Gemini,
- * CAPI, plantilla de las 48 h). Cualquier otra clave que haya quedado en ese
+ * CAPI y plantilla manual de seguimiento). Cualquier otra clave que haya quedado en ese
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
@@ -1500,9 +1500,10 @@ function wabot_conv_load($clave) {
         'presentado_confirmado'  => false,
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
-        // Único mensaje automático que queda después de presentar: la
-        // confirmación por plantilla a las 48 h. Ver wabot_confirmacion_demo_correr().
+        // Plantilla manual de seguimiento de la demo. Se envía únicamente
+        // desde el botón del chat; el cron ya no la dispara.
         'confirmacion_demo_enviada' => false,
+        'confirmacion_demo_ts' => 0,
         // Parte 2 de la venta (después de presentar la demo).
         'videollamada_ofrecida'  => false,
         'cambios_pedidos'        => null,
@@ -1555,6 +1556,8 @@ function wabot_conv_load($clave) {
         // un llamado). Guarda el ts de la marca, no un booleano: así vale
         // solo mientras no pase nada nuevo en el chat y se limpia sola.
         'contestado_ts'    => 0,
+        // Marca manual y permanente del panel; no cambia con mensajes nuevos.
+        'favorito'         => false,
         'aclaraciones_fallidas' => 0,
         // Mensajes seguidos que no se entienden, antes de saber el rubro.
         'ininteligibles'   => 0,
@@ -2611,6 +2614,7 @@ function wabot_lista_items() {
             'rta' => wabot_conv_rta($cv),
             // Le contestaste por fuera del sistema: no está ni en SL ni en RTA.
             'contestado' => wabot_conv_contestada($cv),
+            'favorito' => !empty($cv['favorito']),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -2879,6 +2883,18 @@ function wabot_conv_bot_inactivo($cv) {
     return !empty($cv['bot_off'])
         || (int)($cv['pausado_hasta'] ?? 0) > time()
         || ($cv['fase'] ?? '') === 'derivado';
+}
+
+/** Reactiva la conversación cuando se entrega la demo y empieza el postdemo. */
+function wabot_conv_activar_postdemo(&$cv) {
+    $cv['bot_off'] = false;
+    $cv['pausado_hasta'] = 0;
+    $cv['handoff_pendiente'] = false;
+    $cv['seguimiento_bloqueado'] = false;
+    $cv['contestado_ts'] = 0;
+    $cv['fase'] = 'postdemo';
+    $cv['cierre'] = null;
+    $cv['espera_avisada'] = false;
 }
 
 function wabot_conv_espera_respuesta($cv) {
@@ -4146,9 +4162,9 @@ function wabot_referencia_final($conv, $brief) {
 
 /* ──────────────────── Horarios y automatismos por cron ────────────────────
  *
- * Reloj argentino y horario de contacto, más los dos únicos automatismos que
- * quedan (15-sep): la "última llamada" antes de que cierre la ventana de 24 h
- * de Meta y la confirmación por plantilla a las 48 h de presentar la demo.
+ * Reloj argentino y horario de contacto, más la "última llamada" automática
+ * antes de que cierre la ventana de 24 h de Meta. El seguimiento de la demo
+ * por plantilla se envía manualmente desde el chat.
  *
  * Los dispara wabot/seguimiento.php vía cron. Sin cron configurado, no corren.
  */
@@ -4332,22 +4348,19 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
     return $res;
 }
 
-/* ─────────────────── Confirmación de la demo a las 48 h ───────────────────
+/* ─────────────────── Template manual de seguimiento de la demo ───────────
  *
- * Único automatismo que queda después de presentar: a las 48 h de apretar
- * "Presentar" (presentado_ts), manda una sola vez, por plantilla aprobada de
- * Meta, la pregunta de si el cliente pudo recibir la demo que le mandó Pablo
- * a mano. Va siempre por plantilla, sin importar si la ventana de 24 h de
- * Meta está abierta o cerrada: Pablo no manda texto libre desde acá.
+ * La función de elegibilidad se conserva para compatibilidad y diagnóstico,
+ * pero el envío automático está desactivado. La plantilla aprobada por Meta
+ * sale únicamente desde el botón del chat.
  */
 
 function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
     if (empty($cfg['activo'])) return false;
     if (empty($cv['presentado_ts']) || !empty($cv['confirmacion_demo_enviada'])) return false;
-    // Solo para lo que el bot mandó de verdad: si Pablo la presentó por otro
-    // medio (marcar_entregada, o el envío del bot falló por la ventana de 24 h
-    // de Meta) no hay recordatorio automático que valga.
+    // Solo para lo que el bot mandó de verdad. Esta comprobación se conserva
+    // como diagnóstico del seguimiento aunque el envío ahora sea manual.
     if (empty($cv['presentado_via_bot'])) return false;
     // Y solo si nunca contestó nada: cualquier respuesta ya deriva a Pablo
     // (ver wabot_responder) y marca presentado_confirmado.
@@ -4359,33 +4372,9 @@ function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
 }
 
 function wabot_confirmacion_demo_correr($cfg, $ahora = null) {
-    $ahora = $ahora ?? time();
-    $res = ['revisadas' => 0, 'enviados' => 0, 'detalle' => []];
-
-    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
-        $clave = basename($f, '.json');
-        if (stripos($clave, 'TEST') !== false) continue;
-        $cv = wabot_conv_load($clave);
-        if (!wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora)) continue;
-        $res['revisadas']++;
-
-        $lock = wabot_lock_tomar($clave);
-        if (!$lock) continue;
-        try {
-            $cv = wabot_conv_load($clave);
-            if (!wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora)) continue;
-            if (wabot_enviar_plantilla($cv, 'confirmacion_demo_48h', $cfg)) {
-                $cv['confirmacion_demo_enviada'] = true;
-                $res['enviados']++;
-                $res['detalle'][] = $clave;
-            }
-            wabot_conv_save($cv);
-            wabot_log('confirmacion_demo', ['tel' => $cv['tel'], 'clave' => $clave]);
-        } finally {
-            wabot_lock_soltar($lock);
-        }
-    }
-    return $res;
+    // Desactivado por decisión comercial: la plantilla seguimiento_demo_72h
+    // se manda solamente con el botón manual dentro de la conversación.
+    return ['revisadas' => 0, 'enviados' => 0, 'detalle' => [], 'automatico' => false];
 }
 
 /* ─────────────────── Lead a Firestore (colección propuestas) ─────────── */
