@@ -12,11 +12,15 @@
  * - Pago único: incluye mantenimiento el primer año (hosting, dominio,
  *   actualizaciones de plugins, errores y soporte; SIN cambios). Después,
  *   plan de mantenimiento de `tipos[].mantenimiento` por mes.
+ * - La seña del pago único (`tipos[].sena`) es $40.000 para todos los tipos.
+ *   El bot NO la menciona en el precio inicial ni al comparar formas de pago:
+ *   solo la dice si preguntan puntualmente por la seña (el monto sigue
+ *   viviendo en `wabot_respuesta_pago_fija()`, engine.php).
  * - Suscripción mensual (`tipos[].mensualidad`): sin pago inicial, sin
  *   permanencia, SIN cambios. Plan con cambios (`tipos[].mensualidad_cambios`)
  *   con un cambio por mes. El código se reclama recién a los 2 años.
- * - El precio se ofrece con seguridad: "Para X te conviene…", nunca
- *   "podemos hacer" ni "te podemos ofrecer".
+ * - La recomendación usa exclusivamente el texto fijo de cada tipo: "Lo mejor
+ *   para X es…". El modelo clasifica, pero nunca redacta la propuesta.
  * {nombre} lo pone wabot_personalizar(); {link}, {portfolio} y {portfolio_texto}
  * salen del tipo cotizado; {entrega} es el día de entrega de la demo.
  *
@@ -71,7 +75,7 @@ function wabot_textos_default() {
     'imagenes_pedido_generico' => 'el logo y 3 o 4 fotos de tu negocio',
     'info' => [
         'proceso' => "Primero mirás trabajos reales y elegís uno o dos modelos como referencia. Después elegís pago único —con seña y saldo al entregar— o suscripción mensual, completás el formulario y coordinamos el arranque. La web suele quedar lista en unos 7 días desde que arrancamos y nos pasás el contenido.\nEl valor depende del tipo de web: contame a qué te dedicás y te lo paso.",
-        'pago' => "Hay dos formas de pagarla:\n1. Pago único de {precio}: arrancás con una seña de {sena} y el saldo lo abonás al entregar la web, por transferencia o con tarjeta. Incluye mantenimiento el primer año.\n2. Suscripción mensual de {mensualidad}: se paga por Mercado Pago y se debita sola, con cualquier tarjeta y sin necesidad de cuenta. No hay pago inicial: la primera cuota arranca el armado de tu web.",
+        'pago' => "Hay dos formas de pagarla:\n1. Pago único de {precio}: arrancás con una seña y el saldo lo abonás al entregar la web, por transferencia o con tarjeta. Incluye mantenimiento el primer año.\n2. Suscripción mensual de {mensualidad}: se paga por Mercado Pago y se debita sola, con cualquier tarjeta y sin necesidad de cuenta. No hay pago inicial: la primera cuota arranca el armado de tu web.",
         'plazos' => "La web queda lista en unos 7 días desde que arrancamos, abonás la seña o la primera mensualidad y nos pasás el contenido.",
         'hosting' => "El hosting y el dominio .com.ar van incluidos: con la suscripción mensual, mientras la tengas; con el pago único, dentro del mantenimiento del primer año, y después seguís con el plan de mantenimiento.\nNo los contratás ni los configurás vos, se ocupa Gokywebs.",
         'mantenimiento' => "Depende de cómo contrates la web:\n• Con el pago único, el mantenimiento va incluido el primer año: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}.\n• Con la suscripción mensual de {mensualidad}, va incluido mientras la tengas, sin permanencia.\nEl mantenimiento no incluye cambios en la web: para eso está el plan con cambios de la suscripción, de {cambios_mes}, con un cambio por mes.",
@@ -163,13 +167,13 @@ function wabot_textos_default() {
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
     'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',
-    'msg_precio' => 'Perfecto, para lo tuyo va {desc}. La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
-    'msg_precio_tras_pitch' => 'La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
+    'msg_precio' => 'Perfecto, para lo tuyo va {desc}. La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
+    'msg_precio_tras_pitch' => 'La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
     'msg_precio_variantes' => [
-        'Perfecto, para lo tuyo va {desc}. La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
-        'Por lo que me contás, te conviene {desc}. Hay dos formas de contratarla: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
-        'En este caso iría {desc}. La podés tomar en un pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o con la suscripción mensual de {mensualidad}, sin pago inicial.',
-        'La opción que mejor encaja es {desc}. Son dos formas de contratarla: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena}, o suscripción mensual de {mensualidad}, sin pago inicial.',
+        'Perfecto, para lo tuyo va {desc}. La podés contratar de dos formas: pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
+        'Por lo que me contás, te conviene {desc}. Hay dos formas de contratarla: pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.',
+        'En este caso iría {desc}. La podés tomar en un pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o con la suscripción mensual de {mensualidad}, sin pago inicial.',
+        'La opción que mejor encaja es {desc}. Son dos formas de contratarla: pago único de {precio} (incluye mantenimiento el primer año), con seña, o suscripción mensual de {mensualidad}, sin pago inicial.',
     ],
     'msg_prediseno_oferta' => 'Antes de avanzar mirá trabajos reales y elegí uno o dos modelos en gokywebs.com/modelos/. Después los adaptamos a tu negocio, tus colores y tu contenido.',
     'msg_prediseno_oferta_variantes' => [
@@ -220,7 +224,7 @@ function wabot_textos_default() {
     'postdemo_no_gusto' => 'Gracias por la sinceridad, me sirve. Contame qué es lo que no te cerró y lo revisamos.',
     'postdemo_pago_avisado' => 'Perfecto, revisamos el pago y te confirmamos por acá.',
     'postdemo_videollamada' => 'Si querés, podemos coordinar una videollamada con el desarrollador. Te muestra la web en vivo y podés sacarte cualquier duda directamente con él. Querés que coordinen?',
-    'precio_resumen' => "Son dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}",
+    'precio_resumen' => "Son dos formas: pago único de {precio} (incluye mantenimiento el primer año), con seña y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}",
     'prediseno' => "Para armarla necesito poco:\n{faltan}\nSi no tenés colores definidos, decime 'elegí vos' y los defino yo. Si tenés logo o fotos, mandámelas; si no, arranco con imágenes del rubro y después las cambiamos.",
     'prediseno_completo' => 'Listo {nombre}, ya tenemos los datos para preparar la demo y te la mandamos por acá {entrega}. Si tenés {imagenes}, mandámelos para personalizarla; podemos empezar igual si todavía no los tenés.',
     'prediseno_completo_con_fotos' => 'Listo {nombre}, con eso ya lo preparamos. Con las fotos que me pasaste te la dejo lista {entrega} y te la mando por acá.',
@@ -256,7 +260,7 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
-            'precio_ideal' => 'Para {rubro} te conviene {propuesta}.',
+            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
             'mensualidad' => '$15.000',
@@ -270,13 +274,13 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando',
             'imagenes_pedido' => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
-            'precio_ideal' => 'Para {rubro} te conviene {propuesta}.',
+            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$60.000',
+            'sena' => '$40.000',
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
@@ -284,13 +288,13 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo',
             'imagenes_pedido' => 'el logo y alguna foto tuya dando clase o del material de los cursos',
-            'precio_ideal' => 'Para {rubro} te conviene {propuesta}.',
+            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$60.000',
+            'sena' => '$40.000',
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
@@ -298,13 +302,13 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
             'imagenes_pedido' => 'el logo y fotos de un par de propiedades que tengas publicadas',
-            'precio_ideal' => 'Para {rubro} te conviene {propuesta}.',
+            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$60.000',
+            'sena' => '$40.000',
         ],
     ],
     'ultima_llamada' => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',

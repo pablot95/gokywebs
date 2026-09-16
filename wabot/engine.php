@@ -2056,12 +2056,21 @@ function wabot_texto_cambios_plan($conv, $cfg) {
 function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
     if (trim((string)$texto) === '') return null;
     $tPago = wabot_normalizar_frase($texto);
+    // Desde el 16-sep la seña ya no sale en el precio ni en las respuestas
+    // genéricas de "cómo se paga" (es $40.000 fija para todos los tipos): el
+    // monto solo se dice acá, cuando preguntan puntualmente por él. Por eso
+    // se suma wabot_texto_pregunta_cuanto_anticipo(), que reconoce "cuánto es
+    // la seña?" pelado, sin que haga falta nombrar "pago único" en el mismo
+    // mensaje (la seña solo existe en esa forma, así que no hay ambigüedad).
     if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
-        && mb_strlen($tPago) <= 220
-        && preg_match('/\b(pago unico|un solo pago|una sola vez)\b/u', $tPago)
-        && preg_match('/\b(cuanto|de cuanto)\b/u', $tPago)
-        && preg_match('/\b(sena|senia|empezar|arrancar|entregar|saldo)\b/u', $tPago)
-        && !wabot_texto_pregunta_devolucion($texto)) {
+        && !wabot_texto_pregunta_devolucion($texto)
+        && (
+            (mb_strlen($tPago) <= 220
+                && preg_match('/\b(pago unico|un solo pago|una sola vez)\b/u', $tPago)
+                && preg_match('/\b(cuanto|de cuanto)\b/u', $tPago)
+                && preg_match('/\b(sena|senia|empezar|arrancar|entregar|saldo)\b/u', $tPago))
+            || wabot_texto_pregunta_cuanto_anticipo($texto)
+        )) {
         $vPago = wabot_precio_vigente($conv, $cfg);
         if ($vPago['modelo'] === 'doble' && $vPago['sena'] !== '' && $vPago['saldo'] !== '') {
             return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar y ' . $vPago['saldo'] . ' de saldo al entregar, e incluye mantenimiento el primer año. No se suma la mensualidad de la suscripción.'];
@@ -2154,13 +2163,15 @@ function wabot_regateo_es_contraoferta($texto) {
     );
 }
 
-/** No hay descuentos, y las dos formas con los montos de esta charla (15-sep). */
+/** No hay descuentos, y las dos formas con los montos de esta charla (15-sep).
+ * La seña no se nombra acá (16-sep): el monto solo sale si preguntan
+ * puntualmente por ella (wabot_respuesta_pago_fija). */
 function wabot_texto_descuento($conv, $cfg) {
     $base = trim((string)$cfg['descuento']);
     if (empty($conv['tipo']) || empty($conv['precio_dado'])) return $base;
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['precio'] === '' || $v['mensualidad'] === '') return $base;
-    $unico = 'pago único de ' . $v['precio'] . ' (incluye mantenimiento el primer año)' . ($v['sena'] !== '' ? ', con una seña de ' . $v['sena'] . ' y el saldo al entregar' : '');
+    $unico = 'pago único de ' . $v['precio'] . ' (incluye mantenimiento el primer año)' . ($v['sena'] !== '' ? ', con seña y el saldo al entregar' : '');
     return $base . ' Lo que sí podés elegir es la forma: ' . $unico . ', o suscripción mensual de ' . $v['mensualidad'] . ', sin pago inicial.';
 }
 
@@ -3001,6 +3012,29 @@ function wabot_fallback_respuesta_vacia($texto, $negativaTambien = true) {
     return $negativaTambien && wabot_es_negativa($texto);
 }
 
+/**
+ * "Es para un negocio" no informa el rubro ni qué ofrece. Esta guarda corre
+ * antes del clasificador porque una etiqueta probabilística no puede convertir
+ * una frase genérica en ecommerce. En cuanto aparece una palabra específica
+ * (ropa, abogada, inmobiliaria, etc.) deja de aplicar.
+ */
+function wabot_texto_solo_negocio_generico($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    if (!preg_match('/\b(negocio|empresa|emprendimiento|comercio|local|marca|proyecto)\b/u', $t)) return false;
+
+    $genericas = [
+        'hola','buenas','quiero','queremos','necesito','necesitamos','busco','buscamos',
+        'hacer','armar','tener','una','un','la','el','mi','mis','nuestro','nuestra','nuestros','nuestras',
+        'es','seria','sería','para','por','favor','pagina','página','web','sitio','de','del',
+        'negocio','empresa','emprendimiento','comercio','local','marca','proyecto','propio','propia','familiar',
+    ];
+    foreach (array_filter(explode(' ', $t)) as $palabra) {
+        if (!in_array($palabra, $genericas, true)) return false;
+    }
+    return true;
+}
+
 /** La única pregunta del brief de un sistema de gestión: qué tiene que resolver. */
 function wabot_sistema_texto($cfg) {
     return (string)$cfg['sistema_pregunta'];
@@ -3089,6 +3123,14 @@ function wabot_engine($texto, &$conv, $cfg) {
 
     $regateo = wabot_regateo_responder($texto, $conv, $cfg);
     if ($regateo !== null) return $regateo;
+
+    // Todavía no sabemos qué negocio es: preguntar, nunca adivinar ecommerce.
+    if (empty($conv['tipo'])
+        && in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu', 'algo_diferente'], true)
+        && wabot_texto_solo_negocio_generico($texto)) {
+        $conv['fase'] = 'algo_diferente';
+        return [(string)$cfg['contame']];
+    }
 
     /* ── Atajos deterministas que no dependen del clasificador ── */
 
@@ -4622,13 +4664,14 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     return $texto;
 }
 
-/** " ($290.000: arrancás con una seña de $60.000 y el saldo va al entregar)", o '' sin tipo. */
+/** " ($290.000: arrancás con seña y el saldo va al entregar)", o '' sin tipo.
+ * Sin el monto de la seña (16-sep): sale solo si preguntan puntualmente. */
 function wabot_precio_un_solo_pago_texto($conv, $cfg) {
     $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
     if ($tipo === '' || !isset($cfg['tipos'][$tipo])) return '';
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     if ($v['precio'] === '') return '';
-    return ' (' . $v['precio'] . ($v['sena'] !== '' ? ': arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar' : '') . ')';
+    return ' (' . $v['precio'] . ($v['sena'] !== '' ? ': arrancás con seña y el saldo va al entregar' : '') . ')';
 }
 
 /**
@@ -4982,29 +5025,12 @@ function wabot_monto_por_mes_texto($v, $cfg, $campo) {
     return implode(', ', $partes) . ' y ' . $ultimo;
 }
 
-/**
- * El segundo mensaje del turno del precio: los tres pasos (Pablo, 10-sep) y,
- * desde el 11-sep, la pregunta de si quiere la demo. Terminaban en "comienza el
- * plan mensual", que informa pero no dice qué contestar, y el "Vestidos y
- * conjuntos" que venía después se tomaba como un sí. Con la pregunta, el sí
- * siguiente significa una sola cosa. Sin la pregunta cuando el formulario sale
- * en el mismo turno (el que pidió la demo al entrar): preguntarle si la quiere y
- * mandarle el link en el globo de al lado se contradice.
- */
+/** Segundo y último mensaje automático: el portfolio general. */
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
-    $contexto = trim((string)($conv['descripcion'] ?? '')) . ' ' . wabot_ultimo_texto_cliente($conv);
-    $sugerencias = wabot_rubro_sugerencias($contexto, (string)($conv['tipo'] ?? ''));
-    $t = !empty($conv['portfolio_mostrado'])
-        ? 'Si querés elegir un punto de partida, mirá los modelos en gokywebs.com/modelos/'
-        : ($sugerencias ? $sugerencias['texto'] : 'Podés mirar nuestros trabajos en gokywebs.com/portfolio/ y elegir uno o dos modelos en gokywebs.com/modelos/');
-    return $t . ($conPregunta ? "\n¿Arrancamos?" : '');
+    return 'Podés ver todos nuestros trabajos terminados y funcionando en: gokywebs.com/portfolio';
 }
 
-/**
- * Lo que incluye y las dos formas de contratarla, debajo de lo que le podemos
- * hacer en el primer mensaje del precio (Pablo, 15-sep). Con los montos
- * congelados de la charla. La charla vieja del pago único no lo lleva.
- */
+/** Las dos formas breves de contratarla, con los montos de esta charla. */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']));
@@ -5018,6 +5044,20 @@ function wabot_servicio_texto($tipo, $conv, $cfg) {
 function wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg) {
     $servicio = wabot_servicio_texto($tipo, $conv, $cfg);
     return $servicio === '' ? $precioTexto : rtrim((string)$precioTexto) . "\n\n" . $servicio;
+}
+
+/**
+ * Después de la recomendación, las dos formas de pago y el portfolio termina
+ * la intervención automática. El siguiente mensaje queda visible y pendiente
+ * para que lo continúe una persona, sin avisos ni seguimientos del bot.
+ */
+function wabot_cotizacion_finalizar(&$conv) {
+    wabot_handoff_marcar($conv, 'cotizacion_final');
+    $conv['cierre'] = 'cotizacion_final';
+    $conv['cta_muestra'] = false;
+    $conv['precio_cta_pendiente'] = false;
+    $conv['seguimiento_bloqueado'] = true;
+    $conv['bot_off'] = true;
 }
 
 /**
@@ -5413,18 +5453,15 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
  * contadora, un abogado o un colegio, que no tienen trabajos que mostrar.
  */
 function wabot_propuesta_texto($tipo, $conv) {
-    $paraQue = is_array($conv) && (string)($conv['pitch_para_que_tipo'] ?? '') === (string)$tipo
-        ? trim((string)($conv['pitch_para_que'] ?? '')) : '';
-    if ($paraQue !== '') return 'una web donde ' . $paraQue;
-    // Tienda + cursos (Pablo, 14-sep): se cotiza como tienda, con su propia frase.
+    // Textos cerrados: el modelo elige el tipo, pero no agrega ni reformula.
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
-        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con el acceso de cada alumno y el cobro online';
+        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con acceso para cada alumno, cobro online y un panel administrativo para gestionar todo';
     }
     $fijas = [
-        'landing'      => 'una web a tu medida, que presente tu negocio, explique tus servicios y haga que los clientes te escriban directo por WhatsApp',
-        'ecommerce'    => 'una web para vender online, con tu catálogo, carrito y cobro con tarjeta o Mercado Pago, y un panel tuyo para cargar productos y ver los pedidos',
-        'inmobiliaria' => 'una web para publicar tus propiedades con fotos y fichas completas, con buscador por zona y tipo, y un panel tuyo para cargarlas y darlas de baja',
-        'elearning'    => 'una plataforma para vender tus cursos, con los videos subidos, un usuario para cada alumno con su progreso y el cobro de la inscripción online',
+        'landing'      => 'un sitio profesional para presentar tu negocio, mostrar tus servicios o trabajos y recibir consultas directas por WhatsApp',
+        'ecommerce'    => 'una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos',
+        'inmobiliaria' => 'una web inmobiliaria para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades',
+        'elearning'    => 'una plataforma para vender tus cursos, con los videos organizados, acceso para cada alumno, cobro online y un panel administrativo para gestionar cursos y alumnos',
     ];
     return $fijas[$tipo] ?? 'una web a tu medida';
 }
@@ -5520,22 +5557,16 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['pitch_tipo'] = $tipo;
     $conv['precio_dado'] = true;
     $conv['precio_turnos_desde'] = 0;
-    $conv['precio_cta_pendiente'] = true;
+    $conv['precio_cta_pendiente'] = false;
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* EL TURNO DEL PRECIO SON DOS MENSAJES (Pablo, 14-sep, versión vigente):
-     * primero lo que le podemos hacer con el link y el SERVICIO MENSUAL con lo
-     * que incluye, y 2 segundos después la oferta de la demo gratis. Del 11 al 13-sep fueron
-     * un solo globo; wabot_demora_tipeo() le da a los pasos sus 2 segundos
-     * fijos. Sin nada en el medio (Pablo, 2-sep:
-     * "sacá todo lo que sea 'si te cierra', 'si va por ahí'"). El link del
-     * formulario ya NO va acá: sale recién cuando el cliente contesta que sí
-     * (case 'prediseno' del motor, o consultar_info('prediseno') del agente). */
-    $conv['fase'] = 'prediseno';
-    $conv['cta_muestra'] = true;
-    wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => 'precio']);
-    return [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
+    /* Dos mensajes cerrados: recomendación + precios y el portfolio general.
+     * No hay CTA, demo, modelos ni formulario. */
+    $conv['cta_muestra'] = false;
+    $salida = [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
+    wabot_cotizacion_finalizar($conv);
+    return $salida;
 }
 
 function wabot_precio($tipo, &$conv, $cfg) {
@@ -5582,23 +5613,13 @@ function wabot_precio($tipo, &$conv, $cfg) {
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && !empty($conv['cta_muestra'])) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
-    // El precio ya salió en el turno del pitch (wabot_pitch(), arriba), en su
-    // propio mensaje: acá solo falta OFRECER la demo, sin repetir el precio y
-    // sin pedir los datos todavía (Pablo, 25-ago: primero se ofrece, y solo si
-    // confirma se le pide el listado — antes se saltaba directo al pedido de
-    // datos, dando por hecho un sí que nunca se preguntó). Si contesta que sí
-    // (o cualquier cosa que no sea otra cosa clasificable), case 'prediseno'
-    // ya sabe mandar wabot_prediseno_texto() en el turno siguiente.
+    // Compatibilidad con una cotización vieja que quedó sin su segundo mensaje.
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && empty($conv['cta_muestra'])) {
-        $conv['fase'] = 'prediseno';
-        $conv['cta_muestra'] = true;
+        $conv['cta_muestra'] = false;
         wabot_handoff_aclaracion_resuelta($conv);
-        $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
-        wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-        /* Pablo, 10-sep: el mensaje que sigue al precio son los tres pasos, y
-         * la demo gratis es el paso 1. El link del formulario sale recién
-         * cuando el cliente contesta que sí. Mismo texto con o sin link. */
-        return [wabot_tres_pasos_texto($conv, $cfg)];
+        $salida = [wabot_tres_pasos_texto($conv, $cfg)];
+        wabot_cotizacion_finalizar($conv);
+        return $salida;
     }
 
     $conv['tipo'] = $tipo;
@@ -5606,32 +5627,17 @@ function wabot_precio($tipo, &$conv, $cfg) {
     $conv['precio_dado'] = true;
     wabot_precio_congelar($conv, $tipo, $cfg);
     $conv['precio_turnos_desde'] = 0;
-    $conv['precio_cta_pendiente'] = true;
+    $conv['precio_cta_pendiente'] = false;
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    // Esto solo se llega a pisar cuando el pitch nunca corrió para este tipo
-    // (pidió el precio directo, o pitch_activo está apagado): ahí el precio y
-    // la propuesta de la demo van juntos en el mismo turno, como siempre.
-    // El precio sale con el mismo texto que en el pitch (el formato de Pablo
-    // del 11-sep): el que preguntó "cuánto sale" antes de contar su rubro
-    // recibía otra redacción, la de msg_precio.
+    // Si el pitch estaba desactivado o pidió el precio directo, usa el mismo
+    // formato final de dos mensajes.
     $precioSolo = wabot_pitch_precio_texto($tipo, $cfg, $conv);
-    $conv['fase'] = 'prediseno';
-    $conv['cta_muestra'] = true;
-    // "Ofrecida", no "aceptada": todavía no sabemos si el cliente la quiere,
-    // recién se la estamos por mandar. "Aceptada" se sigue marcando aparte,
-    // cuando de verdad hay una señal de que la quiere (completa el form,
-    // contesta con sus datos, dice que sí).
-    $origenEvento = !empty($conv['demo_pedida_entrada']) ? 'pedida_de_entrada' : 'precio';
-    wabot_evento_sesion($conv, 'muestra_ofrecida', ['origen' => $origenEvento]);
-    /* Los tres pasos van en su propio mensaje, detrás del precio (Pablo,
-     * 14-sep), con o sin link: el formulario o el listado de datos salen recién
-     * con el sí del cliente, igual que en el camino del pitch. Salvo que ya
-     * haya pedido la demo al entrar ("quiero la demo gratis"): ese sí ya está
-     * dicho, así que el formulario va en el mismo turno —en su propio globo,
-     * porque lleva el link— y los pasos van sin la pregunta. */
-    return [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
+    $conv['cta_muestra'] = false;
+    $salida = [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
+    wabot_cotizacion_finalizar($conv);
+    return $salida;
 }
 
 /**

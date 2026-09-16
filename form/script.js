@@ -128,9 +128,6 @@ function armarModelos() {
         mfGrid.innerHTML = '<p class="mf-vacio">No pudimos cargar los modelos. Recargá la página y volvé a intentar.</p>';
         return;
     }
-    const labelTipo = Object.fromEntries(MODELO_TIPOS.map(t => [t.id, t.label]));
-    const labelRubro = Object.fromEntries(MODELO_RUBROS.map(r => [r.id, r.label]));
-
     [{ id: 'all', label: 'Todos' }, ...MODELO_TIPOS].forEach(t => {
         if (t.id !== 'all' && !MODELOS.some(m => m.tipo === t.id)) return;
         const b = document.createElement('button');
@@ -153,16 +150,12 @@ function armarModelos() {
             <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
             <span class="mf-letra" aria-hidden="true"></span>
             <div class="mf-info">
-                <span class="mf-tag"></span>
-                <h3 class="mf-nombre"></h3>
                 <div class="mf-acciones">
                     <button type="button" class="mf-marcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Elegir</span></button>
                     <button type="button" class="mf-ver">Ver grande</button>
                 </div>
             </div>`;
         card.querySelector('.mf-letra').textContent = m.letra;
-        card.querySelector('.mf-tag').textContent = labelRubro[(m.rubros || [])[0]] || labelTipo[m.tipo] || '';
-        card.querySelector('.mf-nombre').textContent = nombreModelo(m);
         card.querySelector('.mf-marcar').setAttribute('aria-label', `Elegir el ${nombreModelo(m)}`);
         card.querySelector('.mf-ver').setAttribute('aria-label', `Ver grande el ${nombreModelo(m)}`);
         frag.append(card);

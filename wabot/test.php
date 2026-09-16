@@ -813,7 +813,7 @@ $valor = function ($k) use ($campos) { $v = $campos[$k] ?? null; return $v ? res
 
 caso('la cantidad de productos llega al boceto', $valor('productos_cantidad') === '40');
 caso('la cantidad de imágenes que mandó también', $valor('imagenes_recibidas') === '3');
-caso('y el precio cotizado también, con las dos formas', preg_match('/^Pago único \$290\.000 \(seña \$60\.000\) o \$25\.000 por mes$/u', (string)$valor('presupuesto_cotizado')) === 1, (string)$valor('presupuesto_cotizado'));
+caso('y el precio cotizado también, con las dos formas', preg_match('/^Pago único \$290\.000 \(seña \$40\.000\) o \$25\.000 por mes$/u', (string)$valor('presupuesto_cotizado')) === 1, (string)$valor('presupuesto_cotizado'));
 caso('el nombre del cliente no viaja vacío', $valor('nombre') === 'Ana Prueba');
 caso('el rubro sale del brief', $valor('rubro') === 'Indumentaria');
 caso('lo que ofrece también', $valor('productos_servicios') === 'remeras');
@@ -1588,9 +1588,10 @@ foreach ($TIPOS as $tipoCuota) {
     $texto = wabot_texto_pago(['tipo' => $tipoCuota, 'precio_dado' => true], $cfg);
     caso("$tipoCuota: la respuesta de pago no trae ningún monto de cuota",
         preg_match('/\d+ (cuotas )?de \$/u', $texto) === 0);
-    caso("$tipoCuota: dice las dos formas con sus montos",
+    caso("$tipoCuota: dice las dos formas, con seña sin monto (16-sep)",
         strpos($texto, 'Pago único de ' . $cfg['tipos'][$tipoCuota]['precio']) !== false
-        && strpos($texto, 'seña de ' . $cfg['tipos'][$tipoCuota]['sena']) !== false
+        && strpos($texto, 'una seña') !== false
+        && strpos($texto, 'seña de ' . $cfg['tipos'][$tipoCuota]['sena']) === false
         && strpos($texto, $cfg['tipos'][$tipoCuota]['mensualidad']) !== false, $texto);
     caso("$tipoCuota: y no deja ningún marcador crudo", strpos($texto, '{') === false);
 }
@@ -2059,7 +2060,7 @@ caso('una charla archivada que vuelve a los 10 días reaparece en el panel', $c[
 echo "— Parte 1: sin seña, sin montos de cuota y sin el nombre de Pablo —\n";
 
 foreach (array_merge([$cfg['msg_precio']], $cfg['msg_precio_variantes']) as $i => $plantilla) {
-    caso("la plantilla de precio #$i, si nombra la seña, la dice con su monto", strpos($plantilla, 'seña') === false || strpos($plantilla, 'seña de {sena}') !== false);
+    caso("la plantilla de precio #$i, si nombra la seña, NO dice su monto (16-sep)", strpos($plantilla, 'seña') === false || strpos($plantilla, '{sena}') === false);
     caso("la plantilla de precio #$i ya no linkea el presupuesto (14-sep)", strpos($plantilla, '{link}') === false);
 }
 caso('el mensaje de precio NO menciona la tarjeta ni las 12 cuotas: eso se contesta solo si preguntan',
@@ -2067,8 +2068,9 @@ caso('el mensaje de precio NO menciona la tarjeta ni las 12 cuotas: eso se conte
     && stripos(wabot_msg_precio_texto('landing', $cfg), 'tarjeta') === false);
 caso('tampoco dice el monto de cada cuota',
     strpos(wabot_msg_precio_texto('landing', $cfg), '$25.168') === false);
-caso('el resumen del precio dice las dos formas, con la seña (15-sep)',
-    strpos((string)$cfg['precio_resumen'], 'seña de {sena}') !== false);
+caso('el resumen del precio dice las dos formas, sin el monto de la seña (16-sep)',
+    strpos((string)$cfg['precio_resumen'], 'seña') !== false
+    && strpos((string)$cfg['precio_resumen'], '{sena}') === false);
 
 // derivar y espera SÍ lo nombran desde el 27-ago: son los dos textos que
 // anuncian el traspaso, y ahora tienen que avisar además que el mensaje va a
@@ -2113,14 +2115,20 @@ caso('la videollamada de la parte 2 tampoco lo nombra',
     stripos((string)$cfg['postdemo_videollamada'], 'pablo') === false
     && stripos((string)$cfg['postdemo_videollamada'], 'desarrollador') !== false);
 
-/* 10-sep: ya no hay seña. El que la pregunta recibe el primer pago y el plan
- * mensual de lo que se le cotizó, sin que el bot repita la palabra. */
+/* 16-sep: la seña ($40.000 fija para todos los tipos) ya no sale en el
+ * precio ni en la info genérica de "cómo se paga"; el monto solo sale acá,
+ * por el atajo dedicado a la pregunta puntual (wabot_respuesta_pago_fija +
+ * wabot_texto_pregunta_cuanto_anticipo, que reconoce "cuánto es la seña?"
+ * pelado, sin que haga falta nombrar "pago único" en el mismo mensaje). */
 $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
 $c['precio_cotizado'] = '$40.000'; $c['mensualidad_cotizada'] = '$15.000'; $c['precio_modelo'] = 'mensual';
+$rFijo = wabot_respuesta_pago_fija('cuanto es la seña?', $c, $cfg);
+caso('preguntar por la seña, pelado, contesta con su monto por el atajo dedicado (16-sep)',
+    $rFijo !== null && strpos(implode("\n", (array)$rFijo), 'seña de $') !== false);
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
 $r = wabot_engine('cuanto es la seña?', $c, $cfg);
-caso('preguntar por la seña contesta con la seña del pago único y el servicio mensual (15-sep)',
-    strpos(implode("\n", (array)$r), 'seña de $') !== false);
+caso('si en cambio cae en la info genérica de pago, ya no dice el monto (16-sep)',
+    strpos(implode("\n", (array)$r), 'seña de $') === false);
 caso('y el detector de esa pregunta la reconoce, para que la conteste el atajo',
     wabot_texto_pregunta_cuanto_anticipo('cuanto es la seña?') === true);
 
@@ -2792,8 +2800,10 @@ caso('todas las webs, sitio profesional incluido, editan textos e imágenes desd
 caso('info.ejemplos ya no repregunta el rubro: puede estar respondiendo a alguien que ya lo dijo',
     stripos($cfg['info']['ejemplos'], 'si me decís de qué rubro') === false);
 
-caso('info.pago explica las dos formas: pago único con seña y mensual sin pago inicial (15-sep)',
-    strpos($cfg['info']['pago'], 'Pago único de {precio}') !== false && strpos($cfg['info']['pago'], 'seña de {sena}') !== false && strpos($cfg['info']['pago'], 'No hay pago inicial') !== false);
+caso('info.pago explica las dos formas: pago único con seña (sin su monto) y mensual sin pago inicial (16-sep)',
+    strpos($cfg['info']['pago'], 'Pago único de {precio}') !== false
+    && strpos($cfg['info']['pago'], 'una seña') !== false && strpos($cfg['info']['pago'], '{sena}') === false
+    && stripos($cfg['info']['pago'], 'No hay pago inicial') !== false);
 
 echo "— info.rangos se calcula en vivo desde los precios actuales, no queda un texto fijo desactualizado —\n";
 

@@ -34,8 +34,8 @@ function conv_cotizada($tipo, $cfg, $clave = '5491177770000TEST') {
 
 echo "— 1. La lista de precios —\n";
 
-foreach (['landing' => ['$180.000', '$40.000', '$15.000'], 'ecommerce' => ['$290.000', '$60.000', '$25.000'],
-          'elearning' => ['$290.000', '$60.000', '$25.000'], 'inmobiliaria' => ['$240.000', '$60.000', '$25.000']] as $t => $par) {
+foreach (['landing' => ['$180.000', '$40.000', '$15.000'], 'ecommerce' => ['$290.000', '$40.000', '$25.000'],
+          'elearning' => ['$290.000', '$40.000', '$25.000'], 'inmobiliaria' => ['$240.000', '$40.000', '$25.000']] as $t => $par) {
     caso("$t: pago único {$par[0]}, seña {$par[1]} y servicio mensual {$par[2]}",
         ($cfg['tipos'][$t]['precio'] ?? '') === $par[0] && ($cfg['tipos'][$t]['sena'] ?? '') === $par[1]
         && ($cfg['tipos'][$t]['mensualidad'] ?? '') === $par[2]);
@@ -46,7 +46,7 @@ caso('la config es los textos del código más los ajustes de bot-config.json',
     $cfg['menu'] === wabot_textos_default()['menu'] && isset($cfg['activo']));
 $v = wabot_precio_vigente(null, $cfg, 'ecommerce');
 caso('el precio vigente sin charla es el de lista, modelo doble, con el saldo calculado',
-    $v['modelo'] === 'doble' && $v['precio'] === '$290.000' && $v['sena'] === '$60.000' && $v['saldo'] === '$230.000' && $v['mensualidad'] === '$25.000');
+    $v['modelo'] === 'doble' && $v['precio'] === '$290.000' && $v['sena'] === '$40.000' && $v['saldo'] === '$250.000' && $v['mensualidad'] === '$25.000');
 caso('la tabla de precios agrupa por par', strpos(wabot_tabla_precios_texto($cfg), 'Sitio profesional: $180.000 en un pago único o $15.000 por mes.') === 0);
 
 echo "— 2. El turno del precio: dos mensajes, los tres pasos sin link —\n";
@@ -265,8 +265,8 @@ foreach (['Con el pago unico despues tengo que pagar algo mas?' => 'plan de mant
 }
 $c = conv_cotizada('ecommerce', $cfg, '5491177770033TEST');
 foreach (['Y con el pago único después qué tengo que seguir pagando?' => ['$15.000 por mes', 'segundo año'],
-          'Los 25 mil son la seña?' => ['No:', '$25.000', '$60.000'],
-          'Si elijo el pago único, cuánto pongo para empezar y cuánto al entregar?' => ['$60.000', '$230.000', '$290.000']] as $m => $frags) {
+          'Los 25 mil son la seña?' => ['No:', '$25.000', '$40.000'],
+          'Si elijo el pago único, cuánto pongo para empezar y cuánto al entregar?' => ['$40.000', '$250.000', '$290.000']] as $m => $frags) {
     wabot_conv_transcript($c, 'cliente', $m); $c['ultimo_cliente_ts'] = time();
     clasifica(['otro']);
     $txt = implode("\n", wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? []);
@@ -338,12 +338,14 @@ foreach ([
 caso('el pago genérico explica las dos formas sin montos antes de saber el rubro (15-sep)',
     stripos(wabot_texto_pago_generico($cfg), 'dos formas de pagarla') !== false && strpos(wabot_texto_pago_generico($cfg), '$') === false
     && stripos(wabot_texto_pago_generico($cfg), 'seña para arrancar') !== false && stripos(wabot_texto_pago_generico($cfg), 'sin pago inicial') !== false);
-caso('el resumen del precio dice las dos formas, con la seña (15-sep)',
-    strpos((string)$cfg['precio_resumen'], 'seña de {sena}') !== false && strpos(wabot_precio_resumen($cLanding, $cfg), 'seña de $40.000') !== false);
+caso('el resumen del precio dice las dos formas, sin el monto de la seña (16-sep)',
+    strpos((string)$cfg['precio_resumen'], 'seña') !== false && strpos((string)$cfg['precio_resumen'], '{sena}') === false
+    && strpos(wabot_precio_resumen($cLanding, $cfg), 'seña de $40.000') === false);
 caso('el resumen conserva el portfolio filtrado',
     strpos(wabot_precio_resumen(['tipo' => 'ecommerce', 'precio_dado' => true], $cfg), 'gokywebs.com/portfolio/?tipo=ecommerce') !== false);
-caso('info.pago explica las dos formas: pago único con seña y mensual sin pago inicial (15-sep)',
-    strpos($cfg['info']['pago'], 'Pago único de {precio}') !== false && strpos($cfg['info']['pago'], 'seña de {sena}') !== false && strpos($cfg['info']['pago'], 'No hay pago inicial') !== false);
+caso('info.pago explica las dos formas: pago único con seña (sin su monto) y mensual sin pago inicial (16-sep)',
+    strpos($cfg['info']['pago'], 'Pago único de {precio}') !== false && strpos($cfg['info']['pago'], 'una seña') !== false
+    && strpos($cfg['info']['pago'], '{sena}') === false && strpos($cfg['info']['pago'], 'No hay pago inicial') !== false);
 caso('el proceso explica modelos, pago único y suscripción mensual, sin demo gratis',
     stripos($cfg['info']['proceso'], 'modelos') !== false && mb_stripos($cfg['info']['proceso'], 'suscripción mensual') !== false
     && stripos($cfg['info']['proceso'], 'demo gratis') === false && strpos(wabot_texto_info('proceso', $cfg), '$') === false);
@@ -405,8 +407,8 @@ caso('sin plataformas de streaming y sin el detalle de los cambios extra',
 caso('y aclara que incluye mantenimiento el primer año (16-sep)', mb_stripos($serv, 'Incluye mantenimiento el primer año') !== false);
 $cU = conv_cotizada('ecommerce', $cfg, '5491177770090TEST');
 $u = wabot_texto_info('un_solo_pago', $cfg, $cU);
-caso('la tienda en un pago único sale $290.000, con su seña y mantenimiento el primer año (16-sep)',
-    strpos($u, '$290.000') !== false && strpos($u, 'seña de $60.000') !== false
+caso('la tienda en un pago único sale $290.000, con seña sin su monto y mantenimiento el primer año (16-sep)',
+    strpos($u, '$290.000') !== false && strpos($u, 'con seña') !== false && strpos($u, 'seña de $') === false
     && mb_stripos($u, 'Incluye mantenimiento el primer año') !== false && mb_stripos($u, 'pago único') !== false, $u);
 foreach (['landing' => '$180.000', 'inmobiliaria' => '$240.000', 'elearning' => '$290.000'] as $t => $p) {
     $cU = conv_cotizada($t, $cfg, '5491177770090TEST');
@@ -548,8 +550,12 @@ caso('aclara el total sin sumar planes ni volver al anterior',
 foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', $m);
 $vUp = $c['upgrade_pendiente'];
 $rUpSena = wabot_upgrade_pago_texto($vUp, $c, $cfg);
+// Desde el 16-sep la seña es $40.000 para todos los tipos, así que ya no
+// distingue sitio de tienda por sí sola: se confirma por la mensualidad
+// ($25.000 de la tienda, no los $15.000 del sitio) y el precio ($290.000).
 caso('la seña después del upgrade es la de la tienda, no la del sitio',
-    mb_strpos($rUpSena, '$60.000') !== false && mb_strpos($rUpSena, '$40.000') === false, $rUpSena);
+    mb_strpos($rUpSena, '$290.000') !== false && mb_strpos($rUpSena, 'seña de $40.000') !== false
+    && mb_strpos($rUpSena, '$25.000') !== false && mb_strpos($rUpSena, '$15.000') === false, $rUpSena);
 caso('la tienda consultada de nuevo se confirma corta, no con el mismo texto',
     wabot_upgrade_confirmacion_texto($vUp, $c, $cfg) !== wabot_upgrade_texto('ecommerce', $c, $cfg));
 $p = 'Sí, quiero la demo con la tienda';

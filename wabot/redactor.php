@@ -50,6 +50,19 @@ function wabot_responder($texto, &$conv, $cfg) {
     // El reset pertenece al borde común, antes de actualizar ultimo_ts.
     wabot_turno_preparar($conv, $cfg, time());
 
+    // La cotización cerrada es el último mensaje automático. Desde acá sigue
+    // una persona; también se respeta en llamadas directas fuera del webhook.
+    if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final') return [];
+    // Conversaciones que ya habían recibido el precio con la versión anterior
+    // también se detienen acá: no continúan hacia modelos, formulario o demo.
+    if (!empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
+        && empty($conv['lead_creado']) && empty($conv['form_completado_ts'])
+        && empty($conv['presentado_ts'])
+        && in_array(($conv['fase'] ?? ''), ['precio', 'prediseno', 'confirma_cambio'], true)) {
+        wabot_cotizacion_finalizar($conv);
+        return [];
+    }
+
     // Transitoria de UN turno (ver wabot_postdemo_responder): si un corte de
     // más abajo terminó el turno anterior sin consumirla, no puede aparecer
     // adelante de la respuesta de hoy.

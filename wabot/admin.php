@@ -1,13 +1,14 @@
 <?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
- * Pestañas: Conversaciones (la de entrada) · Conversaciones live · Ajustes · Estado.
+ * Pestañas: Conversaciones · Conversaciones live · Respuestas rápidas · Ajustes · Estado.
  * Los textos del bot viven en código (textos.php): el panel ya no los edita.
  * Auth: normalmente entra por el login de Firebase del admin (ver auth.php);
  * la clave de WABOT_ADMIN_PASS queda como respaldo para acceso directo.
  */
 
 require_once __DIR__ . '/redactor.php';
+require_once __DIR__ . '/respuestas-rapidas.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -42,12 +43,14 @@ if (!empty($_POST['clave'])) {
 $logueado = !empty($_SESSION['wabot']);
 
 $cfg = wabot_config_load();
+$respuestasRapidas = wabot_respuestas_rapidas_load();
 
 // Las cuatro pestañas del panel. Se define acá arriba porque el redirect de
 // las pestañas viejas (textos, entrenamiento…) lo necesita antes del HTML.
 $NAV_TABS = [
     'conversaciones' => 'Conversaciones',
     'live'           => 'Conversaciones live',
+    'respuestas'     => 'Respuestas rápidas',
     'ajustes'        => 'Ajustes',
     'estado'         => 'Estado',
 ];
@@ -316,6 +319,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['activo'] = empty($cfg['activo']);
         wabot_config_save($cfg);
         header('Location: admin.php'); exit;
+    }
+    if ($a === 'guardar_respuestas_rapidas') {
+        $crudo = (string)($_POST['respuestas_json'] ?? '');
+        $datos = strlen($crudo) <= 1024 * 1024 ? json_decode($crudo, true) : null;
+        if (!is_array($datos) || !wabot_respuestas_rapidas_save($datos)) {
+            header('Location: admin.php?tab=respuestas&error_guardar=1'); exit;
+        }
+        header('Location: admin.php?tab=respuestas&ok=1'); exit;
     }
     /* Pestaña Ajustes: las únicas claves de bot-config.json que se editan desde
      * el panel. Los textos del bot viven en textos.php, así que acá solo quedan
@@ -1165,8 +1176,47 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-item { display:block; width:100%; text-align:left; padding:8px 9px; border:0; border-radius:7px; background:transparent; color:var(--tx); font:inherit; font-size:12.5px; line-height:1.4; cursor:pointer; }
 .rr-item:hover, .rr-item:focus-visible { background:var(--card); outline:0; }
 .rr-item-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); font-size:11.5px; margin-top:2px; }
+/* En escritorio las pestañas tienen una franja propia: el chat termina antes
+   y ningún botón queda apoyado encima de los mensajes o del scroll. */
+@media (min-width: 1181px) and (hover: hover) {
+  body.conv-full .conv-main { margin-right:190px; }
+}
 @media (max-width: 1180px), (hover: none) {
   .rr-panel { display:none; }
+}
+.rr-buscador { position:absolute; left:0; right:0; bottom:calc(100% + 8px); z-index:80;
+    padding:8px; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:11px;
+    box-shadow:0 14px 36px rgb(0 0 0 / .48); }
+.rr-buscador[hidden] { display:none; }
+.rr-buscador-cab { display:flex; align-items:center; gap:8px; }
+.rr-buscador-barra { flex:1; min-width:0; width:100%; height:38px; margin:0; padding:8px 10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--tx); font:inherit; }
+.rr-buscador-barra:focus { border-color:var(--ac); outline:0; }
+.rr-buscador-atajo { flex:none; padding:2px 7px; border:1px solid var(--line-fuerte); border-radius:6px;
+    color:var(--tenue); font-size:11px; font-weight:700; }
+.rr-resultados { display:flex; flex-direction:column; gap:2px; max-height:min(42vh, 330px); overflow-y:auto; margin-top:7px; }
+.rr-resultado { display:block; width:100%; padding:8px 9px; border:0; border-radius:7px; background:transparent;
+    color:var(--tx); font:inherit; font-size:12.5px; font-weight:400; line-height:1.35; text-align:left; }
+.rr-resultado:hover, .rr-resultado.on, .rr-resultado:focus-visible { background:var(--card); outline:0; }
+.rr-resultado-cat { display:block; margin-bottom:2px; color:var(--ac); font-size:10px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; }
+.rr-sin-resultados { padding:12px 9px; color:var(--dim); font-size:12.5px; text-align:center; }
+.rr-admin-lista { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+.rr-admin-cat { padding:13px; border:1px solid var(--line); border-radius:11px; background:var(--card); }
+.rr-admin-cat-cab { display:grid; grid-template-columns:58px minmax(180px,1fr) auto; gap:8px; align-items:center; }
+.rr-admin-cat-cab input { margin:0; }
+.rr-admin-ico { text-align:center; font-size:20px; padding-left:5px !important; padding-right:5px !important; }
+.rr-admin-items { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
+.rr-admin-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:start; }
+.rr-admin-item textarea { min-height:58px; margin:0; resize:vertical; }
+.rr-admin-borrar { padding:8px 10px; color:var(--bad) !important; border-color:transparent !important; }
+.rr-admin-borrar:hover { border-color:var(--bad) !important; }
+.rr-admin-cat-pie { display:flex; justify-content:flex-start; margin-top:9px; }
+.rr-admin-acciones { position:sticky; bottom:0; z-index:5; display:flex; justify-content:space-between; gap:10px;
+    margin-top:14px; padding:10px; border:1px solid var(--line-fuerte); border-radius:11px; background:rgb(25 28 35 / .96); }
+@media (max-width:700px) {
+  .rr-admin-cat-cab { grid-template-columns:52px minmax(0,1fr); }
+  .rr-admin-cat-cab .rr-admin-borrar { grid-column:1 / -1; justify-self:end; }
 }
 .conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
 .conv-head form { display:inline; }
@@ -1428,6 +1478,102 @@ body.embed { min-height: 0; }
             <?php endif; ?>
         </div>
 
+    <?php elseif ($tab === 'respuestas'): ?>
+        <?php if (isset($_GET['error_guardar'])): ?>
+            <p class="ok" style="color:var(--bad)">No se pudieron guardar las respuestas. Revisá los datos e intentá de nuevo.</p>
+        <?php endif; ?>
+        <div class="card">
+            <h2 style="margin-top:0">Respuestas rápidas</h2>
+            <p class="meta">Esta es la lista que aparece al costado de los chats y en el buscador <strong>/</strong>. Podés editar, borrar o crear categorías y mensajes. Los cambios se aplican al guardar.</p>
+            <form method="post" id="rrAdminForm">
+                <input type="hidden" name="accion" value="guardar_respuestas_rapidas">
+                <input type="hidden" name="respuestas_json" id="rrAdminJson">
+                <div class="rr-admin-lista" id="rrAdminLista"></div>
+                <div class="rr-admin-acciones">
+                    <button type="button" class="sec" id="rrAdminNuevaCategoria">+ Nueva categoría</button>
+                    <button type="submit">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+        <script>
+        (() => {
+            const lista = document.getElementById('rrAdminLista');
+            const form = document.getElementById('rrAdminForm');
+            const salida = document.getElementById('rrAdminJson');
+            const nuevaCategoria = document.getElementById('rrAdminNuevaCategoria');
+            let datos = <?= json_encode($respuestasRapidas, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+            function boton(texto, clase, alClick) {
+                const b = document.createElement('button');
+                b.type = 'button'; b.textContent = texto; b.className = clase;
+                b.addEventListener('click', alClick);
+                return b;
+            }
+
+            function render() {
+                lista.textContent = '';
+                if (!datos.length) {
+                    const vacio = document.createElement('p');
+                    vacio.className = 'meta';
+                    vacio.textContent = 'Todavía no hay respuestas. Creá una categoría para empezar.';
+                    lista.appendChild(vacio);
+                    return;
+                }
+                datos.forEach((cat, ci) => {
+                    const caja = document.createElement('section');
+                    caja.className = 'rr-admin-cat';
+                    const cab = document.createElement('div');
+                    cab.className = 'rr-admin-cat-cab';
+
+                    const ico = document.createElement('input');
+                    ico.type = 'text'; ico.className = 'rr-admin-ico'; ico.value = cat.ico || '💬';
+                    ico.maxLength = 8; ico.title = 'Emoji de la categoría'; ico.setAttribute('aria-label', 'Emoji de la categoría');
+                    ico.addEventListener('input', () => { cat.ico = ico.value; });
+
+                    const titulo = document.createElement('input');
+                    titulo.type = 'text'; titulo.value = cat.titulo || ''; titulo.maxLength = 80;
+                    titulo.placeholder = 'Nombre de la categoría'; titulo.setAttribute('aria-label', 'Nombre de la categoría');
+                    titulo.addEventListener('input', () => { cat.titulo = titulo.value; });
+
+                    const borrarCat = boton('Eliminar categoría', 'sec rr-admin-borrar', () => {
+                        if (!confirm('Eliminar esta categoría y todos sus mensajes? El cambio se aplica cuando guardes.')) return;
+                        datos.splice(ci, 1); render();
+                    });
+                    cab.append(ico, titulo, borrarCat);
+                    caja.appendChild(cab);
+
+                    const items = document.createElement('div');
+                    items.className = 'rr-admin-items';
+                    (cat.items || []).forEach((texto, mi) => {
+                        const fila = document.createElement('div');
+                        fila.className = 'rr-admin-item';
+                        const campo = document.createElement('textarea');
+                        campo.value = texto; campo.maxLength = 2000; campo.placeholder = 'Escribí la respuesta…';
+                        campo.setAttribute('aria-label', 'Respuesta rápida');
+                        campo.addEventListener('input', () => { cat.items[mi] = campo.value; });
+                        const borrar = boton('Eliminar', 'sec rr-admin-borrar', () => { cat.items.splice(mi, 1); render(); });
+                        fila.append(campo, borrar); items.appendChild(fila);
+                    });
+                    caja.appendChild(items);
+
+                    const pie = document.createElement('div');
+                    pie.className = 'rr-admin-cat-pie';
+                    pie.appendChild(boton('+ Agregar mensaje', 'sec', () => { cat.items.push(''); render(); }));
+                    caja.appendChild(pie);
+                    lista.appendChild(caja);
+                });
+            }
+
+            nuevaCategoria.addEventListener('click', () => {
+                datos.push({ ico:'💬', titulo:'Nueva categoría', items:[''] });
+                render();
+                lista.lastElementChild?.querySelector('input[type=text]:not(.rr-admin-ico)')?.focus();
+            });
+            form.addEventListener('submit', () => { salida.value = JSON.stringify(datos); });
+            render();
+        })();
+        </script>
+
     <?php elseif ($tab === 'ajustes'): ?>
         <?php /* Un solo formulario con lo único de bot-config.json que se toca
          * desde el panel. Los textos del bot viven en textos.php. */ ?>
@@ -1687,9 +1833,16 @@ body.embed { min-height: 0; }
 
                 <div class="chat" id="chat"></div>
 
-                <div id="responder" style="margin-top:12px">
+                <div id="responder" style="margin-top:12px;position:relative">
+                    <div class="rr-buscador" id="rrBuscador" hidden>
+                        <div class="rr-buscador-cab">
+                            <input type="search" class="rr-buscador-barra" id="rrBusqueda" placeholder="Buscá una respuesta por cualquier palabra…" autocomplete="off" aria-label="Buscar respuestas prearmadas">
+                            <span class="rr-buscador-atajo">Esc</span>
+                        </div>
+                        <div class="rr-resultados" id="rrResultados" role="listbox"></div>
+                    </div>
                     <div class="fila">
-                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…" style="flex:1;min-width:200px"></textarea>
+                        <textarea id="respTexto" rows="2" placeholder="Escribí tu respuesta…  / para buscar respuestas" style="flex:1;min-width:200px"></textarea>
                         <?php if (wabot_canal($conv) !== 'instagram'): ?>
                         <button id="respGrabar" class="sec" type="button" title="Mantené apretado para grabar una nota de voz. Soltá para enviar, deslizá a la izquierda para cancelar.">🎤</button>
                         <?php endif; ?>
@@ -1702,13 +1855,12 @@ body.embed { min-height: 0; }
                         <button type="button" id="grabarCancelar" class="bad" title="Cancelar la grabación">✕</button>
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
-                    <details class="rapidas" id="rapidasPanel"><summary>Respuestas rápidas para editar</summary><p>Elegí una frase, ajustala si hace falta y después tocá Enviar.</p><div id="rapidasCategorias"></div></details>
                 </div>
 
-                <!-- Respuestas rápidas (Pablo, 15-sep): pestañitas flotantes a la
-                     derecha del chat, una por categoría. Con el mouse encima se
+                <!-- Respuestas rápidas: pestañitas a la derecha del chat, una
+                     por categoría. Con el mouse encima se
                      despliega la lista de esa categoría; un clic en un mensaje lo
-                     escribe en #respTexto y lo manda solo, sin reescribir nada.
+                     escribe en #respTexto para revisarlo antes de enviarlo.
                      Solo en pantalla grande (con hover de verdad): en el celular
                      no hay dónde "pasar el mouse", así que ahí queda oculto y se
                      sigue escribiendo a mano. -->
@@ -2360,69 +2512,117 @@ body.embed { min-height: 0; }
         const est  = document.getElementById('respEstado');
         let ultimoRender = '';
 
-        /* Respuestas rápidas (Pablo, 15-sep): "estructura de posibles
-         * respuestas... categorías... clic y se envía automáticamente, así no
-         * repito siempre lo mismo". Son mensajes en primera persona, para
-         * mandar tal cual o retocar antes. Para sumar uno: agregá un string
-         * más al array de la categoría — no hace falta tocar el resto. */
-        const RESPUESTAS_RAPIDAS = [
-            { ico: '🧭', tit: 'Arrancar la charla', items: [
-                'Hola, ¿cómo estás? Contame a qué te dedicás o para qué tipo de negocio sería la web, así te paso el valor.',
-                'Perdón, no llegué a entender bien de qué se trata tu negocio — ¿vendés productos, ofrecés un servicio, es inmobiliaria, o son cursos?',
-                'Che, disculpá la demora. Contame de nuevo con tus palabras a qué te dedicás y seguimos por acá.',
-                'Te dejo cinco trabajos reales de tu rubro: [LINKS]. Y podés ver todo el portfolio en gokywebs.com/portfolio/',
-                'Ahí tenés algunos modelos de estructura para elegir uno como punto de partida: gokywebs.com/modelos/',
-                '¿Te gustó alguno? Si querés arrancamos, decime y te paso el formulario.',
-            ] },
-            { ico: '💰', tit: 'Precio y pago', items: [
-                'Te paso los datos para la seña: [ALIAS o CBU]. En cuanto la veas acreditada, arrancamos.',
-                'Te mando el link de Mercado Pago para la suscripción, así arrancamos con la primera mensualidad: [LINK]',
-                '¡Recibido! Ya arrancamos con tu web, en unos días te muestro los primeros avances.',
-                'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
-                'No manejamos descuentos, pero tenés las dos formas: pago único o mensual sin pago inicial, para que elijas la que te convenga.',
-                'Sí, se puede cambiar de una forma a la otra cuando quieras. Avisame y te cuento cómo seguimos.',
-            ] },
-            { ico: '🙅', tit: 'Objeciones', items: [
-                'Entiendo. Si el pago único te queda grande, tenés el mensual: arrancás sin poner nada de entrada.',
-                'Dale, sin problema. Cualquier duda que te vaya surgiendo, quedo por acá.',
-                'Totalmente válido. Nosotros nos diferenciamos en que no solo te la armamos: seguimos con el soporte y el mantenimiento después. La propuesta queda en pie para cuando quieras.',
-                'Ahí armás vos la página con una plantilla y pagás por mes igual. Acá te la hacemos nosotros a medida y nos ocupamos de todo lo técnico.',
-                'Ningún problema, no hay apuro ni vencimiento. Cuando quieras arrancar, escribime.',
-                'Se puede mejorar o rehacer sin drama. Contame qué te gustaría cambiar y vemos qué te conviene.',
-            ] },
-            { ico: '📋', tit: 'Ya dijo que sí', items: [
-                'Dale! Te paso el formulario para arrancar: [LINK]. Ahí me contás el nombre de tu negocio, una descripción corta, los colores que te gustan y si tenés logo o fotos, los subís ahí.',
-                'Perfecto! Para arrancar necesito: el logo (si tenés), 5-6 fotos de tu negocio o productos, los textos que quieras que aparezcan y los colores que te gustan.',
-                'No hay problema si no tenés logo todavía, arrancamos igual y lo sumamos después.',
-                '¿Ya tenés pensado el nombre para tu dominio? Por ejemplo tumarca.com.ar.',
-                'En unos días te muestro los primeros avances. La web completa suele estar lista en una semana.',
-                'Buenísimo, bienvenido/a a Gokywebs! Vamos a armar algo que te represente.',
-                'Perfecto, ya con el formulario completo arrancamos con tu web. Cualquier cosa que necesites mientras tanto, quedate tranquilo y escribime por acá.',
-            ] },
-            { ico: '⏰', tit: 'Seguimiento', items: [
-                'Hola! ¿Seguís con ganas de avanzar con tu web? Quedo atento.',
-                'Che, ¿pudiste ver la propuesta que te pasé? Cualquier duda, la resolvemos.',
-                'Hola! Te paso de nuevo los datos para la seña, por si se te traspapeló: [DATOS]',
-                'Quedo disponible para cuando quieras retomar, no hay drama.',
-            ] },
-            { ico: '🎨', tit: 'Diseño', items: [
-                'Sí, se puede ajustar. Contame qué te gustaría cambiar (colores, orden, textos) y lo vemos.',
-                'El diseño principal se puede rehacer hasta 2 veces. Una vez que lo elegís, tenés 3 devoluciones para ajustar el resto.',
-                'Tranquilo/a, lo volvemos a armar. Contame qué NO te cerró para ir por otro lado.',
-                '¿Tenés alguna web que te guste como referencia de estilo? Me ayuda mucho para afinar el diseño.',
-            ] },
-            { ico: '❓', tit: 'Preguntas técnicas', items: [
-                'El hosting y el dominio están incluidos mientras tengas la suscripción (con el pago único, el primer año va incluido el mantenimiento).',
-                'Sí, se integra Mercado Pago para que tus clientes paguen directo desde la web.',
-                'Tenés un panel para vos, para cargar y editar productos, textos e imágenes cuando quieras.',
-                'La web queda preparada técnicamente para Google. La posición en el buscador depende de otros factores, no te puedo prometer un puesto.',
-            ] },
-            { ico: '👋', tit: 'Cierre y trato', items: [
-                'Gracias a vos por la confianza! Cualquier cosa que necesites, estoy por acá.',
-                'Buenísimo, cualquier duda me escribís. Que tengas buen día!',
-                'Ya está publicada tu web! Fijate y contame qué te parece.',
-            ] },
-        ];
+        /* Respuestas rápidas. Un clic solo las copia al editor: siempre se
+         * revisan y se mandan con el botón Enviar. Para sumar una, agregá un
+         * string al array de la categoría; el buscador con / la incorpora solo. */
+        const RESPUESTAS_RAPIDAS = <?= json_encode(array_map(function ($cat) {
+            return ['ico' => (string)($cat['ico'] ?? '💬'), 'tit' => (string)($cat['titulo'] ?? ''),
+                    'items' => array_values((array)($cat['items'] ?? []))];
+        }, $respuestasRapidas), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+        const RR_TODAS = RESPUESTAS_RAPIDAS.flatMap((cat, categoria) =>
+            cat.items.map((texto, item) => ({ texto, categoria, item, titulo: cat.tit, ico: cat.ico }))
+        );
+        const rrBuscador = document.getElementById('rrBuscador');
+        const rrBusqueda = document.getElementById('rrBusqueda');
+        const rrResultados = document.getElementById('rrResultados');
+        let rrCoincidencias = [];
+        let rrSeleccion = 0;
+
+        const rrNormalizar = valor => String(valor || '').normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+        function rrCerrar() {
+            rrBuscador.hidden = true;
+            rrBusqueda.value = '';
+            rrResultados.textContent = '';
+        }
+
+        function rrElegir(indice) {
+            const elegida = rrCoincidencias[indice];
+            if (!elegida) return;
+            txt.value = elegida.texto;
+            txt.dispatchEvent(new Event('input', { bubbles:true }));
+            rrCerrar();
+            txt.focus();
+            txt.setSelectionRange(txt.value.length, txt.value.length);
+        }
+
+        function rrMarcar(indice) {
+            if (!rrCoincidencias.length) return;
+            rrSeleccion = Math.max(0, Math.min(indice, rrCoincidencias.length - 1));
+            rrResultados.querySelectorAll('.rr-resultado').forEach((boton, i) => {
+                const elegida = i === rrSeleccion;
+                boton.classList.toggle('on', elegida);
+                boton.setAttribute('aria-selected', elegida ? 'true' : 'false');
+            });
+        }
+
+        function rrPintar() {
+            const palabras = rrNormalizar(rrBusqueda.value).split(/\s+/).filter(Boolean);
+            rrCoincidencias = RR_TODAS.filter(r => {
+                const bolsa = rrNormalizar(r.titulo + ' ' + r.texto);
+                return palabras.every(p => bolsa.includes(p));
+            }).slice(0, 18);
+            rrSeleccion = Math.max(0, Math.min(rrSeleccion, rrCoincidencias.length - 1));
+            rrResultados.textContent = '';
+            if (!rrCoincidencias.length) {
+                const vacio = document.createElement('p');
+                vacio.className = 'rr-sin-resultados';
+                vacio.textContent = 'No hay respuestas que contengan esas palabras.';
+                rrResultados.appendChild(vacio);
+                return;
+            }
+            rrCoincidencias.forEach((r, i) => {
+                const boton = document.createElement('button');
+                boton.type = 'button';
+                boton.className = 'rr-resultado' + (i === rrSeleccion ? ' on' : '');
+                boton.setAttribute('role', 'option');
+                boton.setAttribute('aria-selected', i === rrSeleccion ? 'true' : 'false');
+                const categoria = document.createElement('span');
+                categoria.className = 'rr-resultado-cat';
+                categoria.textContent = r.ico + ' ' + r.titulo;
+                const mensaje = document.createElement('span');
+                mensaje.textContent = r.texto;
+                boton.append(categoria, mensaje);
+                boton.addEventListener('mouseenter', () => rrMarcar(i));
+                boton.addEventListener('click', () => rrElegir(i));
+                rrResultados.appendChild(boton);
+            });
+        }
+
+        function rrAbrir() {
+            rrBuscador.hidden = false;
+            rrSeleccion = 0;
+            rrPintar();
+            rrBusqueda.focus();
+        }
+
+        rrBusqueda.addEventListener('input', () => { rrSeleccion = 0; rrPintar(); });
+        rrBusqueda.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { e.preventDefault(); rrCerrar(); txt.focus(); return; }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const paso = e.key === 'ArrowDown' ? 1 : -1;
+                rrSeleccion = (rrSeleccion + paso + rrCoincidencias.length) % Math.max(1, rrCoincidencias.length);
+                rrMarcar(rrSeleccion);
+                rrResultados.querySelector('.rr-resultado.on')?.scrollIntoView({ block:'nearest' });
+                return;
+            }
+            if (e.key === 'Enter') { e.preventDefault(); rrElegir(rrSeleccion); }
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || !rrBuscador.hidden) return;
+            const objetivo = e.target;
+            const escribiendo = objetivo instanceof HTMLInputElement || objetivo instanceof HTMLTextAreaElement
+                || objetivo?.isContentEditable;
+            if (escribiendo && (objetivo !== txt || txt.value.trim() !== '')) return;
+            e.preventDefault();
+            rrAbrir();
+        });
+        document.addEventListener('mousedown', e => {
+            if (!rrBuscador.hidden && !rrBuscador.contains(e.target)) rrCerrar();
+        });
 
         (function armarRespuestasRapidas() {
             const panel = document.getElementById('rrPanel');
@@ -2440,19 +2640,18 @@ body.embed { min-height: 0; }
                     </div>
                 </div>`).join('');
 
-            // Clic en un mensaje: lo escribe y lo manda solo, como pidió Pablo
-            // ("que nos envía automáticamente, así no estoy siempre
-            // reescribiendo y repitiendo lo mismo"). El texto entre corchetes
-            // ([ALIAS o CBU], [LINK], [DATOS]) es un recordatorio para
-            // completar a mano — si queda, Enviar lo manda igual, así que
-            // conviene revisar antes de tocar el ítem si tiene uno.
+            // Clic en un mensaje: solo lo copia al editor. Nunca lo envía.
             panel.addEventListener('click', ev => {
                 const item = ev.target.closest('.rr-item');
                 if (!item) return;
                 txt.value = item.textContent;
                 txt.dispatchEvent(new Event('input', { bubbles: true }));
-                enviar();
                 txt.focus();
+                txt.setSelectionRange(txt.value.length, txt.value.length);
+                panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
+                    t.classList.remove('rr-abierto');
+                    t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
+                });
             });
 
             // Táctil (tablet sin mouse real): un toque abre/cierra el flyout en

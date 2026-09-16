@@ -475,54 +475,13 @@ function wabot_tres_pasos_pregunta() {
 }
 
 /**
- * Lo que incluye el servicio mensual, por tipo (Pablo, 14-sep: "Trabajamos
- * con un servicio mensual, para un ecommerce sería $30.000 por mes. Con eso
- * nosotros te armamos la web con todo incluido… e incluye el mantenimiento
- * técnico"). Los ítems salen de cada presupuesto. Va en el primer mensaje del
- * precio; {mensualidad} la resuelve wabot_servicio_texto() con lo congelado.
+ * Las dos formas de contratar la web. Es deliberadamente corto: la propuesta
+ * anterior ya explica qué trae el producto y no se vuelve a enumerar todo.
  */
 function wabot_servicio_texto_plantilla($tipo, $conCursos = false) {
-    $hosting = 'Hosting, dominio y certificado de seguridad';
-    $tipos = [
-        'landing' => ['un sitio profesional', 'la web', [
-            'Todas tus secciones, con diseño a medida y animaciones, pensado para el celular y la computadora',
-            'Botón de WhatsApp directo y formulario de contacto',
-            'Optimización para aparecer en Google',
-            'Tu panel para editar los textos y las imágenes cuando quieras', $hosting]],
-        'ecommerce' => ['una tienda online', 'la tienda', [
-            'Diseño a medida, pensado para vender desde el celular',
-            'Carrito de compras y cobro online con Mercado Pago',
-            'Tu propio panel para cargar productos, precios, stock y fotos',
-            'Envíos con Correo Argentino y Andreani, y gestión de pedidos', $hosting]],
-        'inmobiliaria' => ['una web inmobiliaria', 'la web', [
-            'Propiedades con ficha completa y fotos',
-            'Filtros por zona, tipo y precio, y mapa de ubicación',
-            'Tu panel para cargar y editar propiedades cuando quieras',
-            'Consulta por WhatsApp en cada propiedad', $hosting]],
-        'elearning' => ['una plataforma de cursos', 'la plataforma', [
-            'Cursos organizados en módulos con videos',
-            'Acceso para cada alumno, con su progreso y evaluaciones',
-            'Cobro online de los cursos',
-            'Tu panel para cargar cursos, módulos y alumnos', $hosting]],
-    ];
-    if ($tipo === 'ecommerce' && $conCursos) {
-        $d = ['una tienda online con plataforma de cursos', 'la web', [
-            'Tienda con carrito y cobro online con Mercado Pago',
-            'Plataforma de cursos en módulos, con acceso para cada alumno',
-            'Un solo panel para cargar productos y cursos',
-            'Diseño a medida, pensado para el celular', $hosting]];
-    } else {
-        $d = $tipos[$tipo] ?? ['tu web', 'la web', ['Diseño a medida, pensado para el celular y la computadora', $hosting]];
-    }
-    /* 15-sep (Pablo): dos formas de contratar la misma web, en formato
-     * compacto: lo que incluye una sola vez y abajo las dos formas. {precio} es
-     * el pago único y {mensualidad} la suscripción mensual, congelados de la
-     * charla. 16-sep: el pago único dice siempre que incluye mantenimiento el
-     * primer año, y el mensual se llama "Suscripción mensual". */
-    return "Incluye:\n• " . implode("\n• ", $d[2])
-        . "\n\nY la podés contratar de dos formas:\n\n"
-        . "1. Pago único de {precio}: la web queda paga. Incluye mantenimiento el primer año.\n"
-        . "2. Suscripción mensual de {mensualidad}, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas la suscripción queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.";
+    return "Lo podés contratar de dos formas:\n\n"
+        . "1. Pago único de {precio}. Incluye mantenimiento el primer año.\n\n"
+        . "2. Suscripción mensual de {mensualidad}, todo incluido mientras dure la suscripción.";
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */
