@@ -516,11 +516,13 @@ function wabot_servicio_texto_plantilla($tipo, $conCursos = false) {
     }
     /* 15-sep (Pablo): dos formas de contratar la misma web, en formato
      * compacto: lo que incluye una sola vez y abajo las dos formas. {precio} es
-     * el pago único y {mensualidad} el servicio mensual, congelados de la charla. */
+     * el pago único y {mensualidad} la suscripción mensual, congelados de la
+     * charla. 16-sep: el pago único dice siempre que incluye mantenimiento el
+     * primer año, y el mensual se llama "Suscripción mensual". */
     return "Incluye:\n• " . implode("\n• ", $d[2])
         . "\n\nY la podés contratar de dos formas:\n\n"
-        . "1. Pago único de {precio}: la web queda paga y listo. El hosting y el dominio van incluidos el primer año; después solo se renuevan una vez al año.\n"
-        . "2. Servicio mensual de {mensualidad}, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas el servicio queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.";
+        . "1. Pago único de {precio}: la web queda paga. Incluye mantenimiento el primer año.\n"
+        . "2. Suscripción mensual de {mensualidad}, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando, y mientras tengas la suscripción queda todo incluido: hosting, dominio, soporte y mantenimiento técnico.";
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */

@@ -989,18 +989,20 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
+// 16-sep-2026: la suscripción mensual base baja a $15.000 / $25.000 y ya no
+// incluye cambios (el plan con cambios, $25.000 / $35.000, se carga a mano).
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    unico: 180000, sena: 40000, mensual: 20000 },
-    ecommerce:    { label: "Ecommerce",            unico: 290000, sena: 60000, mensual: 30000 },
-    cursos:       { label: "Plataforma de cursos", unico: 290000, sena: 60000, mensual: 30000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 240000, sena: 60000, mensual: 30000 },
+    profesional:  { label: "Sitio profesional",    unico: 180000, sena: 40000, mensual: 15000 },
+    ecommerce:    { label: "Ecommerce",            unico: 290000, sena: 60000, mensual: 25000 },
+    cursos:       { label: "Plataforma de cursos", unico: 290000, sena: 60000, mensual: 25000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 240000, sena: 60000, mensual: 25000 },
     // Pago único y seña del presupuesto de noticias anterior al 10-sep-2026 (presupuestos/noticias).
-    noticias:     { label: "Portal de noticias",   unico: 350000, sena: 90000, mensual: 30000 },
+    noticias:     { label: "Portal de noticias",   unico: 350000, sena: 90000, mensual: 25000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 290000, sena: 60000, mensual: 30000 };
+const PLAN_RESTO = { unico: 290000, sena: 60000, mensual: 25000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
-const MODALIDAD_LABELS = { unico: "Pago único", mensual: "Servicio mensual" };
+const MODALIDAD_LABELS = { unico: "Pago único", mensual: "Suscripción mensual" };
 // Modelo del 10-sep-2026: el plan arrancaba a los 7 días del primer pago. Solo
 // cuenta para los clientes que tienen el primer pago registrado.
 const DIAS_HASTA_EL_PLAN = 7;
@@ -3597,6 +3599,20 @@ async function writeTextToClipboard(texto) {
         temp.remove();
     }
 }
+
+// Links de suscripción de la pestaña Mantenimiento: "Copiar" deja el link listo para pegar.
+document.getElementById("mantLinks")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-mant-link]");
+    if (!btn) return;
+    try {
+        await writeTextToClipboard(btn.dataset.mantLink);
+        btn.textContent = "Copiado";
+        setTimeout(() => { btn.textContent = "Copiar"; }, 1400);
+    } catch (err) {
+        console.error(err);
+        alert("No se pudo copiar el link.");
+    }
+});
 
 async function copyPropuesta(id, btn) {
     const p = propuestas.find(x => x.id === id);

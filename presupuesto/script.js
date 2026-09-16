@@ -269,12 +269,12 @@ const BUSINESS_TYPES = [
    dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Desde el
    15-sep-2026 la lista vale para las dos formas de contratar: arriba va el
    hosting y el dominio de cada una (el primer año con el pago único, mientras
-   dure el servicio mensual) y al final la carga de hasta 10 productos, el
-   panel para editar textos e imágenes (13-sep) y el cambio por mes, que es
-   del servicio mensual. */
+   dure la suscripción mensual) y al final la carga de hasta 10 productos y el
+   panel para editar textos e imágenes (13-sep). Desde el 16-sep-2026 ninguna
+   de las dos incluye cambios: el cambio por mes es del plan con cambios. */
 const INCLUDES = {
     landing: [
-        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
         'Diseño personalizado y responsive',
         'Hasta 5 secciones optimizadas para conversión',
         'SEO básico y meta etiquetas',
@@ -283,11 +283,10 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
-        'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes con el servicio mensual'
+        'Panel de administración para editar vos mismo textos e imágenes'
     ],
     ecommerce: [
-        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
         'Tienda online completa y responsive',
         'Catálogo de productos con filtros',
         'Carrito de compras y proceso de pago',
@@ -297,11 +296,10 @@ const INCLUDES = {
         'SEO optimizado para e-commerce',
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
-        'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes con el servicio mensual'
+        'Panel de administración para editar vos mismo textos e imágenes'
     ],
     inmobiliaria: [
-        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
         'Sitio inmobiliaria profesional y responsive',
         'Listado de propiedades con filtros avanzados',
         'Ficha de propiedad con galería de fotos',
@@ -311,11 +309,10 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
-        'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes con el servicio mensual'
+        'Panel de administración para editar vos mismo textos e imágenes'
     ],
     elearning: [
-        '<strong>Desarrollo a medida, con hosting y dominio: el primer año con el pago único y mientras tengas el servicio mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
         'Plataforma LMS completa y responsive',
         'Login y panel propio para tus alumnos',
         'Cursos organizados en módulos con videos',
@@ -327,8 +324,7 @@ const INCLUDES = {
         'Botón flotante de WhatsApp',
         'Certificado SSL incluido',
         'Carga de hasta 10 productos',
-        'Panel de administración para editar vos mismo textos e imágenes',
-        'Un cambio por mes con el servicio mensual'
+        'Panel de administración para editar vos mismo textos e imágenes'
     ]
 };
 
@@ -541,8 +537,8 @@ function _restorePills(containerId, values) {
 }
 
 /* Paso 3 (10-sep-2026): ya no hay pills de adicionales — el modelo es "todo
-   incluido" y los dos únicos adicionales (productos arriba de 10, más de un
-   cambio por mes) se coordinan por WhatsApp. El paso queda como el panel de
+   incluido" y los adicionales (productos arriba de 10, el plan con cambios)
+   se coordinan por WhatsApp. El paso queda como el panel de
    qué incluye la web + las dos formas de contratarla (15-sep-2026). */
 function renderStep3Context() {
     const type     = getSiteType();
@@ -551,7 +547,7 @@ function renderStep3Context() {
     const { precioUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Pago único de <strong style="color:black">${fmt(precioUnico)}</strong>, con una seña de ${fmt(sena)} para arrancar y el saldo al entregar la web, o servicio mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando. Es la misma web con las dos formas, y con cualquiera queda lista en unos 7 días.`;
+        : `Pago único de <strong style="color:black">${fmt(precioUnico)}</strong>, que incluye mantenimiento el primer año, con una seña de ${fmt(sena)} para arrancar y el saldo al entregar la web, o suscripción mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando. Es la misma web con las dos formas, y con cualquiera queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -739,13 +735,13 @@ function mensajeMuestraWsp(nombreNegocio) {
     lineas.push(`🏢 Negocio: ${nombreNegocio}`);
     if (state.businessInput) lineas.push(`📌 Rubro: ${state.businessInput}`);
     if (TYPE_NAMES[state.siteType]) lineas.push(`🌐 Tipo de web: ${TYPE_NAMES[state.siteType]}`);
-    // Dos líneas y nunca un total (15-sep-2026): el pago único y el servicio
+    // Dos líneas y nunca un total (15-sep-2026): el pago único y la suscripción
     // mensual son dos formas de contratar la misma web.
     if (state.sinPrecio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
         lineas.push(`💰 Pago único: ${fmt(state.precioUnico)} (seña de ${fmt(state.sena)})`);
-        lineas.push(`💰 Servicio mensual: ${fmt(state.mensualidad)}/mes`);
+        lineas.push(`💰 Suscripción mensual: ${fmt(state.mensualidad)}/mes`);
     }
     lineas.push('', 'Gracias!');
     return lineas.join('\n');
@@ -772,16 +768,19 @@ function getSiteType() {
      se cobra con Checkout Pro y el monto lo recalcula server-side
      api/crear-preferencia.php a partir del siteType: SENA tiene que coincidir
      con lo que hay ahí y con SENA de exito.html.
-   · Servicio mensual: suscripción de Mercado Pago, sin pago inicial; con la
+   · Suscripción mensual: suscripción de Mercado Pago, sin pago inicial; con la
      primera mensualidad armamos la web. MENSUALIDAD tiene que coincidir con el
      monto de los dos planes de Mercado Pago y con MENSUALIDAD de exito.html.
-   Son montos que nunca se suman entre sí. Clave 'landing' = sitio profesional. */
+   Son montos que nunca se suman entre sí. Clave 'landing' = sitio profesional.
+   16-sep-2026: la suscripción baja a $15.000 / $25.000 y ya no incluye cambios
+   (el plan con cambios, $25.000 / $35.000, se coordina por WhatsApp). El pago
+   único incluye mantenimiento el primer año. */
 const PRECIO_UNICO = { landing: 180000, ecommerce: 290000, inmobiliaria: 240000, elearning: 290000 };
 const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
-const SUSCRIPCION_20K = 'https://mpago.la/1pfejMG';
-const SUSCRIPCION_30K = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b';
-const SUSCRIPCION_LINK = { landing: SUSCRIPCION_20K, ecommerce: SUSCRIPCION_30K, inmobiliaria: SUSCRIPCION_30K, elearning: SUSCRIPCION_30K };
+const MENSUALIDAD  = { landing: 15000,  ecommerce: 25000,  inmobiliaria: 25000,  elearning: 25000 };
+const SUSCRIPCION_15K = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=17321dd1a34e4ea0979175293297d60f';
+const SUSCRIPCION_25K = 'https://mpago.la/28VK7Ev';
+const SUSCRIPCION_LINK = { landing: SUSCRIPCION_15K, ecommerce: SUSCRIPCION_25K, inmobiliaria: SUSCRIPCION_25K, elearning: SUSCRIPCION_25K };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget(),
 // renderResult() y handlePayment() necesitan los mismos montos y el mismo link.
@@ -855,7 +854,7 @@ function renderResult() {
     badge.className = 'result-type-badge ' + TYPE_BADGE_CLASSES[type];
     badge.textContent = TYPE_NAMES[type];
 
-    // Dos filas del mismo peso: pago único y servicio mensual. Nunca un total.
+    // Dos filas del mismo peso: pago único y suscripción mensual. Nunca un total.
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     setT('pricePagoUnico',        sinPrecio ? 'A coordinar' : fmt(precioUnico));
     setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y saldo al entregar la web' : `seña de ${fmt(sena)} y saldo de ${fmt(saldo)} al entregar la web`);
@@ -1049,8 +1048,8 @@ function validateCheckout() {
    · 'unico'   → la seña del pago único por Checkout Pro: api/crear-preferencia.php
      recalcula la seña a partir del siteType y Mercado Pago vuelve a exito.html
      con payment_id. El saldo se abona al entregar la web, fuera de esta página.
-   · 'mensual' → el link de suscripción del plan del tipo de web: $20.000/mes el
-     sitio profesional y $30.000/mes el resto. Mercado Pago vuelve a exito.html
+   · 'mensual' → el link de suscripción del plan del tipo de web: $15.000/mes el
+     sitio profesional y $25.000/mes el resto (16-sep-2026). Mercado Pago vuelve a exito.html
      con preapproval_id solo si el plan tiene esa URL de retorno configurada
      (eso se define en el plan, en la cuenta de Mercado Pago, no acá).
    Los datos quedan en `gky_presupuesto` para exito.html, con la modalidad. */
@@ -1135,7 +1134,7 @@ function etiquetaPagarSena() {
 }
 
 function etiquetaSuscribirme() {
-    return state.mensualidad ? `Suscribirme al servicio de ${fmt(state.mensualidad)} por mes` : 'Suscribirme al servicio mensual';
+    return state.mensualidad ? `Suscribirme por ${fmt(state.mensualidad)} por mes` : 'Suscribirme por mes';
 }
 
 // Mientras se crea la preferencia de la seña los dos botones quedan trabados,

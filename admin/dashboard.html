@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260911-paletas">
+    <link rel="stylesheet" href="styles.css?v=20260916-links">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -317,6 +317,18 @@
                     <p class="muted">Suscripciones del plan mensual por Mercado Pago. Se cargan solas cuando alguien se suscribe, o agregalas a mano. Si alguien cancela o pausa la suscripción en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha. Si coinciden con un cliente por email, WhatsApp o ID, en Clientes la suscripción figura activa (o de baja). El check de "pidió cambios" se reinicia según el día de alta de cada suscripción.</p>
                 </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
+            </div>
+            <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
+            <div class="mant-links" id="mantLinks">
+                <p class="mant-links-title">Links de suscripción para enviar</p>
+                <div class="mant-links-grid">
+                    <div class="mant-link"><b>$10.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://mpago.la/2KGENxL">Copiar</button><a class="seg-chip" href="https://mpago.la/2KGENxL" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                    <div class="mant-link"><b>$15.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=17321dd1a34e4ea0979175293297d60f">Copiar</button><a class="seg-chip" href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=17321dd1a34e4ea0979175293297d60f" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                    <div class="mant-link"><b>$20.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://mpago.la/1pfejMG">Copiar</button><a class="seg-chip" href="https://mpago.la/1pfejMG" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                    <div class="mant-link"><b>$25.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://mpago.la/28VK7Ev">Copiar</button><a class="seg-chip" href="https://mpago.la/28VK7Ev" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                    <div class="mant-link"><b>$30.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b">Copiar</button><a class="seg-chip" href="https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                    <div class="mant-link"><b>$35.000</b><span>por mes</span><button type="button" class="seg-chip" data-mant-link="https://mpago.la/1hYAiTM">Copiar</button><a class="seg-chip" href="https://mpago.la/1hYAiTM" target="_blank" rel="noopener noreferrer">Abrir</a></div>
+                </div>
             </div>
             <div class="seg-views" id="mantViews">
                 <button class="seg-chip active" data-mantview="todas">Todos <span class="seg-chip-count" id="mantCountTodas">0</span></button>
@@ -981,6 +993,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260915-paletas"></script>
+    <script type="module" src="dashboard.js?v=20260916-links"></script>
 </body>
 </html>

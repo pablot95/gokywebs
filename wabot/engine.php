@@ -1739,9 +1739,10 @@ function wabot_texto_pregunta_costos_despues($texto) {
 function wabot_texto_costos_despues($texto, $conv, $cfg) {
     $t = wabot_normalizar_frase((string)$texto);
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
-    $unico = 'Con el pago único la web queda paga: lo que queda para después es renovar el hosting y el dominio una vez al año, a partir del segundo año.';
+    $unico = 'Con el pago único la web queda paga e incluye mantenimiento el primer año. Desde el segundo año seguís con el plan de mantenimiento, de '
+        . wabot_monto_por_mes_texto($v ?? wabot_precio_vigente($conv, $cfg), $cfg, 'mantenimiento') . '.';
     $monto = ($v !== null && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] : '';
-    $mensual = 'Con el servicio mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte y el mantenimiento.';
+    $mensual = 'Con la suscripción mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte y el mantenimiento. Los cambios en la web van aparte, con el plan con cambios.';
     $nombraUnico = (bool)preg_match('/\b(pago unico|un solo pago|unico pago|una sola vez|de una)\b/u', $t);
     $nombraMensual = (bool)preg_match('/\b(mensual\w*|por mes|suscripcion|abono)\b/u', $t);
     if ($nombraUnico && !$nombraMensual) return $unico;
@@ -1830,17 +1831,17 @@ function wabot_texto_confusion_montos($texto, $conv, $cfg) {
     $unaVez = (bool)preg_match('/\b(una (sola )?vez|de una|y listo|y ya|nada mas|en total|total|pago unico|unico pago|un solo pago)\b/u', $t);
     if (count(array_unique($montos)) === 1 && $montos[0] === $mensual
         && preg_match('/\b(sena|senia|anticipo)\b/u', $t) && !$porMes) {
-        return 'No: los ' . $v['mensualidad'] . ' son la mensualidad del servicio mensual, sin pago inicial. La seña de ' . $v['sena'] . ' corresponde solamente al pago único de ' . $v['precio'] . ', y el saldo de ' . $v['saldo'] . ' va al entregar. Elegís una de las dos formas, no se suman.';
+        return 'No: los ' . $v['mensualidad'] . ' son la mensualidad de la suscripción, sin pago inicial. La seña de ' . $v['sena'] . ' corresponde solamente al pago único de ' . $v['precio'] . ', y el saldo de ' . $v['saldo'] . ' va al entregar. Elegís una de las dos formas, no se suman.';
     }
     foreach ($montos as $n) {
         if ($n === $sena && $porMes) {
-            return 'No: los ' . $v['sena'] . ' son la seña del pago único, para arrancar (el saldo va al entregar la web). Con el servicio mensual pagás ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
+            return 'No: los ' . $v['sena'] . ' son la seña del pago único, para arrancar (el saldo va al entregar la web). Con la suscripción mensual pagás ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
         }
         if ($n === $precio && $porMes) {
-            return 'No: los ' . $v['precio'] . ' son el pago único, una sola vez (con una seña de ' . $v['sena'] . ' y el saldo al entregar). El servicio mensual es de ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
+            return 'No: los ' . $v['precio'] . ' son el pago único, una sola vez (con una seña de ' . $v['sena'] . ' y el saldo al entregar), e incluye mantenimiento el primer año. La suscripción mensual es de ' . $v['mensualidad'] . ' por mes, sin pago inicial.';
         }
         if ($n === $mensual && $unaVez && !$porMes) {
-            return 'No: los ' . $v['mensualidad'] . ' son por mes, con el servicio mensual. Si preferís pagarla una sola vez, el pago único es de ' . $v['precio'] . ', con una seña de ' . $v['sena'] . ' y el saldo al entregar.';
+            return 'No: los ' . $v['mensualidad'] . ' son por mes, con la suscripción mensual. Si preferís pagarla una sola vez, el pago único es de ' . $v['precio'] . ', con una seña de ' . $v['sena'] . ' y el saldo al entregar, e incluye mantenimiento el primer año.';
         }
     }
     return null;
@@ -1868,11 +1869,11 @@ function wabot_texto_cual_forma_conviene($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     $montos = $v !== null && $v['precio'] !== '' && $v['sena'] !== '' && $v['mensualidad'] !== '';
     $unico = $montos
-        ? '• Pago único de ' . $v['precio'] . ': arrancás con una seña de ' . $v['sena'] . ', el saldo va al entregar y después solo renovás el hosting y el dominio una vez al año.'
-        : '• Pago único: arrancás con una seña, el saldo va al entregar y después solo renovás el hosting y el dominio una vez al año.';
+        ? '• Pago único de ' . $v['precio'] . ': arrancás con una seña de ' . $v['sena'] . ', el saldo va al entregar e incluye mantenimiento el primer año; después seguís con el plan de mantenimiento, de ' . wabot_monto_por_mes_texto($v, $cfg, 'mantenimiento') . '.'
+        : '• Pago único: arrancás con una seña, el saldo va al entregar e incluye mantenimiento el primer año; después seguís con el plan de mantenimiento.';
     $mensual = $montos
-        ? '• Servicio mensual de ' . $v['mensualidad'] . ': no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.'
-        : '• Servicio mensual: no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.';
+        ? '• Suscripción mensual de ' . $v['mensualidad'] . ': no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.'
+        : '• Suscripción mensual: no ponés plata de entrada y tenés el hosting, el dominio, el soporte y el mantenimiento incluidos, sin permanencia.';
     $texto = "Las dos te dan la misma web; cambia cómo la pagás:\n" . $unico . "\n" . $mensual
         . "\nSi preferís no tener un gasto fijo, te conviene el pago único; si preferís no hacer un pago grande al principio, el mensual.";
     // Sin montos se piden los datos para darlos, salvo que el rubro ya esté dicho.
@@ -1900,7 +1901,7 @@ function wabot_texto_pregunta_inicio_mensual($texto) {
 function wabot_texto_inicio_mensual($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     $monto = ($v !== null && $v['mensualidad'] !== '') ? ', de ' . $v['mensualidad'] : '';
-    return 'Con el servicio mensual no hay pago inicial: arrancás con la primera mensualidad' . $monto . ', y con eso armamos la web y la dejamos funcionando.';
+    return 'Con la suscripción mensual no hay pago inicial: arrancás con la primera mensualidad' . $monto . ', y con eso armamos la web y la dejamos funcionando.';
 }
 
 /**
@@ -1955,7 +1956,7 @@ function wabot_texto_ofrece_mensual($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     if ($v !== null && $v['mensualidad'] === '') return null;
     $monto = $v !== null ? ' de ' . $v['mensualidad'] : '';
-    return 'Dale, entonces está el servicio mensual' . $monto . ': sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando, y no hay permanencia.';
+    return 'Dale, entonces está la suscripción mensual' . $monto . ': sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando, y no hay permanencia.';
 }
 
 /**
@@ -1999,9 +2000,9 @@ function wabot_texto_saldo_cuando($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     if ($v !== null && $v['sena'] !== '' && $v['saldo'] !== '' && $v['mensualidad'] !== '') {
         return 'Con el pago único no se paga todo antes: la seña de ' . $v['sena'] . ' es para arrancar y el saldo, ' . $v['saldo']
-            . ', se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad de ' . $v['mensualidad'] . '.';
+            . ', se paga al entregar la web. Con la suscripción mensual no hay saldo: pagás la mensualidad de ' . $v['mensualidad'] . '.';
     }
-    return 'Con el pago único no se paga todo antes: la seña es para arrancar y el saldo se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad.';
+    return 'Con el pago único no se paga todo antes: la seña es para arrancar y el saldo se paga al entregar la web. Con la suscripción mensual no hay saldo: pagás la mensualidad.';
 }
 
 function wabot_pregunta_diferencia_pagos($texto) {
@@ -2019,8 +2020,36 @@ function wabot_diferencia_pagos_texto($conv, $cfg) {
     $unico = ($v && $v['precio'] !== '') ? ' de ' . $v['precio'] . ', con seña de ' . $v['sena'] . ' al empezar y saldo de ' . $v['saldo'] . ' al entregar' : ', con seña al empezar y saldo al entregar';
     $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : ' por mes';
     return "La diferencia es cómo contratás y mantenés la web, no dos cuotas del mismo precio.\n"
-        . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Hosting y dominio están incluidos el primer año; después se renuevan anualmente. Un cambio pedido después de la entrega se cotiza aparte.'
-        . "\nAbono mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras el abono esté activo incluye hosting, dominio, soporte y mantenimiento técnico. No hay permanencia; a los 12 meses podés reclamar el código y la propiedad.';
+        . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Incluye mantenimiento el primer año; después seguís con el plan de mantenimiento, de ' . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mantenimiento') . '. Un cambio pedido después de la entrega se cotiza aparte.'
+        . "\nSuscripción mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras la suscripción esté activa incluye hosting, dominio, soporte y mantenimiento técnico, sin cambios (para eso está el plan con cambios, de ' . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mensualidad_cambios') . '). No hay permanencia; a los 2 años de suscripción podés reclamar el código y la propiedad.';
+}
+
+/**
+ * "¿Incluye cambios?", "¿y si después quiero cambiar algo?", "¿el mensual
+ * trae cambios?". Pablo, 16-sep: ni el mantenimiento ni la suscripción
+ * incluyen cambios; hay un plan con cambios (un cambio por mes). Las rondas
+ * de ajuste del diseño ("¿cuántos cambios puedo pedir?") y los cambios que
+ * pide sobre la demo son otra cosa.
+ */
+function wabot_texto_pregunta_cambios_plan($texto, $conv = null) {
+    if (is_array($conv) && in_array(($conv['fase'] ?? ''), ['postdemo'], true)) return false;
+    $crudo = (string)$texto;
+    $t = wabot_normalizar_frase($crudo);
+    if ($t === '' || mb_strlen($t) > 200) return false;
+    if (!wabot_mensaje_pregunta_algo($crudo) && mb_strpos($crudo, '?') === false) return false;
+    if (preg_match('/\b(cuantos|cuantas)\b.{0,15}\b(cambios?|ajustes?|correcciones?|retoques?)\b/u', $t)) return false;
+    if (preg_match('/\b(demo|muestra|diseno|colores?|logo)\b/u', $t)) return false;
+    // "Cambiarme al mensual" es cambiar de forma de pago, no pedir cambios.
+    if (preg_match('/\b(pasar\w*|cambiar\w*|me cambio)\b.{0,12}\b(al|a la|del|de la)\s+(servicio |plan )?(mensual\w*|pago unico|suscripcion)\b/u', $t)) return false;
+    $cambios = '\b(cambios?|cambiar\w*|modificacion\w*|modificar\w*|actualizar (algo|la web|la pagina|contenido)|agregar (una )?seccion\w*)\b';
+    $plan = '\b(incluye\w*|incluido\w*|viene\w*|trae|entra\w*|se paga\w*|se cobra\w*|cobran|cuesta\w*|sale|aparte|extra|despues|mas adelante|a futuro|por mes|mensual\w*|suscripcion|mantenimiento|plan)\b';
+    return (bool)(preg_match('/' . $cambios . '/u', $t) && preg_match('/' . $plan . '/u', $t));
+}
+
+function wabot_texto_cambios_plan($conv, $cfg) {
+    $texto = trim((string)($cfg['cambios_plan'] ?? ''));
+    if ($texto === '') return null;
+    return trim(wabot_precio_placeholders($texto, $conv, $cfg));
 }
 
 /** El punto de entrada: la respuesta fija que corresponde, o null. */
@@ -2035,13 +2064,20 @@ function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
         && !wabot_texto_pregunta_devolucion($texto)) {
         $vPago = wabot_precio_vigente($conv, $cfg);
         if ($vPago['modelo'] === 'doble' && $vPago['sena'] !== '' && $vPago['saldo'] !== '') {
-            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
+            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar y ' . $vPago['saldo'] . ' de saldo al entregar, e incluye mantenimiento el primer año. No se suma la mensualidad de la suscripción.'];
         }
     }
     $confusion = wabot_texto_confusion_montos($texto, $conv, $cfg);
     if ($confusion !== null) {
         wabot_evento_sesion($conv, 'montos_confundidos');
         return [$confusion];
+    }
+    if (wabot_texto_pregunta_cambios_plan($texto, $conv)) {
+        $cambios = wabot_texto_cambios_plan($conv, $cfg);
+        if ($cambios !== null) {
+            wabot_evento_sesion($conv, 'cambios_plan');
+            return [$cambios];
+        }
     }
     if (wabot_pregunta_diferencia_pagos($texto)) {
         wabot_evento_sesion($conv, 'diferencia_pagos');
@@ -2124,8 +2160,8 @@ function wabot_texto_descuento($conv, $cfg) {
     if (empty($conv['tipo']) || empty($conv['precio_dado'])) return $base;
     $v = wabot_precio_vigente($conv, $cfg);
     if ($v['precio'] === '' || $v['mensualidad'] === '') return $base;
-    $unico = 'pago único de ' . $v['precio'] . ($v['sena'] !== '' ? ', con una seña de ' . $v['sena'] . ' y el saldo al entregar' : '');
-    return $base . ' Lo que sí podés elegir es la forma: ' . $unico . ', o servicio mensual de ' . $v['mensualidad'] . ', sin pago inicial.';
+    $unico = 'pago único de ' . $v['precio'] . ' (incluye mantenimiento el primer año)' . ($v['sena'] !== '' ? ', con una seña de ' . $v['sena'] . ' y el saldo al entregar' : '');
+    return $base . ' Lo que sí podés elegir es la forma: ' . $unico . ', o suscripción mensual de ' . $v['mensualidad'] . ', sin pago inicial.';
 }
 
 /**
@@ -4430,7 +4466,7 @@ function wabot_upgrade_pago_texto($pendiente, $conv, $cfg) {
     $nombre = wabot_tipo_nombre_precio($destino, $cfg['tipos'][$destino] ?? []);
     if ($v['modelo'] === 'doble' && $v['sena'] !== '' && $v['mensualidad'] !== '') {
         return 'Con la ' . $nombre . ', depende de cómo la contrates: con el pago único de ' . $v['precio']
-            . ' arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar; con el servicio mensual de '
+            . ' (incluye mantenimiento el primer año) arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar; con la suscripción mensual de '
             . $v['mensualidad'] . ' no hay pago inicial.';
     }
     return wabot_texto_pago($c, $cfg);
@@ -4579,6 +4615,10 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * saldo, pago único). Va acá porque es el embudo único de todo lo que sale
      * de `info.*`, que es justo lo que Pablo edita desde el panel: así también
      * queda cubierta la redacción que escriba mañana. */
+    // {cambios_mes} y {mantenimiento_mes} (16-sep) con los montos de esta charla.
+    if (strpos($texto, '{cambios_mes}') !== false || strpos($texto, '{mantenimiento_mes}') !== false) {
+        $texto = wabot_precio_placeholders($texto, $conv, $cfg);
+    }
     return $texto;
 }
 
@@ -4619,7 +4659,7 @@ function wabot_texto_pago_generico($cfg) {
     // Sin tipo cotizado no se dan montos (14-sep): cómo se paga y la pregunta.
     $texto = trim((string)($cfg['info']['pago_generico'] ?? ''));
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
-        $texto = 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
+        $texto = 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, que incluye mantenimiento el primer año, o una suscripción mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
     }
     return $texto;
 }
@@ -4627,7 +4667,7 @@ function wabot_texto_pago_generico($cfg) {
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
 function wabot_texto_hosting($conv, $cfg, $mensaje = '') {
     $base = trim((string)($cfg['info']['hosting'] ?? ''));
-    $renovacion = trim((string)($cfg['hosting_renovacion'] ?? ''));
+    $renovacion = trim(wabot_precio_placeholders((string)($cfg['hosting_renovacion'] ?? ''), $conv, $cfg));
     if ($renovacion === '' || mb_stripos($base, $renovacion) !== false) return $base;
     /* El monto de la renovación del pago único sale SOLO si pregunta cuánto
      * sale renovar (Pablo, 15-sep: "monto solo si pregunta"). */
@@ -4677,7 +4717,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial.';
+        return 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, que incluye mantenimiento el primer año, o una suscripción mensual por Mercado Pago, sin pago inicial.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
@@ -4780,7 +4820,17 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
              * mensualidad y se le ofrece también el pago único de lista. */
             $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
         }
+        /* 16-sep (Pablo): la suscripción bajó a $15.000 / $25.000 y dejó de
+         * incluir cambios. Una mensualidad congelada con los montos viejos
+         * pasa a la de lista, para que no quede más cara que el plan nuevo ni
+         * desencajada del plan con cambios. */
+        if (in_array($v['mensualidad'], ['$20.000', '$30.000'], true)) {
+            $v['mensualidad'] = trim((string)($t['mensualidad'] ?? '')) ?: $v['mensualidad'];
+        }
     }
+    // El plan con cambios y el mantenimiento después del primer año salen siempre de lista.
+    $v['mensualidad_cambios'] = trim((string)($t['mensualidad_cambios'] ?? ''));
+    $v['mantenimiento']       = trim((string)($t['mantenimiento'] ?? ''));
     $v['saldo'] = ($v['precio'] !== '' && $v['sena'] !== '')
         ? wabot_moneda(max(0, wabot_monto_a_numero($v['precio']) - wabot_monto_a_numero($v['sena']))) : '';
     return $v;
@@ -4889,13 +4939,47 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $d = $cfg['tipos'][$v['tipo']] ?? [];
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
-        ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}'],
+        ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
+         '{mantenimiento_mes}', '{cambios_mes}'],
         [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
-         wabot_tabla_precios_texto($cfg), $mensualidades],
+         wabot_tabla_precios_texto($cfg), $mensualidades,
+         wabot_monto_por_mes_texto($v, $cfg, 'mantenimiento'), wabot_monto_por_mes_texto($v, $cfg, 'mensualidad_cambios')],
         $t
     );
+}
+
+/**
+ * "$10.000 por mes" con el tipo de la charla; sin tipo, los montos de lista
+ * por grupo: "$10.000 por mes en sitio profesional y $15.000 en tienda
+ * online, plataforma de cursos o inmobiliaria". $campo es 'mantenimiento'
+ * (después del primer año del pago único) o 'mensualidad_cambios'.
+ */
+function wabot_monto_por_mes_texto($v, $cfg, $campo) {
+    if (is_array($v) && trim((string)($v[$campo] ?? '')) !== '' && (string)($v['tipo'] ?? '') !== '') {
+        return trim((string)$v[$campo]) . ' por mes';
+    }
+    $orden = ['sitio profesional', 'tienda online', 'plataforma de cursos', 'inmobiliaria'];
+    $porMonto = [];
+    foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
+        $m = trim((string)($d[$campo] ?? ''));
+        if ($m === '') continue;
+        $porMonto[$m][] = wabot_tipo_nombre_precio((string)$tipo, $d);
+    }
+    uksort($porMonto, function ($a, $b) { return wabot_monto_a_numero($a) <=> wabot_monto_a_numero($b); });
+    $partes = [];
+    foreach ($porMonto as $monto => $nombres) {
+        usort($nombres, function ($a, $b) use ($orden) {
+            $ia = array_search($a, $orden, true); $ib = array_search($b, $orden, true);
+            return ($ia === false ? 99 : $ia) <=> ($ib === false ? 99 : $ib);
+        });
+        $partes[] = $monto . (!$partes ? ' por mes' : '') . ' en ' . wabot_lista_o($nombres);
+    }
+    if (!$partes) return $campo === 'mantenimiento' ? 'un monto mensual' : 'un monto mensual aparte';
+    if (count($partes) === 1) return $partes[0];
+    $ultimo = array_pop($partes);
+    return implode(', ', $partes) . ' y ' . $ultimo;
 }
 
 /**
@@ -5078,7 +5162,7 @@ function wabot_precio_resumen($conv, $cfg) {
     $precio = $v['precio'];
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "Son dos formas: pago único de {precio}, con una seña de {sena} y el saldo al entregar, o servicio mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "Son dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace('{precio}', $precio, $plantilla), $conv, $cfg);
 }

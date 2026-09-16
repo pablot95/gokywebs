@@ -114,7 +114,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
-    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . ($extras['modalidad_elegida'] === 'unico' ? 'Pago único' : 'Abono mensual');
+    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . ($extras['modalidad_elegida'] === 'unico' ? 'Pago único' : 'Suscripción mensual');
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
     if ($partes) {
         $linea = ($aplicar ? '[Formulario web, paso 2] ' : '[Formulario web, paso 2, sin código — NO aplicado] ')

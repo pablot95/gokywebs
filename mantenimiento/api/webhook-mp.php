@@ -11,12 +11,18 @@
  *   - status "paused"     → crea el aviso de pausa (ID "pausa_<preapproval id>").
  *   - cualquier otro (pending…) → no escribe nada.
  *
- * Modelo vigente (14-sep-2026): sin pago inicial y sin permanencia, solo la
- * suscripción mensual:
- *   - plan 'landing' → sitio profesional, $20.000/mes
- *   - plan 'mensual' → tienda online, cursos, inmobiliaria y noticias, $30.000/mes
+ * Modelo vigente (16-sep-2026): suscripción mensual sin pago inicial y sin
+ * cambios incluidos, más dos planes que todavía no tienen link de MP:
+ *   - plan 'landing' → sitio profesional: suscripción $15.000/mes, plan con
+ *     cambios $25.000/mes, mantenimiento después del primer año del pago único
+ *     $10.000/mes.
+ *   - plan 'mensual' → tienda online, cursos, inmobiliaria y noticias:
+ *     suscripción $25.000/mes, plan con cambios $35.000/mes, mantenimiento
+ *     después del primer año $15.000/mes.
  *   Los valores 'landing' / 'mensual' del campo `plan` se conservan porque el
- *   panel admin los usa como claves.
+ *   panel admin los usa como claves; lo que distingue base / con cambios /
+ *   mantenimiento es `planLabel` (y `monto`).
+ *   Modelo anterior (14-sep-2026): $20.000 y $30.000 por mes, con 1 cambio.
  *
  * - Idempotente: si MP reenvía la misma notificación, Firestore responde 409
  *   (el doc ya existe) y no se duplica nada.
@@ -33,23 +39,24 @@
  */
 
 // --- Mapa de planes de Mercado Pago (preapproval_plan_id → plan) ---
-// El id es el valor de "preapproval_plan_id" del link de suscripción. Las dos
-// constantes son los planes que ofrece la web desde el 14-sep-2026 (sin pago
-// inicial); el resto sigue en el mapa para que sus suscriptores entren igual.
+// El id es el valor de "preapproval_plan_id" del link de suscripción. Pablo
+// (16-sep-2026) nombró cada plan de MP por su precio, y un mismo plan sirve
+// para más de una cosa ($25.000 = suscripción de la tienda o plan con cambios
+// del sitio profesional; $15.000 = suscripción del sitio o mantenimiento de la
+// tienda), así que el label es el precio. Links (también en Admin →
+// Mantenimiento): $10.000 mpago.la/2KGENxL (id sin cargar: entra por importe),
+// $15.000 plan 17321dd1…, $20.000 mpago.la/1pfejMG, $25.000 mpago.la/28VK7Ev,
+// $30.000 plan 36a67a7e…, $35.000 mpago.la/1hYAiTM.
 // Un plan que no esté en este mapa cae al respaldo por importe.
-const MP_PLAN_ID_SITIO_PROFESIONAL = 'ea40c15059ec42a7ac5b6293d77ae148';   // $20.000/mes, mpago.la/1pfejMG
-const MP_PLAN_ID_RESTO             = '36a67a7e42e7404989beb99703a0569b';   // $30.000/mes
+const MP_PLAN_ID_SITIO_PROFESIONAL = '17321dd1a34e4ea0979175293297d60f';   // $15.000/mes
+const MP_PLAN_ID_RESTO             = '56340e241c87402c81c02d43ce472fd7';   // $25.000/mes, mpago.la/28VK7Ev
 
 $MP_PLANES = [
-    MP_PLAN_ID_SITIO_PROFESIONAL => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
-    MP_PLAN_ID_RESTO             => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
-    // Planes de $15.000 (mpago.la/1hYAiTM) y $25.000 (mpago.la/28VK7Ev): se crearon
-    // y se reemplazaron el mismo 14-sep-2026. Sus suscriptores siguen entrando igual.
-    'b7d653f4f61a445ba8859ae497e7ca66' => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
-    '56340e241c87402c81c02d43ce472fd7' => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
-    // Plan viejo de 15.000/mes: ya no se ofrece en la web, pero sus suscriptores
-    // existentes siguen entrando como 'mensual'.
-    '17321dd1a34e4ea0979175293297d60f' => ['plan' => 'mensual', 'label' => 'Plan mensual tienda online, cursos e inmobiliaria'],
+    MP_PLAN_ID_SITIO_PROFESIONAL => ['plan' => 'landing', 'label' => 'Plan $15.000'],
+    MP_PLAN_ID_RESTO             => ['plan' => 'mensual', 'label' => 'Plan $25.000'],
+    'b7d653f4f61a445ba8859ae497e7ca66' => ['plan' => 'mensual', 'label' => 'Plan $35.000'],   // mpago.la/1hYAiTM
+    'ea40c15059ec42a7ac5b6293d77ae148' => ['plan' => 'landing', 'label' => 'Plan $20.000'],   // mpago.la/1pfejMG
+    '36a67a7e42e7404989beb99703a0569b' => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
 ];
 
 // Status de MP que dejan un aviso para el admin en vez de crear el suscriptor.
@@ -122,24 +129,40 @@ if ($status !== 'authorized' && !isset($MP_AVISOS[$status])) {
 // --- Deducir el plan (también para los avisos de baja / pausa) ---
 // 1) Por preapproval_plan_id (mapa $MP_PLANES del principio): no depende del
 //    importe, que cambia con la actualización anual del plan.
-// 2) Respaldo por el monto, para planes que todavía no están en el mapa. Se
-//    conservan los importes viejos para los suscriptores de los planes anteriores:
-//    20.000 (vigente desde el 14-sep-2026) / 15.000, 7.000 y 10.000 (viejos) → landing;
-//    30.000 (vigente desde el 14-sep-2026) / 25.000 y 15.000 (viejos) → mensual.
-//    20.000 y 30.000 figuran en una sola lista cada uno. Ojo: 15.000 figura en las
-//    dos; como landing se evalúa primero, un suscriptor viejo del plan 'mensual'
-//    de 15.000 que no esté en $MP_PLANES caería como landing (el plan viejo de
-//    15.000 sí está en el mapa).
+// 2) Respaldo por el monto, para planes que todavía no están en el mapa
+//    (16-sep-2026). El `plan` no cambia respecto del modelo anterior para ningún
+//    importe, así los suscriptores viejos siguen cayendo igual; solo se afina el
+//    `planLabel`:
+//    - 10.000 → landing, mantenimiento del sitio profesional después del primer
+//      año (antes, un plan viejo de sitio profesional: mismo `plan`).
+//    - 15.000 → landing, suscripción del sitio profesional. AMBIGUO: también es el
+//      mantenimiento de tienda / cursos / inmobiliaria después del primer año
+//      ('mensual'). La suscripción de $15.000 está en el mapa por id, así que un
+//      15.000 sin id conocido podría ser ese mantenimiento: sumar su plan_id al
+//      mapa apenas exista el link.
+//    - 25.000 → mensual, suscripción de tienda / cursos / inmobiliaria. AMBIGUO:
+//      también es el plan con cambios del sitio profesional ('landing'). Se deja
+//      'mensual' porque es el plan que se ofrece hoy con link y el que tenían los
+//      suscriptores viejos de 25.000; el plan con cambios de $25.000 tiene que
+//      entrar por su preapproval_plan_id.
+//    - 35.000 → mensual, plan con cambios de tienda / cursos / inmobiliaria.
+//    - 20.000 / 7.000 → landing y 30.000 → mensual: planes anteriores.
 $planId = (string)($pre['preapproval_plan_id'] ?? '');
+$MP_MONTOS = [
+    10000 => ['plan' => 'landing', 'label' => 'Plan $10.000'],
+    15000 => ['plan' => 'landing', 'label' => 'Plan $15.000'],
+    20000 => ['plan' => 'landing', 'label' => 'Plan $20.000'],
+    7000  => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
+    25000 => ['plan' => 'mensual', 'label' => 'Plan $25.000'],
+    30000 => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
+    35000 => ['plan' => 'mensual', 'label' => 'Plan $35.000'],
+];
 if ($planId !== '' && isset($MP_PLANES[$planId])) {
     $plan      = $MP_PLANES[$planId]['plan'];
     $planLabel = $MP_PLANES[$planId]['label'];
-} elseif (in_array($amount, [20000, 15000, 7000, 10000], true)) {
-    $plan      = 'landing';
-    $planLabel = $MP_PLANES[MP_PLAN_ID_SITIO_PROFESIONAL]['label'];
-} elseif (in_array($amount, [30000, 25000, 15000], true)) {
-    $plan      = 'mensual';
-    $planLabel = $MP_PLANES[MP_PLAN_ID_RESTO]['label'];
+} elseif (isset($MP_MONTOS[$amount])) {
+    $plan      = $MP_MONTOS[$amount]['plan'];
+    $planLabel = $MP_MONTOS[$amount]['label'];
 } else {
     $plan      = 'mensual';
     $planLabel = $reason ?: 'Plan mensual';

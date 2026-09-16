@@ -2415,7 +2415,7 @@ body.embed { min-height: 0; }
                 '¿Tenés alguna web que te guste como referencia de estilo? Me ayuda mucho para afinar el diseño.',
             ] },
             { ico: '❓', tit: 'Preguntas técnicas', items: [
-                'El hosting y el dominio están incluidos mientras tengas el servicio (con el pago único, el primer año).',
+                'El hosting y el dominio están incluidos mientras tengas la suscripción (con el pago único, el primer año va incluido el mantenimiento).',
                 'Sí, se integra Mercado Pago para que tus clientes paguen directo desde la web.',
                 'Tenés un panel para vos, para cargar y editar productos, textos e imágenes cuando quieras.',
                 'La web queda preparada técnicamente para Google. La posición en el buscador depende de otros factores, no te puedo prometer un puesto.',

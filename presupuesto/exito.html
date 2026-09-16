@@ -343,7 +343,7 @@ const modalidad   = preapprovalId ? 'mensual'
    muestra ningún monto, antes que afirmar uno que no se leyó. */
 const PRECIO_UNICO = { landing: 180000, ecommerce: 290000, inmobiliaria: 240000, elearning: 290000 };
 const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
+const MENSUALIDAD  = { landing: 15000,  ecommerce: 25000,  inmobiliaria: 25000,  elearning: 25000 }; // 16-sep-2026
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const borradorNuevo  = Number(presupuesto.precioUnico) > 0;
 const tipoWeb        = presupuesto.siteType;
@@ -366,8 +366,8 @@ if (modalidad === 'unico') {
     setText('pendingText', 'Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
 } else if (modalidad === 'mensual') {
     setText('exitoBadge', '✓ Suscripción confirmada');
-    setText('exitoDesc', `Ya te suscribiste al servicio mensual${mensualidadVal ? ' de ' + mensualidadFmt + ' por mes' : ''}. Con la primera mensualidad armamos la web y la dejamos funcionando: queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
-    setText('pagoPillLabel', 'Servicio mensual');
+    setText('exitoDesc', `Ya activaste la suscripción mensual${mensualidadVal ? ' de ' + mensualidadFmt + ' por mes' : ''}. Con la primera mensualidad armamos la web y la dejamos funcionando: queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
+    setText('pagoPillLabel', 'Suscripción mensual');
     setText('pagoPillValor', mensualidadVal ? mensualidadFmt + '/mes ✓' : '✓');
     setText('pendingTitle', '⏳ Suscripción en proceso');
     setText('pendingText', 'Tu suscripción está siendo verificada por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
@@ -515,11 +515,11 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
                el 15-sep-2026 (dos formas de contratar) las variables de siempre
                llevan: total_price = precio único; primer_pago = lo que pagó para
                arrancar (la seña si eligió pago único, la primera mensualidad si
-               eligió el servicio mensual); mensualidad = el servicio mensual de ese
-               tipo de web. Se suman modalidad ("Pago único" / "Servicio mensual"),
+               eligió la suscripción mensual); mensualidad = la suscripción mensual de
+               ese tipo de web. Se suman modalidad ("Pago único" / "Suscripción mensual"),
                precio_unico, sena y saldo, para usarlas en los templates. */
             const totalFmt       = precioUnicoFmt;
-            const modalidadTexto = modalidad === 'unico' ? 'Pago único' : (modalidad === 'mensual' ? 'Servicio mensual' : '—');
+            const modalidadTexto = modalidad === 'unico' ? 'Pago único' : (modalidad === 'mensual' ? 'Suscripción mensual' : '—');
             const primerPagoFmt  = modalidad === 'unico' ? senaFmt : (modalidad === 'mensual' ? mensualidadFmt : '—');
             const pagesLabel   = { '1': '1 pagina (hasta 5 secciones)', '2-4': '2 a 4 paginas', 'mas5': 'mas de 5 paginas' };
             const pagesText    = pagesLabel[briefData.pages] || briefData.pages || '—';
