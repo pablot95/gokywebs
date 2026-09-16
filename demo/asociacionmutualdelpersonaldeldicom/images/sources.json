@@ -1,0 +1,12 @@
+[
+  { "archivo": "familia-abuelos.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/7799614/", "uso": "Hero, foto protagonista de la escena" },
+  { "archivo": "nacimiento.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/7919594/", "uso": "Sección firma, momento Nacimiento; miniatura de Subsidios" },
+  { "archivo": "casamiento.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/11032266/", "uso": "Sección firma, momento Casamiento" },
+  { "archivo": "vacaciones-lago.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/29395914/", "uso": "Sección firma, momento Vacaciones" },
+  { "archivo": "prestamo-pintar.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/7218019/", "uso": "Sección firma, momento Préstamo; miniatura de Préstamos personales" },
+  { "archivo": "turismo-bariloche.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/31630479/", "uso": "Servicios, miniatura de Turismo" },
+  { "archivo": "hoteleria.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/30835932/", "uso": "Servicios, miniatura de Hotelería" },
+  { "archivo": "proveeduria.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/8900017/", "uso": "Proveeduría; miniatura de Proveeduría" },
+  { "archivo": "mate-compartido.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/8279924/", "uso": "Ser socio, foto principal" },
+  { "archivo": "laboratorio.webp", "origen": "Pexels", "url": "https://www.pexels.com/photo/15831827/", "uso": "Ser socio, foto secundaria" }
+]

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mutual DICOM — Préstamos, turismo y subsidios en Martínez</title>
+<meta name="description" content="Asociación Mutual del Personal del DICOM, matrícula INAES 1796. Préstamos, turismo, hotelería, proveeduría y subsidios. Sede central en Martínez.">
+<meta name="theme-color" content="#F9FAFB">
+<link rel="canonical" href="https://gokywebs.com/demo/asociacionmutualdelpersonaldeldicom/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Mutual DICOM">
+<meta property="og:title" content="Mutual DICOM — Préstamos, turismo y subsidios en Martínez">
+<meta property="og:description" content="Asociación Mutual del Personal del DICOM, matrícula INAES 1796. Préstamos, turismo, hotelería, proveeduría y subsidios. Sede central en Martínez.">
+<meta property="og:url" content="https://gokywebs.com/demo/asociacionmutualdelpersonaldeldicom/">
+<meta property="og:image" content="https://gokywebs.com/demo/asociacionmutualdelpersonaldeldicom/images/familia-abuelos.webp">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='29' fill='%23F9FAFB' stroke='%23243BEB' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%23243BEB' stroke-width='2'/%3E%3Ctext x='32' y='41' font-family='Georgia,serif' font-weight='700' font-size='25' text-anchor='middle' fill='%23243BEB'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600,100&amp;family=Manrope:wght@400;600;800&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/familia-abuelos.webp" fetchpriority="high">
+<link rel="stylesheet" href="styles.css?v=20260916182043">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important;filter:none!important}</style></noscript>
+<script>
+(function () {
+  try {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var html = document.documentElement;
+    html.classList.add('js-anim');
+    window.setTimeout(function () { html.classList.remove('js-anim'); }, 3500);
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  try {
+    var v = JSON.parse(localStorage.getItem('asociacionmutualdelpersonaldeldicom_paleta') || 'null');
+    if (!v || !v.vars) return;
+    var root = document.documentElement.style;
+    for (var k in v.vars) root.setProperty(k, v.vars[k]);
+  } catch (e) {}
+})();
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": ["LocalBusiness", "NGO"],
+  "name": "Asociación Mutual del Personal del DICOM",
+  "alternateName": "Mutual DICOM",
+  "description": "Mutual inscripta en el INAES con la matrícula 1796. Préstamos personales, turismo, hotelería, proveeduría y subsidios por nacimiento, casamiento y fallecimiento para sus socios.",
+  "url": "https://gokywebs.com/demo/asociacionmutualdelpersonaldeldicom/",
+  "image": "https://gokywebs.com/demo/asociacionmutualdelpersonaldeldicom/images/familia-abuelos.webp",
+  "telephone": "+54 9 11 5512-4922",
+  "email": "mutual_dicom@yahoo.com.ar",
+  "taxID": "30-68641252-7",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "Av. Sir Alexander Fleming 1653",
+    "addressLocality": "Martínez",
+    "addressRegion": "Buenos Aires",
+    "postalCode": "B1640",
+    "addressCountry": "AR"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": -34.4961022, "longitude": -58.5210479 },
+  "areaServed": "San Isidro, Buenos Aires",
+  "hasOfferCatalog": {
+    "@type": "OfferCatalog",
+    "name": "Servicios para socios",
+    "itemListElement": [
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Préstamos personales" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Turismo" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Hotelería" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Proveeduría" } },
+      { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Subsidios por nacimiento, casamiento y fallecimiento" } }
+    ]
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "¿Quién puede asociarse a la mutual?", "acceptedAnswer": { "@type": "Answer", "text": "La mutual es del personal del DICOM (Dirección Nacional de Diagnósticos, Control y Métodos). Escribinos y te contamos cómo sumarte y qué necesitás." } },
+    { "@type": "Question", "name": "¿La mutual está registrada?", "acceptedAnswer": { "@type": "Answer", "text": "Sí. Está inscripta en el INAES con la matrícula N.º 1796 y figura vigente en el padrón oficial de mutuales." } },
+    { "@type": "Question", "name": "¿Cómo se paga la cuota social?", "acceptedAnswer": { "@type": "Answer", "text": "Se descuenta directamente del recibo de sueldo: la mutual está incorporada al régimen de deducción de haberes." } },
+    { "@type": "Question", "name": "¿Qué subsidios da la mutual?", "acceptedAnswer": { "@type": "Answer", "text": "Subsidios por nacimiento, casamiento y fallecimiento. Para cada uno te decimos qué documentación presentar." } },
+    { "@type": "Question", "name": "¿Cómo pido un préstamo personal?", "acceptedAnswer": { "@type": "Answer", "text": "Escribinos por WhatsApp o acercate a la sede: te contamos requisitos, montos y plazos vigentes." } },
+    { "@type": "Question", "name": "¿Dónde queda la sede central?", "acceptedAnswer": { "@type": "Answer", "text": "En Av. Sir Alexander Fleming 1653, Martínez, partido de San Isidro. Antes de ir, escribinos y coordinamos." } }
+  ]
+}
+</script>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <path id="sello-arco" d="M100 100m-70 0a70 70 0 1 1 140 0a70 70 0 1 1-140 0"/>
+    <filter id="tinta" x="-8%" y="-8%" width="116%" height="116%">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7" result="ruido"/>
+      <feDisplacementMap in="SourceGraphic" in2="ruido" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <symbol id="i-wsp" viewBox="0 0 32 32"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.040-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.790 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.660.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-route" viewBox="0 0 24 24"><path d="m3 11 19-9-9 19-2-8-8-2z"/></symbol>
+    <symbol id="i-instagram" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></symbol>
+    <symbol id="i-facebook" viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></symbol>
+  </defs>
+</svg>
+
+<header class="site-header">
+  <div class="topbar">
+    <div class="container topbar-inner">
+      <p class="topbar-item topbar-mat"><span class="dot-vigente" aria-hidden="true"></span>Matrícula INAES N.º 1796 · Vigente</p>
+      <p class="topbar-item topbar-dir"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Av. Fleming 1653, Martínez</p>
+      <a class="topbar-item topbar-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero hacer una consulta a la Mutual DICOM." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>11 5512-4922</a>
+      <a class="topbar-item topbar-link topbar-mail" href="mailto:mutual_dicom@yahoo.com.ar"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg>mutual_dicom@yahoo.com.ar</a>
+    </div>
+  </div>
+  <div class="container header-main">
+    <a class="brand" href="#inicio">
+      <span class="brand-kicker">Mutual del Personal del</span>
+      <span class="brand-name">DICOM</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#servicios">Servicios</a>
+      <a href="#momentos">Momentos</a>
+      <a href="#proveeduria">Proveeduría</a>
+      <a href="#socios">Ser socio</a>
+      <a href="#preguntas">Preguntas</a>
+      <a href="#sede">Sede</a>
+      <a class="nav-cta" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero hacer una consulta a la Mutual DICOM." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Escribinos</a>
+    </nav>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <section class="hero" id="inicio" aria-labelledby="hero-title">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow hero-eyebrow"><svg class="ico" aria-hidden="true"><use href="#i-shield"/></svg>Mutual inscripta en el INAES · Matrícula 1796</p>
+        <h1 class="hero-title" id="hero-title">Préstamos, turismo y subsidios para el personal del DICOM</h1>
+        <p class="hero-lead">También hotelería y proveeduría para socios. Escribinos por WhatsApp y te decimos qué necesitás para cada trámite.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por los servicios de la Mutual DICOM." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar por WhatsApp</a>
+          <a class="btn btn-ghost" href="#servicios">Ver los servicios<svg class="ico" aria-hidden="true"><use href="#i-down"/></svg></a>
+        </div>
+        <p class="hero-sede"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Sede central: Av. Fleming 1653, Martínez</p>
+      </div>
+
+      <div class="hero-scene" id="heroScene">
+        <div class="scene-field" aria-hidden="true"></div>
+        <div class="vale vale-hero" aria-hidden="true">
+          <span class="vale-kicker">Proveeduría</span>
+          <span class="vale-titulo">Vale para socios</span>
+          <span class="vale-codigo">Descuento por recibo</span>
+        </div>
+        <figure class="scene-photo">
+          <img src="images/familia-abuelos.webp" width="1800" height="1202" alt="Abuelos y nietos sonríen juntos en el sillón de su casa" fetchpriority="high" decoding="async">
+        </figure>
+        <div class="carnet" aria-hidden="true">
+          <div class="carnet-head">
+            <span class="carnet-marca"><span class="carnet-kicker">Mutual del Personal del</span><span class="carnet-nombre">DICOM</span></span>
+            <span class="carnet-tipo">Carnet de socio</span>
+          </div>
+          <div class="carnet-body">
+            <span class="carnet-roseta"></span>
+            <span class="carnet-datos">
+              <span class="carnet-label">Matrícula INAES</span>
+              <span class="carnet-valor">N.º 1796</span>
+              <span class="carnet-label">Sede central</span>
+              <span class="carnet-valor">Martínez · San Isidro</span>
+            </span>
+          </div>
+          <div class="carnet-foot">
+            <span class="chip-vigente"><span class="dot-vigente"></span>Vigente</span>
+            <span class="carnet-firma">Socio/a</span>
+          </div>
+        </div>
+        <svg class="sello sello-hero" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+          <g filter="url(#tinta)">
+            <circle class="sello-aro" cx="100" cy="100" r="95"/>
+            <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+            <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+            <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">MUTUAL DEL PERSONAL DEL DICOM · MARTÍNEZ ·</textPath></text>
+            <text class="sello-num" x="100" y="108" text-anchor="middle">1796</text>
+            <text class="sello-sub" x="100" y="128" text-anchor="middle">MAT. INAES</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="servicios" id="servicios" aria-labelledby="servicios-title">
+    <div class="container servicios-grid">
+      <div class="servicios-head">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(24px)">Servicios para socios</p>
+        <h2 id="servicios-title" data-animate style="opacity:0;transform:translateY(32px)">Cinco servicios que se consultan con un mensaje</h2>
+        <p class="servicios-lead" data-animate style="opacity:0;transform:translateY(32px)">Tocá el que te interesa: te abrimos WhatsApp con el servicio ya nombrado y te respondemos qué necesitás.</p>
+      </div>
+      <ol class="servicios-lista" id="serviciosLista" data-animate-stagger>
+        <li class="servicio" data-animate style="opacity:0;transform:translateY(48px)">
+          <a class="servicio-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por los préstamos personales de la mutual." data-preview="0" target="_blank" rel="noopener noreferrer">
+            <span class="servicio-folio">01</span>
+            <span class="servicio-thumb"><img src="images/prestamo-pintar.webp" width="1600" height="1067" alt="" decoding="async"></span>
+            <span class="servicio-texto">
+              <span class="servicio-nombre">Préstamos personales</span>
+              <span class="servicio-desc">Para un arreglo en casa, un imprevisto o eso que venís postergando. Te contamos requisitos, montos y plazos.</span>
+            </span>
+            <span class="servicio-accion">Consultar<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+          </a>
+        </li>
+        <li class="servicio" data-animate style="opacity:0;transform:translateY(48px)">
+          <a class="servicio-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por las opciones de turismo para socios." data-preview="1" target="_blank" rel="noopener noreferrer">
+            <span class="servicio-folio">02</span>
+            <span class="servicio-thumb"><img src="images/turismo-bariloche.webp" width="1600" height="1000" alt="" decoding="async"></span>
+            <span class="servicio-texto">
+              <span class="servicio-nombre">Turismo</span>
+              <span class="servicio-desc">Viajes y escapadas para descansar con tu familia. Preguntanos por destinos y fechas para socios.</span>
+            </span>
+            <span class="servicio-accion">Consultar<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+          </a>
+        </li>
+        <li class="servicio" data-animate style="opacity:0;transform:translateY(48px)">
+          <a class="servicio-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por la hotelería para socios." data-preview="2" target="_blank" rel="noopener noreferrer">
+            <span class="servicio-folio">03</span>
+            <span class="servicio-thumb"><img src="images/hoteleria.webp" width="1400" height="1050" alt="" decoding="async"></span>
+            <span class="servicio-texto">
+              <span class="servicio-nombre">Hotelería</span>
+              <span class="servicio-desc">Alojamiento para socios cuando viajás, por descanso o por trabajo. Consultá la disponibilidad.</span>
+            </span>
+            <span class="servicio-accion">Consultar<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+          </a>
+        </li>
+        <li class="servicio" data-animate style="opacity:0;transform:translateY(48px)">
+          <a class="servicio-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero saber qué hay en la proveeduría y cómo se descuenta del recibo." data-preview="3" target="_blank" rel="noopener noreferrer">
+            <span class="servicio-folio">04</span>
+            <span class="servicio-thumb"><img src="images/proveeduria.webp" width="1600" height="1067" alt="" decoding="async"></span>
+            <span class="servicio-texto">
+              <span class="servicio-nombre">Proveeduría</span>
+              <span class="servicio-desc">Compras para la casa que se descuentan del recibo de sueldo.</span>
+            </span>
+            <span class="servicio-accion">Consultar<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+          </a>
+        </li>
+        <li class="servicio" data-animate style="opacity:0;transform:translateY(48px)">
+          <a class="servicio-link" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por los subsidios de la mutual." data-preview="4" target="_blank" rel="noopener noreferrer">
+            <span class="servicio-folio">05</span>
+            <span class="servicio-thumb"><img src="images/nacimiento.webp" width="1600" height="1066" alt="" decoding="async"></span>
+            <span class="servicio-texto">
+              <span class="servicio-nombre">Subsidios</span>
+              <span class="servicio-desc">Por nacimiento, casamiento y fallecimiento. Te decimos qué presentar en cada caso.</span>
+            </span>
+            <span class="servicio-accion">Consultar<svg class="ico" aria-hidden="true"><use href="#i-arrow"/></svg></span>
+          </a>
+        </li>
+      </ol>
+    </div>
+    <div class="servicios-preview" id="serviciosPreview" aria-hidden="true">
+      <img src="images/prestamo-pintar.webp" width="1600" height="1067" alt="" decoding="async">
+      <img src="images/turismo-bariloche.webp" width="1600" height="1000" alt="" decoding="async">
+      <img src="images/hoteleria.webp" width="1400" height="1050" alt="" decoding="async">
+      <img src="images/proveeduria.webp" width="1600" height="1067" alt="" decoding="async">
+      <img src="images/nacimiento.webp" width="1600" height="1066" alt="" decoding="async">
+    </div>
+  </section>
+
+  <section class="momentos" id="momentos" aria-labelledby="momentos-title">
+    <div class="momentos-escena">
+      <div class="container momentos-grid">
+        <div class="momentos-visual" id="momentosVisual">
+          <figure class="momento-foto is-on" data-momento="0">
+            <img src="images/nacimiento.webp" width="1600" height="1066" alt="Una mamá y un papá sonríen junto a su bebé recién nacido" decoding="async">
+          </figure>
+          <figure class="momento-foto" data-momento="1">
+            <img src="images/casamiento.webp" width="1100" height="1959" alt="Una pareja recién casada sale del registro civil entre aplausos" decoding="async">
+          </figure>
+          <figure class="momento-foto" data-momento="2">
+            <img src="images/vacaciones-lago.webp" width="1600" height="1067" alt="Una familia de vacaciones a orillas de un lago entre montañas" decoding="async">
+          </figure>
+          <figure class="momento-foto" data-momento="3">
+            <img src="images/prestamo-pintar.webp" width="1600" height="1067" alt="Una pareja con rodillos de pintura, lista para renovar su casa" decoding="async">
+          </figure>
+          <div class="momento-sellos" aria-hidden="true">
+            <svg class="sello momento-sello is-on" data-momento="0" viewBox="0 0 200 200" focusable="false">
+              <g filter="url(#tinta)">
+                <circle class="sello-aro" cx="100" cy="100" r="95"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+                <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">SUBSIDIO POR NACIMIENTO · MUTUAL DICOM ·</textPath></text>
+                <text class="sello-palabra" x="100" y="106" text-anchor="middle">DICOM</text>
+                <text class="sello-sub" x="100" y="126" text-anchor="middle">MUTUAL</text>
+              </g>
+            </svg>
+            <svg class="sello momento-sello" data-momento="1" viewBox="0 0 200 200" focusable="false">
+              <g filter="url(#tinta)">
+                <circle class="sello-aro" cx="100" cy="100" r="95"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+                <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">SUBSIDIO POR CASAMIENTO · MUTUAL DICOM ·</textPath></text>
+                <text class="sello-palabra" x="100" y="106" text-anchor="middle">DICOM</text>
+                <text class="sello-sub" x="100" y="126" text-anchor="middle">MUTUAL</text>
+              </g>
+            </svg>
+            <svg class="sello momento-sello" data-momento="2" viewBox="0 0 200 200" focusable="false">
+              <g filter="url(#tinta)">
+                <circle class="sello-aro" cx="100" cy="100" r="95"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+                <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">TURISMO Y HOTELERÍA · MUTUAL DICOM ·</textPath></text>
+                <text class="sello-palabra" x="100" y="106" text-anchor="middle">DICOM</text>
+                <text class="sello-sub" x="100" y="126" text-anchor="middle">MUTUAL</text>
+              </g>
+            </svg>
+            <svg class="sello momento-sello" data-momento="3" viewBox="0 0 200 200" focusable="false">
+              <g filter="url(#tinta)">
+                <circle class="sello-aro" cx="100" cy="100" r="95"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+                <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+                <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">PRÉSTAMO PERSONAL · MUTUAL DICOM ·</textPath></text>
+                <text class="sello-palabra" x="100" y="106" text-anchor="middle">DICOM</text>
+                <text class="sello-sub" x="100" y="126" text-anchor="middle">MUTUAL</text>
+              </g>
+            </svg>
+          </div>
+          <p class="momento-folio" aria-hidden="true"><span class="momento-folio-n" id="momentoFolio">01</span><span class="momento-folio-t">/ 04</span></p>
+        </div>
+
+        <div class="momentos-copy">
+          <p class="eyebrow">Cuatro momentos</p>
+          <h2 class="momentos-title" id="momentos-title">La mutual, cuando la vida cambia</h2>
+          <div class="momentos-textos">
+            <article class="momento-texto is-on" data-momento="0" aria-labelledby="momento-0">
+              <p class="momento-kicker">01 · Subsidio por nacimiento</p>
+              <h3 id="momento-0">Llegó alguien nuevo a la familia</h3>
+              <p class="momento-p">La mutual acompaña con un subsidio por nacimiento. Avisanos y te explicamos cómo pedirlo.</p>
+              <p class="momento-dato"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg><span><span class="momento-dato-label">Tené a mano</span>Partida de nacimiento</span></p>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por el subsidio por nacimiento." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar el subsidio</a>
+            </article>
+            <article class="momento-texto" data-momento="1" aria-labelledby="momento-1">
+              <p class="momento-kicker">02 · Subsidio por casamiento</p>
+              <h3 id="momento-1">Se casan, y la mutual acompaña</h3>
+              <p class="momento-p">Hay un subsidio por casamiento para socios. Escribinos y te decimos qué presentar en la sede.</p>
+              <p class="momento-dato"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg><span><span class="momento-dato-label">Tené a mano</span>Acta de matrimonio</span></p>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por el subsidio por casamiento." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar el subsidio</a>
+            </article>
+            <article class="momento-texto" data-momento="2" aria-labelledby="momento-2">
+              <p class="momento-kicker">03 · Turismo y hotelería</p>
+              <h3 id="momento-2">Vacaciones con turismo y hotelería</h3>
+              <p class="momento-p">Contanos cuándo querés viajar y te pasamos las opciones de turismo y alojamiento para socios.</p>
+              <p class="momento-dato"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg><span><span class="momento-dato-label">Tené a mano</span>Fechas posibles y cantidad de viajeros</span></p>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por turismo y hotelería para socios." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar opciones de viaje</a>
+            </article>
+            <article class="momento-texto" data-momento="3" aria-labelledby="momento-3">
+              <p class="momento-kicker">04 · Préstamo personal</p>
+              <h3 id="momento-3">Un préstamo para lo que venís postergando</h3>
+              <p class="momento-p">Para pintar la casa, cambiar la heladera o cubrir un imprevisto. Te contamos requisitos y plazos.</p>
+              <p class="momento-dato"><svg class="ico" aria-hidden="true"><use href="#i-doc"/></svg><span><span class="momento-dato-label">Tené a mano</span>DNI y último recibo de sueldo</span></p>
+              <a class="btn btn-primary btn-sm" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero consultar por un préstamo personal." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar un préstamo</a>
+            </article>
+          </div>
+          <div class="momentos-marcas">
+            <button type="button" class="momento-marca is-on" data-ir="0" aria-label="Ir al momento 1: nacimiento"><span class="momento-marca-barra"><span></span></span><span class="momento-marca-txt">Nacimiento</span></button>
+            <button type="button" class="momento-marca" data-ir="1" aria-label="Ir al momento 2: casamiento"><span class="momento-marca-barra"><span></span></span><span class="momento-marca-txt">Casamiento</span></button>
+            <button type="button" class="momento-marca" data-ir="2" aria-label="Ir al momento 3: vacaciones"><span class="momento-marca-barra"><span></span></span><span class="momento-marca-txt">Vacaciones</span></button>
+            <button type="button" class="momento-marca" data-ir="3" aria-label="Ir al momento 4: préstamo"><span class="momento-marca-barra"><span></span></span><span class="momento-marca-txt">Préstamo</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="proveeduria" id="proveeduria" aria-labelledby="prov-title">
+    <div class="container prov-grid">
+      <div class="prov-copy">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(24px)">Proveeduría</p>
+        <h2 id="prov-title" data-animate style="opacity:0;transform:translateY(32px)">Las compras de la casa, descontadas del recibo de sueldo</h2>
+        <p class="prov-lead" data-animate style="opacity:0;transform:translateY(32px)">La proveeduría de la mutual es para socios. Preguntanos qué hay disponible y cómo se descuenta de tu recibo.</p>
+        <ul class="checks" data-animate-stagger>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Descuento directo del recibo de haberes</li>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg>Consulta por WhatsApp o en la sede de Martínez</li>
+        </ul>
+        <a class="btn btn-primary" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero saber qué hay en la proveeduría y cómo se descuenta del recibo." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar la proveeduría</a>
+      </div>
+      <div class="prov-visual">
+        <figure class="prov-foto" data-animate="mask" style="opacity:0;clip-path:inset(0 0 100% 0)">
+          <img src="images/proveeduria.webp" width="1600" height="1067" alt="Un socio sostiene una bolsa de papel con verduras frescas en su cocina" decoding="async">
+        </figure>
+        <div class="vale vale-prov" aria-hidden="true">
+          <span class="vale-kicker">Mutual DICOM</span>
+          <span class="vale-titulo">Vale de proveeduría</span>
+          <span class="vale-codigo">Se descuenta del recibo de haberes</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tramites" id="tramites" aria-labelledby="tramites-title">
+    <div class="container">
+      <div class="tramites-head">
+        <div>
+          <p class="eyebrow eyebrow-claro" data-animate style="opacity:0;transform:translateY(24px)">Paso a paso</p>
+          <h2 id="tramites-title" data-animate style="opacity:0;transform:translateY(32px)">Pedir un subsidio o un préstamo lleva tres pasos</h2>
+        </div>
+        <p class="tramites-lead" data-animate style="opacity:0;transform:translateY(32px)">Sin formularios largos ni vueltas: te guiamos desde el primer mensaje hasta que el trámite queda resuelto.</p>
+      </div>
+      <ol class="pasos" data-animate-stagger>
+        <li class="paso" data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(24px)">
+          <span class="paso-num" aria-hidden="true">1</span>
+          <h3>Escribinos</h3>
+          <p>Por WhatsApp o en la sede de Martínez. Contanos qué trámite querés hacer.</p>
+        </li>
+        <li class="paso" data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(24px)">
+          <span class="paso-num" aria-hidden="true">2</span>
+          <h3>Juntá los papeles</h3>
+          <p>Te decimos qué documentación presentar según el subsidio o el préstamo.</p>
+        </li>
+        <li class="paso" data-animate="blur" style="opacity:0;filter:blur(8px);transform:translateY(24px)">
+          <span class="paso-num" aria-hidden="true">3</span>
+          <h3>La mutual lo gestiona</h3>
+          <p>Presentás todo y seguimos el trámite con vos hasta que esté resuelto.</p>
+        </li>
+      </ol>
+      <div class="tramites-nota" data-animate style="opacity:0;transform:translateY(32px)">
+        <div>
+          <h3>Subsidio por fallecimiento</h3>
+          <p>En un momento difícil, la mutual también acompaña. Escribinos cuando puedas y te explicamos el trámite con calma.</p>
+        </div>
+        <a class="btn btn-claro" href="https://wa.me/5491155124922" data-wsp-msg="Hola, necesito consultar por el subsidio por fallecimiento." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Consultar el subsidio</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="socios" id="socios" aria-labelledby="socios-title">
+    <div class="container socios-grid">
+      <div class="socios-fotos">
+        <figure class="socios-mate" data-animate="mask" style="opacity:0;clip-path:inset(0 0 100% 0)">
+          <img src="images/mate-compartido.webp" width="1600" height="1067" alt="Dos compañeros comparten un mate en un patio soleado" decoding="async">
+        </figure>
+        <figure class="socios-lab" data-animate style="opacity:0;transform:translateY(48px)">
+          <img src="images/laboratorio.webp" width="1100" height="1650" alt="Una técnica de laboratorio con cofia y guantes trabaja en la mesada" decoding="async">
+        </figure>
+        <svg class="sello sello-socios" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+          <g filter="url(#tinta)">
+            <circle class="sello-aro" cx="100" cy="100" r="95"/>
+            <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+            <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+            <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">HECHA POR EL PERSONAL DEL DICOM · SOCIOS ·</textPath></text>
+            <text class="sello-palabra" x="100" y="106" text-anchor="middle">SOCIOS</text>
+            <text class="sello-sub" x="100" y="126" text-anchor="middle">MUTUAL</text>
+          </g>
+        </svg>
+      </div>
+      <div class="socios-copy">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(24px)">Ser socio</p>
+        <h2 id="socios-title" data-animate style="opacity:0;transform:translateY(32px)">Una mutual hecha por el personal del DICOM</h2>
+        <blockquote class="lee" data-lee>Una mutual no tiene dueños: tiene socios. Lo que aportamos entre todos vuelve, como el mate, cuando a alguno le toca.</blockquote>
+        <p class="socios-p">¿Trabajás en el DICOM y todavía no sos socio? Escribinos y te contamos cómo asociarte.</p>
+        <a class="btn btn-primary" href="https://wa.me/5491155124922" data-wsp-msg="Hola, trabajo en el DICOM y quiero asociarme a la mutual." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Quiero asociarme</a>
+        <dl class="ficha" data-animate style="opacity:0;transform:translateY(32px)">
+          <div><dt>Matrícula INAES</dt><dd>N.º 1796</dd></div>
+          <div><dt>Padrón de mutuales</dt><dd><span class="dot-vigente" aria-hidden="true"></span>Vigente</dd></div>
+          <div><dt>Inscripción</dt><dd>18 de abril de 1991</dd></div>
+          <div><dt>CUIT</dt><dd>30-68641252-7</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="preguntas" aria-labelledby="faq-title">
+    <div class="container faq-grid">
+      <div class="faq-head">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(24px)">Preguntas frecuentes</p>
+        <h2 id="faq-title" data-animate style="opacity:0;transform:translateY(32px)">Lo que conviene saber antes de escribirnos</h2>
+        <p class="faq-lead" data-animate style="opacity:0;transform:translateY(32px)">¿Tu duda no está? <a href="https://wa.me/5491155124922" data-wsp-msg="Hola, tengo una consulta sobre la mutual." target="_blank" rel="noopener noreferrer">Preguntanos por WhatsApp</a> y te respondemos.</p>
+      </div>
+      <div class="faq-lista" data-animate-stagger>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿Quién puede asociarse a la mutual?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>La mutual es del personal del DICOM (Dirección Nacional de Diagnósticos, Control y Métodos). Escribinos y te contamos cómo sumarte y qué necesitás.</p></div>
+        </details>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿La mutual está registrada?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>Sí. Está inscripta en el INAES con la matrícula N.º 1796 y figura vigente en el padrón oficial de mutuales.</p></div>
+        </details>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿Cómo se paga la cuota social?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>Se descuenta directamente del recibo de sueldo: la mutual está incorporada al régimen de deducción de haberes.</p></div>
+        </details>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿Qué subsidios da la mutual?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>Subsidios por nacimiento, casamiento y fallecimiento. Para cada uno te decimos qué documentación presentar.</p></div>
+        </details>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿Cómo pido un préstamo personal?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>Escribinos por WhatsApp o acercate a la sede: te contamos requisitos, montos y plazos vigentes.</p></div>
+        </details>
+        <details class="faq-item" data-animate style="opacity:0;transform:translateY(24px)">
+          <summary><span>¿Dónde queda la sede central?</span><svg class="ico faq-ico" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <div class="faq-body"><p>En Av. Sir Alexander Fleming 1653, Martínez, partido de San Isidro. Antes de ir, escribinos y coordinamos.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="sede" id="sede" aria-labelledby="sede-title">
+    <div class="container sede-grid">
+      <div class="sede-info">
+        <p class="eyebrow" data-animate style="opacity:0;transform:translateY(24px)">Sede central</p>
+        <h2 id="sede-title" data-animate style="opacity:0;transform:translateY(32px)">La sede central queda en Martínez</h2>
+        <ul class="datos" data-animate-stagger>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg><span><span class="dato-label">Dirección</span>Av. Sir Alexander Fleming 1653, Martínez (B1640), San Isidro, Buenos Aires</span></li>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg><span><span class="dato-label">WhatsApp</span><a href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero hacer una consulta a la Mutual DICOM." target="_blank" rel="noopener noreferrer">+54 9 11 5512-4922</a></span></li>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg><span><span class="dato-label">Mail</span><a href="mailto:mutual_dicom@yahoo.com.ar">mutual_dicom@yahoo.com.ar</a></span></li>
+          <li data-animate style="opacity:0;transform:translateY(24px)"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg><span><span class="dato-label">Atención</span>Consultá días y horarios por WhatsApp antes de acercarte.</span></li>
+        </ul>
+        <div class="sede-acciones">
+          <div class="redes">
+            <span class="dato-label">Redes</span>
+            <a class="red" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la mutual"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg></a>
+            <a class="red" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la mutual"><svg class="ico" aria-hidden="true"><use href="#i-facebook"/></svg></a>
+          </div>
+          <a class="btn btn-ghost" href="https://www.google.com/maps/search/?api=1&amp;query=Av.%20Sir%20Alexander%20Fleming%201653%2C%20Mart%C3%ADnez%2C%20Buenos%20Aires" target="_blank" rel="noopener noreferrer"><svg class="ico" aria-hidden="true"><use href="#i-route"/></svg>Cómo llegar</a>
+        </div>
+      </div>
+      <div class="sede-mapa-wrap" data-animate style="opacity:0;transform:translateY(40px)">
+        <div class="sede-mapa" id="mapa"></div>
+        <p class="sede-mapa-etiqueta"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Fleming 1653 · Martínez</p>
+      </div>
+      <form class="form-consulta" id="formConsulta" novalidate>
+        <div class="form-head">
+          <h3>Dejanos tu consulta</h3>
+          <p>Contanos qué necesitás y te respondemos por WhatsApp.</p>
+        </div>
+        <div class="campo">
+          <label for="f-nombre">Nombre y apellido</label>
+          <input id="f-nombre" name="nombre" type="text" autocomplete="name" placeholder="Como figura en tu recibo" required aria-describedby="e-nombre">
+          <p class="campo-error" id="e-nombre" hidden>Contanos cómo te llamás.</p>
+        </div>
+        <div class="campo">
+          <label for="f-tel">Teléfono</label>
+          <input id="f-tel" name="telefono" type="tel" autocomplete="tel" inputmode="tel" placeholder="11 5555-5555" required aria-describedby="e-tel">
+          <p class="campo-error" id="e-tel" hidden>Revisá el número: parece que falta algún dígito.</p>
+        </div>
+        <div class="campo campo-full">
+          <label for="f-tema">¿Sobre qué querés consultar?</label>
+          <select id="f-tema" name="tema" required aria-describedby="e-tema">
+            <option value="">Elegí un tema</option>
+            <option>Préstamo personal</option>
+            <option>Turismo</option>
+            <option>Hotelería</option>
+            <option>Proveeduría</option>
+            <option>Subsidio</option>
+            <option>Quiero asociarme</option>
+            <option>Otra consulta</option>
+          </select>
+          <p class="campo-error" id="e-tema" hidden>Elegí un tema para tu consulta.</p>
+        </div>
+        <div class="campo campo-full">
+          <label for="f-msg">Mensaje</label>
+          <textarea id="f-msg" name="mensaje" rows="4" placeholder="Por ejemplo: qué papeles llevo para el subsidio por nacimiento"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary form-enviar">Dejar mi consulta</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="cierre" id="cierre" aria-labelledby="cierre-title">
+    <div class="container cierre-inner">
+      <p class="eyebrow eyebrow-claro" data-animate style="opacity:0;transform:translateY(24px)">¿Tenés un trámite pendiente?</p>
+      <h2 id="cierre-title" data-animate style="opacity:0;transform:translateY(32px)">Escribinos y te decimos qué traer a la sede</h2>
+      <div class="cierre-ctas" data-animate style="opacity:0;transform:translateY(32px)">
+        <a class="btn btn-claro btn-lg" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero saber qué tengo que traer para mi trámite en la mutual." target="_blank" rel="noopener noreferrer"><svg class="ico ico-fill" aria-hidden="true"><use href="#i-wsp"/></svg>Escribir a la mutual</a>
+        <a class="cierre-tel" href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero hacer una consulta a la Mutual DICOM." target="_blank" rel="noopener noreferrer">11 5512-4922</a>
+      </div>
+    </div>
+    <svg class="sello sello-cierre" id="selloCierre" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+      <g filter="url(#tinta)">
+        <circle class="sello-aro" cx="100" cy="100" r="95"/>
+        <circle class="sello-aro-fino" cx="100" cy="100" r="86"/>
+        <circle class="sello-aro-fino" cx="100" cy="100" r="54"/>
+        <text class="sello-arco"><textPath href="#sello-arco" textLength="432" lengthAdjust="spacing">SEDE CENTRAL · AV. FLEMING 1653 · MARTÍNEZ ·</textPath></text>
+        <text class="sello-palabra" x="100" y="106" text-anchor="middle">SEDE</text>
+        <text class="sello-sub" x="100" y="126" text-anchor="middle">CENTRAL</text>
+      </g>
+    </svg>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-marca">
+      <p class="footer-wordmark"><span class="brand-kicker">Mutual del Personal del</span><span class="brand-name">DICOM</span></p>
+      <p class="footer-nombre">Asociación Mutual del Personal del DICOM (Dirección Nacional de Diagnósticos, Control y Métodos)</p>
+    </div>
+    <div class="footer-col">
+      <h2 class="footer-h">Secciones</h2>
+      <ul>
+        <li><a href="#servicios">Servicios</a></li>
+        <li><a href="#momentos">Momentos</a></li>
+        <li><a href="#proveeduria">Proveeduría</a></li>
+        <li><a href="#socios">Ser socio</a></li>
+        <li><a href="#preguntas">Preguntas</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h2 class="footer-h">Contacto</h2>
+      <ul>
+        <li>Av. Sir Alexander Fleming 1653, Martínez</li>
+        <li><a href="https://wa.me/5491155124922" data-wsp-msg="Hola, quiero hacer una consulta a la Mutual DICOM." target="_blank" rel="noopener noreferrer">WhatsApp 11 5512-4922</a></li>
+        <li><a href="mailto:mutual_dicom@yahoo.com.ar">mutual_dicom@yahoo.com.ar</a></li>
+      </ul>
+      <div class="redes redes-footer">
+        <a class="red" href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de la mutual"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg></a>
+        <a class="red" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" aria-label="Facebook de la mutual"><svg class="ico" aria-hidden="true"><use href="#i-facebook"/></svg></a>
+      </div>
+    </div>
+    <div class="footer-col">
+      <h2 class="footer-h">Datos</h2>
+      <ul>
+        <li>Matrícula INAES N.º 1796</li>
+        <li>CUIT 30-68641252-7</li>
+        <li>Cuota social por recibo de haberes</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-base">
+    <p>© 2026 Asociación Mutual del Personal del DICOM</p>
+    <p class="footer-credit">Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener noreferrer">Gokywebs</a></p>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5491155124922?text=Hola%2C%20quiero%20hacer%20una%20consulta%20a%20la%20Mutual%20DICOM." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<button type="button" class="color-switch" id="color-switch" aria-haspopup="dialog" aria-label="Cambiar los colores de la web">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 21a9 9 0 1 1 0-18c4.97 0 9 3.58 9 8 0 2.21-1.79 3-4 3h-1.5a1.5 1.5 0 0 0-1.06 2.56c.27.27.56.6.56 1.06A2.38 2.38 0 0 1 12.63 21H12Z"/>
+    <circle cx="7.5" cy="11.5" r="1" fill="currentColor" stroke="none"/><circle cx="10.5" cy="7.5" r="1" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="17" cy="11.5" r="1" fill="currentColor" stroke="none"/>
+  </svg>
+  <span>Cambiar colores</span>
+</button>
+
+<div class="palette-panel-backdrop" id="palette-panel-backdrop" hidden>
+  <div class="palette-panel" role="dialog" aria-modal="true" aria-labelledby="palette-panel-title">
+    <button type="button" class="palette-panel-close" id="palette-panel-close" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <h3 id="palette-panel-title">Elegí una paleta</h3>
+    <p class="palette-panel-sub">Se aplica al instante sobre esta misma demo.</p>
+    <div class="palette-grid" id="palette-grid"></div>
+    <button type="button" class="palette-send" id="palette-send">Enviar estos colores</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/imask@7.6.1/dist/imask.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  const _fbAppPaleta = initializeApp({
+    apiKey: "AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ",
+    authDomain: "gokywebs-967cd.firebaseapp.com",
+    projectId: "gokywebs-967cd",
+    storageBucket: "gokywebs-967cd.firebasestorage.app",
+    messagingSenderId: "50030976147",
+    appId: "1:50030976147:web:9f07245b536a75833a4166"
+  }, 'paletas');
+  const _paletasDb = getFirestore(_fbAppPaleta);
+  window.__gkySendPaleta = (data) => addDoc(collection(_paletasDb, "paletas"), { ...data, createdAt: serverTimestamp(), visto: false });
+</script>
+<script src="script.js?v=20260916182043"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
