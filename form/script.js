@@ -427,7 +427,10 @@ function pasoDe(el) {
     return Number(el?.closest('.form-step')?.dataset.step || 1);
 }
 
-function irAPaso(n, { enfocar = true, scroll = true } = {}) {
+const PASO3 = document.querySelector('.form-step[data-step="3"]');
+let introModelosVista = false;
+
+function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     PASOS.forEach(p => { p.hidden = Number(p.dataset.step) !== n; });
     document.querySelectorAll('.step-dot').forEach(dot => {
         const s = Number(dot.dataset.s);
@@ -437,12 +440,17 @@ function irAPaso(n, { enfocar = true, scroll = true } = {}) {
     document.querySelectorAll('.step-connector').forEach((c, i) => c.classList.toggle('done', i + 1 < n));
 
     const paso = PASOS.find(p => Number(p.dataset.step) === n);
+    // Antes de los modelos, una pantalla que explica qué viene (16-sep). Solo
+    // la primera vez: el que vuelve al paso 2 y avanza no la ve de nuevo.
+    const conIntro = n === 3 && !introModelosVista;
+    PASO3.classList.toggle('con-intro', conIntro);
     // Un textarea oculto mide 0 de alto: se ajusta recién ahora que se ve.
     paso?.querySelectorAll('textarea.autosize').forEach(autoGrow);
     if (scroll) document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (enfocar) paso?.querySelector('.step-header-title')?.focus({ preventScroll: true });
+    // En el paso 3 hay dos títulos: el de la intro y el de los modelos (hijo directo).
+    if (enfocar) paso?.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
     // El paso de modelos necesita más ancho que los campos.
-    document.body.classList.toggle('paso-modelos', n === 3);
+    document.body.classList.toggle('paso-modelos', n === 3 && !conIntro);
     if (n === 2) track('step2');
 }
 
@@ -474,6 +482,13 @@ document.getElementById('btnVolver').addEventListener('click', () => {
 document.getElementById('btnVolver3').addEventListener('click', () => {
     clearErrors();
     irAPaso(2);
+});
+
+document.getElementById('btnVolverIntro').addEventListener('click', () => irAPaso(2));
+
+document.getElementById('btnVerModelos').addEventListener('click', () => {
+    introModelosVista = true;
+    irAPaso(3);
 });
 
 const btnEnviar = document.getElementById('btnEnviar');
@@ -657,6 +672,7 @@ function mostrarErrorServidor(json) {
         return true;
     }
     if (json.motivo === 'modelos') {
+        introModelosVista = true;
         irAPaso(3, { enfocar: false });
         pintarElegidos('Volvé a elegir tus 2 modelos: no pudimos leer los que marcaste.');
         mfAviso.classList.add('error');

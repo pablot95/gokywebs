@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=1">
-    <link rel="stylesheet" href="styles.css?v=20260916c">
+    <link rel="stylesheet" href="styles.css?v=20260916d">
 </head>
 <body>
 
@@ -183,6 +183,21 @@
                      Los modelos se dibujan acá mismo con /modelos/modelos.js,
                      nuevos.js y wire.js: el cliente no sale del formulario. -->
                 <div class="form-step" data-step="3" hidden>
+                    <!-- Pantalla previa a los modelos: se ve la primera vez que se llega al paso 3. -->
+                    <div class="mf-intro" id="mfIntro">
+                        <div class="form-section">
+                            <div class="step-header">
+                                <span class="step-header-badge">Paso 3 de 3</span>
+                                <h2 class="step-header-title" tabindex="-1">Ahora, los modelos</h2>
+                                <p class="mf-intro-texto">A continuación vas a poder elegir 2 tipos de web entre varios modelos. Tienen distintos formatos y estructuras: elegí los que más te gusten y vamos a armar tu web en base a lo que elijas.</p>
+                            </div>
+                        </div>
+                        <div class="step-nav">
+                            <button type="button" class="btn-step btn-step-prev" id="btnVolverIntro">← Volver</button>
+                            <button type="button" class="btn-step btn-step-next" id="btnVerModelos">Ver los modelos <span class="btn-step-arrow">→</span></button>
+                        </div>
+                    </div>
+
                     <div class="form-section">
 
                         <div class="step-header">
@@ -280,6 +295,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260916b"></script>
+    <script type="module" src="script.js?v=20260916c"></script>
 </body>
 </html>

@@ -1997,6 +1997,12 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .mf-ver:hover { color: var(--blue-dark); }
 .mf-vacio { padding: 24px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
+/* Intro del paso 3: mientras se ve, los modelos y la barra quedan ocultos. */
+.mf-intro { display: none; }
+.form-step.con-intro > .mf-intro { display: block; }
+.form-step.con-intro > .form-section, .form-step.con-intro > .mf-barra { display: none; }
+.mf-intro-texto { margin-top: 6px; font-size: 1.02rem; line-height: 1.6; color: var(--text-muted); }
+
 /* La barra con lo elegido y Enviar queda pegada abajo mientras se recorren los modelos. */
 .mf-barra {
     position: sticky; bottom: 0; z-index: 5;
