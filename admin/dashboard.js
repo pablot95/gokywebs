@@ -2377,6 +2377,14 @@ function briefDetailHTML(src) {
     const instagram = cleanFieldValue(src.instagram || "");
     const referencias = cleanFieldValue(src.referencias || "");
     const extra     = cleanFieldValue(src.extra || "");
+    // Pasos 2 y 3 del formulario: estilo, "incluir sí o sí" y los 2 modelos elegidos (16-sep).
+    const estiloPagina = cleanFieldValue(src.estilo_pagina || "");
+    const incluir   = cleanFieldValue(src.incluir_si_o_si || "");
+    let modelosElegidos = "";
+    try {
+        modelosElegidos = (JSON.parse(src.modelosElegidos || "[]") || [])
+            .map(m => `Modelo ${m.letra}${m.nombre ? ` · ${m.nombre}` : ""}`).join(" + ");
+    } catch (_) {}
     // Dos modalidades (15-sep-2026): la elegida en el boceto o, si no eligió, las dos.
     const plan = planDe(src);
     const fecha = src.fecha || src.propuestaFecha || "";
@@ -2391,6 +2399,9 @@ function briefDetailHTML(src) {
         row("Contacto", contacto),
         row("Rubro / actividad", rubro, true),
         row("Tipo de web", tipoWeb),
+        row("Modelos elegidos", modelosElegidos, true),
+        row("Estilo de página", estiloPagina),
+        row("Incluir sí o sí", incluir, true),
         row("Objetivo elegido", objetivos, true),
         row("Tipo de sitio", tipoPagina),
         row("Productos / servicios", prodServ, true),

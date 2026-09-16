@@ -3,7 +3,6 @@
 
    ver.html?m=c                  modelo C
    ver.html?m=c&vista=celular    arranca en la vista de celular
-   ver.html?m=c&partes=0         sin los nombres de las partes
 
    Computadora: el lienzo de 1200px, achicado si la pantalla es
    más chica. Celular: el mismo HTML en 366px, y el @container
@@ -29,14 +28,11 @@
     var vista = p.get('vista') === 'celular' || p.get('vista') === 'pc'
         ? p.get('vista')
         : (window.innerWidth < 700 ? 'celular' : 'pc');
-    var partes = p.get('partes') !== '0';
 
     var $letra = document.getElementById('verLetra');
     var $nombre = document.getElementById('verNombre');
     var $rubro = document.getElementById('verRubro');
-    var $claves = document.getElementById('verClaves');
     var $escenario = document.getElementById('verEscenario');
-    var $partes = document.getElementById('verPartes');
     var $ant = document.getElementById('verAnt');
     var $sig = document.getElementById('verSig');
     var $volver = document.getElementById('verVolver');
@@ -57,9 +53,6 @@
         $letra.textContent = m.letra;
         $nombre.textContent = 'Modelo ' + m.letra + ' · ' + m.nombre;
         $rubro.textContent = LABEL_RUBRO[(m.rubros || [])[0]] || LABEL_TIPO[m.tipo] || m.tipo;
-        $claves.innerHTML = m.claves.map(function (c) {
-            return '<div><dt>' + esc(c[0]) + '</dt><dd>' + esc(c[1]) + '</dd></div>';
-        }).join('');
 
         var wire = GW_WIRE.render(m);
         if (vista === 'pc') {
@@ -72,12 +65,10 @@
         } else {
             $escenario.innerHTML = '<div class="ver-cel"><div class="ver-cel-pantalla">' + wire + '</div></div>';
         }
-        $escenario.querySelector('.wf').classList.toggle('con-partes', partes);
 
         [].forEach.call(document.querySelectorAll('.ver-seg button'), function (b) {
             b.setAttribute('aria-pressed', b.dataset.vista === vista ? 'true' : 'false');
         });
-        $partes.checked = partes;
 
         var principal = (m.rubros || [])[0];
         var relacionados = principal ? modelos.filter(function (x) { return (x.rubros || []).indexOf(principal) >= 0; }) : modelos;
@@ -95,7 +86,7 @@
             encodeURIComponent('Hola! Me gustó el modelo ' + m.letra + ' (' + m.nombre + ') para mi web de ' + ($rubro.textContent || 'mi negocio'));
 
         if (window.history && window.history.replaceState) {
-            window.history.replaceState(null, '', url(m, partes ? '' : '&partes=0'));
+            window.history.replaceState(null, '', url(m));
         }
     }
 
@@ -104,14 +95,6 @@
         if (!b || b.dataset.vista === vista) return;
         vista = b.dataset.vista;
         pintar();
-    });
-    $partes.addEventListener('change', function () {
-        partes = $partes.checked;
-        var wf = $escenario.querySelector('.wf');
-        if (wf) wf.classList.toggle('con-partes', partes);
-        if (window.history && window.history.replaceState) {
-            window.history.replaceState(null, '', url(modelos[idx], partes ? '' : '&partes=0'));
-        }
     });
 
     pintar();

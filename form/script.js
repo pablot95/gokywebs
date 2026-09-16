@@ -55,47 +55,232 @@ const _origen = (() => {
 
 // Se captura antes de limpiar la URL con replaceState, si no se pierden ?t=/?neg=.
 const _paramsInicial = new URLSearchParams(window.location.search);
-let catalogoModelos = [];
+/* ─── Paso 3: modelos ───
+ * Los mismos modelos de /modelos/, dibujados acá (modelos.js, nuevos.js y
+ * wire.js se cargan como scripts clásicos antes que este módulo). El cliente
+ * marca 2 tocando la tarjeta y los puede ver grandes en un modal, sin salir
+ * del formulario. */
+const MODELOS = (typeof GW_MODELOS !== 'undefined') ? GW_MODELOS : [];
+const MODELO_TIPOS = (typeof GW_MODELO_TIPOS !== 'undefined') ? GW_MODELO_TIPOS : [];
+const MODELO_RUBROS = (typeof GW_MODELO_RUBROS !== 'undefined') ? GW_MODELO_RUBROS : [];
+const MODELOS_A_ELEGIR = 2;
+const modeloPorId = id => MODELOS.find(m => m.id === id);
+const nombreModelo = m => `Modelo ${m.letra} · ${m.nombre}`;
+
 let modelosSeleccionados = [];
 const modelosParametro = (_paramsInicial.get('modelos') || '').split(',').filter(Boolean);
 try { modelosSeleccionados = modelosParametro.length ? modelosParametro : JSON.parse(sessionStorage.getItem('gw-modelos') || '[]'); } catch (_) {}
-modelosSeleccionados = [...new Set(modelosSeleccionados)].slice(0, 2);
+modelosSeleccionados = [...new Set(modelosSeleccionados)].filter(modeloPorId).slice(0, MODELOS_A_ELEGIR);
 
-async function cargarModelos() {
-    const caja = document.getElementById('modelosElegidos');
-    try {
-        const res = await fetch('/modelos/catalogo.json');
-        if (!res.ok) throw new Error('Catálogo no disponible');
-        catalogoModelos = await res.json();
-        modelosSeleccionados = modelosSeleccionados.filter(id => catalogoModelos.some(m => m.id === id));
-        const frag = document.createDocumentFragment();
-        catalogoModelos.forEach(m => {
-            const label = document.createElement('label');
-            label.className = 'modelo-opcion';
-            const check = document.createElement('input');
-            check.type = 'checkbox'; check.value = m.id; check.checked = modelosSeleccionados.includes(m.id);
-            check.addEventListener('change', () => {
-                if (check.checked && modelosSeleccionados.length >= 2) {
-                    check.checked = false;
-                    document.getElementById('modelosAviso').textContent = 'Podés marcar hasta dos modelos.';
-                    return;
-                }
-                modelosSeleccionados = [...caja.querySelectorAll('input:checked')].map(el => el.value);
-                document.getElementById('modelosAviso').textContent = modelosSeleccionados.length ? 'Elegiste: ' + modelosSeleccionados.map(id => { const x = catalogoModelos.find(m => m.id === id); return `Modelo ${x.letra} · ${x.nombre}`; }).join(' + ') : 'Elegí al menos un modelo.';
-                try { sessionStorage.setItem('gw-modelos', JSON.stringify(modelosSeleccionados)); } catch (_) {}
-                saveDraft();
-            });
-            const span = document.createElement('span');
-            span.textContent = `Modelo ${m.letra} · ${m.nombre} — ${m.tipo === 'ecommerce' ? 'Tienda online' : m.tipo === 'elearning' ? 'Cursos' : m.tipo === 'inmobiliaria' ? 'Inmobiliaria' : 'Sitio profesional'}`;
-            label.append(check, span); frag.append(label);
-        });
-        caja.textContent = '';
-        const aviso = document.createElement('p'); aviso.id = 'modelosAviso'; aviso.className = 'field-hint';
-        aviso.textContent = modelosSeleccionados.length ? 'Elegiste: ' + modelosSeleccionados.map(id => { const x = catalogoModelos.find(m => m.id === id); return `Modelo ${x.letra} · ${x.nombre}`; }).join(' + ') : 'Elegí al menos un modelo.';
-        caja.append(aviso, frag);
-    } catch (_) { caja.textContent = 'No pudimos cargar los modelos. Abrí la página de modelos y volvé a intentar.'; }
+const mfGrid = document.getElementById('modelosGroup');
+const mfTipos = document.getElementById('mfTipos');
+const mfRubro = document.getElementById('mfRubro');
+const mfAviso = document.getElementById('modelosAviso');
+const mfFiltro = { tipo: 'all', rubro: 'all' };
+
+function pintarElegidos(mensaje) {
+    mfAviso.classList.remove('error');
+    if (mensaje) { mfAviso.textContent = mensaje; return; }
+    const n = modelosSeleccionados.length;
+    mfAviso.textContent = n
+        ? `Elegiste ${n} de ${MODELOS_A_ELEGIR}: ` + modelosSeleccionados.map(id => nombreModelo(modeloPorId(id))).join(' + ')
+        : `Elegí ${MODELOS_A_ELEGIR} modelos.`;
+    mfGrid.querySelectorAll('.mf-card').forEach(card => {
+        const on = modelosSeleccionados.includes(card.dataset.id);
+        card.classList.toggle('elegido', on);
+        card.querySelector('.mf-marcar').setAttribute('aria-pressed', on ? 'true' : 'false');
+        card.querySelector('.mf-marcar-txt').textContent = on ? 'Elegido' : 'Elegir';
+    });
 }
-cargarModelos();
+
+/* Devuelve false si no se pudo marcar (ya había 2). */
+function alternarModelo(id) {
+    if (modelosSeleccionados.includes(id)) {
+        modelosSeleccionados = modelosSeleccionados.filter(x => x !== id);
+    } else if (modelosSeleccionados.length >= MODELOS_A_ELEGIR) {
+        pintarElegidos(`Ya elegiste ${MODELOS_A_ELEGIR}. Tocá uno de los elegidos para sacarlo y cambiarlo.`);
+        mfAviso.classList.add('error');
+        return false;
+    } else {
+        modelosSeleccionados = [...modelosSeleccionados, id];
+    }
+    try { sessionStorage.setItem('gw-modelos', JSON.stringify(modelosSeleccionados)); } catch (_) {}
+    pintarElegidos();
+    return true;
+}
+
+// Las vistas se dibujan cuando la tarjeta se acerca a la pantalla: son 45.
+const mfObservador = window.IntersectionObserver ? new IntersectionObserver(entradas => {
+    entradas.forEach(e => {
+        if (!e.isIntersecting) return;
+        mfObservador.unobserve(e.target);
+        dibujarVista(e.target);
+    });
+}, { rootMargin: '400px' }) : null;
+
+function dibujarVista(card) {
+    if (card.dataset.dibujada) return;
+    card.dataset.dibujada = '1';
+    const lienzo = card.querySelector('.md-lienzo');
+    lienzo.innerHTML = GW_WIRE.render(modeloPorId(card.dataset.id));
+    GW_WIRE.encajar(card.querySelector('.mf-vista'), lienzo, 1200);
+}
+
+function armarModelos() {
+    if (!MODELOS.length || typeof GW_WIRE === 'undefined') {
+        mfGrid.innerHTML = '<p class="mf-vacio">No pudimos cargar los modelos. Recargá la página y volvé a intentar.</p>';
+        return;
+    }
+    const labelTipo = Object.fromEntries(MODELO_TIPOS.map(t => [t.id, t.label]));
+    const labelRubro = Object.fromEntries(MODELO_RUBROS.map(r => [r.id, r.label]));
+
+    [{ id: 'all', label: 'Todos' }, ...MODELO_TIPOS].forEach(t => {
+        if (t.id !== 'all' && !MODELOS.some(m => m.tipo === t.id)) return;
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'mf-chip';
+        b.dataset.valor = t.id;
+        b.textContent = t.label;
+        mfTipos.append(b);
+    });
+    MODELO_RUBROS.forEach(r => mfRubro.append(new Option(r.label, r.id)));
+
+    const frag = document.createDocumentFragment();
+    MODELOS.forEach(m => {
+        const card = document.createElement('article');
+        card.className = 'mf-card';
+        card.dataset.id = m.id;
+        card.dataset.tipo = m.tipo;
+        card.dataset.rubros = (m.rubros || []).join(' ');
+        card.innerHTML = `
+            <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
+            <span class="mf-letra" aria-hidden="true"></span>
+            <div class="mf-info">
+                <span class="mf-tag"></span>
+                <h3 class="mf-nombre"></h3>
+                <div class="mf-acciones">
+                    <button type="button" class="mf-marcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Elegir</span></button>
+                    <button type="button" class="mf-ver">Ver grande</button>
+                </div>
+            </div>`;
+        card.querySelector('.mf-letra').textContent = m.letra;
+        card.querySelector('.mf-tag').textContent = labelRubro[(m.rubros || [])[0]] || labelTipo[m.tipo] || '';
+        card.querySelector('.mf-nombre').textContent = nombreModelo(m);
+        card.querySelector('.mf-marcar').setAttribute('aria-label', `Elegir el ${nombreModelo(m)}`);
+        card.querySelector('.mf-ver').setAttribute('aria-label', `Ver grande el ${nombreModelo(m)}`);
+        frag.append(card);
+        if (mfObservador) mfObservador.observe(card);
+    });
+    mfGrid.append(frag);
+    if (!mfObservador) mfGrid.querySelectorAll('.mf-card').forEach(dibujarVista);
+
+    mfGrid.addEventListener('click', e => {
+        const card = e.target.closest('.mf-card');
+        if (!card) return;
+        if (e.target.closest('.mf-ver')) { abrirModelo(card.dataset.id, e.target.closest('.mf-ver')); return; }
+        // Tocar la vista o el botón marca; el scroll de la vista no.
+        alternarModelo(card.dataset.id);
+    });
+    mfTipos.addEventListener('click', e => {
+        const chip = e.target.closest('.mf-chip');
+        if (!chip) return;
+        mfFiltro.tipo = chip.dataset.valor;
+        filtrarModelos();
+    });
+    // Un rubro tiene modelos de varios tipos: elegirlo vuelve el tipo a "Todos".
+    mfRubro.addEventListener('change', () => {
+        mfFiltro.rubro = mfRubro.value;
+        mfFiltro.tipo = 'all';
+        filtrarModelos();
+    });
+
+    filtrarModelos();
+    pintarElegidos();
+}
+
+function filtrarModelos() {
+    let visibles = 0;
+    mfGrid.querySelectorAll('.mf-card').forEach(card => {
+        card.hidden = (mfFiltro.tipo !== 'all' && card.dataset.tipo !== mfFiltro.tipo) ||
+            (mfFiltro.rubro !== 'all' && !card.dataset.rubros.split(' ').includes(mfFiltro.rubro));
+        if (!card.hidden) visibles++;
+    });
+    mfTipos.querySelectorAll('.mf-chip').forEach(b => b.setAttribute('aria-pressed', b.dataset.valor === mfFiltro.tipo ? 'true' : 'false'));
+    mfRubro.value = mfFiltro.rubro;
+    document.getElementById('mfVacio').hidden = visibles !== 0;
+}
+
+/* ─── Vista grande ─── */
+const mfOverlay = document.getElementById('mfOverlay');
+const mfEscenario = document.getElementById('mfEscenario');
+const mfElegir = document.getElementById('mfElegir');
+const mfVer = { id: '', vista: 'pc', volverA: null };
+
+function pintarModal() {
+    const m = modeloPorId(mfVer.id);
+    document.getElementById('mfTitulo').textContent = nombreModelo(m);
+    const wire = GW_WIRE.render(m);
+    if (mfVer.vista === 'pc') {
+        mfEscenario.innerHTML = `<div class="mf-pc"><div class="md-alto"><div class="md-lienzo">${wire}</div></div></div>`;
+        GW_WIRE.encajar(mfEscenario.querySelector('.mf-pc'), mfEscenario.querySelector('.md-lienzo'), 1200);
+    } else {
+        mfEscenario.innerHTML = `<div class="mf-cel">${wire}</div>`;
+    }
+    mfEscenario.scrollTop = 0;
+    mfOverlay.querySelectorAll('.mf-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === mfVer.vista ? 'true' : 'false'));
+    const elegido = modelosSeleccionados.includes(m.id);
+    mfElegir.textContent = elegido ? '✓ Elegido · tocá para sacarlo' : 'Elegir este modelo';
+    mfElegir.classList.toggle('elegido', elegido);
+}
+
+function abrirModelo(id, desde) {
+    mfVer.id = id;
+    mfVer.volverA = desde || null;
+    mfVer.vista = window.innerWidth < 700 ? 'celular' : 'pc';
+    mfOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    pintarModal();
+    document.getElementById('mfCerrar').focus();
+}
+
+function cerrarModelo() {
+    if (mfOverlay.hidden) return;
+    mfOverlay.hidden = true;
+    mfEscenario.innerHTML = '';
+    document.body.style.overflow = '';
+    mfVer.volverA?.focus();
+}
+
+mfOverlay.querySelector('.mf-seg').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (!b || b.dataset.vista === mfVer.vista) return;
+    mfVer.vista = b.dataset.vista;
+    pintarModal();
+});
+document.getElementById('mfCerrar').addEventListener('click', cerrarModelo);
+mfOverlay.addEventListener('click', e => { if (e.target === mfOverlay) cerrarModelo(); });
+document.addEventListener('keydown', e => {
+    if (mfOverlay.hidden) return;
+    if (e.key === 'Escape') { cerrarModelo(); return; }
+    // Foco atrapado adentro del modal mientras está abierto.
+    if (e.key === 'Tab') {
+        const focos = [...mfOverlay.querySelectorAll('button')];
+        const primero = focos[0], ultimo = focos[focos.length - 1];
+        if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+        else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+    }
+});
+mfElegir.addEventListener('click', () => {
+    const yaEstaba = modelosSeleccionados.includes(mfVer.id);
+    if (!alternarModelo(mfVer.id)) {
+        mfElegir.textContent = `Ya elegiste ${MODELOS_A_ELEGIR}: sacá uno primero`;
+        return;
+    }
+    if (yaEstaba) { pintarModal(); return; }
+    cerrarModelo();
+});
+
+armarModelos();
 
 try {
     if (window.location.search && window.history.replaceState) {
@@ -232,10 +417,10 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
 document.getElementById('propuestaForm').addEventListener('submit', (e) => e.preventDefault());
 
 /* ─── Pasos ───
- * Dos pantallas dentro del mismo <form> (10-sep, pedido de Pablo): el paso 1
- * se valida antes de dejar avanzar y el envío sale del paso 2. Los dos pasos
- * están siempre en el DOM, así el borrador y los reintentos ven todos los
- * campos aunque el paso no esté a la vista. */
+ * Tres pantallas dentro del mismo <form> (10-sep; el 3 con los modelos desde
+ * el 16-sep): cada paso se valida antes de dejar avanzar y el envío sale del
+ * paso 3. Todos están siempre en el DOM, así el borrador y los reintentos ven
+ * todos los campos aunque el paso no esté a la vista. */
 const PASOS = [...document.querySelectorAll('.form-step')];
 
 function pasoDe(el) {
@@ -256,6 +441,8 @@ function irAPaso(n, { enfocar = true, scroll = true } = {}) {
     paso?.querySelectorAll('textarea.autosize').forEach(autoGrow);
     if (scroll) document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (enfocar) paso?.querySelector('.step-header-title')?.focus({ preventScroll: true });
+    // El paso de modelos necesita más ancho que los campos.
+    document.body.classList.toggle('paso-modelos', n === 3);
     if (n === 2) track('step2');
 }
 
@@ -269,9 +456,24 @@ document.getElementById('btnSiguiente').addEventListener('click', () => {
     irAPaso(2);
 });
 
+document.getElementById('btnSiguiente2').addEventListener('click', () => {
+    clearErrors();
+    const error = validarPaso2();
+    if (error) {
+        error.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+    irAPaso(3);
+});
+
 document.getElementById('btnVolver').addEventListener('click', () => {
     clearErrors();
     irAPaso(1);
+});
+
+document.getElementById('btnVolver3').addEventListener('click', () => {
+    clearErrors();
+    irAPaso(2);
 });
 
 const btnEnviar = document.getElementById('btnEnviar');
@@ -288,9 +490,11 @@ btnEnviar.addEventListener('click', () => {
     }
     const error2 = validarPaso2();
     if (error2) {
+        irAPaso(2, { enfocar: false, scroll: false });
         error2.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
+    if (!validarPaso3()) return;
     enviarFormulario();
 });
 
@@ -335,16 +539,12 @@ function validarPaso2() {
 
     const modalidad = document.getElementById('modalidad');
     if (!modalidad.value) { markError(modalidad, 'Elegí pago único o abono mensual.'); firstError = modalidad; }
-    if (!modelosSeleccionados.length || modelosSeleccionados.length > 2) {
-        document.getElementById('modelosAviso')?.classList.add('error');
-        if (!firstError) firstError = document.getElementById('modelosGroup');
-    }
 
     // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
     const estilo = document.getElementById('estilo');
     if (estilo && !estilo.value) {
         markError(estilo, 'Elegí un estilo. Si todavía no lo tenés claro, elegí "No lo sé".');
-        firstError = estilo;
+        if (!firstError) firstError = estilo;
     }
 
     ['referencia', 'incluir'].forEach(id => {
@@ -356,6 +556,16 @@ function validarPaso2() {
     });
 
     return firstError;
+}
+
+function validarPaso3() {
+    if (modelosSeleccionados.length === MODELOS_A_ELEGIR) return true;
+    const faltan = MODELOS_A_ELEGIR - modelosSeleccionados.length;
+    pintarElegidos(faltan === MODELOS_A_ELEGIR
+        ? `Elegí ${MODELOS_A_ELEGIR} modelos para poder enviar.`
+        : `Te falta elegir ${faltan} modelo más para poder enviar.`);
+    mfAviso.classList.add('error');
+    return false;
 }
 
 function markError(input, msg) {
@@ -395,7 +605,9 @@ function buildPayload() {
         referencia: get('referencia'),
         incluir: get('incluir'),
         modalidad: get('modalidad'),
-        modelos: modelosSeleccionados,
+        // Id y nombre: el servidor valida el id y guarda el nombre tal como
+        // lo vio el cliente (nuevos.js arma las letras en el navegador).
+        modelos: modelosSeleccionados.map(id => ({ id, nombre: modeloPorId(id).nombre })),
     };
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
@@ -442,6 +654,12 @@ function mostrarErrorServidor(json) {
         verPasoDe(el);
         markError(el, `Completá ${NOMBRES_CAMPO[campo] || 'este campo'}.`);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+    }
+    if (json.motivo === 'modelos') {
+        irAPaso(3, { enfocar: false });
+        pintarElegidos('Volvé a elegir tus 2 modelos: no pudimos leer los que marcaste.');
+        mfAviso.classList.add('error');
         return true;
     }
     if (json.motivo === 'telefono') {
@@ -536,6 +754,8 @@ function showSuccess(nombre, nombreNegocio) {
     const card = document.getElementById('formCard');
     const url = wspLink(mensajeFormWsp(nombre, nombreNegocio));
     window.open(url, '_blank', 'noopener');
+    document.body.classList.remove('paso-modelos');
+    try { sessionStorage.removeItem('gw-modelos'); } catch (_) {}
     card.innerHTML = `
         <div class="success-screen">
             <div class="success-icon">✅</div>

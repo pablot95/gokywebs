@@ -55,22 +55,25 @@ function formlead_extras($payload, &$motivo = null) {
         $extras['modalidad_elegida'] = $modalidad;
     }
     if (array_key_exists('modelos', $payload)) {
-        $ids = $payload['modelos'];
-        $catalogo = json_decode((string)@file_get_contents(__DIR__ . '/../modelos/catalogo.json'), true);
-        $porId = [];
-        foreach ((array)$catalogo as $m) if (isset($m['id'])) $porId[$m['id']] = $m;
-        if (!is_array($ids) || count($ids) < 1 || count($ids) > 2 || count(array_unique($ids)) !== count($ids)) {
+        /* Paso 3 (16-sep): llegan como [{id, nombre}]. No hay catálogo del lado
+         * del servidor —nuevos.js arma las letras en el navegador—, así que se
+         * valida la forma: id de 1 a 3 letras (a, k, ab…), la letra es el id
+         * en mayúscula y el nombre es el que vio el cliente, recortado. */
+        $lista = $payload['modelos'];
+        if (!is_array($lista) || count($lista) < 1 || count($lista) > 2) {
             $motivo = ['motivo' => 'modelos', 'campo' => 'modelos']; return null;
         }
         $nombres = [];
-        foreach ($ids as $id) {
-            if (!is_string($id) || !isset($porId[$id])) {
+        foreach ($lista as $item) {
+            $id = is_array($item) ? ($item['id'] ?? '') : $item;
+            $nombre = is_array($item) && is_string($item['nombre'] ?? null) ? trim($item['nombre']) : '';
+            if (!is_string($id) || !preg_match('/^[a-z]{1,3}$/', $id) || isset($nombres[$id])) {
                 $motivo = ['motivo' => 'modelos', 'campo' => 'modelos']; return null;
             }
-            $m = $porId[$id];
-            $nombres[] = ['id' => $id, 'letra' => $m['letra'], 'nombre' => $m['nombre']];
+            $nombre = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $nombre), 0, 80);
+            $nombres[$id] = ['id' => $id, 'letra' => strtoupper($id), 'nombre' => $nombre];
         }
-        $extras['modelos_elegidos'] = $nombres;
+        $extras['modelos_elegidos'] = array_values($nombres);
     }
     return $extras;
 }

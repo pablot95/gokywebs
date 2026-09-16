@@ -81,9 +81,6 @@
                 '<span class="tag">' + esc(LABEL_TIPO[m.tipo] || m.tipo) + '</span>' +
                 '<h2 class="md-nombre">Modelo ' + esc(m.letra) + ' · ' + esc(m.nombre) + '</h2>' +
                 '<p class="md-rubros">' + esc((m.rubros || []).map(function (r) { return LABEL_RUBRO[r] || r; }).join(' · ')) + '</p>' +
-                '<dl class="md-claves">' + m.claves.map(function (c) {
-                    return '<div><dt>' + esc(c[0]) + '</dt><dd>' + esc(c[1]) + '</dd></div>';
-                }).join('') + '</dl>' +
                 '<div class="md-acciones">' +
                     '<a href="' + ver + '">Ver completo →</a>' +
                     '<a href="' + ver + '&amp;vista=celular">Ver en celular</a>' +
@@ -201,8 +198,11 @@
         estado.tipo = chip.dataset.valor;
         render();
     });
+    /* Elegir un rubro vuelve el filtro de tipo a "Todos": un rubro tiene
+       modelos de varios tipos y el filtro anterior los escondía. */
     $rubro.addEventListener('change', function () {
         estado.rubro = $rubro.value;
+        estado.tipo = 'all';
         render();
     });
     $buscar.addEventListener('input', function () {
