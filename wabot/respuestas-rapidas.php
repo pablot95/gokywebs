@@ -14,10 +14,10 @@ function wabot_respuestas_rapidas_default() {
             '¿Te gustó alguno? Si querés arrancamos, decime y te paso el formulario.',
         ]],
         ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
-            'Lo mejor para tu negocio es una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.',
-            'Lo mejor para tu negocio es un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.',
-            'Lo mejor para tu inmobiliaria es una web donde puedas publicar propiedades con fotos, precio, ubicación y características, y recibir consultas directamente por cada publicación.',
-            "Lo podés contratar de dos formas:\n\n1. Pago único de $290.000. Incluye mantenimiento el primer año.\n\n2. Suscripción mensual de $25.000, todo incluido mientras dure la suscripción.",
+            "Lo mejor para tu negocio es un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.\n\nLo podés contratar de dos formas:\n\n1. Pago único de $180.000. Incluye mantenimiento el primer año.\n\n2. Suscripción mensual de $15.000, todo incluido mientras dure la suscripción.",
+            "Lo mejor para tu negocio es una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.\n\nLo podés contratar de dos formas:\n\n1. Pago único de $290.000. Incluye mantenimiento el primer año.\n\n2. Suscripción mensual de $25.000, todo incluido mientras dure la suscripción.",
+            "Lo mejor para tu inmobiliaria es una web para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades.\n\nLo podés contratar de dos formas:\n\n1. Pago único de $240.000. Incluye mantenimiento el primer año.\n\n2. Suscripción mensual de $25.000, todo incluido mientras dure la suscripción.",
+            "Lo mejor para tus cursos es una plataforma con los videos subidos, acceso propio para cada alumno y cobro online.\n\nLa podés contratar de dos formas:\n\n1. Pago único de $290.000. Incluye mantenimiento el primer año.\n\n2. Suscripción mensual de $25.000, todo incluido mientras dure la suscripción.",
             'El plan mensual incluye hosting, dominio, soporte técnico y mantenimiento de la web. No incluye administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
             'Antes de arrancar dejamos definido el valor y qué incluye el desarrollo, así sabés desde el principio cuánto vas a pagar.',
         ]],
@@ -120,6 +120,27 @@ function wabot_respuestas_rapidas_migrar_legacy($categorias) {
     return $nuevas;
 }
 
+/**
+ * La primera versión de la nueva organización tenía un único bloque de precio
+ * ($290.000 / $25.000). Completa esa categoría sin tocar el resto de las
+ * respuestas que ya se hayan editado desde el panel.
+ */
+function wabot_respuestas_rapidas_completar_precios($categorias) {
+    foreach ($categorias as &$categoria) {
+        if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'presupuesto y planes') continue;
+        $contenido = implode("\n", (array)($categoria['items'] ?? []));
+        if (mb_strpos($contenido, '$180.000') !== false && mb_strpos($contenido, '$240.000') !== false) break;
+        foreach (wabot_respuestas_rapidas_default() as $predeterminada) {
+            if ($predeterminada['titulo'] === 'Presupuesto y planes') {
+                $categoria['items'] = $predeterminada['items'];
+                break 2;
+            }
+        }
+    }
+    unset($categoria);
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_normalizar($valor) {
     if (!is_array($valor)) return null;
     $salida = [];
@@ -146,7 +167,9 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_default();
-    $migrado = wabot_respuestas_rapidas_migrar_legacy($normalizado);
+    $migrado = wabot_respuestas_rapidas_completar_precios(
+        wabot_respuestas_rapidas_migrar_legacy($normalizado)
+    );
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json)) wabot_json_guardar_atomico($ruta, $json);

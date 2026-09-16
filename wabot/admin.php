@@ -645,6 +645,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $items = array_slice($items, 0, 30);
         foreach ($items as &$it) {
             $cv = wabot_conv_load($it['tel']);
+            $it['ventana'] = wabot_ventana_restante($cv);
             $it['transcript'] = array_map(function ($l) {
                 return ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
                         'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
@@ -908,6 +909,13 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-chat .burb { max-width:94%; font-size:12.5px; padding:7px 10px; line-height:1.4; }
 .live-chat .burb .meta { font-size:10.5px; }
 .live-media { display:block; font-size:11.5px; color:var(--dim); margin-top:3px; }
+.live-responder { flex:0 0 auto; padding:7px; border-top:1px solid var(--line); background:var(--card-2); }
+.live-responder-fila { display:flex; align-items:flex-end; gap:6px; }
+.live-responder textarea { min-height:38px; max-height:92px; resize:vertical; padding:8px 9px; font-size:12.5px; line-height:1.35; }
+.live-enviar { flex:0 0 auto; min-height:38px; padding:7px 10px; font-size:12px; }
+.live-responder-estado { min-height:14px; margin-top:3px; color:var(--dim); font-size:10.5px; line-height:1.25; }
+.live-responder-estado.error { color:var(--bad); }
+.live-responder textarea:disabled { opacity:.65; cursor:not-allowed; }
 .live-vacio { color:var(--dim); font-size:13px; padding:30px 4px; }
 @media (max-width: 1100px) { .live-board { grid-auto-columns:calc((100% - 2 * 10px) / 3); } }
 @media (max-width: 860px)  { .live-board { grid-auto-columns:calc((100% - 10px) / 2); } }
@@ -1166,15 +1174,16 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:default; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
 .rr-tab-ico { font-size:14px; line-height:1; }
 .rr-tab:hover .rr-tab-btn, .rr-tab.rr-abierto .rr-tab-btn { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
-.rr-flyout { position:absolute; right:100%; top:50%; transform:translateY(-50%) translateX(6px); margin-right:2px; width:300px; max-height:min(78vh, 620px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:6px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
+.rr-flyout { position:absolute; right:100%; top:calc(50% + var(--rr-ajuste-y, 0px)); transform:translateY(-50%) translateX(6px); margin-right:2px; width:360px; max-width:calc(100vw - 230px); max-height:min(calc(100vh - 24px), 700px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:8px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
 /* Un margen invisible entre la pestaña y el flyout: sin esto, el pequeño hueco
    entre los dos (right:100%) hace que el mouse "salga" del :hover a mitad de
    camino y el panel se cierra antes de llegar a un ítem. */
 .rr-tab::before { content:''; position:absolute; right:100%; top:0; bottom:0; width:14px; }
 .rr-tab:hover .rr-flyout, .rr-tab.rr-abierto .rr-flyout { visibility:visible; opacity:1; pointer-events:auto; }
-.rr-flyout-tit { padding:6px 8px 5px; font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
-.rr-item { display:block; width:100%; text-align:left; padding:8px 9px; border:0; border-radius:7px; background:transparent; color:var(--tx); font:inherit; font-size:12.5px; line-height:1.4; cursor:pointer; }
-.rr-item:hover, .rr-item:focus-visible { background:var(--card); outline:0; }
+.rr-flyout-tit { position:sticky; top:-8px; z-index:1; margin:0 0 7px; padding:9px 10px 7px; background:var(--card-2); border-bottom:1px solid var(--line); font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--tenue); }
+.rr-item { display:block; width:100%; margin:0 0 7px; text-align:left; padding:10px 11px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--tx); font:inherit; font-size:13.5px; line-height:1.48; cursor:pointer; }
+.rr-item:last-child { margin-bottom:0; }
+.rr-item:hover, .rr-item:focus-visible { border-color:var(--ac); background:var(--ac-tenue); outline:0; }
 .rr-item-txt { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dim); font-size:11.5px; margin-top:2px; }
 /* En escritorio las pestañas tienen una franja propia: el chat termina antes
    y ningún botón queda apoyado encima de los mensajes o del scroll. */
@@ -1952,8 +1961,14 @@ body.embed { min-height: 0; }
 
         function alternarFiltro(grupo) {
             if (FILTROS_COMBINABLES.has(grupo)) {
-                if (filtrosActivos.has(grupo)) filtrosActivos.delete(grupo);
-                else filtrosActivos.add(grupo);
+                if (filtrosActivos.has(grupo)) {
+                    filtrosActivos.delete(grupo);
+                } else {
+                    // Son las dos mitades del mismo estado pendiente: un chat
+                    // no puede estar a la vez sin leer y ya leído sin respuesta.
+                    for (const f of FILTROS_COMBINABLES) filtrosActivos.delete(f);
+                    filtrosActivos.add(grupo);
+                }
             } else if (filtrosActivos.has(grupo)) {
                 filtrosActivos.delete(grupo);
             } else {
@@ -2090,7 +2105,12 @@ body.embed { min-height: 0; }
             // no con O como antes SL/RTA (que hoy además cambiaron de sentido:
             // ver el chip movido a "más filtros").
             const grupoFiltro = [...filtrosActivos].find(f => !FILTROS_COMBINABLES.has(f));
-            const base = grupoFiltro ? cumpleFiltro(it, grupoFiltro) : GRUPOS_POR_DEFECTO.includes(it.grupo);
+            const hayFiltroPendiente = [...FILTROS_COMBINABLES].some(f => filtrosActivos.has(f));
+            // Sin Bot/Yo seleccionado, los filtros pendientes cruzan todas las
+            // conversaciones. Así el badge "No leídos 3" y la lista abierta
+            // representan exactamente los mismos tres chats.
+            const base = grupoFiltro ? cumpleFiltro(it, grupoFiltro)
+                : (hayFiltroPendiente ? true : GRUPOS_POR_DEFECTO.includes(it.grupo));
             if (!base) return false;
             if (filtrosActivos.has('no_leidos') && !esNoLeido(it)) return false;
             if (filtrosActivos.has('no_contestados') && !esNoContestado(it)) return false;
@@ -2640,6 +2660,31 @@ body.embed { min-height: 0; }
                     </div>
                 </div>`).join('');
 
+            // El menú nace centrado respecto de su pestaña, pero las primeras y
+            // últimas categorías pueden quedar cortadas por el borde de la
+            // pantalla. Se desplaza solo lo necesario para conservar 12 px de
+            // margen arriba y abajo, sin cambiar de lugar la pestaña.
+            const acomodarFlyout = tab => {
+                const flyout = tab?.querySelector('.rr-flyout');
+                if (!flyout) return;
+                flyout.style.setProperty('--rr-ajuste-y', '0px');
+                requestAnimationFrame(() => {
+                    const rect = flyout.getBoundingClientRect();
+                    const margen = 12;
+                    let ajuste = 0;
+                    if (rect.top < margen) ajuste = margen - rect.top;
+                    else if (rect.bottom > window.innerHeight - margen) ajuste = window.innerHeight - margen - rect.bottom;
+                    flyout.style.setProperty('--rr-ajuste-y', ajuste + 'px');
+                });
+            };
+            panel.querySelectorAll('.rr-tab').forEach(tab => {
+                tab.addEventListener('mouseenter', () => acomodarFlyout(tab));
+            });
+            window.addEventListener('resize', () => {
+                const visible = panel.querySelector('.rr-tab:hover, .rr-tab.rr-abierto');
+                if (visible) acomodarFlyout(visible);
+            });
+
             // Clic en un mensaje: solo lo copia al editor. Nunca lo envía.
             panel.addEventListener('click', ev => {
                 const item = ev.target.closest('.rr-item');
@@ -2665,7 +2710,11 @@ body.embed { min-height: 0; }
                         t.classList.remove('rr-abierto');
                         t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
                     });
-                    if (!yaAbierto) { tab.classList.add('rr-abierto'); b.setAttribute('aria-expanded', 'true'); }
+                    if (!yaAbierto) {
+                        tab.classList.add('rr-abierto');
+                        b.setAttribute('aria-expanded', 'true');
+                        acomodarFlyout(tab);
+                    }
                 });
             });
             document.addEventListener('click', () => {
@@ -3135,8 +3184,78 @@ body.embed { min-height: 0; }
                 const el = document.createElement('section');
                 el.className = 'live-col';
                 el.innerHTML = '<header class="live-head"><div class="live-fila"><span class="live-nombre"></span>'
-                    + '<span class="live-hace"></span></div><div class="live-sub"></div></header><div class="live-chat"></div>';
-                return { el, firma: '', ts: 0, pintado: false };
+                    + '<span class="live-hace"></span></div><div class="live-sub"></div></header><div class="live-chat"></div>'
+                    + '<div class="live-responder"><div class="live-responder-fila">'
+                    + '<textarea rows="1" placeholder="Escribí tu respuesta…" aria-label="Escribir respuesta"></textarea>'
+                    + '<button type="button" class="live-enviar">Enviar</button></div>'
+                    + '<div class="live-responder-estado"></div></div>';
+                return { el, firma: '', ts: 0, pintado: false, tel: '', enviando: false, ventanaAbierta: false };
+            }
+
+            function prepararRespuesta(c, tel) {
+                if (c.tel === tel) return;
+                c.tel = tel;
+                const texto = c.el.querySelector('.live-responder textarea');
+                const boton = c.el.querySelector('.live-enviar');
+                boton.addEventListener('click', () => enviar(c));
+                texto.addEventListener('keydown', ev => {
+                    if (ev.key === 'Enter' && !ev.shiftKey) {
+                        ev.preventDefault();
+                        enviar(c);
+                    }
+                });
+            }
+
+            function actualizarRespuesta(c, it) {
+                const texto = c.el.querySelector('.live-responder textarea');
+                const boton = c.el.querySelector('.live-enviar');
+                const estadoRespuesta = c.el.querySelector('.live-responder-estado');
+                const abierta = Number(it.ventana || 0) > 0;
+                c.ventanaAbierta = abierta;
+                texto.disabled = !abierta || c.enviando;
+                boton.disabled = !abierta || c.enviando;
+                if (!abierta) {
+                    texto.placeholder = 'Fuera de la ventana de 24 horas';
+                    estadoRespuesta.textContent = 'El cliente tiene que volver a escribir.';
+                    estadoRespuesta.classList.remove('error');
+                } else {
+                    texto.placeholder = 'Escribí tu respuesta…';
+                    if (!c.enviando && estadoRespuesta.textContent === 'El cliente tiene que volver a escribir.') {
+                        estadoRespuesta.textContent = '';
+                    }
+                }
+            }
+
+            async function enviar(c) {
+                if (c.enviando || !c.tel) return;
+                const texto = c.el.querySelector('.live-responder textarea');
+                const boton = c.el.querySelector('.live-enviar');
+                const estadoRespuesta = c.el.querySelector('.live-responder-estado');
+                const mensaje = texto.value.trim();
+                if (!mensaje) { texto.focus(); return; }
+                c.enviando = true;
+                texto.disabled = true;
+                boton.disabled = true;
+                estadoRespuesta.textContent = 'Enviando…';
+                estadoRespuesta.classList.remove('error');
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'responder', tel: c.tel, texto: mensaje }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error(j.error || 'No se pudo enviar.');
+                    texto.value = '';
+                    estadoRespuesta.textContent = 'Enviado. El bot quedó en silencio en este chat.';
+                    await refrescar();
+                } catch (error) {
+                    estadoRespuesta.textContent = error.message || 'No se pudo enviar.';
+                    estadoRespuesta.classList.add('error');
+                    if (estadoRespuesta.textContent.includes('24 horas')) c.ventanaAbierta = false;
+                } finally {
+                    c.enviando = false;
+                    texto.disabled = !c.ventanaAbierta;
+                    boton.disabled = !c.ventanaAbierta;
+                    if (c.ventanaAbierta) texto.focus();
+                }
             }
 
             function pintarCabecera(c, it, ahora) {
@@ -3255,11 +3374,12 @@ body.embed { min-height: 0; }
                     vivas.add(it.tel);
                     let c = cols.get(it.tel);
                     const nueva = !c;
-                    if (nueva) { c = crearColumna(); cols.set(it.tel, c); }
+                    if (nueva) { c = crearColumna(); prepararRespuesta(c, it.tel); cols.set(it.tel, c); }
                     const movio = !nueva && it.ts > c.ts;
                     c.ts = it.ts;
                     pintarCabecera(c, it, ahora);
                     pintarChat(c, it);
+                    actualizarRespuesta(c, it);
                     if (movio) { c.el.classList.remove('movio'); void c.el.offsetWidth; c.el.classList.add('movio'); }
                 }
                 cols.forEach((c, tel) => { if (!vivas.has(tel)) { c.el.remove(); cols.delete(tel); } });
