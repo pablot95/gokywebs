@@ -1166,7 +1166,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-tab-btn { display:flex; align-items:center; gap:6px; padding:7px 10px; border:1px solid var(--line); border-radius:9px 0 0 9px; background:var(--card); color:var(--dim); font:inherit; font-size:12px; font-weight:700; white-space:nowrap; cursor:default; box-shadow:0 2px 8px rgb(0 0 0 / .25); }
 .rr-tab-ico { font-size:14px; line-height:1; }
 .rr-tab:hover .rr-tab-btn, .rr-tab.rr-abierto .rr-tab-btn { color:var(--tx); border-color:var(--ac); background:var(--card-2); }
-.rr-flyout { position:absolute; right:100%; top:50%; transform:translateY(-50%) translateX(6px); margin-right:2px; width:300px; max-height:min(60vh, 420px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:6px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
+.rr-flyout { position:absolute; right:100%; top:50%; transform:translateY(-50%) translateX(6px); margin-right:2px; width:300px; max-height:min(78vh, 620px); overflow-y:auto; background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px; box-shadow:0 8px 28px rgb(0 0 0 / .4); padding:6px; visibility:hidden; opacity:0; pointer-events:none; transition:opacity .12s ease; }
 /* Un margen invisible entre la pestaña y el flyout: sin esto, el pequeño hueco
    entre los dos (right:100%) hace que el mouse "salga" del :hover a mitad de
    camino y el panel se cierra antes de llegar a un ítem. */
