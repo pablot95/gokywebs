@@ -12,6 +12,32 @@
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 
+function wabot_prospecto_acepta($texto, $conv) {
+    if (empty($conv['precio_dado']) || !empty($conv['presentado_ts']) || !empty($conv['form_completado_ts'])) return false;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 240) return false;
+    if (preg_match('/\b(no|todavia no|lo voy a pensar|lo tengo que pensar|no me cierra|es caro|mas adelante)\b/u', $t)) return false;
+    if (wabot_modalidad_elegida_en($texto) !== null && wabot_texto_rechaza_una_forma($texto) === null) return true;
+    if (strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false) return false;
+    if (preg_match('/\b(me cierra|me sirve|estoy conforme|me parece bien|me interesa avanzar|quiero avanzar|queremos avanzar|quiero (hacerlo|arrancar|empezar)|quiero (la )?(demo|muestra)|quiero verla|armemos la (web|pagina|demo|muestra)|armala|armalo|hagamoslo|hagamosla|vamos a (hacerla|hacerlo|arrancar|empezar)|vamos adelante|arranquemos|empecemos|pasame el formulario|mandame el formulario|pasa el form)\b/u', $t)) return true;
+    return !empty($conv['precio_cta_pendiente']) && (int)($conv['precio_turnos_desde'] ?? 0) === 1
+        && (bool)preg_match('/^(si|si dale|dale|ok|okay|bueno|de una|perfecto|listo|vamos)$/u', $t);
+}
+
+function wabot_upgrade_aplicar(&$conv, $pendiente) {
+    if (!is_array($pendiente) || empty($pendiente['tipo'])) return false;
+    $conv['tipo'] = $pendiente['tipo'];
+    $conv['precio_cotizado'] = $pendiente['precio'];
+    $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
+    $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
+    $conv['precio_modelo'] = $pendiente['modelo'];
+    $conv['precio_cotizado_ts'] = time();
+    $conv['pitch_tipo'] = $pendiente['tipo'];
+    unset($conv['upgrade_pendiente'], $conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
+    wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
+    return true;
+}
+
 /** Devuelve la respuesta final para el cliente (lista de mensajes). */
 function wabot_responder($texto, &$conv, $cfg) {
     /* Lo primero de todo: si este cliente ya venía hablando por el otro canal,
@@ -36,9 +62,7 @@ function wabot_responder($texto, &$conv, $cfg) {
      * cero y no hay nada que marcar). Ver wabot_presentado_marcar_respuesta(). */
     wabot_presentado_marcar_respuesta($conv);
 
-    /* La forma de pago que el cliente eligió va a su boceto (Pablo, 15-sep).
-     * Se anota con cada mensaje, conteste quien conteste el turno. */
-    wabot_modalidad_anotar($texto, $conv, $cfg);
+    if (!empty($conv['esProspecto']) && !empty($conv['link_form_enviado'])) return [];
 
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
@@ -84,7 +108,33 @@ function wabot_responder($texto, &$conv, $cfg) {
     // apunta la pregunta. Usar acá el tipo anterior mezclaba las modalidades.
     if (empty($conv['upgrade_pendiente'])) {
         $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
-        if ($pagoFijo !== null) return $pagoFijo;
+        if ($pagoFijo !== null) {
+            if (!empty($conv['precio_dado'])) {
+                $conv['precio_turnos_desde'] = (int)($conv['precio_turnos_desde'] ?? 0) + 1;
+                $conv['precio_cta_pendiente'] = false;
+            }
+            return $pagoFijo;
+        }
+    }
+
+    /* Primero se contestan las dudas de pago; después se evalúa si eligió.
+     * Así "si elijo el pago único, ¿cuánto pongo?" no se toma como cierre. */
+    wabot_modalidad_anotar($texto, $conv, $cfg);
+    if (!empty($conv['precio_dado'])) {
+        $conv['precio_turnos_desde'] = (int)($conv['precio_turnos_desde'] ?? 0) + 1;
+        if (wabot_prospecto_acepta($texto, $conv)) {
+            if (is_array($conv['upgrade_pendiente'] ?? null)) wabot_upgrade_aplicar($conv, $conv['upgrade_pendiente']);
+            $conv['esProspecto'] = true;
+            $conv['link_form_enviado'] = true;
+            $conv['precio_cta_pendiente'] = false;
+            $conv['seguimiento_bloqueado'] = true;
+            wabot_handoff_marcar($conv, 'prospecto');
+            wabot_prospecto_sincronizar($conv);
+            $conv['bot_off'] = true;
+            wabot_evento_sesion($conv, 'prospecto_form_enviado');
+            return ['gokywebs.com/form'];
+        }
+        if ((int)$conv['precio_turnos_desde'] >= 1) $conv['precio_cta_pendiente'] = false;
     }
 
     /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
@@ -196,15 +246,7 @@ function wabot_responder($texto, &$conv, $cfg) {
         } elseif (!wabot_mensaje_pregunta_algo($texto) && wabot_acepta_demo($texto)
             && !preg_match('/\b(inmobiliaria|sistema de gestion)\b/u', $normal)
             && (!preg_match('/\bcursos\b/u', $normal) || $pendiente['tipo'] === 'elearning')) {
-            $conv['tipo'] = $pendiente['tipo'];
-            $conv['precio_cotizado'] = $pendiente['precio'];
-            $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
-            $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
-            $conv['precio_modelo'] = $pendiente['modelo'];
-            $conv['precio_cotizado_ts'] = time();
-            $conv['pitch_tipo'] = $pendiente['tipo'];
-            unset($conv['upgrade_pendiente'], $conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
-            wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
+            wabot_upgrade_aplicar($conv, $pendiente);
             return [wabot_prediseno_texto($conv, $cfg)];
         } elseif (wabot_mensaje_pregunta_algo($texto)
             && preg_match('/\b(sena|senia|anticipo|adelanto|para arrancar|pago inicial|como (se )?(paga|abona)|formas? de pago|cuotas?)\b/u', $normal)

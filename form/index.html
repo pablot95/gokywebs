@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20260910">
+    <link rel="stylesheet" href="styles.css?v=20260916">
 </head>
 <body>
 
@@ -104,7 +104,23 @@
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 2</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Colores, estilo y lo que no puede faltar. Lo que no tengas claro lo resolvemos al diseñar tu demo.</p>
+                            <p class="step-header-desc">Elegí cómo te gustaría pagar y uno o dos modelos como punto de partida. Después los adaptamos a tu negocio.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
+                            <select id="modalidad" name="modalidad" class="field-input" required>
+                                <option value="" disabled selected>Elegí una opción</option>
+                                <option value="unico">Pago único</option>
+                                <option value="mensual">Abono mensual</option>
+                            </select>
+                            <p class="field-hint">Acá no hace falta indicar montos.</p>
+                        </div>
+
+                        <div class="field-group" id="modelosGroup">
+                            <label class="field-label">Modelos que te gustaron <span class="req">*</span> <span class="field-hint">Elegí uno o dos</span></label>
+                            <div id="modelosElegidos" class="modelos-elegidos" aria-live="polite">Cargando modelos…</div>
+                            <a class="inline-link" href="/modelos/" id="verModelos">Ver y elegir modelos →</a>
                         </div>
 
                         <div class="field-group">
@@ -173,7 +189,7 @@
                             <button type="button" class="btn-step btn-step-prev" id="btnVolver">← Volver</button>
                             <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
                         </div>
-                        <p class="submit-note">🔒 Tu información es privada y solo se usa para armar tu demo.</p>
+                        <p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>
                     </div>
                 </div>
 
@@ -187,107 +203,19 @@
 
     </div>
 
-    <!-- Modal: cómo funciona la demo gratis -->
+    <!-- Información para quien completa el formulario -->
     <div class="que-es-overlay" id="queEsOverlay" role="dialog" aria-modal="true" aria-labelledby="queEsTitle">
         <div class="que-es-modal">
             <div class="que-es-header">
-                <h2 class="que-es-title" id="queEsTitle">Cómo funciona la demo gratis</h2>
+                <h2 class="que-es-title" id="queEsTitle">Cómo trabajamos</h2>
                 <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
             </div>
             <div class="que-es-body">
-
-                <p class="que-es-intro">
-                    La demo es un <strong>prediseño de tu web</strong>, hecho a medida según tu marca, tu rubro y el estilo que elijas, <strong>sin costo y sin compromiso</strong>. No es una plantilla genérica: es una primera versión pensada para tu negocio.
-                </p>
-
-                <div class="que-es-block">
-                    <div class="que-es-block-title">Para qué sirve</div>
-                    <div class="que-es-items">
-                        <div class="que-es-item">
-                            <div class="que-es-item-icon">🎨</div>
-                            <div class="que-es-item-text">
-                                <strong>Ver antes de decidir</strong>
-                                Visualizá cómo quedaría tu web con tus colores y estilo, antes de gastar un peso.
-                            </div>
-                        </div>
-                        <div class="que-es-item">
-                            <div class="que-es-item-icon">✅</div>
-                            <div class="que-es-item-text">
-                                <strong>Cero riesgo</strong>
-                                Si la demo no te convence, no hay cargo. Si te gusta, ahí sí avanzamos.
-                            </div>
-                        </div>
-                        <div class="que-es-item">
-                            <div class="que-es-item-icon">⚡</div>
-                            <div class="que-es-item-text">
-                                <strong>Ahorrás tiempo y plata</strong>
-                                Confirmás que el estilo es el que querés antes de arrancar el desarrollo completo.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="que-es-block">
-                    <div class="que-es-block-title">Cómo es la demo</div>
-                    <div class="que-es-steps">
-                        <div class="que-es-step">
-                            <div class="que-es-step-line"></div>
-                            <div class="que-es-step-num">1</div>
-                            <div class="que-es-step-text">
-                                <strong>Completás este formulario</strong>
-                                Son dos pasos cortos: tu negocio, y después los colores y el estilo.
-                            </div>
-                        </div>
-                        <div class="que-es-step">
-                            <div class="que-es-step-line"></div>
-                            <div class="que-es-step-num">2</div>
-                            <div class="que-es-step-text">
-                                <strong>Nuestro equipo diseña tu demo</strong>
-                                Un prediseño de tu web, con tu marca, tus colores y el estilo que elegiste.
-                            </div>
-                        </div>
-                        <div class="que-es-step">
-                            <div class="que-es-step-num">3</div>
-                            <div class="que-es-step-text">
-                                <strong>Te la mandamos en menos de 24 horas</strong>
-                                Te llega por WhatsApp y queda disponible 5 días, por una cuestión de espacio.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="que-es-block">
-                    <div class="que-es-block-title">Así trabajamos, en tres pasos:</div>
-                    <div class="que-es-steps">
-                        <div class="que-es-step">
-                            <div class="que-es-step-line"></div>
-                            <div class="que-es-step-num">1</div>
-                            <div class="que-es-step-text">Antes de arrancar te ofrecemos una demo gratis, para que veas un prediseño de tu web.</div>
-                        </div>
-                        <div class="que-es-step">
-                            <div class="que-es-step-line"></div>
-                            <div class="que-es-step-num">2</div>
-                            <div class="que-es-step-text">Si te gusta, elegís cómo contratarla: con la seña del pago único o con la primera cuota del servicio mensual.</div>
-                        </div>
-                        <div class="que-es-step">
-                            <div class="que-es-step-num">3</div>
-                            <div class="que-es-step-text">Tu web queda lista en unos 7 días desde que arrancamos y nos pasás el contenido.</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="que-es-cta">
-                    <div class="que-es-cta-icon">🚀</div>
-                    <div class="que-es-cta-text">
-                        <strong>Para pedirla, completá el formulario</strong>
-                        Son dos pasos cortos.
-                    </div>
-                </div>
-
+                <p class="que-es-intro">Contanos sobre tu negocio, elegí una forma de pago y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
+                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si elegís pago único, se empieza con una seña que no se devuelve y podemos rehacer el diseño hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con pago único, los cambios posteriores a la entrega se cotizan aparte.</p></div>
             </div>
         </div>
     </div>
-
     <script>
         const _qeOverlay = document.getElementById('queEsOverlay');
         document.getElementById('btnQueEsDemo').addEventListener('click', () => {
@@ -312,6 +240,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260910"></script>
+    <script type="module" src="script.js?v=20260916"></script>
 </body>
 </html>

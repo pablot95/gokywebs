@@ -47,6 +47,31 @@ function formlead_extras($payload, &$motivo = null) {
         && !wabot_referencia_utilizable($extras['referencia'])) {
         $extras['referencia'] = '';
     }
+    if (array_key_exists('modalidad', $payload)) {
+        $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
+        if (!in_array($modalidad, ['unico', 'mensual'], true)) {
+            $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
+        }
+        $extras['modalidad_elegida'] = $modalidad;
+    }
+    if (array_key_exists('modelos', $payload)) {
+        $ids = $payload['modelos'];
+        $catalogo = json_decode((string)@file_get_contents(__DIR__ . '/../modelos/catalogo.json'), true);
+        $porId = [];
+        foreach ((array)$catalogo as $m) if (isset($m['id'])) $porId[$m['id']] = $m;
+        if (!is_array($ids) || count($ids) < 1 || count($ids) > 2 || count(array_unique($ids)) !== count($ids)) {
+            $motivo = ['motivo' => 'modelos', 'campo' => 'modelos']; return null;
+        }
+        $nombres = [];
+        foreach ($ids as $id) {
+            if (!is_string($id) || !isset($porId[$id])) {
+                $motivo = ['motivo' => 'modelos', 'campo' => 'modelos']; return null;
+            }
+            $m = $porId[$id];
+            $nombres[] = ['id' => $id, 'letra' => $m['letra'], 'nombre' => $m['nombre']];
+        }
+        $extras['modelos_elegidos'] = $nombres;
+    }
     return $extras;
 }
 
@@ -77,17 +102,20 @@ function formlead_extras_guardar($base, $extras) {
     if ($aplicar) {
         foreach ($extras as $campo => $valor) {
             if ($valor === '') continue;   // vacío no borra lo que ya se sabía
-            if ($soloCompletar && trim((string)($conv[$campo] ?? '')) !== '') continue;
+            if ($soloCompletar && !empty($conv[$campo])) continue;
             $conv[$campo] = $valor;
         }
         // El formulario ya se la preguntó: el chat no se la vuelve a pedir.
         if (array_key_exists('referencia', $extras)) $conv['referencia_preguntada'] = true;
+        if (!empty($extras['modalidad_elegida']) && !empty($extras['modelos_elegidos'])) $conv['esProspecto'] = true;
     }
 
     $partes = [];
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
+    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . ($extras['modalidad_elegida'] === 'unico' ? 'Pago único' : 'Abono mensual');
+    if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
     if ($partes) {
         $linea = ($aplicar ? '[Formulario web, paso 2] ' : '[Formulario web, paso 2, sin código — NO aplicado] ')
                . implode(' · ', $partes);
@@ -98,6 +126,10 @@ function formlead_extras_guardar($base, $extras) {
         }
         if (!$yaAnotada) wabot_conv_transcript($conv, 'sistema', $linea);
     }
+
+    if ($aplicar && !empty($extras['modalidad_elegida'])) wabot_modalidad_sincronizar($conv);
+    if ($aplicar && !empty($extras['modelos_elegidos'])) wabot_modelos_sincronizar($conv);
+    if ($aplicar && !empty($conv['esProspecto'])) wabot_prospecto_sincronizar($conv);
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);

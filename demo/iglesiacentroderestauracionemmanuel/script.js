@@ -408,10 +408,12 @@ function cardProductoHTML(p) {
 
 const PASO = 12;
 const Estado = { tab: 'todo', q: '', cats: new Set(), niveles: new Set(), modalidades: new Set(), stock: false, rango: null, visibles: PASO };
-const itemsCatalogo = () => [
-  ...AREAS.flatMap(a => CURSOS.filter(c => c.categoria === a.id).sort((x, y) => precioFinal(x) - precioFinal(y))),
-  ...PRODUCTOS,
-];
+const itemsCatalogo = () => {
+  const porArea = AREAS.map(a => CURSOS.filter(c => c.categoria === a.id).sort((x, y) => precioFinal(x) - precioFinal(y)));
+  const cursos = [];
+  for (let i = 0; porArea.some(lista => lista[i]); i++) porArea.forEach(lista => { if (lista[i]) cursos.push(lista[i]); });
+  return [...cursos, ...PRODUCTOS];
+};
 const textoBusqueda = it => it.type === 'course'
   ? normalizar([it.titulo, getArea(it.categoria)?.nombre, it.nivel, it.modalidad, getDocente(it.docenteId)?.nombre, it.descripcionCorta, it.descripcionCompleta, ...it.tags, ...it.modulos.flatMap(m => [m.titulo, ...m.clases.map(c => c.titulo)])].join(' '))
   : normalizar([it.nombre, getSubcat(it.categoria)?.nombre, it.descripcionCorta, it.descripcionCompleta, ...it.tags, ...it.variantes.map(v => v.label)].join(' '));
@@ -703,7 +705,7 @@ const RELACION_PRODUCTO = {
 
 function relacionadoHTML(it) {
   const esCurso = it.type === 'course';
-  const media = esCurso ? coverHTML(it) : `<img src="${esc(it.imagen)}" width="${it.w}" height="${it.h}" alt="" style="object-position:${esc(it.pos)}">`;
+  const media = esCurso ? coverMiniHTML(it) : `<img src="${esc(it.imagen)}" width="${it.w}" height="${it.h}" alt="" style="object-position:${esc(it.pos)}">`;
   return `<button type="button" class="relacionado" data-open="${it.type}:${esc(it.id)}">${media}<span><span class="relacionado-t">${esc(esCurso ? it.titulo : it.nombre)}</span><span class="relacionado-p">${formatearPrecio(precioFinal(it))}</span></span></button>`;
 }
 function stepperHTML(p) {

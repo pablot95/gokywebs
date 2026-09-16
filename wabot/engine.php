@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/rubros-sugeridos.php';
 
 /**
  * Prepara una sesión antes de que cualquier modo toque ultimo_ts.
@@ -868,6 +869,18 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     $mensajes = array_values(array_filter((array)$mensajes, function ($m) {
         return trim((string)$m) !== '';
     }));
+    if ($modo === 'turno' && empty($conv['portfolio_mostrado']) && empty($conv['esProspecto'])
+        && empty($conv['bot_off']) && !empty($mensajes)) {
+        $yaIncluido = strpos(implode("\n", $mensajes), 'cinco trabajos reales') !== false;
+        if ($yaIncluido) $conv['portfolio_mostrado'] = true;
+        elseif (empty($conv['precio_dado'])) {
+            $ultimo = wabot_ultimo_texto_cliente($conv);
+            if (wabot_rubro_detectar($ultimo) !== null) {
+                $sugerencias = wabot_rubro_sugerencias($ultimo, (string)($conv['tipo'] ?? ''));
+                if ($sugerencias) { $mensajes[] = $sugerencias['texto']; $conv['portfolio_mostrado'] = true; }
+            }
+        }
+    }
     if (!$mensajes) return $mensajes;
 
     $mensajes = wabot_salida_limpiar($mensajes);
@@ -1892,11 +1905,12 @@ function wabot_modalidad_elegida_en($texto) {
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
     $unico   = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto))\b';
-    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
+    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
     $elegida = null;
     foreach (preg_split('/(?<=[?.!;,\n])/u', $crudo) as $frase) {
         if (trim($frase) === '' || mb_strpos($frase, '?') !== false || mb_strpos($frase, '¿') !== false) continue;
         $t = wabot_normalizar_frase($frase);
+        if (preg_match('/\bsi (elijo|eligiera|eligiese|voy|fuera|hago|hiciera|prefiero)\b/u', $t)) continue;
         // Preguntar por una forma no es elegirla: "quiero saber del pago único".
         if ($t === '' || preg_match('/\b(saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?)\b/u', $t)) continue;
         // Rechazar una forma es elegir la otra.
@@ -1936,9 +1950,9 @@ function wabot_texto_pide_pagar_antes_de_demo($texto, $conv) {
 
 function wabot_texto_pagar_antes_de_demo($conv) {
     if (!empty($conv['link_form_enviado'])) {
-        return 'Primero va la demo, que es gratis: completá el formulario que te pasé y te la armamos. Si te gusta, ahí coordinamos el pago con la forma que elijas.';
+        return 'Antes de pagar completá el formulario que te pasé: ahí arrancamos con tu web y coordinamos el pago con la forma que elijas.';
     }
-    return 'Primero va la demo, que es gratis: te la armamos para que veas cómo queda tu web, y si te gusta, ahí coordinamos el pago con la forma que elijas. Querés que la preparemos?';
+    return 'Antes de pagar necesito los datos de tu negocio para armar la web. Te paso el formulario y ahí coordinamos el pago con la forma que elijas. ¿Querés que te lo mande?';
 }
 
 /**
@@ -1964,6 +1978,25 @@ function wabot_texto_saldo_cuando($conv, $cfg) {
     return 'Con el pago único no se paga todo antes: la seña es para arrancar y el saldo se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad.';
 }
 
+function wabot_pregunta_diferencia_pagos($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 220) return false;
+    $comparacion = '(diferencia|diferente|comparar|conviene|cambia|incluye|mas barato|mas caro|por que|porque)';
+    $pagos = '(pago unico|mensual|abono|planes|precios|formas de pago|opciones|dos formas|uno y otro|ambas)';
+    return (bool)(preg_match('/\b' . $comparacion . '\b.{0,70}\b' . $pagos . '\b/u', $t)
+        || preg_match('/\b' . $pagos . '\b.{0,70}\b' . $comparacion . '\b/u', $t)
+        || preg_match('/\b(uno y otro|un precio y (el )?otro|los dos precios|entre los dos|entre pago unico y mensual)\b/u', $t));
+}
+
+function wabot_diferencia_pagos_texto($conv, $cfg) {
+    $v = (!empty($conv['precio_dado']) && !empty($conv['tipo'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    $unico = ($v && $v['precio'] !== '') ? ' de ' . $v['precio'] . ', con seña de ' . $v['sena'] . ' al empezar y saldo de ' . $v['saldo'] . ' al entregar' : ', con seña al empezar y saldo al entregar';
+    $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : ' por mes';
+    return "La diferencia es cómo contratás y mantenés la web, no dos cuotas del mismo precio.\n"
+        . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Hosting y dominio están incluidos el primer año; después se renuevan anualmente. Un cambio pedido después de la entrega se cotiza aparte.'
+        . "\nAbono mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras el abono esté activo incluye hosting, dominio, soporte y mantenimiento técnico. No hay permanencia; a los 12 meses podés reclamar el código y la propiedad.';
+}
+
 /** El punto de entrada: la respuesta fija que corresponde, o null. */
 function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
     if (trim((string)$texto) === '') return null;
@@ -1976,13 +2009,17 @@ function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
         && !wabot_texto_pregunta_devolucion($texto)) {
         $vPago = wabot_precio_vigente($conv, $cfg);
         if ($vPago['modelo'] === 'doble' && $vPago['sena'] !== '' && $vPago['saldo'] !== '') {
-            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar, después de aprobar la demo, y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
+            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
         }
     }
     $confusion = wabot_texto_confusion_montos($texto, $conv, $cfg);
     if ($confusion !== null) {
         wabot_evento_sesion($conv, 'montos_confundidos');
         return [$confusion];
+    }
+    if (wabot_pregunta_diferencia_pagos($texto)) {
+        wabot_evento_sesion($conv, 'diferencia_pagos');
+        return [wabot_diferencia_pagos_texto($conv, $cfg)];
     }
     $rechazo = wabot_texto_rechaza_una_forma($texto);
     if ($rechazo === 'mensual') {
@@ -2712,7 +2749,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if (preg_match('/\b(mismo|misma|el mismo|la misma|ese mismo)\b/u', $tcf)) {
                 $conv['fase'] = (string)($conv['fase_previa_cambio'] ?? 'precio');
                 unset($conv['fase_previa_cambio']);
-                return [(string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?')];
+                return [(string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo. En gokywebs.com/modelos/ podés elegir uno o dos modelos como referencia.')];
             }
             if (preg_match('/\b(otra|otro|aparte|separada|separado|distinta|distinto|nueva)\b/u', $tcf)) {
                 unset($conv['fase_previa_cambio']);
@@ -3342,7 +3379,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                 $conv['fase'] = (string)($conv['fase_previa_cambio'] ?? 'precio');
                 unset($conv['fase_previa_cambio']);
                 wabot_handoff_aclaracion_resuelta($conv);
-                $out[] = (string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?');
+                $out[] = (string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo. En gokywebs.com/modelos/ podés elegir uno o dos modelos como referencia.');
                 break;
             }
             if (preg_match('/\b(otra|otro|aparte|separada|separado|distinta|distinto|nueva|nuevo proyecto|otra web|otro proyecto)\b/u', $tc)
@@ -4845,10 +4882,12 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
  * mandarle el link en el globo de al lado se contradice.
  */
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
-    $t = trim((string)($cfg['msg_tres_pasos'] ?? ''));
-    $t = wabot_tres_pasos_precio($t, $conv, $cfg);
-    if ($conPregunta && $t !== '') $t .= "\n" . wabot_tres_pasos_pregunta();
-    return $t;
+    $contexto = trim((string)($conv['descripcion'] ?? '')) . ' ' . wabot_ultimo_texto_cliente($conv);
+    $sugerencias = wabot_rubro_sugerencias($contexto, (string)($conv['tipo'] ?? ''));
+    $t = !empty($conv['portfolio_mostrado'])
+        ? 'Si querés elegir un punto de partida, mirá los modelos en gokywebs.com/modelos/'
+        : ($sugerencias ? $sugerencias['texto'] : 'Podés mirar nuestros trabajos en gokywebs.com/portfolio/ y elegir uno o dos modelos en gokywebs.com/modelos/');
+    return $t . ($conPregunta ? "\n¿Arrancamos?" : '');
 }
 
 /**
@@ -5370,6 +5409,8 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['pitch_hecho'] = true;
     $conv['pitch_tipo'] = $tipo;
     $conv['precio_dado'] = true;
+    $conv['precio_turnos_desde'] = 0;
+    $conv['precio_cta_pendiente'] = true;
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
@@ -5454,6 +5495,8 @@ function wabot_precio($tipo, &$conv, $cfg) {
     $conv['fase'] = 'precio';
     $conv['precio_dado'] = true;
     wabot_precio_congelar($conv, $tipo, $cfg);
+    $conv['precio_turnos_desde'] = 0;
+    $conv['precio_cta_pendiente'] = true;
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
@@ -5478,10 +5521,7 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * haya pedido la demo al entrar ("quiero la demo gratis"): ese sí ya está
      * dicho, así que el formulario va en el mismo turno —en su propio globo,
      * porque lleva el link— y los pasos van sin la pregunta. */
-    $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
-    $out = [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
-    if ($pedidoDemo !== '') $out[] = $pedidoDemo;
-    return $out;
+    return [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -6239,7 +6279,7 @@ function wabot_espera_si_a_la_demo($conv, $cfg) {
 
 /** Lo que cuenta de su negocio sin contestar si quiere la demo: se toma y se vuelve a preguntar. */
 function wabot_tres_pasos_repregunta_texto() {
-    return 'Dale, lo tenemos en cuenta para tu web. Querés que te preparemos la demo gratis?';
+    return 'Dale, lo tenemos en cuenta para tu web. Podés mirar trabajos reales y elegir uno o dos modelos en gokywebs.com/modelos/.';
 }
 
 /** "Sí, quiero la demo" con el link ya mandado: se le recuerda dónde está, sin repetir el mismo texto. */

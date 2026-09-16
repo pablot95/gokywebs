@@ -1265,6 +1265,13 @@ body.embed .wrap { padding-top: 10px; }
    con min-height:100vh el body mide lo que mide el iframe, el iframe mide lo que
    reporta el body, y cada vuelta sumaba unos píxeles hasta el infinito. */
 body.embed { min-height: 0; }
+.rapidas { margin-top:10px; padding:10px; border:1px solid var(--line); border-radius:10px; background:#101b2e; }
+.rapidas summary { cursor:pointer; font-weight:700; }
+.rapidas p { margin:8px 0; font-size:.84rem; color:#a9b6cc; }
+.rapidas details { margin:7px 0; border:1px solid var(--line); border-radius:8px; padding:7px; }
+.rapidas details summary { font-size:.88rem; }
+.rapidas button { display:block; width:100%; margin:5px 0; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#1a2940; color:#e6edf7; text-align:left; font:inherit; font-size:.82rem; cursor:pointer; }
+.rapidas button:hover { border-color:var(--ac); }
 </style>
 </head>
 <?php $pantallaCompleta = in_array($tab, ['conversaciones', 'live'], true); ?>
@@ -1582,6 +1589,7 @@ body.embed { min-height: 0; }
                         <?php if (!empty($conv['bot_off'])): ?><span class="pill off">bot apagado acá</span><?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?><span class="pill pausa">pausado hasta <?= date('d/m H:i', (int)$conv['pausado_hasta']) ?></span><?php endif; ?>
                         <?php if (!empty($conv['handoff_pendiente'])): ?><span class="pill pausa" id="handoffPill">Pablo pendiente</span><?php endif; ?>
+                        <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -1655,6 +1663,7 @@ body.embed { min-height: 0; }
                         <button type="button" id="grabarCancelar" class="bad" title="Cancelar la grabación">✕</button>
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
+                    <details class="rapidas" id="rapidasPanel"><summary>Respuestas rápidas para editar</summary><p>Elegí una frase, ajustala si hace falta y después tocá Enviar.</p><div id="rapidasCategorias"></div></details>
                 </div>
             <?php else: ?>
                 <div class="conv-nada">
@@ -2937,5 +2946,6 @@ body.embed { min-height: 0; }
 })();
 </script>
 <?php endif; ?>
+<script src="respuestas-rapidas.js?v=20260916"></script>
 </body>
 </html>

@@ -4569,6 +4569,8 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         // Paso 2 del formulario (10-sep). También van dentro de objetivo_web.
         'estilo_pagina'      => ['stringValue' => $estilo],
         'incluir_si_o_si'    => ['stringValue' => $incluir],
+        'modelosElegidos'    => ['stringValue' => json_encode((array)($conv['modelos_elegidos'] ?? []), JSON_UNESCAPED_UNICODE)],
+        'esProspecto'        => ['booleanValue' => !empty($conv['esProspecto'])],
         // Mismos nombres que usa el formulario, así la ficha del boceto
         // muestra las filas Color principal / secundario / Fondos.
         'color_principal'    => ['stringValue' => (string)($conv['colores_hex']['principal']  ?? '')],
@@ -4980,4 +4982,52 @@ function wabot_modalidad_sincronizar(&$conv) {
     }
     wabot_log('modalidad_elegida', ['clave' => wabot_conversation_key($conv), 'modalidad' => $modalidad]);
     return true;
+}
+
+/** Completa la marca en una ficha ya creada, sin recrear una ficha vieja. */
+function wabot_prospecto_sincronizar(&$conv) {
+    if (empty($conv['esProspecto']) || empty($conv['lead_creado']) || empty($conv['lead_doc'])) return false;
+    if (!empty($conv['prospecto_sincronizado'])) return true;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+        $conv['prospecto_sincronizado'] = true; return true;
+    }
+    $url = 'https://firestore.googleapis.com/v1/' . $conv['lead_doc'] . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=esProspecto&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'esProspecto' => ['booleanValue' => true],
+            'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')]
+        ]]),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20
+    ]);
+    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($code >= 200 && $code < 300) { $conv['prospecto_sincronizado'] = true; return true; }
+    if ($code !== 404) wabot_log('error', ['donde' => 'firestore_prospecto', 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+    return false;
+}
+
+function wabot_modelos_sincronizar(&$conv) {
+    $modelos = (array)($conv['modelos_elegidos'] ?? []);
+    if (!$modelos || empty($conv['lead_creado']) || empty($conv['lead_doc'])) return false;
+    $json = json_encode($modelos, JSON_UNESCAPED_UNICODE);
+    if ($json === (string)($conv['modelos_sincronizados'] ?? '')) return true;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+        $conv['modelos_sincronizados'] = $json; return true;
+    }
+    $url = 'https://firestore.googleapis.com/v1/' . $conv['lead_doc'] . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=modelosElegidos&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'modelosElegidos' => ['stringValue' => $json],
+            'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')]
+        ]], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20]);
+    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($code >= 200 && $code < 300) { $conv['modelos_sincronizados'] = $json; return true; }
+    if ($code !== 404) wabot_log('error', ['donde' => 'firestore_modelos', 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+    return false;
 }

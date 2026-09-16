@@ -1,14 +1,14 @@
 [
   {
     "id": "01",
-    "titulo": "Sitio profesional: rubro, precio y sí a la demo",
+    "titulo": "Sitio profesional: rubro, precio e interés claro",
     "nombre": "Marcos",
     "turnos": [
       "Hola, soy electricista matriculado, quiero una pagina para que me contacten",
       "cuanto tarda?",
       "dale, armala"
     ],
-    "esperado": "Cotiza el sitio profesional en dos mensajes ($180.000 pago único con seña $40.000, o $20.000 por mes) y los tres pasos con la pregunta de la demo. La duda se contesta sin repetir el precio. El sí trae el link del formulario, una sola vez."
+    "esperado": "Cotiza el sitio profesional en dos mensajes ($180.000 pago único con seña $40.000, o $20.000 por mes), muestra cinco trabajos y los modelos. La duda se contesta sin repetir el precio. El interés claro manda solamente gokywebs.com/form y deja la charla en manos de Pablo."
   },
   {
     "id": "02",
@@ -19,7 +19,7 @@
       "como se paga?",
       "si, quiero la demo"
     ],
-    "esperado": "Ecommerce $290.000 (seña $60.000) o $30.000 por mes. 'Cómo se paga' explica las dos formas con los montos de la charla, sin cuotas. El sí manda el formulario."
+    "esperado": "Ecommerce $290.000 (seña $60.000) o $30.000 por mes. 'Cómo se paga' explica las dos formas con los montos de la charla, sin cuotas. La aceptación manda solamente gokywebs.com/form y apaga el bot."
   },
   {
     "id": "03",
@@ -30,7 +30,7 @@
       "quiero venderlos desde la web, con videos y que cada alumna tenga su acceso",
       "y el hosting va aparte?"
     ],
-    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos a $290.000 o $30.000 por mes. El hosting va incluido, sin repetir la oferta de la demo."
+    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos a $290.000 o $30.000 por mes. El hosting va incluido, sin repetir el precio ni los modelos."
   },
   {
     "id": "04",
@@ -41,7 +41,7 @@
       "cuanto es la seña?",
       "dale, quiero la demo"
     ],
-    "esperado": "Inmobiliaria $240.000 (seña $60.000, saldo $180.000) o $30.000 por mes. La seña se contesta con su monto y el saldo al entregar. El sí trae el formulario."
+    "esperado": "Inmobiliaria $240.000 (seña $60.000, saldo $180.000) o $30.000 por mes. La seña se contesta con su monto y el saldo al entregar. La aceptación manda solamente gokywebs.com/form y apaga el bot."
   },
   {
     "id": "05",

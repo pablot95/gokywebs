@@ -60,20 +60,19 @@ foreach (['Hola! Quiero mi demo gratis para mi negocio.', 'Dale, me interesa la 
 caso('"me pasas el precio?" y "la demo hasta cuándo me dura?" no la piden',
     wabot_pidio_demo_explicita('me pasas el precio?') === false && wabot_pidio_demo_explicita('la demo hasta cuando me dura?') === false);
 
-echo "— 2. Los tres pasos terminan preguntando si la quiere —\n";
+echo "— 2. El precio muestra trabajos y modelos —\n";
 
 $c = conv_nueva('5491188880001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
-caso('el segundo mensaje arranca con la demo gratis', strpos($r[1] ?? '', 'El primer paso es gratis') === 0);
-caso('y cierra con la pregunta de la demo', preg_match('/\nQuerés que preparemos la demo para tu negocio\?$/u', $r[1] ?? '') === 1, $r[1] ?? '');
+caso('el segundo mensaje muestra cinco trabajos reales', substr_count($r[1] ?? '', '• ') === 5);
+caso('y cierra con modelos y la pregunta de arranque', strpos($r[1] ?? '', 'gokywebs.com/modelos/') !== false && str_ends_with($r[1] ?? '', '¿Arrancamos?'), $r[1] ?? '');
 caso('sin el link: ese sale con el sí', !tiene_form($r));
 $c = conv_nueva('5491188880002TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
-caso('quien la pidió al entrar recibe los tres pasos SIN la pregunta y el formulario atrás',
-    count($r) === 3 && mb_stripos($r[1], 'El primer paso es gratis') !== false && strpos($r[1], 'Querés que preparemos') === false && tiene_form([$r[2] ?? '']),
+caso('un anuncio viejo de demo entra al flujo nuevo y espera una aceptación actual',
+    count($r) === 2 && mb_stripos($r[1], 'modelos') !== false && !tiene_form($r),
     json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('y el del formulario es su propio mensaje, sin los pasos repetidos',
-    mb_stripos($r[2], 'formulario') !== false && mb_stripos($r[2], 'El primer paso es gratis') === false);
+caso('y todavía no marca el formulario como enviado', empty($c['link_form_enviado']));
 
 echo "— 3. El motor manda el link solo con el sí —\n";
 
@@ -128,16 +127,12 @@ $c = conv_con_link('5491188880030TEST', $cfg);
 caso('(la charla de prueba tiene el link mandado)', !empty($c['link_form_enviado']) && $c['fase'] === 'prediseno');
 clasifica(['otro']);
 $r = turno('Si, quiero la muestra gratis', $c, $cfg);
-caso('"Sí, quiero la muestra gratis" se lleva dónde está el formulario, con el link', tiene_form($r)
-    && strpos($r[0] ?? '', 'la demo sale del formulario que te pasé') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('y NO lo deriva', ($c['fase'] ?? '') === 'prediseno' && ($c['cierre'] ?? null) !== 'derivacion');
+caso('"Sí, quiero la muestra gratis" heredado recibe solo el enlace simple', $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('y queda como prospecto para que siga Pablo', ($c['fase'] ?? '') === 'derivado' && !empty($c['esProspecto']) && !empty($c['bot_off']));
 $r = turno('si quiero la demo', $c, $cfg);
-caso('la segunda vez no se repite ni deriva: se calla', $r === [] && ($c['fase'] ?? '') === 'prediseno', json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('la segunda vez no se repite: se calla', $r === [] && ($c['fase'] ?? '') === 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
 $r = turno('Malena - IndumentariaMale - negro y dorado', $c, $cfg);
-caso('los datos por chat se toman', ($c['nombre_negocio'] ?? '') === 'IndumentariaMale' && ($c['colores'] ?? '') === 'negro y dorado');
-caso('y cierran el prediseño como si hubiera llegado el formulario, no con el aviso de derivación',
-    ($c['cierre'] ?? '') === 'prediseno' && ($r[0] ?? '') === wabot_personalizar(wabot_texto_prediseno_completo($c, $cfg), $c), json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('con la descripción de lo que contó', trim((string)($c['descripcion'] ?? '')) !== '');
+caso('los datos posteriores quedan para Pablo y el bot no responde', $r === [] && !empty($c['handoff_pendiente']));
 
 $c = conv_con_link('5491188880031TEST', $cfg);
 clasifica(['otro']);
@@ -205,13 +200,12 @@ echo "— 6. El texto del formulario —\n";
 $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
-caso('el texto del formulario es el nuevo, en dos líneas',
-    preg_match('/^Dale\. Para preparar la demo completá este formulario cortito:\nhttps:\/\/gokywebs\.com\/form\/\S+\nSi algo no te queda claro, escribime por acá y te ayudo\.$/u', $form) === 1, $form);
+caso('el texto auxiliar del formulario usa la redacción nueva',
+    preg_match('/^Para avanzar completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
 caso('ni promete un minuto', mb_stripos($form, 'minuto') === false);
-caso('el bot lo reconoce como la demo ya ofrecida',
-    wabot_cta_muestra_ya_ofrecida(['transcript' => [['q' => 'bot', 't' => $form, 'ts' => time()]]]) === true);
+caso('el texto contiene un único enlace al formulario', substr_count($form, 'gokywebs.com/form/') === 1);
 $cierre = 'Listo, con eso ya lo preparamos. Para que la demo sea tuya de verdad y no una genérica, mandame el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar. Con eso te la dejo lista mañana.';
 caso('el cierre del prediseño tampoco se lleva la coletilla', wabot_demo_siempre_gratis([$cierre], $cfg) === [$cierre]);
 foreach ([0, 1] as $imagenes) {

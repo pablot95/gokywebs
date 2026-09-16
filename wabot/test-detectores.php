@@ -67,7 +67,7 @@ clasifica(['otro']);
 $r = turno($p, $cInm, $cfg);
 caso('editar una propiedad conserva el contacto activo', empty($cInm['bot_off']) && ($cInm['cierre'] ?? '') !== 'baja');
 $r = turno('Dale, mandame el formulario para la demo', $cInm, $cfg);
-caso('después de editar una propiedad puede pedir el formulario', tiene_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('después de editar una propiedad puede aceptar y recibir el formulario', $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 2. El cierre sin presión: no sobre el que explora, pregunta o promete datos —\n";
 foreach ([
@@ -344,9 +344,9 @@ caso('pitch_hecho, pitch_tipo, link_form_enviado y form_completado_ts se limpian
 caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
-caso('el precio del que vuelve sale con descripción y, en otro mensaje, los tres pasos (sin link)',
+caso('el precio del que vuelve sale con descripción y, en otro mensaje, trabajos y modelos',
     count($rR) === 2 && stripos($rR[0], 'que presente tu negocio') !== false
-    && stripos($rR[1], 'El primer paso es gratis') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
+    && stripos($rR[1], 'modelos') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 15. Las dudas de pago del modelo doble —\n";
 foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Si pago la seña y despues no me gusta, me la devuelven?', 'Y no se puede pagar de una?'] as $f) {
@@ -377,7 +377,7 @@ foreach (['Cuánto tengo que pagar ahora para ver la demo?', 'La demo se paga?',
     $c = conv_audit('elearning');
     clasifica(['otro']);
     $r = turno($p, $c, $cfg);
-    caso("explica que ver la demo no se paga: $p", strpos(implode(' ', $r), 'La demo no se paga') !== false
+    caso("redirige la consulta vieja de demo al proceso vigente: $p", strpos(implode(' ', $r), 'gokywebs.com/modelos/') !== false
         && strpos(implode(' ', $r), '$50.000') === false && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
 }
 caso('pagar el desarrollo después de la demo sigue siendo otra consulta',
@@ -459,8 +459,8 @@ foreach (['La demo es gratis. El pago único es de $180.000 y el servicio mensua
 wabot_conv_transcript($c, 'cliente', 'Sí, quiero la demo'); $c['ultimo_cliente_ts'] = time();
 clasifica(['otro']);
 $r = wabot_salida_preparar(wabot_responder('Sí, quiero la demo', $c, $cfg), $c, $cfg);
-caso('aceptar después de consultar entrega el formulario, sin prometer un minuto', tiene_form($r) && strpos(implode(' ', $r), 'formulario cortito') !== false
-    && strpos(implode(' ', $r), 'minuto') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('una aceptación con la palabra demo heredada recibe solo el enlace simple',
+    $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
 
 foreach (['999FPTEST', 'QATESTREG11SEP', 'QATESTTEXTOS11SEP', 'QATESTSIS1', 'QATESTSIS2', 'igQATESTSIS3'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
