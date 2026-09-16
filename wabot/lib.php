@@ -1221,7 +1221,7 @@ function wabot_prediseno_texto(&$conv, $cfg) {
     $faltan = wabot_prediseno_faltan($conv, false);
     if (!$faltan) {
         $conv['prediseno_pedido'] = [];
-        return 'El prediseño es gratis y sin compromiso: con lo que ya tengo alcanza para armarlo. Dejame prepararlo.';
+        return 'Perfecto, con lo que ya tengo alcanza para arrancar. Dejame prepararlo.';
     }
 
     // Queda anotado QUÉ se le pidió, no solo que se le pidió algo: mientras la
