@@ -55,6 +55,47 @@ const _origen = (() => {
 
 // Se captura antes de limpiar la URL con replaceState, si no se pierden ?t=/?neg=.
 const _paramsInicial = new URLSearchParams(window.location.search);
+let catalogoModelos = [];
+let modelosSeleccionados = [];
+const modelosParametro = (_paramsInicial.get('modelos') || '').split(',').filter(Boolean);
+try { modelosSeleccionados = modelosParametro.length ? modelosParametro : JSON.parse(sessionStorage.getItem('gw-modelos') || '[]'); } catch (_) {}
+modelosSeleccionados = [...new Set(modelosSeleccionados)].slice(0, 2);
+
+async function cargarModelos() {
+    const caja = document.getElementById('modelosElegidos');
+    try {
+        const res = await fetch('/modelos/catalogo.json');
+        if (!res.ok) throw new Error('Catálogo no disponible');
+        catalogoModelos = await res.json();
+        modelosSeleccionados = modelosSeleccionados.filter(id => catalogoModelos.some(m => m.id === id));
+        const frag = document.createDocumentFragment();
+        catalogoModelos.forEach(m => {
+            const label = document.createElement('label');
+            label.className = 'modelo-opcion';
+            const check = document.createElement('input');
+            check.type = 'checkbox'; check.value = m.id; check.checked = modelosSeleccionados.includes(m.id);
+            check.addEventListener('change', () => {
+                if (check.checked && modelosSeleccionados.length >= 2) {
+                    check.checked = false;
+                    document.getElementById('modelosAviso').textContent = 'Podés marcar hasta dos modelos.';
+                    return;
+                }
+                modelosSeleccionados = [...caja.querySelectorAll('input:checked')].map(el => el.value);
+                document.getElementById('modelosAviso').textContent = modelosSeleccionados.length ? 'Elegiste: ' + modelosSeleccionados.map(id => { const x = catalogoModelos.find(m => m.id === id); return `Modelo ${x.letra} · ${x.nombre}`; }).join(' + ') : 'Elegí al menos un modelo.';
+                try { sessionStorage.setItem('gw-modelos', JSON.stringify(modelosSeleccionados)); } catch (_) {}
+                saveDraft();
+            });
+            const span = document.createElement('span');
+            span.textContent = `Modelo ${m.letra} · ${m.nombre} — ${m.tipo === 'ecommerce' ? 'Tienda online' : m.tipo === 'elearning' ? 'Cursos' : m.tipo === 'inmobiliaria' ? 'Inmobiliaria' : 'Sitio profesional'}`;
+            label.append(check, span); frag.append(label);
+        });
+        caja.textContent = '';
+        const aviso = document.createElement('p'); aviso.id = 'modelosAviso'; aviso.className = 'field-hint';
+        aviso.textContent = modelosSeleccionados.length ? 'Elegiste: ' + modelosSeleccionados.map(id => { const x = catalogoModelos.find(m => m.id === id); return `Modelo ${x.letra} · ${x.nombre}`; }).join(' + ') : 'Elegí al menos un modelo.';
+        caja.append(aviso, frag);
+    } catch (_) { caja.textContent = 'No pudimos cargar los modelos. Abrí la página de modelos y volvé a intentar.'; }
+}
+cargarModelos();
 
 try {
     if (window.location.search && window.history.replaceState) {
@@ -158,7 +199,7 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
         // no tenemos cómo mandarle la demo.
         const pista = document.createElement('p');
         pista.className = 'form-tip';
-        pista.textContent = 'Dejanos tu WhatsApp: es por donde te mandamos la demo cuando esté lista.';
+        pista.textContent = 'Dejanos tu WhatsApp: es por donde coordinamos los próximos pasos.';
         telefonoInput.insertAdjacentElement('afterend', pista);
     } else if (tel) {
         const digits = tel.replace(/\D/g, '');
@@ -292,6 +333,13 @@ function validarPaso1() {
 function validarPaso2() {
     let firstError = null;
 
+    const modalidad = document.getElementById('modalidad');
+    if (!modalidad.value) { markError(modalidad, 'Elegí pago único o abono mensual.'); firstError = modalidad; }
+    if (!modelosSeleccionados.length || modelosSeleccionados.length > 2) {
+        document.getElementById('modelosAviso')?.classList.add('error');
+        if (!firstError) firstError = document.getElementById('modelosGroup');
+    }
+
     // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
     const estilo = document.getElementById('estilo');
     if (estilo && !estilo.value) {
@@ -346,6 +394,8 @@ function buildPayload() {
         estilo: get('estilo'),
         referencia: get('referencia'),
         incluir: get('incluir'),
+        modalidad: get('modalidad'),
+        modelos: modelosSeleccionados,
     };
     if (_codigoBot) payload.c = _codigoBot;
     return payload;
@@ -475,7 +525,7 @@ async function enviarFormulario() {
  * corregir de este lado más que no depender de eso. Con texto ASCII el mensaje
  * llega igual en todos los dispositivos. */
 function mensajeFormWsp(nombre, nombreNegocio) {
-    const lineas = [`Hola! Acabo de completar el formulario de la demo gratis.`, ''];
+    const lineas = [`Hola! Acabo de completar el formulario para mi web.`, ''];
     lineas.push(`Nombre: ${nombre || 'sin nombre'}`);
     lineas.push(`Negocio: ${nombreNegocio || 'sin nombre'}`);
     lineas.push('', 'Quedo atento/a!');
@@ -490,9 +540,9 @@ function showSuccess(nombre, nombreNegocio) {
         <div class="success-screen">
             <div class="success-icon">✅</div>
             <h2 class="success-title">Listo, recibimos tus datos!</h2>
-            <span class="success-badge">⏱️ Tu demo va a estar lista en menos de 24 horas</span>
+            <span class="success-badge">Recibimos tus preferencias</span>
             <p class="success-desc">
-                Te la mandamos por WhatsApp y queda disponible 5 días, por una cuestión de espacio. Ahora te estamos abriendo WhatsApp para coordinar los próximos pasos: si no se abrió solo, tocá el botón de acá abajo.
+                Vamos a revisar tus datos y los modelos que elegiste. Te abrimos WhatsApp para coordinar los próximos pasos; si no se abrió, tocá el botón de abajo.
             </p>
             <a href="${url}" class="btn-wsp-form" target="_blank" rel="noopener">💬 Abrir WhatsApp</a>
             <a href="https://www.gokywebs.com" class="success-link">Mientras tanto, explorá nuestros trabajos →</a>
@@ -565,7 +615,7 @@ const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
     'color_principal', 'color_secundario', 'color_fondos',
-    'estilo', 'referencia', 'incluir'];
+    'estilo', 'referencia', 'incluir', 'modalidad'];
 
 function saveDraft() {
     try {

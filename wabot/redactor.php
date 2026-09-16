@@ -1,24 +1,45 @@
 <?php
 /**
- * wabot/redactor.php — capa opcional que reescribe la respuesta del motor con
- * palabras propias, para que el bot no suene a plantilla.
+ * wabot/redactor.php — el borde común por donde entra cada mensaje del cliente.
  *
- * REGLA DE ORO: el motor sigue decidiendo QUÉ decir; el redactor solo cambia
- * CÓMO se dice. Todo lo que no puede fallar (precio, link, derivación) se
- * valida contra el texto base y, si no coincide, se manda el texto fijo.
- * El peor caso posible es el comportamiento que ya teníamos.
+ * Acá viven los cortes deterministas que valen en cualquier fase (la charla
+ * dada de baja, el pedido de una persona, las dudas de pago con respuesta
+ * fija, el post-demo, el formulario ya mandado…). Lo que no se resuelve acá
+ * sigue al motor de reglas (wabot_engine), que clasifica el mensaje con Gemini
+ * y contesta siempre con los textos fijos de textos.php. Todo lo que sale al
+ * cliente pasa después por wabot_salida_preparar().
  */
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 
-/**
- * Devuelve la respuesta final para el cliente.
- * Si el modo natural está apagado o la redacción no pasa los controles,
- * devuelve el texto fijo del motor tal cual.
- */
-function wabot_responder($texto, &$conv, $cfg) {
-    $modo = $cfg['modo_redaccion'] ?? 'fijo';
+function wabot_prospecto_acepta($texto, $conv) {
+    if (empty($conv['precio_dado']) || !empty($conv['presentado_ts']) || !empty($conv['form_completado_ts'])) return false;
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 240) return false;
+    if (preg_match('/\b(no|todavia no|lo voy a pensar|lo tengo que pensar|no me cierra|es caro|mas adelante)\b/u', $t)) return false;
+    if (wabot_modalidad_elegida_en($texto) !== null && wabot_texto_rechaza_una_forma($texto) === null) return true;
+    if (strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false) return false;
+    if (preg_match('/\b(me cierra|me sirve|estoy conforme|me parece bien|me interesa avanzar|quiero avanzar|queremos avanzar|quiero (hacerlo|arrancar|empezar)|quiero (la )?(demo|muestra)|quiero verla|armemos la (web|pagina|demo|muestra)|armala|armalo|hagamoslo|hagamosla|vamos a (hacerla|hacerlo|arrancar|empezar)|vamos adelante|arranquemos|empecemos|pasame el formulario|mandame el formulario|pasa el form)\b/u', $t)) return true;
+    return !empty($conv['precio_cta_pendiente']) && (int)($conv['precio_turnos_desde'] ?? 0) === 1
+        && (bool)preg_match('/^(si|si dale|dale|ok|okay|bueno|de una|perfecto|listo|vamos)$/u', $t);
+}
 
+function wabot_upgrade_aplicar(&$conv, $pendiente) {
+    if (!is_array($pendiente) || empty($pendiente['tipo'])) return false;
+    $conv['tipo'] = $pendiente['tipo'];
+    $conv['precio_cotizado'] = $pendiente['precio'];
+    $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
+    $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
+    $conv['precio_modelo'] = $pendiente['modelo'];
+    $conv['precio_cotizado_ts'] = time();
+    $conv['pitch_tipo'] = $pendiente['tipo'];
+    unset($conv['upgrade_pendiente'], $conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
+    wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
+    return true;
+}
+
+/** Devuelve la respuesta final para el cliente (lista de mensajes). */
+function wabot_responder($texto, &$conv, $cfg) {
     /* Lo primero de todo: si este cliente ya venía hablando por el otro canal,
      * se trae lo que dejó allá ANTES de que nadie lea el estado. Si no, el
      * mismo cliente arranca de cero acá —le preguntan lo que ya contó y le
@@ -26,15 +47,13 @@ function wabot_responder($texto, &$conv, $cfg) {
      * el 3-sep. Ver wabot_conv_adoptar_hermana(). */
     wabot_conv_adoptar_hermana($conv, $cfg);
 
-    // El reset pertenece al borde común, antes de que el agente vea el estado y
-    // antes de actualizar ultimo_ts. Así también funciona en modo agente, donde
-    // el motor de reglas puede no ejecutarse nunca.
+    // El reset pertenece al borde común, antes de actualizar ultimo_ts.
     wabot_turno_preparar($conv, $cfg, time());
 
     // Transitoria de UN turno (ver wabot_postdemo_responder): si un corte de
     // más abajo terminó el turno anterior sin consumirla, no puede aparecer
     // adelante de la respuesta de hoy.
-    unset($conv['_postdemo_prefijo'], $conv['_plataforma_contestada']);
+    unset($conv['_postdemo_prefijo']);
 
     /* Con la demo ya entregada, ESTE mensaje es la respuesta del cliente: se
      * marca acá, antes de cualquier corte, porque de ese flag dependen la
@@ -43,19 +62,7 @@ function wabot_responder($texto, &$conv, $cfg) {
      * cero y no hay nada que marcar). Ver wabot_presentado_marcar_respuesta(). */
     wabot_presentado_marcar_respuesta($conv);
 
-    /* La forma de pago que el cliente eligió va a su boceto (Pablo, 15-sep).
-     * Se anota con cada mensaje, conteste quien conteste el turno. */
-    wabot_modalidad_anotar($texto, $conv, $cfg);
-
-    /* Prospecto (Pablo, 15-sep): ya vio el precio y afirmó una forma de pago
-     * → el bot se calla y queda para que Pablo siga la venta a mano. Va
-     * antes de cualquier otra respuesta, para que no se le escape un mensaje
-     * más antes de callarse. */
-    if (function_exists('wabot_prospecto_detectar') && wabot_prospecto_detectar($texto, $conv, $cfg)) {
-        wabot_prospecto_marcar($conv, $cfg);
-        wabot_evento_sesion($conv, 'prospecto_marcado');
-        return [];
-    }
+    if (!empty($conv['esProspecto']) && !empty($conv['link_form_enviado'])) return [];
 
     if (!empty($conv['demo_texto_pendiente'])) {
         $conv['demo_texto_pendiente'] = false;
@@ -90,7 +97,7 @@ function wabot_responder($texto, &$conv, $cfg) {
     // primer pago del desarrollo. Vale en todos los modos, antes del modelo.
     if (empty($conv['presentado_ts']) && wabot_texto_pregunta_pago_demo($texto)) {
         wabot_evento_sesion($conv, 'pago_demo_aclarado');
-        return [wabot_texto_sin_modelo_viejo((string)$cfg['pago_antes_o_despues'])];
+        return [(string)$cfg['pago_antes_o_despues']];
     }
 
     /* Dudas de pago con respuesta fija (batería del 15-sep), en todos los modos
@@ -101,7 +108,33 @@ function wabot_responder($texto, &$conv, $cfg) {
     // apunta la pregunta. Usar acá el tipo anterior mezclaba las modalidades.
     if (empty($conv['upgrade_pendiente'])) {
         $pagoFijo = wabot_respuesta_pago_fija($texto, $conv, $cfg);
-        if ($pagoFijo !== null) return $pagoFijo;
+        if ($pagoFijo !== null) {
+            if (!empty($conv['precio_dado'])) {
+                $conv['precio_turnos_desde'] = (int)($conv['precio_turnos_desde'] ?? 0) + 1;
+                $conv['precio_cta_pendiente'] = false;
+            }
+            return $pagoFijo;
+        }
+    }
+
+    /* Primero se contestan las dudas de pago; después se evalúa si eligió.
+     * Así "si elijo el pago único, ¿cuánto pongo?" no se toma como cierre. */
+    wabot_modalidad_anotar($texto, $conv, $cfg);
+    if (!empty($conv['precio_dado'])) {
+        $conv['precio_turnos_desde'] = (int)($conv['precio_turnos_desde'] ?? 0) + 1;
+        if (wabot_prospecto_acepta($texto, $conv)) {
+            if (is_array($conv['upgrade_pendiente'] ?? null)) wabot_upgrade_aplicar($conv, $conv['upgrade_pendiente']);
+            $conv['esProspecto'] = true;
+            $conv['link_form_enviado'] = true;
+            $conv['precio_cta_pendiente'] = false;
+            $conv['seguimiento_bloqueado'] = true;
+            wabot_handoff_marcar($conv, 'prospecto');
+            wabot_prospecto_sincronizar($conv);
+            $conv['bot_off'] = true;
+            wabot_evento_sesion($conv, 'prospecto_form_enviado');
+            return ['gokywebs.com/form'];
+        }
+        if ((int)$conv['precio_turnos_desde'] >= 1) $conv['precio_cta_pendiente'] = false;
     }
 
     /* Parte 2 de la venta: la cierra el desarrollador, no el bot. El texto no
@@ -114,19 +147,6 @@ function wabot_responder($texto, &$conv, $cfg) {
      * turno sigue de largo y lo contesta el agente con sus palabras, que es lo
      * que pidió Pablo ("que siga contestando dudas, no venda, más natural").
      * El agente en esta fase no tiene herramientas de cobro. */
-    /* El cliente escribió: si había una tarea de retomar esperándolo a él, o
-     * vencida esperando al desarrollador, ya se cumplió sola. */
-    wabot_retomar_cliente_escribio($conv);
-
-    /* Un compromiso con fecha —"contactame en 30 días", "hablamos el lunes",
-     * "vuelvo en octubre y te escribo"— es lo más accionable que puede decir un
-     * cliente, así que se lee antes que cualquier otro corte: queda anotado
-     * como tarea (fecha, quién sigue, estado) y se contesta acorde. Vive acá,
-     * en el borde común, para que valga igual en modo agente, en el motor y
-     * con la charla ya derivada (auditoría 7-sep, punto C). */
-    $retomar = wabot_retomar_responder($texto, $conv, $cfg);
-    if ($retomar !== null) return $retomar;
-
     if (($conv['fase'] ?? '') === 'postdemo' && !empty($conv['presentado_ts'])) {
         $postdemo = wabot_postdemo_responder($texto, $conv, $cfg);
         if ($postdemo !== null) return $postdemo;
@@ -226,15 +246,7 @@ function wabot_responder($texto, &$conv, $cfg) {
         } elseif (!wabot_mensaje_pregunta_algo($texto) && wabot_acepta_demo($texto)
             && !preg_match('/\b(inmobiliaria|sistema de gestion)\b/u', $normal)
             && (!preg_match('/\bcursos\b/u', $normal) || $pendiente['tipo'] === 'elearning')) {
-            $conv['tipo'] = $pendiente['tipo'];
-            $conv['precio_cotizado'] = $pendiente['precio'];
-            $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
-            $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
-            $conv['precio_modelo'] = $pendiente['modelo'];
-            $conv['precio_cotizado_ts'] = time();
-            $conv['pitch_tipo'] = $pendiente['tipo'];
-            unset($conv['upgrade_pendiente'], $conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
-            wabot_evento_sesion($conv, 'upgrade_aceptado', ['tipo' => $conv['tipo']]);
+            wabot_upgrade_aplicar($conv, $pendiente);
             return [wabot_prediseno_texto($conv, $cfg)];
         } elseif (wabot_mensaje_pregunta_algo($texto)
             && preg_match('/\b(sena|senia|anticipo|adelanto|para arrancar|pago inicial|como (se )?(paga|abona)|formas? de pago|cuotas?)\b/u', $normal)
@@ -300,25 +312,6 @@ function wabot_responder($texto, &$conv, $cfg) {
         }
     }
 
-    /* "Mejor sin carrito, que me escriban por WhatsApp" después de cotizar
-     * ecommerce: cambió de modalidad y hay que recotizar. El modelo le ofreció
-     * la demo y al turno siguiente le preguntó si era para el mismo proyecto;
-     * el precio nuevo nunca llegó (27-ago). Es una decisión explícita del
-     * cliente, no una duda: la cotización nueva es determinista. */
-    if (!empty($conv['precio_dado'])) {
-        $tipoNuevo = wabot_texto_cambia_modalidad($texto, (string)($conv['tipo'] ?? ''));
-        if ($tipoNuevo !== null && isset($cfg['tipos'][$tipoNuevo])) {
-            wabot_evento_sesion($conv, 'cambio_modalidad', ['de' => (string)$conv['tipo'], 'a' => $tipoNuevo]);
-            // Se limpian las marcas del tipo viejo para que wabot_precio()
-            // cotice el nuevo de verdad en vez de devolver el resumen del que
-            // ya estaba dado.
-            $conv['precio_dado'] = false;
-            $conv['cta_muestra'] = false;
-            $conv['pitch_hecho'] = true;   // el pitch ya se hizo con el tipo viejo
-            return wabot_precio($tipoNuevo, $conv, $cfg);
-        }
-    }
-
     // El listado de datos se pide UNA vez. Después, a un "ok" / "listo
     // gracias" / "si" se le contesta una sola línea corta y, si sigue
     // acusando recibo, silencio: repetirle tres veces "cuando los tengas me
@@ -345,13 +338,10 @@ function wabot_responder($texto, &$conv, $cfg) {
         $plataforma = wabot_objecion_texto('plataforma', (string)$cfg['plataformas'], $conv, $cfg);
         /* "¿Me pueden hacer una página en Wix para mi negocio de tortas?"
          * recibía el "no trabajamos en Wix" y nada más: la charla quedaba sin
-         * próximo paso (V06, batería del 10-sep). Sin precio dado, la venta
-         * sigue en el mismo turno: el agente arranca con la objeción ya
-         * contestada adelante y cotiza o pregunta el rubro; sin agente, se
-         * pregunta el rubro. */
+         * próximo paso (V06, batería del 10-sep). Sin precio dado, se le
+         * pregunta el rubro en el mismo turno. */
         if (!empty($conv['precio_dado'])) return [$plataforma];
-        if ($modo !== 'agente') return [$plataforma, (string)$cfg['contame']];
-        $conv['_plataforma_contestada'] = $plataforma;
+        return [$plataforma, (string)$cfg['contame']];
     }
 
     /* Pedir una llamada, o hablar con una persona, deriva a Pablo SIEMPRE.
@@ -478,298 +468,5 @@ function wabot_responder($texto, &$conv, $cfg) {
         return wabot_derivar($conv, $cfg, 'datos_ya_dados');
     }
 
-    // Modo agente: Gemini lleva la charla con herramientas. Si falla por lo que
-    // sea, seguimos abajo con el motor de reglas, que nunca deja al cliente sin
-    // respuesta. Ojo: la conversación puede haber quedado ya derivada por una
-    // herramienta, y en ese caso el motor responde el silencio que corresponde.
-    // Con la charla cerrada el agente sigue trabajando, pero con las herramientas
-    // de venta sacadas (ver wabot_agente_tools): puede resolver dudas y no puede
-    // recotizar. Si falla, abajo contesta el motor, que tampoco reabre la venta.
-    if ($modo === 'agente') {
-        require_once __DIR__ . '/agente.php';
-        $r = wabot_agente($texto, $conv, $cfg);
-        if ($r !== null) return $r;
-        // La objeción de la plataforma ya estaba contestada: sin el agente,
-        // sale con la pregunta del rubro, igual que sin modo agente.
-        $plataformaDicha = trim((string)($conv['_plataforma_contestada'] ?? ''));
-        unset($conv['_plataforma_contestada']);
-        if ($plataformaDicha !== '') return [$plataformaDicha, (string)$cfg['contame']];
-        wabot_log('agente_fallback', ['tel' => $conv['tel'] ?? '']);
-        if (function_exists('wabot_evento_sesion')) {
-            wabot_evento_sesion($conv, 'ia_fallback_seguro', ['origen' => 'agente']);
-        }
-    }
-
-    $base = wabot_engine($texto, $conv, $cfg);
-    if (!$base) return $base;
-
-    if ($modo !== 'natural') return $base;
-
-    // Estos momentos NO se reescriben: son el cierre de la venta y el corte.
-    // Un precio parafraseado o una derivación ablandada cuestan plata.
-    if ($conv['fase'] === 'derivado') return $base;
-
-    // Solo se reescribe el primero. Los que van detrás son mensajes aparte
-    // —el formulario— y tienen que llegar como están, en su propio globo: si
-    // se los juntara para reescribirlos, se pierde el corte.
-    /* Los TRES PASOS son texto dictado por Pablo: desde el 14-sep van en su
-     * propio globo (el segundo) y no se tocan. El corte de abajo queda de red
-     * por si alguno vuelve a llegar pegado al precio: se reescribe la parte de
-     * arriba y los pasos se vuelven a pegar tal cual. */
-    $precioParte = $base[0];
-    $pasosParte  = '';
-    // Desde el 15-sep lo que no se reescribe es lo que incluye y las dos formas de contratarla.
-    $cabezaPasos = 'Incluye:';
-    if ($cabezaPasos !== '') {
-        $corte = mb_strpos($base[0], "\n\n" . $cabezaPasos);
-        if ($corte !== false) {
-            $precioParte = mb_substr($base[0], 0, $corte);
-            $pasosParte  = mb_substr($base[0], $corte);
-        }
-    }
-    $libre = wabot_redactar($texto, $precioParte, $conv, $cfg);
-    if ($libre === null) return $base;
-    $base[0] = $libre . $pasosParte;
-    return $base;
-}
-
-/**
- * Pide a Gemini una versión más natural del mensaje base y la valida.
- * Devuelve null si algo no cierra (y entonces se usa el texto fijo).
- */
-function wabot_redactar($mensajeCliente, $base, $conv, $cfg) {
-    if (isset($GLOBALS['WABOT_TEST_REDACTOR'])) {
-        $salida = call_user_func($GLOBALS['WABOT_TEST_REDACTOR'], $mensajeCliente, $base, $conv, $cfg);
-    } else {
-        if (WABOT_GEMINI_KEY === 'COMPLETAR') return null;
-        $salida = wabot_redactar_gemini($mensajeCliente, $base, $conv, $cfg);
-    }
-    if (!is_string($salida)) return null;
-
-    return wabot_validar_redaccion($salida, $base, $cfg);
-}
-
-/** Llama a Gemini con el mensaje base y el contexto de la charla. */
-function wabot_redactar_gemini($mensajeCliente, $base, $conv, $cfg) {
-    // Los tests no deben consumir cuota y, si Gemini acaba de devolver 429 o
-    // falló por transporte, el redactor respeta el mismo backoff que el agente.
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return null;
-    if (function_exists('wabot_ia_disponible') && !wabot_ia_disponible()) return null;
-
-    // Últimos intercambios, para que no repita lo que ya dijo.
-    $hist = '';
-    $inicio = (int)($conv['session_started_ts'] ?? 0);
-    $sesion = array_values(array_filter((array)($conv['transcript'] ?? []), function ($t) use ($inicio) {
-        return $inicio <= 0 || (int)($t['ts'] ?? 0) >= $inicio;
-    }));
-    foreach (array_slice($sesion, -6) as $t) {
-        $quien = $t['q'] === 'cliente' ? 'Cliente' : 'Vos';
-        $hist .= "$quien: " . mb_substr($t['t'], 0, 200) . "\n";
-    }
-
-    $extra = trim((string)($cfg['indicaciones_estilo'] ?? ''));
-
-    $prompt = <<<EOT
-Sos el asistente comercial de Gokywebs, una agencia argentina de diseño y desarrollo web. Atendés por WhatsApp a dueños de negocios.
-
-Tu tarea NO es inventar una respuesta: es reescribir el MENSAJE BASE con tus palabras, para que suene a persona y no a plantilla, manteniendo exactamente la misma información y la misma intención comercial.
-
-REGLAS QUE NO PODÉS ROMPER:
-- No agregues ni quites información. Nada de datos, precios, plazos ni funciones que no estén en el mensaje base.
-- Si el mensaje base tiene un precio, escribilo idéntico, con el mismo formato.
-- Si el mensaje base tiene un link, copialo idéntico, carácter por carácter, respetando mayúsculas. No inventes otros links.
-- Si el mensaje base tiene el link en un renglón propio, mantené ese salto de línea: la frase que presenta el link arranca en un renglón nuevo.
-- Voseo argentino, cordial y directo. Como habla un dueño de agencia, no un vendedor.
-- Sin emojis y sin íconos.
-- Nunca uses los signos de apertura de interrogación ni de exclamación. Solo el de cierre o ninguno.
-- Escribí con las tildes correctas: "querés", "preferís", "ahí", "buenísimo". Que sea informal no significa escribir mal.
-- Corto: 2 a 4 líneas como mucho. En WhatsApp nadie lee párrafos.
-- Si el mensaje base termina con una pregunta, la tuya también tiene que terminar preguntando lo mismo.
-- No saludes de nuevo si ya venían hablando.
-
-EOT;
-
-    if ($extra !== '') $prompt .= "INDICACIONES DE ESTILO DEL DUEÑO:\n$extra\n\n";
-    if ($hist !== '')  $prompt .= "ÚLTIMOS MENSAJES DE LA CHARLA:\n$hist\n";
-
-    $prompt .= "MENSAJE DEL CLIENTE AHORA:\n\"$mensajeCliente\"\n\n";
-    $prompt .= "MENSAJE BASE A REESCRIBIR:\n\"\"\"\n$base\n\"\"\"\n\n";
-    $prompt .= "Devolvé SOLO el mensaje reescrito, sin comillas ni explicaciones.";
-
-    $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
-    $body = json_encode([
-        'contents' => [['parts' => [['text' => $prompt]]]],
-        'generationConfig' => ['temperature' => 0.7, 'maxOutputTokens' => 400],
-    ], JSON_UNESCAPED_UNICODE);
-
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $body,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 25,
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($code < 200 || $code >= 300 || !$res) {
-        wabot_log('error', ['donde' => 'redactor', 'http' => $code]);
-        if (function_exists('wabot_ia_reportar_error')) wabot_ia_reportar_error('redactor', $code);
-        return null;
-    }
-    if (function_exists('wabot_ia_reportar_ok')) wabot_ia_reportar_ok();
-    $j = json_decode($res, true);
-    return $j['candidates'][0]['content']['parts'][0]['text'] ?? null;
-}
-
-/**
- * Palabras en portugués que se le escapan al modelo al reescribir en español.
- *
- * Un "si não tenés no pasa nada" llegó tal cual a una clienta el 26-ago: el
- * texto base decía "si no tenés", y el modelo lo retipeó con el "não" de al
- * lado. Se corrige en vez de rechazar la redacción entera: por una palabra no
- * vale la pena tirar abajo el mensaje y caer al motor de reglas.
- *
- * La lista es corta y solo tiene palabras que NO existen en español, para que
- * no pueda romper un texto correcto. Respeta mayúscula inicial.
- */
-function wabot_castellanizar($texto) {
-    // Nada de "com", "seu" o "para": existen o se parecen demasiado a palabras
-    // españolas y un reemplazo a ciegas rompería un texto correcto.
-    $mapa = [
-        'não'      => 'no',
-        'você'     => 'vos',
-        'vocês'    => 'ustedes',
-        'também'   => 'también',
-        'então'    => 'entonces',
-        'obrigado' => 'gracias',
-        'obrigada' => 'gracias',
-        'muito'    => 'muy',
-        'agora'    => 'ahora',
-        'preço'    => 'precio',
-        'preços'   => 'precios',
-        'são'      => 'son',
-    ];
-
-    foreach ($mapa as $pt => $es) {
-        $texto = preg_replace_callback('/\b' . preg_quote($pt, '/') . '\b/ui', function ($m) use ($es) {
-            $orig = $m[0];
-            if (mb_strtoupper($orig) === $orig) return mb_strtoupper($es);
-            if (mb_substr($orig, 0, 1) === mb_strtoupper(mb_substr($orig, 0, 1))) {
-                return mb_strtoupper(mb_substr($es, 0, 1)) . mb_substr($es, 1);
-            }
-            return $es;
-        }, $texto);
-    }
-    return $texto;
-}
-
-/**
- * Controles sobre lo que devolvió el modelo. Devuelve el texto limpio, o null
- * si falla algo importante (y entonces se usa el texto fijo del motor).
- */
-function wabot_validar_redaccion($salida, $base, $cfg, $exigirTodos = true) {
-    $s = trim($salida);
-    if ($s === '') return null;
-
-    // Comillas envolventes que a veces agrega el modelo.
-    $s = trim($s, "\"“”");
-
-    // Reglas de estilo duras: se limpian, no se rechazan.
-    $s = preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{2190}-\x{21FF}\x{2B00}-\x{2BFF}\x{FE0F}\x{2122}\x{2139}\x{3030}]/u', '', $s);
-    $s = str_replace(['¿', '¡'], '', $s);
-    $s = wabot_castellanizar($s);
-    $s = preg_replace("/\n{3,}/", "\n\n", $s);
-    $s = trim(preg_replace('/[ \t]+/', ' ', $s));
-    if ($s === '') return null;
-
-    // Largo razonable para WhatsApp: si se fue de mambo, mejor el texto fijo.
-    if (mb_strlen($s) > 700) return null;
-
-    // Dos artículos pegados: "iría un una página" salió así en producción. El
-    // guard viejo solo miraba definido+indefinido y dejaba pasar un+una.
-    if (preg_match('/\b(el|la|los|las|un|una|unos|unas) (un|una|unos|unas|el|la|los|las)\b/iu', $s)) return null;
-
-    $regateo = '/\b(descuento|rebaja|bonificacion|bonificación|mitad de precio|precio especial|precio amigo|te lo dejo en|dejartelo en|dejártelo en|se lo dejo en|\d{1,2}\s?%\s?(de\s)?(desc|off|rebaja)|\d{1,2}\s?(por ciento|porciento)|\d{1,3}\s?(mil|lucas)\b)/iu';
-    if (preg_match($regateo, $s) && !preg_match($regateo, $base)) return null;
-
-    // El precio del mensaje base tiene que estar idéntico. La regex termina en
-    // dígito a propósito: "un valor de $200.000." lleva el punto de la oración
-    // pegado, y si se lo tragara exigiría un "$200.000." literal que el modelo
-    // nunca escribe — toda redacción caería al texto fijo sin motivo.
-    // El "$" es OPCIONAL a propósito: un monto parafraseado sin el signo
-    // ("35.000 pesos" en vez de "$35.000") es la forma en que se coló un
-    // precio corrompido del adicional bilingüe en producción (30.000 real
-    // pasó a 35.000). Cualquier número con formato de miles (punto cada 3
-    // dígitos) se valida igual, tenga o no el símbolo de pesos adelante.
-    $preciosBase = [];
-    if (preg_match_all('/\$?\s?\d{1,3}(?:\.\d{3})+(?!\d)/u', $base, $m)) {
-        $preciosBase = array_unique($m[0]);
-        /* En modo agente la base son los textos de las herramientas del turno,
-         * y el modelo contesta lo que le preguntaron: "la seña es de $40.000"
-         * no tiene por qué repetir el precio y la mensualidad, y exigirlo tiraba
-         * respuestas correctas al respaldo (auditoría del 15-sep). Ahí alcanza
-         * con que no aparezca ningún monto que no esté en la base (abajo). */
-        if ($exigirTodos) {
-            foreach ($preciosBase as $precio) {
-                if (mb_strpos($s, $precio) === false) return null;
-            }
-        }
-    }
-
-    if (preg_match_all('/\$?\s?\d{1,3}(?:\.\d{3})+(?!\d)/u', $s, $ms)) {
-        $normalizar = function ($p) { return preg_replace('/[^0-9]/', '', $p); };
-        $base_norm = array_map($normalizar, $preciosBase);
-        foreach (array_unique($ms[0]) as $enSalida) {
-            if (!in_array($normalizar($enSalida), $base_norm, true)) return null;
-        }
-    }
-
-    // Los links permitidos son SOLO los de la config.
-    $permitidos = [];
-    $linksPrecio = [];
-    foreach (($cfg['tipos'] ?? []) as $t) {
-        if (!empty($t['link'])) { $permitidos[] = $t['link']; $linksPrecio[] = $t['link']; }
-    }
-    foreach (($cfg['mantenimiento_planes'] ?? []) as $plan) {
-        if (!empty($plan['link'])) $permitidos[] = $plan['link'];
-    }
-
-    // Si el base traía un link, tiene que estar igual (mayúsculas incluidas).
-    foreach ($permitidos as $link) {
-        if (mb_strpos($base, $link) !== false && mb_strpos($s, $link) === false) return null;
-    }
-
-    // Y no puede aparecer ningún link que el base no tuviera.
-    if (preg_match_all('#\b[a-z0-9.-]+\.[a-z]{2,}(?:/[^\s]*)?#i', $s, $u)) {
-        $normalizarLink = function ($l) {
-            $l = preg_replace('#^https?://#i', '', trim($l));
-            return rtrim($l, ".,;:!? \t");
-        };
-        foreach ($u[0] as $encontrado) {
-            $enc = $normalizarLink($encontrado);
-            $ok = false;
-            foreach ($permitidos as $link) {
-                if ($enc === $normalizarLink($link)) { $ok = true; break; }
-            }
-            if (!$ok && mb_strpos($base, $encontrado) === false) return null;   // link inventado
-        }
-    }
-
-    // El link del presupuesto va en un renglón nuevo, siempre. Si el modelo lo
-    // dejó todo en una línea, se corta en la oración que presenta el link: es
-    // el formato del mensaje de precio y no depende de que la IA lo respete.
-    foreach ($linksPrecio as $link) {
-        $pos = mb_strpos($s, $link);
-        if ($pos === false) continue;
-        if (mb_strpos(mb_substr($s, 0, $pos), "\n") !== false) continue;
-        $antes = mb_strrpos(mb_substr($s, 0, $pos), '. ');
-        if ($antes !== false) {
-            $s = mb_substr($s, 0, $antes + 1) . "\n" . ltrim(mb_substr($s, $antes + 2));
-        }
-    }
-
-    return $s;
+    return wabot_engine($texto, $conv, $cfg);
 }

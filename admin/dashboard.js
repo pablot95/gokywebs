@@ -2866,16 +2866,18 @@ searchPropuestasInput.addEventListener("input", renderPropuestas);
    con slugNegocio(), el mismo criterio que ya usa el link "Ver demo". */
 document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
-    const nombres = [...new Set(
-        propuestasListaVisible
-            .map(p => slugNegocio(getPropuestaNegocioFields(p).nombreNegocio))
-            .filter(Boolean)
-    )];
+    const filas = propuestasListaVisible.map(p => {
+        const carpeta = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
+        let modelos = [];
+        try { modelos = JSON.parse(p.modelosElegidos || '[]'); } catch (_) {}
+        return carpeta ? `${carpeta}${modelos.length ? ' — Modelos elegidos: ' + modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (carpeta de modelo: ${m.id})`).join(' + ') : ' — Sin modelo elegido'}` : '';
+    }).filter(Boolean);
+    const nombres = [...new Set(filas)];
     if (!nombres.length) {
         alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
         return;
     }
-    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada uno de estos nombres, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}`;
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de negocio de la lista, y agregale a cada una una subcarpeta 'images' adentro. Para diseñar, identificá el modelo por su letra, nombre y carpeta:\n\n${nombres.join("\n")}`;
     try {
         await writeTextToClipboard(texto);
         const prev = btn.textContent;
@@ -3067,6 +3069,7 @@ function renderPropuestas() {
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`
                         : `<strong>—</strong>`}
+                    <span class="prop-origen-badge ${p.esProspecto ? 'prop-origen-badge--prospecto' : ''}">${p.esProspecto ? 'Prospecto · eligió avanzar' : 'Ficha anterior / formulario'}</span>
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}

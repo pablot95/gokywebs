@@ -6,7 +6,6 @@
  */
 
 require_once __DIR__ . '/redactor.php';
-require_once __DIR__ . '/push.php';
 
 /* ── Verificación del webhook (la hace Meta una sola vez al configurarlo) ── */
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -257,10 +256,7 @@ function wabot_procesar_entrante($ev, $cfg) {
             }
             $conv['ultimo_cliente_ts'] = time();   // reabre la ventana de 24 h
             wabot_logo_sincronizar($conv);
-            if ($primerContacto) {
-                $conv['lead_recibido_evento'] = true;
-                wabot_evento($conv, 'lead_recibido');
-            }
+            if ($primerContacto) $conv['lead_recibido_evento'] = true;
 
             /* La baja se levanta si el cliente vuelve pidiendo una web. Ese
              * camino existía en redactor.php (cierre 'baja' + pide web), pero
@@ -365,13 +361,6 @@ function wabot_procesar_entrante($ev, $cfg) {
     } finally {
         wabot_lock_soltar($lock);
     }
-
-    /* Terminado el turno, si la charla quedó esperando a Pablo —el bot ya no la
-     * lleva y él todavía no la abrió— le suena el celular. Va acá, afuera del
-     * candado y leyendo de disco, para ver el estado FINAL: adentro del bucle
-     * habría que repetirlo en los cuatro puntos donde se corta, y cada uno deja
-     * la conversación en un estado distinto. */
-    wabot_push_si_sl(wabot_conv_load($clave), $cfg);
 
     if (wabot_cola_tiene($clave)) {
         $lock2 = wabot_lock_tomar($clave);
@@ -488,7 +477,6 @@ if (($payload['object'] ?? '') === 'instagram') {
                     $conv['pausado_hasta'] = time() + (int)($cfg['pausa_horas_humano'] ?? 24) * 3600;
                     $conv['handoff_pendiente'] = false;
                     wabot_conv_transcript($conv, 'humano', $textoEco);
-                    wabot_evento($conv, 'humano_responde');
                     wabot_conv_save($conv);
                     wabot_log('pausa_humano', ['tel' => $para, 'canal' => 'instagram']);
                 } finally {
@@ -541,7 +529,6 @@ foreach (($payload['entry'] ?? []) as $entry) {
                     $conv['pausado_hasta'] = time() + $horas * 3600;
                     $conv['handoff_pendiente'] = false;
                     wabot_conv_transcript($conv, 'humano', $textoEco);
-                    wabot_evento($conv, 'humano_responde');
                     wabot_conv_save($conv);
                     wabot_log('pausa_humano', ['tel' => $para, 'horas' => $horas]);
                 } finally {

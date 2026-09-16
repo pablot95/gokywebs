@@ -1,12 +1,13 @@
 <?php
 /**
- * wabot/engine.php — máquina de estados del bot (flujo v8).
+ * wabot/engine.php — máquina de estados del bot.
  * Recibe la conversación + el texto del cliente y devuelve las respuestas.
- * Los textos SIEMPRE salen de bot-config.json: Gemini solo etiqueta intenciones,
+ * Los textos SIEMPRE salen de textos.php: Gemini solo etiqueta intenciones,
  * nunca redacta lo que ve el cliente.
  */
 
 require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/rubros-sugeridos.php';
 
 /**
  * Prepara una sesión antes de que cualquier modo toque ultimo_ts.
@@ -38,9 +39,6 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
 
     if (function_exists('wabot_conv_reset_si_vieja')) {
         wabot_conv_reset_si_vieja($conv, $cfg, $ahora);
-        /* La charla cotizada antes del 10-sep no tiene el precio congelado: se
-         * le siembra el que el bot le dijo, para que siga viendo el suyo. */
-        wabot_precio_sembrar($conv, $cfg);
     } else {
         $resetDias = (int)($cfg['reset_dias'] ?? 7);
         $vieja = (int)($conv['ultimo_ts'] ?? 0) > 0
@@ -48,7 +46,7 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
               && ($conv['fase'] ?? 'nuevo') !== 'nuevo';
         if ($vieja) {
             foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
-                      'ultimo_bot','sistema_problema','sistema_actual','sistema_usuarios','productos_cantidad',
+                      'ultimo_bot','sistema_problema','productos_cantidad',
                       'estilo','incluir','combo_cursos'] as $k) {
                 $conv[$k] = null;
             }
@@ -80,9 +78,8 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
 }
 
 /**
- * Emite cada hito comercial una sola vez por sesión. Durante una ejecución del
- * agente los eventos quedan en la copia transaccional y recién se escriben si
- * la respuesta completa se confirma.
+ * Marca cada hito comercial una sola vez por sesión (queda en la conversación,
+ * en eventos_emitidos_sesion: el anti-repetición y el panel lo leen de ahí).
  */
 function wabot_evento_sesion(&$conv, $evento, $datos = []) {
     if (empty($conv['session_id'])) {
@@ -96,22 +93,7 @@ function wabot_evento_sesion(&$conv, $evento, $datos = []) {
     $emitidos = (array)($conv['eventos_emitidos_sesion'] ?? []);
     if (($emitidos[$evento] ?? null) === $sesion) return false;
     $conv['eventos_emitidos_sesion'][$evento] = $sesion;
-
-    if (!empty($conv['_eventos_diferir'])) {
-        $conv['_eventos_pendientes'][] = ['evento' => $evento, 'datos' => (array)$datos];
-        return true;
-    }
-    return function_exists('wabot_evento') ? wabot_evento($conv, $evento, $datos) : false;
-}
-
-/** Confirma los eventos que una ejecución transaccional dejó en espera. */
-function wabot_eventos_confirmar(&$conv) {
-    $pendientes = (array)($conv['_eventos_pendientes'] ?? []);
-    unset($conv['_eventos_diferir'], $conv['_eventos_pendientes']);
-    if (!function_exists('wabot_evento')) return;
-    foreach ($pendientes as $p) {
-        wabot_evento($conv, (string)($p['evento'] ?? ''), (array)($p['datos'] ?? []));
-    }
+    return true;
 }
 
 /** Último texto del cliente dentro del transcript persistido. */
@@ -460,9 +442,7 @@ function wabot_regateo_responder($texto, &$conv, $cfg) {
          * descuento?" preguntan si existe: la respuesta empieza por el no, con
          * las dos formas (batería del 15-sep). El texto de 'caro' ofrecía el
          * mensual sin contestarla. La contraoferta con número sigue igual. */
-        // La charla del pago único viejo conserva su respuesta (Pablo, 15-sep).
-        $modeloViejo = !empty($conv['tipo']) && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico';
-        if (!wabot_regateo_es_contraoferta($texto) && !$modeloViejo) {
+        if (!wabot_regateo_es_contraoferta($texto)) {
             $conv['objecion_dicha'] = $dichas;
             $conv['objecion_dicha']['descuento'] = true;
             return [wabot_texto_descuento($conv, $cfg)];
@@ -839,8 +819,6 @@ function wabot_texto_reformulado($mensajes, $cfg) {
         // El saludo repetido por el modelo se reformula en vez de derivar (14-sep).
         'menu'              => 'contame',
         'contame'           => 'contame_2',
-        'desempate_turnos'  => 'desempate_turnos_2',
-        'desempate_comercio' => 'desempate_comercio_2',
         'desempate_cursos'  => 'desempate_cursos_2',
         /* Las respuestas que piden el rubro para dar el valor (auditoría del
          * 15-sep): dos "cuánto sale?" o dos "cómo se paga?" sin rubro
@@ -891,6 +869,18 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     $mensajes = array_values(array_filter((array)$mensajes, function ($m) {
         return trim((string)$m) !== '';
     }));
+    if ($modo === 'turno' && empty($conv['portfolio_mostrado']) && empty($conv['esProspecto'])
+        && empty($conv['bot_off']) && !empty($mensajes)) {
+        $yaIncluido = strpos(implode("\n", $mensajes), 'cinco trabajos reales') !== false;
+        if ($yaIncluido) $conv['portfolio_mostrado'] = true;
+        elseif (empty($conv['precio_dado'])) {
+            $ultimo = wabot_ultimo_texto_cliente($conv);
+            if (wabot_rubro_detectar($ultimo) !== null) {
+                $sugerencias = wabot_rubro_sugerencias($ultimo, (string)($conv['tipo'] ?? ''));
+                if ($sugerencias) { $mensajes[] = $sugerencias['texto']; $conv['portfolio_mostrado'] = true; }
+            }
+        }
+    }
     if (!$mensajes) return $mensajes;
 
     $mensajes = wabot_salida_limpiar($mensajes);
@@ -983,7 +973,7 @@ function wabot_salida_sin_avance($mensajes, &$conv, $cfg) {
     }
 
     $campos = ['fase', 'tipo', 'cierre', 'nombre_negocio', 'descripcion', 'colores',
-               'referencia', 'productos_cantidad', 'sistema_problema', 'sistema_usuarios'];
+               'referencia', 'productos_cantidad', 'sistema_problema'];
     $partes = [];
     foreach ($campos as $c) $partes[] = trim((string)($conv[$c] ?? ''));
     foreach (['precio_dado', 'lead_creado', 'pitch_hecho', 'nombre_confirmado'] as $f) {
@@ -1670,61 +1660,6 @@ function wabot_texto_pregunta_precio_combinado($texto) {
 
 
 /**
- * Objeción de precio dicha sin la palabra "caro": "es bastante para mí ahora",
- * "no me alcanza". El clasificador la dejaba pasar y el modelo contestaba
- * "tomate el tiempo que necesites" sin el argumento del pago único (N04, 1-sep).
- * Lista corta y literal: un falso positivo acá mete la objeción de precio en
- * una charla que no la tuvo.
- */
-function wabot_texto_objecion_precio_suave($texto) {
-    $t = wabot_normalizar_frase($texto);
-    if ($t === '') return false;
-    return (bool)(
-        preg_match('/\bes (bastante|mucho|un monton|una banda) para mi\b/u', $t)
-        || preg_match('/\bno me alcanza\b/u', $t)
-        || preg_match('/\bfuera de (mi|nuestro) presupuesto\b/u', $t)
-        || preg_match('/\bno (puedo|podemos) gastar (tanto|eso)\b/u', $t)
-        || preg_match('/\bse me va de (precio|presupuesto)\b/u', $t)
-        || preg_match('/\b(medio|un poco|algo) car[oa]\b/u', $t)
-    );
-}
-
-/**
- * Un medio, un portal o cualquier web cuyo contenido cambia todo el tiempo
- * (noticias, novedades, entrevistas) NO es una landing: necesita panel propio
- * para publicar, y eso se cotiza como sistema a medida. El prompt del agente ya
- * lo decía con todas las letras y el modelo igual le vendió una landing a quien
- * acababa de decir "solo que sea para las noticias locales" (caso Jorge,
- * 26-ago) — otra vez, una regla que tiene que estar garantizada necesita red de
- * código, no solo prompt.
- */
-function wabot_contexto_es_portal_contenido($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    if ($t === '') return false;
-    return (bool)(
-        preg_match('/\b(portal|sitio|pagina|web|revista|agencia|blog)\s+de\s+noticias\b/u', $t)
-        || preg_match('/\b(diario|periodico|noticiero)\s+(digital|online|local|de la (zona|ciudad|localidad))\b/u', $t)
-        || preg_match('/\b(medio de (prensa|comunicacion)|periodistic\w+|revista (digital|online))\b/u', $t)
-        || preg_match('/\b(publicar|subir|cargar|actualizar|redactar|escribir|difundir)\b.{0,40}\b(noticias?|notas?|articulos?|novedades|entrevistas?|cronicas?)\b/u', $t)
-        || preg_match('/\b(noticias?|novedades|entrevistas?)\b.{0,30}\b(locales|del? la (zona|localidad|ciudad|region)|del (pueblo|barrio|departamento|municipio))\b/u', $t)
-        /* "autoadministrable" solo ya no alcanza: desde el 13-sep todas las
-         * webs traen panel para editar textos e imágenes (Pablo). Portal es
-         * el que publica contenido nuevo todo el tiempo (las reglas de arriba). */
-        /* Contenido que cargan los USUARIOS, no el dueño: reseñas, opiniones,
-         * foros, clasificados, directorios. Necesita cuentas, moderación y
-         * panel, o sea un desarrollo a medida — nunca una landing. Sin esto,
-         * "es para una página de reseñas" no matcheaba ningún rubro y el bot
-         * se quedaba preguntando "a qué rubro te dedicás" una y otra vez
-         * (caso BJR Best Job Review, 27-ago: se lo preguntó dos veces
-         * seguidas con distinta redacción y la charla no avanzó nunca). */
-        || preg_match('/\b(pagina|sitio|web|portal|plataforma|app)\b.{0,15}\bde\b.{0,10}\b(resenas?|reviews?|opiniones|calificaciones|valoraciones|puntajes)\b/u', $t)
-        || preg_match('/\b(resenas?|reviews?|opiniones|comentarios|calificaciones)\b.{0,25}\b(laborales|de empresas|de usuarios|de clientes|de empleos|de trabajos)\b/u', $t)
-        || preg_match('/\b(los )?(usuarios|la gente|las personas)\b.{0,30}\b(publiquen|suban|carguen|dejen|escriban|opinen|comenten|califiquen|puntuen)\b/u', $t)
-        || preg_match('/\b(foro|clasificados|directorio de (empresas|profesionales|comercios)|red social|marketplace|bolsa de (trabajo|empleo))\b/u', $t)
-    );
-}
-
-/**
  * "Y si quisiera hacerlo en un solo pago para la creación y encargarme yo de
  * mantenerla?" (14-sep). Hace falta la idea de pagar una vez Y algo del plan o
  * de mantenerla: "no puedo pagar todo junto, en cuotas?" es otra cosa.
@@ -1777,8 +1712,7 @@ function wabot_texto_pregunta_cambio_modalidad($texto) {
 }
 
 function wabot_texto_cambio_modalidad($cfg) {
-    $t = trim((string)($cfg['cambio_modalidad'] ?? ''));
-    return $t !== '' ? $t : 'Arrancás con la forma que más te sirva hoy. Si más adelante querés pasarte de una a la otra, las condiciones de ese cambio las coordinás con el desarrollador.';
+    return trim((string)$cfg['cambio_modalidad']);
 }
 
 /**
@@ -1806,7 +1740,6 @@ function wabot_texto_costos_despues($texto, $conv, $cfg) {
     $t = wabot_normalizar_frase((string)$texto);
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
     $unico = 'Con el pago único la web queda paga: lo que queda para después es renovar el hosting y el dominio una vez al año, a partir del segundo año.';
-    if ($v !== null && $v['modelo'] === 'unico') return $unico;
     $monto = ($v !== null && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] : '';
     $mensual = 'Con el servicio mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte y el mantenimiento.';
     $nombraUnico = (bool)preg_match('/\b(pago unico|un solo pago|unico pago|una sola vez|de una)\b/u', $t);
@@ -1832,8 +1765,7 @@ function wabot_texto_pregunta_devolucion($texto) {
 }
 
 function wabot_texto_devolucion($cfg) {
-    $t = trim((string)($cfg['devolucion'] ?? ''));
-    return $t !== '' ? $t : 'La seña no se devuelve. Si el diseño principal no te convence lo volvemos a hacer, hasta dos veces; una vez elegido, tenés hasta tres devoluciones para ajustar el resto.';
+    return trim((string)$cfg['devolucion']);
 }
 
 /**
@@ -1934,8 +1866,6 @@ function wabot_texto_pregunta_cual_forma_conviene($texto) {
 
 function wabot_texto_cual_forma_conviene($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
-    // La charla cotizada con el pago único viejo no tiene dos formas.
-    if ($v !== null && $v['modelo'] === 'unico') return null;
     $montos = $v !== null && $v['precio'] !== '' && $v['sena'] !== '' && $v['mensualidad'] !== '';
     $unico = $montos
         ? '• Pago único de ' . $v['precio'] . ': arrancás con una seña de ' . $v['sena'] . ', el saldo va al entregar y después solo renovás el hosting y el dominio una vez al año.'
@@ -1969,7 +1899,6 @@ function wabot_texto_pregunta_inicio_mensual($texto) {
 
 function wabot_texto_inicio_mensual($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
-    if ($v !== null && $v['modelo'] === 'unico') return null;
     $monto = ($v !== null && $v['mensualidad'] !== '') ? ', de ' . $v['mensualidad'] : '';
     return 'Con el servicio mensual no hay pago inicial: arrancás con la primera mensualidad' . $monto . ', y con eso armamos la web y la dejamos funcionando.';
 }
@@ -2002,11 +1931,12 @@ function wabot_modalidad_elegida_en($texto) {
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
     $unico   = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto))\b';
-    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
+    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
     $elegida = null;
     foreach (preg_split('/(?<=[?.!;,\n])/u', $crudo) as $frase) {
         if (trim($frase) === '' || mb_strpos($frase, '?') !== false || mb_strpos($frase, '¿') !== false) continue;
         $t = wabot_normalizar_frase($frase);
+        if (preg_match('/\bsi (elijo|eligiera|eligiese|voy|fuera|hago|hiciera|prefiero)\b/u', $t)) continue;
         // Preguntar por una forma no es elegirla: "quiero saber del pago único".
         if ($t === '' || preg_match('/\b(saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?)\b/u', $t)) continue;
         // Rechazar una forma es elegir la otra.
@@ -2023,7 +1953,7 @@ function wabot_modalidad_elegida_en($texto) {
 
 function wabot_texto_ofrece_mensual($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
-    if ($v !== null && ($v['modelo'] === 'unico' || $v['mensualidad'] === '')) return null;
+    if ($v !== null && $v['mensualidad'] === '') return null;
     $monto = $v !== null ? ' de ' . $v['mensualidad'] : '';
     return 'Dale, entonces está el servicio mensual' . $monto . ': sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando, y no hay permanencia.';
 }
@@ -2046,9 +1976,9 @@ function wabot_texto_pide_pagar_antes_de_demo($texto, $conv) {
 
 function wabot_texto_pagar_antes_de_demo($conv) {
     if (!empty($conv['link_form_enviado'])) {
-        return 'Primero va la demo, que es gratis: completá el formulario que te pasé y te la armamos. Si te gusta, ahí coordinamos el pago con la forma que elijas.';
+        return 'Antes de pagar completá el formulario que te pasé: ahí arrancamos con tu web y coordinamos el pago con la forma que elijas.';
     }
-    return 'Primero va la demo, que es gratis: te la armamos para que veas cómo queda tu web, y si te gusta, ahí coordinamos el pago con la forma que elijas. Querés que la preparemos?';
+    return 'Antes de pagar necesito los datos de tu negocio para armar la web. Te paso el formulario y ahí coordinamos el pago con la forma que elijas. ¿Querés que te lo mande?';
 }
 
 /**
@@ -2067,7 +1997,6 @@ function wabot_texto_pregunta_saldo_cuando($texto) {
 
 function wabot_texto_saldo_cuando($conv, $cfg) {
     $v = (!empty($conv['tipo']) && !empty($conv['precio_dado'])) ? wabot_precio_vigente($conv, $cfg) : null;
-    if ($v !== null && $v['modelo'] === 'unico') return null;
     if ($v !== null && $v['sena'] !== '' && $v['saldo'] !== '' && $v['mensualidad'] !== '') {
         return 'Con el pago único no se paga todo antes: la seña de ' . $v['sena'] . ' es para arrancar y el saldo, ' . $v['saldo']
             . ', se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad de ' . $v['mensualidad'] . '.';
@@ -2075,13 +2004,28 @@ function wabot_texto_saldo_cuando($conv, $cfg) {
     return 'Con el pago único no se paga todo antes: la seña es para arrancar y el saldo se paga al entregar la web. Con el servicio mensual no hay saldo: pagás la mensualidad.';
 }
 
+function wabot_pregunta_diferencia_pagos($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '' || mb_strlen($t) > 220) return false;
+    $comparacion = '(diferencia|diferente|comparar|conviene|cambia|incluye|mas barato|mas caro|por que|porque)';
+    $pagos = '(pago unico|mensual|abono|planes|precios|formas de pago|opciones|dos formas|uno y otro|ambas)';
+    return (bool)(preg_match('/\b' . $comparacion . '\b.{0,70}\b' . $pagos . '\b/u', $t)
+        || preg_match('/\b' . $pagos . '\b.{0,70}\b' . $comparacion . '\b/u', $t)
+        || preg_match('/\b(uno y otro|un precio y (el )?otro|los dos precios|entre los dos|entre pago unico y mensual)\b/u', $t));
+}
+
+function wabot_diferencia_pagos_texto($conv, $cfg) {
+    $v = (!empty($conv['precio_dado']) && !empty($conv['tipo'])) ? wabot_precio_vigente($conv, $cfg) : null;
+    $unico = ($v && $v['precio'] !== '') ? ' de ' . $v['precio'] . ', con seña de ' . $v['sena'] . ' al empezar y saldo de ' . $v['saldo'] . ' al entregar' : ', con seña al empezar y saldo al entregar';
+    $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : ' por mes';
+    return "La diferencia es cómo contratás y mantenés la web, no dos cuotas del mismo precio.\n"
+        . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Hosting y dominio están incluidos el primer año; después se renuevan anualmente. Un cambio pedido después de la entrega se cotiza aparte.'
+        . "\nAbono mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras el abono esté activo incluye hosting, dominio, soporte y mantenimiento técnico. No hay permanencia; a los 12 meses podés reclamar el código y la propiedad.';
+}
+
 /** El punto de entrada: la respuesta fija que corresponde, o null. */
 function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
     if (trim((string)$texto) === '') return null;
-    /* La charla cotizada con el pago único viejo (antes del 10-sep) sigue con
-     * sus textos de siempre: "lo viejo no toques nada" (Pablo, 15-sep). */
-    if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
-        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return null;
     $tPago = wabot_normalizar_frase($texto);
     if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
         && mb_strlen($tPago) <= 220
@@ -2091,13 +2035,17 @@ function wabot_respuesta_pago_fija($texto, &$conv, $cfg) {
         && !wabot_texto_pregunta_devolucion($texto)) {
         $vPago = wabot_precio_vigente($conv, $cfg);
         if ($vPago['modelo'] === 'doble' && $vPago['sena'] !== '' && $vPago['saldo'] !== '') {
-            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar, después de aprobar la demo, y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
+            return ['Con el pago único son ' . $vPago['precio'] . ' en total: una seña de ' . $vPago['sena'] . ' para empezar y ' . $vPago['saldo'] . ' de saldo al entregar. No se suma la mensualidad del servicio mensual.'];
         }
     }
     $confusion = wabot_texto_confusion_montos($texto, $conv, $cfg);
     if ($confusion !== null) {
         wabot_evento_sesion($conv, 'montos_confundidos');
         return [$confusion];
+    }
+    if (wabot_pregunta_diferencia_pagos($texto)) {
+        wabot_evento_sesion($conv, 'diferencia_pagos');
+        return [wabot_diferencia_pagos_texto($conv, $cfg)];
     }
     $rechazo = wabot_texto_rechaza_una_forma($texto);
     if ($rechazo === 'mensual') {
@@ -2172,11 +2120,10 @@ function wabot_regateo_es_contraoferta($texto) {
 
 /** No hay descuentos, y las dos formas con los montos de esta charla (15-sep). */
 function wabot_texto_descuento($conv, $cfg) {
-    $base = trim((string)($cfg['descuento'] ?? ''));
-    if ($base === '') $base = 'No manejamos descuentos: el valor es el mismo por transferencia o con tarjeta.';
+    $base = trim((string)$cfg['descuento']);
     if (empty($conv['tipo']) || empty($conv['precio_dado'])) return $base;
     $v = wabot_precio_vigente($conv, $cfg);
-    if ($v['modelo'] === 'unico' || $v['precio'] === '' || $v['mensualidad'] === '') return $base;
+    if ($v['precio'] === '' || $v['mensualidad'] === '') return $base;
     $unico = 'pago único de ' . $v['precio'] . ($v['sena'] !== '' ? ', con una seña de ' . $v['sena'] . ' y el saldo al entregar' : '');
     return $base . ' Lo que sí podés elegir es la forma: ' . $unico . ', o servicio mensual de ' . $v['mensualidad'] . ', sin pago inicial.';
 }
@@ -2197,20 +2144,6 @@ function wabot_rechaza_plan_mensual($texto) {
         || preg_match('/\b(no (lo )?necesito|no me hace falta)\b.{0,15}\b' . $cadaMes . '/u', $t)
         || (preg_match('/\b(de vez en cuando|cada tanto|cuando (lo )?necesite|cuando haga falta|cuando sea necesario|a demanda|solo cuando)\b/u', $t)
             && preg_match('/\b' . $plan . '\b|\b' . $cadaMes . '/u', $t))
-    );
-}
-
-function wabot_pidio_institucional_explicito($contexto) {
-    $t = wabot_normalizar_frase($contexto);
-    return (bool)(
-        preg_match('/\b(varias paginas|multiples paginas|mas paginas|varias secciones|multiples secciones)\b/u', $t)
-        || preg_match('/\bsecciones? para\b.{0,30}\b(historia|autoridades|equipo|novedades)\b/u', $t)
-        || preg_match('/\balgo mas completo\b.{0,30}\bpaginas?\b/u', $t)
-        || preg_match('/\b(con|con las|con la)\b.{0,20}\bsecciones\b.{0,40}\b(historia|autoridades|carreras|novedades|equipo)\b/u', $t)
-        /* "una pagina con la historia, las autoridades, las novedades y los
-         * actos" no dice "secciones" pero pide dos o mas: eso ES la web
-         * institucional (D08, 1-sep — una escuela quedo cotizada como landing). */
-        || preg_match_all('/\b(historia|autoridades|novedades|actos|equipo docente|carreras|circulares)\b/u', $t) >= 2
     );
 }
 
@@ -2236,6 +2169,25 @@ function wabot_texto_es_duda_de_valor($texto) {
         || preg_match('/\b(me|nos|le|les) conviene\b/u', $t)
         || preg_match('/\bsirve (de verdad|realmente)\b/u', $t)
     );
+}
+
+/**
+ * "¿Cuánto sale una web para mostrar mis servicios y cuánto una tienda online?"
+ * nombra DOS tipos de web: es una comparación, no un rubro. El matcher local
+ * leería "tienda online" como ecommerce y cotizaría sin saber a qué se dedica.
+ */
+function wabot_texto_compara_tipos($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return false;
+    $grupos = [
+        '/\b(tienda online|tienda virtual|ecommerce|e commerce|con carrito|vender online)\b/u',
+        '/\b(sitio profesional|landing|pagina (comun|simple|basica|normal|web)|web (comun|simple|basica|normal)|para mostrar (mis|los|nuestros) servicios|web de servicios)\b/u',
+        '/\b(plataforma de cursos|campus virtual|aula virtual|vender (los |mis )?cursos)\b/u',
+        '/\b(web )?inmobiliaria\b/u',
+    ];
+    $n = 0;
+    foreach ($grupos as $re) if (preg_match($re, $t)) $n++;
+    return $n >= 2;
 }
 
 function wabot_texto_pide_precio($texto) {
@@ -2285,32 +2237,6 @@ function wabot_dijo_te_aviso($texto) {
         '/\b(yo|despues|luego|mas adelante)\b.{0,12}\b(te|los|les)\b.{0,4}\b(contacto|escribo|aviso|busco)\b/u',
         ' ' . $t . ' '
     );
-}
-
-/**
- * ¿Es solo una lista de colores? "Rosa, amarillo, beige" contestado a la
- * pregunta de la referencia sigue hablando de colores, no de una web que le
- * gustó (caso Julieta, 21-ago).
- */
-function wabot_parece_lista_colores($texto) {
-    $t = wabot_normalizar_frase($texto);
-    if ($t === '') return false;
-    $colores = ['rojo', 'roja', 'rosa', 'rosado', 'rosados', 'amarillo', 'amarilla', 'azul', 'azules', 'celeste',
-                'verde', 'verdes', 'violeta', 'lila', 'morado', 'purpura', 'naranja', 'beige', 'beis', 'crema',
-                'blanco', 'blanca', 'negro', 'negra', 'gris', 'grises', 'marron', 'bordo', 'dorado', 'dorados',
-                'plateado', 'turquesa', 'fucsia', 'coral', 'ocre', 'mostaza', 'terracota', 'nude', 'cobre', 'salmon'];
-    $conectores = ['y', 'o', 'con', 'el', 'la', 'los', 'las', 'un', 'una', 'algo', 'de', 'en',
-                   'claro', 'clara', 'claros', 'oscuro', 'oscura', 'oscuros', 'tonos', 'tono',
-                   'pasteles', 'pastel', 'calidos', 'calido', 'frios', 'suaves', 'colores', 'color'];
-    // "Colores cálidos" o "tonos pasteles" también hablan de paleta aunque no
-    // nombren ningún color concreto.
-    $familias = ['pastel', 'pasteles', 'calidos', 'calidas', 'frios', 'frias', 'neutros', 'neutrales', 'vivos', 'tierra'];
-    $hayColor = false;
-    foreach (preg_split('/\s+/u', $t) as $palabra) {
-        if (in_array($palabra, $colores, true) || in_array($palabra, $familias, true)) { $hayColor = true; continue; }
-        if (!in_array($palabra, $conectores, true)) return false;
-    }
-    return $hayColor;
 }
 
 /**
@@ -2471,19 +2397,6 @@ function wabot_preguntas_del_mensaje($texto, $conv, $fase = null) {
     return $claves;
 }
 
-/** De esos temas, ¿cuáles NO menciona lo que el bot está por mandar? */
-function wabot_temas_sin_contestar($claves, $mensajes) {
-    $dicho = wabot_normalizar_frase(implode(' ', (array)$mensajes));
-    $perseguibles = wabot_temas_perseguibles();
-    $faltan = [];
-    foreach ((array)$claves as $k) {
-        if (!isset($perseguibles[$k])) continue;
-        if (preg_match('/' . $perseguibles[$k] . '/u', $dicho)) continue;   // ya lo nombró
-        $faltan[] = $k;
-    }
-    return $faltan;
-}
-
 /**
  * Arma la respuesta a varias claves de info: una sola por línea, en viñetas si
  * hay más de una. Extraído de wabot_engine() para que el agente pueda usar la
@@ -2503,248 +2416,6 @@ function wabot_info_lineas($keys, $conv, $cfg) {
     $lineas = array_values(array_filter($lineas, function ($l) { return trim((string)$l) !== ''; }));
     if (!$lineas) return '';
     return count($lineas) > 1 ? "- " . implode("\n- ", $lineas) : $lineas[0];
-}
-
-/**
- * "Podríamos hacer un punto de 30 días, contactarnos en un mes y medio."
- *
- * Héctor no se estaba yendo: estaba pidiendo que lo busquemos más adelante,
- * que es lo más parecido a un sí que da alguien sin plata hoy. El bot le
- * contestó "cuando estés listo, escribime" y le devolvió toda la
- * responsabilidad al cliente (29-ago). Devuelve los días, o null.
- */
-function wabot_texto_pide_retomar_en($texto) {
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return null;
-    // Tiene que hablar de VOLVER a hablar: un plazo suelto puede ser cualquier cosa.
-    if (!preg_match('/\b(contact\w+|escrib\w+|hablamos|hablemos|retom\w+|charlamos|me avisas|avisame|lo vemos|punto de|volver a)\b/u', $t)) return null;
-
-    if (preg_match('/\b(\d{1,3})\s*dias?\b/u', $t, $m)) {
-        $d = (int)$m[1];
-        if ($d >= 7 && $d <= 365) return $d;
-    }
-    if (preg_match('/\b(un mes y medio|mes y medio)\b/u', $t))            return 45;
-    /* "La semana" pelada NO es un plazo: "les escribí la semana pasada y no
-     * me contestaron" agendaba un retomar en siete días y contestaba "te
-     * escribo en una semana" a un reclamo (auditoría 9-sep). */
-    if (preg_match('/\b(una|1)\s*semana\b/u', $t)
-        || preg_match('/\b(la )?(proxima|siguiente|entrante)\s+semana\b/u', $t)
-        || preg_match('/\bla semana (proxima|siguiente|entrante)\b/u', $t)
-        || preg_match('/\bsemana\s*que viene\b/u', $t))                   return 7;
-    if (preg_match('/\b(dos|2)\s*semanas\b/u', $t))                       return 14;
-    if (preg_match('/\b(quince dias|15 dias|una quincena)\b/u', $t))      return 15;
-    if (preg_match('/\b(tres|3)\s*semanas\b/u', $t))                      return 21;
-    if (preg_match('/\b(un|1)\s*mes\b/u', $t))                            return 30;
-    if (preg_match('/\b(dos|2)\s*meses\b/u', $t))                         return 60;
-    if (preg_match('/\b(tres|3)\s*meses\b/u', $t))                        return 90;
-    if (preg_match('/\b(seis|6)\s*meses\b/u', $t))                        return 180;
-    return null;
-}
-
-/**
- * Fecha de CALENDARIO para retomar, en las palabras del cliente.
- *
- * wabot_texto_pide_retomar_en() entiende plazos ("en 30 días", "en un mes") y
- * nada más: "escribime el lunes", "hablamos mañana" y "vuelvo a principios de
- * octubre y te escribo" pasaban de largo y la fecha se perdía (auditoría
- * 7-sep, punto C). Acá van las formas de calendario. Devuelve
- * ['ts' => int, 'humano' => string] o null. El ts cae a las 10:00 de
- * Argentina de ese día, que es cuando el cron puede escribir.
- */
-function wabot_texto_retomar_fecha($texto, $ahora = null) {
-    $ahora = $ahora ?? time();
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return null;
-    // Tiene que hablar de VOLVER a hablar: una fecha suelta puede ser cualquier cosa.
-    if (!preg_match('/\b(contact\w+|escrib\w+|hablamos|hablemos|retom\w+|charlamos|me avisas|avisame|lo vemos|volver a|vuelvo|te aviso|te digo|te confirmo|te contesto|te respondo|seguimos|lo seguimos|lo cerramos|llamame|me llamas|buscame)\b/u', $t)) return null;
-
-    $local = $ahora - 3 * 3600;   // reloj argentino, UTC-3 fijo
-    $hoyY = (int)gmdate('Y', $local); $hoyM = (int)gmdate('n', $local); $hoyD = (int)gmdate('j', $local);
-    $hoyW = (int)gmdate('N', $local);   // 1 = lunes
-    $meses = ['enero' => 1, 'febrero' => 2, 'marzo' => 3, 'abril' => 4, 'mayo' => 5, 'junio' => 6, 'julio' => 7,
-              'agosto' => 8, 'septiembre' => 9, 'setiembre' => 9, 'octubre' => 10, 'noviembre' => 11, 'diciembre' => 12];
-    $nombreMes = [1 => 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-    $diasSemana = ['lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'domingo' => 7];
-    $reMes = '(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre)';
-
-    // 10:00 AR de un día dado (13:00 UTC).
-    $diaTs = function ($y, $m, $d) { return gmmktime(13, 0, 0, $m, $d, $y); };
-    $hoyTs = $diaTs($hoyY, $hoyM, $hoyD);
-    // Un día de un mes, en el año en que todavía no pasó.
-    $enMes = function ($mes, $dia) use ($hoyY, $hoyM, $hoyD, $diaTs) {
-        $y = $hoyY;
-        if ($mes < $hoyM || ($mes === $hoyM && $dia <= $hoyD)) $y++;
-        $tope = (int)gmdate('t', gmmktime(0, 0, 0, $mes, 1, $y));
-        return $diaTs($y, $mes, min($dia, $tope));
-    };
-
-    if (preg_match('/\bpasado manana\b/u', $t)) {
-        return ['ts' => $hoyTs + 2 * 86400, 'humano' => 'pasado mañana'];
-    }
-    // "a la mañana" es un momento del día, no una fecha.
-    if (preg_match('/\bmanana\b/u', $t) && !preg_match('/\b(a|por|en|de|esta) la manana\b/u', $t)) {
-        return ['ts' => $hoyTs + 86400, 'humano' => 'mañana'];
-    }
-    if (preg_match('/\b(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\b/u', $t, $m)) {
-        $delta = ($diasSemana[$m[1]] - $hoyW + 7) % 7;
-        if ($delta === 0) $delta = 7;   // "el lunes" dicho un lunes es el que viene
-        $ts = $hoyTs + $delta * 86400;
-        $nombre = $m[1] === 'miercoles' ? 'miércoles' : ($m[1] === 'sabado' ? 'sábado' : $m[1]);
-        return ['ts' => $ts, 'humano' => 'el ' . $nombre . ' ' . (int)gmdate('j', $ts - 3 * 3600)];
-    }
-    if (preg_match('/\b(\d{1,2}) de ' . $reMes . '\b/u', $t, $m)) {
-        $d = (int)$m[1]; $mes = $meses[$m[2]];
-        if ($d >= 1 && $d <= 31) return ['ts' => $enMes($mes, $d), 'humano' => 'el ' . $d . ' de ' . $nombreMes[$mes]];
-    }
-    if (preg_match('/\b(principios|comienzos|inicios|arranque|primeros dias|mediados|mitad|fines|finales|fin|ultimos dias) de ' . $reMes . '\b/u', $t, $m)) {
-        $mes = $meses[$m[2]];
-        if (in_array($m[1], ['mediados', 'mitad'], true)) return ['ts' => $enMes($mes, 15), 'humano' => 'a mediados de ' . $nombreMes[$mes]];
-        if (in_array($m[1], ['fines', 'finales', 'fin', 'ultimos dias'], true)) return ['ts' => $enMes($mes, 27), 'humano' => 'a fines de ' . $nombreMes[$mes]];
-        return ['ts' => $enMes($mes, 3), 'humano' => 'a principios de ' . $nombreMes[$mes]];
-    }
-    if (preg_match('/\b(en|para|hasta|desde|recien en) ' . $reMes . '\b/u', $t, $m)) {
-        $mes = $meses[$m[2]];
-        return ['ts' => $enMes($mes, 3), 'humano' => 'a principios de ' . $nombreMes[$mes]];
-    }
-    if (preg_match('/\bdespues de (las fiestas|fin de ano|ano nuevo|navidad|las vacaciones)\b/u', $t)) {
-        return ['ts' => $enMes(1, 6), 'humano' => 'después de las fiestas'];
-    }
-    // "el 15" a secas: ese día del mes, el que todavía no pasó. Nunca "el 15 de
-    // septiembre" (ya cubierto) ni "en 15 días" (eso es un plazo).
-    if (preg_match('/\b(el|para el|hasta el) (\d{1,2})\b(?!\s*(de|dias?|hs|h|horas|meses|semanas|min))/u', $t, $m)) {
-        $d = (int)$m[2];
-        if ($d >= 1 && $d <= 31) {
-            // Este mes si todavía no pasó; si no, el que viene (no el año que viene).
-            $mes = $d > $hoyD ? $hoyM : ($hoyM % 12) + 1;
-            $ts = $enMes($mes, $d);
-            return ['ts' => $ts, 'humano' => 'el ' . $d . ' de ' . $nombreMes[(int)gmdate('n', $ts - 3 * 3600)]];
-        }
-    }
-    return null;
-}
-
-/**
- * ¿Quién tiene el próximo paso? "Escribime el lunes" es nuestro; "el lunes te
- * escribo" es del cliente. La diferencia importa: en el primero el bot (o el
- * desarrollador) tiene que escribir ese día; en el segundo hay que esperar y,
- * si no escribió, recién ahí retomarlo.
- */
-function wabot_texto_retomar_quien($texto) {
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return 'bot';
-    if (preg_match('/\b(escribime|escribanme|contactame|contactenme|contactarme|avisame|avisenme|llamame|llamenme|buscame|mandame|hablame'
-        . '|me escribis|me escriben|me contactas|me contactan|me avisas|me avisan|me llamas|me llaman'
-        . '|podrias escribirme|podes escribirme|pueden escribirme|podrian escribirme|escribirme|contactarnos|contactenos)\b/u', $t)) return 'bot';
-    if (wabot_dijo_te_aviso($texto)) return 'cliente';
-    if (preg_match('/\b(yo )?(te|les) (escribo|aviso|contacto|hablo|confirmo|digo|cuento|respondo|contesto|llamo|busco)\b'
-        . '|\b(vuelvo|te busco|los busco|les escribo|me comunico|retomo yo|lo retomo yo|yo retomo|me pongo en contacto)\b/u', $t)) return 'cliente';
-    return 'bot';
-}
-
-/**
- * Detecta un compromiso con fecha: primero calendario, después plazo.
- * Devuelve ['ts', 'humano', 'quien', ('dias')] o null. `humano` ya trae la
- * preposición: "mañana", "el lunes 14", "a principios de octubre", "en un mes".
- */
-function wabot_retomar_detectar($texto, $ahora = null) {
-    $ahora = $ahora ?? time();
-    /* Lo que ya pasó no se agenda: "hablamos la semana pasada", "les escribí
-     * ayer" son un reclamo o un recordatorio, no un compromiso a futuro. */
-    $tn = wabot_normalizar_frase((string)$texto);
-    if (preg_match('/\b(pasad[ao]s?|anterior|ayer|anteayer|antes de ayer|la otra vez|el otro dia|hace (un|unos|una|unas|dos|tres|varios|varias|mucho|bastante) (dia|dias|semana|semanas|mes|meses|rato|tiempo))\b/u', $tn)
-        && !preg_match('/\b(escribime|contactame|avisame|llamame|buscame|te escribo|te aviso|te confirmo|vuelvo)\b/u', $tn)) {
-        return null;
-    }
-    $f = wabot_texto_retomar_fecha($texto, $ahora);
-    if ($f === null) {
-        $dias = wabot_texto_pide_retomar_en($texto);
-        if ($dias === null) return null;
-        $f = ['ts' => $ahora + $dias * 86400, 'humano' => 'en ' . wabot_plazo_humano($dias), 'dias' => $dias];
-    }
-    $f['quien'] = wabot_texto_retomar_quien($texto);
-    return $f;
-}
-
-/**
- * Deja el compromiso anotado en la conversación como una TAREA: fecha, quién
- * tiene el próximo paso, estado y las palabras del cliente. El cron
- * (wabot_retomar_correr) la ejecuta o la vence; el panel la muestra.
- */
-function wabot_retomar_agendar(&$conv, $det, $texto = '') {
-    $conv['retomar_ts'] = (int)$det['ts'];
-    $conv['retomar_quien'] = ($det['quien'] ?? 'bot') === 'cliente' ? 'cliente' : 'bot';
-    $conv['retomar_estado'] = 'pendiente';
-    $conv['retomar_humano'] = (string)($det['humano'] ?? '');
-    $conv['retomar_motivo'] = mb_substr(trim(preg_replace('/\s+/u', ' ', (string)$texto)), 0, 160);
-    $conv['retomar_creado_ts'] = time();
-    $conv['retomar_vencido_ts'] = 0;
-    $conv['retomar_avisado_ts'] = 0;
-    // El seguimiento automático no lo persigue hasta la fecha; la marca dice
-    // que el bloqueo es de esta tarea, para levantarlo cuando se cumpla.
-    $conv['seguimiento_bloqueado'] = true;
-    $conv['retomar_bloqueo'] = true;
-    wabot_evento_sesion($conv, 'retomar_agendado', [
-        'quien' => $conv['retomar_quien'],
-        'dias'  => isset($det['dias']) ? (int)$det['dias'] : (int)round(((int)$det['ts'] - time()) / 86400),
-        'fecha' => gmdate('Y-m-d', (int)$det['ts'] - 3 * 3600),
-    ]);
-}
-
-/**
- * "Contactame en 30 días" / "hablamos el lunes" / "vuelvo en octubre y te
- * escribo": se anota la tarea y se contesta según quién tiene el próximo paso
- * y en qué etapa está la charla. Corre en el borde común (wabot_responder),
- * así vale igual en modo agente, en el motor y con la charla ya derivada.
- * Devuelve la respuesta o null si el mensaje no trae un compromiso con fecha.
- */
-function wabot_retomar_responder($texto, &$conv, $cfg) {
-    $det = wabot_retomar_detectar($texto);
-    if ($det === null) return null;
-    wabot_retomar_agendar($conv, $det, $texto);
-
-    $cerrada = ($conv['fase'] ?? '') === 'derivado'
-        || (!empty($conv['presentado_ts']) && !empty($conv['postdemo_avisado']));
-    if ($det['quien'] === 'cliente') {
-        $tpl = (string)($cfg['retomar_cliente_avisa'] ?? '');
-        if (trim($tpl) === '') $tpl = 'Dale {nombre}, quedo atento. Cuando puedas escribime por acá y lo retomamos; y si antes te surge alguna duda, acá estoy.';
-    } elseif ($cerrada) {
-        $tpl = (string)($cfg['retomar_derivado'] ?? '');
-        if (trim($tpl) === '') $tpl = 'Dale {nombre}, queda anotado: el desarrollador te escribe {fecha} para retomarlo.';
-    } elseif (isset($det['dias'])) {
-        $tpl = (string)($cfg['retomar_confirmado'] ?? '');
-        if (trim($tpl) === '') $tpl = 'Dale {nombre}, me lo anoto: te escribo en {plazo} para retomarlo.';
-    } else {
-        $tpl = (string)($cfg['retomar_confirmado_fecha'] ?? '');
-        if (trim($tpl) === '') $tpl = 'Dale {nombre}, me lo anoto: te escribo {fecha} para retomarlo. Y si antes te surge cualquier duda o querés ver la demo gratis mientras tanto, escribime cuando quieras.';
-    }
-    $plazo = isset($det['dias']) ? wabot_plazo_humano($det['dias']) : $det['humano'];
-    $out = str_replace(['{fecha}', '{plazo}'], [$det['humano'], $plazo], $tpl);
-    return [wabot_personalizar($out, $conv)];
-}
-
-/**
- * El cliente escribió: si la tarea era esperarlo a él, o ya estaba vencida
- * esperando al desarrollador, el contacto se dio solo y la tarea se cumple.
- */
-function wabot_retomar_cliente_escribio(&$conv) {
-    $estado = (string)($conv['retomar_estado'] ?? '');
-    if ($estado === 'vencido' || ($estado === 'pendiente' && ($conv['retomar_quien'] ?? '') === 'cliente')) {
-        wabot_retomar_marcar_hecho($conv, 'cliente_escribio');
-    }
-}
-
-/** "30 días" dicho como lo diría una persona. */
-function wabot_plazo_humano($dias) {
-    $dias = (int)$dias;
-    if ($dias === 7)  return 'una semana';
-    if ($dias === 14) return 'dos semanas';
-    if ($dias === 21) return 'tres semanas';
-    if ($dias === 30) return 'un mes';
-    if ($dias === 45) return 'un mes y medio';
-    if ($dias === 60) return 'dos meses';
-    if ($dias === 90) return 'tres meses';
-    if ($dias === 180) return 'seis meses';
-    return $dias . ' días';
 }
 
 /**
@@ -2793,36 +2464,6 @@ function wabot_texto_pregunta_pago_demo($texto) {
         preg_match('/\b(pagar|abonar|pago|abono|cobran)\b.{0,24}\b(para|por|antes de)\b.{0,22}\b' . $demo . '\b/u', $t)
         || preg_match('/\b(cuanto (sale|cuesta|vale)|que precio tiene)\b\s+(la |una |esa )?' . $demo . '\b/u', $t)
         || preg_match('/\b' . $demo . '\b\s+(es gratis|se paga|se abona|tiene (un )?(costo|precio)|cuanto (sale|cuesta))\b/u', $t)
-    );
-}
-
-function wabot_texto_pregunta_cuando_se_paga($texto) {
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return false;
-    /* "Y si la pago una sola vez y después la mantengo yo?" no pregunta el
-     * orden del pago: pide pagar la creación una sola vez (batería del 14-sep,
-     * se llevaba "la demo no se paga"). */
-    if (wabot_pide_un_solo_pago($texto)) return false;
-    /* "tengo que pagarles mantenimiento todos los meses?" pregunta por un costo
-     * recurrente, no por el orden del pago: contestar la sena ahi es contestar
-     * otra cosa (C02, 1-sep). "despues" + "pagar" solos no alcanzan. */
-    if (preg_match('/\b(mantenimiento|mensual\w*|por mes|todos los meses|cada mes|abono)\b/u', $t)) return false;
-    // "Hago pagos con mercado pago en mi local, primero..." cuenta su negocio (9-sep).
-    if (preg_match('/\b(acepto|aceptamos|cobro|cobramos|hago pagos|hacemos pagos|recibo pagos|recibimos pagos|mis clientes|los clientes me|en mi (local|negocio|tienda))\b/u', $t)) return false;
-    /* Tres que no preguntan el orden y se llevaban "la demo no se paga"
-     * (batería del 15-sep): "con el pago único después tengo que pagar algo
-     * más?" (lo que queda para después), "si pago la seña y después no me
-     * gusta, me la devuelven?" (la devolución) y "no se puede pagar de una?"
-     * (pagarla entera: ya la descarta wabot_pide_un_solo_pago, y "de una" dejó
-     * de contar como "ya mismo"). */
-    if (wabot_texto_pregunta_costos_despues($texto) || wabot_texto_pregunta_devolucion($texto)) return false;
-    $pago = '\b(se abona|se paga|abono|pago|pagar|abonar|sena)\w*\b';
-    if (!preg_match('/' . $pago . '/u', $t)) return false;
-    return (bool)(
-        preg_match('/\b(antes|antez|despues|luego|primero|después)\b/u', $t)
-        || preg_match('/\bcuando\b.{0,20}' . $pago . '/u', $t)
-        || preg_match('/' . $pago . '.{0,20}\bcuando\b/u', $t)
-        || preg_match('/\b(ya mismo|en que momento)\b/u', $t)
     );
 }
 
@@ -3026,7 +2667,6 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if (wabot_contexto_es_hibrido($contexto)) {
                 $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
                 if ($objetivo === 'hibrido_vender')   return wabot_precio('ecommerce', $conv, $cfg);
-                if ($objetivo === 'hibrido_catalogo') return wabot_precio('catalogo', $conv, $cfg);
                 if ($objetivo === 'hibrido_trabajos') return wabot_precio('landing', $conv, $cfg);
                 $conv['fase'] = 'desempate_hibrido';
                 wabot_handoff_aclaracion_resuelta($conv);
@@ -3055,7 +2695,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if ($rubroLocal === 'sistema_pendiente') {
                 $conv['fase'] = 'sistema_problema';
                 wabot_handoff_aclaracion_resuelta($conv);
-                return [wabot_sistema_texto('problema', $cfg)];
+                return [wabot_sistema_texto($cfg)];
             }
             $desempate = wabot_desempate_de($rubroLocal);
             if ($desempate !== null) {
@@ -3078,59 +2718,16 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             return [wabot_contexto_cliente_tiene_negocio($conv)
                 ? (string)$cfg['aclarar_objetivo']
                 : (string)$cfg['contame']];
-        case 'desempate_turnos':  return [$cfg['desempate_turnos']];
-        case 'desempate_comercio': return [$cfg['desempate_comercio']];
         case 'desempate_hibrido':
             $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
             if ($objetivo === 'hibrido_vender')   return wabot_precio('ecommerce', $conv, $cfg);
-            if ($objetivo === 'hibrido_catalogo') return wabot_precio('catalogo', $conv, $cfg);
             if ($objetivo === 'hibrido_trabajos') return wabot_precio('landing', $conv, $cfg);
             return [$cfg['desempate_hibrido']];
-        case 'catalogo_cantidad':
-            $cantFallback = wabot_extraer_cantidad_productos($texto);
-            if ($cantFallback !== null) return wabot_catalogo_cotizar($cantFallback, $conv, $cfg);
-            return [$cfg['catalogo_cantidad']];
         case 'desempate_cursos': return [$cfg['desempate_cursos']];
         case 'sistema_problema':
-            if (wabot_fallback_respuesta_vacia($texto)) return [wabot_sistema_texto('problema', $cfg)];
+            if (wabot_fallback_respuesta_vacia($texto)) return [wabot_sistema_texto($cfg)];
             $conv['sistema_problema'] = trim($texto);
-            $conv['fase'] = 'sistema_usuarios';
             wabot_handoff_aclaracion_resuelta($conv);
-            return [wabot_sistema_texto('usuarios', $cfg)];
-        case 'sistema_usuarios':
-            if (wabot_fallback_respuesta_vacia($texto)) return [wabot_sistema_texto('usuarios', $cfg)];
-            $conv['sistema_usuarios'] = trim($texto);
-            $conv['fase'] = 'sistema_actual';
-            return [wabot_sistema_texto('actual', $cfg)];
-        case 'sistema_actual':
-            if (wabot_fallback_respuesta_vacia($texto, false)) return [wabot_sistema_texto('actual', $cfg)];
-            $conv['sistema_actual'] = wabot_es_negativa($texto)
-                ? 'No indicó cómo lo maneja hoy'
-                : trim($texto);
-            return wabot_sistema_completo($conv, $cfg);
-        case 'sistema_listo':    return wabot_sistema_completo($conv, $cfg);
-        case 'sistema_brief': // compatibilidad con el orden anterior: problema → método → usuarios
-            if (empty($conv['sistema_problema'])) {
-                if (wabot_fallback_respuesta_vacia($texto)) return [wabot_sistema_texto('problema', $cfg)];
-                $conv['sistema_problema'] = trim($texto);
-                $conv['fase'] = 'sistema_usuarios';
-                return [wabot_sistema_texto('usuarios', $cfg)];
-            }
-            if (empty($conv['sistema_actual']) && empty($conv['sistema_usuarios'])) {
-                if (wabot_fallback_respuesta_vacia($texto, false)) return [wabot_sistema_texto('actual', $cfg)];
-                $conv['sistema_actual'] = wabot_es_negativa($texto) ? 'No indicó cómo lo maneja hoy' : trim($texto);
-                $conv['fase'] = 'sistema_usuarios';
-                return [wabot_sistema_texto('usuarios', $cfg)];
-            }
-            if (empty($conv['sistema_usuarios'])) {
-                if (wabot_fallback_respuesta_vacia($texto)) return [wabot_sistema_texto('usuarios', $cfg)];
-                $conv['sistema_usuarios'] = trim($texto);
-                return wabot_sistema_completo($conv, $cfg);
-            }
-            if (empty($conv['sistema_actual'])) {
-                if (wabot_fallback_respuesta_vacia($texto, false)) return [wabot_sistema_texto('actual', $cfg)];
-                $conv['sistema_actual'] = wabot_es_negativa($texto) ? 'No indicó cómo lo maneja hoy' : trim($texto);
-            }
             return wabot_sistema_completo($conv, $cfg);
         case 'sistema_wsp':
             $num = wabot_extraer_celular($texto);
@@ -3138,7 +2735,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             $conv['telefono_wsp'] = $num;
             return wabot_sistema_completo($conv, $cfg);
         case 'pitch':
-            if (in_array(($conv['tipo'] ?? ''), ['catalogo', 'ecommerce'], true) && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
+            if (($conv['tipo'] ?? '') === 'ecommerce' && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
                 $cantFallback = wabot_extraer_cantidad_productos($texto);
                 if ($cantFallback !== null) $conv['productos_cantidad'] = $cantFallback;
             }
@@ -3178,7 +2775,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             if (preg_match('/\b(mismo|misma|el mismo|la misma|ese mismo)\b/u', $tcf)) {
                 $conv['fase'] = (string)($conv['fase_previa_cambio'] ?? 'precio');
                 unset($conv['fase_previa_cambio']);
-                return [(string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?')];
+                return [(string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo. En gokywebs.com/modelos/ podés elegir uno o dos modelos como referencia.')];
             }
             if (preg_match('/\b(otra|otro|aparte|separada|separado|distinta|distinto|nueva)\b/u', $tcf)) {
                 unset($conv['fase_previa_cambio']);
@@ -3235,7 +2832,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             elseif (!empty($conv['colores']) && empty($conv['descripcion'])) $pedido = (string)$cfg['prediseno_falta_descripcion'];
             else $pedido = wabot_prediseno_texto($conv, $cfg);
             if (trim($pedido) !== '' && trim($pedido) === wabot_ultimo_texto_bot($conv)) {
-                return [(string)($cfg['repregunta_suave'] ?? 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo, y seguimos con la demo cuando quieras.')];
+                return [(string)$cfg['repregunta_suave']];
             }
             return [$pedido];
         case 'postdemo':
@@ -3247,16 +2844,6 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             // feedback en vez de dejarlo sin respuesta.
             $rPost = wabot_postdemo_responder($texto, $conv, $cfg);
             if ($rPost !== null) return $rPost;
-            /* Null con texto fijo pendiente = había una pregunta que solo el
-             * agente podía contestar y el agente no está (o falló). El peor
-             * caso es el de siempre: sale el texto fijo y la pregunta queda
-             * para el desarrollador, que la ve en el panel como pendiente. */
-            $prefijo = trim((string)($conv['_postdemo_prefijo'] ?? ''));
-            unset($conv['_postdemo_prefijo']);
-            if ($prefijo !== '') {
-                wabot_evento_sesion($conv, 'postdemo_pregunta_sin_contestar');
-                return [$prefijo];
-            }
             return [(string)($cfg['postdemo_apertura'] ?? '')];
         case 'prediseno_ref':
             if (strpos($texto, '?') === false && trim($texto) !== '') {
@@ -3285,7 +2872,6 @@ function wabot_fallback_rubro_local($t) {
         && preg_match('/\b(stock|ventas|clientes|gestion|facturacion|turnos|control|interno|procesos|tareas)\b/u', $t)) {
         return 'sistema_pendiente';
     }
-    if (wabot_pidio_institucional_explicito($t)) return 'institucional';
     $mencionaCursos = (bool)preg_match('/\b(curso|cursos|capacitacion|capacitaciones|clases|taller|talleres)\b/u', $t);
     if (!$mencionaCursos
         && (preg_match('/\b(ecommerce|e commerce|tienda online|carrito|cobro online|cobrar online)\b/u', $t)
@@ -3379,14 +2965,9 @@ function wabot_fallback_respuesta_vacia($texto, $negativaTambien = true) {
     return $negativaTambien && wabot_es_negativa($texto);
 }
 
-/** Preguntas del brief estructurado de sistemas, con defaults compatibles. */
-function wabot_sistema_texto($paso, $cfg) {
-    $textos = [
-        'problema' => $cfg['sistema_pregunta'] ?? 'Sí, también desarrollamos sistemas de gestión a medida. Qué necesitás que resuelva concretamente?',
-        'usuarios' => $cfg['sistema_pregunta_usuarios'] ?? 'Cuántas personas usarían el sistema aproximadamente?',
-        'actual'   => $cfg['sistema_pregunta_actual'] ?? 'Cómo lo manejan hoy: con papel, Excel, otro sistema o de otra manera?',
-    ];
-    return $textos[$paso] ?? $cfg['contame'];
+/** La única pregunta del brief de un sistema de gestión: qué tiene que resolver. */
+function wabot_sistema_texto($cfg) {
+    return (string)$cfg['sistema_pregunta'];
 }
 
 /** Pedido de contacto para sistemas originados en Instagram. */
@@ -3408,19 +2989,9 @@ function wabot_texto_aclaracion($conv, $cfg) {
     // que esperamos. Repetir lo mismo palabra por palabra es lo que el cliente
     // percibe como "el bot está tildado".
     $yaPregunto = !empty($conv['aclaracion_pendiente']);
-    if ($fase === 'desempate_turnos')   return $yaPregunto && !empty($cfg['desempate_turnos_2'])   ? $cfg['desempate_turnos_2']   : $cfg['desempate_turnos'];
-    if ($fase === 'desempate_comercio') return $yaPregunto && !empty($cfg['desempate_comercio_2']) ? $cfg['desempate_comercio_2'] : $cfg['desempate_comercio'];
     if ($fase === 'desempate_hibrido')  return $yaPregunto && !empty($cfg['desempate_hibrido_2'])  ? $cfg['desempate_hibrido_2']  : $cfg['desempate_hibrido'];
     if ($fase === 'desempate_cursos')   return $yaPregunto && !empty($cfg['desempate_cursos_2'])   ? $cfg['desempate_cursos_2']   : $cfg['desempate_cursos'];
-    if ($fase === 'catalogo_cantidad')  return $yaPregunto && !empty($cfg['catalogo_cantidad_2'])  ? $cfg['catalogo_cantidad_2']  : $cfg['catalogo_cantidad'];
-    if ($fase === 'sistema_problema') return wabot_sistema_texto('problema', $cfg);
-    if ($fase === 'sistema_brief') {
-        if (empty($conv['sistema_problema'])) return wabot_sistema_texto('problema', $cfg);
-        if (empty($conv['sistema_usuarios'])) return wabot_sistema_texto('usuarios', $cfg);
-        if (empty($conv['sistema_actual'])) return wabot_sistema_texto('actual', $cfg);
-    }
-    if ($fase === 'sistema_usuarios') return wabot_sistema_texto('usuarios', $cfg);
-    if ($fase === 'sistema_actual') return wabot_sistema_texto('actual', $cfg);
+    if ($fase === 'sistema_problema') return wabot_sistema_texto($cfg);
     if ($fase === 'sistema_wsp') return wabot_sistema_whatsapp_texto($cfg);
     if ($fase === 'prediseno_wsp') return $cfg['prediseno_whatsapp'];
     if ($fase === 'prediseno_ref') return $cfg['prediseno_referencia'];
@@ -3451,10 +3022,6 @@ function wabot_handoff_intentar($texto, &$conv, $cfg, $causaSugerida = null, $po
 
     if ($causa === null) $causa = wabot_handoff_ambiguedad($conv, $texto);
     if ($causa === null) {
-        wabot_evento_o_diferir($conv, 'handoff_rechazado', [
-            'motivo' => 'sin evidencia',
-            'aclaraciones_fallidas' => (int)($conv['aclaraciones_fallidas'] ?? 0),
-        ]);
         if (($porCambioTipo || in_array($conv['fase'], ['precio', 'prediseno'], true)) && !empty($conv['tipo'])
             && in_array($conv['fase'], ['precio', 'prediseno', 'prediseno_ref', 'prediseno_wsp'], true)) {
             $conv['fase_previa_cambio'] = $conv['fase'];
@@ -3464,14 +3031,6 @@ function wabot_handoff_intentar($texto, &$conv, $cfg, $causaSugerida = null, $po
         return [wabot_texto_aclaracion($conv, $cfg)];
     }
     return wabot_derivar_contestando($texto, $conv, $cfg, $causa);
-}
-
-function wabot_evento_o_diferir(&$conv, $evento, $datos = []) {
-    if (!empty($conv['_eventos_diferir'])) {
-        $conv['_eventos_pendientes'][] = ['evento' => $evento, 'datos' => (array)$datos];
-        return;
-    }
-    if (function_exists('wabot_evento')) wabot_evento($conv, $evento, $datos);
 }
 
 /**
@@ -3494,6 +3053,53 @@ function wabot_engine($texto, &$conv, $cfg) {
 
     $regateo = wabot_regateo_responder($texto, $conv, $cfg);
     if ($regateo !== null) return $regateo;
+
+    /* ── Atajos deterministas que no dependen del clasificador ── */
+
+    // Pregunta cerrada sobre lo que el bot acaba de decir: la respuesta corta.
+    if (wabot_texto_pregunta_si_es_obligatorio($texto)) {
+        $corta = wabot_respuesta_obligatorio($conv, $cfg, $texto);
+        if ($corta !== null && $corta !== '') {
+            wabot_evento_sesion($conv, 'pregunta_cerrada_respondida');
+            return [$corta];
+        }
+    }
+
+    // "¿Y la página común qué precio tiene?" con otro tipo ya cotizado.
+    if (!empty($conv['precio_dado']) && ($conv['fase'] ?? '') !== 'derivado' && trim((string)$texto) !== ''
+        && wabot_texto_pregunta_comparacion_tipo($texto) !== ($conv['tipo'] ?? '')) {
+        $otroTipo = wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $conv['tipo'] ?? null);
+        if ($otroTipo !== null) {
+            $textoOtro = wabot_precio_de_tipo_texto($otroTipo, $conv, $cfg);
+            if ($textoOtro !== null) {
+                wabot_evento_sesion($conv, 'precio_otro_tipo', ['tipo' => $otroTipo]);
+                return [$textoOtro];
+            }
+        }
+    }
+
+    /* Teclado apretado al azar antes de saber el rubro: escalera fija y corta,
+     * que termina en silencio con el chat marcado para el desarrollador. */
+    if (in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu', 'algo_diferente'], true)
+        && empty($conv['tipo']) && trim((string)$texto) !== '') {
+        $yaFallo = (int)($conv['ininteligibles'] ?? 0);
+        $falla = (wabot_texto_ininteligible($texto) && wabot_mensaje_no_destraba($texto))
+            || ($yaFallo > 0 && wabot_mensaje_no_destraba($texto));
+        if ($falla) {
+            $conv['ininteligibles'] = $yaFallo + 1;
+            if ($conv['ininteligibles'] === 1) {
+                if (wabot_ultimo_texto_bot($conv) === '') return [(string)$cfg['ininteligible_primero']];
+                return [(string)$cfg['contame_2']];
+            }
+            if ($conv['ininteligibles'] === 2) {
+                $conv['handoff_pendiente'] = true;
+                wabot_evento_sesion($conv, 'mensajes_ininteligibles');
+                return [(string)$cfg['no_entiendo']];
+            }
+            return [];
+        }
+        if ($yaFallo > 0) $conv['ininteligibles'] = 0;
+    }
 
     if (in_array(($conv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja'], true)
         && !empty($conv['seguimiento_bloqueado'])) {
@@ -3612,21 +3218,16 @@ function wabot_engine($texto, &$conv, $cfg) {
         $out[] = wabot_objecion_texto('pensarlo', $txt, $conv, $cfg);
         $conv['cta_muestra'] = true;
     }
-    if ($has('objecion_socio')) {
-        $txt = (!empty($conv['cta_muestra']) && !empty($cfg['socio_sin_muestra'])) ? $cfg['socio_sin_muestra'] : $cfg['socio'];
-        $out[] = wabot_objecion_texto('socio', $txt, $conv, $cfg);
-        $conv['cta_muestra'] = true;
-    }
-    // Pero no si acaba de decir que no tiene ninguna: el texto arranca
-    // pidiéndole el link de esa página (caso Overlord, 28-ago).
+    // "Ya tengo web": pero no si acaba de decir que no tiene ninguna (caso Overlord, 28-ago).
     if ($has('objecion_ya_tiene_web') && wabot_texto_dice_sin_web($texto)) {
         $acc = array_values(array_diff($acc, ['objecion_ya_tiene_web']));
         $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
     }
-    if ($has('objecion_ya_tiene_web')) {
-        $txt = (!empty($conv['cta_muestra']) && !empty($cfg['ya_tengo_web_sin_muestra'])) ? $cfg['ya_tengo_web_sin_muestra'] : $cfg['ya_tengo_web'];
-        $out[] = wabot_objecion_texto('ya_tiene_web', $txt, $conv, $cfg);
-        $conv['cta_muestra'] = true;
+    /* Lo tiene que hablar con su socio, o ya tiene una web y quiere mejorarla:
+     * eso lo sigue el desarrollador directamente (Pablo, 15-sep). Se contesta
+     * lo contestable y se deriva. */
+    if ($has('objecion_socio') || $has('objecion_ya_tiene_web')) {
+        return array_merge($out, wabot_derivar_contestando($texto, $conv, $cfg, $has('objecion_socio') ? 'socio' : 'ya_tiene_web'));
     }
     if ($has('menciona_plataforma')) $out[] = wabot_objecion_texto('plataforma', $cfg['plataformas'], $conv, $cfg);
     // Respaldo local SOLO cuando el clasificador no etiquetó nada útil: si ya
@@ -3635,6 +3236,9 @@ function wabot_engine($texto, &$conv, $cfg) {
     // leía como la pregunta "qué logo incluye" y pisaba el dato real.
     $sinNada = !$acc || $acc === ['otro'];
     $infoLocal = $sinNada ? wabot_info_por_palabras($texto, $conv['fase']) : null;
+    // "Dale, mandame el formulario para la demo" es el sí a la demo, no una
+    // pregunta por los formularios de la web.
+    if ($infoLocal === 'formularios' && wabot_espera_si_a_la_demo($conv, $cfg) && wabot_acepta_demo($texto)) $infoLocal = null;
     if ($infoLocal !== null) { $acc[] = 'pregunta_info'; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
     if ($has('pregunta_info')) {
         $keys = $c['info_keys'] ?: [];
@@ -3652,7 +3256,9 @@ function wabot_engine($texto, &$conv, $cfg) {
         $preciosDesempate = (in_array('rangos', $keys, true) || in_array('precio_sin_rubro', $keys, true))
             ? wabot_desempate_precios_texto($conv['fase'], $cfg) : null;
 
-        $rubroParaPrecio = wabot_rubro_de($acc) ?? wabot_fallback_rubro_local($texto);
+        // "¿Cuánto sale una web para mostrar mis servicios y cuánto una tienda?"
+        // compara tipos, no cuenta un rubro: sin actividad no hay montos.
+        $rubroParaPrecio = wabot_rubro_de($acc) ?? (wabot_texto_compara_tipos($texto) ? null : wabot_fallback_rubro_local($texto));
         $precioConRubroEnTurno = empty($conv['precio_dado']) && $rubroParaPrecio !== null
             && in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true);
 
@@ -3697,12 +3303,12 @@ function wabot_engine($texto, &$conv, $cfg) {
      * que vio la charla entera y no una sola frase. */
     if (in_array($conv['fase'], ['nuevo', 'menu', 'algo_diferente'], true)
         && wabot_rubro_de($acc) === null) {
-        $rubroLocal = wabot_fallback_rubro_local($texto);
+        $rubroLocal = wabot_texto_compara_tipos($texto) ? null : wabot_fallback_rubro_local($texto);
         if ($rubroLocal !== null) {
             $etiquetas = [
                 'cursos' => 'rubro_cursos',
                 'hibrido_pendiente' => 'rubro_hibrido', 'sistema_pendiente' => 'rubro_sistema',
-                'institucional' => 'rubro_institucional', 'landing' => 'rubro_landing',
+                'landing' => 'rubro_landing',
                 'ecommerce' => 'rubro_ecommerce', 'inmobiliaria' => 'rubro_inmobiliaria',
             ];
             if (isset($etiquetas[$rubroLocal])) {
@@ -3720,7 +3326,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         case 'nuevo':
             $r = wabot_rubro_de($acc);
             $d = wabot_desempate_de($r);
-            if ($d)                         { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $d[0] === 'sistema_problema' ? wabot_sistema_texto('problema', $cfg) : $cfg[$d[1]]; }
+            if ($d)                         { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $cfg[$d[1]]; }
             elseif ($r !== null)            { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif ($has('pregunta_tipos')) { $conv['fase'] = 'menu'; $out[] = $cfg['def_tipos']; }
             elseif ($has('algo_diferente')) { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
@@ -3731,7 +3337,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         case 'menu':
             $r = wabot_rubro_de($acc);
             $d = wabot_desempate_de($r);
-            if ($d)                         { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $d[0] === 'sistema_problema' ? wabot_sistema_texto('problema', $cfg) : $cfg[$d[1]]; }
+            if ($d)                         { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $cfg[$d[1]]; }
             elseif ($r !== null)            { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif ($has('pregunta_tipos')) { $out[] = $cfg['def_tipos']; }
             elseif ($has('algo_diferente')) { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
@@ -3742,42 +3348,17 @@ function wabot_engine($texto, &$conv, $cfg) {
         case 'algo_diferente':
             $r = wabot_rubro_de($acc);
             $d = wabot_desempate_de($r);
-            if ($d)                  { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $d[0] === 'sistema_problema' ? wabot_sistema_texto('problema', $cfg) : $cfg[$d[1]]; }
+            if ($d)                  { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $cfg[$d[1]]; }
             elseif ($r !== null)     { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif (!$out)           { return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg)); }
             break;
 
-        case 'desempate_turnos':
-            // Si el clasificador no la etiquetó, la respuesta se lee por palabras:
-            // "vender", "carrito", "solos"... no pueden depender de que la IA acierte.
-            if (!$has('turnos_si') && !$has('turnos_no')) {
-                $local = wabot_desempate_por_palabras('desempate_turnos', $texto);
-                if ($local !== null) { $acc[] = $local; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
-            }
-            if ($has('turnos_si'))          { $out = array_merge($out, wabot_precio('turnos', $conv, $cfg)); }
-            elseif ($has('turnos_no'))      { $out = array_merge($out, wabot_precio('landing', $conv, $cfg)); }
-            else                            { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
-            break;
-
-        case 'desempate_comercio':
-            // Si el clasificador no la etiquetó, la respuesta se lee por palabras:
-            // "vender", "carrito", "solos"... no pueden depender de que la IA acierte.
-            if (!$has('comercio_vender') && !$has('comercio_mostrar')) {
-                $local = wabot_desempate_por_palabras('desempate_comercio', $texto);
-                if ($local !== null) { $acc[] = $local; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
-            }
-            if ($has('comercio_vender'))    { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
-            elseif ($has('comercio_mostrar')) { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
-            else                            { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
-            break;
-
         case 'desempate_hibrido':
-            if (!$has('hibrido_vender') && !$has('hibrido_catalogo') && !$has('hibrido_trabajos')) {
+            if (!$has('hibrido_vender') && !$has('hibrido_trabajos')) {
                 $local = wabot_desempate_por_palabras('desempate_hibrido', $texto);
                 if ($local !== null) { $acc[] = $local; $has = function ($a) use ($acc) { return in_array($a, $acc, true); }; }
             }
             if ($has('hibrido_vender'))            { $out = array_merge($out, wabot_precio('ecommerce', $conv, $cfg)); }
-            elseif ($has('hibrido_catalogo'))      { $out = array_merge($out, wabot_precio('catalogo', $conv, $cfg)); }
             elseif ($has('hibrido_trabajos'))      { $out = array_merge($out, wabot_precio('landing', $conv, $cfg)); }
             else                                   { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
             break;
@@ -3794,35 +3375,6 @@ function wabot_engine($texto, &$conv, $cfg) {
             else                            { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
             break;
 
-        case 'sistema_brief': // compatibilidad: el flujo anterior preguntaba método antes que usuarios
-            if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
-            if (empty($conv['sistema_problema'])) {
-                if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
-                $conv['sistema_problema'] = trim($texto);
-                $conv['fase'] = 'sistema_usuarios';
-                $out[] = wabot_sistema_texto('usuarios', $cfg);
-                break;
-            }
-            if (empty($conv['sistema_actual']) && empty($conv['sistema_usuarios'])) {
-                $conv['sistema_actual'] = wabot_es_negativa($texto)
-                    ? 'No indicó cómo lo maneja hoy'
-                    : trim($texto);
-                $conv['fase'] = 'sistema_usuarios';
-                $out[] = wabot_sistema_texto('usuarios', $cfg);
-                break;
-            }
-            if (empty($conv['sistema_usuarios'])) {
-                if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
-                $conv['sistema_usuarios'] = trim($texto);
-                return array_merge($out, wabot_sistema_completo($conv, $cfg));
-            }
-            if (empty($conv['sistema_actual'])) {
-                $conv['sistema_actual'] = wabot_es_negativa($texto)
-                    ? 'No indicó cómo lo maneja hoy'
-                    : trim($texto);
-            }
-            return array_merge($out, wabot_sistema_completo($conv, $cfg));
-
         case 'sistema_problema':
             // Dudas y objeciones ya contestadas arriba: la pregunta sigue en pie.
             if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
@@ -3830,32 +3382,9 @@ function wabot_engine($texto, &$conv, $cfg) {
             $r = wabot_rubro_de($acc);
             if ($r !== null && wabot_desempate_de($r) === null) { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); break; }
             if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
+            // Una sola pregunta (qué tiene que resolver) y se deriva al desarrollador.
             $conv['sistema_problema'] = trim($texto);
             wabot_handoff_aclaracion_resuelta($conv);
-            // Si ya explicó el sistema con detalle, no se lo interroga más: se
-            // cierra con lo que dio. Preguntar tres cosas a quien ya contó todo
-            // se siente como un formulario (caso Payaso Natalio, 22-ago).
-            if (wabot_sistema_ya_explicado($conv)) {
-                return array_merge($out, wabot_sistema_completo($conv, $cfg));
-            }
-            $conv['fase'] = 'sistema_usuarios';
-            $out[] = wabot_sistema_texto('usuarios', $cfg);
-            break;
-
-        case 'sistema_usuarios':
-            if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
-            if (wabot_es_negativa($texto)) return array_merge($out, wabot_handoff_intentar($texto, $conv, $cfg));
-            $conv['sistema_usuarios'] = trim($texto);
-            // Dos preguntas es el techo: con el problema y los usuarios alcanza
-            // para que Pablo cotice. El "cómo lo maneja hoy" quedó como opcional.
-            return array_merge($out, wabot_sistema_completo($conv, $cfg));
-
-        case 'sistema_actual':
-            if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
-            $conv['sistema_actual'] = trim($texto) !== '' ? trim($texto) : 'No indicó cómo lo maneja hoy';
-            return array_merge($out, wabot_sistema_completo($conv, $cfg));
-
-        case 'sistema_listo':
             return array_merge($out, wabot_sistema_completo($conv, $cfg));
 
         case 'postdemo':
@@ -3876,7 +3405,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                 $conv['fase'] = (string)($conv['fase_previa_cambio'] ?? 'precio');
                 unset($conv['fase_previa_cambio']);
                 wabot_handoff_aclaracion_resuelta($conv);
-                $out[] = (string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo entonces. Querés que avancemos con la demo gratis?');
+                $out[] = (string)($cfg['confirma_cambio_mismo'] ?? 'Perfecto, seguimos con lo que veníamos viendo. En gokywebs.com/modelos/ podés elegir uno o dos modelos como referencia.');
                 break;
             }
             if (preg_match('/\b(otra|otro|aparte|separada|separado|distinta|distinto|nueva|nuevo proyecto|otra web|otro proyecto)\b/u', $tc)
@@ -3932,7 +3461,7 @@ function wabot_engine($texto, &$conv, $cfg) {
             if (($conv['descripcion'] ?? null) === null && wabot_aporta_descripcion($texto)) {
                 $conv['descripcion'] = trim($texto);
             }
-            if (in_array(($conv['tipo'] ?? ''), ['catalogo', 'ecommerce'], true)) {
+            if (($conv['tipo'] ?? '') === 'ecommerce') {
                 $cant = wabot_extraer_cantidad_productos($texto);
                 if ($cant !== null) $conv['productos_cantidad'] = $cant;
             }
@@ -4038,7 +3567,7 @@ function wabot_engine($texto, &$conv, $cfg) {
                 if (trim($pedido) === wabot_ultimo_texto_bot($conv)) {
                     $agotada = wabot_handoff_ambiguedad($conv, $texto);
                     if ($agotada === 'ambiguedad_agotada') return array_merge($out, wabot_derivar($conv, $cfg, 'ambiguedad'));
-                    $pedido = (string)($cfg['repregunta_suave'] ?? $pedido);
+                    $pedido = (string)$cfg['repregunta_suave'];
                 }
                 $out[] = $pedido;
             }
@@ -4072,17 +3601,6 @@ function wabot_engine($texto, &$conv, $cfg) {
             if ($num === null) { $out[] = wabot_sistema_whatsapp_texto($cfg, true); break; }
             $conv['telefono_wsp'] = $num;
             return array_merge($out, wabot_sistema_completo($conv, $cfg));
-
-        case 'catalogo_cantidad':
-            if ($out || $has('saludo')) { if ($out) $out[] = wabot_texto_aclaracion($conv, $cfg); break; }
-            $rNuevo = wabot_rubro_de($acc);
-            if ($rNuevo !== null && $rNuevo !== 'comercio_pendiente' && wabot_desempate_de($rNuevo) === null) {
-                return array_merge($out, wabot_precio($rNuevo, $conv, $cfg));
-            }
-            if ($has('comercio_vender')) return array_merge($out, wabot_precio('ecommerce', $conv, $cfg));
-            $cant = wabot_extraer_cantidad_productos($texto);
-            if ($cant === null) { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; break; }
-            return array_merge($out, wabot_catalogo_cotizar($cant, $conv, $cfg));
     }
 
     return $out;
@@ -4119,18 +3637,9 @@ function wabot_rubro_de($acc) {
     // 'cursos' y 'turnos_pendiente' no son tipos cotizables: son preguntas que
     // faltan hacer. El resto sí sale directo al precio.
     if (in_array('rubro_cursos', $acc, true))                                        return 'cursos';
-    /* La peluquería NO abre un desempate: con turnos retirado (2-sep) las dos
-     * respuestas daban el mismo sitio profesional a $180.000, así que la
-     * pregunta costaba un turno y no decidía nada. Peor: ofrecía "que los
-     * reserven directamente desde la web", que es justo lo que el sitio
-     * profesional no hace, y el que contestaba que sí se llevaba otra cosa.
-     * El agente ya cotizaba directo; el motor era el único que preguntaba.
-     * 'turnos' está retirado: wabot_precio() lo absorbe a landing. */
-    if (in_array('servicio_con_turnos', $acc, true))                                 return 'turnos';
     if (in_array('rubro_hibrido', $acc, true))                                       return 'hibrido_pendiente';
     if (in_array('rubro_comercio', $acc, true))                                      return 'ecommerce';
     if (in_array('rubro_sistema', $acc, true))                                       return 'sistema_pendiente';
-    if (in_array('rubro_institucional', $acc, true))                                 return 'institucional';
     if (in_array('elige_landing', $acc, true) || in_array('rubro_landing', $acc, true))       return 'landing';
     if (in_array('elige_ecommerce', $acc, true) || in_array('rubro_ecommerce', $acc, true))   return 'ecommerce';
     if (in_array('rubro_inmobiliaria', $acc, true))                                  return 'inmobiliaria';
@@ -4304,7 +3813,7 @@ function wabot_info_por_palabras($texto, $fase = null) {
      * Solo fuera de un desempate: ahí adentro "las dos cosas" es la RESPUESTA
      * a la pregunta y la resuelve wabot_desempate_por_palabras() cotizando
      * ecommerce, que es el tipo que cubre ambas. */
-    if (!in_array((string)$fase, ['desempate_comercio', 'desempate_turnos', 'desempate_cursos', 'desempate_hibrido'], true)
+    if (!in_array((string)$fase, ['desempate_cursos', 'desempate_hibrido'], true)
         && preg_match('/\b(las dos|ambas|los dos|las dos cosas|de las dos formas|ambos)\b/u', $t)
         && preg_match('/\b(comprar|compren|carrito|online|pagar|paguen|vender)\b/u', $t)
         && preg_match('/\bwh?ats?app\b|\bconsultar\w*\b|\bconsulten\b|\bescriban\b/u', $t)) return 'las_dos_formas';
@@ -4555,69 +4064,9 @@ function wabot_desempate_por_palabras($fase, $texto) {
                      'no quiero vender', 'no vender', 'no cobrar', 'no me interesa vender', 'no hace falta vender',
                      'nada de carrito', 'nada de cobro', 'no quiero cobrar', 'no vendo online']);
     if ($niega) {
-        if ($fase === 'desempate_comercio') return 'comercio_mostrar';
-        if ($fase === 'desempate_turnos')   return 'turnos_no';
         if ($fase === 'desempate_cursos')   return 'cursos_mostrar';
     }
-    /* La negación explícita de los turnos.
-     *
-     * Vivi (medicina laboral) dijo "No necesito reserven turnos porque yo tengo
-     * un sistema" y el bot le cotizó una web CON sistema de turnos por $200.000:
-     * justo la función que acababa de rechazar. La lista de verbos tenía
-     * "quiero" y "hace falta" pero no "necesito", así que la frase caía en el
-     * matcher de abajo, que ve "reserven turnos" y devuelve turnos_si (28-ago).
-     *
-     * El "ya tengo mi sistema" va aparte: no es una negación gramatical, pero
-     * dice lo mismo y es como lo dice medio mundo. */
-    $verbosNeg = '(quiero|queremos|quiere|queres|quieren|necesito|necesitamos|necesita|necesitas|necesitan|preciso|precisamos|precisa|hace falta|hacen falta|me sirve|nos sirve)';
-    if ($fase === 'desempate_turnos' && (bool)(
-        preg_match('/\bno\b\s+' . $verbosNeg . '\b.{0,15}\bque\b.{0,20}\b(reserven|reserve|reserva|reservas|saquen|elijan|elijas)\b/u', $t)
-        || preg_match('/\bno\b\s+' . $verbosNeg . '\b.{0,20}\b(reserven|reserva|reservas|reservar|turnos|solos|online)\b/u', $t)
-        || preg_match('/\bya\b.{0,10}\b(tengo|tenemos|manejo|manejamos|uso|usamos)\b.{0,24}\b(sistema|agenda|software|programa|plataforma)\b/u', $t)
-        || preg_match('/\b(tengo|tenemos|manejo|manejamos|uso|usamos)\b.{0,12}\b(mi|nuestro|otro|un)\b.{0,10}\b(propio\s+)?(sistema|agenda|software|programa|plataforma)\b/u', $t)
-    )) {
-        return 'turnos_no';
-    }
-
     switch ($fase) {
-        case 'desempate_comercio':
-            if ($tiene(array_merge($primera, [
-                'vender', 'venderlos', 'venderlas', 'venta', 'ventas', 'carrito', 'tienda', 'online',
-                'ecommerce', 'e commerce', 'cobrar', 'cobro', 'comprar', 'compren', 'compras',
-                'por la web', 'por la pagina', 'desde la web', 'desde la pagina', 'en la web', 'en la pagina',
-                'por internet', 'por la pag', 'la web', 'la pagina', 'que compren', 'pagar', 'paguen',
-                'mercado pago', 'con pago', 'todo online', 'la completa', 'la tienda',
-                // "Botón de pago y pedido integrado a WhatsApp" es ecommerce
-                // dicho con otras palabras (caso MILANEL): el "whatsapp" del
-                // final lo mandaba a catálogo porque estas señales no estaban.
-                'boton de pago', 'con boton', 'pedido integrado', 'pedidos integrados',
-                'gestionar las ventas', 'gestionar ventas', 'gestion de ventas', 'checkout',
-                // "Cotizame ambas": quiere las dos → se cotiza la completa, que
-                // incluye a la otra (caso Distribuidora, que la pidió 3 veces).
-                'ambas', 'ambos', 'las dos', 'los dos', 'las 2', 'los 2', 'las dos opciones',
-            ]))) return 'comercio_vender';
-            if ($tiene(array_merge($segunda, [
-                'mostrar', 'muestre', 'mostrarlos', 'mostrarlas', 'catalogo', 'catálogo',
-                'presentacion', 'presentar', 'contacten', 'contacto',
-                'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap',
-                'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp',
-                'informativa', 'solo mostrar', 'que me escriban', 'me escriban',
-                'escriban', 'que me hablen', 'me contacten', 'la simple', 'la basica', 'sin carrito',
-                'sin cobro', 'nomas', 'solamente mostrar', 'que muestre',
-                // "Quiero publicar los vehículos" es una respuesta clarísima que
-                // el bot repreguntaba (caso Black Automotores, 22-ago): publicar,
-                // exhibir o listar es mostrar, no cobrar online.
-                'publicar', 'publicarlos', 'publicarlas', 'publico', 'publicamos',
-                'exhibir', 'exhibirlos', 'listar', 'subir los productos', 'subirlos',
-                'que se vean', 'para que vean', 'ver los modelos', 'los vehiculos',
-                'las propiedades', 'los productos', 'mi stock', 'el stock',
-                // Dónde conseguir el producto es justo lo contrario de venderlo
-                // por la web: manda al cliente a un local físico.
-                'donde se consigue', 'donde conseguirla', 'donde conseguirlo',
-                'donde conseguir', 'donde comprarla', 'donde comprarlo',
-                'distribuidores', 'kioscos', 'locales', 'sucursales',
-            ]))) return 'comercio_mostrar';
-            return null;
         case 'desempate_hibrido':
             /* Las palabras que el propio bot pide no matcheaban. desempate_hibrido_2
              * dice «respondeme "trabajos" o "vender"» y ninguna de las dos estaba
@@ -4639,7 +4088,7 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'catalogo', 'catálogo', 'modelos', 'productos', 'exhibir modelos', 'mostrar modelos',
                 'catalogo por whatsapp', 'catalogo con whatsapp', 'lista de productos',
                 'publicar', 'publicarlos', 'exhibir', 'listar', 'que se vean',
-            ])) return 'hibrido_catalogo';
+            ])) return 'hibrido_vender';   // mostrar productos ya es la tienda: se cotiza ecommerce
             if ($tiene([
                 'mostrar trabajos', 'mostrar los trabajos', 'mostrar el trabajo', 'mostrar nuestros trabajos',
                 'trabajos realizados', 'portfolio', 'portafolio', 'obras', 'proyectos',
@@ -4647,23 +4096,6 @@ function wabot_desempate_por_palabras($fase, $texto) {
                 'que me consulten', 'me consulten', 'que consulten', 'que pregunten',
                 'que me escriban', 'presentar la empresa', 'mostrar lo que hacemos',
             ])) return 'hibrido_trabajos';
-            return null;
-        case 'desempate_turnos':
-            if ($tiene(array_merge($primera, [
-                'solos', 'online', 'desde la web', 'desde la pagina', 'por la web', 'por la pagina', 'en la web',
-                // "que la gente vea las fechas libres y reserve sin llamarme":
-                // el subjuntivo singular no estaba y unas cabañas se derivaron
-                // sin cotizar justo al contestar el desempate (D04, 1-sep).
-                'reserven', 'reservar', 'reserva', 'reservas', 'reserve', 'saquen', 'sacar turno', 'saquen turno', 'agenda', 'calendario',
-                'sistema de turnos', 'con turnos', 'que elijan', 'elijan', 'automatico', 'la completa',
-                'fechas libres', 'vean las fechas', 'la disponibilidad', 'ver disponibilidad',
-            ]))) return 'turnos_si';
-            if ($tiene(array_merge($segunda, [
-                'whatsapp', 'whatsap', 'whatsapp.', 'wasap', 'wasapp', 'wasup', 'wassap', 'watsapp', 'watsap', 'wtsp', 'wsp', 'wspp', 'wpp', 'wp', 'whats', 'guasap', 'guasapp',
-                'escriban', 'me escriban', 'que me escriban', 'agendo yo', 'los agendo',
-                'lo agendo', 'no hace falta', 'sin turnos', 'alcanza', 'me hablen', 'me contacten', 'la simple',
-                'yo los agendo', 'a mano', 'por mensaje',
-            ]))) return 'turnos_no';
             return null;
         case 'desempate_cursos':
             if ($tiene(array_merge($primera, [
@@ -4742,10 +4174,6 @@ function wabot_extraer_cantidad_productos($texto) {
  */
 function wabot_desempate_precios_texto($fase, $cfg) {
     $opciones = [
-        'desempate_turnos'   => ['landing'   => 'si te escriben por WhatsApp y los agendás vos',
-                                 'turnos'    => 'si preferís que los reserven solos desde la web, eligiendo día y horario'],
-        'desempate_comercio' => ['catalogo'  => 'si mostrás los productos y te consultan por WhatsApp',
-                                 'ecommerce' => 'si querés carrito y cobro online desde la web'],
         'desempate_cursos'   => ['landing'   => 'si solo mostrás los cursos y te contactan por WhatsApp',
                                  'elearning' => 'si querés venderlos desde la web, con acceso propio para cada alumno'],
     ];
@@ -4757,7 +4185,7 @@ function wabot_desempate_precios_texto($fase, $cfg) {
          * decía "$200.000 si reservan solos", el cliente elegía esa y recibía
          * el sitio profesional a $180.000 (auditoría del 2-sep). Sin los dos
          * precios vigentes no se dice ninguno. */
-        if (!wabot_tipo_ofrecible($tipo, $cfg)) return null;
+        if (!isset($cfg['tipos'][$tipo])) return null;
         $frase = wabot_precio_frase(wabot_precio_vigente(null, $cfg, $tipo));
         if ($frase === '') return null;   // sin los dos precios no se dice ninguno
         $lineas[] = ucfirst($condicion) . ', ' . $frase . '.';
@@ -4777,68 +4205,17 @@ function wabot_texto_pregunta_comparacion_tipo($texto) {
     if ($t === '') return null;
     $comparaPrecio = '/\b(lo mismo|igual|mismo precio|diferencia|mas barato|menos|sale|cuesta|vale|precio)\b/u';
     if (preg_match('/\bcarrito\b/u', $t) && preg_match($comparaPrecio, $t)) return 'ecommerce';
-    if (preg_match('/\b(agend[oa]\w* yo|coordin[oa]\w* yo|lo hago yo|sin reserva|sin que reserven|sin agendar)\b/u', $t)
-        && preg_match($comparaPrecio, $t)) return 'turnos';
     return null;
 }
 
 /**
- * No pregunta el precio de la otra modalidad: DICE que quiere la otra.
- *
- * "Che, pensándolo bien mejor sin carrito, que me escriban por WhatsApp" tras
- * cotizar ecommerce. El modelo le ofreció la demo sin recotizar, y al turno
- * siguiente ("cuánto queda entonces?") preguntó si era para el mismo proyecto
- * o para otra web: el cliente nunca recibió el precio nuevo (27-ago).
- *
- * Devuelve el tipo AL QUE HAY QUE PASAR, o null. Exige una marca de decisión
- * ("mejor", "prefiero", "pensándolo bien", "en realidad") además de la
- * negación: sin eso, "no entiendo lo del carrito" recotizaría solo.
+ * "Sale lo mismo sin carrito?": no hay una modalidad sin carrito, la tienda
+ * ya trae las dos formas de contratarla. Se contesta con eso.
  */
-function wabot_texto_cambia_modalidad($texto, $tipoActual) {
-    $t = wabot_normalizar_frase((string)$texto);
-    if ($t === '') return null;
-    if (strpos($t, '?') !== false) return null;   // una pregunta se contesta, no se recotiza
-    $decide = '/\b(mejor|prefiero|preferiria|pensandolo bien|en realidad|finalmente|al final|mas que nada|me quedo con)\b/u';
-    if (!preg_match($decide, $t)) return null;
-
-    /* Los saltos que quedaban (ecommerce→catálogo, turnos→sitio profesional)
-     * murieron con esos tipos el 2-sep: hoy "mejor sin carrito" no cambia
-     * nada, sigue siendo el ecommerce que se le cotizó y el precio no se
-     * toca. Solo sobrevive el salto HACIA un tipo vigente, para la charla
-     * vieja que quedó cotizada en catálogo. */
-    if ($tipoActual === 'catalogo'
-        && preg_match('/\b(con carrito|cobro online|pagos online|vender online|que compren)\b/u', $t)) {
-        return 'ecommerce';
-    }
-    return null;
-}
-
-/** El texto de la comparación real: la modalidad sin la función y la que ya tiene cotizada. */
 function wabot_comparacion_tipo_texto($alterno, $conv, $cfg) {
-    /* "Sale lo mismo sin carrito?" ya NO abre la modalidad catálogo: se retiró
-     * el 2-sep y el bot le seguía cotizando a un cliente nuevo un producto que
-     * no se vende ($180.000 + $500 por producto). Lo que pregunta se contesta
-     * mejor con la verdad: la tienda ya trae las dos formas. */
-    if ($alterno === 'ecommerce' && !wabot_tipo_ofrecible('catalogo', $cfg)) {
-        $dosFormas = trim((string)($cfg['info']['las_dos_formas'] ?? ''));
-        return $dosFormas !== '' ? $dosFormas : null;
-    }
-    if ($alterno === 'ecommerce' && isset($cfg['tipos']['catalogo']) && isset($cfg['tipos']['ecommerce'])) {
-        $c = wabot_catalogo_config($cfg);
-        return 'Sin carrito sería la modalidad catálogo: ' . wabot_moneda($c['base'])
-            . ' de desarrollo más ' . wabot_moneda($c['por_producto'])
-            . ' por cada producto que cargues, y el cliente cierra la compra por WhatsApp en vez de pagar en la web.'
-            . "\n\nCon carrito y pagos online es lo que ya tenés cotizado: " . (string)($cfg['tipos']['ecommerce']['precio'] ?? '');
-    }
-    if ($alterno === 'turnos' && isset($cfg['tipos']['landing']) && isset($cfg['tipos']['turnos'])) {
-        /* Solo llega acá una charla vieja cotizada en turnos (tipo retirado):
-         * se compara con el precio de pago único que tenía la landing entonces,
-         * no con el primer pago del modelo nuevo, que es otra cosa. */
-        return 'Sin reserva automática sería una landing común, donde te escriben por WhatsApp y coordinás vos: '
-            . wabot_precio_anterior_de('landing', $cfg)
-            . '.' . "\n\nCon reserva automática es lo que ya tenés cotizado: " . wabot_precio_vigente($conv, $cfg)['precio'];
-    }
-    return null;
+    if ($alterno !== 'ecommerce') return null;
+    $dosFormas = trim((string)($cfg['info']['las_dos_formas'] ?? ''));
+    return $dosFormas !== '' ? $dosFormas : null;
 }
 
 /**
@@ -4875,17 +4252,14 @@ function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
     $sinonimos = [
         'elearning'     => '(plataforma de cursos|campus virtual|aula virtual|vender los cursos)',
         'inmobiliaria'  => '(inmobiliaria|web de propiedades)',
-        'institucional' => '(institucional|web institucional)',
         'ecommerce'     => '(ecommerce|e commerce|tienda online|tienda virtual|con carrito|carrito y pagos|vender online)',
-        'catalogo'      => '(catalogo|web con catalogo|sin carrito)',
-        'turnos'        => '(con turnos|de turnos|reserva de turnos|con reservas|agenda online)',
         'landing'       => '(landing|pagina comun|web comun|pagina simple|web simple|pagina basica|web basica|pagina normal|web normal|la comun|la simple|la basica|la sencilla|pagina sola|solo la pagina)',
     ];
     foreach ($sinonimos as $tipo => $re) {
         if (!isset($cfg['tipos'][$tipo])) continue;
         /* Y no se cotiza lo que ya no se vende: "cuánto sale una web
          * institucional?" devolvía "$200.000" con descripción y todo. */
-        if (!wabot_tipo_ofrecible($tipo, $cfg)) continue;
+        if (!isset($cfg['tipos'][$tipo])) continue;
         if (!preg_match('/\b' . $re . '\b/u', $t)) continue;
         if ((string)$tipo === (string)$tipoActual) return null;   // pregunta por el que ya tiene
         return $tipo;
@@ -4897,7 +4271,7 @@ function wabot_texto_pregunta_precio_de_tipo($texto, $cfg, $tipoActual = null) {
 function wabot_precio_de_tipo_texto($tipo, $conv, $cfg) {
     $d = $cfg['tipos'][$tipo] ?? null;
     if (!$d) return null;
-    if (!wabot_tipo_ofrecible($tipo, $cfg)) return null;   // no se cotiza lo retirado
+    if (!isset($cfg['tipos'][$tipo])) return null;
     $frase = wabot_precio_frase(wabot_precio_vigente(null, $cfg, $tipo));
     if ($frase === '') return null;
 
@@ -4940,11 +4314,11 @@ function wabot_texto_pregunta_upgrade($texto, $tipoActual) {
     if ($t === '') return null;
 
     // Solo tiene sentido desde un tipo que todavía NO cobra online.
-    if (!in_array((string)$tipoActual, ['landing', 'turnos', 'institucional', 'inmobiliaria'], true)) return null;
+    if (!in_array((string)$tipoActual, ['landing', 'inmobiliaria'], true)) return null;
 
     // Pasar de presentar clases a vender cursos con acceso de alumnos cambia
     // el producto. No confundirlo con sumar fotos/textos al sitio ya cotizado.
-    if (in_array((string)$tipoActual, ['landing', 'turnos', 'institucional'], true)
+    if ((string)$tipoActual === 'landing'
         && preg_match('/\b(cursos?|clases)\b/u', $t)
         && preg_match('/\b(quiero|necesito|agregar|sumar|incluir|poner)\b/u', $t)
         && preg_match('/\b(vender|venta|cobrar|comprar)\b/u', $t)
@@ -5105,7 +4479,7 @@ function wabot_desempate_desvio($acc, $out, $texto, &$conv, $cfg) {
     if ($d && $d[0] !== $conv['fase']) {
         $conv['fase'] = $d[0];
         wabot_handoff_aclaracion_resuelta($conv);
-        $out[] = $d[0] === 'sistema_problema' ? wabot_sistema_texto('problema', $cfg) : $cfg[$d[1]];
+        $out[] = $cfg[$d[1]];
     }
     elseif ($r !== null && $d === null) { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
     elseif (!$out)                      { return wabot_handoff_intentar($texto, $conv, $cfg); }
@@ -5133,16 +4507,6 @@ function wabot_texto_mantenimiento($conv, $cfg) {
     $base   = (string)($cfg['info']['mantenimiento'] ?? '');
     $tipo   = (string)($conv['tipo'] ?? '');
     $v      = wabot_precio_vigente($conv, $cfg);
-
-    /* La charla cotizada con el modelo viejo (pago único) tiene el
-     * mantenimiento opcional que se le prometió, al precio de entonces. */
-    if ($tipo !== '' && $v['modelo'] === 'unico') {
-        $clave = $tipo === 'landing' ? 'landing' : 'otros';
-        $plan  = $planes[$clave] ?? $planes['otros'] ?? [];
-        $precioViejo = trim((string)($plan['precio_anterior'] ?? $plan['precio'] ?? ''));
-        $texto = wabot_modelo_unico_textos()['mantenimiento'];
-        return trim(str_replace(['{precio}', '{link}'], [$precioViejo, (string)($plan['link'] ?? '')], $texto));
-    }
 
     if ($tipo === '' || $v['mensualidad'] === '') {
         $l = $planes['landing'] ?? null;
@@ -5189,19 +4553,9 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     if ($clave === 'bilingue') {
         return str_replace('{precio}', (string)($cfg['adicional_bilingue'] ?? ''), $texto);
     }
-    if ($clave === 'un_solo_pago') {
-        // La charla cotizada antes del 10-sep ya tenía su pago único.
-        if (is_array($conv) && !empty($conv['tipo']) && !empty($conv['precio_dado'])
-            && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
-            return wabot_texto_pago($conv, $cfg);
-        }
+    if ($clave === 'un_solo_pago' || ($clave === 'plan_es_servicio' && strpos($texto, '{precio_un_solo_pago}') !== false)) {
         $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
         // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
-        if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
-        return $texto;
-    }
-    if ($clave === 'plan_es_servicio' && strpos($texto, '{precio_un_solo_pago}') !== false) {
-        $texto = str_replace('{precio_un_solo_pago}', wabot_precio_un_solo_pago_texto($conv, $cfg), $texto);
         if (!is_array($conv) || empty($conv['tipo'])) $texto .= ' Contame a qué te dedicás y te paso el valor.';
         return $texto;
     }
@@ -5225,45 +4579,16 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * saldo, pago único). Va acá porque es el embudo único de todo lo que sale
      * de `info.*`, que es justo lo que Pablo edita desde el panel: así también
      * queda cubierta la redacción que escriba mañana. */
-    return wabot_texto_sin_modelo_viejo($texto);
-}
-
-/**
- * El pago único (Pablo, 15-sep) sale de tipos[].precio y tipos[].sena de la
- * config, con los montos congelados de la charla. Esta lista es el respaldo
- * para cuando no hay config a mano.
- */
-function wabot_precios_un_solo_pago() {
-    return ['landing' => '$180.000', 'ecommerce' => '$290.000', 'inmobiliaria' => '$240.000', 'elearning' => '$290.000'];
+    return $texto;
 }
 
 /** " ($290.000: arrancás con una seña de $60.000 y el saldo va al entregar)", o '' sin tipo. */
-function wabot_precio_un_solo_pago_texto($conv, $cfg = null) {
+function wabot_precio_un_solo_pago_texto($conv, $cfg) {
     $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
-    if ($tipo === '') return '';
-    if (is_array($cfg) && isset($cfg['tipos'][$tipo])) {
-        $v = wabot_precio_vigente($conv, $cfg, $tipo);
-        if ($v['precio'] === '') return '';
-        return ' (' . $v['precio'] . ($v['sena'] !== '' ? ': arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar' : '') . ')';
-    }
-    $alias = ['turnos' => 'landing', 'institucional' => 'landing', 'catalogo' => 'ecommerce', 'lms' => 'elearning'];
-    $p = wabot_precios_un_solo_pago();
-    $tipo = $alias[$tipo] ?? $tipo;
-    return isset($p[$tipo]) ? ' (' . $p[$tipo] . ')' : '';
-}
-
-/** El precio más bajo y el más alto de la lista de tipos, como "$160.000". */
-function wabot_rangos_min_max($cfg) {
-    $montos = [];
-    foreach ((array)($cfg['tipos'] ?? []) as $d) {
-        if (!empty($d['retirado'])) continue;
-        if (!preg_match('/\$[\d.]+/u', (string)($d['precio'] ?? ''), $m)) continue;
-        $n = wabot_monto_a_numero($m[0]);
-        if ($n > 0) $montos[$n] = $m[0];
-    }
-    if (!$montos) return null;
-    ksort($montos);
-    return ['min' => reset($montos), 'max' => end($montos)];
+    if ($tipo === '' || !isset($cfg['tipos'][$tipo])) return '';
+    $v = wabot_precio_vigente($conv, $cfg, $tipo);
+    if ($v['precio'] === '') return '';
+    return ' (' . $v['precio'] . ($v['sena'] !== '' ? ': arrancás con una seña de ' . $v['sena'] . ' y el saldo va al entregar' : '') . ')';
 }
 
 /**
@@ -5282,7 +4607,7 @@ function wabot_texto_rangos($cfg) {
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
         $texto = 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.';
     }
-    return wabot_texto_sin_modelo_viejo($texto);
+    return $texto;
 }
 
 /**
@@ -5296,17 +4621,12 @@ function wabot_texto_pago_generico($cfg) {
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
         $texto = 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
     }
-    return wabot_texto_sin_modelo_viejo($texto);
+    return $texto;
 }
 
 /** Hosting y dominio van incluidos mientras dure el plan: no hay renovación aparte. */
 function wabot_texto_hosting($conv, $cfg, $mensaje = '') {
-    // La charla cotizada con el pago único conserva lo que se le prometió.
-    if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
-        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
-        return wabot_modelo_unico_textos()['hosting'];
-    }
-    $base = trim(wabot_texto_sin_modelo_viejo((string)($cfg['info']['hosting'] ?? '')));
+    $base = trim((string)($cfg['info']['hosting'] ?? ''));
     $renovacion = trim((string)($cfg['hosting_renovacion'] ?? ''));
     if ($renovacion === '' || mb_stripos($base, $renovacion) !== false) return $base;
     /* El monto de la renovación del pago único sale SOLO si pregunta cuánto
@@ -5344,52 +4664,7 @@ function wabot_texto_hosting($conv, $cfg, $mensaje = '') {
  * de borrar: la condición comercial —una parte al arrancar, el resto al
  * entregar— se sigue diciendo; lo que desaparece es la palabra y el número.
  */
-function wabot_texto_sin_sena($texto) {
-    $t = (string)$texto;
-    if ($t === '' || !preg_match('/se[ñn]a|senia/iu', $t)) return $t;
 
-    // "en unos 7 días desde la seña y la entrega del contenido" → "desde que arrancamos"
-    $t = preg_replace('/\bdesde\s+(la|una)\s+se[ñn]a\b/iu', 'desde que arrancamos', $t);
-    // "la seña es de $40.000" / "la seña de {sena}" (con monto, entre paréntesis o no)
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s+(es\s+)?de\s+(\{sena\}|\$\s?[\d.,]+)/iu', 'una parte', $t);
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\s*\([^)]*\)/iu', 'una parte', $t);
-    // Y la mención pelada, sin monto: "se abona una seña", "se deja la seña".
-    $t = preg_replace('/\b(una|la)\s+se[ñn]a\b/iu', 'una parte', $t);
-    $t = preg_replace('/\bse[ñn]a\b/iu', 'parte', $t);
-
-    /* "se deja una parte de" queda colgando si el monto venía con otra forma
-     * que las de arriba; y "una parte para arrancar y el saldo" es redundante
-     * cuando la oración ya arranca con "Para arrancar". */
-    $t = preg_replace('/\buna parte\s+de\s*(?=[.,;]|$)/iu', 'una parte', $t);
-    $t = preg_replace('/\bPara arrancar\b(.{0,30}?)\buna parte para arrancar\b/iu', 'Para arrancar$1una parte', $t);
-    return trim(preg_replace('/\s{2,}/u', ' ', $t));
-}
-
-/**
- * Ningún texto sale hablando del modelo viejo (10-sep-2026).
- *
- * Pablo cambió el modelo comercial: ya no hay pago único, ni seña, ni saldo al
- * entregar: desde el 14-sep es un servicio mensual. Los textos de `info.*` los
- * edita él desde el panel, así que producción siempre tiene alguna redacción
- * que ninguna migración por texto exacto conoce: acá se corrige por CONTENIDO,
- * como wabot_frase_retirada(). Sustituye en vez de borrar —"se abona una seña"
- * pasa a "se abona la primera cuota"— y tira las oraciones que hablan del saldo,
- * que no tienen reemplazo. Es la red final; la redacción buena la ponen las
- * migraciones de wabot_config_modelo_mensual().
- */
-function wabot_texto_sin_modelo_viejo($texto) {
-    $t = (string)$texto;
-    if ($t === '') return $t;
-    /* 15-sep (Pablo): vuelven la seña, el saldo y el pago único, así que ya no
-     * se corrigen. Lo único que no existe en ninguna de las dos formas es el
-     * "primer pago" del modelo del 10 al 14-sep: pasa a ser la seña. */
-    if (!preg_match('/primer pago/iu', $t)) return $t;
-    $t = preg_replace('/\bun primer pago\b/iu', 'una seña', $t);
-    $t = preg_replace('/\bdel primer pago\b/iu', 'de la seña', $t);
-    $t = preg_replace('/\bel primer pago\b/iu', 'la seña', $t);
-    $t = preg_replace('/\bprimer pago\b/iu', 'seña', $t);
-    return trim(preg_replace('/[ \t]{2,}/u', ' ', $t));
-}
 
 /**
  * Cómo se paga lo cotizado (10-sep): el primer pago del tipo y su plan mensual,
@@ -5405,14 +4680,6 @@ function wabot_texto_pago($conv, $cfg) {
         return 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, o un servicio mensual por Mercado Pago, sin pago inicial.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
-    if ($v['modelo'] === 'unico') {
-        $legacy = wabot_modelo_unico_textos();
-        if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) > 0) {
-            $d = wabot_catalogo_total((int)$conv['productos_cantidad'], $cfg);
-            return str_replace('{precio}', wabot_moneda($d['total']), $legacy['pago_catalogo']);
-        }
-        return str_replace('{precio}', $v['precio'], $legacy['pago']);
-    }
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
      * cuota (Pablo, 2-sep). Si quedó alguno en un texto editado a mano, sale
      * la frase sin el número en vez de un {cuotas_12} crudo. */
@@ -5420,7 +4687,7 @@ function wabot_texto_pago($conv, $cfg) {
     $texto = preg_replace('/:?\s*12 cuotas de\s*,?\s*6 de\s*,?\s*(o\s*)?3 de\s*/u', '', $texto);
     $texto = wabot_precio_placeholders($texto, $conv, $cfg);
     $texto = trim(preg_replace('/[ \t]{2,}/u', ' ', $texto));
-    return wabot_texto_sin_modelo_viejo($texto);
+    return $texto;
 }
 
 /** Elige una variante estable por conversación; precios y links siguen exactos. */
@@ -5450,11 +4717,6 @@ function wabot_plantilla_variante($clave, $claveVariantes, $conv, $cfg) {
  * NO existe antes de la demo: es lo que separa la parte 1 de la parte 2.
  */
 
-/** El primer pago que corresponde a lo cotizado, ya formateado (antes: la seña). */
-function wabot_sena_de($conv, $cfg) {
-    return wabot_precio_vigente($conv, $cfg)['precio'];
-}
-
 /* ───────── El precio de ESTA charla: primer pago + plan mensual (10-sep-2026) ─────────
  *
  * Pablo cambió el modelo comercial el 10-sep: se terminó el pago único. Ahora
@@ -5474,33 +4736,13 @@ function wabot_sena_de($conv, $cfg) {
  *     desde los tipos ofrecibles.
  */
 
-/** Los textos del modelo viejo, para las charlas cotizadas antes del 10-sep. */
-function wabot_modelo_unico_textos() {
-    return [
-        'msg_precio'     => "Perfecto, para lo tuyo va {desc}. Todo el desarrollo tendría un valor de {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés.",
-        'msg_precio_tras_pitch' => "El desarrollo completo tiene un valor de {precio}.",
-        'precio_resumen' => "El total es {precio} por todo el desarrollo.\nY acá podés ver {portfolio_texto}: {portfolio}",
-        'pago'           => 'El desarrollo completo es {precio}. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total. Para arrancar se deja una parte y el saldo al entregar la web.',
-        'pago_catalogo'  => 'El total cotizado es {precio}. Se abona por transferencia, con una parte para arrancar y el saldo al entregar la web, o con tarjeta hasta en 12 cuotas con interés: el valor de cada cuota lo calcula la tarjeta sobre el total.',
-        'caro'           => 'Es pago único, sin costos mensuales de plataforma: la web queda a tu nombre y es a medida. Se puede abonar por transferencia o con tarjeta, en un pago o hasta en 12 cuotas con interés.',
-        'mantenimiento'  => 'El mantenimiento es opcional e incluye un cambio por mes —puede ser un cambio grande, no solo un retoque—, además del soporte, y el hosting y el dominio mientras esté activo. Hay planes más completos con más cambios por mes si los llegás a necesitar. Sale {precio} por mes y acá lo podés ver en detalle: {link}',
-        'hosting'        => 'Hosting y dominio están incluidos en el precio, con el primer año cubierto. Después se renuevan una vez al año, y antes del vencimiento te confirmamos el importe actualizado. Si tenés el plan de mantenimiento activo, no la pagás: el hosting y el dominio ya están incluidos.',
-        'obligatorio'    => 'Es opcional. La web es tuya igual: lo contratás solo si lo querés, y lo podés dar de baja cuando quieras.',
-    ];
-}
-
 /**
- * La respuesta a "es caro", con el precio de ESTA charla resuelto (10-sep).
+ * La respuesta a "es caro", con el precio de ESTA charla resuelto.
  * Es el mismo armado que hace wabot_objecion_texto(), para los caminos que no
  * pasan por ahí (el derivado y el limpiador de objeciones).
  */
 function wabot_texto_caro($conv, $cfg) {
-    $t = (string)($cfg['caro'] ?? '');
-    if (!empty($conv['tipo']) && !empty($conv['precio_dado'])
-        && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') {
-        $t = wabot_modelo_unico_textos()['caro'];
-    }
-    return wabot_link_presupuesto_completar(wabot_precio_placeholders($t, $conv, $cfg), $conv, $cfg);
+    return wabot_link_presupuesto_completar(wabot_precio_placeholders((string)($cfg['caro'] ?? ''), $conv, $cfg), $conv, $cfg);
 }
 
 /** Congela en la charla el precio con el que se está cotizando este tipo. */
@@ -5509,42 +4751,13 @@ function wabot_precio_congelar(&$conv, $tipo, $cfg) {
     $conv['precio_cotizado']      = trim((string)($t['precio'] ?? ''));
     $conv['sena_cotizada']        = trim((string)($t['sena'] ?? ''));
     $conv['mensualidad_cotizada'] = trim((string)($t['mensualidad'] ?? ''));
-    // 15-sep: las dos formas (pago único con seña, o servicio mensual).
-    $conv['precio_modelo']        = $conv['mensualidad_cotizada'] !== '' ? 'doble' : 'unico';
+    $conv['precio_modelo']        = 'doble';   // las dos formas: pago único con seña, o servicio mensual
     $conv['precio_cotizado_ts']   = time();
 }
 
 /**
- * La charla cotizada ANTES del snapshot (o sea, con el modelo viejo): se le
- * siembra el precio que el bot le dijo, leído del transcript. Solo si hay un
- * monto de desarrollo dicho por el bot; si no, no se inventa nada y el precio
- * sale de la lista vigente.
- */
-function wabot_precio_sembrar(&$conv, $cfg) {
-    if (empty($conv['precio_dado']) || !empty($conv['precio_cotizado'])) return;
-    $tipo = (string)($conv['tipo'] ?? '');
-    if ($tipo === '') return;
-    $dicho = '';
-    foreach ((array)($conv['transcript'] ?? []) as $l) {
-        if (($l['q'] ?? '') !== 'bot') continue;
-        if (!preg_match_all('/\$\d{1,3}(?:\.\d{3})+/u', (string)($l['t'] ?? ''), $m)) continue;
-        foreach ($m[0] as $monto) {
-            if (wabot_monto_a_numero($monto) >= 100000) $dicho = $monto;
-        }
-    }
-    if ($dicho === '') return;
-    $conv['precio_cotizado']      = $dicho;
-    $conv['sena_cotizada']        = '';
-    $conv['mensualidad_cotizada'] = '';
-    $conv['precio_modelo']        = 'unico';
-    $conv['precio_cotizado_ts']   = (int)($conv['ultimo_ts'] ?? 0) ?: time();
-    wabot_evento_sesion($conv, 'precio_congelado_modelo_unico', ['precio' => $dicho]);
-}
-
-/**
  * El precio que vale para esta charla y este tipo: el congelado si lo hay, la
- * lista si no. Devuelve precio (primer pago), mensualidad y modelo
- * ('mensual' | 'unico').
+ * lista si no. Devuelve precio (pago único), seña, saldo y mensualidad.
  */
 function wabot_precio_vigente($conv, $cfg, $tipo = null) {
     $tipo = (string)($tipo ?? (is_array($conv) ? ($conv['tipo'] ?? '') : ''));
@@ -5556,45 +4769,29 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
         'mensualidad' => trim((string)($t['mensualidad'] ?? '')),
         'modelo'      => 'doble',
     ];
-    if (is_array($conv) && (string)($conv['tipo'] ?? '') === $tipo && $tipo !== '') {
+    if (is_array($conv) && (string)($conv['tipo'] ?? '') === $tipo && $tipo !== '' && !empty($conv['precio_cotizado'])) {
         $modelo = (string)($conv['precio_modelo'] ?? '');
-        if (!empty($conv['precio_cotizado']) && $modelo === 'doble') {
+        if ($modelo === 'doble') {
             $v['precio']      = trim((string)$conv['precio_cotizado']);
             $v['sena']        = trim((string)($conv['sena_cotizada'] ?? '')) ?: $v['sena'];
-            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? ''));
-        } elseif (!empty($conv['precio_cotizado']) && $modelo === 'mensual') {
-            /* Cotizada del 10 al 14-sep, con primer pago o solo la mensualidad:
-             * conserva SU mensualidad y desde el 15-sep se le ofrece también el
-             * pago único de lista. */
             $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
-        } elseif (!empty($conv['precio_cotizado'])) {
-            $v['precio']      = trim((string)$conv['precio_cotizado']);
-            $v['sena']        = '';
-            $v['mensualidad'] = '';
-            $v['modelo']      = 'unico';
-        } elseif (!empty($conv['precio_dado'])) {
-            /* Cotizada y SIN precio congelado: solo las charlas de antes del
-             * 10-sep. Se le respeta el pago único de entonces
-             * (wabot_precio_sembrar lo afina con el monto del transcript). */
-            $v['precio']      = wabot_precio_anterior_de($tipo, $cfg);
-            $v['sena']        = '';
-            $v['mensualidad'] = '';
-            $v['modelo']      = 'unico';
+        } elseif ($modelo === 'mensual') {
+            /* Cotizada del 10 al 14-sep, con la mensualidad sola: conserva SU
+             * mensualidad y se le ofrece también el pago único de lista. */
+            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
         }
     }
-    if ($v['modelo'] === 'doble' && $v['mensualidad'] === '') $v['modelo'] = 'unico';
     $v['saldo'] = ($v['precio'] !== '' && $v['sena'] !== '')
         ? wabot_moneda(max(0, wabot_monto_a_numero($v['precio']) - wabot_monto_a_numero($v['sena']))) : '';
     return $v;
 }
 
-/** "$290.000 en un pago único o $30.000 por mes", o solo el pago único si es una charla vieja. */
+/** "$290.000 en un pago único o $30.000 por mes". */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
-    if (($v['modelo'] ?? '') === 'unico' || $v['mensualidad'] === '') return $v['precio'];
+    if ($v['mensualidad'] === '') return $v['precio'];
     return $v['precio'] . ' en un pago único o ' . $v['mensualidad'] . ' por mes';
 }
-
 /** El nombre de cada tipo como se dice en la tabla de precios. */
 function wabot_tipo_nombre_precio($tipo, $d) {
     $mapa = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda online',
@@ -5606,7 +4803,7 @@ function wabot_tipo_nombre_precio($tipo, $d) {
 function wabot_precio_grupos($cfg) {
     $grupos = [];
     foreach ((array)($cfg['tipos'] ?? []) as $tipo => $d) {
-        if (!empty($d['retirado'])) continue;
+
         $p = trim((string)($d['precio'] ?? ''));
         $m = trim((string)($d['mensualidad'] ?? ''));
         if ($p === '' || wabot_monto_a_numero($p) <= 0) continue;
@@ -5711,11 +4908,12 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
  * mandarle el link en el globo de al lado se contradice.
  */
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
-    $t = trim((string)($cfg['msg_tres_pasos'] ?? ''));
-    if ($t === '' && function_exists('wabot_tres_pasos_default')) $t = wabot_tres_pasos_default();
-    $t = wabot_tres_pasos_precio($t, $conv, $cfg);
-    if ($conPregunta && $t !== '') $t .= "\n" . wabot_tres_pasos_pregunta();
-    return $t;
+    $contexto = trim((string)($conv['descripcion'] ?? '')) . ' ' . wabot_ultimo_texto_cliente($conv);
+    $sugerencias = wabot_rubro_sugerencias($contexto, (string)($conv['tipo'] ?? ''));
+    $t = !empty($conv['portfolio_mostrado'])
+        ? 'Si querés elegir un punto de partida, mirá los modelos en gokywebs.com/modelos/'
+        : ($sugerencias ? $sugerencias['texto'] : 'Podés mirar nuestros trabajos en gokywebs.com/portfolio/ y elegir uno o dos modelos en gokywebs.com/modelos/');
+    return $t . ($conPregunta ? "\n¿Arrancamos?" : '');
 }
 
 /**
@@ -5725,7 +4923,6 @@ function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
  */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
-    if (($v['modelo'] ?? '') === 'unico') return '';
     $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']));
     $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
@@ -5752,11 +4949,8 @@ function wabot_tres_pasos_precio($texto, $conv, $cfg) {
     $mensual    = '';
     if (is_array($conv) && !empty($conv['precio_dado'])) {
         $v = wabot_precio_vigente($conv, $cfg);
-        // La charla del pago único no tiene "primer pago": ahí el monto no va.
-        if (($v['modelo'] ?? '') !== 'unico') {
-            $primerPago = trim((string)$v['precio']);
-            $mensual    = trim((string)$v['mensualidad']);
-        }
+        $primerPago = trim((string)$v['precio']);
+        $mensual    = trim((string)$v['mensualidad']);
     }
     foreach (['{precio}' => $primerPago, '{mensualidad}' => $mensual] as $marca => $monto) {
         $t = $monto !== ''
@@ -5781,22 +4975,6 @@ function wabot_dice_que_pago($texto) {
         || preg_match('/\bcomprobante\b/u', $t)
         // "Ya me suscribí" / "me adherí al plan" (auditoría del 15-sep).
         || preg_match('/\b(ya )?(me )?(suscribi|adheri|subscribi)\b/u', $t)
-    );
-}
-
-/** Después de ver la demo, quiere avanzar: pide el próximo paso o le gustó. */
-function wabot_postdemo_quiere_avanzar($texto) {
-    $t = wabot_normalizar_frase($texto);
-    if ($t === '') return false;
-    if (preg_match('/\bno\b.{0,12}\b(me gusto|me gusta|me encanto|me convence|me convencio|termina de cerrar)\b/u', $t)) return false;
-    if (wabot_es_afirmativa($texto)) return true;
-    return (bool)(
-        preg_match('/\bcomo\b.{0,12}\b(sigo|seguimos|sigue|hago|hacemos|arranco|arrancamos|procedo|avanzo|avanzamos|continuo)\b/u', $t)
-        || preg_match('/\b(que|cual)\b.{0,15}\b(paso|pasos|siguiente|sigue ahora)\b/u', $t)
-        || preg_match('/\b(quiero|queremos|vamos a|listo para)\b.{0,20}\b(avanzar|arrancar|empezar|contratar|seguir|hacerla|comprarla)\b/u', $t)
-        || preg_match('/\b(me gusto|me encanto|me gusta|quedo (muy )?(bien|linda|buena|barbara)|esta (muy )?(buena|linda|barbara)|buenisima|espectacular|hermosa)\b/u', $t)
-        || preg_match('/\b(dale|listo)\b.{0,20}\b(avanzamos|arrancamos|seguimos|vamos)\b/u', $t)
-        || (wabot_texto_es_elogio($texto) && !wabot_postdemo_la_va_a_mirar($texto))
     );
 }
 
@@ -5898,16 +5076,6 @@ function wabot_precio_resumen($conv, $cfg) {
     $t = $cfg['tipos'][$tipo];
     $v = wabot_precio_vigente($conv, $cfg);
     $precio = $v['precio'];
-    if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) > 0) {
-        $d = wabot_catalogo_total((int)$conv['productos_cantidad'], $cfg);
-        $precio = wabot_moneda($d['total']);
-    }
-    // La charla cotizada con el modelo viejo repite SU precio y SUS condiciones.
-    if ($v['modelo'] === 'unico') {
-        return str_replace(['{precio}', '{sena}', '{link}', '{portfolio}', '{portfolio_texto}'],
-            [$precio, '', (string)($t['link'] ?? ''), (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
-            wabot_modelo_unico_textos()['precio_resumen']);
-    }
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
         $plantilla = "Son dos formas: pago único de {precio}, con una seña de {sena} y el saldo al entregar, o servicio mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}";
@@ -6022,122 +5190,6 @@ function wabot_rubro_valido($rubro, $conv) {
 }
 
 /**
- * El rubro sacado de lo que el cliente escribió, cuando el modelo no lo mandó.
- *
- * "Perfecto, para tu negocio sería un sitio profesional" les llegó a Henry
- * (que había escrito tres renglones sobre enfermería domiciliaria), a Mundo
- * Queen y a la clienta de cerámica, todos el 3-sep. El argumento `rubro` de
- * dar_precio era opcional y el modelo lo omitía: ahora es obligatorio, y esto
- * es la red por si igual llega vacío.
- *
- * Deliberadamente angosta. Solo toma lo que viene detrás de una fórmula de
- * presentación explícita ("soy...", "tengo un...", "vendo...", "hago..."), que
- * es donde el rubro está dicho con todas las letras, y lo pasa por
- * wabot_rubro_valido() como si lo hubiera mandado el modelo. Si no encuentra
- * nada con esa forma devuelve '' y sale "tu negocio", como hasta ahora:
- * inventarle un rubro equivocado es peor que no nombrarlo.
- */
-function wabot_rubro_desde_contexto($conv) {
-    $ctx = trim((string)wabot_contexto_cliente_texto($conv));
-    if ($ctx === '') return '';
-
-    /* Se recorre por oración y se prefiere la PRIMERA presentación, que es
-     * donde la gente dice a qué se dedica antes de entrar en detalles. */
-    $verbos = 'soy|somos|tengo|tenemos|vendo|vendemos|hago|hacemos|ofrezco|ofrecemos'
-            . '|me dedico a|nos dedicamos a|fabrico|fabricamos|trabajo (?:con|de)|doy|damos|dicto|dictamos'
-            . '|interesad[oa] en|necesito|necesitaria|quiero|queria';
-    $articulos = '(?:un|una|unos|unas|el|la|los|las|mi|mis)\s+';
-
-    /* Palabras que no dicen nada del rubro. "Tenemos un local donde hacemos
-     * uñas" daba "un local", que en el pitch se lee igual de genérico que "tu
-     * negocio" y encima suena raro ("para un local sería un ecommerce"). */
-    $vacias = '/^(?:es |soy |somos )?(un |una |el |la |los |las |mi |mis )?(local|negocio|negocios|emprendimiento|empresa|comercio'
-            . '|marca|tienda|proyecto|rubro|servicio|servicios|producto|productos|pagina|paginas|web|sitio'
-            . '|cliente|clientes|persona|gente|cosas|todo|algo|profesional|profesionales|emprendedor|emprendedora'
-            // Saludos y muletillas: son el primer segmento de casi todo mensaje.
-            . '|hola|holaa+|buenas|buen dia|buenas tardes|buenas noches|gracias|consulta|consultas'
-            . '|informacion|información|info|precio|precios|presupuesto|presupuestos|ayuda|idea)$/iu';
-
-    $tomar = function ($candidato, $articulo) use ($conv, $vacias) {
-        $candidato = trim((string)$candidato);
-        if ($candidato === '' || preg_match($vacias, $candidato)) return '';
-        /* El rubro es un sustantivo, no una acción. "Quería consultar por una
-         * página" daba "consultar por una pagina" y el pitch salía "para
-         * consultar por una pagina sería un ecommerce". */
-        if (preg_match('/^(consultar|preguntar|saber|ver|hacer|armar|tener|conseguir|averiguar|cotizar|presupuestar|comprar|contratar|hablar|charlar)\b/iu', $candidato)) return '';
-        // Una sola palabra que además es la primera del mensaje y termina en
-        // -ar/-er/-ir tiene todas las chances de ser otro infinitivo suelto.
-        if (preg_match('/^\p{L}+(ar|er|ir)$/u', $candidato)) return '';
-        $articulo = trim((string)$articulo);
-        if ($articulo !== '') {
-            $valido = wabot_rubro_valido($articulo . ' ' . $candidato, $conv);
-            if ($valido !== '') return $valido;
-        }
-        return wabot_rubro_valido($candidato, $conv);
-    };
-
-    /* preg_match_all y no preg_match: en una oración larga la primera fórmula
-     * puede no servir y la segunda sí. "Con mi esposa tenemos un local donde
-     * hace uñas... y también hacemos ventas de insumos" arranca con "tenemos un
-     * local" —que no es un rubro— y recién la segunda ("hacemos ventas de
-     * insumos") dice algo. Con una sola pasada se caía a "tu negocio". */
-    $candidatos = [];
-    foreach (preg_split('/[.;\n]+/u', $ctx) as $oracion) {
-        $o = trim((string)$oracion);
-        if ($o === '') continue;
-        if (!preg_match_all('/\b(' . $verbos . ')\s+(' . $articulos . ')?([\p{L}][\p{L}\s]{2,45})/ui', $o, $ms, PREG_SET_ORDER)) continue;
-        foreach ($ms as $m) $candidatos[] = $m;
-    }
-    foreach ($candidatos as $m) {
-        $cola = trim((string)$m[3]);
-        if ($cola === '') continue;
-        // Se corta en el primer conector: lo que sigue ya es otra cosa.
-        $cola = preg_split('/\b(y|o|que|para|con|en|por|sobre|desde|hasta|donde|pero|porque|ademas|además)\b/ui', $cola)[0] ?? '';
-        $cola = trim((string)$cola);
-        if ($cola === '') continue;
-        /* "Interesado en una DE enfermería domiciliaria": el partitivo no es
-         * parte del rubro, y arrastrarlo daba "para una de enfermería
-         * domiciliaria sería...". Si estaba, el artículo tampoco va. */
-        $articulo = (string)($m[2] ?? '');
-        if (preg_match('/^(de|del|a|al)\s+/ui', $cola)) {
-            $cola = trim(preg_replace('/^(de|del|a|al)\s+/ui', '', $cola));
-            $articulo = '';
-        }
-        if ($cola === '') continue;
-        $palabras = preg_split('/\s+/u', $cola);
-        if (count($palabras) > 4) $palabras = array_slice($palabras, 0, 4);
-        /* Cortar en cuatro puede dejar una preposición colgando: "productos de
-         * limpieza a granel" quedaba "productos de limpieza a", y el precio
-         * arrancaba "Para productos de limpieza a podemos…" (batería 11-sep). */
-        while (count($palabras) > 1 && preg_match('/^(a|al|de|del|la|las|el|los|en|para|con|y|o|e|u|un|una|por|sin)$/iu', end($palabras))) {
-            array_pop($palabras);
-        }
-        $valido = $tomar(implode(' ', $palabras), $articulo);
-        if ($valido !== '') return $valido;
-    }
-
-    /* Sin fórmula de presentación y con el rubro dicho a secas: "ceramica,
-     * venta y clases" son cuatro palabras y ninguna es un verbo. Solo cuando
-     * TODO lo que escribió es corto: en un texto largo, el primer segmento
-     * puede ser cualquier cosa menos el rubro. */
-    $palabrasCtx = preg_split('/\s+/u', trim(preg_replace('/\s+/u', ' ', $ctx)));
-    if (count($palabrasCtx) <= 8) {
-        // Se recorren los segmentos y no solo el primero: casi todo mensaje
-        // arranca con un saludo, que $tomar() descarta.
-        foreach (preg_split('/[,;\n]+/u', $ctx) as $segmento) {
-            $segmento = trim((string)$segmento);
-            /* Si el segmento trae un verbo de presentación, su turno ya pasó
-             * arriba y no salió nada: agarrarlo entero acá deja frases como
-             * "queria consultar por una pagina" de rubro. */
-            if ($segmento === '' || preg_match('/\b(' . $verbos . ')\b/ui', $segmento)) continue;
-            $valido = $tomar($segmento, '');
-            if ($valido !== '') return $valido;
-        }
-    }
-    return '';
-}
-
-/**
  * "No tengo ninguna referencia": la respuesta NEGATIVA también es una respuesta.
  *
  * La clienta de Estética Integral contestó el listado con "No tengo ninguna
@@ -6184,18 +5236,6 @@ function wabot_prediseno_referencia_negada($texto, &$conv) {
     $conv['referencia'] = '';
     $conv['referencia_preguntada'] = true;
     return true;
-}
-
-/** Deshace un pitch que salió este turno pero no llegó al cliente. */
-function wabot_pitch_deshacer(&$conv) {
-    $conv['tipo'] = null;
-    $conv['fase'] = 'menu';
-    $conv['precio_dado'] = false;
-    $conv['pitch_hecho'] = false;
-    $conv['pitch_tipo'] = null;
-    $conv['cta_muestra'] = false;
-    $conv['rubro_pitch'] = '';
-    unset($conv['pitch_para_que'], $conv['pitch_para_que_tipo']);
 }
 
 /**
@@ -6265,9 +5305,7 @@ function wabot_prediseno_no_sabe_como($texto, &$conv, $cfg) {
  */
 function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
     $fijo = trim((string)($cfg['tipos'][$tipo]['precio_ideal'] ?? ''));
-    // La charla cotizada con el pago único conserva su redacción: el formato
-    // del 11-sep habla de primer pago y plan, que para ella no existen.
-    if ($fijo !== '' && wabot_precio_vigente($conv, $cfg, $tipo)['modelo'] !== 'unico') {
+    if ($fijo !== '') {
         // Sin {link} desde el 14-sep (Pablo): lo que incluye va en el mismo
         // mensaje, así que el link del presupuesto no se manda más.
         // {precio} y {mensualidad} salen del precio vigente de la charla.
@@ -6316,72 +5354,12 @@ function wabot_propuesta_texto($tipo, $conv) {
 function wabot_info_variante_por_tipo($clave, $tipo) {
     if ($tipo === '') return null;
     if ($clave === 'que_incluye') {
-        return in_array($tipo, ['ecommerce', 'catalogo'], true) ? null : 'que_incluye_sin_productos';
+        return $tipo === 'ecommerce' ? null : 'que_incluye_sin_productos';
     }
     if ($clave === 'estadisticas') {
-        return in_array($tipo, ['ecommerce', 'catalogo', 'elearning', 'lms'], true) ? 'estadisticas_tienda' : 'estadisticas_sitio';
+        return in_array($tipo, ['ecommerce', 'elearning'], true) ? 'estadisticas_tienda' : 'estadisticas_sitio';
     }
     return null;
-}
-
-/** ¿Es el precio que arranca con la propuesta? ("Para {rubro} podemos hacer una web…") */
-function wabot_texto_arranca_con_propuesta($texto) {
-    return (bool)preg_match('/^\s*(Para [^\n]{1,90}? )?[Pp]odemos hacer (una|un) /u', (string)$texto);
-}
-
-/**
- * El para_que que mandó el modelo, si sirve para ir después de "podemos hacer
- * una web donde". Devuelve '' si no.
- *
- * Es una promesa dicha por nosotros, así que el filtro es más duro que el del
- * rubro: ni montos, ni plazos, ni la demo (eso lo dicen los textos oficiales),
- * ni lo que no se vende a ese precio —apps, integraciones, facturación, Google,
- * redes—, ni carrito o cobro online en un sitio profesional. Lo que el modelo
- * infiera del rubro sí vale: Pablo mismo le prometió turnos online al centro de
- * estética, y están incluidos en todos los planes.
- */
-function wabot_para_que_valido($texto, $tipo = '') {
-    $p = trim(preg_replace('/\s+/u', ' ', str_replace('_', ' ', (string)$texto)));
-    // Lo que ya pone el código: "podemos hacer una web donde".
-    $p = preg_replace('/^(podemos (hacer|armar)|te (hacemos|armamos)|hacer|armar)\s+/iu', '', $p);
-    $p = preg_replace('/^(una|un|tu)\s+(web|p[áa]gina|sitio|tienda|plataforma|landing)\b[^,.;]{0,30}?\s+(?=(donde|en donde|en (la|el) que|para que|que)\b)/iu', '', $p);
-    $p = preg_replace('/^(donde|en donde|en (la|el) que|para que|que)\s+/iu', '', $p);
-    $p = trim($p, " \t\n\r.,;:!¡¿?\"'«»()");
-    if (mb_strlen($p) < 8 || mb_strlen($p) > 170) return '';
-    if (preg_match('/[?¿$%{}@\d]|https?:|www\./u', $p)) return '';
-    // Sigue arrancando como una web: el modelo mandó otra forma ("una web para
-    // mostrar…") y pegada detrás de "una web donde" quedaría dos veces.
-    if (preg_match('/^(una|un|la|el|tu)\s+(web|p[áa]gina|sitio|tienda|plataforma|landing)\b/iu', $p)) return '';
-    $n = wabot_normalizar_frase($p);
-    $palabras = array_values(array_filter(explode(' ', $n)));
-    if (count($palabras) < 3 || count($palabras) > 28) return '';
-
-    // Plata nuestra, plazos y la demo: eso lo dice el resto del mensaje. Los
-    // precios y el presupuesto del CLIENTE sí pueden ir ("te pidan presupuesto
-    // por WhatsApp", "vean los precios de cada producto").
-    if (preg_match('/\b(valor|cuesta|costo|costos|sena|cuota|cuotas|pago|pagos|abono|abonos|abonar|descuento|descuentos'
-        . '|gratis|plazo|plazos|demo|predise\w*|link|mensualidad|mensual|hoy|manana|enseguida|breve|brevedad)\b/u', $n)) return '';
-    if (preg_match('/\b(en|dentro de)\s+(un|una|dos|tres|cuatro|cinco|pocos|pocas|unos|unas)\s+(dia|dias|semana|semanas|mes|meses|hora|horas)\b/u', $n)) return '';
-    // Nada de nosotros: ni derivaciones ni anotaciones.
-    if (preg_match('/\b(desarrollador|pablo|equipo|te paso|te comunico|te derivo|te aviso|contame|decime|pasame|mandame|anote|anotado|anotada|tome nota)\b/u', $n)) return '';
-    // Lo que no se vende a este precio.
-    if (preg_match('/\b(app|apps|aplicacion|aplicaciones|factur\w*|afip|arca|integraci\w*|integrad\w*|integre\w*|integren|sincroniz\w*|api|chatbot|bot'
-        . '|inteligencia artificial|ia|cripto\w*|mercado ?libre|tiendanube|tienda nube|shopify|wix|wordpress|google|seo|posicionamiento'
-        . '|publicidad|anuncios|marketing|redes|instagram|facebook|tiktok|seguidores|seguimiento|rastre\w*|tracking)\b/u', $n)) return '';
-    // Carrito y cobro online son de la tienda (y de la plataforma de cursos).
-    // En la inmobiliaria "compra" es la operación, no un carrito.
-    $soloTienda = 'carrito|cobres|cobrar|cobren|cobro|paguen|pagar|checkout|stock|tienda online';
-    if ((string)$tipo === 'landing' && preg_match('/\b(' . $soloTienda . '|compren|comprar|compra|compras)\b/u', $n)) return '';
-    if ((string)$tipo === 'inmobiliaria' && preg_match('/\b(' . $soloTienda . ')\b/u', $n)) return '';
-    if (wabot_texto_promete_cierre($p) || wabot_texto_promete_info_sin_entregar($p)) return '';
-    if (wabot_texto_comodin_desarrollador($p)) return '';
-    if (function_exists('wabot_texto_parece_interno') && wabot_texto_parece_interno($p)) return '';
-    if (function_exists('wabot_frase_retirada') && wabot_frase_retirada($p)) return '';
-
-    $p = trim(preg_replace('/[\x{1F000}-\x{1FAFF}\x{2600}-\x{27BF}\x{FE0F}]/u', '', $p));
-    // Va en el medio de la oración: minúscula, salvo que arranque con una sigla.
-    if (!preg_match('/^\p{Lu}{2}/u', $p)) $p = mb_strtolower(mb_substr($p, 0, 1)) . mb_substr($p, 1);
-    return $p;
 }
 
 /**
@@ -6438,10 +5416,7 @@ function wabot_pitch_corresponde($tipo, $conv, $cfg) {
     if (!empty($conv['demo_pedida_entrada'])) return false;
     if (!empty($conv['pidio_precio'])) return false;
     if (wabot_texto_pide_precio(wabot_ultimo_texto_cliente($conv))) return false;
-    /* Ya no depende de que haya una línea de pitch cargada: esa línea se
-     * eliminó el 2-sep y el turno es precio + demo. Catálogo queda afuera
-     * porque su "pitch" era la pregunta por la cantidad, que también se fue. */
-    return $tipo !== 'catalogo' && isset($cfg['tipos'][$tipo]);
+    return isset($cfg['tipos'][$tipo]);
 }
 
 /**
@@ -6460,6 +5435,8 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     $conv['pitch_hecho'] = true;
     $conv['pitch_tipo'] = $tipo;
     $conv['precio_dado'] = true;
+    $conv['precio_turnos_desde'] = 0;
+    $conv['precio_cta_pendiente'] = true;
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
@@ -6477,39 +5454,7 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     return [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
 }
 
-/**
- * A qué tipo vigente va a parar uno retirado. Es el embudo de compatibilidad
- * del 2-sep: catálogo lo absorbe ecommerce, turnos e institucional el sitio
- * profesional, y LMS se cotiza como plataforma de cursos salvo que Pablo diga
- * otra cosa. Devuelve el mismo tipo si ya es ofrecible.
- */
-function wabot_tipo_absorbido($tipo, $cfg) {
-    $tipo = (string)$tipo;
-    if (wabot_tipo_ofrecible($tipo, $cfg)) return $tipo;
-    $mapa = ['catalogo' => 'ecommerce', 'turnos' => 'landing',
-             'institucional' => 'landing', 'lms' => 'elearning'];
-    $destino = $mapa[$tipo] ?? 'landing';
-    return isset($cfg['tipos'][$destino]) ? $destino : $tipo;
-}
-
 function wabot_precio($tipo, &$conv, $cfg) {
-    /* Los tipos retirados no se cotizan más (Pablo, 2-sep). Este es el embudo
-     * único por donde pasan TODAS las cotizaciones —motor, atajo y agente—,
-     * así que es el único lugar donde el mapeo no se puede esquivar.
-     *
-     * Excepción: una charla que YA fue cotizada con ese tipo se queda con el
-     * suyo. Cambiarle el tipo a quien ya tiene un precio dado le cambiaría el
-     * número, que es exactamente lo que nunca hay que hacer. */
-    if (!wabot_tipo_ofrecible($tipo, $cfg)) {
-        $yaCotizado = !empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo;
-        if (!$yaCotizado) {
-            $absorbido = wabot_tipo_absorbido($tipo, $cfg);
-            if ($absorbido !== $tipo) {
-                wabot_evento_sesion($conv, 'tipo_retirado', ['pedido' => $tipo, 'cotizado' => $absorbido]);
-                $tipo = $absorbido;
-            }
-        }
-    }
     /* Nadie cotiza UN tipo a quien pidió DOS cosas distintas sin avisarle.
      *
      * El guard vivía en dar_precio (agente.php) y no alcanzaba: la respuesta a
@@ -6550,9 +5495,6 @@ function wabot_precio($tipo, &$conv, $cfg) {
     if (wabot_pitch_corresponde($tipo, $conv, $cfg)) {
         return wabot_pitch($tipo, $conv, $cfg);
     }
-    if ($tipo === 'catalogo' && (int)($conv['productos_cantidad'] ?? 0) <= 0) {
-        return wabot_catalogo_preguntar($conv, $cfg);
-    }
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && !empty($conv['cta_muestra'])) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
@@ -6579,6 +5521,8 @@ function wabot_precio($tipo, &$conv, $cfg) {
     $conv['fase'] = 'precio';
     $conv['precio_dado'] = true;
     wabot_precio_congelar($conv, $tipo, $cfg);
+    $conv['precio_turnos_desde'] = 0;
+    $conv['precio_cta_pendiente'] = true;
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
@@ -6603,10 +5547,7 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * haya pedido la demo al entrar ("quiero la demo gratis"): ese sí ya está
      * dicho, así que el formulario va en el mismo turno —en su propio globo,
      * porque lleva el link— y los pasos van sin la pregunta. */
-    $pedidoDemo = !empty($conv['demo_pedida_entrada']) ? trim((string)wabot_prediseno_texto($conv, $cfg)) : '';
-    $out = [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg, $pedidoDemo === '')];
-    if ($pedidoDemo !== '') $out[] = $pedidoDemo;
-    return $out;
+    return [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
 }
 
 /**
@@ -6621,34 +5562,6 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
     if ($desc === '') $desc = 'tu web a medida, diseñada para tu negocio';
     $trasPitch = is_array($conv) && (($conv['pitch_tipo'] ?? '') === $tipo);
 
-    if ($tipo === 'catalogo') {
-        $cantidad = (int)(is_array($conv) ? ($conv['productos_cantidad'] ?? 0) : 0);
-        if ($cantidad > 0) {
-            $d = wabot_catalogo_total($cantidad, $cfg);
-            $plantilla = $trasPitch && trim((string)($cfg['msg_precio_catalogo_tras_pitch'] ?? '')) !== ''
-                ? (string)$cfg['msg_precio_catalogo_tras_pitch']
-                : (is_array($conv)
-                    ? wabot_plantilla_variante('msg_precio_catalogo', 'msg_precio_catalogo_variantes', $conv, $cfg)
-                    : (string)$cfg['msg_precio_catalogo']);
-            return str_replace(
-                ['{desc}', '{cantidad}', '{total}', '{base}', '{unitario}', '{productos}', '{link}', '{sena}',
-                  '{portfolio}', '{portfolio_texto}'],
-                [$desc, $d['cantidad'], wabot_moneda($d['total']), wabot_moneda($d['base']),
-                  wabot_moneda($d['unitario']), wabot_moneda($d['productos']), $t['link'], (string)($t['sena'] ?? ''),
-                  (string)($t['portfolio'] ?? ''), (string)($t['portfolio_texto'] ?? '')],
-                $plantilla
-            );
-        }
-    }
-
-    $v = wabot_precio_vigente($conv, $cfg, $tipo);
-    // La charla cotizada con el modelo viejo repite SU precio con SU redacción.
-    if ($v['modelo'] === 'unico') {
-        $legacy = wabot_modelo_unico_textos();
-        $plantilla = $trasPitch ? $legacy['msg_precio_tras_pitch'] : $legacy['msg_precio'];
-        return str_replace(['{desc}', '{precio}', '{link}', '{sena}'],
-            [$desc, $v['precio'], (string)($t['link'] ?? ''), ''], $plantilla);
-    }
     $plantilla = $trasPitch && trim((string)($cfg['msg_precio_tras_pitch'] ?? '')) !== ''
         ? (is_array($conv)
             ? wabot_plantilla_variante('msg_precio_tras_pitch', 'msg_precio_tras_pitch_variantes', $conv, $cfg)
@@ -6658,18 +5571,6 @@ function wabot_msg_precio_texto($tipo, $cfg, $conv = null) {
             : (string)$cfg['msg_precio']);
     // {sena} ya no se borra (15-sep): es la seña del pago único y la resuelve wabot_precio_placeholders.
     return wabot_precio_placeholders(str_replace('{desc}', $desc, $plantilla), $conv, $cfg, $tipo);
-}
-
-function wabot_catalogo_preguntar(&$conv, $cfg) {
-    $conv['tipo'] = 'catalogo';
-    $conv['fase'] = 'catalogo_cantidad';
-    wabot_handoff_aclaracion_resuelta($conv);
-    return [$cfg['catalogo_cantidad']];
-}
-
-function wabot_catalogo_cotizar($cantidad, &$conv, $cfg) {
-    $conv['productos_cantidad'] = (int)$cantidad;
-    return wabot_precio('catalogo', $conv, $cfg);
 }
 
 /* Deriva: mensaje fijo + la conversación queda muda (salvo la línea de espera). */
@@ -6892,12 +5793,13 @@ function wabot_postdemo_responder($texto, &$conv, $cfg) {
 
     if (!$interes) {
         if ($extra['hay'] && $info === '') {
-            /* Hay una pregunta y el bot no tiene texto oficial para ella: la
-             * contesta el agente. El texto fijo no se pierde: viaja en una
-             * clave transitoria y el agente lo pone adelante (o el motor lo
-             * manda solo si el agente falla). */
-            if (trim($especifico) !== '') $conv['_postdemo_prefijo'] = $especifico;
-            return null;
+            /* Hay una pregunta y el bot no tiene texto oficial para ella: sale
+             * el texto fijo que corresponde (el elogio, el pedido de cambios…)
+             * con el comodín del desarrollador, y la duda queda marcada para
+             * que la vea en el panel. */
+            $conv['handoff_pendiente'] = true;
+            wabot_evento_sesion($conv, 'duda_sin_respuesta');
+            $info = (string)($cfg['info']['otra'] ?? '');
         }
         // Sigue mirando: el bot queda disponible para la próxima.
         return wabot_postdemo_componer($especifico, $info);
@@ -7403,7 +6305,7 @@ function wabot_espera_si_a_la_demo($conv, $cfg) {
 
 /** Lo que cuenta de su negocio sin contestar si quiere la demo: se toma y se vuelve a preguntar. */
 function wabot_tres_pasos_repregunta_texto() {
-    return 'Dale, lo tenemos en cuenta para tu web. Querés que te preparemos la demo gratis?';
+    return 'Dale, lo tenemos en cuenta para tu web. Podés mirar trabajos reales y elegir uno o dos modelos en gokywebs.com/modelos/.';
 }
 
 /** "Sí, quiero la demo" con el link ya mandado: se le recuerda dónde está, sin repetir el mismo texto. */
@@ -7567,44 +6469,10 @@ function wabot_cerrar_o_pedir_whatsapp(&$conv, $cfg) {
     return wabot_prediseno_completo($conv, $cfg);
 }
 
-/**
- * Cierre del brief de un sistema de gestión: no hay precio de lista, así que
- * el lead viaja a Firestore con la descripción y Pablo cotiza a medida.
- */
-/**
- * ¿Ya contó bastante como para cotizar sin seguir preguntando?
- *
- * El que pide un sistema suele explicarlo largo y con funciones concretas
- * ("registro de socios, suscripción por Mercado Pago, panel de estados, avisos
- * por mail"). A ese cliente no se lo interroga: se le resume y se le dice que
- * lo cotizan. Preguntarle tres cosas más es lo que se siente como un formulario.
- */
-function wabot_sistema_ya_explicado($conv) {
-    $problema = trim((string)($conv['sistema_problema'] ?? ''));
-    if ($problema === '') return false;
-    if (mb_strlen($problema) >= 140) return true;
-    // Varias funciones nombradas en la misma explicación.
-    $t = wabot_normalizar_frase($problema . ' ' . wabot_contexto_cliente_texto($conv, 6));
-    $senales = 0;
-    foreach (['registro', 'socios', 'suscripcion', 'suscriptores', 'mercado pago', 'pagos', 'cobros',
-              'panel', 'administracion', 'administrar', 'estados', 'avisos', 'notificaciones',
-              'mail', 'email', 'stock', 'turnos', 'clientes', 'reportes', 'facturacion',
-              'usuarios', 'roles', 'altas', 'bajas', 'vencimientos'] as $senal) {
-        if (mb_strpos($t, $senal) !== false) $senales++;
-    }
-    return $senales >= 3;
-}
-
 function wabot_sistema_completo(&$conv, $cfg) {
     $conv['tipo'] = 'sistema';
     $problema = trim((string)($conv['sistema_problema'] ?? ''));
-    $actual   = trim((string)($conv['sistema_actual'] ?? ''));
-    $usuarios = trim((string)($conv['sistema_usuarios'] ?? ''));
-    $partes = [];
-    if ($problema !== '') $partes[] = 'Necesita resolver: ' . $problema;
-    if ($usuarios !== '') $partes[] = 'Usuarios: ' . $usuarios;
-    if ($actual !== '')   $partes[] = 'Hoy lo maneja con: ' . $actual;
-    if ($partes) $conv['descripcion'] = implode('. ', $partes) . '.';
+    if ($problema !== '') $conv['descripcion'] = 'Necesita resolver: ' . $problema . '.';
 
     // Instagram entrega un IGSID, no un celular. Sin pedirlo explícitamente la
     // propuesta queda creada con un contacto imposible de usar.
@@ -7628,10 +6496,56 @@ function wabot_prediseno_completo(&$conv, $cfg) {
     wabot_evento_sesion($conv, 'muestra_aceptada', ['origen' => 'cierre']);
     if (!$conv['lead_creado']) {
         $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
-        wabot_muestra_guardar($conv, $cfg, $conv['lead_creado']);
     }
     // Queda en espera no avisada a propósito: si el cliente sigue escribiendo,
     // se lleva una línea y recién después el bot se calla.
     wabot_handoff_marcar($conv, 'prediseno');
     return [wabot_texto_prediseno_completo($conv, $cfg)];
+}
+
+/* ───────────── Pregunta cerrada sobre lo que el bot acaba de decir ───────────── */
+
+/** "¿Es obligatorio?", "¿es opcional?", "¿tengo que pagarlo sí o sí?". */
+function wabot_texto_pregunta_si_es_obligatorio($mensaje) {
+    $t = wabot_normalizar_frase((string)$mensaje);
+    if ($t === '' || mb_strlen($t) > 160) return false;
+    return (bool)(
+        preg_match('/\b(si o si|obligatorio|obligatoria|obligatorios|es fijo|es fija|son fijos)\b/u', $t)
+        || preg_match('/\bes opcional\b|\bopcional\?/u', $t)
+        || preg_match('/\b(hay que|tengo que|debo)\b.{0,12}\b(pagarlo|pagarla|contratarlo|contratarla|tomarlo|abonarlo)\b/u', $t)
+        || preg_match('/\b(se puede|puedo)\b.{0,8}\bno\b.{0,12}\b(pagarlo|contratarlo|tomarlo)\b/u', $t)
+    );
+}
+
+/**
+ * La respuesta corta, sacada de lo que el bot acaba de decir.
+ *
+ * Mira la última tanda propia entera (el precio sale en dos mensajes) y le
+ * responde la polaridad que esa tanda ya tenía, así no se contradice. Si lo
+ * último que dijo no habla ni del servicio mensual ni de algo incluido,
+ * devuelve null y sigue el flujo normal.
+ */
+function wabot_respuesta_obligatorio($conv, $cfg, $mensaje = '') {
+    $tanda = [];
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $linea) {
+        if (($linea['q'] ?? '') === 'bot') { $tanda[] = (string)($linea['t'] ?? ''); continue; }
+        if ($tanda) break;
+    }
+    $ultima = implode("\n", array_reverse($tanda));
+    if (trim($ultima) === '') return null;
+    $u = wabot_normalizar_frase($ultima);
+
+    // Si pregunta por OTRA cosa (la demo, el formulario, el logo), sigue el flujo normal.
+    $m = wabot_normalizar_frase((string)$mensaje);
+    if ($m !== '' && preg_match('/\b(demo|muestra|prediseno|formulario|form|referencia|logo|fotos?|colores?|whatsapp|llamada|reunion)\b/u', $m)) {
+        return null;
+    }
+    if (preg_match('/\b(plan mensual|servicio mensual|abono mensual|mensualidad|mantenimiento|por mes|suscripcion)\b/u', $u)) {
+        return trim((string)$cfg['respuesta_plan_obligatorio']);
+    }
+    if (preg_match('/\bopcional\w*\b/u', $u)) return null;
+    if (preg_match('/\b(incluid[oa]s?|sin cargo|ya viene|viene incluido)\b/u', $u)) {
+        return trim((string)$cfg['respuesta_esta_incluido']);
+    }
+    return null;
 }

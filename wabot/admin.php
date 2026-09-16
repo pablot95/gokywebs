@@ -1,13 +1,13 @@
 <?php
 /**
  * wabot/admin.php — panel del bot de WhatsApp.
- * Pestañas: Conversaciones (la de entrada) · Embudo · Probar · Textos · Entrenamiento · Estado.
+ * Pestañas: Conversaciones (la de entrada) · Conversaciones live · Ajustes · Estado.
+ * Los textos del bot viven en código (textos.php): el panel ya no los edita.
  * Auth: normalmente entra por el login de Firebase del admin (ver auth.php);
  * la clave de WABOT_ADMIN_PASS queda como respaldo para acceso directo.
  */
 
 require_once __DIR__ . '/redactor.php';
-require_once __DIR__ . '/push.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -42,14 +42,15 @@ if (!empty($_POST['clave'])) {
 $logueado = !empty($_SESSION['wabot']);
 
 $cfg = wabot_config_load();
-$ACCIONES = ['rubro_landing','rubro_ecommerce','rubro_inmobiliaria','rubro_cursos','rubro_institucional','rubro_comercio','rubro_hibrido','rubro_sistema','servicio_con_turnos','turnos_si','turnos_no','comercio_vender','comercio_mostrar','hibrido_trabajos','hibrido_catalogo','hibrido_vender','elige_landing','elige_ecommerce','algo_diferente','cursos_vender','cursos_mostrar','pregunta_tipos','quiere_prediseno','datos_prediseno','pregunta_info','objecion_caro','objecion_pensarlo','objecion_socio','objecion_ya_tiene_web','menciona_plataforma','no_interesa','quiere_avanzar','pide_humano','productos_y_cursos','cambia_tipo','saludo','otro'];
-// Si una versión futura del motor agrega una etiqueta, el panel tiene que
-// conservarla aunque todavía no figure arriba: abrir y guardar Entrenamiento
-// nunca puede convertir un ejemplo válido en la primera opción del select.
-foreach (($cfg['ejemplos'] ?? []) as $ej) {
-    $accionExistente = trim((string)($ej['accion'] ?? ''));
-    if ($accionExistente !== '' && !in_array($accionExistente, $ACCIONES, true)) $ACCIONES[] = $accionExistente;
-}
+
+// Las cuatro pestañas del panel. Se define acá arriba porque el redirect de
+// las pestañas viejas (textos, entrenamiento…) lo necesita antes del HTML.
+$NAV_TABS = [
+    'conversaciones' => 'Conversaciones',
+    'live'           => 'Conversaciones live',
+    'ajustes'        => 'Ajustes',
+    'estado'         => 'Estado',
+];
 
 /**
  * Descarga de una foto o audio que mandó un cliente. GET porque es un link
@@ -311,141 +312,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'])) {
     $a = $_POST['accion'];
 
-    if ($a === 'probar') {
-        header('Content-Type: application/json; charset=utf-8');
-        $texto = trim((string)($_POST['texto'] ?? ''));
-        if ($texto === '') { echo json_encode(['error' => 'vacío']); exit; }
-        $conv = wabot_conv_load('TEST');
-        wabot_conv_transcript($conv, 'cliente', $texto);
-        $resp = wabot_responder($texto, $conv, $cfg) ?: [];
-        $resp = array_map(function ($m) use ($conv) { return wabot_personalizar($m, $conv); }, $resp);
-        foreach ($resp as $m) wabot_conv_transcript($conv, 'bot', $m);
-        wabot_conv_save($conv);
-        $demoras = [];
-        foreach ($resp as $m) $demoras[] = round(wabot_demora_tipeo($m, $cfg), 2);
-        echo json_encode([
-            'mensajes' => array_values($resp),
-            'demoras'  => $demoras,
-            'fase'     => $conv['fase'],
-            'tipo'     => $conv['tipo'],
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
-    }
-    if ($a === 'probar_reset') {
-        @unlink(wabot_conv_path('TEST'));
-        header('Location: admin.php?tab=probar'); exit;
-    }
     if ($a === 'toggle_activo') {
         $cfg['activo'] = empty($cfg['activo']);
         wabot_config_save($cfg);
         header('Location: admin.php'); exit;
     }
-    /* Alta del dispositivo para las notificaciones push. El token lo genera el
-     * navegador de Pablo (Firebase) y hay que guardarlo para poder mandarle
-     * algo cuando el panel está cerrado. Se refresca en cada carga: Firebase
-     * los rota, y uno viejo deja de recibir. */
-    if ($a === 'push_token' && !empty($_POST['token'])) {
-        header('Content-Type: application/json; charset=utf-8');
-        $ok = wabot_push_token_guardar($_POST['token'], (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
-        echo json_encode(['ok' => $ok, 'dispositivos' => count(wabot_push_tokens())]);
-        exit;
-    }
-    /* El botón "Probar" de la pestaña Estado: manda una notificación de prueba
-     * a todos los dispositivos registrados. */
-    if ($a === 'push_probar') {
-        header('Content-Type: application/json; charset=utf-8');
-        if (!wabot_push_configurado()) {
-            echo json_encode(['ok' => false, 'error' => 'Falta config/service-account.json en el server.']);
-            exit;
-        }
-        $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, las notificaciones andan.',
-                               ['tel' => 'prueba', 'link' => 'https://www.gokywebs.com/wabot/admin.php']);
-        echo json_encode(['ok' => $n > 0, 'dispositivos' => $n]);
-        exit;
-    }
-    if ($a === 'guardar_textos') {
-        foreach (['menu','def_tipos','contame','aclarar_objetivo','desempate_cursos','desempate_turnos','desempate_comercio','desempate_hibrido','msg_precio','msg_precio_tras_pitch','msg_precio_catalogo_tras_pitch','msg_prediseno_oferta','prediseno','prediseno_falta_descripcion','prediseno_falta_colores','prediseno_completo','derivar','espera','espera_prediseno','pide_llamada','caro','pensarlo','socio','ya_tengo_web','cta_muestra','cierre_suave','cierre_comparando','plataformas','no_interesa','no_texto','media_recibida','seguimiento_precio','seguimiento_datos','seguimiento_pregunta','seguimiento_pregunta_gancho','sistema_pregunta','sistema_pregunta_usuarios','sistema_pregunta_actual','sistema_whatsapp','sistema_whatsapp_invalido','sistema_cierre','hosting_renovacion'] as $k) {
-            if (isset($_POST[$k])) $cfg[$k] = str_replace("\r", '', trim((string)$_POST[$k]));
-        }
-        foreach (array_keys($cfg['info']) as $k) {
-            if (isset($_POST['info_' . $k])) $cfg['info'][$k] = str_replace("\r", '', trim((string)$_POST['info_' . $k]));
-        }
-        foreach (array_keys($cfg['tipos']) as $t) {
-            if (isset($_POST['precio_' . $t])) $cfg['tipos'][$t]['precio'] = trim((string)$_POST['precio_' . $t]);
-            // El plan mensual de cada tipo (10-sep). Sin esta línea, el primer
-            // guardado desde el panel lo borraba y el bot cotizaba sin él.
-            if (isset($_POST['sena_' . $t])) $cfg['tipos'][$t]['sena'] = trim((string)$_POST['sena_' . $t]);
-            if (isset($_POST['mensualidad_' . $t])) $cfg['tipos'][$t]['mensualidad'] = trim((string)$_POST['mensualidad_' . $t]);
-            if (isset($_POST['link_' . $t]))   $cfg['tipos'][$t]['link']   = trim((string)$_POST['link_' . $t]);
-            if (isset($_POST['desc_' . $t]))   $cfg['tipos'][$t]['desc']   = str_replace("\r", '', trim((string)$_POST['desc_' . $t]));
-        }
-        foreach (array_keys($cfg['mantenimiento_planes'] ?? []) as $mp) {
-            if (isset($_POST['mant_precio_' . $mp])) $cfg['mantenimiento_planes'][$mp]['precio'] = trim((string)$_POST['mant_precio_' . $mp]);
-            if (isset($_POST['mant_link_' . $mp]))   $cfg['mantenimiento_planes'][$mp]['link']   = trim((string)$_POST['mant_link_' . $mp]);
-        }
+    /* Pestaña Ajustes: las únicas claves de bot-config.json que se editan desde
+     * el panel. Los textos del bot viven en textos.php, así que acá solo quedan
+     * tiempos, IA, atribución de anuncios, seguimientos y la plantilla de 48 h. */
+    if ($a === 'guardar_ajustes') {
+        // Los checkbox no viajan cuando están destildados: por eso se leen del form entero.
+        $cfg['activo']              = !empty($_POST['activo']);
+        $cfg['demora_por_longitud'] = !empty($_POST['demora_por_longitud']);
+        $cfg['leer_imagenes']       = !empty($_POST['leer_imagenes']);
+        $cfg['escuchar_audios']     = !empty($_POST['escuchar_audios']);
+        $cfg['ultima_llamada_activa'] = !empty($_POST['ultima_llamada_activa']);
+
+        if (isset($_POST['pausa_horas_humano'])) $cfg['pausa_horas_humano'] = max(1, (int)$_POST['pausa_horas_humano']);
+        if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
         if (isset($_POST['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = max(0, min(60, (int)$_POST['demora_primer_mensaje']));
-        if (isset($_POST['demora_segundos']))    $cfg['demora_segundos']    = max(0, min(60, (int)$_POST['demora_segundos']));
+        if (isset($_POST['demora_segundos']))       $cfg['demora_segundos']       = max(0, min(60, (int)$_POST['demora_segundos']));
         if (isset($_POST['demora_entre_mensajes'])) $cfg['demora_entre_mensajes'] = max(0, min(15, (int)$_POST['demora_entre_mensajes']));
         if (isset($_POST['tipeo_por_segundo']))     $cfg['tipeo_por_segundo']     = max(5, min(200, (int)$_POST['tipeo_por_segundo']));
         if (isset($_POST['demora_minima']))         $cfg['demora_minima']         = max(0, min(10, (float)$_POST['demora_minima']));
         if (isset($_POST['demora_maxima']))         $cfg['demora_maxima']         = max(1, min(30, (float)$_POST['demora_maxima']));
-        $cfg['demora_por_longitud'] = !empty($_POST['demora_por_longitud']);
-        // Los checkbox no viajan cuando están destildados: por eso se leen del form entero.
-        $cfg['leer_imagenes']   = !empty($_POST['leer_imagenes']);
-        $cfg['escuchar_audios'] = !empty($_POST['escuchar_audios']);
-        $cfg['form_activo'] = !empty($_POST['form_activo']);
+
         if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
             $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
         }
+
         if (isset($_POST['capi_dataset_id'])) $cfg['capi_dataset_id'] = preg_replace('/\D+/', '', (string)$_POST['capi_dataset_id']);
         // El token solo se pisa si escribieron uno nuevo: el campo se muestra
         // vacío a propósito para no dejar la credencial a la vista en el HTML.
         if (trim((string)($_POST['capi_token'] ?? '')) !== '') $cfg['capi_token'] = trim((string)$_POST['capi_token']);
+
+        if (isset($_POST['ultima_llamada_horas'])) $cfg['ultima_llamada_horas'] = max(1, min(23, (float)$_POST['ultima_llamada_horas']));
+        if (isset($_POST['presentadas_sin_respuesta_horas'])) $cfg['presentadas_sin_respuesta_horas'] = max(1, min(720, (float)$_POST['presentadas_sin_respuesta_horas']));
+        if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
+        if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
+
         foreach (['confirmacion_demo_48h'] as $clavePlant) {
-            if (!isset($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
+            if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
             $cfg['plantillas'][$clavePlant]['activa'] = !empty($_POST["plantilla_{$clavePlant}_activa"]);
         }
-        if (isset($_POST['pausa_horas_humano'])) $cfg['pausa_horas_humano'] = max(1, (int)$_POST['pausa_horas_humano']);
-        if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
-        $cfg['seguimiento_activo'] = !empty($_POST['seguimiento_activo']);
-        if (isset($_POST['seguimiento_horas'])) {
-            $cfg['seguimiento_horas'] = max(0.5, min(22, (float)$_POST['seguimiento_horas']));
-        }
-        if (isset($_POST['seguimiento_hora_desde'])) {
-            $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
-        }
-        if (isset($_POST['seguimiento_hora_hasta'])) {
-            $cfg['seguimiento_hora_hasta'] = max(0, min(23, (int)$_POST['seguimiento_hora_hasta']));
-        }
-        if (isset($_POST['presentados_archivar_horas'])) {
-            $cfg['presentados_archivar_horas'] = max(24, min(720, (float)$_POST['presentados_archivar_horas']));
-        }
         wabot_config_save($cfg);
-        header('Location: admin.php?tab=textos&ok=1'); exit;
-    }
-    if ($a === 'guardar_entrenamiento') {
-        $cfg['indicaciones'] = str_replace("\r", '', trim((string)($_POST['indicaciones'] ?? '')));
-        $modo = $_POST['modo_redaccion'] ?? 'fijo';
-        $cfg['modo_redaccion'] = in_array($modo, ['fijo', 'natural', 'agente'], true) ? $modo : 'fijo';
-        $cfg['indicaciones_estilo'] = str_replace("\r", '', trim((string)($_POST['indicaciones_estilo'] ?? '')));
-        $ejemplos = [];
-        $textos   = (array)($_POST['ej_texto'] ?? []);
-        $acciones = (array)($_POST['ej_accion'] ?? []);
-        $infos    = (array)($_POST['ej_info'] ?? []);
-        foreach ($textos as $i => $t) {
-            $t = trim((string)$t);
-            $ac = (string)($acciones[$i] ?? '');
-            if ($t === '' || !in_array($ac, $ACCIONES, true)) continue;
-            $ej = ['texto' => $t, 'accion' => $ac];
-            $ik = trim((string)($infos[$i] ?? ''));
-            if ($ik !== '') $ej['info_keys'] = array_values(array_filter(array_map('trim', explode(',', $ik))));
-            $ejemplos[] = $ej;
-        }
-        $cfg['ejemplos'] = $ejemplos;
-        wabot_config_save($cfg);
-        header('Location: admin.php?tab=entrenamiento&ok=1'); exit;
+        header('Location: admin.php?tab=ajustes&ok=1'); exit;
     }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
@@ -468,7 +381,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['pausado_hasta'] = time() + $horas * 3600;
         $conv['handoff_pendiente'] = false;
         wabot_conv_transcript($conv, 'humano', $texto);
-        if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel']);
         wabot_conv_save($conv);
         wabot_log('respuesta_panel', ['tel' => $conv['tel']]);
 
@@ -537,7 +449,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $total   = count($textos);
         $enviado = $enviados === $total;
 
-        wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
@@ -575,7 +486,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_via_bot'] = false;
         $conv['presentado_recordatorio_enviado'] = false;
         $conv['presentado_recordatorio_ts'] = 0;
-        wabot_evento($conv, 'muestra_presentada');
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
@@ -641,7 +551,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['pausado_hasta'] = time() + $horas * 3600;
         $conv['handoff_pendiente'] = false;
         wabot_conv_transcript($conv, 'humano', '[nota de voz]', $guardado);
-        if (function_exists('wabot_evento')) wabot_evento($conv, 'humano_responde', ['via' => 'panel_audio']);
         wabot_conv_save($conv);
         wabot_log('respuesta_panel_audio', ['tel' => $conv['tel'], 'mime' => $mime, 'bytes' => strlen($bytes)]);
 
@@ -797,9 +706,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['items' => array_slice($resultados, 0, 60)], JSON_UNESCAPED_UNICODE);
         exit;
     }
-    // Lo consulta el admin (Seguimiento) para reflejar en Firestore lo que ya
-    // pasó acá: mover a "último mensaje" cuando salió el recordatorio, borrar
-    // el seguimiento cuando el chat se archivó por inactividad.
+    // Lo consulta admin/dashboard.js (Seguimiento) para reflejar en Firestore
+    // lo que ya pasó acá: si salió la plantilla de 48 h y si el chat quedó
+    // archivado. Solo lee campos de la conversación, no llama a nada del cron.
     if ($a === 'presentados_estado') {
         header('Content-Type: application/json; charset=utf-8');
         $items = [];
@@ -868,9 +777,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $conv['contestado_ts'] = 0;
         } else {
             $conv['contestado_ts'] = max(1, wabot_conv_ultimo_ts($conv));
-            // "Ya le contesté" también cierra la tarea de retomar que estaba
-            // esperando eso mismo.
-            if (in_array(($conv['retomar_estado'] ?? ''), ['vencido', 'pendiente'], true)) wabot_retomar_marcar_hecho($conv, 'panel');
             // Marcarlo como atendido implica haberlo leído: si no, el globito
             // de sin leer queda encendido en un chat que ya resolviste.
             $conv['panel_visto_ts'] = max((int)$conv['panel_visto_ts'], $conv['contestado_ts']);
@@ -913,7 +819,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 }
 
 // Conversaciones primero: es lo que se mira todos los días.
-$tab = $_GET['tab'] ?? 'conversaciones';
+$tab = (string)($_GET['tab'] ?? 'conversaciones');
+// Las pestañas que ya no existen: Textos y Entrenamiento pasaron a ser
+// Ajustes; cualquier otra desconocida cae en Conversaciones.
+if (in_array($tab, ['textos', 'entrenamiento'], true)) $tab = 'ajustes';
+if (!isset($NAV_TABS[$tab])) $tab = 'conversaciones';
 $e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
 ?>
 <!DOCTYPE html>
@@ -1059,25 +969,6 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .burb-edit-acciones { display:flex; align-items:center; gap:7px; flex-wrap:wrap; }
 .burb-edit-acciones button { font-size:12px; padding:4px 10px; }
 .burb-edit-aviso { font-size:10.5px; color:var(--dim); flex:1 1 140px; min-width:0; }
-.ej-fila { display:grid; grid-template-columns: 1fr 220px 150px 34px; gap:8px; margin-bottom:8px; align-items:center; }
-.campo-etiqueta { width:150px; flex-shrink:0; }
-.campo-etiqueta--ancha { width:340px; }
-
-/* ===== EMBUDO: números rápidos arriba, detalle compacto abajo ===== */
-.embudo-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:16px; }
-.embudo-kpi { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; min-width:0; }
-.embudo-kpi strong { display:block; color:var(--tx); font-size:25px; line-height:1.15; }
-.embudo-kpi span { display:block; color:var(--dim); font-size:11.5px; margin-top:4px; }
-.embudo-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
-.embudo-grid .card { margin-bottom:0; }
-.embudo-fila { display:grid; grid-template-columns:minmax(125px,1fr) minmax(90px,2fr) 48px; gap:10px; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); }
-.embudo-fila:last-child { border-bottom:0; }
-.embudo-etiqueta { color:var(--dim); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.embudo-barra { height:7px; overflow:hidden; border-radius:99px; background:var(--bg); }
-.embudo-barra > span { display:block; height:100%; min-width:2px; border-radius:inherit; background:var(--ac); }
-.embudo-numero { text-align:right; font-variant-numeric:tabular-nums; font-weight:700; }
-.embudo-conversiones { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
-.embudo-conversiones .pill { background:var(--ac-tenue); color:var(--ac); padding:5px 10px; }
 
 /* ===== CONVERSACIONES: tres listas a la izquierda, chat a la derecha ===== */
 .conv-split { display:grid; grid-template-columns: minmax(0,420px) minmax(430px,1fr); gap:14px; align-items:stretch; }
@@ -1118,8 +1009,6 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .conv-nav-btn[data-grupo="presentadas_48"].on { border-left-color:var(--bad); }
 .conv-nav-btn[data-grupo="no_leidos"].tiene { color:var(--info); }
 .conv-nav-btn[data-grupo="no_leidos"].tiene .conv-cuenta { background:var(--info-tenue); color:var(--info); }
-.conv-chip--retomar.tiene { color:var(--warn); border-color:var(--warn); }
-.conv-chip--retomar.tiene .conv-chip-n { background:var(--warn-tenue); color:var(--warn); }
 
 /* WhatsApp e Instagram comparten la misma lista: se distinguen con esta
    etiqueta chica al lado del nombre, no con una columna aparte. */
@@ -1340,7 +1229,6 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 /* ── Mobile: el panel se usa desde el celular, así que todo tiene que entrar ── */
 @media (max-width: 720px) {
     .wrap { padding: 14px 12px 60px; }
-    .ej-fila { grid-template-columns: 1fr; }
     .tabs { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; padding-bottom: 2px; }
     .tabs::-webkit-scrollbar { display: none; }
     .tabs a { white-space: nowrap; padding: 8px 12px; }
@@ -1357,14 +1245,11 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     button, input[type=text], input[type=password], input[type=number], textarea, select { min-height: 42px; font-size: 16px; }
     .fila > form { flex: 1 1 auto; }
     .fila > form button { width: 100%; }
-    .embudo-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
-    .embudo-grid { grid-template-columns:1fr; }
     /* flex-shrink:0 sin ancho hace que la fila de botones (Apagar/Crear boceto/
        Archivar/Resetear/Eliminar) nunca doble línea: se estira más allá de la
        pantalla y empuja TODA la página a scroll horizontal. Al celular esto se
        ve apenas se abre cualquier chat. */
     .conv-acciones { flex-shrink: 1; width: 100%; }
-    .campo-etiqueta { width: 100%; }
 
     /* El chat es lo único que importa en el celular. Medido: la cabecera con
        las 5 acciones ocupaba 173px y el bloque de responder 215px, así que al
@@ -1410,6 +1295,13 @@ body.embed .wrap { padding-top: 10px; }
    con min-height:100vh el body mide lo que mide el iframe, el iframe mide lo que
    reporta el body, y cada vuelta sumaba unos píxeles hasta el infinito. */
 body.embed { min-height: 0; }
+.rapidas { margin-top:10px; padding:10px; border:1px solid var(--line); border-radius:10px; background:#101b2e; }
+.rapidas summary { cursor:pointer; font-weight:700; }
+.rapidas p { margin:8px 0; font-size:.84rem; color:#a9b6cc; }
+.rapidas details { margin:7px 0; border:1px solid var(--line); border-radius:8px; padding:7px; }
+.rapidas details summary { font-size:.88rem; }
+.rapidas button { display:block; width:100%; margin:5px 0; padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#1a2940; color:#e6edf7; text-align:left; font:inherit; font-size:.82rem; cursor:pointer; }
+.rapidas button:hover { border-color:var(--ac); }
 </style>
 </head>
 <?php $pantallaCompleta = in_array($tab, ['conversaciones', 'live'], true); ?>
@@ -1434,21 +1326,10 @@ body.embed { min-height: 0; }
         <p class="sub">Motor propio sobre la Cloud API · <a href="admin.php?salir=1">salir</a></p>
     <?php endif; ?>
 
-    <?php
-    $navTabs = [
-        'conversaciones' => 'Conversaciones',
-        'live'           => 'Conversaciones live',
-        'embudo'         => 'Embudo',
-        'probar'         => 'Probar',
-        'textos'         => 'Textos',
-        'entrenamiento'  => 'Entrenamiento',
-        'estado'         => 'Estado',
-    ];
-    ?>
     <?php /* Botones a lo largo, no un desplegable (Pablo, 13-sep): las
      * pestañas se ven todas de un vistazo. En el celular la fila scrollea. */ ?>
     <nav class="tabs tabs-nav" aria-label="Secciones del bot">
-        <?php foreach ($navTabs as $k => $v): ?>
+        <?php foreach ($NAV_TABS as $k => $v): ?>
             <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= $v ?></a>
         <?php endforeach; ?>
         <?php if ($embed): ?>
@@ -1465,121 +1346,7 @@ body.embed { min-height: 0; }
     <?php if (isset($_GET['reenvio_sin_slug'])) echo '<p class="ok" style="color:var(--bad)">Esta conversación no tiene guardado el link de la demo. Presentala de nuevo desde Bocetos.</p>'; ?>
     <?php if (isset($_GET['boceto_error'])) echo '<p class="ok" style="color:var(--bad)">No se pudo crear el boceto: Firestore rechazó el alta. Quedó guardado igual en Estado → "Prediseños que no llegaron a Bocetos". Revisá el log en wabot/data/log/.</p>'; ?>
 
-    <?php if ($tab === 'embudo'): ?>
-        <?php
-        $embudo = function_exists('wabot_embudo_resumen') ? (array)wabot_embudo_resumen() : [];
-        $numeros = function ($valores, $campoAlternativo = '') {
-            $out = [];
-            foreach ((array)$valores as $k => $v) {
-                if (is_array($v)) {
-                    $v = $v['total'] ?? $v['conversaciones'] ?? ($campoAlternativo !== '' ? ($v[$campoAlternativo] ?? 0) : 0);
-                }
-                if (is_numeric($v)) $out[(string)$k] = (int)$v;
-            }
-            return $out;
-        };
-        $canales = $numeros($embudo['canales'] ?? []);
-        $fases   = $numeros($embudo['fases'] ?? []);
-        $eventos = $numeros($embudo['eventos'] ?? []);
-        $total   = (int)($embudo['total'] ?? $embudo['total_conversaciones'] ?? $eventos['lead_recibido'] ?? array_sum($canales));
-        $precio  = (int)($eventos['precio_dado'] ?? 0);
-        $muestra = (int)($eventos['muestra_aceptada'] ?? 0);
-        $derivado = (int)($eventos['derivado'] ?? $eventos['handoff_creado'] ?? $eventos['handoff_solicitado'] ?? 0);
-
-        $conversiones = (array)($embudo['conversiones'] ?? []);
-        $precioAMuestra = isset($conversiones['precio_a_muestra']) && is_numeric($conversiones['precio_a_muestra'])
-            ? (float)$conversiones['precio_a_muestra'] : ($precio > 0 ? $muestra * 100 / $precio : 0);
-        $muestraADerivacionRaw = $conversiones['muestra_a_derivacion'] ?? $conversiones['muestra_a_handoff'] ?? null;
-        $muestraADerivacion = is_numeric($muestraADerivacionRaw)
-            ? (float)$muestraADerivacionRaw : ($muestra > 0 ? $derivado * 100 / $muestra : 0);
-
-        $etiquetasCanal = ['whatsapp' => 'WhatsApp', 'instagram' => 'Instagram'];
-        $etiquetasFase = [
-            'nuevo' => 'Nuevos', 'menu' => 'Calificando', 'algo_diferente' => 'Por entender',
-            'desempate_turnos' => 'Definiendo turnos', 'desempate_cursos' => 'Definiendo cursos',
-            'desempate_comercio' => 'Definiendo comercio', 'desempate_hibrido' => 'Definiendo objetivo',
-            'sistema_brief' => 'Brief de sistema',
-            'precio' => 'Precio dado', 'prediseno' => 'Pidiendo datos', 'prediseno_ref' => 'Pidiendo referencia',
-            'prediseno_wsp' => 'Pidiendo WhatsApp', 'derivado' => 'Derivados',
-        ];
-        $etiquetasEvento = [
-            'precio_dado' => 'Precio dado', 'muestra_ofrecida' => 'Demo ofrecida',
-            'muestra_aceptada' => 'Demo aceptada', 'seguimiento_enviado' => 'Seguimiento enviado',
-            'seguimiento_respondido' => 'Seguimiento respondido', 'sistema_calificado' => 'Sistema calificado',
-            'lead_recibido' => 'Lead recibido', 'handoff_solicitado' => 'Pablo solicitado',
-            'handoff_creado' => 'Derivado a Pablo', 'handoff_rechazado' => 'Derivación evitada',
-            'humano_responde' => 'Pablo respondió', 'ia_fallback_seguro' => 'Fallback de IA', 'derivado' => 'Derivado',
-        ];
-        $actualizado = (int)($embudo['actualizado_ts'] ?? 0);
-        ?>
-
-        <div class="fila" style="justify-content:space-between;margin-bottom:12px">
-            <div>
-                <strong>Embudo comercial</strong>
-                <p class="meta">Conversaciones almacenadas; cada cliente cuenta una sola vez por hito.</p>
-            </div>
-            <?php if ($actualizado > 0): ?><span class="meta">Actualizado <?= date('d/m/Y H:i', $actualizado) ?></span><?php endif; ?>
-        </div>
-
-        <?php if (!function_exists('wabot_embudo_resumen')): ?>
-            <div class="card" style="border-color:var(--warn)">
-                <p class="meta" style="color:var(--warn)">La vista ya está lista, pero falta habilitar <code>wabot_embudo_resumen()</code> en el motor.</p>
-            </div>
-        <?php endif; ?>
-
-        <div class="embudo-kpis">
-            <div class="embudo-kpi"><strong><?= number_format($total, 0, ',', '.') ?></strong><span>Conversaciones</span></div>
-            <div class="embudo-kpi"><strong><?= number_format($precio, 0, ',', '.') ?></strong><span>Llegaron al precio</span></div>
-            <div class="embudo-kpi"><strong><?= number_format($muestra, 0, ',', '.') ?></strong><span>Aceptaron la demo</span></div>
-            <div class="embudo-kpi"><strong><?= number_format($derivado, 0, ',', '.') ?></strong><span>Derivadas a Pablo</span></div>
-        </div>
-
-        <div class="embudo-grid">
-            <div class="card">
-                <h2 style="margin-top:0">Por canal</h2>
-                <?php $maxCanal = max(1, $canales ? max($canales) : 0); ?>
-                <?php if (!$canales): ?><p class="meta">Todavía no hay conversaciones para medir.</p><?php endif; ?>
-                <?php foreach ($canales as $k => $n): $ancho = $n > 0 ? round($n * 100 / $maxCanal, 1) : 0; ?>
-                    <div class="embudo-fila">
-                        <span class="embudo-etiqueta"><?= $e($etiquetasCanal[$k] ?? ucfirst(str_replace('_', ' ', $k))) ?></span>
-                        <span class="embudo-barra"><span style="width:<?= $ancho ?>%;<?= $n === 0 ? 'min-width:0' : '' ?>"></span></span>
-                        <span class="embudo-numero"><?= number_format($n, 0, ',', '.') ?></span>
-                    </div>
-                <?php endforeach; ?>
-                <div class="embudo-conversiones">
-                    <span class="pill">Precio → demo: <?= number_format($precioAMuestra, 1, ',', '.') ?>%</span>
-                    <span class="pill">Demo → Pablo: <?= number_format($muestraADerivacion, 1, ',', '.') ?>%</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2 style="margin-top:0">Fase actual</h2>
-                <?php $maxFase = max(1, $fases ? max($fases) : 0); ?>
-                <?php if (!$fases): ?><p class="meta">Sin fases registradas.</p><?php endif; ?>
-                <?php foreach ($fases as $k => $n): $ancho = $n > 0 ? round($n * 100 / $maxFase, 1) : 0; ?>
-                    <div class="embudo-fila">
-                        <span class="embudo-etiqueta" title="<?= $e($k) ?>"><?= $e($etiquetasFase[$k] ?? ucfirst(str_replace('_', ' ', $k))) ?></span>
-                        <span class="embudo-barra"><span style="width:<?= $ancho ?>%;<?= $n === 0 ? 'min-width:0' : '' ?>"></span></span>
-                        <span class="embudo-numero"><?= number_format($n, 0, ',', '.') ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-
-            <div class="card" style="grid-column:1 / -1">
-                <h2 style="margin-top:0">Hitos de venta</h2>
-                <?php $maxEvento = max(1, $eventos ? max($eventos) : 0); ?>
-                <?php if (!$eventos): ?><p class="meta">Sin eventos registrados.</p><?php endif; ?>
-                <?php foreach ($eventos as $k => $n): $ancho = $n > 0 ? round($n * 100 / $maxEvento, 1) : 0; ?>
-                    <div class="embudo-fila">
-                        <span class="embudo-etiqueta" title="<?= $e($k) ?>"><?= $e($etiquetasEvento[$k] ?? ucfirst(str_replace('_', ' ', $k))) ?></span>
-                        <span class="embudo-barra"><span style="width:<?= $ancho ?>%;<?= $n === 0 ? 'min-width:0' : '' ?>"></span></span>
-                        <span class="embudo-numero"><?= number_format($n, 0, ',', '.') ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-    <?php elseif ($tab === 'estado'): ?>
+    <?php if ($tab === 'estado'): ?>
         <div class="card">
             <div class="fila" style="justify-content:space-between">
                 <div>
@@ -1590,25 +1357,6 @@ body.embed { min-height: 0; }
                     <button class="<?= !empty($cfg['activo']) ? 'bad' : '' ?>"><?= !empty($cfg['activo']) ? 'Apagar' : 'Encender' ?></button>
                 </form>
             </div>
-        </div>
-        <div class="card">
-            <div class="fila" style="justify-content:space-between">
-                <div>
-                    <strong>Notificaciones</strong>
-                    <p class="meta" id="pushEstado">Te avisan al celular y a la compu cuando entra un mensaje que tenés que contestar vos (los SL), aunque tengas el panel cerrado.</p>
-                </div>
-                <div class="fila" style="gap:.5rem">
-                    <button type="button" class="sec" id="pushActivar">Activar acá</button>
-                    <button type="button" class="sec" id="pushProbar">Probar</button>
-                </div>
-            </div>
-            <?php if (!wabot_push_configurado()): ?>
-                <p class="meta" style="color:#b45309">Falta subir <code>config/service-account.json</code> al server.</p>
-            <?php elseif (wabot_push_vapid() === ''): ?>
-                <p class="meta" style="color:#b45309">Falta <code>WABOT_FCM_VAPID</code> en <code>config/wabot-config.php</code>: Firebase → Configuración del proyecto → Cloud Messaging → Certificados push web.</p>
-            <?php else: ?>
-                <p class="meta"><?= count(wabot_push_tokens()) ?> dispositivo(s) registrado(s). Hay que activarlo una vez en cada uno.</p>
-            <?php endif; ?>
         </div>
         <div class="card">
             <div class="fila" style="justify-content:space-between">
@@ -1632,21 +1380,6 @@ body.embed { min-height: 0; }
                 </form>
             </div>
         </div>
-        <?php $fallados = array_values(array_filter(wabot_muestras_listar(), function ($m) { return empty($m['lead']); })); ?>
-        <?php if ($fallados): ?>
-        <div class="card" style="border-color:var(--bad)">
-            <h2 style="margin-top:0;color:var(--bad)">Prediseños que no llegaron a Bocetos</h2>
-            <p class="meta" style="margin-bottom:10px">El cliente pasó los datos pero Firestore rechazó el alta, así que el boceto no se creó. Están acá para que no se pierdan: cargalos a mano desde el chat.</p>
-            <?php foreach ($fallados as $m): ?>
-                <div style="border-top:1px solid var(--line);padding:9px 0">
-                    <strong><?= $e($m['nombre'] ?? '') ?: 'Sin nombre' ?></strong>
-                    <span class="meta"><?= $e(wabot_formatear_tel($m['tel'])) ?> · <?= date('d/m/Y H:i', (int)$m['ts']) ?></span>
-                    <a href="admin.php?tab=conversaciones&ver=<?= $e($m['tel']) ?>">ver chat</a>
-                    <p class="meta" style="margin:4px 0 0"><?= $e($m['descripcion']) ?> · Colores: <?= $e($m['colores']) ?></p>
-                </div>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
         <div class="card">
             <h2 style="margin-top:0">Qué código está corriendo</h2>
             <label>Sello de versión</label>
@@ -1695,157 +1428,18 @@ body.embed { min-height: 0; }
             <?php endif; ?>
         </div>
 
-    <?php elseif ($tab === 'textos'): ?>
+    <?php elseif ($tab === 'ajustes'): ?>
+        <?php /* Un solo formulario con lo único de bot-config.json que se toca
+         * desde el panel. Los textos del bot viven en textos.php. */ ?>
         <form method="post">
-        <input type="hidden" name="accion" value="guardar_textos">
+        <input type="hidden" name="accion" value="guardar_ajustes">
         <div class="card">
-            <h2 style="margin-top:0">Apertura</h2>
-            <label>Primer mensaje (menú)</label><textarea name="menu" rows="4"><?= $e($cfg['menu']) ?></textarea>
-            <?php $problemasTextos = wabot_textos_problemas($cfg); ?>
-            <?php if ($problemasTextos): ?>
-                <div style="background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);border-radius:10px;padding:10px 12px;margin-bottom:12px">
-                    <strong style="color:#F59E0B;font-size:13px">Revisar: el turno del precio tiene textos que no van a salir bien</strong>
-                    <ul style="margin:6px 0 0;padding-left:18px;font-size:12px;line-height:1.6">
-                        <?php foreach ($problemasTextos as $pt): ?><li><?= htmlspecialchars($pt, ENT_QUOTES, 'UTF-8') ?></li><?php endforeach; ?>
-                    </ul>
-                </div>
-            <?php endif; ?>
-            <label>Qué es cada una (si pregunta)</label><textarea name="def_tipos" rows="3"><?= $e($cfg['def_tipos']) ?></textarea>
-            <label>Algo diferente</label><textarea name="contame" rows="2"><?= $e($cfg['contame']) ?></textarea>
-            <label>Ya contó qué ofrece, pero falta definir el objetivo</label><textarea name="aclarar_objetivo" rows="2"><?= $e($cfg['aclarar_objetivo'] ?? '') ?></textarea>
-            <label>Pregunta de desempate para cursos</label><textarea name="desempate_cursos" rows="3"><?= $e($cfg['desempate_cursos']) ?></textarea>
-            <label style="opacity:.6">Turnos (peluquerías, consultorios, canchas…) <span style="color:#b45309">· ya no se pregunta</span></label><textarea name="desempate_turnos" rows="3" style="opacity:.6"><?= $e($cfg['desempate_turnos'] ?? '') ?></textarea>
-            <label style="opacity:.6">Comercios (ferreterías, kioscos, locales…) <span style="color:#b45309">· ya no se pregunta</span></label><textarea name="desempate_comercio" rows="3" style="opacity:.6"><?= $e($cfg['desempate_comercio'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:-6px">Estas dos preguntas quedaron sin uso cuando se retiraron turnos y catálogo: las dos respuestas daban el mismo tipo y el mismo precio. Un servicio con turnos se cotiza directo como sitio profesional, y un comercio como ecommerce. Se siguen mostrando porque las charlas que quedaron trabadas en ellas todavía las usan.</p>
-            <label>Pregunta para trabajos/productos a medida (cortinas, toldos, aberturas, muebles…)</label><textarea name="desempate_hibrido" rows="3"><?= $e($cfg['desempate_hibrido'] ?? '') ?></textarea>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Precio</h2>
-            <label>Plantilla del mensaje de precio ({desc}, {precio} = pago único, {sena} = seña y {mensualidad} = servicio mensual se reemplazan; el link del presupuesto ya no va) <span style="color:#b45309">· desde el 11-sep el primer precio sale con el texto fijo de cada tipo ("Para tu … podemos hacer una web donde…"); esta queda para el cambio de tipo después de la demo</span></label>
-            <textarea name="msg_precio" rows="3"><?= $e($cfg['msg_precio']) ?></textarea>
-            <label>Mismo mensaje, pero cuando ya se presentó la web con el pitch (sin repetir {desc}, que el cliente ya leyó)</label>
-            <textarea name="msg_precio_tras_pitch" rows="3"><?= $e($cfg['msg_precio_tras_pitch'] ?? '') ?></textarea>
-            <label>Igual para catálogo: precio tras el pitch, sin repetir {desc}</label>
-            <textarea name="msg_precio_catalogo_tras_pitch" rows="3"><?= $e($cfg['msg_precio_catalogo_tras_pitch'] ?? '') ?></textarea>
-            <label>Segundo mensaje: el ofrecimiento del prediseño (llega aparte, unos segundos después)</label>
-            <textarea name="msg_prediseno_oferta" rows="2"><?= $e($cfg['msg_prediseno_oferta'] ?? '') ?></textarea>
-            <?php foreach ($cfg['tipos'] as $t => $d): ?>
-                <div class="fila" style="margin-top:12px<?= !empty($d["retirado"]) ? ";opacity:.55" : "" ?>">
-                    <strong class="campo-etiqueta"><?= $e($d['label']) ?><?php if (!empty($d['retirado'])): ?> <span style="font-weight:400;color:#b45309">· retirado, no se ofrece</span><?php endif; ?></strong>
-                    <input type="text" name="precio_<?= $t ?>" value="<?= $e($d['precio']) ?>" title="Pago único" placeholder="pago único" style="width:110px">
-                    <input type="text" name="sena_<?= $t ?>" value="<?= $e($d['sena'] ?? '') ?>" title="Seña del pago único (el saldo va al entregar)" placeholder="seña" style="width:100px">
-                    <input type="text" name="mensualidad_<?= $t ?>" value="<?= $e($d['mensualidad'] ?? '') ?>" title="Servicio mensual" placeholder="por mes" style="width:110px">
-                    <input type="text" name="link_<?= $t ?>" value="<?= $e($d['link']) ?>" style="flex:1;min-width:220px">
-                </div>
-                <textarea name="desc_<?= $t ?>" rows="2" placeholder="Qué es (reemplaza {desc} en el mensaje del precio)" style="margin-top:4px"><?= $e($d['desc'] ?? '') ?></textarea>
-            <?php endforeach; ?>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Prediseño</h2>
-            <label>Ofrecimiento (usá {faltan}: se reemplaza por lo que falte — nombre, descripción, colores — uno por renglón)</label><textarea name="prediseno" rows="3"><?= $e($cfg['prediseno']) ?></textarea>
-            <label>Falta la descripción</label><textarea name="prediseno_falta_descripcion" rows="2"><?= $e($cfg['prediseno_falta_descripcion']) ?></textarea>
-            <label>Faltan los colores</label><textarea name="prediseno_falta_colores" rows="2"><?= $e($cfg['prediseno_falta_colores']) ?></textarea>
-            <label>Datos completos (cierra y deriva)</label><textarea name="prediseno_completo" rows="2"><?= $e($cfg['prediseno_completo']) ?></textarea>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Derivación y objeciones</h2>
-            <label>Handoff a Pablo</label><textarea name="derivar" rows="2"><?= $e($cfg['derivar']) ?></textarea>
-            <label>Handoff cuando pide una llamada</label><textarea name="pide_llamada" rows="2"><?= $e($cfg['pide_llamada'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:-6px">Pedir una llamada, o hablar con una persona, deriva siempre: el bot nunca rechaza una llamada.</p>
-            <label>Si escribe de nuevo tras derivar</label><textarea name="espera" rows="2"><?= $e($cfg['espera']) ?></textarea>
-            <label>Si escribe de nuevo tras cerrar el prediseño (ahí ya sabe que le escribís vos)</label><textarea name="espera_prediseno" rows="2"><?= $e($cfg['espera_prediseno'] ?? '') ?></textarea>
-            <label>Dice que es caro</label><textarea name="caro" rows="2"><?= $e($cfg['caro']) ?></textarea>
-            <label>Dice que lo va a pensar</label><textarea name="pensarlo" rows="2"><?= $e($cfg['pensarlo'] ?? '') ?></textarea>
-            <label>Lo tiene que hablar con su socio/a</label><textarea name="socio" rows="2"><?= $e($cfg['socio'] ?? '') ?></textarea>
-            <label>Ya tiene una web y quiere renovarla</label><textarea name="ya_tengo_web" rows="2"><?= $e($cfg['ya_tengo_web'] ?? '') ?></textarea>
-            <label>Empujón suave después de contestar una duda</label><textarea name="cta_muestra" rows="2"><?= $e($cfg['cta_muestra'] ?? '') ?></textarea>
-            <label>Cierre sin presión (solo averiguaba / más adelante / sin presupuesto)</label><textarea name="cierre_suave" rows="2"><?= $e($cfg['cierre_suave'] ?? '') ?></textarea>
-            <label>Cierre del que se va comparando precios (ya tiene el nuestro y la demo no se le ofreció): una sola mención de la demo</label><textarea name="cierre_comparando" rows="2"><?= $e($cfg['cierre_comparando'] ?? '') ?></textarea>
-            <label>Nombra Tienda Nube o similar</label><textarea name="plataformas" rows="2"><?= $e($cfg['plataformas']) ?></textarea>
-            <label>No le interesa</label><textarea name="no_interesa" rows="2"><?= $e($cfg['no_interesa']) ?></textarea>
-            <label>Mandó algo y no llegó nada (no se pudo bajar el archivo)</label><textarea name="no_texto" rows="2"><?= $e($cfg['no_texto']) ?></textarea>
-            <label>Mandó un archivo que sí se guardó pero no se pudo leer</label><textarea name="media_recibida" rows="2"><?= $e($cfg['media_recibida']) ?></textarea>
-            <p class="meta" style="margin-top:6px">El segundo es el que sale cuando el archivo quedó descargable en la conversación (un video, un .docx, o una foto con la IA caída): ahí no corresponde decirle que no se pudo abrir, porque lo tenés en el panel.</p>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Sistemas de gestión</h2>
-            <p class="meta" style="margin-bottom:8px">No llevan precio fijo: el bot califica la necesidad y Pablo recibe el brief para cotizarlo.</p>
-            <label>1. Qué necesita resolver</label><textarea name="sistema_pregunta" rows="2"><?= $e($cfg['sistema_pregunta'] ?? '') ?></textarea>
-            <label>2. Cuántas personas lo usarían</label><textarea name="sistema_pregunta_usuarios" rows="2"><?= $e($cfg['sistema_pregunta_usuarios'] ?? '') ?></textarea>
-            <label>3. Cómo lo manejan hoy</label><textarea name="sistema_pregunta_actual" rows="2"><?= $e($cfg['sistema_pregunta_actual'] ?? '') ?></textarea>
-            <label>Contacto de WhatsApp si el lead viene de Instagram</label><textarea name="sistema_whatsapp" rows="2"><?= $e($cfg['sistema_whatsapp'] ?? '') ?></textarea>
-            <label>Número de WhatsApp inválido</label><textarea name="sistema_whatsapp_invalido" rows="2"><?= $e($cfg['sistema_whatsapp_invalido'] ?? '') ?></textarea>
-            <label>Cierre cuando ya tiene el brief</label><textarea name="sistema_cierre" rows="2"><?= $e($cfg['sistema_cierre'] ?? '') ?></textarea>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Seguimiento comercial</h2>
-            <div class="fila" style="gap:18px;align-items:flex-end">
-                <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
-                    <input type="checkbox" name="seguimiento_activo" value="1" <?= !empty($cfg['seguimiento_activo']) ? 'checked' : '' ?> style="width:auto">
-                    Enviar un seguimiento si el cliente queda en silencio
-                </label>
-                <div>
-                    <label>Horas de silencio</label>
-                    <input type="number" name="seguimiento_horas" min="0.5" max="22" step="0.5" value="<?= $e((string)($cfg['seguimiento_horas'] ?? 3)) ?>" style="width:110px">
-                </div>
-                <div>
-                    <label>Solo entre las (hora argentina)</label>
-                    <input type="number" name="seguimiento_hora_desde" min="0" max="23" step="1" value="<?= $e((string)($cfg['seguimiento_hora_desde'] ?? 8)) ?>" style="width:70px">
-                    <span class="meta">y las</span>
-                    <input type="number" name="seguimiento_hora_hasta" min="0" max="23" step="1" value="<?= $e((string)($cfg['seguimiento_hora_hasta'] ?? 20)) ?>" style="width:70px">
-                </div>
-            </div>
-            <p class="meta" style="margin-top:8px">Se manda una sola vez y dentro de la ventana permitida por Meta. <code>{nombre}</code> usa el primer nombre si está disponible. Requiere que Hostinger ejecute <code>wabot/seguimiento.php</code> por cron cada 30 minutos.</p>
-            <p class="meta" style="margin-top:5px">Fuera de esa franja el seguimiento espera a la mañana siguiente. Única excepción: si esperar dejaría vencer las 24 h de Meta, sale igual — mejor a destiempo que perderlo.</p>
-            <?php $cronSeg = function_exists('wabot_seguimiento_estado_cron') ? wabot_seguimiento_estado_cron() : ['ultimo_run_ts'=>0]; ?>
-            <p class="meta" style="margin-top:5px">
-                Estado del cron: <?= !empty($cronSeg['ultimo_run_ts'])
-                    ? 'última ejecución ' . $e(date('d/m/Y H:i', (int)$cronSeg['ultimo_run_ts']))
-                      . ' · enviados ' . (int)($cronSeg['enviados'] ?? 0)
-                      . ' · fallidos ' . (int)($cronSeg['fallidos'] ?? 0)
-                    : 'todavía no se registró ninguna ejecución' ?>
-            </p>
-            <label>Seguimiento después de dar el precio</label><textarea name="seguimiento_precio" rows="3"><?= $e($cfg['seguimiento_precio'] ?? '') ?></textarea>
-            <label>Mensaje de seguimiento (genérico, sale en cualquier estado del chat)</label><textarea name="seguimiento_datos" rows="2"><?= $e($cfg['seguimiento_datos'] ?? '') ?></textarea>
-            <label>Seguimiento cuando quedó una pregunta sin contestar</label><textarea name="seguimiento_pregunta" rows="2"><?= $e($cfg['seguimiento_pregunta'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:-6px">{pregunta} se reemplaza por la pregunta que el bot dejó abierta. Si no quedó ninguna, sale el texto de arriba.</p>
-            <label>Gancho que se suma a ese seguimiento</label><textarea name="seguimiento_pregunta_gancho" rows="2"><?= $e($cfg['seguimiento_pregunta_gancho'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:-6px">Solo se agrega si todavía no se ofreció la muestra ni se dio el precio.</p>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Demos presentadas</h2>
-            <p class="meta" style="margin-bottom:8px">Cuando se aprieta "Presentar" en un boceto del admin, el bot le manda al cliente el link de la demo y el pedido de feedback. Esto controla cuánto tiempo sin confirmar archiva la charla (ver también "Después de presentar la demo" y "Plantillas de WhatsApp" más abajo).</p>
-            <div class="fila" style="gap:18px;align-items:flex-end">
-                <div>
-                    <label>Horas sin confirmar para archivar</label>
-                    <input type="number" name="presentados_archivar_horas" min="24" max="720" step="1" value="<?= $e((string)($cfg['presentados_archivar_horas'] ?? 120)) ?>" style="width:110px">
-                </div>
-            </div>
-            <p class="meta" style="margin-top:8px">Usa el mismo cron que el seguimiento (<code>wabot/seguimiento.php</code>).</p>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Info fija (respuestas a preguntas)</h2>
-            <?php foreach ($cfg['info'] as $k => $v): ?>
-                <label><?= $e($k) ?><?= $k === 'mantenimiento' ? ' — {mensualidad} sale del tipo cotizado y {link} del plan de abajo'
-                    : ($k === 'mantenimiento_ambos' ? ' — se usa SOLO si todavía no se cotizó ningún tipo; {mensualidades} arma los montos de cada tipo'
-                    : (in_array($k, ['rangos', 'precio_sin_rubro', 'pago_generico'], true) ? ' — sin rubro no se dicen montos; {tabla_precios} arma el pago único y el mensual de cada tipo' : '')) ?></label>
-                <textarea name="info_<?= $e($k) ?>" rows="2"><?= $e($v) ?></textarea>
-            <?php endforeach; ?>
-            <label>Renovación de hosting y dominio del pago único · se dice solo si preguntan cuánto sale renovar</label>
-            <textarea name="hosting_renovacion" rows="3"><?= $e($cfg['hosting_renovacion'] ?? '') ?></textarea>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Plan mensual</h2>
-            <p class="meta" style="margin-bottom:8px">Desde el 15-sep es una de las dos formas de contratar la web (la otra es el pago único con seña): sin pago inicial y sin permanencia. El monto que cotiza el bot es el de cada tipo, en la sección Precio (casillero "por mes"); acá quedan los montos de referencia y el link de la página de cada plan.</p>
-            <?php
-            $etiquetasPlan = ['landing' => 'Sitio profesional', 'otros' => 'Ecommerce, cursos e inmobiliaria'];
-            foreach (($cfg['mantenimiento_planes'] ?? []) as $k => $plan): ?>
-                <div class="fila" style="margin-top:8px">
-                    <strong class="campo-etiqueta campo-etiqueta--ancha"><?= $e($etiquetasPlan[$k] ?? $k) ?></strong>
-                    <input type="text" name="mant_precio_<?= $e($k) ?>" value="<?= $e($plan['precio']) ?>" style="width:110px">
-                    <input type="text" name="mant_link_<?= $e($k) ?>" value="<?= $e($plan['link']) ?>" style="flex:1;min-width:200px">
-                </div>
-            <?php endforeach; ?>
+            <h2 style="margin-top:0">Bot</h2>
+            <label class="meta" style="display:flex;align-items:center;gap:7px;cursor:pointer;margin:0">
+                <input type="checkbox" name="activo" value="1" <?= !empty($cfg['activo']) ? 'checked' : '' ?> style="width:auto">
+                Bot activo
+            </label>
+            <p class="meta" style="margin-top:6px">Apagado registra los mensajes pero no contesta nada. Es el mismo interruptor que el botón de la pestaña Estado.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Tiempos</h2>
@@ -1862,8 +1456,8 @@ body.embed { min-height: 0; }
                 <div><label>Velocidad de tipeo (caracteres por segundo)</label><input type="number" name="tipeo_por_segundo" min="5" max="200" value="<?= (int)($cfg['tipeo_por_segundo'] ?? 16) ?>" style="width:100px"></div>
                 <div><label>Nunca menos de (segundos)</label><input type="number" step="0.1" name="demora_minima" min="0" max="10" value="<?= $e((string)($cfg['demora_minima'] ?? 2)) ?>" style="width:100px"></div>
                 <div><label>Nunca mas de (segundos)</label><input type="number" step="0.1" name="demora_maxima" min="1" max="30" value="<?= $e((string)($cfg['demora_maxima'] ?? 7)) ?>" style="width:100px"></div>
-                <div><label>Horas de silencio cuando contestás vos</label><input type="number" name="pausa_horas_humano" value="<?= (int)$cfg['pausa_horas_humano'] ?>" style="width:100px"></div>
-                <div><label>Días para resetear una charla vieja</label><input type="number" name="reset_dias" value="<?= (int)$cfg['reset_dias'] ?>" style="width:100px"></div>
+                <div><label>Horas de silencio cuando contestás vos</label><input type="number" name="pausa_horas_humano" min="1" value="<?= (int)($cfg['pausa_horas_humano'] ?? 24) ?>" style="width:100px"></div>
+                <div><label>Días para resetear una charla vieja</label><input type="number" name="reset_dias" min="1" value="<?= (int)($cfg['reset_dias'] ?? 7) ?>" style="width:100px"></div>
             </div>
             <div class="fila" style="margin-top:14px;gap:18px">
                 <label class="meta" style="display:flex;align-items:center;gap:7px;cursor:pointer;margin:0">
@@ -1877,6 +1471,7 @@ body.embed { min-height: 0; }
             </div>
             <p class="meta" style="margin-top:6px">El audio se transcribe y el bot contesta como si lo hubieran escrito. La foto se describe (logo, captura de otra web, local, productos) y esa descripción entra a la charla. Si no se puede leer, pide que lo manden por texto.</p>
             <p class="meta" style="margin-top:8px">El "escribiendo…" ya no aparece al instante: se muestra recién cuando la respuesta está lista, así el silencio previo se siente real. El tiempo que tarda la IA en pensar se descuenta de la demora, así que si pensar llevó 3 segundos y pusiste 10, espera solo 7 más. En 0 contesta al toque.</p>
+            <p class="meta" style="margin-top:8px">Contestar a mano (desde el panel o desde el celular) calla al bot en ese chat por las horas de silencio. Si el cliente vuelve a escribir después de los días de reset, la charla arranca de cero.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Modelo de IA</h2>
@@ -1903,24 +1498,39 @@ body.embed { min-height: 0; }
             <p class="meta" style="margin-top:8px">Estado: <strong><?= (trim((string)($cfg['capi_dataset_id'] ?? '')) !== '' && trim((string)($cfg['capi_token'] ?? '')) !== '') ? 'activo' : 'sin configurar (no se manda nada)' ?></strong></p>
         </div>
         <div class="card">
-            <h2 style="margin-top:0">Formulario para pedir los datos del prediseño</h2>
-            <label style="display:flex;align-items:center;gap:8px;margin:0">
-                <input type="checkbox" name="form_activo" <?= !empty($cfg['form_activo']) ? 'checked' : '' ?>>
-                Dar el link a /form/ en WhatsApp
-            </label>
-            <p class="meta" style="margin-top:8px">Apagado (por defecto, momentáneamente), el bot pide esos mismos datos por chat, en un solo mensaje con viñetas — el mecanismo que ya se usa siempre en Instagram, que nunca tiene link posible. Prendido, en WhatsApp el bot vuelve a mandar directo el link al formulario para cargar nombre, negocio, descripción y colores.</p>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Después de presentar la demo</h2>
-            <p class="meta" style="margin-top:0">Al presentar, el bot manda los dos mensajes de la demo (link + pedido de feedback). Después sigue contestando normal —dudas, elogios, pedidos de cambio, "la miro y te digo"— sin vender ni pedir el pago. Recién cuando el cliente muestra interés real (pregunta cómo sigue, pregunta por el pago, discute el precio, acepta la videollamada o confirma que no le cambiaría nada) manda una sola vez «Para seguir con el proyecto te va a escribir el desarrollador desde otro número», la charla queda con vos y ese aviso no se repite nunca más. Si nunca contesta nada, se manda la plantilla de WhatsApp de abajo a las 48 h (solo si la demo salió por acá: si la presentaste por otro medio, esa plantilla no se manda).</p>
+            <h2 style="margin-top:0">Avisos automáticos</h2>
+            <div class="fila" style="gap:18px;align-items:flex-end">
+                <label style="display:flex;align-items:center;gap:7px;margin:0;cursor:pointer">
+                    <input type="checkbox" name="ultima_llamada_activa" value="1" <?= !empty($cfg['ultima_llamada_activa']) ? 'checked' : '' ?> style="width:auto">
+                    Última llamada antes de que cierre la ventana de 24 h
+                </label>
+                <div>
+                    <label>Horas desde el último mensaje del cliente</label>
+                    <input type="number" name="ultima_llamada_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['ultima_llamada_horas'] ?? 23)) ?>" style="width:100px">
+                </div>
+            </div>
+            <p class="meta" style="margin-top:8px">Para el que vio el precio, siguió hablando y no pidió la demo: un solo mensaje antes de que Meta cierre la ventana de 24 h, que es la última oportunidad de escribirle sin plantilla. Si la marca cae de noche, se adelanta al horario de contacto.</p>
+            <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">
+                <div>
+                    <label>Horas sin respuesta tras presentar la demo</label>
+                    <input type="number" name="presentadas_sin_respuesta_horas" min="1" max="720" step="1" value="<?= $e((string)($cfg['presentadas_sin_respuesta_horas'] ?? 48)) ?>" style="width:100px">
+                </div>
+                <div>
+                    <label>Horario de contacto (hora argentina), desde las</label>
+                    <input type="number" name="seguimiento_hora_desde" min="0" max="23" step="1" value="<?= $e((string)($cfg['seguimiento_hora_desde'] ?? 8)) ?>" style="width:70px">
+                    <span class="meta">hasta las</span>
+                    <input type="number" name="seguimiento_hora_hasta" min="0" max="24" step="1" value="<?= $e((string)($cfg['seguimiento_hora_hasta'] ?? 20)) ?>" style="width:70px">
+                </div>
+            </div>
+            <p class="meta" style="margin-top:8px">Pasadas esas horas sin que el cliente conteste nada, la charla pasa al filtro "Se enfriaron" de Conversaciones para que la recuperes a mano. El horario de contacto es la franja en la que pueden salir los avisos automáticos: 8 y 20 significan de 08:00 a 19:59. Requiere que Hostinger ejecute <code>wabot/seguimiento.php</code> por cron.</p>
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
-            <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas.</p>
+            <p class="meta" style="margin-top:0">Son lo único que se puede mandar con la ventana de 24 h cerrada: hace falta que Meta las apruebe primero. Cargá acá el nombre exacto con el que quedaron aprobadas (Business Manager → Plantillas) y el idioma; con eso quedan activas. La de 48 h sale solo si la demo se presentó desde el bot y el cliente nunca contestó.</p>
             <?php $plantillasLabels = [
                 'confirmacion_demo_48h' => 'Seguimiento a las 48 h de presentar la demo, si el cliente nunca contestó',
             ]; ?>
-            <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = $cfg['plantillas'][$clavePlant] ?? []; ?>
+            <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
                     <div style="min-width:280px">
                         <label><?= $e($labelPlant) ?></label>
@@ -1934,94 +1544,8 @@ body.embed { min-height: 0; }
                 </div>
             <?php endforeach; ?>
         </div>
-        <button>Guardar textos</button>
+        <button>Guardar ajustes</button>
         </form>
-
-    <?php elseif ($tab === 'entrenamiento'): ?>
-        <form method="post">
-        <input type="hidden" name="accion" value="guardar_entrenamiento">
-        <div class="card">
-            <h2 style="margin-top:0">Cómo escribe el bot</h2>
-            <?php $modo = $cfg['modo_redaccion'] ?? 'fijo'; ?>
-            <label style="display:flex;gap:9px;align-items:flex-start;margin-top:6px;cursor:pointer">
-                <input type="radio" name="modo_redaccion" value="fijo" <?= $modo === 'fijo' ? 'checked' : '' ?> style="width:auto;margin-top:3px">
-                <span><strong>Textos fijos</strong><br><span class="meta">Manda exactamente lo que escribiste en la pestaña Textos. Predecible al 100%, pero se nota que es un bot cuando alguien vuelve a escribir.</span></span>
-            </label>
-            <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;cursor:pointer">
-                <input type="radio" name="modo_redaccion" value="natural" <?= $modo === 'natural' ? 'checked' : '' ?> style="width:auto;margin-top:3px">
-                <span><strong>Redacción natural</strong><br><span class="meta">Las decisiones las toma el bot como siempre, pero escribe con sus palabras adaptándose al cliente. Los precios y links se verifican antes de enviar: si algo no coincide, sale el texto fijo.</span></span>
-            </label>
-            <label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;cursor:pointer">
-                <input type="radio" name="modo_redaccion" value="agente" <?= $modo === 'agente' ? 'checked' : '' ?> style="width:auto;margin-top:3px">
-                <span><strong>Conversación libre</strong><br><span class="meta">La IA lleva la charla: pregunta, indaga y vende sin guion. Los precios y los links no los sabe: los tiene que pedir, y se los damos exactos desde la pestaña Textos, así no puede inventarlos. Derivar y guardar el prediseño también son acciones reales, no frases. Si la IA falla, contesta el bot de siempre. Es el modo más natural y el que mejor entiende a clientes que se explican raro.</span></span>
-            </label>
-            <label>Cómo querés que suene (opcional)</label>
-            <textarea name="indicaciones_estilo" rows="3" placeholder="Ej: tuteá menos, no arranques con 'Perfecto', andá al grano…"><?= $e($cfg['indicaciones_estilo'] ?? '') ?></textarea>
-            <p class="meta" style="margin-top:6px">Solo aplica en modo natural. Probalo en la pestaña Probar antes de dejarlo en vivo.</p>
-        </div>
-
-        <div class="card">
-            <h2 style="margin-top:0">Indicaciones para el clasificador</h2>
-            <p class="meta" style="margin-bottom:8px">Acá le das órdenes al bot en tus palabras. No cambia los textos que manda (eso está en Textos): cambia cómo interpreta lo que escribe el cliente. Ejemplo: "si dice que tiene un kiosco o un almacén, tratalo como ecommerce".</p>
-            <textarea name="indicaciones" rows="6" placeholder="Una indicación por línea…"><?= $e($cfg['indicaciones']) ?></textarea>
-        </div>
-        <div class="card">
-            <h2 style="margin-top:0">Ejemplos etiquetados</h2>
-            <p class="meta" style="margin-bottom:8px">Frases reales de clientes con la acción correcta. Cuantos más cargues, mejor clasifica. La columna info solo aplica a pregunta_info (claves separadas por coma: proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, otra).</p>
-            <div id="ejemplos">
-            <?php foreach ($cfg['ejemplos'] as $ej): ?>
-                <div class="ej-fila">
-                    <input type="text" name="ej_texto[]" value="<?= $e($ej['texto']) ?>" placeholder="frase del cliente">
-                    <select name="ej_accion[]">
-                        <?php foreach ($ACCIONES as $ac): ?><option value="<?= $ac ?>" <?= $ej['accion'] === $ac ? 'selected' : '' ?>><?= $ac ?></option><?php endforeach; ?>
-                    </select>
-                    <input type="text" name="ej_info[]" value="<?= $e(implode(',', $ej['info_keys'] ?? [])) ?>" placeholder="info keys">
-                    <button type="button" class="bad" onclick="this.parentNode.remove()">×</button>
-                </div>
-            <?php endforeach; ?>
-            </div>
-            <button type="button" class="sec" onclick="agregarEj()">+ Agregar ejemplo</button>
-        </div>
-        <button>Guardar entrenamiento</button>
-        </form>
-
-        <div class="card">
-            <h2 style="margin-top:0">Lo que aprendió de vos</h2>
-            <?php $aprendido = wabot_aprendizaje_humano(15); ?>
-            <p class="meta" style="margin-bottom:10px">
-                Cada vez que tomás una charla y contestás vos, el bot guarda esa respuesta y se la muestra a la IA
-                como ejemplo de cómo vendés. No la copia literal: aprende el tono y el criterio.
-                Los precios y los links siguen saliendo de la pestaña Textos, nunca de acá.
-                <?php if ($aprendido): ?>Se usan las 10 más recientes.<?php endif; ?>
-            </p>
-            <?php if (!$aprendido): ?>
-                <p class="meta">Todavía no contestaste ninguna charla a mano. Cuando lo hagas, tus respuestas van a aparecer acá.</p>
-            <?php else: ?>
-                <?php foreach ($aprendido as $i => $par): ?>
-                    <div style="border-bottom:1px solid var(--line);padding:9px 0<?= $i >= 10 ? ';opacity:.45' : '' ?>">
-                        <div class="meta">Cliente: <?= $e($par['cliente']) ?></div>
-                        <div style="font-size:14px;margin-top:3px"><?= $e($par['pablo']) ?></div>
-                    </div>
-                <?php endforeach; ?>
-                <?php if (count($aprendido) > 10): ?>
-                    <p class="meta" style="margin-top:9px">Las atenuadas son más viejas y no entran en el prompt.</p>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
-        <template id="tpl-ej">
-            <div class="ej-fila">
-                <input type="text" name="ej_texto[]" placeholder="frase del cliente">
-                <select name="ej_accion[]"><?php foreach ($ACCIONES as $ac): ?><option value="<?= $ac ?>"><?= $ac ?></option><?php endforeach; ?></select>
-                <input type="text" name="ej_info[]" placeholder="info keys">
-                <button type="button" class="bad" onclick="this.parentNode.remove()">×</button>
-            </div>
-        </template>
-        <script>
-        function agregarEj(){
-            document.getElementById('ejemplos').appendChild(document.getElementById('tpl-ej').content.cloneNode(true));
-        }
-        </script>
-
     <?php elseif ($tab === 'conversaciones'): ?>
         <?php
         $ver   = $_GET['ver'] ?? '';
@@ -2104,6 +1628,7 @@ body.embed { min-height: 0; }
                         <?php if (!empty($conv['bot_off'])): ?><span class="pill off">bot apagado acá</span><?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?><span class="pill pausa">pausado hasta <?= date('d/m H:i', (int)$conv['pausado_hasta']) ?></span><?php endif; ?>
                         <?php if (!empty($conv['handoff_pendiente'])): ?><span class="pill pausa" id="handoffPill">Pablo pendiente</span><?php endif; ?>
+                        <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>
@@ -2177,6 +1702,7 @@ body.embed { min-height: 0; }
                         <button type="button" id="grabarCancelar" class="bad" title="Cancelar la grabación">✕</button>
                     </div>
                     <p class="meta" id="respEstado" style="margin-top:6px"></p>
+                    <details class="rapidas" id="rapidasPanel"><summary>Respuestas rápidas para editar</summary><p>Elegí una frase, ajustala si hace falta y después tocá Enviar.</p><div id="rapidasCategorias"></div></details>
                 </div>
 
                 <!-- Respuestas rápidas (Pablo, 15-sep): pestañitas flotantes a la
@@ -2218,10 +1744,10 @@ body.embed { min-height: 0; }
             - Que no lo hayas abierto desde ese mensaje. */
         const GRUPOS_SIN_LEER = ['pago', 'prospecto', 'presentados', 'presentadas_48', 'muestra'];
         function esNoLeido(it) {
-            // La regla la resuelve el server (wabot_conv_es_sl): es la MISMA
-            // que dispara la notificación push, y con dos copias terminaban
-            // diciendo cosas distintas. El cálculo viejo queda de respaldo por
-            // si llega un item de una versión anterior sin el campo.
+            // La regla la resuelve el server (wabot_conv_es_sl): una sola
+            // copia del criterio, y con dos terminaban diciendo cosas
+            // distintas. El cálculo viejo queda de respaldo por si llega un
+            // item de una versión anterior sin el campo.
             if (typeof it.sl === 'boolean') return it.sl;
             if (it.grupo === 'archivado') return false;
             if (!GRUPOS_SIN_LEER.includes(it.grupo) && !it.espera && !it.handoff_pendiente) return false;
@@ -2359,19 +1885,6 @@ body.embed { min-height: 0; }
             return !!it.rta;
         }
 
-        /* Tarea de retomar que te toca mirar: vencida, o pendiente y vence en
-         * los próximos 2 días (para llegar antes que el cron, si querés). */
-        function esRetomar(it) {
-            const r = it.retomar;
-            if (!r || !r.ts) return false;
-            if (r.estado === 'vencido') return true;
-            return r.estado === 'pendiente' && r.ts <= Date.now() / 1000 + 2 * 86400;
-        }
-        function fechaCorta(ts) {
-            try { return new Date(ts * 1000).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }); }
-            catch (e) { return ''; }
-        }
-
         /* "Ya le contesté" desde la propia fila, para las respuestas que salen
          * del otro WhatsApp y el sistema no ve. La fila entera es un <a>, así
          * que hay que cortar el click antes de que abra el chat. */
@@ -2420,7 +1933,6 @@ body.embed { min-height: 0; }
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
             if (filtro === 'rta') return esRTA(it);
-            if (filtro === 'retomar') return esRetomar(it);
             return (GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat') === filtro;
         }
 
@@ -2513,7 +2025,7 @@ body.embed { min-height: 0; }
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, rta: 0, retomar: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
@@ -2522,7 +2034,6 @@ body.embed { min-height: 0; }
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
                 if (esRTA(it)) cuentas.rta++;
-                if (esRetomar(it)) cuentas.retomar++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
                 if (!buscandoGeneral && fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
                 if (!coincideBusquedaChat(it, termino)) continue;
@@ -2622,16 +2133,6 @@ body.embed { min-height: 0; }
                     pe.textContent = it.handoff_pendiente ? 'te toca a vos' : 'te espera';
                     pills.appendChild(pe);
                 }
-                // La tarea de retomar, con su fecha: "retomar 14/09" mientras
-                // está pendiente, "retomar: vencido" cuando ya te toca a vos.
-                if (it.retomar && it.retomar.ts && (it.retomar.estado === 'pendiente' || it.retomar.estado === 'vencido')) {
-                    const pr = document.createElement('span');
-                    pr.className = 'pill ' + (it.retomar.estado === 'vencido' ? 'off' : 'pausa');
-                    pr.textContent = it.retomar.estado === 'vencido' ? 'retomar: vencido' : ('retomar ' + fechaCorta(it.retomar.ts));
-                    pr.title = (it.retomar.quien === 'cliente' ? 'Dijo que escribía ' : 'Pidió que le escribas ')
-                        + (it.retomar.humano || '') + (it.retomar.motivo ? ' — «' + it.retomar.motivo + '»' : '');
-                    pills.appendChild(pr);
-                }
                 if (it.tipo) {
                     const p2 = document.createElement('span');
                     p2.className = 'pill tipo';
@@ -2672,12 +2173,9 @@ body.embed { min-height: 0; }
             if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
             const elRta = document.getElementById('cuentaRta');
             if (elRta) elRta.textContent = cuentas.rta ?? 0;
-            const elRetomar = document.getElementById('cuentaRetomar');
-            if (elRetomar) elRetomar.textContent = cuentas.retomar ?? 0;
             for (const b of navBtns) {
                 if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
                 if (b.dataset.grupo === 'rta') b.classList.toggle('tiene', (cuentas.rta ?? 0) > 0);
-                if (b.dataset.grupo === 'retomar') b.classList.toggle('tiene', (cuentas.retomar ?? 0) > 0);
             }
             if (!visibles) {
                 const filtrando = termino || fechasChatsSeleccionadas.size || filtrosActivos.size;
@@ -3593,67 +3091,6 @@ body.embed { min-height: 0; }
         })();
         </script>
 
-    <?php elseif ($tab === 'probar'): ?>
-        <?php $convT = wabot_conv_load('TEST'); ?>
-        <div class="card">
-            <div class="fila" style="justify-content:space-between;margin-bottom:10px">
-                <div><strong>Chat de prueba</strong> <span class="meta">— habla con el motor real (Gemini incluido), sin mandar nada por WhatsApp.</span></div>
-                <form method="post"><input type="hidden" name="accion" value="probar_reset"><button class="sec">Reiniciar charla</button></form>
-            </div>
-            <?php if (WABOT_GEMINI_KEY === 'COMPLETAR'): ?>
-                <p class="meta" style="color:var(--warn);margin-bottom:8px">Falta la API key de Gemini en config/wabot-config.php: el clasificador no va a funcionar y el bot cae al comportamiento de emergencia.</p>
-            <?php endif; ?>
-            <div class="chat" id="chat">
-                <?php foreach ($convT['transcript'] as $t): ?>
-                    <div class="burb <?= $e($t['q']) ?>"><?= $e($t['t']) ?></div>
-                <?php endforeach; ?>
-            </div>
-            <div class="fila" style="margin-top:12px">
-                <input type="text" id="msj" placeholder="Escribí como si fueras un cliente…" style="flex:1" autofocus>
-                <button id="enviar">Enviar</button>
-            </div>
-            <p class="meta" style="margin-top:8px">fase: <span id="fase"><?= $e($convT['fase']) ?></span><span id="tipo"><?= $convT['tipo'] ? ' · tipo: ' . $e($convT['tipo']) : '' ?></span></p>
-        </div>
-        <script>
-        const chat = document.getElementById('chat'), inp = document.getElementById('msj');
-        function burb(q, t, demora) {
-            const d = document.createElement('div');
-            d.className = 'burb ' + q; d.textContent = t;
-            if (demora) {
-                const m = document.createElement('div');
-                m.className = 'meta';
-                m.textContent = t.length + ' caracteres · tarda ' + demora + ' s en escribirse';
-                d.appendChild(m);
-            }
-            chat.appendChild(d); chat.scrollTop = chat.scrollHeight;
-        }
-        async function enviar() {
-            const t = inp.value.trim(); if (!t) return;
-            inp.value = ''; burb('cliente', t);
-            const esp = document.createElement('div'); esp.className = 'burb bot'; esp.textContent = '…';
-            chat.appendChild(esp); chat.scrollTop = chat.scrollHeight;
-            try {
-                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ accion: 'probar', texto: t }) });
-                const j = await r.json();
-                esp.remove();
-                const msgs = j.mensajes || [];
-                if (!msgs.length) burb('bot', '(el bot no contesta en esta fase)');
-                // Se pintan con la misma pausa real, para ver cómo le llega al cliente.
-                const dem = j.demoras || [];
-                for (let i = 0; i < msgs.length; i++) {
-                    if (i > 0) await new Promise(r => setTimeout(r, (dem[i] || 2) * 1000));
-                    burb('bot', msgs[i], dem[i]);
-                    chat.scrollTop = chat.scrollHeight;
-                }
-                document.getElementById('fase').textContent = j.fase || '?';
-                document.getElementById('tipo').textContent = j.tipo ? ' · tipo: ' + j.tipo : '';
-            } catch (e) { esp.textContent = 'Error: ' + e; }
-        }
-        document.getElementById('enviar').onclick = enviar;
-        inp.addEventListener('keydown', e => { if (e.key === 'Enter') enviar(); });
-        chat.scrollTop = chat.scrollHeight;
-        </script>
     <?php endif; ?>
 
 <?php endif; ?>
@@ -3662,7 +3099,7 @@ body.embed { min-height: 0; }
 <?php if ($embed): ?>
 <script>
 /* Embebido en el admin: le avisamos nuestro alto real para que el iframe crezca
-   y no tenga scroll propio. Las pestañas largas (Textos, Entrenamiento) hacen
+   y no tenga scroll propio. Las pestañas largas (Ajustes, Estado) hacen
    scrollear la página del admin; Conversaciones avisa que va a pantalla fija
    (conv-full) y ahí el padre la ajusta a la ventana. Un solo scroll siempre. */
 (function () {
@@ -3684,87 +3121,7 @@ body.embed { min-height: 0; }
     avisar();
 })();
 </script>
-<script type="module">
-/* Notificaciones push del panel.
- *
- * El navegador pide permiso una sola vez por dispositivo y devuelve un token
- * que hay que guardar en el server: es la dirección a la que FCM entrega. Los
- * tokens rotan, así que se refresca en cada carga del panel.
- *
- * Todo esto es opcional: si falta la clave VAPID o el usuario dice que no, el
- * panel sigue funcionando igual y no se rompe nada. */
-const VAPID = <?= json_encode(wabot_push_vapid()) ?>;
-const estado = document.getElementById('pushEstado');
-const btnActivar = document.getElementById('pushActivar');
-const btnProbar  = document.getElementById('pushProbar');
-if (btnActivar) {
-
-    const decir = (t) => { if (estado) estado.textContent = t; };
-
-    async function registrar(pedirPermiso) {
-        if (!VAPID) return decir('Falta la clave VAPID en la config del server.');
-        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
-            return decir('Este navegador no soporta notificaciones.');
-        }
-        if (Notification.permission === 'denied') {
-            return decir('Las notificaciones están bloqueadas para este sitio: habilitalas desde el candado de la barra de direcciones.');
-        }
-        if (Notification.permission !== 'granted') {
-            if (!pedirPermiso) return;   // en la carga automática no se molesta
-            if (await Notification.requestPermission() !== 'granted') {
-                return decir('No se dio permiso, así que no te van a llegar.');
-            }
-        }
-        try {
-            const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
-            const { getMessaging, getToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
-            const app = initializeApp({
-                apiKey: 'AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ',
-                authDomain: 'gokywebs-967cd.firebaseapp.com',
-                projectId: 'gokywebs-967cd',
-                messagingSenderId: '50030976147',
-                appId: '1:50030976147:web:9f07245b536a75833a4166'
-            });
-            // El service worker vive en la raíz: desde /wabot/ no podría abrir
-            // el panel al tocar la notificación.
-            const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
-            const token = await getToken(getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: sw });
-            if (!token) return decir('Firebase no devolvió un token. Probá recargar.');
-
-            const r = await fetch('admin.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ accion: 'push_token', token }),
-                credentials: 'same-origin'
-            }).then(x => x.json());
-            decir(r.ok ? 'Listo: este dispositivo va a recibir los avisos. (' + r.dispositivos + ' en total)'
-                       : 'No se pudo guardar el dispositivo en el server.');
-        } catch (e) {
-            decir('No se pudo activar: ' + e.message);
-        }
-    }
-
-    btnActivar.addEventListener('click', () => registrar(true));
-    // Si ya dio permiso antes, se refresca solo el token, sin molestarlo.
-    registrar(false);
-
-    btnProbar?.addEventListener('click', async () => {
-        decir('Mandando…');
-        try {
-            const r = await fetch('admin.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ accion: 'push_probar' }),
-                credentials: 'same-origin'
-            }).then(x => x.json());
-            decir(r.ok ? 'Salió a ' + r.dispositivos + ' dispositivo(s). Fijate si te llegó.'
-                       : (r.error || 'No hay ningún dispositivo registrado todavía.'));
-        } catch (e) {
-            decir('Falló la prueba: ' + e.message);
-        }
-    });
-}
-</script>
 <?php endif; ?>
+<script src="respuestas-rapidas.js?v=20260916"></script>
 </body>
 </html>

@@ -28,11 +28,16 @@ service cloud.firestore {
         'primerPago', 'mensualidad',
         // La forma de pago que el cliente eligió por WhatsApp, si la eligió
         // después de que se creara el boceto (wabot, 15-sep-2026).
-        'modalidad',
         // Marca esta ficha como prospecto: el cliente vio el precio y afirmó
-        // una forma de pago, el bot dejó de responder (wabot, 15-sep-2026).
-        'esProspecto', 'prospectoAt'
-      ]);
+        // una forma de pago, el bot dejó de responder (wabot, 15/16-sep-2026).
+        'modalidad', 'esProspecto', 'prospectoAt', 'modelosElegidos'
+      ]) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['esProspecto'])
+              || request.resource.data.esProspecto == true)
+         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modalidad'])
+              || request.resource.data.modalidad in ['unico', 'mensual'])
+         && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modelosElegidos'])
+              || (request.resource.data.modelosElegidos is string
+                  && request.resource.data.modelosElegidos.size() <= 500));
     }
     match /presupuestos/{doc}  {
       allow create: if true;           // visitantes guardan su lead sin login

@@ -7,9 +7,7 @@
  * real: simulado en un solo proceso, siempre da bien.
  */
 
-if (php_sapi_name() !== 'cli') { http_response_code(404); exit; }
-
-require_once __DIR__ . '/lib.php';
+require_once __DIR__ . '/test-lib.php';
 
 define('WABOT_SALIDA', WABOT_DATA . '/log/test-concurrencia.jsonl');
 
@@ -51,13 +49,6 @@ if (($argv[1] ?? '') === 'worker') {
 }
 
 /* ─────────────────────────── Rol conductor ─────────────────────────── */
-
-$fallas = 0; $total = 0;
-function caso($nombre, $ok) {
-    global $fallas, $total; $total++;
-    echo ($ok ? "  ✓ " : "  ✗ ") . $nombre . "\n";
-    if (!$ok) $fallas++;
-}
 
 function limpiar($tel) {
     @unlink(WABOT_SALIDA);
@@ -165,5 +156,4 @@ wabot_lock_soltar($h2);
 foreach (['5490000000001','5490000000002','5490000000003','5490000000004'] as $t) limpiar($t);
 @unlink(WABOT_SALIDA);
 
-echo "\n" . ($fallas === 0 ? "TODO OK" : "FALLARON $fallas") . " — $total casos\n";
-exit($fallas === 0 ? 0 : 1);
+todo_ok();
