@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SOLuciones F — Paneles solares para casas, campos y comercios</title>
+<meta name="description" content="Instalamos paneles solares, domótica y riego autónomo en el sudoeste bonaerense. Calculá cuánto de tu consumo cubre el sol y escribinos con el número puesto.">
+<meta name="theme-color" content="#131A24">
+<link rel="canonical" href="https://gokywebs.com/demo/solucionesf/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="SOLuciones F">
+<meta property="og:title" content="SOLuciones F — Paneles solares para casas, campos y comercios">
+<meta property="og:description" content="Energía solar, domótica y riego autónomo. Calculá cuánto de tu consumo cubre el sol antes de escribirnos.">
+<meta property="og:url" content="https://gokywebs.com/demo/solucionesf/">
+<meta property="og:image" content="https://gokywebs.com/demo/solucionesf/images/hero-casa-paneles.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="images/logo-solucionesf.png">
+<link rel="apple-touch-icon" href="images/logo-solucionesf.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112..125,600..800&family=Manrope:wght@400..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#contenido">Ir al contenido</a>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#inicio" aria-label="SOLuciones F, inicio">
+      <img src="images/logo-solucionesf.png" width="331" height="336" alt="SOLuciones F">
+    </a>
+    <a class="header-buscar" href="#buscarSistema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span>Buscar un sistema</span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#sistemas">Sistemas</a>
+      <a href="#tambien">Domótica y riego</a>
+      <a href="#proceso">Cómo trabajamos</a>
+      <a href="#obras">Obras</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <a class="btn btn-cta header-cta" href="#charlemos">Charlemos</a>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="contenido">
+
+<section class="hero celdas" id="inicio">
+  <div class="hero-foto">
+    <img src="images/hero-casa-paneles.webp" width="1920" height="1080" alt="Casa con paneles solares instalados en el techo bajo cielo despejado" fetchpriority="high" decoding="async">
+  </div>
+  <div class="container hero-inner">
+    <div class="hero-copy">
+      <img class="hero-logo" src="images/logo-solucionesf.png" width="331" height="336" alt="SOLuciones F">
+      <p class="eyebrow eyebrow-light">Energía solar · Domótica · Riego autónomo</p>
+      <h1 class="hero-h1" data-animate="clip" style="clip-path:inset(0 0 100% 0);opacity:0">Instalamos paneles solares en casas, campos y comercios</h1>
+      <p class="hero-lede" data-animate="up" style="transform:translateY(24px);opacity:0">Traé el consumo en kWh de tu factura: te decimos cuántos paneles entran en tu techo y cuánto cubre el sol.</p>
+      <div class="hero-acciones" data-animate="up" data-delay=".12" style="transform:translateY(24px);opacity:0">
+        <a class="btn btn-cta btn-lg magnetic" href="#charlemos">Charlemos y acordamos</a>
+        <a class="btn btn-ghost btn-lg" href="#sistemas">Ver los sistemas</a>
+      </div>
+    </div>
+
+    <div class="calc" id="calculadora" data-animate="up" data-delay=".2" style="transform:translateY(34px);opacity:0">
+      <div class="calc-head">
+        <h2 class="calc-title">Traductor de factura</h2>
+        <p class="calc-sub">Tu consumo, pasado a paneles.</p>
+      </div>
+
+      <div class="calc-campo">
+        <label for="calcConsumo">¿Cuántos kWh consumís por mes?</label>
+        <div class="calc-num">
+          <input type="range" id="calcConsumo" min="120" max="2400" step="10" value="350" aria-describedby="calcConsumoOut">
+          <output id="calcConsumoOut" class="calc-out"><strong>350</strong> kWh</output>
+        </div>
+        <p class="calc-hint">Lo dice tu factura, en el renglón de consumo del período.</p>
+      </div>
+
+      <div class="calc-campo">
+        <span class="calc-label" id="calcDestinoLabel">¿Dónde lo vas a poner?</span>
+        <div class="calc-segs" role="group" aria-labelledby="calcDestinoLabel">
+          <button type="button" class="seg is-on" data-destino="casa">Casa</button>
+          <button type="button" class="seg" data-destino="campo">Campo</button>
+          <button type="button" class="seg" data-destino="comercio">Comercio</button>
+        </div>
+      </div>
+
+      <div class="calc-campo">
+        <label for="calcTecho">¿Cuánto techo libre tenés?</label>
+        <select id="calcTecho">
+          <option value="18">Hasta 20 m²</option>
+          <option value="32" selected>Entre 20 y 40 m²</option>
+          <option value="60">Entre 40 y 80 m²</option>
+          <option value="120">Más de 80 m²</option>
+        </select>
+      </div>
+
+      <div class="calc-resultado" aria-live="polite">
+        <div class="calc-cubre">
+          <span class="calc-cubre-num" id="calcCubre">100</span><span class="calc-cubre-pct">%</span>
+          <span class="calc-cubre-txt" id="calcCubreTxt">de tu consumo cubierto</span>
+        </div>
+        <dl class="calc-datos">
+          <div><dt>Paneles</dt><dd id="calcPaneles">6</dd></div>
+          <div><dt>Potencia</dt><dd id="calcPotencia">3,3 kWp</dd></div>
+          <div><dt>Genera</dt><dd id="calcGenera">371 kWh/mes</dd></div>
+          <div><dt>Ocupa</dt><dd id="calcOcupa">16 m²</dd></div>
+        </dl>
+      </div>
+
+      <div class="calc-acciones">
+        <button type="button" class="btn btn-cta btn-block" id="calcVerSistemas">Ver los sistemas que te sirven</button>
+        <a class="btn btn-line btn-block" id="calcWsp" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20hice%20el%20c%C3%A1lculo%20en%20la%20web%20y%20quiero%20que%20lo%20veamos." target="_blank" rel="noopener">Mandar este cálculo por WhatsApp</a>
+      </div>
+      <p class="calc-nota">Estimación con 4,8 horas de sol pico promedio de la zona y paneles de 550 W. La medida final sale de la visita técnica.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sistemas" id="sistemas">
+  <div class="container sistemas-head">
+    <p class="eyebrow">Catálogo</p>
+    <h2 class="h2" data-animate="up" style="transform:translateY(34px);opacity:0">Sistemas que instalamos</h2>
+    <p class="lede" data-animate="up" data-delay=".08" style="transform:translateY(24px);opacity:0">Seis armados que ya montamos y repetimos. Filtrá por destino y la grilla se reacomoda con el total de potencia que estás mirando.</p>
+  </div>
+
+  <div class="filtros-bar" id="filtrosBar">
+    <div class="container filtros-inner">
+      <div class="chips" role="group" aria-label="Filtrar sistemas por destino">
+        <button type="button" class="chip is-on" data-seg="todos" aria-pressed="true">Todos <span class="chip-n">6</span></button>
+        <button type="button" class="chip" data-seg="casa" aria-pressed="false">Casa <span class="chip-n">3</span></button>
+        <button type="button" class="chip" data-seg="campo" aria-pressed="false">Campo <span class="chip-n">2</span></button>
+        <button type="button" class="chip" data-seg="comercio" aria-pressed="false">Comercio <span class="chip-n">1</span></button>
+      </div>
+      <div class="buscador" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" id="buscarSistema" placeholder="Buscar por potencia o tipo" aria-label="Buscar un sistema">
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <p class="banda-datos" id="bandaDatos" aria-live="polite"></p>
+    <div class="grid-sistemas" id="gridSistemas"></div>
+    <p class="vacio" id="sistemasVacio" hidden>No hay un armado con ese nombre. Probá con «batería», «bombeo» o el número de kWp — o escribinos y lo calculamos a medida.</p>
+    <div class="banda-cta">
+      <p id="bandaCtaTxt">¿Ninguno encaja justo con tu techo? Los armamos a medida.</p>
+      <a class="btn btn-cta" id="bandaCtaWsp" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20cotizar%20un%20sistema%20a%20medida." target="_blank" rel="noopener">Cotizar a medida</a>
+    </div>
+  </div>
+</section>
+
+<section class="tambien" id="tambien">
+  <div class="container">
+    <div class="tambien-head">
+      <p class="eyebrow">También te puede interesar</p>
+      <h2 class="h2" data-animate="up" style="transform:translateY(34px);opacity:0">El sol no termina en el techo</h2>
+    </div>
+    <div class="tambien-grid" data-animate-stagger>
+      <article class="tcard" data-animate="up" style="transform:translateY(40px);opacity:0">
+        <div class="tcard-foto"><img src="images/servicio-domotica.webp" width="1200" height="1400" alt="Dispositivos de hogar inteligente controlados desde el celular"></div>
+        <div class="tcard-body">
+          <span class="tcard-num">01</span>
+          <h3>Domótica</h3>
+          <p>Luces, riego, portón y tomas desde el celular. Se conecta al mismo tablero que el sistema solar, así lo que más consume arranca cuando hay sol.</p>
+          <a class="link-flecha" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20me%20interesa%20la%20dom%C3%B3tica%20para%20mi%20casa." target="_blank" rel="noopener">Consultar domótica<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </article>
+      <article class="tcard" data-animate="up" style="transform:translateY(40px);opacity:0">
+        <div class="tcard-foto"><img src="images/servicio-riego.webp" width="1200" height="1400" alt="Aspersor riega un cultivo verde en un campo abierto"></div>
+        <div class="tcard-body">
+          <span class="tcard-num">02</span>
+          <h3>Riego autónomo</h3>
+          <p>La bomba arranca con el sol y para cuando baja, sin tablero ni operario en el molino. No lleva baterías: riega en las horas en que el panel entrega.</p>
+          <a class="link-flecha" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20consultar%20por%20riego%20aut%C3%B3nomo%20a%20sol." target="_blank" rel="noopener">Consultar riego<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </article>
+      <article class="tcard" data-animate="up" style="transform:translateY(40px);opacity:0">
+        <div class="tcard-foto"><img src="images/servicio-instalacion.webp" width="1200" height="1400" alt="Técnico con arnés y casco instalando un panel solar sobre un techo"></div>
+        <div class="tcard-body">
+          <span class="tcard-num">03</span>
+          <h3>Mantenimiento y lectura</h3>
+          <p>Limpieza de paneles, revisión de conexiones y control del inversor. Te dejamos por escrito cuánto generó el sistema en el período.</p>
+          <a class="link-flecha" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20coordinar%20mantenimiento%20de%20mi%20instalaci%C3%B3n." target="_blank" rel="noopener">Coordinar mantenimiento<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="proceso" id="proceso">
+  <div class="container proceso-inner">
+    <div class="proceso-head">
+      <p class="eyebrow">Cómo trabajamos</p>
+      <h2 class="h2" data-animate="up" style="transform:translateY(34px);opacity:0">Cuatro pasos y el sistema midiendo</h2>
+      <p class="lede" data-animate="up" data-delay=".08" style="transform:translateY(24px);opacity:0">Sin anticipos para averiguar. La visita técnica es la que define paneles, orientación y tablero.</p>
+      <a class="btn btn-cta magnetic" href="#charlemos">Arrancar por el paso 1</a>
+    </div>
+    <ol class="pasos" data-animate-stagger>
+      <li data-animate="left" style="transform:translateX(-34px);opacity:0">
+        <span class="paso-n">01</span>
+        <h3>Charlamos y mirás tu factura</h3>
+        <p>Nos pasás el consumo en kWh. Con eso ya sabemos en qué orden de potencia estamos y si conviene on-grid, híbrido u off-grid.</p>
+      </li>
+      <li data-animate="left" style="transform:translateX(-34px);opacity:0">
+        <span class="paso-n">02</span>
+        <h3>Visita técnica</h3>
+        <p>Medimos techo libre, orientación, sombras y el estado del tablero. Es lo que cambia el número estimado por el número real.</p>
+      </li>
+      <li data-animate="left" style="transform:translateX(-34px);opacity:0">
+        <span class="paso-n">03</span>
+        <h3>Acordamos el sistema</h3>
+        <p>Te pasamos por escrito qué paneles, qué inversor, cuántos kWp y qué queda a cargo nuestro. Acordamos antes de tocar nada.</p>
+      </li>
+      <li data-animate="left" style="transform:translateX(-34px);opacity:0">
+        <span class="paso-n">04</span>
+        <h3>Instalación y puesta en marcha</h3>
+        <p>Montaje, conexión, pruebas y la app andando en tu celular. Te dejamos el sistema midiendo lo que genera desde el primer día.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="obras celdas" id="obras">
+  <div class="container obras-inner">
+    <div class="obras-foto" data-animate="clip" style="clip-path:inset(0 0 100% 0);opacity:0">
+      <img src="images/obra-frente-casa.webp" width="711" height="679" alt="Frente de una casa con la instalación solar terminada">
+      <span class="obras-sello">Obra terminada</span>
+    </div>
+    <div class="obras-copy">
+      <p class="eyebrow eyebrow-light">Obras</p>
+      <h2 class="h2 h2-light" data-animate="up" style="transform:translateY(34px);opacity:0">El dato que manda no es el panel: es la hora de sol</h2>
+      <p class="obras-num"><span data-counter="4.8">4,8</span> <em>h</em></p>
+      <p class="obras-num-txt">Horas de sol pico promedio por día en el sudoeste bonaerense. Es el número con el que calculamos cada techo: define cuánto entrega un panel acá, que no es lo mismo que en el norte.</p>
+      <ul class="obras-lista">
+        <li><strong>2,6 m²</strong> ocupa cada panel de 550 W, con el paso para caminar el techo.</li>
+        <li><strong>Ley 27.424</strong> de generación distribuida: el excedente se puede inyectar a la red.</li>
+        <li><strong>Casa, campo y comercio</strong> con el mismo criterio de medición.</li>
+      </ul>
+      <a class="btn btn-cta magnetic" href="#charlemos">Quiero que midan mi techo</a>
+    </div>
+  </div>
+</section>
+
+<section class="charlemos" id="charlemos">
+  <div class="container charlemos-inner">
+    <div class="charlemos-copy">
+      <p class="eyebrow">Charlemos y acordamos</p>
+      <h2 class="h2" data-animate="up" style="transform:translateY(34px);opacity:0">Elegí cuándo pasamos a medir</h2>
+      <p class="lede">Dejanos el día que te queda cómodo y de dónde sos. Vamos con el cálculo ya hecho, medimos, y acordamos el sistema recién ahí.</p>
+      <ul class="charlemos-lista">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>La visita no tiene cargo ni te compromete a nada.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Salimos a la zona de Coronel Suárez y alrededores.</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Te queda por escrito qué se instala y qué queda a cargo nuestro.</li>
+      </ul>
+      <p class="charlemos-tel">O escribinos directo:
+        <a href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20coordinar%20una%20visita%20t%C3%A9cnica." target="_blank" rel="noopener">2923 64-5056</a>
+      </p>
+    </div>
+
+    <form class="reserva" id="formVisita" novalidate>
+      <div class="reserva-row">
+        <div class="campo">
+          <label for="visitaFecha">¿Qué día te queda cómodo?</label>
+          <input type="date" id="visitaFecha" name="fecha" required>
+          <span class="campo-error" id="errFecha" hidden>Elegí una fecha.</span>
+        </div>
+        <div class="campo">
+          <label for="visitaLocalidad">¿De dónde sos?</label>
+          <input type="text" id="visitaLocalidad" name="localidad" placeholder="Coronel Suárez, Pigüé, Huanguelén…" autocomplete="address-level2" required>
+          <span class="campo-error" id="errLocalidad" hidden>Contanos la localidad.</span>
+        </div>
+      </div>
+      <div class="reserva-row">
+        <div class="campo">
+          <label for="visitaTipo">¿Qué vamos a medir?</label>
+          <select id="visitaTipo" name="tipo">
+            <option value="casa">Una casa</option>
+            <option value="campo">Un campo</option>
+            <option value="comercio">Un comercio o galpón</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="visitaConsumo">Tu consumo por mes (kWh)</label>
+          <input type="number" id="visitaConsumo" name="consumo" min="0" step="10" value="350" inputmode="numeric">
+        </div>
+      </div>
+      <div class="campo">
+        <label for="visitaTel">Tu teléfono</label>
+        <input type="tel" id="visitaTel" name="tel" placeholder="2923 64-5056" autocomplete="tel" required>
+        <span class="campo-error" id="errTel" hidden>Dejanos un teléfono para confirmarte.</span>
+      </div>
+      <div class="reserva-resumen" id="reservaResumen" aria-live="polite"></div>
+      <div class="reserva-acciones">
+        <a class="btn btn-cta btn-block" id="visitaWsp" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20coordinar%20una%20visita%20t%C3%A9cnica." target="_blank" rel="noopener">Acordar por WhatsApp</a>
+        <button type="submit" class="btn btn-line btn-block" id="visitaSubmit">Prefiero que me escriban</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<section class="preguntas" id="preguntas">
+  <div class="container preguntas-inner">
+    <div class="preguntas-head">
+      <p class="eyebrow">Preguntas</p>
+      <h2 class="h2" data-animate="up" style="transform:translateY(34px);opacity:0">Lo que más nos preguntan antes de subir al techo</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>¿Sirve en días nublados?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Sí, con menos entrega. El panel trabaja con la luz, no con el calor: nublado genera una fracción de lo que genera despejado. El cálculo anual ya lo contempla, porque las 4,8 horas de sol pico son un promedio del año, no el mejor día.</p>
+      </details>
+      <details>
+        <summary>¿Necesito baterías?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Si tenés red, no. Un sistema on-grid usa la red como respaldo y sale bastante menos. Las baterías tienen sentido en el campo sin red, o si querés seguir con luz durante un corte. Por eso en el catálogo el armado con batería figura aparte.</p>
+      </details>
+      <details>
+        <summary>¿Cuántos paneles entran en mi techo?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Contá 2,6 m² por panel de 550 W, dejando paso para caminar. En 30 m² libres entran unos 11 paneles. El traductor de factura de arriba hace esa cuenta con tu medida; la definitiva sale de medir orientación y sombras en la visita.</p>
+      </details>
+      <details>
+        <summary>¿Qué mantenimiento lleva?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Poco: limpieza de los paneles cuando se junta tierra o polvo de cosecha, y una revisión de conexiones e inversor. No tiene partes móviles. En zona de campo la limpieza se nota más en la entrega que en cualquier otra cosa.</p>
+      </details>
+      <details>
+        <summary>¿Puedo inyectar lo que me sobra a la red?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>La ley 27.424 de generación distribuida habilita al usuario a inyectar su excedente a la red. El trámite y el medidor bidireccional los gestiona la distribuidora de tu zona; lo vemos junto con el tablero en la visita.</p>
+      </details>
+      <details>
+        <summary>¿Cuánto tarda la instalación?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Depende del tamaño del sistema, del tipo de techo y de si hay que tocar el tablero. Te lo confirmamos en la visita técnica, con fecha, y queda por escrito en la propuesta.</p>
+      </details>
+      <details>
+        <summary>¿Cuánto dura el sistema?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Los paneles van perdiendo entrega de forma muy gradual a lo largo de décadas; el inversor es el componente que antes se reemplaza. Cada equipo trae su garantía de fábrica y te la pasamos en la propuesta, sin promesas de nuestra parte por encima de eso.</p>
+      </details>
+      <details>
+        <summary>¿Qué pasa si se corta la luz?<span class="faq-mas" aria-hidden="true"></span></summary>
+        <p>Un on-grid se desconecta por seguridad mientras no hay red, así que no te da respaldo en un corte. Si eso te importa, el camino es el híbrido con batería: mantiene los consumos que definas mientras dura la reserva.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="cierre">
+  <div class="container cierre-inner">
+    <p class="cierre-lee" id="cierreLee">Primero el número, después el techo, y recién ahí hablamos de plata.</p>
+    <div class="cierre-cta">
+      <div>
+        <h2 class="cierre-h2">Traé tu factura. Nosotros traemos la cinta.</h2>
+        <p>Coronel Suárez y alrededores · Casa, campo y comercio</p>
+      </div>
+      <a class="btn btn-cta btn-lg magnetic" href="#charlemos">Charlemos y acordamos</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-marca">
+      <img src="images/logo-solucionesf.png" width="331" height="336" alt="SOLuciones F">
+      <p>Energía solar, domótica y riego autónomo en el sudoeste de la provincia de Buenos Aires.</p>
+    </div>
+    <div class="footer-col">
+      <h3>Sistemas</h3>
+      <ul>
+        <li><a href="#sistemas">Casa</a></li>
+        <li><a href="#sistemas">Campo</a></li>
+        <li><a href="#sistemas">Comercio</a></li>
+        <li><a href="#calculadora">Traductor de factura</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Servicios</h3>
+      <ul>
+        <li><a href="#tambien">Domótica</a></li>
+        <li><a href="#tambien">Riego autónomo</a></li>
+        <li><a href="#tambien">Mantenimiento</a></li>
+        <li><a href="#preguntas">Preguntas frecuentes</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Contacto</h3>
+      <ul>
+        <li><a href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20te%20escribo%20desde%20la%20web." target="_blank" rel="noopener">2923 64-5056</a></li>
+        <li><a href="mailto:solucionesf@gmail.com">solucionesf@gmail.com</a></li>
+        <li><a href="https://www.instagram.com/soluciones_ferreri/" target="_blank" rel="noopener">Instagram</a></li>
+        <li><a href="#charlemos">Acordar una visita</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© <span id="anio">2026</span> SOLuciones F</p>
+    <p><a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20quiero%20consultar%20por%20paneles%20solares." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<div class="modal-backdrop" id="sistemaModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <button type="button" class="modal-close" id="modalClose" aria-label="Cerrar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="modal-foto" id="modalFoto"></div>
+    <div class="modal-cont">
+      <p class="eyebrow" id="modalTipo"></p>
+      <h3 id="modalTitulo">Detalle del sistema</h3>
+      <dl class="modal-kpis" id="modalKpis"></dl>
+      <p id="modalIdeal"></p>
+      <ul class="modal-incluye" id="modalIncluye"></ul>
+      <a class="btn btn-cta btn-block" id="modalWsp" href="https://wa.me/5492923645056?text=Hola%20SOLuciones%20F%2C%20me%20interesa%20uno%20de%20los%20sistemas." target="_blank" rel="noopener">Pedir este sistema por WhatsApp</a>
+      <p class="calc-nota">Generación estimada con 4,8 horas de sol pico promedio de la zona. La propuesta final sale de la visita técnica.</p>
+    </div>
+  </div>
+</div>
+
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"LocalBusiness","name":"SOLuciones F","description":"Instalación de paneles solares, domótica y riego autónomo en el sudoeste de la provincia de Buenos Aires.","url":"https://gokywebs.com/demo/solucionesf/","image":"https://gokywebs.com/demo/solucionesf/images/hero-casa-paneles.webp","telephone":"+542923645056","email":"solucionesf@gmail.com","address":{"@type":"PostalAddress","addressLocality":"Coronel Suárez","addressRegion":"Buenos Aires","addressCountry":"AR"},"areaServed":"Coronel Suárez y alrededores, Buenos Aires","priceRange":"$$","sameAs":["https://www.instagram.com/soluciones_ferreri/"]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Sirve en días nublados?","acceptedAnswer":{"@type":"Answer","text":"Sí, con menos entrega. El panel trabaja con la luz, no con el calor. El cálculo anual ya lo contempla, porque las 4,8 horas de sol pico son un promedio del año."}},{"@type":"Question","name":"¿Necesito baterías?","acceptedAnswer":{"@type":"Answer","text":"Si tenés red, no: un sistema on-grid usa la red como respaldo. Las baterías tienen sentido en el campo sin red o para seguir con luz durante un corte."}},{"@type":"Question","name":"¿Cuántos paneles entran en mi techo?","acceptedAnswer":{"@type":"Answer","text":"Contá 2,6 m² por panel de 550 W dejando paso para caminar. En 30 m² libres entran unos 11 paneles. La medida definitiva sale de la visita técnica."}},{"@type":"Question","name":"¿Qué mantenimiento lleva?","acceptedAnswer":{"@type":"Answer","text":"Limpieza de los paneles cuando se junta tierra y una revisión de conexiones e inversor. No tiene partes móviles."}},{"@type":"Question","name":"¿Puedo inyectar lo que me sobra a la red?","acceptedAnswer":{"@type":"Answer","text":"La ley 27.424 de generación distribuida habilita a inyectar el excedente. El trámite y el medidor bidireccional los gestiona la distribuidora de la zona."}},{"@type":"Question","name":"¿Cuánto tarda la instalación?","acceptedAnswer":{"@type":"Answer","text":"Depende del tamaño del sistema, del tipo de techo y de si hay que tocar el tablero. Se confirma en la visita técnica y queda por escrito en la propuesta."}},{"@type":"Question","name":"¿Cuánto dura el sistema?","acceptedAnswer":{"@type":"Answer","text":"Los paneles pierden entrega de forma gradual a lo largo de décadas y el inversor es el componente que antes se reemplaza. Cada equipo trae su garantía de fábrica."}},{"@type":"Question","name":"¿Qué pasa si se corta la luz?","acceptedAnswer":{"@type":"Answer","text":"Un on-grid se desconecta por seguridad mientras no hay red. Para tener respaldo en un corte el camino es el híbrido con batería."}}]}
+</script>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js" defer></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/Flip.min.js" defer></script>
+<script src="script.js?v=1" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
