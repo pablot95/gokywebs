@@ -2671,25 +2671,16 @@ searchPropuestasInput.addEventListener("input", renderPropuestas);
    con slugNegocio(), el mismo criterio que ya usa el link "Ver demo". */
 document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
-    // Dos listas separadas: los nombres de carpeta solos (lo que hay que crear,
-    // sin nada del modelo mezclado ahí) y la referencia de modelos aparte, para
-    // no perderla pero sin ensuciar cada línea de carpeta (Pablo, 17-sep).
-    const filas = propuestasListaVisible.map(p => {
-        const carpeta = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
-        if (!carpeta) return null;
-        const modelos = modelosElegidosDe(p);
-        const refModelos = modelos.length
-            ? `${carpeta} — Modelos elegidos: ${modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (id: ${m.id})`).join(' + ')}`
-            : `${carpeta} — Sin modelo elegido`;
-        return { carpeta, refModelos };
-    }).filter(Boolean);
-    const nombres = [...new Set(filas.map(f => f.carpeta))];
+    // Solo el nombre de carpeta: sin el modelo elegido pegado ni aparte, Pablo
+    // no lo quiere en este texto (17-sep).
+    const nombres = [...new Set(propuestasListaVisible
+        .map(p => slugNegocio(getPropuestaNegocioFields(p).nombreNegocio))
+        .filter(Boolean))];
     if (!nombres.length) {
         alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
         return;
     }
-    const referencias = [...new Set(filas.map(f => f.refModelos))];
-    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de la lista, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}\n\nLos modelos seleccionados están en '${MODELOS_CARPETA_LOCAL}'. Para diseñar cada carpeta, identificá el modelo por su letra, nombre e id:\n\n${referencias.join("\n")}`;
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de la lista, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}`;
     try {
         await writeTextToClipboard(texto);
         const prev = btn.textContent;
