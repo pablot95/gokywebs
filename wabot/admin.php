@@ -2660,14 +2660,28 @@ body.embed { min-height: 0; }
             rrResultados.textContent = '';
         }
 
+        function rrInsertar(texto) {
+            const actual = txt.value;
+            // Un clic en los botones saca el foco del textarea, pero el navegador
+            // conserva la última posición del cursor. Insertamos ahí sin borrar
+            // ni siquiera un tramo que hubiera quedado seleccionado.
+            const posicion = Number.isInteger(txt.selectionEnd) ? txt.selectionEnd : actual.length;
+            const antes = actual.slice(0, posicion);
+            const despues = actual.slice(posicion);
+            const prefijo = antes && !/\s$/.test(antes) ? '\n\n' : '';
+            const sufijo = despues && !/^\s/.test(despues) ? '\n\n' : '';
+            txt.value = antes + prefijo + texto + sufijo + despues;
+            const cursor = (antes + prefijo + texto).length;
+            txt.dispatchEvent(new Event('input', { bubbles:true }));
+            txt.focus();
+            txt.setSelectionRange(cursor, cursor);
+        }
+
         function rrElegir(indice) {
             const elegida = rrCoincidencias[indice];
             if (!elegida) return;
-            txt.value = elegida.texto;
-            txt.dispatchEvent(new Event('input', { bubbles:true }));
+            rrInsertar(elegida.texto);
             rrCerrar();
-            txt.focus();
-            txt.setSelectionRange(txt.value.length, txt.value.length);
         }
 
         function rrMarcar(indice) {
@@ -2791,10 +2805,7 @@ body.embed { min-height: 0; }
             panel.addEventListener('click', ev => {
                 const item = ev.target.closest('.rr-item');
                 if (!item) return;
-                txt.value = item.textContent;
-                txt.dispatchEvent(new Event('input', { bubbles: true }));
-                txt.focus();
-                txt.setSelectionRange(txt.value.length, txt.value.length);
+                rrInsertar(item.textContent);
                 panel.querySelectorAll('.rr-tab.rr-abierto').forEach(t => {
                     t.classList.remove('rr-abierto');
                     t.querySelector('.rr-tab-btn').setAttribute('aria-expanded', 'false');
@@ -3540,6 +3551,6 @@ body.embed { min-height: 0; }
 })();
 </script>
 <?php endif; ?>
-<script src="respuestas-rapidas.js?v=20260916"></script>
+<script src="respuestas-rapidas.js?v=20260916b"></script>
 </body>
 </html>

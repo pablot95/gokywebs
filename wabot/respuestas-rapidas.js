@@ -66,9 +66,17 @@
       const boton = document.createElement('button');
       boton.type = 'button'; boton.textContent = frase;
       boton.addEventListener('click', () => {
-        respuesta.value = frase;
+        const actual = respuesta.value;
+        const posicion = Number.isInteger(respuesta.selectionEnd) ? respuesta.selectionEnd : actual.length;
+        const antes = actual.slice(0, posicion);
+        const despues = actual.slice(posicion);
+        const prefijo = antes && !/\s$/.test(antes) ? '\n\n' : '';
+        const sufijo = despues && !/^\s/.test(despues) ? '\n\n' : '';
+        respuesta.value = antes + prefijo + frase + sufijo + despues;
+        const cursor = (antes + prefijo + frase).length;
+        respuesta.dispatchEvent(new Event('input', { bubbles: true }));
         respuesta.focus();
-        respuesta.setSelectionRange(respuesta.value.length, respuesta.value.length);
+        respuesta.setSelectionRange(cursor, cursor);
       });
       grupo.append(boton);
     });
