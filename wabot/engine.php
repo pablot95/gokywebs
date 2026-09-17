@@ -5199,7 +5199,7 @@ function wabot_precio_resumen($conv, $cfg) {
     $precio = $v['precio'];
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
     if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "Son dos formas: pago único de {precio} (incluye mantenimiento el primer año), con una seña de {sena} y el saldo al entregar, o suscripción mensual de {mensualidad}, sin pago inicial.\nY acá podés ver {portfolio_texto}: {portfolio}";
+        $plantilla = "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.\n\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace('{precio}', $precio, $plantilla), $conv, $cfg);
 }

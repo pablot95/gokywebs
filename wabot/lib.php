@@ -479,9 +479,9 @@ function wabot_tres_pasos_pregunta() {
  * anterior ya explica qué trae el producto y no se vuelve a enumerar todo.
  */
 function wabot_servicio_texto_plantilla($tipo, $conCursos = false) {
-    return "Lo podés contratar de dos formas:\n\n"
-        . "1. Pago único de {precio}. Incluye mantenimiento el primer año.\n\n"
-        . "2. Suscripción mensual de {mensualidad}, todo incluido mientras dure la suscripción.";
+    return "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n"
+        . "1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n"
+        . "2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.";
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */
