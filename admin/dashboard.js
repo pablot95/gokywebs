@@ -3355,21 +3355,37 @@ function slugNegocio(nombre) {
         .replace(/[^a-z0-9]/g, "");
 }
 
-/* El bot re-ofrece el link de /form/ (completar datos → primera propuesta) cada vez
-   que cotiza un precio, con más de 10 variantes de texto distintas según cuándo se
-   armó la charla (ver wabot/lib.php: $linksViejos, $prediseñoLinkVariantesDefault,
-   $prediseñoLinkViejas) — por eso el filtro no busca una frase exacta, busca el link
-   en sí, que es lo único que no cambió nunca: siempre gokywebs.com/form/?c=<código>.
-   Es puro relleno para el brief, y puede repetirse varias veces en una charla larga.
-   Distinto del link de gokywebs.com/presupuestos/<tipo> (detalle de precio, en el
-   MISMO mensaje donde el bot dice qué tipo y precio cotizó) — ese sí queda, tiene
-   información real. Solo toca el texto que arma "Copiar"; chat_completo en Firestore
-   no se toca. */
+/* Limpia solamente el texto que arma "Copiar"; chat_completo en Firestore no se
+   toca. Se sacan dos bloques automáticos que no aportan al brief de diseño:
+   - la invitación repetida a completar /form/;
+   - la bajada comercial con pago único y suscripción mensual.
+   Si la cotización venía después de una descripción útil ("Lo mejor para..."), se
+   conserva esa primera parte y se elimina desde el comienzo de los planes. */
 function limpiarChatBoilerplate(chat) {
     if (!chat) return chat;
     const mensajes = chat.split(/(?=^\d{2}\/\d{2} \d{2}:\d{2} (?:Cliente|Bot|Vos): )/m);
     return mensajes
-        .filter(m => !(/^\d{2}\/\d{2} \d{2}:\d{2} Bot: /.test(m) && /gokywebs\.com\/form/i.test(m)))
+        .map(m => {
+            const botMatch = m.match(/^(\d{2}\/\d{2} \d{2}:\d{2} Bot: )([\s\S]*)$/);
+            if (!botMatch) return m;
+
+            const [, encabezado, cuerpoOriginal] = botMatch;
+            if (/gokywebs\.com\/form/i.test(cuerpoOriginal)) return "";
+
+            const inicioPlanes = cuerpoOriginal.search(
+                /(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas)\s*[:,]?/i
+            );
+            if (inicioPlanes >= 0) {
+                const descripcion = cuerpoOriginal.slice(0, inicioPlanes).trim();
+                return descripcion ? `${encabezado}${descripcion}\n` : "";
+            }
+
+            const esCotizacion = /pago\s+[uú]nico/i.test(cuerpoOriginal)
+                && /(?:suscripci[oó]n\s+mensual|mensualidad|por\s+mes)/i.test(cuerpoOriginal);
+            if (esCotizacion || /gokywebs\.com\/presupuestos\//i.test(cuerpoOriginal)) return "";
+
+            return m;
+        })
         .join("")
         .trim();
 }
