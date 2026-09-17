@@ -396,7 +396,7 @@ let ultimoFoco = null;
 function abrirModal(s) {
   const back = document.getElementById('sistemaModal');
   if (!back) return;
-  const msg = 'Hola SOLuciones F, me interesa el ' + s.nombre + ' (' + nfm(kWp(s.paneles), 1) + ' kWp, ' + s.paneles + ' paneles). Pasamos a medir el techo?';
+  const msg = 'Hola SOLuciones F, me interesa el ' + s.nombre + ' (' + nfm(kWp(s.paneles), 1) + ' kWp, ' + s.paneles + ' paneles). ¿Pasamos a medir el techo?';
   document.getElementById('modalFoto').innerHTML =
     '<img src="images/' + s.foto + '" width="1200" height="675" alt="' + esc(s.alt) + '">';
   document.getElementById('modalTipo').textContent = s.tipo + ' · ' + SEG_LABEL[s.seg];
