@@ -2380,11 +2380,7 @@ function briefDetailHTML(src) {
     // Pasos 2 y 3 del formulario: estilo, "incluir sí o sí" y los 2 modelos elegidos (16-sep).
     const estiloPagina = cleanFieldValue(src.estilo_pagina || "");
     const incluir   = cleanFieldValue(src.incluir_si_o_si || "");
-    let modelosElegidos = "";
-    try {
-        modelosElegidos = (JSON.parse(src.modelosElegidos || "[]") || [])
-            .map(m => `Modelo ${m.letra}${m.nombre ? ` · ${m.nombre}` : ""}`).join(" + ");
-    } catch (_) {}
+    const modelosElegidos = modelosElegidosTexto(src);
     // Dos modalidades (15-sep-2026): la elegida en el boceto o, si no eligió, las dos.
     const plan = planDe(src);
     const fecha = src.fecha || src.propuestaFecha || "";
@@ -2881,8 +2877,7 @@ document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) =
     const btn = e.currentTarget;
     const filas = propuestasListaVisible.map(p => {
         const carpeta = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
-        let modelos = [];
-        try { modelos = JSON.parse(p.modelosElegidos || '[]'); } catch (_) {}
+        const modelos = modelosElegidosDe(p);
         return carpeta ? `${carpeta}${modelos.length ? ' — Modelos elegidos: ' + modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (carpeta de modelo: ${m.id})`).join(' + ') : ' — Sin modelo elegido'}` : '';
     }).filter(Boolean);
     const nombres = [...new Set(filas)];
@@ -2908,6 +2903,29 @@ function getPropuestaTipoWeb(p) {
         return cleanFieldValue(p.tipo_web);
     }
     return cleanFieldValue(p.tipoDetectadoLabel || p.tipoDetectado || "");
+}
+
+function modelosElegidosDe(src = {}) {
+    const crudo = src.modelosElegidos ?? src.modelos_elegidos ?? [];
+    let modelos = crudo;
+    if (typeof crudo === "string") {
+        try { modelos = JSON.parse(crudo || "[]"); } catch (_) { modelos = []; }
+    }
+    if (!Array.isArray(modelos)) return [];
+    return modelos.map((m) => {
+        if (typeof m === "string") return { id: m.toLowerCase(), letra: m.toUpperCase(), nombre: "" };
+        if (!m || typeof m !== "object") return null;
+        const id = cleanFieldValue(m.id || "").toLowerCase();
+        const letra = cleanFieldValue(m.letra || id).toUpperCase();
+        const nombre = cleanFieldValue(m.nombre || "");
+        return letra || nombre ? { id, letra, nombre } : null;
+    }).filter(Boolean).slice(0, 2);
+}
+
+function modelosElegidosTexto(src = {}) {
+    return modelosElegidosDe(src)
+        .map(m => `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`)
+        .join(" + ");
 }
 
 async function savePropuestaTipoWeb(input) {
@@ -3039,6 +3057,7 @@ function renderPropuestas() {
             (p.tipo_web            || "").toLowerCase().includes(term) ||
             (p.tipoDetectado       || "").toLowerCase().includes(term) ||
             (p.tipoDetectadoLabel  || "").toLowerCase().includes(term) ||
+            modelosElegidosTexto(p).toLowerCase().includes(term) ||
             (p.objetivo_web        || "").toLowerCase().includes(term) ||
             (p.adicionales_texto   || "").toLowerCase().includes(term) ||
             (p.productos_servicios || "").toLowerCase().includes(term) ||
@@ -3061,7 +3080,7 @@ function renderPropuestas() {
             : fechasSeleccionadas.size ? " en las fechas marcadas"
             : term ? " para esa búsqueda"
             : " recibidas aún";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay propuestas${motivo}.</td></tr>`;
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="9">No hay propuestas${motivo}.</td></tr>`;
         return;
     }
 
@@ -3070,6 +3089,7 @@ function renderPropuestas() {
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
+        const modelos = modelosElegidosDe(p);
         const aviso = estadoAvisoBoceto(p);
         return `
             <tr class="client-row" data-row-prop-id="${p.id}" style="cursor:pointer">
@@ -3111,6 +3131,11 @@ function renderPropuestas() {
                         placeholder="Escribí el tipo"
                         aria-label="Tipo de web de ${escapeHtml(nombreNegocio || "este boceto")}"
                     >
+                </td>
+                <td class="prop-col-modelos">
+                    ${modelos.length
+                        ? `<div class="prop-modelos-lista">${modelos.map(m => `<span class="prop-modelo-chip">${escapeHtml(`${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`)}</span>`).join("")}</div>`
+                        : `<span class="muted">—</span>`}
                 </td>
                 <td class="prop-col-colores">${escapeHtml(coloresTexto || "—")}</td>
                 <td class="center">
@@ -3338,6 +3363,7 @@ function openPropuestaModal(id) {
     const cantCursos   = cleanFieldValue(p.cant_cursos);
     const colorFondos  = cleanFieldValue(p.color_fondos);
     const tipografias  = cleanFieldValue(p.tipografias);
+    const modelosElegidos = modelosElegidosTexto(p);
     const showCiudad     = !esPresupuestoModal || ciudadZona;
     const showCantCursos = !esPresupuestoModal || cantCursos;
     const showFondos      = !esPresupuestoModal || colorFondos;
@@ -3363,6 +3389,8 @@ function openPropuestaModal(id) {
 
         <label for="propTipoDetectado">Tipo de web detectado</label>
         <input type="text" id="propTipoDetectado" maxlength="100" value="${escapeHtml(getPropuestaTipoWeb(p))}">
+
+        <div class="prop-row"><span class="prop-label">Modelos elegidos</span><span>${modelosElegidos ? escapeHtml(modelosElegidos) : '<span class="muted">No eligió modelos</span>'}</span></div>
 
         <label for="propObjetivos">Objetivos seleccionados</label>
         <textarea id="propObjetivos" rows="2" maxlength="500">${escapeHtml(objetivosTexto)}</textarea>
