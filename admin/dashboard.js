@@ -2671,17 +2671,25 @@ searchPropuestasInput.addEventListener("input", renderPropuestas);
    con slugNegocio(), el mismo criterio que ya usa el link "Ver demo". */
 document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) => {
     const btn = e.currentTarget;
+    // Dos listas separadas: los nombres de carpeta solos (lo que hay que crear,
+    // sin nada del modelo mezclado ahí) y la referencia de modelos aparte, para
+    // no perderla pero sin ensuciar cada línea de carpeta (Pablo, 17-sep).
     const filas = propuestasListaVisible.map(p => {
         const carpeta = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
+        if (!carpeta) return null;
         const modelos = modelosElegidosDe(p);
-        return carpeta ? `${carpeta}${modelos.length ? ' — Modelos elegidos: ' + modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (id: ${m.id})`).join(' + ') : ' — Sin modelo elegido'}` : '';
+        const refModelos = modelos.length
+            ? `${carpeta} — Modelos elegidos: ${modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (id: ${m.id})`).join(' + ')}`
+            : `${carpeta} — Sin modelo elegido`;
+        return { carpeta, refModelos };
     }).filter(Boolean);
-    const nombres = [...new Set(filas)];
+    const nombres = [...new Set(filas.map(f => f.carpeta))];
     if (!nombres.length) {
         alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
         return;
     }
-    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de negocio de la lista, y agregale a cada una una subcarpeta 'images' adentro. Los modelos seleccionados están en '${MODELOS_CARPETA_LOCAL}'. Para diseñar, identificá el modelo por su letra, nombre e id:\n\n${nombres.join("\n")}`;
+    const referencias = [...new Set(filas.map(f => f.refModelos))];
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de la lista, y agregale a cada una una subcarpeta 'images' adentro:\n\n${nombres.join("\n")}\n\nLos modelos seleccionados están en '${MODELOS_CARPETA_LOCAL}'. Para diseñar cada carpeta, identificá el modelo por su letra, nombre e id:\n\n${referencias.join("\n")}`;
     try {
         await writeTextToClipboard(texto);
         const prev = btn.textContent;
