@@ -2878,14 +2878,14 @@ document.getElementById("copyCarpetasBtn").addEventListener("click", async (e) =
     const filas = propuestasListaVisible.map(p => {
         const carpeta = slugNegocio(getPropuestaNegocioFields(p).nombreNegocio);
         const modelos = modelosElegidosDe(p);
-        return carpeta ? `${carpeta}${modelos.length ? ' — Modelos elegidos: ' + modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (carpeta de modelo: ${m.id})`).join(' + ') : ' — Sin modelo elegido'}` : '';
+        return carpeta ? `${carpeta}${modelos.length ? ' — Modelos elegidos: ' + modelos.map(m => `Modelo ${m.letra} · ${m.nombre} (id: ${m.id})`).join(' + ') : ' — Sin modelo elegido'}` : '';
     }).filter(Boolean);
     const nombres = [...new Set(filas)];
     if (!nombres.length) {
         alert("Ningún boceto de la lista actual tiene nombre de negocio cargado.");
         return;
     }
-    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de negocio de la lista, y agregale a cada una una subcarpeta 'images' adentro. Para diseñar, identificá el modelo por su letra, nombre y carpeta:\n\n${nombres.join("\n")}`;
+    const texto = `Crea carpetas dentro de 'C:\\Users\\pablo\\OneDrive\\Escritorio\\Gokywebs\\Gokywebsweb\\demo', una por cada nombre de negocio de la lista, y agregale a cada una una subcarpeta 'images' adentro. Los modelos seleccionados están en '${MODELOS_CARPETA_LOCAL}'. Para diseñar, identificá el modelo por su letra, nombre e id:\n\n${nombres.join("\n")}`;
     try {
         await writeTextToClipboard(texto);
         const prev = btn.textContent;
@@ -2933,10 +2933,13 @@ function modeloElegidoUrl(modelo = {}) {
     return id ? `https://gokywebs.com/modelos/ver.html?m=${encodeURIComponent(id)}` : "https://gokywebs.com/modelos/";
 }
 
-function modelosElegidosConLinksTexto(src = {}) {
+const MODELOS_CARPETA_LOCAL = String.raw`C:\Users\pablo\OneDrive\Escritorio\Gokywebs\Gokywebsweb\modelos`;
+
+function modelosElegidosParaCopiar(src = {}) {
     return modelosElegidosDe(src).map(m => {
         const etiqueta = `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`;
-        return `${etiqueta}: ${modeloElegidoUrl(m)}`;
+        const id = cleanFieldValue(m.id || m.letra || "").toLowerCase();
+        return `${etiqueta}${id ? ` (id: ${id})` : ""}`;
     }).join("\n");
 }
 
@@ -3615,7 +3618,8 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Adicionales elegidos", value: cleanFieldValue(p.adicionales_texto) },
         { title: "Teléfono / WhatsApp (número real para los wa.me del demo)", value: p.telefono || p.contacto_cel || "" },
         { title: "Tipo de web", value: getPropuestaTipoWeb(p) },
-        { title: "Modelos elegidos", value: modelosElegidosConLinksTexto(p) },
+        { title: "Modelos elegidos", value: modelosElegidosParaCopiar(p) },
+        { title: "Carpeta local de los modelos", value: modelosElegidosDe(p).length ? MODELOS_CARPETA_LOCAL : "" },
         { title: "Ciudad / zona", value: p.ciudad_zona || "" },
         { title: "Objetivos seleccionados", value: objetivosTexto },
         { title: "Cantidad de cursos", value: p.cant_cursos || "" },
