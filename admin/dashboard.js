@@ -2928,6 +2928,18 @@ function modelosElegidosTexto(src = {}) {
         .join(" + ");
 }
 
+function modeloElegidoUrl(modelo = {}) {
+    const id = cleanFieldValue(modelo.id || modelo.letra || "").toLowerCase();
+    return id ? `https://gokywebs.com/modelos/ver.html?m=${encodeURIComponent(id)}` : "https://gokywebs.com/modelos/";
+}
+
+function modelosElegidosConLinksTexto(src = {}) {
+    return modelosElegidosDe(src).map(m => {
+        const etiqueta = `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`;
+        return `${etiqueta}: ${modeloElegidoUrl(m)}`;
+    }).join("\n");
+}
+
 async function savePropuestaTipoWeb(input) {
     const id = input.dataset.propTypeId;
     const p = propuestas.find(x => x.id === id);
@@ -3363,7 +3375,7 @@ function openPropuestaModal(id) {
     const cantCursos   = cleanFieldValue(p.cant_cursos);
     const colorFondos  = cleanFieldValue(p.color_fondos);
     const tipografias  = cleanFieldValue(p.tipografias);
-    const modelosElegidos = modelosElegidosTexto(p);
+    const modelosElegidos = modelosElegidosDe(p);
     const showCiudad     = !esPresupuestoModal || ciudadZona;
     const showCantCursos = !esPresupuestoModal || cantCursos;
     const showFondos      = !esPresupuestoModal || colorFondos;
@@ -3390,7 +3402,12 @@ function openPropuestaModal(id) {
         <label for="propTipoDetectado">Tipo de web detectado</label>
         <input type="text" id="propTipoDetectado" maxlength="100" value="${escapeHtml(getPropuestaTipoWeb(p))}">
 
-        <div class="prop-row"><span class="prop-label">Modelos elegidos</span><span>${modelosElegidos ? escapeHtml(modelosElegidos) : '<span class="muted">No eligió modelos</span>'}</span></div>
+        <div class="prop-row"><span class="prop-label">Modelos elegidos</span><span>${modelosElegidos.length
+            ? `<span class="prop-modelos-links">${modelosElegidos.map(m => {
+                const etiqueta = `${m.letra ? `Modelo ${m.letra}` : "Modelo"}${m.nombre ? ` · ${m.nombre}` : ""}`;
+                return `<a class="prop-modelo-link" href="${modeloElegidoUrl(m)}" target="_blank" rel="noopener noreferrer">${escapeHtml(etiqueta)} ↗</a>`;
+            }).join("")}</span>`
+            : '<span class="muted">No eligió modelos</span>'}</span></div>
 
         <label for="propObjetivos">Objetivos seleccionados</label>
         <textarea id="propObjetivos" rows="2" maxlength="500">${escapeHtml(objetivosTexto)}</textarea>
@@ -3598,6 +3615,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Adicionales elegidos", value: cleanFieldValue(p.adicionales_texto) },
         { title: "Teléfono / WhatsApp (número real para los wa.me del demo)", value: p.telefono || p.contacto_cel || "" },
         { title: "Tipo de web", value: getPropuestaTipoWeb(p) },
+        { title: "Modelos elegidos", value: modelosElegidosConLinksTexto(p) },
         { title: "Ciudad / zona", value: p.ciudad_zona || "" },
         { title: "Objetivos seleccionados", value: objetivosTexto },
         { title: "Cantidad de cursos", value: p.cant_cursos || "" },

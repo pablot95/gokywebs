@@ -1001,6 +1001,25 @@ textarea:focus {
     line-height: 1.3;
 }
 
+.prop-modelos-links {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+}
+
+.prop-modelo-link {
+    color: #60A5FA;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.prop-modelo-link:hover {
+    color: #93C5FD;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .prop-type-input {
     width: 100%;
     min-width: 135px;
