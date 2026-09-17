@@ -2335,6 +2335,15 @@ function wabot_ultimo_cliente_ts($cv) {
     return $ts;
 }
 
+/** Último mensaje que salió hacia el cliente, ya sea del bot o escrito a mano. */
+function wabot_ultima_salida_ts($cv) {
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if (!in_array(($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        return (int)($fila['ts'] ?? 0);
+    }
+    return 0;
+}
+
 /** La última foto que mandó el cliente, para la miniatura en la lista de chats. */
 function wabot_ultima_foto_cliente($cv) {
     foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
@@ -2592,6 +2601,12 @@ function wabot_lista_items() {
             // mensaje del cliente. Al llegar a cero sale de esa vista, pero la
             // conversación sigue existiendo normalmente.
             'ventana' => wabot_ventana_restante($cv),
+            // Permiten separar correctamente "el bot derivó y todavía espera
+            // al cliente" de "el cliente respondió y ahora espera a Pablo".
+            // Las líneas internas del formulario (`q=sistema`) no alteran esta
+            // comparación, así completar el form no cuenta como haber hablado.
+            'ultimo_cliente_ts' => wabot_ultimo_cliente_ts($cv),
+            'ultimo_salida_ts' => wabot_ultima_salida_ts($cv),
             'estado' => !empty($cv['bot_off']) ? 'apagado'
                       : (((int)$cv['pausado_hasta'] > time()) ? 'pausado'
                       : ((($cv['fase'] ?? '') === 'derivado') ? 'pausado' : 'bot')),

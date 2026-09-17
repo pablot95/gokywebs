@@ -903,11 +903,11 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .tabs a:hover { background:var(--card); color:var(--tx); }
 .tabs a.on { background:var(--card-2); color:var(--tx); border-color:var(--line-fuerte); font-weight:500; }
 /* Navegación en botones (13-sep): antes era un desplegable. */
-.tabs-nav { margin-bottom:12px; }
-.tabs-nav a { border-color:var(--line); }
+.tabs-nav { margin-bottom:6px; justify-content:flex-end; gap:4px; }
+.tabs-nav a { border-color:var(--line); padding:4px 9px; border-radius:7px; font-size:11.5px; }
 .tabs-nav a.tabs-aparte { border:0; padding:0 2px; }
 @media (max-width: 700px) {
-  .tabs-nav { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+  .tabs-nav { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .tabs-nav::-webkit-scrollbar { display:none; }
   .tabs-nav a { white-space:nowrap; flex:0 0 auto; }
 }
@@ -1058,10 +1058,10 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 
 /* WhatsApp e Instagram comparten la misma lista: se distinguen con esta
    etiqueta chica al lado del nombre, no con una columna aparte. */
-.conv-chips { display:flex; align-items:center; gap:6px; margin-top:7px; }
-.conv-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:5px; height:30px; padding:0 11px;
+.conv-chips { display:flex; align-items:center; gap:4px; margin-top:6px; min-width:0; }
+.conv-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:3px; height:26px; padding:0 7px;
     border:1px solid var(--line); border-radius:99px; background:var(--card-2); color:var(--dim);
-    font:inherit; font-size:12px; font-weight:700; letter-spacing:.03em; cursor:pointer; }
+    font:inherit; font-size:10.5px; font-weight:700; letter-spacing:.01em; cursor:pointer; white-space:nowrap; }
 .conv-chip:hover { border-color:var(--line-fuerte); color:var(--tx); }
 .conv-chip.on { background:var(--info); border-color:var(--info); color:#0b1424; }
 .conv-chip--sl.on, .conv-chip--rta.on { background:var(--info); border-color:var(--info); }
@@ -1069,14 +1069,12 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
     font-size:10.5px; font-weight:800; text-align:center; }
 .conv-chip.on .conv-chip-n { background:rgb(0 0 0 / .22); color:#0b1424; }
 .conv-chip--sl:not(.tiene) .conv-chip-n, .conv-chip--rta:not(.tiene) .conv-chip-n { background:var(--card); color:var(--tenue); }
-/* Las dos pestañas principales (Interesados / Bot activo) van un poco más
-   marcadas que los filtros chicos (SL, RTA, RT): son la elección de fondo,
-   no un agregado. */
-.conv-chip--principal { font-size:12.5px; border-color:var(--line-fuerte); }
+/* La vista del bot va un poco más marcada que los filtros humanos. */
+.conv-chip--principal { font-size:10.5px; border-color:var(--line-fuerte); }
 .conv-chip--principal.on { background:var(--ac); border-color:var(--ac); color:#0b1424; }
 .conv-chips-sep { width:1px; height:18px; background:var(--line-fuerte); margin:0 2px; flex-shrink:0; }
 .conv-chips-mas { position:relative; margin-left:auto; }
-.conv-chip--mas { padding:0 9px; font-size:11px; }
+.conv-chip--mas { padding:0 7px; font-size:10px; }
 .conv-chips-panel { position:absolute; right:0; top:calc(100% + 5px); z-index:30; min-width:172px; padding:5px;
     background:var(--card-2); border:1px solid var(--line-fuerte); border-radius:10px;
     box-shadow:0 12px 28px rgb(0 0 0 / .45); display:flex; flex-direction:column; gap:2px; }
@@ -1119,7 +1117,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
    mide el viewport que se ve de verdad; el vh queda de respaldo para navegadores
    viejos que no lo soportan. */
 body.conv-full { height:100vh; height:100dvh; overflow:hidden; display:flex; flex-direction:column; }
-body.conv-full .wrap { flex:1; min-height:0; display:flex; flex-direction:column; padding-top:8px; padding-bottom:10px; }
+body.conv-full .wrap { flex:1; min-height:0; display:flex; flex-direction:column; padding-top:3px; padding-bottom:7px; }
 /* Cuatro listas más el chat no entran en 1560: acá se usa todo el ancho real.
    El width:100% no sobra: .wrap tiene margin:0 auto, y en un contenedor flex
    los márgenes automáticos le ganan al stretch, así que sin ancho explícito la
@@ -1127,7 +1125,7 @@ body.conv-full .wrap { flex:1; min-height:0; display:flex; flex-direction:column
 body.conv-full .wrap--wide { max-width:none; width:100%; }
 body.conv-full .conv-split { flex:1; min-height:0; }
 
-body.conv-full .tabs { margin-bottom:10px; }
+body.conv-full .tabs { margin-bottom:5px; }
 body.conv-full .conv-main { padding:11px 14px; }
 body.conv-full .conv-head { padding-bottom:8px; margin-bottom:8px; }
 body.conv-full #responder { margin-top:8px; }
@@ -1136,7 +1134,7 @@ body.conv-full #respEstado { margin-top:4px; }
 
 .conv-list { background:var(--card); border:1px solid var(--line); border-radius:12px; display:flex; flex-direction:column; min-height:0; overflow:hidden; }
 .conv-list-head { display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--dim); letter-spacing:.02em; flex-shrink:0; }
-.conv-filtros { padding:9px; border-bottom:1px solid var(--line); flex-shrink:0; }
+.conv-filtros { padding:7px 9px; border-bottom:1px solid var(--line); flex-shrink:0; }
 .conv-busqueda-fila { display:flex; align-items:center; gap:7px; }
 .conv-busqueda { flex:1; min-width:0; width:100%; height:36px; margin:0; padding:7px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg); color:var(--tx); font:inherit; font-size:12.5px; }
 .conv-busqueda::placeholder { color:var(--dim); }
@@ -1422,10 +1420,6 @@ body.embed { min-height: 0; }
         <?php foreach ($NAV_TABS as $k => $v): ?>
             <a href="admin.php?tab=<?= $k ?>" class="<?= $tab === $k ? 'on' : '' ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><?= $v ?></a>
         <?php endforeach; ?>
-        <?php if ($embed): ?>
-            <span class="pill <?= !empty($cfg['activo']) ? 'on' : 'off' ?>"><?= !empty($cfg['activo']) ? 'BOT ACTIVO' : 'BOT APAGADO' ?></span>
-            <a href="admin.php?embed=0" target="_blank" rel="noopener" class="tabs-aparte">Abrir aparte ↗</a>
-        <?php endif; ?>
     </nav>
 
     <?php if (isset($_GET['ok'])) echo '<p class="ok">Guardado.</p>'; ?>
@@ -1779,18 +1773,17 @@ body.embed { min-height: 0; }
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
-                    <!-- Sin demo gratis (15-sep) ya no hay cola de "armar la demo" ni
-                         "demo entregada". Pablo, 16-sep: solo quedan dos pestañas
-                         — Bot (la está llevando el bot) y Yo (te toca a vos) — con
-                         dos subfiltros en cada una: No leídos y No contestados. Lo
-                         demás (Prospectos, Pagaron, RTA, Retomar…) va en "más". -->
+                    <!-- Seis vistas operativas y excluyentes: bot, derivado que aún
+                         espera al cliente, sin leer, leído sin contestar, todos los
+                         humanos y ventana por vencer. Los filtros históricos quedan
+                         en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="activo" title="El bot todavía está contestando esta charla.">Bot</button>
-                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="interesados" title="El bot ya no está llevando la charla: eligió cómo pagar, avisó que pagó, o quedó esperando una respuesta suya.">Yo</button>
-                        <span class="conv-chips-sep" aria-hidden="true"></span>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="Sin leer: el cliente escribió y todavía no abriste el chat.">No leídos <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya abriste el chat, pero el último mensaje sigue siendo del cliente: todavía no le contestaste.">No contestados</button>
-                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="por_vencer" title="Chats donde todavía podés responder, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Por vencer</button>
+                        <button type="button" class="conv-chip conv-chip--principal" data-grupo="bot_hablando" title="Conversaciones que todavía está llevando y contestando el bot.">Bot</button>
+                        <button type="button" class="conv-chip" data-grupo="esperando_cliente" title="El bot mandó el último mensaje y derivó el chat, pero el cliente todavía no respondió. Completar el formulario no cuenta como respuesta.">Espera cliente</button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
+                        <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
+                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todas las conversaciones que ya no está llevando el bot.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
                             <div class="conv-chips-panel" id="convChipsPanel" hidden>
@@ -1935,22 +1928,24 @@ body.embed { min-height: 0; }
         const SEL = <?= json_encode($ver) ?>;
 
         /* ── Lista de la izquierda ── */
-        // "No leídos" y "No contestados" no son grupos excluyentes como los
-        // demás: son vistas que cruzan todas las columnas. Entra un chat SOLO
-        // si el último mensaje es del cliente y le toca a Pablo (wabot_conv_
-        // espera_respuesta, campo "espera") — si el bot ya contestó, no cuenta
-        // como pendiente. Ese universo se parte en dos, sin superponerse
-        // (Pablo, 16-sep): no leídos = todavía no abriste el chat desde ese
-        // mensaje (campo "no_leido", que sí mira panel_visto_ts); no
-        // contestados = ya lo abriste, pero seguís sin contestarle.
+        // Las seis vistas principales son excluyentes. Para separar "espera al
+        // cliente" de "espera a Pablo" se comparan los timestamps reales del
+        // último cliente y de la última salida. Las líneas `sistema` que agrega
+        // el formulario no participan, así completarlo no simula una respuesta.
         const GRUPOS_VALIDOS = new Set(['pago', 'prospecto', 'muestra', 'presentadas_48', 'interesado', 'presentados', 'chat', 'archivado']);
-        // Los que ya no dependen de que el bot siga hablando: eligió cómo
-        // pagar, avisó que pagó, le mandaste la muestra, o pasó los datos y
-        // falta diseñarle algo. La otra pestaña (activo) es lo contrario.
-        const GRUPOS_INTERESADOS = ['prospecto', 'pago', 'muestra', 'presentados', 'presentadas_48'];
         // Solo para agrupar los encabezados dentro de la vista "No leídos".
         const GRUPOS_SIN_LEER = ['pago', 'prospecto', 'presentados', 'presentadas_48', 'muestra'];
-        function necesitaRespuesta(it) { return !!it.espera; }
+        function botLlevaLaCharla(it) { return it.estado === 'bot' && !it.handoff_pendiente; }
+        function esChatHumano(it) { return it.grupo !== 'archivado' && !botLlevaLaCharla(it); }
+        function clienteRespondioDespues(it) {
+            return Number(it.ultimo_cliente_ts || 0) > Number(it.ultimo_salida_ts || 0);
+        }
+        function necesitaRespuesta(it) {
+            return esChatHumano(it) && clienteRespondioDespues(it) && !it.contestado;
+        }
+        function esperaAlCliente(it) {
+            return esChatHumano(it) && !!it.handoff_pendiente && !clienteRespondioDespues(it);
+        }
         function esNoLeido(it) { return necesitaRespuesta(it) && !!it.no_leido; }
         function esNoContestado(it) { return necesitaRespuesta(it) && !it.no_leido; }
         const SUBGRUPOS_NO_LEIDOS = [
@@ -1984,14 +1979,13 @@ body.embed { min-height: 0; }
         const fechaChipsEl = document.getElementById('convFechaChips');
         const fechaCuentaEl = document.getElementById('convFechaCuenta');
 
-        const GRUPOS_POR_DEFECTO = GRUPOS_INTERESADOS;
         let filtrosGuardados = [];
         try { filtrosGuardados = JSON.parse(localStorage.getItem('wabotFiltros') || '[]'); } catch (e) {}
-        const filtrosActivos = new Set(Array.isArray(filtrosGuardados) ? filtrosGuardados : []);
-        // SL y RTA son "combinables": no reemplazan un filtro de grupo (Demos,
-        // Presentados…), se le suman. Elegir "Demos" + "RTA" muestra las demos
-        // MÁS todo lo que ya respondiste, no la intersección de las dos cosas.
-        const FILTROS_COMBINABLES = new Set(['no_leidos', 'no_contestados']);
+        const FILTROS_DISPONIBLES = new Set([...document.querySelectorAll('[data-grupo]')].map(b => b.dataset.grupo));
+        const filtroGuardado = Array.isArray(filtrosGuardados)
+            ? filtrosGuardados.find(f => FILTROS_DISPONIBLES.has(f)) : null;
+        // Migra automáticamente los filtros viejos Bot/Yo a la nueva vista.
+        const filtrosActivos = new Set([filtroGuardado || 'todos_humano']);
         let itemsCache = [];
         let sincronizado = false;
         let firmaLista = '';
@@ -2009,27 +2003,8 @@ body.embed { min-height: 0; }
         }
 
         function alternarFiltro(grupo) {
-            if (grupo === 'por_vencer') {
-                const estabaActivo = filtrosActivos.has(grupo);
-                filtrosActivos.clear();
-                if (!estabaActivo) filtrosActivos.add(grupo);
-            } else if (FILTROS_COMBINABLES.has(grupo)) {
-                filtrosActivos.delete('por_vencer');
-                if (filtrosActivos.has(grupo)) {
-                    filtrosActivos.delete(grupo);
-                } else {
-                    // Son las dos mitades del mismo estado pendiente: un chat
-                    // no puede estar a la vez sin leer y ya leído sin respuesta.
-                    for (const f of FILTROS_COMBINABLES) filtrosActivos.delete(f);
-                    filtrosActivos.add(grupo);
-                }
-            } else if (filtrosActivos.has(grupo)) {
-                filtrosActivos.delete(grupo);
-            } else {
-                filtrosActivos.delete('por_vencer');
-                for (const f of [...filtrosActivos]) if (!FILTROS_COMBINABLES.has(f)) filtrosActivos.delete(f);
-                filtrosActivos.add(grupo);
-            }
+            filtrosActivos.clear();
+            filtrosActivos.add(grupo);
             try { localStorage.setItem('wabotFiltros', JSON.stringify([...filtrosActivos])); } catch (e) {}
             pintarChips();
             pintarLista(itemsCache);
@@ -2146,35 +2121,14 @@ body.embed { min-height: 0; }
             return b;
         }
 
-        // El grupo del embudo (wabot_conv_grupo) no se mueve porque el bot se
-        // haya callado — moverlo resucitaba el bug de Claudio, donde un boceto
-        // recién cerrado desaparecía de Muestras (ver wabot/test.php). Así que
-        // Bot/Yo no pueden mirar solo el grupo: un chat en 'chat'/'interesado'
-        // pero con el bot apagado, pausado o derivado (it.estado !== 'bot', o
-        // it.handoff_pendiente) ya no lo está llevando el bot y es de Pablo,
-        // aunque el grupo diga lo contrario (Pablo, 16-sep: mostraba "te toca
-        // a vos" en la pestaña Bot).
-        function boLlevaLaCharla(it) { return it.estado === 'bot' && !it.handoff_pendiente; }
-
         function cumpleFiltro(it, filtro) {
             if (filtro === 'no_leidos') return esNoLeido(it);
             if (filtro === 'no_contestados') return esNoContestado(it);
-            if (filtro === 'por_vencer') return Number(it.ventana || 0) > 0;
+            if (filtro === 'bot_hablando') return it.grupo !== 'archivado' && botLlevaLaCharla(it);
+            if (filtro === 'esperando_cliente') return esperaAlCliente(it);
+            if (filtro === 'todos_humano') return esChatHumano(it);
+            if (filtro === 'por_vencer') return esChatHumano(it) && it.canal !== 'instagram' && Number(it.ventana || 0) > 0;
             if (filtro === 'favorito') return !!it.favorito;
-            // Las dos pestañas principales (15-sep, sin demo gratis): el bot
-            // sigue hablando, o ya no —eligió pagar, avisó que pagó, quedó
-            // esperando la muestra o que confirme algo—. Para Pablo es la
-            // misma pregunta de siempre ("¿esto lo tengo que mirar yo?"), ya
-            // no separada por DE/DEI/D.
-            if (filtro === 'activo') {
-                const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
-                return (g === 'interesado' || g === 'chat') && boLlevaLaCharla(it);
-            }
-            if (filtro === 'interesados') {
-                const g = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
-                if (GRUPOS_INTERESADOS.includes(it.grupo)) return true;
-                return (g === 'interesado' || g === 'chat') && !boLlevaLaCharla(it);
-            }
             if (filtro === 'instagram') return it.canal === 'instagram';
             if (filtro === 'whatsapp') return it.canal !== 'instagram';
             if (filtro === 'rta') return esRTA(it);
@@ -2182,21 +2136,8 @@ body.embed { min-height: 0; }
         }
 
         function entraEnGrupoActivo(it) {
-            // Pablo, 16-sep: "No leídos" y "No contestados" son SUBfiltros de
-            // Bot/Yo —angostan la vista activa, no la suman— así que van con Y,
-            // no con O como antes SL/RTA (que hoy además cambiaron de sentido:
-            // ver el chip movido a "más filtros").
-            const grupoFiltro = [...filtrosActivos].find(f => !FILTROS_COMBINABLES.has(f));
-            const hayFiltroPendiente = [...FILTROS_COMBINABLES].some(f => filtrosActivos.has(f));
-            // Sin Bot/Yo seleccionado, los filtros pendientes cruzan todas las
-            // conversaciones. Así el badge "No leídos 3" y la lista abierta
-            // representan exactamente los mismos tres chats.
-            const base = grupoFiltro ? cumpleFiltro(it, grupoFiltro)
-                : (hayFiltroPendiente ? true : GRUPOS_POR_DEFECTO.includes(it.grupo));
-            if (!base) return false;
-            if (filtrosActivos.has('no_leidos') && !esNoLeido(it)) return false;
-            if (filtrosActivos.has('no_contestados') && !esNoContestado(it)) return false;
-            return true;
+            const filtro = [...filtrosActivos][0] || 'todos_humano';
+            return cumpleFiltro(it, filtro);
         }
 
         function tiempoParaVencer(segundos) {
@@ -2303,7 +2244,7 @@ body.embed { min-height: 0; }
                 visibles++;
 
                 const a = document.createElement('a');
-                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (it.no_leido ? ' sin-leer' : '') + (it.grupo === 'pago' ? ' pago-avisado' : '');
+                a.className = 'conv-item' + (it.tel === SEL ? ' on' : '') + (esNoLeido(it) ? ' sin-leer' : '') + (it.grupo === 'pago' ? ' pago-avisado' : '');
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
 
                 if (it.foto) {
@@ -2365,7 +2306,7 @@ body.embed { min-height: 0; }
                 h.className = 'conv-item-hora';
                 h.textContent = hora(it.ts);
                 derecha.appendChild(h);
-                if (it.no_leido) {
+                if (esNoLeido(it)) {
                     const globo = document.createElement('span');
                     globo.className = 'conv-item-globo';
                     globo.textContent = it.sin_leer_cuenta > 0 ? it.sin_leer_cuenta : 1;
@@ -2391,10 +2332,10 @@ body.embed { min-height: 0; }
                 }
                 // Si lo marcaste como contestado por afuera ya no te toca a vos:
                 // dejar el pill encendido contradice la marca que acabás de poner.
-                if ((it.handoff_pendiente || it.espera) && !it.contestado) {
+                if ((it.handoff_pendiente || necesitaRespuesta(it)) && !it.contestado) {
                     const pe = document.createElement('span');
                     pe.className = 'pill espera';
-                    pe.textContent = it.handoff_pendiente ? 'te toca a vos' : 'te espera';
+                    pe.textContent = esperaAlCliente(it) ? 'esperando al cliente' : 'te toca a vos';
                     pills.appendChild(pe);
                 }
                 if (it.tipo) {

@@ -281,5 +281,18 @@ caso('el cron ya no envía el template: queda exclusivamente manual',
 $sinDemo = ['tel' => 'TEST48SIN', 'fase' => 'menu', 'transcript' => []];
 caso('sin demo entregada no hay nada que marcar', wabot_presentado_marcar_respuesta($sinDemo) === false && empty($sinDemo['presentado_confirmado']));
 
+echo "\n=== Estado de la bandeja humana ===\n";
+$esperandoCliente = ['ultimo_cliente_ts' => 100, 'transcript' => [
+    ['q' => 'cliente', 't' => 'Quiero una tienda', 'ts' => 100],
+    ['q' => 'bot', 't' => 'Te paso el formulario', 'ts' => 200],
+    ['q' => 'sistema', 't' => '[Formulario web] completado', 'ts' => 300],
+]];
+caso('completar el formulario no cuenta como respuesta del cliente',
+    wabot_ultimo_cliente_ts($esperandoCliente) === 100 && wabot_ultima_salida_ts($esperandoCliente) === 200);
+$yaRespondio = $esperandoCliente;
+$yaRespondio['transcript'][] = ['q' => 'cliente', 't' => 'Listo, ya lo llené', 'ts' => 400];
+caso('un mensaje real posterior sí mueve el chat a la bandeja pendiente',
+    wabot_ultimo_cliente_ts($yaRespondio) === 400 && wabot_ultima_salida_ts($yaRespondio) === 200);
+
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 todo_ok();
