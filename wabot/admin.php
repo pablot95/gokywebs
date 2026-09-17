@@ -902,10 +902,17 @@ h2 { font-size:16px; margin:22px 0 10px; }
 .tabs a { padding:7px 13px; border:1px solid transparent; border-radius:8px; color:var(--dim); font-size:13.5px; }
 .tabs a:hover { background:var(--card); color:var(--tx); }
 .tabs a.on { background:var(--card-2); color:var(--tx); border-color:var(--line-fuerte); font-weight:500; }
-/* Navegación en botones (13-sep): antes era un desplegable. */
+/* Navegación en botones. En Conversaciones y Live sale del flujo y ocupa la
+   misma franja derecha que las respuestas rápidas: así no roba alto al chat. */
 .tabs-nav { margin-bottom:6px; justify-content:flex-end; gap:4px; }
 .tabs-nav a { border-color:var(--line); padding:4px 9px; border-radius:7px; font-size:11.5px; }
 .tabs-nav a.tabs-aparte { border:0; padding:0 2px; }
+@media (min-width: 1181px) and (hover: hover) {
+  body.conv-full .tabs-nav { position:fixed; z-index:60; top:8px; right:10px; width:190px;
+      margin:0; flex-direction:column; align-items:stretch; gap:3px; }
+  body.conv-full .tabs-nav a { padding:3px 8px; font-size:10.5px; line-height:17px; text-align:left; white-space:nowrap; }
+  body.conv-full .live-bar, body.conv-full .live-board { margin-right:190px; }
+}
 @media (max-width: 700px) {
   .tabs-nav { justify-content:flex-start; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
   .tabs-nav::-webkit-scrollbar { display:none; }
@@ -1097,10 +1104,6 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 .estado-tag--ok { background:rgba(52,199,89,.16); color:#4ade80; }
 /* El botón para marcarlo desde la lista, sin abrir el chat. Vive adentro del
    <a> de la fila, así que el handler corta el click. */
-.pill-accion { border:1px solid var(--line); background:transparent; color:var(--dim); cursor:pointer;
-    padding:1px 7px; border-radius:99px; font-size:10.5px; font-weight:700; font-family:inherit; }
-.pill-accion:hover { border-color:#4ade80; color:#4ade80; }
-.pill-accion[disabled] { opacity:.5; cursor:default; }
 .conv-item-globo { min-width:19px; height:19px; padding:0 6px; border-radius:99px; background:var(--info);
     color:#0b1424; font-size:11px; font-weight:800; display:inline-flex; align-items:center;
     justify-content:center; flex-shrink:0; }
@@ -1810,10 +1813,7 @@ body.embed { min-height: 0; }
                     <div>
                         <strong><?= $e(wabot_nombre_agenda($conv)) ?: 'Sin nombre' ?></strong>
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
-                        <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?><?= $conv['tipo'] ? ' · tipo: ' . $e($conv['tipo']) : '' ?></span>
-                        <?php if (!empty($conv['bot_off'])): ?><span class="pill off">bot apagado acá</span><?php endif; ?>
-                        <?php if ((int)$conv['pausado_hasta'] > time()): ?><span class="pill pausa">pausado hasta <?= date('d/m H:i', (int)$conv['pausado_hasta']) ?></span><?php endif; ?>
-                        <?php if (!empty($conv['handoff_pendiente'])): ?><span class="pill pausa" id="handoffPill">Pablo pendiente</span><?php endif; ?>
+                        <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
                         <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
@@ -2072,30 +2072,6 @@ body.embed { min-height: 0; }
             return !!it.rta;
         }
 
-        /* "Ya le contesté" desde la propia fila, para las respuestas que salen
-         * del otro WhatsApp y el sistema no ve. La fila entera es un <a>, así
-         * que hay que cortar el click antes de que abra el chat. */
-        function botonContestado(it) {
-            const b = document.createElement('button');
-            b.type = 'button';
-            b.className = 'pill-accion';
-            b.textContent = it.contestado ? 'Sacar OK' : 'Ya le contesté';
-            b.title = it.contestado
-                ? 'Vuelve a quedar pendiente en SL o RTA.'
-                : 'Sale de SL y de RTA. No se le manda nada al cliente; si vuelve a escribir, reaparece solo.';
-            b.addEventListener('click', async ev => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                b.disabled = true;
-                try {
-                    await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'conv_contestado', tel: it.tel, ajax: '1' }) });
-                } catch (e) {}
-                await refrescarLista();
-            });
-            return b;
-        }
-
         function botonFavorito(it) {
             const b = document.createElement('button');
             b.type = 'button';
@@ -2319,47 +2295,21 @@ body.embed { min-height: 0; }
                 ult.className = 'conv-item-ult';
                 ult.textContent = (it.quien === 'cliente' ? '' : (it.quien === 'humano' ? 'Vos: ' : 'Bot: ')) + (it.ult || '—');
 
-                const pills = document.createElement('div');
-                pills.className = 'conv-item-pills';
-                // "bot" es el estado normal y estaba en TODAS las filas: una
-                // etiqueta que nunca falta no distingue nada. Solo se muestra
-                // cuando el bot NO está llevando la charla, que es la excepción.
-                if (it.estado !== 'bot') {
-                    const p1 = document.createElement('span');
-                    p1.className = 'pill ' + (it.estado === 'apagado' ? 'off' : 'pausa');
-                    p1.textContent = it.estado === 'apagado' ? 'bot apagado' : 'lo seguís vos';
-                    pills.appendChild(p1);
-                }
-                // Si lo marcaste como contestado por afuera ya no te toca a vos:
-                // dejar el pill encendido contradice la marca que acabás de poner.
-                if ((it.handoff_pendiente || necesitaRespuesta(it)) && !it.contestado) {
-                    const pe = document.createElement('span');
-                    pe.className = 'pill espera';
-                    pe.textContent = esperaAlCliente(it) ? 'esperando al cliente' : 'te toca a vos';
-                    pills.appendChild(pe);
-                }
-                if (it.tipo) {
-                    const p2 = document.createElement('span');
-                    p2.className = 'pill tipo';
-                    p2.textContent = it.tipo;
-                    pills.appendChild(p2);
-                }
+                // Las filas quedan limpias: el filtro activo ya explica por qué
+                // está cada chat. Solo se conserva la cuenta regresiva cuando se
+                // usa expresamente la vista de conversaciones por vencer.
+                let pills = null;
                 if (filtrosActivos.has('por_vencer')) {
+                    pills = document.createElement('div');
+                    pills.className = 'conv-item-pills';
                     const vence = document.createElement('span');
                     vence.className = 'pill pausa';
                     vence.textContent = tiempoParaVencer(it.ventana);
                     pills.appendChild(vence);
                 }
-                // Marcar "ya le contesté" sin abrir el chat: el caso de uso es
-                // barrer varias de un saque después de haber contestado por el
-                // otro WhatsApp. Solo donde tiene sentido: lo que está en SL,
-                // no contestados o RTA, más lo ya marcado para poder sacarle
-                // la marca.
-                if (esNoLeido(it) || esNoContestado(it) || esRTA(it) || it.contestado) {
-                    pills.appendChild(botonContestado(it));
-                }
 
-                body.appendChild(top); body.appendChild(ult); body.appendChild(pills);
+                body.appendChild(top); body.appendChild(ult);
+                if (pills) body.appendChild(pills);
                 a.appendChild(body);
                 renderizados.push({ it, el: a });
             }
@@ -3325,10 +3275,6 @@ body.embed { min-height: 0; }
                     s.className = 'pill ' + cls; s.textContent = txt; sub.appendChild(s);
                 };
                 pill(it.canal === 'instagram' ? 'Instagram' : 'WhatsApp', 'tipo');
-                if (it.estado === 'apagado') pill('bot apagado', 'off');
-                else if (it.estado === 'pausado') pill('pausado', 'pausa');
-                else pill('bot', 'on');
-                if (it.handoff_pendiente) pill('te espera', 'pausa');
                 if (it.fase) {
                     const f = document.createElement('span');
                     f.textContent = String(it.fase).replace(/_/g, ' ');
