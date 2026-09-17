@@ -1062,7 +1062,7 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 
 /* WhatsApp e Instagram comparten la misma lista: se distinguen con esta
    etiqueta chica al lado del nombre, no con una columna aparte. */
-.conv-chips { display:flex; align-items:center; gap:4px; margin-top:6px; min-width:0; }
+.conv-chips { display:flex; align-items:center; gap:4px; margin-top:6px; min-width:0; flex-wrap:wrap; }
 .conv-chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:3px; height:26px; padding:0 7px;
     border:1px solid var(--line); border-radius:99px; background:var(--card-2); color:var(--dim);
     font:inherit; font-size:10.5px; font-weight:700; letter-spacing:.01em; cursor:pointer; white-space:nowrap; }
@@ -1076,6 +1076,11 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 /* La vista del bot va un poco más marcada que los filtros humanos. */
 .conv-chip--principal { font-size:10.5px; border-color:var(--line-fuerte); }
 .conv-chip--principal.on { background:var(--ac); border-color:var(--ac); color:#0b1424; }
+.conv-chip--favoritos { border-color:#5b5126; }
+.conv-chip--favoritos:hover { border-color:#facc15; color:#facc15; }
+.conv-chip--favoritos.on { background:#facc15; border-color:#facc15; color:#241d02; }
+.conv-chip--favoritos .conv-chip-n { background:#5b5126; color:#facc15; }
+.conv-chip--favoritos.on .conv-chip-n { background:rgb(0 0 0 / .2); color:#241d02; }
 .conv-chips-sep { width:1px; height:18px; background:var(--line-fuerte); margin:0 2px; flex-shrink:0; }
 .conv-chips-mas { position:relative; margin-left:auto; }
 .conv-chip--mas { padding:0 7px; font-size:10px; }
@@ -1782,6 +1787,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todas las conversaciones que ya no está llevando el bot.">Todos</button>
+                        <button type="button" class="conv-chip conv-chip--favoritos" data-grupo="favorito" title="Mostrar solamente los chats que marcaste con una estrella.">⭐ Favoritos <span class="conv-chip-n" id="cuentaFavoritos">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
@@ -1789,7 +1795,6 @@ body.embed { min-height: 0; }
                                 <button type="button" class="conv-chip-item" data-grupo="prospecto" title="Vio el precio y eligió cómo pagar: el bot se calló, seguí la venta a mano.">Prospectos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="pago">Pagaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="rta">Ya contestaste (RTA)</button>
-                                <button type="button" class="conv-chip-item" data-grupo="favorito">⭐ Favoritos</button>
                                 <button type="button" class="conv-chip-item" data-grupo="retomar">Retomar</button>
                                 <button type="button" class="conv-chip-item" data-grupo="presentadas_48">Se enfriaron</button>
                                 <button type="button" class="conv-chip-item" data-grupo="instagram">Solo Instagram</button>
@@ -2198,7 +2203,7 @@ body.embed { min-height: 0; }
             // ese grupo. Antes Demos y Presentados mostraban cuántas tenían algo
             // sin leer, así que "Demos 0" convivía con tres demos por diseñar y
             // no había forma de saber qué medía cada número.
-            const cuentas = { no_leidos: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
+            const cuentas = { no_leidos: 0, favorito: 0, rta: 0, pago: 0, interesado: 0, chat: 0, muestra: 0, presentados: 0, presentadas_48: 0, archivado: 0 };
             let visibles = 0;
             const renderizados = [];   // {it, el} — se agrupan con encabezados solo en "No leídos"
 
@@ -2209,6 +2214,7 @@ body.embed { min-height: 0; }
                 const grupo = GRUPOS_VALIDOS.has(it.grupo) ? it.grupo : 'chat';
                 cuentas[grupo]++;
                 if (esNoLeido(it)) cuentas.no_leidos++;
+                if (it.favorito) cuentas.favorito++;
                 if (esRTA(it)) cuentas.rta++;
                 if (!buscandoGeneral && !entraEnGrupoActivo(it)) continue;
                 if (!buscandoGeneral && fechasChatsSeleccionadas.size && !fechasChatsSeleccionadas.has(fechaInicioInfo(it).key)) continue;
@@ -2331,8 +2337,11 @@ body.embed { min-height: 0; }
             if (elSinLeer) elSinLeer.textContent = cuentas.no_leidos ?? 0;
             const elRta = document.getElementById('cuentaRta');
             if (elRta) elRta.textContent = cuentas.rta ?? 0;
+            const elFavoritos = document.getElementById('cuentaFavoritos');
+            if (elFavoritos) elFavoritos.textContent = cuentas.favorito ?? 0;
             for (const b of navBtns) {
                 if (b.dataset.grupo === 'no_leidos') b.classList.toggle('tiene', (cuentas.no_leidos ?? 0) > 0);
+                if (b.dataset.grupo === 'favorito') b.classList.toggle('tiene', (cuentas.favorito ?? 0) > 0);
                 if (b.dataset.grupo === 'rta') b.classList.toggle('tiene', (cuentas.rta ?? 0) > 0);
             }
             if (!visibles) {
