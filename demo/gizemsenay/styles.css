@@ -81,7 +81,7 @@ p { max-width: 65ch; }
   color: var(--color-primary-ink); display: flex; align-items: center; gap: .5rem; margin-bottom: .8rem;
 }
 .eyebrow::before { content: ""; width: 26px; height: 3px; border-radius: 3px; background: currentColor; }
-.eyebrow--claro { color: var(--color-text); }
+.eyebrow--claro { color: var(--color-amarillo); }
 .sec-head { margin-bottom: clamp(1.4rem, 3vw, 2.4rem); max-width: 46rem; }
 .sec-head--fila { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); align-items: flex-end; justify-content: space-between; max-width: none; }
 .sec-sub { color: var(--color-text-muted); max-width: 44ch; }
@@ -488,17 +488,17 @@ p { max-width: 65ch; }
 .faq details p { padding: 0 1.2rem 1.1rem; color: var(--color-text-muted); font-size: .93rem; }
 
 /* ---------- cierre ---------- */
-.cierre { position: relative; background: var(--color-primary); color: #fff; padding-block: clamp(3.4rem, 6vw, 5rem) clamp(2.6rem, 5vw, 4rem); overflow: hidden; }
+.cierre { position: relative; background: #1E1B26; color: #fff; border-bottom: 5px solid var(--color-primary); padding-block: clamp(3.4rem, 6vw, 5rem) clamp(2.6rem, 5vw, 4rem); overflow: hidden; }
 .cierre::before {
   content: ""; position: absolute; top: -1px; left: 0; right: 0; height: clamp(30px, 4vw, 56px);
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'%3E%3Cpath d='M0,60 C150,4 330,0 600,28 C870,56 1050,58 1200,16 L1200,0 L0,0 Z' fill='%23FFF3FE'/%3E%3C/svg%3E") no-repeat center top / 100% 100%;
 }
 .cierre h2 { color: #fff; }
 .cierre-in { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: clamp(1.4rem, 3vw, 3rem); align-items: center; }
-.cierre-sub { margin-top: .9rem; color: var(--color-text); max-width: 40ch; }
+.cierre-sub { margin-top: .9rem; color: #D5D0E0; max-width: 40ch; }
 .cierre-acc { display: flex; flex-direction: column; align-items: flex-start; gap: .9rem; }
-.cierre-horario { display: flex; align-items: center; gap: .5rem; font: 600 .92rem/1.4 var(--font-body); color: var(--color-text); }
-.punto { width: 11px; height: 11px; border-radius: 50%; background: var(--color-text); flex: none; }
+.cierre-horario { display: flex; align-items: center; gap: .5rem; font: 600 .92rem/1.4 var(--font-body); color: var(--color-amarillo); }
+.punto { width: 11px; height: 11px; border-radius: 50%; background: var(--color-primary); flex: none; }
 
 /* ---------- pie ---------- */
 .pie { background: var(--color-text); color: #fff; padding-top: var(--section-pad-y); }
