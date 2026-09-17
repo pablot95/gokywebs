@@ -1769,6 +1769,7 @@ body.embed { min-height: 0; }
                 <div class="conv-filtros">
                     <div class="conv-busqueda-fila">
                         <input type="search" class="conv-busqueda" id="convBuscar" placeholder="Buscar nombre, número, código o proyecto…" autocomplete="off" aria-label="Buscar en todos los chats por nombre, número, código o proyecto">
+                        <button type="button" class="conv-fecha-toggle conv-chip--favoritos" data-grupo="favorito" title="Mostrar solamente los chats que marcaste con una estrella.">⭐ Favoritos <span class="conv-chip-n" id="cuentaFavoritos">0</span></button>
                         <button type="button" class="conv-fecha-toggle" id="convFechaToggle" aria-expanded="false" aria-controls="convFechaPanel">Fecha <span class="conv-fecha-cuenta" id="convFechaCuenta" hidden>0</span></button>
                     </div>
                     <div class="conv-fecha-panel" id="convFechaPanel" hidden>
@@ -1787,7 +1788,6 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todas las conversaciones que ya no está llevando el bot.">Todos</button>
-                        <button type="button" class="conv-chip conv-chip--favoritos" data-grupo="favorito" title="Mostrar solamente los chats que marcaste con una estrella.">⭐ Favoritos <span class="conv-chip-n" id="cuentaFavoritos">0</span></button>
                         <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
