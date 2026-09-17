@@ -1787,7 +1787,7 @@ body.embed { min-height: 0; }
                         <button type="button" class="conv-chip" data-grupo="esperando_cliente" title="El bot mandó el último mensaje y derivó el chat, pero el cliente todavía no respondió. Completar el formulario no cuenta como respuesta.">Espera cliente</button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
-                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todas las conversaciones que ya no está llevando el bot.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats humanos, excepto los que todavía esperan una respuesta del cliente.">Todos</button>
                         <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
@@ -2103,7 +2103,7 @@ body.embed { min-height: 0; }
             if (filtro === 'no_contestados') return esNoContestado(it);
             if (filtro === 'bot_hablando') return it.grupo !== 'archivado' && botLlevaLaCharla(it);
             if (filtro === 'esperando_cliente') return esperaAlCliente(it);
-            if (filtro === 'todos_humano') return esChatHumano(it);
+            if (filtro === 'todos_humano') return esChatHumano(it) && !esperaAlCliente(it);
             if (filtro === 'por_vencer') return esChatHumano(it) && it.canal !== 'instagram' && Number(it.ventana || 0) > 0;
             if (filtro === 'favorito') return !!it.favorito;
             if (filtro === 'instagram') return it.canal === 'instagram';
