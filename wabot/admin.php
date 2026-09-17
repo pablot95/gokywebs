@@ -1778,16 +1778,17 @@ body.embed { min-height: 0; }
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
                     </div>
-                    <!-- Seis vistas operativas y excluyentes: bot, derivado que aún
+                    <!-- Siete vistas operativas y excluyentes: bot, derivado que aún
                          espera al cliente, sin leer, leído sin contestar, todos los
-                         humanos y ventana por vencer. Los filtros históricos quedan
-                         en "más" para no perder favoritos ni canales. -->
+                         humanos, demos presentadas y ventana por vencer. Los filtros
+                         históricos quedan en "más" para no perder favoritos ni canales. -->
                     <div class="conv-chips" id="convChips">
                         <button type="button" class="conv-chip conv-chip--principal" data-grupo="bot_hablando" title="Conversaciones que todavía está llevando y contestando el bot.">Bot</button>
                         <button type="button" class="conv-chip" data-grupo="esperando_cliente" title="El bot mandó el último mensaje y derivó el chat, pero el cliente todavía no respondió. Completar el formulario no cuenta como respuesta.">Espera cliente</button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_leidos" title="El cliente respondió después del bot y todavía no abriste el chat.">Sin leer <span class="conv-chip-n" id="cuentaNoLeidos">0</span></button>
                         <button type="button" class="conv-chip conv-chip--sl" data-grupo="no_contestados" title="Ya leíste la respuesta del cliente, pero todavía no le contestaste.">Sin contestar</button>
                         <button type="button" class="conv-chip" data-grupo="todos_humano" title="Todos los chats humanos, excepto los que todavía esperan una respuesta del cliente.">Todos</button>
+                        <button type="button" class="conv-chip" data-grupo="demos_presentadas" title="Conversaciones cuya demo ya fue presentada, incluyendo las que se enfriaron.">Demos presentadas</button>
                         <button type="button" class="conv-chip" data-grupo="por_vencer" title="Chats humanos con ventana abierta, ordenados por el que está más cerca de cumplir 24 horas.">⏳ Vencen</button>
                         <div class="conv-chips-mas">
                             <button type="button" class="conv-chip conv-chip--mas" id="convChipsMas" aria-expanded="false" aria-controls="convChipsPanel" title="Más filtros">▾</button>
@@ -1929,7 +1930,7 @@ body.embed { min-height: 0; }
         const SEL = <?= json_encode($ver) ?>;
 
         /* ── Lista de la izquierda ── */
-        // Las seis vistas principales son excluyentes. Para separar "espera al
+        // Las siete vistas principales son excluyentes. Para separar "espera al
         // cliente" de "espera a Pablo" se comparan los timestamps reales del
         // último cliente y de la última salida. Las líneas `sistema` que agrega
         // el formulario no participan, así completarlo no simula una respuesta.
@@ -2104,6 +2105,7 @@ body.embed { min-height: 0; }
             if (filtro === 'bot_hablando') return it.grupo !== 'archivado' && botLlevaLaCharla(it);
             if (filtro === 'esperando_cliente') return esperaAlCliente(it);
             if (filtro === 'todos_humano') return esChatHumano(it) && !esperaAlCliente(it);
+            if (filtro === 'demos_presentadas') return it.grupo === 'presentados' || it.grupo === 'presentadas_48';
             if (filtro === 'por_vencer') return esChatHumano(it) && it.canal !== 'instagram' && Number(it.ventana || 0) > 0;
             if (filtro === 'favorito') return !!it.favorito;
             if (filtro === 'instagram') return it.canal === 'instagram';
