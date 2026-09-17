@@ -339,7 +339,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $cfg['escuchar_audios']     = !empty($_POST['escuchar_audios']);
         $cfg['ultima_llamada_activa'] = !empty($_POST['ultima_llamada_activa']);
 
-        if (isset($_POST['pausa_horas_humano'])) $cfg['pausa_horas_humano'] = max(1, (int)$_POST['pausa_horas_humano']);
         if (isset($_POST['reset_dias']))         $cfg['reset_dias']         = max(1, (int)$_POST['reset_dias']);
         if (isset($_POST['demora_primer_mensaje'])) $cfg['demora_primer_mensaje'] = max(0, min(60, (int)$_POST['demora_primer_mensaje']));
         if (isset($_POST['demora_segundos']))       $cfg['demora_segundos']       = max(0, min(60, (int)$_POST['demora_segundos']));
@@ -382,6 +381,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         } elseif (!empty($conv['confirmacion_demo_enviada'])) {
             $resultado = 'template_72_ya';
         } elseif (wabot_enviar_plantilla($conv, 'confirmacion_demo_48h', $cfg)) {
+            wabot_conv_tomar_control($conv);
             $conv['confirmacion_demo_enviada'] = true;
             $conv['confirmacion_demo_ts'] = time();
             wabot_conv_save($conv);
@@ -406,15 +406,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
 
-        // Contestar a mano pausa el bot en este chat, igual que si respondieras desde el celular.
-        $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
-        $conv['pausado_hasta'] = time() + $horas * 3600;
-        $conv['handoff_pendiente'] = false;
+        // Contestar a mano toma el control de forma permanente. El bot solo
+        // vuelve si Pablo pulsa expresamente "Encender bot acá".
+        wabot_conv_tomar_control($conv);
         wabot_conv_transcript($conv, 'humano', $texto);
         wabot_conv_save($conv);
         wabot_log('respuesta_panel', ['tel' => $conv['tel']]);
 
-        echo json_encode(['ok' => true, 'pausado_hasta' => $conv['pausado_hasta']]);
+        echo json_encode(['ok' => true, 'bot_off' => true]);
         exit;
     }
     // Botón "Presentar" del admin: le manda al cliente los dos mensajes de la
@@ -433,11 +432,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
         $conv = wabot_conv_load($clave);
 
-        // Presentar abre la parte 2 de la venta y vuelve a encender el bot.
-        // La cotización final lo había dejado en bot_off para que Pablo tomara
-        // el chat; si no se limpia acá, la fase dice postdemo pero nadie
-        // contesta las respuestas posteriores del cliente.
-        wabot_conv_activar_postdemo($conv);
+        // Presentar manda la demo y cambia de etapa, pero el chat sigue en
+        // manos de Pablo: nunca reactiva el bot por detrás.
+        wabot_conv_preparar_postdemo($conv);
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $slug;
         $conv['presentado_confirmado'] = false;
@@ -503,7 +500,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     if ($a === 'marcar_entregada' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $negocio = trim((string)($conv['nombre_negocio'] ?? ''));
-        wabot_conv_activar_postdemo($conv);
+        wabot_conv_preparar_postdemo($conv);
         $conv['presentado_ts'] = time();
         $conv['presentado_slug'] = $negocio !== '' ? wabot_slug_demo($negocio) : '';
         $conv['presentado_confirmado'] = false;
@@ -574,14 +571,12 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         }
 
         $guardado = wabot_media_guardar(wabot_conversation_key($conv), $bytes, $mime, 'audio');
-        $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
-        $conv['pausado_hasta'] = time() + $horas * 3600;
-        $conv['handoff_pendiente'] = false;
+        wabot_conv_tomar_control($conv);
         wabot_conv_transcript($conv, 'humano', '[nota de voz]', $guardado);
         wabot_conv_save($conv);
         wabot_log('respuesta_panel_audio', ['tel' => $conv['tel'], 'mime' => $mime, 'bytes' => strlen($bytes)]);
 
-        echo json_encode(['ok' => true, 'pausado_hasta' => $conv['pausado_hasta']]);
+        echo json_encode(['ok' => true, 'bot_off' => true]);
         exit;
     }
     if ($a === 'transcript' && !empty($_POST['tel'])) {
@@ -779,13 +774,14 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'conv_toggle' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
-        $conv['bot_off'] = empty($conv['bot_off']);
+        if (!empty($conv['bot_off'])) wabot_conv_encender_manual($conv);
+        else wabot_conv_tomar_control($conv);
         wabot_conv_save($conv);
         header('Location: admin.php?tab=conversaciones'); exit;
     }
     if ($a === 'conv_reanudar' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
-        $conv['pausado_hasta'] = 0;
+        wabot_conv_encender_manual($conv);
         wabot_conv_save($conv);
         header('Location: admin.php?tab=conversaciones'); exit;
     }
@@ -804,6 +800,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (wabot_conv_contestada($conv)) {
             $conv['contestado_ts'] = 0;
         } else {
+            wabot_conv_tomar_control($conv);
             $conv['contestado_ts'] = max(1, wabot_conv_ultimo_ts($conv));
             // Marcarlo como atendido implica haberlo leído: si no, el globito
             // de sin leer queda encendido en un chat que ya resolviste.
@@ -1644,7 +1641,6 @@ body.embed { min-height: 0; }
                 <div><label>Velocidad de tipeo (caracteres por segundo)</label><input type="number" name="tipeo_por_segundo" min="5" max="200" value="<?= (int)($cfg['tipeo_por_segundo'] ?? 16) ?>" style="width:100px"></div>
                 <div><label>Nunca menos de (segundos)</label><input type="number" step="0.1" name="demora_minima" min="0" max="10" value="<?= $e((string)($cfg['demora_minima'] ?? 2)) ?>" style="width:100px"></div>
                 <div><label>Nunca mas de (segundos)</label><input type="number" step="0.1" name="demora_maxima" min="1" max="30" value="<?= $e((string)($cfg['demora_maxima'] ?? 7)) ?>" style="width:100px"></div>
-                <div><label>Horas de silencio cuando contestás vos</label><input type="number" name="pausa_horas_humano" min="1" value="<?= (int)($cfg['pausa_horas_humano'] ?? 24) ?>" style="width:100px"></div>
                 <div><label>Días para resetear una charla vieja</label><input type="number" name="reset_dias" min="1" value="<?= (int)($cfg['reset_dias'] ?? 7) ?>" style="width:100px"></div>
             </div>
             <div class="fila" style="margin-top:14px;gap:18px">

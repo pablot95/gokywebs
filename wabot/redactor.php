@@ -88,7 +88,7 @@ function wabot_responder($texto, &$conv, $cfg) {
      * contacto (D09, 1-sep) — lo contrario exacto de lo pedido. Pedir una web
      * de nuevo sí la reabre: la baja es del contacto comercial, no del cliente. */
     if (($conv['cierre'] ?? '') === 'baja') {
-        if (wabot_reabre_consulta($texto) || wabot_texto_pide_web($texto)) {
+        if ((wabot_reabre_consulta($texto) || wabot_texto_pide_web($texto)) && empty($conv['control_manual'])) {
             $conv['cierre'] = null;
             $conv['seguimiento_bloqueado'] = false;
             $conv['seguimiento_estado'] = null;

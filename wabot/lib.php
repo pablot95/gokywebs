@@ -1529,6 +1529,9 @@ function wabot_conv_load($clave) {
         'espera_avisada'   => false,
         'no_texto_avisado' => false,
         'bot_off'          => false,
+        // Cuando Pablo responde o apaga el bot desde el panel/app, el control
+        // queda en sus manos hasta que pulse expresamente "Encender bot acá".
+        'control_manual'   => false,
         'pausado_hasta'    => 0,
         'lead_creado'      => false,
         // Documento del boceto en Firestore y qué imagen ya se le mandó como
@@ -1587,6 +1590,24 @@ function wabot_conv_load($clave) {
         'transcript'       => [],
     ];
     $conv = is_array($cargada) ? array_replace($defaults, $cargada) : $defaults;
+
+    /* Migración de las conversaciones anteriores a `control_manual`: cualquier
+     * respuesta humana ya significaba que Pablo había tomado el chat, pero se
+     * guardaba como una pausa de 24 h y después el bot volvía solo. Incluso si
+     * esa pausa ya venció, `pausado_hasta` conserva un valor distinto de cero.
+     * Una vez que se usa el botón Encender se guarda explícitamente false y no
+     * se vuelve a inferir en cargas posteriores. */
+    if (is_array($cargada) && !array_key_exists('control_manual', $cargada)) {
+        $huboRespuestaHumana = false;
+        foreach ((array)($conv['transcript'] ?? []) as $turno) {
+            if (($turno['q'] ?? '') === 'humano') { $huboRespuestaHumana = true; break; }
+        }
+        if ($huboRespuestaHumana || (int)($conv['pausado_hasta'] ?? 0) > 0) {
+            $conv['control_manual'] = true;
+            $conv['bot_off'] = true;
+            $conv['pausado_hasta'] = 0;
+        }
+    }
 
     // La ruta desde la que se cargó manda sobre cualquier clave vieja guardada.
     $conv['conversation_key'] = $clave;
@@ -2900,11 +2921,24 @@ function wabot_conv_bot_inactivo($cv) {
         || ($cv['fase'] ?? '') === 'derivado';
 }
 
-/** Reactiva la conversación cuando se entrega la demo y empieza el postdemo. */
-function wabot_conv_activar_postdemo(&$cv) {
-    $cv['bot_off'] = false;
+/** Pablo tomó la conversación: el bot no vuelve solo por reloj ni por eventos. */
+function wabot_conv_tomar_control(&$cv) {
+    $cv['control_manual'] = true;
+    $cv['bot_off'] = true;
     $cv['pausado_hasta'] = 0;
     $cv['handoff_pendiente'] = false;
+}
+
+/** Única forma de devolverle una conversación al bot: una acción manual. */
+function wabot_conv_encender_manual(&$cv) {
+    $cv['control_manual'] = false;
+    $cv['bot_off'] = false;
+    $cv['pausado_hasta'] = 0;
+}
+
+/** Presentar cambia de etapa, pero no le devuelve el control al bot. */
+function wabot_conv_preparar_postdemo(&$cv) {
+    wabot_conv_tomar_control($cv);
     $cv['seguimiento_bloqueado'] = false;
     $cv['contestado_ts'] = 0;
     $cv['fase'] = 'postdemo';
@@ -3006,8 +3040,8 @@ function wabot_salida_es_bot($id) {
  * El id no siempre alcanza: Instagram devuelve un message_id al enviar y el eco
  * puede llegar con otro mid, y además el eco puede adelantarse a que se registre
  * el id. Cuando eso pasa, el bot lee su propio mensaje como "lo contestó Pablo
- * a mano", se pausa 24 h y no vuelve a atender ese chat: el síntoma es la charla
- * clavada en "Te esperan" sin respuesta.
+ * a mano" y toma el control humano permanente por error: el síntoma es la
+ * charla clavada del lado de Pablo sin que él haya escrito ese mensaje.
  *
  * Si el texto coincide con algo que el bot acaba de mandar, es nuestro.
  */

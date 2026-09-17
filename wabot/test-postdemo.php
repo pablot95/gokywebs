@@ -9,8 +9,9 @@
  * después: "mejor que solo diga eso, pero que identifique si de verdad el
  * cliente mostró interés".
  *
- * Lo que se prueba: el aviso de handoff sale UNA sola vez y SOLO con interés
- * real; mientras el cliente está mirando, el bot sigue disponible.
+ * Lo que se prueba: Presentar no le devuelve el control al bot. Si Pablo lo
+ * enciende manualmente para esta etapa, el aviso de handoff sale UNA sola vez
+ * y SOLO con interés real.
  */
 
 require_once __DIR__ . '/test-lib.php';
@@ -45,13 +46,31 @@ $reactivada = conv_postdemo([
     'handoff_pendiente' => true, 'seguimiento_bloqueado' => true,
     'contestado_ts' => time(), 'cierre' => 'cotizacion_final', 'espera_avisada' => true,
 ]);
-wabot_conv_activar_postdemo($reactivada);
-caso('Presentar reactiva el bot y abre la etapa postdemo',
+wabot_conv_preparar_postdemo($reactivada);
+caso('Presentar abre la etapa postdemo pero deja el control en Pablo',
     ($reactivada['fase'] ?? '') === 'postdemo'
-    && empty($reactivada['bot_off']) && empty($reactivada['pausado_hasta'])
+    && !empty($reactivada['bot_off']) && !empty($reactivada['control_manual']) && empty($reactivada['pausado_hasta'])
     && empty($reactivada['handoff_pendiente']) && empty($reactivada['seguimiento_bloqueado'])
     && empty($reactivada['contestado_ts']) && empty($reactivada['cierre'])
     && empty($reactivada['espera_avisada']));
+wabot_conv_encender_manual($reactivada);
+caso('solo Encender bot acá devuelve el control al bot',
+    empty($reactivada['bot_off']) && empty($reactivada['control_manual']) && empty($reactivada['pausado_hasta']));
+
+// Conversaciones guardadas antes de este cambio: una respuesta humana tenía
+// una pausa con vencimiento. Al cargarlas se migran a control permanente.
+$claveLegacy = '999CONTROLMANUALTEST';
+$legacy = conv_nueva($claveLegacy, [
+    'pausado_hasta' => time() - 3600,
+    'transcript' => [['q' => 'humano', 't' => 'Te contesto yo', 'ts' => time() - 7200]],
+]);
+unset($legacy['control_manual']);
+wabot_conv_save($legacy);
+$legacyMigrada = wabot_conv_load($claveLegacy);
+caso('una pausa humana vieja se migra y no reactiva el bot al vencer',
+    !empty($legacyMigrada['control_manual']) && !empty($legacyMigrada['bot_off'])
+    && empty($legacyMigrada['pausado_hasta']));
+@unlink(wabot_conv_path($claveLegacy));
 
 echo "\n=== El aviso NO sale mientras el cliente está mirando ===\n";
 

@@ -266,7 +266,7 @@ function wabot_procesar_entrante($ev, $cfg) {
              * baja pedida por el cliente: el apagado a mano del panel no tiene
              * cierre 'baja' y se respeta. */
             $entrada = implode("\n", $usables);
-            if ($usables && !empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'baja'
+            if ($usables && !empty($conv['bot_off']) && empty($conv['control_manual']) && ($conv['cierre'] ?? '') === 'baja'
                 && (wabot_reabre_consulta($entrada) || wabot_texto_pide_web($entrada))) {
                 $conv['bot_off'] = false;   // redactor.php limpia cierre y seguimiento
                 wabot_log('baja_reabierta', ['tel' => $de, 'canal' => $canal]);
@@ -474,11 +474,10 @@ if (($payload['object'] ?? '') === 'instagram') {
                         continue;
                     }
                     wabot_conv_identidad_entrante($conv, $clave, $para, 'instagram');
-                    $conv['pausado_hasta'] = time() + (int)($cfg['pausa_horas_humano'] ?? 24) * 3600;
-                    $conv['handoff_pendiente'] = false;
+                    wabot_conv_tomar_control($conv);
                     wabot_conv_transcript($conv, 'humano', $textoEco);
                     wabot_conv_save($conv);
-                    wabot_log('pausa_humano', ['tel' => $para, 'canal' => 'instagram']);
+                    wabot_log('control_humano', ['tel' => $para, 'canal' => 'instagram']);
                 } finally {
                     wabot_lock_soltar($lockEco);
                 }
@@ -525,12 +524,10 @@ foreach (($payload['entry'] ?? []) as $entry) {
                     $conv = wabot_conv_load($clave);
                     if (wabot_eco_es_propio($conv, $textoEco)) continue;
                     wabot_conv_identidad_entrante($conv, $clave, (string)$para, 'whatsapp');
-                    $horas = (int)($cfg['pausa_horas_humano'] ?? 24);
-                    $conv['pausado_hasta'] = time() + $horas * 3600;
-                    $conv['handoff_pendiente'] = false;
+                    wabot_conv_tomar_control($conv);
                     wabot_conv_transcript($conv, 'humano', $textoEco);
                     wabot_conv_save($conv);
-                    wabot_log('pausa_humano', ['tel' => $para, 'horas' => $horas]);
+                    wabot_log('control_humano', ['tel' => $para, 'canal' => 'whatsapp']);
                 } finally {
                     wabot_lock_soltar($lockEco);
                 }

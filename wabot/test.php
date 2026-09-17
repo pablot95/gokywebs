@@ -2215,11 +2215,12 @@ foreach ([
         && mb_stripos($saliP, 'cuotas sin inter') === false);
 }
 
-// La demo presentada NO deja mudo al bot: esa era la razón por la que la parte 2
-// no existía (presentar pausaba el chat 24 h).
+// Presentar deja la charla en manos de Pablo. El postdemo solo vuelve a
+// contestar si él usa expresamente "Encender bot acá".
 $c = conv_nueva(); $c['fase'] = 'postdemo'; $c['tipo'] = 'landing'; $c['precio_dado'] = true;
-$c['pausado_hasta'] = 0;
-caso('tras presentar la demo el bot queda activo, no pausado', (int)$c['pausado_hasta'] === 0);
+wabot_conv_preparar_postdemo($c);
+caso('tras presentar la demo el control queda en Pablo, sin vencimiento',
+    !empty($c['bot_off']) && !empty($c['control_manual']) && (int)$c['pausado_hasta'] === 0);
 
 echo "— Presentadas 48hs: las que se enfriaron salen de la cola normal —\n";
 
