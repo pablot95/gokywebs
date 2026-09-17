@@ -10,151 +10,198 @@ document.addEventListener('keydown', e => {
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const CATEGORIAS = [
-  { id: 'juguetes', nom: 'Juguetes', img: 'images/cat-juguetes.webp', etq: 'Para regalar', color: '#FF00FF', tint: '#FFE0FF', pie: 'Peluches, madera y encastres' },
-  { id: 'electronica', nom: 'Electrónica', img: 'images/cat-electronica.webp', etq: 'Con garantía', color: '#0000FF', tint: '#E4E4FF', pie: 'Cocina, audio y hogar' },
-  { id: 'blanqueria', nom: 'Blanquería', img: 'images/cat-blanqueria.webp', etq: 'Algodón', color: '#8A00E6', tint: '#F3E0FF', pie: 'Toallas, sábanas y acolchados' }
+  { id: 'panales', nom: 'Pañales', img: 'images/cat-panales.webp', pie: 'De recién nacido a XG', texto: 'El corazón de la pañalera: todos los talles con su rango de peso a la vista, en packs que rinden el mes.' },
+  { id: 'higiene', nom: 'Higiene y cuidado', img: 'images/cat-higiene.webp', pie: 'Para el cambiador y el baño', texto: 'Lo que se usa todos los días y lo que más se regala: cepillo de cerda suave y la canastilla armada.' },
+  { id: 'perfumeria', nom: 'Perfumería', img: 'images/cat-perfumeria.webp', pie: 'Para el bebé y para vos', texto: 'Colonia suave para el bebé y fragancias para mamá, en el mismo pedido.' },
+  { id: 'ropa', nom: 'Ropa y accesorios', img: 'images/cat-accesorios.webp', pie: 'Algodón y tejido', texto: 'Bodies, batitas, conjuntos y ajuares de algodón y tejido, por rango de meses.' }
+];
+
+const TALLES = [
+  { id: 'RN', nom: 'Recién nacido', peso: 'hasta 4,5 kg', txt: 'Para las primeras semanas, cuando el cambio es cada tres horas.' },
+  { id: 'P', nom: 'Talle P', peso: '5 a 8 kg', txt: 'El que más se repite entre el mes y los cuatro meses.' },
+  { id: 'M', nom: 'Talle M', peso: '7 a 10 kg', txt: 'Etapa de gateo: tiene que ajustar sin marcar la piel.' },
+  { id: 'G', nom: 'Talle G y XG', peso: '9 a 15 kg', txt: 'Primeros pasos y noche: más absorción, menos cambios.' }
 ];
 
 const PRODUCTOS = [
   {
-    id: 'gs-1001', nombre: 'Camión de bomberos con luces y sirena', cat: 'juguetes', precio: 24900, descuento: 0,
-    stock: 7, img: 'images/p-camion-bomberos.webp', alt: 'Camión de bomberos de juguete rojo con escalera',
-    desc: 'Camión de plástico reforzado de 38 cm, con luces, sirena y escalera que gira. Funciona con 3 pilas AA.',
-    datos: [['Edad', 'Desde 3 años'], ['Largo', '38 cm'], ['Pilas', '3 AA, no incluidas']],
-    etiquetas: ['camion', 'bomberos', 'auto', 'luces'], destacado: true, nuevo: false, regalo: true
+    id: 'pap-1001', nombre: 'Pañales recién nacido x 36', cat: 'panales', talle: 'RN', medida: 'hasta 4,5 kg',
+    precio: 18900, descuento: 0, stock: 14, img: 'images/p-panal-rn.webp',
+    alt: 'Pañales de recién nacido apilados en la canasta de la tienda',
+    desc: 'Pañal chico y muy suave para las primeras semanas, con elástico bajo para no tocar el ombligo.',
+    datos: [['Talle', 'Recién nacido'], ['Peso', 'Hasta 4,5 kg'], ['Unidades', '36 por pack']],
+    etiquetas: ['panal', 'recien nacido', 'rn', 'primeras semanas'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-1002', nombre: 'Xilofón de madera 8 notas', cat: 'juguetes', precio: 14500, descuento: 0,
-    stock: 12, img: 'images/p-xilofon.webp', alt: 'Xilofón de madera con teclas de colores y su baqueta',
-    desc: 'Ocho notas afinadas en madera pintada con esmalte al agua. Viene con baqueta de madera.',
-    datos: [['Edad', 'Desde 18 meses'], ['Material', 'Madera y metal'], ['Incluye', 'Baqueta']],
-    etiquetas: ['xilofon', 'musica', 'madera', 'bebe'], destacado: false, nuevo: false, regalo: true
+    id: 'pap-1002', nombre: 'Pañales talle P x 50', cat: 'panales', talle: 'P', medida: '5 a 8 kg',
+    precio: 24500, descuento: 0, stock: 12, img: 'images/p-panal-p.webp',
+    alt: 'Pañales talle P doblados en la canasta',
+    desc: 'El talle que más se repone entre el mes y los cuatro meses. Pack de 50 para que rinda.',
+    datos: [['Talle', 'P'], ['Peso', '5 a 8 kg'], ['Unidades', '50 por pack']],
+    etiquetas: ['panal', 'talle p', 'pequeno'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-1003', nombre: 'Tractor con pala y volquete', cat: 'juguetes', precio: 11900, descuento: 10,
-    stock: 9, img: 'images/p-tractor.webp', alt: 'Tractor de juguete azul y naranja con pala',
-    desc: 'Tractor de plástico resistente con pala que sube y baja y volquete que descarga. Para jugar adentro o en la arena.',
-    datos: [['Edad', 'Desde 3 años'], ['Largo', '26 cm'], ['Uso', 'Interior y arenero']],
-    etiquetas: ['tractor', 'auto', 'arena', 'obra'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-1003', nombre: 'Pañales talle M x 56', cat: 'panales', talle: 'M', medida: '7 a 10 kg',
+    precio: 27900, descuento: 10, stock: 9, img: 'images/p-panal-m.webp',
+    alt: 'Pañales talle M en la canasta de la tienda',
+    desc: 'Para la etapa de gateo: elástico lateral que ajusta sin marcar y mayor absorción nocturna.',
+    datos: [['Talle', 'M'], ['Peso', '7 a 10 kg'], ['Unidades', '56 por pack']],
+    etiquetas: ['panal', 'talle m', 'mediano', 'gateo'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-1004', nombre: 'Bloques de encastre x 120 piezas', cat: 'juguetes', precio: 22400, descuento: 0,
-    stock: 15, img: 'images/p-bloques-encastre.webp', alt: 'Bloques de encastre de colores mezclados',
-    desc: 'Ciento veinte piezas compatibles entre sí, en seis colores. Vienen en balde con tapa para guardar.',
-    datos: [['Edad', 'Desde 3 años'], ['Piezas', '120'], ['Incluye', 'Balde con tapa']],
-    etiquetas: ['bloques', 'encastre', 'construccion', 'ladrillos'], destacado: true, nuevo: false, regalo: true
+    id: 'pap-1004', nombre: 'Pañales talle G x 52', cat: 'panales', talle: 'G', medida: '9 a 12,5 kg',
+    precio: 29900, descuento: 0, stock: 8, img: 'images/p-panal-g.webp',
+    alt: 'Pañales talle G doblados en la canasta',
+    desc: 'Primeros pasos: más absorción para aguantar la noche completa y cintura elastizada.',
+    datos: [['Talle', 'G'], ['Peso', '9 a 12,5 kg'], ['Unidades', '52 por pack']],
+    etiquetas: ['panal', 'talle g', 'grande', 'noche'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-1005', nombre: 'Set de construcción grande x 200 piezas', cat: 'juguetes', precio: 34900, descuento: 15,
-    stock: 6, img: 'images/p-bloques-set.webp', alt: 'Set grande de bloques de construcción de colores',
-    desc: 'Doscientas piezas con bases grandes, ruedas y ventanas. El set más pedido para armar de a varios.',
-    datos: [['Edad', 'Desde 4 años'], ['Piezas', '200'], ['Incluye', 'Bases y ruedas']],
-    etiquetas: ['bloques', 'set', 'construccion', 'grande'], destacado: false, nuevo: false, regalo: true
+    id: 'pap-1005', nombre: 'Pañales talle XG x 48', cat: 'panales', talle: 'XG', medida: '12 a 15 kg',
+    precio: 31900, descuento: 0, stock: 6, img: 'images/p-panal-xg.webp',
+    alt: 'Pañales talle XG apilados en la canasta',
+    desc: 'El talle más grande, para cuando ya camina y se cambia de pie.',
+    datos: [['Talle', 'XG'], ['Peso', '12 a 15 kg'], ['Unidades', '48 por pack']],
+    etiquetas: ['panal', 'talle xg', 'extra grande'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-1006', nombre: 'Dinosaurios de madera x 3', cat: 'juguetes', precio: 15600, descuento: 0,
-    stock: 10, img: 'images/p-dinos-madera.webp', alt: 'Dinosaurios de madera pintados a mano',
-    desc: 'Tres dinosaurios de madera maciza pintados a mano, con bordes redondeados. Livianos y sin plástico.',
-    datos: [['Edad', 'Desde 3 años'], ['Material', 'Madera maciza'], ['Piezas', '3 figuras']],
-    etiquetas: ['dinosaurios', 'madera', 'figuras', 'natural'], destacado: true, nuevo: true, regalo: true
+    id: 'pap-1006', nombre: 'Pañales de tela x 3 con absorbente', cat: 'panales', talle: 'multi', medida: '3 a 14 kg',
+    precio: 22400, descuento: 0, stock: 7, img: 'images/p-panal-tela.webp',
+    alt: 'Pañales de tela doblados en una canasta de mimbre',
+    desc: 'Tres pañales de tela con broches regulables que acompañan de los 3 a los 14 kg, más absorbente lavable.',
+    datos: [['Talle', 'Regulable'], ['Peso', '3 a 14 kg'], ['Incluye', '3 pañales + absorbentes']],
+    etiquetas: ['panal', 'tela', 'lavable', 'reutilizable'], destacado: false, nuevo: true
   },
   {
-    id: 'gs-1007', nombre: 'Ladrillos de encastre x 60 piezas', cat: 'juguetes', precio: 13800, descuento: 0,
-    stock: 18, img: 'images/p-bloques-ladrillos.webp', alt: 'Ladrillos de encastre de colores en primer plano',
-    desc: 'Sesenta ladrillos grandes, ideales para las primeras construcciones. Se lavan con agua y jabón.',
-    datos: [['Edad', 'Desde 2 años'], ['Piezas', '60'], ['Tamaño', 'Pieza grande']],
-    etiquetas: ['ladrillos', 'bloques', 'encastre', 'bebe'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-2001', nombre: 'Cepillo de cerda suave', cat: 'higiene', talle: null, medida: 'madera y cerda natural',
+    precio: 8900, descuento: 0, stock: 15, img: 'images/p-cepillo.webp',
+    alt: 'Cepillo de cerda suave con cabo de madera apoyado en el estante',
+    desc: 'Cabo de madera y cerda natural muy suave, para el pelo del bebé desde el primer mes.',
+    datos: [['Material', 'Madera y cerda natural'], ['Uso', 'Desde el primer mes'], ['Largo', '14 cm']],
+    etiquetas: ['cepillo', 'higiene', 'bano', 'madera'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-1008', nombre: 'Oso de peluche 40 cm', cat: 'juguetes', precio: 18900, descuento: 0,
-    stock: 5, img: 'images/p-peluche-oso.webp', alt: 'Oso de peluche con remera roja sentado en la góndola',
-    desc: 'Peluche de 40 cm con relleno siliconado y costuras reforzadas. Se puede lavar a mano.',
-    datos: [['Alto', '40 cm'], ['Relleno', 'Siliconado'], ['Lavado', 'A mano']],
-    etiquetas: ['peluche', 'oso', 'regalo', 'cumpleanos'], destacado: true, nuevo: false, regalo: true
+    id: 'pap-2002', nombre: 'Canastilla de higiene y regalo', cat: 'higiene', talle: null, medida: '6 piezas',
+    precio: 34900, descuento: 0, stock: 5, img: 'images/p-canastilla.webp',
+    alt: 'Canastilla de mimbre con pañales y ropa doblada lista para regalar',
+    desc: 'La que más se regala: canasta de mimbre con pañales, batita, cepillo y colonia, envuelta para entregar.',
+    datos: [['Incluye', '6 piezas'], ['Canasta', 'Mimbre natural'], ['Armado', 'Listo para regalar']],
+    etiquetas: ['canastilla', 'regalo', 'nacimiento', 'baby shower'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-2001', nombre: 'Auriculares inalámbricos con estuche', cat: 'electronica', precio: 42900, descuento: 10,
-    stock: 8, img: 'images/p-auriculares.webp', alt: 'Auriculares inalámbricos negros sobre fondo blanco',
-    desc: 'Vincha acolchada, bluetooth 5.3 y hasta 20 horas de uso. Incluye estuche rígido y cable auxiliar.',
-    datos: [['Batería', 'Hasta 20 horas'], ['Conexión', 'Bluetooth 5.3'], ['Garantía', '6 meses']],
-    etiquetas: ['auriculares', 'bluetooth', 'audio', 'inalambrico'], destacado: true, nuevo: true, regalo: true
+    id: 'pap-3001', nombre: 'Colonia para bebé 200 ml', cat: 'perfumeria', talle: null, medida: '200 ml',
+    precio: 12900, descuento: 15, stock: 18, img: 'images/p-colonia-bebe.webp',
+    alt: 'Frasco de colonia para bebé con detalle del vidrio',
+    desc: 'Colonia sin alcohol, de aroma suave y duradero, pensada para la piel del bebé.',
+    datos: [['Contenido', '200 ml'], ['Sin alcohol', 'Sí'], ['Uso', 'Desde los 3 meses']],
+    etiquetas: ['colonia', 'perfume', 'bebe', 'sin alcohol'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-2002', nombre: 'Licuadora de vaso de vidrio 1,5 L', cat: 'electronica', precio: 89900, descuento: 0,
-    stock: 4, img: 'images/p-licuadora-vidrio.webp', alt: 'Licuadora con vaso de vidrio sobre la mesada',
-    desc: 'Vaso de vidrio de 1,5 litros, dos velocidades más pulso y cuchillas de acero desmontables.',
-    datos: [['Capacidad', '1,5 litros'], ['Potencia', '600 W'], ['Garantía', '6 meses']],
-    etiquetas: ['licuadora', 'vidrio', 'cocina', 'electrodomestico'], destacado: true, nuevo: false, regalo: false
+    id: 'pap-3002', nombre: 'Eau de parfum 100 ml', cat: 'perfumeria', talle: null, medida: '100 ml',
+    precio: 46900, descuento: 0, stock: 6, img: 'images/p-perfume-ambar.webp',
+    alt: 'Frasco de eau de parfum ámbar sobre la mesa de madera',
+    desc: 'Fragancia floral amaderada de larga duración, para mamá. La que más se lleva junto con la canastilla.',
+    datos: [['Contenido', '100 ml'], ['Familia', 'Floral amaderada'], ['Duración', 'Larga']],
+    etiquetas: ['perfume', 'eau de parfum', 'mujer', 'fragancia'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-2003', nombre: 'Licuadora de alta potencia 1200 W', cat: 'electronica', precio: 124900, descuento: 12,
-    stock: 3, img: 'images/p-licuadora-negra.webp', alt: 'Licuadora negra de alta potencia con vaso grande',
-    desc: 'Mil doscientos watts para hielo y frutos secos, con vaso de 2 litros y base antideslizante.',
-    datos: [['Capacidad', '2 litros'], ['Potencia', '1200 W'], ['Garantía', '6 meses']],
-    etiquetas: ['licuadora', 'potencia', 'cocina', 'hielo'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-3003', nombre: 'Set de 3 colonias', cat: 'perfumeria', talle: null, medida: '3 x 100 ml',
+    precio: 58900, descuento: 10, stock: 4, img: 'images/p-set-perfume.webp',
+    alt: 'Tres frascos de colonia alineados en la mesa',
+    desc: 'Tres fragancias distintas en frascos de 100 ml, para probar o para regalar completo.',
+    datos: [['Contenido', '3 x 100 ml'], ['Fragancias', 'Fresca, floral y amaderada'], ['Presentación', 'Caja de regalo']],
+    etiquetas: ['set', 'colonias', 'regalo', 'perfume'], destacado: false, nuevo: true
   },
   {
-    id: 'gs-2004', nombre: 'Batidora de mano con vaso medidor', cat: 'electronica', precio: 54500, descuento: 0,
-    stock: 6, img: 'images/p-batidora.webp', alt: 'Batidora de mano roja y negra apoyada en la mesada',
-    desc: 'Cinco velocidades, pie desmontable de acero y vaso medidor. Sirve para purés, sopas y batidos.',
-    datos: [['Velocidades', '5'], ['Pie', 'Acero desmontable'], ['Garantía', '6 meses']],
-    etiquetas: ['batidora', 'minipimer', 'cocina', 'pure'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-4001', nombre: 'Body de algodón a rayas', cat: 'ropa', talle: null, medida: '0 a 3 meses',
+    precio: 9800, descuento: 0, stock: 20, img: 'images/p-body-rayas.webp',
+    alt: 'Bodies de algodón a rayas azules doblados en el estante',
+    desc: 'Body de algodón peinado con broches en el hombro, para que entre y salga sin tironear.',
+    datos: [['Talle', '0 a 3 meses'], ['Material', 'Algodón peinado'], ['Cierre', 'Broches al hombro']],
+    etiquetas: ['body', 'algodon', 'rayas', 'ropa'], destacado: true, nuevo: false
   },
   {
-    id: 'gs-3001', nombre: 'Juego de toallas 2 piezas', cat: 'blanqueria', precio: 32900, descuento: 20,
-    stock: 11, img: 'images/p-toallas-set.webp', alt: 'Pilas de toallas dobladas en tonos claros',
-    desc: 'Toallón y toalla de mano en algodón peinado de 500 g/m². Absorbe rápido y no destiñe.',
-    datos: [['Piezas', 'Toallón + toalla'], ['Algodón', '500 g/m²'], ['Colores', 'Beige, gris y celeste']],
-    etiquetas: ['toallas', 'juego', 'bano', 'algodon'], destacado: true, nuevo: false, regalo: true
+    id: 'pap-4002', nombre: 'Pack de bodies x 3', cat: 'ropa', talle: null, medida: '0 a 6 meses',
+    precio: 26500, descuento: 10, stock: 11, img: 'images/p-pack-bodies.webp',
+    alt: 'Pack de bodies blancos y estampados apilados',
+    desc: 'Tres bodies de algodón lisos y estampados, en los talles que más se usan los primeros meses.',
+    datos: [['Talle', '0 a 6 meses'], ['Piezas', '3 bodies'], ['Material', 'Algodón']],
+    etiquetas: ['bodies', 'pack', 'algodon', 'ropa'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-3002', nombre: 'Toallón 90 x 150 cm', cat: 'blanqueria', precio: 19900, descuento: 0,
-    stock: 14, img: 'images/p-toallon.webp', alt: 'Toallones grises doblados en la estantería',
-    desc: 'Toallón grande de algodón con orillo reforzado. Entra en el lavarropas sin perder el color.',
-    datos: [['Medida', '90 x 150 cm'], ['Algodón', '450 g/m²'], ['Lavado', 'Lavarropas']],
-    etiquetas: ['toallon', 'bano', 'algodon', 'grande'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-4003', nombre: 'Conjunto de algodón 2 piezas', cat: 'ropa', talle: null, medida: '3 a 6 meses',
+    precio: 21900, descuento: 0, stock: 9, img: 'images/p-conjunto.webp',
+    alt: 'Conjunto de algodón doblado sobre el estante de la tienda',
+    desc: 'Remera y pantalón de algodón, livianos y con puño elastizado. Para todos los días.',
+    datos: [['Talle', '3 a 6 meses'], ['Piezas', 'Remera y pantalón'], ['Material', 'Algodón']],
+    etiquetas: ['conjunto', 'ropa', 'algodon'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-3003', nombre: 'Juego de sábanas 2 plazas', cat: 'blanqueria', precio: 58900, descuento: 0,
-    stock: 7, img: 'images/p-sabanas.webp', alt: 'Sábanas claras tendidas sobre la cama',
-    desc: 'Sábana con elástico, encimera y dos fundas en percal de 144 hilos. Para colchón de hasta 30 cm.',
-    datos: [['Medida', '2 plazas'], ['Hilos', 'Percal 144'], ['Piezas', '4']],
-    etiquetas: ['sabanas', 'juego', 'cama', 'percal'], destacado: true, nuevo: false, regalo: false
+    id: 'pap-4004', nombre: 'Pack de batitas x 2', cat: 'ropa', talle: null, medida: '0 a 3 meses',
+    precio: 18400, descuento: 0, stock: 12, img: 'images/p-ropa-apilada.webp',
+    alt: 'Batitas blancas estampadas dobladas en el estante',
+    desc: 'Dos batitas de algodón con puño y pie, las que se usan en la primera salida del sanatorio.',
+    datos: [['Talle', '0 a 3 meses'], ['Piezas', '2 batitas'], ['Material', 'Algodón']],
+    etiquetas: ['batita', 'pack', 'primera ropa'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-3004', nombre: 'Acolchado liso 2 plazas', cat: 'blanqueria', precio: 74900, descuento: 10,
-    stock: 5, img: 'images/p-acolchado.webp', alt: 'Acolchado claro sobre una cama tendida',
-    desc: 'Acolchado reversible con relleno de vellón siliconado, liviano y abrigado. Funda lavable.',
-    datos: [['Medida', '2 plazas'], ['Relleno', 'Vellón siliconado'], ['Reversible', 'Sí']],
-    etiquetas: ['acolchado', 'cama', 'abrigo', 'invierno'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-4005', nombre: 'Sweater tejido', cat: 'ropa', talle: null, medida: '6 a 12 meses',
+    precio: 32900, descuento: 0, stock: 5, img: 'images/p-sweater.webp',
+    alt: 'Sweater tejido con rayas colgado en el exhibidor',
+    desc: 'Tejido liviano con rayas, abriga sin dar calor y se lava a máquina en frío.',
+    datos: [['Talle', '6 a 12 meses'], ['Material', 'Hilo de algodón'], ['Lavado', 'Máquina en frío']],
+    etiquetas: ['sweater', 'tejido', 'abrigo', 'ropa'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-3005', nombre: 'Toalla de mano de algodón', cat: 'blanqueria', precio: 9800, descuento: 0,
-    stock: 22, img: 'images/p-toalla-mano.webp', alt: 'Toallas de mano dobladas por color',
-    desc: 'La toalla de reposición: algodón liviano que seca rápido, en cinco colores lisos.',
-    datos: [['Medida', '50 x 90 cm'], ['Algodón', '400 g/m²'], ['Colores', '5 lisos']],
-    etiquetas: ['toalla', 'mano', 'bano', 'reposicion'], destacado: false, nuevo: false, regalo: false
+    id: 'pap-4006', nombre: 'Pantalón tejido', cat: 'ropa', talle: null, medida: '6 a 12 meses',
+    precio: 24900, descuento: 0, stock: 7, img: 'images/p-pantalon.webp',
+    alt: 'Pantalón tejido con estampa de animales colgado en el exhibidor',
+    desc: 'Pantalón de hilo con cintura elastizada, combina con el sweater del mismo tejido.',
+    datos: [['Talle', '6 a 12 meses'], ['Material', 'Hilo de algodón'], ['Cintura', 'Elastizada']],
+    etiquetas: ['pantalon', 'tejido', 'ropa'], destacado: false, nuevo: false
   },
   {
-    id: 'gs-3006', nombre: 'Pack de toallas de mano x 3', cat: 'blanqueria', precio: 26500, descuento: 0,
-    stock: 9, img: 'images/p-toallas-pack.webp', alt: 'Pack de toallas de mano apiladas',
-    desc: 'Tres toallas de mano en colores combinados, listas para regalar o para renovar el baño de una vez.',
-    datos: [['Piezas', '3 toallas'], ['Medida', '50 x 90 cm'], ['Algodón', '400 g/m²']],
-    etiquetas: ['toallas', 'pack', 'bano', 'regalo'], destacado: false, nuevo: false, regalo: true
+    id: 'pap-4007', nombre: 'Ajuar de 3 piezas', cat: 'ropa', talle: null, medida: '0 a 3 meses',
+    precio: 47900, descuento: 10, stock: 4, img: 'images/p-ajuar.webp',
+    alt: 'Ajuar tejido de tres piezas colgado en el exhibidor',
+    desc: 'Sweater, pantalón y gorrito del mismo tejido: el regalo clásico de nacimiento.',
+    datos: [['Talle', '0 a 3 meses'], ['Piezas', 'Sweater, pantalón y gorro'], ['Material', 'Hilo de algodón']],
+    etiquetas: ['ajuar', 'regalo', 'tejido', 'nacimiento'], destacado: true, nuevo: false
+  },
+  {
+    id: 'pap-4008', nombre: 'Camisón de algodón', cat: 'ropa', talle: null, medida: '0 a 6 meses',
+    precio: 19900, descuento: 0, stock: 6, img: 'images/p-camison.webp',
+    alt: 'Camisón de algodón blanco con cuello bordado en su percha',
+    desc: 'Camisón blanco con cuello bordado, de algodón finito. Para dormir o para la foto.',
+    datos: [['Talle', '0 a 6 meses'], ['Material', 'Algodón'], ['Detalle', 'Cuello bordado']],
+    etiquetas: ['camison', 'algodon', 'dormir', 'bautismo'], destacado: false, nuevo: false
   }
 ];
 
-const WSP = '5491138921698';
+const WSP = '5493517059380';
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
 const precioFinal = p => p.descuento > 0 ? Math.round(p.precio * (1 - p.descuento / 100)) : p.precio;
 const getProducto = id => PRODUCTOS.find(p => p.id === id);
 const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-const getCat = id => CATEGORIAS.find(c => c.id === id);
-const nombreCat = id => getCat(id)?.nom ?? '';
+const nombreCat = id => CATEGORIAS.find(c => c.id === id)?.nom ?? '';
+// los talles son de una letra (P, M, G): un termino corto tiene que coincidir con la palabra
+// entera, si no "m" matchea "mes", "meses" y media tienda
+const coincide = (heno, t) => {
+  if (t.length > 2) return heno.includes(t);
+  const limite = c => !(c >= 'a' && c <= 'z') && !(c >= '0' && c <= '9');
+  let i = heno.indexOf(t);
+  while (i !== -1) {
+    const antes = i === 0 ? ' ' : heno[i - 1];
+    const despues = i + t.length >= heno.length ? ' ' : heno[i + t.length];
+    if (limite(antes) && limite(despues)) return true;
+    i = heno.indexOf(t, i + 1);
+  }
+  return false;
+};
 
 const Cart = {
-  KEY: 'gizemsenay_cart',
+  KEY: 'panalesaccesoriosperfumeria_cart',
   get() { try { return JSON.parse(localStorage.getItem(this.KEY)) || []; } catch { return []; } },
   save(items) { localStorage.setItem(this.KEY, JSON.stringify(items)); document.dispatchEvent(new CustomEvent('cart:updated')); },
   add(producto, qty = 1) {
@@ -180,20 +227,15 @@ function showToast(msg) {
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.setAttribute('role', 'status');
-  toast.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg><span>' + esc(msg) + '</span>';
+  toast.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg><span>' + esc(msg) + '</span>';
   wrap.appendChild(toast);
   setTimeout(() => { toast.classList.add('hiding'); setTimeout(() => toast.remove(), 220); }, 3200);
 }
 
 /* ---------- estado del catálogo ---------- */
-const estado = { q: '', cat: 'todas', precio: 'todos', regalo: false, stock: false, orden: 'relevancia', pagina: 1 };
+const estado = { q: '', cat: 'todas', talle: 'todos', precio: 'todos', stock: false, orden: 'relevancia', pagina: 1 };
 const PAGE = 16;
 let revealsListos = false;
-
-function estiloMundo(catId) {
-  const c = getCat(catId);
-  return c ? 'style="--mundo:' + c.color + ';--mundo-tint:' + c.tint + '"' : '';
-}
 
 function stepperHTML(id, contexto) {
   const ref = (contexto || 'cat') + '-' + id;
@@ -210,18 +252,17 @@ function cardHTML(p, contexto) {
   const flags = [];
   if (p.descuento > 0) flags.push('<span class="flag flag--off">-' + p.descuento + '%</span>');
   if (p.nuevo) flags.push('<span class="flag flag--nuevo">Nuevo</span>');
-  if (p.regalo) flags.push('<span class="flag flag--regalo">Para regalar</span>');
-  if (!sinStock && p.stock <= 5) flags.push('<span class="flag flag--ultimas">Últimas ' + p.stock + '</span>');
-  return '<article class="prod-card' + (sinStock ? ' prod-card--sinstock' : '') + '" data-id="' + p.id + '" ' + estiloMundo(p.cat) + ' data-animate style="opacity:0;transform:translateY(24px)">' +
+  if (!sinStock && p.stock <= 5) flags.push('<span class="flag flag--ultimas">Quedan ' + p.stock + '</span>');
+  return '<article class="prod-card' + (sinStock ? ' prod-card--sinstock' : '') + '" data-id="' + p.id + '" data-animate style="opacity:0;transform:translateY(18px)">' +
     '<div class="prod-media">' +
       '<img src="' + p.img + '" width="900" height="900" alt="' + esc(p.alt) + '" decoding="async">' +
       (flags.length ? '<div class="prod-flags">' + flags.join('') + '</div>' : '') +
-      '<button type="button" class="prod-vista" data-vista="' + p.id + '">Ver ficha</button>' +
+      '<button type="button" class="prod-vista" data-vista="' + p.id + '">Ver la ficha</button>' +
     '</div>' +
     '<div class="prod-body">' +
       '<p class="prod-rubro">' + esc(nombreCat(p.cat)) + '</p>' +
       '<h3 class="prod-nom">' + esc(p.nombre) + '</h3>' +
-      '<p class="prod-stock">' + (sinStock ? 'Sin stock, lo repone el panel' : p.stock + ' disponibles') + '</p>' +
+      '<p class="prod-talle">' + (p.talle ? 'Talle <strong>' + esc(p.talle === 'multi' ? 'regulable' : p.talle) + '</strong> · ' : '') + esc(p.medida) + '</p>' +
       '<div class="prod-precios">' +
         '<span class="prod-precio' + (p.descuento > 0 ? ' prod-precio--off' : '') + '">' + formatearPrecio(final) + '</span>' +
         (p.descuento > 0 ? '<s class="prod-tachado">' + formatearPrecio(p.precio) + '</s>' : '') +
@@ -229,10 +270,9 @@ function cardHTML(p, contexto) {
       '<div class="prod-actions">' +
         stepperHTML(p.id, contexto) +
         '<button type="button" class="prod-add" data-add="' + p.id + '"' + (sinStock ? ' disabled' : '') + '>' +
-          (sinStock ? 'Sin stock' : '<span class="add-largo">Sumar al carrito</span><span class="add-corto">Sumar</span>') +
+          (sinStock ? 'Sin stock' : '<span class="add-largo">Sumar al pedido</span><span class="add-corto">Sumar</span>') +
         '</button>' +
       '</div>' +
-      (sinStock ? '' : '<button type="button" class="prod-comprar" data-comprar="' + p.id + '">Comprar ahora</button>') +
     '</div>' +
   '</article>';
 }
@@ -243,23 +283,20 @@ function qtyDe(el) {
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
-function initMundos() {
-  const cont = document.getElementById('mundoGrid');
+function initRubros() {
+  const cont = document.getElementById('rubroGrid');
   if (!cont) return;
   cont.innerHTML = CATEGORIAS.map(c => {
     const n = PRODUCTOS.filter(p => p.cat === c.id).length;
-    return '<button type="button" class="mundo-card" data-cat="' + c.id + '" data-animate style="--mundo:' + c.color + ';--mundo-tint:' + c.tint + ';opacity:0;transform:translateY(26px)">' +
-      '<span class="mundo-etq">' + esc(c.etq) + '</span>' +
-      '<span class="mundo-media"><img src="' + c.img + '" width="1000" height="1000" alt="' + esc(c.nom) + '" decoding="async"></span>' +
-      '<span class="mundo-body">' +
-        '<span><span class="mundo-nom">' + esc(c.nom) + '</span><span class="mundo-n">' + n + ' artículos · ' + esc(c.pie) + '</span></span>' +
-        '<span class="mundo-flecha"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M5 12h14M13 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' +
+    return '<button type="button" class="rubro-card" data-cat="' + c.id + '" data-animate style="opacity:0;transform:translateY(18px)">' +
+      '<span class="rubro-media"><img src="' + c.img + '" width="900" height="900" alt="' + esc(c.nom) + '" decoding="async"></span>' +
+      '<span class="rubro-body">' +
+        '<span><span class="rubro-nom">' + esc(c.nom) + '</span><span class="rubro-n">' + n + ' artículos · ' + esc(c.pie) + '</span></span>' +
+        '<span class="rubro-flecha" aria-hidden="true">→</span>' +
       '</span>' +
     '</button>';
   }).join('');
-  cont.querySelectorAll('.mundo-card').forEach(b => {
-    b.addEventListener('click', () => irAlCatalogo(b.dataset.cat));
-  });
+  cont.querySelectorAll('.rubro-card').forEach(b => b.addEventListener('click', () => irAlCatalogo({ cat: b.dataset.cat })));
 
   const pie = document.getElementById('pieCats');
   if (pie) {
@@ -268,13 +305,27 @@ function initMundos() {
       estado.cat = a.dataset.catLink; estado.pagina = 1; sincronizarChips(); render();
     }));
   }
-  document.querySelectorAll('.vidriera-tile[data-cat]').forEach(a => a.addEventListener('click', e => {
-    e.preventDefault(); irAlCatalogo(a.dataset.cat);
-  }));
 }
 
-function irAlCatalogo(cat) {
-  estado.cat = cat; estado.q = ''; estado.pagina = 1;
+function initGuia() {
+  const cont = document.getElementById('guiaGrid');
+  if (!cont) return;
+  cont.innerHTML = TALLES.map(t => {
+    const n = PRODUCTOS.filter(p => p.cat === 'panales' && (t.id === 'G' ? (p.talle === 'G' || p.talle === 'XG') : p.talle === t.id)).length;
+    return '<button type="button" class="guia-card" data-talle="' + t.id + '" data-animate style="opacity:0;transform:translateY(18px)">' +
+      '<span class="guia-talle">' + esc(t.nom) + '</span>' +
+      '<span class="guia-peso">' + esc(t.peso) + '</span>' +
+      '<span class="guia-txt">' + esc(t.txt) + '</span>' +
+      '<span class="guia-link">Ver ' + n + (n === 1 ? ' pañal' : ' pañales') + '</span>' +
+    '</button>';
+  }).join('');
+  cont.querySelectorAll('.guia-card').forEach(b => b.addEventListener('click', () => irAlCatalogo({ cat: 'panales', talle: b.dataset.talle })));
+}
+
+function irAlCatalogo(opciones) {
+  estado.cat = opciones.cat ?? 'todas';
+  estado.talle = opciones.talle ?? 'todos';
+  estado.q = ''; estado.pagina = 1;
   const input = document.getElementById('q'); if (input) input.value = '';
   sincronizarChips(); render();
   document.getElementById('tienda')?.scrollIntoView({ block: 'start' });
@@ -346,7 +397,10 @@ function filtrados() {
   const q = normalizar(estado.q).split(/\s+/).filter(Boolean);
   const lista = PRODUCTOS.filter(p => {
     if (estado.cat !== 'todas' && p.cat !== estado.cat) return false;
-    if (estado.regalo && !p.regalo) return false;
+    if (estado.talle !== 'todos') {
+      const talles = estado.talle === 'G' ? ['G', 'XG', 'multi'] : [estado.talle, 'multi'];
+      if (!p.talle || !talles.includes(p.talle)) return false;
+    }
     if (estado.stock && p.stock <= 0) return false;
     if (estado.precio !== 'todos') {
       const [min, max] = estado.precio.split('-').map(Number);
@@ -354,8 +408,8 @@ function filtrados() {
       if (f < min || f > max) return false;
     }
     if (q.length) {
-      const heno = normalizar([p.nombre, nombreCat(p.cat), p.desc, (p.etiquetas || []).join(' ')].join(' '));
-      if (!q.every(t => heno.includes(t))) return false;
+      const heno = normalizar([p.nombre, nombreCat(p.cat), p.talle, p.medida, p.desc, (p.etiquetas || []).join(' ')].join(' '));
+      if (!q.every(t => coincide(heno, t))) return false;
     }
     return true;
   });
@@ -384,7 +438,7 @@ function render() {
     verMas.parentElement.hidden = visibles.length >= lista.length;
   }
 
-  const n = [estado.cat !== 'todas', estado.precio !== 'todos', estado.regalo, estado.stock].filter(Boolean).length;
+  const n = [estado.cat !== 'todas', estado.talle !== 'todos', estado.precio !== 'todos', estado.stock].filter(Boolean).length;
   const chipN = document.getElementById('filtrosN');
   if (chipN) { chipN.textContent = n; chipN.hidden = n === 0; }
 
@@ -402,8 +456,8 @@ function revelarNuevos(cont) {
 
 function sincronizarChips() {
   document.querySelectorAll('#chipsCat .chip').forEach(c => c.classList.toggle('is-on', c.dataset.catChip === estado.cat));
+  document.querySelectorAll('#chipsTalle .chip').forEach(c => c.classList.toggle('is-on', c.dataset.talleChip === estado.talle));
   document.querySelectorAll('#chipsPrecio .chip').forEach(c => c.classList.toggle('is-on', c.dataset.precio === estado.precio));
-  const r = document.getElementById('soloRegalo'); if (r) r.checked = estado.regalo;
   const s = document.getElementById('soloStock'); if (s) s.checked = estado.stock;
   const o = document.getElementById('orden'); if (o) o.value = estado.orden;
 }
@@ -414,28 +468,33 @@ function initFiltros() {
     chipsCat.innerHTML = '<button type="button" class="chip is-on" data-cat-chip="todas">Todos</button>' +
       CATEGORIAS.map(c => '<button type="button" class="chip" data-cat-chip="' + c.id + '">' + esc(c.nom) + '</button>').join('');
   }
+  const chipsTalle = document.getElementById('chipsTalle');
+  if (chipsTalle) {
+    chipsTalle.innerHTML = '<button type="button" class="chip is-on" data-talle-chip="todos">Todos</button>' +
+      ['RN', 'P', 'M', 'G', 'XG'].map(t => '<button type="button" class="chip" data-talle-chip="' + t + '">' + t + '</button>').join('');
+  }
   document.addEventListener('click', e => {
     const chip = e.target.closest('.chip');
     if (!chip) return;
     if (chip.dataset.catChip) estado.cat = chip.dataset.catChip;
+    else if (chip.dataset.talleChip) estado.talle = chip.dataset.talleChip;
     else if (chip.dataset.precio) estado.precio = chip.dataset.precio;
     else return;
     estado.pagina = 1; sincronizarChips(); render();
   });
 
-  document.getElementById('soloRegalo')?.addEventListener('change', e => { estado.regalo = e.target.checked; estado.pagina = 1; render(); });
   document.getElementById('soloStock')?.addEventListener('change', e => { estado.stock = e.target.checked; estado.pagina = 1; render(); });
   document.getElementById('orden')?.addEventListener('change', e => { estado.orden = e.target.value; estado.pagina = 1; render(); });
   document.getElementById('verMas')?.addEventListener('click', () => { estado.pagina++; render(); });
 
   document.getElementById('limpiarFiltros')?.addEventListener('click', () => {
-    Object.assign(estado, { q: '', cat: 'todas', precio: 'todos', regalo: false, stock: false, orden: 'relevancia', pagina: 1 });
+    Object.assign(estado, { q: '', cat: 'todas', talle: 'todos', precio: 'todos', stock: false, orden: 'relevancia', pagina: 1 });
     const q = document.getElementById('q'); if (q) q.value = '';
     sincronizarChips(); render();
     showToast('Listo, catálogo completo otra vez');
   });
   document.getElementById('vaciarBusqueda')?.addEventListener('click', () => {
-    Object.assign(estado, { q: '', cat: 'todas', precio: 'todos', regalo: false, stock: false, pagina: 1 });
+    Object.assign(estado, { q: '', cat: 'todas', talle: 'todos', precio: 'todos', stock: false, pagina: 1 });
     const q = document.getElementById('q'); if (q) q.value = '';
     sincronizarChips(); render();
   });
@@ -443,31 +502,48 @@ function initFiltros() {
   document.getElementById('formBuscador')?.addEventListener('submit', e => e.preventDefault());
   document.getElementById('q')?.addEventListener('input', e => { estado.q = e.target.value.trim(); estado.pagina = 1; render(); });
 
-  const abrir = document.getElementById('abrirBuscador');
-  const cajon = document.getElementById('cajonBuscador');
-  abrir?.addEventListener('click', () => {
-    const visible = cajon.hidden;
-    cajon.hidden = !visible;
-    abrir.setAttribute('aria-expanded', visible ? 'true' : 'false');
-    if (visible) document.getElementById('qHead')?.focus();
-    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
-  });
-  cajon?.addEventListener('submit', e => {
-    e.preventDefault();
-    const valor = document.getElementById('qHead').value.trim();
-    estado.q = valor; estado.cat = 'todas'; estado.pagina = 1;
-    const q = document.getElementById('q'); if (q) q.value = valor;
-    sincronizarChips(); render();
-    document.getElementById('tienda')?.scrollIntoView({ block: 'start' });
-  });
-
   const toggle = document.getElementById('filtrosToggle');
   const panel = document.getElementById('filtrosPanel');
   toggle?.addEventListener('click', () => {
-    const abiertoPanel = panel.classList.toggle('open');
-    toggle.setAttribute('aria-expanded', abiertoPanel ? 'true' : 'false');
+    const abierto = panel.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', abierto ? 'true' : 'false');
     if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
   });
+}
+
+/* ---------- pestañas por rubro ---------- */
+function initPestanas() {
+  const tabs = document.getElementById('pestanasTabs');
+  const cuerpo = document.getElementById('pestanasCuerpo');
+  if (!tabs || !cuerpo) return;
+  tabs.innerHTML = CATEGORIAS.map((c, i) =>
+    '<button type="button" class="pestana" role="tab" id="tab-' + c.id + '" aria-controls="panel-' + c.id + '" aria-selected="' + (i === 0 ? 'true' : 'false') + '">' + esc(c.nom) + '</button>'
+  ).join('');
+  cuerpo.innerHTML = CATEGORIAS.map((c, i) => {
+    const items = PRODUCTOS.filter(p => p.cat === c.id);
+    const desde = Math.min(...items.map(precioFinal));
+    return '<div class="panel" role="tabpanel" id="panel-' + c.id + '" aria-labelledby="tab-' + c.id + '"' + (i === 0 ? '' : ' hidden') + '>' +
+      '<ul class="panel-lista">' + items.slice(0, 6).map(p =>
+        '<li><span>' + esc(p.nombre) + '</span><strong>' + formatearPrecio(precioFinal(p)) + '</strong></li>'
+      ).join('') + '</ul>' +
+      '<div class="panel-txt">' +
+        '<p>' + esc(c.texto) + '</p>' +
+        '<p><strong>' + items.length + ' artículos cargados</strong>, desde ' + formatearPrecio(desde) + '.</p>' +
+        '<button type="button" class="btn btn--linea" data-cat-panel="' + c.id + '">Ver ' + esc(c.nom.toLowerCase()) + ' en el catálogo</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  const botones = [...tabs.querySelectorAll('.pestana')];
+  botones.forEach(b => b.addEventListener('click', () => {
+    botones.forEach(o => o.setAttribute('aria-selected', String(o === b)));
+    CATEGORIAS.forEach(c => {
+      const panel = document.getElementById('panel-' + c.id);
+      if (panel) panel.hidden = ('tab-' + c.id) !== b.id;
+    });
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+  }));
+  cuerpo.querySelectorAll('[data-cat-panel]').forEach(b => b.addEventListener('click', () => irAlCatalogo({ cat: b.dataset.catPanel })));
 }
 
 /* ---------- carrito ---------- */
@@ -480,8 +556,8 @@ function renderDrawer() {
   if (!body) return;
   const items = Cart.get();
   if (!items.length) {
-    body.innerHTML = '<div class="carrito-vacio"><span class="marca-estrella" aria-hidden="true"></span>' +
-      '<p>Tu pedido está vacío. Entrá por el catálogo y sumá lo que necesites de cada rubro.</p>' +
+    body.innerHTML = '<div class="carrito-vacio">' +
+      '<p>Tu pedido está vacío. Empezá por la guía de talles o por el catálogo.</p>' +
       '<button type="button" class="btn btn--cta" data-cerrar-drawer>Ver el catálogo</button></div>';
   } else {
     body.innerHTML = items.map(i => {
@@ -490,14 +566,14 @@ function renderDrawer() {
       return '<div class="ci" data-linea="' + p.id + '">' +
         '<img src="' + p.img + '" width="900" height="900" alt="' + esc(p.alt) + '" decoding="async">' +
         '<div><p class="ci-nom">' + esc(p.nombre) + '</p>' +
-        '<p class="ci-rubro">' + esc(nombreCat(p.cat)) + '</p>' +
+        '<p class="ci-rubro">' + esc(nombreCat(p.cat)) + (p.talle ? ' · talle ' + esc(p.talle === 'multi' ? 'regulable' : p.talle) : '') + '</p>' +
         '<div class="ci-bajo"><span class="stepper">' +
           '<button type="button" data-linea-paso="-1" aria-label="Quitar uno">−</button>' +
           '<input type="number" value="' + i.qty + '" min="1" max="99" inputmode="numeric" aria-label="Cantidad">' +
           '<button type="button" data-linea-paso="1" aria-label="Sumar uno">+</button>' +
         '</span><span class="ci-precio">' + formatearPrecio(precioFinal(p) * i.qty) + '</span></div></div>' +
         '<button type="button" class="ci-quitar" data-quitar aria-label="Quitar ' + esc(p.nombre) + ' del pedido">' +
-          '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 7h16M9 7V5h6v2M7 7l1 13h8l1-13" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
         '</button>' +
       '</div>';
     }).join('');
@@ -509,8 +585,8 @@ function renderDrawer() {
       return p ? '- ' + p.nombre + ' x ' + i.qty + ' (' + formatearPrecio(precioFinal(p) * i.qty) + ')' : '';
     }).filter(Boolean).join('\n');
     const texto = items.length
-      ? 'Hola Gizem Senay, quiero confirmar este pedido:\n' + detalle + '\nTotal: ' + formatearPrecio(Cart.total())
-      : 'Hola Gizem Senay, quiero confirmar un pedido';
+      ? 'Hola, quiero confirmar este pedido:\n' + detalle + '\nTotal: ' + formatearPrecio(Cart.total())
+      : 'Hola, quiero confirmar un pedido';
     wsp.href = 'https://wa.me/' + WSP + '?text=' + encodeURIComponent(texto);
   }
 }
@@ -585,19 +661,19 @@ function abrirModal(id) {
   ultimoFoco = document.activeElement;
   const final = precioFinal(p);
   const rel = PRODUCTOS.filter(o => o.cat === p.cat && o.id !== p.id).slice(0, 3);
-  inner.innerHTML = '<div class="mv" ' + estiloMundo(p.cat) + '>' +
+  inner.innerHTML = '<div class="mv">' +
     '<div class="mv-media">' +
       '<img src="' + p.img + '" width="900" height="900" alt="' + esc(p.alt) + '" decoding="async">' +
       '<button type="button" class="mv-cerrar" data-cerrar-modal aria-label="Cerrar la ficha">' +
-        '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+        '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
       '</button>' +
     '</div>' +
     '<div class="mv-body">' +
-      '<p class="mv-rubro">' + esc(nombreCat(p.cat)) + (p.regalo ? ' · Ideal para regalo' : '') + '</p>' +
+      '<p class="mv-rubro">' + esc(nombreCat(p.cat)) + '</p>' +
       '<h3>' + esc(p.nombre) + '</h3>' +
       '<p class="mv-desc">' + esc(p.desc) + '</p>' +
-      '<ul class="mv-datos">' + (p.datos || []).map(d => '<li><strong>' + esc(d[0]) + '</strong><span>' + esc(d[1]) + '</span></li>').join('') +
-        '<li><strong>Disponibilidad</strong><span>' + (p.stock > 0 ? p.stock + ' en stock' : 'Sin stock por ahora') + '</span></li>' +
+      '<ul class="mv-datos">' + (p.datos || []).map(d => '<li><span>' + esc(d[0]) + '</span><strong>' + esc(d[1]) + '</strong></li>').join('') +
+        '<li><span>Disponibilidad</span><strong>' + (p.stock > 0 ? p.stock + ' en stock' : 'Sin stock por ahora') + '</strong></li>' +
       '</ul>' +
       '<div class="mv-precios">' +
         '<span class="mv-precio">' + formatearPrecio(final) + '</span>' +
@@ -605,10 +681,9 @@ function abrirModal(id) {
       '</div>' +
       '<div class="prod-actions mv-acc">' +
         stepperHTML(p.id, 'mv') +
-        '<button type="button" class="btn btn--cta" data-add="' + p.id + '"' + (p.stock <= 0 ? ' disabled' : '') + '>' + (p.stock > 0 ? 'Sumar al carrito' : 'Sin stock') + '</button>' +
-        (p.stock > 0 ? '<button type="button" class="btn btn--linea" data-comprar="' + p.id + '">Comprar ahora</button>' : '') +
+        '<button type="button" class="btn btn--cta" data-add="' + p.id + '"' + (p.stock <= 0 ? ' disabled' : '') + '>' + (p.stock > 0 ? 'Sumar al pedido' : 'Sin stock') + '</button>' +
       '</div>' +
-      '<a class="mv-consulta" href="https://wa.me/' + WSP + '?text=' + encodeURIComponent('Hola Gizem Senay, quiero consultar por ' + p.nombre) + '" target="_blank" rel="noopener">Consultar este artículo por WhatsApp</a>' +
+      '<a class="mv-consulta" href="https://wa.me/' + WSP + '?text=' + encodeURIComponent('Hola, quiero consultar por ' + p.nombre) + '" target="_blank" rel="noopener">Consultar este artículo por WhatsApp</a>' +
     '</div>' +
     (rel.length ? '<div class="mv-rel"><p class="mv-rel-t">Del mismo rubro</p><div class="mv-rel-grid">' +
       rel.map(o => '<button type="button" class="mv-rel-card" data-vista="' + o.id + '">' +
@@ -648,7 +723,7 @@ function initModal() {
 
 function trapFoco(e, cont) {
   if (e.key !== 'Tab') return;
-  const foco = cont.querySelectorAll('a[href], button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])');
+  const foco = cont.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
   if (!foco.length) return;
   const primero = foco[0], ultimo = foco[foco.length - 1];
   if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
@@ -673,15 +748,6 @@ function initAcciones() {
       if (!p) return;
       Cart.add(p, qtyDe(add));
       showToast('Sumado al pedido: ' + p.nombre);
-      return;
-    }
-    const comprar = e.target.closest('[data-comprar]');
-    if (comprar) {
-      const p = getProducto(comprar.dataset.comprar);
-      if (!p) return;
-      Cart.add(p, qtyDe(comprar));
-      cerrarModal();
-      setTimeout(abrirDrawer, 120);
     }
   });
 }
@@ -746,7 +812,7 @@ function initReveals() {
   if (!items.length) return;
   document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
     parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
+      el.style.transitionDelay = `${Math.min(i * 0.1, 0.6)}s`;
     });
   });
   if (!('IntersectionObserver' in window) || reduceMotion) {
@@ -781,14 +847,15 @@ function initReveals() {
   window.addEventListener('resize', queueSweep, { passive: true });
 }
 
-/* ---------- sección firma: capítulos que cambian en el lugar ---------- */
+/* ---------- sección firma: etapa por etapa con la escala de peso ---------- */
 function initFirma() {
   const sec = document.getElementById('firma');
   const escena = document.getElementById('firmaEscena');
   const visual = document.getElementById('firmaVisual');
   const copy = document.getElementById('firmaCopy');
   const indice = document.getElementById('firmaIndice');
-  const barra = document.getElementById('firmaBarra');
+  const avance = document.getElementById('escalaAvance');
+  const marca = document.getElementById('escalaMarca');
   if (!sec || !escena || !visual || !copy || !indice) return;
 
   copy.querySelectorAll('.cap-prod').forEach(slot => {
@@ -800,7 +867,7 @@ function initFirma() {
         '<span class="cap-prod-precio">' + formatearPrecio(precioFinal(p)) + '</span>' +
       '</span>' +
       '<button type="button" class="prod-add" data-add="' + p.id + '">' +
-        '<span class="add-largo">Sumar al carrito</span><span class="add-corto">Sumar</span>' +
+        '<span class="add-largo">Sumar al pedido</span><span class="add-corto">Sumar</span>' +
       '</button>';
   });
 
@@ -821,7 +888,9 @@ function initFirma() {
     const r = sec.getBoundingClientRect();
     const recorrido = sec.offsetHeight - window.innerHeight;
     const p = recorrido > 0 ? Math.min(1, Math.max(0, -r.top / recorrido)) : 0;
-    if (barra) barra.style.width = (p * 100).toFixed(1) + '%';
+    const pct = (8 + p * 84).toFixed(1) + '%';
+    if (avance) avance.style.width = pct;
+    if (marca) marca.style.left = pct;
     const idx = Math.min(total - 1, Math.max(0, Math.floor(p * total)));
     if (idx === ultimo) return;
     ultimo = idx;
@@ -858,28 +927,53 @@ function initLee() {
   pintar();
 }
 
-/* ---------- newsletter ---------- */
-function initNews() {
-  const form = document.getElementById('formNews');
-  if (!form) return;
-  const input = document.getElementById('mail');
-  const err = document.getElementById('mailErr');
-  const btn = document.getElementById('newsBtn');
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const valor = input.value.trim();
-    const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(valor);
-    input.setAttribute('aria-invalid', ok ? 'false' : 'true');
-    if (err) err.hidden = ok;
-    if (!ok) { input.focus(); return; }
-    const texto = btn.textContent;
-    btn.disabled = true; btn.textContent = 'Enviando…';
-    setTimeout(() => {
-      btn.disabled = false; btn.textContent = texto;
-      form.reset(); input.setAttribute('aria-invalid', 'false');
-      showToast('¡Gracias! El envío de mensajes se activa al pasar la web a producción.');
-    }, 800);
-  });
+/* ---------- formularios ---------- */
+function initFormularios() {
+  const consulta = document.getElementById('formConsulta');
+  if (consulta) {
+    const nombre = document.getElementById('cNombre');
+    const tel = document.getElementById('cTel');
+    const err = document.getElementById('consultaErr');
+    const btn = document.getElementById('consultaBtn');
+    consulta.addEventListener('submit', e => {
+      e.preventDefault();
+      const okNombre = nombre.value.trim().length > 1;
+      const okTel = tel.value.replace(/\D/g, '').length >= 8;
+      nombre.setAttribute('aria-invalid', okNombre ? 'false' : 'true');
+      tel.setAttribute('aria-invalid', okTel ? 'false' : 'true');
+      if (err) err.hidden = okNombre && okTel;
+      if (!okNombre || !okTel) { (okNombre ? tel : nombre).focus(); return; }
+      const texto = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      setTimeout(() => {
+        btn.disabled = false; btn.textContent = texto;
+        consulta.reset();
+        nombre.setAttribute('aria-invalid', 'false'); tel.setAttribute('aria-invalid', 'false');
+        showToast('¡Gracias! El envío de mensajes se activa al pasar la web a producción.');
+      }, 800);
+    });
+  }
+
+  const news = document.getElementById('formNews');
+  if (news) {
+    const input = document.getElementById('mail');
+    const err = document.getElementById('mailErr');
+    const btn = document.getElementById('newsBtn');
+    news.addEventListener('submit', e => {
+      e.preventDefault();
+      const ok = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(input.value.trim());
+      input.setAttribute('aria-invalid', ok ? 'false' : 'true');
+      if (err) err.hidden = ok;
+      if (!ok) { input.focus(); return; }
+      const texto = btn.textContent;
+      btn.disabled = true; btn.textContent = 'Enviando…';
+      setTimeout(() => {
+        btn.disabled = false; btn.textContent = texto;
+        news.reset(); input.setAttribute('aria-invalid', 'false');
+        showToast('¡Gracias! El envío de mensajes se activa al pasar la web a producción.');
+      }, 800);
+    });
+  }
 }
 
 /* ---------- movimiento ---------- */
@@ -891,26 +985,18 @@ function initGsap() {
   if (typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
   if (reduceMotion) return;
 
-  const foto = document.querySelector('.hero-foto img');
-  if (foto) gsap.fromTo(foto, { scale: 1.09 }, { scale: 1, duration: 1.5, ease: 'power2.out' });
-  const panel = document.querySelector('.hero-panel');
-  if (panel) gsap.fromTo(panel, { y: 34, opacity: 0 }, { y: 0, opacity: 1, duration: .9, ease: 'power3.out' });
-  const sello = document.querySelector('.sello--horario');
-  if (sello) gsap.fromTo(sello, { scale: .6, rotate: -40, opacity: 0 }, { scale: 1, rotate: -12, opacity: 1, duration: .8, delay: .5, ease: 'back.out(1.7)' });
-  gsap.fromTo('.confeti', { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: .6, delay: .7, stagger: .1, ease: 'back.out(2)' });
+  const pill = document.querySelector('.talle-pill');
+  if (pill) gsap.fromTo(pill, { x: -14, opacity: 0 }, { x: 0, opacity: 1, duration: .8, delay: .6, ease: 'power3.out' });
 
   if (typeof ScrollTrigger === 'undefined') return;
-  document.querySelectorAll('.mundo-media img').forEach(img => {
-    gsap.fromTo(img, { yPercent: -4 }, {
-      yPercent: 4, ease: 'none',
-      scrollTrigger: { trigger: img.closest('.mundo-card'), start: 'top bottom', end: 'bottom top', scrub: true }
+  const foto = document.querySelector('.hero-foto img');
+  if (foto) gsap.fromTo(foto, { scale: 1.06 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+  document.querySelectorAll('.rubro-media img').forEach(img => {
+    gsap.fromTo(img, { yPercent: -3 }, {
+      yPercent: 3, ease: 'none',
+      scrollTrigger: { trigger: img.closest('.rubro-card'), start: 'top bottom', end: 'bottom top', scrub: true }
     });
   });
-  document.querySelectorAll('.confeti').forEach((c, i) => {
-    gsap.to(c, { y: (i % 2 ? 40 : -40), ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
-  });
-  const foco = document.querySelector('.historia-foto');
-  if (foco) gsap.to(foco.querySelector('img'), { scale: 1.06, ease: 'none', scrollTrigger: { trigger: foco, start: 'top bottom', end: 'bottom top', scrub: true } });
   window.addEventListener('load', () => ScrollTrigger.refresh());
 }
 
@@ -918,10 +1004,12 @@ function initGsap() {
 const elAnio = document.getElementById('anio');
 if (elAnio) elAnio.textContent = new Date().getFullYear();
 
-initMundos();
+initRubros();
+initGuia();
 initRail();
 initFiltros();
 render();
+initPestanas();
 initReveals();
 initNav();
 initDrawer();
@@ -930,7 +1018,7 @@ initAcciones();
 initFloats();
 initFirma();
 initLee();
-initNews();
+initFormularios();
 initGsap();
 
 document.addEventListener('cart:updated', () => { updateCartBadge(); renderDrawer(); });

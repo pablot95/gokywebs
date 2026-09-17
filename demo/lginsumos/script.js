@@ -179,7 +179,7 @@ const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
 const precioFinal = p => p.descuento > 0 ? Math.round(p.precio * (1 - p.descuento / 100)) : p.precio;
 const getProducto = id => PRODUCTOS.find(p => p.id === id);
-const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const nombreCat = id => CATEGORIAS.find(c => c.id === id)?.nom ?? '';
 const usoTexto = u => u === 'hogar' ? 'Uso hogareño' : u === 'profesional' ? 'Uso profesional' : 'Hogar y obra';
 
