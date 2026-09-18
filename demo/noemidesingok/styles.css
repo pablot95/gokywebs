@@ -18,8 +18,8 @@
   --color-line: #E5D7EC;
   --color-ink-soft: #452650;
 
-  --font-display: 'Chubbo', 'Figtree', system-ui, sans-serif;
-  --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Chubbo', 'Rethink Sans', system-ui, sans-serif;
+  --font-body: 'Rethink Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   --fs-h1: clamp(2.6rem, 7vw, 5.2rem);
   --fs-h2: clamp(1.85rem, 4.6vw, 3.4rem);
