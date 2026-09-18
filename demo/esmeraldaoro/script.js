@@ -11,7 +11,7 @@ const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').match
 const WSP = '5491152207981';
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
-const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 const PRODUCTOS = [
   {
