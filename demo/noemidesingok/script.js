@@ -18,7 +18,7 @@ const $ = (s, c = document) => c.querySelector(s);
 const $$ = (s, c = document) => [...c.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const formatearPrecio = n => '$' + Math.round(n).toLocaleString('es-AR');
-const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const wspLink = lineas => `https://wa.me/${WSP}?text=${encodeURIComponent(lineas.filter(Boolean).join('\n'))}`;
 
