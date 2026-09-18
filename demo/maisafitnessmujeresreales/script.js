@@ -595,24 +595,6 @@ function initGaleria() {
   document.getElementById('lbNext')?.addEventListener('click', () => mostrarItem(lb.i + 1));
 }
 
-function initMapa() {
-  const el = document.getElementById('map');
-  if (!el) return;
-  const crear = () => {
-    if (typeof L === 'undefined' || el.dataset.listo) return;
-    el.dataset.listo = '1';
-    const centro = [-33.6757, -65.4579];
-    const mapa = L.map(el, { scrollWheelZoom: false }).setView(centro, 14);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(mapa);
-    const icono = L.divIcon({ className: 'map-pin', html: '<span></span>', iconSize: [34, 34], iconAnchor: [17, 40], popupAnchor: [0, -36] });
-    L.marker(centro, { icon: icono, keyboard: false, title: 'Maisa' }).addTo(mapa).bindPopup('<strong>Maisa</strong><br>Villa Mercedes, San Luis');
-  };
-  if ('IntersectionObserver' in window) {
-    const io = new IntersectionObserver(entries => { if (entries.some(en => en.isIntersecting)) { io.disconnect(); crear(); } }, { rootMargin: '300px 0px' });
-    io.observe(el);
-  } else crear();
-}
-
 function initForm() {
   const form = document.getElementById('contactForm');
   if (!form) return;
@@ -710,7 +692,6 @@ initGoAgenda();
 initTest();
 initGaleria();
 initAutoVideos();
-initMapa();
 initForm();
 initSways();
 initFinScroll();
