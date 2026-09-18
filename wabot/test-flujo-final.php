@@ -3,7 +3,7 @@ require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
 
-echo "— Flujo comercial final: pregunta, cotiza y se detiene —\n";
+echo "— Flujo comercial (18-sep): pregunta, cotiza, ofrece el primer diseño y espera UNA respuesta —\n";
 
 $c = conv_nueva('549110000FINALTEST', ['fase' => 'menu']);
 clasifica(['rubro_comercio']); // incluso si la IA se equivoca, la guarda manda.
@@ -16,45 +16,98 @@ caso('primero pregunta qué vende o qué servicio ofrece',
 
 clasifica(['rubro_comercio']);
 $r = turno('Vendo ropa', $c, $cfg);
-$visible = array_map(function ($m) use ($c) { return wabot_personalizar($m, $c); }, $r);
-$todo = implode("\n", $visible);
-caso('al conocer el rubro manda exactamente dos mensajes', count($visible) === 2, json_encode($visible, JSON_UNESCAPED_UNICODE));
-caso('el ecommerce usa el texto fijo aprobado',
-    str_starts_with($visible[0] ?? '', 'Lo mejor para tu negocio es una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.'),
-    $visible[0] ?? '');
-caso('aclara que los planes son alternativos y tienen los valores correctos',
-    strpos($visible[0] ?? '', 'Son alternativas, no se abonan las dos') !== false
-    && strpos($visible[0] ?? '', "1. Pago único de $290.000: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.") !== false
-    && strpos($visible[0] ?? '', "2. Suscripción mensual de $25.000: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.") !== false);
-caso('ya no enumera el bloque Incluye', mb_stripos($todo, "Incluye:\n") === false);
-caso('el segundo y último mensaje ofrece la demo con el formulario',
-    ($visible[1] ?? '') === 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form',
-    $visible[1] ?? '');
-caso('no agrega modelos, portfolio ni otra pregunta',
-    preg_match('/modelos|portfolio|arrancamos/iu', $todo) === 0);
-caso('la charla queda apagada y pendiente para una persona',
-    !empty($c['bot_off']) && !empty($c['handoff_pendiente'])
-    && !empty($c['seguimiento_bloqueado']) && ($c['cierre'] ?? '') === 'cotizacion_final');
+$todo = implode("\n", $r);
+caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mejor para"',
+    str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago.')
+    && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
+caso('las dos formas, con los montos y sin "son alternativas"',
+    strpos($r[0] ?? '', 'Podés contratarla de dos maneras, y las dos incluyen el armado completo:') !== false
+    && strpos($r[0] ?? '', '• Pago único de $290.000: la web queda tuya. Incluye mantenimiento el primer año.') !== false
+    && strpos($r[0] ?? '', '• Suscripción mensual de $25.000: no pagás el desarrollo de entrada; mientras esté activa incluye hosting, dominio, soporte y mantenimiento.') !== false
+    && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
+caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
+    ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
+    && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[1] ?? '');
+caso('el bot sigue prendido, esperando la respuesta, y el chat ya figura para Pablo',
+    empty($c['bot_off']) && !empty($c['oferta_diseno_ts']) && !empty($c['handoff_pendiente'])
+    && !empty($c['seguimiento_bloqueado']) && ($c['fase'] ?? '') === 'prediseno');
+caso('la oferta sale dos segundos después del precio', wabot_demora_tipeo($r[1] ?? '', $cfg) === 2.0);
 
+echo "— El sí se lleva el formulario y el bot se calla —\n";
+$si = $c;
 clasifica(['otro']);
-$despues = turno('Me gusta el pago único', $c, $cfg);
-caso('después de ofrecer la demo el bot no manda ningún mensaje más', $despues === []);
+$rSi = turno('Sí, dale', $si, $cfg);
+caso('un sí recibe solo el formulario, con el link de la charla',
+    count($rSi) === 1 && tiene_form($rSi) && str_starts_with($rSi[0], 'Dale. Para prepararte el primer diseño completá este formulario:'),
+    json_encode($rSi, JSON_UNESCAPED_UNICODE));
+caso('y queda como prospecto, con el bot apagado y pendiente para Pablo',
+    !empty($si['esProspecto']) && !empty($si['link_form_enviado']) && !empty($si['bot_off'])
+    && !empty($si['handoff_pendiente']) && ($si['cierre'] ?? '') === 'cotizacion_final' && empty($si['oferta_diseno_ts']));
+caso('después del formulario el bot no contesta nada más', turno('Listo, ya lo estoy llenando', $si, $cfg) === []);
+
+$m = $c;
+$rM = turno('Prefiero el pago único', $m, $cfg);
+caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
+
+echo "— Cualquier otra respuesta la contesta Pablo —\n";
+foreach (['Cuánto tarda?', 'y la seña de cuánto es', 'No, gracias', 'Lo voy a pensar', 'Ok gracias',
+          'Me interesa pero lo hablo con mi socia', 'Quiero hablar con una persona', 'Tienen factura?',
+          'Me pasás el CBU?'] as $resp) {
+    $d = $c;
+    $rD = turno($resp, $d, $cfg);
+    caso("\"$resp\" → silencio y pendiente para Pablo",
+        $rD === [] && !empty($d['bot_off']) && !empty($d['handoff_pendiente']) && empty($d['esProspecto'])
+        && empty($d['oferta_diseno_ts']), json_encode($rD, JSON_UNESCAPED_UNICODE));
+}
+/* El panel (lib.php, lista de conversaciones, y el JavaScript de admin.php):
+ * un chat es "del bot" solo si su estado es 'bot' y NO tiene handoff
+ * pendiente. Con el handoff, es de Pablo: "Esperando cliente" mientras el
+ * cliente no contesta, y "Sin leer / Sin contestar" cuando contesta. */
+$estadoPanel = function ($cv) {
+    return !empty($cv['bot_off']) ? 'apagado'
+        : (((int)($cv['pausado_hasta'] ?? 0) > time()) ? 'pausado'
+        : ((($cv['fase'] ?? '') === 'derivado') ? 'pausado' : 'bot'));
+};
+$delBot = function ($cv) use ($estadoPanel) { return $estadoPanel($cv) === 'bot' && empty($cv['handoff_pendiente']); };
+caso('mientras espera la respuesta, el panel lo muestra como chat de Pablo esperando al cliente (como antes)',
+    !$delBot($c) && wabot_ultima_salida_ts($c) >= wabot_ultimo_cliente_ts($c));
+$d = $c;
+turno('Cuánto tarda?', $d, $cfg);
+caso('con la pregunta, queda como chat de Pablo que espera respuesta',
+    !$delBot($d) && $estadoPanel($d) === 'apagado' && !empty($d['handoff_pendiente'])
+    && wabot_ultimo_cliente_ts($d) >= wabot_ultima_salida_ts($d));
+$p = $c;
+wabot_conv_tomar_control($p);
+wabot_conv_encender_manual($p);
+caso('si Pablo escribe a mano mientras espera, la espera se cancela: el bot no toma lo siguiente como respuesta a la oferta',
+    empty($p['oferta_diseno_ts']) && wabot_oferta_diseno_responder('sí', $p, $cfg) === null);
+
+echo "— El que pidió la demo en el primer mensaje también ve el precio primero —\n";
+$ca = conv_nueva('549110000ANUNCIOTEST', ['fase' => 'menu']);
+clasifica(['saludo']);
+turno('Hola! Quiero mi demo gratis para mi negocio.', $ca, $cfg);
+clasifica(['rubro_landing']);
+$rA = turno('Soy nutricionista', $ca, $cfg);
+caso('precio y oferta, sin el formulario pegado al monto',
+    count($rA) === 2 && !tiene_form($rA) && mb_stripos($rA[1] ?? '', 'primer diseño') !== false, json_encode($rA, JSON_UNESCAPED_UNICODE));
+clasifica(['otro']);
+caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
-    'landing' => ['un sitio profesional para presentar tu negocio, mostrar tus servicios o trabajos y recibir consultas directas por WhatsApp', '$180.000', '$15.000'],
-    'inmobiliaria' => ['una web inmobiliaria para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades', '$240.000', '$25.000'],
-    'elearning' => ['una plataforma para vender tus cursos, con los videos organizados, acceso para cada alumno, cobro online y un panel administrativo para gestionar cursos y alumnos', '$290.000', '$25.000'],
+    'landing' => ['un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp', '$180.000', '$15.000'],
+    'inmobiliaria' => ['una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio', '$240.000', '$25.000'],
+    'elearning' => ['una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online', '$290.000', '$25.000'],
 ];
 foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
     $salida = wabot_pitch($tipo, $ct, $cfg);
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
-    caso("$tipo también usa su texto fijo y termina el bot",
-        str_starts_with($primero, 'Lo mejor para tu negocio es ' . $frase . '.')
-        && strpos($primero, "1. Pago único de $precio: abonás el desarrollo una sola vez") !== false
-        && strpos($primero, "2. Suscripción mensual de $mensualidad: en lugar del pago único") !== false
-        && strpos($primero, 'Son alternativas, no se abonan las dos') !== false
-        && count($salida) === 2 && !empty($ct['bot_off']));
+    caso("$tipo también usa su texto fijo y espera la respuesta",
+        str_starts_with($primero, 'Para lo que me contás, te serviría ' . $frase)
+        && strpos($primero, "• Pago único de $precio: la web queda tuya.") !== false
+        && strpos($primero, "• Suscripción mensual de $mensualidad: no pagás el desarrollo de entrada") !== false
+        && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
 
 // Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
@@ -75,10 +128,10 @@ $cc = conv_nueva('549110000COSMETICATEST', ['fase' => 'menu']);
 clasifica(['pregunta_info', 'rubro_ecommerce'], ['info_keys' => ['proceso']]);
 $salidaCosmeticos = turno('Consulto por precios y cómo sería el procedimiento. Quiero un catálogo de cosméticos con producto, stock y precio.', $cc, $cfg);
 $textoCosmeticos = implode("\n", $salidaCosmeticos);
-caso('procedimiento + rubro claro manda solamente cotización y demo',
+caso('procedimiento + rubro claro manda solamente la cotización y la oferta',
     count($salidaCosmeticos) === 2
-    && mb_stripos($textoCosmeticos, 'Primero mirás trabajos') === false
-    && ($salidaCosmeticos[1] ?? '') === 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form',
+    && mb_stripos($textoCosmeticos, 'Te paso el valor según') === false
+    && mb_stripos($salidaCosmeticos[1] ?? '', 'primer diseño') !== false,
     implode(' | ', $salidaCosmeticos));
 
 todo_ok();

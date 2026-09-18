@@ -61,13 +61,19 @@ caso('con la baja marcada, otro mensaje no recibe respuesta; pedir una web de nu
     $r = wabot_responder('bueno en realidad si quiero una pagina para mi negocio', $c, $cfg);
     return $mudo && $r !== [] && $c['cierre'] === null && empty($c['bot_off']);
 })());
-$cInm = conv_audit('inmobiliaria');
+/* 18-sep: después del precio, una pregunta la contesta Pablo. Lo que se
+ * cuida acá es que "dar de baja una propiedad" no se lea como una baja. */
+$cInm = conv_nueva('QATESTREG11SEP');
+wabot_pitch('inmobiliaria', $cInm, $cfg);
 $p = 'Puedo dar de baja una propiedad cuando se vende y cargar otra yo mismo?';
 clasifica(['otro']);
 $r = turno($p, $cInm, $cfg);
-caso('editar una propiedad conserva el contacto activo', empty($cInm['bot_off']) && ($cInm['cierre'] ?? '') !== 'baja');
+caso('editar una propiedad no es darse de baja: queda para Pablo, no cerrada',
+    ($cInm['cierre'] ?? '') !== 'baja' && !empty($cInm['handoff_pendiente']) && empty($cInm['seguimiento_estado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$cInm = conv_nueva('QATESTREG11SEP');
+wabot_pitch('inmobiliaria', $cInm, $cfg);
 $r = turno('Dale, mandame el formulario para la demo', $cInm, $cfg);
-caso('después de editar una propiedad puede aceptar y recibir el formulario', $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('y el sí a la oferta recibe el formulario', count($r) === 1 && tiene_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 2. El cierre sin presión: no sobre el que explora, pregunta o promete datos —\n";
 foreach ([
@@ -269,14 +275,15 @@ caso('"no hay forma de que me lo dejes en 150?" es contraoferta; "si pago todo j
     wabot_regateo_es_contraoferta('no hay forma de que me lo dejes en 150?') === true && wabot_regateo_es_contraoferta('Si pago todo junto me haces descuento?') === false);
 $pregunta = 'Puedo poner cupones de descuento para mis clientes?';
 caso('cupones tienen respuesta propia', wabot_info_por_palabras($pregunta, 'prediseno') === 'cupones');
-$cCup = conv_audit();
+// Antes del precio: después, desde el 18-sep, las dudas las contesta Pablo.
+$cCup = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
 clasifica(['otro']);
 $rCup = turno($pregunta, $cCup, $cfg);
 caso('contesta los cupones sin desviar al carrito', mb_stripos(implode(' ', $rCup), 'cupones de descuento') !== false
-    && empty($cCup['handoff_pendiente']) && $cCup['tipo'] === 'ecommerce', json_encode($rCup, JSON_UNESCAPED_UNICODE));
+    && empty($cCup['handoff_pendiente']) && empty($cCup['precio_dado']), json_encode($rCup, JSON_UNESCAPED_UNICODE));
 caso('un código de descuento para pagar nuestra web no ofrece cupones de tienda',
     wabot_info_por_palabras('Me das un código de descuento para pagar la web?', 'prediseno') !== 'cupones');
-$cMP = conv_audit();
+$cMP = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
 clasifica(['otro']);
 $rMP = turno('Quiero que mis clientes paguen por Mercado Pago, se puede?', $cMP, $cfg);
 caso('responde Mercado Pago de sus compradores, no nuestro pago', strpos(implode(' ', $rMP), 'Mercado Pago') !== false
@@ -344,9 +351,9 @@ caso('pitch_hecho, pitch_tipo, link_form_enviado y form_completado_ts se limpian
 caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
-caso('el precio del que vuelve sale con descripción y, en otro mensaje, trabajos y modelos',
-    count($rR) === 2 && stripos($rR[0], 'que presente tu negocio') !== false
-    && stripos($rR[1], 'modelos') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
+caso('el precio del que vuelve sale con la propuesta y, en otro mensaje, la oferta del primer diseño',
+    count($rR) === 2 && stripos($rR[0], 'donde presentes tu negocio') !== false
+    && mb_stripos($rR[1], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 15. Las dudas de pago del modelo doble —\n";
 foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Si pago la seña y despues no me gusta, me la devuelven?', 'Y no se puede pagar de una?'] as $f) {
@@ -374,26 +381,27 @@ caso('avisar que ya pagó, preguntar el abono o el precio de la web no son la pr
     wabot_texto_pregunta_cuanto_anticipo('ya te hice la seña') === false && wabot_texto_pregunta_cuanto_anticipo('cuanto es el mantenimiento mensual?') === false
     && wabot_texto_pregunta_cuanto_anticipo('cuanto sale la web?') === false);
 foreach (['Cuánto tengo que pagar ahora para ver la demo?', 'La demo se paga?', 'Cuánto cuesta la demo?', 'Tengo que abonar antes de ver la muestra?'] as $p) {
-    $c = conv_audit('elearning');
+    $c = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
     clasifica(['otro']);
     $r = turno($p, $c, $cfg);
-    caso("redirige la consulta vieja de demo al proceso vigente: $p", strpos(implode(' ', $r), 'gokywebs.com/modelos/') !== false
-        && strpos(implode(' ', $r), '$50.000') === false && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+    caso("la demo no se paga: el primer diseño es sin cargo (18-sep): $p", mb_stripos(implode(' ', $r), 'primer diseño es sin cargo') !== false
+        && strpos(implode(' ', $r), '$') === false && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
 }
 caso('pagar el desarrollo después de la demo sigue siendo otra consulta',
     !wabot_texto_pregunta_pago_demo('Ya vi la demo, cuánto es el primer pago del desarrollo?'));
 
 echo "— 16. Objeciones que derivan: el socio y el que ya tiene web (Pablo, 15-sep) —\n";
-$cSoc = conv_audit('landing');
+// Antes del precio (después, desde el 18-sep, cualquier respuesta la ve Pablo).
+$cSoc = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
 clasifica(['objecion_socio']);
 $rSoc = turno('Lo tengo que hablar con mi socio y te digo', $cSoc, $cfg);
 caso('el socio deriva al desarrollador', $cSoc['fase'] === 'derivado' && !empty($cSoc['handoff_pendiente']) && in_array(wabot_personalizar($cfg['derivar'], $cSoc), $rSoc, true),
     json_encode($rSoc, JSON_UNESCAPED_UNICODE));
-$cWeb = conv_audit('landing');
+$cWeb = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
 clasifica(['objecion_ya_tiene_web']);
 $rWeb = turno('Ya tengo una web pero quiero mejorarla', $cWeb, $cfg);
 caso('el que ya tiene web deriva al desarrollador', $cWeb['fase'] === 'derivado' && !empty($cWeb['handoff_pendiente']), json_encode($rWeb, JSON_UNESCAPED_UNICODE));
-$cSinWeb = conv_audit('landing');
+$cSinWeb = conv_nueva('QATESTREG11SEP', ['fase' => 'menu']);
 clasifica(['objecion_ya_tiene_web']);
 $rSinWeb = turno('no tengo pagina todavia, quiero arrancar de cero', $cSinWeb, $cfg);
 caso('pero el que dice que NO tiene web no se lleva esa objeción', $cSinWeb['fase'] !== 'derivado', json_encode($rSinWeb, JSON_UNESCAPED_UNICODE));
@@ -456,11 +464,13 @@ foreach (['La demo es gratis. El pago único es de $180.000 y el servicio mensua
     'La demo es gratis. Qué colores te gustan?', "Completá el formulario cortito:\nhttps://gokywebs.com/form/?c=TEST"] as $texto) {
     caso('conserva información o pregunta necesaria: ' . mb_substr($texto, 0, 40), wabot_salida_sin_cta_repetida([$texto], $c) === [$texto]);
 }
-wabot_conv_transcript($c, 'cliente', 'Sí, quiero la demo'); $c['ultimo_cliente_ts'] = time();
+// 18-sep: la oferta dice "primer diseño", pero el cliente puede decir "demo".
+$c = conv_nueva('QATESTTEXTOS11SEP');
+wabot_pitch('landing', $c, $cfg);
 clasifica(['otro']);
-$r = wabot_salida_preparar(wabot_responder('Sí, quiero la demo', $c, $cfg), $c, $cfg);
-caso('una aceptación con la palabra demo heredada recibe solo el enlace simple',
-    $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
+$r = turno('Sí, quiero la demo', $c, $cfg);
+caso('una aceptación con la palabra demo recibe solo el formulario de la charla',
+    count($r) === 1 && tiene_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 foreach (['999FPTEST', 'QATESTREG11SEP', 'QATESTTEXTOS11SEP', 'QATESTSIS1', 'QATESTSIS2', 'igQATESTSIS3'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);

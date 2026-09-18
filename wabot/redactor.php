@@ -12,6 +12,96 @@
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 
+/* ── Después del precio: una sola respuesta (Pablo, 18-sep) ──────────────────
+ *
+ * El turno del precio termina con la oferta del primer diseño ("Querés que lo
+ * armemos?"). Lo que el cliente conteste ahí es lo último que maneja el bot:
+ *   - un sí → el formulario, y se calla;
+ *   - cualquier otra cosa (una pregunta, un "no", un "lo pienso", una foto)
+ *     → silencio: la contesta Pablo, que ve el chat como pendiente.
+ * Antes el bot mandaba el formulario pegado al precio y se apagaba en el mismo
+ * turno: el cliente recibía el monto y una tarea al mismo tiempo. */
+
+/** ¿La respuesta trae una pregunta? Sin "?" también: "cómo sigo", "cuánto tarda". */
+function wabot_oferta_diseno_pregunta($texto) {
+    $crudo = trim((string)$texto);
+    if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
+    // "Cuando quieras" y "como te parezca" aceptan, no preguntan.
+    $t = preg_replace('/\b(cuando|como) (quieras|quieran|puedas|puedan|gustes|gusten|te parezca|les parezca|sea)\b/u', ' ',
+        wabot_normalizar_frase($crudo));
+    return (bool)(
+        preg_match('/\b(como|cuanto|cuanta|cuantos|cuantas|cuando|donde|cual|cuales|quien|por que)\b/u', $t)
+        || preg_match('/\bque\s+(precio|valor|costo|incluye|incluyen|necesito|necesitas|necesitan|tengo que|hay que|datos|pasa)\b/u', $t)
+        || preg_match('/\b(se puede|se pueden|puedo|podes|podria|podrian|hay forma|es posible|me decis|me podes decir'
+            . '|queria saber|quisiera saber|necesito saber|una consulta|una pregunta|una duda|tengo dudas)\b/u', $t)
+    );
+}
+
+/**
+ * ¿Dijo que sí al primer diseño? Un sí limpio: sin pregunta, sin condición y
+ * sin postergar. Elegir una forma de pago en afirmativo ("vamos con el
+ * mensual") también es avanzar. Lo dudoso NO es un sí: va a Pablo, que es
+ * quien cierra; mandarle el formulario a alguien que no lo pidió es peor que
+ * hacerlo esperar unos minutos.
+ */
+function wabot_oferta_diseno_aceptada($texto) {
+    $crudo = trim((string)$texto);
+    if ($crudo === '' || wabot_oferta_diseno_pregunta($crudo)) return false;
+    $t = wabot_normalizar_frase($crudo);
+    // Sin letras: un 👍 o un 👌 solos son un sí; cualquier otro emoji, no.
+    if ($t === '') return wabot_acepta_demo($crudo);
+    if (mb_strlen($t) > 160) return false;
+    if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego'
+        . '|te aviso|te confirmo|lo veo|a ver|caro|pero|aunque|primero)\b/u', $t)) return false;
+    // Agradecer no es aceptar: "ok gracias", "perfecto, gracias".
+    if (preg_match('/\bgracias\b/u', $t)
+        && !preg_match('/\b(si+|dale|quiero|queremos|arm\w+|avancemos|me interesa|de una|obvio|por favor|porfa)\b/u', $t)) return false;
+    // Pedir una persona o una llamada no es aceptar el diseño.
+    if (wabot_handoff_causa_explicita($crudo) === 'pide_humano' || wabot_pide_llamada($crudo)
+        || preg_match('/\b(hablar|charlar|llam\w+|persona|humano|asesor)\b/u', $t)) return false;
+    if (wabot_modalidad_elegida_en($crudo) !== null && wabot_texto_rechaza_una_forma($crudo) === null) return true;
+    if (wabot_acepta_demo($crudo)) return true;
+    return (bool)preg_match('/^(si+ )?(dale )?(quiero|queremos)( (eso|el diseno|el primer diseno|verlo|verla|avanzar|arrancar|empezar))?$'
+        . '|^(si+ )?(dale )?(armalo|armenlo|armala|armenla|hacelo|haganlo|preparalo|preparenlo|mandalo|mandamelo)\b'
+        . '|\b(el|un|mi) (primer )?diseno\b|\bsi+ (quiero|dale|claro|obvio|por favor|porfa|me interesa)\b'
+        . '|\b(me interesa|me encanta|me encantaria|me gustaria|me cierra|me sirve|me parece bien|quiero avanzar|queremos avanzar'
+        . '|avancemos|arranquemos|empecemos|hagamoslo|vamos con eso|vamos adelante)\b/u', $t);
+}
+
+/** Cierra la espera sin contestar: el chat queda pendiente para Pablo. */
+function wabot_oferta_diseno_cerrar(&$conv, $motivo = 'respuesta') {
+    $conv['oferta_diseno_ts'] = 0;
+    wabot_evento_sesion($conv, 'post_precio_para_pablo', ['motivo' => $motivo]);
+    wabot_cotizacion_finalizar($conv);
+}
+
+/** La respuesta a la oferta del primer diseño, o null si no se está esperando. */
+function wabot_oferta_diseno_responder($texto, &$conv, $cfg) {
+    if (empty($conv['oferta_diseno_ts'])) return null;
+    // Con el formulario ya mandado o completado, la oferta quedó atrás.
+    if (!empty($conv['link_form_enviado']) || !empty($conv['lead_creado'])
+        || (int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['presentado_ts'])) {
+        $conv['oferta_diseno_ts'] = 0;
+        return null;
+    }
+    // Si eligió cómo pagar, queda anotado igual: viaja al boceto.
+    wabot_modalidad_anotar($texto, $conv, $cfg);
+    if (wabot_oferta_diseno_aceptada($texto)) {
+        $form = wabot_oferta_diseno_form_texto($conv, $cfg);
+        if ($form !== '') {
+            $conv['oferta_diseno_ts'] = 0;
+            $conv['link_form_enviado'] = true;
+            $conv['esProspecto'] = true;
+            wabot_evento_sesion($conv, 'primer_diseno_aceptado');
+            wabot_cotizacion_finalizar($conv);
+            wabot_prospecto_sincronizar($conv);
+            return [$form];
+        }
+    }
+    wabot_oferta_diseno_cerrar($conv);
+    return [];
+}
+
 function wabot_prospecto_acepta($texto, $conv) {
     if (empty($conv['precio_dado']) || !empty($conv['presentado_ts']) || !empty($conv['form_completado_ts'])) return false;
     $t = wabot_normalizar_frase((string)$texto);
@@ -53,6 +143,12 @@ function wabot_responder($texto, &$conv, $cfg) {
     // La cotización cerrada es el último mensaje automático. Desde acá sigue
     // una persona; también se respeta en llamadas directas fuera del webhook.
     if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final') return [];
+    // La respuesta a la oferta del primer diseño: el sí se lleva el
+    // formulario y cualquier otra cosa queda para Pablo (18-sep). Va antes que
+    // todo lo demás: ni una pregunta de pago ni un pedido de llamada tienen
+    // respuesta automática en este punto.
+    $trasElPrecio = wabot_oferta_diseno_responder($texto, $conv, $cfg);
+    if ($trasElPrecio !== null) return $trasElPrecio;
     // Conversaciones que ya habían recibido el precio con la versión anterior
     // también se detienen acá: no continúan hacia modelos, formulario o demo.
     if (!empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
@@ -137,6 +233,10 @@ function wabot_responder($texto, &$conv, $cfg) {
         $conv['precio_turnos_desde'] = (int)($conv['precio_turnos_desde'] ?? 0) + 1;
         if (wabot_prospecto_acepta($texto, $conv)) {
             if (is_array($conv['upgrade_pendiente'] ?? null)) wabot_upgrade_aplicar($conv, $conv['upgrade_pendiente']);
+            // El formulario con el código de la charla: el link pelado llegaba
+            // al formulario sin saber de qué chat venía. Si ya lo tiene, no se
+            // repite: se marca el prospecto y el bot se calla.
+            $form = empty($conv['link_form_enviado']) ? wabot_oferta_diseno_form_texto($conv, $cfg) : '';
             $conv['esProspecto'] = true;
             $conv['link_form_enviado'] = true;
             $conv['precio_cta_pendiente'] = false;
@@ -145,7 +245,7 @@ function wabot_responder($texto, &$conv, $cfg) {
             wabot_prospecto_sincronizar($conv);
             $conv['bot_off'] = true;
             wabot_evento_sesion($conv, 'prospecto_form_enviado');
-            return ['gokywebs.com/form'];
+            return $form !== '' ? [$form] : [];
         }
         if ((int)$conv['precio_turnos_desde'] >= 1) $conv['precio_cta_pendiente'] = false;
     }

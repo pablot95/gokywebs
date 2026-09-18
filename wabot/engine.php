@@ -219,6 +219,9 @@ function wabot_cta_muestra_ya_ofrecida($conv) {
         /* "como podria quedar tu web" es el encuadre que fijó Pablo el 2-sep y
          * no dice la palabra demo: sin esta alternativa el ofrecimiento que sí
          * sale en producción no se reconocía y se repetía. */
+        /* La oferta del primer diseño (18-sep) entra por "cómo quedaría". El
+         * formulario dice "primer diseño" pero no ofrece nada: si contara acá,
+         * la charla con el link ya mandado se tomaría por una oferta vieja. */
         if (!preg_match('/\b(demo|muestra|prediseno)\b|como (podria|podriamos) quedar|como quedaria/u', $t)) continue;
         // "preparar" y "formulario": el texto del formulario del 11-sep
         // ("Para preparar la demo completá este formulario") no dice gratis.
@@ -657,7 +660,7 @@ function wabot_texto_ofrece_demo($t) {
     if ($t === '') return false;
     // Tiene que haber una propuesta de ARMARLA, no una mención cualquiera.
     return (bool)(preg_match('/\b(armamos|armarte|armo|preparamos|prepararte|preparo|mostramos|hacemos)\b'
-            . '.{0,40}\b(demo|muestra|prediseno|version de tu (web|pagina)|version de la (web|pagina))\b/u', $t)
+            . '.{0,40}\b(demo|muestra|prediseno|primer diseno|version de tu (web|pagina)|version de la (web|pagina))\b/u', $t)
         || preg_match('/\b(demo|muestra|prediseno)\b.{0,30}\b(te la armo|te la armamos|te la preparo|la armamos|la preparamos)\b/u', $t));
 }
 
@@ -4976,6 +4979,15 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $t = (string)$texto;
     if ($t === '' || strpos($t, '{') === false) return $t;
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
+    /* {dos_formas}: el bloque único de las dos formas de contratar (18-sep).
+     * Se expande primero para que sus {precio} y {mensualidad} se resuelvan
+     * abajo con los montos de esta charla. Sin mensualidad (una charla del
+     * pago único de antes del 10-sep) queda solo el pago único. */
+    if (strpos($t, '{dos_formas}') !== false) {
+        $bloque = ($v['precio'] !== '' && $v['mensualidad'] === '')
+            ? 'Pago único de {precio}.' : wabot_servicio_texto_plantilla('', false, $cfg);
+        $t = str_replace('{dos_formas}', $bloque, $t);
+    }
     $d = $cfg['tipos'][$v['tipo']] ?? [];
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
@@ -5022,19 +5034,66 @@ function wabot_monto_por_mes_texto($v, $cfg, $campo) {
     return implode(', ', $partes) . ' y ' . $ultimo;
 }
 
-/** Segundo y último mensaje automático: invitación a la demo gratuita. */
+/**
+ * El segundo globo del turno del precio: la oferta del primer diseño, sin
+ * cargo (Pablo, 18-sep: "primer diseño", no "demo gratis", que hacía pensar
+ * que le armábamos la web entera gratis). Termina en una pregunta porque su
+ * sí es lo único que el bot contesta después: con el formulario.
+ */
 function wabot_tres_pasos_texto($conv, $cfg, $conPregunta = true) {
-    return 'Antes de avanzar te armamos un demo gratis, solo tenés que llenar el formulario: gokywebs.com/form';
+    $oferta = trim((string)($cfg['msg_tres_pasos'] ?? ''));
+    return $oferta !== '' ? $oferta : (string)(wabot_textos_default()['msg_tres_pasos'] ?? '');
+}
+
+/**
+ * El formulario del primer diseño, con el link que identifica la charla (el
+ * código corto): con el link pelado, el formulario llegaba sin saber de qué
+ * chat venía. Vacío si el formulario está apagado o ya lo completó.
+ */
+function wabot_oferta_diseno_form_texto(&$conv, $cfg) {
+    $link = wabot_form_link($conv, $cfg);
+    if ($link === '') return '';
+    $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
+    return str_replace('{link}', $link, $texto);
+}
+
+/**
+ * Cómo termina el turno del precio (Pablo, 18-sep): la propuesta con las dos
+ * formas y, dos segundos después, la oferta del primer diseño. El bot NO se
+ * apaga todavía: espera UNA respuesta, que contesta el borde común
+ * (wabot_oferta_diseno_responder, redactor.php). También al que pidió la demo
+ * al escribir (el anuncio viejo): recién ahora vio el precio, y el formulario
+ * pegado al monto es justo la tarea de más que se quería sacar.
+ */
+function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
+    $propuesta = wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg);
+    wabot_oferta_diseno_abrir($conv);
+    return [$propuesta, wabot_tres_pasos_texto($conv, $cfg)];
+}
+
+/**
+ * Deja la charla esperando la respuesta a la oferta del primer diseño. Como
+ * hasta ahora, después del precio no sale ningún seguimiento automático y el
+ * chat figura en el panel como de Pablo ("Esperando cliente", "Vencen"): el
+ * bot sigue prendido solo para recibir el sí.
+ */
+function wabot_oferta_diseno_abrir(&$conv) {
+    $conv['fase'] = 'prediseno';
+    $conv['cta_muestra'] = true;
+    $conv['oferta_diseno_ts'] = time();
+    $conv['seguimiento_bloqueado'] = true;
+    $conv['handoff_pendiente'] = true;
+    wabot_evento_sesion($conv, 'primer_diseno_ofrecido');
 }
 
 /** Las dos formas breves de contratarla, con los montos de esta charla. */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
-    $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']));
+    $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']), $cfg);
     $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
-    // Sin los dos montos no se ofrecen las dos formas: queda lo que incluye.
-    if ($precio === '' || $mensual === '') return trim(explode("\n\nY la podés contratar", $t)[0]);
+    // Sin los dos montos no se ofrecen las dos formas.
+    if ($precio === '' || $mensual === '') return '';
     return str_replace(['{precio}', '{mensualidad}'], [$precio, $mensual], $t);
 }
 
@@ -5198,8 +5257,8 @@ function wabot_precio_resumen($conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg);
     $precio = $v['precio'];
     $plantilla = trim((string)($cfg['precio_resumen'] ?? ''));
-    if ($plantilla === '' || strpos($plantilla, '{mensualidad}') === false) {
-        $plantilla = "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.\n\nY acá podés ver {portfolio_texto}: {portfolio}";
+    if ($plantilla === '' || (strpos($plantilla, '{mensualidad}') === false && strpos($plantilla, '{dos_formas}') === false)) {
+        $plantilla = "{dos_formas}\n\nY acá podés ver {portfolio_texto}: {portfolio}";
     }
     return wabot_precio_placeholders(str_replace('{precio}', $precio, $plantilla), $conv, $cfg);
 }
@@ -5451,14 +5510,17 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
  */
 function wabot_propuesta_texto($tipo, $conv) {
     // Textos cerrados: el modelo elige el tipo, pero no agrega ni reformula.
+    /* Dicho como lo que el cliente va a poder HACER con la web (18-sep), no
+     * como una ficha técnica: "una tienda donde muestres tus productos y
+     * cobres con Mercado Pago", no "catálogo, carrito, integración…". */
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
-        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con acceso para cada alumno, cobro online y un panel administrativo para gestionar todo';
+        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con acceso para cada alumno y cobro online. Todo lo gestionás vos desde tu panel';
     }
     $fijas = [
-        'landing'      => 'un sitio profesional para presentar tu negocio, mostrar tus servicios o trabajos y recibir consultas directas por WhatsApp',
-        'ecommerce'    => 'una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos',
-        'inmobiliaria' => 'una web inmobiliaria para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades',
-        'elearning'    => 'una plataforma para vender tus cursos, con los videos organizados, acceso para cada alumno, cobro online y un panel administrativo para gestionar cursos y alumnos',
+        'landing'      => 'un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp',
+        'ecommerce'    => 'una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago. La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos',
+        'inmobiliaria' => 'una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio. Las cargás, editás y das de baja vos desde tu panel',
+        'elearning'    => 'una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online. Los cursos y los alumnos los gestionás vos desde tu panel',
     ];
     return $fijas[$tipo] ?? 'una web a tu medida';
 }
@@ -5558,12 +5620,9 @@ function wabot_pitch($tipo, &$conv, $cfg) {
     wabot_evento_sesion($conv, 'pitch_dado', ['tipo' => $tipo]);
     wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo]);
 
-    /* Dos mensajes cerrados: recomendación + precios, y demo con formulario.
-     * Después de eso el bot se detiene para que continúe una persona. */
-    $conv['cta_muestra'] = false;
-    $salida = [wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
-    wabot_cotizacion_finalizar($conv);
-    return $salida;
+    /* Dos mensajes cerrados: la propuesta con las dos formas y la oferta del
+     * primer diseño. Después el bot espera una sola respuesta (18-sep). */
+    return wabot_precio_cierre($precioTexto, $tipo, $conv, $cfg);
 }
 
 function wabot_precio($tipo, &$conv, $cfg) {
@@ -5610,13 +5669,12 @@ function wabot_precio($tipo, &$conv, $cfg) {
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && !empty($conv['cta_muestra'])) {
         return [wabot_precio_resumen($conv, $cfg)];
     }
-    // Compatibilidad con una cotización vieja que quedó sin su segundo mensaje.
+    // Compatibilidad con una cotización vieja que quedó sin su segundo mensaje:
+    // se le ofrece el primer diseño y se espera su respuesta, como a todos.
     if (!empty($conv['precio_dado']) && ($conv['tipo'] ?? '') === $tipo && empty($conv['cta_muestra'])) {
-        $conv['cta_muestra'] = false;
         wabot_handoff_aclaracion_resuelta($conv);
-        $salida = [wabot_tres_pasos_texto($conv, $cfg)];
-        wabot_cotizacion_finalizar($conv);
-        return $salida;
+        wabot_oferta_diseno_abrir($conv);
+        return [wabot_tres_pasos_texto($conv, $cfg)];
     }
 
     $conv['tipo'] = $tipo;
@@ -5631,10 +5689,7 @@ function wabot_precio($tipo, &$conv, $cfg) {
     // Si el pitch estaba desactivado o pidió el precio directo, usa el mismo
     // formato final de dos mensajes.
     $precioSolo = wabot_pitch_precio_texto($tipo, $cfg, $conv);
-    $conv['cta_muestra'] = false;
-    $salida = [wabot_precio_con_servicio($precioSolo, $tipo, $conv, $cfg), wabot_tres_pasos_texto($conv, $cfg)];
-    wabot_cotizacion_finalizar($conv);
-    return $salida;
+    return wabot_precio_cierre($precioSolo, $tipo, $conv, $cfg);
 }
 
 /**

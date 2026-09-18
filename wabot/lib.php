@@ -320,6 +320,14 @@ function wabot_personalizar($texto, $conv) {
     if (strpos($texto, '{rubro}') !== false) {
         $texto = wabot_aplicar_rubro($texto, (string)($conv['rubro_pitch'] ?? ''));
     }
+    /* {para_quien} abre la propuesta del precio (Pablo, 18-sep): "Para tu
+     * local de ropa, te serviría…" si se sabe el rubro, y si no "Para lo que
+     * me contás, te serviría…". Nunca "Lo mejor para tu negocio": el bot no
+     * sabe tanto como para decir qué es lo mejor. */
+    if (strpos($texto, '{para_quien}') !== false) {
+        $rubro = trim((string)($conv['rubro_pitch'] ?? ''));
+        $texto = str_replace('{para_quien}', $rubro !== '' ? 'Para ' . $rubro . ',' : 'Para lo que me contás,', $texto);
+    }
     /* {negocio} = la marca del cliente, para las presentaciones de la demo.
      * Sin marca detectada cae en "tu negocio", que encaja en las tres formas en
      * que se usa ("la tienda de…", "la web de…", "el sistema para…"). */
@@ -477,11 +485,12 @@ function wabot_tres_pasos_pregunta() {
 /**
  * Las dos formas de contratar la web. Es deliberadamente corto: la propuesta
  * anterior ya explica qué trae el producto y no se vuelve a enumerar todo.
+ * El texto vive en un solo lugar, `dos_formas` de textos.php (18-sep): antes
+ * estaba copiado en nueve textos y cada cambio dejaba alguno atrás.
  */
-function wabot_servicio_texto_plantilla($tipo, $conCursos = false) {
-    return "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n"
-        . "1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n"
-        . "2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.";
+function wabot_servicio_texto_plantilla($tipo = '', $conCursos = false, $cfg = null) {
+    $texto = is_array($cfg) ? trim((string)($cfg['dos_formas'] ?? '')) : '';
+    return $texto !== '' ? $texto : (string)(wabot_textos_default()['dos_formas'] ?? '');
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */
@@ -1202,6 +1211,7 @@ function wabot_prediseno_texto(&$conv, $cfg) {
                 return str_replace('{link}', $link, wabot_form_recordatorio_texto());
             }
             $conv['link_form_enviado'] = true;
+            $conv['oferta_diseno_ts'] = 0;   // el formulario ya contestó la oferta
             $texto = wabot_plantilla_variante('prediseno_link', 'prediseno_link_variantes', $conv, $cfg);
             return str_replace('{link}', $link, $texto);
         }
@@ -1485,6 +1495,9 @@ function wabot_conv_load($clave) {
         'mensualidad_cotizada' => null,
         'precio_modelo'        => null,
         'precio_cotizado_ts'   => 0,
+        // Precio dado y primer diseño ofrecido: el bot espera UNA respuesta
+        // (ver wabot_oferta_diseno_responder en redactor.php, 18-sep).
+        'oferta_diseno_ts' => 0,
         'objecion_dicha'   => [],
         'referencia_preguntada' => false,
         'cta_muestra'      => false,
@@ -1748,6 +1761,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['tres_pasos_repreguntas'] = 0;
     $conv['form_no_llego_avisos'] = 0;
     foreach (['pitch_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'upgrade_pendiente', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
+    $conv['oferta_diseno_ts'] = 0;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
     $conv['turnos_sin_avance'] = 0;
@@ -2927,6 +2941,9 @@ function wabot_conv_tomar_control(&$cv) {
     $cv['bot_off'] = true;
     $cv['pausado_hasta'] = 0;
     $cv['handoff_pendiente'] = false;
+    // Si el bot esperaba el sí al primer diseño, ya no: contestó Pablo, y lo
+    // que el cliente diga después no es la respuesta a esa oferta.
+    $cv['oferta_diseno_ts'] = 0;
 }
 
 /** Única forma de devolverle una conversación al bot: una acción manual. */

@@ -279,6 +279,14 @@ function wabot_procesar_entrante($ev, $cfg) {
                 break;
             }
 
+            if (!$usables && !empty($conv['oferta_diseno_ts'])) {
+                /* Después del precio el bot solo espera el sí al primer
+                 * diseño (18-sep): un archivo que no se pudo leer no es un
+                 * sí, así que no se acusa recibo. Lo ve Pablo en el panel. */
+                wabot_oferta_diseno_cerrar($conv, 'archivo');
+                wabot_conv_save($conv);
+                break;
+            }
             if (!$usables) {
                 /* "No pude abrir eso que me mandaste" era mentira cuando el
                  * archivo SÍ se había guardado: queda descargable en el panel

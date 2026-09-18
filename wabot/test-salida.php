@@ -360,10 +360,12 @@ $idioma = wabot_texto_info('bilingue', $cfg);
 caso('y no le pone un precio inventado: está incluido, hasta 3 idiomas',
     strpos($idioma, '$') === false && strpos($idioma, '{') === false && mb_stripos($idioma, 'incluido') !== false
     && mb_stripos($idioma, '3 idiomas') !== false);
-$c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
+/* Con el precio ya dado, desde el 18-sep la pregunta la contesta Pablo; si
+ * vuelve a prender el bot (charla derivada), el motor la contesta así. */
+$c = conv_de('derivado', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true, 'bot_off' => false]);
 $r = wabot_responder('Necesito ecommerce internacional, se puede en dos idiomas?', $c, $cfg);
 caso('Marcco: la pregunta por el idioma se contesta con el texto oficial, por el motor',
-    is_array($r) && mb_stripos(implode(' ', $r), '3 idiomas') !== false && strpos(implode(' ', $r), '$') === false);
+    is_array($r) && mb_stripos(implode(' ', $r), '3 idiomas') !== false && strpos(implode(' ', $r), '$') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 $c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
 $r = wabot_responder('Necesito ecommerce internacional, español/inglés, con ventas al extranjero', $c, $cfg);
 caso('y nombrada sin preguntar, no se inventa un adicional ni un precio',
@@ -409,10 +411,13 @@ caso('y la fase no avanza a un tipo cotizado: el pedido de plataforma se contest
     empty($c['tipo']));
 caso('y la marca del turno no queda guardada en la charla', !isset($c['_plataforma_contestada']));
 
-$c = conv_de('prediseno', ['tipo' => 'ecommerce', 'precio_dado' => true, 'cta_muestra' => true]);
+/* Con el precio ya dado y el primer diseño ofrecido, la objeción la
+ * contesta Pablo (18-sep): el bot solo contesta el sí a la oferta. */
+$c = conv_de('menu', ['bot_off' => false, 'cierre' => null, 'precio_dado' => false, 'tipo' => null]);
+wabot_pitch('ecommerce', $c, $cfg);
 $r = wabot_responder('Me la pueden hacer en Tiendanube?', $c, $cfg);
-caso('con el precio ya dado, la objeción sola, como antes',
-    is_array($r) && count($r) === 1 && mb_stripos($r[0], 'tiendanube') !== false);
+caso('con el precio ya dado, la objeción queda para Pablo',
+    $r === [] && !empty($c['handoff_pendiente']) && !empty($c['bot_off']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "\n— La objeción de plataformas contesta antes de argumentar (Tiendanube) —\n";
 

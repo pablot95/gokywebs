@@ -19,8 +19,15 @@
  * - Suscripción mensual (`tipos[].mensualidad`): sin pago inicial, sin
  *   permanencia, SIN cambios. Plan con cambios (`tipos[].mensualidad_cambios`)
  *   con un cambio por mes. El código se reclama recién a los 2 años.
- * - La recomendación usa exclusivamente el texto fijo de cada tipo: "Lo mejor
- *   para X es…". El modelo clasifica, pero nunca redacta la propuesta.
+ * - Las dos formas se dicen siempre con el mismo bloque, `dos_formas`
+ *   ({dos_formas} en cualquier texto). Sin "son alternativas, no se abonan
+ *   las dos": las dos incluyen el armado completo (Pablo, 18-sep).
+ * - La recomendación es "Para lo que me contás, te serviría…" (o "Para
+ *   {rubro}, te serviría…" si se sabe el rubro): {para_quien} lo resuelve
+ *   wabot_personalizar(). El modelo clasifica, pero nunca redacta la propuesta.
+ * - Después del precio se ofrece un "primer diseño" sin cargo (ya no "demo
+ *   gratis") y el bot espera UNA respuesta: el sí se lleva el formulario y
+ *   cualquier otra cosa la contesta Pablo (ver wabot_oferta_diseno_responder).
  * {nombre} lo pone wabot_personalizar(); {link}, {portfolio} y {portfolio_texto}
  * salen del tipo cotizado; {entrega} es el día de entrega de la demo.
  *
@@ -60,6 +67,7 @@ function wabot_textos_default() {
     'derivar' => 'Perfecto, {nombre}. A partir de acá sigue el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.',
     'descuento' => 'No manejamos descuentos: el valor es el mismo por transferencia o con tarjeta.',
     'devolucion' => 'La seña reserva el trabajo y no se devuelve. Si el diseño inicial no te convence, lo rehacemos hasta dos veces; una vez elegido, tenés tres rondas para ajustar el resto.',
+    'dos_formas' => "Podés contratarla de dos maneras, y las dos incluyen el armado completo:\n\n• Pago único de {precio}: la web queda tuya. Incluye mantenimiento el primer año.\n\n• Suscripción mensual de {mensualidad}: no pagás el desarrollo de entrada; mientras esté activa incluye hosting, dominio, soporte y mantenimiento.",
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
     'repregunta_suave' => 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo.',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
@@ -74,8 +82,8 @@ function wabot_textos_default() {
     'hosting_renovacion' => 'Con el pago único, el primer año incluye el mantenimiento: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}. Con la suscripción mensual no hay nada aparte: va incluido mientras la tengas.',
     'imagenes_pedido_generico' => 'el logo y 3 o 4 fotos de tu negocio',
     'info' => [
-        'proceso' => "Primero mirás trabajos reales y elegís uno o dos modelos como referencia. Después elegís pago único —con seña y saldo al entregar— o suscripción mensual, completás el formulario y coordinamos el arranque. La web suele quedar lista en unos 7 días desde que arrancamos y nos pasás el contenido.\nEl valor depende del tipo de web: contame a qué te dedicás y te lo paso.",
-        'pago' => "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
+        'proceso' => "Te paso el valor según lo que necesites y, si te interesa, te preparamos sin cargo un primer diseño de tu web: completás un formulario corto y elegís uno o dos modelos como referencia. Si te gusta, elegís pago único —con seña y saldo al entregar— o suscripción mensual, y arrancamos. La web suele quedar lista en unos 7 días desde que arrancamos y nos pasás el contenido.\nEl valor depende del tipo de web: contame a qué te dedicás y te lo paso.",
+        'pago' => "{dos_formas}\n\nEl pago único arranca con una seña y el saldo va al entregar la web. La suscripción no tiene pago inicial: se paga por Mercado Pago, con cualquier tarjeta y sin necesidad de tener cuenta.",
         'plazos' => "La web queda lista en unos 7 días desde que arrancamos, abonás la seña o la primera mensualidad y nos pasás el contenido.",
         'hosting' => "El hosting y el dominio .com.ar van incluidos: con la suscripción mensual, mientras la tengas; con el pago único, dentro del mantenimiento del primer año, y después seguís con el plan de mantenimiento.\nNo los contratás ni los configurás vos, se ocupa Gokywebs.",
         'mantenimiento' => "Depende de cómo contrates la web:\n• Con el pago único, el mantenimiento va incluido el primer año: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}.\n• Con la suscripción mensual de {mensualidad}, va incluido mientras la tengas, sin permanencia.\nEl mantenimiento no incluye cambios en la web: para eso está el plan con cambios de la suscripción, de {cambios_mes}, con un cambio por mes.",
@@ -167,22 +175,20 @@ function wabot_textos_default() {
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
     'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',
-    'msg_precio' => "Perfecto, para lo tuyo va {desc}.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-    'msg_precio_tras_pitch' => "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
+    'msg_precio' => "Para lo que me contás, te serviría {desc}.\n\n{dos_formas}",
+    'msg_precio_tras_pitch' => '{dos_formas}',
     'msg_precio_variantes' => [
-        "Perfecto, para lo tuyo va {desc}.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-        "Por lo que me contás, para lo tuyo va {desc}.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-        "En este caso va {desc}.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-        "La opción que corresponde es {desc}.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
+        "Para lo que me contás, te serviría {desc}.\n\n{dos_formas}",
+        "En tu caso podemos hacer {desc}.\n\n{dos_formas}",
+        "Por lo que me contás, te serviría {desc}.\n\n{dos_formas}",
     ],
-    'msg_prediseno_oferta' => 'Antes de avanzar mirá trabajos reales y elegí uno o dos modelos en gokywebs.com/modelos/. Después los adaptamos a tu negocio, tus colores y tu contenido.',
+    'msg_prediseno_oferta' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?',
     'msg_prediseno_oferta_variantes' => [
-        'Antes de avanzar mirá trabajos reales y elegí uno o dos modelos en gokywebs.com/modelos/. Después los adaptamos a tu negocio, tus colores y tu contenido.',
-        'Podés comparar trabajos reales y elegir hasta dos modelos como referencia en gokywebs.com/modelos/.',
-        'Primero mirá opciones concretas en gokywebs.com/modelos/ y marcá uno o dos modelos.',
-        'El próximo paso es elegir uno o dos modelos como punto de partida en gokywebs.com/modelos/.',
+        'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?',
     ],
-    'msg_tres_pasos' => 'Mirá trabajos reales y elegí uno o dos modelos en gokywebs.com/modelos/.',
+    // El segundo globo del turno del precio: la oferta del primer diseño. Su
+    // sí es lo único que el bot contesta después (con el formulario).
+    'msg_tres_pasos' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?',
     'muestra_presentar_por_tipo' => [
         'landing' => "¡Ya está lista la primera propuesta para la web de {negocio}!\n\nPodés verla acá:\n{link}\n\nLa armamos para que puedas visualizar cómo presentar tu negocio, organizar tus servicios y facilitar que te contacten.\n\nMirá el estilo general y cómo está distribuida la información. Los textos e imágenes de ejemplo se reemplazan o ajustan con tu contenido real si avanzamos.",
         'ecommerce' => "¡Ya está lista la demo de la tienda de {negocio}! 🛍️\n\nPodés verla acá:\n{link}\n\nLos productos, fotos y precios que usamos para completar la muestra son de ejemplo; no representan tu catálogo real. Sirven para mostrarte cómo se verían los artículos y cómo estaría organizada la tienda.\n\nSi avanzamos, la adaptamos con tus productos, precios, imágenes y categorías.",
@@ -195,7 +201,7 @@ function wabot_textos_default() {
     'no_interesa' => 'Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá.',
     'no_texto' => 'No pude abrir eso que me mandaste. Contámelo por mensaje de texto así te ayudo mejor.',
     'objecion_repetida' => 'Dale, sin apuro. Cuando quieras avanzar, acá estoy.',
-    'pago_antes_o_despues' => 'Para arrancar elegís una de las dos formas: la seña del pago único o la primera mensualidad de la suscripción. Antes podés mirar trabajos reales y elegir uno o dos modelos en gokywebs.com/modelos/.',
+    'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, arrancás con la seña del pago único o con la primera mensualidad de la suscripción.',
     'pausa_horas_humano' => 12,
     'pensarlo' => 'Perfecto, tomate el tiempo que necesites. Podés mirar trabajos reales y modelos para comparar con algo concreto.',
     'pensarlo_sin_muestra' => 'Perfecto, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.',
@@ -224,7 +230,7 @@ function wabot_textos_default() {
     'postdemo_no_gusto' => 'Gracias por la sinceridad, me sirve. Contame qué es lo que no te cerró y lo revisamos.',
     'postdemo_pago_avisado' => 'Perfecto, revisamos el pago y te confirmamos por acá.',
     'postdemo_videollamada' => 'Si querés, podemos coordinar una videollamada con el desarrollador. Te muestra la web en vivo y podés sacarte cualquier duda directamente con él. Querés que coordinen?',
-    'precio_resumen' => "Tenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de {precio}: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de {mensualidad}: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.\n\nY acá podés ver {portfolio_texto}: {portfolio}",
+    'precio_resumen' => "{dos_formas}\n\nY acá podés ver {portfolio_texto}: {portfolio}",
     'prediseno' => "Para armarla necesito poco:\n{faltan}\nSi no tenés colores definidos, decime 'elegí vos' y los defino yo. Si tenés logo o fotos, mandámelas; si no, arranco con imágenes del rubro y después las cambiamos.",
     'prediseno_completo' => 'Listo {nombre}, ya tenemos los datos para preparar la demo y te la mandamos por acá {entrega}. Si tenés {imagenes}, mandámelos para personalizarla; podemos empezar igual si todavía no los tenés.',
     'prediseno_completo_con_fotos' => 'Listo {nombre}, con eso ya lo preparamos. Con las fotos que me pasaste te la dejo lista {entrega} y te la mando por acá.',
@@ -233,9 +239,9 @@ function wabot_textos_default() {
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
-    'prediseno_link' => "Para avanzar completá este formulario:\n{link}\nSi algo no te queda claro, escribime por acá.",
+    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nSi algo no te queda claro, escribime por acá.",
     'prediseno_link_variantes' => [
-        "Para avanzar completá este formulario:\n{link}\nSi algo no te queda claro, escribime por acá.",
+        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nSi algo no te queda claro, escribime por acá.",
     ],
     'prediseno_referencia' => 'Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.',
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
@@ -260,7 +266,7 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
-            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
+            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
             'mensualidad' => '$15.000',
@@ -274,7 +280,7 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando',
             'imagenes_pedido' => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
-            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
+            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
             'mensualidad' => '$25.000',
@@ -288,7 +294,7 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo',
             'imagenes_pedido' => 'el logo y alguna foto tuya dando clase o del material de los cursos',
-            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
+            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
             'mensualidad' => '$25.000',
@@ -302,7 +308,7 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
             'imagenes_pedido' => 'el logo y fotos de un par de propiedades que tengas publicadas',
-            'precio_ideal' => 'Lo mejor para {rubro} es {propuesta}.',
+            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
             'mensualidad' => '$25.000',

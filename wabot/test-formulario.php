@@ -60,17 +60,17 @@ foreach (['Hola! Quiero mi demo gratis para mi negocio.', 'Dale, me interesa la 
 caso('"me pasas el precio?" y "la demo hasta cuándo me dura?" no la piden',
     wabot_pidio_demo_explicita('me pasas el precio?') === false && wabot_pidio_demo_explicita('la demo hasta cuando me dura?') === false);
 
-echo "— 2. El precio muestra trabajos y modelos —\n";
+echo "— 2. El precio ofrece el primer diseño (18-sep) —\n";
 
 $c = conv_nueva('5491188880001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
-caso('el segundo mensaje muestra cinco trabajos reales', substr_count($r[1] ?? '', '• ') === 5);
-caso('y cierra con modelos y la pregunta de arranque', strpos($r[1] ?? '', 'gokywebs.com/modelos/') !== false && str_ends_with($r[1] ?? '', '¿Arrancamos?'), $r[1] ?? '');
+caso('el segundo mensaje ofrece el primer diseño sin cargo', mb_stripos($r[1] ?? '', 'sin cargo un primer diseño') !== false, $r[1] ?? '');
+caso('y termina preguntando si lo armamos', str_ends_with($r[1] ?? '', 'Querés que lo armemos?'), $r[1] ?? '');
 caso('sin el link: ese sale con el sí', !tiene_form($r));
 $c = conv_nueva('5491188880002TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
-caso('un anuncio viejo de demo entra al flujo nuevo y espera una aceptación actual',
-    count($r) === 2 && mb_stripos($r[1], 'modelos') !== false && !tiene_form($r),
+caso('un anuncio viejo de demo también ve el precio y espera una aceptación actual',
+    count($r) === 2 && mb_stripos($r[1], 'primer diseño') !== false && !tiene_form($r),
     json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('y todavía no marca el formulario como enviado', empty($c['link_form_enviado']));
 
@@ -123,52 +123,54 @@ caso('"Ok dale" tras el precio no deriva y recibe el formulario',
 
 echo "— 4. Con el link ya mandado —\n";
 
-$c = conv_con_link('5491188880030TEST', $cfg);
-caso('(la charla de prueba tiene el link mandado)', !empty($c['link_form_enviado']) && $c['fase'] === 'prediseno');
+/* Desde el 18-sep, en la charla real el formulario sale con el sí y el bot
+ * se apaga (lo sigue Pablo): después del link no contesta nada más. */
+$c = conv_tres_pasos('5491188880030TEST', 'ecommerce', $cfg);
 clasifica(['otro']);
 $r = turno('Si, quiero la muestra gratis', $c, $cfg);
-caso('"Sí, quiero la muestra gratis" heredado recibe solo el enlace simple', $r === ['gokywebs.com/form'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('"Sí, quiero la muestra gratis" después de la oferta recibe el formulario de la charla',
+    count($r) === 1 && tiene_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('y queda como prospecto para que siga Pablo', ($c['fase'] ?? '') === 'derivado' && !empty($c['esProspecto']) && !empty($c['bot_off']));
-$r = turno('si quiero la demo', $c, $cfg);
-caso('la segunda vez no se repite: se calla', $r === [] && ($c['fase'] ?? '') === 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
-$r = turno('Malena - IndumentariaMale - negro y dorado', $c, $cfg);
-caso('los datos posteriores quedan para Pablo y el bot no responde', $r === [] && !empty($c['handoff_pendiente']));
+foreach (['si quiero la demo', 'Malena - IndumentariaMale - negro y dorado', 'ya esta todo arriba, fijate', 'Ya completé todo, te llegó?'] as $m) {
+    caso("después del formulario, \"$m\" no recibe respuesta automática", turno($m, $c, $cfg) === []);
+}
+caso('y los datos quedan pendientes para Pablo', !empty($c['handoff_pendiente']));
 
+/* wabot_form_enviado_responder() sigue siendo el que contesta si Pablo vuelve
+ * a prender el bot en una charla con el link mandado: se prueba directo. */
 $c = conv_con_link('5491188880031TEST', $cfg);
-clasifica(['otro']);
-$r = turno('ya esta todo arriba, fijate', $c, $cfg);
+caso('(la charla de prueba tiene el link mandado)', !empty($c['link_form_enviado']) && $c['fase'] === 'prediseno');
+$r = wabot_form_enviado_responder('ya esta todo arriba, fijate', $c, $cfg);
 caso('"ya está todo arriba" sin el formulario recibido: se le avisa que no llegó, con el link',
     strpos($r[0] ?? '', 'Todavía no me llegó el formulario') === 0 && tiene_form($r), json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('sin derivar', ($c['fase'] ?? '') === 'prediseno');
-$r = turno('ya lo complete, fijate bien', $c, $cfg);
+$r = wabot_form_enviado_responder('ya lo complete, fijate bien', $c, $cfg);
 caso('si insiste, algo anda mal con el formulario: lo toma una persona', ($c['fase'] ?? '') === 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_con_link('5491188880032TEST', $cfg);
 $c['form_completado_ts'] = time(); $c['lead_creado'] = 'propuestas/test';
 wabot_handoff_marcar($c, 'prediseno');
-$r = turno('ya lo complete, fijate', $c, $cfg);
+$r = wabot_form_enviado_responder('ya lo complete, fijate', $c, $cfg);
 caso('con el formulario recibido, "ya lo completé" se confirma con la entrega',
     strpos($r[0] ?? '', 'Sí, ya lo tengo: la demo te llega') === 0, json_encode($r, JSON_UNESCAPED_UNICODE));
-$r = turno('ya esta todo arriba', $c, $cfg);
+$r = wabot_form_enviado_responder('ya esta todo arriba', $c, $cfg);
 caso('y una sola vez', $r === [], json_encode($r, JSON_UNESCAPED_UNICODE));
 foreach ([false, true] as $recibido) {
     $c = conv_con_link('5491188880035TEST', $cfg);
     $c['form_completado_ts'] = $recibido ? time() : 0;
-    $r = turno('Ya completé todo, te llegó?', $c, $cfg);
+    $r = (array)wabot_form_enviado_responder('Ya completé todo, te llegó?', $c, $cfg);
     caso('consulta recepción con formulario ' . ($recibido ? 'recibido' : 'pendiente'),
         strpos(implode(' ', $r), $recibido ? 'Sí, ya lo tengo' : 'Todavía no me llegó el formulario') !== false
-        && empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+        && ($c['fase'] ?? '') !== 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
 }
 caso('el aviso de formulario no tapa una pregunta distinta',
     !wabot_form_pregunta_recepcion('Ya completé todo, te llegó? Cuánto tarda la demo?'));
 
 $c = conv_con_link('5491188880034TEST', $cfg);
 $c['nombre_negocio'] = 'IndumentariaMale'; $c['colores'] = 'negro y dorado';
-clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
-$r = turno('el dominio viene incluido?', $c, $cfg);
-caso('con los datos ya sabidos, una pregunta se contesta: el borde no cierra encima de ella',
-    stripos(implode(' ', $r), 'hosting') !== false && !in_array('prediseno_datos_por_chat', array_keys((array)($c['eventos_emitidos_sesion'] ?? [])), true),
-    json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('con los datos ya sabidos, una pregunta no se cierra encima: queda para quien la conteste',
+    wabot_form_enviado_responder('el dominio viene incluido?', $c, $cfg) === null
+    && !in_array('prediseno_datos_por_chat', array_keys((array)($c['eventos_emitidos_sesion'] ?? [])), true));
 
 echo "— 5. Repetirse con el formulario de por medio no deriva —\n";
 
@@ -200,8 +202,8 @@ echo "— 6. El texto del formulario —\n";
 $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
-caso('el texto auxiliar del formulario usa la redacción nueva',
-    preg_match('/^Para avanzar completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
+caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño, 18-sep)',
+    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
 caso('ni promete un minuto', mb_stripos($form, 'minuto') === false);
