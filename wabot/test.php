@@ -3634,6 +3634,34 @@ $igPlant = ['tel' => 'ig123', 'channel_user_id' => 'ig123', 'canal' => 'instagra
 caso('y por Instagram no se usan plantillas',
     wabot_enviar_plantilla($igPlant, 'confirmacion_demo_48h', $cfgPlant) === false);
 
+echo "\n— Template de 72 h a mano: el mismo envío desde el chat y desde Seguimientos (18-sep) —\n";
+
+$GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
+$conv72 = ['tel' => '5491100000072', 'channel_user_id' => '5491100000072', 'canal' => 'whatsapp',
+           'nombre' => 'Yesica', 'presentado_ts' => time() - 72 * 3600, 'presentado_slug' => 'yfprevencion',
+           'bot_off' => false, 'transcript' => []];
+caso('con la demo presentada, sale', wabot_template_72h_enviar($conv72, $cfgPlant) === 'ok');
+caso('sale la plantilla aprobada en Meta, una sola vez',
+    count($GLOBALS['WABOT_TEST_PLANTILLAS']) === 1 && $GLOBALS['WABOT_TEST_PLANTILLAS'][0][1] === 'seguimiento_demo_72h');
+caso('queda marcada con la hora del envío',
+    !empty($conv72['confirmacion_demo_enviada']) && (int)($conv72['confirmacion_demo_ts'] ?? 0) >= time() - 5);
+caso('y el chat pasa a manos de Pablo', !empty($conv72['bot_off']) && !empty($conv72['control_manual']));
+caso('un segundo clic no la repite', wabot_template_72h_enviar($conv72, $cfgPlant) === 'ya'
+    && count($GLOBALS['WABOT_TEST_PLANTILLAS']) === 1);
+
+$sinDemo72 = ['tel' => '5491100000073', 'channel_user_id' => '5491100000073', 'canal' => 'whatsapp', 'transcript' => []];
+caso('sin la demo presentada no sale: el template pregunta si pudo verla',
+    wabot_template_72h_enviar($sinDemo72, $cfgPlant) === 'sin_demo' && empty($sinDemo72['confirmacion_demo_enviada']));
+$ig72 = array_merge($igPlant, ['presentado_ts' => time() - 72 * 3600]);
+caso('por Instagram no sale', wabot_template_72h_enviar($ig72, $cfgPlant) === 'canal');
+$cfgApagada72 = $cfgPlant;
+$cfgApagada72['plantillas']['confirmacion_demo_48h']['activa'] = false;
+$apagada72 = array_merge($conv72, ['confirmacion_demo_enviada' => false, 'confirmacion_demo_ts' => 0, 'bot_off' => false, 'control_manual' => false]);
+caso('apagada en Ajustes, avisa el error y no marca nada',
+    wabot_template_72h_enviar($apagada72, $cfgApagada72) === 'error'
+    && empty($apagada72['confirmacion_demo_enviada']) && empty($apagada72['bot_off']));
+caso('ninguno de los rechazos mandó nada', count($GLOBALS['WABOT_TEST_PLANTILLAS']) === 1);
+
 echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
 
 /* Pablo encontró 17 envíos con la misma presentación, cambiando solo el enlace:

@@ -373,22 +373,37 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     if ($a === 'enviar_template_72h' && !empty($_POST['tel'])) {
         $tel = (string)$_POST['tel'];
         $conv = wabot_conv_load($tel);
-        $resultado = 'template_72_error';
-        if (wabot_canal($conv) === 'instagram') {
-            $resultado = 'template_72_canal';
-        } elseif (empty($conv['presentado_ts'])) {
-            $resultado = 'template_72_sin_demo';
-        } elseif (!empty($conv['confirmacion_demo_enviada'])) {
-            $resultado = 'template_72_ya';
-        } elseif (wabot_enviar_plantilla($conv, 'confirmacion_demo_48h', $cfg)) {
-            wabot_conv_tomar_control($conv);
-            $conv['confirmacion_demo_enviada'] = true;
-            $conv['confirmacion_demo_ts'] = time();
+        $resultado = wabot_template_72h_enviar($conv, $cfg);
+        if ($resultado === 'ok') {
             wabot_conv_save($conv);
             wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $tel, 'clave' => $tel]);
-            $resultado = 'template_72_ok';
         }
-        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&' . $resultado . '=1'); exit;
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&template_72_' . $resultado . '=1'); exit;
+    }
+    /* El mismo template, desde la lista de Seguimientos (admin/dashboard.js).
+     * Ahí el cliente es una fila de Firestore: llega la clave del chat si la
+     * sincronización ya lo había encontrado, o si no el teléfono tal como está
+     * cargado, y la conversación se busca igual que al presentar la demo. */
+    if ($a === 'seguimiento_template_72h' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $clave = wabot_conv_resolver((string)$_POST['tel'], $motivo);
+        if ($clave === null) {
+            echo json_encode(['ok' => false, 'resultado' => $motivo === 'ambiguo' ? 'ambiguo' : 'sin_chat']);
+            exit;
+        }
+        $conv = wabot_conv_load($clave);
+        $resultado = wabot_template_72h_enviar($conv, $cfg);
+        if ($resultado === 'ok') {
+            wabot_conv_save($conv);
+            wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $clave, 'clave' => $clave, 'desde' => 'seguimientos']);
+        }
+        echo json_encode([
+            'ok'         => $resultado === 'ok',
+            'resultado'  => $resultado,
+            'clave'      => $clave,
+            'enviado_ts' => (int)($conv['confirmacion_demo_ts'] ?? 0),
+        ]);
+        exit;
     }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
@@ -732,6 +747,9 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     // Lo consulta admin/dashboard.js (Seguimiento) para reflejar en Firestore
     // lo que ya pasó acá: si salió la plantilla de 48 h y si el chat quedó
     // archivado. Solo lee campos de la conversación, no llama a nada del cron.
+    // También pinta el botón del template de 72 h de cada fila: por eso van
+    // además los chats con la demo marcada a mano (sin cliente_id), que el
+    // admin reconoce por el teléfono.
     if ($a === 'presentados_estado') {
         header('Content-Type: application/json; charset=utf-8');
         $items = [];
@@ -739,14 +757,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $clave = basename($f, '.json');
             if (stripos($clave, 'TEST') !== false) continue;
             $cv = wabot_conv_load($clave);
-            if (empty($cv['presentado_ts']) || empty($cv['cliente_id'])) continue;
+            if (empty($cv['presentado_ts'])) continue;
             $items[] = [
-                'cliente_id'           => $cv['cliente_id'],
+                'cliente_id'           => (string)($cv['cliente_id'] ?? ''),
                 'tel'                  => $cv['tel'],
+                'clave'                => $clave,
+                'canal'                => wabot_canal($cv),
                 'presentado_ts'        => (int)$cv['presentado_ts'],
                 'confirmado'           => !empty($cv['presentado_confirmado']),
                 'recordatorio_enviado' => !empty($cv['presentado_recordatorio_enviado']),
                 'archivado'            => !empty($cv['archivado']),
+                'template_72h_ts'      => !empty($cv['confirmacion_demo_enviada']) ? max(1, (int)($cv['confirmacion_demo_ts'] ?? 0)) : 0,
             ];
         }
         echo json_encode(['items' => $items], JSON_UNESCAPED_UNICODE);

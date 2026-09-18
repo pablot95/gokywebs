@@ -4426,6 +4426,27 @@ function wabot_confirmacion_demo_correr($cfg, $ahora = null) {
     return ['revisadas' => 0, 'enviados' => 0, 'detalle' => [], 'automatico' => false];
 }
 
+/**
+ * El envío manual del template de 72 h. Es el mismo desde los dos botones:
+ * el del chat (wabot/admin.php) y el de cada fila de Seguimientos
+ * (admin/dashboard.js), así los dos cuidan lo mismo.
+ *
+ * Devuelve 'ok', 'canal' (chat de Instagram: las plantillas son de WhatsApp),
+ * 'sin_demo', 'ya' (Meta mide quejas: nunca dos veces al mismo cliente) o
+ * 'error' (Meta la rechazó o está apagada en Ajustes). Con 'ok' el chat queda
+ * marcado y en manos de Pablo; guardarlo le toca a quien llama.
+ */
+function wabot_template_72h_enviar(&$conv, $cfg) {
+    if (wabot_canal($conv) === 'instagram') return 'canal';
+    if (empty($conv['presentado_ts'])) return 'sin_demo';
+    if (!empty($conv['confirmacion_demo_enviada'])) return 'ya';
+    if (!wabot_enviar_plantilla($conv, 'confirmacion_demo_48h', $cfg)) return 'error';
+    wabot_conv_tomar_control($conv);
+    $conv['confirmacion_demo_enviada'] = true;
+    $conv['confirmacion_demo_ts'] = time();
+    return 'ok';
+}
+
 /* ─────────────────── Lead a Firestore (colección propuestas) ─────────── */
 
 function wabot_nombre_negocio_fallback($texto) {

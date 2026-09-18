@@ -191,7 +191,10 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !chatMod
 /* ── Sincronización con "Presentados" del bot ──
    El bot corre por cron: manda el recordatorio a las 48h sin confirmar y
    archiva el chat a la semana. Esto refleja esos dos hechos en Firestore
-   (Seguimiento → Último mensaje / borrado) apenas el admin está abierto. */
+   (Seguimiento → Último mensaje / borrado) apenas el admin está abierto.
+   La misma lista pinta el botón del template de 72 h de cada fila. */
+let wabotPresentados = [];
+let wabotPresentadosFirma = "";
 async function sincronizarPresentados() {
     if (!currentUser) return;
     try {
@@ -203,6 +206,14 @@ async function sincronizarPresentados() {
             credentials: "same-origin"
         });
         const data = await res.json();
+        wabotPresentados = data.items || [];
+        // Repinta solo si cambió algo que el botón muestra: renderSeg rehace la
+        // tabla y se llevaría puesta una nota que Pablo esté escribiendo.
+        const firma = JSON.stringify(wabotPresentados.map(it => [it.clave, it.cliente_id, it.canal, it.template_72h_ts]));
+        if (firma !== wabotPresentadosFirma) {
+            wabotPresentadosFirma = firma;
+            if (activeTab === "seguimientos") renderSeg();
+        }
         for (const item of (data.items || [])) {
             if (!item.cliente_id) continue;
             if (item.archivado) {
@@ -1643,6 +1654,9 @@ function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll("[data-back-id]").forEach(btn => {
         btn.addEventListener("click", () => setStatus(btn.dataset.backId, "seguimiento1"));
     });
+    tbodyEl.querySelectorAll("[data-template72-id]").forEach(btn => {
+        btn.addEventListener("click", () => enviarTemplate72h(btn.dataset.template72Id, btn));
+    });
 }
 
 /* Fila de Clientes con la misma forma que Mantenimiento: plan, cobro y el cambio
@@ -1750,6 +1764,95 @@ function _clientRow(c) {
         </tr>`;
 }
 
+/* ── Template de 72 h desde Seguimientos ──
+   El bot le manda al cliente la plantilla de seguimiento de la demo
+   (seguimiento_demo_72h en Meta). Es el mismo envío que el botón del chat: una
+   sola vez por cliente, solo por WhatsApp y con la demo ya presentada. */
+
+/* El chat del bot con la demo presentada de este cliente, según la última
+   sincronización: por el id que viaja al presentar la demo o, si la demo se
+   marcó a mano desde el chat, por el teléfono (solo WhatsApp: en Instagram la
+   clave del chat no es un número). Con dos chats para el mismo número no elige
+   ninguno: el clic manda el teléfono y el bot avisa que es ambiguo. */
+function presentadoDeCliente(c) {
+    const porId = wabotPresentados.find(it => it.cliente_id === c.id);
+    if (porId) return porId;
+    const tel = cleanArgPhone(c.telefono);
+    if (tel.length < 8) return null;
+    const porTel = wabotPresentados.filter(it => it.canal !== "instagram" && cleanArgPhone(it.tel) === tel);
+    return porTel.length === 1 ? porTel[0] : null;
+}
+
+// Envíos hechos desde esta pestaña: la fila los muestra sin esperar la próxima sincronización.
+const template72hEnviados = {};
+
+function fechaTemplate72h(ts) {
+    return new Date(ts * 1000).toLocaleString("es-AR", {
+        day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
+        timeZone: "America/Argentina/Buenos_Aires"
+    });
+}
+
+function _botonTemplate72h(c) {
+    const it = presentadoDeCliente(c);
+    if (!it && cleanArgPhone(c.telefono).length < 8) return "";
+    const enviadoTs = template72hEnviados[c.id] || it?.template_72h_ts || 0;
+    if (enviadoTs) {
+        return `<button class="icon-btn btn-template72 enviado" disabled title="Template de 72 h enviado el ${escapeHtml(fechaTemplate72h(enviadoTs))}">✓ 72h</button>`;
+    }
+    if (it?.canal === "instagram") {
+        return `<button class="icon-btn btn-template72" disabled title="Su chat es de Instagram: el template de 72 h sale solo por WhatsApp">72h</button>`;
+    }
+    return `<button class="icon-btn btn-template72" data-template72-id="${c.id}" title="Mandarle por el bot el template de seguimiento de 72 h">72h</button>`;
+}
+
+const TEMPLATE_72H_MOTIVOS = {
+    sin_demo: "Todavía no tiene la demo presentada por el bot, y el template le pregunta si pudo verla.",
+    canal:    "Su chat es de Instagram, y el template de 72 h sale solo por WhatsApp.",
+    sin_chat: "No hay una conversación del bot con ese teléfono.",
+    ambiguo:  "Hay más de una conversación del bot con ese teléfono: mandalo desde el chat que corresponde, en la pestaña WhatsApp.",
+    error:    "Meta rechazó el template, o está apagado en Ajustes del bot.",
+};
+
+async function enviarTemplate72h(id, btn) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const nombre = c.nombre || c.proyecto || "este cliente";
+    if (!confirm(`¿Mandarle a ${nombre} el template de seguimiento de 72 h por el bot?`)) return;
+
+    // Si la sincronización ya encontró su chat, va la clave exacta; si no, el
+    // teléfono y el bot lo busca como al presentar la demo.
+    const it = presentadoDeCliente(c);
+    btn.disabled = true;
+    btn.textContent = "…";
+    let data;
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "seguimiento_template_72h", tel: it ? it.clave : c.telefono }),
+            credentials: "same-origin"
+        });
+        data = await res.json();
+    } catch (e) {
+        console.error(e);
+        alert("No se pudo contactar al panel del bot: " + e.message);
+        renderSeg();
+        return;
+    }
+
+    if (data.ok || data.resultado === "ya") {
+        template72hEnviados[c.id] = data.enviado_ts || Math.floor(Date.now() / 1000);
+    }
+    renderSeg();
+    if (data.resultado === "ya") {
+        alert(`A ${nombre} ya le salió el template de 72 h el ${fechaTemplate72h(template72hEnviados[c.id])}. No se manda dos veces al mismo cliente.`);
+    } else if (!data.ok) {
+        alert(`No se envió. ${TEMPLATE_72H_MOTIVOS[data.resultado] || TEMPLATE_72H_MOTIVOS.error}`);
+    }
+}
+
 function _segRow(c) {
     const estado = getEstado(c);
     const plan = planDe(c, propuestaDeCliente(c));
@@ -1786,6 +1889,7 @@ function _segRow(c) {
                 </div>
             </td>
             <td class="actions-col">
+                ${_botonTemplate72h(c)}
                 ${estado === 'ultimo-mensaje'
                     ? `<button class="icon-btn btn-volver-seg" data-back-id="${c.id}" title="Volver a Seguimiento">↩</button>`
                     : `<button class="icon-btn btn-ultimo-msj" data-um-id="${c.id}" title="Pasar a Último mensaje">✉</button>`}
