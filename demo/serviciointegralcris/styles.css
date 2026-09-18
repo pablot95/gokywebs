@@ -519,6 +519,7 @@ body.no-scroll { overflow: hidden; }
   position: relative;
   z-index: 3;
   background: var(--color-bg);
+  color: var(--color-text);
   border-left: 4px solid var(--color-secondary);
   border-radius: var(--radius-plate);
   padding: 1.1rem 1.3rem;
