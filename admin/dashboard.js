@@ -164,9 +164,9 @@ async function abrirWabot() {
 const chatModal = document.getElementById("chatModal");
 const chatModalFrame = document.getElementById("chatModalFrame");
 
-async function abrirChatModal(tel) {
+async function abrirChatModal(tel, titulo) {
     if (!tel) return;
-    document.getElementById("chatModalTitle").textContent = tel;
+    document.getElementById("chatModalTitle").textContent = titulo || tel;
     document.getElementById("chatModalAparte").href = "../wabot/admin.php?tab=conversaciones&ver=" + encodeURIComponent(tel);
     chatModal.hidden = false;
     chatModalFrame.src = "about:blank";
@@ -183,6 +183,8 @@ function cerrarChatModal() {
     chatModal.hidden = true;
     // Corta el polling/refresco propio del panel embebido apenas se cierra.
     chatModalFrame.src = "about:blank";
+    // Si desde el chat se mandó el template de 72 h, la fila de Seguimientos lo muestra ya.
+    if (activeTab === "seguimientos") sincronizarPresentados();
 }
 document.getElementById("closeChatModalBtn").addEventListener("click", cerrarChatModal);
 chatModal.addEventListener("click", (e) => { if (e.target === chatModal) cerrarChatModal(); });
@@ -1657,6 +1659,9 @@ function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll("[data-template72-id]").forEach(btn => {
         btn.addEventListener("click", () => enviarTemplate72h(btn.dataset.template72Id, btn));
     });
+    tbodyEl.querySelectorAll("[data-chat-tel]").forEach(btn => {
+        btn.addEventListener("click", () => abrirChatModal(btn.dataset.chatTel, btn.dataset.chatTitulo));
+    });
 }
 
 /* Fila de Clientes con la misma forma que Mantenimiento: plan, cobro y el cambio
@@ -1806,6 +1811,16 @@ function _botonTemplate72h(c) {
     return `<button class="icon-btn btn-template72" data-template72-id="${c.id}" title="Mandarle por el bot el template de seguimiento de 72 h">72h</button>`;
 }
 
+/* "Ver chat" como en Bocetos: el chat del bot en el modal, sin salir de la
+   pestaña. Va la clave exacta si la sincronización ya encontró el chat; si no,
+   el teléfono, y el panel lo busca como al presentar la demo. */
+function _botonVerChat(c) {
+    const destino = presentadoDeCliente(c)?.clave || (cleanArgPhone(c.telefono).length >= 8 ? c.telefono : "");
+    if (!destino) return "";
+    const titulo = [c.nombre, c.telefono].filter(Boolean).join(" · ");
+    return `<div><button type="button" class="btn-ghost" data-chat-tel="${escapeHtml(destino)}" data-chat-titulo="${escapeHtml(titulo)}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Abrir la conversación de WhatsApp/Instagram de este cliente sin salir de Seguimientos">Ver chat</button></div>`;
+}
+
 const TEMPLATE_72H_MOTIVOS = {
     sin_demo: "Todavía no tiene la demo presentada por el bot, y el template le pregunta si pudo verla.",
     canal:    "Su chat es de Instagram, y el template de 72 h sale solo por WhatsApp.",
@@ -1863,7 +1878,7 @@ function _segRow(c) {
         <tr class="client-row" data-row-id="${c.id}">
             <td>${escapeHtml(c.nombre)}</td>
             <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
-            <td class="col-telefono">${phoneDisplay}</td>
+            <td class="col-telefono">${phoneDisplay}${_botonVerChat(c)}</td>
             <td>
                 <div>${escapeHtml(plan.label || "Plan sin definir")}</div>
                 <div class="muted" style="font-size:12px;white-space:nowrap">${_planMontosTexto(plan)}</div>
