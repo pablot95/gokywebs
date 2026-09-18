@@ -21,12 +21,12 @@
   --color-cta: #2563eb;
   --color-cta-text: #ffffff;
 
-  --font-display: 'Archivo', 'Arial Black', sans-serif;
+  --font-display: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
   --font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
   --section-pad-y: clamp(2rem, 4vw, 3rem);
-  --fs-h1: clamp(2.2rem, 6vw, 4.3rem);
-  --fs-h2: clamp(1.75rem, 4.4vw, 3.3rem);
+  --fs-h1: clamp(2.5rem, 7vw, 5.2rem);
+  --fs-h2: clamp(1.9rem, 4.8vw, 3.4rem);
   --fs-h3: clamp(1.2rem, 2vw, 1.5rem);
   --fs-body: clamp(1rem, 1.1vw, 1.125rem);
 
@@ -77,10 +77,9 @@ img {
 
 h1, h2, h3 {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
-  line-height: 1.03;
-  letter-spacing: -0.015em;
+  line-height: 0.95;
+  letter-spacing: 0.004em;
   margin: 0;
   text-wrap: balance;
 }
@@ -142,7 +141,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .placa-v {
   display: block;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 1.02rem;
   line-height: 1.18;
@@ -188,6 +186,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- botones ---------- */
 
+.placa-v,
+.btn,
+.footer-h,
+.escena-chip,
+.dim-tab,
+.serv-dato .placa-v,
+.campo-val { letter-spacing: 0.028em; }
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -198,10 +204,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 2px solid transparent;
   border-radius: var(--radius);
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
-  font-size: 0.98rem;
-  letter-spacing: 0.01em;
+  font-size: 1.02rem;
   cursor: pointer;
   transition: background-color 0.28s var(--ease), color 0.28s var(--ease), border-color 0.28s var(--ease), transform 0.28s var(--ease);
 }
@@ -304,15 +308,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .marca-sello {
   display: grid;
   place-items: center;
-  width: 62px;
-  height: 62px;
+  width: 72px;
+  height: 72px;
   background: var(--color-secondary);
   color: #fff;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
-  font-size: 1.32rem;
-  letter-spacing: 0.02em;
+  font-size: 1.7rem;
+  letter-spacing: 0.06em;
   border-radius: var(--radius-plate);
 }
 .marca-txt { display: block; }
@@ -327,9 +330,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .marca-l2 {
   display: block;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
-  font-size: 2.3rem;
+  font-size: 2.9rem;
   line-height: 0.92;
   letter-spacing: -0.01em;
   color: #fff;
@@ -471,7 +473,6 @@ body.no-scroll { overflow: hidden; }
   background: var(--color-ink);
   color: #fff;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 0.86rem;
   padding: 0.28rem 0.6rem;
@@ -485,7 +486,6 @@ body.no-scroll { overflow: hidden; }
 }
 .esp-nom {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 1.22rem;
   line-height: 1.1;
@@ -570,7 +570,6 @@ body.no-scroll { overflow: hidden; }
   margin-left: -1px;
   color: var(--color-text-claro);
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 0.95rem;
   text-align: left;
@@ -590,14 +589,12 @@ body.no-scroll { overflow: hidden; }
 }
 .escena-nom {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: clamp(1.4rem, 2.6vw, 2.1rem);
   line-height: 1.04;
 }
 .escena-dato {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: clamp(1rem, 1.5vw, 1.2rem);
   color: var(--color-primary-claro);
@@ -696,7 +693,6 @@ body.no-scroll { overflow: hidden; }
 }
 .serv-n {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 1.5rem;
   color: var(--color-secondary);
@@ -705,7 +701,6 @@ body.no-scroll { overflow: hidden; }
 .serv-nom {
   display: block;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 1.18rem;
   line-height: 1.12;
@@ -757,7 +752,6 @@ body.no-scroll { overflow: hidden; }
   border-bottom: 3px solid transparent;
   color: var(--color-text-claro);
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -793,7 +787,6 @@ body.no-scroll { overflow: hidden; }
 }
 .campo-val {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 1.05rem;
   letter-spacing: 0;
@@ -873,7 +866,6 @@ input[type="range"]::-moz-range-thumb {
   gap: 0.5rem;
   flex-wrap: wrap;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 800;
   font-size: clamp(2.6rem, 6vw, 4rem);
   line-height: 0.95;
@@ -887,7 +879,6 @@ input[type="range"]::-moz-range-thumb {
 }
 .dim-out-rec {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 1.05rem;
   color: #fff;
@@ -948,7 +939,6 @@ input[type="range"]::-moz-range-thumb {
 .hero-placa--nos { left: auto; right: -0.8rem; bottom: 1.2rem; }
 .lectura {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: clamp(1.2rem, 2.2vw, 1.75rem);
   line-height: 1.22;
@@ -998,7 +988,6 @@ input[type="range"]::-moz-range-thumb {
 }
 .paso-n {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 800;
   font-size: 2.1rem;
   line-height: 1;
@@ -1060,7 +1049,6 @@ input[type="range"]::-moz-range-thumb {
   padding-block: 0.9rem;
   cursor: pointer;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 1.05rem;
   line-height: 1.2;
@@ -1116,7 +1104,6 @@ input[type="range"]::-moz-range-thumb {
   align-items: center;
   min-height: 44px;
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 700;
   font-size: 1.6rem;
   color: #fff;
@@ -1179,12 +1166,11 @@ input[type="range"]::-moz-range-thumb {
   padding-bottom: var(--sp-4);
 }
 .footer-marca { display: grid; gap: 0.6rem; align-content: start; }
-.marca-sello--pie { width: 84px; height: 84px; font-size: 1.8rem; }
-.marca-txt--pie .marca-l2 { font-size: 2.6rem; }
+.marca-sello--pie { width: 96px; height: 96px; font-size: 2.3rem; }
+.marca-txt--pie .marca-l2 { font-size: 3.2rem; }
 .footer-claim { font-size: 0.9rem; max-width: 34ch; margin-top: 0.4rem; }
 .footer-h {
   font-family: var(--font-display);
-  font-stretch: 112%;
   font-weight: 600;
   font-size: 0.78rem;
   letter-spacing: 0.16em;
@@ -1299,8 +1285,8 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
 @media (max-width: 1100px) {
   .main-nav { gap: 0.8rem; }
   .main-nav a { font-size: 0.86rem; }
-  .marca-sello { width: 54px; height: 54px; font-size: 1.16rem; }
-  .marca-l2 { font-size: 2rem; }
+  .marca-sello { width: 60px; height: 60px; font-size: 1.4rem; }
+  .marca-l2 { font-size: 2.4rem; }
 }
 
 @media (max-width: 980px) {
@@ -1452,9 +1438,9 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   .fichas-hero li:first-child { grid-column: auto; }
   .aviso-in { justify-content: flex-start; }
   .serv-item { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
-  .marca-sello { width: 48px; height: 48px; font-size: 1.02rem; }
+  .marca-sello { width: 52px; height: 52px; font-size: 1.24rem; }
   .marca-l1 { font-size: 0.68rem; letter-spacing: 0.16em; }
-  .marca-l2 { font-size: 1.7rem; }
+  .marca-l2 { font-size: 2.05rem; }
   .mosaico { height: 34svh; min-height: 210px; }
   .dim-out-v { font-size: 2.4rem; }
 }
