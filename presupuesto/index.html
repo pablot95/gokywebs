@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculá tu plan web | Gokywebs</title>
     <link rel="icon" type="image/png" href="../logo.png">
-    <meta name="description" content="Respondé 3 preguntas y conocé al instante cuánto sale tu web a medida: con un pago único o con la suscripción mensual.">
+    <meta name="description" content="Respondé 3 preguntas y conocé al instante cuánto sale tu web a medida: con el plan anual o con el plan mensual.">
     <meta name="robots" content="noindex">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,7 +46,7 @@
 
     <div class="live-budget" id="liveBudget" aria-live="polite">
         <span class="live-budget-label">Tu web</span>
-        <span class="live-budget-opcion"><strong id="liveBudgetUnico">$0</strong> <small>pago único</small></span>
+        <span class="live-budget-opcion"><strong id="liveBudgetUnico">$0</strong> <small>por año</small></span>
         <span class="live-budget-o">o</span>
         <span class="live-budget-opcion"><strong id="liveBudgetMensual">$0</strong> <small>por mes</small></span>
     </div>
@@ -124,7 +124,7 @@
     <div class="step-card" id="step-3">
         <p class="step-label">Paso 3 de 3</p>
         <h2 class="step-question">Todo esto viene incluido</h2>
-        <!-- Lo llena renderStep3Context(): lista de INCLUDES[tipo] + las dos formas de contratar. -->
+        <!-- Lo llena renderStep3Context(): lista de INCLUDES[tipo] + los dos planes. -->
         <div id="func-included" style="margin-bottom:1.5rem;padding:1rem 1.1rem;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid var(--border)"></div>
         <p class="form-helper" style="margin-top:0;margin-bottom:0.9rem">Necesitás algo que no está en la lista? Contanos y lo vemos juntos.</p>
         <div class="custom-request-wrap" style="margin-top:0">
@@ -147,21 +147,22 @@
                 <p class="includes-title">Tu web incluye</p>
                 <ul class="includes-list" id="includesList"></ul>
                 <div class="price-totals">
-                    <!-- Dos formas de contratar la misma web (15-sep-2026): dos filas del
-                         mismo peso que nunca se suman en un total. Las llena renderResult(). -->
+                    <!-- Dos planes para la misma web (19-sep-2026): dos filas del mismo
+                         peso que nunca se suman en un total. Las llena renderResult(). -->
                     <div class="price-final-group">
                         <div class="price-final-row">
-                            <span class="label">Pago único <small id="pricePagoUnicoDetalle">seña y saldo al entregar la web</small></span>
-                            <span class="value" id="pricePagoUnico">$0</span>
+                            <span class="label">Plan anual <small id="pricePagoUnicoDetalle">seña y el resto al entregar la web</small></span>
+                            <span class="value" id="pricePagoUnico">$0/año</span>
                         </div>
                         <div class="price-final-row">
-                            <span class="label">Suscripción mensual <small>sin pago inicial, sin cambios incluidos</small></span>
+                            <span class="label">Plan mensual <small>sin pago inicial, sin cambios incluidos</small></span>
                             <span class="value" id="priceMensual">$0/mes</span>
                         </div>
                     </div>
-                    <p class="plan-note"><strong>Pago único:</strong> arrancamos con la seña y el saldo lo abonás al entregar la web, por transferencia o con tarjeta, por Mercado Pago. La web queda paga e incluye mantenimiento el primer año: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte (no incluye cambios). Después del primer año podés seguir con el plan de mantenimiento, opcional: $10.000 por mes el sitio profesional y $15.000 por mes la tienda, los cursos y la inmobiliaria.</p>
-                    <p class="plan-note"><strong>Suscripción mensual:</strong> con la primera mensualidad armamos la web y la dejamos funcionando. Se cobra por suscripción automática de Mercado Pago y, mientras tengas la suscripción, queda todo incluido: hosting, dominio y soporte. No incluye cambios: si los necesitás, el plan con cambios suma $10.000 por mes e incluye 1 cambio por mes. Incluye el mantenimiento técnico de la web: actualizaciones de sistemas, plugins, SDKs e integraciones externas, corrección de errores, compatibilidad con servicios de terceros, seguridad, soporte y los ajustes necesarios para que la página se mantenga operativa y actualizada. Sin permanencia: la cancelás cuando quieras; si se cancela la suscripción, la web deja de estar publicada. El valor se actualiza una vez al año.</p>
-                    <p class="plan-note">Es la misma web con las dos formas: con cualquiera queda lista en unos 7 días desde que arrancamos y nos pasás el contenido.</p>
+                    <p class="plan-note"><strong>Plan anual:</strong> arrancamos con la seña y el resto lo abonás al entregar la web, por transferencia o con tarjeta. Después se renueva una vez por año, contado desde la seña, sin suscripción. Mientras el plan esté activo queda todo incluido: hosting, dominio, mantenimiento, actualizaciones y soporte (no incluye cambios: un cambio después de entregada la web se cotiza aparte).</p>
+                    <p class="plan-note"><strong>Plan mensual:</strong> con la primera mensualidad armamos la web y la dejamos funcionando. Se cobra por suscripción automática de Mercado Pago y, mientras tengas el plan, queda todo incluido: hosting, dominio, mantenimiento, actualizaciones y soporte. No incluye cambios: para eso está el plan con cambios, con 1 cambio por mes, de $25.000 por mes el sitio profesional y $35.000 por mes la tienda, los cursos y la inmobiliaria. Sin permanencia: lo das de baja cuando quieras; si se cancela la suscripción, la web deja de estar publicada. La mensualidad se actualiza una vez al año.</p>
+                    <p class="plan-note" id="planNotePanel" hidden><strong>Panel:</strong> el sitio profesional no trae panel de administración y los cambios los hacemos nosotros. Si querés cambiar vos los textos y las imágenes, le sumamos un panel y el plan mensual pasa a <span id="planNotePanelMonto">$25.000</span> por mes.</p>
+                    <p class="plan-note">Es la misma web con los dos planes: incluyen lo mismo, cambia cada cuánto lo pagás, y con cualquiera queda lista en unos 7 días desde que arrancamos y nos pasás el contenido.</p>
                 </div>
                 <button type="button" class="btn-muestra" id="btnMuestraGratis" style="margin-top:0.75rem">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -201,11 +202,11 @@
                         <p class="cs-value" id="summTypeName">—</p>
                     </div>
                     <div>
-                        <p class="cs-label">Pago único</p>
+                        <p class="cs-label">Plan anual</p>
                         <p class="cs-pago-unico" id="summPagoUnico">—</p>
                     </div>
                     <div>
-                        <p class="cs-label">Suscripción mensual</p>
+                        <p class="cs-label">Plan mensual</p>
                         <p class="cs-mensualidad" id="summMensualidad">—</p>
                     </div>
                 </div>
@@ -256,8 +257,9 @@
                         </div>
                     </div>
 
-                    <!-- Un botón por cada forma de contratar, con el mismo peso (15-sep-2026).
-                         Son type="button": cada uno llama a handlePayment() con su modalidad. -->
+                    <!-- Un botón por cada plan, con el mismo peso (19-sep-2026): la seña del
+                         plan anual y la suscripción del plan mensual. Son type="button": cada
+                         uno llama a handlePayment() con su modalidad. -->
                     <div class="pay-options">
                         <button type="button" class="btn-pay" id="btnPaySena">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
@@ -268,7 +270,7 @@
                             <span id="btnPayMensualLabel">Suscribirme por mes</span>
                         </button>
                     </div>
-                    <p class="cs-note">Pago único: pagás la seña con Mercado Pago y el saldo lo abonás al entregar la web; incluye mantenimiento el primer año. Suscripción mensual: te llevamos a la suscripción de Mercado Pago, podés suscribirte aunque no tengas cuenta y con la primera mensualidad armamos la web y la dejamos funcionando; sin permanencia, la cancelás cuando quieras desde Mercado Pago o llamando al banco emisor de la tarjeta si te suscribiste sin cuenta.</p>
+                    <p class="cs-note">Plan anual: pagás la seña con Mercado Pago, el resto lo abonás al entregar la web y después se renueva una vez por año, contado desde la seña. Plan mensual: te llevamos a la suscripción de Mercado Pago, podés suscribirte aunque no tengas cuenta y con la primera mensualidad armamos la web y la dejamos funcionando; sin permanencia, la cancelás cuando quieras desde Mercado Pago o llamando al banco emisor de la tarjeta si te suscribiste sin cuenta.</p>
                     <div class="mp-seal">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                         Pago 100% seguro · SSL encriptado · Mercado Pago
@@ -325,8 +327,8 @@
             <div class="ctm-step">
                 <div class="ctm-step-num">2</div>
                 <div class="ctm-step-body">
-                    <h3>Elegís cómo contratarla</h3>
-                    <p>Si te gusta, elegís cómo contratarla: con el pago único abonás la seña y el saldo al entregar la web; con la suscripción mensual te suscribís por Mercado Pago y, sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando.</p>
+                    <h3>Elegís el plan</h3>
+                    <p>Si te gusta, elegís el plan: con el plan anual abonás la seña y el resto al entregar la web; con el plan mensual te suscribís por Mercado Pago y, sin pago inicial, con la primera mensualidad armamos la web y la dejamos funcionando.</p>
                 </div>
             </div>
 
@@ -334,7 +336,7 @@
                 <div class="ctm-step-num">3</div>
                 <div class="ctm-step-body">
                     <h3>Web publicada</h3>
-                    <p>En unos <strong>7 días</strong> desde que arrancamos y nos pasás el contenido, tu web queda publicada y funcionando, con un panel para editar vos mismo los textos y las imágenes. Con el pago único la web queda paga, con el mantenimiento incluido el primer año. La suscripción mensual incluye hosting, dominio, soporte y el mantenimiento técnico (los cambios van con el plan con cambios), sin permanencia: si se cancela la suscripción, la web deja de estar publicada.</p>
+                    <p>En unos <strong>7 días</strong> desde que arrancamos y nos pasás el contenido, tu web queda publicada y funcionando. Los dos planes incluyen hosting, dominio, soporte y el mantenimiento técnico (los cambios van con el plan con cambios). El plan anual se renueva una vez por año, contado desde la seña; el plan mensual no tiene permanencia: si se cancela la suscripción, la web deja de estar publicada.</p>
                 </div>
             </div>
 
@@ -359,7 +361,7 @@
                 <span class="ctm-info-icon">🔒</span>
                 <div>
                     <strong>Nos ocupamos de todo</strong>
-                    <span>Con la suscripción mensual, hosting, dominio, soporte y mantenimiento corren por nuestra cuenta mientras dure tu suscripción. Vos te olvidás de todo.</span>
+                    <span>Con el plan anual o el mensual, hosting, dominio, soporte y mantenimiento corren por nuestra cuenta mientras el plan esté activo. Vos te olvidás de todo.</span>
                 </div>
             </div>
         </div>
@@ -418,6 +420,6 @@
     </div>
 </div>
 
-<script type="module" src="script.js?v=20260916"></script>
+<script type="module" src="script.js?v=20260919"></script>
 </body>
 </html>

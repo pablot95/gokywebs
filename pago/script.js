@@ -5,14 +5,15 @@
 
    Monto dinámico por link: gokywebs.com/pago?monto=15000 cobra exactamente
    ese valor, por única vez (Pablo arma el link con el importe puntual de cada
-   cliente: la seña o el saldo del pago único, una carga de productos, etc.).
-   Los botones "Pagar la seña" de /presupuestos/* traen ?monto= con la seña del
-   tipo de web (40000, 60000 o 90000), y la tabla de esta página los repite.
+   cliente: la seña o el resto del plan anual, una carga de productos, etc.).
+   Desde el 19-sep-2026 /presupuestos/* ya no traen botones a esta página (el
+   plan anual se pide por WhatsApp); la tabla de acá sigue ofreciendo las señas
+   del plan anual (40000 o 60000) con ?monto=.
    Desde el 14-sep-2026 no hay monto por defecto (el que había era el del
    modelo anterior): sin ?monto= válido no se ofrece el pago con
    Mercado Pago, porque no hay importe que cobrar, y quedan la transferencia y
-   los links de suscripción. El servicio mensual NO se cobra por acá: va por
-   suscripción de Mercado Pago (/mantenimientomensual y /mantenimientoweb).
+   los links de suscripción. El plan mensual NO se cobra por acá: va por
+   suscripción de Mercado Pago (/planmensual/sitioprofesional y /planmensual/tienda).
    OJO: es "monto", no "pago" — "?pago=fallido" ya existe en esta misma
    página para el aviso de pago rechazado (ver checkFailedPayment más abajo);
    reusar esa clave para el monto lo pisaría. */

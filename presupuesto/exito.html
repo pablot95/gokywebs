@@ -162,8 +162,8 @@
 
 <div class="exito-wrap">
 
-    <!-- Los textos de acá dependen de cómo contrató (15-sep-2026): los completa el
-         script de abajo según vuelva de la seña del pago único o de la suscripción. -->
+    <!-- Los textos de acá dependen del plan (19-sep-2026): los completa el script
+         de abajo según vuelva de la seña del plan anual o de la suscripción del mensual. -->
     <div id="pendingBox" class="pending-box" style="display:none">
         <h2 id="pendingTitle">⏳ En proceso</h2>
         <p id="pendingText">Mercado Pago está verificando la operación. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.</p>
@@ -299,11 +299,11 @@ const firebaseConfig = {
 };
 
 const params        = new URLSearchParams(window.location.search);
-/* Dos formas de contratar (15-sep-2026). La vuelta de Mercado Pago dice cuál fue:
-   la seña del pago único vuelve de Checkout Pro con payment_id (y collection_id);
-   la suscripción del servicio mensual vuelve con preapproval_id, solo si el plan
-   tiene esta página como URL de retorno. Sin ninguno de los dos se usa la
-   modalidad que guardó script.js al tocar el botón. */
+/* Dos planes (19-sep-2026). La vuelta de Mercado Pago dice cuál fue: la seña
+   del plan anual vuelve de Checkout Pro con payment_id (y collection_id); la
+   suscripción del plan mensual vuelve con preapproval_id, solo si el plan de
+   Mercado Pago tiene esta página como URL de retorno. Sin ninguno de los dos se
+   usa la modalidad que guardó script.js al tocar el botón ('unico' = plan anual). */
 const preapprovalId = params.get('preapproval_id');
 const pagoId        = params.get('payment_id') || params.get('collection_id');
 const paymentId     = preapprovalId || pagoId || '—';
@@ -336,14 +336,15 @@ const modalidad   = preapprovalId ? 'mensual'
     : (MODALIDADES.includes(presupuesto.modalidad) ? presupuesto.modalidad : '');
 
 /* Montos de este presupuesto. Los guarda script.js en `gky_presupuesto` antes de
-   ir a Mercado Pago (precioUnico, sena, saldo, mensualidad): si se renombran
-   allá, hay que renombrarlos acá. Un borrador sin precioUnico es de un modelo
-   anterior y sus montos no se leen: salen del siteType, con los mismos valores
-   que PRECIO_UNICO / SENA / MENSUALIDAD de script.js. Sin siteType no se
-   muestra ningún monto, antes que afirmar uno que no se leyó. */
-const PRECIO_UNICO = { landing: 180000, ecommerce: 290000, inmobiliaria: 240000, elearning: 290000 };
+   ir a Mercado Pago (precioUnico = precio por año del plan anual, sena, saldo,
+   mensualidad): si se renombran allá, hay que renombrarlos acá. Un borrador
+   sin precioUnico es de un modelo anterior y sus montos no se leen: salen del
+   siteType, con los mismos valores que PRECIO_UNICO / SENA / MENSUALIDAD de
+   script.js. Sin siteType no se muestra ningún monto, antes que afirmar uno
+   que no se leyó. */
+const PRECIO_UNICO = { landing: 140000, ecommerce: 230000, inmobiliaria: 190000, elearning: 230000 }; // plan anual, 19-sep-2026
 const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD  = { landing: 15000,  ecommerce: 25000,  inmobiliaria: 25000,  elearning: 25000 }; // 16-sep-2026
+const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 }; // 19-sep-2026
 const fmtARS = n => '$' + Number(n).toLocaleString('es-AR');
 const borradorNuevo  = Number(presupuesto.precioUnico) > 0;
 const tipoWeb        = presupuesto.siteType;
@@ -359,25 +360,26 @@ const mensualidadFmt = mensualidadVal ? fmtARS(mensualidadVal) : '—';
 const setText = (id, texto) => { const el = document.getElementById(id); if (el) el.textContent = texto; };
 if (modalidad === 'unico') {
     setText('exitoBadge', '✓ Seña confirmada');
-    setText('exitoDesc', `Ya recibimos tu seña${senaVal ? ' de ' + senaFmt : ''}. ${saldoVal ? 'El saldo de ' + saldoFmt : 'El saldo'} lo abonás al entregar la web, que queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
+    setText('exitoDesc', `Ya recibimos la seña de tu plan anual${senaVal ? ', ' + senaFmt : ''}. ${saldoVal ? 'El resto, ' + saldoFmt + ',' : 'El resto'} lo abonás al entregar la web, que queda lista en unos 7 días desde que arrancamos y nos pasás el contenido, y el plan se renueva una vez por año, contado desde la seña. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
     setText('pagoPillLabel', 'Seña');
     setText('pagoPillValor', senaVal ? senaFmt + ' ✓' : '✓');
     setText('pendingTitle', '⏳ Pago en proceso');
     setText('pendingText', 'Tu pago está siendo verificado por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
 } else if (modalidad === 'mensual') {
     setText('exitoBadge', '✓ Suscripción confirmada');
-    setText('exitoDesc', `Ya activaste la suscripción mensual${mensualidadVal ? ' de ' + mensualidadFmt + ' por mes' : ''}. Con la primera mensualidad armamos la web y la dejamos funcionando: queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
-    setText('pagoPillLabel', 'Suscripción mensual');
+    setText('exitoDesc', `Ya activaste el plan mensual${mensualidadVal ? ' de ' + mensualidadFmt + ' por mes' : ''}. Con la primera mensualidad armamos la web y la dejamos funcionando: queda lista en unos 7 días desde que arrancamos y nos pasás el contenido. Ahora necesitamos algunos datos para que el equipo de Gokywebs pueda empezar a trabajar en tu sitio web.`);
+    setText('pagoPillLabel', 'Plan mensual');
     setText('pagoPillValor', mensualidadVal ? mensualidadFmt + '/mes ✓' : '✓');
     setText('pendingTitle', '⏳ Suscripción en proceso');
     setText('pendingText', 'Tu suscripción está siendo verificada por Mercado Pago. En cuanto se confirme te contactamos. De todos modos podés completar el formulario a continuación.');
 }
 
 /* Campos de precio de los docs de `presupuestos`, con los nombres que lee el
-   admin: totalPrice y basePrice valen el precio único (el admin toma totalPrice
-   0 como "a cotizar"), sena es la seña del pago único, saldo el resto al
-   entregar y modalidad 'unico' | 'mensual' ('' si no se sabe). primerPago es
-   del modelo del 10 al 14-sep y va siempre en 0. */
+   admin: totalPrice, basePrice y precioUnico valen el precio por año del plan
+   anual (el admin toma totalPrice 0 como "a cotizar"), sena es la seña del plan
+   anual, saldo el resto al entregar y modalidad 'unico' (plan anual) |
+   'mensual' ('' si no se sabe). primerPago es del modelo del 10 al 14-sep y va
+   siempre en 0. */
 const camposPrecio = {
     totalPrice:  precioUnicoVal,
     basePrice:   precioUnicoVal,
@@ -512,14 +514,14 @@ document.getElementById('briefForm').addEventListener('submit', async (e) => {
 
             /* Los textos de estos dos mails viven en el panel de EmailJS, no en el
                repo (template_1mq1gt7 al cliente, template_xugoxum al admin). Desde
-               el 15-sep-2026 (dos formas de contratar) las variables de siempre
-               llevan: total_price = precio único; primer_pago = lo que pagó para
-               arrancar (la seña si eligió pago único, la primera mensualidad si
-               eligió la suscripción mensual); mensualidad = la suscripción mensual de
-               ese tipo de web. Se suman modalidad ("Pago único" / "Suscripción mensual"),
-               precio_unico, sena y saldo, para usarlas en los templates. */
+               el 19-sep-2026 (plan anual o plan mensual) las variables de siempre
+               llevan: total_price y precio_unico = el precio por año del plan
+               anual; primer_pago = lo que pagó para arrancar (la seña si eligió el
+               plan anual, la primera mensualidad si eligió el plan mensual);
+               mensualidad = el plan mensual de ese tipo de web; modalidad = "Plan
+               anual" / "Plan mensual"; sena y saldo, los del plan anual. */
             const totalFmt       = precioUnicoFmt;
-            const modalidadTexto = modalidad === 'unico' ? 'Pago único' : (modalidad === 'mensual' ? 'Suscripción mensual' : '—');
+            const modalidadTexto = modalidad === 'unico' ? 'Plan anual' : (modalidad === 'mensual' ? 'Plan mensual' : '—');
             const primerPagoFmt  = modalidad === 'unico' ? senaFmt : (modalidad === 'mensual' ? mensualidadFmt : '—');
             const pagesLabel   = { '1': '1 pagina (hasta 5 secciones)', '2-4': '2 a 4 paginas', 'mas5': 'mas de 5 paginas' };
             const pagesText    = pagesLabel[briefData.pages] || briefData.pages || '—';

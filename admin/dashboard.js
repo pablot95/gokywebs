@@ -1027,8 +1027,8 @@ const PLANES = {
     ecommerce:    { label: "Ecommerce",            unico: 230000, sena: 60000, mensual: 30000, propia: 290000 },
     cursos:       { label: "Plataforma de cursos", unico: 230000, sena: 60000, mensual: 30000, propia: 290000 },
     inmobiliaria: { label: "Inmobiliaria",         unico: 190000, sena: 60000, mensual: 30000, propia: 240000 },
-    // Pago único y seña del presupuesto de noticias anterior al 10-sep-2026 (presupuestos/noticias).
-    noticias:     { label: "Portal de noticias",   unico: 350000, sena: 90000, mensual: 30000, propia: 350000 },
+    // Desde el 19-sep-2026 el portal de noticias se cotiza como la tienda (Pablo): presupuestos/noticias.
+    noticias:     { label: "Portal de noticias",   unico: 230000, sena: 60000, mensual: 30000, propia: 290000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
 const PLAN_RESTO = { unico: 230000, sena: 60000, mensual: 30000, propia: 290000 };

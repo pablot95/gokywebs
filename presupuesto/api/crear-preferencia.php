@@ -1,11 +1,12 @@
 <?php
-/* Seña del pago único de la calculadora /presupuesto/ (15-sep-2026). La misma
-   web se contrata de dos formas: pago único (una seña para arrancar y el saldo
-   al entregar la web) o servicio mensual por suscripción de Mercado Pago. Este
-   archivo arma la preferencia de Checkout Pro solo para la seña: la llama
-   handlePayment('unico') de presupuesto/script.js y Mercado Pago vuelve a
-   exito.html con payment_id. La suscripción no pasa por acá: script.js manda
-   directo al link del plan. Estuvo sin uso del 14 al 15-sep-2026. */
+/* Seña del plan anual de la calculadora /presupuesto/ (19-sep-2026; del 15 al
+   19-sep fue la seña del pago único, por los mismos montos). La misma web se
+   contrata con uno de dos planes: el anual (una seña para arrancar, el resto al
+   entregar la web y después se renueva cada año, contado desde la seña) o el
+   mensual por suscripción de Mercado Pago. Este archivo arma la preferencia de
+   Checkout Pro solo para la seña: la llama handlePayment('unico') de
+   presupuesto/script.js y Mercado Pago vuelve a exito.html con payment_id. La
+   suscripción no pasa por acá: script.js manda directo al link del plan. */
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -28,7 +29,7 @@ $nombre    = htmlspecialchars(trim($body['nombre']    ?? ''), ENT_QUOTES);
 $email     = filter_var(trim($body['email']           ?? ''), FILTER_SANITIZE_EMAIL);
 $reference = htmlspecialchars(trim($body['reference'] ?? ('GKY-' . time() . '-' . rand(1000,9999))), ENT_QUOTES);
 
-// Seña del pago único, recalculada server-side a partir del siteType: nunca se
+// Seña del plan anual, recalculada server-side a partir del siteType: nunca se
 // confía en un monto mandado desde el cliente. Sitio profesional (clave 'landing')
 // $40.000 · ecommerce, inmobiliaria y elearning $60.000. Tiene que coincidir con
 // SENA de presupuesto/script.js y de presupuesto/exito.html. Un tipo desconocido
@@ -38,7 +39,7 @@ $siteType = is_string($body['siteType'] ?? null) ? trim($body['siteType']) : '';
 if (!isset($SENAS[$siteType])) { http_response_code(400); echo json_encode(['error' => 'Tipo de web inválido']); exit; }
 $sena = $SENAS[$siteType];
 
-// El servicio mensual no se cobra acá: es una suscripción de Mercado Pago
+// El plan mensual no se cobra acá: es una suscripción de Mercado Pago
 // (preapproval) y el link del plan lo abre directo presupuesto/script.js. Las altas
 // y las bajas las procesa mantenimiento/api/webhook-mp.php.
 
@@ -46,7 +47,7 @@ $preference = [
     'items' => [[
         'id'          => 'sena-web-gokywebs',
         'title'       => 'Seña — Desarrollo Web Gokywebs',
-        'description' => 'Seña del pago único de tu sitio web. El saldo se abona al entregar la web.',
+        'description' => 'Seña del plan anual de tu sitio web. El resto se abona al entregar la web.',
         'quantity'    => 1,
         'currency_id' => 'ARS',
         'unit_price'  => $sena

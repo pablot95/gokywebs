@@ -227,11 +227,11 @@ function wabot_textos_default() {
     'mantenimiento_planes' => [
         'landing' => [
             'precio' => '$20.000',
-            'link' => 'gokywebs.com/mantenimientomensual',
+            'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
             'precio' => '$30.000',
-            'link' => 'gokywebs.com/mantenimientoweb',
+            'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
     'media_recibida' => 'Me llegó tu archivo y queda guardado en la conversación. Si querés, contame en un mensaje de qué se trata así lo tengo en cuenta.',

@@ -83,13 +83,14 @@ async function _guardarLead(st) {
             objectives:      st.objectives      || [],
             functionalities: st.functionalities || [],
             pages:           st.pages           || '',
-            /* Dos formas de contratar la misma web (15-sep-2026), con los
-               nombres que lee el admin: precioUnico, sena (la seña del pago
-               único), saldo (precioUnico - sena), mensualidad y modalidad (''
-               acá, porque todavía no eligió; 'unico' o 'mensual' lo escribe
-               exito.html). totalPrice y basePrice valen el precio único: el
-               admin toma totalPrice 0 como "a cotizar". primerPago es del modelo
-               del 10 al 14-sep y va siempre en 0. */
+            /* Plan anual o plan mensual (19-sep-2026), con los nombres que lee
+               el admin: precioUnico (el precio por año del plan anual), sena (la
+               seña del plan anual), saldo (precioUnico - sena, el resto al
+               entregar), mensualidad y modalidad ('' acá, porque todavía no
+               eligió; 'unico' = plan anual o 'mensual' lo escribe exito.html).
+               totalPrice y basePrice valen el precio del plan anual: el admin
+               toma totalPrice 0 como "a cotizar". primerPago es del modelo del
+               10 al 14-sep y va siempre en 0. */
             basePrice:       st.precioUnico     || 0,
             extrasPrice:     st.extrasPrice     || 0,
             totalPrice:      st.precioUnico     || 0,
@@ -121,11 +122,12 @@ async function _guardarLead(st) {
      NO en "notas" (apuntes internos de Pablo) ni solo en "extra" (esa fila
      recién se ve al convertir a cliente).
    · precio → precioTotal/sena/saldo son los nombres canónicos de `propuestas`
-     (el admin los copia al pasar el boceto a Seguimiento). Desde el 15-sep-2026
-     (dos formas de contratar la misma web) precioTotal, totalPrice y basePrice
-     valen el precio único; sena es la seña del pago único y saldo el resto al
-     entregar, y van también precioUnico, mensualidad y modalidad ('' hasta que
-     elige, en exito.html). primerPago es del modelo del 10 al 14-sep: siempre 0.
+     (el admin los copia al pasar el boceto a Seguimiento). Desde el 19-sep-2026
+     (plan anual o plan mensual) precioTotal, totalPrice, basePrice y
+     precioUnico valen el precio por año del plan anual; sena es la seña del
+     plan anual y saldo el resto al entregar, y van también mensualidad y
+     modalidad ('' hasta que elige, en exito.html; 'unico' es el plan anual).
+     primerPago es del modelo del 10 al 14-sep: siempre 0.
    · adicionales elegidos → campo propio `adicionales_texto` (31-jul-2026:
      antes se mezclaban dentro de productos_servicios, que en /form/ significa
      otra cosa — quedaban pegados en medio del párrafo de "Sobre el negocio"). */
@@ -267,26 +269,26 @@ const BUSINESS_TYPES = [
 /* Qué incluye cada tipo de web (10-sep-2026). Es UNA sola lista por tipo y
    la usan tanto el panel del paso 3 como la tarjeta de resultado (antes había
    dos listas, INCLUDES y ALREADY_INCLUDED, que se desincronizaban). Desde el
-   15-sep-2026 la lista vale para las dos formas de contratar: arriba va el
-   hosting y el dominio de cada una (el primer año con el pago único, mientras
-   dure la suscripción mensual) y al final la carga de hasta 10 productos y el
-   panel para editar textos e imágenes (13-sep). Desde el 16-sep-2026 ninguna
-   de las dos incluye cambios: el cambio por mes es del plan con cambios. */
+   19-sep-2026 la lista vale para los dos planes, el anual y el mensual: arriba
+   va el hosting, el dominio y el mantenimiento mientras el plan esté activo, y
+   ninguno incluye cambios (el cambio por mes es del plan con cambios). La
+   tienda, los cursos y la inmobiliaria traen la carga de hasta 10 productos y
+   el panel para editar textos e imágenes; el sitio profesional no trae panel
+   (con panel, el plan mensual pasa a MENSUALIDAD_CON_PANEL) y sus productos se
+   cargan a $500 cada uno. */
 const INCLUDES = {
     landing: [
-        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento incluidos mientras tengas el plan, anual o mensual</strong>',
         'Diseño personalizado y responsive',
         'Hasta 5 secciones optimizadas para conversión',
         'SEO básico y meta etiquetas',
         'Formulario de contacto',
         'Integración con redes sociales',
         'Botón flotante de WhatsApp',
-        'Certificado SSL incluido',
-        'Carga de hasta 10 productos',
-        'Panel de administración para editar vos mismo textos e imágenes'
+        'Certificado SSL incluido'
     ],
     ecommerce: [
-        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento incluidos mientras tengas el plan, anual o mensual</strong>',
         'Tienda online completa y responsive',
         'Catálogo de productos con filtros',
         'Carrito de compras y proceso de pago',
@@ -299,7 +301,7 @@ const INCLUDES = {
         'Panel de administración para editar vos mismo textos e imágenes'
     ],
     inmobiliaria: [
-        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento incluidos mientras tengas el plan, anual o mensual</strong>',
         'Sitio inmobiliaria profesional y responsive',
         'Listado de propiedades con filtros avanzados',
         'Ficha de propiedad con galería de fotos',
@@ -312,7 +314,7 @@ const INCLUDES = {
         'Panel de administración para editar vos mismo textos e imágenes'
     ],
     elearning: [
-        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento: el primer año con el pago único y mientras tengas la suscripción mensual</strong>',
+        '<strong>Desarrollo a medida, con hosting, dominio y mantenimiento incluidos mientras tengas el plan, anual o mensual</strong>',
         'Plataforma LMS completa y responsive',
         'Login y panel propio para tus alumnos',
         'Cursos organizados en módulos con videos',
@@ -431,11 +433,11 @@ const state = {
     basePrice: 0,
     extrasPrice: 0,
     totalPrice: 0,     // = precioUnico (el admin toma 0 como "a cotizar")
-    precioUnico: 0,
-    sena: 0,           // seña del pago único
-    saldo: 0,          // precioUnico - sena, se abona al entregar la web
+    precioUnico: 0,    // precio por año del plan anual (el admin lo lee con este nombre)
+    sena: 0,           // seña del plan anual
+    saldo: 0,          // precioUnico - sena, el resto se abona al entregar la web
     mensualidad: 0,
-    modalidad: '',     // 'unico' | 'mensual' recién al tocar un botón del checkout
+    modalidad: '',     // 'unico' (plan anual) | 'mensual' recién al tocar un botón del checkout
     primerPago: 0,     // campo del modelo del 10 al 14-sep: siempre 0
     sinPrecio: false, // precio a cotizar en vez de $0 real — el admin lo necesita para no mostrarlo como plata
     extras: [],
@@ -537,9 +539,9 @@ function _restorePills(containerId, values) {
 }
 
 /* Paso 3 (10-sep-2026): ya no hay pills de adicionales — el modelo es "todo
-   incluido" y los adicionales (productos arriba de 10, el plan con cambios)
-   se coordinan por WhatsApp. El paso queda como el panel de
-   qué incluye la web + las dos formas de contratarla (15-sep-2026). */
+   incluido" y los adicionales (productos, el plan con cambios, el panel del
+   sitio profesional) se coordinan por WhatsApp. El paso queda como el panel de
+   qué incluye la web + los dos planes, anual y mensual (19-sep-2026). */
 function renderStep3Context() {
     const type     = getSiteType();
     const items    = INCLUDES[type] || INCLUDES.landing;
@@ -547,7 +549,7 @@ function renderStep3Context() {
     const { precioUnico, sena, mensualidad, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Pago único de <strong style="color:black">${fmt(precioUnico)}</strong>, que incluye mantenimiento el primer año, con una seña de ${fmt(sena)} para arrancar y el saldo al entregar la web, o suscripción mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando. Es la misma web con las dos formas, y con cualquiera queda lista en unos 7 días.`;
+        : `Plan anual de <strong style="color:black">${fmt(precioUnico)} por año</strong>, con una seña de ${fmt(sena)} para arrancar y el resto al entregar la web, o plan mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial: con la primera mensualidad armamos la web y la dejamos funcionando. Los dos incluyen lo mismo y con cualquiera la web queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -735,13 +737,13 @@ function mensajeMuestraWsp(nombreNegocio) {
     lineas.push(`🏢 Negocio: ${nombreNegocio}`);
     if (state.businessInput) lineas.push(`📌 Rubro: ${state.businessInput}`);
     if (TYPE_NAMES[state.siteType]) lineas.push(`🌐 Tipo de web: ${TYPE_NAMES[state.siteType]}`);
-    // Dos líneas y nunca un total (15-sep-2026): el pago único y la suscripción
-    // mensual son dos formas de contratar la misma web.
+    // Dos líneas y nunca un total (19-sep-2026): el plan anual y el plan
+    // mensual son dos planes para la misma web.
     if (state.sinPrecio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
-        lineas.push(`💰 Pago único: ${fmt(state.precioUnico)} (seña de ${fmt(state.sena)})`);
-        lineas.push(`💰 Suscripción mensual: ${fmt(state.mensualidad)}/mes`);
+        lineas.push(`💰 Plan anual: ${fmt(state.precioUnico)} por año (seña de ${fmt(state.sena)})`);
+        lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes`);
     }
     lineas.push('', 'Gracias!');
     return lineas.join('\n');
@@ -762,25 +764,29 @@ function getSiteType() {
     return 'landing';
 }
 
-/* Modelo comercial (15-sep-2026): la misma web se contrata de dos formas, y
-   ninguna es "mejor" que la otra.
-   · Pago único: una seña para arrancar y el saldo al entregar la web. La seña
-     se cobra con Checkout Pro y el monto lo recalcula server-side
+/* Modelo comercial (19-sep-2026): la misma web se contrata con uno de dos
+   planes, que incluyen lo mismo.
+   · Plan anual, sin suscripción: una seña para arrancar, el resto al entregar
+     la web y después se renueva una vez por año, contado desde la seña. Se
+     llama PRECIO_UNICO y viaja como precioUnico / modalidad 'unico' porque son
+     los nombres que lee el admin (ahí 'unico' es el plan anual). Si la seña se
+     cobra con Checkout Pro, el monto lo recalcula server-side
      api/crear-preferencia.php a partir del siteType: SENA tiene que coincidir
      con lo que hay ahí y con SENA de exito.html.
-   · Suscripción mensual: suscripción de Mercado Pago, sin pago inicial; con la
+   · Plan mensual: suscripción de Mercado Pago, sin pago inicial; con la
      primera mensualidad armamos la web. MENSUALIDAD tiene que coincidir con el
      monto de los dos planes de Mercado Pago y con MENSUALIDAD de exito.html.
    Son montos que nunca se suman entre sí. Clave 'landing' = sitio profesional.
-   16-sep-2026: la suscripción baja a $15.000 / $25.000 y ya no incluye cambios
-   (el plan con cambios, $25.000 / $35.000, se coordina por WhatsApp). El pago
-   único incluye mantenimiento el primer año. */
-const PRECIO_UNICO = { landing: 180000, ecommerce: 290000, inmobiliaria: 240000, elearning: 290000 };
+   Ninguno incluye cambios (el plan con cambios, $25.000 / $35.000, se coordina
+   por WhatsApp). El sitio profesional no trae panel: con panel, el plan
+   mensual pasa a MENSUALIDAD_CON_PANEL. */
+const PRECIO_UNICO = { landing: 140000, ecommerce: 230000, inmobiliaria: 190000, elearning: 230000 };
 const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
-const MENSUALIDAD  = { landing: 15000,  ecommerce: 25000,  inmobiliaria: 25000,  elearning: 25000 };
-const SUSCRIPCION_15K = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=17321dd1a34e4ea0979175293297d60f';
-const SUSCRIPCION_25K = 'https://mpago.la/28VK7Ev';
-const SUSCRIPCION_LINK = { landing: SUSCRIPCION_15K, ecommerce: SUSCRIPCION_25K, inmobiliaria: SUSCRIPCION_25K, elearning: SUSCRIPCION_25K };
+const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
+const MENSUALIDAD_CON_PANEL = 25000; // sitio profesional con panel, solo plan mensual
+const SUSCRIPCION_20K = 'https://mpago.la/1pfejMG';
+const SUSCRIPCION_30K = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=36a67a7e42e7404989beb99703a0569b';
+const SUSCRIPCION_LINK = { landing: SUSCRIPCION_20K, ecommerce: SUSCRIPCION_30K, inmobiliaria: SUSCRIPCION_30K, elearning: SUSCRIPCION_30K };
 
 // Centralizado acá porque renderStep3Context(), updateLiveBudget(),
 // renderResult() y handlePayment() necesitan los mismos montos y el mismo link.
@@ -815,7 +821,7 @@ function updateLiveBudget() {
     const type = getSiteType();
     const { precioUnico, mensualidad } = getPlanInfo(type);
 
-    // Los dos montos con el mismo peso y nunca sumados: pago único o por mes.
+    // Los dos montos con el mismo peso y nunca sumados: por año o por mes.
     const unicoEl = document.getElementById('liveBudgetUnico');
     const mensualEl = document.getElementById('liveBudgetMensual');
     if (unicoEl) unicoEl.textContent = fmt(precioUnico);
@@ -832,12 +838,12 @@ function renderResult() {
     state.siteType = type;
 
     const { precioUnico, sena, saldo, mensualidad, sinPrecio } = getPlanInfo(type);
-    /* Dos formas de contratar la misma web (15-sep-2026). Campos que lee el
-       admin: precioUnico, sena, saldo, mensualidad y modalidad; totalPrice y
-       basePrice valen el precio único y nunca pueden quedar en 0 con precio
-       real, porque el admin toma totalPrice 0 como "a cotizar". La modalidad
-       queda en '' hasta que toca un botón del checkout. primerPago es del
-       modelo del 10 al 14-sep: siempre 0. */
+    /* Plan anual o plan mensual (19-sep-2026). Campos que lee el admin:
+       precioUnico (precio por año del plan anual), sena, saldo, mensualidad y
+       modalidad; totalPrice y basePrice valen el precio del plan anual y nunca
+       pueden quedar en 0 con precio real, porque el admin toma totalPrice 0
+       como "a cotizar". La modalidad queda en '' hasta que toca un botón del
+       checkout. primerPago es del modelo del 10 al 14-sep: siempre 0. */
     state.precioUnico = sinPrecio ? 0 : precioUnico;
     state.sena        = sinPrecio ? 0 : sena;
     state.saldo       = sinPrecio ? 0 : saldo;
@@ -854,11 +860,16 @@ function renderResult() {
     badge.className = 'result-type-badge ' + TYPE_BADGE_CLASSES[type];
     badge.textContent = TYPE_NAMES[type];
 
-    // Dos filas del mismo peso: pago único y suscripción mensual. Nunca un total.
+    // Dos filas del mismo peso: plan anual y plan mensual. Nunca un total.
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-    setT('pricePagoUnico',        sinPrecio ? 'A coordinar' : fmt(precioUnico));
-    setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y saldo al entregar la web' : `seña de ${fmt(sena)} y saldo de ${fmt(saldo)} al entregar la web`);
+    setT('pricePagoUnico',        sinPrecio ? 'A coordinar' : `${fmt(precioUnico)}/año`);
+    setT('pricePagoUnicoDetalle', sinPrecio ? 'seña y el resto al entregar la web' : `seña de ${fmt(sena)} y el resto (${fmt(saldo)}) al entregar la web`);
     setT('priceMensual',          sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
+
+    // El sitio profesional no trae panel: con panel, el plan mensual pasa a MENSUALIDAD_CON_PANEL.
+    const notaPanel = document.getElementById('planNotePanel');
+    if (notaPanel) notaPanel.hidden = type !== 'landing';
+    setT('planNotePanelMonto', fmt(MENSUALIDAD_CON_PANEL));
 
     const includesList = document.getElementById('includesList');
     const items = INCLUDES[type] || INCLUDES.landing;
@@ -875,7 +886,7 @@ function renderResult() {
     ).join('');
 
     setT('summTypeName',       TYPE_NAMES[type]);
-    setT('summPagoUnico',      sinPrecio ? 'A coordinar' : fmt(precioUnico));
+    setT('summPagoUnico',      sinPrecio ? 'A coordinar' : `${fmt(precioUnico)}/año`);
     setT('summMensualidad',    sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
     setT('btnPaySenaLabel',    etiquetaPagarSena());
     setT('btnPayMensualLabel', etiquetaSuscribirme());
@@ -1043,13 +1054,14 @@ function validateCheckout() {
     return ok;
 }
 
-/* Paso de pago (15-sep-2026): la misma web se contrata de dos formas y el
-   checkout tiene un botón para cada una.
-   · 'unico'   → la seña del pago único por Checkout Pro: api/crear-preferencia.php
+/* Paso de pago (19-sep-2026): la misma web se contrata con uno de dos planes y
+   el checkout tiene un botón para cada uno. Hoy no hay botón que abra este
+   paso (ver ctmCtaBtn): el plan anual se pide por WhatsApp.
+   · 'unico'   → la seña del plan anual por Checkout Pro: api/crear-preferencia.php
      recalcula la seña a partir del siteType y Mercado Pago vuelve a exito.html
-     con payment_id. El saldo se abona al entregar la web, fuera de esta página.
-   · 'mensual' → el link de suscripción del plan del tipo de web: $15.000/mes el
-     sitio profesional y $25.000/mes el resto (16-sep-2026). Mercado Pago vuelve a exito.html
+     con payment_id. El resto se abona al entregar la web, fuera de esta página.
+   · 'mensual' → el link de suscripción del plan del tipo de web: $20.000/mes el
+     sitio profesional y $30.000/mes el resto. Mercado Pago vuelve a exito.html
      con preapproval_id solo si el plan tiene esa URL de retorno configurada
      (eso se define en el plan, en la cuenta de Mercado Pago, no acá).
    Los datos quedan en `gky_presupuesto` para exito.html, con la modalidad. */
@@ -1235,7 +1247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         _guardarLead(state); // solo cuando el usuario aprieta "Calcular precio"
         /* ⚠️ `presupuesto_funnel` tiene un allowlist (hasOnly) en firestore.rules:
            un solo campo de más hace que Firestore rechace el update ENTERO. Los
-           campos de las dos formas de contratar (precioUnico, sena, saldo y
+           campos de los dos planes (precioUnico = plan anual, sena, saldo y
            modalidad, 15-sep-2026) van en la escritura completa y, si la regla
            todavía no los acepta, _trackFunnel reintenta solo con `permitidos`,
            que ya están en la regla, para no perder el hito. Cualquier otro campo
