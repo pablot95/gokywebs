@@ -308,7 +308,7 @@ foreach ([
     ['se pueden hacer formularios en la web?', 'prediseno', 'formularios', true],
     ['Soy tecnico de mantenimiento y tengo una empresa de servicio de mantenimiento', 'menu', 'mantenimiento', false],
     ['el mantenimiento es obligatorio?', 'menu', 'mantenimiento', true],
-    ['Y si la pago una sola vez y despues la mantengo yo?', 'prediseno', 'un_solo_pago', true],
+    ['Y si la pago una sola vez y despues la mantengo yo?', 'prediseno', 'web_propia', true],
     ['ustedes se quedan con una comision?', 'pitch', 'comisiones', true],
     ['como se paga?', 'pitch', 'pago', true],
 ] as [$frase, $fase, $clave, $si]) {

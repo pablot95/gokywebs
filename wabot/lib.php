@@ -1421,8 +1421,8 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
               'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno',
               // El paso 2 del formulario viaja con el resto de lo que completó.
               'estilo', 'incluir',
-              // La forma de pago que eligió también (15-sep).
-              'modalidad_elegida',
+              // La forma de pago que eligió también (15-sep), y la web propia (19-sep).
+              'modalidad_elegida', 'quiere_web_propia',
               // El precio congelado viaja con el tipo (10-sep): sin él, la
               // punta nueva de la charla cotizaba con otra lista.
               'precio_cotizado', 'sena_cotizada', 'mensualidad_cotizada', 'precio_modelo', 'precio_cotizado_ts'] as $k) {
@@ -1502,6 +1502,8 @@ function wabot_conv_load($clave) {
         // Precio dado y primer diseño ofrecido: el bot espera UNA respuesta
         // (ver wabot_oferta_diseno_responder en redactor.php, 18-sep).
         'oferta_diseno_ts' => 0,
+        // Pidió la web a su nombre o en su hosting (19-sep): suma el pago único.
+        'quiere_web_propia' => false,
         // Lo que el cliente fue contando, ordenado (ver wabot_ficha_actualizar).
         'ficha'            => null,
         'objecion_dicha'   => [],
@@ -1753,6 +1755,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['mensualidad_cotizada'] = null;
     $conv['precio_modelo'] = null;
     $conv['precio_cotizado_ts'] = 0;
+    $conv['quiere_web_propia'] = false;
     /* Las marcas del turno del precio y del formulario también son de la
      * sesión vieja (auditoría 9-sep): con pitch_hecho/pitch_tipo vivos, el
      * cliente que volvía a los 20 días recibía "Para una web de este tipo, el
@@ -3913,7 +3916,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_comercio, rubro_hibrido, rubro_sistema, hibrido_trabajos, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, plan_es_servicio, un_solo_pago, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
 
     $ultimoBot = '';
     foreach (array_reverse($conv['transcript']) as $t) {
@@ -3943,7 +3946,7 @@ GUIA:
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
-- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), casillas de correo corporativas (emails), si entregan el código o un backup (entrega_codigo), licencias de plugins o SDK (licencias), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
+- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), casillas de correo corporativas (emails), si entregan el código o un backup (entrega_codigo), si quiere la web a su nombre o en su propio hosting, pagar solo la creación y mantenerla él, o pregunta por el pago único (web_propia), licencias de plugins o SDK (licencias), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
   · **pago**: cómo se paga, con qué medios, si hay cuotas, cuánto es la seña. Es la pregunta por la PLATA. Si pregunta las dos cosas ("cómo trabajan y cómo se paga"), poné las dos claves.
 - objecion_caro: dice que es caro, regatea o pide descuento.
@@ -4521,14 +4524,20 @@ function wabot_lead_cotizado($conv, $cfg) {
             // El catálogo sin cobro online suma la carga de productos (18-sep).
             $carga = ($tipo === 'landing' && !empty($conv['catalogo']))
                 ? ' + carga de productos ' . (string)($cfg['carga_producto'] ?? '$500') . ' c/u' : '';
+            // Los dos planes (19-sep); la charla cotizada antes conserva su pago único.
+            if (($v['modelo'] ?? '') !== 'doble') {
+                // Y el pago único, si pidió la web propia (19-sep).
+                $unico = !empty($conv['quiere_web_propia']) ? (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '') : '';
+                return 'Plan anual ' . $v['precio'] . ' o plan mensual ' . $v['mensualidad'] . $carga
+                    . ($unico !== '' ? ' · pidió la web propia: pago único ' . $unico : '');
+            }
             return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes' . $carga;
         }
     }
     $t = $cfg['tipos'][$tipo] ?? [];
     $precio = (string)($t['precio'] ?? '');
-    $sena   = (string)($t['sena'] ?? '');
     $mens   = (string)($t['mensualidad'] ?? '');
-    if ($precio !== '' && $mens !== '') return 'Pago único ' . $precio . ($sena !== '' ? ' (seña ' . $sena . ')' : '') . ' o ' . $mens . ' por mes';
+    if ($precio !== '' && $mens !== '') return 'Plan anual ' . $precio . ' o plan mensual ' . $mens;
     return $precio;
 }
 
@@ -5018,6 +5027,9 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!function_exists('wabot_modalidad_elegida_en')) return false;
     if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
+    /* "Prefiero el pago único" (19-sep) pide la web propia, no el plan anual
+     * (que usa el valor interno 'unico'): eso ya lo anotó wabot_web_propia_anotar. */
+    if (!empty($conv['quiere_web_propia']) && preg_match('/\b(pago unico|unico pago)\b/u', wabot_normalizar_frase((string)$texto))) return false;
     $elegida = wabot_modalidad_elegida_en($texto);
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;

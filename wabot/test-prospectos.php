@@ -25,7 +25,8 @@ $c = conv_nueva('549110002TEST', ['tipo' => 'ecommerce', 'fase' => 'prediseno', 
 wabot_precio_congelar($c, 'ecommerce', $cfg);
 $r = turno('¿Qué diferencia hay entre un precio y el otro?', $c, $cfg);
 $texto = implode(' ', $r);
-caso('explica la diferencia sin confundir seña y mensualidad', str_contains($texto, 'no dos cuotas del mismo precio') && str_contains($texto, 'sin seña ni saldo final'), $texto);
+caso('explica la diferencia entre los planes, con sus montos y sin seña (19-sep)', str_contains($texto, 'Los dos planes incluyen lo mismo')
+    && str_contains($texto, 'Plan anual de $230.000 por año') && str_contains($texto, 'Plan mensual de $25.000 por mes') && !str_contains($texto, 'seña'), $texto);
 caso('una pregunta de pago no manda el formulario ni crea prospecto', !str_contains($texto, 'gokywebs.com/form') && empty($c['esProspecto']));
 $r = turno('ok', $c, $cfg);
 caso('un ok posterior a una duda no apaga el bot', empty($c['esProspecto']) && empty($c['bot_off']));

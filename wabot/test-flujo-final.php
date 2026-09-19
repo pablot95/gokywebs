@@ -21,10 +21,10 @@ caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json
 caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mejor para"',
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
-caso('las dos formas, con los montos y sin "son alternativas"',
-    strpos($r[0] ?? '', 'Podés contratarla de dos maneras, y las dos incluyen el armado completo:') !== false
-    && strpos($r[0] ?? '', '• Pago único de $290.000: la web queda tuya. Incluye mantenimiento el primer año.') !== false
-    && strpos($r[0] ?? '', '• Suscripción mensual de $25.000: no pagás el desarrollo de entrada; mientras esté activa incluye hosting, dominio, soporte y mantenimiento.') !== false
+caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
+    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $230.000 por año\n• Plan mensual: $25.000 por mes\n\nAmbos incluyen:") !== false
+    && strpos($r[0] ?? '', '✓ Hosting y dominio') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
+    && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
 caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
     ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
@@ -47,7 +47,7 @@ caso('y queda como prospecto, con el bot apagado y pendiente para Pablo',
 caso('después del formulario el bot no contesta nada más', turno('Listo, ya lo estoy llenando', $si, $cfg) === []);
 
 $m = $c;
-$rM = turno('Prefiero el pago único', $m, $cfg);
+$rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
 
 echo "— Cualquier otra respuesta la contesta Pablo —\n";
@@ -95,9 +95,9 @@ clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
-    'landing' => ['un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp', '$180.000', '$15.000'],
-    'inmobiliaria' => ['una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio', '$240.000', '$25.000'],
-    'elearning' => ['una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online', '$290.000', '$25.000'],
+    'landing' => ['un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp', '$140.000', '$15.000'],
+    'inmobiliaria' => ['una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio', '$190.000', '$25.000'],
+    'elearning' => ['una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online', '$230.000', '$25.000'],
 ];
 foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
@@ -105,8 +105,8 @@ foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
     caso("$tipo también usa su texto fijo y espera la respuesta",
         str_starts_with($primero, 'Para lo que me contás, te serviría ' . $frase)
-        && strpos($primero, "• Pago único de $precio: la web queda tuya.") !== false
-        && strpos($primero, "• Suscripción mensual de $mensualidad: no pagás el desarrollo de entrada") !== false
+        && strpos($primero, "• Plan anual: $precio por año") !== false
+        && strpos($primero, "• Plan mensual: $mensualidad por mes") !== false
         && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
 

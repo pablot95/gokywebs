@@ -8,20 +8,25 @@
  * {cambios_mes}, {tabla_precios} y {mensualidades} los resuelve
  * wabot_precio_placeholders() desde `tipos`.
  *
- * Condiciones vigentes (Pablo, 16-sep):
- * - Pago único: incluye mantenimiento el primer año (hosting, dominio,
- *   actualizaciones de plugins, errores y soporte; SIN cambios). Después,
- *   plan de mantenimiento de `tipos[].mantenimiento` por mes.
- * - La seña del pago único (`tipos[].sena`) es $40.000 para todos los tipos.
- *   El bot NO la menciona en el precio inicial ni al comparar formas de pago:
- *   solo la dice si preguntan puntualmente por la seña (el monto sigue
- *   viviendo en `wabot_respuesta_pago_fija()`, engine.php).
- * - Suscripción mensual (`tipos[].mensualidad`): sin pago inicial, sin
- *   permanencia, SIN cambios. Plan con cambios (`tipos[].mensualidad_cambios`)
- *   con un cambio por mes. El código se reclama recién a los 2 años.
- * - Las dos formas se dicen siempre con el mismo bloque, `dos_formas`
- *   ({dos_formas} en cualquier texto). Sin "son alternativas, no se abonan
- *   las dos": las dos incluyen el armado completo (Pablo, 18-sep).
+ * Condiciones vigentes (Pablo, 19-sep): DOS PLANES. El pago único queda solo
+ * para quien pide la web propia (ver abajo).
+ * - Plan anual (`tipos[].precio`): se paga una vez por año. Sin seña ni
+ *   saldo (`tipos[].sena` vacío).
+ * - Plan mensual (`tipos[].mensualidad`): sin pago inicial aparte, sin
+ *   permanencia. Plan con cambios (`tipos[].mensualidad_cambios`) con un
+ *   cambio por mes. El código se reclama recién a los 2 años.
+ * - Los dos incluyen lo mismo: desarrollo completo, hosting, dominio,
+ *   mantenimiento, actualizaciones y soporte. SIN cambios en la web.
+ * - Los dos planes se dicen siempre con el mismo bloque, `dos_formas`
+ *   ({dos_formas} en cualquier texto): "Plan anual" y "Plan mensual" con sus
+ *   montos y, abajo, "Ambos incluyen:" con la lista.
+ * - Web propia (19-sep): si el cliente la quiere a su nombre, en su propio
+ *   hosting, se le pasa el pago único (`tipos[].precio_unico`, los montos
+ *   del pago único de antes). No incluye hosting, dominio, mantenimiento,
+ *   actualizaciones ni soporte. Lo dicen info.web_propia, el precio
+ *   (`dos_formas_web_propia`, debajo de los planes) y la titularidad.
+ * - Las charlas cotizadas antes (precio_modelo 'doble': pago único con seña)
+ *   conservan sus montos y sus respuestas de seña y saldo.
  * - La recomendación es "Para lo que me contás, te serviría…" (o "Para
  *   {rubro}, te serviría…" si se sabe el rubro): {para_quien} lo resuelve
  *   wabot_personalizar(). El modelo clasifica, pero nunca redacta la propuesta.
@@ -41,11 +46,11 @@ function wabot_textos_default() {
     'activo' => true,
     'adicional_bilingue' => '$30.000',
     'baja' => 'Listo, no te escribimos más. Gracias por avisar.',
-    'cambio_modalidad' => 'Arrancás con la forma que más te sirva hoy. Si más adelante querés pasarte de una a la otra, las condiciones de ese cambio las coordinás con el desarrollador.',
+    'cambio_modalidad' => 'Arrancás con el plan que más te sirva hoy. Si más adelante querés pasarte de uno al otro, las condiciones de ese cambio las coordinás con el desarrollador.',
     'capi_dataset_id' => '',
     'capi_token' => '',
-    'cambios_plan' => 'El mantenimiento no incluye cambios en la web. Si vas a necesitar cambios, con la suscripción mensual está el plan con cambios de {cambios_mes}, que incluye un cambio por mes. Con el pago único, un cambio después de entregada la web se cotiza aparte. Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
-    'caro' => 'Si el pago único se te hace mucho, está la suscripción mensual de {mensualidad}: arrancás sin pago inicial, y con la primera mensualidad armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
+    'cambios_plan' => 'Los planes no incluyen cambios en la web. Si vas a necesitar cambios seguido, está el plan mensual con cambios, de {cambios_mes}, que incluye un cambio por mes; con el plan anual, un cambio después de entregada la web se cotiza aparte. Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
+    'caro' => 'Si pagar el año entero se te hace mucho, está el plan mensual de {mensualidad}: arrancás con la primera mensualidad, y con eso armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
     // Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): se cotiza como
     // sitio profesional y la carga de productos va aparte.
     'carga_producto' => '$500',
@@ -80,8 +85,12 @@ function wabot_textos_default() {
     'demora_segundos' => 15,
     'derivar' => 'Perfecto, {nombre}. A partir de acá sigue el desarrollador: te va a escribir desde nuestro número de proyectos para avanzar con la propuesta.',
     'descuento' => 'No manejamos descuentos: el valor es el mismo por transferencia o con tarjeta.',
-    'devolucion' => 'La seña reserva el trabajo y no se devuelve. Si el diseño inicial no te convence, lo rehacemos hasta dos veces; una vez elegido, tenés tres rondas para ajustar el resto.',
-    'dos_formas' => "Podés contratarla de dos maneras, y las dos incluyen el armado completo:\n\n• Pago único de {precio}: la web queda tuya. Incluye mantenimiento el primer año.\n\n• Suscripción mensual de {mensualidad}: no pagás el desarrollo de entrada; mientras esté activa incluye hosting, dominio, soporte y mantenimiento.",
+    // Sin seña desde el 19-sep: la devolución de un plan la contesta el
+    // desarrollador (el turno queda marcado para él).
+    'devolucion' => 'Primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
+    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen:\n✓ Desarrollo completo de la web, con diseño a medida\n✓ Adaptada a celulares, tablets y computadoras\n✓ Panel para que actualices tu contenido cuando quieras\n✓ Hosting y dominio .com.ar\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Mantenimiento y actualizaciones\n✓ Soporte técnico",
+    // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
+    'dos_formas_web_propia' => 'Y si la querés tuya, para tenerla en tu propio hosting, está el pago único: {precio_unico}. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
     'repregunta_suave' => 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo.',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
@@ -117,29 +126,29 @@ function wabot_textos_default() {
     ],
     'funciones_pedidas_intro' => 'Y lleva lo que me pediste: {lista}.',
     'gemini_modelo' => 'gemini-3.5-flash-lite',
-    'hosting_renovacion' => 'Con el pago único, el primer año incluye el mantenimiento: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}. Con la suscripción mensual no hay nada aparte: va incluido mientras la tengas.',
+    'hosting_renovacion' => 'No hay renovación aparte: con cualquiera de los dos planes, el hosting, el dominio, el mantenimiento y el soporte van incluidos mientras el plan esté activo. El plan anual se paga una vez por año y el mensual, cada mes.',
     'imagenes_pedido_generico' => 'el logo y 3 o 4 fotos de tu negocio',
     'info' => [
-        'proceso' => "Te paso el valor según lo que necesites y, si te interesa, te preparamos sin cargo un primer diseño de tu web: completás un formulario corto y elegís uno o dos modelos como referencia. Si te gusta, elegís pago único —con seña y saldo al entregar— o suscripción mensual, y arrancamos. La web suele quedar lista en unos 7 días desde que arrancamos y nos pasás el contenido.\nEl valor depende del tipo de web: contame a qué te dedicás y te lo paso.",
-        'pago' => "{dos_formas}\n\nEl pago único arranca con una seña y el saldo va al entregar la web. La suscripción no tiene pago inicial: se paga por Mercado Pago, con cualquier tarjeta y sin necesidad de tener cuenta.",
-        'plazos' => "La web queda lista en unos 7 días desde que arrancamos, abonás la seña o la primera mensualidad y nos pasás el contenido.",
-        'hosting' => "El hosting y el dominio .com.ar van incluidos: con la suscripción mensual, mientras la tengas; con el pago único, dentro del mantenimiento del primer año, y después seguís con el plan de mantenimiento.\nNo los contratás ni los configurás vos, se ocupa Gokywebs.",
-        'mantenimiento' => "Depende de cómo contrates la web:\n• Con el pago único, el mantenimiento va incluido el primer año: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}.\n• Con la suscripción mensual de {mensualidad}, va incluido mientras la tengas, sin permanencia.\nEl mantenimiento no incluye cambios en la web: para eso está el plan con cambios de la suscripción, de {cambios_mes}, con un cambio por mes.",
-        'carga' => "Sí, lo manejás vos. Todas nuestras webs traen un panel de administración donde editás los textos y las imágenes cuando quieras, sin costo extra.\nEn la tienda online cargás vos desde tu panel los productos, precios, stock, fotos y descripciones todas las veces que necesites, también sin costo extra, y el panel trae un video explicativo. Si preferís, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista, y de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\nLa suscripción mensual no es por cargar productos ni por hacer cambios: cubre el hosting, el dominio, el soporte y el mantenimiento técnico.",
+        'proceso' => "Te paso el valor según lo que necesites y, si te interesa, te preparamos sin cargo un primer diseño de tu web: completás un formulario corto y elegís uno o dos modelos como referencia. Si te gusta, elegís el plan anual o el mensual y arrancamos. La web suele quedar lista en unos 7 días desde que arrancamos y nos pasás el contenido.\nEl valor depende del tipo de web: contame a qué te dedicás y te lo paso.",
+        'pago' => "Hay dos planes: el anual, de {precio}, que pagás una vez por año, y el mensual, de {mensualidad} por mes. Los dos incluyen lo mismo: el desarrollo completo de la web, hosting, dominio, mantenimiento, actualizaciones y soporte.\nEl mensual se paga por Mercado Pago, con cualquier tarjeta y sin necesidad de tener cuenta, y no tiene permanencia.",
+        'plazos' => "La web queda lista en unos 7 días desde que arrancamos con el plan y nos pasás el contenido.",
+        'hosting' => "El hosting y el dominio .com.ar van incluidos en los dos planes, el anual y el mensual, mientras el plan esté activo.\nNo los contratás ni los configurás vos, se ocupa Gokywebs.",
+        'mantenimiento' => "El mantenimiento va incluido en los dos planes, el anual y el mensual, mientras el plan esté activo: hosting, dominio, actualizaciones, corrección de errores y soporte. El anual lo pagás una vez por año y el mensual, de {mensualidad}, no tiene permanencia.\nNo incluye cambios en la web: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes.",
+        'carga' => "Sí, lo manejás vos. Todas nuestras webs traen un panel de administración donde editás los textos y las imágenes cuando quieras, sin costo extra.\nEn la tienda online cargás vos desde tu panel los productos, precios, stock, fotos y descripciones todas las veces que necesites, también sin costo extra, y el panel trae un video explicativo. Si preferís, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista, y de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\nEl plan, anual o mensual, no es por cargar productos ni por hacer cambios: cubre el desarrollo, el hosting, el dominio, el soporte y el mantenimiento técnico.",
         'logo' => 'No hacemos logos; si tenés uno se usa, y si no, se trabaja tu nombre bien tipografiado.',
         'marketing' => 'No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.',
         'reuniones' => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
         'tecnologia' => 'Trabajamos con servidor Hostinger, base Firebase y código a medida en HTML, CSS, JS y PHP. No usamos WordPress ni trabajamos sobre webs ya hechas.',
         'otra' => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
-        'pago_generico' => 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, que incluye mantenimiento el primer año, o una suscripción mensual por Mercado Pago, sin pago inicial. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
+        'pago_generico' => 'Hay dos planes: uno anual, que pagás una vez por año, y uno mensual, por Mercado Pago y sin permanencia. Los dos incluyen el desarrollo completo de la web, hosting, dominio, mantenimiento y soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
         'precio_sin_rubro' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
         'ubicacion' => 'Somos de Tigre, Buenos Aires. No tenemos oficina: trabajamos de manera remota con clientes de todo el país, así que todo el proceso lo hacemos por acá.',
         'accesos' => "El hosting es nuestro y viene incluido: trabajamos con Hostinger, así que la web queda subida ahí y no tenés que contratar ni configurar nada.\nSi necesitás un acceso puntual, al panel o por FTP, decímelo y lo vemos.",
-        'titularidad' => "Con el pago único la web es tuya: queda a tu nombre cuando terminás de pagarla.\nCon la suscripción mensual, mientras dure la web y el dominio están a nombre de Gokywebs (por eso van incluidos el hosting, el dominio y el soporte), y a los 2 años de suscripción podés reclamar el código y la propiedad.",
+        'titularidad' => "Con cualquiera de los dos planes, mientras esté activo, la web y el dominio están a nombre de Gokywebs (por eso van incluidos el hosting, el dominio y el soporte). A los 2 años de plan podés reclamar el código y la propiedad.\nSi la querés a tu nombre desde el principio, para tenerla en tu propio hosting, está el pago único{precio_web_propia}, que no incluye hosting, dominio, mantenimiento ni soporte.",
         'emails' => 'Este plan no incluye casillas de correo corporativas. Se pueden sumar, pero no son transferibles: los accesos te los damos sin problema y si querés que queden a tu nombre las tenés que contratar vos. La configuración en Outlook, Gmail o el celular no la hacemos nosotros.',
-        'entrega_codigo' => 'Con el pago único la web es tuya. Con la suscripción mensual la web corre por nuestra cuenta mientras dure, y a los 2 años de suscripción podés reclamar el código y la propiedad; y si lo que te preocupa es quedar atado, no hay permanencia: lo das de baja cuando quieras.',
+        'entrega_codigo' => 'Mientras el plan esté activo la web corre por nuestra cuenta, y a los 2 años de plan podés reclamar el código y la propiedad. Si lo que te preocupa es quedar atado, el plan mensual no tiene permanencia: lo das de baja cuando quieras. Y si querés la web tuya desde el principio, está el pago único{precio_web_propia}: te la llevás a tu hosting, pero sin hosting, dominio, mantenimiento ni soporte.',
         'licencias' => 'Las licencias de plugins, librerías o SDK son siempre de terceros, así que no pueden quedar a tu nombre. Lo que sí es tuyo es la web: el código, el dominio y todo el contenido.',
-        'manual' => 'No entregamos un manual de uso. Todas las webs traen un panel para editar los textos y las imágenes, pensado para usarlo sin instructivo (en la tienda, la inmobiliaria y los cursos también cargás ahí lo tuyo), y para cambios más grandes está el plan con cambios de la suscripción, con un cambio por mes.',
+        'manual' => 'No entregamos un manual de uso. Todas las webs traen un panel para editar los textos y las imágenes, pensado para usarlo sin instructivo (en la tienda, la inmobiliaria y los cursos también cargás ahí lo tuyo), y para cambios más grandes está el plan mensual con cambios, con un cambio por mes.',
         'bilingue' => 'Sí, está incluido: la web se puede traducir hasta a 3 idiomas, sin costo aparte.',
         'ejemplos' => 'Sí, en gokywebs.com/portfolio podés ver los trabajos que ya entregamos, de rubros muy distintos. Cada web se diseña a medida del negocio, así que no vas a encontrar dos iguales.',
         'migracion' => 'Sí, los contenidos de tu página actual los pasamos nosotros a la web nueva: textos, fotos y secciones. Vos no tenés que volver a cargar nada. Pasame el link de la página que tenés y la reviso.',
@@ -162,7 +171,7 @@ function wabot_textos_default() {
         'exclusividad' => 'Sí, es exclusivo: cada web se diseña a medida para tu negocio, así que no reciclamos el mismo diseño con otro cliente.',
         'fotos_propiedad' => 'Podés subir decenas de fotos por propiedad, y también video.',
         'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
-        'pago_sin_precio' => 'Hay dos formas de pagarla: un pago único, con una seña para arrancar y el saldo al entregar la web, que incluye mantenimiento el primer año, o una suscripción mensual por Mercado Pago, sin pago inicial.',
+        'pago_sin_precio' => 'Hay dos planes: uno anual, que pagás una vez por año, y uno mensual, por Mercado Pago y sin permanencia. Los dos incluyen el desarrollo completo de la web, hosting, dominio, mantenimiento y soporte.',
         'demo_vigencia' => 'La demo queda disponible 5 días, por una cuestión de espacio en el servidor. Dentro de ese plazo mirala con tranquilidad y contame qué te parece.',
         'facturacion' => 'Facturamos con Factura C. No emitimos Factura A ni B, así que no lleva IVA discriminado.',
         'apps' => 'Sí, también desarrollamos aplicaciones para celular. No entran en la lista de precios de las webs: se cotizan aparte según lo que necesite hacer la app.',
@@ -173,7 +182,7 @@ function wabot_textos_default() {
         'comisiones' => 'No, nosotros no cobramos ninguna comisión por venta: lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.',
         'envios' => 'Sí, la tienda calcula el envío sola: el cliente pone el código postal en el checkout y le aparecen las opciones con el costo de cada una, antes de pagar. Se conecta con el correo con el que trabajes, y también podés ofrecer retiro en el local. Si preferís algo más simple, se puede dejar un costo fijo por zona.',
         'como_funciona_tienda' => 'Sí, exactamente así: el cliente entra, ve el catálogo, arma el carrito y paga desde la web. El pedido te llega al panel con los datos de envío para que lo despaches, y los productos, precios y stock los manejás vos desde ahí.',
-        'que_incluye' => "Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte (con el pago único, el primer año), un panel para editar vos mismo los textos y las imágenes y la carga de hasta 10 productos. Nos ocupamos del armado y de lo técnico.\nSi querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Los cambios en la web no van incluidos: con la suscripción está el plan con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
+        'que_incluye' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte, un panel para editar vos mismo los textos y las imágenes y la carga de hasta 10 productos. Nos ocupamos del armado y de lo técnico.\nSi querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Los cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
         'emprendimientos' => 'Sí, trabajamos con emprendimientos que recién arrancan y con negocios chicos: no hay un tamaño mínimo. En gokywebs.com/portfolio están los trabajos entregados y vas a ver que la mayoría son negocios chicos como el tuyo.',
         'que_hacemos' => 'En Gokywebs diseñamos y desarrollamos páginas web a medida: sitios profesionales, tiendas online, plataformas de cursos e inmobiliarias, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.',
         'internet' => 'La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web y tu panel siguen funcionando normalmente.',
@@ -181,7 +190,7 @@ function wabot_textos_default() {
         'confianza' => 'Entiendo la desconfianza, pasa seguido en este rubro. En gokywebs.com/portfolio podés ver proyectos entregados a negocios reales y públicos; también podés escribirles por tu cuenta. En gokywebs.com/modelos/ elegís uno o dos modelos antes de avanzar.',
         'rangos' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
         'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
-        'que_incluye_sin_productos' => "Está todo incluido: el desarrollo completo a medida, el hosting, el dominio, el soporte (con el pago único, el primer año) y un panel para editar vos mismo los textos y las imágenes. Nos ocupamos del armado y de lo técnico.\nLos cambios en la web no van incluidos: con la suscripción está el plan con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
+        'que_incluye_sin_productos' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte y un panel para editar vos mismo los textos y las imágenes. Nos ocupamos del armado y de lo técnico.\nLos cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
         'cupones' => 'Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.',
         'cobros_tienda' => 'Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.',
         'turnos' => 'Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.',
@@ -189,9 +198,10 @@ function wabot_textos_default() {
         'estadisticas' => "La tienda online y la plataforma de cursos traen estadísticas en tu panel: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.\nEn el sitio profesional y en la web inmobiliaria te vinculamos Google Analytics, así ves las visitas igual.",
         'estadisticas_tienda' => 'Sí, tu panel trae estadísticas: cuánta gente entra por día, desde qué dispositivo y de dónde llega, qué se mira más y cuánto vendés.',
         'estadisticas_sitio' => 'Sí: te vinculamos Google Analytics, así ves cuánta gente entra a la web, de dónde llega y qué mira.',
-        'baja_del_plan' => "No hay permanencia: la suscripción la das de baja cuando quieras, desde Mercado Pago. Si te suscribiste sin cuenta de Mercado Pago (se puede, con cualquier tarjeta), la baja se hace llamando al banco de esa tarjeta.\nLo que sí te aclaro para que no haya sorpresas: la web funciona mientras la suscripción esté activa. Si se da de baja o dejás de pagar la mensualidad, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.",
-        'plan_es_servicio' => 'Dale, entonces te conviene el pago único: pagás la web una sola vez{precio_un_solo_pago} y no tenés que pagar por mes. Incluye mantenimiento el primer año; después, si querés, seguís con el plan de mantenimiento.',
-        'un_solo_pago' => 'Sí, se puede: la web en un pago único{precio_un_solo_pago}. Incluye mantenimiento el primer año.',
+        'baja_del_plan' => "El plan mensual no tiene permanencia: lo das de baja cuando quieras, desde Mercado Pago. Si te suscribiste sin cuenta de Mercado Pago (se puede, con cualquier tarjeta), la baja se hace llamando al banco de esa tarjeta. El anual se paga una vez por año.\nLo que sí te aclaro para que no haya sorpresas: la web funciona mientras el plan esté activo. Si se da de baja o dejás de pagarlo, se desactiva, porque el hosting, el dominio y el soporte salen de ahí.",
+        'plan_es_servicio' => 'Dale, entonces te conviene el plan anual: lo pagás una vez por año{precio_un_solo_pago} y no tenés que pagar todos los meses. Incluye lo mismo que el mensual: hosting, dominio, mantenimiento y soporte.',
+        'un_solo_pago' => 'Sí: con el plan anual pagás una vez por año{precio_un_solo_pago}, y sale menos que doce meses del plan mensual. Incluye lo mismo: hosting, dominio, mantenimiento y soporte.',
+        'web_propia' => 'Si la querés tuya, para tenerla en tu propio hosting, está el pago único{precio_web_propia}. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte: eso corre por tu cuenta.',
     ],
     'leer_imagenes' => true,
     'mantenimiento_planes' => [
@@ -239,7 +249,7 @@ function wabot_textos_default() {
     'no_interesa' => 'Perfecto, gracias por escribirnos. Cualquier cosa estamos por acá.',
     'no_texto' => 'No pude abrir eso que me mandaste. Contámelo por mensaje de texto así te ayudo mejor.',
     'objecion_repetida' => 'Dale, sin apuro. Cuando quieras avanzar, acá estoy.',
-    'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, arrancás con la seña del pago único o con la primera mensualidad de la suscripción.',
+    'pago_antes_o_despues' => 'El primer diseño es sin cargo: lo ves antes de decidir. Si después querés avanzar, elegís el plan anual o el mensual y arrancamos.',
     'pausa_horas_humano' => 12,
     'pensarlo' => 'Perfecto, tomate el tiempo que necesites. Podés mirar trabajos reales y modelos para comparar con algo concreto.',
     'pensarlo_sin_muestra' => 'Perfecto, tomate el tiempo que necesites. Cualquier duda que te surja mientras tanto, escribime.',
@@ -258,7 +268,7 @@ function wabot_textos_default() {
             'activa' => true,
         ],
     ],
-    'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. Y si la tomás con la suscripción mensual, funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",
+    'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. El plan, anual o mensual, funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",
     'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
     'postdemo_cambios' => 'Perfecto, anoto esos cambios para aplicarlos cuando avancemos.',
     'postdemo_derivar' => 'Para seguir con el proyecto te va a escribir el desarrollador desde nuestro número de proyectos.',
@@ -289,7 +299,7 @@ function wabot_textos_default() {
     'productos_derivar_desde' => 500,
     'reset_dias' => 7,
     'respuesta_esta_incluido' => 'Está incluido en el plan, no se paga aparte.',
-    'respuesta_plan_obligatorio' => 'No: la suscripción mensual es una de las dos formas de contratar la web. Si preferís, la pagás una sola vez y no tenés que pagar por mes.',
+    'respuesta_plan_obligatorio' => 'No: el plan mensual es una de las dos formas de contratar la web. Si preferís, está el plan anual: lo pagás una vez por año y no tenés que pagar todos los meses.',
     'seguimiento_hora_desde' => 8,
     'seguimiento_hora_hasta' => 20,
     'sistema_cierre' => 'Perfecto, {nombre}, ya tengo el panorama. Al ser un sistema a medida hay que cotizarlo según esas funciones, así que te preparamos la propuesta y te escribimos por acá con el presupuesto.',
@@ -302,7 +312,8 @@ function wabot_textos_default() {
     'tipos' => [
         'landing' => [
             'label' => 'Sitio profesional',
-            'precio' => '$180.000',
+            'precio' => '$140.000',
+            'precio_unico' => '$180.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
@@ -312,11 +323,12 @@ function wabot_textos_default() {
             'mensualidad' => '$15.000',
             'mensualidad_cambios' => '$25.000',
             'mantenimiento' => '$10.000',
-            'sena' => '$40.000',
+            'sena' => '',
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$290.000',
+            'precio' => '$230.000',
+            'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando',
             'imagenes_pedido' => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
@@ -326,11 +338,12 @@ function wabot_textos_default() {
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$40.000',
+            'sena' => '',
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$290.000',
+            'precio' => '$230.000',
+            'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo',
             'imagenes_pedido' => 'el logo y alguna foto tuya dando clase o del material de los cursos',
@@ -340,11 +353,12 @@ function wabot_textos_default() {
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$40.000',
+            'sena' => '',
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$240.000',
+            'precio' => '$190.000',
+            'precio_unico' => '$240.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
             'imagenes_pedido' => 'el logo y fotos de un par de propiedades que tengas publicadas',
@@ -354,7 +368,7 @@ function wabot_textos_default() {
             'mensualidad' => '$25.000',
             'mensualidad_cambios' => '$35.000',
             'mantenimiento' => '$15.000',
-            'sena' => '$40.000',
+            'sena' => '',
         ],
     ],
     'ultima_llamada' => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',

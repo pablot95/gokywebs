@@ -143,6 +143,8 @@ function wabot_responder($texto, &$conv, $cfg) {
     // La ficha se actualiza con cada mensaje y antes de cualquier respuesta
     // (18-sep): lo que contó queda anotado aunque después conteste Pablo.
     wabot_ficha_actualizar($conv, $texto);
+    // Lo mismo con el pedido de la web propia (19-sep): suma el pago único.
+    wabot_web_propia_anotar($conv, $texto, $cfg);
 
     // La cotización cerrada es el último mensaje automático. Desde acá sigue
     // una persona; también se respeta en llamadas directas fuera del webhook.
