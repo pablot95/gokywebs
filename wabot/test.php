@@ -4296,10 +4296,19 @@ echo "\n— \"Quiero vender mis diseños\" no es un callejón sin salida (27-ago
 // distinta redacción ("qué vendés o qué servicio ofrecés?" y después "a qué
 // rubro te dedicás?") a alguien que ya había contestado. Pasó dos veces el
 // mismo día: BJR y el ebook de diseños.
-caso('"quiero vender mis diseños" cae en el desempate de comercio',
-    wabot_fallback_rubro_local('quiero vender mis disenos') === 'hibrido_pendiente');
+/* 18-sep: vender es tienda, sin la pregunta "mostrar o vender" (Pablo,
+ * 29-ago). "Vendo sahumerios" se llevaba esa pregunta. */
+caso('"quiero vender mis diseños" se cotiza tienda, sin desempate',
+    wabot_fallback_rubro_local('quiero vender mis disenos') === 'ecommerce');
 caso('"vendo cuadros pintados a mano" también',
-    wabot_fallback_rubro_local('vendo cuadros pintados a mano') === 'hibrido_pendiente');
+    wabot_fallback_rubro_local('vendo cuadros pintados a mano') === 'ecommerce');
+caso('"vendo sahumerios" también', wabot_fallback_rubro_local('Vendo sahumerios y quiero tener seguidores') === 'ecommerce');
+caso('la distribuidora de insumos de manicura vende: tienda, no sitio de servicios (18-sep)',
+    wabot_fallback_rubro_local('Somos una distribuidora de cosméticos, insumos de manicura y herramientas para peluquerías') === 'ecommerce');
+caso('pero la manicura que atiende sigue siendo sitio profesional',
+    wabot_fallback_rubro_local('hago manicura y esculpidas en mi local') === 'landing');
+caso('y el que vende propiedades sigue siendo inmobiliaria',
+    wabot_fallback_rubro_local('tengo una inmobiliaria y vendo propiedades') === 'inmobiliaria');
 // El catch-all va ÚLTIMO: no puede pisar los rubros que ya se reconocían.
 foreach ([
     'vendo ropa'                => 'ecommerce',
@@ -5158,11 +5167,22 @@ foreach ([
 foreach ([
     'doy talleres de costura online y vendo ropa',
     'tengo un ecommerce de ropa y ademas doy cursos de molderia',
-    'vendo productos y tambien cuadernillos',
 ] as $mixtoReal) {
     caso('"' . mb_substr($mixtoReal, 0, 38) . '..." sigue siendo mixto',
         wabot_ejes_mixtos($mixtoReal) !== null);
 }
+/* 18-sep: cuadernillos y ebooks se venden, son productos; y "consulta" o
+ * "atención" a secas no son un servicio. Ninguno abre un segundo eje. */
+foreach ([
+    'vendo productos y tambien cuadernillos',
+    'Tengo una regalería con souvenirs, cuadernillos para colorear, velas y sahumerios',
+    'Hola, quería hacer una consulta. Vendo ropa de mujer',
+    'vendo ropa y tengo atención al cliente por whatsapp',
+] as $noMixto) {
+    caso('"' . mb_substr($noMixto, 0, 38) . '..." no es mixto (18-sep)', wabot_ejes_mixtos($noMixto) === null);
+}
+caso('sesiones y cuadernillos sí: servicio más productos (psicoeducación, 27-ago)',
+    wabot_ejes_mixtos('hago sesiones, grupos y vendo cuadernillos') !== null);
 
 echo "— 2-sep (noche): sin línea entre el precio y la demo —
 ";

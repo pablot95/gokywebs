@@ -147,7 +147,11 @@ function wabot_ejes_mixtos($texto) {
     $ejes = [];
     // terap\w*, no terapia\w*: así entra también "terapeuta", que es como se
     // presenta la mayoría ("soy terapeuta y además vendo...").
-    if (preg_match('/\b(sesion\w*|terap\w*|consulta\w*|tratamiento\w*|atencion|turno\w*|lectura\w*|sanacion\w*'
+    /* "Consulta" y "atención" a secas NO son un servicio (18-sep): "les hago
+     * una consulta, vendo ropa" o "atención al cliente" sumaban un eje que el
+     * cliente nunca nombró, y salía el aviso de necesidad mixta con la tienda
+     * ya clara. Cuentan solo las consultas que se atienden. */
+    if (preg_match('/\b(sesion\w*|terap\w*|consultas? (online|presenciales?|medicas?|psicologicas?|nutricionales?)|consultorio\w*|tratamiento\w*|turno\w*|lectura\w*|sanacion\w*'
         . '|masaje\w*|clase\w* particular\w*|asesoria\w*|acompanamiento\w*)\b/u', $t)) $ejes['servicios'] = 'tus servicios';
     /* "Taller" solo NO es un curso: un taller de manualidades, uno mecánico o
      * uno de costura son el LUGAR donde trabaja, no algo que enseñe. Se le
@@ -167,16 +171,19 @@ function wabot_ejes_mixtos($texto) {
      * spinning" (el destino del producto que vende). */
     $enumeraClases = preg_match('/\b(y|e|tambien|ademas|mas|damos|doy|dicto|dictamos|hacemos|brindamos|ofrecemos|dictar|dar)\s+(clases|talleres|cursos)\b/u', $t)
         || preg_match('/\b(clases|talleres)\s+(y|e)\s/u', $t);
-    if (preg_match('/\b(curso\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*'
-            . '|cuadernillo\w*|ebook\w*|e book|clases grabadas|material descargable)\b/u', $t)
-        || $dictaTalleres || $enumeraClases) $ejes['cursos'] = 'los cursos o materiales';
+    /* Cuadernillos, ebooks y material descargable se VENDEN: son productos,
+     * no cursos (18-sep). Una regalería con cuadernillos para colorear salía
+     * con "una web que integre los cursos o materiales y la venta de
+     * productos" sin haber hablado nunca de cursos. */
+    if (preg_match('/\b(curso\w*|capacitacion\w*|formacion\w*|diplomatura\w*|seminario\w*|alumno\w*|clases grabadas)\b/u', $t)
+        || $dictaTalleres || $enumeraClases) $ejes['cursos'] = 'los cursos';
     /* "Vender los cursos" NO es un segundo eje: es la forma normal de pedir
      * una plataforma de cursos. Sin este freno, "quiero venderlos desde la web
      * con los videos y el acceso de cada alumna" disparaba el aviso de mixto y
      * la clienta se iba sin precio, con el elearning ya identificado (batería
      * del 2-sep). El verbo de venta cuenta solo si NO viene pegado al curso. */
     $ventaEsDelCurso = preg_match('/\b(vend\w+|venta\w*)\b\s*(los?|las?|mis?|el|la)?\s*'
-        . '(curso\w*|clase\w*|taller\w*|capacitacion\w*|seminario\w*|ebook\w*|cuadernillo\w*)\b/u', $t)
+        . '(curso\w*|clase\w*|taller\w*|capacitacion\w*|seminario\w*)\b/u', $t)
         || preg_match('/\b(venderlos|venderlas|venderlo|venderla)\b/u', $t);
     /* Pero si además nombra un producto aparte, el eje vuelve: "doy talleres
      * de costura online y vendo ropa" son dos negocios, no uno. */
@@ -188,7 +195,7 @@ function wabot_ejes_mixtos($texto) {
     // "vendo los kits", "vendo lana" no caían en ningún eje.
     if (!$ventaEsDelCurso
         && preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
-        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*|insumo\w*)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
+        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*|insumo\w*|cuadernillo\w*|ebook\w*|e book|material descargable)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
     if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
 
     return count($ejes) >= 2 ? $ejes : null;
@@ -207,6 +214,204 @@ function wabot_texto_mixto($ejes, $cfg) {
     $plantilla = trim((string)($cfg['mixto'] ?? ''));
     if ($plantilla === '') return null;
     return str_replace('{lista}', $lista, $plantilla);
+}
+
+/* ── La ficha del cliente (18-sep) ───────────────────────────────────────────
+ *
+ * Lo que el cliente fue contando, ordenado: a qué se dedica, qué vende, qué
+ * necesita de la web, qué funciones pidió, qué pidió que no hacemos y qué hace
+ * que su proyecto no sea de lista. Cada mensaje la actualiza ANTES de
+ * responder y nunca borra lo que ya sabía (Pablo, 18-sep: "si ya tiene rubro,
+ * productos u objetivo, esos datos tienen que quedar bloqueados y no volver a
+ * preguntarse").
+ *
+ * Lo que sale de palabras sueltas (funciones, señales, cantidad, lo que no
+ * hacemos, algunas necesidades) lo detecta el código. Rubro, qué vende,
+ * objetivo, necesidad e interlocutor los propone el clasificador, en el mismo
+ * llamado, y se validan contra lo que el cliente escribió. El cliente nunca ve
+ * estas etiquetas: sirven para elegir bien y para el resumen del panel.
+ */
+
+/** La ficha de la charla, con todos sus campos. */
+function wabot_ficha($conv) {
+    $f = is_array($conv['ficha'] ?? null) ? $conv['ficha'] : [];
+    return array_merge(['rubro' => '', 'que_vende' => '', 'objetivo' => '', 'necesidad' => '', 'interlocutor' => '',
+        'funciones' => [], 'fuera' => [], 'senales' => [], 'cantidad_productos' => 0], $f);
+}
+
+/** Las necesidades internas: el cliente nunca las ve. */
+function wabot_ficha_necesidades() {
+    return ['tienda', 'catalogo', 'productos_digitales', 'cursos', 'turnos', 'servicios', 'gastronomia',
+            'hospedaje', 'inmobiliaria', 'sistema', 'web_existente', 'otra'];
+}
+
+/**
+ * Las funciones que el cliente PIDIÓ, para nombrarlas en la propuesta (18-sep:
+ * el que pide "turnos a WhatsApp, Instagram y calificaciones" tiene que ver
+ * esas tres cosas en la respuesta). Solo funciones que cualquier web nuestra
+ * incluye, y dichas como pedido: "vendo por Instagram" cuenta su negocio, no
+ * pide un botón.
+ */
+function wabot_ficha_funciones_de($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return [];
+    $f = [];
+    if (preg_match('/\bturnos?\b.{0,30}\b(whats?app|wsp|wpp)\b|\b(whats?app|wsp|wpp)\b.{0,30}\bturnos?\b/u', $t)) $f[] = 'turnos_whatsapp';
+    elseif (preg_match('/\b(turnos? (online|en linea|por la web|desde la web)|saquen turnos?|sacar turnos?|agenda online|reserven turnos?)\b/u', $t)) $f[] = 'turnos_online';
+    if (!$f && preg_match('/\b(reservas? (online|por la web|desde la web)|que (me )?reserven|puedan reservar|reservar (online|desde la web|por la web))\b/u', $t)) $f[] = 'reservas';
+    $publicidad = in_array('publicidad', wabot_ficha_fuera_de($t), true);
+    if (!$publicidad && preg_match('/\b(con|que tenga|que tengan|quiero|queria|necesito|agregar|sumar|link|links|boton|botones|acceso|conectar|vincular|integrar)\b.{0,25}\b(instagram|insta)\b/u', $t)) $f[] = 'instagram';
+    if (preg_match('/\b(resenas?|calificacion\w*|opiniones|testimonios?|valoraciones)\b/u', $t)) $f[] = 'resenas';
+    if (preg_match('/\b(mapa|google maps|como llegar)\b/u', $t)) $f[] = 'mapa';
+    if (preg_match('/\bformulario (de contacto|de consultas?|para (que|consultas|pedidos))\b/u', $t)) $f[] = 'formulario';
+    if (preg_match('/\b(la|mi|nuestra|con la) carta\b/u', $t)
+        && preg_match('/\b(restaurant\w*|resto|bar|comidas?|platos|parrilla|pizzeria|cafeteria|rotiseria)\b/u', $t)) $f[] = 'carta';
+    if (preg_match('/\b(en|a) (ingles|portugues|otro idioma|varios idiomas|dos idiomas)\b|\bbilingue\b/u', $t)) $f[] = 'idiomas';
+    if (preg_match('/\b(envios?|envio a domicilio|andreani|correo argentino)\b/u', $t)) $f[] = 'envios';
+    if (preg_match('/\b(cupon\w*|codigos? de descuento)\b/u', $t)) $f[] = 'cupones';
+    return $f;
+}
+
+/** Lo que pidió y no hacemos: publicidad y redes, o el diseño del logo. */
+function wabot_ficha_fuera_de($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return [];
+    $f = [];
+    if (preg_match('/\b(publicidad|pauta\w*|anuncios? (pagos?|en)|campanas? (de|en) (instagram|facebook|google|redes)|facebook ads|google ads|meta ads'
+        . '|seguidores|community manager|manej\w* (de )?(las |mis )?redes|administr\w* (las |mis )?redes|marketing)\b/u', $t)) $f[] = 'publicidad';
+    if (preg_match('/\b(disen\w*|hacen|hacer|hacerme|armar|armarme|crear|crearme)\b.{0,10}\b(el |un |mi |los )?(logo|logos|logotipo)\b|\b(necesito|quiero|queria) (un|una) (logo|logotipo)\b/u', $t)) $f[] = 'logo';
+    return $f;
+}
+
+/** Lo que saca el proyecto de la lista de precios: se deriva con el motivo. */
+function wabot_ficha_senales_de($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return [];
+    $s = [];
+    if (preg_match('/\b(mercado ?libre|meli)\b/u', $t)) $s[] = 'mercadolibre';
+    if (preg_match('/\b(tango|erp|odoo|bejerman|sistema de (stock|gestion|facturacion) que (ya )?(tengo|uso|usamos|tenemos)|sincroniz\w* (el |los )?(stock|precios)|facturacion electronica)\b/u', $t)) $s[] = 'integracion';
+    if (preg_match('/\b(marketplace|multivendedor|varios vendedores|que otros (vendan|publiquen)|cada vendedor)\b/u', $t)) $s[] = 'marketplace';
+    if (preg_match('/\b(descarga automatica|se descargue\w* sol[oa]s?|entrega automatica|reciban el (archivo|pdf|ebook|libro) (al pagar|automaticamente)'
+        . '|les llegue (el archivo|el pdf|al mail|por mail) (solo|automaticamente))\b/u', $t)) $s[] = 'entrega_digital';
+    return $s;
+}
+
+/**
+ * La cantidad de productos, solo dicha como cantidad de productos: "3.500
+ * productos", "unos 800 artículos". El extractor general toma cualquier
+ * número plausible ("tengo 45 años") y acá decide si el proyecto es de lista.
+ */
+function wabot_ficha_cantidad_de($texto) {
+    $crudo = preg_replace('/(\d)[.\s](\d{3})\b/', '$1$2', (string)$texto);
+    $palabras = '(productos?|articulos?|art[ií]culos?|items?|prendas?|referencias?|skus?|c[oó]digos?|modelos?)';
+    if (preg_match('/(\d{1,5})\s*(de\s+)?' . $palabras . '\b/iu', $crudo, $m)) return (int)$m[1];
+    if (preg_match('/\b' . $palabras . '\b[^0-9\n]{0,20}(\d{1,5})\b/iu', $crudo, $m)) return (int)$m[2];
+    return 0;
+}
+
+/**
+ * La necesidad que se lee sola en las palabras del cliente. Catálogo solo si
+ * lo dijo: "si tiene productos es tienda, no se pregunta" (Pablo, 29-ago), y
+ * el que no quiere cobrar online lo aclara.
+ */
+function wabot_ficha_necesidad_de($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($t === '') return '';
+    if (preg_match('/\b(solo (mostrar|exhibir)|sin (carrito|cobro online|cobrar online|venta online|pago online|pagos online)'
+        . '|no (quiero|necesito) (vender|cobrar) (online|por la web|desde la web)|que me (consulten|escriban|pidan) (por|al) (whatsapp|wsp|wpp)'
+        . '|catalogo (para mostrar|sin carrito|sin precios|con consulta))\b/u', $t)) return 'catalogo';
+    if (preg_match('/\b(hospedaje|alojamiento|hotel|hostel|hosteria|posada|cabanas?|apart ?hotel|bungalows?|glamping|habitaciones|alquiler temporario|departamentos? temporarios?)\b/u', $t)) return 'hospedaje';
+    if (preg_match('/\b(e ?books?|libros? digitales|pdfs?|descargables?|productos digitales|archivos digitales|plantillas digitales|recetarios? digitales|presets)\b/u', $t)) return 'productos_digitales';
+    if (preg_match('/\b(restaurant\w*|restoran|resto ?bar|bar|cafeteria|parrilla|pizzeria|rotiseria|bodegon|cerveceria|viandas|comida casera)\b/u', $t)) return 'gastronomia';
+    return '';
+}
+
+/**
+ * Un texto que el clasificador propone para la ficha vale solo si sale de lo
+ * que el cliente escribió: corto y con al menos una palabra suya adentro.
+ */
+function wabot_ficha_texto_propio($texto, $conv, $max) {
+    $r = trim(preg_replace('/\s+/u', ' ', (string)$texto), " \t\n\r.,;:!?\"'«»()");
+    if ($r === '' || mb_strlen($r) > $max || preg_match('/[${}]|https?:|www\./u', $r)) return '';
+    $ctx = ' ' . wabot_normalizar_frase(wabot_contexto_cliente_texto($conv)) . ' ';
+    foreach (explode(' ', wabot_normalizar_frase($r)) as $p) {
+        if (mb_strlen($p) < 4) continue;
+        if (mb_strpos($ctx, mb_substr($p, 0, max(4, min(mb_strlen($p) - 2, 5)))) !== false) return $r;
+    }
+    return '';
+}
+
+/**
+ * Cada mensaje actualiza la ficha antes de responder. $c es la salida del
+ * clasificador (null si no corrió): sus campos se validan y un valor vacío o
+ * inválido nunca borra lo que ya estaba.
+ */
+function wabot_ficha_actualizar(&$conv, $texto, $c = null) {
+    $f = wabot_ficha($conv);
+    foreach (['funciones' => wabot_ficha_funciones_de($texto), 'fuera' => wabot_ficha_fuera_de($texto),
+              'senales' => wabot_ficha_senales_de($texto)] as $campo => $nuevos) {
+        $f[$campo] = array_values(array_unique(array_merge((array)$f[$campo], $nuevos)));
+    }
+    $cantidad = wabot_ficha_cantidad_de($texto);
+    if ($cantidad > 0) $f['cantidad_productos'] = max((int)$f['cantidad_productos'], $cantidad);
+    $necesidadLocal = wabot_ficha_necesidad_de($texto);
+
+    $cf = is_array($c) && is_array($c['ficha'] ?? null) ? $c['ficha'] : [];
+    $rubro = wabot_rubro_valido((string)($cf['rubro'] ?? ''), $conv);
+    if ($rubro !== '') $f['rubro'] = $rubro;
+    $vende = wabot_ficha_texto_propio((string)($cf['que_vende'] ?? ''), $conv, 80);
+    if ($vende !== '') $f['que_vende'] = $vende;
+    $objetivo = wabot_ficha_texto_propio((string)($cf['objetivo'] ?? ''), $conv, 120);
+    if ($objetivo !== '') $f['objetivo'] = $objetivo;
+    $necesidad = (string)($cf['necesidad'] ?? '');
+    // Lo que el cliente dijo con todas las letras gana sobre lo que infiere el modelo.
+    if ($necesidadLocal !== '') $f['necesidad'] = $necesidadLocal;
+    elseif (in_array($necesidad, wabot_ficha_necesidades(), true) && $f['necesidad'] !== 'catalogo') $f['necesidad'] = $necesidad;
+    $interlocutor = (string)($cf['interlocutor'] ?? '');
+    if (in_array($interlocutor, ['cliente', 'cliente_actual', 'empleo', 'proveedor', 'otro'], true)) $f['interlocutor'] = $interlocutor;
+
+    $conv['ficha'] = $f;
+    // El rubro validado es el que nombra la propuesta ("Para tu local de ropa,
+    // te serviría…"). Se fija antes de cotizar: después el precio ya salió.
+    if ($f['rubro'] !== '' && empty($conv['precio_dado'])) $conv['rubro_pitch'] = $f['rubro'];
+    return $f;
+}
+
+/**
+ * El clasificador dice que no escribe un cliente nuevo: se le cree solo si el
+ * mensaje trae algo de eso, no pide una web y todavía no se cotizó nada.
+ * Devuelve 'laboral', 'cliente_existente', 'proveedor' o null.
+ */
+function wabot_interlocutor_no_venta($texto, $conv) {
+    if (!empty($conv['precio_dado']) || !empty($conv['tipo']) || wabot_texto_pide_web($texto)) return null;
+    if (!in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu', 'algo_diferente'], true)) return null;
+    $quien = wabot_ficha($conv)['interlocutor'];
+    $t = wabot_normalizar_frase((string)$texto);
+    if ($quien === 'empleo' && preg_match('/\b(trabaj\w*|laboral\w*|empleo|cv|curriculum|sumarme|colabor\w*|freelance\w*|ofrezco|ofrecerles|mis servicios'
+        . '|experiencia|desarrollador\w*|programador\w*|disenador\w*|vacante|busqueda)\b/u', $t)) return 'laboral';
+    if ($quien === 'cliente_actual' && preg_match('/\b(mi (web|pagina|tienda)|la (web|pagina|tienda) que|ya (soy|somos) clientes?|me (hicieron|armaron)|ustedes me)\b/u', $t)) return 'cliente_existente';
+    if ($quien === 'proveedor' && preg_match('/\b(ofrecemos|les ofrezco|somos una (empresa|agencia)|propuesta comercial|promo\w*)\b/u', $t)) return 'proveedor';
+    return null;
+}
+
+/** La ficha en una línea, para el panel y el boceto. */
+function wabot_ficha_resumen($conv, $cfg) {
+    $f = wabot_ficha($conv);
+    $partes = [];
+    if ($f['rubro'] !== '') $partes[] = 'Rubro: ' . $f['rubro'];
+    if ($f['que_vende'] !== '') $partes[] = 'Ofrece: ' . $f['que_vende'];
+    if ($f['objetivo'] !== '') $partes[] = 'Quiere: ' . $f['objetivo'];
+    if ($f['necesidad'] !== '') $partes[] = 'Necesita: ' . str_replace('_', ' ', $f['necesidad']);
+    $pedidas = [];
+    foreach ((array)$f['funciones'] as $k) $pedidas[] = (string)($cfg['funciones_pedidas'][$k] ?? $k);
+    if ($pedidas) $partes[] = 'Pidió: ' . implode(', ', $pedidas);
+    if ($f['fuera']) $partes[] = 'No hacemos: ' . implode(', ', (array)$f['fuera']);
+    $alertas = array_map(function ($s) { return str_replace('_', ' ', $s); }, (array)$f['senales']);
+    if ((int)$f['cantidad_productos'] > 0) array_unshift($alertas, $f['cantidad_productos'] . ' productos');
+    if ($alertas) $partes[] = '⚠ ' . implode(', ', $alertas);
+    if (!empty($conv['modalidad_elegida'])) $partes[] = 'Eligió: ' . ($conv['modalidad_elegida'] === 'unico' ? 'pago único' : 'suscripción');
+    if (in_array($f['interlocutor'], ['empleo', 'proveedor', 'cliente_actual'], true)) $partes[] = 'No es un lead: ' . str_replace('_', ' ', $f['interlocutor']);
+    return implode(' · ', $partes);
 }
 
 /** Reconstruye el CTA usado en chats viejos mirando solo lo dicho por el bot. */
@@ -888,6 +1093,8 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
         $mensajes = wabot_salida_sin_cta_repetida($mensajes, $conv);
         $mensajes = wabot_sin_repetidos_consecutivos($mensajes);
         $mensajes = wabot_una_sola_pregunta($mensajes);
+        $mensajes = wabot_salida_sin_repreguntar_rubro($mensajes, $conv, $cfg);
+        $mensajes = wabot_salida_con_lo_que_no_hacemos($mensajes, $conv, $cfg);
     }
 
     // Va después de los filtros de texto (para leer el mensaje final) y antes
@@ -912,6 +1119,48 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     }
 
     return array_values($mensajes);
+}
+
+/**
+ * "Qué vendés o qué servicio ofrecés?" a alguien que ya lo contó es lo que
+ * más delata que nadie leyó (18-sep: la distribuidora que explicó
+ * cosméticos, insumos de manicura y herramientas para peluquerías, y recibió
+ * esa pregunta). Si la ficha ya sabe a qué se dedica, se pregunta lo que de
+ * verdad falta —qué tiene que hacer la web— una sola vez; si tampoco con eso
+ * se llega a una propuesta, lo toma Pablo.
+ */
+function wabot_salida_sin_repreguntar_rubro($mensajes, &$conv, $cfg) {
+    $f = wabot_ficha($conv);
+    if ($f['que_vende'] === '' && $f['rubro'] === '') return $mensajes;
+    $repreguntas = array_values(array_filter([trim((string)($cfg['contame'] ?? '')), trim((string)($cfg['contame_2'] ?? ''))]));
+    foreach ($mensajes as $i => $m) {
+        if (!in_array(trim((string)$m), $repreguntas, true)) continue;
+        if (empty($conv['objetivo_preguntado']) && trim((string)($cfg['aclarar_objetivo'] ?? '')) !== '') {
+            $conv['objetivo_preguntado'] = true;
+            wabot_evento_sesion($conv, 'rubro_no_repreguntado');
+            $mensajes[$i] = (string)$cfg['aclarar_objetivo'];
+            continue;
+        }
+        wabot_evento_sesion($conv, 'objetivo_sin_aclarar');
+        wabot_handoff_marcar($conv, 'objetivo_sin_aclarar');
+        return [(string)$cfg['derivar']];
+    }
+    return $mensajes;
+}
+
+/**
+ * Lo que pidió y no hacemos (publicidad, logo) se dice aunque el turno lo
+ * haya contestado otro camino (18-sep: "nunca ignorar una parte del
+ * mensaje"). El precio y la derivación ya lo ponen donde corresponde; esto es
+ * la red para el resto —el respaldo sin IA, una pregunta de info—. Una vez por
+ * tema, y solo si el bot contesta algo: el silencio lo sigue Pablo.
+ */
+function wabot_salida_con_lo_que_no_hacemos($mensajes, &$conv, $cfg) {
+    if (!$mensajes || !in_array(($conv['fase'] ?? ''), ['nuevo', 'menu', 'algo_diferente', 'derivado', 'desempate_hibrido', 'desempate_cursos'], true)) return $mensajes;
+    $fuera = wabot_fuera_de_servicio_texto((string)($conv['tipo'] ?? ''), $conv, $cfg);
+    if ($fuera === '') return $mensajes;
+    $mensajes[0] = $fuera . "\n\n" . ltrim((string)$mensajes[0]);
+    return $mensajes;
 }
 
 /** Una consulta después de la oferta merece su respuesta, sin otra invitación. */
@@ -2321,7 +2570,13 @@ function wabot_contexto_consulta($texto, $conv = null) {
         || (preg_match('/\b(busco|buscando|necesito)\s+(un\s+)?(trabajo|empleo|laburo)\b/u', $t)
             && !preg_match('/\b(mas (trabajo|laburo|clientes)|(trabajo|laburo) para (mi|el|la|nuestro|nuestra)|conseguir (mas )?(trabajo|clientes)|trabajos)\b/u', $t))
         || preg_match('/\b(quiero|quisiera|me gustaria)\b.{0,30}\b(trabajar (con|en|para) (ustedes|uds|vos)|sumarme al equipo|formar parte del equipo)\b/u', $t)
-        || preg_match('/\b(toman|estan tomando|buscan)\b.{0,20}\b(gente|personal|programador\w*|disenador\w*|empleados?)\b/u', $t)) {
+        || preg_match('/\b(toman|estan tomando|buscan|estan buscando|necesitan|precisan)\b.{0,20}\b(gente|personal|programador\w*|desarrollador\w*|disenador\w*|empleados?|colaboradores)\b/u', $t)
+        /* El desarrollador que ofrece su trabajo a la agencia (18-sep): el bot
+         * le contestó como a alguien con una web para reemplazar. Si en el
+         * mismo mensaje pide una web, ya salió arriba como venta. */
+        || (preg_match('/\b(soy|somos)\s+(un |una )?(desarrollador\w*|programador\w*|disenador\w*|maquetador\w*|dev|freelancer?)\b/u', $t)
+            && preg_match('/\b(trabajar|trabajo|empleo|busqueda|sumarme|colabor\w*|ofrezco|ofrecerles|ofrecer mis|mis servicios|oportunidad|vacante|equipo)\b/u', $t))
+        || preg_match('/\b(les ofrezco|ofrecerles|me ofrezco)\b.{0,30}\b(mis servicios|como (desarrollador|programador|disenador|freelance)|para trabajar|trabajar con ustedes)\b/u', $t)) {
         return 'laboral';
     }
 
@@ -2928,6 +3183,15 @@ function wabot_fallback_rubro_local($t) {
     if (preg_match('/\b(vender|vendo|vendemos|venta de|comercializar)\b.{0,25}\b(cursos?|clases grabadas|clases online|capacitaciones)\b|\bcursos? (grabados|online|virtuales|en video|a distancia)\b/u', $t)) {
         return 'cursos';
     }
+    /* Vender o distribuir productos PARA un rubro de servicios no es el
+     * servicio (18-sep): "distribuidora de cosméticos, insumos de manicura y
+     * herramientas para peluquerías" vende, no hace uñas, y se cotizaba
+     * sitio profesional por la palabra "manicura". */
+    if (preg_match('/\b(distribuidor\w*|mayorista\w*|insumos?|reventa|revendo|revendemos|vendo|vendemos|venta de|comercializ\w*)\b/u', $t)
+        && !preg_match('/\b(servicios?|clases|turnos|sesiones|consultas|tratamientos|reparacion\w*|instalacion\w*'
+            . '|propiedad\w*|inmobiliari\w*|departamentos?|casas|lotes|terrenos)\b/u', $t)) {
+        return 'ecommerce';
+    }
     /* Los rubros que trabajan con turno ya no abren ningún desempate: turnos
      * se retiró el 2-sep y todos van a sitio profesional. En una semana la
      * pregunta tocó a doce clientes, solo tres terminaron cotizados como
@@ -2972,7 +3236,8 @@ function wabot_fallback_rubro_local($t) {
     // cliente contestó dos veces y recibió la misma pregunta las dos.
     // Sin "local" ni "fabricamos": un local es un LUGAR (de comidas, de
     // uñas, de una agencia de viajes) y fabricar no dice qué, ni si lo vende.
-    if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|indumentaria|marroquineria|cosmetica|perfumeria'
+    if (preg_match('/\b(mates?|velas|ropa|zapatillas?|calzados?|productos|mercaderia|muebles|articulos|ferreteria|kiosco|dietetica|bazar|vivero|panaderia|pet shop|repuestos|imprenta|grafica|cajas|packaging|envases|libreria|jugueteria|carniceria|verduleria|indumentaria|marroquineria|cosmetic\w*|perfumeria'
+        . '|sahumerio\w*|souvenirs?|regaleria|insumos?|bijou\w*|joyeria|accesorios|pasteleria|reposteria|tortas'
         . '|netbooks?|notebooks?|celulares?|computadoras?|compu|tablets?|consolas?|electrodomesticos?|electronica|informatica|tecnologia usada|usados)\b/u', $t)) {
         return 'ecommerce';
     }
@@ -2990,14 +3255,14 @@ function wabot_fallback_rubro_local($t) {
     }
     /* Último recurso: dice que VENDE algo pero ese algo no está en ninguna
      * lista de arriba ("quiero vender mis diseños", "vendo cuadros", "vendo
-     * plantines"). Vender es comercio, y ahí la única duda real es si cobra
-     * online o le consultan por WhatsApp: eso es el desempate, no un callejón
-     * sin salida. Sin esto el bot no reconocía nada y preguntaba el rubro dos
-     * veces con distinta redacción —"qué vendés o qué servicio ofrecés?" y
-     * después "a qué rubro te dedicás?"— a alguien que YA había contestado.
-     * Pasó dos veces el mismo día (BJR y el ebook de diseños, 27-ago). */
+     * plantines"). Sin esto el bot no reconocía nada y preguntaba el rubro dos
+     * veces con distinta redacción a alguien que YA había contestado (BJR y el
+     * ebook de diseños, 27-ago). Vender es tienda, sin preguntar si prefiere
+     * cobrar online o que le consulten (Pablo, 29-ago): antes esto abría el
+     * desempate "mostrar o vender", y "vendo sahumerios" se llevaba esa
+     * pregunta (18-sep). Lo que vende se pregunta solo si no lo dijo. */
     if (preg_match('/\b(vendo|vender|venderia|venta de|comercializo|comercializar|revendo|revender)\b/u', $t)) {
-        return 'hibrido_pendiente';
+        return 'ecommerce';
     }
     return null;
 }
@@ -3018,13 +3283,17 @@ function wabot_fallback_respuesta_vacia($texto, $negativaTambien = true) {
 function wabot_texto_solo_negocio_generico($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '') return false;
-    if (!preg_match('/\b(negocio|empresa|emprendimiento|comercio|local|marca|proyecto)\b/u', $t)) return false;
+    /* "Trabajo en feria" tampoco dice qué vende (18-sep): se cotizó tienda
+     * online sin saber si eran plantas, ropa o comida. La feria o el puesto
+     * son el LUGAR, igual que el local. */
+    if (!preg_match('/\b(negocio|empresa|emprendimiento|comercio|local|marca|proyecto|feria|ferias|puesto|stand)\b/u', $t)) return false;
 
     $genericas = [
         'hola','buenas','quiero','queremos','necesito','necesitamos','busco','buscamos',
         'hacer','armar','tener','una','un','la','el','mi','mis','nuestro','nuestra','nuestros','nuestras',
         'es','seria','sería','para','por','favor','pagina','página','web','sitio','de','del',
         'negocio','empresa','emprendimiento','comercio','local','marca','proyecto','propio','propia','familiar',
+        'feria','ferias','puesto','stand','trabajo','trabajamos','vendo','vendemos','en','las','los','y','tengo','tenemos','con',
     ];
     foreach (array_filter(explode(' ', $t)) as $palabra) {
         if (!in_array($palabra, $genericas, true)) return false;
@@ -3216,6 +3485,26 @@ function wabot_engine($texto, &$conv, $cfg) {
     if ($c === null) {
         wabot_evento_sesion($conv, 'ia_fallback_seguro', ['origen' => 'clasificador']);
         return wabot_fallback_ia($texto, $conv, $cfg);
+    }
+
+    // Lo que el clasificador leyó de la charla completa la ficha (18-sep).
+    wabot_ficha_actualizar($conv, $texto, $c);
+
+    /* Quién escribe (18-sep): el que pide trabajo, el que ya es cliente o el
+     * proveedor no son un lead. Las palabras sueltas los reconocen en el borde
+     * (wabot_contexto_consulta); el clasificador cubre lo que se les escapa,
+     * pero solo si el mensaje trae algo de eso y no pide una web. */
+    $noVenta = wabot_interlocutor_no_venta($texto, $conv);
+    if ($noVenta === 'proveedor') {
+        wabot_log('proveedor_ignorado', ['tel' => $conv['tel'] ?? '', 'origen' => 'clasificador']);
+        return wabot_cerrar_proveedor($conv);
+    }
+    if ($noVenta !== null) {
+        $conv['contexto_consulta'] = $noVenta;
+        $conv['handoff_pendiente'] = true;
+        $conv['seguimiento_bloqueado'] = true;
+        wabot_evento_sesion($conv, 'contexto_no_venta', ['contexto' => $noVenta, 'origen' => 'clasificador']);
+        return [(string)($cfg[$noVenta === 'laboral' ? 'mensaje_laboral' : 'mensaje_cliente_existente'] ?? $cfg['espera'] ?? '')];
     }
 
     $acc  = $c['acciones'];
@@ -4992,12 +5281,13 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
         ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
-         '{mantenimiento_mes}', '{cambios_mes}'],
+         '{mantenimiento_mes}', '{cambios_mes}', '{carga_producto}'],
         [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades,
-         wabot_monto_por_mes_texto($v, $cfg, 'mantenimiento'), wabot_monto_por_mes_texto($v, $cfg, 'mensualidad_cambios')],
+         wabot_monto_por_mes_texto($v, $cfg, 'mantenimiento'), wabot_monto_por_mes_texto($v, $cfg, 'mensualidad_cambios'),
+         (string)($cfg['carga_producto'] ?? '$500')],
         $t
     );
 }
@@ -5066,9 +5356,95 @@ function wabot_oferta_diseno_form_texto(&$conv, $cfg) {
  * pegado al monto es justo la tarea de más que se quería sacar.
  */
 function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
-    $propuesta = wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg);
+    // La propuesta nombra lo que pidió (18-sep) y, abajo, las dos formas.
+    $propuesta = rtrim((string)$precioTexto) . wabot_funciones_pedidas_linea($tipo, $conv, $cfg);
+    $propuesta = wabot_precio_con_servicio($propuesta, $tipo, $conv, $cfg);
+    if ($tipo === 'landing' && !empty($conv['catalogo'])) {
+        $carga = trim(wabot_precio_placeholders((string)($cfg['catalogo_carga'] ?? ''), $conv, $cfg, $tipo));
+        if ($carga !== '') $propuesta .= "\n\n" . $carga;
+    }
+    // Lo que pidió y no hacemos va primero: nunca queda una parte sin contestar.
+    $fuera = wabot_fuera_de_servicio_texto($tipo, $conv, $cfg);
+    if ($fuera !== '') $propuesta = $fuera . "\n\n" . $propuesta;
     wabot_oferta_diseno_abrir($conv);
     return [$propuesta, wabot_tres_pasos_texto($conv, $cfg)];
+}
+
+/** "a, b y c": la lista con "y" al final. */
+function wabot_lista_y($items) {
+    $items = array_values(array_filter(array_map('trim', (array)$items), 'strlen'));
+    if (count($items) < 2) return $items[0] ?? '';
+    $ultimo = array_pop($items);
+    return implode(', ', $items) . ' y ' . $ultimo;
+}
+
+/**
+ * "Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el
+ * acceso a tu Instagram y una sección de reseñas de tus clientes." (18-sep).
+ * Solo lo que el tipo cotizado incluye y que la propuesta no dice ya: lo que
+ * no está en la lista no se promete, lo ve Pablo en la ficha.
+ */
+function wabot_funciones_pedidas_linea($tipo, $conv, $cfg) {
+    $porTipo = [
+        'landing'      => ['turnos_whatsapp', 'turnos_online', 'reservas', 'instagram', 'resenas', 'mapa', 'formulario', 'carta', 'idiomas'],
+        'ecommerce'    => ['instagram', 'resenas', 'mapa', 'formulario', 'idiomas', 'envios', 'cupones'],
+        'elearning'    => ['instagram', 'resenas', 'formulario', 'idiomas'],
+        'inmobiliaria' => ['instagram', 'resenas', 'mapa', 'formulario', 'idiomas'],
+    ];
+    $f = wabot_ficha($conv);
+    $yaDicho = ['hospedaje' => ['reservas', 'turnos_online'], 'gastronomia' => ['carta']][$f['necesidad']] ?? [];
+    $frases = [];
+    foreach ((array)$f['funciones'] as $k) {
+        if (!in_array($k, $porTipo[$tipo] ?? [], true) || in_array($k, $yaDicho, true)) continue;
+        $frase = trim((string)($cfg['funciones_pedidas'][$k] ?? ''));
+        if ($frase !== '') $frases[] = $frase;
+        if (count($frases) >= 4) break;
+    }
+    if (!$frases) return '';
+    $intro = trim((string)($cfg['funciones_pedidas_intro'] ?? ''));
+    return $intro === '' ? '' : ' ' . str_replace('{lista}', wabot_lista_y($frases), $intro);
+}
+
+/**
+ * Lo que pidió y no hacemos, dicho una sola vez y antes de la propuesta
+ * (18-sep). El de la publicidad sigue con cómo lo ayuda igual la web: "tener
+ * seguidores y subir la venta" no se contesta con un precio a secas.
+ */
+function wabot_fuera_de_servicio_texto($tipo, &$conv, $cfg) {
+    $f = wabot_ficha($conv);
+    $avisado = (array)($conv['fuera_avisado'] ?? []);
+    $lineas = [];
+    if (in_array('publicidad', (array)$f['fuera'], true) && !in_array('publicidad', $avisado, true)) {
+        $linea = trim((string)($cfg['fuera_publicidad'] ?? ''));
+        $comoAyuda = trim((string)($cfg['fuera_publicidad_tipo'][(string)$tipo] ?? ''));
+        if ($linea !== '') { $lineas[] = trim($linea . ' ' . $comoAyuda); $avisado[] = 'publicidad'; }
+    }
+    if (in_array('logo', (array)$f['fuera'], true) && !in_array('logo', $avisado, true)) {
+        $linea = trim((string)($cfg['info']['logo'] ?? ''));
+        if ($linea !== '') { $lineas[] = $linea; $avisado[] = 'logo'; }
+    }
+    $conv['fuera_avisado'] = $avisado;
+    return implode("\n\n", $lineas);
+}
+
+/**
+ * El proyecto que no es de lista (18-sep): muchos productos, Mercado Libre,
+ * un sistema que ya usa, varios vendedores o la entrega automática de
+ * archivos. Devuelve [motivo, texto] o null. Nunca un precio estándar para
+ * algo que no es estándar: lo cotiza el desarrollador con la ficha a mano.
+ */
+function wabot_complejidad($tipo, $conv, $cfg) {
+    $f = wabot_ficha($conv);
+    $textos = (array)($cfg['complejidad'] ?? []);
+    $umbral = (int)($cfg['productos_derivar_desde'] ?? 0);
+    if (in_array($tipo, ['ecommerce', 'landing'], true) && $umbral > 0 && (int)$f['cantidad_productos'] >= $umbral
+        && trim((string)($textos['muchos_productos'] ?? '')) !== '') {
+        return ['muchos_productos', str_replace('{cantidad}', number_format((int)$f['cantidad_productos'], 0, ',', '.'), (string)$textos['muchos_productos'])];
+    }
+    foreach (['mercadolibre', 'integracion', 'marketplace', 'entrega_digital'] as $s) {
+        if (in_array($s, (array)$f['senales'], true) && trim((string)($textos[$s] ?? '')) !== '') return [$s, (string)$textos[$s]];
+    }
+    return null;
 }
 
 /**
@@ -5516,6 +5892,25 @@ function wabot_propuesta_texto($tipo, $conv) {
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
         return 'una tienda online para vender tus productos y una plataforma para tus cursos, con acceso para cada alumno y cobro online. Todo lo gestionás vos desde tu panel';
     }
+    /* La necesidad interna de la ficha afina la frase sin cambiar el precio
+     * (18-sep): la cabaña con restaurante no es "un sitio para mostrar tus
+     * servicios", es un lugar donde reservar. */
+    $necesidad = is_array($conv) ? wabot_ficha($conv)['necesidad'] : '';
+    if ($tipo === 'landing' && is_array($conv) && !empty($conv['catalogo'])) {
+        return 'un sitio profesional con el catálogo de tus productos, donde los muestres con fotos y te consulten directo por WhatsApp';
+    }
+    if ($tipo === 'landing' && $necesidad === 'hospedaje') {
+        $conResto = (bool)preg_match('/\b(restaurant\w*|resto|restoran|comidas?|cocina|gastronom\w*)\b/u',
+            wabot_normalizar_frase(wabot_contexto_cliente_texto($conv)));
+        return 'un sitio profesional donde muestres las habitaciones' . ($conResto ? ', el restaurante' : '')
+            . ' y los servicios, y tus huéspedes te pidan la reserva online';
+    }
+    if ($tipo === 'landing' && $necesidad === 'gastronomia') {
+        return 'un sitio profesional donde muestres tu carta y te hagan los pedidos o las reservas por WhatsApp';
+    }
+    if ($tipo === 'ecommerce' && $necesidad === 'productos_digitales') {
+        return 'una tienda online donde vendas tus productos digitales y cobres con Mercado Pago. La administrás vos desde tu panel: cargás los productos, cambiás precios y ves las ventas';
+    }
     $fijas = [
         'landing'      => 'un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp',
         'ecommerce'    => 'una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago. La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos',
@@ -5649,11 +6044,33 @@ function wabot_precio($tipo, &$conv, $cfg) {
      * institucional salía excluido, por ser la que junta varias secciones. La
      * condición ya no puede darse: sin precio_dado el tipo retirado se absorbe
      * a landing más arriba, y con precio_dado este guard no corre. */
+    if (empty($conv['precio_dado'])) {
+        /* Lo que no es de lista no se cotiza con el precio de lista (18-sep):
+         * 3.500 productos, Mercado Libre, un sistema que ya usa… Se nombra el
+         * motivo y lo toma el desarrollador, con la ficha en el panel. */
+        $complejo = wabot_complejidad($tipo, $conv, $cfg);
+        if ($complejo !== null) {
+            wabot_evento_sesion($conv, 'complejidad_derivada', ['motivo' => $complejo[0]]);
+            wabot_handoff_marcar($conv, 'complejidad');
+            return [$complejo[1]];
+        }
+        /* Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): precio de
+         * sitio profesional más la carga de productos. Solo si el cliente lo
+         * dijo: con productos, lo normal sigue siendo la tienda (29-ago). */
+        if ($tipo === 'ecommerce' && empty($conv['combo_cursos']) && wabot_ficha($conv)['necesidad'] === 'catalogo') {
+            $tipo = 'landing';
+            $conv['catalogo'] = true;
+            wabot_evento_sesion($conv, 'catalogo_sin_cobro');
+        }
+    }
     if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])) {
         $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));
-        // Tienda + cursos tiene precio de lista (14-sep): esos dos ejes solos no son mixtos.
-        if ($ejes !== null && !empty($conv['combo_cursos'])
-            && !array_diff(array_keys($ejes), ['productos', 'cursos'])) {
+        /* Tienda + cursos tiene precio de lista (14-sep): esos dos ejes solos
+         * nunca son mixtos. Si el clasificador reconoció los cursos se cotiza
+         * el combinado (combo_cursos); si fueron solo palabras sueltas
+         * ("hacemos talleres"), se cotiza lo que pidió y el resto lo ve Pablo
+         * (18-sep: la regalería que nunca habló de cursos). */
+        if ($ejes !== null && !array_diff(array_keys($ejes), ['productos', 'cursos'])) {
             $ejes = null;
         }
         $textoMixto = $ejes !== null ? wabot_texto_mixto($ejes, $cfg) : null;
@@ -5741,21 +6158,46 @@ function wabot_derivar(&$conv, $cfg, $causa = 'derivacion') {
  * aviso atrás. Si no tiene nada que decir, sale el aviso solo, como antes.
  */
 function wabot_derivar_contestando($texto, &$conv, $cfg, $causa = 'derivacion') {
-    $previa = wabot_respuesta_antes_de_derivar($texto, $conv, $cfg);
+    /* Nunca ignorar una parte del mensaje (18-sep): el que ya tenía web,
+     * preguntó por Tiendanube y pidió manejo de publicidad recibió lo de
+     * Tiendanube y nada sobre la publicidad. Lo que no hacemos va primero y
+     * después cada duda que el bot sabe contestar, no solo la primera. */
+    $partes = [];
+    $fuera = wabot_fuera_de_servicio_texto((string)($conv['tipo'] ?? ''), $conv, $cfg);
+    if ($fuera !== '') $partes[] = $fuera;
+    $previa = wabot_respuesta_antes_de_derivar($texto, $conv, $cfg, $fuera !== '');
+    if ($previa !== '') $partes[] = $previa;
     $aviso  = wabot_derivar($conv, $cfg, $causa);
-    return $previa === '' ? $aviso : array_merge([$previa], $aviso);
+    return $partes ? array_merge([implode("\n\n", $partes)], $aviso) : $aviso;
 }
 
-/** Lo que el bot puede contestar de un tirón antes de pasarle la charla a Pablo. */
-function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg) {
-    $clave = wabot_info_por_palabras($texto, 'derivado');
-    if ($clave === null) return '';
-    if ($clave === 'precio_actual')  return wabot_precio_resumen($conv, $cfg);
-    if ($clave === 'mantenimiento')  return wabot_texto_mantenimiento($conv, $cfg);
-    if ($clave === 'pago')           return wabot_texto_pago($conv, $cfg);
-    if ($clave === 'hosting')        return wabot_texto_hosting($conv, $cfg);
-    if ($clave === 'rangos')         return wabot_texto_rangos($cfg);
-    return wabot_texto_info($clave, $cfg, $conv);
+/**
+ * Lo que el bot puede contestar de un tirón antes de pasarle la charla a
+ * Pablo: la duda principal y, si trajo más, hasta dos de las que se pueden
+ * rastrear (wabot_preguntas_del_mensaje). Con la publicidad ya aclarada, no
+ * se repite la respuesta de marketing.
+ */
+function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg, $sinMarketing = false) {
+    $claves = [];
+    $principal = wabot_info_por_palabras($texto, 'derivado');
+    if ($principal !== null) $claves[] = $principal;
+    foreach (wabot_preguntas_del_mensaje($texto, $conv, 'derivado') as $k) {
+        if (count($claves) >= 3) break;
+        if (!in_array($k, $claves, true)) $claves[] = $k;
+    }
+    $textos = [];
+    foreach ($claves as $clave) {
+        if ($sinMarketing && $clave === 'marketing') continue;
+        if ($clave === 'precio_actual')     $t = wabot_precio_resumen($conv, $cfg);
+        elseif ($clave === 'mantenimiento') $t = wabot_texto_mantenimiento($conv, $cfg);
+        elseif ($clave === 'pago')          $t = wabot_texto_pago($conv, $cfg);
+        elseif ($clave === 'hosting')       $t = wabot_texto_hosting($conv, $cfg);
+        elseif ($clave === 'rangos')        $t = wabot_texto_rangos($cfg);
+        else                                $t = wabot_texto_info($clave, $cfg, $conv);
+        $t = trim((string)$t);
+        if ($t !== '' && !in_array($t, $textos, true)) $textos[] = $t;
+    }
+    return implode("\n\n", $textos);
 }
 
 /**

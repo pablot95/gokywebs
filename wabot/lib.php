@@ -1498,6 +1498,8 @@ function wabot_conv_load($clave) {
         // Precio dado y primer diseño ofrecido: el bot espera UNA respuesta
         // (ver wabot_oferta_diseno_responder en redactor.php, 18-sep).
         'oferta_diseno_ts' => 0,
+        // Lo que el cliente fue contando, ordenado (ver wabot_ficha_actualizar).
+        'ficha'            => null,
         'objecion_dicha'   => [],
         'referencia_preguntada' => false,
         'cta_muestra'      => false,
@@ -1675,7 +1677,9 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
               // Paso 2 del formulario (10-sep): son del proyecto viejo.
-              'estilo','incluir','combo_cursos'] as $k) {
+              'estilo','incluir','combo_cursos',
+              // La ficha y lo que se decidió con ella (18-sep).
+              'ficha','catalogo','fuera_avisado','objetivo_preguntado'] as $k) {
         $conv[$k] = null;
     }
     $conv['fase'] = 'nuevo';
@@ -3916,7 +3920,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
 
     $prompt = <<<EOT
 Sos el clasificador de intenciones del bot comercial de Gokywebs (agencia argentina de diseño web que vende webs por WhatsApp). NO redactás respuestas: solo etiquetás el mensaje del cliente. Respondé SOLO un JSON válido con esta forma exacta:
-{"acciones": ["..."], "info_keys": ["..."], "descripcion": null, "colores": null}
+{"acciones": ["..."], "info_keys": ["..."], "descripcion": null, "colores": null, "ficha": {"rubro": null, "que_vende": null, "objetivo": null, "necesidad": null, "interlocutor": null}}
 
 ACCIONES POSIBLES (elegí las que apliquen, en orden de importancia): $acciones
 
@@ -3956,6 +3960,13 @@ Nunca lo etiquetes como quiere_avanzar: un "dale" no es pedir el CBU, es decir q
 - algo_diferente: eligió "algo diferente" o describe algo que no encaja en ningún tipo.
 - saludo: solo saluda o agradece, sin contenido.
 - otro: nada de lo anterior aplica con claridad.
+
+FICHA (aparte de las acciones: no cambia cómo elegís las acciones). Resumí lo que el cliente dijo en TODA la charla, con sus palabras. Si un dato no lo dijo, null. No inventes ni deduzcas de más:
+- rubro: su negocio en segunda persona y corto, máximo 6 palabras: "tu local de ropa", "tu estudio contable", "tu distribuidora de cosméticos". Sin verbos ni tipos de web.
+- que_vende: qué vende u ofrece, corto: "cosméticos, insumos de manicura y herramientas", "sesiones de nutrición".
+- objetivo: qué quiere lograr con la web, si lo dijo: "vender online", "que le reserven turnos", "tener más clientes".
+- necesidad: UNA de estas: tienda, catalogo, productos_digitales, cursos, turnos, servicios, gastronomia, hospedaje, inmobiliaria, sistema, web_existente, otra. catalogo = mostrar productos y que le consulten por WhatsApp SIN cobrar en la web, y solo si lo dijo. hospedaje = cabañas, hotel, habitaciones. web_existente = ya tiene web y quiere cambiarla.
+- interlocutor: quién escribe. cliente = quiere una web o pregunta por una (casi siempre). cliente_actual = ya le hicimos la web. empleo = pide trabajo o se ofrece a trabajar o colaborar CON la agencia (desarrolladores, diseñadores). proveedor = le ofrece un servicio o producto A la agencia. otro = nada de eso.
 
 ERRORES DE ESCRITURA:
 - Interpretá usando el contexto antes de tomar literalmente una frase rara. Si una corrección evidente produce una intención natural, usala.
@@ -4005,11 +4016,19 @@ EOT;
     $out = json_decode($salida, true);
     if (!is_array($out) || !isset($out['acciones']) || !is_array($out['acciones'])) return null;
 
+    // La ficha (18-sep) es opcional: si no vino o vino rota, el turno sigue
+    // igual. Sus valores los valida wabot_ficha_actualizar() contra la charla.
+    $ficha = [];
+    foreach (['rubro', 'que_vende', 'objetivo', 'necesidad', 'interlocutor'] as $k) {
+        $v = is_array($out['ficha'] ?? null) ? ($out['ficha'][$k] ?? null) : null;
+        if (is_string($v) && trim($v) !== '' && strtolower(trim($v)) !== 'null') $ficha[$k] = trim($v);
+    }
     return [
         'acciones'    => array_values(array_filter($out['acciones'], 'is_string')),
         'info_keys'   => array_values(array_filter((array)($out['info_keys'] ?? []), 'is_string')),
         'descripcion' => (isset($out['descripcion']) && is_string($out['descripcion']) && trim($out['descripcion']) !== '') ? trim($out['descripcion']) : null,
         'colores'     => (isset($out['colores']) && is_string($out['colores']) && trim($out['colores']) !== '') ? trim($out['colores']) : null,
+        'ficha'       => $ficha,
     ];
 }
 
@@ -4495,7 +4514,10 @@ function wabot_lead_cotizado($conv, $cfg) {
         $v = wabot_precio_vigente($conv, $cfg);
         if ($v['precio'] !== '') {
             if ($v['mensualidad'] === '') return $v['precio'];
-            return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes';
+            // El catálogo sin cobro online suma la carga de productos (18-sep).
+            $carga = ($tipo === 'landing' && !empty($conv['catalogo']))
+                ? ' + carga de productos ' . (string)($cfg['carga_producto'] ?? '$500') . ' c/u' : '';
+            return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes' . $carga;
         }
     }
     $t = $cfg['tipos'][$tipo] ?? [];
@@ -4543,6 +4565,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $tipo  = $conv['tipo'] ?? '';
     $label = wabot_tipo_label($tipo, $cfg);
     if ($tipo === 'ecommerce' && !empty($conv['combo_cursos'])) $label .= ' + cursos online';
+    if ($tipo === 'landing' && !empty($conv['catalogo'])) $label .= ' con catálogo';
     $ahora = gmdate('Y-m-d\TH:i:s\Z');
     $fecha = (new DateTime('now', new DateTimeZone('America/Argentina/Buenos_Aires')))->format('d/n/Y, H:i:s');
 
@@ -4577,6 +4600,14 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     }
     if (!$esSistema && $incluir !== '' && mb_stripos($objetivo, $incluir) === false) {
         $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Quiere incluir sí o sí: ' . $incluir;
+    }
+    /* Lo que pidió por chat (18-sep), en el mismo bloque que se lee al diseñar:
+     * las funciones que nombró y lo que dijo que no es de lista. */
+    if (!$esSistema && function_exists('wabot_ficha_resumen')) {
+        $ficha = wabot_ficha_resumen($conv, $cfg);
+        if ($ficha !== '' && mb_stripos($objetivo, $ficha) === false) {
+            $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Del chat: ' . $ficha;
+        }
     }
 
     $productos = (int)($conv['productos_cantidad'] ?? 0);

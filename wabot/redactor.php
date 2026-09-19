@@ -140,6 +140,10 @@ function wabot_responder($texto, &$conv, $cfg) {
     // El reset pertenece al borde común, antes de actualizar ultimo_ts.
     wabot_turno_preparar($conv, $cfg, time());
 
+    // La ficha se actualiza con cada mensaje y antes de cualquier respuesta
+    // (18-sep): lo que contó queda anotado aunque después conteste Pablo.
+    wabot_ficha_actualizar($conv, $texto);
+
     // La cotización cerrada es el último mensaje automático. Desde acá sigue
     // una persona; también se respeta en llamadas directas fuera del webhook.
     if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final') return [];

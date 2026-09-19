@@ -46,7 +46,21 @@ function wabot_textos_default() {
     'capi_token' => '',
     'cambios_plan' => 'El mantenimiento no incluye cambios en la web. Si vas a necesitar cambios, con la suscripción mensual está el plan con cambios de {cambios_mes}, que incluye un cambio por mes. Con el pago único, un cambio después de entregada la web se cotiza aparte. Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
     'caro' => 'Si el pago único se te hace mucho, está la suscripción mensual de {mensualidad}: arrancás sin pago inicial, y con la primera mensualidad armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
+    // Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): se cotiza como
+    // sitio profesional y la carga de productos va aparte.
+    'carga_producto' => '$500',
+    'catalogo_carga' => 'La carga de los productos va aparte: {carga_producto} por producto.',
     'cierre_comparando' => 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
+    /* Lo que no entra en el precio de lista: se nombra el motivo y lo toma el
+     * desarrollador (18-sep). Nunca un precio estándar para un proyecto que no
+     * es estándar. */
+    'complejidad' => [
+        'muchos_productos' => 'Con {cantidad} productos no es una tienda estándar: hay que ver cómo se importa el catálogo y cómo se mantiene el stock, y eso lo cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+        'mercadolibre' => 'Conectar la web con tus publicaciones de Mercado Libre no entra en el precio de lista: lo cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+        'integracion' => 'Conectar la web con el sistema que ya usás no entra en el precio de lista: lo cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+        'marketplace' => 'Una web donde vendan varios vendedores no entra en el precio de lista: la cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+        'entrega_digital' => 'La entrega automática de los archivos después del pago no entra en el precio de lista: la cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+    ],
     'cierre_memoria' => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
     'cierre_suave' => 'Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá.',
     'confirma_cambio' => 'Antes de seguir, confirmame una cosa: esto es para el mismo proyecto que veníamos viendo, o es otra web aparte?',
@@ -78,6 +92,30 @@ function wabot_textos_default() {
     'espera' => 'El desarrollador ya tiene tu consulta: te escribe a la brevedad desde nuestro número de proyectos.',
     'espera_prediseno' => 'Listo, ya quedó todo anotado: la demo te llega {entrega}. Te la manda el desarrollador, por acá — y si te escribe desde otro número, es el nuestro de proyectos.',
     'form_activo' => true,
+    /* Lo que pidió y no hacemos, dicho antes de la propuesta (18-sep: "nunca
+     * ignorar una parte del mensaje"). Después, cómo lo ayuda igual la web. */
+    'fuera_publicidad' => 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web.',
+    'fuera_publicidad_tipo' => [
+        'landing' => 'Con el sitio, el que te encuentra en redes llega a toda tu información y te escribe directo.',
+        'ecommerce' => 'Con la tienda, la gente que te sigue en redes te compra directo desde el link, sin tener que escribirte.',
+        'elearning' => 'Con la plataforma, el que te sigue en redes compra el curso directo desde el link.',
+        'inmobiliaria' => 'Con la web, el que ve tus publicaciones en redes llega a todas tus propiedades y te consulta directo.',
+    ],
+    // Las funciones que el cliente pidió, nombradas en la propuesta (18-sep).
+    'funciones_pedidas' => [
+        'turnos_whatsapp' => 'un botón para pedir turnos por WhatsApp',
+        'turnos_online' => 'turnos online, para que tus clientes elijan día y horario',
+        'reservas' => 'reservas online',
+        'instagram' => 'el acceso a tu Instagram',
+        'resenas' => 'una sección de reseñas de tus clientes',
+        'mapa' => 'el mapa con tu ubicación',
+        'formulario' => 'un formulario de contacto',
+        'carta' => 'la carta con tus platos',
+        'idiomas' => 'la web en varios idiomas (hasta 3)',
+        'envios' => 'el cálculo del envío al comprar',
+        'cupones' => 'cupones de descuento',
+    ],
+    'funciones_pedidas_intro' => 'Y lleva lo que me pediste: {lista}.',
     'gemini_modelo' => 'gemini-3.5-flash-lite',
     'hosting_renovacion' => 'Con el pago único, el primer año incluye el mantenimiento: hosting, dominio, actualizaciones de plugins, corrección de errores y soporte. Desde el segundo año seguís con el plan de mantenimiento, de {mantenimiento_mes}. Con la suscripción mensual no hay nada aparte: va incluido mientras la tengas.',
     'imagenes_pedido_generico' => 'el logo y 3 o 4 fotos de tu negocio',
@@ -247,6 +285,8 @@ function wabot_textos_default() {
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
     'prediseno_whatsapp_invalido' => 'Ese número no me cierra. Pasámelo con característica, por ejemplo 11 2506-8578.',
     'presentadas_sin_respuesta_horas' => 48,
+    // Desde cuántos productos una tienda deja de ser de lista (18-sep).
+    'productos_derivar_desde' => 500,
     'reset_dias' => 7,
     'respuesta_esta_incluido' => 'Está incluido en el plan, no se paga aparte.',
     'respuesta_plan_obligatorio' => 'No: la suscripción mensual es una de las dos formas de contratar la web. Si preferís, la pagás una sola vez y no tenés que pagar por mes.',

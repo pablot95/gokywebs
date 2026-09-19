@@ -1838,6 +1838,9 @@ body.embed { min-height: 0; }
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
                         <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
+                        <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
+                              $fichaResumen = function_exists('wabot_ficha_resumen') ? wabot_ficha_resumen($conv, $cfg) : '';
+                              if ($fichaResumen !== ''): ?><span class="meta" title="Lo que el cliente fue contando, ordenado por el bot">📋 <?= $e($fichaResumen) ?></span><?php endif; ?>
                     </div>
                     <div class="conv-acciones-wrap">
                         <button type="button" class="conv-acciones-toggle" aria-expanded="false" title="Acciones">⋯</button>

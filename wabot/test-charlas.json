@@ -1,25 +1,24 @@
 [
   {
     "id": "01",
-    "titulo": "Sitio profesional: rubro, precio e interés claro",
+    "titulo": "Sitio profesional: rubro, precio y sí al primer diseño",
     "nombre": "Marcos",
     "turnos": [
       "Hola, soy electricista matriculado, quiero una pagina para que me contacten",
-      "cuanto tarda?",
       "dale, armala"
     ],
-    "esperado": "Cotiza el sitio profesional en dos mensajes ($180.000 pago único con seña $40.000, o $20.000 por mes), muestra cinco trabajos y los modelos. La duda se contesta sin repetir el precio. El interés claro manda solamente gokywebs.com/form y deja la charla en manos de Pablo."
+    "esperado": "Dos mensajes: 'Para tu … , te serviría un sitio profesional donde…' (o 'Para lo que me contás, te serviría…') con las dos maneras ($180.000 pago único o $15.000 por mes, 'las dos incluyen el armado completo') y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
   },
   {
     "id": "02",
-    "titulo": "Tienda online: precio, cómo se paga y aceptación",
+    "titulo": "Tienda online: una pregunta después del precio la contesta Pablo",
     "nombre": "Luciana",
     "turnos": [
       "Buenas, tengo una tienda de ropa de mujer y quiero vender online",
       "como se paga?",
-      "si, quiero la demo"
+      "hola?"
     ],
-    "esperado": "Ecommerce $290.000 (seña $60.000) o $30.000 por mes. 'Cómo se paga' explica las dos formas con los montos de la charla, sin cuotas. La aceptación manda solamente gokywebs.com/form y apaga el bot."
+    "esperado": "Tienda online $290.000 o $25.000 por mes, más la oferta del primer diseño. 'Cómo se paga?' NO se contesta: silencio, bot apagado y handoff para Pablo. 'Hola?' tampoco recibe nada."
   },
   {
     "id": "03",
@@ -28,20 +27,19 @@
     "turnos": [
       "Hola, doy cursos de maquillaje",
       "quiero venderlos desde la web, con videos y que cada alumna tenga su acceso",
-      "y el hosting va aparte?"
+      "si"
     ],
-    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos a $290.000 o $30.000 por mes. El hosting va incluido, sin repetir el precio ni los modelos."
+    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos a $290.000 o $25.000 por mes con la oferta del primer diseño. El 'si' recibe el formulario."
   },
   {
     "id": "04",
-    "titulo": "Inmobiliaria: precio y la seña",
+    "titulo": "Inmobiliaria: precio y 'no, gracias'",
     "nombre": "Gustavo",
     "turnos": [
       "Tengo una inmobiliaria en Tigre y quiero publicar las propiedades",
-      "cuanto es la seña?",
-      "dale, quiero la demo"
+      "no, gracias, lo voy a pensar"
     ],
-    "esperado": "Inmobiliaria $240.000 (seña $60.000, saldo $180.000) o $30.000 por mes. La seña se contesta con su monto y el saldo al entregar. La aceptación manda solamente gokywebs.com/form y apaga el bot."
+    "esperado": "Inmobiliaria $240.000 o $25.000 por mes con la oferta del primer diseño. El 'no' queda en silencio y pendiente para Pablo (no hay cierre automático)."
   },
   {
     "id": "05",
@@ -49,10 +47,9 @@
     "nombre": "Raúl",
     "turnos": [
       "Hacemos cortinas y toldos a medida",
-      "quiero mostrar los trabajos que hacemos y que me consulten",
-      "cuanto sale?"
+      "quiero mostrar los trabajos que hacemos y que me consulten"
     ],
-    "esperado": "Abre el desempate del híbrido (trabajos vs. vender). 'Mostrar trabajos' cotiza el sitio profesional. 'Cuánto sale' repite el resumen corto con los dos montos, no el bloque entero."
+    "esperado": "Abre el desempate del híbrido (trabajos vs. vender). 'Mostrar trabajos' cotiza el sitio profesional con la oferta del primer diseño."
   },
   {
     "id": "06",
@@ -67,41 +64,33 @@
   },
   {
     "id": "07",
-    "titulo": "Dudas del pago único con el precio ya dado",
+    "titulo": "Antes del precio: la demo no se paga",
     "nombre": "Carla",
-    "estado": {"fase": "prediseno", "tipo": "landing", "precio_dado": true, "cta_muestra": true,
-               "precio_cotizado": "$180.000", "sena_cotizada": "$40.000", "mensualidad_cotizada": "$20.000", "precio_modelo": "doble"},
     "turnos": [
-      "Con el pago unico despues tengo que pagar algo mas?",
-      "Si pago la seña y despues no me gusta, me la devuelven?",
-      "Entonces pago 40 mil por mes?"
+      "Hola, cuanto hay que pagar para ver la demo?",
+      "tengo una pasteleria"
     ],
-    "esperado": "Lo que queda después del pago único es la renovación anual del hosting, sin nombrar la demo. La devolución no se promete: la confirma el desarrollador. Los $40.000 son la seña, no la mensualidad ($20.000): se corrige con un no."
+    "esperado": "'El primer diseño es sin cargo: lo ves antes de decidir…' sin montos. Con el rubro cotiza la tienda (o el sitio si Gemini lo lee como servicio) con la oferta del primer diseño."
   },
   {
     "id": "08",
-    "titulo": "Dudas del servicio mensual con la tienda cotizada",
+    "titulo": "Elegir la forma de pago también es avanzar",
     "nombre": "Sofía",
-    "estado": {"fase": "prediseno", "tipo": "ecommerce", "precio_dado": true, "cta_muestra": true,
-               "precio_cotizado": "$290.000", "sena_cotizada": "$60.000", "mensualidad_cotizada": "$30.000", "precio_modelo": "doble"},
     "turnos": [
-      "El mensual es obligatorio?",
-      "como doy de baja el plan si dejo de necesitarlo?",
-      "Cual me conviene mas, pagar una vez o por mes?"
+      "Vendo accesorios de cuero y quiero una tienda",
+      "prefiero el pago unico"
     ],
-    "esperado": "No es obligatorio: es una de las dos formas. La baja se hace desde Mercado Pago, sin permanencia, y la web se desactiva. 'Cuál conviene' explica las dos con los montos de la charla sin elegir por él."
+    "esperado": "Tienda $290.000 o $25.000 por mes con la oferta. 'Prefiero el pago único' recibe el formulario, queda anotada la modalidad 'unico' y el bot se apaga."
   },
   {
     "id": "09",
-    "titulo": "Objeción del socio: deriva",
+    "titulo": "Objeción del socio antes del precio: deriva",
     "nombre": "Diego",
-    "estado": {"fase": "prediseno", "tipo": "landing", "precio_dado": true, "cta_muestra": true,
-               "precio_cotizado": "$180.000", "sena_cotizada": "$40.000", "mensualidad_cotizada": "$20.000", "precio_modelo": "doble"},
     "turnos": [
-      "Lo tengo que hablar con mi socio y te digo",
+      "Hola, quiero una web para mi taller mecanico pero lo tengo que hablar con mi socio",
       "dale, gracias"
     ],
-    "esperado": "El socio deriva al desarrollador (fase derivado) en vez del texto de la objeción. El acuse posterior queda en silencio."
+    "esperado": "Si Gemini lo toma como objeción del socio, deriva al desarrollador sin precio. Si cotiza, lo hace con la oferta del primer diseño, y el 'dale, gracias' cuenta como sí ('dale'): recibe el formulario. Un 'gracias' o un 'ok gracias' solos quedarían en silencio para Pablo."
   },
   {
     "id": "10",
@@ -111,7 +100,7 @@
       "Hola, ya tengo una pagina en wix pero quiero mejorarla, tengo un estudio contable",
       "cuanto saldria hacerla de nuevo?"
     ],
-    "esperado": "El pedido de armar en Wix se contesta con la objeción de plataforma y sigue la venta; 'ya tengo web' lo sigue el desarrollador. No repite el aviso de derivación dos veces."
+    "esperado": "El pedido de armar en Wix se contesta con la objeción de plataforma; 'ya tengo web' lo sigue el desarrollador. No repite el aviso de derivación dos veces."
   },
   {
     "id": "11",
@@ -140,7 +129,7 @@
     "nombre": "Romina",
     "estado": {"fase": "postdemo", "tipo": "landing", "precio_dado": true, "lead_creado": true,
                "presentado_ts": "@ahora", "presentado_slug": "demo-test",
-               "precio_cotizado": "$180.000", "sena_cotizada": "$40.000", "mensualidad_cotizada": "$20.000", "precio_modelo": "doble"},
+               "precio_cotizado": "$180.000", "sena_cotizada": "$40.000", "mensualidad_cotizada": "$15.000", "precio_modelo": "doble"},
     "turnos": [
       "Me encantó, quedó hermosa",
       "cambiaria el color del fondo a beige",
@@ -156,6 +145,116 @@
       "Hola, cuanto sale una web?",
       "soy plomero"
     ],
-    "esperado": "Sin rubro no hay montos: pregunta a qué se dedica. Con 'soy plomero' cotiza el sitio profesional en dos mensajes."
+    "esperado": "Sin rubro no hay montos: pregunta a qué se dedica. Con 'soy plomero' cotiza el sitio profesional con la oferta del primer diseño."
+  },
+  {
+    "id": "15",
+    "titulo": "Feedback 18-sep: indumentaria, la propuesta nombra el rubro",
+    "nombre": "Paula",
+    "turnos": [
+      "Tengo un local de indumentaria femenina"
+    ],
+    "esperado": "'Para tu local de indumentaria femenina, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago…' (si Gemini no manda un rubro válido: 'Para lo que me contás, te serviría…'). Nunca 'Lo mejor para tu negocio'."
+  },
+  {
+    "id": "16",
+    "titulo": "Feedback 18-sep: turnos a WhatsApp, Instagram y calificaciones",
+    "nombre": "Lorena",
+    "turnos": [
+      "Soy manicura, quiero una pagina con turnos a WhatsApp, Instagram y calificaciones"
+    ],
+    "esperado": "Sitio profesional $180.000 o $15.000 por mes. La propuesta incluye 'Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el acceso a tu Instagram y una sección de reseñas de tus clientes.'"
+  },
+  {
+    "id": "17",
+    "titulo": "Feedback 18-sep: sahumerios y seguidores",
+    "nombre": "Mica",
+    "turnos": [
+      "Vendo sahumerios y quiero tener seguidores, subir la venta y demás"
+    ],
+    "esperado": "Primero: 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link…'. Después la tienda online con las dos maneras y la oferta del primer diseño. Nunca la pregunta 'mostrar o vender'."
+  },
+  {
+    "id": "18",
+    "titulo": "Feedback 18-sep: restaurant con hospedaje",
+    "nombre": "Jorge",
+    "turnos": [
+      "Tenemos un restaurant con hospedaje en Merlo, San Luis"
+    ],
+    "esperado": "Sitio profesional ($180.000 o $15.000 por mes) 'donde muestres las habitaciones, el restaurante y los servicios, y tus huéspedes te pidan la reserva online'."
+  },
+  {
+    "id": "19",
+    "titulo": "Feedback 18-sep: ferretería con 3.500 productos",
+    "nombre": "Oscar",
+    "turnos": [
+      "Tengo una ferreteria chica, son como 3.500 productos"
+    ],
+    "esperado": "Sin precio de lista: 'Con 3.500 productos no es una tienda estándar…' y lo toma el desarrollador (fase derivado, handoff). La ficha del panel muestra '⚠ 3500 productos'."
+  },
+  {
+    "id": "20",
+    "titulo": "Feedback 18-sep: regalería, sin cursos inventados",
+    "nombre": "Silvia",
+    "turnos": [
+      "Hola, tengo una regaleria, vendo souvenirs, figuras de yeso, velas, sahumerios e impresiones"
+    ],
+    "esperado": "Tienda online con las dos maneras y la oferta. Nunca 'una web que integre los cursos o materiales y la venta de productos'."
+  },
+  {
+    "id": "21",
+    "titulo": "Feedback 18-sep: distribuidora de cosméticos, no se repregunta",
+    "nombre": "Hernán",
+    "turnos": [
+      "Hola, quiero una pagina",
+      "Somos una distribuidora de cosmeticos, insumos de manicura y herramientas para peluquerias"
+    ],
+    "esperado": "Primero la pregunta del rubro. Con la respuesta cotiza la tienda online. Nunca 'Contame un poco más, qué vendés o qué servicio ofrecés?' después de que lo explicó."
+  },
+  {
+    "id": "22",
+    "titulo": "Feedback 18-sep: desarrollador que pide trabajo",
+    "nombre": "Tomás",
+    "turnos": [
+      "Hola, soy desarrollador web full stack y queria saber si estan buscando gente para sumarse al equipo"
+    ],
+    "esperado": "El texto laboral ('Las propuestas para sumarse al equipo las ve el desarrollador…'), handoff marcado, sin venta ni 'pasame el link de tu página'."
+  },
+  {
+    "id": "23",
+    "titulo": "Feedback 18-sep: ya tengo web, Tiendanube y publicidad",
+    "nombre": "Valeria",
+    "turnos": [
+      "Ya tengo una web, trabajan con Tiendanube? Y necesito que me manejen la publicidad en Instagram y Google"
+    ],
+    "esperado": "Contesta las dos cosas: que la publicidad y el manejo de redes no los hacemos, y lo de Tiendanube. Después sigue el desarrollador. Ninguna parte queda sin contestar."
+  },
+  {
+    "id": "24",
+    "titulo": "Feedback 18-sep: trabajo en feria",
+    "nombre": "Rosa",
+    "turnos": [
+      "Trabajo en feria"
+    ],
+    "esperado": "No cotiza tienda todavía: pregunta qué vende ('Contame un poco más, qué vendés o qué servicio ofrecés?')."
+  },
+  {
+    "id": "25",
+    "titulo": "Feedback 18-sep: catálogo sin cobro online",
+    "nombre": "Bruno",
+    "turnos": [
+      "Vendo muebles de algarrobo pero solo quiero mostrarlos y que me consulten por WhatsApp, sin carrito"
+    ],
+    "esperado": "Sitio profesional con el catálogo ($180.000 o $15.000 por mes) y 'La carga de los productos va aparte: $500 por producto.'"
+  },
+  {
+    "id": "26",
+    "titulo": "Feedback 18-sep: la pregunta después del precio la contesta Pablo",
+    "nombre": "Lu",
+    "turnos": [
+      "Hola, tengo una tienda de ropa infantil",
+      "y ustedes me arman igual la tienda con la suscripcion? como funciona?"
+    ],
+    "esperado": "Tienda online con las dos maneras: la suscripción dice 'no pagás el desarrollo de entrada' y 'las dos incluyen el armado completo'. La pregunta posterior queda en silencio para Pablo (bot apagado, handoff)."
   }
 ]
