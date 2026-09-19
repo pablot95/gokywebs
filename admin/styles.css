@@ -2683,3 +2683,16 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .mant-link b { color: #e6ecf7; font-size: .95rem; font-variant-numeric: tabular-nums; }
 .mant-link span { color: #8a9bb8; font-size: .8rem; margin-right: auto; }
 .mant-link .seg-chip { padding: 5px 11px; font-size: .78rem; text-decoration: none; }
+
+/* Mantenimiento: plan mensual / plan anual (19-sep). Mismo aspecto que .filtro-modo
+   pero con su propia clase: el código de Completados agarra todos los .filtro-modo-btn. */
+.mant-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 16px; }
+.mant-planes { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+.mant-plan-btn { background: none; border: 0; border-radius: 6px; color: var(--text-muted); font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color .15s, color .15s; }
+.mant-plan-btn:hover { color: var(--text); }
+.mant-plan-btn[aria-pressed="true"] { background: var(--primary); color: #fff; }
+.mant-plan-btn[aria-pressed="true"] .seg-chip-count { background: rgba(255,255,255,.18); }
+.mant-plan-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.mant-subtitulo { margin: 0 0 10px; font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #8a9bb8; }
+.mant-cliente-link { background: none; border: 0; padding: 0; margin-top: 3px; color: #60A5FA; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.mant-cliente-link:hover { text-decoration: underline; }

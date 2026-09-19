@@ -967,6 +967,14 @@ function getEstado(c) {
     return e;
 }
 
+/* ¿La web ya se entregó? (Pablo, 19-sep-2026) Clientes son las webs que se
+   están armando; al entregarla (completarCliente) pasa a Mantenimiento, al plan
+   mensual o al anual. completadoId cubre el momento en que entregadoAt todavía
+   es un serverTimestamp sin resolver. */
+function webEntregada(c) {
+    return !!(c?.entregadoAt || c?.completadoId);
+}
+
 function formatDate(val) {
     if (!val) return "—";
     const [, m, d] = val.split("-");
@@ -1425,6 +1433,8 @@ function initRealtime() {
         clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         clientesCargados = true;
         render();
+        // Mantenimiento lista las webs entregadas y cruza las suscripciones con los clientes.
+        renderMantenimiento();
         if (activeTab === "seguimientos") renderSeg();
         if (activeTab === "calendario") renderCal();
         if (enMetrica("stats")) renderStats();
@@ -1603,7 +1613,8 @@ async function renderResenasEnModal(clientId) {
 }
 
 function _updateClientCounters() {
-    const nClientes = clients.filter(c => getEstado(c) === "cliente").length;
+    // El tab Clientes cuenta las webs en desarrollo; las entregadas, Mantenimiento.
+    const nClientes = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c)).length;
     const nSeg = clients.filter(c => getEstado(c) === "seguimiento1").length;
     const nUM = clients.filter(c => getEstado(c) === "ultimo-mensaje").length;
     const nSB = clients.filter(c => getEstado(c) === "standby").length;
@@ -1617,39 +1628,13 @@ function _updateClientCounters() {
     const um = document.getElementById("segCountUM"); if (um) um.textContent = nUM;
     const sb = document.getElementById("segCountSB"); if (sb) sb.textContent = nSB;
 
-    /* Plan mensual: la mensualidad que entra por mes (suscripciones activas) y
-       cuántas suscripciones pendientes ya tendrían que haber arrancado. Plan
-       anual y web propia: el saldo que falta cobrar (precio menos lo cobrado);
-       los clientes "a cotizar" no suman. Plan anual (19-sep-2026): los cobros
-       anuales vencidos o que vencen en los próximos DIAS_AVISO_RENOVACION días. */
-    const clientesActivos = clients.filter(c => getEstado(c) === "cliente");
-    const suscripciones = clientesActivos.filter(c => !_conSena(modalidadDe(c))).map(suscripcionDe);
-    const mensualidadActiva = suscripciones
-        .filter(s => s.estado === "activa")
-        .reduce((sum, s) => sum + s.mensual, 0);
-    const porActivar = suscripciones.filter(s => s.porActivar).length;
-    const saldoPendiente = clientesActivos
-        .filter(c => _conSena(modalidadDe(c)) && !c.sinPrecio)
+    /* Plan anual y web propia: el saldo que falta cobrar de las webs en
+       desarrollo (precio menos lo cobrado); los clientes "a cotizar" no suman.
+       La mensualidad activa, las suscripciones por activar y los cobros anuales
+       están en Mantenimiento (_updateMantCounters, 19-sep-2026). */
+    const saldoPendiente = clients
+        .filter(c => getEstado(c) === "cliente" && !webEntregada(c) && _conSena(modalidadDe(c)) && !c.sinPrecio)
         .reduce((sum, c) => sum + pagoUnicoDe(c).saldo, 0);
-    const anualesACobrar = clientesActivos
-        .map(renovacionAnualDe)
-        .filter(r => r && !r.legado && (r.estado === "vencido" || r.estado === "por_vencer"));
-    const anualesEl = document.getElementById("anualesACobrar");
-    if (anualesEl) {
-        const vencidos = anualesACobrar.filter(r => r.estado === "vencido").length;
-        anualesEl.textContent = anualesACobrar.length
-            ? `${anualesACobrar.length} · ${fmtMoney(anualesACobrar.reduce((sum, r) => sum + r.monto, 0))}`
-            : "0";
-        anualesEl.style.color = vencidos ? "var(--danger)" : anualesACobrar.length ? "var(--warning)" : "";
-    }
-
-    const mrrEl = document.getElementById("mrrActivo");
-    if (mrrEl) mrrEl.textContent = fmtMoney(mensualidadActiva);
-    const porActivarEl = document.getElementById("porActivar");
-    if (porActivarEl) {
-        porActivarEl.textContent = porActivar;
-        porActivarEl.style.color = porActivar ? "var(--warning)" : "";
-    }
     const saldoEl = document.getElementById("saldoPendiente");
     if (saldoEl) saldoEl.textContent = fmtMoney(saldoPendiente);
 }
@@ -1762,7 +1747,10 @@ const ESTADO_SUSCRIPCION_HTML = {
     baja:      `<span style="color:var(--danger);font-weight:700">✕ Dio de baja</span>`,
 };
 
-function _clientRow(c) {
+/* Fila de un cliente: en Clientes (webs en desarrollo) y en Mantenimiento
+   (entregadas). `sinCambios` saca la columna "Cambios del mes", que el plan
+   anual de Mantenimiento no lleva. */
+function _clientRow(c, { sinCambios = false } = {}) {
     // "" (sin definir) se ve como el plan mensual, igual que antes del 15-sep-2026.
     const modalidad = modalidadDe(c);
     const s = suscripcionDe(c);
@@ -1860,12 +1848,12 @@ function _clientRow(c) {
                 ${modeloAnterior}`}
             </td>
             <td>${_conSena(modalidad) ? pagoUnico + renovacion : suscripcion}</td>
-            <td class="center">${cambios}</td>
+            ${sinCambios ? "" : `<td class="center">${cambios}</td>`}
             <td class="actions-col">
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
                 <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo el saldo o una mensualidad (no marca la web como entregada)">🧾</button>
                 <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
-                <button class="icon-btn delete" data-id="${c.id}" title="${entregada ? "Eliminar de Clientes" : "Marcar la web como entregada (con factura o sin factura)"}">🗑</button>
+                <button class="icon-btn delete" data-id="${c.id}" title="${webEntregada(c) ? "Eliminar el cliente (el registro de la entrega queda en Completados)" : "Marcar la web como entregada (con factura o sin factura): pasa a Mantenimiento"}">🗑</button>
             </td>
         </tr>`;
 }
@@ -2182,7 +2170,8 @@ function _weekSeparatorRow(group, colspan = 7) {
 function render() {
     const term = searchInput.value.trim().toLowerCase();
     const termPhone = cleanArgPhone(term);
-    const clientesBase = clients.filter(c => getEstado(c) === "cliente");
+    // Solo las webs en desarrollo: las entregadas están en Mantenimiento (19-sep-2026).
+    const clientesBase = clients.filter(c => getEstado(c) === "cliente" && !webEntregada(c));
     let list = clientesBase;
     if (term) list = list.filter(c =>
         (c.nombre || "").toLowerCase().includes(term) ||
@@ -2195,7 +2184,7 @@ function render() {
 
     tbody.innerHTML = ordered.length
         ? ordered.map(_clientRow).join("")
-        : `<tr class="empty-row"><td colspan="5">No hay clientes${term ? " para esa búsqueda" : ""}.</td></tr>`;
+        : `<tr class="empty-row"><td colspan="5">No hay webs en desarrollo${term ? " para esa búsqueda" : ""}.</td></tr>`;
 
     _updateClientCounters();
     _bindTableListeners(tbody);
@@ -3911,14 +3900,14 @@ async function removeClient(id) {
     if (!c) return;
 
     // Cliente con la web todavía sin entregar: el tacho abre "factura + entregada", como siempre.
-    if (getEstado(c) === "cliente" && !c.entregadoAt) {
+    if (getEstado(c) === "cliente" && !webEntregada(c)) {
         abrirFacturaModal(c);
         return;
     }
 
     const conRegistro = c.completadoId && completados.some(x => x.id === c.completadoId);
     const mensaje = getEstado(c) === "cliente"
-        ? `Eliminar a "${c.nombre}" de Clientes?${conRegistro ? " El registro de la entrega queda en Completados." : ""}${_conSena(modalidadDe(c)) ? "" : `\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`}`
+        ? `¿Eliminar a "${c.nombre}"? Sale de Mantenimiento.${conRegistro ? " El registro de la entrega queda en Completados." : ""}${_conSena(modalidadDe(c)) ? "" : `\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`}`
         : `¿Eliminar a "${c.nombre}"? Esta acción no se puede deshacer.`;
     if (!confirm(mensaje)) return;
     try {
@@ -3931,8 +3920,10 @@ async function removeClient(id) {
 
 /* Marcar la web como entregada. Con el plan mensual (10-sep-2026) entregar es
    cuando empieza a correr el plan, no el final de la relación: el cliente ya no
-   se borra de `clientes`, se marca `entregadoAt` y sigue con su suscripción. En
-   `completados` queda una copia como registro de la entrega (y de la factura). */
+   se borra de `clientes`, se marca `entregadoAt` y sigue con su suscripción.
+   Desde el 19-sep-2026 eso lo pasa del tab Clientes (webs en desarrollo) a
+   Mantenimiento, al plan mensual o al anual. En `completados` queda una copia
+   como registro de la entrega (y de la factura). */
 async function completarCliente(id, factura) {
     const c = clients.find(x => x.id === id);
     if (!c) throw new Error("El cliente ya no está en la lista.");
@@ -5695,6 +5686,15 @@ document.querySelectorAll("#mantViews .seg-chip").forEach(b => {
     });
 });
 
+// Plan mensual / plan anual (Pablo, 19-sep-2026): Mantenimiento divide las webs entregadas por plan.
+let mantPlan = "mensual";
+document.querySelectorAll("#mantPlanes [data-mantplan]").forEach(b => {
+    b.addEventListener("click", () => {
+        mantPlan = b.dataset.mantplan;
+        renderMantenimiento();
+    });
+});
+
 /* ── Avisos de baja / pausa de Mercado Pago ──
    Cuando una suscripción se cancela o se pausa en MP, el webhook no puede tocar
    el doc del suscriptor (las reglas públicas de "mantenimiento" solo dejan crear):
@@ -5809,24 +5809,150 @@ async function removeAvisoMant(id) {
     }
 }
 
+/* Las webs entregadas, por plan (Pablo, 19-sep-2026). El plan anual lleva
+   también los pagos únicos anteriores al 19-sep, con su año de mantenimiento
+   incluido; la web propia no lleva mantenimiento (queda en Completados). ""
+   (modalidad sin definir) cuenta como mensual, igual que en Clientes. */
+function _clientesEnMantenimiento() {
+    const entregados = clients.filter(c => getEstado(c) === "cliente" && webEntregada(c));
+    return {
+        anual: entregados.filter(c => modalidadDe(c) === "unico"),
+        mensual: entregados.filter(c => !_conSena(modalidadDe(c))),
+    };
+}
+
+// El cliente de cada suscripción, con el mismo cruce de Clientes (ID, email o WhatsApp).
+function _clientePorSuscripcion() {
+    const mapa = new Map();
+    clients.filter(c => getEstado(c) === "cliente").forEach(c => {
+        const m = mantenimientoDeCliente(c);
+        if (m && !mapa.has(m.id)) mapa.set(m.id, c);
+    });
+    return mapa;
+}
+
+function _clienteCoincide(c, term) {
+    const termPhone = cleanArgPhone(term);
+    return [c.nombre, c.proyecto, c.telefono, c.email].some(v => String(v || "").toLowerCase().includes(term))
+        || (!!termPhone && cleanArgPhone(c.telefono).includes(termPhone));
+}
+
+/* Los números de arriba de Mantenimiento (antes estaban en Clientes): lo que
+   entra por mes (las suscripciones activas de Mercado Pago y las cargadas
+   activas a mano en un cliente sin suscripción), las webs entregadas del plan
+   mensual que todavía no tienen la suscripción y los cobros anuales vencidos o
+   que vencen en los próximos DIAS_AVISO_RENOVACION días. */
+function _updateMantCounters(filas, sinSusc) {
+    const clientesActivos = clients.filter(c => getEstado(c) === "cliente");
+    const deMercadoPago = filas
+        .filter(f => f.m && f.clave === "activo")
+        .reduce((sum, f) => sum + Number(f.m.monto ?? MANT_PLAN_MONTO[f.m.plan] ?? 0), 0);
+    const aMano = clientesActivos
+        .filter(c => !_conSena(modalidadDe(c)) && !mantenimientoDeCliente(c))
+        .map(suscripcionDe)
+        .filter(s => s.estado === "activa")
+        .reduce((sum, s) => sum + s.mensual, 0);
+    const mrrEl = document.getElementById("mrrActivo");
+    if (mrrEl) mrrEl.textContent = fmtMoney(deMercadoPago + aMano);
+
+    const porActivar = sinSusc.map(suscripcionDe)
+        .filter(s => s.estado === "pendiente" && (!s.desde || s.desde <= new Date())).length;
+    const porActivarEl = document.getElementById("porActivar");
+    if (porActivarEl) {
+        porActivarEl.textContent = porActivar;
+        porActivarEl.style.color = porActivar ? "var(--warning)" : "";
+    }
+
+    const anualesACobrar = clientesActivos
+        .map(renovacionAnualDe)
+        .filter(r => r && !r.legado && (r.estado === "vencido" || r.estado === "por_vencer"));
+    const anualesEl = document.getElementById("anualesACobrar");
+    if (anualesEl) {
+        const vencidos = anualesACobrar.filter(r => r.estado === "vencido").length;
+        anualesEl.textContent = anualesACobrar.length
+            ? `${anualesACobrar.length} · ${fmtMoney(anualesACobrar.reduce((sum, r) => sum + r.monto, 0))}`
+            : "0";
+        anualesEl.style.color = vencidos ? "var(--danger)" : anualesACobrar.length ? "var(--warning)" : "";
+    }
+}
+
+// Plan anual: las webs entregadas, el cobro más cercano primero (las que no tienen fecha, al final).
+function _renderMantAnual(anual, term) {
+    const tb = document.getElementById("mantAnualTbody");
+    if (!tb) return;
+    const orden = c => renovacionAnualDe(c)?.proximo?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const list = (term ? anual.filter(c => _clienteCoincide(c, term)) : anual)
+        .slice().sort((a, b) => orden(a) - orden(b));
+    tb.innerHTML = list.length
+        ? list.map(c => _clientRow(c, { sinCambios: true })).join("")
+        : `<tr class="empty-row"><td colspan="4">${term ? "No hay webs del plan anual para esa búsqueda." : "Todavía no hay webs entregadas con el plan anual."}</td></tr>`;
+    _bindTableListeners(tb);
+}
+
+// Plan mensual: las webs entregadas que no cruzan con ninguna suscripción de Mercado Pago.
+function _renderMantSinSusc(sinSusc, term) {
+    const wrap = document.getElementById("mantSinSuscWrap");
+    const tb = document.getElementById("mantSinSuscTbody");
+    if (!wrap || !tb) return;
+    const list = term ? sinSusc.filter(c => _clienteCoincide(c, term)) : sinSusc;
+    // En "Todos" aparece solo si hay alguna; en "Sin suscripción", siempre.
+    wrap.hidden = mantVista === "sin_susc" ? false : (mantVista !== "todas" || !list.length);
+    tb.innerHTML = list.length
+        ? list.map(c => _clientRow(c)).join("")
+        : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : "Todas las webs entregadas del plan mensual tienen su suscripción."}</td></tr>`;
+    _bindTableListeners(tb);
+}
+
 function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
     const term = (searchMantInput?.value || "").trim().toLowerCase();
 
+    const { anual, mensual } = _clientesEnMantenimiento();
+    const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
     const filas = _mantFilas();
-    const conteo = { todas: filas.length, activo: 0, pausado: 0, baja: 0 };
+    const conteo = { todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: sinSusc.length };
     filas.forEach(f => { conteo[f.clave]++; });
-    Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja" })
+    Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja", sin_susc: "mantCountSinSusc" })
         .forEach(([clave, id]) => { const el = document.getElementById(id); if (el) el.textContent = conteo[clave]; });
-    // El número del tab: suscriptores activos (sin bajas ni pausas).
+    // El número del tab: las suscripciones activas y las webs del plan anual.
     const tabCount = document.getElementById("countMantenimiento");
-    if (tabCount) tabCount.textContent = conteo.activo;
+    if (tabCount) tabCount.textContent = conteo.activo + anual.length;
+    const countMensual = document.getElementById("mantCountMensual");
+    if (countMensual) countMensual.textContent = conteo.todas;
+    const countAnual = document.getElementById("mantCountAnual");
+    if (countAnual) countAnual.textContent = anual.length;
+    _updateMantCounters(filas, sinSusc);
+
+    // Plan mensual o plan anual. El alta a mano es una suscripción: solo en el mensual.
+    document.querySelectorAll("#mantPlanes [data-mantplan]").forEach(b =>
+        b.setAttribute("aria-pressed", String(b.dataset.mantplan === mantPlan)));
+    const mensualEl = document.getElementById("mantMensual");
+    if (mensualEl) mensualEl.hidden = mantPlan !== "mensual";
+    const anualEl = document.getElementById("mantAnual");
+    if (anualEl) anualEl.hidden = mantPlan !== "anual";
+    const altaBtn = document.getElementById("openMantModalBtn");
+    if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
+
+    _renderMantAnual(anual, term);
+    _renderMantSinSusc(sinSusc, term);
+    _renderMantSuscripciones(tbody, filas, term);
+}
+
+/* Las suscripciones de Mercado Pago del plan mensual, con la viñeta elegida
+   (Todos / Activos / Pausados / Bajas). Cada una muestra el cliente con el que
+   cruza, con la web entregada o todavía en desarrollo. */
+function _renderMantSuscripciones(tbody, filas, term) {
+    const wrap = document.getElementById("mantSuscWrap");
+    if (wrap) wrap.hidden = mantVista === "sin_susc";
+    if (mantVista === "sin_susc") return;
+    const clientePorMant = _clientePorSuscripcion();
 
     let list = mantVista === "todas" ? filas : filas.filter(f => f.clave === mantVista);
     if (term) list = list.filter(f => {
         const d = f.m || f.aviso;
-        return [d.nombre, d.email, d.whatsapp].some(v => String(v || "").toLowerCase().includes(term));
+        const c = f.m ? clientePorMant.get(f.m.id) : null;
+        return [d.nombre, d.email, d.whatsapp, c?.nombre, c?.proyecto].some(v => String(v || "").toLowerCase().includes(term));
     });
     // Más reciente primero: por alta y, en Bajas, por la fecha de la baja.
     const fechaOrden = f => (mantVista === "baja"
@@ -5843,6 +5969,11 @@ function renderMantenimiento() {
     tbody.innerHTML = list.map(fila => {
         if (!fila.m) return _mantFilaAvisoHTML(fila);
         const m = fila.m;
+        const cliente = clientePorMant.get(m.id) || null;
+        const proyectoCliente = String(cliente?.proyecto || "").trim();
+        const clienteLink = cliente
+            ? `<button type="button" class="mant-cliente-link" data-mant-cliente="${escapeHtml(cliente.id)}" title="Abrir el cliente">${escapeHtml(cliente.nombre || "Cliente")}${proyectoCliente && proyectoCliente.toLowerCase() !== String(cliente.nombre || "").trim().toLowerCase() ? ` · ${escapeHtml(proyectoCliente)}` : ""} · ${webEntregada(cliente) ? "web entregada" : "web en desarrollo"}</button>`
+            : "";
         const alta = m.createdAt?.toDate
             ? m.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
             : "—";
@@ -5873,6 +6004,7 @@ function renderMantenimiento() {
                 <td>
                     <div style="font-weight:600">${escapeHtml(m.nombre || "—")}</div>
                     <div class="muted" style="font-size:12px">${escapeHtml(m.email || "")}</div>
+                    ${clienteLink}
                 </td>
                 <td>
                     <div>${escapeHtml(planLabel)}</div>
@@ -5901,6 +6033,9 @@ function renderMantenimiento() {
     });
     tbody.querySelectorAll("[data-mant-edit]").forEach(btn => {
         btn.addEventListener("click", () => openMantModal(btn.dataset.mantEdit));
+    });
+    tbody.querySelectorAll("[data-mant-cliente]").forEach(btn => {
+        btn.addEventListener("click", () => openModal(btn.dataset.mantCliente));
     });
     tbody.querySelectorAll("[data-mant-del]").forEach(btn => {
         btn.addEventListener("click", () => removeMant(btn.dataset.mantDel));

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260918-template72">
+    <link rel="stylesheet" href="styles.css?v=20260919-mantenimiento">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -28,24 +28,12 @@
             <div class="panel-header">
                 <div>
                     <h1>Clientes</h1>
-                    <p class="muted">Clientes activos con su plan: anual (seña, saldo al entregar y un cobro por año, sin suscripción), mensual (suscripción de Mercado Pago) o pago único de la web propia. La suscripción figura activa cuando el email, el WhatsApp o el ID coinciden con uno de Mantenimiento (Mercado Pago).</p>
+                    <p class="muted">Las webs que estamos armando, con su plan: anual (seña y el resto al entregar), mensual (suscripción de Mercado Pago) o pago único de la web propia. Cuando la marcás como entregada (el botón del tacho), pasa a Mantenimiento, al plan mensual o al anual; la web propia no lleva mantenimiento y queda en Completados.</p>
                 </div>
                 <div class="stats-box stats-box--periods">
-                    <div class="stat-item">
-                        <span class="stat-label">Mensualidad activa</span>
-                        <span class="stat-value" id="mrrActivo">$0</span>
-                    </div>
-                    <div class="stat-item" title="Suscripciones pendientes cuya fecha de inicio ya pasó: toca activarlas en Mercado Pago">
-                        <span class="stat-label">Por activar</span>
-                        <span class="stat-value" id="porActivar">0</span>
-                    </div>
-                    <div class="stat-item" title="Plan anual y pago único: lo que falta cobrar de cada cliente (el precio menos lo cobrado). Los que están a cotizar no suman">
+                    <div class="stat-item" title="Plan anual y pago único: lo que falta cobrar de las webs en desarrollo (el precio menos lo cobrado). Los que están a cotizar no suman">
                         <span class="stat-label">Saldo pendiente</span>
                         <span class="stat-value" id="saldoPendiente">$0</span>
-                    </div>
-                    <div class="stat-item" title="Plan anual: los cobros de cada año que ya vencieron o vencen en los próximos 30 días, y cuánto suman">
-                        <span class="stat-label">Cobros anuales</span>
-                        <span class="stat-value" id="anualesACobrar">0</span>
                     </div>
                 </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
@@ -317,10 +305,32 @@
             <div class="panel-header">
                 <div>
                     <h1>Mantenimiento</h1>
-                    <p class="muted">Suscripciones del plan mensual por Mercado Pago. Se cargan solas cuando alguien se suscribe, o agregalas a mano. Si alguien cancela o pausa la suscripción en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha. Si coinciden con un cliente por email, WhatsApp o ID, en Clientes la suscripción figura activa (o de baja). El check de "pidió cambios" se reinicia según el día de alta de cada suscripción.</p>
+                    <p class="muted">Las webs ya entregadas, según su plan. Plan mensual: las suscripciones de Mercado Pago (cada una que se activa aparece sola; también se pueden agregar a mano) y las webs entregadas que todavía no tienen la suscripción. Plan anual: el próximo cobro de cada año, contado desde la seña. Si alguien cancela o pausa en Mercado Pago, figura como "Dio de baja" o "Pausado", con la fecha.</p>
+                </div>
+                <div class="stats-box stats-box--periods">
+                    <div class="stat-item" title="Lo que entra por mes: las suscripciones activas de Mercado Pago y las que se cargaron activas a mano en un cliente">
+                        <span class="stat-label">Mensualidad activa</span>
+                        <span class="stat-value" id="mrrActivo">$0</span>
+                    </div>
+                    <div class="stat-item" title="Webs entregadas con el plan mensual que todavía no tienen la suscripción de Mercado Pago">
+                        <span class="stat-label">Por activar</span>
+                        <span class="stat-value" id="porActivar">0</span>
+                    </div>
+                    <div class="stat-item" title="Plan anual: los cobros de cada año que ya vencieron o vencen en los próximos 30 días, y cuánto suman">
+                        <span class="stat-label">Cobros anuales</span>
+                        <span class="stat-value" id="anualesACobrar">0</span>
+                    </div>
                 </div>
                 <button id="openMantModalBtn" class="btn-primary">+ Agregar suscriptor</button>
             </div>
+            <div class="mant-toolbar">
+                <div class="mant-planes" id="mantPlanes" role="group" aria-label="Plan">
+                    <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
+                </div>
+                <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" style="flex:1 1 240px;max-width:340px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
+            </div>
+            <div id="mantMensual">
             <!-- Links de suscripción de Mercado Pago, para mandarlos a mano. Solo para Pablo: el bot no los usa. -->
             <div class="mant-links" id="mantLinks">
                 <p class="mant-links-title">Links de suscripción para enviar</p>
@@ -338,11 +348,27 @@
                 <button class="seg-chip" data-mantview="activo">Activos <span class="seg-chip-count" id="mantCountActivo">0</span></button>
                 <button class="seg-chip" data-mantview="pausado">Pausados <span class="seg-chip-count" id="mantCountPausado">0</span></button>
                 <button class="seg-chip" data-mantview="baja">Bajas <span class="seg-chip-count" id="mantCountBaja">0</span></button>
+                <button class="seg-chip" data-mantview="sin_susc" title="Webs entregadas con el plan mensual sin suscripción de Mercado Pago">Sin suscripción <span class="seg-chip-count" id="mantCountSinSusc">0</span></button>
             </div>
-            <div style="margin:0 0 14px">
-                <input type="search" id="searchMant" placeholder="Buscar por nombre, email o WhatsApp…" autocomplete="off" style="width:100%;max-width:320px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
+            <!-- Webs entregadas con el plan mensual que no cruzan con ninguna suscripción de Mercado Pago. -->
+            <div id="mantSinSuscWrap" hidden style="margin:14px 0 18px">
+                <p class="mant-subtitulo">Entregadas sin suscripción de Mercado Pago</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Plan</th>
+                                <th>Suscripción</th>
+                                <th class="center">Cambios del mes</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantSinSuscTbody"></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper" id="mantSuscWrap">
                 <table class="clients-table">
                     <thead>
                         <tr>
@@ -361,6 +387,25 @@
                     </tbody>
                 </table>
             </div>
+            </div>
+            <!-- Plan anual: las webs entregadas con el plan anual (y los pagos únicos anteriores, con su año de mantenimiento incluido). -->
+            <div id="mantAnual" hidden>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Plan</th>
+                                <th>Cobro anual</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantAnualTbody">
+                            <tr class="empty-row"><td colspan="4">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
 
         <!-- Tab: Completados -->
@@ -368,7 +413,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Completados</h1>
-                    <p class="muted">Registro de las webs entregadas. El cliente sigue en Clientes (con su suscripción o su pago único) y acá queda la copia de la entrega. El período se calcula por la fecha de creación del boceto.</p>
+                    <p class="muted">Registro de las webs entregadas. Al entregarla, el cliente pasa de Clientes a Mantenimiento (plan mensual o anual) y acá queda la copia de la entrega; la web propia no lleva mantenimiento y queda solo acá. El período se calcula por la fecha de creación del boceto.</p>
                 </div>
                 <div class="stats-box stats-box--periods">
                     <div class="stat-item">
@@ -989,6 +1034,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260919-plan-anual"></script>
+    <script type="module" src="dashboard.js?v=20260919-mantenimiento"></script>
 </body>
 </html>
