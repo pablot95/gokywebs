@@ -842,6 +842,10 @@ function wabot_muestra_presentar_textos($slug, $cfg, $conv = null) {
     if (is_array($conv)) $texto = wabot_personalizar($texto, $conv);
     else $texto = str_replace('{negocio}', 'tu negocio', $texto);
 
+    // Todas las demos nuevas ofrecen dos variantes dentro del mismo enlace.
+    // Se aclara al presentarlas para que el cliente no pase por alto el selector.
+    $texto = rtrim($texto) . "\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.";
+
     $textos = [$texto];
     // Segundo mensaje, aparte, pidiendo el feedback.
     $seguimiento = trim((string)($cfg['muestra_presentar_seguimiento'] ?? ''));

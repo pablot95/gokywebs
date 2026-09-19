@@ -3680,6 +3680,9 @@ caso('trae el link', strpos($demoTextos[0], 'gokywebs.com/demo/yfprevencion') !=
 caso('aclara que el contenido es de ejemplo',
     stripos($demoTextos[0], 'de ejemplo') !== false);
 caso('y dice qué mirar', stripos($demoTextos[0], 'mirá') !== false);
+caso('aclara que hay dos modelos y dónde se cambian',
+    stripos($demoTextos[0], 'dos modelos') !== false
+    && stripos($demoTextos[0], 'parte superior') !== false);
 caso('es un solo mensaje', count($demoTextos) === 1);
 
 $presentaciones = [];
