@@ -107,11 +107,14 @@
 
                         <div class="field-group">
                             <label class="field-label" for="modalidad">Plan que preferís <span class="req">*</span></label>
-                            <select id="modalidad" name="modalidad" class="field-input" required>
+                            <!-- Como en el estilo, script.js muestra abajo la descripción del plan elegido.
+                                 Los valores unico/mensual los valida wabot/form-lead.php. -->
+                            <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
                                 <option value="" disabled selected>Elegí una opción</option>
-                                <option value="unico">Plan anual</option>
-                                <option value="mensual">Plan mensual</option>
+                                <option value="unico" data-desc="Arrancás con una seña, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción.">Plan anual</option>
+                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia.">Plan mensual</option>
                             </select>
+                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Los dos incluyen lo mismo: hosting, dominio, mantenimiento y soporte.</p>
                         </div>
 
                         <div class="field-group">
@@ -246,7 +249,7 @@
             </div>
             <div class="que-es-body">
                 <p class="que-es-intro">Contanos sobre tu negocio, elegí un plan y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
-                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con el plan anual, los cambios posteriores a la entrega se cotizan aparte.</p></div>
+                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si elegís el plan anual, se arranca con una seña que no se devuelve, el resto se paga al entregar y el plan se renueva cada año, contado desde la seña. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con el plan anual, los cambios posteriores a la entrega se cotizan aparte.</p></div>
             </div>
         </div>
     </div>
@@ -295,6 +298,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260919a"></script>
+    <script type="module" src="script.js?v=20260919b"></script>
 </body>
 </html>

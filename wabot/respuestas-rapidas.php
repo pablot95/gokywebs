@@ -4,6 +4,12 @@
  * administrarlas desde Wabot sin publicar archivos de nuevo.
  */
 
+/** El bloque de los dos planes, el mismo que manda el bot (`dos_formas` de textos.php). */
+function wabot_respuestas_rapidas_planes_texto($anual, $mensual, $tipo = '') {
+    require_once __DIR__ . '/textos.php';
+    return str_replace(['{precio}', '{mensualidad}'], [$anual, $mensual], wabot_servicio_texto_plantilla($tipo));
+}
+
 function wabot_respuestas_rapidas_default() {
     return [
         ['ico' => '🟢', 'titulo' => 'Primer contacto', 'items' => [
@@ -13,21 +19,26 @@ function wabot_respuestas_rapidas_default() {
             'También tenemos algunos modelos de estructura para que veas distintos estilos y formas de organizar una web: gokywebs.com/modelos/',
             '¿Te gustó alguno? Si querés arrancamos, decime y te paso el formulario.',
         ]],
+        // Los dos planes del 19-sep (Pablo): el mismo bloque que manda el bot.
         ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
-            "Lo mejor para tu negocio es un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de $180.000: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de $15.000: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-            "Lo mejor para tu negocio es una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de $290.000: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de $25.000: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-            "Lo mejor para tu inmobiliaria es una web para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de $240.000: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de $25.000: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-            "Lo mejor para tus cursos es una plataforma con los videos subidos, acceso propio para cada alumno y cobro online.\n\nTenés dos opciones para contratar el servicio, y elegís la que más te convenga. Son alternativas, no se abonan las dos:\n\n1. Pago único de $290.000: abonás el desarrollo una sola vez e incluye mantenimiento durante el primer año.\n\n2. Suscripción mensual de $25.000: en lugar del pago único, abonás mes a mes y tenés todo incluido mientras mantengas activa la suscripción.",
-            'El plan mensual incluye hosting, dominio, soporte técnico y mantenimiento de la web. No incluye administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
+            "Para lo que me contás, te serviría un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.\n\n" . wabot_respuestas_rapidas_planes_texto('$140.000', '$20.000', 'landing'),
+            "Para lo que me contás, te serviría una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$230.000', '$30.000'),
+            "Para tu inmobiliaria te serviría una web para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
+            "Para tus cursos te serviría una plataforma con los videos subidos, acceso propio para cada alumno y cobro online.\n\n" . wabot_respuestas_rapidas_planes_texto('$230.000', '$30.000'),
+            'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.',
+            'Si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000 el sitio profesional, $290.000 la tienda o los cursos y $240.000 la inmobiliaria. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
+            'En el sitio profesional los cambios los hacemos nosotros. Si querés cambiar vos los textos y las imágenes, le sumamos un panel de administración y el plan mensual pasa a $25.000.',
+            'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
             'Antes de arrancar dejamos definido el valor y qué incluye el desarrollo, así sabés desde el principio cuánto vas a pagar.',
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar la suscripción mensual. Una vez realizado el pago queda activo el servicio: EDITAR LINK',
+            'Te mando el link de Mercado Pago para activar el plan mensual. Una vez realizado el pago queda activo el servicio: EDITAR LINK',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
             'Hola, ¿cómo estás? Te escribo porque quedó pendiente el pago de EDITAR IMPORTE. Cuando puedas avisame y continuamos.',
+            "Hola, ¿cómo estás? Se cumple el año de tu web y toca renovar el plan anual: son EDITAR IMPORTE. Te paso los datos para el pago:\n\nEDITAR DATOS DE PAGO",
         ]],
         ['ico' => '✅', 'titulo' => 'Cliente confirmado', 'items' => [
             'Dale, te paso el formulario para arrancar: gokywebs.com/form/. Con esa información podemos empezar a preparar la web y después vamos ajustando juntos los detalles.',
@@ -46,7 +57,7 @@ function wabot_respuestas_rapidas_default() {
         ]],
         ['ico' => '🛡️', 'titulo' => 'Objeciones', 'items' => [
             'Obvio, no hay problema. Si te quedó alguna duda sobre el precio, cómo funciona la web o qué incluye el servicio, decime y te la aclaro.',
-            'El mantenimiento no es por cargar productos ni administrar la página; eso lo hacés vos desde tu panel. El plan mensual cubre hosting, dominio, soporte técnico y el mantenimiento necesario para que la web siga funcionando correctamente.',
+            'El mantenimiento no es por cargar productos ni administrar la página; eso lo hacés vos desde tu panel. Los dos planes cubren hosting, dominio, soporte técnico y el mantenimiento necesario para que la web siga funcionando correctamente.',
             'Tiendanube es una buena alternativa si preferís trabajar dentro de una plataforma y configurar vos mismo la tienda. Nosotros desarrollamos la web por vos y nos ocupamos de la parte técnica, el diseño, la configuración y el soporte.',
             'Entiendo. Tené en cuenta que no estás pagando solamente el diseño: incluye el desarrollo, la configuración, la adaptación a celulares y computadoras y la puesta en funcionamiento de la web.',
             'Puede ser, hay muchas formas de desarrollar una web y distintos servicios. Lo importante es comparar qué incluye cada propuesta, cómo se administra después y qué soporte vas a tener una vez publicada.',
@@ -60,8 +71,8 @@ function wabot_respuestas_rapidas_default() {
             'Sí. La web se adapta automáticamente a celulares, tablets y computadoras.',
             'Sí, la página puede funcionar con tu propio dominio, por ejemplo tunegocio.com.ar o tunegocio.com.',
             'La web queda preparada para ser indexada por Google. La posición en los resultados depende de distintos factores y se trabaja con el tiempo; no se puede garantizar una posición específica.',
-            'Con el pago único, el hosting, el dominio y el mantenimiento están incluidos durante el primer año.',
-            'Con la suscripción, el hosting, el dominio, el soporte y el mantenimiento están incluidos mientras el plan mensual esté activo.',
+            'Con el plan anual o el mensual, el hosting, el dominio, el soporte y el mantenimiento están incluidos mientras el plan esté activo.',
+            'Con el pago único (la web propia, en tu hosting), el hosting, el dominio, el mantenimiento y el soporte corren por tu cuenta: no están incluidos.',
             'Sí, podemos conectar la web con WhatsApp, Instagram, Facebook y tus demás redes.',
             'Los productos los administrás vos desde el panel: podés agregar, modificar o sacar productos sin depender de nosotros.',
         ]],
@@ -129,13 +140,81 @@ function wabot_respuestas_rapidas_completar_precios($categorias) {
     foreach ($categorias as &$categoria) {
         if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'presupuesto y planes') continue;
         $contenido = implode("\n", (array)($categoria['items'] ?? []));
-        if (mb_strpos($contenido, '$180.000') !== false && mb_strpos($contenido, '$240.000') !== false) break;
+        /* Solo esa primera versión: el bloque de $290.000 sin los montos de los
+         * otros tipos (ni los del 15-sep ni los planes del 19-sep). Una
+         * categoría que Pablo ya editó no se vuelve a pisar. */
+        if (mb_strpos($contenido, '$290.000') === false) break;
+        foreach (['$180.000', '$240.000', '$140.000', '$190.000', '$230.000'] as $otroMonto) {
+            if (mb_strpos($contenido, $otroMonto) !== false) break 2;
+        }
         foreach (wabot_respuestas_rapidas_default() as $predeterminada) {
             if ($predeterminada['titulo'] === 'Presupuesto y planes') {
                 $categoria['items'] = $predeterminada['items'];
                 break 2;
             }
         }
+    }
+    unset($categoria);
+    return $categorias;
+}
+
+/**
+ * Los dos planes (Pablo, 19-sep): plan anual (seña, el resto al entregar y el
+ * cobro cada año) o plan mensual; el pago único queda para la web propia.
+ * Corre mientras las respuestas guardadas conserven el modelo anterior (pago
+ * único con mantenimiento el primer año o suscripción mensual): cambia las que
+ * siguen tal cual venían de fábrica —las de precio se reconocen también por
+ * "Son alternativas"— y suma las nuevas. Lo que Pablo reescribió a mano no se
+ * toca, y una vez migradas ya no vuelve a correr.
+ */
+function wabot_respuestas_rapidas_planes_19sep($categorias) {
+    $reemplazos = [
+        'El plan mensual incluye hosting, dominio, soporte técnico y mantenimiento de la web. No incluye administrar tus productos o pedidos: eso lo manejás vos desde tu panel.'
+            => 'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
+        'Te mando el link de Mercado Pago para activar la suscripción mensual. Una vez realizado el pago queda activo el servicio: EDITAR LINK'
+            => 'Te mando el link de Mercado Pago para activar el plan mensual. Una vez realizado el pago queda activo el servicio: EDITAR LINK',
+        'El mantenimiento no es por cargar productos ni administrar la página; eso lo hacés vos desde tu panel. El plan mensual cubre hosting, dominio, soporte técnico y el mantenimiento necesario para que la web siga funcionando correctamente.'
+            => 'El mantenimiento no es por cargar productos ni administrar la página; eso lo hacés vos desde tu panel. Los dos planes cubren hosting, dominio, soporte técnico y el mantenimiento necesario para que la web siga funcionando correctamente.',
+        'Con el pago único, el hosting, el dominio y el mantenimiento están incluidos durante el primer año.'
+            => 'Con el plan anual o el mensual, el hosting, el dominio, el soporte y el mantenimiento están incluidos mientras el plan esté activo.',
+        'Con la suscripción, el hosting, el dominio, el soporte y el mantenimiento están incluidos mientras el plan mensual esté activo.'
+            => 'Con el pago único (la web propia, en tu hosting), el hosting, el dominio, el mantenimiento y el soporte corren por tu cuenta: no están incluidos.',
+    ];
+    $precioViejo = 'Son alternativas, no se abonan las dos';
+    $hayViejas = false;
+    foreach ($categorias as $categoria) {
+        foreach ((array)($categoria['items'] ?? []) as $texto) {
+            if (isset($reemplazos[$texto]) || mb_strpos((string)$texto, $precioViejo) !== false) { $hayViejas = true; break 2; }
+        }
+    }
+    if (!$hayViejas) return $categorias;
+
+    // Las nuevas salen de fábrica: los cuatro precios, la seña del anual, la web propia, el panel del sitio y la renovación.
+    $fabrica = [];
+    foreach (wabot_respuestas_rapidas_default() as $predeterminada) $fabrica[$predeterminada['titulo']] = $predeterminada['items'];
+    $precios = array_slice($fabrica['Presupuesto y planes'], 0, 4);   // sitio, tienda, inmobiliaria, cursos
+    $sumarPlanes = array_slice($fabrica['Presupuesto y planes'], 4, 3);
+    $renovacion = end($fabrica['Pagos']);
+
+    foreach ($categorias as &$categoria) {
+        $titulo = mb_strtolower(trim((string)($categoria['titulo'] ?? '')));
+        $items = [];
+        foreach ((array)($categoria['items'] ?? []) as $texto) {
+            $texto = (string)$texto;
+            if (isset($reemplazos[$texto])) {
+                $texto = $reemplazos[$texto];
+            } elseif (mb_strpos($texto, $precioViejo) !== false) {
+                // El bloque de precio viejo, por el monto del pago único que nombra.
+                if (mb_strpos($texto, '$180.000') !== false) $texto = $precios[0];
+                elseif (mb_strpos($texto, '$240.000') !== false) $texto = $precios[2];
+                elseif (mb_stripos($texto, 'curso') !== false) $texto = $precios[3];
+                else $texto = $precios[1];
+            }
+            $items[] = $texto;
+        }
+        if ($titulo === 'presupuesto y planes') $items = array_merge($items, $sumarPlanes);
+        if ($titulo === 'pagos') $items[] = $renovacion;
+        $categoria['items'] = array_values(array_unique($items));
     }
     unset($categoria);
     return $categorias;
@@ -167,9 +246,9 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_default();
-    $migrado = wabot_respuestas_rapidas_completar_precios(
+    $migrado = wabot_respuestas_rapidas_planes_19sep(wabot_respuestas_rapidas_completar_precios(
         wabot_respuestas_rapidas_migrar_legacy($normalizado)
-    );
+    ));
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json)) wabot_json_guardar_atomico($ruta, $json);

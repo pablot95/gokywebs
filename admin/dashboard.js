@@ -988,33 +988,50 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PLANES — dos modalidades desde el 15-sep-2026
-   La misma web se contrata de dos maneras: PAGO ÚNICO (seña para arrancar y
-   saldo al entregar; saldo = unico − sena) o SERVICIO MENSUAL por suscripción
-   de Mercado Pago, sin pago inicial y sin permanencia. Mismos montos que
-   /presupuesto/script.js (mantener sincronizados).
-   En `clientes`, `modalidad` dice cuál eligió:
-   - 'unico': valorTotal (precio único), abono (lo cobrado) y senaAt (la seña).
+   PLANES — plan anual o plan mensual desde el 19-sep-2026
+   La misma web se contrata con uno de dos planes (Pablo, 19-sep-2026):
+   - PLAN ANUAL, sin suscripción: seña para arrancar ($40.000 el sitio
+     profesional, $60.000 el resto), el resto al entregar (saldo = unico − sena)
+     y después se cobra de nuevo cada año, a mano.
+   - PLAN MENSUAL por suscripción de Mercado Pago, sin pago inicial y sin
+     permanencia.
+   El pago único queda solo para el que pide la web propia, en su hosting: seña
+   y saldo como el anual, pero sin renovación (no incluye hosting, dominio ni
+   mantenimiento). Mismos montos que el bot (wabot/textos.php).
+   En `clientes`, `modalidad` dice cuál eligió. El valor interno del plan anual
+   sigue siendo 'unico' (el mismo que el formulario y el bot):
+   - 'unico' (plan anual): valorTotal (precio por año), abono (lo cobrado),
+     senaAt (la seña), renovacionAt (el próximo cobro anual; si no está, un año
+     después de la seña) y renovaciones (los cobros anuales hechos).
+   - 'propia' (pago único, web propia): valorTotal, abono y senaAt.
    - 'mensual': montoMensual, estadoSuscripcion, suscripcionDesde, preapprovalId.
    Los docs guardados antes no tienen el campo y se deducen (modalidadDe). Del
    modelo del 10 al 14-sep-2026 (primer pago + plan mensual) quedan primerPago /
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
-// 16-sep-2026: la suscripción mensual base baja a $15.000 / $25.000 y ya no
-// incluye cambios (el plan con cambios, $25.000 / $35.000, se carga a mano).
+// 19-sep-2026: el plan mensual vuelve a $20.000 / $30.000 (del 16 al 19-sep fue
+// $15.000 / $25.000). No incluye cambios: el plan con cambios, $25.000 / $35.000,
+// se carga a mano.
+// `unico` es el precio del plan anual; `propia`, el pago único de la web propia.
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    unico: 180000, sena: 40000, mensual: 15000 },
-    ecommerce:    { label: "Ecommerce",            unico: 290000, sena: 60000, mensual: 25000 },
-    cursos:       { label: "Plataforma de cursos", unico: 290000, sena: 60000, mensual: 25000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 240000, sena: 60000, mensual: 25000 },
+    profesional:  { label: "Sitio profesional",    unico: 140000, sena: 40000, mensual: 20000, propia: 180000 },
+    ecommerce:    { label: "Ecommerce",            unico: 230000, sena: 60000, mensual: 30000, propia: 290000 },
+    cursos:       { label: "Plataforma de cursos", unico: 230000, sena: 60000, mensual: 30000, propia: 290000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 190000, sena: 60000, mensual: 30000, propia: 240000 },
     // Pago único y seña del presupuesto de noticias anterior al 10-sep-2026 (presupuestos/noticias).
-    noticias:     { label: "Portal de noticias",   unico: 350000, sena: 90000, mensual: 25000 },
+    noticias:     { label: "Portal de noticias",   unico: 350000, sena: 90000, mensual: 30000, propia: 350000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 290000, sena: 60000, mensual: 25000 };
+const PLAN_RESTO = { unico: 230000, sena: 60000, mensual: 30000, propia: 290000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
-const MODALIDAD_LABELS = { unico: "Pago único", mensual: "Suscripción mensual" };
+const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único (web propia)" };
+// Modalidades que se cobran con seña y saldo al entregar: el plan anual y la web propia.
+function _conSena(modalidad) {
+    return modalidad === "unico" || modalidad === "propia";
+}
+// Días antes del cobro anual en que el panel empieza a avisar.
+const DIAS_AVISO_RENOVACION = 30;
 // Modelo del 10-sep-2026: el plan arrancaba a los 7 días del primer pago. Solo
 // cuenta para los clientes que tienen el primer pago registrado.
 const DIAS_HASTA_EL_PLAN = 7;
@@ -1047,9 +1064,9 @@ function _docConModalidad(d) {
     return !!d && (d.precioUnico != null || typeof d.modalidad === "string");
 }
 
-// La modalidad que el doc tiene elegida: 'unico', 'mensual' o "" (sin elegir, o sin el campo).
+// La modalidad que el doc tiene elegida: 'unico' (plan anual), 'mensual', 'propia' o "" (sin elegir, o sin el campo).
 function _modalidadElegida(d) {
-    return d?.modalidad === "unico" || d?.modalidad === "mensual" ? d.modalidad : "";
+    return d?.modalidad === "unico" || d?.modalidad === "mensual" || d?.modalidad === "propia" ? d.modalidad : "";
 }
 
 /* Modalidad de un doc de `clientes` o `completados` guardado antes del
@@ -1075,17 +1092,61 @@ function modalidadDe(c) {
     return _modalidadElegida(c) || (typeof c?.modalidad === "string" ? "" : _modalidadDeducida(c));
 }
 
-// Precio único acordado (valorTotal) si el doc es de pago único; 0 en los demás.
+// Precio acordado (valorTotal) si el doc se cobra con seña (plan anual o web propia); 0 en los demás.
 function _precioUnicoGuardado(c) {
-    return modalidadDe(c) === "unico" ? _num(c.valorTotal) : 0;
+    return _conSena(modalidadDe(c)) ? _num(c.valorTotal) : 0;
 }
 
-/* Pago único de un cliente: el precio acordado (valorTotal), lo cobrado (abono),
-   la fecha de la seña (senaAt) y el saldo pendiente, que se cobra al entregar. */
+/* Plan anual o web propia de un cliente: el precio acordado (valorTotal), lo
+   cobrado (abono), la fecha de la seña (senaAt) y el saldo pendiente, que se
+   cobra al entregar. */
 function pagoUnicoDe(c) {
     const precio = _num(c.valorTotal);
     const cobrado = _num(c.abono);
     return { precio, cobrado, saldo: Math.max(0, precio - cobrado), senaAt: mantToDate(c.senaAt) };
+}
+
+function _sumarAnios(fecha, anios) {
+    return new Date(fecha.getFullYear() + anios, fecha.getMonth(), fecha.getDate(), 12);
+}
+
+/* El plan anual arrancó el 19-sep-2026. Un cliente con el valor 'unico' de
+   antes (la seña o la entrega son anteriores, o el doc ni siquiera tiene
+   `modalidad`) contrató el pago único de entonces: incluía el primer año de
+   mantenimiento y no se renueva como el plan anual. */
+const INICIO_PLAN_ANUAL = new Date(2026, 8, 19);
+function _pagoUnicoAnterior(c) {
+    if (modalidadDe(c) !== "unico") return false;
+    if (typeof c?.modalidad !== "string") return true;
+    const inicio = mantToDate(c.senaAt) || mantToDate(c.entregadoAt);
+    return !!inicio && inicio < INICIO_PLAN_ANUAL;
+}
+
+/* El cobro anual de un cliente del plan anual (19-sep-2026): se cobra de nuevo
+   cada año, sin suscripción. La fecha es la guardada (renovacionAt) o, si no
+   está, un año después de la seña (Pablo, 19-sep); sin seña registrada no corre.
+   El monto es el precio del plan (valorTotal). estado: 'sin_fecha',
+   'al_dia', 'por_vencer' (faltan DIAS_AVISO_RENOVACION días o menos) o
+   'vencido'. En el pago único anterior (`legado`), la fecha es el fin del año
+   de mantenimiento incluido (un año después de la entrega) y no hay cobro anual. null si el cliente no es
+   del plan anual. */
+function renovacionAnualDe(c) {
+    if (modalidadDe(c) !== "unico") return null;
+    const legado = _pagoUnicoAnterior(c);
+    const guardada = mantToDate(c.renovacionAt);
+    // El plan anual se cuenta desde la seña; el mantenimiento del pago único anterior, desde la entrega.
+    const desde = legado ? mantToDate(c.entregadoAt) : mantToDate(c.senaAt);
+    const proximo = guardada
+        ? new Date(guardada.getFullYear(), guardada.getMonth(), guardada.getDate(), 12)
+        : (desde ? _sumarAnios(desde, 1) : null);
+    const cobros = Array.isArray(c.renovaciones) ? c.renovaciones : [];
+    const ultimo = cobros.length ? cobros[cobros.length - 1] : null;
+    const monto = legado ? 0 : _num(c.valorTotal);
+    if (!proximo) return { proximo: null, monto, estado: "sin_fecha", dias: null, ultimo, legado };
+    const hoy = new Date();
+    const dias = Math.ceil((new Date(proximo.getFullYear(), proximo.getMonth(), proximo.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 86400000);
+    const estado = dias < 0 ? "vencido" : dias <= DIAS_AVISO_RENOVACION ? "por_vencer" : "al_dia";
+    return { proximo, monto, estado, dias, ultimo, legado };
 }
 
 // Precio único que solo estaba cotizado: no se cobró nada y no quedó en un cliente mensual.
@@ -1117,7 +1178,10 @@ function planDe(src, extra = null) {
     const base = key ? PLANES[key] : PLAN_RESTO;
     // Montos que cotizó la calculadora o el boceto con las dos modalidades.
     const cotizado = [s, x].find(f => _num(f.precioUnico)) || {};
-    const unico = _precioUnicoGuardado(s) || _num(cotizado.precioUnico) || base.unico;
+    const guardadoEnDoc = _precioUnicoGuardado(s);
+    // El precio guardado vale para su modalidad: el de una web propia no es el del plan anual.
+    const unico = (modalidadDe(s) === "unico" && guardadoEnDoc) || _num(cotizado.precioUnico) || base.unico;
+    const propia = (modalidadDe(s) === "propia" && guardadoEnDoc) || base.propia;
     const sena = _num(cotizado.sena) || base.sena;
     const senaAnterior = f => _docConModalidad(f) ? 0 : _num(f.sena);
     return {
@@ -1125,6 +1189,7 @@ function planDe(src, extra = null) {
         label: guardado !== null ? guardado : (key ? PLANES[key].label : ""),
         modalidad:  _modalidadElegida(s) || _modalidadElegida(x),
         unico,
+        propia,
         sena,
         saldo:      Math.max(0, unico - sena),
         mensual:    _num(s.montoMensual) || _num(s.mensualidad) || _num(x.montoMensual) || _num(x.mensualidad) || base.mensual,
@@ -1211,16 +1276,18 @@ function _planRowsHTML(plan) {
     const fila = (label, valor) => `<div class="prop-row"><span class="prop-label">${label}</span><span>${valor}</span></div>`;
     return `<div class="prop-row"><span class="prop-label">Plan</span><span style="font-weight:700;color:#4ade80">${escapeHtml(plan.label || "Sin definir")}</span></div>
         ${plan.modalidad ? fila("Modalidad", MODALIDAD_LABELS[plan.modalidad]) : ""}
-        ${plan.modalidad !== "mensual" ? fila("Pago único", `${fmtMoney(plan.unico)}: seña de ${fmtMoney(plan.sena)} para arrancar y saldo de ${fmtMoney(plan.saldo)} al entregar`) : ""}
+        ${!plan.modalidad || plan.modalidad === "unico" ? fila("Plan anual", `${fmtMoney(plan.unico)} por año: seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año, sin suscripción`) : ""}
         ${plan.primerPago ? fila("Primer pago (modelo anterior)", fmtMoney(plan.primerPago)) : ""}
-        ${plan.modalidad !== "unico" ? fila("Servicio mensual", `${fmtMoney(plan.mensual)}/mes${plan.primerPago ? `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago` : ", sin pago inicial"}`) : ""}`;
+        ${!plan.modalidad || plan.modalidad === "mensual" ? fila("Plan mensual", `${fmtMoney(plan.mensual)}/mes${plan.primerPago ? `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago` : ", sin pago inicial"}`) : ""}
+        ${plan.modalidad === "propia" ? fila("Pago único (web propia)", `${fmtMoney(plan.propia)}: seña de ${fmtMoney(plan.sena)} para arrancar y el resto al entregar, sin hosting, dominio ni mantenimiento`) : ""}`;
 }
 
-// Montos del plan en una línea, para las tablas: los de la modalidad elegida o los de las dos.
+// Montos del plan en una línea, para las tablas: los de la modalidad elegida o los de los dos planes.
 function _planMontosTexto(plan, modalidad = plan.modalidad) {
-    if (modalidad === "unico") return `pago único ${fmtMoney(plan.unico)}`;
+    if (modalidad === "unico") return `plan anual ${fmtMoney(plan.unico)}`;
     if (modalidad === "mensual") return `${fmtMoney(plan.mensual)}/mes`;
-    return `pago único ${fmtMoney(plan.unico)} o ${fmtMoney(plan.mensual)}/mes`;
+    if (modalidad === "propia") return `pago único ${fmtMoney(plan.propia)} (web propia)`;
+    return `plan anual ${fmtMoney(plan.unico)} o ${fmtMoney(plan.mensual)}/mes`;
 }
 
 // Los adicionales de /presupuesto/ se guardan como slug (`calendario`, `login`…).
@@ -1550,19 +1617,31 @@ function _updateClientCounters() {
     const um = document.getElementById("segCountUM"); if (um) um.textContent = nUM;
     const sb = document.getElementById("segCountSB"); if (sb) sb.textContent = nSB;
 
-    /* Dos modalidades (15-sep-2026). Servicio mensual: la mensualidad que entra
-       por mes (suscripciones activas) y cuántas suscripciones pendientes ya
-       tendrían que haber arrancado. Pago único: el saldo que falta cobrar
-       (precio único menos lo cobrado); los clientes "a cotizar" no suman. */
+    /* Plan mensual: la mensualidad que entra por mes (suscripciones activas) y
+       cuántas suscripciones pendientes ya tendrían que haber arrancado. Plan
+       anual y web propia: el saldo que falta cobrar (precio menos lo cobrado);
+       los clientes "a cotizar" no suman. Plan anual (19-sep-2026): los cobros
+       anuales vencidos o que vencen en los próximos DIAS_AVISO_RENOVACION días. */
     const clientesActivos = clients.filter(c => getEstado(c) === "cliente");
-    const suscripciones = clientesActivos.filter(c => modalidadDe(c) !== "unico").map(suscripcionDe);
+    const suscripciones = clientesActivos.filter(c => !_conSena(modalidadDe(c))).map(suscripcionDe);
     const mensualidadActiva = suscripciones
         .filter(s => s.estado === "activa")
         .reduce((sum, s) => sum + s.mensual, 0);
     const porActivar = suscripciones.filter(s => s.porActivar).length;
     const saldoPendiente = clientesActivos
-        .filter(c => modalidadDe(c) === "unico" && !c.sinPrecio)
+        .filter(c => _conSena(modalidadDe(c)) && !c.sinPrecio)
         .reduce((sum, c) => sum + pagoUnicoDe(c).saldo, 0);
+    const anualesACobrar = clientesActivos
+        .map(renovacionAnualDe)
+        .filter(r => r && !r.legado && (r.estado === "vencido" || r.estado === "por_vencer"));
+    const anualesEl = document.getElementById("anualesACobrar");
+    if (anualesEl) {
+        const vencidos = anualesACobrar.filter(r => r.estado === "vencido").length;
+        anualesEl.textContent = anualesACobrar.length
+            ? `${anualesACobrar.length} · ${fmtMoney(anualesACobrar.reduce((sum, r) => sum + r.monto, 0))}`
+            : "0";
+        anualesEl.style.color = vencidos ? "var(--danger)" : anualesACobrar.length ? "var(--warning)" : "";
+    }
 
     const mrrEl = document.getElementById("mrrActivo");
     if (mrrEl) mrrEl.textContent = fmtMoney(mensualidadActiva);
@@ -1599,6 +1678,9 @@ function _bindTableListeners(tbodyEl) {
     });
     tbodyEl.querySelectorAll("[data-cli-cambio]").forEach(chk => {
         chk.addEventListener("change", () => toggleCambiosCliente(chk.dataset.cliCambio, chk.checked));
+    });
+    tbodyEl.querySelectorAll("[data-renovar-id]").forEach(btn => {
+        btn.addEventListener("click", () => registrarCobroAnual(btn.dataset.renovarId));
     });
     tbodyEl.querySelectorAll(".notes-cell").forEach(cell => {
         const label = cell.querySelector(".notes-label");
@@ -1665,10 +1747,12 @@ function _bindTableListeners(tbodyEl) {
 }
 
 /* Fila de Clientes con la misma forma que Mantenimiento: plan, cobro y el cambio
-   del mes. Dos modalidades desde el 15-sep-2026:
-   - Pago único: el precio único abajo del plan y, en Cobro, la seña cobrada (con
-     su fecha) y el saldo pendiente. No lleva cambio del mes.
-   - Servicio mensual: cuánto paga por mes y, en Cobro, la suscripción (con las
+   del mes. Desde el 19-sep-2026:
+   - Plan anual: el precio por año abajo del plan y, en Cobro, la seña cobrada
+     (con su fecha), el saldo pendiente y el próximo cobro anual, con el botón
+     para registrarlo. No lleva cambio del mes.
+   - Pago único de la web propia: lo mismo, sin cobro anual.
+   - Plan mensual: cuánto paga por mes y, en Cobro, la suscripción (con las
      bajas y pausas de Mercado Pago). El primer pago solo se ve, abajo del plan,
      en los clientes que lo tienen cargado (modelo anterior).
    Las notas se editan desde el modal; acá solo se ve la primera línea. */
@@ -1679,7 +1763,7 @@ const ESTADO_SUSCRIPCION_HTML = {
 };
 
 function _clientRow(c) {
-    // "" (sin definir) se ve como el servicio mensual, igual que antes del 15-sep-2026.
+    // "" (sin definir) se ve como el plan mensual, igual que antes del 15-sep-2026.
     const modalidad = modalidadDe(c);
     const s = suscripcionDe(c);
     const proyecto = String(c.proyecto || "").trim();
@@ -1709,7 +1793,7 @@ function _clientRow(c) {
         ${s.mant ? `<div class="muted" style="font-size:11px">vía Mercado Pago</div>` : ""}
         ${s.preapprovalId ? `<div class="muted" style="font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.preapprovalId)}">ID ${escapeHtml(s.preapprovalId)}</div>` : ""}`;
 
-    // Pago único: la seña (o todo lo cobrado) con su fecha y el saldo que se cobra al entregar.
+    // Plan anual y web propia: la seña (o todo lo cobrado) con su fecha y el saldo que se cobra al entregar.
     const u = pagoUnicoDe(c);
     const pagoUnico = `
         ${u.cobrado
@@ -1717,13 +1801,25 @@ function _clientRow(c) {
                <div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(u.cobrado)}${u.senaAt ? ` · ${mantLongDate(u.senaAt)}` : ""}</div>`
             : `<div style="color:#F59E0B;font-weight:600">Seña sin registrar</div>`}
         ${!u.precio
-            ? `<div class="muted" style="font-size:12px">${c.sinPrecio ? "precio a cotizar" : "sin precio único cargado"}</div>`
+            ? `<div class="muted" style="font-size:12px">${c.sinPrecio ? "precio a cotizar" : "sin precio cargado"}</div>`
             : u.saldo ? `<div class="saldo-val" style="font-size:12px;white-space:nowrap">saldo pendiente ${fmtMoney(u.saldo)}</div>` : ""}`;
 
+    // Plan anual (19-sep-2026): el próximo cobro anual, con aviso cuando se acerca o ya venció.
+    const r = renovacionAnualDe(c);
+    const colorRenovacion = { vencido: "var(--danger)", por_vencer: "#F59E0B" }[r?.estado] || "";
+    const renovacion = !r ? "" : r.legado
+        // Pago único anterior al plan anual: el aviso de cuándo termina el año de mantenimiento incluido.
+        ? (r.proximo ? `<div style="font-size:12px;font-weight:600;white-space:nowrap;margin-top:4px;color:${colorRenovacion || "var(--text-muted)"}">${r.estado === "vencido" ? "terminó el mantenimiento incluido el" : "mantenimiento incluido hasta el"} ${mantLongDate(r.proximo)}</div>` : "")
+        : !r.proximo
+        ? `<div class="muted" style="font-size:11px;white-space:nowrap">el cobro anual se cuenta desde la seña</div>`
+        : `<div style="font-size:12px;font-weight:600;white-space:nowrap;margin-top:4px;color:${colorRenovacion || "var(--text-muted)"}">${r.estado === "vencido" ? "cobro anual vencido el" : "próximo cobro anual:"} ${mantLongDate(r.proximo)}${r.monto ? ` · ${fmtMoney(r.monto)}` : ""}</div>
+           ${r.ultimo ? `<div class="muted" style="font-size:11px;white-space:nowrap">último cobro: ${fmtMoney(_num(r.ultimo.monto))}${mantToDate(r.ultimo.at) ? ` · ${mantLongDate(mantToDate(r.ultimo.at))}` : ""}</div>` : ""}
+           <button type="button" class="btn-ghost" data-renovar-id="${c.id}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="Anota el cobro del año y pasa el próximo al año siguiente">Registrar cobro anual</button>`;
+
     // Un cambio por mes incluido desde que arranca el plan mensual. El ciclo se reinicia el
-    // mismo día del mes en que arrancó (mismo motor que Mantenimiento). El pago único no lo lleva.
+    // mismo día del mes en que arrancó (mismo motor que Mantenimiento). El plan anual y la web propia no lo llevan.
     let cambios;
-    if (modalidad === "unico" || s.estado === "baja" || !s.desde) {
+    if (_conSena(modalidad) || s.estado === "baja" || !s.desde) {
         cambios = `<span class="muted">—</span>`;
     } else if (s.desde > new Date()) {
         cambios = `<span class="muted" style="font-size:12px;white-space:nowrap">arranca el ${mantShortDate(s.desde)}</span>`;
@@ -1752,13 +1848,18 @@ function _clientRow(c) {
             </td>
             <td>
                 <div>${escapeHtml(s.plan.label || "Plan sin definir")}</div>
-                ${modalidad === "unico"
-                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">pago único${u.precio ? ` ${fmtMoney(u.precio)}` : ""}</div>`
+                ${modalidad === "unico" && r?.legado
+                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">pago único${u.precio ? ` ${fmtMoney(u.precio)}` : ""}</div>
+                       <div class="muted" style="font-size:11px">anterior al plan anual</div>`
+                    : modalidad === "unico"
+                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">plan anual${u.precio ? ` ${fmtMoney(u.precio)}/año` : ""}</div>`
+                    : modalidad === "propia"
+                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">pago único${u.precio ? ` ${fmtMoney(u.precio)}` : ""} · web propia</div>`
                     : `<div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.mensual)}/mes</div>
                 ${modalidad ? "" : `<div class="muted" style="font-size:11px">modalidad sin definir</div>`}
                 ${modeloAnterior}`}
             </td>
-            <td>${modalidad === "unico" ? pagoUnico : suscripcion}</td>
+            <td>${_conSena(modalidad) ? pagoUnico + renovacion : suscripcion}</td>
             <td class="center">${cambios}</td>
             <td class="actions-col">
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
@@ -2184,11 +2285,44 @@ async function toggleCambiosCliente(id, checked) {
     }
 }
 
-// Respuesta al prompt de la modalidad: 1 o "único" → 'unico'; 2 o "mensual" → 'mensual'; si no, "".
+/* Cobro anual del plan anual (19-sep-2026): se anota en `renovaciones` (cuándo,
+   cuánto y qué vencimiento pagó) y el próximo pasa al año siguiente. No hay
+   suscripción: el cobro se hace a mano y se registra acá. */
+async function registrarCobroAnual(id) {
+    const c = clients.find(x => x.id === id);
+    const r = c ? renovacionAnualDe(c) : null;
+    if (!r || !r.proximo || r.legado) return;
+    const siguiente = _sumarAnios(r.proximo, 1);
+    const montoInput = prompt(
+        `Cobro anual de "${c.nombre || c.proyecto || "Cliente"}", que vence el ${mantLongDate(r.proximo)}.\n\n` +
+        `¿Cuánto cobraste? El próximo cobro queda para el ${mantLongDate(siguiente)}.`,
+        r.monto ? String(r.monto) : ""
+    );
+    if (montoInput === null) return;
+    const monto = Number(String(montoInput).replace(/\D/g, "")) || 0;
+    if (!monto) {
+        alert("Escribí el monto que cobraste.");
+        return;
+    }
+    const renovaciones = [...(Array.isArray(c.renovaciones) ? c.renovaciones : []), { at: new Date(), monto, vencia: r.proximo }];
+    try {
+        await updateDoc(doc(db, "clientes", id), {
+            renovaciones,
+            renovacionAt: siguiente,
+            updatedAt: serverTimestamp()
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error al registrar el cobro: " + err.message);
+    }
+}
+
+// Respuesta al prompt de la modalidad: 1 o "anual" → 'unico'; 2 o "mensual" → 'mensual'; 3, "propia" o "único" → 'propia'; si no, "".
 function _modalidadDeRespuesta(texto) {
     const t = String(texto || "").trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-    if (t === "1" || t.startsWith("u") || t.includes("unico")) return "unico";
+    if (t === "1" || t.startsWith("a") || t.includes("anual")) return "unico";
     if (t === "2" || t.startsWith("m") || t.includes("mensual")) return "mensual";
+    if (t === "3" || t.includes("propia") || t.includes("unico")) return "propia";
     return "";
 }
 
@@ -2202,14 +2336,16 @@ async function setStatus(id, value) {
             updatedAt: serverTimestamp()
         };
 
-        /* Pasar a Cliente (dos modalidades desde el 15-sep-2026): se pregunta con cuál
-           contrató y se sugiere la elegida en el doc, en el boceto o en la calculadora
-           (o la deducida de un doc anterior). Si cancela, sigue en Seguimiento.
-           - Pago único: queda el precio único (el acordado o el del plan) y se pregunta
-             cuánto cobró de seña; la seña se registra una sola vez, con la fecha de hoy.
-           - Servicio mensual: se fija la mensualidad (del boceto o del tipo de web) y la
+        /* Pasar a Cliente: se pregunta con qué plan contrató y se sugiere el elegido en
+           el doc, en el boceto o en la calculadora (o el deducido de un doc anterior).
+           Si cancela, sigue en Seguimiento.
+           - Plan anual (19-sep-2026) y pago único de la web propia: queda el precio (el
+             acordado o el del plan) y se pregunta cuánto cobró de seña; la seña se
+             registra una sola vez, con la fecha de hoy. El cobro anual se cuenta desde
+             la seña.
+           - Plan mensual: se fija la mensualidad (del boceto o del tipo de web) y la
              suscripción queda pendiente hasta que se suscribe en Mercado Pago. Un precio
-             único que solo estaba cotizado, sin nada cobrado, vuelve a 0.
+             que solo estaba cotizado, sin nada cobrado, vuelve a 0.
            Lo que el doc ya tenga del modelo anterior (primerPago, primerPagoAt y lo
            cobrado) no se toca. */
         if (value === "cliente" && prevEstado !== "cliente" && c) {
@@ -2218,29 +2354,31 @@ async function setStatus(id, value) {
             let modalidad = "";
             while (!modalidad) {
                 const respuesta = prompt(
-                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente (plan ${plan.label || "sin definir"}). ¿Con qué modalidad contrató?\n\n` +
-                    `1. Pago único: ${fmtMoney(plan.unico)}, con seña de ${fmtMoney(plan.sena)} para arrancar y saldo de ${fmtMoney(plan.saldo)} al entregar.\n` +
-                    `2. Servicio mensual: ${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.\n\n` +
-                    `Escribí 1 o 2. Si cancelás, sigue en Seguimiento.`,
-                    sugerida === "unico" ? "1" : sugerida === "mensual" ? "2" : ""
+                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente (plan ${plan.label || "sin definir"}). ¿Con qué plan contrató?\n\n` +
+                    `1. Plan anual: ${fmtMoney(plan.unico)} por año, sin suscripción. Seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año.\n` +
+                    `2. Plan mensual: ${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.\n` +
+                    `3. Pago único (web propia, en su hosting): ${fmtMoney(plan.propia)}, con seña de ${fmtMoney(plan.sena)} y el resto al entregar. Sin renovación.\n\n` +
+                    `Escribí 1, 2 o 3. Si cancelás, sigue en Seguimiento.`,
+                    sugerida === "unico" ? "1" : sugerida === "mensual" ? "2" : sugerida === "propia" ? "3" : ""
                 );
                 if (respuesta === null) {
                     renderSeg();   // el select de la fila vuelve al estado guardado
                     return;
                 }
                 modalidad = _modalidadDeRespuesta(respuesta);
-                if (!modalidad) alert("Escribí 1 para pago único o 2 para servicio mensual.");
+                if (!modalidad) alert("Escribí 1 para el plan anual, 2 para el plan mensual o 3 para el pago único de la web propia.");
             }
             updateData.modalidad = modalidad;
             if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
-            if (modalidad === "unico") {
-                updateData.valorTotal = plan.unico;
+            if (_conSena(modalidad)) {
+                const precio = modalidad === "propia" ? plan.propia : plan.unico;
+                updateData.valorTotal = precio;
                 // Si vuelve a Seguimiento y regresa, conserva la seña que ya tenía registrada.
-                const senaYaCobrada = modalidadDe(c) === "unico" && (_num(c.abono) || c.senaAt);
+                const senaYaCobrada = _conSena(modalidadDe(c)) && (_num(c.abono) || c.senaAt);
                 if (!senaYaCobrada) {
                     const montoInput = prompt(
-                        `Pago único de ${fmtMoney(plan.unico)}.\n\n` +
-                        `¿Cuánto cobraste de seña? El saldo se cobra al entregar. Si cancelás, pasa igual a Cliente con la seña sin registrar.`,
+                        `${modalidad === "propia" ? `Pago único de ${fmtMoney(precio)}` : `Plan anual de ${fmtMoney(precio)} por año`}.\n\n` +
+                        `¿Cuánto cobraste de seña? El resto se cobra al entregar. Si cancelás, pasa igual a Cliente con la seña sin registrar.`,
                         String(plan.sena)
                     );
                     const monto = montoInput === null ? 0 : Number(String(montoInput).replace(/\D/g, "")) || 0;
@@ -2508,44 +2646,68 @@ document.getElementById("estadoCliente").addEventListener("change", () => {
     toggleTareasSection();
 });
 
-// ── Plan y modalidad en el modal de cliente (dos modalidades desde el 15-sep-2026) ──
+// ── Plan y modalidad en el modal de cliente (plan anual o mensual desde el 19-sep-2026) ──
 // Las opciones salen de PLANES: una sola fuente para los montos.
 document.getElementById("planCliente").innerHTML = `<option value="">Sin definir</option>` + Object.values(PLANES)
-    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.unico)} o ${fmtMoney(p.mensual)}/mes</option>`)
+    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.unico)}/año o ${fmtMoney(p.mensual)}/mes</option>`)
     .join("");
 
-// Cambiar el plan propone el precio único y la mensualidad: lo cobrado y un primer pago del modelo anterior no se tocan.
+// El precio que propone cada modalidad: el del plan anual o el pago único de la web propia.
+function _precioSugerido(plan, modalidad) {
+    return modalidad === "propia" ? plan.propia : plan.unico;
+}
+
+// Cambiar el plan propone el precio y la mensualidad: lo cobrado y un primer pago del modelo anterior no se tocan.
 document.getElementById("planCliente").addEventListener("change", (e) => {
     const plan = PLANES[PLAN_POR_LABEL[e.target.value]];
     if (!plan) return;
-    document.getElementById("valorTotal").value = plan.unico;
+    document.getElementById("valorTotal").value = _precioSugerido(plan, document.getElementById("modalidadCliente").value);
     document.getElementById("montoMensual").value = plan.mensual;
     sincronizarModalidadModal();
 });
-document.getElementById("modalidadCliente").addEventListener("change", sincronizarModalidadModal);
+/* Pasar del plan anual a la web propia (o al revés) cambia el precio propuesto,
+   salvo que ya se haya escrito otro a mano. */
+document.getElementById("modalidadCliente").addEventListener("change", (e) => {
+    const plan = PLANES[PLAN_POR_LABEL[document.getElementById("planCliente").value]];
+    const precioEl = document.getElementById("valorTotal");
+    const anterior = e.target.dataset.anterior || "";
+    if (plan && _conSena(e.target.value) && (!precioEl.value || (_conSena(anterior) && Number(precioEl.value) === _precioSugerido(plan, anterior)))) {
+        precioEl.value = _precioSugerido(plan, e.target.value);
+    }
+    e.target.dataset.anterior = e.target.value;
+    sincronizarModalidadModal();
+});
 document.getElementById("valorTotal").addEventListener("input", sincronizarModalidadModal);
 document.getElementById("abono").addEventListener("input", sincronizarModalidadModal);
 document.getElementById("primerPagoAt").addEventListener("change", sincronizarDesdeAuto);
 
-/* Muestra solo los campos de la modalidad elegida: pago único (precio, cobrado y,
-   en los clientes, la fecha de la seña) o servicio mensual (mensualidad y, en los
-   clientes, la suscripción). "Sin definir" no muestra montos. */
+/* Muestra solo los campos de la modalidad elegida: plan anual o web propia
+   (precio, cobrado y, en los clientes, la fecha de la seña; el plan anual suma
+   el próximo cobro anual) o plan mensual (mensualidad y, en los clientes, la
+   suscripción). "Sin definir" no muestra montos. */
 function sincronizarModalidadModal() {
     const $ = id => document.getElementById(id);
     const modalidad = $("modalidadCliente").value;
     const esCliente = $("estadoCliente").value === "cliente";
-    $("pagoUnicoCampos").hidden = modalidad !== "unico";
+    // El pago único anterior al plan anual (lo marca cargarPlanEnModal): sin cobro anual.
+    const legado = modalidad === "unico" && $("renovacionField").dataset.legado === "1";
+    $("pagoUnicoCampos").hidden = !_conSena(modalidad);
+    $("valorTotalLabel").textContent = modalidad === "propia" || legado ? "Pago único" : "Precio por año";
     $("mensualCampos").hidden = modalidad !== "mensual";
     $("montoMensual").required = modalidad === "mensual";
-    $("pagoUnicoSection").style.display = esCliente && modalidad === "unico" ? "" : "none";
+    $("pagoUnicoSection").style.display = esCliente && _conSena(modalidad) ? "" : "none";
+    $("renovacionField").hidden = modalidad !== "unico";
     $("suscripcionSection").style.display = esCliente && modalidad === "mensual" ? "" : "none";
-    // Importes del modelo anterior (solo lectura): en un pago único se editan arriba.
-    $("modeloAnteriorNota").hidden = modalidad === "unico" || !$("modeloAnteriorNota").textContent;
+    // Importes del modelo anterior (solo lectura): con seña se editan arriba.
+    $("modeloAnteriorNota").hidden = _conSena(modalidad) || !$("modeloAnteriorNota").textContent;
     const precio = Number($("valorTotal").value) || 0;
     const cobrado = Number($("abono").value) || 0;
     const nota = $("pagoUnicoNota");
-    nota.textContent = precio ? `Saldo pendiente: ${fmtMoney(Math.max(0, precio - cobrado))}, se cobra al entregar.` : "";
-    nota.hidden = modalidad !== "unico" || !precio;
+    const saldo = Math.max(0, precio - cobrado);
+    nota.textContent = !precio ? ""
+        : (saldo ? `Saldo pendiente: ${fmtMoney(saldo)}, se cobra al entregar.` : "Pagado.")
+            + (modalidad === "unico" && !legado ? ` Después se cobran ${fmtMoney(precio)} cada año, sin suscripción.` : "");
+    nota.hidden = !_conSena(modalidad) || !precio;
 }
 
 /* "El plan arranca el" sigue a la fecha del primer pago (+7 días) mientras no
@@ -2574,15 +2736,31 @@ function cargarPlanEnModal(c) {
     if ($("planCliente").selectedIndex < 0) $("planCliente").value = "";
 
     $("modalidadCliente").value = !c ? "" : getEstado(c) === "cliente" ? modalidadDe(c) : (_modalidadElegida(c) || s.plan.modalidad);
-    // Pago único: lo guardado si el doc es de pago único; si no, el precio del plan como sugerencia
-    // (un cliente "a cotizar" sin precio cargado queda vacío).
-    const esUnico = !!c && modalidadDe(c) === "unico";
-    $("valorTotal").value = !c || (esUnico && c.sinPrecio && !_num(c.valorTotal)) ? "" : s.plan.unico;
+    $("modalidadCliente").dataset.anterior = $("modalidadCliente").value;
+    // Plan anual o web propia: lo guardado si el doc se cobra con seña; si no, el precio del plan
+    // como sugerencia (un cliente "a cotizar" sin precio cargado queda vacío).
+    const esUnico = !!c && _conSena(modalidadDe(c));
+    $("valorTotal").value = !c || (esUnico && c.sinPrecio && !_num(c.valorTotal)) ? ""
+        : (esUnico && _num(c.valorTotal)) || _precioSugerido(s.plan, $("modalidadCliente").value);
     $("abono").value = esUnico ? (_num(c.abono) || "") : "";
     const senaAt = esUnico ? mantToDate(c.senaAt) : null;
     const senaKey = senaAt ? mantDateKey(senaAt) : "";
     $("senaAt").value = senaKey;
     $("senaAt").dataset.original = senaKey;
+    // Plan anual: el próximo cobro guardado o, si no, el que sale de la entrega (sugerido, no se guarda si no se toca).
+    const r = c ? renovacionAnualDe(c) : null;
+    const renovacionKey = r?.proximo ? mantDateKey(r.proximo) : "";
+    $("renovacionAt").value = renovacionKey;
+    $("renovacionAt").dataset.original = renovacionKey;
+    $("renovacionField").dataset.legado = r?.legado ? "1" : "";
+    $("renovacionLabel").textContent = r?.legado ? "Fin del mantenimiento incluido" : "Próximo cobro anual";
+    const notaRenovacion = $("renovacionNota");
+    notaRenovacion.textContent = r?.legado
+        ? "Pago único anterior al plan anual (19-sep-2026): el primer año de mantenimiento va incluido y no tiene cobro anual. Si pasa al plan anual, poné la fecha de la seña del plan nuevo."
+        : r?.ultimo
+        ? `Último cobro anual: ${fmtMoney(_num(r.ultimo.monto))}${mantToDate(r.ultimo.at) ? ` el ${mantLongDate(mantToDate(r.ultimo.at))}` : ""}.`
+        : (r && !r.proximo ? "Sin fecha: se cuenta un año desde la seña. Registrá la fecha de la seña." : "");
+    notaRenovacion.hidden = !notaRenovacion.textContent;
 
     const conPrimerPago = !!(s && (s.primerPago || s.primerPagoAt));
     $("primerPagoField").hidden = !conPrimerPago;
@@ -2644,7 +2822,7 @@ form.addEventListener("submit", async (e) => {
     const estadoCliente = document.getElementById("estadoCliente").value;
     const modalidad = document.getElementById("modalidadCliente").value;
     if (estadoCliente === "cliente" && !modalidad) {
-        alert("Elegí la modalidad del cliente: pago único o servicio mensual.");
+        alert("Elegí la modalidad del cliente: plan anual, plan mensual o pago único de la web propia.");
         document.getElementById("modalidadCliente").focus();
         return;
     }
@@ -2662,15 +2840,19 @@ form.addEventListener("submit", async (e) => {
         tareas: { ...modalTareas },
         updatedAt: serverTimestamp()
     };
-    if (modalidad === "unico") {
-        /* Pago único: el precio, lo cobrado y la fecha de la seña. La fecha se escribe
-           solo si cambió; una seña recién cargada y sin fecha queda con la de hoy. */
+    if (_conSena(modalidad)) {
+        /* Plan anual o web propia: el precio, lo cobrado y la fecha de la seña. La
+           fecha se escribe solo si cambió; una seña recién cargada y sin fecha queda
+           con la de hoy. El próximo cobro anual, solo si se tocó: si no, sigue
+           saliendo de la entrega. */
         data.valorTotal = Number(document.getElementById("valorTotal").value) || 0;
         data.abono = Number(document.getElementById("abono").value) || 0;
         const senaEl = document.getElementById("senaAt");
-        const senaRegistrada = !!actual && modalidadDe(actual) === "unico" && !!actual.senaAt;
+        const senaRegistrada = !!actual && _conSena(modalidadDe(actual)) && !!actual.senaAt;
         if (senaEl.value !== senaEl.dataset.original) data.senaAt = _fechaDeInput(senaEl.value);
         else if (data.abono && !senaEl.value && !senaRegistrada) data.senaAt = serverTimestamp();
+        const renovacionEl = document.getElementById("renovacionAt");
+        if (modalidad === "unico" && renovacionEl.value !== renovacionEl.dataset.original) data.renovacionAt = _fechaDeInput(renovacionEl.value);
     } else if (modalidad === "mensual") {
         // Servicio mensual. El primer pago solo está visible en los docs del modelo anterior.
         const primerPago = document.getElementById("primerPagoField").hidden
@@ -2695,7 +2877,7 @@ form.addEventListener("submit", async (e) => {
            reflejen el primer pago, o cuando el doc pasa a Cliente ahora. Lo de un pago
            único no se pisa, salvo un precio que solo estaba cotizado (nada cobrado). */
         const pasaACliente = estadoCliente === "cliente" && (!actual || getEstado(actual) !== "cliente");
-        const eraPagoUnico = !!actual && modalidadDe(actual) === "unico";
+        const eraPagoUnico = !!actual && _conSena(modalidadDe(actual));
         const reflejaPrimerPago = campo => !actual || (eraPagoUnico
             ? _cotizacionSinCobro(actual)
             : pasaACliente || !_num(actual[campo]) || _num(actual[campo]) === _num(actual.primerPago));
@@ -3477,7 +3659,8 @@ function slugNegocio(nombre) {
 /* Limpia solamente el texto que arma "Copiar"; chat_completo en Firestore no se
    toca. Se sacan dos bloques automáticos que no aportan al brief de diseño:
    - la invitación repetida a completar /form/;
-   - la bajada comercial con pago único y suscripción mensual.
+   - la bajada comercial con los planes (plan anual y mensual; antes, pago único
+     y suscripción).
    Si la cotización venía después de una descripción útil ("Lo mejor para..."), se
    conserva esa primera parte y se elimina desde el comienzo de los planes. */
 function limpiarChatBoilerplate(chat) {
@@ -3492,15 +3675,15 @@ function limpiarChatBoilerplate(chat) {
             if (/gokywebs\.com\/form/i.test(cuerpoOriginal)) return "";
 
             const inicioPlanes = cuerpoOriginal.search(
-                /(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas)\s*[:,]?/i
+                /(?:Ten[eé]s dos opciones para contratar el servicio|Lo pod[eé]s contratar de dos formas|Pod[eé]s contratarla de dos maneras|Pod[eé]s elegir entre dos planes)\s*[:,]?/i
             );
             if (inicioPlanes >= 0) {
                 const descripcion = cuerpoOriginal.slice(0, inicioPlanes).trim();
                 return descripcion ? `${encabezado}${descripcion}\n` : "";
             }
 
-            const esCotizacion = /pago\s+[uú]nico/i.test(cuerpoOriginal)
-                && /(?:suscripci[oó]n\s+mensual|mensualidad|por\s+mes)/i.test(cuerpoOriginal);
+            const esCotizacion = /pago\s+[uú]nico|plan\s+anual/i.test(cuerpoOriginal)
+                && /(?:suscripci[oó]n\s+mensual|plan\s+mensual|mensualidad|por\s+mes)/i.test(cuerpoOriginal);
             if (esCotizacion || /gokywebs\.com\/presupuestos\//i.test(cuerpoOriginal)) return "";
 
             return m;
@@ -3735,7 +3918,7 @@ async function removeClient(id) {
 
     const conRegistro = c.completadoId && completados.some(x => x.id === c.completadoId);
     const mensaje = getEstado(c) === "cliente"
-        ? `Eliminar a "${c.nombre}" de Clientes?${conRegistro ? " El registro de la entrega queda en Completados." : ""}${modalidadDe(c) === "unico" ? "" : `\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`}`
+        ? `Eliminar a "${c.nombre}" de Clientes?${conRegistro ? " El registro de la entrega queda en Completados." : ""}${_conSena(modalidadDe(c)) ? "" : `\n\nSi solo se dio de baja del plan, mejor editalo y poné la suscripción en "Baja".`}`
         : `¿Eliminar a "${c.nombre}"? Esta acción no se puede deshacer.`;
     if (!confirm(mensaje)) return;
     try {
@@ -3910,12 +4093,13 @@ async function abrirFacturaModal(cliente, opts = {}) {
     document.getElementById("facturaModalTitulo").textContent =
         facturaEsAdhoc ? "Emitir factura" : "Emitir factura y marcar entregada";
     document.getElementById("facturaCliente").textContent = etiquetaCliente(cliente);
-    /* Al entregar se propone lo cobrado al arrancar (15-sep-2026). Pago único: lo cobrado
-       o, si no se registró, la seña del plan. Servicio mensual: vacío para cargar el
-       importe, salvo el primer pago de un cliente del modelo del 10 al 14-sep-2026. */
+    /* Al entregar se propone lo cobrado al arrancar (15-sep-2026). Plan anual o web
+       propia: lo cobrado o, si no se registró, la seña del plan. Plan mensual: vacío
+       para cargar el importe, salvo el primer pago de un cliente del modelo del 10 al
+       14-sep-2026. */
     const modalidadFactura = modalidadDe(cliente);
     campoFactura("Total").value = facturaEsAdhoc ? ""
-        : modalidadFactura === "unico" ? (_num(cliente.abono) || planDe(cliente, propuestaDeCliente(cliente)).sena)
+        : _conSena(modalidadFactura) ? (_num(cliente.abono) || planDe(cliente, propuestaDeCliente(cliente)).sena)
         : (_num(cliente.primerPago) || "");
     campoFactura("Comprobante").textContent = "Consultando a ARCA…";
     campoFactura("EntornoAviso").hidden = true;
@@ -4063,7 +4247,7 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
 document.getElementById("facturaSinFacturarBtn")?.addEventListener("click", async () => {
     if (!clienteAFacturar) return;
     const cliente = clienteAFacturar;
-    if (!confirm(`Marcar la web de "${cliente.nombre}" como entregada sin emitir factura? Sigue en Clientes (con su suscripción o su pago único) y queda el registro en Completados.`)) return;
+    if (!confirm(`Marcar la web de "${cliente.nombre}" como entregada sin emitir factura? Sigue en Clientes (con su plan) y queda el registro en Completados.`)) return;
     try {
         await completarCliente(cliente.id, null);
         cerrarFacturaModal();
@@ -4193,14 +4377,14 @@ async function presentarPropuesta(propId) {
             // ── Plan y modalidad (15-sep-2026): la que eligió en el boceto o "" si todavía no eligió ──
             planLabel:         plan.label,
             modalidad:         plan.modalidad,
-            // Servicio mensual: sin pago inicial, arranca cuando se suscribe en Mercado Pago.
+            // Plan mensual: sin pago inicial, arranca cuando se suscribe en Mercado Pago.
             primerPago:        0,
             primerPagoAt:      null,
             montoMensual:      plan.mensual,
             estadoSuscripcion: "pendiente",
             suscripcionDesde:  null,
             preapprovalId:     "",
-            // Pago único: el precio se fija y la seña se registra al pasar a Cliente
+            // Plan anual o web propia: el precio se fija y la seña se registra al pasar a Cliente
             // (hasta entonces el precio cotizado sale del boceto guardado en propuestaSnapshot).
             valorTotal:      0,
             abono:           0,
@@ -4461,9 +4645,9 @@ async function presupuestoToCliente(id) {
             createdBy:      currentUser?.uid || null
         });
         alert(`✅ "${p.nombre || p.negocio}" quedó en Seguimiento con el plan ${plan.label || "sin definir"}` +
-            (senaCobrada ? `: pago único${precioUnico ? ` de ${fmtMoney(precioUnico)}` : ""}, con la seña de ${fmtMoney(senaCobrada)} registrada.`
+            (senaCobrada ? `: plan anual${precioUnico ? ` de ${fmtMoney(precioUnico)}` : ""}, con la seña de ${fmtMoney(senaCobrada)} registrada.`
                 : primerPago ? ` y el primer pago de ${fmtMoney(primerPago)} registrado. El plan mensual arranca el ${mantLongDate(_sumarDias(pagadoAt, DIAS_HASTA_EL_PLAN))}.`
-                : pago ? `: servicio mensual de ${fmtMoney(plan.mensual)}. La suscripción queda pendiente hasta que figure en Mantenimiento.`
+                : pago ? `: plan mensual de ${fmtMoney(plan.mensual)}. La suscripción queda pendiente hasta que figure en Mantenimiento.`
                 : "."));
     } catch (err) {
         console.error(err);
@@ -5968,7 +6152,7 @@ function _statsFechaSemana(c) {
    modalidad definida, lo que tenga cargado. */
 function _statsTotalProyecto(c) {
     const modalidad = modalidadDe(c);
-    if (modalidad === "unico") return Number(c.valorTotal) || 0;
+    if (_conSena(modalidad)) return Number(c.valorTotal) || 0;
     if (modalidad === "mensual") return _num(c.primerPago);
     return _num(c.primerPago) || Number(c.valorTotal) || 0;
 }
@@ -6090,9 +6274,9 @@ function renderStats() {
 
         <div class="sketch-stats">
             <div class="sketch-stats-col sketch-stats-col--hours">
-                <div class="sketch-stats-title">Total por semana — pagos únicos</div>
+                <div class="sketch-stats-title">Total por semana — planes anuales y pagos únicos</div>
                 <div class="stats-weeks">${_statsSemanasHTML()}</div>
-                <p class="stats-note">Los clientes de pago único suman su valor total (seña y saldo), igual que antes del 10-sep-2026. Los del servicio mensual suman $0, salvo el pago inicial que cobró el modelo del 10 al 14-sep-2026. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
+                <p class="stats-note">Los clientes del plan anual y los de pago único suman su valor total (seña y saldo); los cobros anuales de los años siguientes no entran acá. Los del plan mensual suman $0, salvo el pago inicial que cobró el modelo del 10 al 14-sep-2026. Las mensualidades no entran acá: la mensualidad activa está en Clientes.</p>
             </div>
         </div>`;
 }

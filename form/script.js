@@ -818,6 +818,19 @@ function pintarEstilo() {
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();
 
+// Lo mismo con el plan (19-sep): qué implica el anual y qué el mensual.
+const planSelect = document.getElementById('modalidad');
+const planAyuda = document.getElementById('modalidadDetalle');
+const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';
+
+function pintarPlan() {
+    if (!planSelect || !planAyuda) return;
+    const op = planSelect.selectedOptions[0];
+    planAyuda.textContent = op && op.value ? (op.dataset.desc || '') : PLAN_AYUDA_INICIAL;
+}
+planSelect?.addEventListener('change', pintarPlan);
+pintarPlan();
+
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
@@ -863,3 +876,4 @@ restoreDraft();
 // ejemplo del estilo.
 _pintarContadores.forEach(pintar => pintar());
 pintarEstilo();
+pintarPlan();

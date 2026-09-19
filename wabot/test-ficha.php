@@ -105,7 +105,7 @@ echo "— 4. Catálogo + WhatsApp: sitio profesional más la carga de productos 
 caso('se cotiza como sitio profesional con catálogo',
     ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo'])
     && mb_stripos($r[0] ?? '', 'un sitio profesional con el catálogo de tus productos') !== false
-    && strpos($r[0] ?? '', '$140.000') !== false && strpos($r[0] ?? '', '$15.000') !== false, $r[0] ?? '');
+    && strpos($r[0] ?? '', '$140.000') !== false && strpos($r[0] ?? '', '$20.000') !== false, $r[0] ?? '');
 caso('con la carga de productos aparte, a $500 cada uno',
     strpos($r[0] ?? '', 'La carga de los productos va aparte: $500 por producto.') !== false);
 $campos = wabot_lead_campos($c, $cfg);

@@ -3472,6 +3472,6 @@ body.embed { min-height: 0; }
 })();
 </script>
 <?php endif; ?>
-<script src="respuestas-rapidas.js?v=20260916b"></script>
+<script src="respuestas-rapidas.js?v=20260919a"></script>
 </body>
 </html>

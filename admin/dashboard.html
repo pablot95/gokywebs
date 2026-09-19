@@ -28,7 +28,7 @@
             <div class="panel-header">
                 <div>
                     <h1>Clientes</h1>
-                    <p class="muted">Clientes activos con su modalidad: pago único (seña y saldo al entregar) o servicio mensual. La suscripción figura activa cuando el email, el WhatsApp o el ID coinciden con uno de Mantenimiento (Mercado Pago).</p>
+                    <p class="muted">Clientes activos con su plan: anual (seña, saldo al entregar y un cobro por año, sin suscripción), mensual (suscripción de Mercado Pago) o pago único de la web propia. La suscripción figura activa cuando el email, el WhatsApp o el ID coinciden con uno de Mantenimiento (Mercado Pago).</p>
                 </div>
                 <div class="stats-box stats-box--periods">
                     <div class="stat-item">
@@ -39,9 +39,13 @@
                         <span class="stat-label">Por activar</span>
                         <span class="stat-value" id="porActivar">0</span>
                     </div>
-                    <div class="stat-item" title="Pago único: lo que falta cobrar de cada cliente (precio único menos lo cobrado). Los que están a cotizar no suman">
+                    <div class="stat-item" title="Plan anual y pago único: lo que falta cobrar de cada cliente (el precio menos lo cobrado). Los que están a cotizar no suman">
                         <span class="stat-label">Saldo pendiente</span>
                         <span class="stat-value" id="saldoPendiente">$0</span>
+                    </div>
+                    <div class="stat-item" title="Plan anual: los cobros de cada año que ya vencieron o vencen en los próximos 30 días, y cuánto suman">
+                        <span class="stat-label">Cobros anuales</span>
+                        <span class="stat-value" id="anualesACobrar">0</span>
                     </div>
                 </div>
                 <button id="openModalBtn" class="btn-primary">+ Nuevo cliente</button>
@@ -716,8 +720,9 @@
                 <label for="emailCliente">Email <span class="muted">(opcional)</span></label>
                 <input type="text" id="emailCliente" maxlength="160" inputmode="email" autocomplete="off" placeholder="El que usa en Mercado Pago">
 
-                <!-- Dos modalidades desde el 15-sep-2026: pago único (seña para arrancar y
-                     saldo al entregar) o servicio mensual por Mercado Pago. Las opciones del
+                <!-- Desde el 19-sep-2026: plan anual (seña para arrancar, saldo al entregar y
+                     un cobro por año, sin suscripción), plan mensual por Mercado Pago o pago
+                     único de la web propia (seña y saldo, sin renovación). Las opciones del
                      plan las carga dashboard.js desde PLANES y solo se ven los campos de la
                      modalidad elegida. El primer pago y su fecha quedan ocultos: dashboard.js
                      los muestra solo en los clientes que los tienen cargados (modelo del
@@ -729,14 +734,15 @@
                 <label for="modalidadCliente">Modalidad</label>
                 <select id="modalidadCliente">
                     <option value="">Sin definir todavía</option>
-                    <option value="unico">Pago único (seña y saldo al entregar)</option>
-                    <option value="mensual">Servicio mensual (Mercado Pago)</option>
+                    <option value="unico">Plan anual (seña, saldo al entregar y cobro cada año)</option>
+                    <option value="mensual">Plan mensual (suscripción de Mercado Pago)</option>
+                    <option value="propia">Pago único · web propia (seña y saldo, sin renovación)</option>
                 </select>
 
                 <div id="pagoUnicoCampos" hidden>
                     <div class="grid-2">
                         <div>
-                            <label for="valorTotal">Precio único</label>
+                            <label for="valorTotal" id="valorTotalLabel">Precio por año</label>
                             <input type="number" id="valorTotal" min="0" step="1" inputmode="numeric">
                         </div>
                         <div>
@@ -774,14 +780,20 @@
                     <input type="date" id="hablarleElDia">
                 </div>
 
-                <!-- Pago único: la fecha de la seña (solo clientes) -->
+                <!-- Plan anual y web propia: la fecha de la seña; el plan anual, además, el
+                     próximo cobro anual (solo clientes). -->
                 <div id="pagoUnicoSection" style="display:none">
                     <div class="grid-2">
                         <div>
                             <label for="senaAt">Fecha de la seña</label>
                             <input type="date" id="senaAt">
                         </div>
+                        <div id="renovacionField" hidden>
+                            <label for="renovacionAt" id="renovacionLabel">Próximo cobro anual</label>
+                            <input type="date" id="renovacionAt">
+                        </div>
                     </div>
+                    <p class="muted" id="renovacionNota" style="font-size:12px;margin-top:8px" hidden></p>
                 </div>
 
                 <!-- Suscripción al servicio mensual (solo clientes) -->
@@ -977,6 +989,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260918-ver-chat-seg"></script>
+    <script type="module" src="dashboard.js?v=20260919-plan-anual"></script>
 </body>
 </html>

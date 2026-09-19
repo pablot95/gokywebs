@@ -148,7 +148,15 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     // La cotización cerrada es el último mensaje automático. Desde acá sigue
     // una persona; también se respeta en llamadas directas fuera del webhook.
-    if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final') return [];
+    if (!empty($conv['bot_off']) && in_array(($conv['cierre'] ?? ''), ['cotizacion_final', 'propiedad'], true)) return [];
+    // De quién es la web, el código, qué pasa si cancela o si se la lleva a
+    // otro lado (Pablo, 19-sep): el bot no lo contesta ni explica condiciones.
+    // Se calla y se apaga en este chat, en cualquier fase: sigue Pablo.
+    $propiedad = wabot_pregunta_propiedad($texto);
+    if ($propiedad !== null) {
+        wabot_propiedad_detener($conv, $propiedad);
+        return [];
+    }
     // La respuesta a la oferta del primer diseño: el sí se lleva el
     // formulario y cualquier otra cosa queda para Pablo (18-sep). Va antes que
     // todo lo demás: ni una pregunta de pago ni un pedido de llamada tienen

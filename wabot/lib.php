@@ -490,7 +490,14 @@ function wabot_tres_pasos_pregunta() {
  */
 function wabot_servicio_texto_plantilla($tipo = '', $conCursos = false, $cfg = null) {
     $texto = is_array($cfg) ? trim((string)($cfg['dos_formas'] ?? '')) : '';
-    return $texto !== '' ? $texto : (string)(wabot_textos_default()['dos_formas'] ?? '');
+    if ($texto === '') $texto = (string)(wabot_textos_default()['dos_formas'] ?? '');
+    // El sitio profesional no lleva panel de administración (Pablo, 19-sep).
+    return $tipo === 'landing' ? wabot_planes_sin_panel($texto) : $texto;
+}
+
+/** El bloque de los planes sin la línea del panel ("✓ Panel para…"), para el sitio profesional. */
+function wabot_planes_sin_panel($texto) {
+    return (string)preg_replace('/^✓[^\n]*\bpanel\b[^\n]*(\n|$)/imu', '', (string)$texto);
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */
@@ -3916,7 +3923,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_comercio, rubro_hibrido, rubro_sistema, hibrido_trabajos, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, cuenta_mercado_pago, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
 
     $ultimoBot = '';
     foreach (array_reverse($conv['transcript']) as $t) {
@@ -3946,7 +3953,7 @@ GUIA:
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
-- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), a nombre de quién quedan el dominio y el hosting (titularidad), casillas de correo corporativas (emails), si entregan el código o un backup (entrega_codigo), si quiere la web a su nombre o en su propio hosting, pagar solo la creación y mantenerla él, o pregunta por el pago único (web_propia), licencias de plugins o SDK (licencias), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
+- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), de quién es o a nombre de quién queda la web, el dominio o el código, o si se la puede llevar a otro hosting o a otro programador (titularidad), casillas de correo corporativas (emails), si entregan el código, los archivos o un backup (entrega_codigo), si quiere la web en su propio hosting, pagar solo la creación y mantenerla él, o pregunta por el pago único (web_propia), licencias de plugins o SDK (licencias), cancelar, dar de baja o dejar de pagar el plan, o la permanencia (baja_del_plan), si hace falta cuenta de Mercado Pago para pagar (cuenta_mercado_pago), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
   · **pago**: cómo se paga, con qué medios, si hay cuotas, cuánto es la seña. Es la pregunta por la PLATA. Si pregunta las dos cosas ("cómo trabajan y cómo se paga"), poné las dos claves.
 - objecion_caro: dice que es caro, regatea o pide descuento.
@@ -4528,7 +4535,7 @@ function wabot_lead_cotizado($conv, $cfg) {
             if (($v['modelo'] ?? '') !== 'doble') {
                 // Y el pago único, si pidió la web propia (19-sep).
                 $unico = !empty($conv['quiere_web_propia']) ? (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '') : '';
-                return 'Plan anual ' . $v['precio'] . ' o plan mensual ' . $v['mensualidad'] . $carga
+                return 'Plan anual ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o plan mensual ' . $v['mensualidad'] . $carga
                     . ($unico !== '' ? ' · pidió la web propia: pago único ' . $unico : '');
             }
             return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes' . $carga;
@@ -4536,8 +4543,9 @@ function wabot_lead_cotizado($conv, $cfg) {
     }
     $t = $cfg['tipos'][$tipo] ?? [];
     $precio = (string)($t['precio'] ?? '');
+    $sena   = (string)($t['sena'] ?? '');
     $mens   = (string)($t['mensualidad'] ?? '');
-    if ($precio !== '' && $mens !== '') return 'Plan anual ' . $precio . ' o plan mensual ' . $mens;
+    if ($precio !== '' && $mens !== '') return 'Plan anual ' . $precio . ($sena !== '' ? ' (seña ' . $sena . ')' : '') . ' o plan mensual ' . $mens;
     return $precio;
 }
 
