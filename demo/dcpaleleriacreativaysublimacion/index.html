@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gluten:wght@300..800&amp;family=Onest:wght@400;500;700&amp;display=swap" rel="stylesheet">
 <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=20260919">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}</style></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
@@ -233,94 +233,98 @@
           <a class="btn btn--cyan" href="#tienda" data-filtro="sublimados">Ver tazas y remeras</a>
         </div>
       </div>
-      <div class="mundos-linea" aria-hidden="true"></div>
-      <p class="mundos-dato" aria-hidden="true">
-        <svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>
-        <b><span class="mundos-temp">24</span> °C</b>
-        <span class="mundos-lbl">a mano</span>
-      </p>
     </div>
   </section>
 
-  <section class="vidriera" id="vidriera" aria-labelledby="vid-title">
-    <div class="container sec-head sec-head--row">
-      <div>
-        <p class="eyebrow"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>Vidriera</p>
-        <h2 class="h2" id="vid-title">Así queda en la mesa y en la mano</h2>
+  <section class="vitrina" id="vidriera" aria-labelledby="vid-title">
+    <div class="vitrina-scene">
+      <div class="container vitrina-head">
+        <div>
+          <p class="eyebrow"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/></svg>Vidriera</p>
+          <h2 class="h2" id="vid-title">Así queda en la mesa y en la mano</h2>
+        </div>
+        <p class="vitrina-num" aria-hidden="true"><b class="vitrina-i">01</b><span>/ 07</span></p>
       </div>
-      <div class="rail-arrows">
-        <button type="button" class="rail-arrow" data-rail-prev aria-label="Ver fotos anteriores"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
-        <button type="button" class="rail-arrow" data-rail-next aria-label="Ver fotos siguientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      <div class="vitrina-vp">
+        <ul class="vitrina-track">
+          <li class="vit-item vit-item--alta" data-producto="centro-mesa">
+            <button type="button" class="vit-card" data-open="centro-mesa">
+              <span class="vit-media"><img src="images/v-mesa.webp" width="1200" height="1600" alt="Mesa de cumple con árboles de cartulina, flores de cartón y banderines"></span>
+              <span class="vit-cap"><b>Mesa del bosque</b><span>Centros de mesa de cartulina</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--ancha" data-producto="cajitas-sorpresa">
+            <button type="button" class="vit-card" data-open="cajitas-sorpresa">
+              <span class="vit-media"><img src="images/v-cajitas.webp" width="1600" height="1200" alt="Cajitas sorpresa con animales de granja junto a globos rosas"></span>
+              <span class="vit-cap"><b>Cajitas de la granja</b><span>Sorpresitas con manija</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--alta" data-producto="pinata-unicornio">
+            <button type="button" class="vit-card" data-open="pinata-unicornio">
+              <span class="vit-media"><img src="images/v-pinata.webp" width="1200" height="1600" alt="Piñata unicornio de papel crepé blanco colgada de un hilo"></span>
+              <span class="vit-cap"><b>Piñata unicornio</b><span>Papel crepé y flecos</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--cuadrada" data-producto="banderin-nombre">
+            <button type="button" class="vit-card" data-open="banderin-nombre">
+              <span class="vit-media"><img src="images/p-banderin.webp" width="1200" height="1200" alt="Guirnalda de banderines de cartulina mostaza, verde y violeta con su sombra"></span>
+              <span class="vit-cap"><b>Banderines al sol</b><span>Cartulina y cordón</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--cuadrada" data-producto="taza-nombre">
+            <button type="button" class="vit-card" data-open="taza-nombre">
+              <span class="vit-media vit-media--mock">
+                <img src="images/p-taza.webp" width="1400" height="1400" alt="Taza blanca sublimada con el nombre Sofi">
+                <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+                  <path id="arcTazaVid" d="M 318 712 Q 588 752 858 712" fill="none"/>
+                  <text class="mock-txt" style="font-size:190px" fill="#16A34A"><textPath href="#arcTazaVid" startOffset="50%" text-anchor="middle">Sofi</textPath></text>
+                </svg>
+              </span>
+              <span class="vit-cap"><b>Taza para Sofi</b><span>Sublimada con su nombre</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--cuadrada" data-producto="remera-sublimada">
+            <button type="button" class="vit-card" data-open="remera-sublimada">
+              <span class="vit-media vit-media--mock">
+                <img src="images/p-remera.webp" width="1400" height="1400" alt="Remera blanca sublimada con el nombre Mateo y el número 7">
+                <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+                  <text class="mock-txt" x="690" y="478" style="font-size:104px" fill="#2563EB" text-anchor="middle">MATEO</text>
+                  <text class="mock-txt" x="690" y="712" style="font-size:230px" fill="#2563EB" text-anchor="middle">7</text>
+                </svg>
+              </span>
+              <span class="vit-cap"><b>Remera de cumple</b><span>Nombre y edad al frente</span></span>
+            </button>
+          </li>
+          <li class="vit-item vit-item--cuadrada" data-producto="tarjetas">
+            <button type="button" class="vit-card" data-open="tarjetas">
+              <span class="vit-media vit-media--mock">
+                <img src="images/p-tarjetas.webp" width="1400" height="1400" alt="Tarjetas de papel kraft impresas con el nombre de un emprendimiento">
+                <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+                  <circle cx="432" cy="272" r="26" fill="#2563EB"/>
+                  <text class="mock-txt" x="408" y="430" style="font-size:86px" fill="#0E1B3D">Lola Dulces</text>
+                  <text class="mock-txt mock-txt--body" x="410" y="494" style="font-size:34px" fill="#0E1B3D">Tortas y mesas dulces</text>
+                  <rect x="368" y="711" width="679" height="391" rx="4" fill="#2563EB" opacity=".94"/>
+                  <text class="mock-txt mock-txt--mono" x="707" y="960" style="font-size:150px" fill="#FFFFFF" text-anchor="middle">LD</text>
+                </svg>
+              </span>
+              <span class="vit-cap"><b>Tarjetas de Lola</b><span>Kraft, 9 × 5 cm</span></span>
+            </button>
+          </li>
+        </ul>
+      </div>
+      <div class="container vitrina-panel">
+        <div class="vit-info" aria-live="polite">
+          <p class="vit-tipo">Centro de mesa</p>
+          <p class="vit-nombre">Centro de mesa temático</p>
+          <p class="vit-precio">$6.800 <small>c/u</small></p>
+        </div>
+        <div class="vit-acciones">
+          <button type="button" class="btn btn--cta" id="vitAgregar" data-producto="centro-mesa">Sumar al carrito</button>
+          <button type="button" class="btn btn--ghost" id="vitVer" aria-label="Ver el detalle del producto"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg><span class="vit-ver-txt">Ver detalle</span></button>
+        </div>
+        <span class="vit-barra" aria-hidden="true"><i></i></span>
       </div>
     </div>
-    <div class="rail-vp" data-rail>
-      <ul class="rail-track">
-        <li class="vid-item vid-item--alta">
-          <button type="button" class="vid-card" data-open="centro-mesa">
-            <span class="vid-media"><img src="images/v-mesa.webp" width="1200" height="1600" alt="Mesa de cumple con árboles de cartulina, flores de cartón y banderines"></span>
-            <span class="vid-cap"><b>Mesa del bosque</b><span>Centros de mesa de cartulina</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--ancha">
-          <button type="button" class="vid-card" data-open="cajitas-sorpresa">
-            <span class="vid-media"><img src="images/v-cajitas.webp" width="1600" height="1200" alt="Cajitas sorpresa con animales de granja junto a globos rosas"></span>
-            <span class="vid-cap"><b>Cajitas de la granja</b><span>Sorpresitas con manija</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--alta">
-          <button type="button" class="vid-card" data-open="pinata-unicornio">
-            <span class="vid-media"><img src="images/v-pinata.webp" width="1200" height="1600" alt="Piñata unicornio de papel crepé blanco colgada de un hilo"></span>
-            <span class="vid-cap"><b>Piñata unicornio</b><span>Papel crepé y flecos</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--cuadrada">
-          <button type="button" class="vid-card" data-open="taza-nombre">
-            <span class="vid-media vid-media--mock">
-              <img src="images/p-taza.webp" width="1400" height="1400" alt="Taza blanca sublimada con el nombre Sofi">
-              <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-                <path id="arcTazaVid" d="M 318 712 Q 588 752 858 712" fill="none"/>
-                <text class="mock-txt" style="font-size:190px" fill="#16A34A"><textPath href="#arcTazaVid" startOffset="50%" text-anchor="middle">Sofi</textPath></text>
-              </svg>
-            </span>
-            <span class="vid-cap"><b>Taza para Sofi</b><span>Sublimada con su nombre</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--cuadrada">
-          <button type="button" class="vid-card" data-open="banderin-nombre">
-            <span class="vid-media"><img src="images/ig-sombras.webp" width="800" height="800" alt="Sombra de una guirnalda de banderines sobre una pared blanca"></span>
-            <span class="vid-cap"><b>Banderines al sol</b><span>Cartulina y cordón</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--cuadrada">
-          <button type="button" class="vid-card" data-open="remera-sublimada">
-            <span class="vid-media vid-media--mock">
-              <img src="images/p-remera.webp" width="1400" height="1400" alt="Remera blanca sublimada con el nombre Mateo y el número 7">
-              <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-                <text class="mock-txt" x="690" y="478" style="font-size:104px" fill="#2563EB" text-anchor="middle">MATEO</text>
-                <text class="mock-txt" x="690" y="712" style="font-size:230px" fill="#2563EB" text-anchor="middle">7</text>
-              </svg>
-            </span>
-            <span class="vid-cap"><b>Remera de cumple</b><span>Nombre y edad al frente</span></span>
-          </button>
-        </li>
-        <li class="vid-item vid-item--cuadrada">
-          <button type="button" class="vid-card" data-open="tarjetas">
-            <span class="vid-media vid-media--mock">
-              <img src="images/p-tarjetas.webp" width="1400" height="1400" alt="Tarjetas de papel kraft impresas con el nombre de un emprendimiento">
-              <svg class="mock-svg" viewBox="0 0 1400 1400" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
-                <circle cx="432" cy="272" r="26" fill="#2563EB"/>
-                <text class="mock-txt" x="408" y="430" style="font-size:86px" fill="#0E1B3D">Lola Dulces</text>
-                <text class="mock-txt mock-txt--body" x="410" y="494" style="font-size:34px" fill="#0E1B3D">Tortas y mesas dulces</text>
-                <rect x="368" y="711" width="679" height="391" rx="4" fill="#2563EB" opacity=".94"/>
-                <text class="mock-txt mock-txt--mono" x="707" y="960" style="font-size:150px" fill="#FFFFFF" text-anchor="middle">LD</text>
-              </svg>
-            </span>
-            <span class="vid-cap"><b>Tarjetas de Lola</b><span>Kraft, 9 × 5 cm</span></span>
-          </button>
-        </li>
-      </ul>
-    </div>
-    <p class="container rail-hint">Arrastrá para ver más. Tocá una foto para ver el producto.</p>
   </section>
 
   <section class="nombre" id="con-tu-nombre" aria-labelledby="nombre-title">
@@ -581,7 +585,7 @@
 <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
-<script src="script.js?v=1" defer></script>
+<script src="script.js?v=20260919" defer></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>

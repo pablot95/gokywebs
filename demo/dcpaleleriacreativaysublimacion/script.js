@@ -13,8 +13,6 @@ const normalizar = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const clamp01 = v => clamp(v, 0, 1);
 const lerp = (a, b, t) => a + (b - a) * t;
-const tramo = (p, a, b) => clamp01((p - a) / (b - a));
-const suave = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const wspLink = lineas => `https://wa.me/${WSP}?text=${encodeURIComponent(lineas.filter(Boolean).join('\n'))}`;
 const contarLetras = t => (String(t || '').match(/[\p{L}\p{N}]/gu) || []).length;
 const metros = n => (n * 0.2).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -862,43 +860,61 @@ function initNombre() {
   if (document.fonts?.ready) document.fonts.ready.then(() => { letrasPrevias = null; renderNombre(false); });
 }
 
-function initMundos() {
-  const sec = $('.mundos');
-  if (!sec || reduceMotion) return;
+function initVitrina() {
+  const sec = $('.vitrina');
+  if (!sec) return;
+  const items = $$('.vit-item', sec);
+  const track = $('.vitrina-track', sec);
+  const vp = $('.vitrina-vp', sec);
+  const numero = $('.vitrina-i', sec);
+  const tipo = $('.vit-tipo', sec);
+  const nombre = $('.vit-nombre', sec);
+  const precio = $('.vit-precio', sec);
+  const barra = $('.vit-barra i', sec);
+  const btnAdd = $('#vitAgregar');
+  const btnVer = $('#vitVer');
+  if (!items.length || !btnAdd) return;
+  let activo = -1;
+  const pintarDatos = i => {
+    if (i === activo) return;
+    activo = i;
+    const p = getProducto(items[i].dataset.producto);
+    if (!p) return;
+    items.forEach((it, k) => it.classList.toggle('is-activa', k === i));
+    numero.textContent = String(i + 1).padStart(2, '0');
+    tipo.textContent = p.tipo;
+    nombre.textContent = p.nombre;
+    precio.innerHTML = `${p.variantes ? '<small>desde </small>' : ''}${formatearPrecio(precioDesde(p))} <small>${esc(unidadDe(p))}</small>`;
+    btnAdd.textContent = p.porLetra ? 'Escribir el nombre' : 'Sumar al carrito';
+    btnAdd.dataset.producto = p.id;
+  };
+  btnAdd.addEventListener('click', () => {
+    const p = getProducto(btnAdd.dataset.producto);
+    if (!p) return;
+    if (p.porLetra) abrirPersonalizador(p.pieza);
+    else agregar(p, p.qtyDefault || 1);
+  });
+  btnVer?.addEventListener('click', () => openQuickView(btnAdd.dataset.producto, btnVer));
+  pintarDatos(0);
+  if (reduceMotion) return;
   sec.classList.add('js-on');
-  const scene = $('.mundos-scene', sec);
-  const copyA = $('.mundo--a .mundo-copy', sec);
-  const copyB = $('.mundo--b .mundo-copy', sec);
-  const temp = $('.mundos-temp', sec);
-  const lbl = $('.mundos-lbl', sec);
+  let centros = [];
+  const medir = () => { centros = items.map(it => it.offsetLeft + it.offsetWidth / 2); };
   const offset = () => parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--gw-modelos-h')) || 0;
-  let d = 3;
-  const medir = () => {
-    const r = scene.getBoundingClientRect();
-    d = Math.tan((4.5 * Math.PI) / 180) * (r.height / Math.max(1, r.width)) * 50;
-    scene.style.setProperty('--d', d.toFixed(2));
-  };
-  const pintar = p => {
-    const t = suave(tramo(p, 0.06, 0.72));
-    scene.style.setProperty('--w', lerp(100 + d + 3, -d - 3, t).toFixed(2));
-    const a = 1 - tramo(p, 0.1, 0.3);
-    copyA.style.opacity = a.toFixed(3);
-    copyA.style.transform = `translateX(${(-30 * (1 - a)).toFixed(1)}px)`;
-    copyA.style.pointerEvents = a < 0.15 ? 'none' : '';
-    copyA.style.visibility = a <= 0.01 ? 'hidden' : '';
-    const b = tramo(p, 0.36, 0.6);
-    copyB.style.opacity = b.toFixed(3);
-    copyB.style.transform = `translateX(${(30 * (1 - b)).toFixed(1)}px)`;
-    copyB.style.pointerEvents = b < 0.5 ? 'none' : '';
-    copyB.style.visibility = b <= 0.01 ? 'hidden' : '';
-    temp.textContent = Math.round(lerp(24, 200, t));
-    lbl.textContent = t < 0.5 ? 'a mano' : 'en la prensa';
-  };
   const progreso = () => {
     const r = sec.getBoundingClientRect();
     const off = offset();
     const total = r.height - (window.innerHeight - off);
     return total > 0 ? clamp01((off - r.top) / total) : 0;
+  };
+  const pintar = p => {
+    if (!centros.length) medir();
+    const pos = p * (items.length - 1);
+    const i0 = Math.min(items.length - 2, Math.floor(pos));
+    const centro = lerp(centros[i0], centros[i0 + 1], pos - i0);
+    track.style.transform = `translate3d(${(vp.clientWidth / 2 - centro).toFixed(1)}px, 0, 0)`;
+    barra.style.transform = `scaleX(${p.toFixed(3)})`;
+    pintarDatos(Math.round(pos));
   };
   let pedido = false;
   const tick = () => { pedido = false; pintar(progreso()); };
@@ -908,56 +924,6 @@ function initMundos() {
   window.addEventListener('load', () => { medir(); pintar(progreso()); });
   medir();
   pintar(progreso());
-}
-
-function initRail() {
-  $$('[data-rail]').forEach(vp => {
-    const sec = vp.closest('section');
-    const track = $('.rail-track', vp);
-    const prev = $('[data-rail-prev]', sec);
-    const next = $('[data-rail-next]', sec);
-    let down = false;
-    let moved = false;
-    let startX = 0;
-    let startScroll = 0;
-    let pointerId = null;
-    vp.addEventListener('pointerdown', e => {
-      if (e.pointerType !== 'mouse' || e.button !== 0) return;
-      down = true; moved = false; startX = e.clientX; startScroll = vp.scrollLeft; pointerId = e.pointerId;
-    });
-    vp.addEventListener('pointermove', e => {
-      if (!down) return;
-      const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) > 6) {
-        moved = true;
-        vp.classList.add('dragging');
-        try { vp.setPointerCapture?.(pointerId); } catch { /* sin capture el drag igual funciona */ }
-      }
-      if (moved) { vp.scrollLeft = startScroll - dx; e.preventDefault(); }
-    });
-    const end = () => {
-      if (!down) return;
-      down = false;
-      try { vp.releasePointerCapture?.(pointerId); } catch { /* ya liberado */ }
-      if (moved) requestAnimationFrame(() => vp.classList.remove('dragging'));
-    };
-    vp.addEventListener('pointerup', end);
-    vp.addEventListener('pointercancel', end);
-    vp.addEventListener('lostpointercapture', end);
-    vp.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
-    const actualizar = () => {
-      const inicio = parseFloat(window.getComputedStyle(track).paddingInlineStart) || 0;
-      if (prev) prev.disabled = vp.scrollLeft <= inicio + 2;
-      if (next) next.disabled = vp.scrollLeft >= (vp.scrollWidth - vp.clientWidth) - 2;
-    };
-    const mover = dir => vp.scrollBy({ left: dir * vp.clientWidth * 0.8, behavior: reduceMotion ? 'auto' : 'smooth' });
-    prev?.addEventListener('click', () => mover(-1));
-    next?.addEventListener('click', () => mover(1));
-    vp.addEventListener('scroll', actualizar, { passive: true });
-    window.addEventListener('resize', actualizar, { passive: true });
-    window.addEventListener('load', actualizar);
-    actualizar();
-  });
 }
 
 function initMapa() {
@@ -1110,8 +1076,7 @@ initQuickView();
 initCarrito();
 initFloats();
 initPedidoBar();
-initMundos();
-initRail();
+initVitrina();
 initMapa();
 initWspLinks();
 initNav();
