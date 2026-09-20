@@ -2610,9 +2610,8 @@ function wabot_texto_pregunta_cambios_plan($texto, $conv = null) {
 function wabot_texto_cambios_plan($conv, $cfg) {
     $texto = trim((string)($cfg['cambios_plan'] ?? ''));
     if ($texto === '') return null;
-    // Que los textos los cambia él desde su panel; en el sitio profesional, que no
-    // lo lleva, que con el panel el plan mensual pasa a $25.000 (19-sep).
-    $panel = trim((string)($cfg[(string)($conv['tipo'] ?? '') === 'landing' ? 'cambios_plan_sin_panel' : 'cambios_plan_panel'] ?? ''));
+    // El panel está incluido en los cuatro tipos de web (20-sep).
+    $panel = trim((string)($cfg['cambios_plan_panel'] ?? ''));
     if ($panel !== '') $texto .= ' ' . $panel;
     return trim(wabot_precio_placeholders($texto, $conv, $cfg));
 }
@@ -5312,7 +5311,7 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
      * de `info.*`, que es justo lo que Pablo edita desde el panel: así también
      * queda cubierta la redacción que escriba mañana. */
     // {cambios_mes} y {mantenimiento_mes} (16-sep) con los montos de esta charla.
-    if (strpos($texto, '{cambios_mes}') !== false || strpos($texto, '{mantenimiento_mes}') !== false || strpos($texto, '{mensualidad_panel}') !== false) {
+    if (strpos($texto, '{cambios_mes}') !== false || strpos($texto, '{mantenimiento_mes}') !== false) {
         $texto = wabot_precio_placeholders($texto, $conv, $cfg);
     }
     return $texto;
@@ -5659,13 +5658,13 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
         ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
-         '{mantenimiento_mes}', '{cambios_mes}', '{carga_producto}', '{mensualidad_panel}'],
+         '{mantenimiento_mes}', '{cambios_mes}', '{carga_producto}'],
         [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades,
          wabot_monto_por_mes_texto($v, $cfg, 'mantenimiento'), wabot_monto_por_mes_texto($v, $cfg, 'mensualidad_cambios'),
-         (string)($cfg['carga_producto'] ?? '$500'), (string)($cfg['tipos']['landing']['mensualidad_panel'] ?? '$25.000')],
+         (string)($cfg['carga_producto'] ?? '$500')],
         $t
     );
 }
@@ -6271,7 +6270,7 @@ function wabot_propuesta_texto($tipo, $conv) {
      * como una ficha técnica: "una tienda donde muestres tus productos y
      * cobres con Mercado Pago", no "catálogo, carrito, integración…". */
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
-        return 'una tienda online para vender tus productos y una plataforma para tus cursos, con acceso para cada alumno y cobro online. Todo lo gestionás vos desde tu panel';
+        return 'una tienda online para vender productos y cursos, dar acceso a alumnos y cobrar online. Todo lo administrás desde tu panel';
     }
     /* La necesidad interna de la ficha afina la frase sin cambiar el precio
      * (18-sep): la cabaña con restaurante no es "un sitio para mostrar tus
@@ -6290,13 +6289,13 @@ function wabot_propuesta_texto($tipo, $conv) {
         return 'un sitio profesional donde muestres tu carta y te hagan los pedidos o las reservas por WhatsApp';
     }
     if ($tipo === 'ecommerce' && $necesidad === 'productos_digitales') {
-        return 'una tienda online donde vendas tus productos digitales y cobres con Mercado Pago. La administrás vos desde tu panel: cargás los productos, cambiás precios y ves las ventas';
+        return 'una tienda online para vender productos digitales y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y ventas';
     }
     $fijas = [
-        'landing'      => 'un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp',
-        'ecommerce'    => 'una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago. La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos',
-        'inmobiliaria' => 'una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio. Las cargás, editás y das de baja vos desde tu panel',
-        'elearning'    => 'una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online. Los cursos y los alumnos los gestionás vos desde tu panel',
+        'landing'      => 'un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp',
+        'ecommerce'    => 'una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos',
+        'inmobiliaria' => 'una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja',
+        'elearning'    => 'una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos',
     ];
     return $fijas[$tipo] ?? 'una web a tu medida';
 }
@@ -6310,15 +6309,11 @@ function wabot_propuesta_texto($tipo, $conv) {
 function wabot_info_variante_por_tipo($clave, $tipo) {
     if ($tipo === '') return null;
     if ($clave === 'que_incluye') {
-        // El sitio profesional, sin panel de administración (Pablo, 19-sep).
-        if ($tipo === 'landing') return 'que_incluye_sitio';
         return $tipo === 'ecommerce' ? null : 'que_incluye_sin_productos';
     }
     if ($clave === 'estadisticas') {
         return in_array($tipo, ['ecommerce', 'elearning'], true) ? 'estadisticas_tienda' : 'estadisticas_sitio';
     }
-    // El sitio profesional no trae panel: con panel, el plan mensual pasa a $25.000 (Pablo, 19-sep).
-    if ($tipo === 'landing' && in_array($clave, ['carga', 'manual'], true)) return $clave . '_sitio';
     return null;
 }
 

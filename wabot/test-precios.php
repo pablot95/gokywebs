@@ -68,16 +68,17 @@ $r = wabot_pitch('landing', $c, $cfg);
 $r0 = wabot_personalizar($r[0] ?? '', $c);
 caso('son dos mensajes: la propuesta y, aparte, la oferta del primer diseño', count($r) === 2);
 caso('arranca "Para lo que me contás, te serviría", sin "Lo mejor para" ni link (18-sep)',
-    str_starts_with($r0, 'Para lo que me contás, te serviría un sitio profesional donde')
+    str_starts_with($r0, 'Para lo que me contás, te serviría un sitio profesional para mostrar')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('los dos planes con sus montos y, abajo, todo lo que incluyen (19-sep)',
     strpos($r0, "Podés elegir entre dos planes:\n\n• Plan anual: $140.000 por año\n• Plan mensual: $20.000 por mes\n\nAmbos incluyen:\n✓ Desarrollo completo de la web") !== false
-    && strpos($r0, '✓ Hosting y dominio') !== false && strpos($r0, '✓ Mantenimiento y actualizaciones') !== false
+    && strpos($r0, '✓ Hosting y dominio') !== false && strpos($r0, '✓ Mantenimiento, actualizaciones y arreglo de bugs') !== false
     && strpos($r0, '✓ Soporte técnico') !== false && mb_stripos($r0, 'pago único') === false && mb_stripos($r0, 'seña') === false, $r0);
-caso('el sitio profesional no lleva el panel de administración en la lista (19-sep)', mb_stripos($r0, 'panel') === false, $r0);
+caso('el panel figura incluido en todos los tipos, también en el sitio profesional (20-sep)',
+    strpos($r0, '✓ Panel para autogestionar contenido') !== false, $r0);
 $cTiendaPanel = conv_nueva('5491177770006TEST');
 $rTiendaPanel = wabot_personalizar(implode("\n", wabot_pitch('ecommerce', $cTiendaPanel, $cfg)), []);
-caso('la tienda sí', strpos($rTiendaPanel, '✓ Panel para que actualices tu contenido cuando quieras') !== false, $rTiendaPanel);
+caso('la tienda usa el mismo texto breve del panel', strpos($rTiendaPanel, '✓ Panel para autogestionar contenido') !== false, $rTiendaPanel);
 caso('sin "son alternativas, no se abonan las dos"', mb_stripos($r0, 'alternativas') === false && mb_stripos($r0, 'no se abonan') === false);
 caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta',
     ($r[1] ?? '') === wabot_tres_pasos_texto($c, $cfg) && mb_stripos($r[1], 'sin cargo un primer diseño') !== false
@@ -100,8 +101,8 @@ caso('pasa entero por el punto único de salida: propuesta y oferta',
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => 'una tienda online donde muestres tus productos', 'inmobiliaria' => 'una web inmobiliaria donde publiques tus propiedades',
-          'elearning' => 'una plataforma donde vendas tus cursos'] as $tipo => $arranque) {
+foreach (['ecommerce' => 'una tienda online para mostrar tus productos', 'inmobiliaria' => 'una web inmobiliaria para publicar propiedades',
+          'elearning' => 'una plataforma para vender cursos'] as $tipo => $arranque) {
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
@@ -112,7 +113,7 @@ $c = conv_nueva('5491177770002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
 $r = wabot_pitch('landing', $c, $cfg);
 caso('con el rubro sabido, la propuesta lo nombra: "Para tu centro de estética, te serviría…"',
-    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te serviría un sitio profesional donde') === 0,
+    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te serviría un sitio profesional para mostrar') === 0,
     wabot_personalizar($r[0], $c));
 caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos(implode(' ', $r), 'primer pago') === false);
 
@@ -615,11 +616,11 @@ clasifica(['productos_y_cursos']);
 $rTM = wabot_engine($msgTaller, $cTM, $cfg);
 caso('el motor cotiza tienda + cursos en vez de derivar',
     ($cTM['fase'] ?? '') !== 'derivado' && empty($cTM['bot_off']) && ($cTM['tipo'] ?? '') === 'ecommerce' && !empty($cTM['combo_cursos'])
-    && strpos(implode("\n", (array)$rTM), 'una plataforma para tus cursos') !== false
+    && strpos(implode("\n", (array)$rTM), 'vender productos y cursos') !== false
     && strpos(implode("\n", (array)$rTM), '$230.000') !== false
     && strpos(implode("\n", (array)$rTM), '$30.000') !== false, json_encode($rTM, JSON_UNESCAPED_UNICODE));
 caso('con la frase del combinado y sin el aviso de "el precio no sale de la lista"',
-    mb_stripos(implode("\n", (array)$rTM), 'plataforma para tus cursos') !== false
+    mb_stripos(implode("\n", (array)$rTM), 'vender productos y cursos') !== false
     && mb_stripos(implode("\n", (array)$rTM), 'no sale de la lista') === false);
 caso('el resumen del precio no manda link de presupuesto', strpos(wabot_precio_resumen($cTM, $cfg), 'presupuestos/') === false);
 caso('y el boceto dice que es tienda + cursos',
@@ -628,14 +629,14 @@ $cTS = conv_nueva('5491177770098TEST');
 clasifica(['rubro_ecommerce']);
 $rTS = wabot_engine('Tengo una tienda de ropa y quiero vender online', $cTS, $cfg);
 caso('una tienda sin cursos se cotiza como tienda sola', empty($cTS['combo_cursos'])
-    && strpos($rTS[0], '• Plan anual: $230.000 por año') !== false && strpos($rTS[0], 'plataforma para tus cursos') === false);
+    && strpos($rTS[0], '• Plan anual: $230.000 por año') !== false && strpos($rTS[0], 'vender productos y cursos') === false);
 $cCombo = conv_nueva('998FPTEST'); $cCombo['fase'] = 'nuevo';
 $msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos';
 wabot_conv_transcript($cCombo, 'cliente', $msjCombo); $cCombo['ultimo_cliente_ts'] = time();
 clasifica(['productos_y_cursos']);
 $rCombo = wabot_salida_preparar(wabot_responder($msjCombo, $cCombo, $cfg), $cCombo, $cfg);
 caso('por el borde común: el taller de artesanías recibe la cotización de tienda + cursos, no el texto de carga',
-    strpos(implode("\n", $rCombo), 'una plataforma para tus cursos') !== false
+    strpos(implode("\n", $rCombo), 'vender productos y cursos') !== false
     && strpos(implode("\n", $rCombo), (string)wabot_texto_info('carga', $cfg)) === false, json_encode($rCombo, JSON_UNESCAPED_UNICODE));
 caso('combinar tienda y cursos conserva el alcance especial',
     wabot_texto_pregunta_upgrade('Quiero agregar una tienda y cursos grabados, cuánto sale todo junto?', 'landing') === null);
@@ -762,8 +763,8 @@ caso('el .com: .com.ar incluido y $40.000 por año de renovación',
     mb_stripos($cfg['info']['dominio_com'], '.com.ar') !== false && strpos($cfg['info']['dominio_com'], '$40.000') !== false);
 caso('el hosting nombra el .com.ar y no el .com', mb_stripos($cfg['info']['hosting'], '.com.ar') !== false && strpos($cfg['info']['hosting'], '$40.000') === false);
 $incluyeSitio = wabot_texto_info('que_incluye', $cfg, ['tipo' => 'landing']);
-caso('al sitio profesional no le habla de cargar productos, y le da el plan con cambios de su tipo (16-sep)',
-    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'un panel para editar') === false && mb_stripos($incluyeSitio, '$25.000 por mes') !== false
+caso('el sitio profesional incluye panel sin hablar de cargar productos, y usa el plan con cambios de su tipo (20-sep)',
+    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'un panel para editar') !== false && mb_stripos($incluyeSitio, '$25.000 por mes') !== false
     && mb_stripos($incluyeSitio, '{cambios_mes}') === false, $incluyeSitio);
 caso('a la tienda sí', mb_stripos(wabot_texto_info('que_incluye', $cfg, ['tipo' => 'ecommerce']), '10 productos') !== false);
 caso('sin tipo, el general, con los planes con cambios de lista',
@@ -841,14 +842,14 @@ caso('en postdemo los cambios son sobre la demo, no el plan',
     !wabot_texto_pregunta_cambios_plan('los cambios se pagan aparte?', ['fase' => 'postdemo']));
 $rSin = wabot_texto_cambios_plan(['tipo' => null], $cfg);
 $rCambiosSitio = wabot_texto_cambios_plan(['tipo' => 'landing'], $cfg);
-caso('al sitio profesional no le dice que cambia los textos desde su panel: con el panel, el plan mensual pasa a $25.000 (19-sep)',
-    mb_stripos($rCambiosSitio, 'desde tu panel') === false && strpos($rCambiosSitio, 'le sumamos un panel y el plan mensual pasa a $25.000 por mes') !== false, $rCambiosSitio);
+caso('el sitio profesional también permite cambiar textos e imágenes desde el panel (20-sep)',
+    mb_stripos($rCambiosSitio, 'desde tu panel') !== false && strpos($rCambiosSitio, 'le sumamos un panel') === false, $rCambiosSitio);
 $sitio = ['tipo' => 'landing', 'precio_dado' => true];
 foreach (['carga', 'manual', 'que_incluye'] as $clavePanel) {
     $tPanel = wabot_texto_info($clavePanel, $cfg, $sitio);
-    caso("$clavePanel del sitio profesional: sin panel, y con panel el plan mensual pasa a \$25.000 (19-sep)",
-        mb_stripos($tPanel, 'todas nuestras webs traen un panel') === false && mb_stripos($tPanel, 'Todas las webs traen un panel') === false
-        && strpos($tPanel, 'pasa a $25.000 por mes') !== false && strpos($tPanel, '{') === false, $tPanel);
+    caso("$clavePanel del sitio profesional: el panel está incluido (20-sep)",
+        mb_stripos($tPanel, 'panel') !== false && strpos($tPanel, 'pasa a $25.000 por mes') === false
+        && strpos($tPanel, '{') === false, $tPanel);
 }
 caso('la tienda sigue con su panel', mb_stripos(wabot_texto_info('carga', $cfg, ['tipo' => 'ecommerce']), 'panel de administración') !== false);
 foreach (['puedo cambiar yo los textos de la web?', 'la web la manejo yo?', 'los textos los cambio yo?'] as $pPanel) {
