@@ -402,21 +402,22 @@ $salenSolos = [$cfg['tipos']['landing']['precio_ideal'], $cfg['msg_precio'], $cf
     $cfg['msg_tres_pasos'], $cfg['prediseno_link']];
 caso('ningún texto que sale solo nombra cuándo se reclama el código',
     count(array_filter($salenSolos, function ($t) { return preg_match('/12 meses|2 años|reclamar el código/iu', (string)$t); })) === 0);
-caso('ni siquiera si preguntan: ningún texto dice cuándo se reclama el código ni la propiedad (19-sep)',
-    !preg_match('/2 años de plan|reclamar el código|12 meses/iu', json_encode($cfg, JSON_UNESCAPED_UNICODE)));
-caso('y los 18 meses ya no aparecen en ningún texto', mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), '18 meses') === false);
+caso('si preguntan, la propiedad del código se contesta con sus plazos (20-sep)',
+    mb_stripos($cfg['info']['entrega_codigo'], 'al pagar el segundo año') !== false
+    && mb_stripos($cfg['info']['entrega_codigo'], 'a los 18 meses') !== false
+    && mb_stripos($cfg['info']['entrega_codigo'], 'cuando abonás el total') !== false);
 $cuentaMp = wabot_texto_info('cuenta_mercado_pago', $cfg);
 caso('"¿necesito cuenta de Mercado Pago?": no hace falta, con cualquier tarjeta, y nada de la baja',
     mb_stripos($cuentaMp, 'No hace falta') === 0 && mb_stripos($cuentaMp, 'cualquier tarjeta') !== false
     && !preg_match('/baja|permanencia|desactiva|dejás de pagar/iu', $cuentaMp), $cuentaMp);
 caso('cómo se paga aclara que no hace falta cuenta de Mercado Pago', mb_stripos(wabot_texto_pago(conv_cotizada('landing', $cfg), $cfg), 'cualquier tarjeta') !== false);
 foreach (['como doy de baja el plan?', 'se puede cancelar la suscripcion?', 'hay permanencia?', 'que pasa si dejo de pagar?'] as $p) {
-    caso("\"$p\" → baja_del_plan, y el bot no la contesta", wabot_info_por_palabras($p, 'prediseno') === 'baja_del_plan'
-        && wabot_pregunta_propiedad($p) !== null, (string)wabot_info_por_palabras($p, 'prediseno'));
+    caso("\"$p\" → baja_del_plan, con su respuesta", wabot_info_por_palabras($p, 'prediseno') === 'baja_del_plan'
+        && trim(wabot_texto_info('baja_del_plan', $cfg)) !== '', (string)wabot_info_por_palabras($p, 'prediseno'));
 }
 foreach (['necesito cuenta de mercado pago?', 'no tengo mercado pago, puedo pagar igual?'] as $p) {
-    caso("\"$p\" → cuenta_mercado_pago, que sí se contesta", wabot_info_por_palabras($p, 'prediseno') === 'cuenta_mercado_pago'
-        && wabot_pregunta_propiedad($p) === null, (string)wabot_info_por_palabras($p, 'prediseno'));
+    caso("\"$p\" → cuenta_mercado_pago, no la baja", wabot_info_por_palabras($p, 'prediseno') === 'cuenta_mercado_pago',
+        (string)wabot_info_por_palabras($p, 'prediseno'));
 }
 caso('"con el mensual a los cuántos meses la web es mía?" va a titularidad',
     wabot_info_por_palabras('con el mensual a los cuantos meses la web es mia?', 'prediseno') === 'titularidad');
@@ -471,12 +472,16 @@ echo "— 8b. La web propia: el pago único, sin hosting ni mantenimiento (Pablo
 
 foreach (['landing' => '$180.000', 'ecommerce' => '$290.000', 'elearning' => '$290.000', 'inmobiliaria' => '$240.000'] as $t => $p) {
     $wp = wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST'));
-    caso("$t: la web propia es el pago único de $p, sin hosting, dominio ni mantenimiento",
-        strpos($wp, 'pago único, de ' . $p) !== false && mb_stripos($wp, 'no incluye hosting, dominio, mantenimiento') !== false, $wp);
+    // 20-sep: es solo la página (sin hosting ni dominio) y el mantenimiento se puede sumar aparte.
+    caso("$t: la web propia es el pago único de $p, solo la página",
+        strpos($wp, 'pago único, de ' . $p) !== false && mb_stripos($wp, 'es solo la página') !== false
+        && mb_stripos($wp, 'No incluye hosting ni dominio') !== false
+        && mb_stripos($wp, 'le sumás el mantenimiento') !== false, $wp);
 }
 $wpSin = wabot_texto_info('web_propia', $cfg);
-caso('sin tipo, la web propia no da montos: pregunta a qué se dedica',
-    strpos($wpSin, '$') === false && mb_stripos($wpSin, 'Contame a qué te dedicás') !== false, $wpSin);
+caso('sin tipo, la web propia no da el precio de la página y pregunta a qué se dedica',
+    mb_stripos($wpSin, 'pago único, de $') === false && mb_stripos($wpSin, 'Contame a qué te dedicás') !== false
+    && mb_stripos($wpSin, '$10.000 por mes en sitio profesional') !== false, $wpSin);
 foreach (['Quiero que la web sea mía', 'Tengo mi propio hosting', 'Ya tengo hosting y dominio', 'Quiero comprar la web',
           'Tienen pago único?', 'Prefiero que quede a mi nombre', 'Quiero tener el código', 'Cuánto sale sin mantenimiento?',
           'El mantenimiento lo hago yo'] as $p) {
@@ -487,16 +492,14 @@ foreach (['Quiero mi propia web', 'Quiero una web propia para mi negocio', 'No t
           'Vendo mi propiedad en Palermo', $realRechazo] as $p) {
     caso('no pide la web propia: "' . mb_substr($p, 0, 48) . '"', !wabot_pide_web_propia($p));
 }
-caso('"¿la web queda a mi nombre?" sigue siendo la titularidad, pero el bot no la contesta (19-sep)',
+caso('"¿la web queda a mi nombre?" va a la titularidad, que se contesta con los plazos (20-sep)',
     wabot_info_por_palabras('la web queda a mi nombre?', 'prediseno') === 'titularidad'
-    && wabot_pregunta_propiedad('la web queda a mi nombre?') === 'titularidad'
-    && wabot_texto_info('titularidad', $cfg, conv_cotizada('landing', $cfg, '5491177770093TEST')) === '');
-caso('decir que la quiere a su nombre es el pedido; preguntarlo, la propiedad',
-    wabot_pregunta_propiedad('Quiero la web a mi nombre, en mi propio hosting') === null
-    && wabot_pregunta_propiedad('Quiero la web a mi nombre, se puede?') === 'titularidad');
-foreach (['landing', 'ecommerce'] as $t) {
-    caso("$t: la web propia no dice que la web queda a su nombre (19-sep)",
-        !preg_match('/a tu nombre|tuya|es tuyo/iu', wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST')) . ' ' . $cfg['dos_formas_web_propia']));
+    && mb_stripos(wabot_texto_info('titularidad', $cfg, conv_cotizada('landing', $cfg, '5491177770093TEST')), 'a los 18 meses') !== false);
+foreach (['landing' => '$10.000', 'ecommerce' => '$15.000'] as $t => $mant) {
+    $wp = wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST'));
+    caso("$t: el pago único es solo la página, con el código al abonar el total y el mantenimiento opcional de $mant",
+        mb_stripos($wp, 'es solo la página') !== false && mb_stripos($wp, 'el código queda tuyo') !== false
+        && mb_stripos($wp, 'No incluye hosting ni dominio') !== false && strpos($wp, $mant . ' por mes') !== false, $wp);
 }
 
 // Por el borde: sin rubro, contesta el pago único y pregunta a qué se dedica.
@@ -508,7 +511,7 @@ caso('sin rubro, la web propia se contesta y queda anotada', count($rW) === 1 &&
 clasifica(['rubro_landing']);
 $rW = turno('Soy electricista', $cW, $cfg);
 caso('y el precio después suma el pago único debajo de los planes',
-    strpos($rW[0] ?? '', 'Y si la querés en tu propio hosting, está el pago único: $180.000. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.') !== false
+    strpos($rW[0] ?? '', 'Y si la querés en tu propio hosting, está el pago único: $180.000. Ese es solo la página, sin hosting ni dominio, y el código queda tuyo cuando abonás el total; si querés, le sumás el mantenimiento por $10.000 por mes.') !== false
     && strpos($rW[0] ?? '', 'Y si la querés en tu propio hosting') > strpos($rW[0] ?? '', '✓ Soporte técnico'), $rW[0] ?? '');
 caso('el boceto lo lleva en el precio cotizado y en la ficha',
     wabot_lead_cotizado($cW, $cfg) === 'Plan anual $120.000 (seña $40.000) o plan mensual $20.000 · pidió la web propia: pago único $180.000'

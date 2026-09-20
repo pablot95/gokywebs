@@ -2467,11 +2467,11 @@ foreach ([
 foreach (['emails', 'manual', 'bilingue', 'cuenta_mercado_pago'] as $clave) {
     caso("la respuesta de \"$clave\" existe y no quedó vacía", trim((string)($cfg['info'][$clave] ?? '')) !== '');
 }
-/* 19-sep: la propiedad de la web, el código, las licencias, los accesos y la
- * baja del plan no tienen respuesta automática: las contesta Pablo. */
-foreach (wabot_claves_propiedad() as $clave) {
-    caso("\"$clave\" no tiene respuesta automática (19-sep)",
-        !isset($cfg['info'][$clave]) && wabot_texto_info($clave, $cfg) === '' && wabot_info_lineas([$clave], null, $cfg) === '');
+/* 20-sep: la propiedad del código se contesta, con sus plazos (el 19-sep el
+ * bot se callaba y cortaba la venta). */
+foreach (['titularidad', 'entrega_codigo', 'licencias', 'accesos', 'baja_del_plan'] as $clave) {
+    caso("\"$clave\" vuelve a tener respuesta (20-sep)",
+        trim((string)($cfg['info'][$clave] ?? '')) !== '' && trim(wabot_texto_info($clave, $cfg)) !== '');
 }
 /* 10-sep: "todo incluido" salvo dos adicionales con precio fijo. El bilingüe
  * no es uno de ellos, así que el bot no le pone un monto. 11-sep: está
@@ -2483,10 +2483,11 @@ caso('el bilingüe no sale con un precio inventado ni con el placeholder: está 
     && stripos(wabot_texto_info('bilingue', $cfg), 'desarrollador') === false);
 caso('los correos aclaran que no son transferibles',
     stripos((string)$cfg['info']['emails'], 'no son transferibles') !== false);
-caso('ningún texto del bot promete el código ni la propiedad a los 2 años (19-sep)',
-    mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), '2 años de plan') === false
-    && mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), 'a nombre de Gokywebs') === false
-    && mb_stripos(json_encode($cfg, JSON_UNESCAPED_UNICODE), 'es tuyo es la web') === false);
+caso('la titularidad dice los tres plazos del código (Pablo, 20-sep)',
+    mb_stripos($cfg['info']['titularidad'], 'Pago único: cuando abonás el total') !== false
+    && mb_stripos($cfg['info']['titularidad'], 'al pagar el segundo año') !== false
+    && mb_stripos($cfg['info']['titularidad'], 'a los 18 meses') !== false
+    && mb_stripos($cfg['info']['titularidad'], 'es de Gokywebs') !== false, (string)$cfg['info']['titularidad']);
 
 // Son respuestas: el bot no las saca de la nada.
 $c = conv_nueva(); $c['chat_started_ts'] = time();

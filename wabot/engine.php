@@ -2042,7 +2042,8 @@ function wabot_web_propia_precio_texto($conv, $cfg, $v) {
     $unico = (string)($cfg['tipos'][$v['tipo']]['precio_unico'] ?? '');
     $texto = trim((string)($cfg['dos_formas_web_propia'] ?? ''));
     if ($unico === '' || $texto === '') return '';
-    return str_replace('{precio_unico}', $unico, $texto);
+    // {mantenimiento_mes}: el mantenimiento opcional del pago único (Pablo, 20-sep).
+    return wabot_precio_placeholders(str_replace('{precio_unico}', $unico, $texto), $conv, $cfg, $v['tipo']);
 }
 
 /**
@@ -2065,148 +2066,6 @@ function wabot_info_claves_sin_repetidas(array $keys) {
         : $keys;
 }
 
-/* ───────────── La propiedad de la web no la contesta el bot (Pablo, 19-sep) ─────────────
- *
- * De quién es la web, el dominio o el código; si le entregan el código, los
- * archivos o los accesos; qué pasa con la web si cancela, deja de pagar o no
- * renueva; si se la puede llevar a otro hosting o a otro programador; las
- * licencias. Ante cualquiera de esas preguntas el bot no contesta ni explica
- * condiciones: se calla, se apaga en ese chat y la charla le queda pendiente a
- * Pablo. Lo corta el borde común (redactor.php) antes que cualquier respuesta,
- * y el motor tiene el mismo freno para lo que clasifique Gemini.
- *
- * Decir que la quiere propia sin preguntar nada ("la quiero en mi hosting",
- * "quiero que quede a mi nombre") sigue siendo el pedido de la web propia: se
- * le pasa el pago único (Pablo, 19-sep). Si además pregunta, manda la pregunta.
- */
-
-/** Las claves de info que hablan de propiedad, código, licencias, accesos o la baja. */
-function wabot_claves_propiedad() {
-    return ['titularidad', 'entrega_codigo', 'licencias', 'accesos', 'baja_del_plan'];
-}
-
-/** ¿Pregunta, o solo cuenta lo que quiere? Sin signo de pregunta también. */
-function wabot_propiedad_es_pregunta($crudo, $t) {
-    if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
-    return (bool)preg_match('/\b(saber|consultar|consulta|preguntar|pregunta|duda|dudas|aclarar|entender|que pasa|que pasaria'
-        . '|como (es|seria|funciona|queda|quedaria)|cuando|quien|de quien|cual|puedo|podria|podemos|se puede|es posible'
-        . '|me dan|me darian|me entregan|me pasan)\b/u', $t);
-}
-
-/** ¿Pregunta por cancelar, dejar de pagar, no renovar o la permanencia? */
-function wabot_propiedad_pregunta_baja($t) {
-    // "Cancelar un turno" o "dar de baja una propiedad" son funciones de la web, no el plan.
-    $delPanel = '(propiedad|producto|curso|publicacion|alumno|turno|reserva|pedido|compra|clase|cita|orden|venta|usuario|cliente|suscriptor)\w*';
-    if (preg_match('/\b(dejo|dejamos|deje|dejara|dejaria|dejase|dejar|dejaramos|dejariamos) de pagar(la|lo|le|les)?\b/u', $t)
-        || preg_match('/\b(no pago|no pagamos|no pague|no pagara|no pagaria) mas\b/u', $t)
-        || preg_match('/\bsi no (renuevo|renovamos|renueve|renovara|renovaria|renuevo el|pago (mas|el plan|la cuota|la mensualidad|el abono|la renovacion|el mes|un mes|el ano))\b/u', $t)
-        || preg_match('/\b(permanencia|contrato minimo|minimo de meses|meses minimos?|cuantos meses (minimo|como minimo)|me tengo que quedar|nos tenemos que quedar)\b/u', $t)
-        || preg_match('/\b(quedo|quedamos|quedar|quedaria|estoy|estaria|estar) atad[oa]s?\b/u', $t)
-        || preg_match('/\b(pierdo|perderia|perdemos|perderiamos|me quedo sin|nos quedamos sin|me quedaria sin|me borran|me la borran|me la sacan|me la dan de baja)\b.{0,10}\b(la|mi|el|todo|toda)\b.{0,6}\b(web|pagina|sitio|tienda|dominio|contenido|informacion|datos|codigo)\b/u', $t)
-        || preg_match('/\bsi (despues |mas adelante |en algun momento |un dia )?(no (quiero|queremos|quisiera|quisieramos) (seguir|continuar|renovar)|(quiero|queremos|quisiera|quisieramos) (dejar|cortar|terminar|cancelar))\b/u', $t)
-        || preg_match('/\bque (pasa|pasaria|sucede)\b.{0,30}\b(al terminar|cuando termine|cuando se termine|al finalizar|cuando finalice|al vencer|cuando venza|despues del (primer )?ano|al ano|a los dos anos|al final del plan)\b/u', $t)) return true;
-    if (preg_match('/\b(si (me )?(cancelo|cancelamos|cancelara|cancelaria|cancelase|doy de baja|damos de baja|me doy de baja|nos damos de baja|me bajo|rescindo|me arrepiento)'
-        . '|(puedo|podemos|podria|podriamos|se puede|como) (cancelar|cancelo|darme de baja|dar de baja|me doy de baja|rescindir|desuscribirme))\b(?! (un|una|el|la|los|las|mis|sus) ' . $delPanel . ')/u', $t)) return true;
-    if (preg_match('/\b(cancel\w*|dar de baja|darme de baja|darla de baja|darlo de baja|darnos de baja|la baja|anular|rescindir|rescision|desuscrib\w*|cortar|suspender|al terminar|al finalizar|cuando termine)\b.{0,30}\b(plan|suscripcion|servicio|contrato|abono|mensualidad|debito|renovacion|el anual|el mensual)\b/u', $t)
-        && !preg_match('/\b' . $delPanel . '\b/u', $t)) return true;
-    return (bool)preg_match('/\bsi (corto|cortamos|suspendo|suspendemos|interrumpo|interrumpimos) (el|la) (plan|servicio|suscripcion|abono|contrato|pago|mensualidad|debito)\b/u', $t);
-}
-
-/** ¿Pregunta si se la puede llevar a otro hosting, proveedor o programador? */
-function wabot_propiedad_pregunta_traspaso($t) {
-    // Lo que cuenta de antes ("otro programador me la hizo") no pregunta por después.
-    if (preg_match('/\b(me (la|lo) hizo|me hizo|la hizo|lo hizo|tuve|tuvimos|tenia|teniamos|me dejo|nos dejo|me estafo|nos estafo|abandono)\b/u', $t)) return false;
-    $destino = '(a|al|hacia|en) (otro|otra|otros|mi|mis|nuestro|nuestra|un|una|cualquier) (hosting|host|servidor|proveedor|empresa|agencia|programador|desarrollador|disenador|lado|plataforma)\b';
-    // Su web de hoy la traen a nosotros: "migrar mi web actual" no es llevarse la nuestra.
-    $actual = '(actual|que tengo|que tenemos|vieja|anterior|de ahora)';
-    if (preg_match('/\b(llevar|pasar|mudar|migrar|trasladar|transferir|mover|sacar)(me|nos|te|le)?(la|lo|las|los)\b.{0,25}\b' . $destino . '/u', $t)
-        || preg_match('/\b(llevar|pasar|mudar|migrar|trasladar|transferir|mover|sacar)(me|nos|te|le)?(sela|selo|mela|melo|nosla|noslo)\b.{0,25}\b' . $destino . '/u', $t)) return true;
-    if (preg_match('/\b(llevar|pasar|mudar|migrar|trasladar|transferir|mover|sacar)\w*\b.{0,12}\b(la|mi|nuestra|el|nuestro|toda la|todo el) (web|pagina|sitio|tienda|codigo|archivos|contenido|ecommerce|landing)\b(?! ' . $actual . ').{0,25}\b' . $destino . '/u', $t)
-        || preg_match('/\b(la|lo|las|los|me la|me lo|nos la|nos lo) (puedo|podemos|podria|podriamos|podre|voy a poder) (llevar|pasar|mudar|migrar|trasladar|transferir|mover|sacar)\b.{0,25}\b' . $destino . '/u', $t)
-        || preg_match('/\b(migrar|mudar|trasladar|mover)(la|lo|nos)?\b.{0,6}\b' . $destino . '/u', $t)) return true;
-    if (preg_match('/\b(puedo|podria|podemos|podriamos|se puede|si (quiero|queremos|quisiera|quisieramos|decido|decidimos))\b.{0,25}\bcambiar(me|nos)? de (hosting|proveedor|programador|desarrollador|servidor|empresa|agencia)\b/u', $t)) return true;
-    $otro = '(otro|otra|otros|otras) (programador|desarrollador|disenador|proveedor|agencia|empresa|informatico|tecnico|hosting)\w*';
-    return (bool)(preg_match('/\b(contratar\w*|llamar|dar(sela|selo|le)|pasar(sela|selo|le)|llevar(sela|selo|le))\b.{0,15}\b(a )?' . $otro . '/u', $t)
-        || preg_match('/\b' . $otro . '\b.{0,20}\b(puede|podria|pueda|podra|va a poder|pudiera)\b.{0,15}\b(modificar|editar|tocar|mantener|seguir|trabajar|agarrar|tomar|manejar|actualizar)\w*/u', $t)
-        || preg_match('/\b(me puedo ir|puedo irme|si me quiero ir|si nos queremos ir|si decido irme|si decidimos irnos)\b(?! de (vacaciones|viaje))/u', $t));
-}
-
-/** ¿Pregunta de quién es la web, el dominio o el código? */
-function wabot_propiedad_pregunta_titularidad($t) {
-    $objeto = '(la web|el sitio|la pagina|la tienda|el dominio|el codigo|los archivos|la plataforma|el ecommerce|la landing|la app|el desarrollo|el proyecto|todo)';
-    $mia = '(mia|mio|mias|mios|nuestra|nuestro|nuestras|nuestros|propia|propio|de mi propiedad|de nuestra propiedad|para mi|para nosotros|en mi poder)';
-    // "A mi nombre" de la factura, el pago o un envío no es la web.
-    if (preg_match('/\b(a mi nombre|a nuestro nombre|a nombre mio|a nombre nuestro|a nombre de quien|a nombre de ustedes|a nombre de gokywebs|a su nombre)\b/u', $t)
-        && !preg_match('/\b(factura|comprobante|recibo|cuenta|tarjeta|transferencia|pago|cobro|envio|paquete|reserva|turno|pedido|cbu|alias)\w*\b.{0,30}\ba (mi|nuestro|su|nombre) /u', $t)) return true;
-    if (preg_match('/\b' . $objeto . '\b.{0,30}\b(es|seria|sera|queda|quedaria|quedan|quedarian|pasa a ser|pasaria a ser|va a ser|termina siendo|son|serian|seran)( toda| todo| totalmente| 100)? ' . $mia . '\b(?! (negocio|empresa|marca|local|emprendimiento|comercio|rubro|trabajo|estudio|consultorio))/u', $t)
-        || preg_match('/\b(es|seria|sera|queda|quedaria|pasa a ser|pasaria a ser|va a ser|me queda|nos queda)( toda| todo)? (mia|mio|nuestra|nuestro|de mi propiedad)\b.{0,20}\b' . $objeto . '\b/u', $t)
-        || preg_match('/\b(pasa|pasaria|pasan|pasarian|va a pasar) a ser (mia|mio|mias|mios|nuestra|nuestro|de mi propiedad|de nuestra propiedad)\b/u', $t)
-        || preg_match('/\b(queda|quedaria|quedan|me queda|me quedaria|nos queda) (para mi|para nosotros|mia|mio|en mi poder|de mi propiedad)\b(?! (negocio|empresa|marca|local|emprendimiento|comercio|rubro|trabajo|estudio|consultorio))/u', $t)
-        // Sin sujeto: "¿y es mía?", "¿queda mía después?". "La empresa es mía" cuenta su negocio.
-        || preg_match('/^(y |pero |entonces |o sea )?(es|seria|sera|queda|quedaria)( toda| todo)? (mia|mio)\b/u', $t)
-        // "¿La compro o la alquilo?": comprarla o alquilarla es de quién queda.
-        || preg_match('/\b(la|lo) (compro|compramos|compraria|comprariamos|alquilo|alquilamos|alquilaria|estoy alquilando|estaria alquilando)\b|\b(es|seria) (un )?alquiler\b|\balquil\w* (la|de la|el|del) (web|pagina|sitio|tienda|dominio)\b/u', $t)
-        || preg_match('/\bquien se queda con (el codigo|la web|la pagina|el sitio|la tienda|el dominio|los archivos)\b/u', $t)) return true;
-    if (preg_match('/\b(seria|sere|voy a ser|quedo como|quedaria como|paso a ser|pasaria a ser|seriamos|quedamos como)( el| la| los)? (duen[oa]s?|propietari[oa]s?|titular\w*)\b/u', $t)
-        || preg_match('/\b(soy|somos)( el| la| los)? (duen[oa]s?|propietari[oa]s?|titular\w*) de (la|el|mi|los) (web|pagina|sitio|tienda|dominio|codigo|plataforma|desarrollo|archivos)\b/u', $t)
-        || preg_match('/\b(quien es|quien seria|quien queda como|de quien es|de quien seria|de quien queda|de quien son|a quien pertenece)( el| la| los)? (duen[oa]|propietari[oa]|titular|web|sitio|pagina|tienda|dominio|codigo|propiedad|archivos)\b/u', $t)
-        || preg_match('/\b(la |el )?(propiedad|titularidad) (de|del|de la|sobre) (la |el )?(web|pagina|sitio|tienda|dominio|codigo|desarrollo|proyecto)\b/u', $t)
-        || preg_match('/\b(titularidad|propiedad intelectual|derechos de autor|que derechos (tengo|tendria|conservo|me quedan|tenemos))\b/u', $t)
-        || preg_match('/\bderechos?\b.{0,12}\b(sobre|de) (la|el) (web|pagina|sitio|codigo|desarrollo|diseno|dominio)\b/u', $t)
-        || preg_match('/\b(me|nos) (pertenece|pertenecen|perteneceria|pertenecerian)\b/u', $t)
-        || preg_match('/\b(la|el) (web|pagina|sitio|tienda|dominio|codigo)\b.{0,15}\b(es|seria|queda|quedaria) (de ustedes|de gokywebs|suya|suyo|de la empresa)\b/u', $t)) return true;
-    return false;
-}
-
-/** ¿Pregunta si le entregan el código, los archivos, un backup o los accesos? */
-function wabot_propiedad_pregunta_codigo($t) {
-    // Los accesos al panel son para cargar contenido: eso es la carga, no el código.
-    $noPanel = '(?! (al|del|para el|de) (panel|administrador)| para (cargar|editar|subir|actualizar|administrar))';
-    return (bool)(preg_match('/\bcodigo fuente\b|\bcodigos? (de la|del|de mi) (web|pagina|sitio|tienda|desarrollo|proyecto)\b/u', $t)
-        || preg_match('/\b(me|nos) (dan|daran|darian|entregan|entregarian|entregaran|pasan|pasarian|pasaran|mandan|mandarian|envian|enviarian|dejan|dejarian|comparten|compartirian|facilitan)\b.{0,20}\b(el codigo|los codigos|los archivos|todos los archivos|el proyecto|el repositorio|el backup|un backup|una copia|la copia|la base de datos|las claves|los datos de acceso|el ftp|el cpanel|la carpeta|el zip|(los|el) accesos?' . $noPanel . ')/u', $t)
-        || preg_match('/\bel codigo\b.{0,15}\b(me lo|nos lo) (dan|entregan|pasan|mandan|dejan)\b/u', $t)
-        || preg_match('/\bquien tiene (el|los|la|las) (acceso|accesos|codigo|dominio|claves|archivos)\b' . $noPanel . '/u', $t)
-        || preg_match('/\bacceso (al|a los|a la) (codigo|archivos|hosting|servidor|ftp|cpanel|repositorio|base de datos)\b/u', $t)
-        || preg_match('/\b(me|nos) (puedo |podemos |podria |podriamos )?(quedo|quedamos|quedar|quedaria|quedariamos) con (el codigo|los archivos|la web|la pagina|el sitio|la tienda|el dominio)\b/u', $t)
-        || preg_match('/\bdescargar?(me|nos)?(la|lo|los)? (la web|el codigo|los archivos|el sitio|la pagina|la tienda)\b/u', $t)
-        // "¿Y lo del código cómo es?". El código postal o el de descuento son de la tienda.
-        || (preg_match('/\b(lo del|el tema del|y el|sobre el|con el|del) codigo\b(?! (de (descuento|seguimiento|verificacion|area|barras)|postal|qr))/u', $t)
-            && preg_match('/\b(como|que pasa|quien|cuando|me lo|nos lo|es mio|seria mio|queda)\b/u', $t)));
-}
-
-/**
- * El motivo si el mensaje pregunta por la propiedad de la web, el código, las
- * licencias o qué pasa al cancelar; null si no. Mira el mensaje entero con los
- * patrones de acá y, en cada pregunta del mensaje, lo que el clasificador de
- * dudas ya lee como una de esas claves.
- */
-function wabot_pregunta_propiedad($texto) {
-    $crudo = trim(wabot_texto_sin_urls((string)$texto));
-    $t = wabot_normalizar_frase($crudo);
-    if ($t === '') return null;
-    if (wabot_propiedad_pregunta_baja($t)) return 'baja';
-    if (wabot_propiedad_pregunta_traspaso($t)) return 'traspaso';
-    // "La quiero en mi hosting", "quiero que quede a mi nombre": la web propia.
-    if (wabot_pide_web_propia($crudo) && !wabot_propiedad_es_pregunta($crudo, $t)) return null;
-    if (wabot_propiedad_pregunta_titularidad($t)) return 'titularidad';
-    if (wabot_propiedad_pregunta_codigo($t)) return 'codigo';
-    /* El clasificador de dudas es el respaldo para PREGUNTAS cortas: sin forma
-     * de pregunta no se usa acá. "Tengo una distribuidora y quiero vender por
-     * la web" contaba su negocio y el bot se callaba (19-sep). Lo que sí es
-     * propiedad sin signo de pregunta ("la web queda a mi nombre") ya lo
-     * agarran los patrones de arriba. */
-    if (!wabot_propiedad_es_pregunta($crudo, $t)) return null;
-    $partes = preg_split('/(?<=[?])|[;!\n]+|\.(?=\s|$)|,| y | o | si | tambien | también | ademas | además /iu', $crudo);
-    array_unshift($partes, $crudo);
-    foreach ((array)$partes as $parte) {
-        $parte = trim((string)$parte);
-        if ($parte === '') continue;
-        $k = wabot_info_por_palabras($parte);
-        if ($k !== null && in_array($k, wabot_claves_propiedad(), true)) return $k;
-    }
-    return null;
-}
-
 /**
  * Gemini puede leer "¿necesito cuenta de Mercado Pago?" como la baja del plan.
  * Sin nada de cancelar en el mensaje no lo es: pasa a la cuenta de Mercado
@@ -2215,26 +2074,13 @@ function wabot_pregunta_propiedad($texto) {
 function wabot_info_claves_sin_baja_falsa(array $keys, $texto) {
     if (!in_array('baja_del_plan', $keys, true)) return $keys;
     $t = wabot_normalizar_frase((string)$texto);
-    if (wabot_propiedad_pregunta_baja($t) || wabot_info_por_palabras($texto) === 'baja_del_plan') return $keys;
+    $cancela = '/\b(permanencia|desuscrib\w*|dejar de pagar|dejo de pagar|deja de pagar|de baja|la baja|cancel\w*|anular|rescind\w*)\b/u';
+    if (preg_match($cancela, $t) || wabot_info_por_palabras($texto) === 'baja_del_plan') return $keys;
     $keys = array_values(array_diff($keys, ['baja_del_plan']));
     if (preg_match('/\bmercado ?pago\b/u', $t) && !in_array('cuenta_mercado_pago', $keys, true)) $keys[] = 'cuenta_mercado_pago';
     return $keys;
 }
 
-/**
- * Corta la charla automática por una pregunta de propiedad: el bot se apaga
- * en ese chat, sin seguimientos, y la charla le queda pendiente a Pablo.
- */
-function wabot_propiedad_detener(&$conv, $motivo) {
-    wabot_handoff_marcar($conv, 'propiedad');
-    $conv['cierre'] = 'propiedad';
-    $conv['oferta_diseno_ts'] = 0;
-    $conv['cta_muestra'] = false;
-    $conv['precio_cta_pendiente'] = false;
-    $conv['seguimiento_bloqueado'] = true;
-    $conv['bot_off'] = true;
-    wabot_evento_sesion($conv, 'propiedad_para_pablo', ['motivo' => (string)$motivo]);
-}
 
 /* ───────────── Dudas de pago con respuesta fija (batería del 15-sep) ─────────────
  *
@@ -4024,11 +3870,6 @@ function wabot_engine($texto, &$conv, $cfg) {
          * mismo freno que el borde común, para lo que clasificó Gemini. No se
          * contesta nada y la charla queda para Pablo. */
         $keys = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa($keys, $texto));
-        $dePropiedad = array_values(array_intersect($keys, wabot_claves_propiedad()));
-        if ($dePropiedad) {
-            wabot_propiedad_detener($conv, $dePropiedad[0]);
-            return [];
-        }
         if (!$keys) $keys = ['otra'];
         // En un desempate el precio ya está acotado a dos opciones: se dicen las
         // dos en vez del rango genérico, que además remata pidiendo el rubro
@@ -4518,7 +4359,9 @@ function wabot_info_por_palabras($texto, $fase = null) {
     if (preg_match('/\b(cuenta (de|en) mercado ?pago|no tengo mercado ?pago|sin mercado ?pago|tener mercado ?pago)\b/u', $t)) return 'cuenta_mercado_pago';
     /* "Con el mensual la web es mía?" pregunta de quién es, no por el plan
      * (auditoría del 15-sep): va antes que las dos de abajo. */
-    if (preg_match('/\b(la web|el sitio|la pagina|la tienda|el dominio|el codigo)\b.{0,25}\b(es mia|es mio|queda a mi nombre|me pertenece|queda mia|queda mio)\b|\b(a los cuantos meses|cuando)\b.{0,25}\b(es mia|es mio|queda a mi nombre)\b/u', $t)) return 'titularidad';
+    if (preg_match('/\b(la web|el sitio|la pagina|la tienda|el dominio|el codigo)\b.{0,25}\b(es mia|es mio|queda a mi nombre|me pertenece|queda mia|queda mio)\b|\b(a los cuantos meses|cuando)\b.{0,25}\b(es mia|es mio|queda a mi nombre)\b/u', $t)
+        // "¿A quién pertenece el código?" (20-sep): antes se la llevaba tecnología por la palabra "código".
+        || preg_match('/\ba quien (le )?pertenece\b.{0,15}\b(la web|el sitio|la pagina|la tienda|el dominio|el codigo)\b/u', $t)) return 'titularidad';
     // "Soy técnico de mantenimiento" cuenta su negocio, no pregunta por el plan (14-sep).
     if (preg_match('/\bmantenimiento\b/u', $t) && !($cuentaSuNegocio && !$tienePregunta)) return 'mantenimiento';
     if (preg_match('/\b(por mes|mensual\w*|al mes|cada mes|abono\w*|cuota mensual|mensualidad|costo fijo|pago mensual)/u', $t)
@@ -4666,7 +4509,10 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // "¿Puedo vender mi dominio a futuro?" es una pregunta por la titularidad,
     // no por la renovación: sin esto caía en hosting y le contestaban el precio
     // anual (caso real del 21-ago).
-    if (preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)
+    /* "Soy dueño de la página?" es la titularidad (20-sep). Pide el objeto web
+     * pegado: "soy dueña de una peluquería" cuenta su negocio, no pregunta. */
+    if (preg_match('/\b(soy|somos|seria|sere|quedo como|paso a ser|quien es|quien seria|a quien pertenece)( el| la| los)? (duen[oa]s?|propietari[oa]s?|titular\w*) (de (la|el|mi|tu) (web|pagina|sitio|tienda|dominio|codigo)|del (dominio|sitio|codigo))\b/u', $t)
+        || preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)
         /* "Vender POR la web" es la venta de SUS productos, no la de la web
          * (19-sep): pide el objeto directo pegado al verbo ("vender mi
          * dominio", "puedo vender la web"), no una preposición en el medio. */
@@ -5323,8 +5169,6 @@ function wabot_texto_mantenimiento($conv, $cfg) {
 
 /** Un texto de info con sus placeholders resueltos. */
 function wabot_texto_info($clave, $cfg, $conv = null) {
-    // La propiedad de la web no tiene respuesta automática (19-sep).
-    if (in_array($clave, wabot_claves_propiedad(), true)) return '';
     if (in_array($clave, ['rangos', 'precio_sin_rubro'], true)
         && is_array($conv) && !empty($conv['tipo']) && !empty($conv['precio_dado'])) {
         return wabot_precio_resumen($conv, $cfg);
