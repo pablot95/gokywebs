@@ -63,7 +63,7 @@ caso('ya no quedan "Son alternativas", "Lo mejor para" ni el primer año del pag
 caso('las cuatro de precio con los dos planes y lo que incluyen',
     mb_strpos($planes[0], '• Plan anual: $140.000 por año') !== false && mb_strpos($planes[1], '• Plan anual: $230.000 por año') !== false
     && mb_strpos($planes[2], '• Plan anual: $190.000 por año') !== false && mb_strpos($planes[3], 'cursos') !== false
-    && mb_strpos($planes[3], '• Plan mensual: $30.000 por mes') !== false && mb_strpos($planes[0], 'Ambos incluyen:') !== false, $planes[0]);
+    && mb_strpos($planes[3], '• Plan mensual: $30.000 por mes') !== false && mb_strpos($planes[0], 'Ambos incluyen todo:') !== false, $planes[0]);
 caso('el sitio profesional sin el panel de administración; la tienda con su panel (19-sep)',
     mb_stripos($planes[0], 'panel') === false && mb_strpos($planes[1], '✓ Panel para que actualices tu contenido cuando quieras') !== false, $planes[0]);
 caso('se suman la seña del plan anual (desde la seña), la web propia y el panel del sitio a $25.000',

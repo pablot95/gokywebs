@@ -24,13 +24,9 @@
  *   mantenimiento, actualizaciones y soporte. SIN cambios en la web.
  * - Los dos planes se dicen siempre con el mismo bloque, `dos_formas`
  *   ({dos_formas} en cualquier texto): "Plan anual" y "Plan mensual" con sus
- *   montos y, abajo, "Ambos incluyen:" con la lista. El sitio profesional no
- *   lleva panel de administración (Pablo, 19-sep): a su bloque se le saca la
- *   línea del panel (wabot_planes_sin_panel) y su "qué incluye" es
- *   info.que_incluye_sitio. Si quiere cambiar él los textos y las imágenes,
- *   con el panel el plan mensual pasa a `tipos.landing.mensualidad_panel`
- *   ({mensualidad_panel}, $25.000): lo dicen info.carga_sitio,
- *   info.manual_sitio, que_incluye_sitio y cambios_plan_sin_panel.
+ *   montos y, abajo, "Ambos incluyen todo:" con la misma lista breve para los
+ *   cuatro tipos de web. Desde el 20-sep el panel vuelve a figurar incluido
+ *   también en el sitio profesional.
  * - El plan anual se cuenta desde la seña: se renueva cada año desde ahí.
  * - Web propia (19-sep): si el cliente la quiere a su nombre, en su propio
  *   hosting, se le pasa el pago único (`tipos[].precio_unico`, los montos
@@ -62,10 +58,8 @@ function wabot_textos_default() {
     'capi_dataset_id' => '',
     'capi_token' => '',
     'cambios_plan' => 'Los planes no incluyen cambios en la web. Si vas a necesitar cambios seguido, está el plan mensual con cambios, de {cambios_mes}, que incluye un cambio por mes; con el plan anual, un cambio después de entregada la web se cotiza aparte.',
-    // Se suma a cambios_plan menos en el sitio profesional, que no lleva panel (Pablo, 19-sep).
+    // Se suma a cambios_plan: los cuatro tipos incluyen panel (Pablo, 20-sep).
     'cambios_plan_panel' => 'Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
-    // Y en el sitio profesional, el panel es aparte (Pablo, 19-sep).
-    'cambios_plan_sin_panel' => 'Si preferís cambiar vos los textos y las imágenes, le sumamos un panel y el plan mensual pasa a {mensualidad_panel} por mes.',
     'caro' => 'Si pagar el año entero se te hace mucho, está el plan mensual de {mensualidad}: arrancás con la primera mensualidad, y con eso armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
     // Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): se cotiza como
     // sitio profesional y la carga de productos va aparte.
@@ -104,7 +98,7 @@ function wabot_textos_default() {
     // La seña del plan anual no se devuelve (Pablo, 15-sep); el turno queda
     // marcado para el desarrollador.
     'devolucion' => 'La seña del plan anual no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
-    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen:\n✓ Desarrollo completo de la web, con diseño a medida\n✓ Adaptada a celulares, tablets y computadoras\n✓ Panel para que actualices tu contenido cuando quieras\n✓ Hosting y dominio .com.ar\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Mantenimiento y actualizaciones\n✓ Soporte técnico",
+    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Hosting y dominio\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Mantenimiento, actualizaciones y arreglo de bugs\n✓ Soporte técnico",
     // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
@@ -209,11 +203,6 @@ function wabot_textos_default() {
         'rangos' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
         'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
         'que_incluye_sin_productos' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte y un panel para editar vos mismo los textos y las imágenes. Nos ocupamos del armado y de lo técnico.\nLos cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
-        // El sitio profesional no lleva panel de administración (Pablo, 19-sep).
-        'que_incluye_sitio' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento y el soporte. Nos ocupamos del armado y de lo técnico.\nLos cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Y si querés cambiar vos los textos y las imágenes, le sumamos un panel y el plan mensual pasa a {mensualidad_panel} por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
-        // El sitio profesional no trae panel: con panel, el plan mensual pasa a $25.000 (Pablo, 19-sep).
-        'carga_sitio' => "El sitio profesional no trae panel de administración: los cambios de textos e imágenes los hacemos nosotros. Si querés cambiarlos vos cuando quieras, le sumamos un panel y el plan mensual pasa a {mensualidad_panel} por mes.\nEl plan, anual o mensual, cubre el desarrollo, el hosting, el dominio, el soporte y el mantenimiento técnico; los cambios van aparte, con el plan mensual con cambios, de {cambios_mes}, con un cambio por mes.",
-        'manual_sitio' => 'No entregamos un manual de uso. El sitio profesional no trae panel: los cambios los hacemos nosotros, con el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si querés un panel para cambiar vos los textos y las imágenes, el plan mensual pasa a {mensualidad_panel} por mes.',
         'cupones' => 'Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.',
         'cobros_tienda' => 'Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.',
         'turnos' => 'Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.',
@@ -230,11 +219,11 @@ function wabot_textos_default() {
     'mantenimiento_planes' => [
         'landing' => [
             'precio' => '$20.000',
-            'link' => 'gokywebs.com/mantenimientomensual',
+            'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
             'precio' => '$30.000',
-            'link' => 'gokywebs.com/mantenimientoweb',
+            'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
     'media_recibida' => 'Me llegó tu archivo y queda guardado en la conversación. Si querés, contame en un mensaje de qué se trata así lo tengo en cuenta.',
@@ -336,15 +325,13 @@ function wabot_textos_default() {
             'precio' => '$140.000',
             'precio_unico' => '$180.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
-            'desc' => 'una página a tu medida que te presenta como corresponde: tus servicios, quién sos y contacto directo a tu WhatsApp, así el que te encuentra ya sabe de qué se trata y te escribe sin preguntarte lo básico',
+            'desc' => 'un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
             'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
             'mensualidad' => '$20.000',
             'mensualidad_cambios' => '$25.000',
-            // Con panel para que cambie él los textos y las imágenes (Pablo, 19-sep).
-            'mensualidad_panel' => '$25.000',
             'mantenimiento' => '$10.000',
             'sena' => '$40.000',
         ],
@@ -353,7 +340,7 @@ function wabot_textos_default() {
             'precio' => '$230.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
-            'desc' => 'una tienda online completa: catálogo con tus productos, carrito y cobro online, y un panel propio para manejar todo vos, así te compran y te pagan sin que tengas que estar contestando',
+            'desc' => 'una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos',
             'imagenes_pedido' => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
             'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
@@ -368,7 +355,7 @@ function wabot_textos_default() {
             'precio' => '$230.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
-            'desc' => 'una plataforma de cursos con los videos subidos ahí, acceso propio para cada alumno y cobro online, así vendés el curso una vez y el alumno entra solo',
+            'desc' => 'una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos',
             'imagenes_pedido' => 'el logo y alguna foto tuya dando clase o del material de los cursos',
             'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
@@ -383,7 +370,7 @@ function wabot_textos_default() {
             'precio' => '$190.000',
             'precio_unico' => '$240.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
-            'desc' => 'una web inmobiliaria con su catálogo de propiedades, fichas completas, búsqueda con filtros y panel propio para cargarlas, así el interesado filtra solo por zona y precio y te consulta por una propiedad concreta',
+            'desc' => 'una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja',
             'imagenes_pedido' => 'el logo y fotos de un par de propiedades que tengas publicadas',
             'precio_ideal' => '{para_quien} te serviría {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',

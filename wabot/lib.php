@@ -491,13 +491,7 @@ function wabot_tres_pasos_pregunta() {
 function wabot_servicio_texto_plantilla($tipo = '', $conCursos = false, $cfg = null) {
     $texto = is_array($cfg) ? trim((string)($cfg['dos_formas'] ?? '')) : '';
     if ($texto === '') $texto = (string)(wabot_textos_default()['dos_formas'] ?? '');
-    // El sitio profesional no lleva panel de administración (Pablo, 19-sep).
-    return $tipo === 'landing' ? wabot_planes_sin_panel($texto) : $texto;
-}
-
-/** El bloque de los planes sin la línea del panel ("✓ Panel para…"), para el sitio profesional. */
-function wabot_planes_sin_panel($texto) {
-    return (string)preg_replace('/^✓[^\n]*\bpanel\b[^\n]*(\n|$)/imu', '', (string)$texto);
+    return $texto;
 }
 
 /* ─────────────────────── Estado por conversación ─────────────────────── */

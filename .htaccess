@@ -7,6 +7,16 @@ RedirectMatch 404 /\.git
 # PHP, por lo que no se agrega trabajo extra a las visitas normales.
 <IfModule mod_rewrite.c>
 RewriteEngine On
+
+# Las páginas del plan mensual se mudaron a /planmensual (Pablo, 19-sep-2026):
+# los links viejos que ya se mandaron por WhatsApp redirigen a los nuevos. Van
+# antes del case-router, que no las encontraría. /mantenimiento/api/ (el webhook
+# de suscripciones de Mercado Pago) sigue en su lugar y no se redirige.
+RewriteRule ^mantenimiento/?$ /planmensual/ [R=301,L]
+RewriteRule ^mantenimiento/index\.html$ /planmensual/ [R=301,L]
+RewriteRule ^mantenimientomensual(/.*)?$ /planmensual/sitioprofesional/ [R=301,L]
+RewriteRule ^mantenimientoweb(/.*)?$ /planmensual/tienda/ [R=301,L]
+
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ case-router.php [L,QSA]
