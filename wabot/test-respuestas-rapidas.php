@@ -65,9 +65,10 @@ caso('las cuatro de precio con los dos planes y lo que incluyen',
     && mb_strpos($planes[2], '• Plan anual: $180.000 por año') !== false && mb_strpos($planes[3], 'cursos') !== false
     && mb_strpos($planes[3], '• Plan mensual: $30.000 por mes') !== false && mb_strpos($planes[0], 'Ambos incluyen todo:') !== false, $planes[0]);
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
-caso('los cuatro bloques nombran el panel incluido',
-    count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4, $planes[0]);
-caso('se suman la seña del plan anual (desde la seña) y la web propia',
+caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
+    count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4
+    && mb_strpos($planes[1], "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
+caso('se suman la seña del plan anual (desde la seña) y la opción de web propia',
     count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el plan anual arrancás con una seña de $40.000') === 0 && mb_strpos($t, 'contado desde la seña') !== false)) === 1
     && count(array_filter($planes, fn($t) => mb_strpos($t, 'Si la querés tuya') === 0)) === 1);
 caso('lo que Pablo editó no se toca', in_array('Antes de arrancar dejamos todo por escrito.', $planes, true));

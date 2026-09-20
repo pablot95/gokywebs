@@ -72,7 +72,8 @@ caso('arranca "Para lo que me contás, te serviría", sin "Lo mejor para" ni lin
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('los dos planes con sus montos y, abajo, todo lo que incluyen (19-sep)',
     strpos($r0, "Podés elegir entre dos planes:\n\n• Plan anual: $120.000 por año\n• Plan mensual: $20.000 por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web") !== false
-    && strpos($r0, '✓ Hosting y dominio') !== false && strpos($r0, '✓ Mantenimiento, actualizaciones y arreglo de bugs') !== false
+    && strpos($r0, "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
+    && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
     && strpos($r0, '✓ Soporte técnico') !== false && mb_stripos($r0, 'pago único') === false && mb_stripos($r0, 'seña') === false, $r0);
 caso('el panel figura incluido en todos los tipos, también en el sitio profesional (20-sep)',
     strpos($r0, '✓ Panel para autogestionar contenido') !== false, $r0);
