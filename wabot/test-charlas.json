@@ -7,7 +7,7 @@
       "Hola, soy electricista matriculado, quiero una pagina para que me contacten",
       "dale, armala"
     ],
-    "esperado": "Dos mensajes: 'Para tu … , te serviría un sitio profesional donde…' (o 'Para lo que me contás, te serviría…') con los dos planes ('Plan anual: $140.000 por año' y 'Plan mensual: $20.000 por mes', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
+    "esperado": "Dos mensajes: 'Para tu … , te serviría un sitio profesional donde…' (o 'Para lo que me contás, te serviría…') con los dos planes ('Plan anual: $120.000 por año' y 'Plan mensual: $20.000 por mes', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
   },
   {
     "id": "02",
@@ -18,7 +18,7 @@
       "como se paga?",
       "hola?"
     ],
-    "esperado": "Tienda online: plan anual $230.000 o plan mensual $30.000, más la oferta del primer diseño. 'Cómo se paga?' NO se contesta: silencio, bot apagado y handoff para Pablo. 'Hola?' tampoco recibe nada."
+    "esperado": "Tienda online: plan anual $200.000 o plan mensual $30.000, más la oferta del primer diseño. 'Cómo se paga?' NO se contesta: silencio, bot apagado y handoff para Pablo. 'Hola?' tampoco recibe nada."
   },
   {
     "id": "03",
@@ -29,7 +29,7 @@
       "quiero venderlos desde la web, con videos y que cada alumna tenga su acceso",
       "si"
     ],
-    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos: plan anual $230.000 o plan mensual $30.000 con la oferta del primer diseño. El 'si' recibe el formulario."
+    "esperado": "Pregunta de desempate (vender vs. mostrar). 'Venderlos' cotiza la plataforma de cursos: plan anual $200.000 o plan mensual $30.000 con la oferta del primer diseño. El 'si' recibe el formulario."
   },
   {
     "id": "04",
@@ -39,7 +39,7 @@
       "Tengo una inmobiliaria en Tigre y quiero publicar las propiedades",
       "no, gracias, lo voy a pensar"
     ],
-    "esperado": "Inmobiliaria: plan anual $190.000 o plan mensual $30.000 con la oferta del primer diseño. El 'no' queda en silencio y pendiente para Pablo (no hay cierre automático)."
+    "esperado": "Inmobiliaria: plan anual $180.000 o plan mensual $30.000 con la oferta del primer diseño. El 'no' queda en silencio y pendiente para Pablo (no hay cierre automático)."
   },
   {
     "id": "05",
@@ -80,7 +80,7 @@
       "Vendo accesorios de cuero y quiero una tienda",
       "prefiero el plan anual"
     ],
-    "esperado": "Tienda: plan anual $230.000 o plan mensual $30.000, con la oferta. 'Prefiero el plan anual' recibe el formulario, queda anotada la modalidad 'unico' (el valor interno del plan anual) y el bot se apaga."
+    "esperado": "Tienda: plan anual $200.000 o plan mensual $30.000, con la oferta. 'Prefiero el plan anual' recibe el formulario, queda anotada la modalidad 'unico' (el valor interno del plan anual) y el bot se apaga."
   },
   {
     "id": "09",
@@ -163,7 +163,7 @@
     "turnos": [
       "Soy manicura, quiero una pagina con turnos a WhatsApp, Instagram y calificaciones"
     ],
-    "esperado": "Sitio profesional: plan anual $140.000 o plan mensual $20.000. La propuesta incluye 'Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el acceso a tu Instagram y una sección de reseñas de tus clientes.'"
+    "esperado": "Sitio profesional: plan anual $120.000 o plan mensual $20.000. La propuesta incluye 'Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el acceso a tu Instagram y una sección de reseñas de tus clientes.'"
   },
   {
     "id": "17",
@@ -181,7 +181,7 @@
     "turnos": [
       "Tenemos un restaurant con hospedaje en Merlo, San Luis"
     ],
-    "esperado": "Sitio profesional ($140.000 por año o $20.000 por mes) 'donde muestres las habitaciones, el restaurante y los servicios, y tus huéspedes te pidan la reserva online'."
+    "esperado": "Sitio profesional ($120.000 por año o $20.000 por mes) 'donde muestres las habitaciones, el restaurante y los servicios, y tus huéspedes te pidan la reserva online'."
   },
   {
     "id": "19",
@@ -245,7 +245,7 @@
     "turnos": [
       "Vendo muebles de algarrobo pero solo quiero mostrarlos y que me consulten por WhatsApp, sin carrito"
     ],
-    "esperado": "Sitio profesional con el catálogo ($140.000 por año o $20.000 por mes) y 'La carga de los productos va aparte: $500 por producto.'"
+    "esperado": "Sitio profesional con el catálogo ($120.000 por año o $20.000 por mes) y 'La carga de los productos va aparte: $500 por producto.'"
   },
   {
     "id": "26",
@@ -255,7 +255,7 @@
       "Hola, tengo una tienda de ropa infantil",
       "y ustedes me arman igual la tienda con la suscripcion? como funciona?"
     ],
-    "esperado": "Tienda online con los dos planes (anual $230.000, mensual $30.000) y 'Ambos incluyen:' con la lista. La pregunta posterior queda en silencio para Pablo (bot apagado, handoff)."
+    "esperado": "Tienda online con los dos planes (anual $200.000, mensual $30.000) y 'Ambos incluyen:' con la lista. La pregunta posterior queda en silencio para Pablo (bot apagado, handoff)."
   },
   {
     "id": "27",
@@ -265,7 +265,7 @@
       "Hola, quiero una web para mi estudio de arquitectura, pero la quiero a mi nombre y en mi propio hosting",
       "dale"
     ],
-    "esperado": "El precio con los dos planes (anual $140.000, mensual $20.000) y 'Ambos incluyen:', y debajo 'Y si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.' Aparte, la oferta del primer diseño. El 'dale' recibe el formulario. La ficha dice 'Web propia: le interesa el pago único'."
+    "esperado": "El precio con los dos planes (anual $120.000, mensual $20.000) y 'Ambos incluyen:', y debajo 'Y si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.' Aparte, la oferta del primer diseño. El 'dale' recibe el formulario. La ficha dice 'Web propia: le interesa el pago único'."
   },
   {
     "id": "28",
@@ -275,6 +275,6 @@
       "Hola! se puede pagar solo la creación de la web y yo me encargo del hosting?",
       "tengo una pastelería"
     ],
-    "esperado": "Primero el pago único sin monto: 'Si la querés tuya, para tenerla en tu propio hosting, está el pago único. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte… Contame a qué te dedicás'. Con el rubro, la tienda con los dos planes (anual $230.000, mensual $30.000), debajo el pago único de $290.000 y la oferta del primer diseño."
+    "esperado": "Primero el pago único sin monto: 'Si la querés tuya, para tenerla en tu propio hosting, está el pago único. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte… Contame a qué te dedicás'. Con el rubro, la tienda con los dos planes (anual $200.000, mensual $30.000), debajo el pago único de $290.000 y la oferta del primer diseño."
   }
 ]

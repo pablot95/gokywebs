@@ -21,10 +21,10 @@ function wabot_respuestas_rapidas_default() {
         ]],
         // Los dos planes del 19-sep (Pablo): el mismo bloque que manda el bot.
         ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
-            "Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp.\n\n" . wabot_respuestas_rapidas_planes_texto('$140.000', '$20.000', 'landing'),
-            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$230.000', '$30.000'),
-            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
-            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$230.000', '$30.000'),
+            "Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp.\n\n" . wabot_respuestas_rapidas_planes_texto('$120.000', '$20.000', 'landing'),
+            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$200.000', '$30.000'),
+            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$180.000', '$30.000'),
+            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$200.000', '$30.000'),
             'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.',
             'Si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000 el sitio profesional, $290.000 la tienda o los cursos y $240.000 la inmobiliaria. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
             'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
@@ -238,6 +238,42 @@ function wabot_respuestas_rapidas_normalizar($valor) {
     return $salida;
 }
 
+/**
+ * Bajaron los precios del plan anual (Pablo, 20-sep): $140.000 → $120.000,
+ * $230.000 → $200.000 y $190.000 → $180.000. Los cuatro bloques de precio que
+ * todavía son los de fábrica —se reconocen porque arrancan igual que el de
+ * fábrica y nombran un monto viejo— pasan a los nuevos. Lo que Pablo reescribió
+ * a mano no se toca, y la versión del 19-sep del bloque se reemplaza entera
+ * (los montos viven adentro del texto, no en un marcador).
+ */
+function wabot_respuestas_rapidas_precios_20sep($categorias) {
+    $viejos = ['$140.000', '$230.000', '$190.000'];
+    $fabrica = [];
+    foreach (wabot_respuestas_rapidas_default() as $predeterminada) {
+        if ($predeterminada['titulo'] === 'Presupuesto y planes') $fabrica = array_slice($predeterminada['items'], 0, 4);
+    }
+    if (count($fabrica) !== 4) return $categorias;
+    // Cada bloque nuevo, indexado por su arranque (la recomendación del tipo de web).
+    $porArranque = [];
+    foreach ($fabrica as $item) $porArranque[mb_substr((string)$item, 0, 70)] = $item;
+
+    foreach ($categorias as &$categoria) {
+        if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'presupuesto y planes') continue;
+        foreach ((array)($categoria['items'] ?? []) as $i => $texto) {
+            $texto = (string)$texto;
+            $tieneMontoViejo = false;
+            foreach ($viejos as $monto) {
+                if (mb_strpos($texto, $monto) !== false) { $tieneMontoViejo = true; break; }
+            }
+            if (!$tieneMontoViejo) continue;
+            $arranque = mb_substr($texto, 0, 70);
+            if (isset($porArranque[$arranque])) $categoria['items'][$i] = $porArranque[$arranque];
+        }
+    }
+    unset($categoria);
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
@@ -245,8 +281,8 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_default();
-    $migrado = wabot_respuestas_rapidas_planes_19sep(wabot_respuestas_rapidas_completar_precios(
-        wabot_respuestas_rapidas_migrar_legacy($normalizado)
+    $migrado = wabot_respuestas_rapidas_precios_20sep(wabot_respuestas_rapidas_planes_19sep(
+        wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
     ));
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

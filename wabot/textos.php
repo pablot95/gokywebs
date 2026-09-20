@@ -322,7 +322,7 @@ function wabot_textos_default() {
     'tipos' => [
         'landing' => [
             'label' => 'Sitio profesional',
-            'precio' => '$140.000',
+            'precio' => '$120.000',
             'precio_unico' => '$180.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp',
@@ -337,7 +337,7 @@ function wabot_textos_default() {
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$230.000',
+            'precio' => '$200.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos',
@@ -352,7 +352,7 @@ function wabot_textos_default() {
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$230.000',
+            'precio' => '$200.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos',
@@ -367,7 +367,7 @@ function wabot_textos_default() {
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$190.000',
+            'precio' => '$180.000',
             'precio_unico' => '$240.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja',

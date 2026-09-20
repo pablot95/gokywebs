@@ -227,7 +227,7 @@ caso('dijo que no → rechazo', wabot_presentada_nivel(array_merge($hablo, ['cie
 
 $precio = ['precio_dado' => true, 'fase' => 'precio', 'transcript' => [
     ['q' => 'cliente', 't' => 'cuánto sale?', 'ts' => time() - 100],
-    ['q' => 'bot', 't' => 'Una landing sale $190.000 por todo el desarrollo. gokywebs.com/presupuestos/Landing', 'ts' => time() - 90],
+    ['q' => 'bot', 't' => 'Una landing sale $180.000 por todo el desarrollo. gokywebs.com/presupuestos/Landing', 'ts' => time() - 90],
 ]];
 caso('precio dado y silencio: NO es "interesado"', wabot_conv_interesado($precio) === false);
 $precio['transcript'][] = ['q' => 'cliente', 't' => 'y tiene mantenimiento?', 'ts' => time() - 10];
@@ -235,7 +235,7 @@ caso('precio dado y siguió hablando: sí', wabot_conv_interesado($precio) === t
 caso('sin precio en el transcript se asume como antes', wabot_conv_interesado(['precio_dado' => true, 'transcript' => []]) === true);
 caso('y la última llamada respeta lo mismo',
     wabot_ultima_llamada_corresponde(['precio_dado' => true, 'ultimo_cliente_ts' => time() - 23.2 * 3600,
-        'transcript' => [['q' => 'cliente', 't' => 'precio?', 'ts' => time() - 23.2 * 3600], ['q' => 'bot', 't' => 'Sale $190.000. gokywebs.com/presupuestos/Landing', 'ts' => time() - 23.1 * 3600]]],
+        'transcript' => [['q' => 'cliente', 't' => 'precio?', 'ts' => time() - 23.2 * 3600], ['q' => 'bot', 't' => 'Sale $180.000. gokywebs.com/presupuestos/Landing', 'ts' => time() - 23.1 * 3600]]],
         array_merge($cfg, ['activo' => true, 'ultima_llamada_activa' => true]), time()) === false);
 
 /* ─── Elegibilidad histórica del template manual ───
