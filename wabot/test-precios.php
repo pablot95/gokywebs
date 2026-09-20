@@ -299,10 +299,9 @@ caso('"¿hay descuento?" se contesta con el no y las dos formas, no con el texto
 wabot_regateo_responder('Dejamelo en 150 mil y cerramos', $c21d, $cfg);
 caso('y si después regatea con un número, lo toma el desarrollador', ($c21d['fase'] ?? '') === 'derivado');
 
-/* Por el borde común, como llega en producción (18-sep): después del precio
- * y la oferta del primer diseño, una duda de pago NO se contesta sola. La
- * contesta Pablo, que ve el chat pendiente (las respuestas fijas de arriba
- * siguen sirviendo antes del precio y si Pablo vuelve a prender el bot). */
+/* Por el borde común, como llega en producción: desde el 20-sep (Pablo) una
+ * duda de pago después del precio SÍ se contesta, y la oferta del primer
+ * diseño sigue esperando el sí. Lo que no es pregunta sigue siendo de Pablo. */
 foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Cual es la diferencia entre las dos formas?',
           'Y si elijo el mensual cuánto pago al principio?', 'Los 25 mil son la seña?',
           'Si elijo el pago único, cuánto pongo para empezar y cuánto al entregar?'] as $m) {
@@ -311,8 +310,8 @@ foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Cual es la dif
     wabot_conv_transcript($c, 'cliente', $m); $c['ultimo_cliente_ts'] = time();
     clasifica(['otro']);
     $out = wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg);
-    caso('después de la oferta, por el borde, la duda queda para Pablo: ' . $m,
-        $out === [] && !empty($c['bot_off']) && !empty($c['handoff_pendiente']), json_encode($out, JSON_UNESCAPED_UNICODE));
+    caso('después de la oferta, por el borde, la duda se contesta: ' . $m,
+        $out !== [] && empty($c['bot_off']) && !empty($c['oferta_diseno_ts']), json_encode($out, JSON_UNESCAPED_UNICODE));
 }
 
 /* "¿Es obligatorio?" después del plan: no, es una de las dos formas. */
@@ -535,8 +534,9 @@ clasifica(['rubro_inmobiliaria']);
 turno('Tengo una inmobiliaria', $cW4, $cfg);
 clasifica(['otro']);
 $rW4 = turno('Y si la quiero en mi hosting?', $cW4, $cfg);
-caso('después del precio, la web propia queda para Pablo y anotada en la ficha', $rW4 === [] && !empty($cW4['quiere_web_propia'])
-    && mb_stripos(wabot_ficha_resumen($cW4, $cfg), 'Web propia') !== false);
+caso('después del precio, "¿y si la quiero en mi hosting?" se contesta y queda anotada en la ficha',
+    $rW4 !== [] && mb_stripos(implode("\n", $rW4), 'pago único') !== false && !empty($cW4['quiere_web_propia'])
+    && mb_stripos(wabot_ficha_resumen($cW4, $cfg), 'Web propia') !== false, json_encode($rW4, JSON_UNESCAPED_UNICODE));
 $cW5 = conv_nueva('5491177770099TEST'); $cW5['fase'] = 'menu';
 clasifica(['rubro_landing']);
 turno('Soy electricista', $cW5, $cfg);
@@ -556,17 +556,25 @@ $cR3 = array_merge($cW, ['ultimo_ts' => time() - 30 * 86400]);
 wabot_conv_reset_si_vieja($cR3, $cfg, time());
 caso('el reset de sesión olvida el pedido de la web propia', empty($cR3['quiere_web_propia']));
 
-/* Los dos casos reales llegaron DESPUÉS del precio: desde el 18-sep esa
- * respuesta la da Pablo (el bot solo contesta el sí al primer diseño). */
-foreach ([$realUnaVez, $realRechazo] as $m) {
-    $cA = conv_nueva('5491177770091TEST');
-    wabot_pitch('ecommerce', $cA, $cfg);
-    wabot_conv_transcript($cA, 'cliente', $m); $cA['ultimo_cliente_ts'] = time();
-    clasifica(['otro']);
-    $sA = wabot_salida_preparar(wabot_responder($m, $cA, $cfg), $cA, $cfg);
-    caso('el caso real después del precio queda para Pablo: ' . mb_substr($m, 0, 40),
-        $sA === [] && !empty($cA['handoff_pendiente']) && !empty($cA['bot_off']), json_encode($sA, JSON_UNESCAPED_UNICODE));
-}
+/* Los dos casos reales llegaron DESPUÉS del precio. Desde el 20-sep la
+ * pregunta se contesta; el que no pregunta —"déjame que consulte… no me
+ * interesa el mantenimiento", con su "de vez en cuando" que parecía un
+ * interrogativo— sigue siendo de Pablo. */
+$cA = conv_nueva('5491177770091TEST');
+wabot_pitch('ecommerce', $cA, $cfg);
+wabot_conv_transcript($cA, 'cliente', $realUnaVez); $cA['ultimo_cliente_ts'] = time();
+clasifica(['otro']);
+$sA = wabot_salida_preparar(wabot_responder($realUnaVez, $cA, $cfg), $cA, $cfg);
+caso('el caso real del pago único, después del precio, se contesta',
+    $sA !== [] && mb_stripos(implode("\n", $sA), 'pago único') !== false && empty($cA['bot_off']),
+    json_encode($sA, JSON_UNESCAPED_UNICODE));
+$cA2 = conv_nueva('5491177770093TEST');
+wabot_pitch('ecommerce', $cA2, $cfg);
+wabot_conv_transcript($cA2, 'cliente', $realRechazo); $cA2['ultimo_cliente_ts'] = time();
+clasifica(['otro']);
+$sA2 = wabot_salida_preparar(wabot_responder($realRechazo, $cA2, $cfg), $cA2, $cfg);
+caso('y el que no pregunta, "déjame que consulte…", sigue quedando para Pablo',
+    $sA2 === [] && !empty($cA2['handoff_pendiente']) && !empty($cA2['bot_off']), json_encode($sA2, JSON_UNESCAPED_UNICODE));
 $cA = conv_nueva('5491177770092TEST');
 wabot_pitch('ecommerce', $cA, $cfg);
 turno('No me interesa el mensual', $cA, $cfg);

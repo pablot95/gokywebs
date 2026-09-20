@@ -51,10 +51,26 @@ $m = $c;
 $rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
 
-echo "— Cualquier otra respuesta la contesta Pablo —\n";
-foreach (['Cuánto tarda?', 'y la seña de cuánto es', 'No, gracias', 'Lo voy a pensar', 'Ok gracias',
-          'Me interesa pero lo hablo con mi socia', 'Quiero hablar con una persona', 'Tienen factura?',
-          'Me pasás el CBU?'] as $resp) {
+/* 20-sep (Pablo): "después de pasar el precio pregunta por el form, si dan
+ * afirmativo manda el link; también resuelve dudas". Las preguntas se
+ * contestan y la oferta sigue abierta; lo que no es pregunta sigue siendo de
+ * Pablo, como desde el 18-sep. */
+echo "— Las dudas se contestan y la oferta sigue esperando el sí (20-sep) —\n";
+foreach (['Cuánto tarda?', 'y la seña de cuánto es?', 'Tienen factura?', 'El dominio está incluido?'] as $duda) {
+    $d = $c;
+    $rD = turno($duda, $d, $cfg);
+    caso("\"$duda\" → la contesta y el bot sigue prendido",
+        $rD !== [] && empty($d['bot_off']) && !empty($d['oferta_diseno_ts']) && empty($d['esProspecto']),
+        json_encode($rD, JSON_UNESCAPED_UNICODE));
+}
+$dSi = $c;
+turno('Cuánto tarda?', $dSi, $cfg);
+clasifica(['otro']);
+caso('y después de la duda, el sí se sigue llevando el formulario', tiene_form(turno('dale, armenlo', $dSi, $cfg)));
+
+echo "— Lo que no es una pregunta lo contesta Pablo —\n";
+foreach (['No, gracias', 'Lo voy a pensar', 'Ok gracias',
+          'Me interesa pero lo hablo con mi socia'] as $resp) {
     $d = $c;
     $rD = turno($resp, $d, $cfg);
     caso("\"$resp\" → silencio y pendiente para Pablo",
@@ -73,11 +89,14 @@ $estadoPanel = function ($cv) {
 $delBot = function ($cv) use ($estadoPanel) { return $estadoPanel($cv) === 'bot' && empty($cv['handoff_pendiente']); };
 caso('mientras espera la respuesta, el panel lo muestra como chat de Pablo esperando al cliente (como antes)',
     !$delBot($c) && wabot_ultima_salida_ts($c) >= wabot_ultimo_cliente_ts($c));
+/* 20-sep: la pregunta la contesta el bot, así que el chat le sigue figurando
+ * a Pablo (el handoff ya quedó marcado al cotizar) pero esperando al cliente,
+ * no esperando a Pablo: la última salida es la respuesta del bot. */
 $d = $c;
 turno('Cuánto tarda?', $d, $cfg);
-caso('con la pregunta, queda como chat de Pablo que espera respuesta',
-    !$delBot($d) && $estadoPanel($d) === 'apagado' && !empty($d['handoff_pendiente'])
-    && wabot_ultimo_cliente_ts($d) >= wabot_ultima_salida_ts($d));
+caso('con la pregunta contestada, el chat sigue de Pablo pero esperando al cliente',
+    !$delBot($d) && !empty($d['handoff_pendiente']) && empty($d['bot_off'])
+    && wabot_ultima_salida_ts($d) >= wabot_ultimo_cliente_ts($d));
 $p = $c;
 wabot_conv_tomar_control($p);
 wabot_conv_encender_manual($p);

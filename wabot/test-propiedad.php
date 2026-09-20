@@ -67,9 +67,11 @@ $r = turno('Soy contador y necesito una web para mostrar mis servicios', $c, $cf
 caso('(se cotiza el sitio profesional)', !empty($c['precio_dado']) && count($r) === 2);
 clasifica(['pregunta_info'], ['info_keys' => ['titularidad']]);
 $rT = turno('La página queda a mi nombre?', $c, $cfg);
-/* Después del precio el bot ya no contesta (regla del 18-sep: espera un sí y
- * lo demás lo sigue Pablo), así que la propiedad se prueba antes de cotizar. */
-caso('después del precio sigue valiendo la regla del 18-sep: lo contesta Pablo', $rT === [], json_encode($rT, JSON_UNESCAPED_UNICODE));
+/* 20-sep: después del precio las dudas también se contestan, y la oferta del
+ * primer diseño sigue esperando el sí. */
+caso('después del precio también la contesta, con los plazos',
+    $rT !== [] && mb_stripos(implode("\n", $rT), 'a los 18 meses') !== false
+    && empty($c['bot_off']) && !empty($c['oferta_diseno_ts']), json_encode($rT, JSON_UNESCAPED_UNICODE));
 
 $c = conv_nueva('549110000PROPANTES', ['fase' => 'menu']);
 clasifica(['pregunta_info'], ['info_keys' => ['titularidad']]);

@@ -26,8 +26,11 @@ require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
 function wabot_oferta_diseno_pregunta($texto) {
     $crudo = trim((string)$texto);
     if (mb_strpos($crudo, '?') !== false || mb_strpos($crudo, '¿') !== false) return true;
-    // "Cuando quieras" y "como te parezca" aceptan, no preguntan.
-    $t = preg_replace('/\b(cuando|como) (quieras|quieran|puedas|puedan|gustes|gusten|te parezca|les parezca|sea)\b/u', ' ',
+    /* "Cuando quieras" y "como te parezca" aceptan, no preguntan. "De vez en
+     * cuando" tampoco pregunta (20-sep): con las dudas contestándose, ese
+     * "cuando" hacía que una objeción con la palabra adentro recibiera una
+     * respuesta automática en vez de quedar para Pablo. */
+    $t = preg_replace('/\bde vez en cuando\b|\b(cuando|como) (quieras|quieran|puedas|puedan|gustes|gusten|te parezca|les parezca|sea)\b/u', ' ',
         wabot_normalizar_frase($crudo));
     return (bool)(
         preg_match('/\b(como|cuanto|cuanta|cuantos|cuantas|cuando|donde|cual|cuales|quien|por que)\b/u', $t)
@@ -98,6 +101,16 @@ function wabot_oferta_diseno_responder($texto, &$conv, $cfg) {
             return [$form];
         }
     }
+    /* Una duda se contesta y la oferta sigue esperando el sí (Pablo, 20-sep:
+     * "después de pasar el precio pregunta por el form, si dan afirmativo
+     * manda el link; también resuelve dudas"). Devolver null deja seguir el
+     * turno normal: las respuestas fijas de pago y el motor con sus textos.
+     * Lo que no es pregunta —un "no", un "lo pienso", una foto— sigue siendo
+     * de Pablo, como desde el 18-sep. */
+    if (wabot_oferta_diseno_pregunta($texto)) {
+        wabot_evento_sesion($conv, 'duda_tras_precio');
+        return null;
+    }
     wabot_oferta_diseno_cerrar($conv);
     return [];
 }
@@ -155,11 +168,12 @@ function wabot_responder($texto, &$conv, $cfg) {
     // respuesta automática en este punto.
     $trasElPrecio = wabot_oferta_diseno_responder($texto, $conv, $cfg);
     if ($trasElPrecio !== null) return $trasElPrecio;
-    // Conversaciones que ya habían recibido el precio con la versión anterior
-    // también se detienen acá: no continúan hacia modelos, formulario o demo.
+    /* Conversaciones que ya habían recibido el precio con la versión anterior
+     * también se detienen acá: no continúan hacia modelos, formulario o demo.
+     * Salvo que pregunten algo: desde el 20-sep las dudas se contestan (Pablo). */
     if (!empty($conv['precio_dado']) && !empty($conv['cta_muestra'])
         && empty($conv['lead_creado']) && empty($conv['form_completado_ts'])
-        && empty($conv['presentado_ts'])
+        && empty($conv['presentado_ts']) && !wabot_oferta_diseno_pregunta($texto)
         && in_array(($conv['fase'] ?? ''), ['precio', 'prediseno', 'confirma_cambio'], true)) {
         wabot_cotizacion_finalizar($conv);
         return [];
