@@ -34,9 +34,12 @@
  *   (`dos_formas_web_propia`, debajo de los planes) y la titularidad.
  * - Las charlas cotizadas antes (precio_modelo 'doble': pago único con seña)
  *   conservan sus montos y sus respuestas de seña y saldo.
- * - La recomendación es "Para lo que me contás, te serviría…" (o "Para
- *   {rubro}, te serviría…" si se sabe el rubro): {para_quien} lo resuelve
+ * - La recomendación es "Para lo que me contás, te armamos…" (o "Para {rubro},
+ *   te armamos…" si se sabe el rubro): {para_quien} lo resuelve
  *   wabot_personalizar(). El modelo clasifica, pero nunca redacta la propuesta.
+ *   Desde el 20-sep la propuesta es corta —"un sitio profesional completo",
+ *   "una tienda online completa"— porque abajo, en el mismo mensaje, va la
+ *   lista de todo lo que incluye (ver wabot_propuesta_texto en engine.php).
  * - Después del precio se ofrece un "primer diseño" sin cargo (ya no "demo
  *   gratis") y el bot espera UNA respuesta: el sí se lleva el formulario y
  *   cualquier otra cosa la contesta Pablo (ver wabot_oferta_diseno_responder).
@@ -232,12 +235,12 @@ function wabot_textos_default() {
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
     'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',
-    'msg_precio' => "Para lo que me contás, te serviría {desc}.\n\n{dos_formas}",
+    'msg_precio' => "Para lo que me contás, te armamos {desc}.\n\n{dos_formas}",
     'msg_precio_tras_pitch' => '{dos_formas}',
     'msg_precio_variantes' => [
-        "Para lo que me contás, te serviría {desc}.\n\n{dos_formas}",
-        "En tu caso podemos hacer {desc}.\n\n{dos_formas}",
-        "Por lo que me contás, te serviría {desc}.\n\n{dos_formas}",
+        "Para lo que me contás, te armamos {desc}.\n\n{dos_formas}",
+        "En tu caso te armamos {desc}.\n\n{dos_formas}",
+        "Por lo que me contás, te armamos {desc}.\n\n{dos_formas}",
     ],
     'msg_prediseno_oferta' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?',
     'msg_prediseno_oferta_variantes' => [
@@ -324,9 +327,9 @@ function wabot_textos_default() {
             'precio' => '$120.000',
             'precio_unico' => '$180.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
-            'desc' => 'un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp',
+            'desc' => 'un sitio profesional completo',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
-            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
+            'precio_ideal' => '{para_quien} te armamos {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
             'mensualidad' => '$20.000',
@@ -339,9 +342,9 @@ function wabot_textos_default() {
             'precio' => '$190.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
-            'desc' => 'una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos',
+            'desc' => 'una tienda online completa',
             'imagenes_pedido' => 'el logo y fotos de tus productos, aunque sean 4 o 5 para arrancar',
-            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
+            'precio_ideal' => '{para_quien} te armamos {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
             'mensualidad' => '$30.000',
@@ -354,9 +357,9 @@ function wabot_textos_default() {
             'precio' => '$190.000',
             'precio_unico' => '$290.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
-            'desc' => 'una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos',
+            'desc' => 'una plataforma de cursos completa',
             'imagenes_pedido' => 'el logo y alguna foto tuya dando clase o del material de los cursos',
-            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
+            'precio_ideal' => '{para_quien} te armamos {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
             'mensualidad' => '$30.000',
@@ -369,9 +372,9 @@ function wabot_textos_default() {
             'precio' => '$170.000',
             'precio_unico' => '$240.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
-            'desc' => 'una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja',
+            'desc' => 'una web inmobiliaria completa',
             'imagenes_pedido' => 'el logo y fotos de un par de propiedades que tengas publicadas',
-            'precio_ideal' => '{para_quien} te serviría {propuesta}.',
+            'precio_ideal' => '{para_quien} te armamos {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
             'mensualidad' => '$30.000',

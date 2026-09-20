@@ -6346,32 +6346,35 @@ function wabot_propuesta_texto($tipo, $conv) {
      * como una ficha técnica: "una tienda donde muestres tus productos y
      * cobres con Mercado Pago", no "catálogo, carrito, integración…". */
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
-        return 'una tienda online para vender productos y cursos, dar acceso a alumnos y cobrar online. Todo lo administrás desde tu panel';
+        return 'una tienda online completa, con tus cursos';
     }
     /* La necesidad interna de la ficha afina la frase sin cambiar el precio
      * (18-sep): la cabaña con restaurante no es "un sitio para mostrar tus
      * servicios", es un lugar donde reservar. */
     $necesidad = is_array($conv) ? wabot_ficha($conv)['necesidad'] : '';
     if ($tipo === 'landing' && is_array($conv) && !empty($conv['catalogo'])) {
-        return 'un sitio profesional con el catálogo de tus productos, donde los muestres con fotos y te consulten directo por WhatsApp';
+        return 'un sitio profesional completo, con el catálogo de tus productos';
     }
     if ($tipo === 'landing' && $necesidad === 'hospedaje') {
         $conResto = (bool)preg_match('/\b(restaurant\w*|resto|restoran|comidas?|cocina|gastronom\w*)\b/u',
             wabot_normalizar_frase(wabot_contexto_cliente_texto($conv)));
-        return 'un sitio profesional donde muestres las habitaciones' . ($conResto ? ', el restaurante' : '')
-            . ' y los servicios, y tus huéspedes te pidan la reserva online';
+        return 'un sitio profesional completo, con las habitaciones' . ($conResto ? ', el restaurante' : '')
+            . ' y las reservas online';
     }
     if ($tipo === 'landing' && $necesidad === 'gastronomia') {
-        return 'un sitio profesional donde muestres tu carta y te hagan los pedidos o las reservas por WhatsApp';
+        return 'un sitio profesional completo, con tu carta y los pedidos por WhatsApp';
     }
     if ($tipo === 'ecommerce' && $necesidad === 'productos_digitales') {
-        return 'una tienda online para vender productos digitales y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y ventas';
+        return 'una tienda online completa, para vender productos digitales';
     }
+    /* Cortas a propósito (Pablo, 20-sep): la propuesta nombra QUÉ le armamos y
+     * listo, porque abajo, en el mismo mensaje, va la lista de todo lo que
+     * incluye. Antes explicaba también para qué le servía y quedaba larguísima. */
     $fijas = [
-        'landing'      => 'un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp',
-        'ecommerce'    => 'una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos',
-        'inmobiliaria' => 'una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja',
-        'elearning'    => 'una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos',
+        'landing'      => 'un sitio profesional completo',
+        'ecommerce'    => 'una tienda online completa',
+        'inmobiliaria' => 'una web inmobiliaria completa',
+        'elearning'    => 'una plataforma de cursos completa',
     ];
     return $fijas[$tipo] ?? 'una web a tu medida';
 }

@@ -18,8 +18,8 @@ clasifica(['rubro_comercio']);
 $r = turno('Vendo ropa', $c, $cfg);
 $todo = implode("\n", $r);
 caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mejor para"',
-    str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago.')
+caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',
+    str_starts_with($r[0] ?? '', 'Para lo que me contás, te armamos una tienda online completa.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
     strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $190.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen todo:") !== false
@@ -96,16 +96,16 @@ clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
-    'landing' => ['un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp', '$120.000', '$20.000'],
-    'inmobiliaria' => ['una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja', '$170.000', '$30.000'],
-    'elearning' => ['una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos', '$190.000', '$30.000'],
+    'landing' => ['un sitio profesional completo', '$120.000', '$20.000'],
+    'inmobiliaria' => ['una web inmobiliaria completa', '$170.000', '$30.000'],
+    'elearning' => ['una plataforma de cursos completa', '$190.000', '$30.000'],
 ];
 foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
     $salida = wabot_pitch($tipo, $ct, $cfg);
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
     caso("$tipo también usa su texto fijo y espera la respuesta",
-        str_starts_with($primero, 'Para lo que me contás, te serviría ' . $frase)
+        str_starts_with($primero, 'Para lo que me contás, te armamos ' . $frase)
         && strpos($primero, "• Plan anual: $precio por año") !== false
         && strpos($primero, "• Plan mensual: $mensualidad por mes") !== false
         && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);

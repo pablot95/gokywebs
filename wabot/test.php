@@ -31,13 +31,13 @@ $TIPOS = ['landing', 'ecommerce', 'elearning', 'inmobiliaria'];
 function conv_sin_pitch() { return conv_nueva(); }
 
 /**
- * El turno del precio desde el 18-sep: la propuesta ("…te serviría…") con las
+ * El turno del precio desde el 18-sep: la propuesta ("…te armamos…") con las
  * dos formas y, aparte, la oferta del primer diseño, sin el formulario.
  */
 function precio_formato_18sep($r, $precio, $mensualidad) {
     $r = array_values((array)$r);
     return count($r) === 2
-        && mb_stripos($r[0], 'te serviría') !== false
+        && mb_stripos($r[0], 'te armamos') !== false
         && strpos($r[0], "Podés elegir entre dos planes:\n\n• Plan anual: $precio por año\n• Plan mensual: $mensualidad por mes\n\nAmbos incluyen todo:") !== false
         && mb_stripos($r[0], 'pago único') === false && mb_stripos($r[0], 'seña') === false
         && mb_stripos($r[1], 'sin cargo un primer diseño') !== false && str_ends_with($r[1], 'Querés que lo armemos?')
@@ -67,10 +67,10 @@ caso('y no hay ninguna línea intermedia del tipo "si te cierra" (Pablo, 2-sep)'
     && stripos(implode(' ', $r), 'si te sirve') === false);
 caso('el mensaje del precio ya no trae pegada la oferta del prediseño',
     stripos($r[0], 'predise') === false);
-/* 18-sep (Pablo): "Para lo que me contás, te serviría…". Nunca "Lo mejor
+/* 18-sep (Pablo): "Para lo que me contás, te armamos…". Nunca "Lo mejor
  * para tu negocio": el bot no sabe tanto como para afirmar qué es lo mejor. */
-caso('la propuesta arranca "Para lo que me contás, te serviría", sin "Lo mejor para" (18-sep)',
-    str_starts_with(wabot_personalizar($r[0], $c), 'Para lo que me contás, te serviría') && mb_stripos($r[0], 'lo mejor para') === false, $r[0]);
+caso('la propuesta arranca "Para lo que me contás, te armamos", sin "Lo mejor para" (18-sep)',
+    str_starts_with(wabot_personalizar($r[0], $c), 'Para lo que me contás, te armamos') && mb_stripos($r[0], 'lo mejor para') === false, $r[0]);
 
 $c = conv_nueva();
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
@@ -166,7 +166,7 @@ clasifica(['productos_y_cursos']);
 $r = wabot_engine('vendo velas y doy talleres', $c, $cfg);
 caso('productos + cursos → cotiza tienda + cursos, no deriva (Pablo, 14-sep)',
     ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['combo_cursos']) && $c['fase'] !== 'derivado'
-    && strpos(implode("\n", (array)$r), 'una plataforma para tus cursos') !== false);
+    && strpos(implode("\n", (array)$r), 'una tienda online completa, con tus cursos') !== false);
 
 echo "— Después del precio —\n";
 
@@ -545,8 +545,9 @@ $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
 caso('el turno A son DOS mensajes: la propuesta y, aparte, la oferta del primer diseño (18-sep)',
     precio_formato_18sep($rP, '$190.000', '$30.000') && mb_stripos($rP[1], 'demo gratis') === false, json_encode($rP, JSON_UNESCAPED_UNICODE));
 caso('y ya no manda el link del presupuesto (14-sep)', strpos($rP[0], 'presupuestos/') === false);
-caso('el primer mensaje es el texto fijo del ecommerce, con su panel de productos y pedidos',
-    strpos($rP[0], '• Plan anual: $190.000 por año') !== false && mb_stripos($rP[0], 'La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos') !== false);
+caso('el primer mensaje es la propuesta corta del ecommerce con su precio (20-sep)',
+    strpos($rP[0], '• Plan anual: $190.000 por año') !== false
+    && mb_stripos($rP[0], 'te armamos una tienda online completa.') !== false, $rP[0]);
 caso('la demo se ofreció en el mismo turno, sin esperar respuesta',
     !empty($cP['cta_muestra']) && $cP['fase'] === 'prediseno'
     && $cP['tipo'] === 'ecommerce' && $cP['precio_dado'] === true);
@@ -643,18 +644,23 @@ caso('y ya no manda el link del presupuesto (14-sep)', strpos($r[0], 'presupuest
 
 echo "— Cada tipo cuenta lo suyo en el mensaje del precio —\n";
 
+/* 20-sep (Pablo): la propuesta es corta —"te armamos un sitio profesional
+   completo"— porque abajo, en el mismo mensaje, va la lista de todo lo que
+   incluye. Antes cada tipo explicaba también para qué le servía. */
 foreach ([
-    'landing'       => 'contacto directo a tu WhatsApp',
-    'inmobiliaria'  => 'catálogo de propiedades',
-    'ecommerce'     => 'carrito y cobro online',
-    'elearning'     => 'acceso propio para cada alumno',
-] as $tipo => $sena) {
+    'landing'       => 'un sitio profesional completo',
+    'inmobiliaria'  => 'una web inmobiliaria completa',
+    'ecommerce'     => 'una tienda online completa',
+    'elearning'     => 'una plataforma de cursos completa',
+] as $tipo => $corta) {
     $msg = wabot_msg_precio_texto($tipo, $cfg);
-    caso("$tipo describe lo que incluye, sin link del presupuesto (14-sep)", stripos($msg, $sena) !== false
+    caso("$tipo dice en una línea qué le armamos, sin link del presupuesto", stripos($msg, 'te armamos ' . $corta) !== false
         && strpos($msg, $cfg['tipos'][$tipo]['precio']) !== false
         && strpos($msg, (string)$cfg['tipos'][$tipo]['link']) === false);
     caso("$tipo dice qué es ANTES de cuánto sale",
-        strpos($msg, $sena) < strpos($msg, $cfg['tipos'][$tipo]['precio']));
+        strpos($msg, $corta) < strpos($msg, $cfg['tipos'][$tipo]['precio']));
+    caso("$tipo lista lo que incluye debajo del precio",
+        strpos($msg, '✓ Desarrollo completo de la web') > strpos($msg, $cfg['tipos'][$tipo]['precio']));
 }
 
 // Y si a un tipo le borran la descripción, el mensaje no queda con un {desc} crudo.
@@ -3148,16 +3154,17 @@ caso('sin ese pedido, lo mismo: el precio y la oferta, sin el formulario ni el l
 
 echo "— TANDA 1: el precio llega comprando algo (beneficio antes del número) —\n";
 
-foreach (['landing' => 'te escribe sin preguntarte lo básico',
-          'inmobiliaria' => 'te consulta por una propiedad concreta',
-          'ecommerce' => 'te compran y te pagan sin que tengas que estar contestando',
-          'elearning' => 'vendés el curso una vez y el alumno entra solo'] as $tipo => $beneficio) {
-    caso("$tipo explica para qué le sirve, no solo qué es",
-        mb_stripos((string)$cfg['tipos'][$tipo]['desc'], $beneficio) !== false);
+// 20-sep: la descripción de cada tipo es corta y termina en "completo/completa".
+foreach (['landing' => 'un sitio profesional completo',
+          'inmobiliaria' => 'una web inmobiliaria completa',
+          'ecommerce' => 'una tienda online completa',
+          'elearning' => 'una plataforma de cursos completa'] as $tipo => $corta) {
+    caso("$tipo dice en pocas palabras qué es", (string)$cfg['tipos'][$tipo]['desc'] === $corta,
+        (string)$cfg['tipos'][$tipo]['desc']);
 }
-caso('el beneficio va ANTES del precio en el mensaje', (function () use ($cfg) {
+caso('la propuesta va ANTES del precio en el mensaje', (function () use ($cfg) {
     $t = wabot_msg_precio_texto('ecommerce', $cfg);
-    return mb_strpos($t, 'sin que tengas que estar contestando') < mb_strpos($t, '$30.000');
+    return mb_strpos($t, 'una tienda online completa') < mb_strpos($t, '$30.000');
 })());
 
 echo "— La oferta es un primer diseño sin cargo (18-sep) —\n";
@@ -4760,7 +4767,7 @@ caso('y la clave existe en la config',
  * desde la tercera versión los montos viven en los tres pasos: el mensaje del
  * precio es la oferta y el link. */
 caso('el mensaje del precio es la propuesta, sin link ni párrafo de montos (18-sep)',
-    (string)$cfg['tipos']['landing']['precio_ideal'] === '{para_quien} te serviría {propuesta}.'
+    (string)$cfg['tipos']['landing']['precio_ideal'] === '{para_quien} te armamos {propuesta}.'
     && strpos((string)$cfg['tipos']['landing']['precio_ideal'], '{precio}') === false
     && stripos((string)$cfg['tipos']['landing']['precio_ideal'], 'pago único') === false);
 caso('y el segundo mensaje ofrece el primer diseño, sin montos',
@@ -5083,10 +5090,10 @@ caso('los guiones bajos se limpian antes de salir', wabot_rubro_valido('las_gorr
 $cR['rubro_pitch'] = 'las gorras';
 $pitchR = wabot_pitch_precio_texto('ecommerce', $cfg, $cR);
 caso('el texto arranca con {para_quien} y personalizar lo resuelve con las palabras del cliente (18-sep)',
-    strpos($pitchR, '{para_quien} te serviría') === 0
-    && strpos(wabot_personalizar($pitchR, $cR), 'Para las gorras, te serviría una tienda online') === 0, wabot_personalizar($pitchR, $cR));
-caso('sin rubro válido arranca "Para lo que me contás, te serviría", sin marcador crudo',
-    strpos(wabot_personalizar($pitchR, conv_nueva()), 'Para lo que me contás, te serviría una tienda online') === 0);
+    strpos($pitchR, '{para_quien} te armamos') === 0
+    && strpos(wabot_personalizar($pitchR, $cR), 'Para las gorras, te armamos una tienda online') === 0, wabot_personalizar($pitchR, $cR));
+caso('sin rubro válido arranca "Para lo que me contás, te armamos", sin marcador crudo',
+    strpos(wabot_personalizar($pitchR, conv_nueva()), 'Para lo que me contás, te armamos una tienda online') === 0);
 caso('en el medio de una frase, sin rubro, queda "tu negocio"',
     wabot_aplicar_rubro('Es una demo gratis, pensada para {rubro}.', '') === 'Es una demo gratis, pensada para tu negocio.'
     && wabot_aplicar_rubro('Es una demo gratis, pensada para {rubro}.', 'la ropa de nene') === 'Es una demo gratis, pensada para la ropa de nene.');

@@ -67,8 +67,8 @@ $c = conv_nueva('5491177770001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
 $r0 = wabot_personalizar($r[0] ?? '', $c);
 caso('son dos mensajes: la propuesta y, aparte, la oferta del primer diseño', count($r) === 2);
-caso('arranca "Para lo que me contás, te serviría", sin "Lo mejor para" ni link (18-sep)',
-    str_starts_with($r0, 'Para lo que me contás, te serviría un sitio profesional para mostrar')
+caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link (18-sep)',
+    str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('los dos planes con sus montos y, abajo, todo lo que incluyen (19-sep)',
     strpos($r0, "Podés elegir entre dos planes:\n\n• Plan anual: $120.000 por año\n• Plan mensual: $20.000 por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web") !== false
@@ -102,19 +102,19 @@ caso('pasa entero por el punto único de salida: propuesta y oferta',
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => 'una tienda online para mostrar tus productos', 'inmobiliaria' => 'una web inmobiliaria para publicar propiedades',
-          'elearning' => 'una plataforma para vender cursos'] as $tipo => $arranque) {
+foreach (['ecommerce' => 'una tienda online completa', 'inmobiliaria' => 'una web inmobiliaria completa',
+          'elearning' => 'una plataforma de cursos completa'] as $tipo => $arranque) {
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
     caso("$tipo: la frase fija de su tipo y las dos formas",
-        strpos($t, 'Para lo que me contás, te serviría ' . $arranque) === 0 && strpos($t, '• Plan mensual: $30.000 por mes') !== false, $t);
+        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0 && strpos($t, '• Plan mensual: $30.000 por mes') !== false, $t);
 }
 $c = conv_nueva('5491177770002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
 $r = wabot_pitch('landing', $c, $cfg);
-caso('con el rubro sabido, la propuesta lo nombra: "Para tu centro de estética, te serviría…"',
-    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te serviría un sitio profesional para mostrar') === 0,
+caso('con el rubro sabido, la propuesta lo nombra: "Para tu centro de estética, te armamos…"',
+    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te armamos un sitio profesional completo') === 0,
     wabot_personalizar($r[0], $c));
 caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos(implode(' ', $r), 'primer pago') === false);
 
@@ -123,7 +123,7 @@ $c['pidio_precio'] = true;
 $c['rubro_pitch'] = 'tu pastelería';
 $r = wabot_precio('ecommerce', $c, $cfg);
 caso('el que pidió el precio de entrada recibe el mismo formato',
-    strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería, te serviría una tienda online') === 0
+    strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería, te armamos una tienda online') === 0
     && mb_stripos($r[0], 'para lo tuyo va') === false, $r[0]);
 caso('con la oferta del primer diseño en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'primer diseño') !== false);
 
@@ -618,11 +618,11 @@ clasifica(['productos_y_cursos']);
 $rTM = wabot_engine($msgTaller, $cTM, $cfg);
 caso('el motor cotiza tienda + cursos en vez de derivar',
     ($cTM['fase'] ?? '') !== 'derivado' && empty($cTM['bot_off']) && ($cTM['tipo'] ?? '') === 'ecommerce' && !empty($cTM['combo_cursos'])
-    && strpos(implode("\n", (array)$rTM), 'vender productos y cursos') !== false
+    && strpos(implode("\n", (array)$rTM), 'una tienda online completa, con tus cursos') !== false
     && strpos(implode("\n", (array)$rTM), '$190.000') !== false
     && strpos(implode("\n", (array)$rTM), '$30.000') !== false, json_encode($rTM, JSON_UNESCAPED_UNICODE));
 caso('con la frase del combinado y sin el aviso de "el precio no sale de la lista"',
-    mb_stripos(implode("\n", (array)$rTM), 'vender productos y cursos') !== false
+    mb_stripos(implode("\n", (array)$rTM), 'una tienda online completa, con tus cursos') !== false
     && mb_stripos(implode("\n", (array)$rTM), 'no sale de la lista') === false);
 caso('el resumen del precio no manda link de presupuesto', strpos(wabot_precio_resumen($cTM, $cfg), 'presupuestos/') === false);
 caso('y el boceto dice que es tienda + cursos',
@@ -631,14 +631,14 @@ $cTS = conv_nueva('5491177770098TEST');
 clasifica(['rubro_ecommerce']);
 $rTS = wabot_engine('Tengo una tienda de ropa y quiero vender online', $cTS, $cfg);
 caso('una tienda sin cursos se cotiza como tienda sola', empty($cTS['combo_cursos'])
-    && strpos($rTS[0], '• Plan anual: $190.000 por año') !== false && strpos($rTS[0], 'vender productos y cursos') === false);
+    && strpos($rTS[0], '• Plan anual: $190.000 por año') !== false && strpos($rTS[0], 'una tienda online completa, con tus cursos') === false);
 $cCombo = conv_nueva('998FPTEST'); $cCombo['fase'] = 'nuevo';
 $msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos';
 wabot_conv_transcript($cCombo, 'cliente', $msjCombo); $cCombo['ultimo_cliente_ts'] = time();
 clasifica(['productos_y_cursos']);
 $rCombo = wabot_salida_preparar(wabot_responder($msjCombo, $cCombo, $cfg), $cCombo, $cfg);
 caso('por el borde común: el taller de artesanías recibe la cotización de tienda + cursos, no el texto de carga',
-    strpos(implode("\n", $rCombo), 'vender productos y cursos') !== false
+    strpos(implode("\n", $rCombo), 'una tienda online completa, con tus cursos') !== false
     && strpos(implode("\n", $rCombo), (string)wabot_texto_info('carga', $cfg)) === false, json_encode($rCombo, JSON_UNESCAPED_UNICODE));
 caso('combinar tienda y cursos conserva el alcance especial',
     wabot_texto_pregunta_upgrade('Quiero agregar una tienda y cursos grabados, cuánto sale todo junto?', 'landing') === null);
@@ -870,7 +870,7 @@ caso('el turno del precio dice los dos planes con sus montos y lo que incluyen (
     && mb_stripos($rT[0], '• Plan mensual: $30.000 por mes') !== false && mb_stripos($rT[0], 'Ambos incluyen todo:') !== false, $rT[0]);
 $todos = json_encode(wabot_textos_default(), JSON_UNESCAPED_UNICODE);
 /* "En tu caso podemos hacer…" volvió a estar permitido (Pablo, 18-sep: "Para
- * lo que me contás, te serviría…" o "En tu caso podemos hacer…"). */
+ * lo que me contás, te armamos…" o "En tu caso podemos hacer…"). */
 caso('ningún texto dice "servicio mensual", "abono mensual", "Lo mejor para" ni "te podemos ofrecer"',
     !preg_match('/servicio mensual|abono mensual|lo mejor para|te podemos ofrecer/iu', $todos));
 caso('ningún texto promete un cambio por mes incluido en la suscripción ni los $10.000 por cambio extra',

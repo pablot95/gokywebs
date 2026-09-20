@@ -352,7 +352,7 @@ caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con la propuesta y, en otro mensaje, la oferta del primer diseño',
-    count($rR) === 2 && stripos($rR[0], 'donde presentes tu negocio') !== false
+    count($rR) === 2 && stripos($rR[0], 'te armamos un sitio profesional completo') !== false
     && mb_stripos($rR[1], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 15. Las dudas de pago del modelo doble —\n";

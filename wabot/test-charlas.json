@@ -7,7 +7,7 @@
       "Hola, soy electricista matriculado, quiero una pagina para que me contacten",
       "dale, armala"
     ],
-    "esperado": "Dos mensajes: 'Para tu … , te serviría un sitio profesional donde…' (o 'Para lo que me contás, te serviría…') con los dos planes ('Plan anual: $120.000 por año' y 'Plan mensual: $20.000 por mes', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
+    "esperado": "Dos mensajes: 'Para tu … , te armamos un sitio profesional donde…' (o 'Para lo que me contás, te armamos…') con los dos planes ('Plan anual: $120.000 por año' y 'Plan mensual: $20.000 por mes', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
   },
   {
     "id": "02",
@@ -154,7 +154,7 @@
     "turnos": [
       "Tengo un local de indumentaria femenina"
     ],
-    "esperado": "'Para tu local de indumentaria femenina, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago…' (si Gemini no manda un rubro válido: 'Para lo que me contás, te serviría…'). Nunca 'Lo mejor para tu negocio'."
+    "esperado": "'Para tu local de indumentaria femenina, te armamos una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago…' (si Gemini no manda un rubro válido: 'Para lo que me contás, te armamos…'). Nunca 'Lo mejor para tu negocio'."
   },
   {
     "id": "16",

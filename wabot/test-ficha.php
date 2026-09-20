@@ -78,8 +78,8 @@ echo "— 3. La propuesta demuestra que escuchó —\n";
 
 [$c, $r] = charla([['Tengo un local de indumentaria femenina', ['rubro_comercio'],
     ['ficha' => ['rubro' => 'tu local de indumentaria femenina', 'necesidad' => 'tienda']]]], '549110000INDUTEST', $cfg);
-caso('indumentaria: "Para tu local de indumentaria femenina, te serviría una tienda online…"',
-    str_starts_with($r[0] ?? '', 'Para tu local de indumentaria femenina, te serviría una tienda online donde muestres tus productos'), $r[0] ?? '');
+caso('indumentaria: "Para tu local de indumentaria femenina, te armamos una tienda online…"',
+    str_starts_with($r[0] ?? '', 'Para tu local de indumentaria femenina, te armamos una tienda online completa'), $r[0] ?? '');
 
 [$c, $r] = charla([['Soy peluquera, quiero una web con turnos a WhatsApp, Instagram y calificaciones', ['rubro_landing'], []]], '549110000TURNOSTEST', $cfg);
 caso('turnos por WhatsApp, Instagram y calificaciones se nombran en la propuesta',
@@ -91,12 +91,12 @@ caso('y siguen el precio del sitio profesional y la oferta', strpos($r[0] ?? '',
 caso('sahumerios: primero que la publicidad no la hacemos, y cómo ayuda la tienda',
     str_starts_with($r[0] ?? '', 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link'),
     $r[0] ?? '');
-caso('y después la propuesta con el precio de la tienda', mb_stripos($r[0] ?? '', 'te serviría una tienda online') !== false && strpos($r[0] ?? '', '$190.000') !== false);
+caso('y después la propuesta con el precio de la tienda', mb_stripos($r[0] ?? '', 'te armamos una tienda online') !== false && strpos($r[0] ?? '', '$190.000') !== false);
 caso('la aclaración sale una sola vez', ($c['fuera_avisado'] ?? []) === ['publicidad']);
 
 [$c, $r] = charla([['Tenemos un restaurant con hospedaje en las sierras', ['rubro_landing'], []]], '549110000HOSPTEST', $cfg);
 caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con precio de sitio profesional',
-    mb_stripos($r[0] ?? '', 'muestres las habitaciones, el restaurante y los servicios, y tus huéspedes te pidan la reserva online') !== false
+    mb_stripos($r[0] ?? '', 'un sitio profesional completo, con las habitaciones, el restaurante y las reservas online') !== false
     && strpos($r[0] ?? '', '$120.000') !== false, $r[0] ?? '');
 
 echo "— 4. Catálogo + WhatsApp: sitio profesional más la carga de productos (Pablo, 18-sep) —\n";
@@ -104,7 +104,7 @@ echo "— 4. Catálogo + WhatsApp: sitio profesional más la carga de productos 
 [$c, $r] = charla([['Vendo ropa pero solo quiero mostrar los productos y que me consulten por WhatsApp', ['rubro_comercio'], []]], '549110000CATATEST', $cfg);
 caso('se cotiza como sitio profesional con catálogo',
     ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo'])
-    && mb_stripos($r[0] ?? '', 'un sitio profesional con el catálogo de tus productos') !== false
+    && mb_stripos($r[0] ?? '', 'un sitio profesional completo, con el catálogo de tus productos') !== false
     && strpos($r[0] ?? '', '$120.000') !== false && strpos($r[0] ?? '', '$20.000') !== false, $r[0] ?? '');
 caso('con la carga de productos aparte, a $500 cada uno',
     strpos($r[0] ?? '', 'La carga de los productos va aparte: $500 por producto.') !== false);
