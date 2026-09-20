@@ -64,12 +64,12 @@ caso('las cuatro de precio con los dos planes y lo que incluyen',
     mb_strpos($planes[0], '• Plan anual: $140.000 por año') !== false && mb_strpos($planes[1], '• Plan anual: $230.000 por año') !== false
     && mb_strpos($planes[2], '• Plan anual: $190.000 por año') !== false && mb_strpos($planes[3], 'cursos') !== false
     && mb_strpos($planes[3], '• Plan mensual: $30.000 por mes') !== false && mb_strpos($planes[0], 'Ambos incluyen todo:') !== false, $planes[0]);
-caso('el sitio profesional sin el panel de administración; la tienda con su panel (19-sep)',
-    mb_stripos($planes[0], 'panel') === false && mb_strpos($planes[1], '✓ Panel para que actualices tu contenido cuando quieras') !== false, $planes[0]);
-caso('se suman la seña del plan anual (desde la seña), la web propia y el panel del sitio a $25.000',
+caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
+    mb_strpos($planes[0], '✓ Panel para autogestionar contenido') !== false
+    && mb_strpos($planes[1], "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
+caso('se suman la seña del plan anual (desde la seña) y la opción de web propia',
     count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el plan anual arrancás con una seña de $40.000') === 0 && mb_strpos($t, 'contado desde la seña') !== false)) === 1
-    && count(array_filter($planes, fn($t) => mb_strpos($t, 'Si la querés tuya') === 0)) === 1
-    && count(array_filter($planes, fn($t) => mb_strpos($t, 'el plan mensual pasa a $25.000') !== false)) === 1);
+    && count(array_filter($planes, fn($t) => mb_strpos($t, 'Si la querés tuya') === 0)) === 1);
 caso('lo que Pablo editó no se toca', in_array('Antes de arrancar dejamos todo por escrito.', $planes, true));
 $pagos = rr_items($r, 'Pagos');
 caso('sus datos para la seña quedan', $pagos[0] === 'Te paso los datos para la seña. Alias: gokywebs.mp');
@@ -108,7 +108,7 @@ unset($cat);
 file_put_contents($ruta, json_encode($primera, JSON_UNESCAPED_UNICODE));
 $rPrimera = wabot_respuestas_rapidas_load();
 caso('la primera versión (un solo bloque de $290.000) queda con los precios nuevos',
-    count(rr_items($rPrimera, 'Presupuesto y planes')) === 9 && mb_strpos(json_encode($rPrimera, JSON_UNESCAPED_UNICODE), 'Son alternativas') === false);
+    count(rr_items($rPrimera, 'Presupuesto y planes')) === 8 && mb_strpos(json_encode($rPrimera, JSON_UNESCAPED_UNICODE), 'Son alternativas') === false);
 
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 todo_ok();

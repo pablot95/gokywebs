@@ -19,11 +19,12 @@ $r = turno('Vendo ropa', $c, $cfg);
 $todo = implode("\n", $r);
 caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mejor para"',
-    str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago.')
+    str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
     strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $230.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen todo:") !== false
-    && strpos($r[0] ?? '', '✓ Hosting y dominio') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
+    && strpos($r[0] ?? '', "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
+    && strpos($r[0] ?? '', '✓ Actualizaciones de SDK y plugins') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
     && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
 caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
@@ -95,9 +96,9 @@ clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
-    'landing' => ['un sitio profesional donde presentes tu negocio, muestres tus servicios o trabajos y te escriban directo a tu WhatsApp', '$140.000', '$20.000'],
-    'inmobiliaria' => ['una web inmobiliaria donde publiques tus propiedades con fotos y fichas completas, con buscador por zona, tipo y precio', '$190.000', '$30.000'],
-    'elearning' => ['una plataforma donde vendas tus cursos, con los videos organizados, acceso propio para cada alumno y cobro online', '$230.000', '$30.000'],
+    'landing' => ['un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp', '$140.000', '$20.000'],
+    'inmobiliaria' => ['una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja', '$190.000', '$30.000'],
+    'elearning' => ['una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos', '$230.000', '$30.000'],
 ];
 foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
