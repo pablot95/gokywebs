@@ -22,7 +22,7 @@ caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mej
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
-    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $200.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen todo:") !== false
+    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $190.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen todo:") !== false
     && strpos($r[0] ?? '', "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r[0] ?? '', '✓ Actualizaciones de SDK y plugins') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
     && mb_stripos($r[0] ?? '', 'pago único') === false
@@ -97,8 +97,8 @@ caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
     'landing' => ['un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp', '$120.000', '$20.000'],
-    'inmobiliaria' => ['una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja', '$180.000', '$30.000'],
-    'elearning' => ['una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos', '$200.000', '$30.000'],
+    'inmobiliaria' => ['una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja', '$170.000', '$30.000'],
+    'elearning' => ['una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos', '$190.000', '$30.000'],
 ];
 foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);

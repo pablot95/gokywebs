@@ -61,8 +61,8 @@ $planes = rr_items($r, 'Presupuesto y planes');
 caso('ya no quedan "Son alternativas", "Lo mejor para" ni el primer año del pago único',
     mb_strpos($todo, 'Son alternativas') === false && mb_strpos($todo, 'Lo mejor para') === false && mb_strpos($todo, 'durante el primer año') === false);
 caso('las cuatro de precio con los dos planes y lo que incluyen',
-    mb_strpos($planes[0], '• Plan anual: $120.000 por año') !== false && mb_strpos($planes[1], '• Plan anual: $200.000 por año') !== false
-    && mb_strpos($planes[2], '• Plan anual: $180.000 por año') !== false && mb_strpos($planes[3], 'cursos') !== false
+    mb_strpos($planes[0], '• Plan anual: $120.000 por año') !== false && mb_strpos($planes[1], '• Plan anual: $190.000 por año') !== false
+    && mb_strpos($planes[2], '• Plan anual: $170.000 por año') !== false && mb_strpos($planes[3], 'cursos') !== false
     && mb_strpos($planes[3], '• Plan mensual: $30.000 por mes') !== false && mb_strpos($planes[0], 'Ambos incluyen todo:') !== false, $planes[0]);
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',

@@ -22,9 +22,9 @@ function wabot_respuestas_rapidas_default() {
         // Los dos planes del 19-sep (Pablo): el mismo bloque que manda el bot.
         ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
             "Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp.\n\n" . wabot_respuestas_rapidas_planes_texto('$120.000', '$20.000', 'landing'),
-            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$200.000', '$30.000'),
-            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$180.000', '$30.000'),
-            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$200.000', '$30.000'),
+            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
+            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$170.000', '$30.000'),
+            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
             'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.',
             'Si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000 el sitio profesional, $290.000 la tienda o los cursos y $240.000 la inmobiliaria. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
             'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
@@ -247,7 +247,8 @@ function wabot_respuestas_rapidas_normalizar($valor) {
  * (los montos viven adentro del texto, no en un marcador).
  */
 function wabot_respuestas_rapidas_precios_20sep($categorias) {
-    $viejos = ['$140.000', '$230.000', '$190.000'];
+    // El 20-sep bajaron dos veces: entran los montos del 19-sep y los del primer ajuste.
+    $viejos = ['$140.000', '$230.000', '$190.000', '$200.000', '$180.000'];
     $fabrica = [];
     foreach (wabot_respuestas_rapidas_default() as $predeterminada) {
         if ($predeterminada['titulo'] === 'Presupuesto y planes') $fabrica = array_slice($predeterminada['items'], 0, 4);

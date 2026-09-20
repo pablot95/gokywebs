@@ -91,7 +91,7 @@ caso('y siguen el precio del sitio profesional y la oferta', strpos($r[0] ?? '',
 caso('sahumerios: primero que la publicidad no la hacemos, y cómo ayuda la tienda',
     str_starts_with($r[0] ?? '', 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link'),
     $r[0] ?? '');
-caso('y después la propuesta con el precio de la tienda', mb_stripos($r[0] ?? '', 'te serviría una tienda online') !== false && strpos($r[0] ?? '', '$200.000') !== false);
+caso('y después la propuesta con el precio de la tienda', mb_stripos($r[0] ?? '', 'te serviría una tienda online') !== false && strpos($r[0] ?? '', '$190.000') !== false);
 caso('la aclaración sale una sola vez', ($c['fuera_avisado'] ?? []) === ['publicidad']);
 
 [$c, $r] = charla([['Tenemos un restaurant con hospedaje en las sierras', ['rubro_landing'], []]], '549110000HOSPTEST', $cfg);
@@ -125,7 +125,7 @@ caso('3.500 productos: nombra el motivo y deriva, sin precio de lista',
 caso('Mercado Libre: lo cotiza el desarrollador',
     mb_stripos($r[0] ?? '', 'Mercado Libre no entra en el precio de lista') !== false && empty($c['precio_dado']), $r[0] ?? '');
 [$c, $r] = charla([['Tengo un vivero con 120 plantas distintas', ['rubro_comercio'], []]], '549110000POCOSTEST', $cfg);
-caso('120 productos sí es de lista', !empty($c['precio_dado']) && strpos($r[0] ?? '', '$200.000') !== false);
+caso('120 productos sí es de lista', !empty($c['precio_dado']) && strpos($r[0] ?? '', '$190.000') !== false);
 
 echo "— 6. Lo que el bot entendía mal —\n";
 

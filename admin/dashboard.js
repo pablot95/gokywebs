@@ -1024,14 +1024,14 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 // `unico` es el precio del plan anual; `propia`, el pago único de la web propia.
 const PLANES = {
     profesional:  { label: "Sitio profesional",    unico: 120000, sena: 40000, mensual: 20000, propia: 180000 },
-    ecommerce:    { label: "Ecommerce",            unico: 200000, sena: 60000, mensual: 30000, propia: 290000 },
-    cursos:       { label: "Plataforma de cursos", unico: 200000, sena: 60000, mensual: 30000, propia: 290000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 180000, sena: 60000, mensual: 30000, propia: 240000 },
+    ecommerce:    { label: "Ecommerce",            unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
+    cursos:       { label: "Plataforma de cursos", unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 170000, sena: 60000, mensual: 30000, propia: 240000 },
     // Desde el 19-sep-2026 el portal de noticias se cotiza como la tienda (Pablo): presupuestos/noticias.
-    noticias:     { label: "Portal de noticias",   unico: 200000, sena: 60000, mensual: 30000, propia: 290000 },
+    noticias:     { label: "Portal de noticias",   unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 200000, sena: 60000, mensual: 30000, propia: 290000 };
+const PLAN_RESTO = { unico: 190000, sena: 60000, mensual: 30000, propia: 290000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
 const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único (web propia)" };
 // Modalidades que se cobran con seña y saldo al entregar: el plan anual y la web propia.

@@ -26,7 +26,7 @@ wabot_precio_congelar($c, 'ecommerce', $cfg);
 $r = turno('¿Qué diferencia hay entre un precio y el otro?', $c, $cfg);
 $texto = implode(' ', $r);
 caso('explica la diferencia entre los planes, con sus montos y sin seña (19-sep)', str_contains($texto, 'Los dos planes incluyen lo mismo')
-    && str_contains($texto, 'Plan anual de $200.000 por año') && str_contains($texto, 'Plan mensual de $30.000 por mes') && !str_contains($texto, 'seña'), $texto);
+    && str_contains($texto, 'Plan anual de $190.000 por año') && str_contains($texto, 'Plan mensual de $30.000 por mes') && !str_contains($texto, 'seña'), $texto);
 caso('una pregunta de pago no manda el formulario ni crea prospecto', !str_contains($texto, 'gokywebs.com/form') && empty($c['esProspecto']));
 $r = turno('ok', $c, $cfg);
 caso('un ok posterior a una duda no apaga el bot', empty($c['esProspecto']) && empty($c['bot_off']));

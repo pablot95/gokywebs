@@ -104,7 +104,7 @@ caso('sin rubro no hay montos, aunque cambie la lista de tipos (14-sep)',
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['elige_ecommerce']);
 $r = wabot_engine('ecommerce', $c, $cfg);
-caso('elige ecommerce del menú → precio de la tienda online, sin link (14-sep)', strpos(implode("\n", (array)$r), '$30.000') !== false && strpos(implode("\n", (array)$r), '$30.000') !== false && strpos($r[0], '• Plan anual: $200.000 por año') !== false && strpos($r[0], 'presupuestos/') === false && $c['tipo'] === 'ecommerce');
+caso('elige ecommerce del menú → precio de la tienda online, sin link (14-sep)', strpos(implode("\n", (array)$r), '$30.000') !== false && strpos(implode("\n", (array)$r), '$30.000') !== false && strpos($r[0], '• Plan anual: $190.000 por año') !== false && strpos($r[0], 'presupuestos/') === false && $c['tipo'] === 'ecommerce');
 
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['pregunta_tipos']);
@@ -543,10 +543,10 @@ $cP = conv_sin_pitch();
 clasifica(['rubro_comercio']);
 $rP = wabot_engine('Tengo una empresa de ropa', $cP, $cfg);
 caso('el turno A son DOS mensajes: la propuesta y, aparte, la oferta del primer diseño (18-sep)',
-    precio_formato_18sep($rP, '$200.000', '$30.000') && mb_stripos($rP[1], 'demo gratis') === false, json_encode($rP, JSON_UNESCAPED_UNICODE));
+    precio_formato_18sep($rP, '$190.000', '$30.000') && mb_stripos($rP[1], 'demo gratis') === false, json_encode($rP, JSON_UNESCAPED_UNICODE));
 caso('y ya no manda el link del presupuesto (14-sep)', strpos($rP[0], 'presupuestos/') === false);
 caso('el primer mensaje es el texto fijo del ecommerce, con su panel de productos y pedidos',
-    strpos($rP[0], '• Plan anual: $200.000 por año') !== false && mb_stripos($rP[0], 'La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos') !== false);
+    strpos($rP[0], '• Plan anual: $190.000 por año') !== false && mb_stripos($rP[0], 'La administrás vos desde tu panel: cargás productos, cambiás precios y gestionás los pedidos') !== false);
 caso('la demo se ofreció en el mismo turno, sin esperar respuesta',
     !empty($cP['cta_muestra']) && $cP['fase'] === 'prediseno'
     && $cP['tipo'] === 'ecommerce' && $cP['precio_dado'] === true);
@@ -625,9 +625,9 @@ caso('y no le encajó el precio institucional', strpos(implode(' ', $r), '250.00
 $c = conv_nueva();
 clasifica(['rubro_comercio']);
 $r = wabot_engine('Vendo ropa y quiero vender online', $c, $cfg);
-caso('quiere vender online → tienda online: plan anual de $200.000 o plan mensual de $30.000',
+caso('quiere vender online → tienda online: plan anual de $190.000 o plan mensual de $30.000',
     strpos(implode(' ', $r), '$30.000') !== false && strpos(implode(' ', $r), '$30.000') !== false
-    && strpos(implode(' ', $r), '• Plan anual: $200.000 por año') !== false
+    && strpos(implode(' ', $r), '• Plan anual: $190.000 por año') !== false
     && $c['tipo'] === 'ecommerce');
 
 
@@ -821,7 +821,7 @@ $valor = function ($k) use ($campos) { $v = $campos[$k] ?? null; return $v ? res
 
 caso('la cantidad de productos llega al boceto', $valor('productos_cantidad') === '40');
 caso('la cantidad de imágenes que mandó también', $valor('imagenes_recibidas') === '3');
-caso('y el precio cotizado también, con las dos formas', preg_match('/^Plan anual \$200\.000 \(seña \$60\.000\) o plan mensual \$30\.000$/u', (string)$valor('presupuesto_cotizado')) === 1, (string)$valor('presupuesto_cotizado'));
+caso('y el precio cotizado también, con las dos formas', preg_match('/^Plan anual \$190\.000 \(seña \$60\.000\) o plan mensual \$30\.000$/u', (string)$valor('presupuesto_cotizado')) === 1, (string)$valor('presupuesto_cotizado'));
 caso('el nombre del cliente no viaja vacío', $valor('nombre') === 'Ana Prueba');
 caso('el rubro sale del brief', $valor('rubro') === 'Indumentaria');
 caso('lo que ofrece también', $valor('productos_servicios') === 'remeras');
@@ -2825,7 +2825,7 @@ $rangos = wabot_texto_rangos($cfg);
 caso('sin rubro, "cuánto sale" no da montos: pregunta a qué se dedica (Pablo, 14-sep)',
     strpos($rangos, '$') === false && mb_stripos($rangos, 'primero contame a qué te dedicás') !== false);
 caso('y no queda ningún precio viejo',
-    strpos($rangos, '$290.000') === false && strpos($rangos, '$320.000') === false && strpos($rangos, '$200.000') === false);
+    strpos($rangos, '$290.000') === false && strpos($rangos, '$320.000') === false && strpos($rangos, '$190.000') === false);
 
 $cfgPrecioNuevo = wabot_config_load();
 $cfgPrecioNuevo['tipos']['landing']['precio'] = '$99.000';
@@ -4259,7 +4259,7 @@ echo "\n— El aviso de mixto va en el embudo de precio, no se puede esquivar (2
 // El guard vivía solo en dar_precio y la respuesta a un desempate toma un
 // atajo determinista que llama a wabot_precio() directo, sin pasar por la
 // herramienta: psicoeducación pidió "sesiones, grupos y cuadernillos",
-// contestó "Reservar" y se llevó turnos de $200.000 con los cuadernillos
+// contestó "Reservar" y se llevó turnos de $190.000 con los cuadernillos
 // afuera. Acá se prueba por ese mismo atajo.
 $cMixPrecio = conv_nueva();
 $cMixPrecio['fase'] = 'menu';
@@ -5030,7 +5030,7 @@ caso('"cuánto sale todo eso?" pregunta por el combinado, "cuánto sale?" no',
     && wabot_texto_pregunta_precio_combinado('cuanto queda entonces?') === false);
 
 /* Con la charla ya derivada por mixto, el precio del combinado no es el del
- * tipo base: un gimnasio con turnos + planes + cursos se llevaba los $200.000. */
+ * tipo base: un gimnasio con turnos + planes + cursos se llevaba los $190.000. */
 $convComb = conv_nueva();
 $convComb['fase'] = 'derivado'; $convComb['tipo'] = 'landing';
 $convComb['precio_dado'] = true; $convComb['espera_avisada'] = true;
@@ -5356,12 +5356,12 @@ caso('"qué hacen ustedes?" tampoco lista los retirados',
     stripos($cfg['info']['que_hacemos'], 'webs con turnos') === false
     && stripos($cfg['info']['que_hacemos'], 'institucional') === false);
 
-/* Y la plata: los rangos decían "desde $200.000 (una landing) hasta $320.000",
+/* Y la plata: los rangos decían "desde $190.000 (una landing) hasta $320.000",
  * precios de antes del recorte. Ahora salen de los tipos vigentes. */
 caso('el texto de rangos ya no dice montos sin rubro (Pablo, 14-sep)',
     strpos(wabot_texto_info('rangos', $cfg), '$') === false);
 caso('y no quedó ningún precio viejo en el texto',
-    strpos((string)$cfg['info']['rangos'], '$200.000') === false
+    strpos((string)$cfg['info']['rangos'], '$190.000') === false
     && strpos((string)$cfg['info']['rangos'], '$320.000') === false);
 
 /* El respaldo del pago va sin montos: si la cuenta de las señas falla, es

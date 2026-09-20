@@ -780,7 +780,7 @@ function getSiteType() {
    Ninguno incluye cambios (el plan con cambios, $25.000 / $35.000, se coordina
    por WhatsApp). El sitio profesional no trae panel: con panel, el plan
    mensual pasa a MENSUALIDAD_CON_PANEL. */
-const PRECIO_UNICO = { landing: 120000, ecommerce: 200000, inmobiliaria: 180000, elearning: 200000 };
+const PRECIO_UNICO = { landing: 120000, ecommerce: 190000, inmobiliaria: 170000, elearning: 190000 };
 const SENA         = { landing: 40000,  ecommerce: 60000,  inmobiliaria: 60000,  elearning: 60000 };
 const MENSUALIDAD  = { landing: 20000,  ecommerce: 30000,  inmobiliaria: 30000,  elearning: 30000 };
 const MENSUALIDAD_CON_PANEL = 25000; // sitio profesional con panel, solo plan mensual
