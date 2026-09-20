@@ -38,7 +38,7 @@ function precio_formato_18sep($r, $precio, $mensualidad) {
     $r = array_values((array)$r);
     return count($r) === 2
         && mb_stripos($r[0], 'te serviría') !== false
-        && strpos($r[0], "Podés elegir entre dos planes:\n\n• Plan anual: $precio por año\n• Plan mensual: $mensualidad por mes\n\nAmbos incluyen:") !== false
+        && strpos($r[0], "Podés elegir entre dos planes:\n\n• Plan anual: $precio por año\n• Plan mensual: $mensualidad por mes\n\nAmbos incluyen todo:") !== false
         && mb_stripos($r[0], 'pago único') === false && mb_stripos($r[0], 'seña') === false
         && mb_stripos($r[1], 'sin cargo un primer diseño') !== false && str_ends_with($r[1], 'Querés que lo armemos?')
         && strpos(implode("\n", $r), 'gokywebs.com/form/') === false;

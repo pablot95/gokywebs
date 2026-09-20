@@ -24,7 +24,7 @@
  *   mantenimiento, actualizaciones y soporte. SIN cambios en la web.
  * - Los dos planes se dicen siempre con el mismo bloque, `dos_formas`
  *   ({dos_formas} en cualquier texto): "Plan anual" y "Plan mensual" con sus
- *   montos y, abajo, "Ambos incluyen:" con la misma lista breve para los
+ *   montos y, abajo, "Ambos incluyen todo:" con la misma lista breve para los
  *   cuatro tipos de web. Desde el 20-sep el panel vuelve a figurar incluido
  *   también en el sitio profesional.
  * - El plan anual se cuenta desde la seña: se renueva cada año desde ahí.
@@ -98,7 +98,7 @@ function wabot_textos_default() {
     // La seña del plan anual no se devuelve (Pablo, 15-sep); el turno queda
     // marcado para el desarrollador.
     'devolucion' => 'La seña del plan anual no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
-    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Hosting y dominio\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Mantenimiento, actualizaciones y arreglo de bugs\n✓ Soporte técnico",
+    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Hosting y dominio\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Mantenimiento, actualizaciones y arreglo de bugs\n✓ Soporte técnico",
     // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',

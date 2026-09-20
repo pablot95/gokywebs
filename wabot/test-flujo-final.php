@@ -22,7 +22,7 @@ caso('la propuesta arranca "Para lo que me contás, te serviría", nunca "Lo mej
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te serviría una tienda online donde muestres tus productos, recibas los pedidos y cobres con Mercado Pago.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
-    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $230.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen:") !== false
+    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n• Plan anual: $230.000 por año\n• Plan mensual: $30.000 por mes\n\nAmbos incluyen todo:") !== false
     && strpos($r[0] ?? '', '✓ Hosting y dominio') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
     && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
