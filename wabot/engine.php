@@ -193,9 +193,19 @@ function wabot_ejes_mixtos($texto) {
     }
     // "vendo" / "vendemos" faltaban y son la forma más común de decirlo:
     // "vendo los kits", "vendo lana" no caían en ningún eje.
-    if (!$ventaEsDelCurso
-        && preg_match('/\b(producto\w*|vend[oe]|vendemos|vender\w*|venta\w*|tienda|mercaderia|articulo\w*|stock'
-        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*|insumo\w*|cuadernillo\w*|ebook\w*|e book|material descargable)\b/u', $t)) $ejes['productos'] = 'la venta de productos';
+    $nombraProducto = preg_match('/\b(producto\w*|tienda|mercaderia|articulo\w*|stock'
+        . '|sahumerio\w*|indumentaria|ropa|accesorio\w*|insumo\w*|cuadernillo\w*|ebook\w*|e book|material descargable)\b/u', $t);
+    $ventaSuelta = preg_match('/\b(vend[oe]|vendemos|vender\w*|venta\w*)\b/u', $t);
+    /* La inmobiliaria que dice "alquileres y ventas" vende PROPIEDADES, no
+     * productos: se llevaba el aviso de proyecto mixto y se iba sin precio
+     * (19-sep). La venta suelta suma eje solo fuera del rubro inmobiliario;
+     * si además nombra un producto, el eje vuelve ("inmobiliaria y vendo muebles"). */
+    $esInmobiliaria = preg_match('/\b(inmobiliaria\w*|martiller\w*|propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|terreno\w*|lote\w*|cochera\w*|ph|duplex)\b/u', $t);
+    // Pero "vendo muebles" en una inmobiliaria sí son dos negocios: el verbo con
+    // un objeto que no es una propiedad vuelve a sumar el eje.
+    $vendeOtraCosa = preg_match('/\b(vend[oe]|vendemos|vendes|venden|vender|vendiendo)\s+(de |un |una |los |las |el |la )?'
+        . '(?!propiedad|inmueble|casa|departamento|terreno|lote|ph\b|duplex|cochera|alquiler|unidad|campo|tambien|todo|mucho|varios)\p{L}{3,}/u', $t);
+    if (!$ventaEsDelCurso && ($nombraProducto || ($ventaSuelta && (!$esInmobiliaria || $vendeOtraCosa)))) $ejes['productos'] = 'la venta de productos';
     if (preg_match('/\b(propiedad\w*|inmueble\w*|alquiler\w*|departamento\w*|casas? en venta)\b/u', $t)) $ejes['propiedades'] = 'las propiedades';
 
     return count($ejes) >= 2 ? $ejes : null;
@@ -1076,6 +1086,43 @@ function wabot_texto_reformulado($mensajes, $cfg) {
  *              es una repetición de la charla— pero sí la limpieza y la
  *              coherencia de estado.
  */
+/**
+ * Lo que el bot no sabe contestar no se contesta (Pablo, 19-sep: "cuando el
+ * bot no entienda, no conteste nada").
+ *
+ * El comodín de textos.php ("Esa duda te la va a poder contestar el
+ * desarrollador cuando te escriba") era la respuesta de todo lo que el motor
+ * no supo clasificar, y salía por una docena de caminos distintos. Se saca acá,
+ * en el borde de salida, que es por donde pasan todos: la línea se cae de la
+ * tanda —si venía en una lista, las otras respuestas siguen— y si era lo único
+ * que había, el turno queda mudo. En los dos casos el chat le queda pendiente a
+ * Pablo, que es quien contesta. El texto sigue en textos.php porque el motor lo
+ * usa como marca interna de "no sé".
+ */
+function wabot_salida_sin_comodin($mensajes, &$conv, $cfg) {
+    $comodinN = wabot_normalizar_frase((string)($cfg['info']['otra'] ?? ''));
+    if ($comodinN === '') return $mensajes;
+    $saco = false;
+    $limpios = [];
+    foreach ((array)$mensajes as $m) {
+        $quedan = [];
+        foreach (preg_split('/\R/u', (string)$m) as $linea) {
+            $sinVineta = trim(preg_replace('/^[-•*]\s*/u', '', trim($linea)));
+            if ($sinVineta !== '' && wabot_normalizar_frase($sinVineta) === $comodinN) { $saco = true; continue; }
+            $quedan[] = $linea;
+        }
+        $texto = trim(implode("\n", $quedan));
+        // Si de una lista quedó una sola línea, se le saca la viñeta.
+        if (strpos($texto, "\n") === false) $texto = trim(preg_replace('/^[-•*]\s*/u', '', $texto));
+        if ($texto !== '') $limpios[] = $texto;
+    }
+    if ($saco) {
+        $conv['handoff_pendiente'] = true;
+        wabot_evento_sesion($conv, 'duda_sin_respuesta');
+    }
+    return array_values($limpios);
+}
+
 function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     $mensajes = array_values(array_filter((array)$mensajes, function ($m) {
         return trim((string)$m) !== '';
@@ -1092,6 +1139,8 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
     $mensajes = wabot_salida_sin_promesas($mensajes, $cfg);
 
     if ($modo === 'turno') {
+        $mensajes = wabot_salida_sin_comodin($mensajes, $conv, $cfg);
+        if (!$mensajes) return $mensajes;
         $mensajes = wabot_demo_siempre_gratis($mensajes, $cfg);
         $mensajes = wabot_salida_sin_cta_repetida($mensajes, $conv);
         $mensajes = wabot_sin_repetidos_consecutivos($mensajes);
@@ -2008,6 +2057,14 @@ function wabot_info_claves_web_propia(array $keys, $texto, $conv, $cfg) {
     return $keys;
 }
 
+/* Los tres pasos ya dicen en cuántos días queda lista: a "cómo trabajan y
+   cuánto tardan?" el plazo le salía dos veces, una en cada respuesta (19-sep). */
+function wabot_info_claves_sin_repetidas(array $keys) {
+    return (in_array('proceso', $keys, true) && in_array('plazos', $keys, true))
+        ? array_values(array_diff($keys, ['plazos']))
+        : $keys;
+}
+
 /* ───────────── La propiedad de la web no la contesta el bot (Pablo, 19-sep) ─────────────
  *
  * De quién es la web, el dominio o el código; si le entregan el código, los
@@ -2133,6 +2190,12 @@ function wabot_pregunta_propiedad($texto) {
     if (wabot_pide_web_propia($crudo) && !wabot_propiedad_es_pregunta($crudo, $t)) return null;
     if (wabot_propiedad_pregunta_titularidad($t)) return 'titularidad';
     if (wabot_propiedad_pregunta_codigo($t)) return 'codigo';
+    /* El clasificador de dudas es el respaldo para PREGUNTAS cortas: sin forma
+     * de pregunta no se usa acá. "Tengo una distribuidora y quiero vender por
+     * la web" contaba su negocio y el bot se callaba (19-sep). Lo que sí es
+     * propiedad sin signo de pregunta ("la web queda a mi nombre") ya lo
+     * agarran los patrones de arriba. */
+    if (!wabot_propiedad_es_pregunta($crudo, $t)) return null;
     $partes = preg_split('/(?<=[?])|[;!\n]+|\.(?=\s|$)|,| y | o | si | tambien | también | ademas | además /iu', $crudo);
     array_unshift($partes, $crudo);
     foreach ((array)$partes as $parte) {
@@ -2453,7 +2516,7 @@ function wabot_texto_rechaza_una_forma($texto) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '' || mb_strlen($t) > 160) return null;
     $no = '\bno (me |nos )?(interesa|interesan|quiero|queremos|me sirve|nos sirve|me conviene|necesito)\b.{0,15}';
-    if (preg_match('/' . $no . '\b(el mensual|el servicio mensual|lo mensual|la suscripcion|pagar (por mes|todos los meses|mensualmente)|pago mensual|un abono|abono mensual)\b/u', $t)) return 'mensual';
+    if (preg_match('/' . $no . '\b(el plan mensual|plan mensual|el mensual|el servicio mensual|lo mensual|la suscripcion|pagar (por mes|todos los meses|mensualmente)|pago mensual|un abono|abono mensual)\b/u', $t)) return 'mensual';
     // "No quiero el anual" (19-sep) rechaza el plan anual: 'unico' es su valor interno.
     if (preg_match('/' . $no . '\b(el pago unico|un pago unico|pagar(la|lo)? (todo )?(junto|de una)|pagarla entera|un solo pago|pagar todo'
         . '|el anual|el plan anual|plan anual|el pago anual|pago anual|pagar (el|todo el) ano( entero| completo)?)\b/u', $t)) return 'unico';
@@ -2476,11 +2539,21 @@ function wabot_modalidad_elegida_en($texto) {
     // El plan anual (19-sep) usa el mismo valor interno 'unico' que el formulario.
     $unico   = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto)'
              . '|el plan anual|plan anual|el anual|el pago anual|pago anual|anual|por ano|pagar(la|lo)? por ano)\b';
-    $mensual = '(el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mensualmente)\b';
+    // "El plan mensual" es como lo nombra el propio bot desde el 19-sep: sin
+    // esto, "me quedo con el plan mensual" no elegía nada y el bot se callaba.
+    $mensual = '(el plan mensual|plan mensual|el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mes a mes|mensualmente)\b';
     $elegida = null;
     foreach (preg_split('/(?<=[?.!;,\n])/u', $crudo) as $frase) {
         if (trim($frase) === '' || mb_strpos($frase, '?') !== false || mb_strpos($frase, '¿') !== false) continue;
         $t = wabot_normalizar_frase($frase);
+        /* Una frase que es SOLO el nombre del plan también elige: "Dale, el
+         * mensual" se parte en "Dale," y "el mensual", y ninguna de las dos
+         * traía el verbo de elegir. Anclada a toda la frase: "cuánto sale el
+         * plan mensual" no entra. */
+        if (preg_match('/^(y |dale |listo |ok |okey |perfecto |bueno )?(el |la |con el |por el )?(plan |pago )?(mensual|anual)$/u', $t)) {
+            $elegida = strpos($t, 'anual') !== false ? 'unico' : 'mensual';
+            continue;
+        }
         if (preg_match('/\bsi (elijo|eligiera|eligiese|voy|fuera|hago|hiciera|prefiero)\b/u', $t)) continue;
         // Preguntar por una forma no es elegirla: "quiero saber del pago único".
         if ($t === '' || preg_match('/\b(saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?)\b/u', $t)) continue;
@@ -3951,7 +4024,7 @@ function wabot_engine($texto, &$conv, $cfg) {
         /* Propiedad, código, licencias, accesos o la baja (Pablo, 19-sep): el
          * mismo freno que el borde común, para lo que clasificó Gemini. No se
          * contesta nada y la charla queda para Pablo. */
-        $keys = wabot_info_claves_sin_baja_falsa($keys, $texto);
+        $keys = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa($keys, $texto));
         $dePropiedad = array_values(array_intersect($keys, wabot_claves_propiedad()));
         if ($dePropiedad) {
             wabot_propiedad_detener($conv, $dePropiedad[0]);
@@ -4595,7 +4668,10 @@ function wabot_info_por_palabras($texto, $fase = null) {
     // no por la renovación: sin esto caía en hosting y le contestaban el precio
     // anual (caso real del 21-ago).
     if (preg_match('/\b(a mi nombre|a nombre de quien|de quien queda|quien es el titular|titularidad|dueno del dominio|el dominio es mio|queda a mi nombre)\b/u', $t)
-        || preg_match('/\b(vender|venderlo|venderla|transferir|traspasar|ceder|pasarlo a otro|cambiar de dueno)\b.{0,25}\b(dominio|la web|la tienda|el sitio|la pagina)\b/u', $t)
+        /* "Vender POR la web" es la venta de SUS productos, no la de la web
+         * (19-sep): pide el objeto directo pegado al verbo ("vender mi
+         * dominio", "puedo vender la web"), no una preposición en el medio. */
+        || preg_match('/\b(vender|venderlo|venderla|transferir|transferirlo|transferirla|traspasar|ceder|cambiar de dueno)\s+(a otr[oa]\s+)?(mi|el|la|los|las|este|esta)?\s*(dominio|web|pagina|sitio|tienda)\b/u', $t)
         || preg_match('/\b(dominio|la web|la tienda|el sitio|la pagina)\b.{0,25}\b(a mi nombre|es mio|me pertenece|puedo venderl|lo puedo vender|la puedo vender)/u', $t)) return 'titularidad';
     // "Panel de control" a secas es el panel de la web (19-sep): el del hosting lo dice.
     if (preg_match('/\b(cpanel|c panel|ftp|sftp|panel del hosting|panel de control del (hosting|servidor)|acceso al hosting|accesos? al servidor|credenciales|usuario y contrasena)\b/u', $t)) return 'accesos';
@@ -6570,6 +6646,7 @@ function wabot_respuesta_antes_de_derivar($texto, $conv, $cfg, $sinMarketing = f
         if (count($claves) >= 3) break;
         if (!in_array($k, $claves, true)) $claves[] = $k;
     }
+    $claves = wabot_info_claves_sin_repetidas($claves);
     $textos = [];
     foreach ($claves as $clave) {
         if ($sinMarketing && $clave === 'marketing') continue;

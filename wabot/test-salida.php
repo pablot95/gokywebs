@@ -432,6 +432,31 @@ caso('y ya no usa el argumento del pago único: el diferenciador es quién arma 
     && stripos((string)$cfg['plataformas'], 'plantilla') !== false
     && stripos((string)$cfg['plataformas'], 'a medida') !== false);
 
+echo "\n— Lo que el bot no sabe contestar no se contesta (Pablo, 19-sep) —\n";
+
+$comodin = (string)$cfg['info']['otra'];
+$c = conv_de('menu');
+caso('el comodín solo → el turno queda mudo y el chat le queda pendiente a Pablo',
+    wabot_salida_preparar([$comodin], $c, $cfg) === [] && !empty($c['handoff_pendiente']));
+
+$c = conv_de('menu');
+$r = wabot_salida_preparar(["- El hosting y el dominio van incluidos.\n- $comodin"], $c, $cfg);
+caso('en una lista se cae solo esa línea y la respuesta real queda, sin la viñeta suelta',
+    count($r) === 1 && strpos($r[0], 'hosting') !== false && strpos($r[0], 'contestar el desarrollador') === false
+    && strpos($r[0], '- ') !== 0, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_de('menu');
+$r = wabot_salida_preparar(['Somos de Tigre, Buenos Aires.'], $c, $cfg);
+caso('una respuesta normal pasa intacta y no marca nada',
+    $r === ['Somos de Tigre, Buenos Aires.'] && empty($c['handoff_pendiente']));
+
+$c = conv_nueva('549110000COMODIN', ['fase' => 'menu']);
+clasifica(['pregunta_info'], ['info_keys' => ['otra']]);
+$r = turno('Ustedes facturan en dólares para el exterior?', $c, $cfg);
+caso('por el borde común: el bot no contesta y queda pendiente',
+    $r === [] && !empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+clasifica(['otro']);
+
 @unlink(WABOT_DATA . '/conv/TESTSALIDA.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 

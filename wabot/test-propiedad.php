@@ -47,7 +47,11 @@ foreach (['Hola, quiero hacer mi propia página web', 'Quiero una web propia par
           'quiero migrar mi web actual a otro hosting', 'se cae la pagina si hay mucho trafico?', 'que pasa si no me gusta el diseño?',
           'cual es el tiempo minimo de entrega?', 'me dan acceso al panel para cargar productos?', 'queda linda para mi negocio?',
           'Tengo un dominio comprado, lo puedo usar?', 'se puede pagar en cuotas?', 'el mantenimiento que incluye?',
-          'cuanto tarda en estar lista?', 'con el codigo postal calcula el envio?', 'aceptan el codigo de descuento?'] as $p) {
+          'cuanto tarda en estar lista?', 'con el codigo postal calcula el envio?', 'aceptan el codigo de descuento?',
+          // "Vender por la web" es vender SUS productos: contaba como vender la web (19-sep).
+          'Tengo una distribuidora de bebidas y quiero vender por la web', 'Puedo vender por la web?',
+          'Se puede vender por internet con la web?', 'quiero una web para vender mis productos',
+          'Vendo ropa y quiero vender online'] as $p) {
     caso("sigue: \"$p\"", wabot_pregunta_propiedad($p) === null, (string)wabot_pregunta_propiedad($p));
 }
 

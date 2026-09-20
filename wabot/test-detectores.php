@@ -481,10 +481,48 @@ foreach (['Prefiero pagarla una sola vez' => 'unico', 'Vamos con el pago unico, 
           'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual'] as $f => $esperada) {
     caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
 }
+/* 19-sep: los planes se llaman "plan anual" y "plan mensual", que es como los
+ * nombra el propio bot dos mensajes antes. "Me quedo con el plan mensual" no
+ * elegía nada y el bot se callaba justo al cerrar. */
+foreach (['Me quedo con el plan mensual' => 'mensual', 'Vamos con el plan mensual' => 'mensual',
+          'Dale, el mensual' => 'mensual', 'Prefiero el plan anual' => 'unico', 'Dale el plan anual' => 'unico',
+          'No quiero el plan mensual' => 'unico', 'Arranco con el plan mensual' => 'mensual'] as $f => $esperada) {
+    caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
+    // Rechazar una forma elige la otra, pero no es aceptar el primer diseño.
+    if (stripos($f, 'no quiero') === false) {
+        caso("y \"$f\" cuenta como aceptar el primer diseño", wabot_oferta_diseno_aceptada($f));
+    }
+}
 foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Quiero saber del pago unico',
-          'Cual me conviene mas, pagar una vez o por mes?', 'dale vamos de una'] as $f) {
+          'Cual me conviene mas, pagar una vez o por mes?', 'dale vamos de una',
+          'cuanto sale el plan mensual?', 'el plan mensual incluye cambios?'] as $f) {
     caso('no elige nada: "' . $f . '"', wabot_modalidad_elegida_en($f) === null, (string)wabot_modalidad_elegida_en($f));
 }
+
+echo "\n-- La inmobiliaria que vende propiedades no es un proyecto mixto (19-sep) --\n";
+foreach (['Tengo una inmobiliaria en Tigre, publico alquileres y ventas',
+          'Soy martillero: alquileres y ventas',
+          'Venta y alquiler de propiedades en zona sur',
+          'Inmobiliaria, vendo y alquilo departamentos'] as $f) {
+    caso('no es mixto: "' . mb_substr($f, 0, 46) . '"', wabot_ejes_mixtos($f) === null,
+        json_encode(wabot_ejes_mixtos($f), JSON_UNESCAPED_UNICODE));
+}
+foreach (['Vendo ropa y alquilo departamentos', 'Alquilo departamentos y vendo muebles a medida'] as $f) {
+    $e = wabot_ejes_mixtos($f);
+    caso('sí es mixto: "' . mb_substr($f, 0, 46) . '"', $e !== null && isset($e['productos']) && isset($e['propiedades']),
+        json_encode($e, JSON_UNESCAPED_UNICODE));
+}
+
+echo "\n-- Los días de entrega se dicen una sola vez (19-sep) --\n";
+caso('preguntando el proceso y los plazos juntos, el plazo sale solo en los tres pasos',
+    wabot_info_claves_sin_repetidas(['proceso', 'plazos']) === ['proceso']
+    && wabot_info_claves_sin_repetidas(['plazos']) === ['plazos']);
+$cDias = conv_nueva('999DIASTEST', ['fase' => 'menu']);
+clasifica(['pregunta_info'], ['info_keys' => ['proceso', 'plazos']]);
+$rDias = turno('Cómo trabajan? y cuánto tardan más o menos?', $cDias, $cfg);
+caso('y en la charla, "7 días" aparece una sola vez',
+    substr_count(implode("\n", $rDias), '7 días') === 1, implode(' | ', $rDias));
+clasifica(['otro']);
 $cMod = conv_nueva('999MODTEST', ['tipo' => 'ecommerce', 'precio_dado' => true, 'fase' => 'prediseno']);
 wabot_precio_congelar($cMod, 'ecommerce', $cfg);
 $cMod['modalidad_elegida'] = ''; $cMod['modalidad_sincronizada'] = ''; $cMod['lead_creado'] = false; $cMod['lead_doc'] = null;

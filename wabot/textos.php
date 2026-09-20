@@ -155,6 +155,9 @@ function wabot_textos_default() {
         'marketing' => 'No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.',
         'reuniones' => 'Las reuniones se coordinan con el desarrollador al avanzar el proyecto.',
         'tecnologia' => 'Trabajamos con servidor Hostinger, base Firebase y código a medida en HTML, CSS, JS y PHP. No usamos WordPress ni trabajamos sobre webs ya hechas.',
+        // Marca interna de "no sé": desde el 19-sep NO se manda (Pablo: "cuando
+        // el bot no entienda, no conteste nada"). wabot_salida_sin_comodin() la
+        // saca de la salida y el chat le queda pendiente a Pablo.
         'otra' => 'Esa duda te la va a poder contestar el desarrollador cuando te escriba.',
         'pago_generico' => 'Hay dos planes: uno anual, que arranca con una seña y después se renueva una vez por año, y uno mensual, por Mercado Pago y sin permanencia. Los dos incluyen el desarrollo completo de la web, hosting, dominio, mantenimiento y soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.',
         'precio_sin_rubro' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
