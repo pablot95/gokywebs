@@ -483,4 +483,54 @@ $camposB = wabot_lead_campos($convB, $cfg, false);
 caso('el documento del boceto viaja con modalidad "propia"', ($camposB['modalidad']['stringValue'] ?? '') === 'propia', json_encode($camposB['modalidad'] ?? null));
 @unlink(WABOT_DATA . '/conv/5493810009001.json');
 
+echo "— 13. El link del formulario que copia Pablo desde el chat (21-sep) —\n";
+
+/* Pablo, 21-sep: "un cliente me dice que sí al formulario, estoy contestando
+ * yo, le paso el form sin código: ¿cómo se vincula el chat con el form?".
+ * Sin ?c=, lo único que ata el envío a la charla es el teléfono que el cliente
+ * tipea, y desde Instagram no hay ninguno. El panel arma el link con el código
+ * de esa conversación (accion=form_link) aunque el bot nunca lo haya mandado. */
+$idxPath = wabot_codigo_indice_path();
+$idxPrevio = @file_get_contents($idxPath);
+
+$cPanel = conv_nueva('5491133344455');
+caso('una charla sin código todavía', trim((string)($cPanel['codigo'] ?? '')) === '');
+$codPanel = wabot_codigo_asignar($cPanel);
+caso('el panel le asigna uno y queda guardado en la charla',
+    $codPanel !== '' && ($cPanel['codigo'] ?? '') === $codPanel);
+caso('pedirlo de nuevo no cambia el código', wabot_codigo_asignar($cPanel) === $codPanel);
+// En el sandbox el código sale derivado de la clave y no escribe el índice real: se registra a mano, como los casos de arriba.
+$cIg = conv_nueva('ig17841400000000009', ['canal' => 'instagram']);
+$codIg = wabot_codigo_asignar($cIg);
+file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(),
+    [$codPanel => '5491133344455', $codIg => 'ig17841400000000009'])));
+caso('el índice lo devuelve a esa conversación', wabot_codigo_buscar($codPanel) === '5491133344455');
+$datosPanel = wabot_form_lead_validar(['c' => $codPanel, 't' => '1133344455', 'nombre' => 'Ana',
+    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
+caso('un envío con ese código cae en la charla, no en una nueva',
+    is_array($datosPanel) && $datosPanel['clave'] === '5491133344455' && !empty($datosPanel['conCodigo']));
+
+caso('en Instagram también hay código', $codIg !== '' && wabot_codigo_buscar($codIg) === 'ig17841400000000009');
+$datosIgPanel = wabot_form_lead_validar(['c' => $codIg, 't' => '1123456789', 'nombre' => 'Ana',
+    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
+caso('y el envío queda atado a la charla de Instagram, con el WhatsApp aparte',
+    is_array($datosIgPanel) && $datosIgPanel['clave'] === 'ig17841400000000009' && $datosIgPanel['telWsp'] === '1123456789');
+/* Lo que pasaba antes: el mismo formulario sin código desde Instagram no tiene
+ * con qué encontrar la charla y abre una nueva por el teléfono tipeado. */
+$datosSinCodigo = wabot_form_lead_validar(['t' => '1123456789', 'nombre' => 'Ana',
+    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
+caso('sin código, el envío queda en la charla del teléfono tipeado y sin permiso de pisar',
+    is_array($datosSinCodigo) && $datosSinCodigo['clave'] !== 'ig17841400000000009' && empty($datosSinCodigo['conCodigo']));
+
+$adminForm = (string)@file_get_contents(__DIR__ . '/admin.php');
+caso('el panel tiene la acción y el botón para copiarlo',
+    strpos($adminForm, "\$a === 'form_link'") !== false
+    && strpos($adminForm, "accion: 'form_link'") !== false
+    && strpos($adminForm, 'Copiar form') !== false);
+caso('y arma el link igual que el bot, con &ig=1 en Instagram',
+    strpos($adminForm, "'https://gokywebs.com/form/?c=' . \$codigo") !== false
+    && strpos($adminForm, "\$link .= '&ig=1'") !== false);
+
+if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
+
 todo_ok();

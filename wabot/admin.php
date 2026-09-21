@@ -405,6 +405,24 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ]);
         exit;
     }
+    /* El link del formulario CON el código de esta charla (Pablo, 21-sep:
+     * "estoy contestando yo, le paso el form sin código, ¿cómo se vincula el
+     * chat con el form?"). Sin el ?c= lo único que ata el envío a la charla es
+     * el teléfono que el cliente tipea, y desde Instagram no hay teléfono: el
+     * boceto queda suelto. El código se asigna acá mismo si la charla todavía
+     * no tenía, y se guarda. */
+    if ($a === 'form_link' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_channel_user_id($conv) === '') { echo json_encode(['error' => 'Esa conversación no tiene canal.']); exit; }
+        $codigo = wabot_codigo_asignar($conv);
+        if ($codigo === '') { echo json_encode(['error' => 'No se pudo asignar el código del formulario.']); exit; }
+        wabot_conv_save($conv);
+        $link = 'https://gokywebs.com/form/?c=' . $codigo;
+        if (wabot_canal($conv) === 'instagram') $link .= '&ig=1';
+        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo]);
+        exit;
+    }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $texto = trim((string)($_POST['texto'] ?? ''));
@@ -954,6 +972,9 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
 .live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
 .live-abrir:hover { color:var(--tx); }
+.live-form { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
+.live-form:hover, .live-form:focus-visible { color:var(--ac); border-color:var(--ac); }
+.live-form:disabled { opacity:.5; cursor:default; }
 .live-eliminar { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
 .live-eliminar:hover, .live-eliminar:focus-visible { color:var(--bad); border-color:var(--bad); }
 .live-eliminar:disabled { opacity:.5; cursor:default; }
@@ -3320,6 +3341,39 @@ body.embed { min-height: 0; }
                 }
             }
 
+            async function copiarAlPortapapeles(texto) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                } catch (err) {
+                    const caja = document.createElement('textarea');
+                    caja.value = texto;
+                    document.body.appendChild(caja);
+                    caja.select();
+                    document.execCommand('copy');
+                    caja.remove();
+                }
+            }
+
+            async function copiarFormLink(tel, boton) {
+                const previo = boton.textContent;
+                boton.disabled = true;
+                boton.textContent = '…';
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'form_link', tel }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
+                    await copiarAlPortapapeles(j.link);
+                    boton.textContent = j.codigo + ' copiado ✓';
+                } catch (error) {
+                    boton.textContent = 'error';
+                    boton.title = error.message || 'No se pudo armar el link.';
+                } finally {
+                    boton.disabled = false;
+                    setTimeout(() => { boton.textContent = previo; }, 2200);
+                }
+            }
+
             function pintarCabecera(c, it, ahora) {
                 const nombre = it.nombre_agenda || it.nombre || it.nombre_negocio || it.tel;
                 const nom = c.el.querySelector('.live-nombre');
@@ -3343,6 +3397,16 @@ body.embed { min-height: 0; }
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
                 a.textContent = 'Abrir ↗';
                 sub.appendChild(a);
+                /* El formulario CON el código de esta charla: así lo que el
+                 * cliente complete cae en esta conversación aunque el link lo
+                 * mande Pablo a mano. Desde Instagram es la única forma. */
+                const form = document.createElement('button');
+                form.type = 'button';
+                form.className = 'live-form';
+                form.textContent = 'Copiar form';
+                form.title = 'Copia el link del formulario con el código de esta conversación';
+                form.addEventListener('click', () => copiarFormLink(it.tel, form));
+                sub.appendChild(form);
                 const del = document.createElement('button');
                 del.type = 'button';
                 del.className = 'live-eliminar';
