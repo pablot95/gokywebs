@@ -295,6 +295,27 @@ body {
     display: none;
 }
 
+/* "Corregir" / "Cambiar" junto al teléfono: es un <button> por accesibilidad,
+   pero tiene que verse como un link y no como el botón gris del navegador. */
+.link-inline {
+    background: none;
+    border: 0;
+    padding: 4px 2px;
+    margin: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--blue);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.link-inline:hover { color: var(--blue-dark); }
+.link-inline:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
 .small-label {
     font-size: 0.78rem;
     color: var(--text-muted);

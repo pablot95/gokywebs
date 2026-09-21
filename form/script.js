@@ -386,7 +386,11 @@ const _desdeInstagram = (_paramsInicial.get('ig') || '') === '1';
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
     } else if (_codigoBot) {
-        telefonoAviso.textContent = '¿No es tu número? ';
+        // El link con código no lleva el número (el servidor lo resuelve al
+        // enviar), así que no se puede mostrar: se dice a cuál WhatsApp se
+        // escribe y se ofrece cambiarlo.
+        telefonoAviso.textContent = 'Te escribimos al mismo WhatsApp desde el que nos contactaste. ¿Preferís otro número? ';
+        telefonoCorregir.textContent = 'Cambiar';
         telefonoAviso.appendChild(telefonoCorregir);
         ocultarTelefono();
     }
