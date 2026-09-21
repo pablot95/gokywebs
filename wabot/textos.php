@@ -244,7 +244,7 @@ function wabot_textos_default() {
     'media_recibida' => 'Me llegó tu archivo y queda guardado en la conversación. Si querés, contame en un mensaje de qué se trata así lo tengo en cuenta.',
     'mensaje_cliente_existente' => 'Perfecto, eso lo sigue el desarrollador directamente: le paso tu mensaje ahora y te escribe por acá a la brevedad.',
     'mensaje_laboral' => 'Gracias por escribir. Las propuestas para sumarse al equipo las ve el desarrollador directamente: le paso tu mensaje y, si hay algo, te contesta por acá.',
-    'menu' => 'Hola, cómo estás? Para poder asesorarte bien, contame brevemente a qué te dedicás o para qué tipo de negocio es',
+    'menu' => "Hola! Gracias por contactarnos.\nHacemos páginas web adaptadas a cada negocio.\nContame un poquito a qué te dedicás y te asesoro según lo que necesitás",
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
     'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',

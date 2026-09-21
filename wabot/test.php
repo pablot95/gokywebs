@@ -3205,8 +3205,9 @@ caso('el cierre suave ya no dice "escribinos" en tono corporativo',
 // 27-ago: 14 de 32 charlas del día murieron en el saludo, sin una sola
 // respuesta. "Para qué rubro necesitás la web" obliga a traducir el propio
 // negocio a la palabra "rubro"; preguntar qué vende se contesta solo.
-caso('el saludo dice para qué sirve contestar antes de preguntar (2-sep; "asesorarte bien" desde el 13-sep)',
-    $cfg['menu'] === 'Hola, cómo estás? Para poder asesorarte bien, contame brevemente a qué te dedicás o para qué tipo de negocio es'
+caso('el saludo dice para qué sirve contestar antes de preguntar (2-sep; texto de Pablo, en tres líneas, desde el 21-sep)',
+    $cfg['menu'] === "Hola! Gracias por contactarnos.\nHacemos páginas web adaptadas a cada negocio.\nContame un poquito a qué te dedicás y te asesoro según lo que necesitás"
+    && count(explode("\n", $cfg['menu'])) === 3
     && stripos($cfg['menu'], 'a qué te dedicás') !== false
     && stripos($cfg['menu'], 'rubro') === false);
 
