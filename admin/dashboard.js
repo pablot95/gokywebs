@@ -3868,7 +3868,9 @@ async function copyPropuesta(id, btn) {
 
 // Un solo pedido de imágenes por boceto (Pablo, 20-sep): 6 imágenes, 1 en 9:16,
 // 1 en 16:9 y 4 en 1:1, con la info del boceto al final.
-const PROPUESTA_IMAGE_PROMPT = `Crea 6 imágenes, todas juntas y sin textos. 1 tamaño 9:16 y otra tamaño 16:9. 4 imágenes 1:1 que van a ser utilizadas en un prediseño de una página web para:
+const PROPUESTA_IMAGE_PROMPT = `Crea 6 imágenes, todas juntas y sin textos. 1 tamaño 9:16 y otra tamaño 16:9. 4 imágenes 1:1. Que todas las imágenes sean diferentes entre sí, para secciones diferentes. Si es ecommerce, que sean simplemente imágenes de distintos productos.
+
+Van a ser utilizadas en un prediseño de una página web para:
 {{DATOS_PROYECTO}}`;
 
 async function copyPropuestaImagePrompt(id, btn) {
