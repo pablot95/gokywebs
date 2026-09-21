@@ -3230,12 +3230,35 @@ body.embed { min-height: 0; }
                 return { el, firma: '', ts: 0, pintado: false, tel: '', enviando: false, ventanaAbierta: false };
             }
 
+            /* Borrador por chat (Pablo, 21-sep: "escribo algo, cambio de chat y
+             * lo pierdo"). Las columnas se reciclan entre conversaciones, así
+             * que lo escrito se guarda con el teléfono al que estaba dirigido y
+             * vuelve cuando esa conversación se pinta de nuevo. Queda en este
+             * navegador y sobrevive a la recarga; se borra al enviar. */
+            function borradorKey(tel) { return 'wabot_borrador_' + tel; }
+            function borradorLeer(tel) {
+                try { return localStorage.getItem(borradorKey(tel)) || ''; } catch (e) { return ''; }
+            }
+            function borradorGuardar(tel, valor) {
+                if (!tel) return;
+                try {
+                    if (valor && valor.trim() !== '') localStorage.setItem(borradorKey(tel), valor);
+                    else localStorage.removeItem(borradorKey(tel));
+                } catch (e) {}
+            }
+
             function prepararRespuesta(c, tel) {
                 if (c.tel === tel) return;
-                c.tel = tel;
                 const texto = c.el.querySelector('.live-responder textarea');
                 const boton = c.el.querySelector('.live-enviar');
+                // La columna pasa a otro chat: lo que había escrito es del anterior.
+                if (c.tel) borradorGuardar(c.tel, texto.value);
+                c.tel = tel;
+                texto.value = borradorLeer(tel);
+                if (c.ligado) return;   // los listeners se cuelgan una sola vez por columna
+                c.ligado = true;
                 boton.addEventListener('click', () => enviar(c));
+                texto.addEventListener('input', () => borradorGuardar(c.tel, texto.value));
                 texto.addEventListener('keydown', ev => {
                     if (ev.key === 'Enter' && !ev.shiftKey) {
                         ev.preventDefault();
@@ -3282,6 +3305,7 @@ body.embed { min-height: 0; }
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'No se pudo enviar.');
                     texto.value = '';
+                    borradorGuardar(c.tel, '');   // se fue: el borrador ya no existe
                     estadoRespuesta.textContent = 'Enviado. El bot quedó en silencio en este chat.';
                     await refrescar();
                 } catch (error) {
