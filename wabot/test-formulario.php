@@ -572,4 +572,31 @@ caso('el admin lo explica en vez de decir que no pudo confirmar el envío',
     strpos($dashPres, 'envio.fuera_ventana') !== false
     && strpos($dashPres, 'nunca escribió por WhatsApp') !== false);
 
+echo "— 15. Meta avisa que no entregó: el aviso va al chat de verdad (21-sep) —\n";
+
+/* El status failed llega segundos después del envío, con el número en formato
+ * de Meta (549...). La charla puede estar guardada como el cliente escribió su
+ * número en el formulario (2944814198): sin resolver, el aviso caía en una
+ * conversación fantasma y en el chat real no aparecía nada. */
+$cFalla = conv_nueva('5492944814100');
+$cFalla['presentado_ts'] = time() - 5;
+$cFalla['presentado_via_bot'] = true;
+$desmarco = wabot_entrega_fallida_marcar($cFalla, 'Re-engagement message');
+caso('el aviso queda en el transcript del chat',
+    $desmarco === true && str_contains((string)(end($cFalla['transcript'])['t'] ?? ''), 'no pudo entregar el último mensaje'));
+caso('y la demo deja de figurar como entregada por el bot', empty($cFalla['presentado_via_bot']));
+
+$cVieja = conv_nueva('5492944814101');
+$cVieja['presentado_ts'] = time() - 3 * 86400;
+$cVieja['presentado_via_bot'] = true;
+wabot_entrega_fallida_marcar($cVieja, 'Re-engagement message');
+caso('una demo de hace tres días no se desmarca por un mensaje que falló hoy',
+    !empty($cVieja['presentado_via_bot']));
+
+$webhookSrc = (string)@file_get_contents(__DIR__ . '/webhook.php');
+caso('el webhook resuelve la conversación antes de escribir el aviso',
+    strpos($webhookSrc, '$claveReal = wabot_conv_resolver($clave);') !== false
+    && strpos($webhookSrc, 'wabot_entrega_fallida_marcar($conv, $motivo);') !== false);
+caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($claveReal === null) continue;') !== false);
+
 todo_ok();

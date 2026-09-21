@@ -1271,6 +1271,24 @@ function wabot_mismo_abonado($a, $b) {
     return (bool)array_intersect($unos, $otros);
 }
 
+/**
+ * Meta avisó que el mensaje no se entregó (status failed). Deja el aviso en el
+ * chat y, si acaba de salir la demo, la desmarca: el 21-sep la de Pescadería
+ * Las Grutas figuró enviada cuando Meta la había rechazado dos segundos después
+ * (131047, ventana de 24 h). Con presentado_via_bot en false, el panel no dice
+ * que el cliente la tiene y tampoco sale la plantilla de seguimiento.
+ */
+function wabot_entrega_fallida_marcar(&$conv, $motivo, $ahora = null) {
+    $ahora = $ahora ?? time();
+    wabot_conv_transcript($conv, 'sistema', 'WhatsApp no pudo entregar el último mensaje (' . $motivo . '). Probá reenviarlo.');
+    $presentado = (int)($conv['presentado_ts'] ?? 0);
+    if (!empty($conv['presentado_via_bot']) && $presentado > 0 && $ahora - $presentado <= 600) {
+        $conv['presentado_via_bot'] = false;
+        return true;
+    }
+    return false;
+}
+
 function wabot_conv_resolver($tel, &$motivo = null) {
     $motivo = null;
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$tel);
