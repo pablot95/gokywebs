@@ -7,7 +7,7 @@
       "Hola, soy electricista matriculado, quiero una pagina para que me contacten",
       "dale, armala"
     ],
-    "esperado": "Dos mensajes: 'Para tu … , te armamos un sitio profesional donde…' (o 'Para lo que me contás, te armamos…') con los dos planes ('Plan anual: $120.000 por año' y 'Plan mensual: $20.000 por mes', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
+    "esperado": "Dos mensajes: 'Para tu … , te armamos un sitio profesional donde…' (o 'Para lo que me contás, te armamos…') con los dos planes ('Plan anual: $120.000' y 'Plan mensual: $20.000', y abajo 'Ambos incluyen:' con la lista) y, aparte, la oferta del primer diseño sin cargo que termina en 'Querés que lo armemos?'. El sí recibe solo el formulario con el link gokywebs.com/form/?c=… y el bot se apaga (bot_off, prospecto)."
   },
   {
     "id": "02",

@@ -534,4 +534,38 @@ caso('si después cambia de idea, se completa en el boceto que ya existe',
     && $cMod['modalidad_elegida'] === 'mensual' && $cMod['modalidad_sincronizada'] === 'mensual');
 @unlink(WABOT_DATA . '/conv/999MODTEST.json');
 
+echo "— La respuesta del desempate gana sobre 'quiere avanzar' (21-sep) —\n";
+
+/* Charla real del 21-sep (capacitación en moldería y costura): el clasificador
+ * leyó "Todo en la web" y "Vender" como ganas de avanzar, el corte global se
+ * llevó el turno al handoff —que repreguntó y después derivó— y el cliente
+ * quedó sin precio después de contestar justo lo que el bot le pidió. */
+function desempate_responde($clave, $texto, $acciones, $cfg, $fase = 'desempate_cursos') {
+    $c = conv_nueva($clave, ['fase' => $fase, 'chat_started_ts' => time(), 'desempate_preguntado' => true]);
+    clasifica($acciones);
+    $r = turno($texto, $c, $cfg);
+    @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
+    return [$r, $c];
+}
+
+[$rVender, $cVender] = desempate_responde('999DESEMP1', 'Vender', ['quiere_avanzar'], $cfg);
+caso('"Vender" con etiqueta de avanzar cotiza la plataforma de cursos, no deriva',
+    ($cVender['tipo'] ?? '') === 'elearning' && mb_strpos($rVender[0] ?? '', 'una plataforma de cursos completa') !== false
+    && ($cVender['fase'] ?? '') !== 'derivado', json_encode($rVender, JSON_UNESCAPED_UNICODE));
+[$rTodo, $cTodo] = desempate_responde('999DESEMP2', 'Todo en la web', ['quiere_avanzar'], $cfg);
+caso('"Todo en la web" tampoco se va al handoff',
+    ($cTodo['tipo'] ?? '') === 'elearning' && ($cTodo['fase'] ?? '') !== 'derivado');
+[$rMostrar, $cMostrar] = desempate_responde('999DESEMP3', 'Mostrar', ['pide_humano'], $cfg);
+caso('"Mostrar" con etiqueta de pedir persona cotiza el sitio profesional',
+    ($cMostrar['tipo'] ?? '') === 'landing' && ($cMostrar['fase'] ?? '') !== 'derivado');
+[$rHib, $cHib] = desempate_responde('999DESEMP4', 'Vender', ['quiere_avanzar'], $cfg, 'desempate_hibrido');
+caso('lo mismo en el desempate híbrido: "Vender" cotiza la tienda',
+    ($cHib['tipo'] ?? '') === 'ecommerce' && ($cHib['fase'] ?? '') !== 'derivado');
+[$rPersona, $cPersona] = desempate_responde('999DESEMP5', 'Prefiero hablar con una persona', ['pide_humano'], $cfg);
+caso('pedir una persona de verdad sigue derivando',
+    ($cPersona['fase'] ?? '') === 'derivado' && empty($cPersona['tipo']), json_encode($rPersona, JSON_UNESCAPED_UNICODE));
+[$rMixto, $cMixto] = desempate_responde('999DESEMP6', 'Que me llame alguien para ver lo de vender los cursos', ['pide_humano'], $cfg);
+caso('y si pide que lo llamen, aunque nombre "vender", también deriva',
+    ($cMixto['fase'] ?? '') === 'derivado', json_encode($rMixto, JSON_UNESCAPED_UNICODE));
+
 todo_ok();

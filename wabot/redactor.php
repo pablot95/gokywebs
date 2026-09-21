@@ -59,7 +59,7 @@ function wabot_oferta_diseno_aceptada($texto) {
     // Pedir una persona o una llamada no es aceptar el diseño.
     if (wabot_handoff_causa_explicita($crudo) === 'pide_humano' || wabot_pide_llamada($crudo)
         || preg_match('/\b(hablar|charlar|llam\w+|persona|humano|asesor)\b/u', $t)) return false;
-    if (wabot_modalidad_elegida_en($crudo) !== null && wabot_texto_rechaza_una_forma($crudo) === null) return true;
+    if (wabot_modalidad_elegida_en($crudo, true) !== null && wabot_texto_rechaza_una_forma($crudo) === null) return true;
     if (wabot_acepta_demo($crudo)) return true;
     return (bool)preg_match('/^(si+ )?(dale )?(quiero|queremos)( (eso|el diseno|el primer diseno|verlo|verla|avanzar|arrancar|empezar))?$'
         . '|^(si+ )?(dale )?(armalo|armenlo|armala|armenla|hacelo|haganlo|preparalo|preparenlo|mandalo|mandamelo)\b'
@@ -107,7 +107,7 @@ function wabot_prospecto_acepta($texto, $conv) {
     $t = wabot_normalizar_frase((string)$texto);
     if ($t === '' || mb_strlen($t) > 240) return false;
     if (preg_match('/\b(no|todavia no|lo voy a pensar|lo tengo que pensar|no me cierra|es caro|mas adelante)\b/u', $t)) return false;
-    if (wabot_modalidad_elegida_en($texto) !== null && wabot_texto_rechaza_una_forma($texto) === null) return true;
+    if (wabot_modalidad_elegida_en($texto, true) !== null && wabot_texto_rechaza_una_forma($texto) === null) return true;
     if (strpos((string)$texto, '?') !== false || strpos((string)$texto, '¿') !== false) return false;
     if (preg_match('/\b(me cierra|me sirve|estoy conforme|me parece bien|me interesa avanzar|quiero avanzar|queremos avanzar|quiero (hacerlo|arrancar|empezar)|quiero (la )?(demo|muestra)|quiero verla|armemos la (web|pagina|demo|muestra)|armala|armalo|hagamoslo|hagamosla|vamos a (hacerla|hacerlo|arrancar|empezar)|vamos adelante|arranquemos|empecemos|pasame el formulario|mandame el formulario|pasa el form)\b/u', $t)) return true;
     return !empty($conv['precio_cta_pendiente']) && (int)($conv['precio_turnos_desde'] ?? 0) === 1

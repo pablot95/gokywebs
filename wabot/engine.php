@@ -2378,9 +2378,17 @@ function wabot_texto_rechaza_una_forma($texto) {
  * "¿y si no quiero pagar todo junto?" preguntan, no eligen. Si en el mismo
  * mensaje cambia de idea, vale la última.
  */
-function wabot_modalidad_elegida_en($texto) {
+function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
     $crudo = trim((string)$texto);
     if ($crudo === '' || mb_strlen($crudo) > 300) return null;
+
+    /* Desde el 21-sep los planes van numerados ("1) Plan anual… 2) Plan
+     * mensual…"), así que la respuesta natural es el número solo. Vale
+     * únicamente cuando el mensaje es ese número y el precio ya salió: fuera
+     * de ahí un "2" suelto puede ser cualquier otra cosa. */
+    if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([12])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
+        return $m[2] === '1' ? 'unico' : 'mensual';
+    }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
     // El plan anual (19-sep) usa el mismo valor interno 'unico' que el formulario.
@@ -3790,6 +3798,25 @@ function wabot_engine($texto, &$conv, $cfg) {
         wabot_evento_sesion($conv, 'combo_tienda_cursos');
         if (!empty($conv['precio_dado'])) return [wabot_precio_resumen($conv, $cfg)];
         return wabot_precio('ecommerce', $conv, $cfg);
+    }
+    /* Adentro de un desempate, lo que el cliente escribe ES la respuesta a la
+     * pregunta que acaba de hacer el bot, y se lee por palabras. El corte de
+     * abajo no la mira: con una etiqueta de "quiere avanzar" la charla se iba
+     * al handoff, que repreguntaba el desempate y a la segunda derivaba.
+     *
+     * Pasó el 21-sep con una capacitación de moldería y costura: contestó
+     * "Todo en la web", le repreguntaron, contestó "Vender" —la palabra que el
+     * bot le había pedido— y lo derivaron sin cotizarle la plataforma. Un
+     * pedido explícito de persona sigue derivando: ahí hay causa. */
+    if (in_array($conv['fase'], ['desempate_cursos', 'desempate_hibrido'], true)
+        && ($has('quiere_avanzar') || $has('pide_humano'))
+        && wabot_handoff_causa_explicita($texto) === null) {
+        $respuesta = wabot_desempate_por_palabras($conv['fase'], $texto);
+        if ($respuesta !== null) {
+            $acc = array_values(array_diff($acc, ['quiere_avanzar', 'pide_humano', 'otro', 'saludo']));
+            $acc[] = $respuesta;
+            $has = function ($a) use ($acc) { return in_array($a, $acc, true); };
+        }
     }
     if ($has('pide_humano') || $has('quiere_avanzar') || $has('productos_y_cursos')) {
         $causa = wabot_handoff_causa_explicita($texto);

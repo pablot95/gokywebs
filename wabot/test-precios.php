@@ -71,7 +71,7 @@ caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link 
     str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('los dos planes con sus montos y, abajo, todo lo que incluyen (19-sep)',
-    strpos($r0, "Podés elegir entre dos planes:\n\n• Plan anual: $120.000 por año\n• Plan mensual: $20.000 por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web") !== false
+    strpos($r0, "Podés elegir entre dos planes:\n\n1) Plan anual: $120.000\n2) Plan mensual: $20.000\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web") !== false
     && strpos($r0, "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
     && strpos($r0, '✓ Soporte técnico') !== false && mb_stripos($r0, 'pago único') === false && mb_stripos($r0, 'seña') === false, $r0);
@@ -108,7 +108,7 @@ foreach (['ecommerce' => 'una tienda online completa', 'inmobiliaria' => 'una we
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar(implode("\n\n", $r), $c);
     caso("$tipo: la frase fija de su tipo y las dos formas",
-        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0 && strpos($t, '• Plan mensual: $30.000 por mes') !== false, $t);
+        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0 && strpos($t, '2) Plan mensual: $30.000') !== false, $t);
 }
 $c = conv_nueva('5491177770002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
@@ -380,7 +380,7 @@ caso('el pago genérico explica los dos planes sin montos antes de saber el rubr
     && stripos(wabot_texto_pago_generico($cfg), 'una vez por año') !== false && stripos(wabot_texto_pago_generico($cfg), 'sin permanencia') !== false);
 caso('el resumen del precio dice los dos planes con el bloque único, sin seña (19-sep)',
     strpos((string)$cfg['precio_resumen'], '{dos_formas}') !== false && strpos((string)$cfg['precio_resumen'], '{sena}') === false
-    && strpos(wabot_precio_resumen($cLanding, $cfg), '• Plan anual: $120.000 por año') !== false
+    && strpos(wabot_precio_resumen($cLanding, $cfg), '1) Plan anual: $120.000') !== false
     && mb_stripos(wabot_precio_resumen($cLanding, $cfg), 'seña') === false, wabot_precio_resumen($cLanding, $cfg));
 caso('el resumen conserva el portfolio filtrado',
     strpos(wabot_precio_resumen(['tipo' => 'ecommerce', 'precio_dado' => true], $cfg), 'gokywebs.com/portfolio/?tipo=ecommerce') !== false);
@@ -634,7 +634,7 @@ $cTS = conv_nueva('5491177770098TEST');
 clasifica(['rubro_ecommerce']);
 $rTS = wabot_engine('Tengo una tienda de ropa y quiero vender online', $cTS, $cfg);
 caso('una tienda sin cursos se cotiza como tienda sola', empty($cTS['combo_cursos'])
-    && strpos($rTS[0], '• Plan anual: $190.000 por año') !== false && strpos($rTS[0], 'una tienda online completa, con tus cursos') === false);
+    && strpos($rTS[0], '1) Plan anual: $190.000') !== false && strpos($rTS[0], 'una tienda online completa, con tus cursos') === false);
 $cCombo = conv_nueva('998FPTEST'); $cCombo['fase'] = 'nuevo';
 $msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos';
 wabot_conv_transcript($cCombo, 'cliente', $msjCombo); $cCombo['ultimo_cliente_ts'] = time();
@@ -869,8 +869,8 @@ caso('después del primer año: no hay renovación aparte, va incluida en los pl
     mb_stripos($hostT, 'No hay renovación aparte') !== false && strpos($hostT, '$50.000') === false && strpos($hostT, '{') === false, $hostT);
 $rT = wabot_pitch('ecommerce', $cT, $cfg);
 caso('el turno del precio dice los dos planes con sus montos y lo que incluyen (19-sep)',
-    mb_stripos($rT[0], '• Plan anual: $190.000 por año') !== false
-    && mb_stripos($rT[0], '• Plan mensual: $30.000 por mes') !== false && mb_stripos($rT[0], 'Ambos incluyen todo:') !== false, $rT[0]);
+    mb_stripos($rT[0], '1) Plan anual: $190.000') !== false
+    && mb_stripos($rT[0], '2) Plan mensual: $30.000') !== false && mb_stripos($rT[0], 'Ambos incluyen todo:') !== false, $rT[0]);
 $todos = json_encode(wabot_textos_default(), JSON_UNESCAPED_UNICODE);
 /* "En tu caso podemos hacer…" volvió a estar permitido (Pablo, 18-sep: "Para
  * lo que me contás, te armamos…" o "En tu caso podemos hacer…"). */

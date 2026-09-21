@@ -238,38 +238,110 @@ function wabot_respuestas_rapidas_normalizar($valor) {
     return $salida;
 }
 
+/** Arranque del bloque de planes, el mismo que manda el bot. */
+const WABOT_RR_BLOQUE_PLANES = 'Podés elegir entre dos planes:';
+
+/** Las recomendaciones de fábrica anteriores, por tipo de web. */
+function wabot_respuestas_rapidas_intros_viejas() {
+    return [
+        'landing' => ['Para lo que me contás, te serviría un sitio profesional donde puedas mostrar tus servicios, trabajos e información de contacto, pensado para transmitir confianza y recibir consultas.'],
+        'ecommerce' => ['Para lo que me contás, te serviría una web para vender online, con catálogo, carrito, integración de cobros con Mercado Pago y un panel administrativo para cargar productos y gestionar pedidos.'],
+        'inmobiliaria' => ['Para tu inmobiliaria te serviría una web para publicar propiedades con fotos y fichas completas, buscador por zona, tipo y precio, y un panel administrativo para cargar, editar y dar de baja propiedades.'],
+        'elearning' => ['Para tus cursos te serviría una plataforma con los videos subidos, acceso propio para cada alumno y cobro online.'],
+    ];
+}
+
+/** Qué tipo de web recomienda un bloque de precio, por lo que dice arriba. */
+function wabot_respuestas_rapidas_tipo_de($intro, $bloque = '') {
+    $t = mb_strtolower($intro);
+    if (mb_strpos($t, 'inmobiliaria') !== false || mb_strpos($t, 'propiedades') !== false) return 'inmobiliaria';
+    if (mb_strpos($t, 'curso') !== false || mb_strpos($t, 'alumno') !== false) return 'elearning';
+    if (mb_strpos($t, 'tienda') !== false || mb_strpos($t, 'vender online') !== false
+        || mb_strpos($t, 'carrito') !== false || mb_strpos($t, 'productos') !== false) return 'ecommerce';
+    if (mb_strpos($t, 'sitio profesional') !== false) return 'landing';
+    // Sin pistas arriba, por la mensualidad del bloque: $20.000 es el sitio.
+    return mb_strpos($bloque, '$20.000') !== false ? 'landing' : 'ecommerce';
+}
+
 /**
- * Bajaron los precios del plan anual (Pablo, 20-sep): $140.000 → $120.000,
- * $230.000 → $200.000 y $190.000 → $180.000. Los cuatro bloques de precio que
- * todavía son los de fábrica —se reconocen porque arrancan igual que el de
- * fábrica y nombran un monto viejo— pasan a los nuevos. Lo que Pablo reescribió
- * a mano no se toca, y la versión del 19-sep del bloque se reemplaza entera
- * (los montos viven adentro del texto, no en un marcador).
+ * Los bloques de precio del panel se rearman en CADA carga con los montos y el
+ * texto que manda hoy el bot (Pablo, 21-sep: "las respuestas rápidas tienen los
+ * precios y mensajes viejos"). La migración del 20-sep no los alcanzó: buscaba
+ * el arranque del texto de fábrica y ese mismo día se habían acortado las
+ * recomendaciones, así que no coincidía ninguno y en el panel seguían los
+ * $140.000 / $230.000 con las viñetas viejas.
+ *
+ * Solo se toca lo que genera el bot: el bloque de los planes, y únicamente si
+ * conserva su forma ("Podés elegir entre dos planes:" con las dos viñetas). La
+ * recomendación de arriba se respeta si Pablo la reescribió; si es una de
+ * fábrica, pasa a la de ahora.
  */
-function wabot_respuestas_rapidas_precios_20sep($categorias) {
-    // El 20-sep bajaron dos veces: entran los montos del 19-sep y los del primer ajuste.
-    $viejos = ['$140.000', '$230.000', '$190.000', '$200.000', '$180.000'];
+function wabot_respuestas_rapidas_precios_al_dia($categorias) {
     $fabrica = [];
     foreach (wabot_respuestas_rapidas_default() as $predeterminada) {
         if ($predeterminada['titulo'] === 'Presupuesto y planes') $fabrica = array_slice($predeterminada['items'], 0, 4);
     }
     if (count($fabrica) !== 4) return $categorias;
-    // Cada bloque nuevo, indexado por su arranque (la recomendación del tipo de web).
-    $porArranque = [];
-    foreach ($fabrica as $item) $porArranque[mb_substr((string)$item, 0, 70)] = $item;
+    $porTipo = array_combine(['landing', 'ecommerce', 'inmobiliaria', 'elearning'], $fabrica);
+    $viejas = wabot_respuestas_rapidas_intros_viejas();
 
     foreach ($categorias as &$categoria) {
         if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'presupuesto y planes') continue;
         foreach ((array)($categoria['items'] ?? []) as $i => $texto) {
             $texto = (string)$texto;
-            $tieneMontoViejo = false;
-            foreach ($viejos as $monto) {
-                if (mb_strpos($texto, $monto) !== false) { $tieneMontoViejo = true; break; }
-            }
-            if (!$tieneMontoViejo) continue;
-            $arranque = mb_substr($texto, 0, 70);
-            if (isset($porArranque[$arranque])) $categoria['items'][$i] = $porArranque[$arranque];
+            $corte = mb_strpos($texto, WABOT_RR_BLOQUE_PLANES);
+            if ($corte === false) continue;
+            $bloque = mb_substr($texto, $corte);
+            // Las dos líneas del bloque, como las escribió el bot en cualquier
+            // versión: con viñeta hasta el 21-sep y numeradas desde entonces.
+            if (!preg_match('/(?:•|\d\))\s*Plan anual:/u', $bloque)
+                || !preg_match('/(?:•|\d\))\s*Plan mensual:/u', $bloque)) continue;
+            $intro = rtrim(mb_substr($texto, 0, $corte));
+            $tipo = wabot_respuestas_rapidas_tipo_de($intro, $bloque);
+            $nuevo = (string)($porTipo[$tipo] ?? '');
+            $corteNuevo = $nuevo === '' ? false : mb_strpos($nuevo, WABOT_RR_BLOQUE_PLANES);
+            if ($corteNuevo === false) continue;
+            $categoria['items'][$i] = ($intro === '' || in_array($intro, $viejas[$tipo] ?? [], true))
+                ? $nuevo
+                : $intro . "\n\n" . mb_substr($nuevo, $corteNuevo);
         }
+    }
+    unset($categoria);
+    return $categorias;
+}
+
+/**
+ * Respuestas escritas a mano que quedaron con el modelo viejo: la suscripción
+ * de $25.000, el pago único como una de las dos opciones y el código a los dos
+ * años. Se cambian una sola vez y por texto exacto, así lo que Pablo reescriba
+ * después no se vuelve a pisar.
+ */
+function wabot_respuestas_rapidas_textos_21sep($categorias) {
+    require_once __DIR__ . '/textos.php';
+    $tipos = (array)(wabot_textos_default()['tipos'] ?? []);
+    $monto = static fn($tipo, $clave) => (string)($tipos[$tipo][$clave] ?? '');
+    $reemplazos = [
+        'En el sitio profesional los cambios los hacemos nosotros. Si querés cambiar vos los textos y las imágenes, le sumamos un panel de administración y el plan mensual pasa a $25.000.'
+            => 'Los dos planes incluyen un cambio por mes en la web. Si vas a necesitar cambios más seguido, está el plan mensual con cambios: '
+                . $monto('landing', 'mensualidad_cambios') . ' el sitio profesional y ' . $monto('ecommerce', 'mensualidad_cambios') . ' la tienda, los cursos o la inmobiliaria.',
+        'Luego de los 2 años, si deseas continuar con otra persona, te entregamos el código de la página'
+            => 'El código de la web pasa a ser tuyo según el plan: con el pago único, cuando abonás el total; con el plan anual, al pagar el segundo año; con el plan mensual, a los 18 meses. Hasta ese momento el código es nuestro.',
+        'La suscripción no tiene una duración fija. Es mensual y se mantiene activa mientras quieras seguir usando el servicio. Abonás $25.000 por mes e incluye la web, hosting, dominio, mantenimiento y soporte'
+            => 'El plan mensual no tiene permanencia: se mantiene activo mientras quieras seguir usando el servicio. Son '
+                . $monto('landing', 'mensualidad') . ' por mes el sitio profesional y ' . $monto('ecommerce', 'mensualidad')
+                . ' la tienda, los cursos o la inmobiliaria, e incluye la web, hosting, dominio, mantenimiento y soporte.',
+        "Si elegís el pago único, se abona una seña para comenzar y el resto cuando la web está lista para publicarse. Si elegís la suscripción, se abona la primera cuota mensual para iniciar.\nDespués te paso un formulario cortito donde cargás el nombre del negocio, todos los datos, productos y la información de la tienda, elegis el modelo de web que te gustaría y con eso empezamos a armarla."
+            => "Si elegís el plan anual, se abona una seña para comenzar y el resto cuando la web está lista para publicarse. Si elegís el plan mensual, se abona la primera mensualidad para iniciar.\nDespués te paso un formulario cortito donde cargás el nombre del negocio, todos los datos, productos y la información de la tienda, elegís el modelo de web que te gustaría y con eso empezamos a armarla.",
+        'Perfecto. Para arrancar primero decime cuál de las dos opciones preferís: pago único de $290.000 o suscripción de $25.000 por mes.'
+            => 'Perfecto. Para arrancar primero decime qué plan preferís: el anual o el mensual.',
+    ];
+    foreach ($categorias as &$categoria) {
+        $items = [];
+        foreach ((array)($categoria['items'] ?? []) as $texto) {
+            $texto = (string)$texto;
+            $items[] = $reemplazos[$texto] ?? $texto;
+        }
+        $categoria['items'] = array_values(array_unique($items));
     }
     unset($categoria);
     return $categorias;
@@ -282,8 +354,10 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_default();
-    $migrado = wabot_respuestas_rapidas_precios_20sep(wabot_respuestas_rapidas_planes_19sep(
-        wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
+    $migrado = wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
+        wabot_respuestas_rapidas_planes_19sep(
+            wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
+        )
     ));
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

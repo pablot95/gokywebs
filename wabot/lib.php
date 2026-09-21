@@ -5032,7 +5032,7 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     /* "Prefiero el pago único" (19-sep) pide la web propia, no el plan anual
      * (que usa el valor interno 'unico'): eso ya lo anotó wabot_web_propia_anotar. */
     if (!empty($conv['quiere_web_propia']) && preg_match('/\b(pago unico|unico pago)\b/u', wabot_normalizar_frase((string)$texto))) return false;
-    $elegida = wabot_modalidad_elegida_en($texto);
+    $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']));
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;
     wabot_modalidad_sincronizar($conv);

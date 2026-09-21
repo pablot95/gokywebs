@@ -38,7 +38,7 @@ function precio_formato_18sep($r, $precio, $mensualidad) {
     $r = array_values((array)$r);
     return count($r) === 2
         && mb_stripos($r[0], 'te armamos') !== false
-        && strpos($r[0], "Podés elegir entre dos planes:\n\n• Plan anual: $precio por año\n• Plan mensual: $mensualidad por mes\n\nAmbos incluyen todo:") !== false
+        && strpos($r[0], "Podés elegir entre dos planes:\n\n1) Plan anual: $precio\n2) Plan mensual: $mensualidad\n\nAmbos incluyen todo:") !== false
         && mb_stripos($r[0], 'pago único') === false && mb_stripos($r[0], 'seña') === false
         && mb_stripos($r[1], 'sin cargo un primer diseño') !== false && str_ends_with($r[1], 'Querés que lo armemos?')
         && strpos(implode("\n", $r), 'gokywebs.com/form/') === false;
@@ -104,7 +104,7 @@ caso('sin rubro no hay montos, aunque cambie la lista de tipos (14-sep)',
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['elige_ecommerce']);
 $r = wabot_engine('ecommerce', $c, $cfg);
-caso('elige ecommerce del menú → precio de la tienda online, sin link (14-sep)', strpos(implode("\n", (array)$r), '$30.000') !== false && strpos(implode("\n", (array)$r), '$30.000') !== false && strpos($r[0], '• Plan anual: $190.000 por año') !== false && strpos($r[0], 'presupuestos/') === false && $c['tipo'] === 'ecommerce');
+caso('elige ecommerce del menú → precio de la tienda online, sin link (14-sep)', strpos(implode("\n", (array)$r), '$30.000') !== false && strpos(implode("\n", (array)$r), '$30.000') !== false && strpos($r[0], '1) Plan anual: $190.000') !== false && strpos($r[0], 'presupuestos/') === false && $c['tipo'] === 'ecommerce');
 
 $c = conv_nueva(); $c['fase'] = 'menu';
 clasifica(['pregunta_tipos']);
@@ -546,7 +546,7 @@ caso('el turno A son DOS mensajes: la propuesta y, aparte, la oferta del primer 
     precio_formato_18sep($rP, '$190.000', '$30.000') && mb_stripos($rP[1], 'demo gratis') === false, json_encode($rP, JSON_UNESCAPED_UNICODE));
 caso('y ya no manda el link del presupuesto (14-sep)', strpos($rP[0], 'presupuestos/') === false);
 caso('el primer mensaje es la propuesta corta del ecommerce con su precio (20-sep)',
-    strpos($rP[0], '• Plan anual: $190.000 por año') !== false
+    strpos($rP[0], '1) Plan anual: $190.000') !== false
     && mb_stripos($rP[0], 'te armamos una tienda online completa.') !== false, $rP[0]);
 caso('la demo se ofreció en el mismo turno, sin esperar respuesta',
     !empty($cP['cta_muestra']) && $cP['fase'] === 'prediseno'
@@ -600,8 +600,8 @@ foreach ($textosFijosEsperados as $tipoFijo => $plantillaFija) {
     caso("$tipoFijo: el texto del precio sale tal cual, con la propuesta, el primer pago, la mensualidad y el link resueltos",
         strpos(wabot_personalizar($rFijo[0], $cFijo), $esperado) === 0, wabot_personalizar($rFijo[0], $cFijo));
     caso("$tipoFijo: el primer mensaje dice los dos planes con sus montos (19-sep)",
-        preg_match('/• Plan anual: \$[\d.]+ por año/u', $rFijo[0]) === 1
-        && preg_match('/• Plan mensual: \$[\d.]+ por mes/u', $rFijo[0]) === 1);
+        preg_match('/1\) Plan anual: \$[\d.]+\n/u', $rFijo[0]) === 1
+        && preg_match('/2\) Plan mensual: \$[\d.]+\n/u', $rFijo[0]) === 1);
     caso("$tipoFijo: ya no linkea el presupuesto (14-sep)",
         strpos($rFijo[0], 'gokywebs.com/presupuestos/') === false);
     caso("$tipoFijo: y ya no lleva la línea del portfolio, que vive dentro del presupuesto",
@@ -628,7 +628,7 @@ clasifica(['rubro_comercio']);
 $r = wabot_engine('Vendo ropa y quiero vender online', $c, $cfg);
 caso('quiere vender online → tienda online: plan anual de $190.000 o plan mensual de $30.000',
     strpos(implode(' ', $r), '$30.000') !== false && strpos(implode(' ', $r), '$30.000') !== false
-    && strpos(implode(' ', $r), '• Plan anual: $190.000 por año') !== false
+    && strpos(implode(' ', $r), '1) Plan anual: $190.000') !== false
     && $c['tipo'] === 'ecommerce');
 
 
@@ -4425,7 +4425,7 @@ caso('el turno del pitch manda el precio y luego la oferta del primer diseño, s
 $partesPitch = [$salidaPitch[0], $salidaPitch[1] ?? ''];
 caso('la propuesta termina en el punto y abajo van los dos planes (19-sep)',
     count($partesPitch) === 2
-    && preg_match('/\.\n\nPodés elegir entre dos planes:\n\n• Plan anual/u', $partesPitch[0]) === 1);
+    && preg_match('/\.\n\nPodés elegir entre dos planes:\n\n1\) Plan anual/u', $partesPitch[0]) === 1);
 
 echo "\n— SL: cuando suena el celular (28-ago) —\n";
 
