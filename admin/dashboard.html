@@ -351,8 +351,25 @@
                 <button class="seg-chip" data-mantview="sin_susc" title="Webs del plan mensual sin suscripción de Mercado Pago registrada">Sin suscripción <span class="seg-chip-count" id="mantCountSinSusc">0</span></button>
             </div>
             <!-- Webs entregadas con el plan mensual que no cruzan con ninguna suscripción de Mercado Pago. -->
+            <div id="mantManualWrap" hidden style="margin:14px 0 18px">
+                <p class="mant-subtitulo">Ya cobrándose, cargadas a mano</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Plan</th>
+                                <th>Suscripción</th>
+                                <th class="center">Cambios del mes</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantManualTbody"></tbody>
+                    </table>
+                </div>
+            </div>
             <div id="mantSinSuscWrap" hidden style="margin:14px 0 18px">
-                <p class="mant-subtitulo">Sin suscripción de Mercado Pago registrada</p>
+                <p class="mant-subtitulo">Todavía sin suscripción</p>
                 <div class="table-wrapper">
                     <table class="clients-table">
                         <thead>
@@ -1034,6 +1051,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260921b-img6"></script>
+    <script type="module" src="dashboard.js?v=20260921c-mant"></script>
 </body>
 </html>

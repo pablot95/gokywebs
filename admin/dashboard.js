@@ -5932,16 +5932,26 @@ function _renderMantAnual(anual, term) {
 // Plan mensual: las webs del plan que no cruzan con ninguna suscripción de
 // Mercado Pago (entregadas, o en desarrollo con la suscripción ya cobrándose).
 function _renderMantSinSusc(sinSusc, term) {
-    const wrap = document.getElementById("mantSinSuscWrap");
-    const tb = document.getElementById("mantSinSuscTbody");
-    if (!wrap || !tb) return;
     const list = term ? sinSusc.filter(c => _clienteCoincide(c, term)) : sinSusc;
-    // En "Todos" aparece solo si hay alguna; en "Sin suscripción", siempre.
-    wrap.hidden = mantVista === "sin_susc" ? false : (mantVista !== "todas" || !list.length);
-    tb.innerHTML = list.length
-        ? list.map(c => _clientRow(c, { marcarDesarrollo: true })).join("")
-        : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : "Todas las webs del plan mensual tienen su suscripción."}</td></tr>`;
-    _bindTableListeners(tb);
+    /* Dos listas, porque son dos cosas distintas y juntas confunden (Pablo,
+       21-sep: marcó a los dos suscriptores y los leyó bajo "sin suscripción"):
+       arriba los que YA se están cobrando y todavía no llegaron por Mercado
+       Pago, abajo los que siguen sin suscribirse. */
+    const cobrando = list.filter(c => suscripcionDe(c).estado === "activa");
+    const pendientes = list.filter(c => suscripcionDe(c).estado !== "activa");
+    // En "Todos" cada bloque aparece solo si tiene filas; en "Sin suscripción", siempre.
+    const pintar = (idWrap, idTbody, filas, vacio) => {
+        const wrap = document.getElementById(idWrap);
+        const tb = document.getElementById(idTbody);
+        if (!wrap || !tb) return;
+        wrap.hidden = mantVista === "sin_susc" ? false : (mantVista !== "todas" || !filas.length);
+        tb.innerHTML = filas.length
+            ? filas.map(c => _clientRow(c, { marcarDesarrollo: true })).join("")
+            : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : vacio}</td></tr>`;
+        _bindTableListeners(tb);
+    };
+    pintar("mantManualWrap", "mantManualTbody", cobrando, "Ninguna: las que cobran entraron por Mercado Pago.");
+    pintar("mantSinSuscWrap", "mantSinSuscTbody", pendientes, "Todas las webs del plan mensual tienen su suscripción.");
 }
 
 function renderMantenimiento() {
