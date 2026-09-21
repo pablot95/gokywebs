@@ -42,6 +42,8 @@ $rSi = turno('Sí, dale', $si, $cfg);
 caso('un sí recibe solo el formulario, con el link de la charla',
     count($rSi) === 1 && tiene_form($rSi) && str_starts_with($rSi[0], 'Dale. Para prepararte el primer diseño completá este formulario:'),
     json_encode($rSi, JSON_UNESCAPED_UNICODE));
+caso('el formulario aclara que el primer diseño va a estar listo en menos de 24 hs (21-sep)',
+    mb_strpos($rSi[0] ?? '', 'va a estar listo en menos de 24 hs') !== false, json_encode($rSi, JSON_UNESCAPED_UNICODE));
 caso('y queda como prospecto, con el bot apagado y pendiente para Pablo',
     !empty($si['esProspecto']) && !empty($si['link_form_enviado']) && !empty($si['bot_off'])
     && !empty($si['handoff_pendiente']) && ($si['cierre'] ?? '') === 'cotizacion_final' && empty($si['oferta_diseno_ts']));

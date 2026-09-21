@@ -202,8 +202,8 @@ echo "— 6. El texto del formulario —\n";
 $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
-caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño, 18-sep)',
-    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
+caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño, 18-sep; con las 24 hs, 21-sep)',
+    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nUna vez que lo completes, va a estar listo en menos de 24 hs\.\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
 caso('ni promete un minuto', mb_stripos($form, 'minuto') === false);
