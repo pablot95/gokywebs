@@ -1674,6 +1674,9 @@ function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll("[data-iniciar-plan]").forEach(btn => {
         btn.addEventListener("click", () => iniciarPlanAnual(btn.dataset.iniciarPlan));
     });
+    tbodyEl.querySelectorAll("[data-suscripto-id]").forEach(btn => {
+        btn.addEventListener("click", () => marcarSuscripcionActiva(btn.dataset.suscriptoId));
+    });
     tbodyEl.querySelectorAll(".notes-cell").forEach(cell => {
         const label = cell.querySelector(".notes-label");
         const textarea = cell.querySelector(".notes-input");
@@ -1757,7 +1760,7 @@ const ESTADO_SUSCRIPCION_HTML = {
 /* Fila de un cliente: en Clientes (webs en desarrollo) y en Mantenimiento
    (entregadas). `sinCambios` saca la columna "Cambios del mes", que el plan
    anual de Mantenimiento no lleva. */
-function _clientRow(c, { sinCambios = false } = {}) {
+function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
     // "" (sin definir) se ve como el plan mensual, igual que antes del 15-sep-2026.
     const modalidad = modalidadDe(c);
     const s = suscripcionDe(c);
@@ -1785,6 +1788,7 @@ function _clientRow(c, { sinCambios = false } = {}) {
         ${avisoMp}
         <div class="muted" style="font-size:12px;white-space:nowrap">${s.desde ? `desde ${mantLongDate(s.desde)}` : "sin fecha de inicio"}</div>
         ${s.porActivar ? `<div style="font-size:12px;font-weight:600;color:#F59E0B">por activar en Mercado Pago</div>` : ""}
+        ${s.estado === "pendiente" ? `<button type="button" class="btn-ghost" data-suscripto-id="${c.id}" style="font-size:11px;padding:2px 7px;margin-top:4px" title="El cliente ya está pagando la mensualidad: la deja activa y lo suma a Mantenimiento">Ya se suscribió</button>` : ""}
         ${s.mant ? `<div class="muted" style="font-size:11px">vía Mercado Pago</div>` : ""}
         ${s.preapprovalId ? `<div class="muted" style="font-size:11px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(s.preapprovalId)}">ID ${escapeHtml(s.preapprovalId)}</div>` : ""}`;
 
@@ -1849,6 +1853,7 @@ function _clientRow(c, { sinCambios = false } = {}) {
                     ${mostrarProyecto ? `<small class="muted" style="font-size:12px">${escapeHtml(proyecto)}</small>` : ""}
                     ${phoneDisplay}
                     ${entregada ? `<small class="muted" style="font-size:11px">Web entregada el ${mantLongDate(entregada)}</small>` : ""}
+                    ${!entregada && marcarDesarrollo ? `<small style="font-size:11px;color:#93b4e8">web en desarrollo</small>` : ""}
                     ${c.notas ? `<small class="muted" style="font-size:12px;font-style:italic;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escapeHtml(c.notas)}">${escapeHtml(c.notas)}</small>` : ""}
                 </div>
             </td>
@@ -2322,6 +2327,36 @@ async function marcarWebTerminada(id) {
    el año corre desde la fecha que diga Pablo (por defecto, la de la seña o
    hoy). Deja el próximo cobro un año después; el botón "Registrar cobro
    anual" sigue moviéndolo cada vez que cobra. */
+/* "Ya se suscribió" (Pablo, 21-sep): el cliente pagó la mensualidad y el panel
+   todavía lo muestra pendiente, porque la suscripción no llegó por el webhook
+   de Mercado Pago. La deja activa —con eso entra a Mantenimiento y empieza a
+   contar el cambio del mes— y pregunta desde cuándo corre si no tiene fecha. */
+async function marcarSuscripcionActiva(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const s = suscripcionDe(c);
+    const cambios = { estadoSuscripcion: "activa", updatedAt: serverTimestamp() };
+    if (!s.desde) {
+        const hoy = new Date();
+        const sugerida = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+        const respuesta = prompt(
+            `"${c.nombre || c.proyecto || "Cliente"}": ¿desde cuándo corre la mensualidad?\n\n` +
+            `Desde esa fecha se cuenta el cambio por mes incluido.\nFormato: aaaa-mm-dd.`,
+            sugerida
+        );
+        if (respuesta === null) return;
+        const inicio = _fechaDeInput(respuesta);
+        if (!inicio) { alert("La fecha va en formato aaaa-mm-dd, por ejemplo 2026-09-21."); return; }
+        cambios.suscripcionDesde = inicio;
+    }
+    try {
+        await updateDoc(doc(db, "clientes", id), cambios);
+    } catch (err) {
+        console.error(err);
+        alert("Error al marcar la suscripción: " + err.message);
+    }
+}
+
 async function iniciarPlanAnual(id) {
     const c = clients.find(x => x.id === id);
     if (!c) return;
@@ -5812,10 +5847,17 @@ async function removeAvisoMant(id) {
    incluido; la web propia no lleva mantenimiento (queda en Completados). ""
    (modalidad sin definir) cuenta como mensual, igual que en Clientes. */
 function _clientesEnMantenimiento() {
-    const entregados = clients.filter(c => getEstado(c) === "cliente" && webEntregada(c));
+    const activos = clients.filter(c => getEstado(c) === "cliente");
+    const entregados = activos.filter(c => webEntregada(c));
+    /* El que ya está pagando entra a Mantenimiento aunque la web siga en
+       desarrollo (Pablo, 21-sep: "ya se suscribieron pero no figuran en
+       mantenimiento"). Las suscripciones de Mercado Pago ya aparecían así en la
+       tabla de abajo; esto alcanza a las cargadas a mano en el cliente. */
+    const pagando = activos.filter(c => !webEntregada(c) && !_conSena(modalidadDe(c))
+        && suscripcionDe(c).estado === "activa");
     return {
         anual: entregados.filter(c => modalidadDe(c) === "unico"),
-        mensual: entregados.filter(c => !_conSena(modalidadDe(c))),
+        mensual: [...entregados.filter(c => !_conSena(modalidadDe(c))), ...pagando],
     };
 }
 
@@ -5887,7 +5929,8 @@ function _renderMantAnual(anual, term) {
     _bindTableListeners(tb);
 }
 
-// Plan mensual: las webs entregadas que no cruzan con ninguna suscripción de Mercado Pago.
+// Plan mensual: las webs del plan que no cruzan con ninguna suscripción de
+// Mercado Pago (entregadas, o en desarrollo con la suscripción ya cobrándose).
 function _renderMantSinSusc(sinSusc, term) {
     const wrap = document.getElementById("mantSinSuscWrap");
     const tb = document.getElementById("mantSinSuscTbody");
@@ -5896,8 +5939,8 @@ function _renderMantSinSusc(sinSusc, term) {
     // En "Todos" aparece solo si hay alguna; en "Sin suscripción", siempre.
     wrap.hidden = mantVista === "sin_susc" ? false : (mantVista !== "todas" || !list.length);
     tb.innerHTML = list.length
-        ? list.map(c => _clientRow(c)).join("")
-        : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : "Todas las webs entregadas del plan mensual tienen su suscripción."}</td></tr>`;
+        ? list.map(c => _clientRow(c, { marcarDesarrollo: true })).join("")
+        : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : "Todas las webs del plan mensual tienen su suscripción."}</td></tr>`;
     _bindTableListeners(tb);
 }
 

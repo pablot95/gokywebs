@@ -62,20 +62,29 @@ $MP_PLANES = [
 // Status de MP que dejan un aviso para el admin en vez de crear el suscriptor.
 $MP_AVISOS = ['cancelled' => 'baja', 'paused' => 'pausa'];
 
+/* --- Log para debug (mismo patrón que presupuesto/api/webhook-mp.php) ---
+ * Va ANTES del require de la config: si falta mp-config.php el webhook salía
+ * con 'no-config' sin escribir nada, ni siquiera la carpeta de logs, y desde
+ * afuera no se podía distinguir de "Mercado Pago nunca llamó" (21-sep: dos
+ * suscriptores que no aparecían en Mantenimiento). */
+$logDir = __DIR__ . '/../logs';
+if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+$logFile = $logDir . '/webhook.log';
+function wlog($logFile, $msg) { @file_put_contents($logFile, date('Y-m-d H:i:s') . ' | ' . $msg . PHP_EOL, FILE_APPEND | LOCK_EX); }
+
 // --- Config: token secreto de MP (fuera del webroot) ---
 $configPath = __DIR__ . '/../../config/mp-config.php';
-if (!file_exists($configPath)) { http_response_code(200); echo 'no-config'; exit; }
+if (!file_exists($configPath)) {
+    wlog($logFile, 'NO-CONFIG falta config/mp-config.php: la notificación se pierde');
+    http_response_code(200);
+    echo 'no-config';
+    exit;
+}
 require $configPath;
 
 // --- Datos públicos de Firebase (ya expuestos en admin/firebase-config.js) ---
 $FB_PROJECT = 'gokywebs-967cd';
 $FB_APIKEY  = 'AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ';
-
-// --- Log para debug (mismo patrón que presupuesto/api/webhook-mp.php) ---
-$logDir = __DIR__ . '/../logs';
-if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
-$logFile = $logDir . '/webhook.log';
-function wlog($logFile, $msg) { @file_put_contents($logFile, date('Y-m-d H:i:s') . ' | ' . $msg . PHP_EOL, FILE_APPEND | LOCK_EX); }
 
 // --- Leer la notificación (MP la manda por query o por JSON body) ---
 $body  = json_decode(file_get_contents('php://input'), true) ?: [];
