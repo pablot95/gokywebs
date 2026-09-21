@@ -3480,6 +3480,18 @@ function wabot_fallback_rubro_local($t) {
         && !preg_match('/\b(vendo|vendemos|venta|ventas|vender|tienda|productos|insumos|articulos|mercaderia)\b/u', $t)) {
         return 'landing';
     }
+    /* El OFICIO, no la persona: la lista de arriba tenía "plomero" y
+     * "electricista", pero no "plomería" ni "electricidad", así que "Servicio
+     * de plomería, electricidad y gas" y "Maestro mayor d obras" se quedaban
+     * sin rubro y recibían "Contame un poco más, qué vendés o qué servicio
+     * ofrecés?" (dos charlas del 21-sep). Con venta o materiales en el mismo
+     * mensaje no entra: "venta de artículos de electricidad" es comercio. */
+    if (preg_match('/\b(plomeri?a|gasista\w*|instalacion(es)? de gas|gas natural|electricidad|instalacion(es)? electricas?'
+        . '|climatizacion|refrigeracion|maestro mayor|construccion\w*|constructora|albanileria|herreria|durlock'
+        . '|impermeabilizacion\w*|techista\w*|fumigacion\w*|desinfeccion\w*|mudanzas?|fletes?)\b/u', $t)
+        && !preg_match('/\b(vendo|vendemos|venta|ventas|vender|tienda|productos|insumos|articulos|mercaderia|materiales)\b/u', $t)) {
+        return 'landing';
+    }
     /* Gastronomía con mesas: sitio profesional, como dice el playbook del
      * agente (restaurante, bar → sitio profesional salvo que pida pedidos).
      * Va ANTES de la lista de productos y sin la palabra "local": "tengo un
@@ -6422,7 +6434,12 @@ function wabot_intencion_web_dicha($texto) {
 function wabot_reconocimiento_corresponde($tipo, $conv, $cfg) {
     if (empty($cfg['reconocimiento_activo'])) return false;
     if (!empty($conv['reconocimiento_hecho']) || !empty($conv['precio_dado'])) return false;
-    if (!isset($cfg['tipos'][$tipo]) || $tipo === 'inmobiliaria') return false;
+    /* SOLO cuando lo que tiene son productos (Pablo, 21-sep: "la pregunta solo
+     * tiene que ser cuando es un producto"). Al de servicios no hay nada que
+     * preguntarle —no va a vender por la web— y se le cotiza derecho; los
+     * cursos y el híbrido ya tienen su propio desempate, y la inmobiliaria no
+     * tiene dos caminos. */
+    if ($tipo !== 'ecommerce' || !isset($cfg['tipos'][$tipo])) return false;
     if (trim((string)($cfg['reconocimiento'] ?? '')) === '') return false;
     // Solo al reconocer el rubro. Resolviendo un desempate, la pregunta ya se hizo.
     if (!in_array((string)($conv['fase'] ?? ''), ['nuevo', 'menu', 'algo_diferente', 'derivado'], true)) return false;

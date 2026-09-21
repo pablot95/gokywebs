@@ -114,15 +114,14 @@ function wabot_textos_default() {
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese es solo la página, sin hosting ni dominio, y el código queda tuyo cuando abonás el total; si querés, le sumás el mantenimiento por {mantenimiento_mes}.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
     'repregunta_suave' => 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo.',
-    /* La pregunta de reconocimiento (Pablo, 21-sep): el bot no asume el tipo de
-     * web con una respuesta suelta ("Abogado", "Venta de zapatillas"), pregunta
-     * una vez antes de cotizar. {lo_tuyo} lo pone cada tipo. */
+    /* La pregunta de reconocimiento (Pablo, 21-sep): antes de cotizar una
+     * TIENDA se pregunta una vez, porque con productos hay dos caminos
+     * distintos —vender online o solo mostrarlos—. A los servicios no se les
+     * pregunta ("si es abogado QUE va a vender por la web?"): se les cotiza el
+     * sitio profesional derecho. Un tipo puede llevar su propia pregunta con
+     * tipos[].reconocimiento_pregunta. */
     'reconocimiento_activo' => true,
     'reconocimiento' => 'Buscás vender por la web, o solo mostrar {lo_tuyo}?',
-    /* Al de servicios no se le puede preguntar si "vende por la web" (Pablo,
-     * 21-sep: "si es abogado QUE va a vender por la web?"): la pregunta es qué
-     * tiene que poder hacer el que entra. Es un override de `reconocimiento`
-     * y vive en tipos[].reconocimiento_pregunta. */
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
     'desempate_cursos_2' => 'Te lo simplifico: querés vender los cursos desde la web con los videos y acceso para cada alumno (respondé "vender"), o solo mostrarlos y que te escriban (respondé "mostrar")?',
     'desempate_hibrido' => 'Para cotizarte bien, confirmame una cosa: la web sería principalmente para mostrar tus trabajos y que te consulten por WhatsApp, o para vender tus productos y cobrar online?',
@@ -351,7 +350,6 @@ function wabot_textos_default() {
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
             'reconocimiento_que' => 'tus servicios',
-            'reconocimiento_pregunta' => 'Qué querés que pueda hacer la persona que entra a tu web: escribirte por WhatsApp, pedirte un turno, o comprarte online?',
             'imagenes_pedido' => 'el logo y 3 o 4 fotos de tus trabajos, tu local o tu equipo',
             'precio_ideal' => '{para_quien} te armamos {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
