@@ -34,7 +34,7 @@ service cloud.firestore {
       ]) && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['esProspecto'])
               || request.resource.data.esProspecto == true)
          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modalidad'])
-              || request.resource.data.modalidad in ['unico', 'mensual'])
+              || request.resource.data.modalidad in ['unico', 'mensual', 'propia'])
          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['modelosElegidos'])
               || (request.resource.data.modelosElegidos is string
                   && request.resource.data.modelosElegidos.size() <= 500));

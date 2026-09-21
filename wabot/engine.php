@@ -420,7 +420,8 @@ function wabot_ficha_resumen($conv, $cfg) {
     if ((int)$f['cantidad_productos'] > 0) array_unshift($alertas, $f['cantidad_productos'] . ' productos');
     if ($alertas) $partes[] = '⚠ ' . implode(', ', $alertas);
     if (!empty($conv['quiere_web_propia'])) $partes[] = 'Web propia: le interesa el pago único';
-    if (!empty($conv['modalidad_elegida'])) $partes[] = 'Eligió: ' . ($conv['modalidad_elegida'] === 'unico' ? 'plan anual' : 'plan mensual');
+    // 'propia' (pago único, formulario /formb) ya lo dice la línea de "Web propia" de arriba.
+    if (!empty($conv['modalidad_elegida']) && $conv['modalidad_elegida'] !== 'propia') $partes[] = 'Eligió: ' . ($conv['modalidad_elegida'] === 'unico' ? 'plan anual' : 'plan mensual');
     if (in_array($f['interlocutor'], ['empleo', 'proveedor', 'cliente_actual'], true)) $partes[] = 'No es un lead: ' . str_replace('_', ' ', $f['interlocutor']);
     return implode(' · ', $partes);
 }

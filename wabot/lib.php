@@ -4686,7 +4686,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'saldo'              => ['integerValue' => $montoLead($vLead['saldo'] ?? '')],
         'mensualidad'        => ['integerValue' => $montoLead($vLead['mensualidad'] ?? '')],
         // La forma que eligió por chat, si eligió (15-sep); vacía, el admin muestra las dos.
-        'modalidad'          => ['stringValue' => in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual'], true)
+        'modalidad'          => ['stringValue' => in_array((string)($conv['modalidad_elegida'] ?? ''), ['unico', 'mensual', 'propia'], true)
                                     ? (string)$conv['modalidad_elegida'] : ''],
         'primerPago'         => ['integerValue' => '0'],
         'sistema_problema'   => ['stringValue' => (string)($conv['sistema_problema'] ?? '')],
@@ -5048,7 +5048,7 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
  */
 function wabot_modalidad_sincronizar(&$conv) {
     $modalidad = (string)($conv['modalidad_elegida'] ?? '');
-    if (empty($conv['lead_creado']) || !in_array($modalidad, ['unico', 'mensual'], true)) return false;
+    if (empty($conv['lead_creado']) || !in_array($modalidad, ['unico', 'mensual', 'propia'], true)) return false;
     if ($modalidad === (string)($conv['modalidad_sincronizada'] ?? '')) return false;
     $doc = trim((string)($conv['lead_doc'] ?? ''));
     if ($doc === '') return false;

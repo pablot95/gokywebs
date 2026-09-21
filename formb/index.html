@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GokyWebs – Propuesta personalizada</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="../logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/modelos/wire.css?v=1">
+    <!-- Formulario alternativo (Pablo, 21-sep): el mismo /form, con el pago único
+         como forma de pago fija y sin mostrarla. El CSS y el JS son los de /form,
+         para que no haya dos copias que mantener: un cambio allá vale acá. -->
+    <link rel="stylesheet" href="/form/styles.css?v=20260921a">
+</head>
+<body>
+
+    <div class="page-wrapper">
+
+        <!-- Header -->
+        <header class="header">
+            <a href="https://www.gokywebs.com" class="logo" target="_blank">
+                <img src="../logo.png" alt="GokyWebs" class="logo-img">
+                <span class="logo-text">GokyWebs</span>
+            </a>
+        </header>
+
+        <!-- Card -->
+        <div class="form-card" id="formCard">
+
+            <!-- Indicador de pasos (el "Paso N de 3" de cada paso es el que se lee) -->
+            <div class="steps-indicator" id="stepsIndicator" aria-hidden="true">
+                <div class="step-dot active" data-s="1">
+                    <div class="step-dot-circle">1</div>
+                    <div class="step-dot-label">Tu negocio</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-dot" data-s="2">
+                    <div class="step-dot-circle">2</div>
+                    <div class="step-dot-label">Colores y estilo</div>
+                </div>
+                <div class="step-connector"></div>
+                <div class="step-dot" data-s="3">
+                    <div class="step-dot-circle">3</div>
+                    <div class="step-dot-label">Modelos</div>
+                </div>
+            </div>
+
+            <form id="propuestaForm" novalidate autocomplete="off">
+
+                <!-- ─── PASO 1: Tu negocio ─── -->
+                <div class="form-step" data-step="1">
+                    <div class="form-section">
+
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 1 de 3</span>
+                            <h2 class="step-header-title" tabindex="-1">Contanos sobre tu negocio</h2>
+                            <p class="step-header-desc">Primero lo básico: lleva menos de un minuto.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="nombre">
+                                Tu nombre <span class="req">*</span>
+                            </label>
+                            <input type="text" id="nombre" name="nombre" class="field-input" placeholder="" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="nombre_negocio">
+                                Nombre de tu negocio o marca <span class="req">*</span>
+                            </label>
+                            <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="resumen">
+                                Breve resumen de lo que ofrecés <span class="req">*</span>
+                                <span class="field-hint" id="resumenContador" aria-live="polite">0/600</span>
+                            </label>
+                            <textarea id="resumen" name="resumen" class="field-input field-textarea autosize" rows="1" placeholder="" required maxlength="600"></textarea>
+                        </div>
+
+                        <div class="field-group" id="telefonoGroup">
+                            <label class="field-label" for="telefono">
+                                Teléfono / WhatsApp <span class="req">*</span>
+                            </label>
+                            <input type="tel" id="telefono" name="telefono" class="field-input" placeholder="Ej: 1123456789" inputmode="tel" maxlength="18" required>
+                            <p class="field-hint" id="telefonoConfirmado" hidden>¿No es el tuyo? <button type="button" class="link-inline" id="telefonoCorregir">Corregir</button></p>
+                        </div>
+
+                    </div>
+
+                    <div class="step-nav">
+                        <div></div>
+                        <button type="button" class="btn-step btn-step-next" id="btnSiguiente">Siguiente <span class="btn-step-arrow">→</span></button>
+                    </div>
+                </div>
+
+                <!-- ─── PASO 2: Colores y estilo ─── -->
+                <div class="form-step" data-step="2" hidden>
+                    <div class="form-section">
+
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 2 de 3</span>
+                            <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
+                            <p class="step-header-desc">Tus colores y el estilo que buscás.</p>
+                        </div>
+
+                        <!-- La forma de pago no se muestra: en este formulario es siempre el pago
+                             único. Lleva el mismo id que el <select> de /form, que es el que lee
+                             script.js, y 'propia' es el valor del pago único que valida
+                             wabot/form-lead.php y que el admin muestra como "Pago único (web propia)". -->
+                        <input type="hidden" id="modalidad" name="modalidad" value="propia">
+
+                        <div class="field-group">
+                            <label class="field-label">
+                                Colores de identidad <span class="req">*</span>
+                                <span class="field-hint">Tenés colores de marca?</span>
+                            </label>
+                            <div class="color-fields-grid">
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_principal">Color principal</label>
+                                    <input type="color" id="color_principal" name="color_principal" class="color-swatch-input" value="#2563EB">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_secundario">Color secundario</label>
+                                    <input type="color" id="color_secundario" name="color_secundario" class="color-swatch-input" value="#16A34A">
+                                </div>
+                                <div class="field-group color-field-group">
+                                    <label class="field-label small-label" for="color_fondos">Color de fondos</label>
+                                    <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="estilo">
+                                Estilo de página <span class="req">*</span>
+                            </label>
+                            <!-- Cada opción trae su descripción y un ejemplo del portfolio, que
+                                 script.js muestra abajo (un <option> no puede llevar links). La
+                                 lista tiene que coincidir con formlead_estilos() de wabot/form-lead.php. -->
+                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
+                                <option value="" disabled selected>Elegí un estilo</option>
+                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow">Minimalista</option>
+                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE">Moderno y audaz</option>
+                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes">Elegante / premium</option>
+                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo">Cálido y cercano</option>
+                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos">Colorido y divertido</option>
+                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones">Corporativo / sobrio</option>
+                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
+                            </select>
+                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y acá te mostramos un ejemplo.</p>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="referencia">
+                                Referencia web <span class="optional">(opcional)</span>
+                            </label>
+                            <p class="field-hint" id="referenciaAyuda">Puede ser cualquier sitio web que te guste, de cualquier rubro, o uno de <a class="inline-link" href="https://gokywebs.com/portfolio/" target="_blank" rel="noopener">nuestro catálogo</a>.</p>
+                            <input type="text" id="referencia" name="referencia" class="field-input" placeholder="Link o nombre del sitio" maxlength="300" autocapitalize="off" autocorrect="off" spellcheck="false" aria-describedby="referenciaAyuda">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="incluir">
+                                Cosas que quieras incluir sí o sí en la web <span class="optional">(opcional)</span>
+                                <span class="field-hint" id="incluirContador" aria-live="polite">0/600</span>
+                            </label>
+                            <textarea id="incluir" name="incluir" class="field-input field-textarea autosize" rows="1" placeholder="Ej: galería de trabajos, mapa con la ubicación, horarios de atención" maxlength="600"></textarea>
+                        </div>
+
+                    </div>
+
+                    <div class="step-nav">
+                        <button type="button" class="btn-step btn-step-prev" id="btnVolver">← Volver</button>
+                        <button type="button" class="btn-step btn-step-next" id="btnSiguiente2">Siguiente <span class="btn-step-arrow">→</span></button>
+                    </div>
+                </div>
+
+                <!-- ─── PASO 3: Modelos ───
+                     Los modelos se dibujan acá mismo con /modelos/modelos.js,
+                     nuevos.js y wire.js: el cliente no sale del formulario. -->
+                <div class="form-step" data-step="3" hidden>
+                    <!-- Pantalla previa a los modelos: se ve la primera vez que se llega al paso 3. -->
+                    <div class="mf-intro" id="mfIntro">
+                        <div class="form-section">
+                            <div class="step-header">
+                                <span class="step-header-badge">Paso 3 de 3</span>
+                                <h2 class="step-header-title" tabindex="-1">Ahora, los modelos</h2>
+                                <p class="mf-intro-texto">A continuación vas a poder elegir 2 tipos de web entre varios modelos. Tienen distintos formatos y estructuras: elegí los que más te gusten y vamos a armar tu web en base a lo que elijas.</p>
+                            </div>
+                        </div>
+                        <div class="step-nav">
+                            <button type="button" class="btn-step btn-step-prev" id="btnVolverIntro">← Volver</button>
+                            <button type="button" class="btn-step btn-step-next" id="btnVerModelos">Ver los modelos <span class="btn-step-arrow">→</span></button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+
+                        <div class="step-header">
+                            <span class="step-header-badge">Paso 3 de 3</span>
+                            <h2 class="step-header-title" tabindex="-1">Elegí los 2 modelos que más te gusten</h2>
+                            <p class="step-header-desc">Son el punto de partida: después los adaptamos con tus fotos, textos y colores.</p>
+                        </div>
+
+                        <div class="mf-filtros" id="mfTipos" role="group" aria-label="Filtrar por tipo de web"></div>
+                        <label class="mf-rubro">
+                            <span>Rubro</span>
+                            <select id="mfRubro" class="field-input"><option value="all">Todos los rubros</option></select>
+                        </label>
+
+                        <div class="mf-grid" id="modelosGroup" aria-live="off"></div>
+                        <p class="mf-vacio" id="mfVacio" hidden>No hay modelos con ese filtro. Probá con otro rubro.</p>
+
+                    </div>
+
+                    <div class="mf-barra" id="mfBarra">
+                        <p class="mf-elegidos" id="modelosAviso" aria-live="polite">Elegí 2 modelos.</p>
+                        <div class="step-nav step-nav-submit">
+                            <button type="button" class="btn-step btn-step-prev" id="btnVolver3">← Volver</button>
+                            <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
+                        </div>
+                        <p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>© 2026 GokyWebs · <a href="https://www.gokywebs.com" target="_blank">www.gokywebs.com</a></p>
+        </footer>
+
+    </div>
+
+    <!-- Información para quien completa el formulario -->
+    <div class="que-es-overlay" id="queEsOverlay" role="dialog" aria-modal="true" aria-labelledby="queEsTitle">
+        <div class="que-es-modal">
+            <div class="que-es-header">
+                <h2 class="que-es-title" id="queEsTitle">Cómo trabajamos</h2>
+                <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="que-es-body">
+                <p class="que-es-intro">Contanos sobre tu negocio y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
+                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto.</p></div>
+            </div>
+        </div>
+    </div>
+    <!-- Vista grande de un modelo, sin salir del formulario -->
+    <div class="mf-overlay" id="mfOverlay" hidden>
+        <div class="mf-modal" role="dialog" aria-modal="true" aria-labelledby="mfTitulo">
+            <div class="mf-modal-top">
+                <h2 class="mf-modal-titulo" id="mfTitulo"></h2>
+                <div class="mf-seg" role="group" aria-label="Cómo verlo">
+                    <button type="button" data-vista="pc" aria-pressed="true">Computadora</button>
+                    <button type="button" data-vista="celular" aria-pressed="false">Celular</button>
+                </div>
+                <button type="button" class="mf-cerrar" id="mfCerrar" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="mf-escenario" id="mfEscenario"></div>
+            <div class="mf-modal-pie">
+                <button type="button" class="btn-submit mf-elegir" id="mfElegir">Elegir este modelo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/modelos/modelos.js?v=2"></script>
+    <script src="/modelos/nuevos.js?v=3"></script>
+    <script src="/modelos/wire.js?v=4"></script>
+    <script>
+        const _qeOverlay = document.getElementById('queEsOverlay');
+        document.getElementById('btnQueEsDemo')?.addEventListener('click', () => {
+            _qeOverlay.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        });
+        document.getElementById('queEsClose').addEventListener('click', () => {
+            _qeOverlay.classList.remove('open');
+            document.body.style.overflow = '';
+        });
+        _qeOverlay.addEventListener('click', (e) => {
+            if (e.target === _qeOverlay) {
+                _qeOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && _qeOverlay.classList.contains('open')) {
+                _qeOverlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+        });
+    </script>
+
+    <script type="module" src="/form/script.js?v=20260921a"></script>
+</body>
+</html>

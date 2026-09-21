@@ -433,4 +433,54 @@ caso('sin formulario ni boceto del otro lado, no se adopta nada', wabot_conv_ado
 foreach (glob(WABOT_DATA . '/conv/54911888800*TEST.json') ?: [] as $f) @unlink($f);
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
+echo "— 12. /formb: el pago único llega al boceto (21-sep) —\n";
+
+/* form-lead.php es el endpoint: al incluirlo atiende un POST y termina. Acá se
+ * cargan solo sus funciones, que son lo que va antes del primer header(). */
+$srcFormLead = (string)file_get_contents(__DIR__ . '/form-lead.php');
+eval('?>' . substr($srcFormLead, 0, (int)strpos($srcFormLead, "header('Access-Control-Allow-Origin")));
+
+foreach (['unico', 'mensual'] as $plan) {
+    $ePlan = formlead_extras(['modalidad' => $plan]);
+    caso("\"$plan\" sigue siendo un plan: sin la marca de web propia",
+        ($ePlan['modalidad_elegida'] ?? '') === $plan && !isset($ePlan['quiere_web_propia']), json_encode($ePlan));
+}
+$ePropia = formlead_extras(['modalidad' => 'propia']);
+caso('"propia" (el pago único) se acepta y marca la web propia',
+    ($ePropia['modalidad_elegida'] ?? '') === 'propia' && ($ePropia['quiere_web_propia'] ?? false) === true, json_encode($ePropia));
+$motivoPropia = null;
+caso('una forma inventada se sigue rechazando',
+    formlead_extras(['modalidad' => 'gratis'], $motivoPropia) === null && ($motivoPropia['campo'] ?? '') === 'modalidad');
+
+$htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
+caso('el HTML de /formb manda el pago único en un campo oculto',
+    strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
+caso('y no muestra la forma de pago: ni el selector ni los planes',
+    strpos($htmlB, '<select id="modalidad"') === false && stripos($htmlB, 'Plan anual') === false
+    && stripos($htmlB, 'Plan mensual') === false && stripos($htmlB, 'elegí un plan') === false);
+caso('comparte el JS y el CSS de /form, no una copia',
+    strpos($htmlB, 'src="/form/script.js') !== false && strpos($htmlB, 'href="/form/styles.css') !== false);
+
+@unlink(WABOT_DATA . '/conv/5493810009001.json');
+$payloadB = ['t' => '5493810009001', 'nombre' => 'Lucía', 'nombre_negocio' => 'Taller Lucía',
+    'resumen' => 'Taller mecánico de barrio', 'colores' => 'Rojo y negro', 'modalidad' => 'propia',
+    'modelos' => [['id' => 'a', 'nombre' => 'Uno'], ['id' => 'b', 'nombre' => 'Dos']]];
+$baseB = wabot_form_lead_validar($payloadB);
+$extrasB = formlead_extras($payloadB);
+caso('el paso 2 con pago único se guarda', $baseB !== null && $extrasB !== null && formlead_extras_guardar($baseB, $extrasB) === true);
+$rB = wabot_form_lead_procesar($payloadB, $cfg);
+$convB = wabot_conv_load('5493810009001');
+caso('el envío se acepta y la charla queda con el pago único, la web propia y como prospecto',
+    ($rB['ok'] ?? false) === true && ($convB['modalidad_elegida'] ?? '') === 'propia'
+    && !empty($convB['quiere_web_propia']) && !empty($convB['esProspecto']) && !empty($convB['lead_creado']),
+    json_encode($rB) . ' ' . ($convB['modalidad_elegida'] ?? ''));
+$fichaB = wabot_ficha_resumen($convB, $cfg);
+caso('la ficha dice que le interesa el pago único, sin un "Eligió" de plan',
+    strpos($fichaB, 'Web propia: le interesa el pago único') !== false && strpos($fichaB, 'Eligió:') === false, $fichaB);
+$lineasB = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convB['transcript'] ?? [])));
+caso('el transcript anota la forma de pago como Pago único', strpos($lineasB, 'Forma de pago: Pago único') !== false, $lineasB);
+$camposB = wabot_lead_campos($convB, $cfg, false);
+caso('el documento del boceto viaja con modalidad "propia"', ($camposB['modalidad']['stringValue'] ?? '') === 'propia', json_encode($camposB['modalidad'] ?? null));
+@unlink(WABOT_DATA . '/conv/5493810009001.json');
+
 todo_ok();

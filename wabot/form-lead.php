@@ -49,10 +49,16 @@ function formlead_extras($payload, &$motivo = null) {
     }
     if (array_key_exists('modalidad', $payload)) {
         $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
-        if (!in_array($modalidad, ['unico', 'mensual'], true)) {
+        /* 'unico' es el plan anual y 'mensual' el plan mensual. 'propia' es el pago
+         * único de la web propia: lo manda el formulario alternativo (/formb,
+         * 21-sep), que no muestra la forma de pago. */
+        if (!in_array($modalidad, ['unico', 'mensual', 'propia'], true)) {
             $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
         }
         $extras['modalidad_elegida'] = $modalidad;
+        // Además de la forma, la marca que el bot ya pone cuando el cliente pide el
+        // pago único por chat: con ella la ficha y el precio del boceto lo dicen.
+        if ($modalidad === 'propia') $extras['quiere_web_propia'] = true;
     }
     if (array_key_exists('modelos', $payload)) {
         /* Paso 3 (16-sep): llegan como [{id, nombre}]. No hay catálogo del lado
@@ -117,7 +123,7 @@ function formlead_extras_guardar($base, $extras) {
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
-    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . ($extras['modalidad_elegida'] === 'unico' ? 'Plan anual' : 'Plan mensual');
+    if (($extras['modalidad_elegida'] ?? '') !== '') $partes[] = 'Forma de pago: ' . (['unico' => 'Plan anual', 'propia' => 'Pago único'][$extras['modalidad_elegida']] ?? 'Plan mensual');
     if (!empty($extras['modelos_elegidos'])) $partes[] = 'Modelos: ' . implode(' + ', array_map(function ($m) { return 'Modelo ' . $m['letra'] . ' · ' . $m['nombre'] . ' (carpeta ' . $m['id'] . ')'; }, $extras['modelos_elegidos']));
     if ($partes) {
         $linea = ($aplicar ? '[Formulario web, paso 2] ' : '[Formulario web, paso 2, sin código — NO aplicado] ')
