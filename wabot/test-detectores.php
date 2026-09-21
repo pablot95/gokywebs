@@ -353,7 +353,7 @@ caso('y la pregunta de reconocimiento también, que es un proyecto nuevo (21-sep
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('al que vuelve se le pregunta de nuevo antes de cotizar',
-    count($rR) === 1 && mb_strpos($rR[0], 'Buscás vender por la web') === 0, json_encode($rR, JSON_UNESCAPED_UNICODE));
+    count($rR) === 1 && mb_strpos($rR[0], 'Qué querés que pueda hacer la persona que entra a tu web') === 0, json_encode($rR, JSON_UNESCAPED_UNICODE));
 $cR['fase'] = 'menu';   // contestó y se lo cotiza igual que a cualquiera
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con la propuesta y, en otro mensaje, la oferta del primer diseño',
@@ -554,10 +554,31 @@ function reconocer($clave, array $pasos, $cfg) {
     @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
     return [$r, $c];
 }
+/* A los servicios no se les pregunta si venden por la web (Pablo, 21-sep: "si
+ * es abogado QUE va a vender por la web?"; "no lo arregles solo para abogado,
+ * es todos los servicios"): la pregunta es por TIPO de web, así que la reciben
+ * todos los oficios y profesionales que caen en sitio profesional. */
+$preguntaServicios = 'Qué querés que pueda hacer la persona que entra a tu web: escribirte por WhatsApp, pedirte un turno, o comprarte online?';
 [$rAbo, $cAbo] = reconocer('999REC1', [['Abogado', ['rubro_landing'], ['descripcion' => 'abogado']]], $cfg);
 caso('un rubro suelto de servicios abre la pregunta, no el precio',
-    count($rAbo) === 1 && $rAbo[0] === 'Buscás vender por la web, o solo mostrar tus servicios?'
+    count($rAbo) === 1 && $rAbo[0] === $preguntaServicios
     && empty($cAbo['precio_dado']) && ($cAbo['fase'] ?? '') === 'reconocimiento', json_encode($rAbo, JSON_UNESCAPED_UNICODE));
+foreach (['Soy mago' => 'mago', 'Tengo un gimnasio chico' => 'gimnasio', 'Arreglo aires acondicionados' => 'servicio técnico',
+          'Tengo una peluquería' => 'peluquería', 'Soy fotógrafo' => 'fotógrafo'] as $dice => $rubro) {
+    [$rSrv] = reconocer('999RECS' . mb_strlen($dice), [[$dice, ['rubro_landing'], ['descripcion' => $rubro]]], $cfg);
+    caso("\"$dice\" recibe la misma pregunta de servicios, no la de vender",
+        ($rSrv[0] ?? '') === $preguntaServicios, json_encode($rSrv, JSON_UNESCAPED_UNICODE));
+}
+[$rTur, $cTur] = reconocer('999REC1B', [
+    ['Soy kinesióloga', ['rubro_landing'], ['descripcion' => 'kinesióloga']],
+    ['Que me pidan un turno', ['otro']],
+], $cfg);
+caso('y pedir turno es sitio profesional, no tienda', ($cTur['tipo'] ?? '') === 'landing' && !empty($cTur['precio_dado']));
+[$rComp, $cComp] = reconocer('999REC1C', [
+    ['Tengo una peluquería', ['rubro_landing'], ['descripcion' => 'peluquería']],
+    ['Comprarme online', ['otro']],
+], $cfg);
+caso('pero si quiere que le compren online, sube a tienda', ($cComp['tipo'] ?? '') === 'ecommerce');
 [$rZap, $cZap] = reconocer('999REC2', [['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'venta de zapatillas']]], $cfg);
 caso('y uno de productos también, con sus palabras',
     count($rZap) === 1 && $rZap[0] === 'Buscás vender por la web, o solo mostrar tus productos?', json_encode($rZap, JSON_UNESCAPED_UNICODE));

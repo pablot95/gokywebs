@@ -4766,17 +4766,23 @@ function wabot_desempate_por_palabras($fase, $texto) {
          * "mostrar", así que las dos tienen que entrar sueltas y con sus
          * sinónimos: una respuesta de una palabra a una pregunta cerrada no
          * puede depender de que la IA acierte. */
+        /* Sin ordinales: las dos preguntas ordenan distinto sus opciones (la de
+         * productos arranca con "vender", la de servicios con "escribirte"), y
+         * un "la primera" cruzado cotizaría el tipo equivocado. Si no se
+         * entiende, el turno cotiza igual el tipo reconocido. */
         case 'reconocimiento':
-            if ($tiene(array_merge($primera, [
+            if ($tiene([
                 'vender', 'venderlos', 'venderlas', 'venta', 'ventas', 'vendo', 'vender online',
                 'tienda', 'tienda online', 'carrito', 'cobrar', 'cobro', 'cobros', 'pagar', 'paguen',
-                'que compren', 'comprar', 'ecommerce', 'e commerce', 'la primera opcion',
-            ]))) return 'reconocimiento_vender';
-            if ($tiene(array_merge($segunda, [
+                'que compren', 'comprar', 'comprarme', 'comprarte', 'comprarlos', 'compren online',
+                'ecommerce', 'e commerce',
+            ])) return 'reconocimiento_vender';
+            if ($tiene([
                 'mostrar', 'mostrarlos', 'mostrarlas', 'solo mostrar', 'exhibir', 'presentar',
                 'informativa', 'catalogo', 'contacten', 'me contacten', 'que me escriban', 'me escriban',
-                'consultas', 'que consulten', 'whatsapp', 'wsp',
-            ]))) return 'reconocimiento_mostrar';
+                'escribirme', 'escribirte', 'consultas', 'consultarme', 'que consulten', 'whatsapp', 'wsp',
+                'turno', 'turnos', 'pedir turno', 'pedirme un turno', 'reservar', 'reserva', 'reservas',
+            ])) return 'reconocimiento_mostrar';
             return null;
         case 'desempate_hibrido':
             /* Las palabras que el propio bot pide no matcheaban. desempate_hibrido_2
@@ -6429,6 +6435,10 @@ function wabot_reconocimiento_preguntar($tipo, &$conv, $cfg) {
     $conv['fase'] = 'reconocimiento';
     wabot_handoff_aclaracion_resuelta($conv);
     wabot_evento_sesion($conv, 'reconocimiento', ['tipo' => $tipo]);
+    // Cada tipo puede tener su propia pregunta: al de servicios no se le
+    // pregunta si vende por la web, sino qué tiene que poder hacer el que entra.
+    $propia = trim((string)($cfg['tipos'][$tipo]['reconocimiento_pregunta'] ?? ''));
+    if ($propia !== '') return [$propia];
     $que = trim((string)($cfg['tipos'][$tipo]['reconocimiento_que'] ?? ''));
     if ($que === '') $que = 'lo tuyo';
     return [str_replace('{lo_tuyo}', $que, (string)$cfg['reconocimiento'])];
