@@ -1668,6 +1668,12 @@ function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll("[data-renovar-id]").forEach(btn => {
         btn.addEventListener("click", () => registrarCobroAnual(btn.dataset.renovarId));
     });
+    tbodyEl.querySelectorAll("[data-terminada-id]").forEach(btn => {
+        btn.addEventListener("click", () => marcarWebTerminada(btn.dataset.terminadaId));
+    });
+    tbodyEl.querySelectorAll("[data-iniciar-plan]").forEach(btn => {
+        btn.addEventListener("click", () => iniciarPlanAnual(btn.dataset.iniciarPlan));
+    });
     tbodyEl.querySelectorAll(".notes-cell").forEach(cell => {
         const label = cell.querySelector(".notes-label");
         const textarea = cell.querySelector(".notes-input");
@@ -1824,6 +1830,17 @@ function _clientRow(c, { sinCambios = false } = {}) {
             <div class="muted" style="font-size:11px;white-space:nowrap">se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>`;
     }
 
+    /* Los dos botones que pidió Pablo (20-sep): "terminada" pasa la web del
+       plan mensual o anual a Mantenimiento —la web propia sigue saliendo por
+       el tacho, que factura y la deja en Completados— y "iniciar plan" fija
+       desde cuándo corre el año del plan anual, con su próximo cobro. */
+    const terminada = (!entregada && modalidad !== 'propia')
+        ? `<button class="icon-btn btn-terminada" data-terminada-id="${c.id}" title="Marcar la web como terminada: pasa a Mantenimiento con su plan">✓</button>`
+        : '';
+    const iniciarPlan = modalidad === 'unico' && !r?.legado
+        ? `<button class="icon-btn btn-iniciar-plan" data-iniciar-plan="${c.id}" title="${r?.proximo ? `Cambiar desde cuándo corre el plan anual (próximo cobro: ${mantLongDate(r.proximo)})` : 'Marcar desde cuándo corre el plan anual: el próximo cobro queda un año después'}">▶</button>`
+        : '';
+
     return `
         <tr class="client-row" data-row-id="${c.id}">
             <td>
@@ -1851,10 +1868,15 @@ function _clientRow(c, { sinCambios = false } = {}) {
             <td>${_conSena(modalidad) ? pagoUnico + renovacion : suscripcion}</td>
             ${sinCambios ? "" : `<td class="center">${cambios}</td>`}
             <td class="actions-col">
+                ${terminada}${iniciarPlan}
                 <button class="icon-btn" data-agenda-nombre="${escapeHtml(c.nombre)}" data-agenda-proyecto="${escapeHtml(c.proyecto)}" title="Agregar al calendario">📅</button>
                 <button class="icon-btn" data-facturar-id="${c.id}" title="Facturar un monto puntual, por ejemplo el saldo o una mensualidad (no marca la web como entregada)">🧾</button>
                 <button class="icon-btn edit" data-id="${c.id}" title="Editar">✎</button>
-                <button class="icon-btn delete" data-id="${c.id}" title="${webEntregada(c) ? "Eliminar el cliente (el registro de la entrega queda en Completados)" : "Marcar la web como entregada (con factura o sin factura): pasa a Mantenimiento"}">🗑</button>
+                <button class="icon-btn delete" data-id="${c.id}" title="${webEntregada(c)
+                    ? "Eliminar el cliente (el registro de la entrega queda en Completados)"
+                    : modalidad === 'propia'
+                        ? "Facturar y cerrar la web propia: sale de Clientes y queda en Completados"
+                        : "Entregar con factura. Si no hace falta factura, usá el ✓ de Terminada"}">🗑</button>
             </td>
         </tr>`;
 }
@@ -2278,6 +2300,55 @@ async function toggleCambiosCliente(id, checked) {
 /* Cobro anual del plan anual (19-sep-2026): se anota en `renovaciones` (cuándo,
    cuánto y qué vencimiento pagó) y el próximo pasa al año siguiente. No hay
    suscripción: el cobro se hace a mano y se registra acá. */
+/* "Terminada" (Pablo, 20-sep): la web del plan mensual o anual se entrega y
+   pasa de Clientes a Mantenimiento. Es el mismo completarCliente() del tacho
+   pero sin el paso de la factura: el cliente sigue con su plan y en
+   Completados queda el registro de la entrega. La web propia no usa este
+   botón: esa se factura y queda solo en Completados. */
+async function marcarWebTerminada(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const plan = modalidadDe(c) === "unico" ? "el plan anual" : "el plan mensual";
+    if (!confirm(`¿Marcar la web de "${c.nombre || c.proyecto || "este cliente"}" como terminada?\n\nPasa a Mantenimiento con ${plan} y queda el registro de la entrega en Completados.`)) return;
+    try {
+        await completarCliente(id, null);
+    } catch (err) {
+        console.error(err);
+        alert("Error al marcarla como terminada: " + err.message);
+    }
+}
+
+/* "Iniciar plan" (Pablo, 20-sep): el plan anual no tiene suscripción, así que
+   el año corre desde la fecha que diga Pablo (por defecto, la de la seña o
+   hoy). Deja el próximo cobro un año después; el botón "Registrar cobro
+   anual" sigue moviéndolo cada vez que cobra. */
+async function iniciarPlanAnual(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    const r = renovacionAnualDe(c);
+    const desde = mantToDate(c.planDesdeAt) || mantToDate(c.senaAt) || new Date();
+    const sugerida = `${desde.getFullYear()}-${String(desde.getMonth() + 1).padStart(2, "0")}-${String(desde.getDate()).padStart(2, "0")}`;
+    const respuesta = prompt(
+        `"${c.nombre || c.proyecto || "Cliente"}": ¿desde cuándo corre el plan anual?\n\n` +
+        `El próximo cobro queda un año después de esa fecha${r?.proximo ? ` (ahora está en ${mantLongDate(r.proximo)})` : ""}.\n` +
+        `Formato: aaaa-mm-dd.`,
+        sugerida
+    );
+    if (respuesta === null) return;
+    const inicio = _fechaDeInput(respuesta);
+    if (!inicio) { alert("La fecha va en formato aaaa-mm-dd, por ejemplo 2026-09-20."); return; }
+    try {
+        await updateDoc(doc(db, "clientes", id), {
+            planDesdeAt: inicio,
+            renovacionAt: _sumarAnios(inicio, 1),
+            updatedAt: serverTimestamp()
+        });
+    } catch (err) {
+        console.error(err);
+        alert("Error al iniciar el plan: " + err.message);
+    }
+}
+
 async function registrarCobroAnual(id) {
     const c = clients.find(x => x.id === id);
     const r = c ? renovacionAnualDe(c) : null;

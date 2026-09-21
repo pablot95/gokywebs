@@ -2686,6 +2686,13 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 
 /* Mantenimiento: plan mensual / plan anual (19-sep). Mismo aspecto que .filtro-modo
    pero con su propia clase: el código de Completados agarra todos los .filtro-modo-btn. */
+/* Los dos botones de la fila del cliente (Pablo, 20-sep): terminar la web y
+   arrancar el plan anual. El verde es el que mueve la web a Mantenimiento. */
+.icon-btn.btn-terminada { background: #14532d; border-color: #15803d; color: #bbf7d0; font-weight: 700; }
+.icon-btn.btn-terminada:hover { background: #15803d; color: #fff; }
+.icon-btn.btn-iniciar-plan { background: #1e2c49; border-color: #31456e; color: #93b4e8; }
+.icon-btn.btn-iniciar-plan:hover { background: #2b3f66; color: #fff; }
+
 .mant-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 16px; }
 .mant-planes { display: inline-flex; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
 .mant-plan-btn { background: none; border: 0; border-radius: 6px; color: var(--text-muted); font-family: inherit; font-size: 14px; font-weight: 600; padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background-color .15s, color .15s; }
