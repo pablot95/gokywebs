@@ -527,6 +527,16 @@ caso('el panel tiene la acción y el botón para copiarlo',
     strpos($adminForm, "\$a === 'form_link'") !== false
     && strpos($adminForm, "accion: 'form_link'") !== false
     && strpos($adminForm, 'Copiar form') !== false);
+// En los dos lugares donde Pablo trabaja: las columnas del live y la ficha del chat.
+caso('el boton esta en el live y tambien en la ficha de la conversacion',
+    strpos($adminForm, "form.className = 'live-form'") !== false
+    && strpos($adminForm, 'class="sec form-copiar"') !== false
+    && strpos($adminForm, "ev.target.closest('.form-copiar')") !== false);
+// Y copia el mensaje entero, no el link pelado (Pablo, 21-sep).
+caso('copia el mensaje completo, con el texto arriba del link',
+    strpos($adminForm, "'mensaje' => $intro") !== false
+    && substr_count($adminForm, 'j.mensaje || j.link') === 3
+    && strpos((string)wabot_textos_default()['form_link_panel'], 'primera muestra gratis') !== false);
 caso('y arma el link igual que el bot, con &ig=1 en Instagram',
     strpos($adminForm, "'https://gokywebs.com/form/?c=' . \$codigo") !== false
     && strpos($adminForm, "\$link .= '&ig=1'") !== false);

@@ -420,7 +420,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_conv_save($conv);
         $link = 'https://gokywebs.com/form/?c=' . $codigo;
         if (wabot_canal($conv) === 'instagram') $link .= '&ig=1';
-        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo]);
+        // El mensaje completo, listo para pegar (Pablo, 21-sep): el texto de
+        // textos.php (editable desde Ajustes → Textos) y abajo el link.
+        $intro = trim((string)($cfg['form_link_panel'] ?? ''));
+        if ($intro === '') $intro = 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:';
+        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $intro . "\n" . $link]);
         exit;
     }
     if ($a === 'responder' && !empty($_POST['tel'])) {
@@ -1890,6 +1894,9 @@ body.embed { min-height: 0; }
                         <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_toggle"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['bot_off']) ? 'Encender bot acá' : 'Apagar bot acá' ?></button></form>
+                        <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
+                        <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
+                            title="Copia el link del formulario con el código de esta conversación, para mandárselo vos">Copiar form</button>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -2537,6 +2544,41 @@ body.embed { min-height: 0; }
             guardarFechasSeleccionadas();
             firmaLista = '';
             pintarLista(itemsCache);
+        });
+
+        /* "Copiar form": el link del formulario con el código de esta charla.
+           Sin el ?c= lo único que ata el envío a la conversación es el teléfono
+           que el cliente tipea, y desde Instagram no hay ninguno (21-sep). */
+        document.addEventListener('click', async (ev) => {
+            const boton = ev.target.closest('.form-copiar');
+            if (!boton) return;
+            const previo = boton.textContent;
+            boton.disabled = true;
+            boton.textContent = '…';
+            try {
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ accion: 'form_link', tel: boton.dataset.tel }) });
+                const j = await r.json();
+                if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
+                try {
+                    await navigator.clipboard.writeText(j.mensaje || j.link);
+                } catch (err) {
+                    const caja = document.createElement('textarea');
+                    caja.value = j.mensaje || j.link;
+                    document.body.appendChild(caja);
+                    caja.select();
+                    document.execCommand('copy');
+                    caja.remove();
+                }
+                boton.textContent = j.codigo + ' copiado ✓';
+                boton.title = j.link;
+            } catch (error) {
+                boton.textContent = 'no se pudo';
+                boton.title = error.message || 'No se pudo armar el link.';
+            } finally {
+                boton.disabled = false;
+                setTimeout(() => { boton.textContent = previo; }, 2200);
+            }
         });
 
         document.addEventListener('click', async (ev) => {
@@ -3374,7 +3416,7 @@ body.embed { min-height: 0; }
                         body: new URLSearchParams({ accion: 'form_link', tel }) });
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
-                    await copiarAlPortapapeles(j.link);
+                    await copiarAlPortapapeles(j.mensaje || j.link);
                     boton.textContent = j.codigo + ' copiado ✓';
                 } catch (error) {
                     boton.textContent = 'error';

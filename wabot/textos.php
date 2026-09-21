@@ -120,6 +120,9 @@ function wabot_textos_default() {
      * pregunta ("si es abogado QUE va a vender por la web?"): se les cotiza el
      * sitio profesional derecho. Un tipo puede llevar su propia pregunta con
      * tipos[].reconocimiento_pregunta. */
+    /* Lo que copia el botón "Copiar form" del panel, para que Pablo se lo
+     * mande él mismo (21-sep). El link con el código de la charla va abajo. */
+    'form_link_panel' => 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:',
     'reconocimiento_activo' => true,
     'reconocimiento' => 'Buscás vender por la web, o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
