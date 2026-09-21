@@ -7057,7 +7057,7 @@ function wabot_normalizar_frase($texto) {
 function wabot_es_afirmativa($texto) {
     $t = wabot_normalizar_frase($texto);
     if ($t === '' || mb_strlen($t) > 25) return false;
-    $afirmativas = ['si', 'sii', 'siii', 'ok', 'oka', 'okey', 'okay', 'dale', 'ok dale',
+    $afirmativas = ['si', 'sii', 'siii', 'sisi', 'ok', 'oka', 'oki', 'okey', 'okay', 'por supuesto', 'dale', 'ok dale',
                     'si dale', 'dale si', 'bueno', 'buenisimo', 'perfecto', 'listo',
                     'de una', 'obvio', 'obvio si', 'joya', 'barbaro', 'genial', 'va',
                     'vamos', 'sale', 'me sirve', 'me interesa', 'si por favor',

@@ -18,7 +18,7 @@
       "como se paga?",
       "hola?"
     ],
-    "esperado": "Tienda online: plan anual $190.000 o plan mensual $30.000, más la oferta del primer diseño. 'Cómo se paga?' SÍ se contesta (20-sep: las dudas después del precio se resuelven) y la oferta sigue abierta. 'Hola?' no aporta nada nuevo: silencio, con el bot todavía prendido."
+    "esperado": "Tienda online: plan anual $190.000 o plan mensual $30.000, más la oferta del primer diseño. 'Cómo se paga?' NO se contesta: silencio, bot apagado y handoff para Pablo. 'Hola?' tampoco recibe nada."
   },
   {
     "id": "03",

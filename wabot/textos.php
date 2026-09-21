@@ -48,9 +48,10 @@
  *   "una tienda online completa"— porque abajo, en el mismo mensaje, va la
  *   lista de todo lo que incluye (ver wabot_propuesta_texto en engine.php).
  * - Después del precio se ofrece un "primer diseño" sin cargo (ya no "demo
- *   gratis"): el sí se lleva el formulario, las DUDAS se contestan y la oferta
- *   sigue esperando (Pablo, 20-sep), y lo que no es pregunta —un "no", un "lo
- *   pienso"— lo contesta Pablo (ver wabot_oferta_diseno_responder).
+ *   gratis"): el sí se lleva el formulario y todo lo demás —dudas, un "no", un
+ *   "lo pienso"— lo contesta Pablo con las respuestas rápidas del panel (regla
+ *   del 18-sep; el 20-sep se probó contestar las dudas y Pablo la revirtió, ver
+ *   wabot_oferta_diseno_responder).
  * {nombre} lo pone wabot_personalizar(); {link}, {portfolio} y {portfolio_texto}
  * salen del tipo cotizado; {entrega} es el día de entrega de la demo.
  *
