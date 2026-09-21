@@ -349,7 +349,12 @@ wabot_conv_reset_si_vieja($cR, $cfg, time());
 caso('pitch_hecho, pitch_tipo, link_form_enviado y form_completado_ts se limpian',
     empty($cR['pitch_hecho']) && empty($cR['pitch_tipo']) && empty($cR['link_form_enviado']) && (int)$cR['form_completado_ts'] === 0);
 caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
+caso('y la pregunta de reconocimiento también, que es un proyecto nuevo (21-sep)', empty($cR['reconocimiento_hecho']));
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
+$rR = wabot_precio('landing', $cR, $cfg);
+caso('al que vuelve se le pregunta de nuevo antes de cotizar',
+    count($rR) === 1 && mb_strpos($rR[0], 'Buscás vender por la web') === 0, json_encode($rR, JSON_UNESCAPED_UNICODE));
+$cR['fase'] = 'menu';   // contestó y se lo cotiza igual que a cualquiera
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con la propuesta y, en otro mensaje, la oferta del primer diseño',
     count($rR) === 2 && stripos($rR[0], 'te armamos un sitio profesional completo') !== false

@@ -1433,7 +1433,7 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
         $conv['nombre'] = $otra['nombre'];
         $conv['nombre_confirmado'] = !empty($otra['nombre_confirmado']);
     }
-    foreach (['precio_dado', 'pitch_hecho', 'cta_muestra', 'lead_creado', 'referencia_preguntada'] as $k) {
+    foreach (['precio_dado', 'pitch_hecho', 'reconocimiento_hecho', 'cta_muestra', 'lead_creado', 'referencia_preguntada'] as $k) {
         if (!empty($otra[$k])) $conv[$k] = true;
     }
     if (!empty($otra['form_completado_ts'])) $conv['form_completado_ts'] = (int)$otra['form_completado_ts'];
@@ -1765,14 +1765,14 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
      * link del formulario: le pedían los datos por chat. Es un proyecto nuevo
      * y arranca como tal. El código corto se conserva (su link sigue siendo
      * el suyo) y el teléfono también. */
-    foreach (['pitch_hecho', 'link_form_enviado', 'form_link_enviado', 'mixto_avisado', 'bilingue_avisado',
+    foreach (['pitch_hecho', 'reconocimiento_hecho', 'link_form_enviado', 'form_link_enviado', 'mixto_avisado', 'bilingue_avisado',
               'prediseno_acuse_respondido', 'form_aviso_respondido', 'empujon_postdemo_dado',
               'postdemo_pregunto_cambios', 'pidio_precio',
               // el sí a la demo y el formulario ya mandado (11-sep)
               'form_recordatorio_enviado', 'form_recibido_confirmado'] as $k) $conv[$k] = false;
     $conv['tres_pasos_repreguntas'] = 0;
     $conv['form_no_llego_avisos'] = 0;
-    foreach (['pitch_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'upgrade_pendiente', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
+    foreach (['pitch_tipo', 'reconocimiento_tipo', 'rubro_pitch', 'pitch_para_que', 'pitch_para_que_tipo', 'upgrade_pendiente', 'hermana_adoptada', 'avance_sello', 'origen_prediseno'] as $k) $conv[$k] = null;
     $conv['oferta_diseno_ts'] = 0;
     $conv['form_completado_ts'] = 0;
     $conv['form_link_ts'] = 0;
