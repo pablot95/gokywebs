@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://api.fontshare.com">
 <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
 <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B0%5D=melodrama@400,500,700&f%5B1%5D=cabinet-grotesk@400,500,700&display=swap">
-<link rel="stylesheet" href="styles.css?v=2">
+<link rel="stylesheet" href="styles.css?v=3">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Store","name":"EGDECO& MOLDES","description":"Moldes de silicona y termoformados para velas, jabones, resina, bombones y repostería.","image":"images/vitrina.webp","telephone":"+5493854114526","address":{"@type":"PostalAddress","addressLocality":"Santiago del Estero","addressRegion":"Santiago del Estero","addressCountry":"AR"},"priceRange":"$$","currenciesAccepted":"ARS"}
@@ -192,21 +192,21 @@
       <div class="catalogo__layout">
         <aside class="filtros" id="filtros" aria-label="Filtros del catálogo">
           <div class="filtros__head">
-            <h3>Filtrar</h3>
+            <p class="filtros__titulo">Filtrar</p>
             <button type="button" class="filtros__close" id="filtrosClose" aria-label="Cerrar filtros">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <fieldset class="fgroup">
             <legend>Material</legend>
-            <label class="check"><input type="checkbox" name="mat" value="silicona"><span>Silicona</span></label>
-            <label class="check"><input type="checkbox" name="mat" value="termoformado"><span>Termoformado</span></label>
+            <label class="check"><input type="checkbox" data-f="mat" value="silicona"><span>Silicona</span></label>
+            <label class="check"><input type="checkbox" data-f="mat" value="termoformado"><span>Termoformado</span></label>
           </fieldset>
           <fieldset class="fgroup">
             <legend>Cavidades</legend>
-            <label class="check"><input type="checkbox" name="cav" value="una"><span>Pieza única</span></label>
-            <label class="check"><input type="checkbox" name="cav" value="pocas"><span>De 2 a 12</span></label>
-            <label class="check"><input type="checkbox" name="cav" value="muchas"><span>13 o más</span></label>
+            <label class="check"><input type="checkbox" data-f="cav" value="una"><span>Pieza única</span></label>
+            <label class="check"><input type="checkbox" data-f="cav" value="pocas"><span>De 2 a 12</span></label>
+            <label class="check"><input type="checkbox" data-f="cav" value="muchas"><span>13 o más</span></label>
           </fieldset>
           <fieldset class="fgroup">
             <legend>Precio hasta <strong id="precioVal">$25.000</strong></legend>
@@ -262,9 +262,9 @@
       <div class="calc" id="calc" data-animate style="opacity:0;transform:translateY(22px)">
         <h3>¿Cuánto te rinde?</h3>
         <div class="calc__campos">
-          <label class="calc__campo" for="rindeMolde"><span>Molde</span><select id="rindeMolde"></select></label>
-          <label class="calc__campo" for="rindeMaterial"><span>Con qué lo llenás</span><select id="rindeMaterial"></select></label>
-          <label class="calc__campo" for="rindeTandas"><span>Coladas por día</span>
+          <label class="calc__campo"><span>Molde</span><select id="rindeMolde"></select></label>
+          <label class="calc__campo"><span>Con qué lo llenás</span><select id="rindeMaterial"></select></label>
+          <label class="calc__campo"><span>Coladas por día</span>
             <select id="rindeTandas">
               <option value="1">1 colada</option>
               <option value="2" selected>2 coladas</option>
@@ -386,7 +386,7 @@
   <div class="drawer__foot" id="drawerFoot"></div>
 </aside>
 
-<div class="modal" id="quickModal" role="dialog" aria-modal="true" aria-labelledby="quickTit" hidden>
+<div class="modal" id="quickModal" role="dialog" aria-modal="true" aria-label="Vista rápida del producto" hidden>
   <div class="modal__backdrop" data-close-modal></div>
   <div class="modal__panel">
     <button type="button" class="icon-btn modal__close" id="quickClose" aria-label="Cerrar">
@@ -408,7 +408,7 @@
 
 <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
 <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
-<script src="script.js?v=2"></script>
+<script src="script.js?v=3"></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>

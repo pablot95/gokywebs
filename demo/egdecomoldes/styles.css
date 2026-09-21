@@ -148,6 +148,9 @@ legend { padding: 0; }
 .nav-backdrop.open { opacity: 1; visibility: visible; transition: opacity .3s var(--ease-out); }
 body.no-scroll { overflow: hidden; }
 
+.search-go { display: grid; place-items: center; flex: none; width: 30px; height: 30px; color: var(--color-text-muted); }
+.search-go:hover { color: var(--color-text); }
+
 /* ---------- hero banner (modelo 1) ---------- */
 .hero-banner { position: relative; overflow: hidden; }
 .hero-banner__media { position: relative; width: 100%; height: clamp(500px, calc(100svh - var(--gw-modelos-h, 0px) - 130px), 700px); overflow: hidden; background: var(--color-ink); }
@@ -242,7 +245,7 @@ body.no-scroll { overflow: hidden; }
 .filtros { display: none; border: 1px solid var(--line); padding: 1.1rem 1.2rem 1.3rem; background: var(--color-bg); margin-bottom: var(--sp-3); }
 .filtros.is-open { display: block; }
 .filtros__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .8rem; }
-.filtros__head h3 { font-size: 1.1rem; }
+.filtros__titulo { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; }
 .filtros__close { width: 38px; height: 38px; display: grid; place-items: center; }
 .filtros__close svg { width: 18px; height: 18px; }
 .fgroup { padding-block: .9rem; border-top: 1px solid var(--line-soft); }

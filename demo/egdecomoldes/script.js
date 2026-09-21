@@ -273,12 +273,12 @@ function initCatalogo() {
     });
   });
 
-  document.querySelectorAll('input[name="mat"]').forEach(i => i.addEventListener('change', () => {
-    estado.mat = [...document.querySelectorAll('input[name="mat"]:checked')].map(x => x.value);
+  document.querySelectorAll('input[data-f="mat"]').forEach(i => i.addEventListener('change', () => {
+    estado.mat = [...document.querySelectorAll('input[data-f="mat"]:checked')].map(x => x.value);
     estado.mostrados = 16; aplicar();
   }));
-  document.querySelectorAll('input[name="cav"]').forEach(i => i.addEventListener('change', () => {
-    estado.cav = [...document.querySelectorAll('input[name="cav"]:checked')].map(x => x.value);
+  document.querySelectorAll('input[data-f="cav"]').forEach(i => i.addEventListener('change', () => {
+    estado.cav = [...document.querySelectorAll('input[data-f="cav"]:checked')].map(x => x.value);
     estado.mostrados = 16; aplicar();
   }));
 
@@ -336,7 +336,7 @@ function initCatalogo() {
 function limpiarTodo() {
   estado.cat = 'todos'; estado.mat = []; estado.cav = []; estado.max = 25000; estado.q = ''; estado.orden = 'destacados'; estado.mostrados = 16;
   document.querySelectorAll('.pestana').forEach(b => b.classList.toggle('is-on', b.dataset.cat === 'todos'));
-  document.querySelectorAll('input[name="mat"], input[name="cav"]').forEach(i => { i.checked = false; });
+  document.querySelectorAll('input[data-f="mat"], input[data-f="cav"]').forEach(i => { i.checked = false; });
   const rango = document.getElementById('precioMax');
   if (rango) rango.value = 25000;
   const precioVal = document.getElementById('precioVal');
