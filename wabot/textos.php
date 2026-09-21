@@ -320,9 +320,9 @@ function wabot_textos_default() {
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
-    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.\nSi algo no te queda claro, escribime por acá.",
+    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
     'prediseno_link_variantes' => [
-        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.\nSi algo no te queda claro, escribime por acá.",
+        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
     ],
     'prediseno_referencia' => 'Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.',
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
