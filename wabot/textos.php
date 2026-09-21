@@ -17,7 +17,8 @@
  * - Plan mensual (`tipos[].mensualidad`): $20.000 el sitio profesional y
  *   $30.000 el resto (Pablo, 19-sep: "15.000 y 25.000 es re poco"; fueron
  *   así del 16 al 19-sep). Sin pago inicial aparte, sin permanencia. Plan
- *   con cambios (`tipos[].mensualidad_cambios`) con un cambio por mes.
+ *   con cambios (`tipos[].mensualidad_cambios`) para varios cambios al mes;
+ *   los dos planes básicos ya incluyen UN cambio por mes (Pablo, 20-sep).
  * - La propiedad del código SÍ se contesta (Pablo, 20-sep; el 19-sep el bot se
  *   callaba y era peor): pasa a ser del cliente cuando abona el total del pago
  *   único, al pagar el segundo año del plan anual o a los 18 meses del
@@ -27,7 +28,7 @@
  *   dominio. Se le puede sumar el mantenimiento por `tipos[].mantenimiento`
  *   ({mantenimiento_mes}: $10.000 el sitio profesional, $15.000 el resto).
  * - Los dos incluyen lo mismo: desarrollo completo, hosting, dominio,
- *   mantenimiento, actualizaciones y soporte. SIN cambios en la web.
+ *   mantenimiento, actualizaciones, soporte y un cambio por mes.
  * - Los dos planes se dicen siempre con el mismo bloque, `dos_formas`
  *   ({dos_formas} en cualquier texto): "Plan anual" y "Plan mensual" con sus
  *   montos y, abajo, "Ambos incluyen todo:" con el desarrollo y un bloque
@@ -35,8 +36,8 @@
  * - El plan anual se cuenta desde la seña: se renueva cada año desde ahí.
  * - Web propia (19-sep): si el cliente la quiere a su nombre, en su propio
  *   hosting, se le pasa el pago único (`tipos[].precio_unico`, los montos
- *   del pago único de antes). No incluye hosting, dominio, mantenimiento,
- *   actualizaciones ni soporte. Lo dicen info.web_propia, el precio
+ *   del pago único de antes). Es solo la página: sin hosting ni dominio, con
+ *   mantenimiento opcional. Lo dicen info.web_propia, el precio
  *   (`dos_formas_web_propia`, debajo de los planes) y la titularidad.
  * - Las charlas cotizadas antes (precio_modelo 'doble': pago único con seña)
  *   conservan sus montos y sus respuestas de seña y saldo.
@@ -47,8 +48,9 @@
  *   "una tienda online completa"— porque abajo, en el mismo mensaje, va la
  *   lista de todo lo que incluye (ver wabot_propuesta_texto en engine.php).
  * - Después del precio se ofrece un "primer diseño" sin cargo (ya no "demo
- *   gratis") y el bot espera UNA respuesta: el sí se lleva el formulario y
- *   cualquier otra cosa la contesta Pablo (ver wabot_oferta_diseno_responder).
+ *   gratis"): el sí se lleva el formulario, las DUDAS se contestan y la oferta
+ *   sigue esperando (Pablo, 20-sep), y lo que no es pregunta —un "no", un "lo
+ *   pienso"— lo contesta Pablo (ver wabot_oferta_diseno_responder).
  * {nombre} lo pone wabot_personalizar(); {link}, {portfolio} y {portfolio_texto}
  * salen del tipo cotizado; {entrega} es el día de entrega de la demo.
  *
@@ -65,7 +67,7 @@ function wabot_textos_default() {
     'cambio_modalidad' => 'Arrancás con el plan que más te sirva hoy. Si más adelante querés pasarte de uno al otro, las condiciones de ese cambio las coordinás con el desarrollador.',
     'capi_dataset_id' => '',
     'capi_token' => '',
-    'cambios_plan' => 'Los planes no incluyen cambios en la web. Si vas a necesitar cambios seguido, está el plan mensual con cambios, de {cambios_mes}, que incluye un cambio por mes; con el plan anual, un cambio después de entregada la web se cotiza aparte.',
+    'cambios_plan' => 'Los dos planes, el anual y el mensual, incluyen un cambio por mes en la web. Si vas a necesitar cambios más seguido, está el plan mensual con cambios, de {cambios_mes}, para varios cambios al mes.',
     // Se suma a cambios_plan: los cuatro tipos incluyen panel (Pablo, 20-sep).
     'cambios_plan_panel' => 'Los textos y las imágenes los cambiás vos cuando quieras desde tu panel, sin costo.',
     'caro' => 'Si pagar el año entero se te hace mucho, está el plan mensual de {mensualidad}: arrancás con la primera mensualidad, y con eso armamos la web y la dejamos funcionando. En Tiendanube pagás parecido por mes y la web la armás vos; acá te la hacemos nosotros.',
@@ -106,7 +108,7 @@ function wabot_textos_default() {
     // La seña del plan anual no se devuelve (Pablo, 15-sep); el turno queda
     // marcado para el desarrollador.
     'devolucion' => 'La seña del plan anual no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
-    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico",
+    'dos_formas' => "Podés elegir entre dos planes:\n\n• Plan anual: {precio} por año\n• Plan mensual: {mensualidad} por mes\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico",
     // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese es solo la página, sin hosting ni dominio, y el código queda tuyo cuando abonás el total; si querés, le sumás el mantenimiento por {mantenimiento_mes}.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
@@ -151,7 +153,7 @@ function wabot_textos_default() {
         'pago' => "Hay dos planes: el anual, de {precio} por año, y el mensual, de {mensualidad} por mes. Los dos incluyen lo mismo: el desarrollo completo de la web, hosting, dominio, mantenimiento, actualizaciones y soporte.\nEl anual arranca con una seña, el resto se paga al entregar la web y después se renueva una vez por año, contado desde la seña, sin suscripción. El mensual se paga por Mercado Pago, con cualquier tarjeta y sin necesidad de tener cuenta, y no tiene permanencia.",
         'plazos' => "La web queda lista en unos 7 días desde que arrancamos con el plan y nos pasás el contenido.",
         'hosting' => "El hosting y el dominio .com.ar van incluidos en los dos planes, el anual y el mensual, mientras el plan esté activo.\nNo los contratás ni los configurás vos, se ocupa Gokywebs. Con el pago único de la web propia no van incluidos: ahí corren por tu cuenta.",
-        'mantenimiento' => "El mantenimiento va incluido en los dos planes, el anual y el mensual, mientras el plan esté activo: hosting, dominio, actualizaciones, corrección de errores y soporte. El anual lo pagás una vez por año y el mensual, de {mensualidad}, no tiene permanencia.\nNo incluye cambios en la web: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes.",
+        'mantenimiento' => "El mantenimiento va incluido en los dos planes, el anual y el mensual, mientras el plan esté activo: hosting, dominio, actualizaciones, corrección de errores y soporte. El anual lo pagás una vez por año y el mensual, de {mensualidad}, no tiene permanencia.\nIncluye un cambio por mes en la web; si vas a necesitar más, está el plan mensual con cambios, de {cambios_mes}.",
         'carga' => "Sí, lo manejás vos. Todas nuestras webs traen un panel de administración donde editás los textos y las imágenes cuando quieras, sin costo extra.\nEn la tienda online cargás vos desde tu panel los productos, precios, stock, fotos y descripciones todas las veces que necesites, también sin costo extra, y el panel trae un video explicativo. Si preferís, los primeros 10 productos los cargamos nosotros para que arranques con la tienda lista, y de ahí en más son \$500 por producto si querés que los sigamos cargando nosotros. La inmobiliaria y la plataforma de cursos también cargan las propiedades o los cursos desde su panel.\nEl plan, anual o mensual, no es por cargar productos ni por hacer cambios: cubre el desarrollo, el hosting, el dominio, el soporte y el mantenimiento técnico.",
         'logo' => 'No hacemos logos; si tenés uno se usa, y si no, se trabaja tu nombre bien tipografiado.',
         'marketing' => 'No hacemos publicidad, marketing ni redes, y no recomendamos proveedores; solo diseño y desarrollo de webs y sistemas.',
@@ -205,7 +207,7 @@ function wabot_textos_default() {
         'comisiones' => 'No, nosotros no cobramos ninguna comisión por venta: lo que vendas es tuyo. Lo único que se descuenta es la comisión del medio de pago que uses (Mercado Pago, la tarjeta), que la cobran ellos y no nosotros.',
         'envios' => 'Sí, la tienda calcula el envío sola: el cliente pone el código postal en el checkout y le aparecen las opciones con el costo de cada una, antes de pagar. Se conecta con el correo con el que trabajes, y también podés ofrecer retiro en el local. Si preferís algo más simple, se puede dejar un costo fijo por zona.',
         'como_funciona_tienda' => 'Sí, exactamente así: el cliente entra, ve el catálogo, arma el carrito y paga desde la web. El pedido te llega al panel con los datos de envío para que lo despaches, y los productos, precios y stock los manejás vos desde ahí.',
-        'que_incluye' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte, un panel para editar vos mismo los textos y las imágenes y la carga de hasta 10 productos. Nos ocupamos del armado y de lo técnico.\nSi querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Los cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
+        'que_incluye' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte, un panel para editar vos mismo los textos y las imágenes y la carga de hasta 10 productos. Nos ocupamos del armado y de lo técnico.\nSi querés que carguemos más de 10 productos, son \$500 por cada producto extra; también podés cargarlos vos desde el panel. Incluye un cambio por mes en la web; si vas a necesitar más, está el plan mensual con cambios, de {cambios_mes}. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
         'emprendimientos' => 'Sí, trabajamos con emprendimientos que recién arrancan y con negocios chicos: no hay un tamaño mínimo. En gokywebs.com/portfolio están los trabajos entregados y vas a ver que la mayoría son negocios chicos como el tuyo.',
         'que_hacemos' => 'En Gokywebs diseñamos y desarrollamos páginas web a medida: sitios profesionales, tiendas online, plataformas de cursos e inmobiliarias, además de sistemas de gestión. Contame qué negocio tenés y te paso el precio exacto de una.',
         'internet' => 'La página funciona online, así que hace falta conexión a internet para usarla. Si en el local se corta el wifi, podés entrar igual desde el celular con datos móviles: la web y tu panel siguen funcionando normalmente.',
@@ -213,7 +215,7 @@ function wabot_textos_default() {
         'confianza' => 'Entiendo la desconfianza, pasa seguido en este rubro. En gokywebs.com/portfolio podés ver proyectos entregados a negocios reales y públicos; también podés escribirles por tu cuenta. En gokywebs.com/modelos/ elegís uno o dos modelos antes de avanzar.',
         'rangos' => 'Te paso el valor exacto, pero primero contame a qué te dedicás o para qué sería la web: el precio depende de lo que necesites.',
         'dominio_com' => 'Sí, se puede. El dominio que viene incluido es .com.ar; si preferís un .com, tiene una renovación adicional de $40.000 por año.',
-        'que_incluye_sin_productos' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte y un panel para editar vos mismo los textos y las imágenes. Nos ocupamos del armado y de lo técnico.\nLos cambios en la web no van incluidos: para eso está el plan mensual con cambios, de {cambios_mes}, con un cambio por mes. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
+        'que_incluye_sin_productos' => "Está todo incluido, con el plan anual o con el mensual: el desarrollo completo a medida, el hosting, el dominio, el mantenimiento, el soporte y un panel para editar vos mismo los textos y las imágenes. Nos ocupamos del armado y de lo técnico.\nIncluye un cambio por mes en la web; si vas a necesitar más, está el plan mensual con cambios, de {cambios_mes}. Si tenés en mente algo puntual, preguntame y te digo si está incluido.",
         'cupones' => 'Sí, en la tienda podés crear cupones de descuento desde tu panel. Tus clientes ingresan el código al comprar. Podés aplicarlos a toda la tienda, a una categoría o a productos puntuales, y elegir la fecha de inicio y fin.',
         'cobros_tienda' => 'Sí, tus clientes pueden pagar con Mercado Pago desde la tienda. El pedido te queda registrado en el panel para que lo prepares y lo despaches.',
         'turnos' => 'Sí, está incluido: la web puede tener turnos online, donde tus clientes eligen el día y el horario y la reserva te llega directo. No se paga aparte.',

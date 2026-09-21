@@ -685,9 +685,10 @@ foreach (['ecommerce' => '$30.000', 'inmobiliaria' => '$30.000', 'elearning' => 
     caso("$t → $montoPlan por mes", strpos($r[0], $montoPlan) !== false && strpos($r[0], '{') === false);
 }
 
-caso('el texto de mantenimiento dice que va en los dos planes y que no incluye cambios (19-sep)',
+// 20-sep: los dos planes incluyen un cambio por mes; el de cambios es para más.
+caso('el texto de mantenimiento dice que va en los dos planes y que incluye un cambio por mes',
     mb_stripos($cfg['info']['mantenimiento'], 'en los dos planes') !== false && mb_stripos($cfg['info']['mantenimiento'], 'pago único') === false
-    && mb_stripos($cfg['info']['mantenimiento'], 'no incluye cambios') !== false);
+    && mb_stripos($cfg['info']['mantenimiento'], 'un cambio por mes') !== false);
 
 echo "— Cómo trabajamos: los tres pasos de Pablo (10-sep) —\n";
 
@@ -3309,8 +3310,8 @@ caso('el plan mensual con su monto', mb_stripos($mant, 'el mensual, de $20.000')
 caso('va en los dos planes, sin el primer año del pago único ni el plan de $10.000 (19-sep)',
     mb_stripos($mant, 'en los dos planes') !== false && mb_stripos($mant, 'primer año') === false && strpos($mant, '$10.000') === false);
 caso('sin permanencia', mb_stripos($mant, 'no tiene permanencia') !== false);
-caso('no incluye cambios: el plan con cambios de su tipo, sin montos de otro tipo',
-    mb_stripos($mant, 'no incluye cambios') !== false && strpos($mant, '$25.000 por mes') !== false
+caso('incluye un cambio por mes y nombra el plan con cambios de su tipo, sin montos de otro tipo',
+    mb_stripos($mant, 'un cambio por mes') !== false && strpos($mant, '$25.000 por mes') !== false
     && strpos($mant, '$35.000') === false && strpos($mant, '$15.000 por mes') === false);
 caso('y ya no promete el primer mes gratis/incluido',
     mb_stripos($mant, 'primer mes') === false);

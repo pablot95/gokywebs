@@ -1019,8 +1019,9 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
 // 19-sep-2026: el plan mensual vuelve a $20.000 / $30.000 (del 16 al 19-sep fue
-// $15.000 / $25.000). No incluye cambios: el plan con cambios, $25.000 / $35.000,
-// se carga a mano.
+// $15.000 / $25.000). Los dos planes incluyen un cambio por mes (Pablo,
+// 20-sep); el plan con cambios, $25.000 / $35.000, es para varios al mes y se
+// carga a mano.
 // `unico` es el precio del plan anual; `propia`, el pago único de la web propia.
 const PLANES = {
     profesional:  { label: "Sitio profesional",    unico: 120000, sena: 40000, mensual: 20000, propia: 180000 },
