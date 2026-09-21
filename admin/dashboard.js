@@ -4375,6 +4375,19 @@ async function presentarPropuesta(propId) {
             // equivocado (28-ago).
             const porDonde = envio.canal === "instagram" ? "por Instagram" : "por WhatsApp";
             alert("Quedó en Seguimiento. El bot ya le mandó la demo " + porDonde + ", no hace falta que le escribas vos.");
+        } else if (envio.fuera_ventana) {
+            /* Meta no deja mandar texto libre fuera de las 24 h desde el último
+               mensaje del cliente. El que llegó por el formulario y nunca
+               escribió por WhatsApp está siempre fuera (21-sep, Pescadería Las
+               Grutas: la demo salió al vacío y en el panel figuraba enviada). */
+            alert("Quedó en Seguimiento, pero el bot NO le mandó nada: "
+                + (envio.nunca_escribio
+                    ? "ese número nunca escribió por WhatsApp (llegó por el formulario)."
+                    : "pasaron más de 24 hs desde su último mensaje.")
+                + "\n\nWhatsApp no deja escribirle hasta que el cliente vuelva a hablar."
+                + " Mandale vos el link desde tu número"
+                + (link ? ":\n" + link : ".")
+                + "\n\nSi ya tenés su chat en el panel del bot, ahí está el botón de la plantilla de 72 hs.");
         } else if (envio.demo_ok) {
             // El mensaje con el link SÍ salió; falló el segundo, que solo pide
             // el feedback. Mandar la demo de nuevo sería duplicarla.

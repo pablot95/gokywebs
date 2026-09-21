@@ -533,4 +533,33 @@ caso('y arma el link igual que el bot, con &ig=1 en Instagram',
 
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 
+echo "— 14. Presentar la demo no puede mandar al vacío (21-sep) —\n";
+
+/* El 21-sep salió la demo de Pescadería Las Grutas a un número que había
+ * llegado por el formulario y nunca había escrito por WhatsApp: la ventana de
+ * 24 h de Meta estaba cerrada, el envío se perdió y el panel lo mostró como
+ * enviado. `responder` ya miraba la ventana; `presentar_muestra` no. */
+$cForm = conv_nueva('5492944814198');
+$cForm['ultimo_cliente_ts'] = 0;
+caso('el que llegó por el formulario y nunca escribió está fuera de la ventana',
+    wabot_ventana_restante($cForm) <= 0);
+$cViejo = conv_nueva('5492944814199');
+$cViejo['ultimo_cliente_ts'] = time() - 25 * 3600;
+caso('y el que escribió hace más de un día, también', wabot_ventana_restante($cViejo) <= 0);
+$cVivo = conv_nueva('5492944814197');
+$cVivo['ultimo_cliente_ts'] = time() - 3600;
+caso('el que escribió hace un rato sigue adentro', wabot_ventana_restante($cVivo) > 0);
+
+$adminPres = (string)@file_get_contents(__DIR__ . '/admin.php');
+caso('presentar_muestra mide la ventana antes de mandar y no manda si está cerrada',
+    strpos($adminPres, '$fueraVentana = wabot_ventana_restante($conv) <= 0;') !== false
+    && strpos($adminPres, 'foreach ($fueraVentana ? [] : $textos as $i => $texto)') !== false);
+caso('y se lo avisa al panel, diciendo si el cliente nunca escribió',
+    strpos($adminPres, "'fuera_ventana' => \$fueraVentana,") !== false
+    && strpos($adminPres, "'nunca_escribio'") !== false);
+$dashPres = (string)@file_get_contents(__DIR__ . '/../admin/dashboard.js');
+caso('el admin lo explica en vez de decir que no pudo confirmar el envío',
+    strpos($dashPres, 'envio.fuera_ventana') !== false
+    && strpos($dashPres, 'nunca escribió por WhatsApp') !== false);
+
 todo_ok();

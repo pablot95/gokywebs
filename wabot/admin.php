@@ -494,9 +494,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
          * los 20 s, así que un timeout con Meta lenta devuelve false igual con
          * el mensaje entregado. Por eso el panel avisa que hay que mirar el
          * chat antes de reenviar, en vez de mandar a reenviar de una. */
+        /* Sin ventana de 24 h no se manda nada. El que llegó por el formulario
+         * y nunca escribió por WhatsApp tiene el chat cerrado para Meta: el
+         * envío se pierde sin aviso y en el panel queda como si hubiera salido.
+         * Pasó el 21-sep con Pescadería Las Grutas, que cargó su número en el
+         * formulario y nunca habló con el bot: la demo salió al vacío. El
+         * estado igual avanza, porque el link lo manda Pablo a mano. */
         $textos = wabot_muestra_presentar_textos($slug, $cfg, $conv);
+        $fueraVentana = wabot_ventana_restante($conv) <= 0;
         $enviados = 0;
-        foreach ($textos as $i => $texto) {
+        foreach ($fueraVentana ? [] : $textos as $i => $texto) {
             // Un respiro entre los dos: mandarlos pegados hace que Meta a veces
             // los entregue al revés, y el segundo no tiene sentido antes del link.
             if ($i > 0) sleep(1);
@@ -511,13 +518,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
-                                        'enviados' => $enviados, 'total' => $total]);
+                                        'enviados' => $enviados, 'total' => $total,
+                                        'fuera_ventana' => $fueraVentana]);
 
         echo json_encode([
             'ok'       => true,
             'enviado'  => $enviado,
             'enviados' => $enviados,
             'total'    => $total,
+            'fuera_ventana' => $fueraVentana,
+            // Nunca escribió por WhatsApp: llegó por el formulario o por otro lado.
+            'nunca_escribio' => (int)($conv['ultimo_cliente_ts'] ?? 0) === 0,
             'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
             'slug'     => $slug,
             // Por dónde salió: el panel decía "por WhatsApp" siempre, y desde
