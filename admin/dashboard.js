@@ -3208,11 +3208,6 @@ function renderFechaChips() {
     });
 }
 
-document.addEventListener("click", (e) => {
-    if (e.target.closest("[data-prop-img-toggle]")) return;
-    document.querySelectorAll(".prop-img-menu").forEach(m => { m.hidden = true; });
-});
-
 function renderPropuestas() {
     const tbody = document.getElementById("propuestasTbody");
     const term  = searchPropuestasInput.value.trim().toLowerCase();
@@ -3322,17 +3317,7 @@ function renderPropuestas() {
                 </td>
                 <td class="actions-col">
                     <button class="btn-ghost" data-prop-copy="${p.id}" style="font-size:13px">Copiar</button>
-                    <!--
-                    <span style="position:relative;display:inline-block">
-                        <button type="button" class="btn-ghost" data-prop-img-toggle="${p.id}" style="font-size:13px" title="Prompts de imágenes (Lan / Ecom / 6 / 10)">🖼</button>
-                        <span class="prop-img-menu" data-prop-img-menu="${p.id}" hidden style="position:absolute;top:100%;left:0;z-index:20;display:flex;gap:4px;background:#171a2b;border:1px solid #2a2f4a;border-radius:8px;padding:6px;margin-top:4px;white-space:nowrap">
-                            <button class="btn-ghost btn-image-prompt${p.imgLanCopiado ? ' active' : ''}" data-prop-lan="${p.id}" style="font-size:13px" title="Copiar prompt de imágenes para landing">Lan</button>
-                            <button class="btn-ghost btn-image-prompt-zip" data-prop-lan-zip="${p.id}" style="font-size:13px" title="Copiar el pedido de armar el ZIP con las 6 imágenes">6</button>
-                            <button class="btn-ghost btn-image-prompt${p.imgEcomCopiado ? ' active' : ''}" data-prop-ecom="${p.id}" style="font-size:13px" title="Copiar prompt de imágenes para e-commerce">Ecom</button>
-                            <button class="btn-ghost btn-image-prompt-zip" data-prop-ecom-zip="${p.id}" style="font-size:13px" title="Copiar el pedido de armar el ZIP con las 10 imágenes">10</button>
-                        </span>
-                    </span>
-                    -->
+                    <button class="btn-ghost btn-image-prompt${p.imgLanCopiado ? ' active' : ''}" data-prop-img6="${p.id}" style="font-size:13px" title="Copiar el pedido de 6 imágenes (1 en 9:16, 1 en 16:9 y 4 en 1:1) con la info de este boceto">Copiar 6</button>
                     <button class="btn-toggle-prop${p.bocetoHecho ? ' active' : ''}" data-prop-boceto="${p.id}" style="font-size:13px">Boceto hecho</button>
                     <button class="btn-presentada-prop" data-prop-presentada="${p.id}" style="font-size:13px">Presentar</button>
                     <button class="icon-btn" data-agenda-nombre="${escapeHtml(p.nombre || p.contacto_nombre || '')}" data-agenda-proyecto="${escapeHtml(p.nombre_negocio || p.rubro || '')}" title="Agregar al calendario">📅</button>
@@ -3352,26 +3337,8 @@ function renderPropuestas() {
     tbody.querySelectorAll("[data-prop-copy]").forEach(btn => {
         btn.addEventListener("click", () => copyPropuesta(btn.dataset.propCopy, btn));
     });
-    tbody.querySelectorAll("[data-prop-img-toggle]").forEach(btn => {
-        btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const menu = tbody.querySelector(`[data-prop-img-menu="${btn.dataset.propImgToggle}"]`);
-            const abrir = menu.hidden;
-            tbody.querySelectorAll(".prop-img-menu").forEach(m => { m.hidden = true; });
-            menu.hidden = !abrir;
-        });
-    });
-    tbody.querySelectorAll("[data-prop-lan]").forEach(btn => {
-        btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propLan, "lan", btn));
-    });
-    tbody.querySelectorAll("[data-prop-ecom]").forEach(btn => {
-        btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propEcom, "ecom", btn));
-    });
-    tbody.querySelectorAll("[data-prop-lan-zip]").forEach(btn => {
-        btn.addEventListener("click", () => copyPropuestaImageZipPrompt("lan", btn));
-    });
-    tbody.querySelectorAll("[data-prop-ecom-zip]").forEach(btn => {
-        btn.addEventListener("click", () => copyPropuestaImageZipPrompt("ecom", btn));
+    tbody.querySelectorAll("[data-prop-img6]").forEach(btn => {
+        btn.addEventListener("click", () => copyPropuestaImagePrompt(btn.dataset.propImg6, btn));
     });
     tbody.querySelectorAll("[data-prop-type-id]").forEach(input => {
         input.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -3864,40 +3831,17 @@ async function copyPropuesta(id, btn) {
     }
 }
 
-const PROPUESTA_IMAGE_PROMPTS = {
-    lan: `Crea 6 imágenes realistas, separadas entre sí y no en collage, con estética profesional y coherente, adaptadas al rubro, colores y estilo de la marca. Asegurate que las imagenes no sean parecidas entre si.
-Deben ser 100% visuales, sin textos y parecer reales.
-Datos del proyecto: {{DATOS_PROYECTO}}
-Generá exactamente:- 1 imagen en formato 2.8:1- 1 imagen en formato 9:16- 1 imagen en formato 5:3- 1 imagen en formato 4:5- 2 imágenes en formato 1:1
+// Un solo pedido de imágenes por boceto (Pablo, 20-sep): 6 imágenes, 1 en 9:16,
+// 1 en 16:9 y 4 en 1:1, con la info del boceto al final.
+const PROPUESTA_IMAGE_PROMPT = `Crea 6 imágenes. 1 tamaño 9:16 y otra tamaño 16:9. 4 imágenes 1:1 que van a ser utilizadas en un prediseño de una página web para:
+{{DATOS_PROYECTO}}`;
 
-Cada imagen debe mostrar una escena, producto, servicio o concepto distinto relacionado con el negocio, evitando repeticiones. Todas deben mantener unidad visual, buena iluminación, composición atractiva y estilo realista.`,
-    ecom: `Crea 10 imágenes realistas, separadas entre sí y no en collage, con estética profesional y coherente, adaptadas al rubro, colores y estilo de la marca. Asegurate que las imagenes no sean parecidas entre si.
-Deben ser 100% visuales, sin textos y parecer reales.
-Datos del proyecto: {{DATOS_PROYECTO}}
-Generá exactamente:- 1 imagen en formato 2.8:1- 1 imagen en formato 9:16- 1 imagen en formato 5:3- 1 imagen en formato 4:5
-Y 6 imagenes de productos especificos, con formato 1:1
-
-Cada imagen debe mostrar una escena, producto, servicio o concepto distinto relacionado con el negocio, evitando repeticiones. Todas deben mantener unidad visual, buena iluminación, composición atractiva y estilo realista.`
-};
-
-const PROPUESTA_IMAGE_ZIP_PROMPTS = {
-    lan: `Prepará un archivo ZIP descargable con las 6 imágenes renombradas.
-Nombrá cada archivo así:
-nombre-del-contenido_tamaño
-Asegurate que sea un link clickeable listo para descargar el zip`,
-    ecom: `Prepará un archivo ZIP descargable con las 10 imágenes renombradas.
-Nombrá cada archivo así:
-nombre-del-contenido_tamaño
-Asegurate que sea un link clickeable listo para descargar el zip`
-};
-
-async function copyPropuestaImagePrompt(id, type, btn) {
+async function copyPropuestaImagePrompt(id, btn) {
     const p = propuestas.find(x => x.id === id);
-    const template = PROPUESTA_IMAGE_PROMPTS[type];
-    if (!p || !template) return;
+    if (!p) return;
 
     try {
-        const texto = template.replace("{{DATOS_PROYECTO}}", `\n${getPropuestaCopyText(p)}\n`);
+        const texto = PROPUESTA_IMAGE_PROMPT.replace("{{DATOS_PROYECTO}}", getPropuestaCopyText(p));
         await writeTextToClipboard(texto);
         if (btn) {
             const original = btn.textContent;
@@ -3905,29 +3849,11 @@ async function copyPropuestaImagePrompt(id, type, btn) {
             setTimeout(() => { btn.textContent = original; }, 1400);
             btn.classList.add("active");
         }
-        const field = type === "ecom" ? "imgEcomCopiado" : "imgLanCopiado";
-        p[field] = true;
-        await updateField(id, field, true, "propuestas");
+        p.imgLanCopiado = true;
+        await updateField(id, "imgLanCopiado", true, "propuestas");
     } catch (err) {
         console.error(err);
-        alert(`No se pudo copiar el prompt de ${type === "ecom" ? "Ecom" : "Lan"}.`);
-    }
-}
-
-async function copyPropuestaImageZipPrompt(type, btn) {
-    const texto = PROPUESTA_IMAGE_ZIP_PROMPTS[type];
-    if (!texto) return;
-
-    try {
-        await writeTextToClipboard(texto);
-        if (btn) {
-            const original = btn.textContent;
-            btn.textContent = "Copiado";
-            setTimeout(() => { btn.textContent = original; }, 1400);
-        }
-    } catch (err) {
-        console.error(err);
-        alert(`No se pudo copiar el pedido del ZIP de ${type === "ecom" ? "Ecom" : "Lan"}.`);
+        alert("No se pudo copiar el pedido de imágenes.");
     }
 }
 
