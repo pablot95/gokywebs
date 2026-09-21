@@ -492,7 +492,7 @@ body.no-scroll { overflow: hidden; }
 }
 @media (max-width: 1100px) {
   .may-body { grid-template-columns: minmax(0, 1fr); }
-  .may-panel { position: static; order: -1; }
+  .may-panel { position: static; order: 1; margin-top: 1.4rem; }
   .may-panel__body { max-height: 34vh; }
 }
 @media (max-width: 900px) {

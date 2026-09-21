@@ -365,8 +365,8 @@ body.no-scroll { overflow: hidden; }
 .panel__vaciar { font-size: .8rem; color: var(--color-text-muted); border-bottom: 1px solid var(--line); justify-self: center; }
 .panel__vaciar:hover { color: var(--color-primary); }
 @media (max-width: 999px) {
-  .panel { order: -1; }
-  .panel__body { display: none; }
+  .panel { order: 1; margin-top: var(--sp-3); }
+  .panel__body { max-height: 40vh; }
 }
 
 /* ---------- componente funcional + cierre ---------- */
