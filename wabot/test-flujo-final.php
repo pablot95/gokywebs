@@ -5,7 +5,8 @@ $cfg = wabot_config_load();
 
 echo "— Flujo comercial (18-sep): pregunta, cotiza, ofrece el primer diseño y espera UNA respuesta —\n";
 
-$c = conv_nueva('549110000FINALTEST', ['fase' => 'menu']);
+// De punta a punta, con la pregunta de reconocimiento del 21-sep incluida.
+$c = conv_nueva('549110000FINALTEST', ['fase' => 'menu', 'reconocimiento_hecho' => false]);
 clasifica(['rubro_comercio']); // incluso si la IA se equivoca, la guarda manda.
 $r = turno('Es para un negocio', $c, $cfg);
 caso('"es para un negocio" no se clasifica como ecommerce',
@@ -16,6 +17,14 @@ caso('primero pregunta qué vende o qué servicio ofrece',
 
 clasifica(['rubro_comercio']);
 $r = turno('Vendo ropa', $c, $cfg);
+/* Antes de cotizar hace UNA pregunta (Pablo, 21-sep): con "Vendo ropa" sabe a
+ * qué se dedica, pero no qué tiene que hacer la web. */
+caso('antes del precio pregunta si vende por la web o solo muestra',
+    count($r) === 1 && $r[0] === 'Buscás vender por la web, o solo mostrar tus productos?'
+    && ($c['fase'] ?? '') === 'reconocimiento' && empty($c['precio_dado']), implode(' | ', $r));
+
+clasifica(['otro']);
+$r = turno('Vender', $c, $cfg);
 $todo = implode("\n", $r);
 caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',

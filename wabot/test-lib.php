@@ -45,6 +45,11 @@ function conv_nueva($clave = '999TEST999', array $extra = []) {
         'referencia' => null, 'msgs' => [], 'ultimo_ts' => 0, 'ultimo_cliente_ts' => 0, 'transcript' => [],
         'espera_avisada' => false, 'no_texto_avisado' => false, 'bot_off' => false, 'pausado_hasta' => 0,
         'lead_creado' => false,
+        /* La pregunta de reconocimiento (21-sep) ya hecha: estas suites prueban
+         * lo que pasa DESPUÉS de saber el tipo. La pregunta en sí se prueba en
+         * test-detectores.php y de punta a punta en test-flujo-final.php, que
+         * la piden con ['reconocimiento_hecho' => false]. */
+        'reconocimiento_hecho' => true,
     ];
     foreach ($extra as $k => $v) $c[$k] = $v;
     return $c;

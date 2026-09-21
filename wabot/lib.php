@@ -3962,6 +3962,7 @@ REGLA DE ORO DEL "SÍ" PELADO
 Si el cliente contesta solo "si", "dale", "ok", "listo", "bueno", "de una", "joya" o parecido, está contestando LA ÚLTIMA PREGUNTA QUE HIZO EL BOT. Mirá el último mensaje del bot antes de etiquetar:
 - Si el bot ofreció el prediseño o la demo gratis → quiere_prediseno.
 - Si el bot preguntó por los cursos → cursos_vender o cursos_mostrar, según cuál de las dos opciones esté aceptando.
+- Si el bot preguntó "Buscás vender por la web, o solo mostrar..." → hibrido_vender si elige vender, hibrido_trabajos si elige mostrar.
 Nunca lo etiquetes como quiere_avanzar: un "dale" no es pedir el CBU, es decir que sí a lo que le acabás de preguntar.
 - pide_humano: pide hablar con una persona.
 - cambia_tipo: ya tiene un precio dado y ahora cuenta algo que corresponde a OTRO tipo de web.

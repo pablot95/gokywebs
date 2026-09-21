@@ -3808,7 +3808,7 @@ function wabot_engine($texto, &$conv, $cfg) {
      * "Todo en la web", le repreguntaron, contestó "Vender" —la palabra que el
      * bot le había pedido— y lo derivaron sin cotizarle la plataforma. Un
      * pedido explícito de persona sigue derivando: ahí hay causa. */
-    if (in_array($conv['fase'], ['desempate_cursos', 'desempate_hibrido'], true)
+    if (in_array($conv['fase'], ['desempate_cursos', 'desempate_hibrido', 'reconocimiento'], true)
         && ($has('quiere_avanzar') || $has('pide_humano'))
         && wabot_handoff_causa_explicita($texto) === null) {
         $respuesta = wabot_desempate_por_palabras($conv['fase'], $texto);
@@ -4014,6 +4014,34 @@ function wabot_engine($texto, &$conv, $cfg) {
             elseif ($has('hibrido_trabajos'))      { $out = array_merge($out, wabot_precio('landing', $conv, $cfg)); }
             else                                   { $out = wabot_desempate_desvio($acc, $out, $texto, $conv, $cfg); if ($conv['fase'] === 'derivado') return $out; }
             break;
+
+        /* La respuesta a la pregunta de reconocimiento (21-sep). Si no se
+         * entiende NO se repregunta ni se deriva: se cotiza el tipo que ya se
+         * había reconocido, que es lo que habría salido sin la pregunta. */
+        case 'reconocimiento': {
+            $previo = (string)($conv['reconocimiento_tipo'] ?? '');
+            // Como en los desempates: la etiqueta del clasificador y, si no
+            // etiquetó, las palabras que el propio bot ofreció.
+            $intencion = ($has('hibrido_vender') || $has('cursos_vender')) ? 'vender'
+                : (($has('hibrido_trabajos') || $has('cursos_mostrar')) ? 'mostrar' : null);
+            if ($intencion === null) {
+                $local = wabot_desempate_por_palabras('reconocimiento', $texto);
+                $intencion = $local === 'reconocimiento_vender' ? 'vender'
+                    : ($local === 'reconocimiento_mostrar' ? 'mostrar' : null);
+            }
+            // Si en vez de contestar nombró otro rubro, manda el rubro nuevo.
+            if ($intencion === null) {
+                $rNuevo = wabot_rubro_de($acc);
+                if ($rNuevo !== null && $rNuevo !== $previo) {
+                    $d = wabot_desempate_de($rNuevo);
+                    if ($d) { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $cfg[$d[1]]; break; }
+                    $out = array_merge($out, wabot_precio($rNuevo, $conv, $cfg));
+                    break;
+                }
+            }
+            $out = array_merge($out, wabot_precio(wabot_reconocimiento_resolver($intencion, $previo), $conv, $cfg));
+            break;
+        }
 
         case 'desempate_cursos':
             // Si el clasificador no la etiquetó, la respuesta se lee por palabras:
@@ -4731,8 +4759,25 @@ function wabot_desempate_por_palabras($fase, $texto) {
                      'nada de carrito', 'nada de cobro', 'no quiero cobrar', 'no vendo online']);
     if ($niega) {
         if ($fase === 'desempate_cursos')   return 'cursos_mostrar';
+        if ($fase === 'reconocimiento')     return 'reconocimiento_mostrar';
     }
     switch ($fase) {
+        /* La pregunta de reconocimiento ofrece dos palabras, "vender" y
+         * "mostrar", así que las dos tienen que entrar sueltas y con sus
+         * sinónimos: una respuesta de una palabra a una pregunta cerrada no
+         * puede depender de que la IA acierte. */
+        case 'reconocimiento':
+            if ($tiene(array_merge($primera, [
+                'vender', 'venderlos', 'venderlas', 'venta', 'ventas', 'vendo', 'vender online',
+                'tienda', 'tienda online', 'carrito', 'cobrar', 'cobro', 'cobros', 'pagar', 'paguen',
+                'que compren', 'comprar', 'ecommerce', 'e commerce', 'la primera opcion',
+            ]))) return 'reconocimiento_vender';
+            if ($tiene(array_merge($segunda, [
+                'mostrar', 'mostrarlos', 'mostrarlas', 'solo mostrar', 'exhibir', 'presentar',
+                'informativa', 'catalogo', 'contacten', 'me contacten', 'que me escriban', 'me escriban',
+                'consultas', 'que consulten', 'whatsapp', 'wsp',
+            ]))) return 'reconocimiento_mostrar';
+            return null;
         case 'desempate_hibrido':
             /* Las palabras que el propio bot pide no matcheaban. desempate_hibrido_2
              * dice «respondeme "trabajos" o "vender"» y ninguna de las dos estaba
@@ -6316,6 +6361,86 @@ function wabot_pitch_encaje_rechazado($texto, &$conv, $cfg) {
     return [wabot_plantilla_variante('pitch_otra_idea', 'pitch_otra_idea_variantes', $conv, $cfg)];
 }
 
+/* ─────────────── La pregunta de reconocimiento (Pablo, 21-sep) ───────────────
+ *
+ * "El bot no hace pregunta de reconocimiento. Con una simple respuesta asume el
+ * tipo de web. Habíamos quedado en que iba a hacer 1 pregunta al menos": con
+ * "Abogado" o "Venta de zapatillas" cotizaba en el mismo turno. Vuelve la
+ * pregunta que se había perdido en `29c4963` ("el pitch deja de preguntar"),
+ * con el texto que dictó Pablo, y recién después sale el precio.
+ *
+ * No se pregunta dos veces: si el rubro ya trae su propio desempate (cursos,
+ * híbrido) ese es EL turno de pregunta, y si el cliente ya dijo qué tiene que
+ * hacer la web se cotiza derecho. Tampoco a la inmobiliaria, donde las dos
+ * ramas terminan en la misma web (una pregunta que converge es una promesa
+ * falsa, ver la nota de los cuatro tipos).
+ */
+
+/** Lo que el cliente dijo de su web hasta ahora, para no repreguntárselo. */
+function wabot_reconocimiento_contexto($conv) {
+    $texto = (string)($conv['descripcion'] ?? '');
+    foreach (array_slice((array)($conv['transcript'] ?? []), -6) as $t) {
+        if (($t['q'] ?? '') === 'cliente') $texto .= ' ' . (string)($t['t'] ?? '');
+    }
+    return trim($texto);
+}
+
+/**
+ * 'vender' | 'mostrar' | null: qué dijo que tiene que hacer LA WEB. Tiene que
+ * hablar de la página, no del negocio: "vendo zapatillas" dice a qué se dedica,
+ * no que la web tenga que cobrar (es el falso positivo que Pablo marcó el
+ * 29-ago, cuando el bot cotizaba tienda con solo oír "venta").
+ */
+function wabot_intencion_web_dicha($texto) {
+    $t = ' ' . wabot_normalizar_frase((string)$texto) . ' ';
+    if (trim($t) === '') return null;
+    $tiene = function ($frases) use ($t) {
+        foreach ($frases as $f) if (mb_strpos($t, ' ' . $f . ' ') !== false) return true;
+        return false;
+    };
+    if ($tiene(['vender online', 'vender por la web', 'vender por internet', 'vender desde la web',
+                'vender desde la pagina', 'venta online', 'ventas online', 'tienda online', 'tienda virtual',
+                'ecommerce', 'e commerce', 'carrito', 'checkout', 'cobro online', 'cobros online',
+                'cobrar online', 'cobrar por la web', 'cobrar desde la web', 'pago online', 'pagos online',
+                'que compren', 'que me compren', 'que puedan comprar', 'comprar online', 'comprar desde la web',
+                'que paguen', 'que puedan pagar', 'mercado pago'])) return 'vender';
+    if ($tiene(['solo mostrar', 'solo para mostrar', 'sin carrito', 'sin cobro', 'sin tienda',
+                'no vendo online', 'no quiero vender', 'mostrar mis trabajos', 'mostrar mis servicios',
+                'mostrar los servicios', 'mostrar mis productos', 'mostrar lo que hago',
+                'que me escriban', 'que me consulten', 'que me contacten', 'recibir consultas',
+                'pedir turno', 'pedir turnos', 'reservar turno', 'que me pidan turno',
+                'web informativa', 'pagina informativa'])) return 'mostrar';
+    return null;
+}
+
+function wabot_reconocimiento_corresponde($tipo, $conv, $cfg) {
+    if (empty($cfg['reconocimiento_activo'])) return false;
+    if (!empty($conv['reconocimiento_hecho']) || !empty($conv['precio_dado'])) return false;
+    if (!isset($cfg['tipos'][$tipo]) || $tipo === 'inmobiliaria') return false;
+    if (trim((string)($cfg['reconocimiento'] ?? '')) === '') return false;
+    // Solo al reconocer el rubro. Resolviendo un desempate, la pregunta ya se hizo.
+    if (!in_array((string)($conv['fase'] ?? ''), ['nuevo', 'menu', 'algo_diferente', 'derivado'], true)) return false;
+    return wabot_intencion_web_dicha(wabot_reconocimiento_contexto($conv)) === null;
+}
+
+function wabot_reconocimiento_preguntar($tipo, &$conv, $cfg) {
+    $conv['reconocimiento_hecho'] = true;
+    $conv['reconocimiento_tipo'] = $tipo;
+    $conv['fase'] = 'reconocimiento';
+    wabot_handoff_aclaracion_resuelta($conv);
+    wabot_evento_sesion($conv, 'reconocimiento', ['tipo' => $tipo]);
+    $que = trim((string)($cfg['tipos'][$tipo]['reconocimiento_que'] ?? ''));
+    if ($que === '') $que = 'lo tuyo';
+    return [str_replace('{lo_tuyo}', $que, (string)$cfg['reconocimiento'])];
+}
+
+/** La respuesta manda; si no se entiende, se cotiza lo que se había reconocido. */
+function wabot_reconocimiento_resolver($respuesta, $tipoPrevio) {
+    if ($respuesta === 'vender')  return $tipoPrevio === 'elearning' ? 'elearning' : 'ecommerce';
+    if ($respuesta === 'mostrar') return 'landing';
+    return $tipoPrevio !== '' ? $tipoPrevio : 'landing';
+}
+
 function wabot_pitch_corresponde($tipo, $conv, $cfg) {
     if (empty($cfg['pitch_activo'])) return false;
     if (!empty($conv['pitch_hecho']) || !empty($conv['precio_dado'])) return false;
@@ -6410,6 +6535,9 @@ function wabot_precio($tipo, &$conv, $cfg) {
             wabot_evento_sesion($conv, 'necesidad_mixta', ['ejes' => implode('+', array_keys($ejes))]);
             return [$textoMixto, (string)$cfg['mixto_pregunta']];
         }
+    }
+    if (wabot_reconocimiento_corresponde($tipo, $conv, $cfg)) {
+        return wabot_reconocimiento_preguntar($tipo, $conv, $cfg);
     }
     if (wabot_pitch_corresponde($tipo, $conv, $cfg)) {
         return wabot_pitch($tipo, $conv, $cfg);
