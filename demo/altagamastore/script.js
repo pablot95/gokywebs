@@ -533,15 +533,25 @@ function initEscena() {
   const destacado = getProducto('s25u');
   const OFF = () => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gw-modelos-h')) || 0;
 
-  const anchoMin = () => window.innerWidth <= 720 ? 64 : 32;
+  const sticky = escena.querySelector('.escena-sticky');
+  const chico = () => window.innerWidth <= 720;
   const ratioIni = 9 / 16;
-  const ratioFin = () => window.innerWidth <= 720 ? 3 / 4 : 16 / 10;
+  const ratioFin = () => chico() ? 3 / 4 : 4 / 5;
+  const anchoIni = () => chico() ? 64 : 20;
+  const anchoFin = () => chico() ? 100 : 46;
+  const radioFin = () => chico() ? 0 : 4;
 
   const pintar = p => {
-    const w = anchoMin() + (100 - anchoMin()) * p;
-    foto.style.width = w.toFixed(2) + '%';
-    foto.style.aspectRatio = (ratioIni + (ratioFin() - ratioIni) * p).toFixed(4);
-    foto.style.borderRadius = (20 - 20 * p).toFixed(1) + 'px';
+    const cajaW = escena.clientWidth;
+    const cajaH = sticky ? sticky.clientHeight : window.innerHeight;
+    const rFin = ratioFin();
+    const wIni = cajaW * anchoIni() / 100;
+    const wFin = Math.min(cajaW * anchoFin() / 100, cajaH * 0.94 * rFin);
+    const ancho = Math.round(wIni + (wFin - wIni) * p);
+    foto.style.width = ancho + 'px';
+    if (ficha) ficha.style.width = chico() ? '' : ancho + 'px';
+    foto.style.aspectRatio = (ratioIni + (rFin - ratioIni) * p).toFixed(4);
+    foto.style.borderRadius = (20 - (20 - radioFin()) * p).toFixed(1) + 'px';
     if (num) num.textContent = String(Math.max(1, Math.round(1 + (total - 1) * p))).padStart(2, '0');
     if (barra) barra.style.transform = 'scaleX(' + Math.max(0.02, p).toFixed(3) + ')';
     escena.classList.toggle('escena--final', p > 0.82);

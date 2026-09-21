@@ -342,14 +342,14 @@ body.no-scroll { overflow: hidden; }
 }
 .escena-barra { display: block; height: 100%; background: var(--color-brand); transform-origin: left center; transform: scaleX(.02); }
 .escena-ficha {
-  position: absolute; left: var(--gutter); right: var(--gutter); bottom: clamp(2.2rem, 7vh, 4rem); z-index: 4;
+  position: absolute; left: 50%; bottom: clamp(2.2rem, 7vh, 4rem); z-index: 4;
+  width: min(700px, calc(100% - var(--gutter) * 2));
   display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--sp-2);
-  max-width: 760px;
-  opacity: 0; visibility: hidden; transform: translateY(16px);
+  opacity: 0; visibility: hidden; transform: translate(-50%, 16px);
   transition: opacity .45s var(--ease-soft), transform .45s var(--ease-soft), visibility 0s .45s;
   pointer-events: none;
 }
-.escena--final .escena-ficha { opacity: 1; visibility: visible; transform: none; pointer-events: auto; transition: opacity .45s var(--ease-soft), transform .45s var(--ease-soft); }
+.escena--final .escena-ficha { opacity: 1; visibility: visible; transform: translate(-50%, 0); pointer-events: auto; transition: opacity .45s var(--ease-soft), transform .45s var(--ease-soft); }
 .escena-ficha-txt { flex: 1 1 260px; min-width: 0; }
 .escena-ficha-txt b { display: block; font-family: var(--font-display); font-stretch: 120%; text-transform: uppercase; font-size: clamp(1.1rem, 2vw, 1.6rem); line-height: 1.05; }
 .escena-ficha-txt em { font-style: normal; display: block; color: var(--color-primary); font-weight: 700; font-size: var(--fs-price); margin-top: .25rem; }
@@ -360,7 +360,8 @@ body.no-scroll { overflow: hidden; }
   .escena { height: 150svh; }
   .escena-foto { width: 64%; }
   .escena-hud { top: .8rem; }
-  .escena-ficha { bottom: 4.6rem; padding-right: 74px; }
+  .escena-ficha { left: var(--gutter); right: var(--gutter); width: auto; bottom: 4.6rem; padding-right: 74px; transform: translateY(16px); }
+  .escena--final .escena-ficha { transform: none; }
   .escena-ficha .btn { flex: 1 1 100%; }
 }
 
