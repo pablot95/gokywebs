@@ -743,17 +743,17 @@ body.no-scroll {
 /* ============ 8. ELEGÍ TU MUNDO (momento propio) ============ */
 .mundos__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-3);
   min-height: 52svh;
   max-height: 560px;
   transition: grid-template-columns 0.65s var(--ease);
 }
 .mundos__grid[data-activo="hogar"] {
-  grid-template-columns: 2.05fr 1fr;
+  grid-template-columns: minmax(0, 2.05fr) minmax(0, 1fr);
 }
 .mundos__grid[data-activo="ninos"] {
-  grid-template-columns: 1fr 2.05fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2.05fr);
 }
 
 .mundos__panel {
@@ -855,7 +855,7 @@ body.no-scroll {
 /* variante compacta — Modelo B, dentro de productos-filtros */
 .mundos-compact {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--sp-2);
   margin-bottom: var(--sp-4);
 }
@@ -1476,7 +1476,7 @@ body.no-scroll {
   position: relative;
   box-shadow: var(--shadow-lg);
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 .quickview-close {
   position: absolute;
@@ -1556,7 +1556,7 @@ body.no-scroll {
 }
 .quickview-rel-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.6em;
 }
 .quickview-rel-card img {
@@ -1846,7 +1846,10 @@ body.no-scroll {
 }
 .footer-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1fr 1.1fr;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) minmax(
+      0,
+      1.1fr
+    );
   gap: var(--sp-5);
   padding-block: var(--sp-5);
   border-bottom: 1px solid rgb(255 255 255 / 0.12);
@@ -1916,7 +1919,7 @@ body.no-scroll {
 }
 @media (max-width: 900px) {
   .footer-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .footer .newsletter {
     flex-direction: column;
