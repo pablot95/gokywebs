@@ -29,7 +29,7 @@
   --sp-5: 40px; --sp-6: 56px; --sp-7: 72px; --sp-8: 96px;
 
   --radius: 2px;
-  --maxw: 1240px;
+  --maxw: 1400px;
   --maxw-texto: 60ch;
   --gutter: clamp(20px, 5vw, 48px);
 

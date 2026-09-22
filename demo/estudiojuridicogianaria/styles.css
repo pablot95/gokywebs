@@ -332,7 +332,12 @@ body.no-scroll { overflow: hidden; }
 .pasos__lista--col .paso__n { font-size: 1.6rem; }
 .pasos__lista--col h3 { margin-top: .3rem; }
 
-body.m2 #estudio { padding-top: var(--section-pad-y); }
+body.m2 .hero__media--ancha { margin-bottom: 0; }
+body.m2 #estudio { padding-top: clamp(3rem, 6vw, 5rem); }
+
+body.m2 #estudio .margen__col {
+  padding-top: .35rem;
+}
 
 .areas__head { margin-bottom: clamp(28px, 4vw, 48px); }
 .areas__lista { border-top: 1px solid var(--color-line); }
@@ -676,6 +681,8 @@ body.no-scroll .wsp-float { opacity: 0; pointer-events: none; }
   .hero__banda { height: clamp(230px, 40svh, 360px); }
   .hero__media--ancha { margin-bottom: clamp(-52px, -8vw, -32px); }
   .hero__media--ancha .hero__sello { right: 0; }
+  body.m2 #estudio { padding-top: clamp(2.5rem, 8vw, 4rem); }
+  body.m2 #estudio .margen__col { margin-bottom: 1.25rem; padding-top: 0; }
   .pasos__lista, .modos, .galeria__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .escena { height: 150svh; }
   .escena__sticky { min-height: 460px; }

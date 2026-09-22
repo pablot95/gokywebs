@@ -105,7 +105,7 @@ textarea,
   --sp-8: 64px;
   --radius: 3px;
   --radius-lg: 5px;
-  --container: 1360px;
+  --container: 1400px;
   --container-narrow: 780px;
   --gutter: clamp(20px, 4vw, 48px);
 
@@ -445,10 +445,14 @@ body.no-scroll .gw-modelos {
   color: var(--color-text);
 }
 .brand-word {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .08em;
   font-family: var(--font-display);
   font-weight: 500;
   font-size: clamp(1.7rem, 2.6vw, 2.3rem);
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 .brand-word strong {
   font-weight: 700;
@@ -658,6 +662,10 @@ body.m2 .header-nav-links {
   font-size: 1.05rem;
 }
 @media (max-width: 899px) {
+  body.m2 .header-inner { min-height: 88px; padding-inline: 1rem; }
+  body.m2 .brand { position: static; transform: none; margin-right: auto; }
+  body.m2 .brand-word { font-size: clamp(1.55rem, 7vw, 2rem); gap: .1em; }
+  body.m2 .header-actions { margin-left: auto; }
   .main-nav {
     position: fixed;
     top: 0;

@@ -40,7 +40,7 @@ input, textarea, [contenteditable] { -webkit-user-select: text; user-select: tex
   --sp-1: .5rem; --sp-2: 1rem; --sp-3: 1.5rem; --sp-4: 2rem; --sp-5: 2.5rem; --sp-6: 3rem; --sp-7: 4rem; --sp-8: 5rem;
   --radius: 4px;
   --radius-lg: 18px;
-  --container: 1200px;
+  --container: 1400px;
   --gutter: clamp(20px, 4vw, 48px);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);

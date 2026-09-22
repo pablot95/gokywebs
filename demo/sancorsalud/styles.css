@@ -161,6 +161,8 @@ section { padding-block: var(--section-pad-y); position: relative; }
 .hero-fondo h1 { color: #fff; max-width: 15ch; }
 .hero-fondo .hero-kicker { color: rgba(255, 255, 255, .84); max-width: 46ch; margin: 1rem 0 0; }
 .hero-fondo .eyebrow { color: #9DC0FF; }
+.hero-fondo .btn-ghost { border-color: rgba(255, 255, 255, .72); color: #fff; background: rgba(11, 15, 24, .24); }
+.hero-fondo .btn-ghost:hover { background: #fff; border-color: #fff; color: var(--color-primary); }
 
 /* placa flotante (costura 1): pisa el borde entre el hero y lo que sigue */
 .placa-flotante {
@@ -403,8 +405,14 @@ body.no-scroll { overflow: hidden; }
   .cap-textos { min-height: 240px; }
 }
 @media (max-width: 720px) {
-  .hero-fondo__inner { padding-block: calc(var(--header-h) + 1rem) 2.8rem; }
+  .hero-fondo__inner {
+    width: 100%;
+    padding: calc(var(--header-h) + 1.5rem) clamp(1.5rem, 6vw, 2.25rem) 3.25rem;
+  }
   .hero-fondo h1 { max-width: 13ch; }
+  .hero-fondo .hero-kicker { line-height: 1.55; }
+  .hero-fondo .hero-ctas { justify-content: flex-start; }
+  .hero-fondo .hero-ctas .btn { width: min(100%, 330px); }
   .trio-item { border-left: 0 !important; padding-left: 0 !important; border-top: 1.5px solid var(--color-text); }
   .trio-item:first-child { border-top: 0; }
 }

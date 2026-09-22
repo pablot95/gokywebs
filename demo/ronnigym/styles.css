@@ -185,7 +185,8 @@ body.no-scroll { overflow: hidden; }
 .hero--dividido { position: relative; }
 .hero--dividido .hero__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .82fr); gap: clamp(28px, 4vw, 64px); align-items: center; padding-block: clamp(28px, 4vw, 52px); }
 .hero__texto-do { max-width: 46ch; }
-.hero--dividido h1 { max-width: 12ch; }
+.hero--dividido h1 { max-width: 12ch; color: var(--color-text); }
+.hero--dividido .bajada { color: var(--color-text-muted); }
 .hero__do-foto { position: relative; width: 100%; aspect-ratio: 4/5; border-radius: var(--radius); overflow: hidden; }
 .hero__do-foto img { width: 100%; height: 100%; object-fit: cover; }
 .hero__do-badge {
@@ -424,6 +425,9 @@ body.no-scroll .gw-modelos { opacity: 0; pointer-events: none; }
   .actividades__grid { grid-template-columns: minmax(0,1fr); }
   .site-footer .container { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .franja-vivo { flex-direction: column; align-items: stretch; text-align: center; }
+  .hero--dividido .hero__grid { padding-block: 2rem 2.5rem; }
+  .hero--dividido h1 { font-size: clamp(2.15rem, 11vw, 3.15rem); max-width: 11ch; }
+  .hero--dividido .bajada { margin-top: 1.15rem; line-height: 1.55; }
 }
 
 @media (max-width: 560px) {

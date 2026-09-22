@@ -95,7 +95,7 @@ svg {
   --fs-small: clamp(0.82rem, 0.8rem + 0.08vw, 0.88rem);
   --fs-price: clamp(1.05rem, 1rem + 0.2vw, 1.2rem);
 
-  --container: 1360px;
+  --container: 1400px;
   --gutter: clamp(20px, 4vw, 48px);
   --section-pad-y: clamp(3.5rem, 6vw, 4.75rem);
 
@@ -623,6 +623,16 @@ body.no-scroll {
 .hero-banner .lede {
   color: hsl(36 30% 92% / 0.88);
   margin-block: var(--sp-3) var(--sp-4);
+}
+.hero-banner .btn-ghost {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.86);
+  background: rgb(20 19 18 / 0.72);
+}
+.hero-banner .btn-ghost:hover {
+  color: #fff;
+  border-color: #fff;
+  background: rgb(20 19 18 / 0.9);
 }
 .hero-banner__ctas {
   display: flex;
