@@ -121,14 +121,11 @@ function cardHtml(p) {
   <article class="prod-card" data-id="${p.id}" data-animate style="opacity:0;transform:translateY(24px)">
     <div class="prod-media">
       ${p.descuento > 0 ? `<span class="prod-badge tag">-${p.descuento}%</span>` : ''}
-      <button type="button" class="prod-fav" data-fav="${p.id}" aria-pressed="false" aria-label="Guardar en favoritos">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20.5s-7.5-4.6-10-9.3C.4 7.8 2 4.5 5.3 4c2-.3 3.7.6 4.7 2.2C11 4.6 12.7 3.7 14.7 4c3.3.5 4.9 3.8 3.3 7.2-2.5 4.7-10 9.3-10 9.3z"/></svg>
-      </button>
-      <a href="#" class="prod-media-link" data-quickview="${p.id}" style="display:block;width:100%;height:100%">${mediaHtml(p)}</a>
+      ${mediaHtml(p)}
     </div>
     <div class="prod-info">
       <span class="prod-cat">${esc(cat ? cat.nombre : '')}</span>
-      <a href="#" class="prod-nombre" data-quickview="${p.id}" style="text-decoration:none">${esc(p.nombre)}</a>
+      <a href="#" class="prod-nombre" data-quickview="${p.id}">${esc(p.nombre)}</a>
       <div class="prod-precio">${off}<b>${formatearPrecio(pf)}</b>${original}</div>
       <div class="prod-actions">
         <div class="stepper" data-stepper="${p.id}">
@@ -140,6 +137,26 @@ function cardHtml(p) {
       </div>
     </div>
   </article>`;
+}
+
+/* Rail: tarjeta liviana — foto, nombre y precio; el agregar con cantidad vive en la vista rápida */
+function railCardHtml(p) {
+  const pf = precioFinal(p);
+  const off = p.descuento > 0 ? `<span class="off">-${p.descuento}%</span>` : '';
+  const original = p.descuento > 0 ? `<s>${formatearPrecio(p.precio)}</s>` : '';
+  const cat = CATEGORIAS.find(c => c.id === p.categoria);
+  return `
+  <a href="#" class="prod-card prod-card--rail" data-quickview="${p.id}" data-animate style="opacity:0;transform:translateY(24px)">
+    <div class="prod-media">
+      ${p.descuento > 0 ? `<span class="prod-badge tag">-${p.descuento}%</span>` : ''}
+      ${mediaHtml(p)}
+    </div>
+    <div class="prod-info">
+      <span class="prod-cat">${esc(cat ? cat.nombre : '')}</span>
+      <span class="prod-nombre">${esc(p.nombre)}</span>
+      <div class="prod-precio">${off}<b>${formatearPrecio(pf)}</b>${original}</div>
+    </div>
+  </a>`;
 }
 
 /* ===== Categorías ===== */
@@ -200,7 +217,7 @@ function initRail() {
   const track = document.getElementById('railTrack');
   if (!vp || !track) return;
   const productos = DESTACADOS_IDS.map(getProducto).filter(Boolean);
-  track.innerHTML = productos.map(p => `<div class="rail-card">${cardHtml(p)}</div>`).join('');
+  track.innerHTML = productos.map(p => `<div class="rail-card">${railCardHtml(p)}</div>`).join('');
 
   const prev = document.getElementById('railPrev');
   const next = document.getElementById('railNext');
@@ -435,19 +452,6 @@ function bindCardEvents(scope) {
   });
   scope.querySelectorAll('[data-quickview]').forEach(el => {
     el.addEventListener('click', e => { e.preventDefault(); abrirVistaRapida(el.dataset.quickview); });
-  });
-  scope.querySelectorAll('[data-fav]').forEach(btn => {
-    const KEY = 'totoraspunilla_wishlist';
-    const get = () => { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } };
-    const activo = get().includes(btn.dataset.fav);
-    btn.setAttribute('aria-pressed', String(activo));
-    btn.addEventListener('click', () => {
-      let ids = get();
-      const on = btn.getAttribute('aria-pressed') === 'true';
-      ids = on ? ids.filter(id => id !== btn.dataset.fav) : [...ids, btn.dataset.fav];
-      localStorage.setItem(KEY, JSON.stringify(ids));
-      btn.setAttribute('aria-pressed', String(!on));
-    });
   });
 }
 
