@@ -647,7 +647,6 @@ body.no-scroll .floats {
    =================================================================== */
 .hero-inmersivo {
   position: relative;
-  margin-top: calc(-1 * var(--header-h));
   min-height: calc(100svh - var(--gw-modelos-h, 0px));
   display: flex;
   align-items: flex-end;
@@ -736,7 +735,6 @@ body.no-scroll .floats {
    =================================================================== */
 .hero-fondo {
   position: relative;
-  margin-top: calc(-1 * var(--header-h));
   min-height: calc(92svh - var(--gw-modelos-h, 0px));
   display: flex;
   align-items: flex-end;
