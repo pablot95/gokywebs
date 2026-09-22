@@ -536,6 +536,9 @@ body.m2 .brand { justify-items: center; }
   -webkit-appearance: none; appearance: none; cursor: pointer;
 }
 
+/* Catalogo: caja mas ancha que el resto del sitio (1400px) */
+#tienda { --container: 1400px; }
+
 .catalogo-grid { display: grid; gap: clamp(.9rem, 1.8vw, 1.4rem); grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .catalogo-grid.is-vacio { display: block; }
 

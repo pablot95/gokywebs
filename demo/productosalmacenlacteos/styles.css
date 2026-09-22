@@ -1465,6 +1465,17 @@ body.no-scroll .floats {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+@media (max-width: 640px) {
+  .catalogo-grid .prod-add {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: 0.5rem;
+    font-size: 0.78rem;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+  }
+}
 
 .beneficios-grid {
   display: grid;

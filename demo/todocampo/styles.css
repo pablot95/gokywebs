@@ -213,7 +213,7 @@ body.m2 .site-header { background: var(--color-bg); border-bottom: 1px solid var
   background: linear-gradient(178deg, rgba(14, 13, 12, .62) 0%, rgba(14, 13, 12, .22) 34%, rgba(14, 13, 12, .58) 72%, rgba(14, 13, 12, .84) 100%);
 }
 .hero-full__inner {
-  position: relative; z-index: 2; width: 100%;
+  position: relative; z-index: 2;
   padding-block: calc(var(--header-h) + 1.5rem) clamp(3.2rem, 8vh, 5.5rem);
   color: #FFF8F1;
 }
@@ -574,15 +574,25 @@ body.m2 .site-header { background: var(--color-bg); border-bottom: 1px solid var
 .prod__precio { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-price); font-variant-numeric: tabular-nums; }
 .prod__precio--off { color: var(--color-cta); }
 .prod__precios s { font-size: .82rem; color: var(--color-text-muted); }
-.prod__actions { display: flex; align-items: center; gap: .4rem; margin-top: auto; padding-top: .55rem; }
+.prod__actions { display: flex; flex-direction: column; align-items: stretch; gap: .4rem; margin-top: auto; padding-top: .55rem; }
 .stepper { display: inline-flex; align-items: center; border: 1.5px solid var(--color-line); border-radius: 999px; flex: 0 0 auto; }
 .stepper button { width: 32px; height: 38px; border: 0; background: transparent; cursor: pointer; display: grid; place-items: center; font-size: 1.05rem; line-height: 1; color: inherit; }
 .stepper button:hover { color: var(--color-cta); }
 .stepper output { min-width: 22px; text-align: center; font-weight: 600; font-size: .92rem; font-variant-numeric: tabular-nums; }
-.prod-add { flex-grow: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod-add { flex-grow: 1; width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.catalogo-grid .stepper { align-self: center; }
 @media (max-width: 640px) {
   .catalogo-grid .prod-actions, .catalogo-grid .prod__actions { flex-direction: column; align-items: stretch; gap: .4rem; }
   .catalogo-grid .stepper { align-self: center; }
+  .catalogo-grid .prod-add {
+    width: 100%;
+    min-height: 44px;
+    padding-inline: .5rem;
+    font-size: .78rem;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+  }
 }
 .vermas-wrap { display: flex; justify-content: center; margin-top: var(--sp-4); }
 .sin-resultados { text-align: center; padding: var(--sp-6) var(--sp-2); border: 1px dashed var(--color-line); border-radius: var(--radius); }

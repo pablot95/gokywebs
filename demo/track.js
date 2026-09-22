@@ -10,6 +10,47 @@
  */
 (function () {
   "use strict";
+
+  function initModelBarScroll() {
+    var bar = document.querySelector(".gw-modelos");
+    if (!bar) return;
+
+    var style = document.createElement("style");
+    style.textContent =
+      ".gw-modelos{transition:transform .16s ease-out,opacity .14s ease-out}" +
+      ".gw-modelos.gw-modelos--scrolling{transform:translateY(calc(-100% - 2px));opacity:0;pointer-events:none}" +
+      "@media(prefers-reduced-motion:reduce){.gw-modelos{transition:none}}";
+    document.head.appendChild(style);
+
+    var showTimer = 0;
+    var frame = 0;
+    var update = function () {
+      frame = 0;
+      if (window.scrollY <= 8) {
+        bar.classList.remove("gw-modelos--scrolling");
+        return;
+      }
+      bar.classList.add("gw-modelos--scrolling");
+      window.clearTimeout(showTimer);
+      showTimer = window.setTimeout(function () {
+        bar.classList.remove("gw-modelos--scrolling");
+      }, 120);
+    };
+
+    window.addEventListener("scroll", function () {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    }, { passive: true });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initModelBarScroll, { once: true });
+  } else {
+    initModelBarScroll();
+  }
+})();
+
+(function () {
+  "use strict";
   try {
     // 1) Solo la página principal del demo, nunca dentro de un iframe (el fondo animado).
     if (window.top !== window.self) return;

@@ -331,6 +331,8 @@ body.no-scroll .floats, body.no-scroll .gw-modelos { opacity: 0; pointer-events:
 }
 
 /* ===== Catálogo ===== */
+/* Catalogo: caja mas ancha que el resto del sitio (1400px) */
+#catalogo { --container: 1400px; }
 .catalogo-toolbar { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; margin-bottom: var(--sp-4); }
 .catalogo-toolbar .search-form { flex: 1 1 260px; max-width: 420px; }
 .chip-row { display: flex; flex-wrap: wrap; gap: .5rem; }

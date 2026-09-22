@@ -400,6 +400,14 @@ body.no-scroll{overflow:hidden}
   .catalogo-grid { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
   .producto-card { padding: 9px; gap: 5px; }
   .producto-icono-wrap { height: 64px; }
+  .producto-cta {
+    min-height: 44px;
+    padding: 8px 6px;
+    font-size: .76rem;
+    line-height: 1.15;
+    white-space: normal;
+    text-align: center;
+  }
 }
 
 /* ===== 11. Rail de destacados (Modelo B) ===== */
