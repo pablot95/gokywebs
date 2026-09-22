@@ -3784,7 +3784,6 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         prefijo = [
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
             `La carpeta del proyecto está en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
-            "Buscá en internet un máximo de 10 imágenes coherentes con el negocio.",
         ].join("\n") + "\n\n";
     }
 
