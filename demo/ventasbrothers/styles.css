@@ -117,7 +117,7 @@ textarea,
   --shadow-md: 0 14px 32px -14px rgba(2, 31, 24, 0.26);
 
   /* barra de modelos — snippet §11 */
-  --gw-modelos-h: 56px;
+  --gw-modelos-h: 42px;
 }
 
 body {
@@ -353,25 +353,25 @@ section {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 6px;
+  padding: 0 8px;
   background: #101010;
   border-bottom: 1px solid rgba(255, 255, 255, 0.14);
   transition: opacity 0.2s;
 }
 .gw-modelos__btn {
-  flex: 0 1 168px;
-  min-height: 44px;
-  padding: 0 16px;
+  flex: 0 1 116px;
+  min-height: 30px;
+  padding: 0 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #fff;
+  border: 1.5px solid #fff;
   border-radius: 999px;
   background: transparent;
   color: #fff;
   font:
-    700 15px/1 system-ui,
+    700 13px/1 system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,

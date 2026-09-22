@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Todo Campo — Bazar, regalería, blanco y camping</title>
+<meta name="description" content="Bazar, regalería, blanco, deco, marroquinería y camping en Bahía Blanca. Elegí online, retiralo en el local o coordinamos la entrega por WhatsApp.">
+<meta name="theme-color" content="#F9FAFB">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Todo Campo — Bazar, regalería, blanco y camping">
+<meta property="og:description" content="Todo para la mesa, la cama y el fogón. Elegí online y retiralo en el local de Bahía Blanca.">
+<meta property="og:image" content="images/hero.webp">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F3EDE3'/%3E%3Ctext x='32' y='43' font-family='Georgia,serif' font-size='30' font-weight='700' text-anchor='middle' fill='%23121110'%3ETC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gabarito:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css?v=1">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important}</style></noscript>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Store","@id":"#negocio","name":"Todo Campo","alternateName":"Campo Market","description":"Bazar, regalería, blanco, decoración, marroquinería y camping.","telephone":"+5492914468893","image":"images/local.webp","address":{"@type":"PostalAddress","addressLocality":"Bahía Blanca","addressRegion":"Buenos Aires","addressCountry":"AR"},"areaServed":"Bahía Blanca y zona","foundingDate":"2025"},
+{"@type":"Product","name":"Set matero completo","image":"images/p-mate.webp","brand":{"@type":"Brand","name":"Todo Campo"},"offers":{"@type":"Offer","price":"57900","priceCurrency":"ARS","availability":"https://schema.org/InStock"}},
+{"@type":"Product","name":"Manta de lana tejida","image":"images/p-manta.webp","brand":{"@type":"Brand","name":"Todo Campo"},"offers":{"@type":"Offer","price":"46900","priceCurrency":"ARS","availability":"https://schema.org/InStock"}},
+{"@type":"Product","name":"Bolso de cuero","image":"images/p-bolso.webp","brand":{"@type":"Brand","name":"Todo Campo"},"offers":{"@type":"Offer","price":"124000","priceCurrency":"ARS","availability":"https://schema.org/InStock"}}
+]}
+</script>
+</head>
+<body class="m1" id="top">
+
+<a class="skip-link" href="#main">Ir al contenido</a>
+
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1" aria-current="page">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2">Modelo 2</a>
+</nav>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="./" aria-label="Todo Campo, inicio">
+      <img src="images/logo.png" alt="Todo Campo — Bazar &amp; Regalería · Campo Market" width="840" height="470">
+    </a>
+
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#ambientes">Ambientes</a>
+      <a href="#tienda">Tienda</a>
+      <a href="#marca">La marca</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+
+    <div class="header-acciones">
+      <button type="button" class="icon-btn" id="btnBuscarHeader" aria-label="Buscar en la tienda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="btnCarritoHeader" aria-label="Abrir el carrito">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+        <span class="cart-badge" data-cart-count hidden>0</span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ===== 1. HERO (primera pantalla del Modelo R: inmersivo) ===== -->
+  <section class="hero-full" aria-labelledby="h1">
+    <div class="hero-full__media">
+      <img src="images/hero.webp" alt="Mesa de exhibición de Todo Campo con vajilla de cerámica, canastos, termo y marroquinería" width="1600" height="900" fetchpriority="high">
+    </div>
+    <div class="hero-full__scrim"></div>
+    <div class="container hero-full__inner">
+      <img class="hero-full__sello" src="images/logo.png" alt="Todo Campo, bazar y regalería" width="840" height="470">
+      <p class="regla"><span>Bahía Blanca</span><svg class="estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 2.6 6.6L21.5 9l-5 4.6 1.4 7-5.9-3.6L6.1 20.6l1.4-7-5-4.6 6.9-.4z"/></svg><span>Est. 2025</span></p>
+      <h1 id="h1">Todo para la mesa, la cama y el fogón</h1>
+      <p class="hero-kicker">Bazar, regalería, blanco, deco, marroquinería y camping. Elegilo online y pasá a buscarlo por el local, o lo coordinamos por WhatsApp.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-cta" href="#tienda">Ver el catálogo</a>
+        <a class="btn btn-ghost" href="#ambientes">Comprar por ambiente</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 2. AMBIENTES (categorías-tarjetas · click = catálogo filtrado) ===== -->
+  <section id="ambientes" aria-labelledby="t-ambientes">
+    <div class="container">
+
+      <div class="hero-placa" data-animate style="opacity:0;transform:translateY(22px)">
+        <div class="hero-placa__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9h18M5 9V6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 13h6"/></svg>
+          <div><b>Retiro en el local</b><span>Lo dejamos preparado y pasás cuando puedas.</span></div>
+        </div>
+        <div class="hero-placa__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+          <div><b>Entrega en Bahía Blanca</b><span>Coordinamos día y horario por WhatsApp.</span></div>
+        </div>
+        <div class="hero-placa__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7 9 18l-5-5"/></svg>
+          <div><b>Lo ves antes de pagar</b><span>Te mandamos la foto real de lo que sale del estante.</span></div>
+        </div>
+      </div>
+
+      <div class="sec-head sec-head--split sec-head--tras-placa">
+        <div>
+          <p class="eyebrow">Comprá por ambiente</p>
+          <h2 id="t-ambientes">Cuatro rincones, un solo local</h2>
+        </div>
+        <p class="bajada">Tocá el ambiente y el catálogo de abajo se filtra solo, sin salir de esta página.</p>
+      </div>
+
+      <div class="ambientes-grid" data-animate-stagger>
+        <article class="ambiente" data-cat="mesa" data-animate style="opacity:0;transform:translateY(30px)">
+          <div class="ambiente__foto"><img src="images/mesa.webp" alt="Mesa de madera con jarras, tazas y platos de cerámica" width="1200" height="1200"><span class="ambiente__num">01</span></div>
+          <div class="ambiente__cuerpo">
+            <h3>Mesa y cocina</h3>
+            <p>Vajilla de cerámica, enlozados, cafeteras y tablas de algarrobo.</p>
+            <button type="button" class="ambiente__ver" data-cat="mesa">Ver los productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </article>
+        <article class="ambiente" data-cat="blanco" data-animate style="opacity:0;transform:translateY(30px)">
+          <div class="ambiente__foto"><img src="images/textiles.webp" alt="Estante con toallas, mantas y almohadones de algodón blanco" width="1200" height="1200"><span class="ambiente__num">02</span></div>
+          <div class="ambiente__cuerpo">
+            <h3>Descanso y blanco</h3>
+            <p>Sábanas, toallas, mantas y repasadores para la cama y el baño.</p>
+            <button type="button" class="ambiente__ver" data-cat="blanco">Ver los productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </article>
+        <article class="ambiente" data-cat="deco" data-animate style="opacity:0;transform:translateY(30px)">
+          <div class="ambiente__foto"><img src="images/deco.webp" alt="Rincón decorado con velas, difusor, canasto y florero" width="1200" height="1200"><span class="ambiente__num">03</span></div>
+          <div class="ambiente__cuerpo">
+            <h3>Deco y regalos</h3>
+            <p>Velas, difusores, canastos y floreros: el regalo que resuelve.</p>
+            <button type="button" class="ambiente__ver" data-cat="deco">Ver los productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </article>
+        <article class="ambiente" data-cat="campo" data-animate style="opacity:0;transform:translateY(30px)">
+          <div class="ambiente__foto"><img src="images/campo.webp" alt="Bolso de cuero, termo, farol y manta sobre una mesa de campo" width="1200" height="1200"><span class="ambiente__num">04</span></div>
+          <div class="ambiente__cuerpo">
+            <h3>Campo y cuero</h3>
+            <p>Camping, mate, faroles y marroquinería para lo que pasa afuera.</p>
+            <button type="button" class="ambiente__ver" data-cat="campo">Ver los productos <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <svg class="horizonte" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60V26c186-22 352 14 561 14C770 40 900 4 1102 4c150 0 250 14 338 26v30z"/></svg>
+
+  <!-- ===== 3. DESTACADOS (productos-carrusel, estilo foto) ===== -->
+  <section id="destacados" class="paper sin-tope" aria-labelledby="t-destacados">
+    <div class="container">
+      <div class="sec-head sec-head--split">
+        <div>
+          <p class="eyebrow">Para renovar tu espacio</p>
+          <h2 id="t-destacados">Lo que más se lleva la gente</h2>
+        </div>
+        <div class="rail-head-acciones">
+          <a class="link-flecha" href="#tienda">Ver todo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></a>
+          <div class="rail-nav">
+            <button type="button" id="railPrev" aria-label="Producto anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button type="button" id="railNext" aria-label="Producto siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rail-vp" id="railVp">
+      <div class="rail-track" id="railTrack"></div>
+    </div>
+    <div class="sello-caballo">
+      <svg class="estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 2.6 6.6L21.5 9l-5 4.6 1.4 7-5.9-3.6L6.1 20.6l1.4-7-5-4.6 6.9-.4z"/></svg>
+      Todo para la vida de campo
+    </div>
+  </section>
+
+  <!-- ===== 4. LA MARCA (historia) + momento propio montado encima ===== -->
+  <section id="marca" aria-labelledby="t-escena">
+
+    <div class="escena" id="escena">
+      <div class="escena-sticky">
+        <div class="container">
+          <div class="escena-grid">
+
+            <div class="escena-foto">
+              <img src="images/mesa.webp" alt="Mesa puesta con jarras de cerámica, tazas, platos, tabla de madera y repasador a cuadros" width="1200" height="1200">
+              <span class="escena-foto__velo" id="escenaVelo"></span>
+              <span class="punto" data-punto="0"></span>
+              <span class="punto" data-punto="1"></span>
+              <span class="punto" data-punto="2"></span>
+              <span class="punto" data-punto="3"></span>
+              <span class="escena-foto__num" id="escenaNum">01<small>/04</small></span>
+            </div>
+
+            <div class="escena-panel">
+              <p class="regla"><span>El ambiente, comprable</span><svg class="estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 2.6 6.6L21.5 9l-5 4.6 1.4 7-5.9-3.6L6.1 20.6l1.4-7-5-4.6 6.9-.4z"/></svg></p>
+              <h2 id="t-escena">Lo que hay en esta mesa</h2>
+              <p>Bajá y la luz va encontrando cada pieza. Todas están en el catálogo, con su precio.</p>
+              <ul class="escena-fichas" id="escenaFichas"></ul>
+              <div class="escena-total">
+                <span>La mesa, armada</span>
+                <b id="escenaTotal">$0</b>
+              </div>
+              <div class="escena-ctas">
+                <button type="button" class="btn btn-cta btn-sm" id="escenaAddTodo">Sumar la mesa entera</button>
+                <button type="button" class="btn btn-ghost btn-sm" data-cat="mesa">Ver mesa y cocina</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="marca-grid">
+        <div class="marca-foto" data-animate style="opacity:0;transform:translateY(26px)">
+          <img src="images/local.webp" alt="Frente del local de Todo Campo, bazar y regalería, en Bahía Blanca" width="1280" height="832">
+        </div>
+        <div class="marca-texto" data-animate style="opacity:0;transform:translateY(26px)">
+          <p class="eyebrow">La marca</p>
+          <h2>Un local donde entran la casa y el campo</h2>
+          <p>Todo Campo abrió en 2025 con una idea sencilla: que lo que se usa adentro y lo que se usa afuera se compren en el mismo mostrador. Por eso en la misma góndola hay una jarra de cerámica, un juego de sábanas y un farol para el fogón.</p>
+          <p>Lo que ves acá es lo que hay en el estante. Si algo se agota, te lo decimos antes de cobrarte.</p>
+          <ul class="marca-lista">
+            <li>Bazar</li><li>Regalería</li><li>Blanco</li><li>Deco</li><li>Marroquinería</li><li>Camping</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <svg class="horizonte" viewBox="0 0 1440 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0 60V30c210 18 380-12 592-12s392 30 566 30c110 0 210-12 282-22v34z"/></svg>
+
+  <!-- ===== 5. TIENDA: componente + buscador + filtros + catálogo ===== -->
+  <section id="tienda" class="paper sin-tope" aria-labelledby="t-tienda">
+    <div class="container">
+
+      <!-- Componente funcional propio del rubro -->
+      <div class="lista-finde" id="listaFinde" data-animate style="opacity:0;transform:translateY(24px)">
+        <div class="lista-finde__head">
+          <p class="eyebrow">Armador de equipo</p>
+          <h3>La lista del finde</h3>
+          <p>Decinos cuántos van y cuántas noches se quedan. Te armamos la lista con lo que hay en el local.</p>
+        </div>
+        <div class="lista-finde__grid">
+          <div class="lf-campos">
+            <div class="lf-campo">
+              <p id="lf-lbl-personas">Cuántos van</p>
+              <div class="lf-opciones" role="group" aria-labelledby="lf-lbl-personas">
+                <label>2<input type="radio" name="lf-personas" value="2" aria-label="2 personas"></label>
+                <label>4<input type="radio" name="lf-personas" value="4" checked aria-label="4 personas"></label>
+                <label>6<input type="radio" name="lf-personas" value="6" aria-label="6 personas"></label>
+                <label>8<input type="radio" name="lf-personas" value="8" aria-label="8 personas"></label>
+              </div>
+            </div>
+            <div class="lf-campo">
+              <p id="lf-lbl-noches">Cuántas noches</p>
+              <div class="lf-opciones" role="group" aria-labelledby="lf-lbl-noches">
+                <label>Solo el día<input type="radio" name="lf-noches" value="0" aria-label="Solo el día"></label>
+                <label>1 noche<input type="radio" name="lf-noches" value="1" checked aria-label="1 noche"></label>
+                <label>2 o más<input type="radio" name="lf-noches" value="2" aria-label="2 noches o más"></label>
+              </div>
+            </div>
+            <div class="lf-campo">
+              <p id="lf-lbl-fuego">Cocinan al fuego</p>
+              <div class="lf-opciones" role="group" aria-labelledby="lf-lbl-fuego">
+                <label>Sí<input type="radio" name="lf-fuego" value="1" checked aria-label="Sí, cocinan al fuego"></label>
+                <label>No<input type="radio" name="lf-fuego" value="0" aria-label="No cocinan al fuego"></label>
+              </div>
+            </div>
+          </div>
+
+          <div class="lf-resultado" aria-live="polite">
+            <p class="lf-dato"><b id="lfTitulo">Salida de 4 con una noche afuera</b><span id="lfSub">6 piezas del local</span></p>
+            <ul class="lf-piezas" id="lfPiezas"></ul>
+            <div class="lf-total"><span>Total de la lista</span><b id="lfTotal">$0</b></div>
+            <div class="lf-ctas">
+              <button type="button" class="btn btn-cta btn-sm" id="lfAdd">Sumar la lista al carrito</button>
+              <a class="btn btn-ghost btn-sm" id="lfWsp" href="https://wa.me/5492914468893" target="_blank" rel="noopener">Pedirla por WhatsApp</a>
+            </div>
+            <p class="lf-nota">Las cantidades son una sugerencia nuestra: podés sacar o sumar piezas en el carrito.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-head sec-head--split">
+        <div>
+          <p class="eyebrow">Catálogo</p>
+          <h2 id="t-tienda">Todo lo que hay en el estante</h2>
+        </div>
+        <form class="buscador" id="buscadorForm" role="search">
+          <label class="sr-only" for="buscador">Buscar productos</label>
+          <input type="search" id="buscador" placeholder="Buscá jarro, sábanas, farol…" autocomplete="off">
+          <button type="submit" aria-label="Buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          </button>
+        </form>
+      </div>
+
+      <div class="tienda-barra">
+        <button type="button" class="btn btn-ghost btn-sm filtros-toggle" id="filtrosToggle" aria-expanded="false" aria-controls="filtros">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+          Filtrar
+        </button>
+        <p><strong id="contador">0</strong> productos</p>
+        <div class="orden-wrap">
+          <label for="orden">Ordenar</label>
+          <select id="orden">
+            <option value="destacados">Destacados</option>
+            <option value="precio-asc">Precio: menor a mayor</option>
+            <option value="precio-desc">Precio: mayor a menor</option>
+            <option value="nombre">Nombre A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="tienda-layout">
+        <aside class="filtros" id="filtros" aria-label="Filtros del catálogo">
+          <p class="filtros__titulo">Filtrar</p>
+
+          <div class="filtro-grupo">
+            <p>Ambiente</p>
+            <label class="filtro-op"><input type="checkbox" data-f="cat" value="mesa"><span>Mesa y cocina</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="cat" value="blanco"><span>Descanso y blanco</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="cat" value="deco"><span>Deco y regalos</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="cat" value="campo"><span>Campo y cuero</span></label>
+          </div>
+
+          <div class="filtro-grupo">
+            <p>Rubro</p>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Bazar"><span>Bazar</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Blanco"><span>Blanco</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Deco"><span>Deco</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Regalería"><span>Regalería</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Camping"><span>Camping</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="rubro" value="Marroquinería"><span>Marroquinería</span></label>
+          </div>
+
+          <div class="filtro-grupo">
+            <p>Precio</p>
+            <label class="filtro-op"><input type="checkbox" data-f="precio" value="0-15000"><span>Hasta $15.000</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="precio" value="15000-40000"><span>$15.000 a $40.000</span></label>
+            <label class="filtro-op"><input type="checkbox" data-f="precio" value="40000-999999999"><span>Más de $40.000</span></label>
+          </div>
+
+          <div class="filtros__pie">
+            <button type="button" class="btn btn-ghost btn-sm" id="limpiarFiltros">Limpiar filtros</button>
+          </div>
+        </aside>
+
+        <div>
+          <div class="catalogo-grid" id="catalogoGrid"></div>
+          <div class="sin-resultados" id="sinResultados" hidden>
+            <h3>No encontramos nada con eso</h3>
+            <p>Probá con otra palabra o mirá todo el catálogo: en el local hay más de lo que entra en una búsqueda.</p>
+            <button type="button" class="btn btn-ghost btn-sm" id="verTodoVacio">Ver todo el catálogo</button>
+          </div>
+          <div class="vermas-wrap"><button type="button" class="btn btn-ghost" id="verMas">Ver más productos</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 6. CIERRE ===== -->
+  <section id="contacto" class="ink" aria-labelledby="t-cierre">
+    <div class="container">
+      <div class="cierre-grid">
+        <div class="cierre-texto">
+          <p class="regla"><span>Bahía Blanca</span><svg class="estrella" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 2 2.6 6.6L21.5 9l-5 4.6 1.4 7-5.9-3.6L6.1 20.6l1.4-7-5-4.6 6.9-.4z"/></svg></p>
+          <h2 id="t-cierre">Escribinos y te lo dejamos preparado</h2>
+          <p>Mandanos la lista por WhatsApp, te confirmamos qué hay en el estante y lo dejamos listo para que pases a buscarlo.</p>
+          <div class="cierre-ctas">
+            <a class="btn btn-cta" href="https://wa.me/5492914468893?text=Hola%20Todo%20Campo%2C%20quiero%20consultar%20por%20unos%20productos%20de%20la%20web." target="_blank" rel="noopener">Escribir por WhatsApp</a>
+            <a class="btn btn-ghost" href="#tienda">Volver al catálogo</a>
+          </div>
+        </div>
+        <div class="cierre-datos">
+          <div class="cierre-dato">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="2.6"/></svg>
+            <div><b>El local</b><span>Bahía Blanca, provincia de Buenos Aires. Bazar &amp; Regalería · Campo Market.</span></div>
+          </div>
+          <div class="cierre-dato">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h6l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v6h-1A17 17 0 0 1 4 6z"/></svg>
+            <div><b>WhatsApp</b><a href="https://wa.me/5492914468893?text=Hola%20Todo%20Campo%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 291 446-8893</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-marca">
+        <img src="images/logo.png" alt="Todo Campo — Bazar &amp; Regalería · Campo Market" width="840" height="470">
+        <p>Bazar, regalería, blanco, deco, marroquinería y camping. Todo para la vida de campo, en Bahía Blanca.</p>
+      </div>
+      <div>
+        <h4>La tienda</h4>
+        <nav aria-label="Secciones">
+          <ul>
+            <li><a href="#ambientes">Ambientes</a></li>
+            <li><a href="#destacados">Más elegidos</a></li>
+            <li><a href="#tienda">Catálogo</a></li>
+            <li><a href="#marca">La marca</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-contacto">
+        <h4>Contacto</h4>
+        <p><a href="https://wa.me/5492914468893?text=Hola%20Todo%20Campo%2C%20quiero%20hacer%20una%20consulta." target="_blank" rel="noopener">+54 9 291 446-8893</a></p>
+        <p>Bahía Blanca, Buenos Aires</p>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>© 2026 Todo Campo · Campo Market</span>
+      <span>Developed and designed by <a href="https://gokywebs.com" target="_blank" rel="noopener">Gokywebs</a></span>
+    </div>
+  </div>
+</footer>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Tu carrito" inert>
+  <div class="drawer__head">
+    <h2>Tu carrito</h2>
+    <button type="button" class="icon-btn" id="drawerCerrar" aria-label="Cerrar el carrito">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="drawer__body" id="drawerBody"></div>
+  <div class="drawer__foot" id="drawerFoot" hidden>
+    <div class="drawer-total"><span>Total</span><b id="drawerTotal">$0</b></div>
+    <button type="button" class="btn btn-cta btn-full" id="finalizar">Enviar pedido por WhatsApp</button>
+  </div>
+</aside>
+
+<div class="modal-backdrop" id="modalBackdrop"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Detalle del producto" inert>
+  <div class="modal__caja" id="modalCaja"></div>
+</div>
+
+<div class="floats" id="floats">
+  <button class="float-btn cart-float" id="cart-float" type="button" aria-label="Abrir el carrito">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span class="float-badge" data-cart-count hidden>0</span>
+  </button>
+  <a class="float-btn wsp-float" id="wsp-float" href="https://wa.me/5492914468893?text=Hola%20Todo%20Campo%2C%20vi%20la%20web%20y%20quiero%20consultar%20por%20unos%20productos." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+    <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+  </a>
+</div>
+
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js" defer></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js" defer></script>
+<script src="script.js?v=1" defer></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
