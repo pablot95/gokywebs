@@ -557,8 +557,16 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 $motivo = trim((string)($err['title'] ?? '')) ?: (trim((string)($err['message'] ?? '')) ?: 'motivo desconocido');
                 wabot_log('error', ['donde' => 'whatsapp_status_failed', 'tel' => $clave,
                     'wamid' => $st['id'] ?? '', 'codigo' => $err['code'] ?? null, 'motivo' => $motivo]);
-                $conv = wabot_conv_load($clave);
-                wabot_conv_transcript($conv, 'sistema', 'WhatsApp no pudo entregar el último mensaje (' . $motivo . '). Probá reenviarlo.');
+                /* Meta manda el recipient_id con el 549 adelante, y la charla
+                 * puede estar guardada como el cliente escribió su número en el
+                 * formulario (2944814198). Sin resolver, el aviso caía en una
+                 * conversación fantasma —una más, con el número al revés— y en
+                 * el chat de verdad no aparecía nada: fue lo que pasó el 21-sep
+                 * con Pescadería Las Grutas, donde la demo figuraba enviada. */
+                $claveReal = wabot_conv_resolver($clave);
+                if ($claveReal === null) continue;   // sin charla no hay dónde avisar; queda en el log
+                $conv = wabot_conv_load($claveReal);
+                wabot_entrega_fallida_marcar($conv, $motivo);
                 wabot_conv_save($conv);
             }
             continue;

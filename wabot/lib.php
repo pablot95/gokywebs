@@ -1271,6 +1271,24 @@ function wabot_mismo_abonado($a, $b) {
     return (bool)array_intersect($unos, $otros);
 }
 
+/**
+ * Meta avisó que el mensaje no se entregó (status failed). Deja el aviso en el
+ * chat y, si acaba de salir la demo, la desmarca: el 21-sep la de Pescadería
+ * Las Grutas figuró enviada cuando Meta la había rechazado dos segundos después
+ * (131047, ventana de 24 h). Con presentado_via_bot en false, el panel no dice
+ * que el cliente la tiene y tampoco sale la plantilla de seguimiento.
+ */
+function wabot_entrega_fallida_marcar(&$conv, $motivo, $ahora = null) {
+    $ahora = $ahora ?? time();
+    wabot_conv_transcript($conv, 'sistema', 'WhatsApp no pudo entregar el último mensaje (' . $motivo . '). Probá reenviarlo.');
+    $presentado = (int)($conv['presentado_ts'] ?? 0);
+    if (!empty($conv['presentado_via_bot']) && $presentado > 0 && $ahora - $presentado <= 600) {
+        $conv['presentado_via_bot'] = false;
+        return true;
+    }
+    return false;
+}
+
 function wabot_conv_resolver($tel, &$motivo = null) {
     $motivo = null;
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$tel);
@@ -4640,7 +4658,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
     $telefono = wabot_canal($conv) === 'instagram'
         ? (string)($conv['telefono_wsp'] ?? '')
         : wabot_channel_user_id($conv);
-    return [
+    $campos = [
         // La charla entera, para leerla al diseñar: los campos resumidos pierden
         // matices que el cliente sí dijo ("para el Día del Padre hacemos combos").
         'chat_completo'      => ['stringValue' => wabot_transcript_texto($conv)],
@@ -4700,6 +4718,14 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'createdAt'          => ['timestampValue' => $ahora],
         'updatedAt'          => ['timestampValue' => $ahora],
     ];
+    // Hora en que el CLIENTE escribió el primer mensaje de la charla (Pablo,
+    // 22-sep), no cuándo se armó este boceto: para eso ya está `createdAt`.
+    // Sin chat real (alta manual o formulario sin charla previa) no hay nada
+    // que mostrar, así que el campo directamente no viaja.
+    if (!empty($conv['chat_started_ts'])) {
+        $campos['primerMensajeAt'] = ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z', (int)$conv['chat_started_ts'])];
+    }
+    return $campos;
 }
 
 function wabot_form_lead_validar($payload, &$motivo = null) {

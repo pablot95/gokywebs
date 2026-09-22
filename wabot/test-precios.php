@@ -71,10 +71,12 @@ caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link 
     str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('las tres opciones con sus montos y lo incluido en los dos planes (22-sep)',
-    strpos($r0, "Podés elegir entre tres opciones:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 (La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones)\n\nLos planes anual y mensual incluyen todo:\n✓ Desarrollo completo de la web") !== false
+    strpos($r0, "Podés elegir entre tres opciones:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos planes anual y mensual incluyen todo:\n✓ Desarrollo completo de la web") !== false
     && strpos($r0, "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
-    && strpos($r0, '✓ Soporte técnico') !== false && mb_stripos($r0, 'seña') === false, $r0);
+    && strpos($r0, '✓ Soporte técnico') !== false
+    && str_ends_with($r0, '*El pago único se puede pagar en cuotas con intereses')
+    && mb_stripos($r0, 'seña') === false, $r0);
 caso('el panel figura incluido en todos los tipos, también en el sitio profesional (20-sep)',
     strpos($r0, '✓ Panel para autogestionar contenido') !== false, $r0);
 $cTiendaPanel = conv_nueva('5491177770006TEST');
@@ -512,7 +514,7 @@ caso('sin rubro, la web propia se contesta y queda anotada', count($rW) === 1 &&
 clasifica(['rubro_landing']);
 $rW = turno('Soy electricista', $cW, $cfg);
 caso('el precio muestra el pago único como tercera opción, sin repetirlo debajo',
-    strpos($rW[0] ?? '', '3. Pago único: $200.000 (La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones)') !== false
+    strpos($rW[0] ?? '', '3. Pago único: $200.000 NO incluye mantenimiento*') !== false
     && substr_count($rW[0] ?? '', 'Pago único:') === 1, $rW[0] ?? '');
 caso('el boceto lo lleva en el precio cotizado y en la ficha',
     wabot_lead_cotizado($cW, $cfg) === 'Plan anual $120.000 (seña $40.000) o plan mensual $20.000 o pago único $200.000'

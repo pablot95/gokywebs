@@ -3201,6 +3201,17 @@ function getPropuestaFechaInfo(p) {
     return { key: "Sin fecha", hora: "", sortMs: -Infinity };
 }
 
+/* Hora (24 hs) en que el CLIENTE mandó el primer mensaje de la charla, no
+   cuándo se armó el boceto (eso ya lo muestra "hora" de arriba, que sale de
+   createdAt). Solo los bocetos que llegaron con una charla real de por medio
+   traen `primerMensajeAt`: los cargados a mano o por un formulario sin chat
+   previo no tienen de dónde sacarlo. */
+function horaPrimerMensajeDe(p) {
+    if (!p.primerMensajeAt?.toDate) return "";
+    const d = p.primerMensajeAt.toDate();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
 // Fechas marcadas para filtrar Bocetos. Vive fuera de renderPropuestas() para
 // no perderse en cada re-render (búsqueda, llegada de datos nuevos).
 const fechasSeleccionadas = new Set();
@@ -3288,6 +3299,7 @@ function renderPropuestas() {
 
     tbody.innerHTML = list.map(p => {
         const { key: fecha, hora } = getPropuestaFechaInfo(p);
+        const horaPrimerMensaje = horaPrimerMensajeDe(p);
         const coloresTexto = p.colores || p.colores_extra || "";
         const nombreNegocio = getPropuestaNegocioFields(p).nombreNegocio;
         const tipoWeb = getPropuestaTipoWeb(p);
@@ -3299,6 +3311,7 @@ function renderPropuestas() {
                     ${aviso?.vencido ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:6px" title="No contestó el aviso de la mañana: pasaron más de 24hs"></span>` : ""}
                     ${escapeHtml(fecha)}
                     ${hora ? `<div class="muted" style="font-size:11px;margin-top:2px">${escapeHtml(hora)}</div>` : ""}
+                    ${horaPrimerMensaje ? `<div class="muted" style="font-size:11px;margin-top:2px" title="Hora en que el cliente mandó el primer mensaje de la charla">💬 ${escapeHtml(horaPrimerMensaje)}</div>` : ""}
                 </td>
                 <td class="prop-col-marca">
                     ${nombreNegocio
@@ -4124,7 +4137,11 @@ async function abrirFacturaModal(cliente, opts = {}) {
        para cargar el importe, salvo el primer pago de un cliente del modelo del 10 al
        14-sep-2026. */
     const modalidadFactura = modalidadDe(cliente);
-    campoFactura("Total").value = facturaEsAdhoc ? ""
+    // Ad hoc en Mantenimiento (22-sep) es, en la enorme mayoría de los casos,
+    // la mensualidad del plan mensual: al cliente ya se le cobra siempre lo
+    // mismo, así que no tiene sentido tipearlo de nuevo cada vez. Si no es
+    // plan mensual o no tiene montoMensual cargado, queda vacío como antes.
+    campoFactura("Total").value = facturaEsAdhoc ? (modalidadFactura === "mensual" ? (_num(cliente.montoMensual) || "") : "")
         : _conSena(modalidadFactura) ? (_num(cliente.abono) || planDe(cliente, propuestaDeCliente(cliente)).sena)
         : (_num(cliente.primerPago) || "");
     campoFactura("Comprobante").textContent = "Consultando a ARCA…";
@@ -4148,7 +4165,7 @@ async function abrirFacturaModal(cliente, opts = {}) {
 
     mostrarErrorFactura("");
     facturaModal.hidden = false;
-    if (facturaEsAdhoc) campoFactura("Total").focus();
+    if (facturaEsAdhoc) campoFactura("Total").select();
 
     try {
         const datos = await llamarFacturacion("proximo", null, { clienteId: cliente.id });
@@ -4375,6 +4392,19 @@ async function presentarPropuesta(propId) {
             // equivocado (28-ago).
             const porDonde = envio.canal === "instagram" ? "por Instagram" : "por WhatsApp";
             alert("Quedó en Seguimiento. El bot ya le mandó la demo " + porDonde + ", no hace falta que le escribas vos.");
+        } else if (envio.fuera_ventana) {
+            /* Meta no deja mandar texto libre fuera de las 24 h desde el último
+               mensaje del cliente. El que llegó por el formulario y nunca
+               escribió por WhatsApp está siempre fuera (21-sep, Pescadería Las
+               Grutas: la demo salió al vacío y en el panel figuraba enviada). */
+            alert("Quedó en Seguimiento, pero el bot NO le mandó nada: "
+                + (envio.nunca_escribio
+                    ? "ese número nunca escribió por WhatsApp (llegó por el formulario)."
+                    : "pasaron más de 24 hs desde su último mensaje.")
+                + "\n\nWhatsApp no deja escribirle hasta que el cliente vuelva a hablar."
+                + " Mandale vos el link desde tu número"
+                + (link ? ":\n" + link : ".")
+                + "\n\nSi ya tenés su chat en el panel del bot, ahí está el botón de la plantilla de 72 hs.");
         } else if (envio.demo_ok) {
             // El mensaje con el link SÍ salió; falló el segundo, que solo pide
             // el feedback. Mandar la demo de nuevo sería duplicarla.

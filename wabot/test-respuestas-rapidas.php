@@ -68,7 +68,9 @@ caso('las cuatro de precio con las tres opciones y lo que incluyen los planes',
     && mb_strpos($planes[2], '3. Pago único: $260.000') !== false
     && mb_strpos($planes[3], '3. Pago único: $290.000') !== false
     && mb_strpos($planes[3], '2. Plan mensual: $30.000 incluye mantenimiento') !== false
-    && mb_strpos($planes[0], 'Los planes anual y mensual incluyen todo:') !== false, $planes[0]);
+    && mb_strpos($planes[0], 'Los planes anual y mensual incluyen todo:') !== false
+    && mb_strpos($planes[0], '3. Pago único: $200.000 NO incluye mantenimiento*') !== false
+    && str_ends_with($planes[0], '*El pago único se puede pagar en cuotas con intereses'), $planes[0]);
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
     count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4

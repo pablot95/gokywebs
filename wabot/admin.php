@@ -405,6 +405,28 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         ]);
         exit;
     }
+    /* El link del formulario CON el código de esta charla (Pablo, 21-sep:
+     * "estoy contestando yo, le paso el form sin código, ¿cómo se vincula el
+     * chat con el form?"). Sin el ?c= lo único que ata el envío a la charla es
+     * el teléfono que el cliente tipea, y desde Instagram no hay teléfono: el
+     * boceto queda suelto. El código se asigna acá mismo si la charla todavía
+     * no tenía, y se guarda. */
+    if ($a === 'form_link' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_channel_user_id($conv) === '') { echo json_encode(['error' => 'Esa conversación no tiene canal.']); exit; }
+        $codigo = wabot_codigo_asignar($conv);
+        if ($codigo === '') { echo json_encode(['error' => 'No se pudo asignar el código del formulario.']); exit; }
+        wabot_conv_save($conv);
+        $link = 'https://gokywebs.com/form/?c=' . $codigo;
+        if (wabot_canal($conv) === 'instagram') $link .= '&ig=1';
+        // El mensaje completo, listo para pegar (Pablo, 21-sep): el texto de
+        // textos.php (editable desde Ajustes → Textos) y abajo el link.
+        $intro = trim((string)($cfg['form_link_panel'] ?? ''));
+        if ($intro === '') $intro = 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:';
+        echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $intro . "\n" . $link]);
+        exit;
+    }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $texto = trim((string)($_POST['texto'] ?? ''));
@@ -476,9 +498,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
          * los 20 s, así que un timeout con Meta lenta devuelve false igual con
          * el mensaje entregado. Por eso el panel avisa que hay que mirar el
          * chat antes de reenviar, en vez de mandar a reenviar de una. */
+        /* Sin ventana de 24 h no se manda nada. El que llegó por el formulario
+         * y nunca escribió por WhatsApp tiene el chat cerrado para Meta: el
+         * envío se pierde sin aviso y en el panel queda como si hubiera salido.
+         * Pasó el 21-sep con Pescadería Las Grutas, que cargó su número en el
+         * formulario y nunca habló con el bot: la demo salió al vacío. El
+         * estado igual avanza, porque el link lo manda Pablo a mano. */
         $textos = wabot_muestra_presentar_textos($slug, $cfg, $conv);
+        $fueraVentana = wabot_ventana_restante($conv) <= 0;
         $enviados = 0;
-        foreach ($textos as $i => $texto) {
+        foreach ($fueraVentana ? [] : $textos as $i => $texto) {
             // Un respiro entre los dos: mandarlos pegados hace que Meta a veces
             // los entregue al revés, y el segundo no tiene sentido antes del link.
             if ($i > 0) sleep(1);
@@ -493,13 +522,17 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('presentar_muestra', ['tel' => $conv['tel'], 'slug' => $slug,
-                                        'enviados' => $enviados, 'total' => $total]);
+                                        'enviados' => $enviados, 'total' => $total,
+                                        'fuera_ventana' => $fueraVentana]);
 
         echo json_encode([
             'ok'       => true,
             'enviado'  => $enviado,
             'enviados' => $enviados,
             'total'    => $total,
+            'fuera_ventana' => $fueraVentana,
+            // Nunca escribió por WhatsApp: llegó por el formulario o por otro lado.
+            'nunca_escribio' => (int)($conv['ultimo_cliente_ts'] ?? 0) === 0,
             'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
             'slug'     => $slug,
             // Por dónde salió: el panel decía "por WhatsApp" siempre, y desde
@@ -954,6 +987,9 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
 .live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
 .live-abrir:hover { color:var(--tx); }
+.live-form { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
+.live-form:hover, .live-form:focus-visible { color:var(--ac); border-color:var(--ac); }
+.live-form:disabled { opacity:.5; cursor:default; }
 .live-eliminar { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
 .live-eliminar:hover, .live-eliminar:focus-visible { color:var(--bad); border-color:var(--bad); }
 .live-eliminar:disabled { opacity:.5; cursor:default; }
@@ -1858,6 +1894,9 @@ body.embed { min-height: 0; }
                         <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_toggle"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"><?= !empty($conv['bot_off']) ? 'Encender bot acá' : 'Apagar bot acá' ?></button></form>
+                        <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
+                        <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
+                            title="Copia el link del formulario con el código de esta conversación, para mandárselo vos">Copiar form</button>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -2505,6 +2544,41 @@ body.embed { min-height: 0; }
             guardarFechasSeleccionadas();
             firmaLista = '';
             pintarLista(itemsCache);
+        });
+
+        /* "Copiar form": el link del formulario con el código de esta charla.
+           Sin el ?c= lo único que ata el envío a la conversación es el teléfono
+           que el cliente tipea, y desde Instagram no hay ninguno (21-sep). */
+        document.addEventListener('click', async (ev) => {
+            const boton = ev.target.closest('.form-copiar');
+            if (!boton) return;
+            const previo = boton.textContent;
+            boton.disabled = true;
+            boton.textContent = '…';
+            try {
+                const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ accion: 'form_link', tel: boton.dataset.tel }) });
+                const j = await r.json();
+                if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
+                try {
+                    await navigator.clipboard.writeText(j.mensaje || j.link);
+                } catch (err) {
+                    const caja = document.createElement('textarea');
+                    caja.value = j.mensaje || j.link;
+                    document.body.appendChild(caja);
+                    caja.select();
+                    document.execCommand('copy');
+                    caja.remove();
+                }
+                boton.textContent = j.codigo + ' copiado ✓';
+                boton.title = j.link;
+            } catch (error) {
+                boton.textContent = 'no se pudo';
+                boton.title = error.message || 'No se pudo armar el link.';
+            } finally {
+                boton.disabled = false;
+                setTimeout(() => { boton.textContent = previo; }, 2200);
+            }
         });
 
         document.addEventListener('click', async (ev) => {
@@ -3320,6 +3394,39 @@ body.embed { min-height: 0; }
                 }
             }
 
+            async function copiarAlPortapapeles(texto) {
+                try {
+                    await navigator.clipboard.writeText(texto);
+                } catch (err) {
+                    const caja = document.createElement('textarea');
+                    caja.value = texto;
+                    document.body.appendChild(caja);
+                    caja.select();
+                    document.execCommand('copy');
+                    caja.remove();
+                }
+            }
+
+            async function copiarFormLink(tel, boton) {
+                const previo = boton.textContent;
+                boton.disabled = true;
+                boton.textContent = '…';
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'form_link', tel }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error(j.error || 'No se pudo armar el link.');
+                    await copiarAlPortapapeles(j.mensaje || j.link);
+                    boton.textContent = j.codigo + ' copiado ✓';
+                } catch (error) {
+                    boton.textContent = 'error';
+                    boton.title = error.message || 'No se pudo armar el link.';
+                } finally {
+                    boton.disabled = false;
+                    setTimeout(() => { boton.textContent = previo; }, 2200);
+                }
+            }
+
             function pintarCabecera(c, it, ahora) {
                 const nombre = it.nombre_agenda || it.nombre || it.nombre_negocio || it.tel;
                 const nom = c.el.querySelector('.live-nombre');
@@ -3343,6 +3450,16 @@ body.embed { min-height: 0; }
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
                 a.textContent = 'Abrir ↗';
                 sub.appendChild(a);
+                /* El formulario CON el código de esta charla: así lo que el
+                 * cliente complete cae en esta conversación aunque el link lo
+                 * mande Pablo a mano. Desde Instagram es la única forma. */
+                const form = document.createElement('button');
+                form.type = 'button';
+                form.className = 'live-form';
+                form.textContent = 'Copiar form';
+                form.title = 'Copia el link del formulario con el código de esta conversación';
+                form.addEventListener('click', () => copiarFormLink(it.tel, form));
+                sub.appendChild(form);
                 const del = document.createElement('button');
                 del.type = 'button';
                 del.className = 'live-eliminar';
