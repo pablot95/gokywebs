@@ -71,8 +71,8 @@ caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link 
     str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('las tres opciones con sus montos y lo incluido en los dos planes (22-sep)',
-    strpos($r0, "Podés elegir entre tres opciones:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos planes anual y mensual incluyen todo:\n✓ Desarrollo completo de la web") !== false
-    && strpos($r0, "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
+    strpos($r0, "Podés elegir entre tres opciones:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:\n✓ Desarrollo completo de la web") !== false
+    && strpos($r0, "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
     && strpos($r0, '✓ Soporte técnico') !== false
     && str_ends_with($r0, '*El pago único se puede pagar en cuotas con intereses')
@@ -146,7 +146,7 @@ foreach (['Soy electricista, cuánto sale la web?' => ['rubro_landing', 'landing
     $v = wabot_precio_vigente($c, $cfg, $par[1]);
     caso('rubro y precio en un turno: ' . $par[1], $c['tipo'] === $par[1] && !empty($c['precio_dado']), $txt);
     caso('tres alternativas completas: ' . $par[1], strpos($txt, $v['precio']) !== false && strpos($txt, $v['mensualidad']) !== false
-        && strpos($txt, (string)$cfg['tipos'][$par[1]]['precio_unico']) !== false && strpos($txt, 'Los planes anual y mensual incluyen todo:') !== false, $txt);
+        && strpos($txt, (string)$cfg['tipos'][$par[1]]['precio_unico']) !== false && strpos($txt, 'Los 3 planes incluyen todo:') !== false, $txt);
     caso('sin repregunta ni marcadores: ' . $par[1], !preg_match('/a qu[eé] te dedic|\{\w+\}/iu', $txt), $txt);
 }
 foreach (['Cuánto sale una web?', 'Cuánto sale una web para mostrar mis servicios y cuánto una tienda online?'] as $m) {
@@ -876,7 +876,7 @@ caso('el turno del precio dice las tres opciones con sus montos y lo incluido en
     mb_stripos($rT[0], '1. Plan anual: $190.000 incluye mantenimiento') !== false
     && mb_stripos($rT[0], '2. Plan mensual: $30.000 incluye mantenimiento') !== false
     && mb_stripos($rT[0], '3. Pago único: $300.000') !== false
-    && mb_stripos($rT[0], 'Los planes anual y mensual incluyen todo:') !== false, $rT[0]);
+    && mb_stripos($rT[0], 'Los 3 planes incluyen todo:') !== false, $rT[0]);
 $todos = json_encode(wabot_textos_default(), JSON_UNESCAPED_UNICODE);
 /* "En tu caso podemos hacer…" volvió a estar permitido (Pablo, 18-sep: "Para
  * lo que me contás, te armamos…" o "En tu caso podemos hacer…"). */

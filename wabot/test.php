@@ -39,7 +39,7 @@ function precio_formato_18sep($r, $precio, $mensualidad, $pagoUnico) {
     return count($r) === 2
         && mb_stripos($r[0], 'te armamos') !== false
         && strpos($r[0], "Podés elegir entre tres opciones:\n\n1. Plan anual: $precio incluye mantenimiento\n2. Plan mensual: $mensualidad incluye mantenimiento\n3. Pago único: $pagoUnico") !== false
-        && mb_stripos($r[0], 'Los planes anual y mensual incluyen todo:') !== false && mb_stripos($r[0], 'seña') === false
+        && mb_stripos($r[0], 'Los 3 planes incluyen todo:') !== false && mb_stripos($r[0], 'seña') === false
         && mb_stripos($r[1], 'sin cargo un primer diseño') !== false && str_ends_with($r[1], 'Querés que lo armemos?')
         && strpos(implode("\n", $r), 'gokywebs.com/form/') === false;
 }

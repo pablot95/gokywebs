@@ -68,13 +68,13 @@ caso('las cuatro de precio con las tres opciones y lo que incluyen los planes',
     && mb_strpos($planes[2], '3. Pago único: $260.000') !== false
     && mb_strpos($planes[3], '3. Pago único: $290.000') !== false
     && mb_strpos($planes[3], '2. Plan mensual: $30.000 incluye mantenimiento') !== false
-    && mb_strpos($planes[0], 'Los planes anual y mensual incluyen todo:') !== false
+    && mb_strpos($planes[0], 'Los 3 planes incluyen todo:') !== false
     && mb_strpos($planes[0], '3. Pago único: $200.000 NO incluye mantenimiento*') !== false
     && str_ends_with($planes[0], '*El pago único se puede pagar en cuotas con intereses'), $planes[0]);
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
     count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4
-    && mb_strpos($planes[1], "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
+    && mb_strpos($planes[1], "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
 caso('se suman la seña del plan anual y la explicación del pago único',
     count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el plan anual arrancás con una seña de $40.000') === 0 && mb_strpos($t, 'contado desde la seña') !== false)) === 1
     && count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el pago único, la web queda abonada en su totalidad.') === 0)) === 1);
@@ -163,7 +163,7 @@ caso('las recomendaciones de fábrica viejas pasan a las cortas de ahora',
     mb_strpos($planes21[0], 'Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio') === 0
     && mb_strpos($planes21[2], 'Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros') === 0, $planes21[2]);
 caso('la que escribió Pablo conserva su texto y solo se le actualiza el bloque',
-    mb_strpos($planes21[3], $suyo) === 0 && mb_strpos($planes21[3], 'Los planes anual y mensual incluyen todo:') !== false, $planes21[3]);
+    mb_strpos($planes21[3], $suyo) === 0 && mb_strpos($planes21[3], 'Los 3 planes incluyen todo:') !== false, $planes21[3]);
 caso('el panel aparte de $25.000 pasa al cambio por mes de los dos planes',
     count(array_filter($planes21, fn($t) => mb_strpos($t, 'le sumamos un panel de administración') !== false)) === 0
     && count(array_filter($planes21, fn($t) => mb_strpos($t, 'Los dos planes incluyen un cambio por mes') === 0
