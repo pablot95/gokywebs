@@ -5993,8 +5993,13 @@ function renderMantenimiento() {
 
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
+    // De sinSusc, los que YA se están cobrando a mano son tan "activo" como
+    // cualquier fila de mantenimiento (misma cuenta que usa _renderMantSinSusc
+    // para separarlos abajo, 22-sep): el chip "Sin suscripción" no puede seguir
+    // contando gente a la que ya se le está cobrando.
+    const sinSuscCobrando = sinSusc.filter(c => suscripcionDe(c).estado === "activa").length;
     const filas = _mantFilas();
-    const conteo = { todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: sinSusc.length };
+    const conteo = { todas: filas.length + sinSusc.length, activo: sinSuscCobrando, pausado: 0, baja: 0, sin_susc: sinSusc.length - sinSuscCobrando };
     filas.forEach(f => { conteo[f.clave]++; });
     Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja", sin_susc: "mantCountSinSusc" })
         .forEach(([clave, id]) => { const el = document.getElementById(id); if (el) el.textContent = conteo[clave]; });
