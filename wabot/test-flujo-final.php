@@ -30,11 +30,10 @@ caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json
 caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te armamos una tienda online completa.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
-caso('los dos planes, con los montos, lo que incluyen y sin "son alternativas" (19-sep)',
-    strpos($r[0] ?? '', "Podés elegir entre dos planes:\n\n1) Plan anual: $190.000\n2) Plan mensual: $30.000\n\nAmbos incluyen todo:") !== false
+caso('las tres opciones, con los montos y lo incluido en los planes (22-sep)',
+    strpos($r[0] ?? '', "Podés elegir entre tres opciones:\n\n1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n3. Pago único: $300.000 (La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones)\n\nLos planes anual y mensual incluyen todo:") !== false
     && strpos($r[0] ?? '', "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r[0] ?? '', '✓ Actualizaciones de SDK y plugins') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
-    && mb_stripos($r[0] ?? '', 'pago único') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
 caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
     ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
@@ -61,14 +60,14 @@ caso('después del formulario el bot no contesta nada más', turno('Listo, ya lo
 $m = $c;
 $rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
-/* Los planes salen numerados (Pablo, 21-sep: "1) Plan anual… 2) Plan
- * mensual…"), así que el cliente contesta el número solo. */
-foreach (['1' => 'unico', '2' => 'mensual', 'el 1' => 'unico', '2)' => 'mensual', 'La opción 1' => 'unico'] as $numero => $plan) {
+/* Las opciones salen numeradas, así que el cliente puede contestar el número solo. */
+foreach (['1' => 'unico', '2' => 'mensual', '3' => 'propia', 'el 1' => 'unico', '2)' => 'mensual', 'La opción 3' => 'propia'] as $numero => $plan) {
     $n = $c;
     clasifica(['otro']);
     $rN = turno((string)$numero, $n, $cfg);
     caso("\"$numero\" elige el plan y se lleva el formulario",
-        tiene_form($rN) && ($n['modalidad_elegida'] ?? '') === $plan && !empty($n['esProspecto']), json_encode($rN, JSON_UNESCAPED_UNICODE));
+        tiene_form($rN) && ($n['modalidad_elegida'] ?? '') === $plan && !empty($n['esProspecto'])
+        && ($plan !== 'propia' || !empty($n['quiere_web_propia'])), json_encode($rN, JSON_UNESCAPED_UNICODE));
 }
 // Pablo, 20-sep: contesta solo ante un sí, un dale, un bueno, un ok o algo parecido.
 foreach (['si', 'Sí', 'sii', 'sisi', 'dale', 'Dale!', 'bueno', 'ok', 'OK', 'oka', 'oki', 'okey', 'okay', 'listo', 'perfecto',
@@ -135,8 +134,8 @@ foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
     caso("$tipo también usa su texto fijo y espera la respuesta",
         str_starts_with($primero, 'Para lo que me contás, te armamos ' . $frase)
-        && strpos($primero, "1) Plan anual: $precio") !== false
-        && strpos($primero, "2) Plan mensual: $mensualidad") !== false
+        && strpos($primero, "1. Plan anual: $precio incluye mantenimiento") !== false
+        && strpos($primero, "2. Plan mensual: $mensualidad incluye mantenimiento") !== false
         && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
 

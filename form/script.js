@@ -547,7 +547,7 @@ function validarPaso2() {
     let firstError = null;
 
     const modalidad = document.getElementById('modalidad');
-    if (!modalidad.value) { markError(modalidad, 'Elegí el plan anual o el mensual.'); firstError = modalidad; }
+    if (!modalidad.value) { markError(modalidad, 'Elegí el plan anual, el mensual o el pago único.'); firstError = modalidad; }
 
     // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
     const estilo = document.getElementById('estilo');
@@ -822,7 +822,7 @@ function pintarEstilo() {
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();
 
-// Lo mismo con el plan (19-sep): qué implica el anual y qué el mensual.
+// Lo mismo con la forma de pago: qué implica cada una de las tres opciones.
 const planSelect = document.getElementById('modalidad');
 const planAyuda = document.getElementById('modalidadDetalle');
 const PLAN_AYUDA_INICIAL = planAyuda ? planAyuda.textContent : '';

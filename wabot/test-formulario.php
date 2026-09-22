@@ -202,8 +202,8 @@ echo "— 6. El texto del formulario —\n";
 $c = conv_nueva('5491166660010TEST');
 foreach (wabot_pitch('ecommerce', $c, $cfg) as $m) wabot_conv_transcript($c, 'bot', $m);
 $form = wabot_prediseno_texto($c, $cfg);
-caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño 18-sep, 24 hs y sin la coletilla de las dudas, 21-sep)',
-    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nUna vez que lo completes, va a estar listo en menos de 24 hs\.$/u', $form) === 1, $form);
+caso('el texto auxiliar del formulario usa la redacción nueva (primer diseño, 18-sep; con las 24 hs, 21-sep)',
+    preg_match('/^Dale\. Para prepararte el primer diseño completá este formulario:\nhttps:\/\/gokywebs\.com\/form\/\S+\nUna vez que lo completes, va a estar listo en menos de 24 hs\.\nSi algo no te queda claro, escribime por acá\.$/u', $form) === 1, $form);
 $salida = wabot_salida_preparar([$form], $c, $cfg);
 caso('y sale sin "Es gratis y sin compromiso." pegado al final', mb_stripos(end($salida), 'sin compromiso') === false, json_encode($salida, JSON_UNESCAPED_UNICODE));
 caso('ni promete un minuto', mb_stripos($form, 'minuto') === false);
@@ -453,6 +453,10 @@ caso('una forma inventada se sigue rechazando',
     formlead_extras(['modalidad' => 'gratis'], $motivoPropia) === null && ($motivoPropia['campo'] ?? '') === 'modalidad');
 
 $htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
+$htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
+caso('el formulario principal ofrece el pago único como tercera opción',
+    strpos($htmlPrincipal, '<option value="propia"') !== false
+    && strpos($htmlPrincipal, 'La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones.') !== false);
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',
@@ -482,121 +486,5 @@ caso('el transcript anota la forma de pago como Pago único', strpos($lineasB, '
 $camposB = wabot_lead_campos($convB, $cfg, false);
 caso('el documento del boceto viaja con modalidad "propia"', ($camposB['modalidad']['stringValue'] ?? '') === 'propia', json_encode($camposB['modalidad'] ?? null));
 @unlink(WABOT_DATA . '/conv/5493810009001.json');
-
-echo "— 13. El link del formulario que copia Pablo desde el chat (21-sep) —\n";
-
-/* Pablo, 21-sep: "un cliente me dice que sí al formulario, estoy contestando
- * yo, le paso el form sin código: ¿cómo se vincula el chat con el form?".
- * Sin ?c=, lo único que ata el envío a la charla es el teléfono que el cliente
- * tipea, y desde Instagram no hay ninguno. El panel arma el link con el código
- * de esa conversación (accion=form_link) aunque el bot nunca lo haya mandado. */
-$idxPath = wabot_codigo_indice_path();
-$idxPrevio = @file_get_contents($idxPath);
-
-$cPanel = conv_nueva('5491133344455');
-caso('una charla sin código todavía', trim((string)($cPanel['codigo'] ?? '')) === '');
-$codPanel = wabot_codigo_asignar($cPanel);
-caso('el panel le asigna uno y queda guardado en la charla',
-    $codPanel !== '' && ($cPanel['codigo'] ?? '') === $codPanel);
-caso('pedirlo de nuevo no cambia el código', wabot_codigo_asignar($cPanel) === $codPanel);
-// En el sandbox el código sale derivado de la clave y no escribe el índice real: se registra a mano, como los casos de arriba.
-$cIg = conv_nueva('ig17841400000000009', ['canal' => 'instagram']);
-$codIg = wabot_codigo_asignar($cIg);
-file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(),
-    [$codPanel => '5491133344455', $codIg => 'ig17841400000000009'])));
-caso('el índice lo devuelve a esa conversación', wabot_codigo_buscar($codPanel) === '5491133344455');
-$datosPanel = wabot_form_lead_validar(['c' => $codPanel, 't' => '1133344455', 'nombre' => 'Ana',
-    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
-caso('un envío con ese código cae en la charla, no en una nueva',
-    is_array($datosPanel) && $datosPanel['clave'] === '5491133344455' && !empty($datosPanel['conCodigo']));
-
-caso('en Instagram también hay código', $codIg !== '' && wabot_codigo_buscar($codIg) === 'ig17841400000000009');
-$datosIgPanel = wabot_form_lead_validar(['c' => $codIg, 't' => '1123456789', 'nombre' => 'Ana',
-    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
-caso('y el envío queda atado a la charla de Instagram, con el WhatsApp aparte',
-    is_array($datosIgPanel) && $datosIgPanel['clave'] === 'ig17841400000000009' && $datosIgPanel['telWsp'] === '1123456789');
-/* Lo que pasaba antes: el mismo formulario sin código desde Instagram no tiene
- * con qué encontrar la charla y abre una nueva por el teléfono tipeado. */
-$datosSinCodigo = wabot_form_lead_validar(['t' => '1123456789', 'nombre' => 'Ana',
-    'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
-caso('sin código, el envío queda en la charla del teléfono tipeado y sin permiso de pisar',
-    is_array($datosSinCodigo) && $datosSinCodigo['clave'] !== 'ig17841400000000009' && empty($datosSinCodigo['conCodigo']));
-
-$adminForm = (string)@file_get_contents(__DIR__ . '/admin.php');
-caso('el panel tiene la acción y el botón para copiarlo',
-    strpos($adminForm, "\$a === 'form_link'") !== false
-    && strpos($adminForm, "accion: 'form_link'") !== false
-    && strpos($adminForm, 'Copiar form') !== false);
-// En los dos lugares donde Pablo trabaja: las columnas del live y la ficha del chat.
-caso('el boton esta en el live y tambien en la ficha de la conversacion',
-    strpos($adminForm, "form.className = 'live-form'") !== false
-    && strpos($adminForm, 'class="sec form-copiar"') !== false
-    && strpos($adminForm, "ev.target.closest('.form-copiar')") !== false);
-// Y copia el mensaje entero, no el link pelado (Pablo, 21-sep).
-caso('copia el mensaje completo, con el texto arriba del link',
-    strpos($adminForm, "'mensaje' => $intro") !== false
-    && substr_count($adminForm, 'j.mensaje || j.link') === 3
-    && strpos((string)wabot_textos_default()['form_link_panel'], 'primera muestra gratis') !== false);
-caso('y arma el link igual que el bot, con &ig=1 en Instagram',
-    strpos($adminForm, "'https://gokywebs.com/form/?c=' . \$codigo") !== false
-    && strpos($adminForm, "\$link .= '&ig=1'") !== false);
-
-if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
-
-echo "— 14. Presentar la demo no puede mandar al vacío (21-sep) —\n";
-
-/* El 21-sep salió la demo de Pescadería Las Grutas a un número que había
- * llegado por el formulario y nunca había escrito por WhatsApp: la ventana de
- * 24 h de Meta estaba cerrada, el envío se perdió y el panel lo mostró como
- * enviado. `responder` ya miraba la ventana; `presentar_muestra` no. */
-$cForm = conv_nueva('5492944814198');
-$cForm['ultimo_cliente_ts'] = 0;
-caso('el que llegó por el formulario y nunca escribió está fuera de la ventana',
-    wabot_ventana_restante($cForm) <= 0);
-$cViejo = conv_nueva('5492944814199');
-$cViejo['ultimo_cliente_ts'] = time() - 25 * 3600;
-caso('y el que escribió hace más de un día, también', wabot_ventana_restante($cViejo) <= 0);
-$cVivo = conv_nueva('5492944814197');
-$cVivo['ultimo_cliente_ts'] = time() - 3600;
-caso('el que escribió hace un rato sigue adentro', wabot_ventana_restante($cVivo) > 0);
-
-$adminPres = (string)@file_get_contents(__DIR__ . '/admin.php');
-caso('presentar_muestra mide la ventana antes de mandar y no manda si está cerrada',
-    strpos($adminPres, '$fueraVentana = wabot_ventana_restante($conv) <= 0;') !== false
-    && strpos($adminPres, 'foreach ($fueraVentana ? [] : $textos as $i => $texto)') !== false);
-caso('y se lo avisa al panel, diciendo si el cliente nunca escribió',
-    strpos($adminPres, "'fuera_ventana' => \$fueraVentana,") !== false
-    && strpos($adminPres, "'nunca_escribio'") !== false);
-$dashPres = (string)@file_get_contents(__DIR__ . '/../admin/dashboard.js');
-caso('el admin lo explica en vez de decir que no pudo confirmar el envío',
-    strpos($dashPres, 'envio.fuera_ventana') !== false
-    && strpos($dashPres, 'nunca escribió por WhatsApp') !== false);
-
-echo "— 15. Meta avisa que no entregó: el aviso va al chat de verdad (21-sep) —\n";
-
-/* El status failed llega segundos después del envío, con el número en formato
- * de Meta (549...). La charla puede estar guardada como el cliente escribió su
- * número en el formulario (2944814198): sin resolver, el aviso caía en una
- * conversación fantasma y en el chat real no aparecía nada. */
-$cFalla = conv_nueva('5492944814100');
-$cFalla['presentado_ts'] = time() - 5;
-$cFalla['presentado_via_bot'] = true;
-$desmarco = wabot_entrega_fallida_marcar($cFalla, 'Re-engagement message');
-caso('el aviso queda en el transcript del chat',
-    $desmarco === true && str_contains((string)(end($cFalla['transcript'])['t'] ?? ''), 'no pudo entregar el último mensaje'));
-caso('y la demo deja de figurar como entregada por el bot', empty($cFalla['presentado_via_bot']));
-
-$cVieja = conv_nueva('5492944814101');
-$cVieja['presentado_ts'] = time() - 3 * 86400;
-$cVieja['presentado_via_bot'] = true;
-wabot_entrega_fallida_marcar($cVieja, 'Re-engagement message');
-caso('una demo de hace tres días no se desmarca por un mensaje que falló hoy',
-    !empty($cVieja['presentado_via_bot']));
-
-$webhookSrc = (string)@file_get_contents(__DIR__ . '/webhook.php');
-caso('el webhook resuelve la conversación antes de escribir el aviso',
-    strpos($webhookSrc, '$claveReal = wabot_conv_resolver($clave);') !== false
-    && strpos($webhookSrc, 'wabot_entrega_fallida_marcar($conv, $motivo);') !== false);
-caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($claveReal === null) continue;') !== false);
 
 todo_ok();

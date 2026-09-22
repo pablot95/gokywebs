@@ -49,9 +49,8 @@ function formlead_extras($payload, &$motivo = null) {
     }
     if (array_key_exists('modalidad', $payload)) {
         $modalidad = is_string($payload['modalidad']) ? $payload['modalidad'] : '';
-        /* 'unico' es el plan anual y 'mensual' el plan mensual. 'propia' es el pago
-         * único de la web propia: lo manda el formulario alternativo (/formb,
-         * 21-sep), que no muestra la forma de pago. */
+        /* 'unico' es el plan anual, 'mensual' el plan mensual y 'propia' el
+         * pago único. Lo mandan el formulario principal y /formb. */
         if (!in_array($modalidad, ['unico', 'mensual', 'propia'], true)) {
             $motivo = ['motivo' => 'vacio', 'campo' => 'modalidad']; return null;
         }

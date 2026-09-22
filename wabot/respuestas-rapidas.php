@@ -4,10 +4,12 @@
  * administrarlas desde Wabot sin publicar archivos de nuevo.
  */
 
-/** El bloque de los dos planes, el mismo que manda el bot (`dos_formas` de textos.php). */
+/** El bloque de las tres opciones, el mismo que manda el bot (`dos_formas` de textos.php). */
 function wabot_respuestas_rapidas_planes_texto($anual, $mensual, $tipo = '') {
     require_once __DIR__ . '/textos.php';
-    return str_replace(['{precio}', '{mensualidad}'], [$anual, $mensual], wabot_servicio_texto_plantilla($tipo));
+    $cfg = wabot_textos_default();
+    $propia = (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '');
+    return str_replace(['{precio}', '{mensualidad}', '{precio_unico}'], [$anual, $mensual, $propia], wabot_servicio_texto_plantilla($tipo));
 }
 
 function wabot_respuestas_rapidas_default() {
@@ -22,11 +24,11 @@ function wabot_respuestas_rapidas_default() {
         // Los dos planes del 19-sep (Pablo): el mismo bloque que manda el bot.
         ['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [
             "Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio, tus servicios o trabajos y recibir consultas por WhatsApp.\n\n" . wabot_respuestas_rapidas_planes_texto('$120.000', '$20.000', 'landing'),
-            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
-            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$170.000', '$30.000'),
-            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000'),
+            "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000', 'ecommerce'),
+            "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('$170.000', '$30.000', 'inmobiliaria'),
+            "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('$190.000', '$30.000', 'elearning'),
             'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.',
-            'Si la querés tuya, para tenerla en tu propio hosting, está el pago único: $180.000 el sitio profesional, $290.000 la tienda o los cursos y $240.000 la inmobiliaria. La web queda a tu nombre, pero no incluye hosting, dominio, mantenimiento, actualizaciones ni soporte.',
+            'Con el pago único, la web queda abonada en su totalidad. Son $200.000 el sitio profesional, $300.000 la tienda, $290.000 los cursos y $260.000 la inmobiliaria. No incluye mantenimiento ni renovaciones.',
             'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
             'Antes de arrancar dejamos definido el valor y qué incluye el desarrollo, así sabés desde el principio cuánto vas a pagar.',
         ]],
@@ -239,7 +241,8 @@ function wabot_respuestas_rapidas_normalizar($valor) {
 }
 
 /** Arranque del bloque de planes, el mismo que manda el bot. */
-const WABOT_RR_BLOQUE_PLANES = 'Podés elegir entre dos planes:';
+const WABOT_RR_BLOQUE_PLANES = 'Podés elegir entre tres opciones:';
+const WABOT_RR_BLOQUE_PLANES_ANTERIOR = 'Podés elegir entre dos planes:';
 
 /** Las recomendaciones de fábrica anteriores, por tipo de web. */
 function wabot_respuestas_rapidas_intros_viejas() {
@@ -290,12 +293,13 @@ function wabot_respuestas_rapidas_precios_al_dia($categorias) {
         foreach ((array)($categoria['items'] ?? []) as $i => $texto) {
             $texto = (string)$texto;
             $corte = mb_strpos($texto, WABOT_RR_BLOQUE_PLANES);
+            if ($corte === false) $corte = mb_strpos($texto, WABOT_RR_BLOQUE_PLANES_ANTERIOR);
             if ($corte === false) continue;
             $bloque = mb_substr($texto, $corte);
             // Las dos líneas del bloque, como las escribió el bot en cualquier
             // versión: con viñeta hasta el 21-sep y numeradas desde entonces.
-            if (!preg_match('/(?:•|\d\))\s*Plan anual:/u', $bloque)
-                || !preg_match('/(?:•|\d\))\s*Plan mensual:/u', $bloque)) continue;
+            if (!preg_match('/(?:•|\d[.)])\s*Plan anual:/u', $bloque)
+                || !preg_match('/(?:•|\d[.)])\s*Plan mensual:/u', $bloque)) continue;
             $intro = rtrim(mb_substr($texto, 0, $corte));
             $tipo = wabot_respuestas_rapidas_tipo_de($intro, $bloque);
             $nuevo = (string)($porTipo[$tipo] ?? '');

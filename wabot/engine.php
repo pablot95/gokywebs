@@ -2040,6 +2040,8 @@ function wabot_web_propia_anotar(&$conv, $texto, $cfg) {
 /** Debajo de los planes, el pago único para quien pidió la web propia, o ''. */
 function wabot_web_propia_precio_texto($conv, $cfg, $v) {
     if (!is_array($conv) || empty($conv['quiere_web_propia']) || $v['modelo'] === 'doble') return '';
+    // El pago único ya figura siempre como tercera opción: no se duplica abajo.
+    if (strpos((string)($cfg['dos_formas'] ?? ''), '{precio_unico}') !== false) return '';
     $unico = (string)($cfg['tipos'][$v['tipo']]['precio_unico'] ?? '');
     $texto = trim((string)($cfg['dos_formas_web_propia'] ?? ''));
     if ($unico === '' || $texto === '') return '';
@@ -2386,14 +2388,14 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
      * mensual…"), así que la respuesta natural es el número solo. Vale
      * únicamente cuando el mensaje es ese número y el precio ya salió: fuera
      * de ahí un "2" suelto puede ser cualquier otra cosa. */
-    if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([12])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
-        return $m[2] === '1' ? 'unico' : 'mensual';
+    if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([123])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
+        return ['1' => 'unico', '2' => 'mensual', '3' => 'propia'][$m[2]];
     }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
     // El plan anual (19-sep) usa el mismo valor interno 'unico' que el formulario.
-    $unico   = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto)'
-             . '|el plan anual|plan anual|el anual|el pago anual|pago anual|anual|por ano|pagar(la|lo)? por ano)\b';
+    $unico   = '(el plan anual|plan anual|el anual|el pago anual|pago anual|anual|por ano|pagar(la|lo)? por ano)\b';
+    $propia  = '(el pago unico|pago unico|un solo pago|el unico pago|una sola vez|de una sola vez|todo junto|pagarla (toda )?(de una|una sola vez|en un (solo )?pago)|pagar(la|lo)? (de una|una sola vez|todo junto))\b';
     // "El plan mensual" es como lo nombra el propio bot desde el 19-sep: sin
     // esto, "me quedo con el plan mensual" no elegía nada y el bot se callaba.
     $mensual = '(el plan mensual|plan mensual|el mensual|el servicio mensual|servicio mensual|el pago mensual|pago mensual|el abono mensual|abono mensual|la suscripcion|pagar por mes|pagarla por mes|por mes|mes a mes|mensualmente)\b';
@@ -2405,8 +2407,8 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
          * mensual" se parte en "Dale," y "el mensual", y ninguna de las dos
          * traía el verbo de elegir. Anclada a toda la frase: "cuánto sale el
          * plan mensual" no entra. */
-        if (preg_match('/^(y |dale |listo |ok |okey |perfecto |bueno )?(el |la |con el |por el )?(plan |pago )?(mensual|anual)$/u', $t)) {
-            $elegida = strpos($t, 'anual') !== false ? 'unico' : 'mensual';
+        if (preg_match('/^(y |dale |listo |ok |okey |perfecto |bueno )?(el |la |con el |por el )?(plan |pago )?(mensual|anual|unico)$/u', $t)) {
+            $elegida = strpos($t, 'unico') !== false ? 'propia' : (strpos($t, 'anual') !== false ? 'unico' : 'mensual');
             continue;
         }
         if (preg_match('/\bsi (elijo|eligiera|eligiese|voy|fuera|hago|hiciera|prefiero)\b/u', $t)) continue;
@@ -2418,8 +2420,10 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
         if ($rechazo === 'unico') { $elegida = 'mensual'; continue; }
         $u = preg_match('/' . $elige . $unico . '/u', $t);
         $m = preg_match('/' . $elige . $mensual . '/u', $t);
-        if ($u && !$m) $elegida = 'unico';
-        elseif ($m && !$u) $elegida = 'mensual';
+        $p = preg_match('/' . $elige . $propia . '/u', $t);
+        if ($p && !$u && !$m) $elegida = 'propia';
+        elseif ($u && !$m && !$p) $elegida = 'unico';
+        elseif ($m && !$u && !$p) $elegida = 'mensual';
     }
     return $elegida;
 }
@@ -5668,9 +5672,9 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
     $d = $cfg['tipos'][$v['tipo']] ?? [];
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
-        ['{precio}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
+        ['{precio}', '{precio_unico}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
          '{mantenimiento_mes}', '{cambios_mes}', '{carga_producto}'],
-        [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
+        [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', (string)($d['precio_unico'] ?? 'el valor del pago único'), $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades,
@@ -5850,15 +5854,16 @@ function wabot_oferta_diseno_abrir(&$conv) {
     wabot_evento_sesion($conv, 'primer_diseno_ofrecido');
 }
 
-/** Las dos formas breves de contratarla, con los montos de esta charla. */
+/** Las tres opciones breves de contratarla, con los montos de esta charla. */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']), $cfg);
     $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
+    $propia  = trim((string)($cfg['tipos'][$tipo]['precio_unico'] ?? ''));
     // Sin los dos montos no se ofrecen las dos formas.
     if ($precio === '' || $mensual === '') return '';
-    $t = str_replace(['{precio}', '{mensualidad}'], [$precio, $mensual], $t);
+    $t = str_replace(['{precio}', '{mensualidad}', '{precio_unico}'], [$precio, $mensual, $propia], $t);
     // Si pidió la web propia (19-sep), debajo va el pago único.
     $propia = wabot_web_propia_precio_texto($conv, $cfg, $v);
     return $propia !== '' ? $t . "\n\n" . $propia : $t;

@@ -4,12 +4,12 @@
  * valores por defecto de los ajustes del panel.
  *
  * Se editan acá y se publican con el deploy. Los montos NUNCA van escritos en
- * un texto: {precio}, {sena}, {saldo}, {mensualidad}, {mantenimiento_mes},
+ * un texto: {precio}, {precio_unico}, {sena}, {saldo}, {mensualidad}, {mantenimiento_mes},
  * {cambios_mes}, {tabla_precios} y {mensualidades} los resuelve
  * wabot_precio_placeholders() desde `tipos`.
  *
- * Condiciones vigentes (Pablo, 19-sep): DOS PLANES. El pago único queda solo
- * para quien pide la web propia (ver abajo).
+ * Condiciones vigentes (Pablo, 22-sep): TRES OPCIONES: plan anual, plan
+ * mensual y pago único.
  * - Plan anual (`tipos[].precio`): sin suscripción. Arranca con una seña
  *   (`tipos[].sena`: $40.000 el sitio profesional, $60.000 el resto), el
  *   resto se paga al entregar la web y después se cobra una vez por año
@@ -29,10 +29,9 @@
  *   ({mantenimiento_mes}: $10.000 el sitio profesional, $15.000 el resto).
  * - Los dos incluyen lo mismo: desarrollo completo, hosting, dominio,
  *   mantenimiento, actualizaciones, soporte y un cambio por mes.
- * - Los dos planes se dicen siempre con el mismo bloque, `dos_formas`
- *   ({dos_formas} en cualquier texto): "Plan anual" y "Plan mensual" con sus
- *   montos y, abajo, "Ambos incluyen todo:" con el desarrollo y un bloque
- *   separado de mantenimiento. Es la misma lista para los cuatro tipos de web.
+ * - Las tres opciones se dicen siempre con el mismo bloque, `dos_formas`:
+ *   plan anual, plan mensual y pago único. Solo los dos planes incluyen el
+ *   mantenimiento y las renovaciones. Es el mismo formato para los cuatro tipos.
  * - El plan anual se cuenta desde la seña: se renueva cada año desde ahí.
  * - Web propia (19-sep): si el cliente la quiere a su nombre, en su propio
  *   hosting, se le pasa el pago único (`tipos[].precio_unico`, los montos
@@ -109,7 +108,7 @@ function wabot_textos_default() {
     // La seña del plan anual no se devuelve (Pablo, 15-sep); el turno queda
     // marcado para el desarrollador.
     'devolucion' => 'La seña del plan anual no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
-    'dos_formas' => "Podés elegir entre dos planes:\n\n1) Plan anual: {precio}\n2) Plan mensual: {mensualidad}\n\nAmbos incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico",
+    'dos_formas' => "Podés elegir entre tres opciones:\n\n1. Plan anual: {precio} incluye mantenimiento\n2. Plan mensual: {mensualidad} incluye mantenimiento\n3. Pago único: {precio_unico} (La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones)\n\nLos planes anual y mensual incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Un cambio por mes en la web\n\nMantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico",
     // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese es solo la página, sin hosting ni dominio, y el código queda tuyo cuando abonás el total; si querés, le sumás el mantenimiento por {mantenimiento_mes}.',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
@@ -120,9 +119,6 @@ function wabot_textos_default() {
      * pregunta ("si es abogado QUE va a vender por la web?"): se les cotiza el
      * sitio profesional derecho. Un tipo puede llevar su propia pregunta con
      * tipos[].reconocimiento_pregunta. */
-    /* Lo que copia el botón "Copiar form" del panel, para que Pablo se lo
-     * mande él mismo (21-sep). El link con el código de la charla va abajo. */
-    'form_link_panel' => 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:',
     'reconocimiento_activo' => true,
     'reconocimiento' => 'Buscás vender por la web, o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
@@ -323,9 +319,9 @@ function wabot_textos_default() {
     'prediseno_espera_datos' => 'Perfecto, quedo atento. Cuando tengas esos datos, mandámelos por acá y seguimos.',
     'prediseno_falta_colores' => 'Perfecto, anoté la descripción. Me faltan solo los colores de tu marca.',
     'prediseno_falta_descripcion' => 'Perfecto, anoté los colores. Me falta solo una descripción breve de lo que ofrecés.',
-    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
+    'prediseno_link' => "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.\nSi algo no te queda claro, escribime por acá.",
     'prediseno_link_variantes' => [
-        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.",
+        "Dale. Para prepararte el primer diseño completá este formulario:\n{link}\nUna vez que lo completes, va a estar listo en menos de 24 hs.\nSi algo no te queda claro, escribime por acá.",
     ],
     'prediseno_referencia' => 'Perfecto, con eso ya arrancamos. Una última cosa que ayuda mucho: tenés alguna página que te haya gustado como referencia, o algún estilo pensado? Puede ser la web de otro rubro, no importa. Si no tenés ninguna, decime que no y lo armamos igual.',
     'prediseno_whatsapp' => 'Última cosa y ya te lo preparamos: pasame tu número de WhatsApp, que por ahí te mandamos la demo cuando esté lista.',
@@ -349,7 +345,7 @@ function wabot_textos_default() {
         'landing' => [
             'label' => 'Sitio profesional',
             'precio' => '$120.000',
-            'precio_unico' => '$180.000',
+            'precio_unico' => '$200.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
             'reconocimiento_que' => 'tus servicios',
@@ -365,7 +361,7 @@ function wabot_textos_default() {
         'ecommerce' => [
             'label' => 'Ecommerce',
             'precio' => '$190.000',
-            'precio_unico' => '$290.000',
+            'precio_unico' => '$300.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
             'reconocimiento_que' => 'tus productos',
@@ -397,7 +393,7 @@ function wabot_textos_default() {
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
             'precio' => '$170.000',
-            'precio_unico' => '$240.000',
+            'precio_unico' => '$260.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',
             'reconocimiento_que' => 'tus propiedades',

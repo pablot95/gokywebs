@@ -477,7 +477,7 @@ foreach (['999FPTEST', 'QATESTREG11SEP', 'QATESTTEXTOS11SEP', 'QATESTSIS1', 'QAT
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 echo "\n-- La forma de pago que eligió el cliente va al boceto (15-sep) --\n";
-foreach (['Prefiero pagarla una sola vez' => 'unico', 'Vamos con el pago unico, me pasas el CBU?' => 'unico',
+foreach (['Prefiero pagarla una sola vez' => 'propia', 'Vamos con el pago unico, me pasas el CBU?' => 'propia',
           'No me interesa el mensual' => 'unico', 'Quiero avanzar con el pago mensual' => 'mensual',
           'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual'] as $f => $esperada) {
     caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
@@ -527,8 +527,8 @@ clasifica(['otro']);
 $cMod = conv_nueva('999MODTEST', ['tipo' => 'ecommerce', 'precio_dado' => true, 'fase' => 'prediseno']);
 wabot_precio_congelar($cMod, 'ecommerce', $cfg);
 $cMod['modalidad_elegida'] = ''; $cMod['modalidad_sincronizada'] = ''; $cMod['lead_creado'] = false; $cMod['lead_doc'] = null;
-caso('anota la forma elegida', wabot_modalidad_anotar('Prefiero pagarla una sola vez', $cMod, $cfg) === true && $cMod['modalidad_elegida'] === 'unico');
-caso('y el boceto la lleva en modalidad', strpos(json_encode(wabot_lead_campos($cMod, $cfg)), '"modalidad":{"stringValue":"unico"}') !== false);
+caso('anota el pago único como tercera opción', wabot_modalidad_anotar('Prefiero pagarla una sola vez', $cMod, $cfg) === true && $cMod['modalidad_elegida'] === 'propia');
+caso('y el boceto la lleva en modalidad', strpos(json_encode(wabot_lead_campos($cMod, $cfg)), '"modalidad":{"stringValue":"propia"}') !== false);
 $cMod['lead_creado'] = true; $cMod['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/abc'; $cMod['modalidad_sincronizada'] = 'unico';
 caso('si después cambia de idea, se completa en el boceto que ya existe',
     wabot_modalidad_anotar('Mejor quiero el mensual', $cMod, $cfg) === true

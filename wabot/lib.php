@@ -1271,24 +1271,6 @@ function wabot_mismo_abonado($a, $b) {
     return (bool)array_intersect($unos, $otros);
 }
 
-/**
- * Meta avisó que el mensaje no se entregó (status failed). Deja el aviso en el
- * chat y, si acaba de salir la demo, la desmarca: el 21-sep la de Pescadería
- * Las Grutas figuró enviada cuando Meta la había rechazado dos segundos después
- * (131047, ventana de 24 h). Con presentado_via_bot en false, el panel no dice
- * que el cliente la tiene y tampoco sale la plantilla de seguimiento.
- */
-function wabot_entrega_fallida_marcar(&$conv, $motivo, $ahora = null) {
-    $ahora = $ahora ?? time();
-    wabot_conv_transcript($conv, 'sistema', 'WhatsApp no pudo entregar el último mensaje (' . $motivo . '). Probá reenviarlo.');
-    $presentado = (int)($conv['presentado_ts'] ?? 0);
-    if (!empty($conv['presentado_via_bot']) && $presentado > 0 && $ahora - $presentado <= 600) {
-        $conv['presentado_via_bot'] = false;
-        return true;
-    }
-    return false;
-}
-
 function wabot_conv_resolver($tel, &$motivo = null) {
     $motivo = null;
     $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$tel);
@@ -4534,7 +4516,7 @@ function wabot_nombre_negocio_fallback($texto) {
     return mb_substr($resultado, 0, 40);
 }
 
-/** El precio que el bot le dijo al cliente: las dos formas, con los montos de ESTA charla. */
+/** El precio que el bot le dijo al cliente: las tres opciones, con los montos de ESTA charla. */
 function wabot_lead_cotizado($conv, $cfg) {
     $tipo = (string)($conv['tipo'] ?? '');
     if (function_exists('wabot_precio_vigente')) {
@@ -4544,12 +4526,11 @@ function wabot_lead_cotizado($conv, $cfg) {
             // El catálogo sin cobro online suma la carga de productos (18-sep).
             $carga = ($tipo === 'landing' && !empty($conv['catalogo']))
                 ? ' + carga de productos ' . (string)($cfg['carga_producto'] ?? '$500') . ' c/u' : '';
-            // Los dos planes (19-sep); la charla cotizada antes conserva su pago único.
+            // Los dos planes y el pago único; una charla antigua conserva su modelo.
             if (($v['modelo'] ?? '') !== 'doble') {
-                // Y el pago único, si pidió la web propia (19-sep).
-                $unico = !empty($conv['quiere_web_propia']) ? (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '') : '';
+                $unico = (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '');
                 return 'Plan anual ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o plan mensual ' . $v['mensualidad'] . $carga
-                    . ($unico !== '' ? ' · pidió la web propia: pago único ' . $unico : '');
+                    . ($unico !== '' ? ' o pago único ' . $unico : '');
             }
             return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes' . $carga;
         }
@@ -5048,12 +5029,10 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!function_exists('wabot_modalidad_elegida_en')) return false;
     if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
-    /* "Prefiero el pago único" (19-sep) pide la web propia, no el plan anual
-     * (que usa el valor interno 'unico'): eso ya lo anotó wabot_web_propia_anotar. */
-    if (!empty($conv['quiere_web_propia']) && preg_match('/\b(pago unico|unico pago)\b/u', wabot_normalizar_frase((string)$texto))) return false;
     $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']));
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;
+    if ($elegida === 'propia') $conv['quiere_web_propia'] = true;
     wabot_modalidad_sincronizar($conv);
     return true;
 }

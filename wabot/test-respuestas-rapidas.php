@@ -60,17 +60,22 @@ $todo = json_encode($r, JSON_UNESCAPED_UNICODE);
 $planes = rr_items($r, 'Presupuesto y planes');
 caso('ya no quedan "Son alternativas", "Lo mejor para" ni el primer año del pago único',
     mb_strpos($todo, 'Son alternativas') === false && mb_strpos($todo, 'Lo mejor para') === false && mb_strpos($todo, 'durante el primer año') === false);
-caso('las cuatro de precio con los dos planes y lo que incluyen',
-    mb_strpos($planes[0], '1) Plan anual: $120.000') !== false && mb_strpos($planes[1], '1) Plan anual: $190.000') !== false
-    && mb_strpos($planes[2], '1) Plan anual: $170.000') !== false && mb_strpos($planes[3], 'cursos') !== false
-    && mb_strpos($planes[3], '2) Plan mensual: $30.000') !== false && mb_strpos($planes[0], 'Ambos incluyen todo:') !== false, $planes[0]);
+caso('las cuatro de precio con las tres opciones y lo que incluyen los planes',
+    mb_strpos($planes[0], '1. Plan anual: $120.000 incluye mantenimiento') !== false && mb_strpos($planes[1], '1. Plan anual: $190.000 incluye mantenimiento') !== false
+    && mb_strpos($planes[2], '1. Plan anual: $170.000 incluye mantenimiento') !== false && mb_strpos($planes[3], 'cursos') !== false
+    && mb_strpos($planes[0], '3. Pago único: $200.000') !== false
+    && mb_strpos($planes[1], '3. Pago único: $300.000') !== false
+    && mb_strpos($planes[2], '3. Pago único: $260.000') !== false
+    && mb_strpos($planes[3], '3. Pago único: $290.000') !== false
+    && mb_strpos($planes[3], '2. Plan mensual: $30.000 incluye mantenimiento') !== false
+    && mb_strpos($planes[0], 'Los planes anual y mensual incluyen todo:') !== false, $planes[0]);
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
     count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4
     && mb_strpos($planes[1], "Mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
-caso('se suman la seña del plan anual (desde la seña) y la opción de web propia',
+caso('se suman la seña del plan anual y la explicación del pago único',
     count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el plan anual arrancás con una seña de $40.000') === 0 && mb_strpos($t, 'contado desde la seña') !== false)) === 1
-    && count(array_filter($planes, fn($t) => mb_strpos($t, 'Si la querés tuya') === 0)) === 1);
+    && count(array_filter($planes, fn($t) => mb_strpos($t, 'Con el pago único, la web queda abonada en su totalidad.') === 0)) === 1);
 caso('lo que Pablo editó no se toca', in_array('Antes de arrancar dejamos todo por escrito.', $planes, true));
 $pagos = rr_items($r, 'Pagos');
 caso('sus datos para la seña quedan', $pagos[0] === 'Te paso los datos para la seña. Alias: gokywebs.mp');
@@ -102,7 +107,7 @@ echo "— 3. Sin archivo, y la primera versión de la organización —\n";
 
 @unlink($ruta);
 caso('sin archivo salen las de fábrica, ya con los dos planes',
-    mb_strpos(json_encode(wabot_respuestas_rapidas_load(), JSON_UNESCAPED_UNICODE), '2) Plan mensual: $20.000') !== false);
+    mb_strpos(json_encode(wabot_respuestas_rapidas_load(), JSON_UNESCAPED_UNICODE), '2. Plan mensual: $20.000 incluye mantenimiento') !== false);
 $primera = rr_archivo_viejo($preciosViejos);
 foreach ($primera as &$cat) if ($cat['titulo'] === 'Presupuesto y planes') $cat['items'] = [$preciosViejos[1]];
 unset($cat);
@@ -145,10 +150,10 @@ $r21 = wabot_respuestas_rapidas_load();
 $planes21 = rr_items($r21, 'Presupuesto y planes');
 $pagos21 = rr_items($r21, 'Pagos');
 caso('los cuatro bloques quedan con los precios de hoy',
-    mb_strpos($planes21[0], "1) Plan anual: $120.000\n2) Plan mensual: $20.000\n") !== false
-    && mb_strpos($planes21[1], "1) Plan anual: $190.000\n2) Plan mensual: $30.000\n") !== false
-    && mb_strpos($planes21[2], "1) Plan anual: $170.000\n2) Plan mensual: $30.000\n") !== false
-    && mb_strpos($planes21[3], "1) Plan anual: $190.000\n2) Plan mensual: $30.000\n") !== false, $planes21[0]);
+    mb_strpos($planes21[0], "1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n") !== false
+    && mb_strpos($planes21[1], "1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n") !== false
+    && mb_strpos($planes21[2], "1. Plan anual: $170.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n") !== false
+    && mb_strpos($planes21[3], "1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n") !== false, $planes21[0]);
 caso('no queda ningún monto viejo ni las viñetas del 19-sep',
     count(array_filter($planes21, fn($t) => mb_strpos($t, '$140.000') !== false || mb_strpos($t, '$230.000') !== false
         || mb_strpos($t, ' por año') !== false || mb_strpos($t, 'Hosting y dominio .com.ar') !== false)) === 0, implode("\n", $planes21));
@@ -156,7 +161,7 @@ caso('las recomendaciones de fábrica viejas pasan a las cortas de ahora',
     mb_strpos($planes21[0], 'Para lo que me contás, te serviría un sitio profesional para mostrar tu negocio') === 0
     && mb_strpos($planes21[2], 'Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros') === 0, $planes21[2]);
 caso('la que escribió Pablo conserva su texto y solo se le actualiza el bloque',
-    mb_strpos($planes21[3], $suyo) === 0 && mb_strpos($planes21[3], 'Ambos incluyen todo:') !== false, $planes21[3]);
+    mb_strpos($planes21[3], $suyo) === 0 && mb_strpos($planes21[3], 'Los planes anual y mensual incluyen todo:') !== false, $planes21[3]);
 caso('el panel aparte de $25.000 pasa al cambio por mes de los dos planes',
     count(array_filter($planes21, fn($t) => mb_strpos($t, 'le sumamos un panel de administración') !== false)) === 0
     && count(array_filter($planes21, fn($t) => mb_strpos($t, 'Los dos planes incluyen un cambio por mes') === 0
