@@ -384,6 +384,12 @@ body.m2 #estudio .margen__col {
   background: rgba(255, 255, 255, .045);
 }
 .asesoramiento__contacto p { color: #D5DCE7; }
+.asesoramiento__nombre {
+  color: #fff !important;
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 2.5vw, 2.2rem);
+  line-height: 1.1;
+}
 .asesoramiento__disponibilidad {
   color: #A9C4FF !important;
   font-size: .78rem;
