@@ -2710,3 +2710,8 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 .mant-subtitulo { margin: 0 0 10px; font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #8a9bb8; }
 .mant-cliente-link { background: none; border: 0; padding: 0; margin-top: 3px; color: #60A5FA; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
 .mant-cliente-link:hover { text-decoration: underline; }
+#mantSuscWrap .clients-table { min-width: 1100px; }
+#mantSuscWrap td:nth-child(3) a,
+#mantSuscWrap td:nth-child(4) a { color: #60A5FA; overflow-wrap: anywhere; }
+#mantSuscWrap td:nth-child(4) { max-width: 230px; }
+#mantSuscWrap .mant-delete:hover { color: var(--danger); border-color: var(--danger); }

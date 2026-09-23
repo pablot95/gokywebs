@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260923-seguimientos">
+    <link rel="stylesheet" href="styles.css?v=20260923-mantenimiento-unificado">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -351,57 +351,21 @@
                 <button class="seg-chip" data-mantview="baja">Bajas <span class="seg-chip-count" id="mantCountBaja">0</span></button>
                 <button class="seg-chip" data-mantview="sin_susc" title="Webs del plan mensual sin suscripción de Mercado Pago registrada">Sin suscripción <span class="seg-chip-count" id="mantCountSinSusc">0</span></button>
             </div>
-            <!-- Webs entregadas con el plan mensual que no cruzan con ninguna suscripción de Mercado Pago. -->
-            <div id="mantManualWrap" hidden style="margin:14px 0 18px">
-                <p class="mant-subtitulo">Ya cobrándose, cargadas a mano</p>
-                <div class="table-wrapper">
-                    <table class="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Plan</th>
-                                <th>Suscripción</th>
-                                <th class="center">Cambios del mes</th>
-                                <th class="actions-col">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mantManualTbody"></tbody>
-                    </table>
-                </div>
-            </div>
-            <div id="mantSinSuscWrap" hidden style="margin:14px 0 18px">
-                <p class="mant-subtitulo">Todavía sin suscripción</p>
-                <div class="table-wrapper">
-                    <table class="clients-table">
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Plan</th>
-                                <th>Suscripción</th>
-                                <th class="center">Cambios del mes</th>
-                                <th class="actions-col">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="mantSinSuscTbody"></tbody>
-                    </table>
-                </div>
-            </div>
             <div class="table-wrapper" id="mantSuscWrap">
                 <table class="clients-table">
                     <thead>
                         <tr>
-                            <th>Alta</th>
-                            <th>Suscriptor</th>
+                            <th>Cliente</th>
                             <th>Plan / precio</th>
                             <th class="col-telefono">WhatsApp</th>
                             <th>Dominio</th>
-                            <th class="center">Estado</th>
-                            <th class="center">Pidió cambios · período vigente</th>
-                            <th class="actions-col"></th>
+                            <th class="center">Suscripción</th>
+                            <th class="center">Cambios del mes</th>
+                            <th class="actions-col">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="mantTbody">
-                        <tr class="empty-row"><td colspan="8">Cargando…</td></tr>
+                        <tr class="empty-row"><td colspan="7">Cargando…</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -780,6 +744,9 @@
                 <label for="telefono">Teléfono</label>
                 <input type="tel" id="telefono" required maxlength="30">
 
+                <label for="dominioCliente">Dominio <span class="muted">(opcional)</span></label>
+                <input type="text" id="dominioCliente" maxlength="160" placeholder="midominio.com.ar">
+
                 <label for="emailCliente">Email <span class="muted">(opcional)</span></label>
                 <input type="text" id="emailCliente" maxlength="160" inputmode="email" autocomplete="off" placeholder="El que usa en Mercado Pago">
 
@@ -1052,6 +1019,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260923-seguimientos"></script>
+    <script type="module" src="dashboard.js?v=20260923-mantenimiento-unificado"></script>
 </body>
 </html>

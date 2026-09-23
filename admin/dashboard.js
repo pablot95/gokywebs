@@ -1645,9 +1645,9 @@ function _updateClientCounters() {
 }
 
 function _bindTableListeners(tbodyEl) {
-    tbodyEl.querySelectorAll(".client-row").forEach(row => {
+    tbodyEl.querySelectorAll(".client-row[data-row-id]").forEach(row => {
         row.addEventListener("click", (e) => {
-            if (e.target.closest("button, input, select, label, .date-cell, .actions-col, .notes-col, .phone-copy")) return;
+            if (e.target.closest("a, button, input, select, label, .date-cell, .actions-col, .notes-col, .phone-copy")) return;
             if (window.getSelection().toString().length > 0) return;
             openModal(row.dataset.rowId);
         });
@@ -2665,6 +2665,7 @@ function openModal(id = null) {
         document.getElementById("nombre").value = c.nombre || "";
         document.getElementById("proyecto").value = c.proyecto || "";
         document.getElementById("telefono").value = c.telefono || "";
+        document.getElementById("dominioCliente").value = c.dominio || "";
         document.getElementById("emailCliente").value = c.email || "";
         document.getElementById("notasCliente").value = c.notas || "";
         document.getElementById("estadoCliente").value = getEstado(c);
@@ -2986,6 +2987,7 @@ form.addEventListener("submit", async (e) => {
         nombre: document.getElementById("nombre").value.trim(),
         proyecto: document.getElementById("proyecto").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
+        dominio: document.getElementById("dominioCliente").value.trim(),
         email: document.getElementById("emailCliente").value.trim(),
         notas: document.getElementById("notasCliente").value.trim(),
         estadoCliente,
@@ -5897,11 +5899,10 @@ function _mantFilaAvisoHTML(fila) {
     const planLabel = a.planLabel || MANT_PLAN_LABELS[a.plan] || a.plan || "—";
     const monto = Number(a.monto ?? MANT_PLAN_MONTO[a.plan] ?? 0);
     return `
-            <tr class="client-row">
-                <td>${escapeHtml(alta)}</td>
+            <tr class="mant-row">
                 <td>
                     <div style="font-weight:600">${escapeHtml(a.email || "—")}</div>
-                    <div class="muted" style="font-size:12px">sin alta registrada en Mantenimiento</div>
+                    <div class="muted" style="font-size:12px">${escapeHtml(alta)} · sin alta registrada</div>
                 </td>
                 <td>
                     <div>${escapeHtml(planLabel)}</div>
@@ -5912,7 +5913,7 @@ function _mantFilaAvisoHTML(fila) {
                 <td class="center">${_mantEstadoHTML(fila)}</td>
                 <td class="center"><span class="muted">—</span></td>
                 <td class="actions-col">
-                    <button class="icon-btn delete" data-mant-aviso-del="${escapeHtml(a.id)}" title="Quitar el aviso">🗑</button>
+                    <button class="icon-btn mant-delete" data-mant-aviso-del="${escapeHtml(a.id)}" title="Quitar el aviso">🗑</button>
                 </td>
             </tr>`;
 }
@@ -5961,8 +5962,69 @@ function _clientePorSuscripcion() {
 
 function _clienteCoincide(c, term) {
     const termPhone = cleanArgPhone(term);
-    return [c.nombre, c.proyecto, c.telefono, c.email].some(v => String(v || "").toLowerCase().includes(term))
+    return [c.nombre, c.proyecto, c.telefono, c.email, _dominioMantenimiento(c)].some(v => String(v || "").toLowerCase().includes(term))
         || (!!termPhone && cleanArgPhone(c.telefono).includes(termPhone));
+}
+
+function _completadoDeMantenimiento(c, m) {
+    return completados.find(x => (m?.completadoId && x.id === m.completadoId)
+        || (c && ((c.completadoId && x.id === c.completadoId) || x.clienteId === c.id))) || null;
+}
+
+function _dominioMantenimiento(c, m) {
+    const comp = _completadoDeMantenimiento(c, m);
+    return m?.dominio || c?.dominio || c?.web || c?.url || comp?.dominio || comp?.web || comp?.url || "";
+}
+
+function _telefonoMantenimiento(c, m) {
+    const comp = _completadoDeMantenimiento(c, m);
+    return m?.whatsapp || c?.telefono || comp?.whatsapp || comp?.telefono || "";
+}
+
+function _mantContactoHTML(c, m) {
+    const telefono = _telefonoMantenimiento(c, m);
+    const dominio = _dominioMantenimiento(c, m);
+    return {
+        telefono: telefono
+            ? `<a href="${escapeHtml(mantWaLink(telefono))}" target="_blank" rel="noopener noreferrer">${escapeHtml(telefono)}</a>`
+            : `<span class="muted">—</span>`,
+        dominio: dominio
+            ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>`
+            : `<span class="muted">—</span>`
+    };
+}
+
+function _mantFilaClienteHTML(c) {
+    const s = suscripcionDe(c);
+    const contacto = _mantContactoHTML(c);
+    const periodo = s.desde && s.desde <= new Date() ? mantCurrentPeriod(null, new Date(), s.desde) : null;
+    const pidio = periodo && mantUsedCurrentPeriod(c, periodo);
+    const dias = periodo ? Math.max(0, Math.ceil((periodo.next - new Date()) / 86400000)) : 0;
+    const proyecto = String(c.proyecto || "").trim();
+    const estado = s.aviso?.tipoEvento === "pausa" ? "Pausado"
+        : s.estado === "baja" ? "Dio de baja"
+        : s.estado === "activa" ? "Activo" : "Sin suscripción";
+    const color = estado === "Activo" ? "#4ade80" : estado === "Sin suscripción" ? "#F59E0B" : "#9CA3AF";
+    return `<tr class="client-row" data-row-id="${escapeHtml(c.id)}">
+        <td><div style="font-weight:600">${escapeHtml(c.nombre || proyecto || "—")}</div>
+            ${proyecto && proyecto.toLowerCase() !== String(c.nombre || "").trim().toLowerCase() ? `<div class="muted" style="font-size:12px">${escapeHtml(proyecto)}</div>` : ""}
+            <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div></td>
+        <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div></td>
+        <td class="col-telefono">${contacto.telefono}</td><td>${contacto.dominio}</td>
+        <td class="center"><span style="color:${color};font-weight:700">● ${estado}</span>${s.desde ? `<div class="muted" style="font-size:11px">desde ${mantLongDate(s.desde)}</div>` : ""}</td>
+        <td class="center">${periodo && estado === "Activo" ? `<label title="Se habilita nuevamente el ${mantLongDate(periodo.next)}"><input type="checkbox" data-cli-cambio="${escapeHtml(c.id)}" ${pidio ? "checked" : ""}></label><div style="font-size:12px;color:#93b4e8">${mantShortDate(periodo.start)} al ${mantShortDate(periodo.next)}</div><div class="muted" style="font-size:11px">se renueva ${dias === 0 ? "hoy" : `en ${dias} días`}</div>` : `<span class="muted">—</span>`}</td>
+        <td class="actions-col">${!webEntregada(c) ? `<button class="icon-btn btn-terminada" data-terminada-id="${escapeHtml(c.id)}" title="Marcar la web como terminada">✓</button>` : ""}
+            <button class="icon-btn" data-facturar-id="${escapeHtml(c.id)}" title="Facturar la mensualidad">🧾</button>
+            <button class="icon-btn edit" data-id="${escapeHtml(c.id)}" title="Editar cliente">✎</button>
+            <button class="icon-btn delete" data-id="${escapeHtml(c.id)}" title="Eliminar cliente">🗑</button></td>
+    </tr>`;
+}
+
+function _claveMantCliente(c) {
+    const s = suscripcionDe(c);
+    if (s.aviso?.tipoEvento === "pausa") return "pausado";
+    if (s.estado === "baja") return "baja";
+    return s.estado === "activa" ? "activo" : "sin_susc";
 }
 
 /* Los números de arriba de Mantenimiento (antes estaban en Clientes): lo que
@@ -6017,31 +6079,6 @@ function _renderMantAnual(anual, term) {
     _bindTableListeners(tb);
 }
 
-// Plan mensual: las webs del plan que no cruzan con ninguna suscripción de
-// Mercado Pago (entregadas, o en desarrollo con la suscripción ya cobrándose).
-function _renderMantSinSusc(sinSusc, term) {
-    const list = term ? sinSusc.filter(c => _clienteCoincide(c, term)) : sinSusc;
-    /* Dos listas, porque son dos cosas distintas y juntas confunden (Pablo,
-       21-sep: marcó a los dos suscriptores y los leyó bajo "sin suscripción"):
-       arriba los que YA se están cobrando y todavía no llegaron por Mercado
-       Pago, abajo los que siguen sin suscribirse. */
-    const cobrando = list.filter(c => suscripcionDe(c).estado === "activa");
-    const pendientes = list.filter(c => suscripcionDe(c).estado !== "activa");
-    // En "Todos" cada bloque aparece solo si tiene filas; en "Sin suscripción", siempre.
-    const pintar = (idWrap, idTbody, filas, vacio) => {
-        const wrap = document.getElementById(idWrap);
-        const tb = document.getElementById(idTbody);
-        if (!wrap || !tb) return;
-        wrap.hidden = mantVista === "sin_susc" ? false : (mantVista !== "todas" || !filas.length);
-        tb.innerHTML = filas.length
-            ? filas.map(c => _clientRow(c, { marcarDesarrollo: true })).join("")
-            : `<tr class="empty-row"><td colspan="5">${term ? "Ninguna para esa búsqueda." : vacio}</td></tr>`;
-        _bindTableListeners(tb);
-    };
-    pintar("mantManualWrap", "mantManualTbody", cobrando, "Ninguna: las que cobran entraron por Mercado Pago.");
-    pintar("mantSinSuscWrap", "mantSinSuscTbody", pendientes, "Todas las webs del plan mensual tienen su suscripción.");
-}
-
 function renderMantenimiento() {
     const tbody = document.getElementById("mantTbody");
     if (!tbody) return;
@@ -6049,13 +6086,9 @@ function renderMantenimiento() {
 
     const { anual, mensual } = _clientesEnMantenimiento();
     const sinSusc = mensual.filter(c => !mantenimientoDeCliente(c));
-    // De sinSusc, los que YA se están cobrando a mano son tan "activo" como
-    // cualquier fila de mantenimiento (misma cuenta que usa _renderMantSinSusc
-    // para separarlos abajo, 22-sep): el chip "Sin suscripción" no puede seguir
-    // contando gente a la que ya se le está cobrando.
-    const sinSuscCobrando = sinSusc.filter(c => suscripcionDe(c).estado === "activa").length;
     const filas = _mantFilas();
-    const conteo = { todas: filas.length + sinSusc.length, activo: sinSuscCobrando, pausado: 0, baja: 0, sin_susc: sinSusc.length - sinSuscCobrando };
+    const conteo = { todas: filas.length + sinSusc.length, activo: 0, pausado: 0, baja: 0, sin_susc: 0 };
+    sinSusc.forEach(c => { conteo[_claveMantCliente(c)]++; });
     filas.forEach(f => { conteo[f.clave]++; });
     Object.entries({ todas: "mantCountTodas", activo: "mantCountActivo", pausado: "mantCountPausado", baja: "mantCountBaja", sin_susc: "mantCountSinSusc" })
         .forEach(([clave, id]) => { const el = document.getElementById(id); if (el) el.textContent = conteo[clave]; });
@@ -6079,38 +6112,40 @@ function renderMantenimiento() {
     if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
 
     _renderMantAnual(anual, term);
-    _renderMantSinSusc(sinSusc, term);
-    _renderMantSuscripciones(tbody, filas, term);
+    _renderMantSuscripciones(tbody, filas, sinSusc, term);
 }
 
-/* Las suscripciones de Mercado Pago del plan mensual, con la viñeta elegida
-   (Todos / Activos / Pausados / Bajas). Cada una muestra el cliente con el que
-   cruza, con la web entregada o todavía en desarrollo. */
-function _renderMantSuscripciones(tbody, filas, term) {
-    const wrap = document.getElementById("mantSuscWrap");
-    if (wrap) wrap.hidden = mantVista === "sin_susc";
-    if (mantVista === "sin_susc") return;
+/* Una sola lista mensual: suscripciones de Mercado Pago y clientes cargados a mano. */
+function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
     const clientePorMant = _clientePorSuscripcion();
 
-    let list = mantVista === "todas" ? filas : filas.filter(f => f.clave === mantVista);
-    if (term) list = list.filter(f => {
+    let suscripciones = mantVista === "todas" ? filas : filas.filter(f => f.clave === mantVista);
+    if (term) suscripciones = suscripciones.filter(f => {
         const d = f.m || f.aviso;
         const c = f.m ? clientePorMant.get(f.m.id) : null;
-        return [d.nombre, d.email, d.whatsapp, c?.nombre, c?.proyecto].some(v => String(v || "").toLowerCase().includes(term));
+        return [d.nombre, d.email, d.whatsapp, d.dominio, c?.nombre, c?.proyecto,
+            _telefonoMantenimiento(c, f.m), _dominioMantenimiento(c, f.m)]
+            .some(v => String(v || "").toLowerCase().includes(term));
     });
-    // Más reciente primero: por alta y, en Bajas, por la fecha de la baja.
-    const fechaOrden = f => (mantVista === "baja"
-        ? (mantToDate(f.aviso?.fechaBaja) || mantToDate(f.aviso?.createdAt))
-        : f.alta)?.getTime() || 0;
-    list = [...list].sort((a, b) => fechaOrden(b) - fechaOrden(a));
+    const clientes = sinSusc.filter(c => (mantVista === "todas" || _claveMantCliente(c) === mantVista)
+        && (!term || _clienteCoincide(c, term)));
+    const list = [
+        ...suscripciones.map(fila => ({ fila, fecha: (mantVista === "baja"
+            ? (mantToDate(fila.aviso?.fechaBaja) || mantToDate(fila.aviso?.createdAt))
+            : fila.alta)?.getTime() || 0 })),
+        ...clientes.map(cliente => ({ cliente, fecha: (suscripcionDe(cliente).desde
+            || mantToDate(cliente.entregadoAt) || mantToDate(cliente.createdAt))?.getTime() || 0 }))
+    ].sort((a, b) => b.fecha - a.fecha);
 
     if (list.length === 0) {
-        const vacio = { todas: "suscriptores", activo: "suscriptores activos", pausado: "suscripciones pausadas", baja: "bajas" }[mantVista] || "suscriptores";
-        tbody.innerHTML = `<tr class="empty-row"><td colspan="8">No hay ${vacio}${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
+        const vacio = { todas: "mantenimientos", activo: "mantenimientos activos", pausado: "suscripciones pausadas", baja: "bajas", sin_susc: "clientes sin suscripción" }[mantVista];
+        tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No hay ${vacio}${term ? " para esa búsqueda" : " todavía"}.</td></tr>`;
         return;
     }
 
-    tbody.innerHTML = list.map(fila => {
+    tbody.innerHTML = list.map(item => {
+        if (item.cliente) return _mantFilaClienteHTML(item.cliente);
+        const fila = item.fila;
         if (!fila.m) return _mantFilaAvisoHTML(fila);
         const m = fila.m;
         const cliente = clientePorMant.get(m.id) || null;
@@ -6118,9 +6153,7 @@ function _renderMantSuscripciones(tbody, filas, term) {
         const clienteLink = cliente
             ? `<button type="button" class="mant-cliente-link" data-mant-cliente="${escapeHtml(cliente.id)}" title="Abrir el cliente">${escapeHtml(cliente.nombre || "Cliente")}${proyectoCliente && proyectoCliente.toLowerCase() !== String(cliente.nombre || "").trim().toLowerCase() ? ` · ${escapeHtml(proyectoCliente)}` : ""} · ${webEntregada(cliente) ? "web entregada" : "web en desarrollo"}</button>`
             : "";
-        const alta = m.createdAt?.toDate
-            ? m.createdAt.toDate().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" })
-            : "—";
+        const alta = mantToDate(m.createdAt);
         const planLabel = m.planLabel || MANT_PLAN_LABELS[m.plan] || m.plan || "—";
         const monto = Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0);
         const estado = _mantEstadoHTML(fila);
@@ -6129,12 +6162,7 @@ function _renderMantSuscripciones(tbody, filas, term) {
             : m.origen === "completados"
                 ? `<span class="muted" style="font-size:11px">desde Completados</span>`
                 : `<span class="muted" style="font-size:11px">carga manual</span>`;
-        const wa = m.whatsapp
-            ? `<a href="${escapeHtml(mantWaLink(m.whatsapp))}" target="_blank" style="color:#60A5FA">${escapeHtml(m.whatsapp)}</a>`
-            : `<span class="muted">—</span>`;
-        const dominio = m.dominio
-            ? `<a href="${escapeHtml(mantDomainLink(m.dominio))}" target="_blank" rel="noopener noreferrer" style="color:#60A5FA">${escapeHtml(m.dominio)}</a>`
-            : `<span class="muted">—</span>`;
+        const contacto = _mantContactoHTML(cliente, m);
         const period = mantCurrentPeriod(m);
         const pidio = mantUsedCurrentPeriod(m, period);
         const proximoReinicio = mantLongDate(period.next);
@@ -6143,19 +6171,19 @@ function _renderMantSuscripciones(tbody, filas, term) {
         const diasRestantes = Math.max(0, Math.ceil((period.next - new Date()) / 86400000));
 
         return `
-            <tr class="client-row">
-                <td>${escapeHtml(alta)}</td>
+            <tr class="mant-row">
                 <td>
                     <div style="font-weight:600">${escapeHtml(m.nombre || "—")}</div>
                     <div class="muted" style="font-size:12px">${escapeHtml(m.email || "")}</div>
+                    ${alta ? `<div class="muted" style="font-size:11px">Alta ${mantLongDate(alta)}</div>` : ""}
                     ${clienteLink}
                 </td>
                 <td>
                     <div>${escapeHtml(planLabel)}</div>
                     <div class="muted" style="font-size:12px">${fmtMoney(monto)}/mes · ${origen}</div>
                 </td>
-                <td class="col-telefono">${wa}</td>
-                <td>${dominio}</td>
+                <td class="col-telefono">${contacto.telefono}</td>
+                <td>${contacto.dominio}</td>
                 <td class="center">${estado}</td>
                 <td class="center">
                     ${fila.clave === "baja" ? `<span class="muted">—</span>` : `
@@ -6166,12 +6194,29 @@ function _renderMantSuscripciones(tbody, filas, term) {
                     <div class="muted" style="font-size:11px;white-space:nowrap">ciclo de ${diasCiclo} días · se renueva ${diasRestantes === 0 ? "hoy" : `en ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`}</div>`}
                 </td>
                 <td class="actions-col">
+                    <button class="icon-btn" data-mant-facturar="${escapeHtml(m.id)}" title="Facturar la mensualidad">🧾</button>
                     <button class="btn-ghost" data-mant-edit="${m.id}" style="font-size:13px">✎ Editar</button>
-                    <button class="icon-btn delete" data-mant-del="${m.id}" title="Eliminar">🗑</button>
+                    <button class="icon-btn mant-delete" data-mant-del="${m.id}" title="Eliminar">🗑</button>
                 </td>
             </tr>`;
     }).join("");
 
+    _bindTableListeners(tbody);
+    tbody.querySelectorAll("[data-mant-facturar]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const m = mantenimiento.find(x => x.id === btn.dataset.mantFacturar);
+            if (!m) return;
+            const cliente = clientePorMant.get(m.id);
+            abrirFacturaModal({
+                ...cliente,
+                id: cliente?.id || `mantenimiento:${m.id}`,
+                nombre: cliente?.nombre || m.nombre || m.email || "Suscriptor",
+                proyecto: cliente?.proyecto || "",
+                modalidad: "mensual",
+                montoMensual: Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0)
+            }, { adhoc: true });
+        });
+    });
     tbody.querySelectorAll("[data-mant-check]").forEach(chk => {
         chk.addEventListener("change", () => toggleCambiosPeriodo(chk.dataset.mantCheck, chk.checked));
     });
