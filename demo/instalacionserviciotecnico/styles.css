@@ -271,6 +271,18 @@ section.on-bg-alt {
 .btn-outline:hover {
   border-color: var(--color-text);
 }
+.hero-inmersivo .btn-outline,
+.hero-fondo .btn-outline {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.8);
+  background: rgba(10, 20, 36, 0.2);
+}
+.hero-inmersivo .btn-outline:hover,
+.hero-fondo .btn-outline:hover {
+  color: #fff;
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+}
 section.on-ink .btn-outline {
   color: #fff;
   border-color: var(--color-ink-line);
@@ -448,7 +460,7 @@ body.no-scroll .gw-modelos {
   gap: var(--sp-4);
   padding: 0.55rem 0.7rem 0.55rem 1.3rem;
   border-radius: 999px;
-  background: rgba(10, 20, 36, 0.55);
+  background: var(--color-ink);
   border: 1px solid rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1388,8 +1400,12 @@ body.no-scroll .floats {
 }
 .contacto .container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sp-6);
+}
+.contacto-info,
+.contacto-form {
+  min-width: 0;
 }
 .contacto-info h2 {
   color: #fff;
@@ -1403,6 +1419,8 @@ body.no-scroll .floats {
   display: flex;
   align-items: center;
   gap: 0.6em;
+  min-width: 0;
+  overflow-wrap: anywhere;
   text-decoration: none;
   color: #fff;
   padding-block: 0.5em;
@@ -1414,6 +1432,10 @@ body.no-scroll .floats {
   stroke-width: 1.8;
   color: var(--color-secondary);
   flex-shrink: 0;
+}
+.contacto-info a.contacto-link span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .contacto-stat {
   margin-top: var(--sp-5);
@@ -1492,7 +1514,7 @@ body.no-scroll .floats {
 }
 @media (max-width: 860px) {
   .contacto .container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -1682,6 +1704,20 @@ body.no-scroll .floats {
 .wsp-float {
   background: #25d366;
   color: #fff;
+}
+@media (max-width: 560px) {
+  .floats {
+    right: 12px;
+    bottom: 12px;
+  }
+  .float-btn {
+    width: 48px;
+    height: 48px;
+  }
+  .float-btn svg {
+    width: 24px;
+    height: 24px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .float-btn {
