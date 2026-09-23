@@ -211,12 +211,13 @@ async function sincronizarPresentados() {
         wabotPresentados = data.items || [];
         // Repinta solo si cambió algo que el botón muestra: renderSeg rehace la
         // tabla y se llevaría puesta una nota que Pablo esté escribiendo.
-        const firma = JSON.stringify(wabotPresentados.map(it => [it.clave, it.cliente_id, it.canal, it.template_72h_ts]));
+        const firma = JSON.stringify(wabotPresentados.map(it => [it.clave, it.cliente_id, it.canal, it.template_72h_ts, it.favorito, it.template_interesado_ts]));
         if (firma !== wabotPresentadosFirma) {
             wabotPresentadosFirma = firma;
             if (activeTab === "seguimientos") renderSeg();
         }
         for (const item of (data.items || [])) {
+            if (!item.presentado_ts) continue;
             if (!item.cliente_id) continue;
             if (item.archivado) {
                 // Desde el 10-sep-2026 el cliente con la web entregada se queda en
@@ -1625,7 +1626,10 @@ function _updateClientCounters() {
     if (seg1El) seg1El.textContent = nSeg;
     const totalSegEl = document.getElementById("totalSeguimientos");
     if (totalSegEl) totalSegEl.textContent = nSeg + nUM + nSB;
-    const v1 = document.getElementById("segCountV1"); if (v1) v1.textContent = nSeg;
+    const interesados = clients.filter(c => getEstado(c) === "seguimiento1" && _tipoSeguimiento(c) === "interesados").length;
+    const nPresentadas = nSeg - interesados;
+    const ci = document.getElementById("segCountInteresados"); if (ci) ci.textContent = interesados;
+    const cp = document.getElementById("segCountPresentadas"); if (cp) cp.textContent = nPresentadas;
     const um = document.getElementById("segCountUM"); if (um) um.textContent = nUM;
     const sb = document.getElementById("segCountSB"); if (sb) sb.textContent = nSB;
 
@@ -1735,6 +1739,9 @@ function _bindTableListeners(tbodyEl) {
     });
     tbodyEl.querySelectorAll("[data-template72-id]").forEach(btn => {
         btn.addEventListener("click", () => enviarTemplate72h(btn.dataset.template72Id, btn));
+    });
+    tbodyEl.querySelectorAll("[data-template-interesado-id]").forEach(btn => {
+        btn.addEventListener("click", () => enviarTemplateInteresado(btn.dataset.templateInteresadoId, btn));
     });
     tbodyEl.querySelectorAll("[data-chat-tel]").forEach(btn => {
         btn.addEventListener("click", () => abrirChatModal(btn.dataset.chatTel, btn.dataset.chatTitulo));
@@ -1905,8 +1912,13 @@ function presentadoDeCliente(c) {
     return porTel.length === 1 ? porTel[0] : null;
 }
 
+function _tipoSeguimiento(c) {
+    return presentadoDeCliente(c)?.favorito ? "interesados" : "presentadas";
+}
+
 // Envíos hechos desde esta pestaña: la fila los muestra sin esperar la próxima sincronización.
 const template72hEnviados = {};
+const templateInteresadoEnviados = {};
 
 function fechaTemplate72h(ts) {
     return new Date(ts * 1000).toLocaleString("es-AR", {
@@ -1918,6 +1930,7 @@ function fechaTemplate72h(ts) {
 function _botonTemplate72h(c) {
     const it = presentadoDeCliente(c);
     if (!it && cleanArgPhone(c.telefono).length < 8) return "";
+    if (it && !it.presentado_ts) return "";
     const enviadoTs = template72hEnviados[c.id] || it?.template_72h_ts || 0;
     if (enviadoTs) {
         return `<button class="icon-btn btn-template72 enviado" disabled title="Template de 72 h enviado el ${escapeHtml(fechaTemplate72h(enviadoTs))}">✓ 72h</button>`;
@@ -1926,6 +1939,15 @@ function _botonTemplate72h(c) {
         return `<button class="icon-btn btn-template72" disabled title="Su chat es de Instagram: el template de 72 h sale solo por WhatsApp">72h</button>`;
     }
     return `<button class="icon-btn btn-template72" data-template72-id="${c.id}" title="Mandarle por el bot el template de seguimiento de 72 h">72h</button>`;
+}
+
+function _botonTemplateInteresado(c) {
+    const it = presentadoDeCliente(c);
+    if (!it?.favorito) return "";
+    const enviadoTs = templateInteresadoEnviados[c.id] || it.template_interesado_ts || 0;
+    if (enviadoTs) return `<button class="icon-btn btn-template-interesado enviado" disabled title="Plantilla enviada el ${escapeHtml(fechaTemplate72h(enviadoTs))}">✓ Interesado</button>`;
+    if (it.canal === "instagram") return `<button class="icon-btn btn-template-interesado" disabled title="Las plantillas de Meta solo salen por WhatsApp">Interesado</button>`;
+    return `<button class="icon-btn btn-template-interesado" data-template-interesado-id="${c.id}" title="Enviar la plantilla de Marketing seguimiento_interesado">Interesado</button>`;
 }
 
 /* "Ver chat" como en Bocetos: el chat del bot en el modal, sin salir de la
@@ -1985,6 +2007,40 @@ async function enviarTemplate72h(id, btn) {
     }
 }
 
+async function enviarTemplateInteresado(id, btn) {
+    const c = clients.find(x => x.id === id);
+    const it = c && presentadoDeCliente(c);
+    if (!c || !it?.favorito) return;
+    const nombre = c.nombre || c.proyecto || "este cliente";
+    if (!confirm(`¿Mandarle a ${nombre} la plantilla seguimiento_interesado por WhatsApp?`)) return;
+    btn.disabled = true;
+    btn.textContent = "…";
+    try {
+        await wabotAuthHandshake();
+        const res = await fetch("../wabot/admin.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ accion: "seguimiento_template_interesado", tel: it.clave }),
+            credentials: "same-origin"
+        });
+        const data = await res.json();
+        if (data.ok || data.resultado === "ya") templateInteresadoEnviados[c.id] = data.enviado_ts || Math.floor(Date.now() / 1000);
+        if (!data.ok) {
+            const motivos = {
+                ya: "Esta plantilla ya fue enviada en este chat.",
+                no_interesado: "El chat ya no está marcado como favorito.",
+                canal: "Esta plantilla solo sale por WhatsApp.",
+                sin_chat: "No se encontró el chat de este cliente.",
+                error: "Meta rechazó la plantilla o no está activa en Ajustes del bot."
+            };
+            alert(motivos[data.resultado] || motivos.error);
+        }
+    } catch (e) {
+        alert("No se pudo contactar al panel del bot: " + e.message);
+    }
+    renderSeg();
+}
+
 function _segRow(c) {
     const estado = getEstado(c);
     const plan = planDe(c, propuestaDeCliente(c));
@@ -1993,7 +2049,7 @@ function _segRow(c) {
         : '';
     return `
         <tr class="client-row" data-row-id="${c.id}">
-            <td>${escapeHtml(c.nombre)}</td>
+            <td>${escapeHtml(c.nombre)}<span class="seg-tipo ${_tipoSeguimiento(c)}">${_tipoSeguimiento(c) === "interesados" ? "Interesado" : "Demo presentada"}</span></td>
             <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
             <td class="col-telefono">${phoneDisplay}${_botonVerChat(c)}</td>
             <td>
@@ -2022,6 +2078,7 @@ function _segRow(c) {
             </td>
             <td class="actions-col">
                 ${_botonTemplate72h(c)}
+                ${_botonTemplateInteresado(c)}
                 ${estado === 'ultimo-mensaje'
                     ? `<button class="icon-btn btn-volver-seg" data-back-id="${c.id}" title="Volver a Seguimiento">↩</button>`
                     : `<button class="icon-btn btn-ultimo-msj" data-um-id="${c.id}" title="Pasar a Último mensaje">✉</button>`}
@@ -2218,8 +2275,8 @@ function render() {
     _bindTableListeners(tbody);
 }
 
-// --- Viñetas de Seguimientos (En seguimiento / Último mensaje / Stand by) ---
-let segView = "seguimiento1";
+// --- Viñetas de Seguimientos ---
+let segView = "interesados";
 document.querySelectorAll("#segViews .seg-chip").forEach(b => {
     b.addEventListener("click", () => {
         document.querySelectorAll("#segViews .seg-chip").forEach(x => x.classList.remove("active"));
@@ -2234,7 +2291,10 @@ function renderSeg() {
     if (!segTbody) return;
     const term = (document.getElementById("searchSegInput")?.value || "").trim().toLowerCase();
     const termPhone = cleanArgPhone(term);
-    let list = clients.filter(c => getEstado(c) === segView);
+    let list = clients.filter(c =>
+        segView === "interesados" || segView === "presentadas"
+            ? getEstado(c) === "seguimiento1" && _tipoSeguimiento(c) === segView
+            : getEstado(c) === segView);
     if (term) list = list.filter(c =>
         (c.nombre || "").toLowerCase().includes(term) ||
         (c.proyecto || "").toLowerCase().includes(term) ||
@@ -2247,7 +2307,7 @@ function renderSeg() {
         return da ? -1 : db2 ? 1 : 0;
     });
 
-    const emptyLabels = { "seguimiento1": "seguimientos", "ultimo-mensaje": "clientes en Último mensaje", "standby": "clientes en Stand by" };
+    const emptyLabels = { "interesados": "interesados", "presentadas": "demos presentadas", "ultimo-mensaje": "clientes en Último mensaje", "standby": "clientes en Stand by" };
     segTbody.innerHTML = list.length
         ? list.map(_segRow).join("")
         : `<tr class="empty-row"><td colspan="8">No hay ${emptyLabels[segView] || "seguimientos"}${term ? " para esa búsqueda" : ""}.</td></tr>`;

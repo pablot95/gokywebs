@@ -188,7 +188,10 @@ function wabot_config_load() {
     $guardado = $raw ? json_decode($raw, true) : null;
     if (is_array($guardado)) {
         foreach (wabot_ajustes_claves() as $k) {
-            if (array_key_exists($k, $guardado)) $cfg[$k] = $guardado[$k];
+            if (array_key_exists($k, $guardado)) {
+                $cfg[$k] = $k === 'plantillas' && is_array($guardado[$k])
+                    ? array_replace($cfg[$k], $guardado[$k]) : $guardado[$k];
+            }
         }
     }
     if (trim((string)($cfg['gemini_modelo'] ?? '')) === '') $cfg['gemini_modelo'] = wabot_gemini_modelo_default();
@@ -675,6 +678,15 @@ function wabot_slug_demo($texto) {
     ];
     $v = mb_strtolower(strtr((string)$texto, $tabla), 'UTF-8');
     return preg_replace('/[^a-z0-9]/', '', $v);
+}
+
+/** Link de la demo para una conversación que ya completó el formulario. */
+function wabot_demo_url($conv) {
+    if ((int)($conv['form_completado_ts'] ?? 0) <= 0) return '';
+    $nombre = trim((string)($conv['presentado_slug'] ?? ''));
+    if ($nombre === '') $nombre = (string)($conv['nombre_negocio'] ?? '');
+    $slug = wabot_slug_demo($nombre);
+    return $slug !== '' ? 'https://gokywebs.com/demo/' . $slug . '/' : '';
 }
 
 /** Detecta únicamente presentaciones explícitas del nombre del negocio. */
@@ -2695,6 +2707,7 @@ function wabot_lista_items() {
             // Le contestaste por fuera del sistema: no está ni en SL ni en RTA.
             'contestado' => wabot_conv_contestada($cv),
             'favorito' => !empty($cv['favorito']),
+            'demo_url' => wabot_demo_url($cv),
         ];
     }
     usort($items, function ($a, $b) { return (int)$b['ts'] <=> (int)$a['ts']; });
@@ -4507,6 +4520,18 @@ function wabot_template_72h_enviar(&$conv, $cfg) {
     wabot_conv_tomar_control($conv);
     $conv['confirmacion_demo_enviada'] = true;
     $conv['confirmacion_demo_ts'] = time();
+    return 'ok';
+}
+
+/** Envío manual de la plantilla de marketing para chats marcados con estrella. */
+function wabot_template_interesado_enviar(&$conv, $cfg) {
+    if (wabot_canal($conv) === 'instagram') return 'canal';
+    if (empty($conv['favorito'])) return 'no_interesado';
+    if (!empty($conv['seguimiento_interesado_enviado'])) return 'ya';
+    if (!wabot_enviar_plantilla($conv, 'seguimiento_interesado', $cfg)) return 'error';
+    wabot_conv_tomar_control($conv);
+    $conv['seguimiento_interesado_enviado'] = true;
+    $conv['seguimiento_interesado_ts'] = time();
     return 'ok';
 }
 

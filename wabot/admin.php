@@ -361,7 +361,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if (isset($_POST['seguimiento_hora_desde'])) $cfg['seguimiento_hora_desde'] = max(0, min(23, (int)$_POST['seguimiento_hora_desde']));
         if (isset($_POST['seguimiento_hora_hasta'])) $cfg['seguimiento_hora_hasta'] = max(0, min(24, (int)$_POST['seguimiento_hora_hasta']));
 
-        foreach (['confirmacion_demo_48h'] as $clavePlant) {
+        foreach (['confirmacion_demo_48h', 'seguimiento_interesado'] as $clavePlant) {
             if (!isset($cfg['plantillas'][$clavePlant]) || !is_array($cfg['plantillas'][$clavePlant])) $cfg['plantillas'][$clavePlant] = [];
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
@@ -402,6 +402,29 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'resultado'  => $resultado,
             'clave'      => $clave,
             'enviado_ts' => (int)($conv['confirmacion_demo_ts'] ?? 0),
+        ]);
+        exit;
+    }
+    if ($a === 'enviar_template_interesado' && !empty($_POST['tel'])) {
+        $tel = (string)$_POST['tel'];
+        $conv = wabot_conv_load($tel);
+        $resultado = wabot_template_interesado_enviar($conv, $cfg);
+        if ($resultado === 'ok') wabot_conv_save($conv);
+        header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&template_interesado_' . $resultado . '=1'); exit;
+    }
+    if ($a === 'seguimiento_template_interesado' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $clave = wabot_conv_resolver((string)$_POST['tel'], $motivo);
+        if ($clave === null) {
+            echo json_encode(['ok' => false, 'resultado' => $motivo === 'ambiguo' ? 'ambiguo' : 'sin_chat']);
+            exit;
+        }
+        $conv = wabot_conv_load($clave);
+        $resultado = wabot_template_interesado_enviar($conv, $cfg);
+        if ($resultado === 'ok') wabot_conv_save($conv);
+        echo json_encode([
+            'ok' => $resultado === 'ok', 'resultado' => $resultado, 'clave' => $clave,
+            'enviado_ts' => (int)($conv['seguimiento_interesado_ts'] ?? 0),
         ]);
         exit;
     }
@@ -790,7 +813,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $clave = basename($f, '.json');
             if (stripos($clave, 'TEST') !== false) continue;
             $cv = wabot_conv_load($clave);
-            if (empty($cv['presentado_ts'])) continue;
+            if (empty($cv['presentado_ts']) && empty($cv['favorito'])) continue;
             $items[] = [
                 'cliente_id'           => (string)($cv['cliente_id'] ?? ''),
                 'tel'                  => $cv['tel'],
@@ -801,6 +824,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
                 'recordatorio_enviado' => !empty($cv['presentado_recordatorio_enviado']),
                 'archivado'            => !empty($cv['archivado']),
                 'template_72h_ts'      => !empty($cv['confirmacion_demo_enviada']) ? max(1, (int)($cv['confirmacion_demo_ts'] ?? 0)) : 0,
+                'favorito'             => !empty($cv['favorito']),
+                'template_interesado_ts' => !empty($cv['seguimiento_interesado_enviado']) ? max(1, (int)($cv['seguimiento_interesado_ts'] ?? 0)) : 0,
             ];
         }
         echo json_encode(['items' => $items], JSON_UNESCAPED_UNICODE);
@@ -987,6 +1012,8 @@ body:not(.conv-full) .live-board { height:calc(100vh - 170px); }
 .live-sub { display:flex; flex-wrap:wrap; gap:5px; align-items:center; font-size:11.5px; color:var(--dim); }
 .live-abrir { margin-left:auto; font-size:11.5px; color:var(--dim); }
 .live-abrir:hover { color:var(--tx); }
+.live-demo { color:#93c5fd; font-weight:700; text-decoration:none; }
+.live-demo:hover { color:#fff; text-decoration:underline; }
 .live-form { background:transparent; border:1px solid transparent; color:var(--dim); font:inherit; font-size:11.5px; padding:1px 6px; border-radius:6px; cursor:pointer; }
 .live-form:hover, .live-form:focus-visible { color:var(--ac); border-color:var(--ac); }
 .live-form:disabled { opacity:.5; cursor:default; }
@@ -1319,6 +1346,8 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
   .rr-admin-cat-cab .rr-admin-borrar { grid-column:1 / -1; justify-self:end; }
 }
 .conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
+.conv-demo-link { display:inline-flex; align-items:center; margin-top:7px; padding:5px 10px; border:1px solid #315aa0; border-radius:7px; color:#bfdbfe; font-size:12px; font-weight:700; text-decoration:none; }
+.conv-demo-link:hover { background:#19365f; color:#fff; }
 .conv-head form { display:inline; }
 .conv-acciones { gap:6px; flex-shrink:0; }
 .conv-acciones button { padding:5px 10px; font-size:12px; font-weight:500; border-radius:6px; }
@@ -1496,6 +1525,11 @@ body.embed { min-height: 0; }
     <?php if (isset($_GET['template_72_sin_demo'])) echo '<p class="ok" style="color:var(--bad)">Primero tenés que presentar la demo.</p>'; ?>
     <?php if (isset($_GET['template_72_canal'])) echo '<p class="ok" style="color:var(--bad)">Este template es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_72_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó el template o no está activo en Ajustes.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_ok'])) echo '<p class="ok">Plantilla de seguimiento para interesado enviada.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_ya'])) echo '<p class="ok" style="color:var(--warn)">La plantilla para interesado ya se envió en este chat.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_no_interesado'])) echo '<p class="ok" style="color:var(--warn)">Marcá el chat como favorito antes de enviar esta plantilla.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó la plantilla o no está activa en Ajustes.</p>'; ?>
 
     <?php if ($tab === 'estado'): ?>
         <div class="card">
@@ -1772,9 +1806,10 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
-            <p class="meta" style="margin-top:0">Las plantillas permiten escribir con la ventana de 24 h cerrada y deben estar aprobadas por Meta. El seguimiento de 72 h ya no se envía automáticamente: se manda únicamente desde el botón del chat.</p>
+            <p class="meta" style="margin-top:0">Las plantillas permiten escribir con la ventana de 24 h cerrada y deben estar aprobadas por Meta. Ambas se envían manualmente desde el chat o Seguimientos.</p>
             <?php $plantillasLabels = [
                 'confirmacion_demo_48h' => 'Template manual de seguimiento de 72 h',
+                'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
                 <div class="fila" style="margin-top:14px;gap:14px;align-items:flex-end;flex-wrap:wrap">
@@ -1783,6 +1818,7 @@ body.embed { min-height: 0; }
                         <input type="text" name="plantilla_<?= $e($clavePlant) ?>_nombre" placeholder="nombre_exacto_de_la_plantilla" value="<?= $e((string)($p['nombre'] ?? '')) ?>" style="width:100%">
                     </div>
                     <div><label>Idioma</label><input type="text" name="plantilla_<?= $e($clavePlant) ?>_idioma" value="<?= $e((string)($p['idioma'] ?? 'es_AR')) ?>" style="width:90px"></div>
+                    <?php if ($clavePlant === 'seguimiento_interesado'): ?><span class="meta" style="margin-bottom:8px">Categoría en Meta: Marketing</span><?php endif; ?>
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_activa" <?= !empty($p['activa']) ? 'checked' : '' ?>>
                         Activa
@@ -1873,6 +1909,7 @@ body.embed { min-height: 0; }
                         <strong><?= $e(wabot_nombre_agenda($conv)) ?: 'Sin nombre' ?></strong>
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
+                        <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
                         <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                         <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
                               $fichaResumen = function_exists('wabot_ficha_resumen') ? wabot_ficha_resumen($conv, $cfg) : '';
@@ -1890,6 +1927,15 @@ body.embed { min-height: 0; }
                         <form method="post" onsubmit="return confirm('Enviar ahora el template de seguimiento de 72 h?')">
                             <input type="hidden" name="accion" value="enviar_template_72h"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec"<?= ($template72Enviado || !$template72Activo) ? ' disabled' : '' ?> title="<?= $e($template72Enviado ? 'Ya fue enviado en esta conversación.' : (!$template72Activo ? 'Activá y configurá el template en Ajustes.' : 'Envía manualmente la plantilla aprobada por Meta.')) ?>"><?= $template72Enviado ? '✓ Template 72 h enviado' : 'Enviar template 72 h' ?></button>
+                        </form>
+                        <?php endif; ?>
+                        <?php if (wabot_canal($conv) !== 'instagram' && !empty($conv['favorito'])):
+                            $templateInteresadoEnviado = !empty($conv['seguimiento_interesado_enviado']);
+                            $templateInteresadoActivo = wabot_plantilla_config('seguimiento_interesado', $cfg) !== null;
+                        ?>
+                        <form method="post" onsubmit="return confirm('Enviar ahora la plantilla seguimiento_interesado?')">
+                            <input type="hidden" name="accion" value="enviar_template_interesado"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
+                            <button class="sec"<?= ($templateInteresadoEnviado || !$templateInteresadoActivo) ? ' disabled' : '' ?> title="<?= $e($templateInteresadoEnviado ? 'Ya fue enviada en este chat.' : (!$templateInteresadoActivo ? 'Activá y configurá la plantilla en Ajustes.' : 'Envía la plantilla de Marketing aprobada por Meta.')) ?>"><?= $templateInteresadoEnviado ? '✓ Seguimiento interesado enviado' : 'Enviar seguimiento interesado' ?></button>
                         </form>
                         <?php endif; ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_toggle"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -3450,6 +3496,15 @@ body.embed { min-height: 0; }
                 a.href = 'admin.php?tab=conversaciones&ver=' + encodeURIComponent(it.tel);
                 a.textContent = 'Abrir ↗';
                 sub.appendChild(a);
+                if (it.demo_url) {
+                    const demo = document.createElement('a');
+                    demo.className = 'live-demo';
+                    demo.href = it.demo_url;
+                    demo.target = '_blank';
+                    demo.rel = 'noopener noreferrer';
+                    demo.textContent = 'Ver demo ↗';
+                    sub.appendChild(demo);
+                }
                 /* El formulario CON el código de esta charla: así lo que el
                  * cliente complete cae en esta conversación aunque el link lo
                  * mande Pablo a mano. Desde Instagram es la única forma. */

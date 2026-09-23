@@ -2375,6 +2375,9 @@ body.modal-open { overflow: hidden; }
 .seg-chip.active { background: #1d4ed8; border-color: #1d4ed8; color: #fff; }
 .seg-chip-count { background: #1e2c49; border-radius: 100px; padding: 1px 8px; font-size: .75rem; font-weight: 700; }
 .seg-chip.active .seg-chip-count { background: rgba(255,255,255,.18); }
+.seg-tipo { display:block; width:max-content; max-width:100%; margin-top:5px; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:700; line-height:1.3; }
+.seg-tipo.interesados { background:rgba(250,204,21,.14); color:#fde68a; }
+.seg-tipo.presentadas { background:rgba(96,165,250,.14); color:#bfdbfe; }
 
 /* Chips de fecha en Bocetos: se recalculan solas con las fechas que haya en los
    datos, y se pueden marcar varias a la vez (filtro OR). Mismo lenguaje visual
@@ -2396,6 +2399,10 @@ body.modal-open { overflow: hidden; }
 .icon-btn.btn-template72:hover:not(:disabled) { background: #15803d; color: #fff; }
 .icon-btn.btn-template72:disabled { cursor: default; opacity: .45; }
 .icon-btn.btn-template72.enviado { opacity: 1; background: transparent; border-color: rgba(74, 222, 128, .35); color: #4ade80; }
+.icon-btn.btn-template-interesado { width:auto; padding:0 8px; font-size:11px; font-weight:700; background:#664211; border-color:#a16207; color:#fde68a; }
+.icon-btn.btn-template-interesado:hover:not(:disabled) { background:#92400e; color:#fff; }
+.icon-btn.btn-template-interesado:disabled { opacity:.45; cursor:default; }
+.icon-btn.btn-template-interesado.enviado { opacity:1; background:transparent; border-color:rgba(250,204,21,.4); }
 
 /* Último número copiado: recuadro sutil para retomar donde quedaste */
 .phone-copy.last-copied { outline: 1.5px solid #60a5fa; outline-offset: 3px; border-radius: 6px; background: rgba(96,165,250,.08); }

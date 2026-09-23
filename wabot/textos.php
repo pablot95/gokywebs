@@ -302,6 +302,12 @@ function wabot_textos_default() {
             'idioma' => 'es_AR',
             'activa' => true,
         ],
+        'seguimiento_interesado' => [
+            'nombre' => 'seguimiento_interesado',
+            'idioma' => 'es_AR',
+            'categoria' => 'MARKETING',
+            'activa' => true,
+        ],
     ],
     'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. El plan, anual o mensual, funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",
     'postdemo_apertura' => 'Contame qué te pareció, y si hay algo que quieras cambiar lo ajustamos.',
