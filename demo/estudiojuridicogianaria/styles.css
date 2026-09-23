@@ -359,6 +359,43 @@ body.m2 #estudio .margen__col {
 .area__detalle { color: var(--color-text-muted); font-size: .97rem; }
 .area__cta { justify-self: end; }
 
+.asesoramiento {
+  background: var(--color-ink);
+  color: #E9EDF5;
+  padding-block: clamp(48px, 7vw, 88px);
+}
+.asesoramiento .folio { color: #A9C4FF; }
+.asesoramiento .margen__col::after { background: rgba(255, 255, 255, .2); }
+.asesoramiento__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .7fr);
+  align-items: center;
+  gap: clamp(28px, 5vw, 72px);
+}
+.asesoramiento h2 { color: #fff; max-width: 18ch; }
+.asesoramiento .bajada { color: #C5CDDB; margin-top: 1.2rem; max-width: 50ch; }
+.asesoramiento__contacto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid rgba(255, 255, 255, .22);
+  background: rgba(255, 255, 255, .045);
+}
+.asesoramiento__contacto p { color: #D5DCE7; }
+.asesoramiento__disponibilidad {
+  color: #A9C4FF !important;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.asesoramiento__enlace { color: #fff; font-size: .9rem; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+@media (max-width: 900px) {
+  .asesoramiento__grid { grid-template-columns: minmax(0, 1fr); }
+}
+
 .areas__cierre {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .78fr);
   gap: clamp(24px, 4vw, 56px); align-items: end;

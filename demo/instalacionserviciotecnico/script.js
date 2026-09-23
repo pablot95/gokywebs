@@ -14,7 +14,6 @@ const esc = (s) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
-const clamp01 = (n) => Math.max(0, Math.min(1, n));
 const wspLink = (msg) =>
   `https://wa.me/${NUMERO_WSP}?text=${encodeURIComponent(msg)}`;
 
@@ -420,7 +419,7 @@ function pintarMomento(root) {
   if (marcas) {
     marcas.innerHTML = MOMENTO.map(
       (_, i) =>
-        `<button type="button" class="momento-marca${i === 0 ? " is-on" : ""}" aria-label="Ir al paso ${i + 1}"></button>`,
+        `<button type="button" class="momento-marca${i === 0 ? " is-on" : ""}" aria-label="Ir al paso ${i + 1}" aria-pressed="${i === 0}">Paso ${i + 1}</button>`,
     ).join("");
   }
 }
@@ -429,66 +428,37 @@ function initMomento(rootId) {
   const root = document.getElementById(rootId);
   if (!root) return;
   pintarMomento(root);
-  const wrap = root.querySelector(".momento-wrap");
-  const escena = root.querySelector(".momento-escena");
   const fotos = [...root.querySelectorAll(".momento-foto")];
   const textos = [...root.querySelectorAll(".momento-texto")];
   const marcas = [...root.querySelectorAll(".momento-marca")];
   const chip = root.querySelector("[data-momento-chip]");
-  if (!wrap || !escena || !textos.length) return;
+  if (!textos.length) return;
   const N = Math.min(textos.length, 4);
 
   let activo = 0;
   const activar = (i) => {
     if (i === activo && fotos[i]?.classList.contains("is-on")) return;
     activo = i;
-    fotos.forEach((f, idx) => f.classList.toggle("is-on", idx === i));
-    textos.forEach((t, idx) => t.classList.toggle("is-on", idx === i));
-    marcas.forEach((m, idx) => m.classList.toggle("is-on", idx === i));
+    fotos.forEach((f, idx) => {
+      f.classList.toggle("is-on", idx === i);
+      f.setAttribute("aria-hidden", String(idx !== i));
+    });
+    textos.forEach((t, idx) => {
+      t.classList.toggle("is-on", idx === i);
+      t.setAttribute("aria-hidden", String(idx !== i));
+    });
+    marcas.forEach((m, idx) => {
+      m.classList.toggle("is-on", idx === i);
+      m.setAttribute("aria-pressed", String(idx === i));
+    });
     if (chip) chip.textContent = `Paso ${i + 1} de ${N}`;
   };
 
-  let ticking = false;
-  const update = () => {
-    ticking = false;
-    const total = wrap.offsetHeight - escena.offsetHeight;
-    const p =
-      total > 0 ? clamp01(-wrap.getBoundingClientRect().top / total) : 0;
-    const i = Math.min(N - 1, Math.floor(p * N * 0.9999));
-    activar(i);
-    if (!reduceMotion) {
-      const local = clamp01(p * N - i);
-      fotos.forEach((f) => {
-        const img = f.querySelector("img");
-        if (img) img.style.transform = `scale(${1.07 - local * 0.07})`;
-      });
-    }
-  };
-  const queue = () => {
-    if (!ticking) {
-      ticking = true;
-      requestAnimationFrame(update);
-    }
-  };
-  window.addEventListener("scroll", queue, { passive: true });
-  window.addEventListener("resize", queue, { passive: true });
-  window.addEventListener("load", queue);
-
   marcas.forEach((m, idx) => {
-    m.addEventListener("click", () => {
-      const total = wrap.offsetHeight - escena.offsetHeight;
-      const destino =
-        wrap.getBoundingClientRect().top +
-        window.scrollY +
-        total * ((idx + 0.5) / N);
-      window.scrollTo({
-        top: destino,
-        behavior: reduceMotion ? "auto" : "smooth",
-      });
-    });
+    m.addEventListener("click", () => activar(idx));
   });
-
-  queue();
+  fotos.forEach((f, idx) => f.setAttribute("aria-hidden", String(idx !== 0)));
+  textos.forEach((t, idx) => t.setAttribute("aria-hidden", String(idx !== 0)));
 }
 
 /* ===================================================================
