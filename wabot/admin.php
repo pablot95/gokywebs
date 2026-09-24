@@ -733,7 +733,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             wabot_conv_save($conv);
         }
         echo json_encode([
-            'transcript' => wabot_transcript_completo($_POST['tel'], $conv),
+            'transcript' => wabot_transcript_citas(wabot_transcript_completo($_POST['tel'], $conv)),
             'fase'       => $conv['fase'],
             'ventana'    => wabot_ventana_restante($conv),
             'pausado'    => ((int)$conv['pausado_hasta'] > time()),
@@ -799,9 +799,11 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $cv = wabot_conv_load($it['tel']);
             $it['ventana'] = wabot_ventana_restante($cv);
             $it['transcript'] = array_map(function ($l) {
-                return ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
-                        'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
-            }, array_slice(array_values((array)($cv['transcript'] ?? [])), -40));
+                $fila = ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
+                         'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
+                if (!empty($l['cita'])) { $fila['cita'] = 1; $fila['cita_q'] = $l['cita_q']; $fila['cita_t'] = $l['cita_t']; }
+                return $fila;
+            }, array_slice(wabot_transcript_citas(array_values((array)($cv['transcript'] ?? []))), -40));
         }
         unset($it);
         echo json_encode(['items' => $items, 'ahora' => time()], JSON_UNESCAPED_UNICODE);
@@ -1162,6 +1164,15 @@ code { background:var(--bg); padding:2px 7px; border-radius:6px; font-size:13px;
 @keyframes latido { 0%,100% { opacity:1 } 50% { opacity:.25 } }
 @media (prefers-reduced-motion: reduce) { .grabando-punto { animation:none } }
 .meta { font-size:11px; color:var(--dim); }
+/* La cita de un mensaje respondido, como en WhatsApp: arriba de la burbuja,
+   con el autor en color y el texto recortado a tres renglones. Tocarla lleva
+   al mensaje citado. */
+.burb-cita { display:block; margin:0 0 6px; padding:5px 9px; border-left:3px solid var(--ac); border-radius:6px;
+    background:rgba(255,255,255,.06); color:var(--dim); font-size:12.5px; line-height:1.35; cursor:pointer;
+    display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }
+.burb-cita b { display:block; color:var(--ac); font-size:11.5px; font-weight:700; }
+.burb-cita.sin-origen { cursor:default; font-style:italic; }
+.burb.resaltada { outline:2px solid var(--ac); outline-offset:2px; transition:outline-color .6s; }
 .meta-editado { color:var(--dim); font-style:italic; }
 /* El lápiz aparece al pasar por encima de la burbuja: en el celular, donde no
    hay hover, queda siempre visible (ver el @media de abajo). */
@@ -1556,6 +1567,39 @@ body.embed { min-height: 0; }
 </head>
 <?php $pantallaCompleta = in_array($tab, ['conversaciones', 'live'], true); ?>
 <body class="<?= $embed ? 'embed ' : '' ?><?= $pantallaCompleta ? 'conv-full' : '' ?>">
+<script>
+/* La cita de un mensaje respondido (Pablo, 24-sep: "no puedo ver una
+ * respuesta a un comentario"). La usan el chat y la vista live, por eso vive
+ * acá arriba y no adentro del script de una pestaña. El server ya la resolvió
+ * (wabot_transcript_citas): cita_q es quién escribió el citado, cita_t qué
+ * decía. Con `chat`, tocarla lleva al mensaje citado y lo resalta. */
+function burbujaCita(t, chat) {
+    const q = document.createElement('div');
+    q.className = 'burb-cita';
+    const autor = document.createElement('b');
+    if (!t.cita_q) {
+        q.classList.add('sin-origen');
+        autor.textContent = 'Respondió a un mensaje anterior';
+        q.appendChild(autor);
+        return q;
+    }
+    autor.textContent = t.cita_q === 'cliente' ? 'Cliente' : (t.cita_q === 'humano' ? 'Vos' : 'Bot');
+    q.appendChild(autor);
+    q.appendChild(document.createTextNode(t.cita_t || '[sin texto]'));
+    if (chat && typeof t.cita === 'string') {
+        q.title = 'Ir al mensaje citado';
+        q.addEventListener('click', ev => {
+            ev.stopPropagation();
+            const destino = Array.from(chat.querySelectorAll('.burb[data-id]')).find(b => b.dataset.id === t.cita);
+            if (!destino) return;
+            destino.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            destino.classList.add('resaltada');
+            setTimeout(() => destino.classList.remove('resaltada'), 1400);
+        });
+    }
+    return q;
+}
+</script>
 <div class="wrap <?= $pantallaCompleta ? 'wrap--wide' : '' ?>">
 
 <?php if (!$logueado): ?>
@@ -2990,6 +3034,8 @@ body.embed { min-height: 0; }
                 const d = document.createElement('div');
                 d.className = 'burb ' + t.q;
                 d.textContent = t.t;
+                if (t.id) d.dataset.id = t.id;
+                if (t.cita) d.prepend(burbujaCita(t, chat));
                 if (t.media && t.media.archivo) {
                     const base = 'admin.php?accion=media&tel=' + encodeURIComponent(TEL) + '&archivo=' + encodeURIComponent(t.media.archivo);
                     const caja = document.createElement('div');
@@ -3397,7 +3443,7 @@ body.embed { min-height: 0; }
             btnGrabar.addEventListener('keyup', ev => { if ((ev.key === ' ' || ev.key === 'Enter') && grab) { ev.preventDefault(); pararGrabacion(true); } });
             btnGrabCancel.onclick = () => pararGrabacion(false);
         }
-        pintar(<?= json_encode(array_values($conv['transcript']), JSON_UNESCAPED_UNICODE) ?>);
+        pintar(<?= json_encode(array_values(wabot_transcript_citas($conv['transcript'])), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();
         setInterval(refrescar, 5000);
@@ -3648,6 +3694,7 @@ body.embed { min-height: 0; }
                     const d = document.createElement('div');
                     d.className = 'burb ' + t.q;
                     d.textContent = t.t;
+                    if (t.cita) d.prepend(burbujaCita(t, null));
                     if (t.media) {
                         const md = document.createElement('span');
                         md.className = 'live-media';

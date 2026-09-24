@@ -5645,4 +5645,46 @@ caso('con negocio, muestra el negocio', wabot_push_quien($pushNombre) === 'Tarot
 caso('sin la cuenta de servicio o sin red, avisar no rompe nada',
     in_array(wabot_push_avisar_si_corresponde($pushCallado), [true, false], true));
 
+echo "— 24-sep: se ve a qué mensaje respondió el cliente —\n";
+
+/* Pablo, 24-sep: "en el bot no puedo ver una respuesta a un comentario". El
+ * cliente citó uno de los dos dominios que le pasó Pablo y escribió "Este": sin
+ * la cita, el chat no dice cuál. */
+$cvCita = conv_nueva('QATESTCITA1');
+wabot_salida_anotar('wamid.PABLO1');
+wabot_conv_transcript($cvCita, 'humano', 'asesoramientosancorsalud.com.ar está disponible');
+wabot_salida_anotar('wamid.PABLO2');
+wabot_conv_transcript($cvCita, 'humano', 'asesoratesancorsalud.com.ar tambien esta disponible');
+wabot_conv_transcript($cvCita, 'cliente', 'Este', null, ['id' => 'wamid.CLI1', 'cita' => 'wamid.PABLO2']);
+$lineasCita = wabot_transcript_citas($cvCita['transcript']);
+$ultCita = end($lineasCita);
+caso('lo que sale guarda el id que devolvió Meta', ($cvCita['transcript'][0]['id'] ?? '') === 'wamid.PABLO1');
+caso('lo que entra guarda su id y el del citado',
+    ($ultCita['id'] ?? '') === 'wamid.CLI1' && ($ultCita['cita'] ?? '') === 'wamid.PABLO2');
+caso('la cita se resuelve al mensaje correcto',
+    ($ultCita['cita_q'] ?? '') === 'humano' && ($ultCita['cita_t'] ?? '') === 'asesoratesancorsalud.com.ar tambien esta disponible');
+
+// Un id que ya se usó no se le pega al renglón siguiente.
+wabot_conv_transcript($cvCita, 'bot', 'texto sin envío detrás');
+$sinId = end($cvCita['transcript']);
+caso('un renglón sin envío no hereda el id de otro', !isset($sinId['id']));
+
+// El id viejo tampoco sirve pasados dos minutos.
+$GLOBALS['WABOT_SALIDA_ULTIMA'] = ['wamid.VIEJO', time() - 300];
+caso('un id de hace cinco minutos no se toma', wabot_salida_tomar() === '');
+
+// Citó un mensaje que no está en la charla (anterior a guardar ids).
+$cvCita2 = conv_nueva('QATESTCITA2');
+wabot_conv_transcript($cvCita2, 'cliente', 'Sí, ese', null, ['id' => 'wamid.CLI2', 'cita' => 'wamid.NOESTA']);
+$l2 = wabot_transcript_citas($cvCita2['transcript']);
+caso('si el citado no está, queda marcado sin origen', ($l2[0]['cita'] ?? '') === 'wamid.NOESTA' && ($l2[0]['cita_q'] ?? 'x') === '');
+caso('un mensaje sin cita no se toca', !isset(wabot_transcript_citas([['q' => 'cliente', 't' => 'hola', 'ts' => 1]])[0]['cita_q']));
+
+// La cola lleva el id y la cita hasta el transcript.
+wabot_cola_drenar('QATESTCITA3');
+wabot_cola_encolar('QATESTCITA3', 'Este', 'Este', '', null, 'wamid.CLI3', 'wamid.PABLO2');
+$tandaCita = wabot_cola_drenar('QATESTCITA3');
+caso('la cola conserva id y cita', ($tandaCita[0]['id'] ?? '') === 'wamid.CLI3' && ($tandaCita[0]['cita'] ?? '') === 'wamid.PABLO2');
+@unlink(wabot_cola_path('QATESTCITA3'));
+
 todo_ok();

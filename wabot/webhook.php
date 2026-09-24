@@ -216,7 +216,8 @@ function wabot_procesar_entrante($ev, $cfg) {
         $etiquetaMedia = 'documento: ' . $mediaGuardada['nombre'];
     }
     $etiqueta = $texto !== '' ? $marcaMedia . $texto : '[' . $etiquetaMedia . ']';
-    wabot_cola_encolar($clave, $etiqueta, $texto, $nombreEntrante, $mediaGuardada);
+    wabot_cola_encolar($clave, $etiqueta, $texto, $nombreEntrante, $mediaGuardada,
+                       (string)$id, (string)($ev['cita'] ?? ''));
 
     // Un solo proceso contesta por conversación. Si el candado ya está tomado,
     // el que lo tiene se va a llevar este mensaje también.
@@ -247,7 +248,8 @@ function wabot_procesar_entrante($ev, $cfg) {
             $usables = [];
             $primerContacto = empty($conv['lead_recibido_evento']);
             foreach ($tanda as $item) {
-                wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+                wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null,
+                                      ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '']);
                 wabot_imagenes_contar($conv, $item['media'] ?? null);
                 if (trim((string)($item['u'] ?? '')) !== '') {
                     $usables[] = $item['u'];
@@ -411,7 +413,8 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         wabot_conv_identidad_entrante($conv, $clave, $de, $canal);
         $usables = [];
         foreach ($tanda as $item) {
-            wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null);
+            wabot_conv_transcript($conv, 'cliente', $item['t'], $item['media'] ?? null,
+                                  ['id' => $item['id'] ?? '', 'cita' => $item['cita'] ?? '']);
             wabot_imagenes_contar($conv, $item['media'] ?? null);
             if (trim((string)($item['u'] ?? '')) !== '') $usables[] = $item['u'];
             if (!empty($item['n']) && empty($conv['nombre_confirmado'])) $conv['nombre'] = $item['n'];
@@ -496,7 +499,8 @@ if (($payload['object'] ?? '') === 'instagram') {
                     }
                     wabot_conv_identidad_entrante($conv, $clave, $para, 'instagram');
                     wabot_conv_tomar_control($conv);
-                    wabot_conv_transcript($conv, 'humano', $textoEco);
+                    wabot_conv_transcript($conv, 'humano', $textoEco, null,
+                        ['id' => $id, 'cita' => (string)($ev['message']['reply_to']['mid'] ?? '')]);
                     wabot_conv_save($conv);
                     wabot_log('control_humano', ['tel' => $para, 'canal' => 'instagram']);
                 } finally {
@@ -512,6 +516,8 @@ if (($payload['object'] ?? '') === 'instagram') {
                 'conversation_key' => 'ig' . $de,
                 'channel_user_id'  => $de,
                 'id'               => $id,
+                // Respuesta a un mensaje puntual: Instagram manda el mid del citado.
+                'cita'             => (string)($ev['message']['reply_to']['mid'] ?? ''),
                 'texto'            => trim((string)($ev['message']['text'] ?? '')),
                 'nombre'           => '',
                 'media'            => wabot_ig_adjunto($ev['message']['attachments'] ?? []),
@@ -546,7 +552,8 @@ foreach (($payload['entry'] ?? []) as $entry) {
                     if (wabot_eco_es_propio($conv, $textoEco)) continue;
                     wabot_conv_identidad_entrante($conv, $clave, (string)$para, 'whatsapp');
                     wabot_conv_tomar_control($conv);
-                    wabot_conv_transcript($conv, 'humano', $textoEco);
+                    wabot_conv_transcript($conv, 'humano', $textoEco, null,
+                        ['id' => (string)($eco['id'] ?? ''), 'cita' => (string)($eco['context']['id'] ?? '')]);
                     wabot_conv_save($conv);
                     wabot_log('control_humano', ['tel' => $para, 'canal' => 'whatsapp']);
                 } finally {
@@ -607,6 +614,8 @@ foreach (($payload['entry'] ?? []) as $entry) {
                 'conversation_key' => $clave,
                 'channel_user_id'  => $de,
                 'id'               => $id,
+                // "Responder" sobre un mensaje: WhatsApp manda el wamid del citado.
+                'cita'             => (string)($msg['context']['id'] ?? ''),
                 'texto'            => $tipo === 'text' ? trim((string)($msg['text']['body'] ?? '')) : '',
                 'nombre'           => $nombresPerfil[$clave] ?? '',
                 'media'            => wabot_wa_adjunto($msg, $tipo),

@@ -256,12 +256,18 @@ function wabot_push_avisar_si_corresponde($cv) {
 
     // Todos los mensajes del cliente desde lo último que se le contestó.
     $pendientes = [];
-    foreach (array_reverse((array)$cv['transcript']) as $linea) {
+    foreach (array_reverse(wabot_transcript_citas((array)$cv['transcript'])) as $linea) {
         if (($linea['q'] ?? '') !== 'cliente') break;
         // Se respetan los renglones que escribió el cliente; solo se limpian
         // los espacios de más y las líneas en blanco repetidas.
         $t = preg_replace(['/[ \t]+/u', '/\s*\n\s*\n\s*/u'], [' ', "\n"], (string)($linea['t'] ?? ''));
         $t = trim($t);
+        /* Si respondió citando un mensaje, va arriba lo citado: un "Este" o un
+         * "Sí" suelto no se entiende sin saber a qué contesta. */
+        $citado = trim(preg_replace('/\s+/u', ' ', (string)($linea['cita_t'] ?? '')));
+        if ($t !== '' && $citado !== '') {
+            $t = '↩ «' . (mb_strlen($citado) > 90 ? mb_substr($citado, 0, 89) . '…' : $citado) . "»\n" . $t;
+        }
         if ($t !== '') array_unshift($pendientes, $t);
     }
     /* Pablo, 24-sep: "que se vean como los de WhatsApp, que no diga '2

@@ -525,10 +525,12 @@ function wabot_cola_path($tel) {
     return WABOT_DATA . '/cola/' . preg_replace('/[^0-9A-Za-z]/', '', $tel) . '.jsonl';
 }
 
-function wabot_cola_encolar($tel, $mostrar, $usable, $nombre = '', $media = null) {
+function wabot_cola_encolar($tel, $mostrar, $usable, $nombre = '', $media = null, $id = '', $cita = '') {
     wabot_ensure_dirs();
     $fila = ['t' => $mostrar, 'u' => $usable, 'n' => $nombre, 'ts' => time()];
     if ($media) $fila['media'] = $media;
+    if ($id !== '') $fila['id'] = (string)$id;
+    if ($cita !== '') $fila['cita'] = (string)$cita;
     $linea = json_encode($fila, JSON_UNESCAPED_UNICODE);
     @file_put_contents(wabot_cola_path($tel), $linea . "\n", FILE_APPEND | LOCK_EX);
 }
@@ -1848,6 +1850,27 @@ function wabot_historial_guardar($clave, $lineas) {
 }
 
 /** La charla COMPLETA: lo archivado más lo que sigue en el archivo vivo. */
+/**
+ * Resuelve las citas: a cada renglón que responde a otro mensaje le agrega
+ * quién escribió el citado (cita_q) y qué decía (cita_t). Si el citado no está
+ * en la charla —es anterior a que se guardaran los ids (24-sep) o de otra
+ * sesión— cita_q queda vacío y el panel dice "un mensaje anterior".
+ */
+function wabot_transcript_citas($lineas) {
+    $porId = [];
+    foreach ((array)$lineas as $l) {
+        if (!empty($l['id'])) $porId[(string)$l['id']] = $l;
+    }
+    foreach ($lineas as &$l) {
+        if (empty($l['cita'])) continue;
+        $c = $porId[(string)$l['cita']] ?? null;
+        $l['cita_q'] = $c ? (string)($c['q'] ?? '') : '';
+        $l['cita_t'] = $c ? mb_substr((string)($c['t'] ?? ''), 0, 300) : '';
+    }
+    unset($l);
+    return $lineas;
+}
+
 function wabot_transcript_completo($clave, $conv = null) {
     $vivo = is_array($conv) ? (array)($conv['transcript'] ?? []) : [];
     $path = wabot_historial_path($clave);
@@ -1905,9 +1928,18 @@ function wabot_conv_save($conv) {
     return $ok;
 }
 
-function wabot_conv_transcript(&$conv, $quien, $texto, $media = null) {
+function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = []) {
     $fila = ['q' => $quien, 't' => $texto, 'ts' => time()];
     if ($media) $fila['media'] = $media;
+    /* El id del mensaje en WhatsApp/Instagram y, si el mensaje cita a otro, el
+     * id del citado: con los dos el panel muestra a qué se respondió (Pablo,
+     * 24-sep: "no puedo ver una respuesta a un comentario"). Lo que sale se
+     * anota solo: el envío deja su id en wabot_salida_anotar() y acá se toma. */
+    $id = trim((string)($extra['id'] ?? ''));
+    if ($id === '' && $quien !== 'cliente') $id = wabot_salida_tomar();
+    if ($id !== '') $fila['id'] = $id;
+    $cita = trim((string)($extra['cita'] ?? ''));
+    if ($cita !== '') $fila['cita'] = $cita;
     if ($quien === 'cliente' && empty($conv['chat_started_ts'])) {
         $conv['chat_started_ts'] = $fila['ts'];
     }
@@ -3074,6 +3106,21 @@ function wabot_enviar($conv, $texto) {
         : wabot_wa_send_text(wabot_channel_user_id($conv), $texto);
 }
 
+/**
+ * El id del último mensaje que salió, para que el wabot_conv_transcript() que
+ * sigue al envío lo guarde en su renglón. Vale dos minutos: un renglón que se
+ * escribe sin haber mandado nada no puede quedarse con el id de otro envío.
+ */
+function wabot_salida_anotar($id) {
+    $id = trim((string)$id);
+    $GLOBALS['WABOT_SALIDA_ULTIMA'] = $id === '' ? null : [$id, time()];
+}
+function wabot_salida_tomar() {
+    $u = $GLOBALS['WABOT_SALIDA_ULTIMA'] ?? null;
+    $GLOBALS['WABOT_SALIDA_ULTIMA'] = null;
+    return (is_array($u) && time() - (int)$u[1] <= 120) ? (string)$u[0] : '';
+}
+
 /** IDs de mensajes salientes para distinguir un eco del bot de uno humano. */
 function wabot_salida_bot_marcar($id) {
     $id = trim((string)$id);
@@ -3213,6 +3260,7 @@ function wabot_ig_post($payload, $donde) {
     $j = json_decode((string)$res, true);
     $mid = (string)($j['message_id'] ?? '');
     if ($mid !== '') wabot_salida_bot_marcar($mid);
+    wabot_salida_anotar($mid);
     return true;
 }
 
@@ -3277,6 +3325,7 @@ function wabot_wa_send_text($tel, $texto) {
         wabot_log('error', ['donde' => 'wa_send', 'http' => $code, 'res' => substr((string)$res, 0, 500)]);
         return false;
     }
+    wabot_salida_anotar(json_decode((string)$res, true)['messages'][0]['id'] ?? '');
     return true;
 }
 
@@ -3337,6 +3386,7 @@ function wabot_wa_send_template($tel, $nombre, $idioma, $params = [], $paramsBot
     $j = json_decode((string)$res, true);
     $mid = (string)($j['messages'][0]['id'] ?? '');
     if ($mid !== '') wabot_salida_bot_marcar($mid);
+    wabot_salida_anotar($mid);
     return true;
 }
 
@@ -3468,6 +3518,7 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
         }
         return false;
     }
+    wabot_salida_anotar(json_decode((string)$res, true)['messages'][0]['id'] ?? '');
     return true;
 }
 
