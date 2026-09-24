@@ -38,7 +38,7 @@ function precio_formato_18sep($r, $precio, $mensualidad, $pagoUnico) {
     $r = array_values((array)$r);
     return count($r) === 2
         && mb_stripos($r[0], 'te armamos') !== false
-        && strpos($r[0], "Podés elegir entre tres opciones:\n\n1. Plan anual: $precio incluye mantenimiento\n2. Plan mensual: $mensualidad incluye mantenimiento\n3. Pago único: $pagoUnico") !== false
+        && strpos($r[0], "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: $precio incluye mantenimiento\n2. Plan mensual: $mensualidad incluye mantenimiento\n3. Pago único: $pagoUnico") !== false
         && mb_stripos($r[0], 'Los 3 planes incluyen todo:') !== false && mb_stripos($r[0], 'seña') === false
         && mb_stripos($r[1], 'sin cargo un primer diseño') !== false && str_ends_with($r[1], 'Querés que lo armemos?')
         && strpos(implode("\n", $r), 'gokywebs.com/form/') === false;
@@ -4424,7 +4424,7 @@ caso('el turno del pitch manda el precio y luego la oferta del primer diseño, s
 $partesPitch = [$salidaPitch[0], $salidaPitch[1] ?? ''];
 caso('la propuesta termina en el punto y abajo van las tres opciones (22-sep)',
     count($partesPitch) === 2
-    && preg_match('/\.\n\nPodés elegir entre tres opciones:\n\n1\. Plan anual/u', $partesPitch[0]) === 1);
+    && preg_match('/\.\n\nPodés elegir una de estas 3 modalidades de pago:\n\n1\. Plan anual/u', $partesPitch[0]) === 1);
 
 echo "\n— SL: cuando suena el celular (28-ago) —\n";
 
@@ -5220,7 +5220,7 @@ caso('el turno del precio son dos mensajes: el precio y, aparte, la oferta del p
     count($rSL) === 2 && strpos($rSL[0], '$30.000') !== false && mb_stripos($rSL[1], 'primer diseño') !== false);
 caso('con las tres opciones, la oferta aparte y sin el formulario',
     strpos(implode("\n", $rSL), 'gokywebs.com/form/') === false
-    && mb_stripos($rSL[0], 'Podés elegir entre tres opciones') !== false
+    && mb_stripos($rSL[0], 'Podés elegir una de estas 3 modalidades de pago') !== false
     && mb_stripos($rSL[1], 'primer diseño') !== false && mb_stripos(implode("\n", $rSL), 'demo gratis') === false);
 caso('y en ninguno de los dos aparece la línea vieja',
     preg_match('/si te cierra|si va por ah|si te sirve|si te gusta la idea/iu', implode(' ', $rSL)) === 0);

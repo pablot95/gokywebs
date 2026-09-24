@@ -71,7 +71,7 @@ caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link 
     str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('las tres opciones con sus montos y lo incluido en los dos planes (22-sep)',
-    strpos($r0, "Podés elegir entre tres opciones:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:\n✓ Desarrollo completo de la web") !== false
+    strpos($r0, "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:\n✓ Desarrollo completo de la web") !== false
     && strpos($r0, "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
     && strpos($r0, '✓ Soporte técnico') !== false

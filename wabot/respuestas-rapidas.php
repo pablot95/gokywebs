@@ -241,8 +241,11 @@ function wabot_respuestas_rapidas_normalizar($valor) {
 }
 
 /** Arranque del bloque de planes, el mismo que manda el bot. */
-const WABOT_RR_BLOQUE_PLANES = 'Podés elegir entre tres opciones:';
-const WABOT_RR_BLOQUE_PLANES_ANTERIOR = 'Podés elegir entre dos planes:';
+const WABOT_RR_BLOQUE_PLANES = 'Podés elegir una de estas 3 modalidades de pago:';
+/* Los arranques que tuvo antes, para reconocer los bloques guardados y
+   pasarlos al texto de hoy: "dos planes" hasta el 21-sep, "tres opciones"
+   hasta el 24-sep. */
+const WABOT_RR_BLOQUES_PLANES_ANTERIORES = ['Podés elegir entre tres opciones:', 'Podés elegir entre dos planes:'];
 
 /** Las recomendaciones de fábrica anteriores, por tipo de web. */
 function wabot_respuestas_rapidas_intros_viejas() {
@@ -293,7 +296,9 @@ function wabot_respuestas_rapidas_precios_al_dia($categorias) {
         foreach ((array)($categoria['items'] ?? []) as $i => $texto) {
             $texto = (string)$texto;
             $corte = mb_strpos($texto, WABOT_RR_BLOQUE_PLANES);
-            if ($corte === false) $corte = mb_strpos($texto, WABOT_RR_BLOQUE_PLANES_ANTERIOR);
+            foreach (WABOT_RR_BLOQUES_PLANES_ANTERIORES as $anterior) {
+                if ($corte === false) $corte = mb_strpos($texto, $anterior);
+            }
             if ($corte === false) continue;
             $bloque = mb_substr($texto, $corte);
             // Las dos líneas del bloque, como las escribió el bot en cualquier

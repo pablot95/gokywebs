@@ -180,5 +180,20 @@ caso('las dos opciones del modelo viejo pasan a los dos planes',
 caso('sus datos para la seña no se tocan', mb_strpos($pagos21[0], 'CVU: 0000003100053462800156') !== false);
 caso('la segunda carga no cambia nada', wabot_respuestas_rapidas_load() === $r21);
 
+echo "— 24-sep: \"Podés elegir una de estas 3 modalidades de pago\" —\n";
+
+/* Pablo, 24-sep: el arranque del bloque pasa de "Podés elegir entre tres
+ * opciones:" a "Podés elegir una de estas 3 modalidades de pago:". Las
+ * respuestas guardadas con el arranque anterior se ponen al día solas, sin
+ * tocar la recomendación que escribió Pablo arriba. */
+$suyo24 = 'Para tu estudio te armamos una web con tus áreas de práctica.';
+$viejo24 = $suyo24 . "\n\nPodés elegir entre tres opciones:\n\n1. Plan anual: \$120.000 incluye mantenimiento\n2. Plan mensual: \$20.000 incluye mantenimiento\n3. Pago único: \$200.000 NO incluye mantenimiento*";
+$al24 = wabot_respuestas_rapidas_precios_al_dia([['ico' => '💰', 'titulo' => 'Presupuesto y planes', 'items' => [$viejo24]]]);
+$item24 = (string)($al24[0]['items'][0] ?? '');
+caso('un bloque guardado con "tres opciones" pasa a las 3 modalidades de pago',
+    mb_strpos($item24, 'Podés elegir una de estas 3 modalidades de pago:') !== false
+    && mb_strpos($item24, 'Podés elegir entre tres opciones') === false, $item24);
+caso('y la recomendación de Pablo queda arriba, igual', mb_strpos($item24, $suyo24) === 0, $item24);
+
 if ($respaldo === null) @unlink($ruta); else file_put_contents($ruta, $respaldo);
 todo_ok();

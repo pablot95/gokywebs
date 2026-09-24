@@ -28,7 +28,7 @@ caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te armamos una tienda online completa.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('las tres opciones, con los montos y lo incluido en los planes (22-sep)',
-    strpos($r[0] ?? '', "Podés elegir entre tres opciones:\n\n1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n3. Pago único: $300.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:") !== false
+    strpos($r[0] ?? '', "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n3. Pago único: $300.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:") !== false
     && strpos($r[0] ?? '', "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false
     && strpos($r[0] ?? '', '✓ Actualizaciones de SDK y plugins') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
     && str_ends_with($r[0] ?? '', '*El pago único se puede pagar en cuotas con intereses')
