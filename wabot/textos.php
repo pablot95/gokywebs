@@ -118,11 +118,15 @@ function wabot_textos_default() {
      * distintos —vender online o solo mostrarlos—. A los servicios no se les
      * pregunta ("si es abogado QUE va a vender por la web?"): se les cotiza el
      * sitio profesional derecho. Un tipo puede llevar su propia pregunta con
-     * tipos[].reconocimiento_pregunta. */
+     * tipos[].reconocimiento_pregunta.
+     * APAGADA desde el 24-sep (Pablo: "le damos mucha elección"): la pañalera
+     * que contestó "vender, pero también como catálogo" se llevó el precio de
+     * sitio profesional. Si el cliente VENDE algo, se cotiza tienda online sin
+     * preguntar; si vende cursos, talleres o capacitaciones, plataforma de cursos. */
     /* Lo que copia el botón "Copiar form" del panel, para que Pablo se lo
      * mande él mismo (21-sep). El link con el código de la charla va abajo. */
     'form_link_panel' => 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:',
-    'reconocimiento_activo' => true,
+    'reconocimiento_activo' => false,
     'reconocimiento' => 'Buscás vender por la web, o solo mostrar {lo_tuyo}?',
     'desempate_cursos' => 'Querés vender los cursos desde la web misma, con los videos subidos ahí y acceso propio para cada alumno, o preferís solo mostrarlos y que te contacten por WhatsApp?',
     'desempate_cursos_2' => 'Te lo simplifico: querés vender los cursos desde la web con los videos y acceso para cada alumno (respondé "vender"), o solo mostrarlos y que te escriban (respondé "mostrar")?',

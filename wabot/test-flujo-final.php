@@ -17,14 +17,11 @@ caso('primero pregunta qué vende o qué servicio ofrece',
 
 clasifica(['rubro_comercio']);
 $r = turno('Vendo ropa', $c, $cfg);
-/* Antes de cotizar hace UNA pregunta (Pablo, 21-sep): con "Vendo ropa" sabe a
- * qué se dedica, pero no qué tiene que hacer la web. */
-caso('antes del precio pregunta si vende por la web o solo muestra',
-    count($r) === 1 && $r[0] === 'Buscás vender por la web, o solo mostrar tus productos?'
-    && ($c['fase'] ?? '') === 'reconocimiento' && empty($c['precio_dado']), implode(' | ', $r));
-
-clasifica(['otro']);
-$r = turno('Vender', $c, $cfg);
+/* Sin la pregunta "vender o mostrar" (Pablo, 24-sep: "le damos mucha
+ * elección"): si vende algo, se cotiza la tienda online derecho. */
+caso('vende algo: cotiza la tienda sin preguntar si vende por la web',
+    mb_stripos(implode(' ', $r), 'Buscás vender') === false && ($c['fase'] ?? '') !== 'reconocimiento'
+    && !empty($c['precio_dado']) && ($c['tipo'] ?? '') === 'ecommerce', implode(' | ', $r));
 $todo = implode("\n", $r);
 caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',

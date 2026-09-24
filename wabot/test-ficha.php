@@ -99,19 +99,13 @@ caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con
     mb_stripos($r[0] ?? '', 'un sitio profesional completo, con las habitaciones, el restaurante y las reservas online') !== false
     && strpos($r[0] ?? '', '$120.000') !== false, $r[0] ?? '');
 
-echo "— 4. Catálogo + WhatsApp: sitio profesional más la carga de productos (Pablo, 18-sep) —\n";
+echo "— 4. Si vende algo es tienda, aunque diga catálogo (Pablo, 24-sep; el catálogo como sitio profesional del 18-sep se retiró) —\n";
 
 [$c, $r] = charla([['Vendo ropa pero solo quiero mostrar los productos y que me consulten por WhatsApp', ['rubro_comercio'], []]], '549110000CATATEST', $cfg);
-caso('se cotiza como sitio profesional con catálogo',
-    ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo'])
-    && mb_stripos($r[0] ?? '', 'un sitio profesional completo, con el catálogo de tus productos') !== false
-    && strpos($r[0] ?? '', '$120.000') !== false && strpos($r[0] ?? '', '$20.000') !== false, $r[0] ?? '');
-caso('con la carga de productos aparte, a $500 cada uno',
-    strpos($r[0] ?? '', 'La carga de los productos va aparte: $500 por producto.') !== false);
-$campos = wabot_lead_campos($c, $cfg);
-caso('y el boceto lo dice: sitio profesional con catálogo y la carga aparte',
-    (string)reset($campos['tipoDetectadoLabel']) === 'Sitio profesional con catálogo'
-    && str_ends_with((string)reset($campos['presupuesto_cotizado']), '+ carga de productos $500 c/u'), json_encode($campos['presupuesto_cotizado']));
+caso('se cotiza la tienda online, no el sitio profesional con catálogo',
+    ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo'])
+    && mb_stripos($r[0] ?? '', 'una tienda online completa') !== false
+    && strpos($r[0] ?? '', '$190.000') !== false && strpos($r[0] ?? '', '$30.000') !== false, $r[0] ?? '');
 [$c, $r] = charla([['Vendo ropa de mujer', ['rubro_comercio'], []]], '549110000TIENDATEST', $cfg);
 caso('sin decirlo, lo que vende productos sigue siendo tienda (29-ago)', ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']));
 

@@ -205,8 +205,8 @@ caso('el fallback nunca devuelve un tipo retirado', (function () {
 caso('wabot_rubro_de no devuelve turnos ni institucional',
     wabot_rubro_de(['servicio_con_turnos']) === null && wabot_rubro_de(['rubro_institucional']) === null && wabot_rubro_de(['rubro_landing']) === 'landing');
 caso('un servicio con turnos ya no abre un desempate', wabot_desempate_de('turnos') === null && wabot_desempate_de('turnos_pendiente') === null);
-caso('los desempates vivos son cursos, híbrido y el sistema',
-    wabot_desempate_de('cursos') === ['desempate_cursos', 'desempate_cursos'] && wabot_desempate_de('hibrido_pendiente') === ['desempate_hibrido', 'desempate_hibrido']
+caso('los desempates vivos son híbrido y el sistema (cursos se retiró el 24-sep)',
+    wabot_desempate_de('cursos') === null && wabot_desempate_de('hibrido_pendiente') === ['desempate_hibrido', 'desempate_hibrido']
     && wabot_desempate_de('sistema_pendiente') === ['sistema_problema', 'sistema_pregunta']);
 caso('"dale, hagamos la demo" no es una descripción del negocio', wabot_texto_no_es_descripcion('dale, hagamos la demo') === true
     && wabot_texto_no_es_descripcion('vendo ropa de mujer, tengo local en Salta') === false);
@@ -553,38 +553,24 @@ function reconocer($clave, array $pasos, $cfg) {
     return [$r, $c];
 }
 
+/* Sin la pregunta "vender o mostrar" (Pablo, 24-sep): si vende algo, es
+ * tienda online. La pañalera que contestó "vender, pero también como
+ * catálogo" se había llevado el precio del sitio profesional. */
 [$rZap, $cZap] = reconocer('999REC2', [['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'venta de zapatillas']]], $cfg);
-caso('con productos pregunta antes de cotizar',
-    count($rZap) === 1 && $rZap[0] === 'Buscás vender por la web, o solo mostrar tus productos?'
-    && empty($cZap['precio_dado']) && ($cZap['fase'] ?? '') === 'reconocimiento', json_encode($rZap, JSON_UNESCAPED_UNICODE));
-[$rVen, $cVen] = reconocer('999REC3', [
-    ['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'venta de zapatillas']],
-    ['Vender', ['otro']],
+caso('con productos cotiza la tienda sin preguntar',
+    ($cZap['tipo'] ?? '') === 'ecommerce' && !empty($cZap['precio_dado'])
+    && mb_strpos(implode(' ', $rZap), 'Buscás vender') === false, json_encode($rZap, JSON_UNESCAPED_UNICODE));
+[$rPan, $cPan] = reconocer('999REC3', [
+    ['Tengo una pañalera y juguetería', ['rubro_comercio'], ['descripcion' => 'pañalera y juguetería']],
 ], $cfg);
-caso('"vender" cotiza la tienda', ($cVen['tipo'] ?? '') === 'ecommerce' && !empty($cVen['precio_dado']));
-[$rMos, $cMos] = reconocer('999REC4', [
-    ['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'venta de zapatillas']],
-    ['Mostrar', ['otro']],
-], $cfg);
-caso('"mostrar" cotiza el sitio profesional', ($cMos['tipo'] ?? '') === 'landing' && !empty($cMos['precio_dado']));
-[$rRaro, $cRaro] = reconocer('999REC5', [
-    ['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'zapatillas']],
-    ['mmm no sé, vos qué decís', ['otro']],
-], $cfg);
-caso('una respuesta que no se entiende cotiza lo reconocido, sin repreguntar ni derivar',
-    ($cRaro['tipo'] ?? '') === 'ecommerce' && !empty($cRaro['precio_dado']) && ($cRaro['fase'] ?? '') !== 'derivado'
-    && mb_strpos($rRaro[0] ?? '', 'Buscás vender') === false, json_encode($rRaro, JSON_UNESCAPED_UNICODE));
-[$rAv, $cAv] = reconocer('999REC6', [
-    ['Venta de sapatillas', ['rubro_comercio'], ['descripcion' => 'zapatillas']],
-    ['Mostrar', ['quiere_avanzar']],
-], $cfg);
-caso('y si el clasificador lee la respuesta como ganas de avanzar, tampoco deriva',
-    ($cAv['tipo'] ?? '') === 'landing' && ($cAv['fase'] ?? '') !== 'derivado', json_encode($rAv, JSON_UNESCAPED_UNICODE));
-[$rEt, $cEt] = reconocer('999REC13', [
-    ['Vendo mates', ['rubro_comercio'], ['descripcion' => 'mates']],
-    ['que me compren desde ahí', ['hibrido_vender']],
-], $cfg);
-caso('si el clasificador etiqueta la respuesta, también vale', ($cEt['tipo'] ?? '') === 'ecommerce' && !empty($cEt['precio_dado']));
+caso('la pañalera cotiza tienda online, no sitio profesional',
+    ($cPan['tipo'] ?? '') === 'ecommerce' && empty($cPan['catalogo']), json_encode($rPan, JSON_UNESCAPED_UNICODE));
+$cCat = conv_nueva('999REC4', ['fase' => 'nuevo', 'chat_started_ts' => time()]);
+clasifica(['rubro_comercio'], ['ficha' => ['necesidad' => 'catalogo']]);
+turno('Me gustaría que permita vender por la web, pero también que funcione como catálogo', $cCat, $cfg);
+@unlink(WABOT_DATA . '/conv/999REC4.json');
+caso('aunque la ficha diga catálogo, el que vende se lleva la tienda',
+    ($cCat['tipo'] ?? '') === 'ecommerce' && empty($cCat['catalogo']));
 
 /* Los servicios no la reciben: no hay dos caminos, y "si es abogado QUE va a
  * vender por la web?". Es por TIPO de web, así que vale para todos los oficios. */
@@ -610,13 +596,13 @@ caso('pero vender materiales sigue siendo comercio',
 [$rInmo, $cInmo] = reconocer('999REC9', [['Tengo una inmobiliaria en Tigre', ['rubro_inmobiliaria'], ['descripcion' => 'inmobiliaria']]], $cfg);
 caso('la inmobiliaria también cotiza derecho', ($cInmo['tipo'] ?? '') === 'inmobiliaria' && !empty($cInmo['precio_dado']));
 [$rCur, $cCur] = reconocer('999REC10', [['Capacitacion en molderia y costura', ['rubro_cursos'], ['descripcion' => 'capacitación']]], $cfg);
-caso('los cursos siguen con su propio desempate',
-    ($cCur['fase'] ?? '') === 'desempate_cursos' && mb_strpos($rCur[0] ?? '', 'Buscás vender') === false, json_encode($rCur, JSON_UNESCAPED_UNICODE));
+caso('los cursos cotizan la plataforma de cursos sin preguntar (24-sep)',
+    ($cCur['tipo'] ?? '') === 'elearning' && !empty($cCur['precio_dado']) && ($cCur['fase'] ?? '') !== 'desempate_cursos', json_encode($rCur, JSON_UNESCAPED_UNICODE));
 [$rYa, $cYa] = reconocer('999REC7', [['Quiero una web para vender online y cobrar con Mercado Pago', ['rubro_comercio'], ['descripcion' => 'vender online y cobrar']]], $cfg);
 caso('el que YA dijo que quiere cobrar online no pasa por la pregunta',
     ($cYa['tipo'] ?? '') === 'ecommerce' && !empty($cYa['precio_dado']), json_encode($rYa, JSON_UNESCAPED_UNICODE));
 [$rSolo, $cSolo] = reconocer('999REC8', [['Tengo una ferretería, quiero una web solo mostrar los productos y que me escriban', ['rubro_comercio'], ['descripcion' => 'ferretería']]], $cfg);
-caso('el que ya dijo "solo mostrar" tampoco', !empty($cSolo['precio_dado']), json_encode($rSolo, JSON_UNESCAPED_UNICODE));
+caso('el que dijo "solo mostrar" igual vende: tienda (24-sep)', ($cSolo['tipo'] ?? '') === 'ecommerce' && !empty($cSolo['precio_dado']), json_encode($rSolo, JSON_UNESCAPED_UNICODE));
 [$rDos, $cDos] = reconocer('999REC12', [
     ['Vendo mates', ['rubro_comercio'], ['descripcion' => 'mates']],
     ['Mostrar', ['otro']],

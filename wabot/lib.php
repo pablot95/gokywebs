@@ -3976,7 +3976,7 @@ GUIA:
 - hibrido_trabajos / hibrido_vender: SOLO al responder la pregunta del rubro híbrido. Mostrar trabajos y que consulten por WhatsApp = trabajos; carrito y cobro online = vender.
 - rubro_ecommerce: dice explícitamente que quiere VENDER ONLINE, tener tienda con carrito, o ya vende por internet (incluye revender marcas como Just, Essen, Avon). Si solo cuenta que TIENE un local o comercio, usá rubro_comercio.
 - rubro_inmobiliaria: rubro inmobiliario o publica propiedades.
-- rubro_cursos: da o vende cursos, clases o capacitaciones (todavía no se sabe si los quiere vender desde la web).
+- rubro_cursos: da o vende cursos, talleres, clases o capacitaciones. Se cotiza plataforma de cursos SIEMPRE, sin preguntarle si los quiere vender desde la web o solo mostrarlos.
 - rubro_sistema: pide un sistema, aplicación o panel de gestión para ordenar stock, ventas, clientes, turnos, facturación, tareas o procesos internos. No es una página web y se califica antes de derivar.
 - cursos_vender / cursos_mostrar: SOLO si la conversación está en la pregunta de cursos — quiere venderlos desde la web con acceso de alumnos, o solo mostrarlos y que lo contacten.
 - productos_y_cursos: vende productos Y ADEMÁS cursos online.

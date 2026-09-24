@@ -3249,12 +3249,8 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
              * 'institucional', 'landing' o 'sistema_pendiente', y nada más. Las
              * ramas de 'comercio_pendiente' y 'turnos_pendiente' que vivían acá
              * no se alcanzaban nunca, y sus dos desempates ya no se preguntan. */
-            if ($rubroContexto === 'cursos') {
-                $objetivo = wabot_desempate_por_palabras('desempate_cursos', $texto);
-                if ($objetivo === 'cursos_vender')  return wabot_precio('elearning', $conv, $cfg);
-                if ($objetivo === 'cursos_mostrar') return wabot_precio('landing', $conv, $cfg);
-            }
-
+            // Los cursos ya no se desempatan (24-sep): 'cursos' se cotiza como
+            // plataforma de cursos en wabot_precio().
             if ($rubroLocal === null) $rubroLocal = $rubroContexto;
             if ($rubroLocal === 'sistema_pendiente') {
                 $conv['fase'] = 'sistema_problema';
@@ -4328,11 +4324,12 @@ function wabot_apertura($conv, $cfg) {
     return $cfg['menu'];
 }
 
-/* Devuelve el tipo si alguna acción lo determina, 'cursos' si hay que desempatar, null si no. */
+/* Devuelve el tipo si alguna acción lo determina, un *_pendiente si hay que desempatar, null si no. */
 function wabot_rubro_de($acc) {
-    // 'cursos' y 'turnos_pendiente' no son tipos cotizables: son preguntas que
-    // faltan hacer. El resto sí sale directo al precio.
-    if (in_array('rubro_cursos', $acc, true))                                        return 'cursos';
+    // Los *_pendiente no son tipos cotizables: son preguntas que faltan hacer.
+    // Los cursos ya no se preguntan (Pablo, 24-sep): si vende cursos, talleres
+    // o capacitaciones, es plataforma de cursos.
+    if (in_array('rubro_cursos', $acc, true))                                        return 'elearning';
     if (in_array('rubro_hibrido', $acc, true))                                       return 'hibrido_pendiente';
     if (in_array('rubro_comercio', $acc, true))                                      return 'ecommerce';
     if (in_array('rubro_sistema', $acc, true))                                       return 'sistema_pendiente';
@@ -4347,7 +4344,6 @@ function wabot_rubro_de($acc) {
  * Devuelve [fase a la que va, clave del texto a mandar], o null si se cotiza ya.
  */
 function wabot_desempate_de($r) {
-    if ($r === 'cursos')           return ['desempate_cursos', 'desempate_cursos'];
     if ($r === 'hibrido_pendiente')  return ['desempate_hibrido', 'desempate_hibrido'];
     if ($r === 'sistema_pendiente')  return ['sistema_problema', 'sistema_pregunta'];
     return null;
@@ -6509,6 +6505,8 @@ function wabot_pitch($tipo, &$conv, $cfg) {
 }
 
 function wabot_precio($tipo, &$conv, $cfg) {
+    // El rubro 'cursos' ya no se pregunta (24-sep): vende cursos = plataforma de cursos.
+    if ($tipo === 'cursos') $tipo = 'elearning';
     /* Nadie cotiza UN tipo a quien pidió DOS cosas distintas sin avisarle.
      *
      * El guard vivía en dar_precio (agente.php) y no alcanzaba: la respuesta a
@@ -6542,14 +6540,10 @@ function wabot_precio($tipo, &$conv, $cfg) {
             wabot_handoff_marcar($conv, 'complejidad');
             return [$complejo[1]];
         }
-        /* Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): precio de
-         * sitio profesional más la carga de productos. Solo si el cliente lo
-         * dijo: con productos, lo normal sigue siendo la tienda (29-ago). */
-        if ($tipo === 'ecommerce' && empty($conv['combo_cursos']) && wabot_ficha($conv)['necesidad'] === 'catalogo') {
-            $tipo = 'landing';
-            $conv['catalogo'] = true;
-            wabot_evento_sesion($conv, 'catalogo_sin_cobro');
-        }
+        /* El catálogo sin cobro online (18-sep) cotizaba sitio profesional y
+         * se retiró el 24-sep: la pañalera que pidió "vender, pero también
+         * como catálogo" quedó en necesidad=catalogo y se llevó el precio
+         * equivocado. Si vende algo, es tienda online (Pablo). */
     }
     if (empty($conv['mixto_avisado']) && empty($conv['precio_dado'])) {
         $ejes = wabot_ejes_mixtos(wabot_contexto_cliente_texto($conv));

@@ -150,11 +150,9 @@ echo "— Cursos —\n";
 $c = conv_nueva();
 clasifica(['rubro_cursos']);
 $r = wabot_engine('doy cursos de maquillaje', $c, $cfg);
-caso('cursos → pregunta de desempate', $r === [$cfg['desempate_cursos']] && $c['fase'] === 'desempate_cursos');
-
-clasifica(['cursos_vender']);
-$r = wabot_engine('venderlos desde la web', $c, $cfg);
-caso('quiere venderlos → elearning', strpos(implode("\n", (array)$r), '$30.000') !== false && $c['tipo'] === 'elearning');
+// Sin desempate desde el 24-sep (Pablo): vende cursos = plataforma de cursos.
+caso('cursos → plataforma de cursos, sin preguntar', strpos(implode("\n", (array)$r), '$30.000') !== false
+    && $c['tipo'] === 'elearning' && $c['fase'] !== 'desempate_cursos');
 
 $c = conv_nueva(); $c['fase'] = 'desempate_cursos';
 clasifica(['cursos_mostrar']);
@@ -1233,8 +1231,8 @@ caso('contesta otro rubro en pleno desempate → lo cotiza, no deriva',
 $c = conv_nueva(); $c['fase'] = 'desempate_hibrido';
 clasifica(['rubro_cursos']);
 $r = wabot_engine('aparte doy cursos de barberia', $c, $cfg);
-caso('nombra cursos en el desempate del híbrido → cambia a la pregunta de cursos',
-    $r === [$cfg['desempate_cursos']] && $c['fase'] === 'desempate_cursos');
+caso('nombra cursos en el desempate del híbrido → cotiza la plataforma de cursos',
+    ($c['tipo'] ?? '') === 'elearning' && $c['fase'] !== 'desempate_cursos');
 
 $c = conv_nueva(); $c['fase'] = 'desempate_cursos';
 clasifica(['pregunta_info'], ['info_keys' => ['pago']]);
@@ -5316,8 +5314,7 @@ echo "— 2-sep, auditoría: la pregunta de turnos ya no se hace —\n";
  * ese producto no hace. El agente ya cotizaba directo; el motor no. */
 caso('un servicio con turnos ya no abre un desempate', wabot_desempate_de('turnos') === null);
 caso('ni por el nombre viejo del pendiente', wabot_desempate_de('turnos_pendiente') === null);
-caso('el de cursos, que sí distingue dos precios, sigue vivo',
-    wabot_desempate_de('cursos') === ['desempate_cursos', 'desempate_cursos']);
+caso('el de cursos también se retiró (24-sep)', wabot_desempate_de('cursos') === null);
 caso('y el del híbrido también', wabot_desempate_de('hibrido_pendiente') !== null);
 
 $cPelu = conv_nueva(); $cPelu['fase'] = 'menu';
