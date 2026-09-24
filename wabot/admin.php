@@ -9,6 +9,7 @@
 
 require_once __DIR__ . '/redactor.php';
 require_once __DIR__ . '/respuestas-rapidas.php';
+require_once __DIR__ . '/push.php';
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
@@ -315,6 +316,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'])) {
     $a = $_POST['accion'];
 
+    /* Alta del dispositivo para las notificaciones push. El token lo genera el
+     * navegador (Firebase) y hay que guardarlo para poder mandarle algo cuando
+     * el panel está cerrado. Se refresca en cada carga: Firebase los rota, y
+     * uno viejo deja de recibir. */
+    if ($a === 'push_token' && !empty($_POST['token'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $ok = wabot_push_token_guardar($_POST['token'], (string)($_SERVER['HTTP_USER_AGENT'] ?? ''));
+        echo json_encode(['ok' => $ok, 'dispositivos' => count(wabot_push_tokens())]);
+        exit;
+    }
+    /* El botón "Probar" de la pestaña Estado: manda una notificación de prueba
+     * a todos los dispositivos registrados. */
+    if ($a === 'push_probar') {
+        header('Content-Type: application/json; charset=utf-8');
+        if (!wabot_push_configurado()) {
+            echo json_encode(['ok' => false, 'error' => 'Falta config/service-account.json en el server.']);
+            exit;
+        }
+        $n = wabot_push_enviar('Gokywebs · prueba', 'Si ves esto, las notificaciones andan.',
+                               ['tel' => 'prueba', 'link' => 'https://www.gokywebs.com/wabot/admin.php?tab=estado']);
+        echo json_encode(['ok' => $n > 0, 'dispositivos' => $n,
+                          'error' => $n > 0 ? '' : 'No llegó a ningún dispositivo. ¿Tocaste "Activar acá" en el celular?']);
+        exit;
+    }
     if ($a === 'toggle_activo') {
         $cfg['activo'] = empty($cfg['activo']);
         wabot_config_save($cfg);
@@ -1590,6 +1615,25 @@ body.embed { min-height: 0; }
                     <button class="<?= !empty($cfg['activo']) ? 'bad' : '' ?>"><?= !empty($cfg['activo']) ? 'Apagar' : 'Encender' ?></button>
                 </form>
             </div>
+        </div>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <div>
+                    <strong>Notificaciones</strong>
+                    <p class="meta" id="pushEstado">Te suena el celular con cada mensaje que el bot no contestó, aunque tengas el panel cerrado.</p>
+                </div>
+                <div class="fila" style="gap:.5rem">
+                    <button type="button" class="sec" id="pushActivar">Activar acá</button>
+                    <button type="button" class="sec" id="pushProbar">Probar</button>
+                </div>
+            </div>
+            <?php if (!wabot_push_configurado()): ?>
+                <p class="meta" style="color:#b45309">Falta subir <code>config/service-account.json</code> al server.</p>
+            <?php elseif (wabot_push_vapid() === ''): ?>
+                <p class="meta" style="color:#b45309">Falta <code>WABOT_FCM_VAPID</code> en <code>config/wabot-config.php</code>: Firebase → Configuración del proyecto → Cloud Messaging → Certificados push web.</p>
+            <?php else: ?>
+                <p class="meta"><?= count(wabot_push_tokens()) ?> dispositivo(s) registrado(s). Hay que activarlo una vez en cada uno.</p>
+            <?php endif; ?>
         </div>
         <div class="card">
             <div class="fila" style="justify-content:space-between">
@@ -3721,5 +3765,84 @@ body.embed { min-height: 0; }
 </script>
 <?php endif; ?>
 <script src="respuestas-rapidas.js?v=20260919a"></script>
+<?php if ($logueado && $tab === 'estado'): ?>
+<script type="module">
+/* Notificaciones push del panel.
+ *
+ * El navegador pide permiso una sola vez por dispositivo y devuelve un token
+ * que hay que guardar en el server: es la dirección a la que FCM entrega. Los
+ * tokens rotan, así que se refresca cada vez que se abre esta pestaña.
+ *
+ * Todo esto es opcional: si falta la clave VAPID o el usuario dice que no, el
+ * panel sigue funcionando igual y no se rompe nada. */
+const VAPID = <?= json_encode(wabot_push_vapid()) ?>;
+const estado = document.getElementById('pushEstado');
+const btnActivar = document.getElementById('pushActivar');
+const btnProbar  = document.getElementById('pushProbar');
+const decir = (t) => { if (estado) estado.textContent = t; };
+
+async function registrar(pedirPermiso) {
+    if (!VAPID) return pedirPermiso && decir('Falta la clave VAPID en la config del server.');
+    if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+        return decir('Este navegador no soporta notificaciones. En Android, abrí el panel con Chrome.');
+    }
+    if (Notification.permission === 'denied') {
+        return decir('Las notificaciones están bloqueadas para este sitio: habilitalas desde el candado de la barra de direcciones.');
+    }
+    if (Notification.permission !== 'granted') {
+        if (!pedirPermiso) return;   // al abrir la pestaña no se molesta
+        if (await Notification.requestPermission() !== 'granted') {
+            return decir('No se dio permiso, así que no te van a llegar.');
+        }
+    }
+    try {
+        const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
+        const { getMessaging, getToken } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js');
+        const app = initializeApp({
+            apiKey: 'AIzaSyC1OLtFB2aqovDA-u07HFhK0cPY-y-ZBqQ',
+            authDomain: 'gokywebs-967cd.firebaseapp.com',
+            projectId: 'gokywebs-967cd',
+            messagingSenderId: '50030976147',
+            appId: '1:50030976147:web:9f07245b536a75833a4166'
+        }, 'wabot-push');
+        // El service worker vive en la raíz: desde /wabot/ no podría abrir
+        // el panel al tocar la notificación.
+        const sw = await navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: '/' });
+        const token = await getToken(getMessaging(app), { vapidKey: VAPID, serviceWorkerRegistration: sw });
+        if (!token) return decir('Firebase no devolvió un token para este dispositivo.');
+        const r = await fetch('admin.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ accion: 'push_token', token }),
+            credentials: 'same-origin'
+        }).then(x => x.json());
+        decir(r.ok ? 'Listo: este dispositivo recibe los avisos. (' + r.dispositivos + ' en total)'
+                   : 'No se pudo guardar el dispositivo en el server.');
+    } catch (e) {
+        decir('No se pudo activar: ' + e.message);
+    }
+}
+
+btnActivar?.addEventListener('click', () => registrar(true));
+// Si ya dio permiso antes, se refresca solo el token, sin molestarlo.
+registrar(false);
+
+btnProbar?.addEventListener('click', async () => {
+    decir('Mandando…');
+    try {
+        const r = await fetch('admin.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ accion: 'push_probar' }),
+            credentials: 'same-origin'
+        }).then(x => x.json());
+        decir(r.ok ? 'Salió a ' + r.dispositivos + ' dispositivo(s). Fijate si te llegó.'
+                   : (r.error || 'No salió.'));
+    } catch (e) {
+        decir('Falló la prueba: ' + e.message);
+    }
+});
+</script>
+<?php endif; ?>
 </body>
 </html>

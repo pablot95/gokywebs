@@ -28,10 +28,11 @@ define('WABOT_FIREBASE_API_KEY', 'COMPLETAR');
 define('WABOT_FIREBASE_PROJECT', 'COMPLETAR');
 define('WABOT_ADMIN_PASS', 'COMPLETAR');
 
-/* Notificaciones push al celular y a la compu cuando entra un mensaje que tiene
-   que contestar Pablo (los SL del panel). Es la clave PUBLICA del par que
+/* Notificaciones push al celular y a la compu cuando entra un mensaje que el
+   bot no contesto (ver wabot/push.php). Es la clave PUBLICA del par que
    genera Firebase en: Configuracion del proyecto -> Cloud Messaging ->
    Certificados push web -> Generar par de claves.
    Ademas hay que dejar la cuenta de servicio en config/service-account.json.
-   Vacio = no se manda ninguna notificacion y el bot sigue igual. */
+   Vacio = usa la del proyecto, que ya viene en wabot/push.php. Sin la cuenta
+   de servicio no se manda ninguna notificacion y el bot sigue igual. */
 define('WABOT_FCM_VAPID', '');

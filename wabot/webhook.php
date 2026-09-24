@@ -6,6 +6,7 @@
  */
 
 require_once __DIR__ . '/redactor.php';
+require_once __DIR__ . '/push.php';
 
 /* ── Verificación del webhook (la hace Meta una sola vez al configurarlo) ── */
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -382,6 +383,18 @@ function wabot_procesar_entrante($ev, $cfg) {
                 wabot_lock_soltar($lock2);
             }
         }
+    }
+
+    /* Terminado el turno, si el último mensaje quedó siendo del cliente —el
+     * bot no le contestó, por el motivo que sea— le suena el celular a Pablo.
+     * Va acá al final, leyendo de disco, para ver el estado FINAL: adentro del
+     * bucle habría que repetirlo en cada punto donde se corta, y cada uno deja
+     * la conversación en un estado distinto. Un aviso que falla no puede
+     * tumbar el webhook. */
+    try {
+        wabot_push_avisar_si_corresponde(wabot_conv_load($clave));
+    } catch (Throwable $err) {
+        wabot_log('error', ['donde' => 'push', 'msg' => mb_substr($err->getMessage(), 0, 200)]);
     }
 }
 

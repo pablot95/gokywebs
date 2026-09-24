@@ -5600,4 +5600,52 @@ caso('ni preguntar por el abono mensual',
 caso('ni preguntar el precio de la web',
     wabot_texto_pregunta_cuanto_anticipo('cuanto sale la web?') === false);
 
+echo "— 24-sep: suena el celular con cada mensaje que el bot no contestó —\n";
+
+/* Pablo, 24-sep: "que suene cada mensaje que entra que NO esté contestando el
+ * bot". Se mira el estado final del turno: si el último mensaje es del
+ * cliente, nadie le contestó. */
+require_once __DIR__ . '/push.php';
+$ahoraPush = time();
+$pushBase = ['canal' => 'whatsapp', 'tel' => '5491100000009', 'conversation_key' => '5491100000009',
+             'transcript' => [['q' => 'bot', 't' => 'Hola! En qué te ayudo?', 'ts' => $ahoraPush - 60]]];
+
+$pushContestado = $pushBase;
+$pushContestado['transcript'][] = ['q' => 'cliente', 't' => 'cuanto sale una web?', 'ts' => $ahoraPush - 30];
+$pushContestado['transcript'][] = ['q' => 'bot', 't' => 'Depende de lo que necesites', 'ts' => $ahoraPush - 20];
+caso('el bot contestó → no suena', wabot_push_debe_avisar($pushContestado) === false);
+
+$pushCallado = $pushBase;
+$pushCallado['transcript'][] = ['q' => 'cliente', 't' => 'hola?', 'ts' => $ahoraPush];
+caso('el bot activo pero no contestó → suena', wabot_push_debe_avisar($pushCallado) === true);
+
+$pushOff = $pushCallado;
+$pushOff['bot_off'] = true;
+caso('bot apagado en el chat → suena', wabot_push_debe_avisar($pushOff) === true);
+
+$pushPausa = $pushCallado;
+$pushPausa['pausado_hasta'] = $ahoraPush + 3600;
+caso('bot en pausa porque contestó Pablo → suena', wabot_push_debe_avisar($pushPausa) === true);
+
+$pushHumano = $pushPausa;
+$pushHumano['transcript'][] = ['q' => 'humano', 't' => 'Ya te paso la info', 'ts' => $ahoraPush + 1];
+caso('Pablo ya contestó a mano → no suena', wabot_push_debe_avisar($pushHumano) === false);
+
+$pushArch = $pushCallado;
+$pushArch['archivado'] = true;
+caso('archivado → no suena', wabot_push_debe_avisar($pushArch) === false);
+
+$pushMarcado = $pushCallado;
+$pushMarcado['contestado_ts'] = $ahoraPush + 5;
+caso('marcado "ya le contesté" → no suena', wabot_push_debe_avisar($pushMarcado) === false);
+
+caso('charla vacía → no suena', wabot_push_debe_avisar(['transcript' => []]) === false);
+
+$pushNombre = $pushCallado;
+caso('sin nombre, la notificación muestra el número', wabot_push_quien($pushNombre) === '+5491100000009');
+$pushNombre['nombre_negocio'] = 'Tarot Luna';
+caso('con negocio, muestra el negocio', wabot_push_quien($pushNombre) === 'Tarot Luna');
+caso('sin la cuenta de servicio o sin red, avisar no rompe nada',
+    in_array(wabot_push_avisar_si_corresponde($pushCallado), [true, false], true));
+
 todo_ok();
