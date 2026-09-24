@@ -486,8 +486,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 
         $clave = wabot_conv_resolver($_POST['tel'], $motivo);
         if ($clave === null) {
+            $tipo = trim((string)($_POST['tipo'] ?? ''));
+            $textoConv = [
+                'tipo' => array_key_exists($tipo, (array)($cfg['muestra_presentar_por_tipo'] ?? [])) ? $tipo : '',
+                'nombre_negocio' => $negocio,
+                'nombre' => trim((string)($_POST['nombre'] ?? '')),
+            ];
+            $textos = wabot_muestra_presentar_textos($slug, $cfg, $textoConv);
             wabot_log('presentar_muestra_sin_chat', ['tel' => (string)$_POST['tel'], 'motivo' => $motivo, 'slug' => $slug]);
-            echo json_encode(['ok' => true, 'enviado' => false, 'sin_chat' => true, 'slug' => $slug]);
+            echo json_encode(['ok' => true, 'enviado' => false, 'sin_chat' => true, 'slug' => $slug,
+                              'textos' => $textos, 'textos_enviados' => array_fill(0, count($textos), false)]);
             exit;
         }
         $conv = wabot_conv_load($clave);
@@ -530,12 +538,18 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $textos = wabot_muestra_presentar_textos($slug, $cfg, $conv);
         $fueraVentana = wabot_ventana_restante($conv) <= 0;
         $enviados = 0;
+        $textosEnviados = array_fill(0, count($textos), false);
         foreach ($fueraVentana ? [] : $textos as $i => $texto) {
             // Un respiro entre los dos: mandarlos pegados hace que Meta a veces
             // los entregue al revés, y el segundo no tiene sentido antes del link.
             if ($i > 0) sleep(1);
-            if (!wabot_enviar($conv, $texto)) continue;
+            if (!wabot_enviar($conv, $texto)) {
+                // Sin el enlace confirmado, no enviar el pedido de feedback solo.
+                if ($i === 0) break;
+                continue;
+            }
             wabot_conv_transcript($conv, 'bot', $texto);
+            $textosEnviados[$i] = true;
             $enviados++;
             if ($i === 0) $conv['presentado_via_bot'] = true;
         }
@@ -558,6 +572,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             'nunca_escribio' => (int)($conv['ultimo_cliente_ts'] ?? 0) === 0,
             'demo_ok'  => !empty($conv['presentado_via_bot']),   // el mensaje con el link
             'slug'     => $slug,
+            'textos'   => $textos,
+            'textos_enviados' => $textosEnviados,
             // Por dónde salió: el panel decía "por WhatsApp" siempre, y desde
             // que los leads de Instagram se resuelven también, eso puede ser
             // mentira (28-ago).

@@ -4382,6 +4382,90 @@ async function togglePropuestaFlag(id, field, btn) {
 // Ver wabot/admin.php (presentar_muestra). clienteId viaja para que wabot
 // pueda avisarle después al admin (chat archivado) sobre este mismo cliente:
 // ver sincronizarPresentados().
+const presentacionManualModal = document.getElementById("presentacionManualModal");
+
+function textoPresentacionRespaldo(p, slug) {
+    const negocio = p.nombre_negocio || p.rubro || "tu negocio";
+    const link = slug ? `gokywebs.com/demo/${slug}` : "[falta el enlace de la demo]";
+    return `¡Ya está lista la primera propuesta para la web de ${negocio}!\n\nPodés verla acá:\n${link}\n\nMirá el estilo general y cómo está distribuida la información. Los textos e imágenes de ejemplo se reemplazan o ajustan con tu contenido real si avanzamos.\n\nHay dos modelos de web para elegir. En la parte superior podés cambiar de modelo.`;
+}
+
+function mostrarPresentacionManual(p, envio, enSeguimiento = null) {
+    const telefono = String(p.telefono || p.contacto_cel || "").trim();
+    const slug = envio?.slug || slugNegocio(p.nombre_negocio || p.rubro || "");
+    const textos = Array.isArray(envio?.textos) && envio.textos.length
+        ? envio.textos.filter(texto => typeof texto === "string" && texto.trim())
+        : [textoPresentacionRespaldo(p, slug)];
+    const enviados = Array.isArray(envio?.textos_enviados) ? envio.textos_enviados : [];
+    const pendientes = textos.filter((_, i) => !enviados[i] && !(i === 0 && envio?.demo_ok));
+    const mensajes = pendientes.length ? pendientes : [textoPresentacionRespaldo(p, slug)];
+    const estado = document.getElementById("presentacionManualEstado");
+    const nota = document.getElementById("presentacionManualNota");
+    const campoTelefono = document.getElementById("presentacionManualTelefono");
+    const copiarTelefono = document.getElementById("copiarPresentacionTelefono");
+    const contenedor = document.getElementById("presentacionManualMensajes");
+
+    let motivo;
+    if (envio?.error) motivo = `El bot no pudo enviar la demo: ${envio.error}`;
+    else if (envio?.sin_chat) motivo = "No se encontró una conversación con el bot. Enviá la presentación manualmente.";
+    else if (envio?.fuera_ventana) motivo = envio.nunca_escribio
+        ? "El cliente todavía no escribió por WhatsApp. El bot no pudo enviarle la demo."
+        : "Pasaron más de 24 horas desde el último mensaje. El bot no pudo enviarle la demo.";
+    else if (envio?.demo_ok) motivo = "El primer mensaje con la demo sí salió. Solo falta enviar el mensaje siguiente.";
+    else motivo = "El bot no pudo confirmar el envío. Tenés el texto y el número para enviarlo manualmente.";
+    const prefijo = enSeguimiento === true ? "Quedó en Seguimiento. " : enSeguimiento === false ? "Sigue en Bocetos. " : "";
+    estado.textContent = prefijo + motivo;
+
+    campoTelefono.value = telefono || "Sin número cargado";
+    copiarTelefono.disabled = !telefono;
+    contenedor.replaceChildren();
+    mensajes.forEach((texto, i) => {
+        const bloque = document.createElement("div");
+        bloque.className = "presentacion-manual-mensaje";
+        const label = document.createElement("label");
+        const textarea = document.createElement("textarea");
+        textarea.id = `presentacionManualTexto${i}`;
+        textarea.readOnly = true;
+        textarea.value = texto;
+        label.htmlFor = textarea.id;
+        label.textContent = mensajes.length > 1 ? `Mensaje ${i + 1} para copiar` : "Mensaje para copiar";
+        const boton = document.createElement("button");
+        boton.type = "button";
+        boton.className = "btn-ghost";
+        boton.textContent = "Copiar mensaje";
+        boton.addEventListener("click", async () => {
+            try {
+                await writeTextToClipboard(textarea.value);
+                boton.textContent = "Copiado";
+                setTimeout(() => { boton.textContent = "Copiar mensaje"; }, 1500);
+            } catch (err) { alert("No se pudo copiar el mensaje: " + err.message); }
+        });
+        bloque.append(label, textarea, boton);
+        contenedor.append(bloque);
+    });
+    const respuestaExacta = Array.isArray(envio?.textos) && envio.textos.length > 0;
+    const entregaIncierta = !envio?.sin_chat && !envio?.fuera_ventana && !envio?.demo_ok;
+    nota.hidden = respuestaExacta && !entregaIncierta;
+    nota.textContent = !respuestaExacta
+        ? "El bot no devolvió su texto exacto; este es un mensaje de respaldo. Revisá el enlace antes de enviarlo."
+        : "Si hubo un problema de conexión o tiempo de espera, revisá primero el chat del bot: el mensaje podría haber llegado aunque no se haya confirmado.";
+    presentacionManualModal.hidden = false;
+    document.getElementById("closePresentacionManualBtn").focus();
+}
+
+function cerrarPresentacionManual() { presentacionManualModal.hidden = true; }
+document.getElementById("closePresentacionManualBtn").addEventListener("click", cerrarPresentacionManual);
+document.getElementById("cerrarPresentacionManualBtn").addEventListener("click", cerrarPresentacionManual);
+presentacionManualModal.addEventListener("click", e => { if (e.target === presentacionManualModal) cerrarPresentacionManual(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !presentacionManualModal.hidden) cerrarPresentacionManual(); });
+document.getElementById("copiarPresentacionTelefono").addEventListener("click", async e => {
+    try {
+        await writeTextToClipboard(document.getElementById("presentacionManualTelefono").value);
+        e.currentTarget.textContent = "Copiado";
+        setTimeout(() => { e.currentTarget.textContent = "Copiar número"; }, 1500);
+    } catch (err) { alert("No se pudo copiar el número: " + err.message); }
+});
+
 async function enviarMuestraWhatsapp(p, clienteId) {
     const telefono = p.telefono || p.contacto_cel || "";
     const negocio  = p.nombre_negocio || p.rubro || "";
@@ -4389,14 +4473,21 @@ async function enviarMuestraWhatsapp(p, clienteId) {
 
     try {
         await wabotAuthHandshake();
-        const cuerpo = { accion: "presentar_muestra", tel: telefono, negocio, cliente_id: clienteId || "" };
+        const tipoPlan = planKeyDeTipo(p.tipoDetectado || p.tipo_web || getPropuestaTipoWeb(p));
+        const tipoBot = { profesional: "landing", ecommerce: "ecommerce", cursos: "elearning", inmobiliaria: "inmobiliaria" }[tipoPlan] || "";
+        const cuerpo = { accion: "presentar_muestra", tel: telefono, negocio,
+                         nombre: p.nombre || p.contacto_nombre || "", tipo: tipoBot,
+                         cliente_id: clienteId || "" };
         const res = await fetch("../wabot/admin.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams(cuerpo),
             credentials: "same-origin"
         });
-        return await res.json();
+        if (!res.ok) throw new Error(`Respuesta ${res.status} del panel del bot.`);
+        const data = await res.json();
+        if (!data || typeof data !== "object") throw new Error("Respuesta vacía del panel del bot.");
+        return data;
     } catch (e) {
         return { error: "No se pudo contactar al panel del bot: " + e.message };
     }
@@ -4432,53 +4523,42 @@ async function presentarPropuesta(propId) {
     // Se pregunta en vez de asumir, y si Pablo confirma, el cliente se crea
     // igual: el link se lo manda él a mano.
     const envio = await enviarMuestraWhatsapp(p, clienteRef.id);
+    let mostrarCopiaManual = false;
+    let avisoPresentado = "";
     if (envio?.error) {
         const seguirIgual = confirm(
             "No se le pudo avisar al bot / mandar el link por WhatsApp:\n\n" + envio.error +
-            "\n\n¿Pasarla a Seguimiento igual? El cliente NO recibe nada automático: mandale vos el link a mano."
+            "\n\n¿Pasarla a Seguimiento igual? Después vas a ver el número y el mensaje para copiarlos."
         );
-        if (!seguirIgual) return;
+        if (!seguirIgual) { mostrarPresentacionManual(p, envio, false); return; }
+        mostrarCopiaManual = true;
     } else if (envio) {
-        const link = envio.slug ? "gokywebs.com/demo/" + envio.slug : "";
         if (envio.sin_chat) {
-            alert("Quedó en Seguimiento. Mandale vos el link por WhatsApp desde tu número"
-                + (link ? ":\n" + link : ".")
-                + "\n\nEste cliente no tiene conversación con el bot, así que el bot no lo va a seguir: el seguimiento corre por tu cuenta.");
+            mostrarCopiaManual = true;
         } else if (envio.enviado) {
             // Los leads de Instagram reciben la demo por DM, no por WhatsApp:
             // decir siempre "por WhatsApp" mandaba a Pablo a mirar el chat
             // equivocado (28-ago).
             const porDonde = envio.canal === "instagram" ? "por Instagram" : "por WhatsApp";
-            alert("Quedó en Seguimiento. El bot ya le mandó la demo " + porDonde + ", no hace falta que le escribas vos.");
+            avisoPresentado = "Quedó en Seguimiento. El bot ya le mandó la demo " + porDonde + ", no hace falta que le escribas vos.";
         } else if (envio.fuera_ventana) {
             /* Meta no deja mandar texto libre fuera de las 24 h desde el último
                mensaje del cliente. El que llegó por el formulario y nunca
                escribió por WhatsApp está siempre fuera (21-sep, Pescadería Las
                Grutas: la demo salió al vacío y en el panel figuraba enviada). */
-            alert("Quedó en Seguimiento, pero el bot NO le mandó nada: "
-                + (envio.nunca_escribio
-                    ? "ese número nunca escribió por WhatsApp (llegó por el formulario)."
-                    : "pasaron más de 24 hs desde su último mensaje.")
-                + "\n\nWhatsApp no deja escribirle hasta que el cliente vuelva a hablar."
-                + " Mandale vos el link desde tu número"
-                + (link ? ":\n" + link : ".")
-                + "\n\nSi ya tenés su chat en el panel del bot, ahí está el botón de la plantilla de 72 hs.");
+            mostrarCopiaManual = true;
         } else if (envio.demo_ok) {
             // El mensaje con el link SÍ salió; falló el segundo, que solo pide
             // el feedback. Mandar la demo de nuevo sería duplicarla.
-            alert("Quedó en Seguimiento. El link de la demo SÍ le llegó, así que no se la vuelvas a mandar."
-                + "\n\nLo que no salió fue el segundo mensaje, el que le pide que te cuente qué le pareció."
-                + " Si querés, escribíselo vos por el chat del bot.");
+            mostrarCopiaManual = true;
         } else {
             // Ojo: el envío corta a los 20 s, así que un timeout con Meta lenta
             // se ve igual que un fallo real aunque el mensaje haya salido. Por
             // eso primero se mira el chat y recién después se reenvía.
-            alert("Quedó en Seguimiento, pero el bot no pudo confirmar el envío de la demo"
-                + " (puede ser que la ventana de 24h ya cerró, o que Meta tardó en responder)."
-                + "\n\nFijate en el chat del bot si el mensaje llegó. Si no está, mandásela vos desde tu número"
-                + (link ? ":\n" + link : ".")
-                + "\n\nMientras no conste como enviada por el bot, tampoco se le manda la plantilla de seguimiento de las 48h.");
+            mostrarCopiaManual = true;
         }
+    } else {
+        mostrarCopiaManual = true;
     }
 
     try {
@@ -4548,9 +4628,12 @@ async function presentarPropuesta(propId) {
             createdBy:      currentUser?.uid || null
         });
         await deleteDoc(doc(db, "propuestas", propId));
+        if (mostrarCopiaManual) mostrarPresentacionManual(p, envio, true);
+        else if (avisoPresentado) alert(avisoPresentado);
     } catch (err) {
         console.error(err);
         alert("Error: " + err.message);
+        if (mostrarCopiaManual) mostrarPresentacionManual(p, envio);
     }
 }
 

@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260923-mantenimiento-unificado">
+    <link rel="stylesheet" href="styles.css?v=20260924-presentacion-manual">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -907,6 +907,27 @@
         </div>
     </div>
 
+    <!-- Modal: copia manual cuando el bot no pudo presentar la demo -->
+    <div id="presentacionManualModal" class="modal-backdrop" hidden>
+        <div class="modal modal-presentacion-manual" role="dialog" aria-modal="true" aria-labelledby="presentacionManualTitle">
+            <div class="modal-header">
+                <h2 id="presentacionManualTitle">Enviar la demo a mano</h2>
+                <button class="modal-close" id="closePresentacionManualBtn" type="button" aria-label="Cerrar">&times;</button>
+            </div>
+            <p id="presentacionManualEstado" class="presentacion-manual-estado"></p>
+            <div class="presentacion-manual-campo">
+                <label for="presentacionManualTelefono">Número del cliente</label>
+                <div class="presentacion-manual-copia">
+                    <input id="presentacionManualTelefono" type="text" readonly>
+                    <button class="btn-ghost" type="button" id="copiarPresentacionTelefono">Copiar número</button>
+                </div>
+            </div>
+            <div id="presentacionManualMensajes" class="presentacion-manual-mensajes"></div>
+            <p id="presentacionManualNota" class="presentacion-manual-nota" hidden></p>
+            <div class="modal-actions"><button class="btn-primary" type="button" id="cerrarPresentacionManualBtn">Listo</button></div>
+        </div>
+    </div>
+
     <!-- Modal: chat de WhatsApp/Instagram (panel del bot embebido) -->
     <div id="chatModal" class="modal-backdrop" hidden>
         <div class="modal modal-chat">
@@ -1019,6 +1040,6 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260923-mantenimiento-unificado"></script>
+    <script type="module" src="dashboard.js?v=20260924-presentacion-manual"></script>
 </body>
 </html>

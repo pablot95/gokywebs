@@ -1372,6 +1372,21 @@ textarea:focus {
 
 .modal-backdrop[hidden] { display: none; }
 
+.modal-presentacion-manual { max-width: 680px; }
+.modal-presentacion-manual .modal-header { flex: none; }
+.presentacion-manual-estado { color: var(--text); font-size: 14px; line-height: 1.5; margin: 4px 0 18px; }
+.presentacion-manual-campo label,
+.presentacion-manual-mensaje label { display: block; color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+.presentacion-manual-copia { display: flex; gap: 8px; align-items: stretch; }
+.presentacion-manual-copia input { flex: 1; min-width: 0; font: inherit; }
+.presentacion-manual-copia .btn-ghost { flex: none; margin: 0; }
+.presentacion-manual-mensajes { overflow-y: auto; min-height: 0; padding-right: 4px; margin-top: 18px; }
+.presentacion-manual-mensaje + .presentacion-manual-mensaje { margin-top: 18px; }
+.presentacion-manual-mensaje textarea { display: block; width: 100%; min-height: 170px; resize: vertical; line-height: 1.5; font: inherit; }
+.presentacion-manual-mensaje .btn-ghost { margin-top: 8px; }
+.presentacion-manual-nota { color: var(--text-muted); font-size: 12px; line-height: 1.5; margin: 15px 0 0; }
+@media (max-width: 560px) { .presentacion-manual-copia { flex-direction: column; } .presentacion-manual-copia .btn-ghost { align-self: flex-start; } }
+
 body.modal-open { overflow: hidden; }
 
 .modal {
