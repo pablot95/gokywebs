@@ -1552,10 +1552,10 @@ function wabot_conv_load($clave) {
         'presentado_confirmado'  => false,
         'presentado_recordatorio_enviado' => false,
         'presentado_recordatorio_ts' => 0,
-        // Plantilla manual de seguimiento de la demo. Se envía únicamente
-        // desde el botón del chat; el cron ya no la dispara.
+        // Seguimiento de la demo: manual o programado a las 18 h.
         'confirmacion_demo_enviada' => false,
         'confirmacion_demo_ts' => 0,
+        'confirmacion_demo_auto_intento_ts' => 0,
         // Parte 2 de la venta (después de presentar la demo).
         'videollamada_ofrecida'  => false,
         'cambios_pedidos'        => null,
@@ -1613,6 +1613,9 @@ function wabot_conv_load($clave) {
         'contestado_ts'    => 0,
         // Marca manual y permanente del panel; no cambia con mensajes nuevos.
         'favorito'         => false,
+        // Los favoritos anteriores a la automatización quedan fuera del envío masivo.
+        'favorito_ts'      => 0,
+        'seguimiento_interesado_auto_intento_ts' => 0,
         'aclaraciones_fallidas' => 0,
         // Mensajes seguidos que no se entienden, antes de saber el rubro.
         'ininteligibles'   => 0,
@@ -1743,6 +1746,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     $conv['presentado_recordatorio_enviado'] = false;
     $conv['presentado_recordatorio_ts'] = 0;
     $conv['confirmacion_demo_enviada'] = false;
+    $conv['confirmacion_demo_ts'] = 0;
+    $conv['confirmacion_demo_auto_intento_ts'] = 0;
     $conv['videollamada_ofrecida'] = false;
     $conv['cambios_pedidos'] = null;
     $conv['pago_avisado_ts'] = 0;
@@ -4288,8 +4293,8 @@ function wabot_referencia_final($conv, $brief) {
 /* ──────────────────── Horarios y automatismos por cron ────────────────────
  *
  * Reloj argentino y horario de contacto, más la "última llamada" automática
- * antes de que cierre la ventana de 24 h de Meta. El seguimiento de la demo
- * por plantilla se envía manualmente desde el chat.
+ * antes de que cierre la ventana de 24 h de Meta. Las dos plantillas de
+ * seguimiento salen a las 18 h por el mismo cron, una vez por conversación.
  *
  * Los dispara wabot/seguimiento.php vía cron. Sin cron configurado, no corren.
  */
@@ -4473,33 +4478,110 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
     return $res;
 }
 
-/* ─────────────────── Template manual de seguimiento de la demo ───────────
- *
- * La función de elegibilidad se conserva para compatibilidad y diagnóstico,
- * pero el envío automático está desactivado. La plantilla aprobada por Meta
- * sale únicamente desde el botón del chat.
- */
+/* ─────────────────── Plantillas automáticas de seguimiento ────────────── */
+
+/** Evita que la primera ejecución mande plantillas a chats históricos. */
+function wabot_plantillas_auto_desde_ts() {
+    return strtotime('2026-09-24 18:00:00 -03:00');
+}
+
+function wabot_plantilla_auto_activa($clave, $cfg) {
+    $p = wabot_plantilla_config($clave, $cfg);
+    return $p !== null && (!array_key_exists('automatico', $p) || !empty($p['automatico']));
+}
+
+function wabot_plantillas_auto_contacto_ok($cv, $ahora) {
+    if (wabot_canal($cv) !== 'whatsapp' || !empty($cv['archivado'])) return false;
+    if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
+    if (!empty($cv['contexto_consulta']) || !empty($cv['pago_avisado_ts'])) return false;
+    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora || (int)($cv['retomar_ts'] ?? 0) > $ahora) return false;
+    return true;
+}
+
+/** El transcript incluye mensajes del cliente, del bot y de Pablo en el panel. */
+function wabot_ultimo_mensaje_ts($cv) {
+    $ts = max((int)($cv['ultimo_cliente_ts'] ?? 0),
+              (int)($cv['presentado_ts'] ?? 0),
+              (int)($cv['confirmacion_demo_ts'] ?? 0));
+    foreach (array_reverse((array)($cv['transcript'] ?? [])) as $fila) {
+        if (!in_array(($fila['q'] ?? ''), ['cliente', 'bot', 'humano'], true)) continue;
+        $ts = max($ts, (int)($fila['ts'] ?? 0));
+        break;
+    }
+    return $ts;
+}
 
 function wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora = null) {
     $ahora = $ahora ?? time();
-    if (empty($cfg['activo'])) return false;
+    if (empty($cfg['activo']) || !wabot_plantilla_auto_activa('confirmacion_demo_48h', $cfg)) return false;
     if (empty($cv['presentado_ts']) || !empty($cv['confirmacion_demo_enviada'])) return false;
-    // Solo para lo que el bot mandó de verdad. Esta comprobación se conserva
-    // como diagnóstico del seguimiento aunque el envío ahora sea manual.
-    if (empty($cv['presentado_via_bot'])) return false;
-    // Y solo si nunca contestó nada: cualquier respuesta ya deriva a Pablo
-    // (ver wabot_responder) y marca presentado_confirmado.
-    if (!empty($cv['presentado_confirmado'])) return false;
-    if (!empty($cv['archivado']) || !empty($cv['bot_off'])) return false;
-    if ((int)($cv['pausado_hasta'] ?? 0) > $ahora) return false;
-    $horas = (float)($cfg['confirmacion_demo_horas'] ?? 48);
+    if ((int)$cv['presentado_ts'] < wabot_plantillas_auto_desde_ts()) return false;
+    if (empty($cv['presentado_via_bot']) || !empty($cv['favorito']) || !empty($cv['presentado_confirmado'])) return false;
+    if (!empty($cv['confirmacion_demo_auto_intento_ts'])) return false;
+    if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
+    if (wabot_presentada_nivel($cv) !== 'sin_respuesta') return false;
+    if (wabot_ultimo_cliente_ts($cv) > (int)$cv['presentado_ts']) return false;
+    $horas = (float)($cfg['confirmacion_demo_horas'] ?? 72);
     return $ahora - (int)$cv['presentado_ts'] >= $horas * 3600;
 }
 
+function wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    if (empty($cfg['activo']) || !wabot_plantilla_auto_activa('seguimiento_interesado', $cfg)) return false;
+    if (empty($cv['favorito']) || (int)($cv['favorito_ts'] ?? 0) < wabot_plantillas_auto_desde_ts()) return false;
+    if (!empty($cv['seguimiento_interesado_enviado']) || !empty($cv['seguimiento_interesado_auto_intento_ts'])) return false;
+    if (!wabot_plantillas_auto_contacto_ok($cv, $ahora)) return false;
+    $ultimo = wabot_ultimo_mensaje_ts($cv);
+    return $ultimo > 0 && $ahora - $ultimo >= 7 * 86400;
+}
+
+/** Una pasada de cron; registra el intento antes de llamar a Meta para no duplicar ante un timeout. */
+function wabot_plantillas_auto_correr($cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $res = ['automatico' => true, 'revisadas' => 0, 'enviados' => 0, 'fallidos' => 0, 'detalle' => []];
+    if (wabot_hora_local($ahora) !== 18 || empty($cfg['activo'])) return $res;
+
+    foreach (glob(WABOT_DATA . '/conv/*.json') ?: [] as $f) {
+        $clave = basename($f, '.json');
+        if (stripos($clave, 'TEST') !== false) continue;
+        $cv = wabot_conv_load($clave);
+        $tipo = wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora) ? 'demo'
+              : (wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora) ? 'interesado' : '');
+        if ($tipo === '') continue;
+        $res['revisadas']++;
+
+        $lock = wabot_lock_tomar($clave);
+        if (!$lock) continue;
+        try {
+            $cv = wabot_conv_load($clave);
+            $corresponde = $tipo === 'demo'
+                ? wabot_confirmacion_demo_corresponde($cv, $cfg, $ahora)
+                : wabot_seguimiento_interesado_corresponde($cv, $cfg, $ahora);
+            if (!$corresponde) continue;
+
+            $intentoCampo = $tipo === 'demo' ? 'confirmacion_demo_auto_intento_ts' : 'seguimiento_interesado_auto_intento_ts';
+            $cv[$intentoCampo] = $ahora;
+            if (!wabot_conv_save($cv)) { $res['fallidos']++; continue; }
+
+            $resultado = $tipo === 'demo'
+                ? wabot_template_72h_enviar($cv, $cfg)
+                : wabot_template_interesado_enviar($cv, $cfg);
+            if ($resultado === 'ok' && wabot_conv_save($cv)) {
+                $res['enviados']++;
+                $res['detalle'][] = ['clave' => $clave, 'plantilla' => $tipo];
+            } else {
+                $res['fallidos']++;
+                wabot_log('plantilla_auto_fallida', ['clave' => $clave, 'plantilla' => $tipo, 'resultado' => $resultado]);
+            }
+        } finally {
+            wabot_lock_soltar($lock);
+        }
+    }
+    return $res;
+}
+
 function wabot_confirmacion_demo_correr($cfg, $ahora = null) {
-    // Desactivado por decisión comercial: la plantilla seguimiento_demo_72h
-    // se manda solamente con el botón manual dentro de la conversación.
-    return ['revisadas' => 0, 'enviados' => 0, 'detalle' => [], 'automatico' => false];
+    return wabot_plantillas_auto_correr($cfg, $ahora);
 }
 
 /**

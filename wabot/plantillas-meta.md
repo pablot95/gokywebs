@@ -6,11 +6,14 @@ Se cargan en **WhatsApp Manager → Herramientas de cuenta → Plantillas de
 mensajes**. El nombre va en minúsculas y con guiones bajos; la categoría de todo
 lo que sea "volver a contactar para vender" es **Marketing**.
 
-## La única cableada: confirmación de la demo a las 48 h
+## Seguimiento automático de la demo
 
-La manda el cron (`seguimiento.php` → `wabot_confirmacion_demo_correr`) a quien
-tiene la demo presentada y no contestó en `presentadas_sin_respuesta_horas`
-(48 h por defecto). Una sola vez por conversación, siempre por plantilla.
+El cron `seguimiento.php` la manda a las 18:00 (hora argentina), en la primera
+ejecución después de que pasen 72 horas desde una demo entregada por el bot,
+si el cliente no respondió, el chat no es favorito y no hay un cierre o baja.
+Solo entran demos presentadas a partir del 24/09/2026 a las 18:00.
+Se registra el intento antes de llamar a Meta para evitar duplicados si hay
+un tiempo de espera. Si falla, queda disponible el botón manual.
 
 | Campo | Valor |
 |---|---|
@@ -27,6 +30,17 @@ Hola! Te escribo para saber si pudiste ver la demo que te enviamos. Si hay algo 
 
 Si algún día se aprueba otra, alcanza con cambiar el nombre y el idioma desde el
 panel: el cron toma lo que haya en esa clave.
+
+## Seguimiento automático de interesados
+
+`seguimiento_interesado` se manda a las 18:00, una sola vez, cuando el chat
+está marcado como favorito y pasaron siete días completos desde el último
+mensaje registrado del cliente, del bot o escrito a mano desde el panel.
+Los favoritos que ya estaban marcados antes de activar este flujo no entran:
+hay que quitar y volver a poner la estrella para programarlos.
+Los mensajes enviados por fuera del panel no quedan registrados en ese reloj.
+La opción «Automática a las 18 h» en Ajustes permite apagar cada flujo sin
+desactivar el botón manual de la plantilla.
 
 ## Qué pasa después
 

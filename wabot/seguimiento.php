@@ -1,18 +1,16 @@
 <?php
 /**
  * wabot/seguimiento.php — automatismos por cron:
- *   - la "última llamada" a las 23 h del último mensaje del cliente, antes de
- *     que cierre la ventana de 24 h de Meta (wabot_ultima_llamada_correr).
+ *   - la "última llamada" antes de que cierre la ventana de Meta;
+ *   - seguimiento_demo_72h, a las 18 h tras 72 h sin respuesta;
+ *   - seguimiento_interesado, a las 18 h tras 7 días sin mensajes.
  *
- * La plantilla seguimiento_demo_72h ya NO sale desde este cron: se envía
- * únicamente con el botón manual de la conversación.
- *
- * Desde Hostinger (hPanel → Avanzado → Cron Jobs), cada 30 minutos:
+ * Desde el hosting, cada 5-30 minutos (zona horaria argentina para las plantillas):
  *   php /home/USUARIO/public_html/wabot/seguimiento.php
  * o por URL, con el verify token como clave:
  *   https://gokywebs.com/wabot/seguimiento.php?clave=VERIFY_TOKEN
  *
- * Correrlo de más no duplica la última llamada.
+ * Correrlo de más no duplica los envíos: cada conversación registra su intento.
  */
 
 // engine.php, no lib.php: los textos de los crons también pasan por el punto
@@ -35,6 +33,7 @@ if (php_sapi_name() !== 'cli') {
 
 $cfg = wabot_config_load();
 $ultima = wabot_ultima_llamada_correr($cfg);
+$plantillas = wabot_plantillas_auto_correr($cfg);
 
 echo json_encode([
     'ultima_llamada' => [
@@ -42,10 +41,5 @@ echo json_encode([
         'enviados'  => $ultima['enviados'],
         'detalle'   => $ultima['detalle'],
     ],
-    'confirmacion_demo' => [
-        'automatico' => false,
-        'revisadas' => 0,
-        'enviados'  => 0,
-        'detalle'   => [],
-    ],
+    'plantillas' => $plantillas,
 ], JSON_UNESCAPED_UNICODE) . "\n";

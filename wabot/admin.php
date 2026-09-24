@@ -366,17 +366,24 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $cfg['plantillas'][$clavePlant]['nombre'] = trim((string)($_POST["plantilla_{$clavePlant}_nombre"] ?? ''));
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
             $cfg['plantillas'][$clavePlant]['activa'] = !empty($_POST["plantilla_{$clavePlant}_activa"]);
+            $cfg['plantillas'][$clavePlant]['automatico'] = !empty($_POST["plantilla_{$clavePlant}_automatico"]);
         }
         wabot_config_save($cfg);
         header('Location: admin.php?tab=ajustes&ok=1'); exit;
     }
     if ($a === 'enviar_template_72h' && !empty($_POST['tel'])) {
         $tel = (string)$_POST['tel'];
-        $conv = wabot_conv_load($tel);
-        $resultado = wabot_template_72h_enviar($conv, $cfg);
-        if ($resultado === 'ok') {
-            wabot_conv_save($conv);
-            wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $tel, 'clave' => $tel]);
+        $lock = wabot_lock_tomar($tel);
+        $resultado = 'ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($tel);
+                $resultado = wabot_template_72h_enviar($conv, $cfg);
+                if ($resultado === 'ok') {
+                    wabot_conv_save($conv);
+                    wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $tel, 'clave' => $tel]);
+                }
+            } finally { wabot_lock_soltar($lock); }
         }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&template_72_' . $resultado . '=1'); exit;
     }
@@ -391,11 +398,18 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             echo json_encode(['ok' => false, 'resultado' => $motivo === 'ambiguo' ? 'ambiguo' : 'sin_chat']);
             exit;
         }
-        $conv = wabot_conv_load($clave);
-        $resultado = wabot_template_72h_enviar($conv, $cfg);
-        if ($resultado === 'ok') {
-            wabot_conv_save($conv);
-            wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $clave, 'clave' => $clave, 'desde' => 'seguimientos']);
+        $lock = wabot_lock_tomar($clave);
+        $resultado = 'ocupado';
+        $conv = null;
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($clave);
+                $resultado = wabot_template_72h_enviar($conv, $cfg);
+                if ($resultado === 'ok') {
+                    wabot_conv_save($conv);
+                    wabot_log('confirmacion_demo_manual', ['tel' => $conv['tel'] ?? $clave, 'clave' => $clave, 'desde' => 'seguimientos']);
+                }
+            } finally { wabot_lock_soltar($lock); }
         }
         echo json_encode([
             'ok'         => $resultado === 'ok',
@@ -407,9 +421,15 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     }
     if ($a === 'enviar_template_interesado' && !empty($_POST['tel'])) {
         $tel = (string)$_POST['tel'];
-        $conv = wabot_conv_load($tel);
-        $resultado = wabot_template_interesado_enviar($conv, $cfg);
-        if ($resultado === 'ok') wabot_conv_save($conv);
+        $lock = wabot_lock_tomar($tel);
+        $resultado = 'ocupado';
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($tel);
+                $resultado = wabot_template_interesado_enviar($conv, $cfg);
+                if ($resultado === 'ok') wabot_conv_save($conv);
+            } finally { wabot_lock_soltar($lock); }
+        }
         header('Location: admin.php?tab=conversaciones&ver=' . urlencode($tel) . '&template_interesado_' . $resultado . '=1'); exit;
     }
     if ($a === 'seguimiento_template_interesado' && !empty($_POST['tel'])) {
@@ -419,9 +439,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             echo json_encode(['ok' => false, 'resultado' => $motivo === 'ambiguo' ? 'ambiguo' : 'sin_chat']);
             exit;
         }
-        $conv = wabot_conv_load($clave);
-        $resultado = wabot_template_interesado_enviar($conv, $cfg);
-        if ($resultado === 'ok') wabot_conv_save($conv);
+        $lock = wabot_lock_tomar($clave);
+        $resultado = 'ocupado';
+        $conv = null;
+        if ($lock) {
+            try {
+                $conv = wabot_conv_load($clave);
+                $resultado = wabot_template_interesado_enviar($conv, $cfg);
+                if ($resultado === 'ok') wabot_conv_save($conv);
+            } finally { wabot_lock_soltar($lock); }
+        }
         echo json_encode([
             'ok' => $resultado === 'ok', 'resultado' => $resultado, 'clave' => $clave,
             'enviado_ts' => (int)($conv['seguimiento_interesado_ts'] ?? 0),
@@ -511,6 +538,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['confirmacion_demo_enviada'] = false;
         $conv['confirmacion_demo_ts'] = 0;
+        $conv['confirmacion_demo_auto_intento_ts'] = 0;
         $conv['cliente_id'] = trim((string)($_POST['cliente_id'] ?? '')) ?: null;
 
         /* Se manda mensaje por mensaje y se mira CADA uno por separado.
@@ -597,6 +625,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $conv['presentado_recordatorio_ts'] = 0;
         $conv['confirmacion_demo_enviada'] = false;
         $conv['confirmacion_demo_ts'] = 0;
+        $conv['confirmacion_demo_auto_intento_ts'] = 0;
         wabot_capi_evento($conv, 'Schedule', $cfg);
         wabot_conv_save($conv);
         wabot_log('marcar_entregada', ['tel' => $conv['tel'], 'slug' => $conv['presentado_slug']]);
@@ -912,6 +941,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
     if ($a === 'conv_favorito' && !empty($_POST['tel'])) {
         $conv = wabot_conv_load($_POST['tel']);
         $conv['favorito'] = empty($conv['favorito']);
+        $conv['favorito_ts'] = !empty($conv['favorito']) ? time() : 0;
         wabot_conv_save($conv);
         if (!empty($_POST['ajax'])) {
             header('Content-Type: application/json; charset=utf-8');
@@ -1541,11 +1571,13 @@ body.embed { min-height: 0; }
     <?php if (isset($_GET['template_72_sin_demo'])) echo '<p class="ok" style="color:var(--bad)">Primero tenés que presentar la demo.</p>'; ?>
     <?php if (isset($_GET['template_72_canal'])) echo '<p class="ok" style="color:var(--bad)">Este template es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_72_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó el template o no está activo en Ajustes.</p>'; ?>
+    <?php if (isset($_GET['template_72_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
     <?php if (isset($_GET['template_interesado_ok'])) echo '<p class="ok">Plantilla de seguimiento para interesado enviada.</p>'; ?>
     <?php if (isset($_GET['template_interesado_ya'])) echo '<p class="ok" style="color:var(--warn)">La plantilla para interesado ya se envió en este chat.</p>'; ?>
     <?php if (isset($_GET['template_interesado_no_interesado'])) echo '<p class="ok" style="color:var(--warn)">Marcá el chat como favorito antes de enviar esta plantilla.</p>'; ?>
     <?php if (isset($_GET['template_interesado_canal'])) echo '<p class="ok" style="color:var(--bad)">Esta plantilla es de WhatsApp y no se puede enviar por Instagram.</p>'; ?>
     <?php if (isset($_GET['template_interesado_error'])) echo '<p class="ok" style="color:var(--bad)">Meta rechazó la plantilla o no está activa en Ajustes.</p>'; ?>
+    <?php if (isset($_GET['template_interesado_ocupado'])) echo '<p class="ok" style="color:var(--warn)">Este chat se está procesando. Revisá si la plantilla salió antes de volver a enviarla.</p>'; ?>
 
     <?php if ($tab === 'estado'): ?>
         <div class="card">
@@ -1822,9 +1854,9 @@ body.embed { min-height: 0; }
         </div>
         <div class="card">
             <h2 style="margin-top:0">Plantillas de WhatsApp</h2>
-            <p class="meta" style="margin-top:0">Las plantillas permiten escribir con la ventana de 24 h cerrada y deben estar aprobadas por Meta. Ambas se envían manualmente desde el chat o Seguimientos.</p>
+            <p class="meta" style="margin-top:0">Las plantillas deben estar aprobadas por Meta. El cron revisa a las 18 h de Argentina: la demo a las 72 h sin respuesta y el interesado a los 7 días del último mensaje de cualquiera de los dos. También podés enviarlas manualmente desde el chat o Seguimientos. Los chats anteriores a esta automatización no se envían en bloque.</p>
             <?php $plantillasLabels = [
-                'confirmacion_demo_48h' => 'Template manual de seguimiento de 72 h',
+                'confirmacion_demo_48h' => 'Seguimiento de la demo · 72 h',
                 'seguimiento_interesado' => 'Seguimiento interesado · Marketing',
             ]; ?>
             <?php foreach ($plantillasLabels as $clavePlant => $labelPlant): $p = (array)($cfg['plantillas'][$clavePlant] ?? []); ?>
@@ -1838,6 +1870,10 @@ body.embed { min-height: 0; }
                     <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_activa" <?= !empty($p['activa']) ? 'checked' : '' ?>>
                         Activa
+                    </label>
+                    <label style="display:flex;align-items:center;gap:7px;margin:0 0 8px">
+                        <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_automatico" <?= !array_key_exists('automatico', $p) || !empty($p['automatico']) ? 'checked' : '' ?>>
+                        Automática a las 18 h
                     </label>
                 </div>
             <?php endforeach; ?>
