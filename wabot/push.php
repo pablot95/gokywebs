@@ -258,14 +258,21 @@ function wabot_push_avisar_si_corresponde($cv) {
     $pendientes = [];
     foreach (array_reverse((array)$cv['transcript']) as $linea) {
         if (($linea['q'] ?? '') !== 'cliente') break;
-        $t = trim(preg_replace('/\s+/u', ' ', (string)($linea['t'] ?? '')));
+        // Se respetan los renglones que escribió el cliente; solo se limpian
+        // los espacios de más y las líneas en blanco repetidas.
+        $t = preg_replace(['/[ \t]+/u', '/\s*\n\s*\n\s*/u'], [' ', "\n"], (string)($linea['t'] ?? ''));
+        $t = trim($t);
         if ($t !== '') array_unshift($pendientes, $t);
     }
-    $cuerpo = $pendientes ? implode(' · ', $pendientes) : 'Te escribió y espera respuesta.';
-    if (mb_strlen($cuerpo) > 160) $cuerpo = '…' . mb_substr($cuerpo, -159);
+    /* Pablo, 24-sep: "que se vean como los de WhatsApp, que no diga '2
+     * mensajes' porque no los puedo leer". Un renglón por mensaje y enteros:
+     * Android expande la notificación y los muestra todos. El único tope es el
+     * de FCM (4 KB por mensaje): si una ráfaga no entra, se cortan los más
+     * viejos, nunca el último. */
+    $cuerpo = $pendientes ? implode("\n", $pendientes) : 'Te escribió y espera respuesta.';
+    if (mb_strlen($cuerpo) > 1500) $cuerpo = '…' . mb_substr($cuerpo, -1499);
 
-    $quien  = wabot_push_quien($cv);
-    $titulo = count($pendientes) > 1 ? $quien . ' · ' . count($pendientes) . ' mensajes' : $quien;
+    $titulo = wabot_push_quien($cv);
     $clave  = (string)($cv['conversation_key'] ?? $cv['tel'] ?? '');
 
     $ok = wabot_push_enviar($titulo, $cuerpo, [
