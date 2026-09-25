@@ -90,6 +90,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     document.body.classList.toggle("wabot-full", activeTab === "wabot" && wabotPantallaFija);
         document.body.classList.toggle("propuestas-tab", activeTab === "propuestas");
         document.getElementById("tabMantenimiento").hidden = activeTab !== "mantenimiento";
+        document.getElementById("tabInversion").hidden     = activeTab !== "inversion";
         if (activeTab === "calendario") renderCal();
         if (activeTab === "propuestas") sincronizarAvisosBoceto();
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
@@ -97,6 +98,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         if (activeTab === "metricas") renderSubMetrica(subMetrica);
         if (activeTab === "wabot") { abrirWabot(); requestAnimationFrame(ajustarAltoWabot); }
         if (activeTab === "mantenimiento") renderMantenimiento();
+        if (activeTab === "inversion") abrirInversion();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
 });
@@ -155,6 +157,20 @@ async function abrirWabot() {
         console.warn("No se pudo abrir sesión automática en el panel del bot:", e);
     }
     f.src = "../wabot/admin.php?embed=1";
+}
+
+/* ── Pestaña Inversión: la pestaña "cohortes" de wabot/admin.php en su propio
+   iframe, mismo handshake de sesión. Nunca pide pantalla completa (no es una
+   charla), así que solo necesita el alto por postMessage — eso ya lo manda
+   wabot/admin.php para cualquier pestaña que no sea Conversaciones/Live. */
+async function abrirInversion() {
+    const f = document.getElementById("inversionFrame");
+    if (!f || f.src.indexOf("wabot") !== -1) return;
+
+    try { await wabotAuthHandshake(); } catch (e) {
+        console.warn("No se pudo abrir sesión automática en Inversión:", e);
+    }
+    f.src = "../wabot/admin.php?tab=cohortes&embed=1";
 }
 
 /* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
@@ -341,8 +357,16 @@ window.addEventListener("message", (ev) => {
     const d = ev.data;
     if (!d || d.wabot !== true) return;
 
+    // Dos iframes mandan este mismo mensaje (WhatsApp e Inversión); hay que
+    // distinguir por el origen, no asumir que siempre es wabotFrame.
+    const fi = document.getElementById("inversionFrame");
+    if (fi && ev.source === fi.contentWindow) {
+        if (d.alto > 0) fi.style.height = d.alto + "px";
+        return;
+    }
+
     const f = document.getElementById("wabotFrame");
-    if (!f) return;
+    if (!f || ev.source !== f.contentWindow) return;
 
     wabotPantallaFija = !!d.full;
     document.body.classList.toggle("wabot-full", activeTab === "wabot" && wabotPantallaFija);

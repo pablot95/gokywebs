@@ -99,15 +99,12 @@ function wabot_procesar_entrante($ev, $cfg) {
 
     // De que anuncio vino. Solo llega en el PRIMER mensaje tras el clic, asi
     // que si no se guarda ahora se pierde para siempre y esa conversacion ya
-    // no se puede atribuir.
+    // no se puede atribuir. OJO: no se guarda en ESTE $conv —es el de antes
+    // del candado y se descarta entero unas líneas más abajo (mismo problema
+    // que ya tenían las imágenes, ver el comentario de wabot_media_guardar
+    // más abajo)—, se aplica recién con el $conv que sí se guarda, adentro
+    // del candado.
     $ref = $ev['referral'] ?? null;
-    if (is_array($ref) && !empty($ref['ctwa_clid'])) {
-        $conv['ctwa_clid']       = $ref['ctwa_clid'];
-        $conv['ctwa_clid_ts']    = time();
-        $conv['anuncio_id']      = (string)($ref['anuncio_id'] ?? '');
-        $conv['anuncio_titular'] = (string)($ref['anuncio_titular'] ?? '');
-        wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id']]);
-    }
 
     $arranque = microtime(true);
     $primerContacto = empty($conv['lead_recibido_evento']);
@@ -244,6 +241,21 @@ function wabot_procesar_entrante($ev, $cfg) {
             // de anexar su primer mensaje. El reset posterior del motor queda
             // como respaldo idempotente para otros puntos de entrada.
             wabot_conv_reset_si_vieja($conv, $cfg, time());
+
+            // Recién acá se guarda de verdad: este es el $conv que sobrevive
+            // hasta wabot_conv_save() más abajo. Aplicado antes (con el
+            // candado sin tomar) se perdía siempre, sin excepción, porque
+            // unas líneas más abajo se pisa con un wabot_conv_load() nuevo
+            // (bug real, detectado el 25-sep: el log "anuncio_referral" sí
+            // salía —se arma con el $conv de antes— pero el ctwa_clid nunca
+            // llegaba a disco).
+            if (is_array($ref) && !empty($ref['ctwa_clid'])) {
+                $conv['ctwa_clid']       = $ref['ctwa_clid'];
+                $conv['ctwa_clid_ts']    = time();
+                $conv['anuncio_id']      = (string)($ref['anuncio_id'] ?? '');
+                $conv['anuncio_titular'] = (string)($ref['anuncio_titular'] ?? '');
+                wabot_log('anuncio_referral', ['tel' => $de, 'anuncio' => $conv['anuncio_id']]);
+            }
 
             $usables = [];
             $primerContacto = empty($conv['lead_recibido_evento']);
