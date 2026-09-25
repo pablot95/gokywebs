@@ -483,19 +483,18 @@ function initEscena() {
   const escena = document.getElementById('escena');
   if (!escena) return;
   const sticky = escena.querySelector('.escena__sticky');
-  const kelvin = document.getElementById('escenaK');
-  if (!sticky || !kelvin) return;
+  const reloj = document.getElementById('escenaHora');
+  if (!sticky || !reloj) return;
   const OFF = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--gw-modelos-h')) || 0;
-  const K_SALON = 5500;
-  const K_CABINA = 2700;
+  const EN_EL_SALON = 15 * 60;
+  const COLOR = getServicio('color')?.min ?? 120;
 
   const aplicar = p => {
     const barrido = Math.min(1, Math.max(0, (p - 0.08) / 0.8));
     const w = 100 - barrido * 100;
     escena.style.setProperty('--p', `${w.toFixed(2)}%`);
     escena.style.setProperty('--lo', w > 99.5 || w < 0.5 ? '0' : '1');
-    const k = Math.round((K_CABINA + (K_SALON - K_CABINA) * (w / 100)) / 100) * 100;
-    kelvin.textContent = `${k.toLocaleString('es-AR')} K`;
+    reloj.textContent = hhmm(EN_EL_SALON + Math.round((COLOR * barrido) / 5) * 5);
   };
 
   if (reduceMotion) { aplicar(1); return; }
