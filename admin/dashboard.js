@@ -159,18 +159,141 @@ async function abrirWabot() {
     f.src = "../wabot/admin.php?embed=1";
 }
 
-/* ── Pestaña Inversión: la pestaña "cohortes" de wabot/admin.php en su propio
-   iframe, mismo handshake de sesión. Nunca pide pantalla completa (no es una
-   charla), así que solo necesita el alto por postMessage — eso ya lo manda
-   wabot/admin.php para cualquier pestaña que no sea Conversaciones/Live. */
-async function abrirInversion() {
-    const f = document.getElementById("inversionFrame");
-    if (!f || f.src.indexOf("wabot") !== -1) return;
+/* ── Pestaña Inversión: cuántos de los que escribieron por primera vez en
+   wabot esa semana (cohorte) terminaron pasando a Cliente acá, sin importar
+   cuándo. No usa "pago_avisado_ts" del chat (lo que el bot CREE que entendió)
+   ni el anuncio de Meta (Pablo, 26-sep: no importa de dónde vino, importa si
+   se convirtió) — el dato real es "pasó a Cliente" en este mismo panel,
+   cruzado por teléfono contra los contactos de wabot. */
 
-    try { await wabotAuthHandshake(); } catch (e) {
-        console.warn("No se pudo abrir sesión automática en Inversión:", e);
+// Domingo (fecha, "YYYY-MM-DD") de la semana que contiene $ts, en huso de
+// Argentina. Solo se usa aritmética de fecha calendario (sin hora), así que
+// no hay que lidiar con DST.
+function argYmd(ts) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }).format(new Date(ts * 1000));
+}
+function ymdAgregarDias(ymd, dias) {
+    const [y, m, d] = ymd.split('-').map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + dias);
+    return dt.toISOString().slice(0, 10);
+}
+function ymdDiaSemana(ymd) {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); // 0 = domingo
+}
+function semanaClave(ts) {
+    const ymd = argYmd(ts);
+    return ymdAgregarDias(ymd, -ymdDiaSemana(ymd));
+}
+function fechaCorta(ymd) {
+    const [, m, d] = ymd.split('-');
+    return `${d}/${m}`;
+}
+function fechaHoraContacto(ts) {
+    return new Date(ts * 1000).toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+    });
+}
+
+let inversionContactos = null;   // cache: null = todavía no se pidió
+let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
+
+async function abrirInversion() {
+    if (inversionContactos === null) {
+        const cont = document.getElementById("inversionContent");
+        if (cont) cont.innerHTML = '<p class="muted">Cargando…</p>';
+        try {
+            try { await wabotAuthHandshake(); } catch (e) { /* sigue igual: el fetch de abajo va a fallar con un 401/403 claro */ }
+            const res = await fetch("../wabot/admin.php?accion=cohortes_json", { credentials: "same-origin" });
+            if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
+            inversionContactos = await res.json();
+        } catch (e) {
+            console.error(e);
+            if (cont) cont.innerHTML = '<p class="muted">No se pudo cargar: ' + escapeHtml(e.message) + '</p>';
+            return;
+        }
     }
-    f.src = "../wabot/admin.php?tab=cohortes&embed=1";
+    renderInversion();
+}
+
+function renderInversion() {
+    const chips = document.getElementById("inversionSemanas");
+    const cont = document.getElementById("inversionContent");
+    if (!chips || !cont) return;
+    if (!inversionContactos) { cont.innerHTML = '<p class="muted">Cargando…</p>'; return; }
+
+    // Teléfonos de quienes YA son Cliente (no solo prospecto en seguimiento),
+    // normalizados para poder cruzar contra el tel crudo de wabot.
+    const telsCliente = new Set(
+        (clients || [])
+            .filter(c => getEstado(c) === "cliente")
+            .map(c => cleanArgPhone(c.telefono))
+            .filter(t => t.length >= 8)
+    );
+
+    const semanas = new Map();
+    for (const c of inversionContactos) {
+        const key = semanaClave(c.inicio_ts);
+        if (!semanas.has(key)) semanas.set(key, { desde: key, hasta: ymdAgregarDias(key, 6), contactos: [], clientesN: 0 });
+        const s = semanas.get(key);
+        const telC = cleanArgPhone(c.tel);
+        c._esCliente = telC.length >= 8 && telsCliente.has(telC);
+        if (c._esCliente) s.clientesN++;
+        s.contactos.push(c);
+    }
+
+    const claves = Array.from(semanas.keys()).sort().reverse();   // más reciente primero
+    if (!claves.length) { chips.innerHTML = ""; cont.innerHTML = '<p class="muted">Todavía no hay contactos registrados.</p>'; return; }
+    if (inversionSemanaSel === null) inversionSemanaSel = claves[0];
+
+    chips.innerHTML = "";
+    const chipTodas = document.createElement("button");
+    chipTodas.type = "button";
+    chipTodas.className = "seg-chip" + (inversionSemanaSel === "todas" ? " active" : "");
+    chipTodas.textContent = "Todas";
+    chipTodas.addEventListener("click", () => { inversionSemanaSel = "todas"; renderInversion(); });
+    chips.appendChild(chipTodas);
+    for (const key of claves) {
+        const s = semanas.get(key);
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "seg-chip" + (inversionSemanaSel === key ? " active" : "");
+        chip.innerHTML = `${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)} <span class="seg-chip-count">${s.contactos.length}</span>`;
+        chip.addEventListener("click", () => { inversionSemanaSel = key; renderInversion(); });
+        chips.appendChild(chip);
+    }
+
+    const aMostrar = inversionSemanaSel === "todas" ? claves : claves.filter(k => k === inversionSemanaSel);
+    cont.innerHTML = "";
+    for (const key of aMostrar) {
+        const s = semanas.get(key);
+        const filas = s.contactos.slice().sort((a, b) => b.inicio_ts - a.inicio_ts).map(c => `
+            <tr>
+                <td>${escapeHtml(c.nombre || c.tel)}</td>
+                <td>${escapeHtml(c.canal)}</td>
+                <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
+                <td class="center">${c._esCliente ? "✓" : ""}</td>
+            </tr>`).join("");
+        const div = document.createElement("div");
+        div.className = "panel";
+        div.style.marginBottom = "14px";
+        div.innerHTML = `
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+                <strong>${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)}</strong>
+                <span class="muted">${s.contactos.length} contactos · <strong style="color:var(--accent-green,#4ade80)">${s.clientesN} pasaron a Cliente</strong></span>
+            </div>
+            <details>
+                <summary class="muted" style="cursor:pointer">Ver ${s.contactos.length} contacto(s)</summary>
+                <div class="table-wrapper" style="margin-top:8px">
+                    <table class="clients-table">
+                        <thead><tr><th>Nombre</th><th>Canal</th><th>Contacto</th><th class="center">Cliente</th></tr></thead>
+                        <tbody>${filas}</tbody>
+                    </table>
+                </div>
+            </details>`;
+        cont.appendChild(div);
+    }
 }
 
 /* ── Modal "Ver chat" desde Bocetos: el chat del bot en un modal, sin salir
@@ -356,14 +479,6 @@ window.addEventListener("message", (ev) => {
     if (ev.origin !== location.origin) return;
     const d = ev.data;
     if (!d || d.wabot !== true) return;
-
-    // Dos iframes mandan este mismo mensaje (WhatsApp e Inversión); hay que
-    // distinguir por el origen, no asumir que siempre es wabotFrame.
-    const fi = document.getElementById("inversionFrame");
-    if (fi && ev.source === fi.contentWindow) {
-        if (d.alto > 0) fi.style.height = d.alto + "px";
-        return;
-    }
 
     const f = document.getElementById("wabotFrame");
     if (!f || ev.source !== f.contentWindow) return;
@@ -1464,6 +1579,7 @@ function initRealtime() {
         if (activeTab === "seguimientos") renderSeg();
         if (activeTab === "calendario") renderCal();
         if (enMetrica("stats")) renderStats();
+        if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;

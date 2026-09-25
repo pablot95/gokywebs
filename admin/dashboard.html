@@ -391,12 +391,19 @@
             </div>
         </section>
 
-        <!-- Tab: Inversión (cohortes de prospectos vs. anuncios de Meta; misma
-             pestaña de wabot/admin.php embebida, como WhatsApp) -->
+        <!-- Tab: Inversión — cuántos de los que escribieron esa semana (cohorte
+             de primer contacto en wabot) terminaron pasando a Cliente acá, sin
+             importar cuándo. Nativo (no iframe): cruza wabot/admin.php?accion=
+             cohortes_json con la colección `clientes` que ya está en memoria. -->
         <section class="panel tab-panel" id="tabInversion" hidden>
-            <div class="wabot-frame-wrap" id="inversionFrameWrap">
-                <iframe id="inversionFrame" title="Inversión en Meta vs. prospectos" src="about:blank"></iframe>
+            <div class="panel-header">
+                <div>
+                    <h1>Inversión</h1>
+                    <p class="muted">Cada contacto cuenta en la semana en que escribió por PRIMERA vez, no en la que se convirtió: comparás "Pasaron a Cliente" de una semana contra lo que gastaste ESA semana en Meta Ads Manager (no hay integración con esa API, se mira aparte), nunca contra el gasto del mismo día. Las últimas semanas todavía pueden sumar clientes que hoy no aparecen.</p>
+                </div>
             </div>
+            <div class="seg-views" id="inversionSemanas"></div>
+            <div id="inversionContent"><p class="muted">Cargando…</p></div>
         </section>
 
         <!-- Tab: Completados -->

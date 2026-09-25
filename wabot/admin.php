@@ -107,6 +107,28 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
+ * Contactos crudos para la pestaña Inversión del admin principal (Firebase):
+ * ahí se cruzan contra la colección `clientes` de Firestore por teléfono, así
+ * que el JSON acá es solo tel + fecha de primer contacto, sin nada de anuncio
+ * ni de "dijo que pagó" (esa charla vive en wabot/admin.php?tab=cohortes,
+ * pero "pasó a Cliente" es la conversión real, no lo que el bot cree
+ * entender del chat).
+ */
+if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'cohortes_json') {
+    $desde = strtotime((string)($_GET['desde'] ?? '2026-01-01') . ' 00:00:00') ?: strtotime('2026-01-01');
+    $semanas = wabot_cohortes_calcular($desde, time());
+    $contactos = [];
+    foreach ($semanas as $s) {
+        foreach ($s['detalle'] as $d) {
+            $contactos[] = ['tel' => $d['tel'], 'nombre' => $d['nombre'], 'canal' => $d['canal'], 'inicio_ts' => $d['inicio_ts']];
+        }
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($contactos, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+/**
  * TODAS las imágenes que mandó el cliente, en un solo archivo.
  *
  * El botón del boceto bajaba una sola foto —la que el bot eligió como logo— y

@@ -2248,6 +2248,7 @@ function wabot_cohortes_procesar_conv($tel, $cv, $desde, $hasta, &$semanas) {
             'tel'                  => $tel,
             'nombre'               => $nombre,
             'canal'                => wabot_canal($cv),
+            'inicio_ts'            => $inicio,
             'fecha_contacto'       => date('Y-m-d H:i', $inicio),
             'anuncio'              => $conAnuncio
                 ? (trim((string)($cv['anuncio_titular'] ?? '')) ?: (string)($cv['anuncio_id'] ?? ''))
