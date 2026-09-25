@@ -2165,14 +2165,38 @@ function wabot_cohortes_calcular($desde, $hasta) {
         $tel = basename($f, '.json');
         if (stripos($tel, 'TEST') !== false) continue;   // charlas de prueba, no clientes
 
-        $cv = wabot_conv_load($tel);
-
-        $inicio = (int)($cv['chat_started_ts'] ?? 0);
-        if ($inicio <= 0 && !empty($cv['transcript'])) {
-            $primera = reset($cv['transcript']);
-            $inicio  = (int)($primera['ts'] ?? 0);
+        // Son más de mil archivos reales, de un mes largo de cambios de
+        // esquema: una charla vieja con una forma de dato que no se previó
+        // no puede tirar abajo el reporte entero (25-sep, primera vez que se
+        // corrió contra datos de producción).
+        try {
+            wabot_cohortes_procesar_conv($tel, wabot_conv_load($tel), $desde, $hasta, $semanas);
+        } catch (\Throwable $err) {
+            wabot_log('error', ['donde' => 'wabot_cohortes_calcular', 'tel' => $tel, 'msg' => mb_substr($err->getMessage(), 0, 200)]);
         }
-        if ($inicio <= 0 || $inicio < $desde || $inicio > $hasta) continue;
+    }
+    krsort($semanas);   // semana más reciente primero
+
+    foreach ($semanas as &$s) {
+        $dias = $s['dias_hasta_pago'];
+        $s['promedio_dias_hasta_pago'] = $dias ? round(array_sum($dias) / count($dias), 1) : null;
+        unset($s['dias_hasta_pago']);
+        ksort($s['anuncios']);
+    }
+    unset($s);
+
+    return $semanas;
+}
+
+/** Una conversación dentro de wabot_cohortes_calcular(); separada para poder
+ *  envolverla en try/catch por archivo sin perder el resto del reporte. */
+function wabot_cohortes_procesar_conv($tel, $cv, $desde, $hasta, &$semanas) {
+        $inicio = (int)($cv['chat_started_ts'] ?? 0);
+        if ($inicio <= 0 && !empty($cv['transcript']) && is_array($cv['transcript'])) {
+            $primera = reset($cv['transcript']);
+            $inicio  = is_array($primera) ? (int)($primera['ts'] ?? 0) : 0;
+        }
+        if ($inicio <= 0 || $inicio < $desde || $inicio > $hasta) return;
 
         $domingo = wabot_cohorte_domingo($inicio);
         if (!isset($semanas[$domingo])) {
@@ -2208,7 +2232,7 @@ function wabot_cohortes_calcular($desde, $hasta) {
 
         if ($conAnuncio) {
             $titular = trim((string)($cv['anuncio_titular'] ?? ''));
-            if ($titular === '') $titular = 'id ' . ($cv['anuncio_id'] ?: '?');
+            if ($titular === '') $titular = 'id ' . (trim((string)($cv['anuncio_id'] ?? '')) ?: '?');
             if (!isset($s['anuncios'][$titular])) {
                 $s['anuncios'][$titular] = ['contactos' => 0, 'prospectos' => 0, 'pagos' => 0];
             }
@@ -2237,19 +2261,6 @@ function wabot_cohortes_calcular($desde, $hasta) {
             'sena_cotizada'        => $cv['sena_cotizada'] ?? null,
             'mensualidad_cotizada' => $cv['mensualidad_cotizada'] ?? null,
         ];
-    }
-    unset($s);
-    krsort($semanas);   // semana más reciente primero
-
-    foreach ($semanas as &$s) {
-        $dias = $s['dias_hasta_pago'];
-        $s['promedio_dias_hasta_pago'] = $dias ? round(array_sum($dias) / count($dias), 1) : null;
-        unset($s['dias_hasta_pago']);
-        ksort($s['anuncios']);
-    }
-    unset($s);
-
-    return $semanas;
 }
 
 /** Idem para Instagram, que manda los adjuntos como URL directa. */
@@ -5337,18 +5348,6 @@ function wabot_form_lead_procesar($payload, $cfg) {
         $lineaWsp = $telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : '';
         wabot_conv_transcript($conv, 'sistema',
             "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}{$lineaWsp}");
-        // Aviso a Pablo de que entró un formulario nuevo, para que lo pueda ver
-        // sin tener que estar mirando el panel. Fire-and-forget: si Meta lo
-        // rechaza (por ejemplo porque ese número no le escribió al bot en las
-        // últimas 24h) queda solo logueado, nunca frena el guardado del lead.
-        $avisoNombre  = $conv['nombre'] !== null && $conv['nombre'] !== '' ? $conv['nombre'] : $nombre;
-        $avisoNegocio = $conv['nombre_negocio'] !== null && $conv['nombre_negocio'] !== '' ? $conv['nombre_negocio'] : $nombreNegocio;
-        $avisoDonde = wabot_canal($conv) === 'instagram'
-            ? 'Instagram, escribile al ' . ($telWsp !== '' ? $telWsp : 'WhatsApp que dejó')
-            : 'Tel: ' . $clave;
-        $avisoTexto = "Nuevo lead por formulario: {$avisoNombre} — {$avisoNegocio}. {$avisoDonde}.";
-        $avisoOk = wabot_wa_send_text('5491125068578', $avisoTexto);
-        wabot_log('form_lead_aviso_pablo', ['ok' => $avisoOk, 'tel' => $clave]);
     }
     $conv['form_completado_ts'] = time();
     $conv['origen_prediseno'] = $conv['origen_prediseno'] ?: 'form';

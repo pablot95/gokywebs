@@ -1756,7 +1756,14 @@ function burbujaCita(t, chat) {
         // falta validar acá.
         $desdeParam = (string)($_GET['desde'] ?? '2026-09-20');
         $cohDesde = strtotime($desdeParam . ' 00:00:00') ?: strtotime('2026-09-20 00:00:00');
-        $semanas = wabot_cohortes_calcular($cohDesde, time());
+        $cohError = null;
+        try {
+            $semanas = wabot_cohortes_calcular($cohDesde, time());
+        } catch (\Throwable $err) {
+            wabot_log('error', ['donde' => 'admin_cohortes', 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+            $semanas = [];
+            $cohError = $err->getMessage();
+        }
     ?>
         <div class="card">
             <h2 style="margin-top:0">Inversión en Meta vs. prospectos</h2>
@@ -1775,7 +1782,9 @@ function burbujaCita(t, chat) {
             </form>
         </div>
 
-        <?php if (!$semanas): ?>
+        <?php if ($cohError !== null): ?>
+            <div class="card"><p class="meta" style="color:var(--bad)">No se pudo armar el reporte: <?= $e($cohError) ?>. Quedó en el log de <?= date('Y-m-d') ?>.</p></div>
+        <?php elseif (!$semanas): ?>
             <div class="card"><p class="meta">Sin contactos en ese rango.</p></div>
         <?php endif; ?>
 
