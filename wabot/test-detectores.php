@@ -653,4 +653,174 @@ caso('pedir una persona de verdad sigue derivando',
 caso('y si pide que lo llamen, aunque nombre "vender", también deriva',
     ($cMixto['fase'] ?? '') === 'derivado', json_encode($rMixto, JSON_UNESCAPED_UNICODE));
 
+
+echo "— Gemini caído: reintento y un respaldo que cotiza (25-sep) —\n";
+
+/* Export del 22-sep: 11 de las 21 charlas con errores antes del precio fueron
+ * turnos en los que Gemini no contestó (http 0 o 503) y contestó el respaldo
+ * sin IA. "Vender" recibía "Para orientarte bien…" y a la segunda se derivaba
+ * sin precio. */
+$llamadas = [];
+$respuestas = [];
+$GLOBALS['WABOT_TEST_GEMINI_HTTP'] = function ($modelo, $body) use (&$llamadas, &$respuestas) {
+    $llamadas[] = $modelo;
+    return array_shift($respuestas) ?? [0, ''];
+};
+$circuito = WABOT_DATA . '/ia-circuit.json';
+$circuitoAntes = @file_get_contents($circuito);
+$okGemini = [200, '{"candidates":[{"content":{"parts":[{"text":"{\"acciones\":[\"otro\"]}"}]}}]}'];
+$cfgLite = array_merge($cfg, ['gemini_modelo' => 'gemini-3.5-flash-lite']);
+
+$llamadas = []; $respuestas = [[0, ''], $okGemini];
+caso('sin respuesta del primero, reintenta con el otro modelo y sigue',
+    wabot_clasificar_llamar('{}', $cfgLite) === $okGemini[1] && $llamadas === ['gemini-3.5-flash-lite', 'gemini-3.5-flash'], json_encode($llamadas));
+$llamadas = []; $respuestas = [[503, '{"error":{"code":503}}'], $okGemini];
+caso('un 503 "high demand" también se reintenta', wabot_clasificar_llamar('{}', $cfgLite) === $okGemini[1] && count($llamadas) === 2);
+$llamadas = []; $respuestas = [[400, '{"error":{"code":400}}']];
+caso('un error del pedido (400) no se reintenta: saldría igual', wabot_clasificar_llamar('{}', $cfgLite) === null && count($llamadas) === 1);
+@unlink($circuito);
+$llamadas = []; $respuestas = [[0, ''], [503, '']];
+caso('si fallan los dos, contesta el respaldo y el circuito queda a nombre del clasificador',
+    wabot_clasificar_llamar('{}', $cfgLite) === null && count($llamadas) === 2
+    && (json_decode((string)@file_get_contents($circuito), true)['donde'] ?? '') === 'clasificador');
+caso('el reintento de Flash va a Flash Lite',
+    wabot_gemini_modelo_alterno('gemini-3.5-flash') === 'gemini-3.5-flash-lite' && wabot_gemini_modelo_alterno('gemini-3.5-pro') === 'gemini-3.5-flash');
+unset($GLOBALS['WABOT_TEST_GEMINI_HTTP']);
+
+// El circuito que abrió OTRO (un audio que no se pudo leer) no frena al clasificador; un 429 sí.
+$sinRed = $GLOBALS['WABOT_TEST_SIN_RED'];
+unset($GLOBALS['WABOT_TEST_SIN_RED']);
+$abrir = function ($donde, $http) use ($circuito) {
+    file_put_contents($circuito, json_encode(['hasta_ts' => time() + 60, 'http' => $http, 'donde' => $donde]));
+};
+$abrir('media', 503);
+caso('un audio que Gemini no leyó no manda el texto al respaldo', wabot_ia_disponible('clasificador') && !wabot_ia_disponible());
+$abrir('media', 429);
+caso('un 429 frena a todos: es la cuota de la key', !wabot_ia_disponible('clasificador'));
+$abrir('clasificador', 0);
+caso('si falló el propio clasificador, espera los 30 segundos', !wabot_ia_disponible('clasificador'));
+$GLOBALS['WABOT_TEST_SIN_RED'] = $sinRed;
+if ($circuitoAntes === false) @unlink($circuito); else file_put_contents($circuito, $circuitoAntes);
+
+/* El respaldo, con la charla armada como en producción. */
+function respaldo_turno($clave, array $previos, $texto, $cfg, array $extra = []) {
+    @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
+    $c = conv_nueva($clave, array_merge(['fase' => 'menu', 'chat_started_ts' => time()], $extra));
+    foreach ($previos as [$quien, $t]) wabot_conv_transcript($c, $quien, $t);
+    unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
+    $r = turno($texto, $c, $cfg);
+    @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
+    return [$r, $c];
+}
+$recon = [['bot', $cfg['menu']], ['cliente', 'Me dedico a la venta de maquillaje y perfumes'], ['bot', 'Buscás vender por la web, o solo mostrar tus productos?']];
+foreach (['Vender', 'Quiero vender por la web', 'Vender mis productos', 'y también quiero un poco del hogar'] as $resp) {
+    [$r, $c] = respaldo_turno('999RESP1', $recon, $resp, $cfg, ['fase' => 'reconocimiento', 'reconocimiento_tipo' => 'ecommerce']);
+    caso('sin IA, "' . $resp . '" a la pregunta de vender o mostrar cotiza la tienda',
+        ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && mb_strpos(implode(' ', $r), 'Para orientarte bien') === false,
+        json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+[$r, $c] = respaldo_turno('999RESP2', $recon, 'Solo mostrar', $cfg, ['fase' => 'reconocimiento', 'reconocimiento_tipo' => 'ecommerce']);
+caso('sin IA, "Solo mostrar" se cotiza igual que con IA', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']));
+
+foreach (['Hola buen día tengo una tienda holística' => 'ecommerce',
+          'En realidad preferiría un tipo tienda nube, como para q hagan pedidos. Tengo un cotillón' => 'ecommerce',
+          'Hola,tienda virtual de partituras descargables' => 'ecommerce',
+          'Academia de lashista lifting cejas' => 'elearning'] as $dice => $tipo) {
+    [$r, $c] = respaldo_turno('999RESP3', [['bot', $cfg['menu']]], $dice, $cfg);
+    caso('sin IA, "' . mb_substr($dice, 0, 40) . '" se cotiza (' . $tipo . ')',
+        ($c['tipo'] ?? '') === $tipo && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+caso('la academia gana sobre el oficio que enseña; el oficio solo sigue siendo servicio',
+    wabot_fallback_rubro_local('Academia de estética') === 'cursos' && wabot_fallback_rubro_local('Tengo una peluquería') === 'landing'
+    && wabot_fallback_rubro_local('Soy plomero') === 'landing');
+
+$objetivo = [['bot', $cfg['menu']], ['cliente', 'Tengo un emprendimiento de cosas lindas'], ['bot', $cfg['aclarar_objetivo']]];
+foreach (['Vender y cobrar online' => 'ecommerce', 'La última vender y cobrar' => 'ecommerce',
+          'Presentar mis servicios y recibir consultas' => 'landing'] as $resp => $tipo) {
+    [$r, $c] = respaldo_turno('999RESP4', $objetivo, $resp, $cfg, ['fase' => 'algo_diferente', 'objetivo_preguntado' => true]);
+    caso('sin IA, "' . $resp . '" a "Para orientarte bien…" cotiza (' . $tipo . ')',
+        ($c['tipo'] ?? '') === $tipo && ($c['fase'] ?? '') !== 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+[$r, $c] = respaldo_turno('999RESP5', $objetivo, 'Lo que ustedes sugieran', $cfg, ['fase' => 'algo_diferente', 'objetivo_preguntado' => true]);
+caso('sin saber qué ofrece, "lo que sugieran" no se cotiza a ciegas', empty($c['precio_dado']));
+
+[$r, $c] = respaldo_turno('999RESP6', [['bot', $cfg['menu']], ['cliente', 'Capacitacion en molderia y costura'], ['bot', $cfg['desempate_cursos']]],
+    'Todo en la web', $cfg, ['fase' => 'desempate_cursos']);
+caso('sin IA, el desempate de cursos que quedó abierto lee la respuesta y cotiza la plataforma',
+    ($c['tipo'] ?? '') === 'elearning' && ($c['fase'] ?? '') !== 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
+
+echo "— Cuando el cliente le pide al bot que elija (25-sep) —\n";
+
+foreach (['Que me recomendas ?', 'Qué me recomendás?', 'Lo que ustedes sugieran', 'lo que me recomienden', 'no sé qué me conviene', 'vos decime', 'cuál me conviene?'] as $f) {
+    caso('"' . $f . '" pide que elijamos', wabot_pide_que_elijamos($f));
+}
+foreach (['Todo bien', 'Hola, qué tal?', 'Vendo sillas y mesas', 'Todo en la web', 'que me recomendaron ustedes en un grupo de emprendedores de la zona norte del conurbano'] as $f) {
+    caso('"' . $f . '" no', !wabot_pide_que_elijamos($f) && !wabot_quiere_todas_las_opciones($f));
+}
+foreach (['Todo', 'Ambas cosas', 'Las dos', 'todas'] as $f) caso('"' . $f . '" es quedarse con todas las opciones', wabot_quiere_todas_las_opciones($f));
+
+function elegir_turno($clave, array $previos, $texto, $acciones, $cfg, array $extra = []) {
+    @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
+    $c = conv_nueva($clave, array_merge(['fase' => 'algo_diferente', 'chat_started_ts' => time()], $extra));
+    foreach ($previos as [$quien, $t]) wabot_conv_transcript($c, $quien, $t);
+    clasifica($acciones);
+    $r = turno($texto, $c, $cfg);
+    @unlink(WABOT_DATA . '/conv/' . $clave . '.json');
+    return [$r, $c];
+}
+[$r, $c] = elegir_turno('999ELE1', [['bot', $cfg['menu']], ['cliente', 'Servicio de plomería, electricidad y gas'], ['bot', $cfg['aclarar_objetivo']]],
+    'Lo que ustedes sugieran', ['otro'], $cfg, ['objetivo_preguntado' => true]);
+caso('la plomería que dice "lo que ustedes sugieran" recibe el sitio profesional, no la derivación',
+    ($c['tipo'] ?? '') === 'landing' && ($c['fase'] ?? '') !== 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
+[$r, $c] = elegir_turno('999ELE2', [['bot', $cfg['menu']], ['cliente', 'Me dedico a la venta de maquillaje, perfumes y accesorios'], ['bot', $cfg['aclarar_objetivo']]],
+    'Todo', ['otro'], $cfg, ['objetivo_preguntado' => true]);
+caso('"Todo" con productos recibe la tienda', ($c['tipo'] ?? '') === 'ecommerce' && ($c['fase'] ?? '') !== 'derivado', json_encode($r, JSON_UNESCAPED_UNICODE));
+[$r, $c] = elegir_turno('999ELE3', [['bot', $cfg['menu']], ['cliente', 'Tengo una peluquería'], ['bot', 'Contame un poco más, qué vendés o qué servicio ofrecés?']],
+    'Lo que ustedes sugieran', ['otro'], $cfg);
+caso('sin la pregunta del objetivo abierta, no se usa la recomendación', empty($c['precio_dado']) || ($c['tipo'] ?? '') === 'landing');
+
+$mueble = [['bot', $cfg['menu']], ['cliente', "Muebleria \nSillas sillones mesas respaldos"], ['bot', $cfg['desempate_hibrido']]];
+foreach ([['otro'], ['pregunta_tipos']] as $acc) {
+    [$r, $c] = elegir_turno('999ELE4', $mueble, 'Que me recomendas ?', $acc, $cfg, ['fase' => 'desempate_hibrido']);
+    caso('la mueblería que pregunta qué le recomendamos recibe la tienda (' . implode(',', $acc) . ')',
+        ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+$cortinas = [['bot', $cfg['menu']], ['cliente', 'Hacemos cortinas metálicas'], ['bot', $cfg['desempate_hibrido']]];
+[$r, $c] = elegir_turno('999ELE5', $cortinas, '¿Qué me recomendás?', ['otro'], $cfg, ['fase' => 'desempate_hibrido']);
+caso('las cortinas a medida reciben el sitio para mostrar los trabajos', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']));
+[$r, $c] = elegir_turno('999ELE6', $cortinas, 'Ambas', ['otro'], $cfg, ['fase' => 'desempate_hibrido']);
+caso('"Ambas" en el desempate híbrido es la tienda, que trae las dos cosas', ($c['tipo'] ?? '') === 'ecommerce');
+[$r, $c] = respaldo_turno('999ELE7', $mueble, 'Que me recomendas ?', $cfg, ['fase' => 'desempate_hibrido']);
+caso('y sin IA, igual', ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']));
+
+echo "— Una sola pregunta por el rubro, los cursos con prueba y la propaganda (25-sep) —\n";
+
+foreach ([['precio_sin_rubro', 'proceso'], ['que_hacemos', 'precio_sin_rubro'], ['pago', 'precio_sin_rubro'], ['proceso', 'pago']] as $keys) {
+    clasifica(['pregunta_info'], ['info_keys' => $keys]);
+    $c = conv_nueva('999INF1', ['fase' => 'menu', 'chat_started_ts' => time()]);
+    wabot_conv_transcript($c, 'bot', $cfg['menu']);
+    $r = turno('Quería saber los requisitos y el precio', $c, $cfg);
+    @unlink(WABOT_DATA . '/conv/999INF1.json');
+    $todo = implode(' ', $r);
+    caso(implode(' + ', $keys) . ': el rubro se pide una sola vez',
+        preg_match_all('/contame (a qué te dedicás|qué negocio tenés)/iu', $todo) === 1, $todo);
+}
+caso('una sola respuesta que pide el rubro queda igual',
+    wabot_info_unir(['Una.', 'Te paso el valor exacto, pero primero contame a qué te dedicás.']) === "- Una.\n- Te paso el valor exacto, pero primero contame a qué te dedicás.");
+
+[$r, $c] = elegir_turno('999CUR1', [['bot', $cfg['menu']]], 'Hola vendo turismo y también cosmética x catalogo', ['productos_y_cursos', 'rubro_ecommerce'], $cfg, ['fase' => 'menu']);
+caso('sin cursos en lo que escribió, no hay "con tus cursos" ni combo',
+    empty($c['combo_cursos']) && mb_strpos(implode(' ', $r), 'con tus cursos') === false && ($c['tipo'] ?? '') === 'ecommerce', json_encode($r, JSON_UNESCAPED_UNICODE));
+[$r, $c] = elegir_turno('999CUR2', [['bot', $cfg['menu']]], 'Vendo velas y además doy talleres online', ['productos_y_cursos'], $cfg, ['fase' => 'menu']);
+caso('con talleres dichos, el combo sigue', !empty($c['combo_cursos']) && mb_strpos(implode(' ', $r), 'con tus cursos') !== false);
+
+caso('"propaganda" es publicidad', in_array('publicidad', wabot_ficha_fuera_de('Quiero meter propaganda en Instagram y tik tok'), true));
+caso('y no se convierte en "el acceso a tu Instagram"', !in_array('instagram', wabot_ficha_funciones_de('Quiero meter propaganda en Instagram y tik tok'), true));
+caso('el que pide el link a su Instagram lo sigue recibiendo', in_array('instagram', wabot_ficha_funciones_de('Quiero que tenga el link a mi instagram'), true));
+[$r, $c] = elegir_turno('999PUB1', [['bot', $cfg['menu']], ['cliente', 'Yo vendo calzados..pero cero con las redes']],
+    'Quiero meter propaganda en Instagram y tik tok', ['rubro_comercio'], $cfg, ['fase' => 'menu']);
+caso('la zapatería escucha que la publicidad no la hacemos, y el precio no promete Instagram',
+    mb_strpos(implode(' ', $r), 'La publicidad y el manejo de redes no los hacemos') !== false
+    && mb_strpos(implode(' ', $r), 'el acceso a tu Instagram') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
 todo_ok();

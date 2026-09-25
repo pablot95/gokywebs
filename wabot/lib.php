@@ -208,11 +208,19 @@ function wabot_config_save($cfg) {
     return is_string($json) && wabot_json_guardar_atomico(WABOT_DIR . '/bot-config.json', $json);
 }
 
-/** Circuit breaker compartido: evita duplicar llamadas cuando Gemini ya falló. */
-function wabot_ia_disponible() {
+/**
+ * Circuit breaker compartido: evita duplicar llamadas cuando Gemini ya falló.
+ *
+ * Con $para = 'clasificador', solo lo frena una falla del propio clasificador
+ * o un 429 (la cuota de la key vale para todos). Un audio o unos colores que
+ * Gemini no pudo leer abrían el circuito 30 segundos y el texto de ese mismo
+ * turno lo contestaba el respaldo sin IA, que sabe mucho menos (25-sep).
+ */
+function wabot_ia_disponible($para = null) {
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return false;
     $j = json_decode((string)@file_get_contents(WABOT_DATA . '/ia-circuit.json'), true);
-    return !is_array($j) || (int)($j['hasta_ts'] ?? 0) <= time();
+    if (!is_array($j) || (int)($j['hasta_ts'] ?? 0) <= time()) return true;
+    return $para === 'clasificador' && ($j['donde'] ?? '') !== 'clasificador' && (int)($j['http'] ?? 0) !== 429;
 }
 
 function wabot_ia_reportar_error($donde, $http) {
@@ -4001,7 +4009,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (isset($GLOBALS['WABOT_TEST_CLASIFICADOR'])) {
         return call_user_func($GLOBALS['WABOT_TEST_CLASIFICADOR'], $texto, $conv, $cfg);
     }
-    if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+    if (!wabot_ia_disponible('clasificador') || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_comercio, rubro_hibrido, rubro_sistema, hibrido_trabajos, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
     $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, cuenta_mercado_pago, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
@@ -4027,10 +4035,10 @@ GUIA:
 - hibrido_trabajos / hibrido_vender: SOLO al responder la pregunta del rubro híbrido. Mostrar trabajos y que consulten por WhatsApp = trabajos; carrito y cobro online = vender.
 - rubro_ecommerce: dice explícitamente que quiere VENDER ONLINE, tener tienda con carrito, o ya vende por internet (incluye revender marcas como Just, Essen, Avon). Si solo cuenta que TIENE un local o comercio, usá rubro_comercio.
 - rubro_inmobiliaria: rubro inmobiliario o publica propiedades.
-- rubro_cursos: da o vende cursos, talleres, clases o capacitaciones. Se cotiza plataforma de cursos SIEMPRE, sin preguntarle si los quiere vender desde la web o solo mostrarlos.
+- rubro_cursos: da o vende cursos, talleres, clases o capacitaciones, o tiene una academia (de pestañas, de estética, de danza, de idiomas…): una academia enseña, así que es rubro_cursos aunque el oficio que enseña sea un servicio. Se cotiza plataforma de cursos SIEMPRE, sin preguntarle si los quiere vender desde la web o solo mostrarlos.
 - rubro_sistema: pide un sistema, aplicación o panel de gestión para ordenar stock, ventas, clientes, turnos, facturación, tareas o procesos internos. No es una página web y se califica antes de derivar.
 - cursos_vender / cursos_mostrar: SOLO si la conversación está en la pregunta de cursos — quiere venderlos desde la web con acceso de alumnos, o solo mostrarlos y que lo contacten.
-- productos_y_cursos: vende productos Y ADEMÁS cursos online.
+- productos_y_cursos: vende productos Y ADEMÁS cursos online. Solo si el cliente nombró los cursos, talleres o clases: "turismo" o "por catálogo" no son cursos.
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
@@ -4079,7 +4087,6 @@ EOT;
 
     $prompt .= "MENSAJE DEL CLIENTE:\n\"$texto\"";
 
-    $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
     $body = json_encode([
         'contents' => [['parts' => [['text' => $prompt]]]],
         'generationConfig' => [
@@ -4088,24 +4095,8 @@ EOT;
         ],
     ], JSON_UNESCAPED_UNICODE);
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $body,
-        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 25,
-    ]);
-    $res  = curl_exec($ch);
-    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($code < 200 || $code >= 300 || !$res) {
-        wabot_log('error', ['donde' => 'gemini', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
-        wabot_ia_reportar_error('clasificador', $code);
-        return null;
-    }
-    wabot_ia_reportar_ok();
+    $res = wabot_clasificar_llamar($body, $cfg);
+    if ($res === null) return null;
     $json  = json_decode($res, true);
     $salida = $json['candidates'][0]['content']['parts'][0]['text'] ?? null;
     if (!$salida) return null;
@@ -4126,6 +4117,64 @@ EOT;
         'colores'     => (isset($out['colores']) && is_string($out['colores']) && trim($out['colores']) !== '') ? trim($out['colores']) : null,
         'ficha'       => $ficha,
     ];
+}
+
+/**
+ * La llamada del clasificador, con UN reintento (25-sep).
+ *
+ * Gemini falla todos los días, entre 2 y 10 veces: sin respuesta (http 0) o
+ * con 503 "high demand". Sin reintento ese turno lo contestaba el respaldo
+ * sin IA, y el 21 y 22-sep fueron 11 de las 21 charlas con errores antes del
+ * precio: "Vender" recibía otra pregunta y a la segunda se derivaba sin
+ * precio. El reintento va al OTRO modelo, que no comparte la saturación del
+ * primero. Un error del pedido (400, 403) no se reintenta: saldría igual.
+ *
+ * El primer fallo queda en el log como 'reintento'; 'error' es solo cuando
+ * fallaron los dos y contestó el respaldo.
+ */
+function wabot_clasificar_llamar($body, $cfg) {
+    $modelo = wabot_gemini_modelo($cfg);
+    foreach ([$modelo, wabot_gemini_modelo_alterno($modelo)] as $i => $m) {
+        [$code, $res] = wabot_gemini_post($m, $body, $i === 0 ? 25 : 20);
+        if ($code >= 200 && $code < 300 && $res) {
+            wabot_ia_reportar_ok();
+            return (string)$res;
+        }
+        if ($i === 0 && ($code === 0 || $code === 429 || $code >= 500)) {
+            wabot_log('reintento', ['donde' => 'gemini', 'http' => $code, 'modelo' => $m, 'res' => substr((string)$res, 0, 200)]);
+            if (!isset($GLOBALS['WABOT_TEST_GEMINI_HTTP'])) usleep(700000);
+            continue;
+        }
+        wabot_log('error', ['donde' => 'gemini', 'http' => $code, 'modelo' => $m, 'res' => substr((string)$res, 0, 400)]);
+        wabot_ia_reportar_error('clasificador', $code);
+        return null;
+    }
+    return null;
+}
+
+/** El modelo del reintento: Flash si falló otro, Flash Lite si falló Flash. */
+function wabot_gemini_modelo_alterno($modelo) {
+    return $modelo === 'gemini-3.5-flash' ? 'gemini-3.5-flash-lite' : 'gemini-3.5-flash';
+}
+
+/** Un POST a generateContent: [código http, cuerpo]. El gancho de test lo simula. */
+function wabot_gemini_post($modelo, $body, $timeout = 25) {
+    if (isset($GLOBALS['WABOT_TEST_GEMINI_HTTP'])) {
+        return call_user_func($GLOBALS['WABOT_TEST_GEMINI_HTTP'], $modelo, $body);
+    }
+    $ch = curl_init('https://generativelanguage.googleapis.com/v1beta/models/' . $modelo . ':generateContent?key=' . WABOT_GEMINI_KEY);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 8,
+        CURLOPT_TIMEOUT => (int)$timeout,
+    ]);
+    $res  = curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$code, $res];
 }
 
 /* ───────────────────────── Muestras / prediseños ─────────────────────── */
