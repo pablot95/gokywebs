@@ -1,5 +1,6 @@
 # Credenciales reales — nunca commitear. Ver config/mp-config.example.php.
 config/mp-config.php
+config/mp-oauth-config.php
 config/wabot-config.php
 wabot/data/
 # track.php la crea sola, con su propio .htaccess: es de runtime
