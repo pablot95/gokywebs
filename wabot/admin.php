@@ -54,6 +54,7 @@ $NAV_TABS = [
     'respuestas'     => 'Respuestas rápidas',
     'ajustes'        => 'Ajustes',
     'estado'         => 'Estado',
+    'cohortes'       => 'Inversión',
 ];
 
 /**
@@ -1748,6 +1749,88 @@ function burbujaCita(t, chat) {
                 </p>
             <?php endif; ?>
         </div>
+
+    <?php elseif ($tab === 'cohortes'):
+        // Domingo 20-sep pedido por Pablo. wabot_cohortes_calcular() retrocede
+        // al domingo de la semana si se pasa otra fecha, así que no hace
+        // falta validar acá.
+        $desdeParam = (string)($_GET['desde'] ?? '2026-09-20');
+        $cohDesde = strtotime($desdeParam . ' 00:00:00') ?: strtotime('2026-09-20 00:00:00');
+        $semanas = wabot_cohortes_calcular($cohDesde, time());
+    ?>
+        <div class="card">
+            <h2 style="margin-top:0">Inversión en Meta vs. prospectos</h2>
+            <p class="meta">
+                Cada conversación se cuenta en la semana en que escribió por PRIMERA vez, no en la que
+                pagó: un lead de hoy puede pagar en 15 días. Compará "Prospectos" o "Pagos" de una fila
+                contra lo gastado ESA misma semana en Meta Ads Manager — acá no está, no hay integración
+                con esa API. Las últimas semanas todavía pueden sumar pagos que hoy no aparecen.
+            </p>
+            <form method="get" action="admin.php" class="fila" style="gap:10px;margin-top:10px">
+                <input type="hidden" name="tab" value="cohortes">
+                <label style="margin:0">Desde
+                    <input type="date" name="desde" value="<?= $e(date('Y-m-d', $cohDesde)) ?>" style="width:auto">
+                </label>
+                <button type="submit" class="sec">Ver</button>
+            </form>
+        </div>
+
+        <?php if (!$semanas): ?>
+            <div class="card"><p class="meta">Sin contactos en ese rango.</p></div>
+        <?php endif; ?>
+
+        <?php foreach ($semanas as $s): ?>
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:6px">
+                <strong><?= $e($s['desde']) ?> a <?= $e($s['hasta']) ?></strong>
+                <span class="meta">
+                    <?= $s['total_contactos'] ?> contactos (<?= $s['contactos_anuncio'] ?> de anuncio) ·
+                    <?= $s['prospectos'] ?> prospectos (<?= $s['prospectos_anuncio'] ?> de anuncio) ·
+                    <?= $s['pagos'] ?> pagos (<?= $s['pagos_anuncio'] ?> de anuncio)
+                    <?php if ($s['promedio_dias_hasta_pago'] !== null): ?>
+                        · <?= $s['promedio_dias_hasta_pago'] ?> días prom. hasta pagar
+                    <?php endif; ?>
+                </span>
+            </div>
+
+            <?php if ($s['anuncios']): ?>
+                <table style="margin-top:10px">
+                    <tr><th>Anuncio</th><th>Contactos</th><th>Prospectos</th><th>Pagos</th></tr>
+                    <?php foreach ($s['anuncios'] as $titular => $a): ?>
+                    <tr>
+                        <td><?= $e($titular) ?></td>
+                        <td><?= $a['contactos'] ?></td>
+                        <td><?= $a['prospectos'] ?></td>
+                        <td><?= $a['pagos'] ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </table>
+            <?php else: ?>
+                <p class="meta" style="margin-top:10px">Ningún contacto de esta semana vino de un anuncio de click-to-WhatsApp.</p>
+            <?php endif; ?>
+
+            <details style="margin-top:10px">
+                <summary class="meta" style="cursor:pointer">Ver <?= count($s['detalle']) ?> contacto(s)</summary>
+                <table>
+                    <tr>
+                        <th>Nombre</th><th>Canal</th><th>Contacto</th><th>Anuncio</th>
+                        <th>Prospecto</th><th>Pagó</th><th>Días hasta pago</th>
+                    </tr>
+                    <?php foreach ($s['detalle'] as $d): ?>
+                    <tr>
+                        <td><?= $e($d['nombre'] ?: $d['tel']) ?></td>
+                        <td><?= $e($d['canal']) ?></td>
+                        <td><?= $e($d['fecha_contacto']) ?></td>
+                        <td><?= $e($d['anuncio']) ?></td>
+                        <td><?= $d['prospecto'] ? 'sí' : '' ?></td>
+                        <td><?= $d['pago'] ? 'sí' : '' ?></td>
+                        <td><?= $d['dias_hasta_pago'] ?? '' ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </table>
+            </details>
+        </div>
+        <?php endforeach; ?>
 
     <?php elseif ($tab === 'respuestas'): ?>
         <?php if (isset($_GET['error_guardar'])): ?>

@@ -2133,6 +2133,125 @@ function wabot_wa_referral($msg) {
     ];
 }
 
+/**
+ * Domingo 00:00 de la semana que contiene $ts, hora Argentina (sin DST, así
+ * que restar días de calendario alcanza).
+ */
+function wabot_cohorte_domingo($ts) {
+    return strtotime(date('Y-m-d', $ts) . ' -' . date('w', $ts) . ' days');
+}
+
+/**
+ * Prospectos agrupados por la semana (domingo a sábado) en que escribieron
+ * por PRIMERA vez, no en la que pagaron: un lead de hoy puede pagar en 15
+ * días, así que comparar gasto de hoy contra ventas de hoy no dice nada.
+ * Comparado contra lo gastado esa misma semana en Meta Ads Manager (no hay
+ * integración con esa API acá, así que el gasto se mira aparte).
+ *
+ * Retroactivo sin instrumentar nada nuevo: chat_started_ts, ctwa_clid,
+ * anuncio_id/anuncio_titular y pago_avisado_ts ya se guardan en cada
+ * conversación desde el 24-ago (ver wabot_wa_referral).
+ *
+ * Devuelve un array indexado por el ts del domingo, semana más reciente
+ * primero.
+ */
+function wabot_cohortes_calcular($desde, $hasta) {
+    $desde = wabot_cohorte_domingo($desde);
+
+    $semanas  = [];
+    $archivos = glob(WABOT_DATA . '/conv/*.json') ?: [];
+
+    foreach ($archivos as $f) {
+        $tel = basename($f, '.json');
+        if (stripos($tel, 'TEST') !== false) continue;   // charlas de prueba, no clientes
+
+        $cv = wabot_conv_load($tel);
+
+        $inicio = (int)($cv['chat_started_ts'] ?? 0);
+        if ($inicio <= 0 && !empty($cv['transcript'])) {
+            $primera = reset($cv['transcript']);
+            $inicio  = (int)($primera['ts'] ?? 0);
+        }
+        if ($inicio <= 0 || $inicio < $desde || $inicio > $hasta) continue;
+
+        $domingo = wabot_cohorte_domingo($inicio);
+        if (!isset($semanas[$domingo])) {
+            $semanas[$domingo] = [
+                'desde'              => date('Y-m-d', $domingo),
+                'hasta'              => date('Y-m-d', $domingo + 6 * 86400),
+                'total_contactos'    => 0,
+                'contactos_anuncio'  => 0,
+                'prospectos'         => 0,
+                'prospectos_anuncio' => 0,
+                'pagos'              => 0,
+                'pagos_anuncio'      => 0,
+                'dias_hasta_pago'    => [],
+                'anuncios'           => [],   // titular => ['contactos'=>n,'prospectos'=>n,'pagos'=>n]
+                'detalle'            => [],
+            ];
+        }
+        $s = &$semanas[$domingo];
+        $s['total_contactos']++;
+
+        $conAnuncio  = trim((string)($cv['ctwa_clid'] ?? '')) !== '';
+        $esProspecto = !empty($cv['esProspecto']);
+        $pagoTs      = (int)($cv['pago_avisado_ts'] ?? 0);
+        $pago        = $pagoTs > 0;
+
+        if ($conAnuncio) $s['contactos_anuncio']++;
+        if ($esProspecto) { $s['prospectos']++; if ($conAnuncio) $s['prospectos_anuncio']++; }
+        if ($pago) {
+            $s['pagos']++;
+            if ($conAnuncio) $s['pagos_anuncio']++;
+            $s['dias_hasta_pago'][] = round(($pagoTs - $inicio) / 86400, 1);
+        }
+
+        if ($conAnuncio) {
+            $titular = trim((string)($cv['anuncio_titular'] ?? ''));
+            if ($titular === '') $titular = 'id ' . ($cv['anuncio_id'] ?: '?');
+            if (!isset($s['anuncios'][$titular])) {
+                $s['anuncios'][$titular] = ['contactos' => 0, 'prospectos' => 0, 'pagos' => 0];
+            }
+            $s['anuncios'][$titular]['contactos']++;
+            if ($esProspecto) $s['anuncios'][$titular]['prospectos']++;
+            if ($pago) $s['anuncios'][$titular]['pagos']++;
+        }
+
+        $nombreNeg = trim((string)($cv['nombre_negocio'] ?? ''));
+        $nombre    = $nombreNeg !== '' ? $nombreNeg : trim((string)($cv['nombre'] ?? ''));
+
+        $s['detalle'][] = [
+            'tel'                  => $tel,
+            'nombre'               => $nombre,
+            'canal'                => wabot_canal($cv),
+            'fecha_contacto'       => date('Y-m-d H:i', $inicio),
+            'anuncio'              => $conAnuncio
+                ? (trim((string)($cv['anuncio_titular'] ?? '')) ?: (string)($cv['anuncio_id'] ?? ''))
+                : '',
+            'prospecto'            => $esProspecto,
+            'pago'                 => $pago,
+            'fecha_pago'           => $pago ? date('Y-m-d H:i', $pagoTs) : '',
+            'dias_hasta_pago'      => $pago ? round(($pagoTs - $inicio) / 86400, 1) : null,
+            'modalidad'            => $cv['modalidad_elegida'] ?? '',
+            'precio_cotizado'      => $cv['precio_cotizado'] ?? null,
+            'sena_cotizada'        => $cv['sena_cotizada'] ?? null,
+            'mensualidad_cotizada' => $cv['mensualidad_cotizada'] ?? null,
+        ];
+    }
+    unset($s);
+    krsort($semanas);   // semana más reciente primero
+
+    foreach ($semanas as &$s) {
+        $dias = $s['dias_hasta_pago'];
+        $s['promedio_dias_hasta_pago'] = $dias ? round(array_sum($dias) / count($dias), 1) : null;
+        unset($s['dias_hasta_pago']);
+        ksort($s['anuncios']);
+    }
+    unset($s);
+
+    return $semanas;
+}
+
 /** Idem para Instagram, que manda los adjuntos como URL directa. */
 function wabot_ig_adjunto($adjuntos) {
     foreach ((array)$adjuntos as $a) {
