@@ -67,7 +67,7 @@ function turno($texto, &$c, $cfg) {
     wabot_conv_transcript($c, 'cliente', $texto);
     $c['ultimo_cliente_ts'] = time();
     $r = wabot_salida_preparar(wabot_responder($texto, $c, $cfg), $c, $cfg);
-    foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', (string)$m);
+    foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', wabot_respuesta_texto_transcript((string)$m));
     return (array)$r;
 }
 

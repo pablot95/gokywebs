@@ -8,9 +8,9 @@
     <link rel="icon" type="image/png" href="../logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=1">
-    <link rel="stylesheet" href="styles.css?v=20260921a">
+    <link rel="stylesheet" href="styles.css?v=20260924b">
 </head>
 <body>
 
@@ -204,10 +204,11 @@
 
                     <div class="form-section">
 
-                        <div class="step-header">
+                        <div class="step-header mf-header">
                             <span class="step-header-badge">Paso 3 de 3</span>
-                            <h2 class="step-header-title" tabindex="-1">Elegí los 2 modelos que más te gusten</h2>
-                            <p class="step-header-desc">Son el punto de partida: después los adaptamos con tus fotos, textos y colores.</p>
+                            <h2 class="step-header-title" tabindex="-1">Elegí 2 modelos</h2>
+                            <span class="mf-contador" id="mfContador" aria-live="polite">0 de 2 seleccionados</span>
+                            <p class="step-header-desc">Después los adaptamos con tus fotos, textos y colores.</p>
                         </div>
 
                         <div class="mf-filtros" id="mfTipos" role="group" aria-label="Filtrar por tipo de web"></div>
@@ -221,11 +222,12 @@
 
                     </div>
 
+                    <!-- El texto de #btnEnviar lo pone script.js: cuántos faltan, o Enviar. -->
                     <div class="mf-barra" id="mfBarra">
-                        <p class="mf-elegidos" id="modelosAviso" aria-live="polite">Elegí 2 modelos.</p>
+                        <p class="mf-elegidos" id="modelosAviso" aria-live="polite"></p>
                         <div class="step-nav step-nav-submit">
-                            <button type="button" class="btn-step btn-step-prev" id="btnVolver3">← Volver</button>
-                            <button type="button" id="btnEnviar" class="btn-submit">Enviar →</button>
+                            <button type="button" class="btn-step btn-step-prev" id="btnVolver3"><svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>Volver</button>
+                            <button type="button" id="btnEnviar" class="btn-submit">Elegí 2 modelos</button>
                         </div>
                         <p class="submit-note">🔒 Tu información se usa para preparar tu propuesta y contactarte.</p>
                     </div>
@@ -267,7 +269,7 @@
             </div>
             <div class="mf-escenario" id="mfEscenario"></div>
             <div class="mf-modal-pie">
-                <button type="button" class="btn-submit mf-elegir" id="mfElegir">Elegir este modelo</button>
+                <button type="button" class="btn-submit mf-elegir" id="mfElegir">Seleccionar este modelo</button>
             </div>
         </div>
     </div>
@@ -299,6 +301,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260921a"></script>
+    <script type="module" src="script.js?v=20260924a"></script>
 </body>
 </html>

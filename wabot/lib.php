@@ -3530,6 +3530,123 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
     return true;
 }
 
+/**
+ * La imagen con las 3 modalidades de pago que sigue al turno del precio
+ * (25-sep, Pablo): cursos y tienda online comparten la de $30.000 —el pago
+ * único de cursos ($290.000) queda aproximado ahí a $300.000, aceptado para
+ * no armar una cuarta imagen solo por esa diferencia—. Los archivos viven en
+ * wabot/, junto al resto del código, no en data/: son parte del deploy, no
+ * contenido subido por un cliente.
+ */
+function wabot_precio_imagen_archivo($tipo) {
+    $mapa = [
+        'landing'      => '20000.png',
+        'ecommerce'    => '30000.png',
+        'elearning'    => '30000.png',
+        'inmobiliaria' => 'inmobiliaria.png',
+    ];
+    return $mapa[(string)$tipo] ?? '';
+}
+
+/* El marcador interno para la imagen del precio: un elemento más de la tanda
+ * de $mensajes, junto a los textos. Nunca sale así al cliente —se resuelve
+ * en wabot_respuesta_enviar() antes de mandar nada— pero tiene que
+ * sobrevivir intacto todo el pipeline de salida (anti-repetición, una sola
+ * pregunta, personalización…), que solo mira texto: por eso arranca con un
+ * byte de control que ningún texto real usa, así ningún filtro lo confunde
+ * con una frase y la muletilla/el "?" no lo tocan. */
+define('WABOT_PRECIO_IMAGEN_MARCA', "\x01precio_imagen:");
+
+function wabot_precio_imagen_marcador($tipo) {
+    return wabot_precio_imagen_archivo($tipo) !== '' ? WABOT_PRECIO_IMAGEN_MARCA . $tipo : null;
+}
+
+function wabot_es_marcador_imagen_precio($mensaje) {
+    return is_string($mensaje) && strpos($mensaje, WABOT_PRECIO_IMAGEN_MARCA) === 0;
+}
+
+/** El cuerpo del mensaje de imagen, igual de simple que el de audio. */
+function wabot_wa_image_body($tel, $mediaId) {
+    return [
+        'messaging_product' => 'whatsapp',
+        'to'    => $tel,
+        'type'  => 'image',
+        'image' => ['id' => $mediaId],
+    ];
+}
+
+function wabot_wa_send_image($tel, $mediaId) {
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$tel, '[imagen]']; return true; }
+    if (WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') return false;
+
+    $url = 'https://graph.facebook.com/' . WABOT_GRAPH_VERSION . '/' . WABOT_PHONE_NUMBER_ID . '/messages';
+    $body = json_encode(wabot_wa_image_body($tel, $mediaId));
+
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $body,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . WABOT_META_TOKEN, 'Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 30,
+    ]);
+    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+
+    if ($code < 200 || $code >= 300) {
+        wabot_log('error', ['donde' => 'wa_send_image', 'http' => $code, 'res' => substr((string)$res, 0, 400)]);
+        return false;
+    }
+    wabot_salida_anotar(json_decode((string)$res, true)['messages'][0]['id'] ?? '');
+    return true;
+}
+
+/**
+ * Lee el PNG del deploy, lo sube como media de WhatsApp y lo manda. Solo
+ * WhatsApp: Instagram todavía no tiene un envío de media saliente propio,
+ * igual que pasa con las notas de voz.
+ */
+function wabot_precio_imagen_enviar($conv, $tipo) {
+    $archivo = wabot_precio_imagen_archivo($tipo);
+    if ($archivo === '' || wabot_canal($conv) !== 'whatsapp') return false;
+    $bytes = @file_get_contents(__DIR__ . '/' . $archivo);
+    if ($bytes === false) {
+        wabot_log('error', ['donde' => 'precio_imagen', 'msg' => 'archivo no encontrado', 'archivo' => $archivo]);
+        return false;
+    }
+    $mediaId = wabot_wa_media_subir($bytes, 'image/png', $archivo);
+    if ($mediaId === null) return false;
+    return wabot_wa_send_image(wabot_channel_user_id($conv), $mediaId);
+}
+
+/** Qué queda escrito en el transcript por cada elemento de la tanda: el texto
+ * tal cual, o una descripción legible si es el marcador de la imagen del
+ * precio (el marcador crudo no tiene que llegar nunca al panel). La usan
+ * wabot_respuesta_enviar() y turno() (test-lib.php), para que el transcript
+ * de las pruebas quede igual que el de producción. */
+function wabot_respuesta_texto_transcript($mensaje) {
+    return wabot_es_marcador_imagen_precio($mensaje) ? '[Imagen: modalidades de pago]' : (string)$mensaje;
+}
+
+/**
+ * El punto único por donde sale cada elemento de la tanda de respuestas: un
+ * texto normal, igual que siempre, o —si es el marcador de
+ * wabot_precio_imagen_marcador()— la imagen de modalidades de pago. Reemplaza
+ * al `if (wabot_enviar(...)) wabot_conv_transcript(...)` que se repetía en
+ * los dos caminos del webhook (el principal y el que rescata la cola).
+ */
+function wabot_respuesta_enviar(&$conv, $mensaje) {
+    if (wabot_es_marcador_imagen_precio($mensaje)) {
+        if (!wabot_precio_imagen_enviar($conv, substr($mensaje, strlen(WABOT_PRECIO_IMAGEN_MARCA)))) return false;
+        wabot_conv_transcript($conv, 'bot', wabot_respuesta_texto_transcript($mensaje));
+        return true;
+    }
+    if (wabot_enviar($conv, $mensaje)) {
+        wabot_conv_transcript($conv, 'bot', $mensaje);
+        return true;
+    }
+    return false;
+}
+
 function wabot_wa_escribiendo($msgId) {
     if (!$msgId || WABOT_META_TOKEN === 'COMPLETAR' || WABOT_PHONE_NUMBER_ID === 'COMPLETAR') return false;
     if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return true;

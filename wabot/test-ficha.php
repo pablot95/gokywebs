@@ -85,19 +85,19 @@ caso('indumentaria: "Para tu local de indumentaria femenina, te armamos una tien
 caso('turnos por WhatsApp, Instagram y calificaciones se nombran en la propuesta',
     mb_stripos($r[0] ?? '', 'Y lleva lo que me pediste: un botón para pedir turnos por WhatsApp, el acceso a tu Instagram y una sección de reseñas de tus clientes.') !== false,
     $r[0] ?? '');
-caso('y siguen el precio del sitio profesional y la oferta', strpos($r[0] ?? '', '$120.000') !== false && mb_stripos($r[1] ?? '', 'primer diseño') !== false);
+caso('y siguen la imagen del sitio profesional y la oferta', ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && mb_stripos($r[2] ?? '', 'primer diseño') !== false);
 
 [$c, $r] = charla([['Vendo sahumerios y quiero tener seguidores, subir la venta y demás', ['rubro_comercio'], []]], '549110000SAHUTEST', $cfg);
 caso('sahumerios: primero que la publicidad no la hacemos, y cómo ayuda la tienda',
     str_starts_with($r[0] ?? '', 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link'),
     $r[0] ?? '');
-caso('y después la propuesta con el precio de la tienda', mb_stripos($r[0] ?? '', 'te armamos una tienda online') !== false && strpos($r[0] ?? '', '$190.000') !== false);
+caso('y después la propuesta con la imagen de la tienda', mb_stripos($r[0] ?? '', 'te armamos una tienda online') !== false && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'));
 caso('la aclaración sale una sola vez', ($c['fuera_avisado'] ?? []) === ['publicidad']);
 
 [$c, $r] = charla([['Tenemos un restaurant con hospedaje en las sierras', ['rubro_landing'], []]], '549110000HOSPTEST', $cfg);
-caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con precio de sitio profesional',
+caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con imagen de sitio profesional',
     mb_stripos($r[0] ?? '', 'un sitio profesional completo, con las habitaciones, el restaurante y las reservas online') !== false
-    && strpos($r[0] ?? '', '$120.000') !== false, $r[0] ?? '');
+    && ($r[1] ?? '') === wabot_precio_imagen_marcador('landing'), $r[0] ?? '');
 
 echo "— 4. Si vende algo es tienda, aunque diga catálogo (Pablo, 24-sep; el catálogo como sitio profesional del 18-sep se retiró) —\n";
 
@@ -105,7 +105,7 @@ echo "— 4. Si vende algo es tienda, aunque diga catálogo (Pablo, 24-sep; el c
 caso('se cotiza la tienda online, no el sitio profesional con catálogo',
     ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo'])
     && mb_stripos($r[0] ?? '', 'una tienda online completa') !== false
-    && strpos($r[0] ?? '', '$190.000') !== false && strpos($r[0] ?? '', '$30.000') !== false, $r[0] ?? '');
+    && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $r[0] ?? '');
 [$c, $r] = charla([['Vendo ropa de mujer', ['rubro_comercio'], []]], '549110000TIENDATEST', $cfg);
 caso('sin decirlo, lo que vende productos sigue siendo tienda (29-ago)', ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']));
 
@@ -119,7 +119,7 @@ caso('3.500 productos: nombra el motivo y deriva, sin precio de lista',
 caso('Mercado Libre: lo cotiza el desarrollador',
     mb_stripos($r[0] ?? '', 'Mercado Libre no entra en el precio de lista') !== false && empty($c['precio_dado']), $r[0] ?? '');
 [$c, $r] = charla([['Tengo un vivero con 120 plantas distintas', ['rubro_comercio'], []]], '549110000POCOSTEST', $cfg);
-caso('120 productos sí es de lista', !empty($c['precio_dado']) && strpos($r[0] ?? '', '$190.000') !== false);
+caso('120 productos sí es de lista', !empty($c['precio_dado']) && in_array(wabot_precio_imagen_marcador('ecommerce'), (array)$r, true));
 
 echo "— 6. Lo que el bot entendía mal —\n";
 

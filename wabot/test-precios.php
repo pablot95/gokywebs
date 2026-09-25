@@ -66,27 +66,26 @@ echo "— 2. El turno del precio: la propuesta y la oferta del primer diseño (1
 $c = conv_nueva('5491177770001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
 $r0 = wabot_personalizar($r[0] ?? '', $c);
-caso('son dos mensajes: la propuesta y, aparte, la oferta del primer diseño', count($r) === 2);
+caso('son tres mensajes: la propuesta, la imagen de modalidades y, aparte, la oferta del primer diseño (25-sep)', count($r) === 3);
 caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link (18-sep)',
     str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
-caso('las tres opciones con sus montos y lo incluido en los dos planes (22-sep)',
-    strpos($r0, "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: $120.000 incluye mantenimiento\n2. Plan mensual: $20.000 incluye mantenimiento\n3. Pago único: $200.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:\n✓ Desarrollo completo de la web") !== false
-    && strpos($r0, "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false
-    && strpos($r0, '✓ Actualizaciones de SDK y plugins') !== false && strpos($r0, '✓ Arreglo de errores') !== false
-    && strpos($r0, '✓ Soporte técnico') !== false
-    && str_ends_with($r0, '*El pago único se puede pagar en cuotas con intereses')
+caso('termina con la frase que abre las 3 modalidades, sin los montos ni lo incluido: eso ahora va en la imagen (25-sep)',
+    str_ends_with($r0, 'Podés elegir una de estas 3 modalidades de pago:')
+    && strpos($r0, '$120.000') === false && strpos($r0, 'Los 3 planes incluyen todo:') === false
     && mb_stripos($r0, 'seña') === false, $r0);
-caso('el panel figura incluido en todos los tipos, también en el sitio profesional (20-sep)',
-    strpos($r0, '✓ Panel para autogestionar contenido') !== false, $r0);
+caso('el segundo mensaje es la imagen de modalidades del sitio profesional, $20.000 (25-sep)',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && wabot_precio_imagen_archivo('landing') === '20000.png', $r[1] ?? '');
 $cTiendaPanel = conv_nueva('5491177770006TEST');
-$rTiendaPanel = wabot_personalizar(implode("\n", wabot_pitch('ecommerce', $cTiendaPanel, $cfg)), []);
-caso('la tienda usa el mismo texto breve del panel', strpos($rTiendaPanel, '✓ Panel para autogestionar contenido') !== false, $rTiendaPanel);
+$rTiendaPanel = wabot_pitch('ecommerce', $cTiendaPanel, $cfg);
+caso('la tienda manda la imagen de $30.000, la misma que comparte con cursos (25-sep)',
+    ($rTiendaPanel[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === '30000.png',
+    json_encode($rTiendaPanel, JSON_UNESCAPED_UNICODE));
 caso('sin "son alternativas, no se abonan las dos"', mb_stripos($r0, 'alternativas') === false && mb_stripos($r0, 'no se abonan') === false);
-caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta',
-    ($r[1] ?? '') === wabot_tres_pasos_texto($c, $cfg) && mb_stripos($r[1], 'sin cargo un primer diseño') !== false
-    && str_ends_with($r[1], 'Querés que lo armemos?') && strpos($r[1], '$') === false, $r[1] ?? '');
-caso('la oferta ya no dice "demo gratis"', mb_stripos($r[1] ?? '', 'demo') === false && mb_stripos($r[1] ?? '', 'gratis') === false);
+caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta',
+    ($r[2] ?? '') === wabot_tres_pasos_texto($c, $cfg) && mb_stripos($r[2], 'sin cargo un primer diseño') !== false
+    && str_ends_with($r[2], 'Querés que lo armemos?') && strpos($r[2], '$') === false, $r[2] ?? '');
+caso('la oferta ya no dice "demo gratis"', mb_stripos($r[2] ?? '', 'demo') === false && mb_stripos($r[2] ?? '', 'gratis') === false);
 caso('y sin el link del formulario', strpos(implode("\n", $r), 'gokywebs.com/form/') === false);
 caso('el precio queda congelado en la charla: plan anual con su seña y mensual, modelo anual (19-sep)',
     ($c['precio_cotizado'] ?? '') === '$120.000' && ($c['sena_cotizada'] ?? '') === '$40.000' && ($c['mensualidad_cotizada'] ?? '') === '$20.000'
@@ -97,20 +96,24 @@ caso('una charla cotizada el 19-sep a la mañana, sin seña congelada, toma la d
 caso('el link todavía no se marcó como enviado', empty($c['link_form_enviado']));
 caso('el bot queda esperando la respuesta a la oferta', $c['fase'] === 'prediseno' && !empty($c['oferta_diseno_ts']) && empty($c['bot_off']));
 caso('el contador para el sí corto empieza en cero', ($c['precio_turnos_desde'] ?? null) === 0);
-caso('la oferta sale con la demora fija de 2 segundos', wabot_demora_tipeo($r[1], $cfg) === 2.0);
-caso('pasa entero por el punto único de salida: propuesta y oferta',
+caso('la oferta sale con la demora fija de 2 segundos', wabot_demora_tipeo($r[2], $cfg) === 2.0);
+caso('pasa entero por el punto único de salida: propuesta, imagen y oferta',
     (function () use ($cfg, $r, $c) { $out = wabot_salida_preparar($r, $c, $cfg);
-        return count($out) === 2 && mb_stripos($out[0], 'plan mensual') !== false && mb_stripos($out[1], 'primer diseño') !== false; })());
+        return count($out) === 3 && mb_stripos($out[0], 'modalidades de pago') !== false
+            && $out[1] === wabot_precio_imagen_marcador('landing') && mb_stripos($out[2], 'primer diseño') !== false; })());
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => 'una tienda online completa', 'inmobiliaria' => 'una web inmobiliaria completa',
-          'elearning' => 'una plataforma de cursos completa'] as $tipo => $arranque) {
+foreach (['ecommerce' => ['una tienda online completa', '30000.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'inmobiliaria.png'],
+          'elearning' => ['una plataforma de cursos completa', '30000.png']] as $tipo => $par) {
+    [$arranque, $archivo] = $par;
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
-    $t = wabot_personalizar(implode("\n\n", $r), $c);
-    caso("$tipo: la frase fija de su tipo y las dos formas",
-        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0 && strpos($t, '2. Plan mensual: $30.000 incluye mantenimiento') !== false, $t);
+    $t = wabot_personalizar($r[0] ?? '', $c);
+    caso("$tipo: la frase fija de su tipo, la intro de modalidades y su imagen",
+        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0
+        && str_ends_with($t, 'Podés elegir una de estas 3 modalidades de pago:')
+        && ($r[1] ?? '') === wabot_precio_imagen_marcador($tipo) && wabot_precio_imagen_archivo($tipo) === $archivo, $t);
 }
 $c = conv_nueva('5491177770002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
@@ -127,12 +130,12 @@ $r = wabot_precio('ecommerce', $c, $cfg);
 caso('el que pidió el precio de entrada recibe el mismo formato',
     strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería, te armamos una tienda online') === 0
     && mb_stripos($r[0], 'para lo tuyo va') === false, $r[0]);
-caso('con la oferta del primer diseño en su propio mensaje, detrás del precio', count($r) === 2 && mb_stripos($r[1], 'primer diseño') !== false);
+caso('con la oferta del primer diseño en su propio mensaje, detrás del precio y la imagen', count($r) === 3 && mb_stripos($r[2], 'primer diseño') !== false);
 
 $c = conv_nueva('5491177770005TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
-caso('el anuncio viejo de demo también ve primero el precio y la oferta, sin el formulario pegado',
-    count($r) === 2 && mb_stripos($r[1], 'primer diseño') !== false && !tiene_form($r),
+caso('el anuncio viejo de demo también ve primero el precio, la imagen y la oferta, sin el formulario pegado',
+    count($r) === 3 && mb_stripos($r[2], 'primer diseño') !== false && !tiene_form($r),
     json_encode($r, JSON_UNESCAPED_UNICODE));
 
 /* Rubro y precio en un solo turno (15-sep): el que dice a qué se dedica y
@@ -142,11 +145,10 @@ foreach (['Soy electricista, cuánto sale la web?' => ['rubro_landing', 'landing
           'Vendo ropa para bebés, cuánto sale una tienda con carrito?' => ['rubro_ecommerce', 'ecommerce']] as $m => $par) {
     $c = conv_nueva('QATESTREGLOGICA15'); wabot_conv_transcript($c, 'cliente', $m); $c['ultimo_cliente_ts'] = time();
     clasifica([$par[0]]);
-    $txt = implode("\n", wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? []);
-    $v = wabot_precio_vigente($c, $cfg, $par[1]);
+    $out = wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? [];
+    $txt = implode("\n", $out);
     caso('rubro y precio en un turno: ' . $par[1], $c['tipo'] === $par[1] && !empty($c['precio_dado']), $txt);
-    caso('tres alternativas completas: ' . $par[1], strpos($txt, $v['precio']) !== false && strpos($txt, $v['mensualidad']) !== false
-        && strpos($txt, (string)$cfg['tipos'][$par[1]]['precio_unico']) !== false && strpos($txt, 'Los 3 planes incluyen todo:') !== false, $txt);
+    caso('la imagen con las 3 alternativas va en su propio mensaje: ' . $par[1], in_array(wabot_precio_imagen_marcador($par[1]), $out, true), $txt);
     caso('sin repregunta ni marcadores: ' . $par[1], !preg_match('/a qu[eé] te dedic|\{\w+\}/iu', $txt), $txt);
 }
 foreach (['Cuánto sale una web?', 'Cuánto sale una web para mostrar mis servicios y cuánto una tienda online?'] as $m) {
@@ -513,22 +515,22 @@ caso('sin rubro, la web propia se contesta y queda anotada', count($rW) === 1 &&
     && mb_stripos($rW[0], 'Contame a qué te dedicás') !== false && !empty($cW['quiere_web_propia']), json_encode($rW, JSON_UNESCAPED_UNICODE));
 clasifica(['rubro_landing']);
 $rW = turno('Soy electricista', $cW, $cfg);
-caso('el precio muestra el pago único como tercera opción, sin repetirlo debajo',
-    strpos($rW[0] ?? '', '3. Pago único: $200.000 NO incluye mantenimiento*') !== false
-    && substr_count($rW[0] ?? '', 'Pago único:') === 1, $rW[0] ?? '');
+caso('el pago único ya no se repite en texto: va una sola vez, en la imagen de modalidades',
+    substr_count($rW[0] ?? '', 'Pago único') === 0
+    && in_array(wabot_precio_imagen_marcador('landing'), $rW, true), json_encode($rW, JSON_UNESCAPED_UNICODE));
 caso('el boceto lo lleva en el precio cotizado y en la ficha',
     wabot_lead_cotizado($cW, $cfg) === 'Plan anual $120.000 (seña $40.000) o plan mensual $20.000 o pago único $200.000'
     && mb_stripos(wabot_ficha_resumen($cW, $cfg), 'Web propia') !== false, wabot_lead_cotizado($cW, $cfg));
 $cN = conv_nueva('5491177770095TEST'); $cN['fase'] = 'menu';
 clasifica(['rubro_landing']);
 $rN = turno('Soy electricista', $cN, $cfg);
-caso('sin pedirlo, el precio igualmente muestra el pago único como tercera opción',
-    !empty($cN['precio_dado']) && mb_stripos(implode("\n", $rN), '3. Pago único: $200.000') !== false);
+caso('sin pedirlo, el precio igualmente manda la imagen con el pago único como tercera opción',
+    !empty($cN['precio_dado']) && in_array(wabot_precio_imagen_marcador('landing'), $rN, true));
 $cW2 = conv_nueva('5491177770096TEST'); $cW2['fase'] = 'menu';
 clasifica(['rubro_comercio']);
 $rW2 = turno('Vendo ropa de mujer y la quiero en mi propio hosting', $cW2, $cfg);
-caso('rubro y pedido en el mismo mensaje: la tienda con el pago único de $300.000', !empty($cW2['precio_dado'])
-    && strpos($rW2[0] ?? '', '3. Pago único: $300.000') !== false, $rW2[0] ?? '');
+caso('rubro y pedido en el mismo mensaje: la tienda manda la imagen con el pago único de $300.000', !empty($cW2['precio_dado'])
+    && in_array(wabot_precio_imagen_marcador('ecommerce'), $rW2, true), json_encode($rW2, JSON_UNESCAPED_UNICODE));
 $cW3 = conv_nueva('5491177770097TEST'); $cW3['fase'] = 'menu';
 clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
 $rW3 = turno('Tengo mi propio hosting, la pueden subir ahí?', $cW3, $cfg);
@@ -626,8 +628,7 @@ $rTM = wabot_engine($msgTaller, $cTM, $cfg);
 caso('el motor cotiza tienda + cursos en vez de derivar',
     ($cTM['fase'] ?? '') !== 'derivado' && empty($cTM['bot_off']) && ($cTM['tipo'] ?? '') === 'ecommerce' && !empty($cTM['combo_cursos'])
     && strpos(implode("\n", (array)$rTM), 'una tienda online completa, con tus cursos') !== false
-    && strpos(implode("\n", (array)$rTM), '$190.000') !== false
-    && strpos(implode("\n", (array)$rTM), '$30.000') !== false, json_encode($rTM, JSON_UNESCAPED_UNICODE));
+    && in_array(wabot_precio_imagen_marcador('ecommerce'), (array)$rTM, true), json_encode($rTM, JSON_UNESCAPED_UNICODE));
 caso('con la frase del combinado y sin el aviso de "el precio no sale de la lista"',
     mb_stripos(implode("\n", (array)$rTM), 'una tienda online completa, con tus cursos') !== false
     && mb_stripos(implode("\n", (array)$rTM), 'no sale de la lista') === false);
@@ -638,7 +639,7 @@ $cTS = conv_nueva('5491177770098TEST');
 clasifica(['rubro_ecommerce']);
 $rTS = wabot_engine('Tengo una tienda de ropa y quiero vender online', $cTS, $cfg);
 caso('una tienda sin cursos se cotiza como tienda sola', empty($cTS['combo_cursos'])
-    && strpos($rTS[0], '1. Plan anual: $190.000 incluye mantenimiento') !== false && strpos($rTS[0], 'una tienda online completa, con tus cursos') === false);
+    && ($rTS[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && strpos($rTS[0], 'una tienda online completa, con tus cursos') === false);
 $cCombo = conv_nueva('998FPTEST'); $cCombo['fase'] = 'nuevo';
 $msjCombo = 'Buenas, tengo un taller de artesanias. Quiero vender insumos online y mas adelante subir cursos';
 wabot_conv_transcript($cCombo, 'cliente', $msjCombo); $cCombo['ultimo_cliente_ts'] = time();
@@ -872,11 +873,9 @@ $hostT = wabot_texto_hosting($cT, $cfg, 'y despues del primer año cuanto sale e
 caso('después del primer año: no hay renovación aparte, va incluida en los planes (19-sep)',
     mb_stripos($hostT, 'No hay renovación aparte') !== false && strpos($hostT, '$50.000') === false && strpos($hostT, '{') === false, $hostT);
 $rT = wabot_pitch('ecommerce', $cT, $cfg);
-caso('el turno del precio dice las tres opciones con sus montos y lo incluido en los planes (22-sep)',
-    mb_stripos($rT[0], '1. Plan anual: $190.000 incluye mantenimiento') !== false
-    && mb_stripos($rT[0], '2. Plan mensual: $30.000 incluye mantenimiento') !== false
-    && mb_stripos($rT[0], '3. Pago único: $300.000') !== false
-    && mb_stripos($rT[0], 'Los 3 planes incluyen todo:') !== false, $rT[0]);
+caso('el turno del precio termina en la intro de las 3 modalidades y manda la imagen de $30.000/$300.000 (22-sep, 25-sep)',
+    str_ends_with(trim((string)$rT[0]), 'Podés elegir una de estas 3 modalidades de pago:')
+    && ($rT[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $rT[0]);
 $todos = json_encode(wabot_textos_default(), JSON_UNESCAPED_UNICODE);
 /* "En tu caso podemos hacer…" volvió a estar permitido (Pablo, 18-sep: "Para
  * lo que me contás, te armamos…" o "En tu caso podemos hacer…"). */

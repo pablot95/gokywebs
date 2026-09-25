@@ -1375,6 +1375,11 @@ function wabot_salida_limpiar($mensajes) {
 function wabot_texto_parece_interno($texto) {
     $crudo = trim((string)$texto);
     if ($crudo === '') return false;
+    // El marcador de la imagen del precio (wabot_precio_imagen_marcador) no
+    // tiene espacios, igual que las palabras sueltas que este filtro caza: sin
+    // esta salida, wabot_salida_limpiar() se lo comía antes de llegar a
+    // wabot_respuesta_enviar() (25-sep).
+    if (wabot_es_marcador_imagen_precio($crudo)) return false;
 
     if (!preg_match('/\s/u', $crudo)) {
         // Un link solo NO es basura: el globo de la demo puede ser la URL pelada.
@@ -5844,7 +5849,17 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     $fuera = wabot_fuera_de_servicio_texto($tipo, $conv, $cfg);
     if ($fuera !== '') $propuesta = $fuera . "\n\n" . $propuesta;
     wabot_oferta_diseno_abrir($conv);
-    return [$propuesta, wabot_tres_pasos_texto($conv, $cfg)];
+
+    $salida = [$propuesta];
+    /* La imagen con las 3 modalidades (25-sep), solo cuando wabot_servicio_texto()
+     * de verdad las ofreció: sin eso —charlas viejas del modelo 'doble', sin
+     * mensualidad— la imagen mostraría montos que no aplican a esta charla. */
+    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '') {
+        $imagen = wabot_precio_imagen_marcador($tipo);
+        if ($imagen !== null) $salida[] = $imagen;
+    }
+    $salida[] = wabot_tres_pasos_texto($conv, $cfg);
+    return $salida;
 }
 
 /** "a, b y c": la lista con "y" al final. */
@@ -5939,16 +5954,22 @@ function wabot_oferta_diseno_abrir(&$conv) {
     wabot_evento_sesion($conv, 'primer_diseno_ofrecido');
 }
 
-/** Las tres opciones breves de contratarla, con los montos de esta charla. */
+/**
+ * La frase que abre las 3 modalidades de contratarla (25-sep): los montos ya
+ * no van enumerados acá, salen en la imagen que manda wabot_precio_cierre()
+ * justo después (wabot_precio_imagen_archivo). Esta función solo decide SI
+ * corresponde ofrecerlas —los mismos dos montos que exigía la lista de
+ * antes— y, si pidió la web propia, le suma el pago único debajo.
+ */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
-    $t = wabot_servicio_texto_plantilla((string)$tipo, is_array($conv) && !empty($conv['combo_cursos']), $cfg);
     $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
-    $propia  = trim((string)($cfg['tipos'][$tipo]['precio_unico'] ?? ''));
     // Sin los dos montos no se ofrecen las dos formas.
     if ($precio === '' || $mensual === '') return '';
-    $t = str_replace(['{precio}', '{mensualidad}', '{precio_unico}'], [$precio, $mensual, $propia], $t);
+    $t = trim((string)($cfg['precio_modalidades_intro'] ?? ''));
+    if ($t === '') $t = trim((string)(wabot_textos_default()['precio_modalidades_intro'] ?? ''));
+    if ($t === '') return '';
     // Si pidió la web propia (19-sep), debajo va el pago único.
     $propia = wabot_web_propia_precio_texto($conv, $cfg, $v);
     return $propia !== '' ? $t . "\n\n" . $propia : $t;
@@ -7784,7 +7805,7 @@ function wabot_respuesta_obligatorio($conv, $cfg, $mensaje = '') {
     if ($m !== '' && preg_match('/\b(demo|muestra|prediseno|formulario|form|referencia|logo|fotos?|colores?|whatsapp|llamada|reunion)\b/u', $m)) {
         return null;
     }
-    if (preg_match('/\b(plan mensual|servicio mensual|abono mensual|mensualidad|mantenimiento|por mes|suscripcion)\b/u', $u)) {
+    if (preg_match('/\b(plan mensual|servicio mensual|abono mensual|mensualidad|mantenimiento|por mes|suscripcion|modalidades de pago)\b/u', $u)) {
         return trim((string)$cfg['respuesta_plan_obligatorio']);
     }
     if (preg_match('/\bopcional\w*\b/u', $u)) return null;

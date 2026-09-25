@@ -111,6 +111,11 @@ function wabot_textos_default() {
     'dos_formas' => "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: {precio} incluye mantenimiento\n2. Plan mensual: {mensualidad} incluye mantenimiento\n3. Pago único: {precio_unico} NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n✓ Un cambio por mes en la web\n\nEl plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico\n\n*El pago único se puede pagar en cuotas con intereses",
     // Debajo de los planes, solo si el cliente pidió la web propia (19-sep).
     'dos_formas_web_propia' => 'Y si la querés en tu propio hosting, está el pago único: {precio_unico}. Ese es solo la página, sin hosting ni dominio, y el código queda tuyo cuando abonás el total; si querés, le sumás el mantenimiento por {mantenimiento_mes}.',
+    /* El turno del precio (25-sep, Pablo) ya no enumera las 3 modalidades en
+     * texto: las manda como imagen aparte (wabot_precio_imagen_archivo, con
+     * el monto mensual de cada tipo). Este es solo el texto que abre ese
+     * globo; wabot_servicio_texto() en engine.php es el único que lo usa. */
+    'precio_modalidades_intro' => 'Podés elegir una de estas 3 modalidades de pago:',
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
     'repregunta_suave' => 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo.',
     /* La pregunta de reconocimiento (Pablo, 21-sep): antes de cotizar una

@@ -352,9 +352,10 @@ caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 caso('y la pregunta de reconocimiento también, que es un proyecto nuevo (21-sep)', empty($cR['reconocimiento_hecho']));
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
-caso('el precio del que vuelve sale con la propuesta y, en otro mensaje, la oferta del primer diseño',
-    count($rR) === 2 && stripos($rR[0], 'te armamos un sitio profesional completo') !== false
-    && mb_stripos($rR[1], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
+caso('el precio del que vuelve sale con la propuesta, la imagen y, en otro mensaje, la oferta del primer diseño',
+    count($rR) === 3 && stripos($rR[0], 'te armamos un sitio profesional completo') !== false
+    && ($rR[1] ?? '') === wabot_precio_imagen_marcador('landing')
+    && mb_stripos($rR[2], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 15. Las dudas de pago del modelo doble —\n";
 foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Si pago la seña y despues no me gusta, me la devuelven?', 'Y no se puede pagar de una?'] as $f) {

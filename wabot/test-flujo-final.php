@@ -23,23 +23,23 @@ caso('vende algo: cotiza la tienda sin preguntar si vende por la web',
     mb_stripos(implode(' ', $r), 'Buscás vender') === false && ($c['fase'] ?? '') !== 'reconocimiento'
     && !empty($c['precio_dado']) && ($c['tipo'] ?? '') === 'ecommerce', implode(' | ', $r));
 $todo = implode("\n", $r);
-caso('al conocer el rubro manda exactamente dos mensajes', count($r) === 2, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('al conocer el rubro manda exactamente tres mensajes: propuesta, imagen y oferta (25-sep)', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',
     str_starts_with($r[0] ?? '', 'Para lo que me contás, te armamos una tienda online completa.')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
-caso('las tres opciones, con los montos y lo incluido en los planes (22-sep)',
-    strpos($r[0] ?? '', "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: $190.000 incluye mantenimiento\n2. Plan mensual: $30.000 incluye mantenimiento\n3. Pago único: $300.000 NO incluye mantenimiento*\n\nLos 3 planes incluyen todo:") !== false
-    && strpos($r[0] ?? '', "El plan anual y mensual incluyen mantenimiento:\n✓ Renovación de hosting y dominio") !== false
-    && strpos($r[0] ?? '', '✓ Actualizaciones de SDK y plugins') !== false && strpos($r[0] ?? '', '✓ Soporte técnico') !== false
-    && str_ends_with($r[0] ?? '', '*El pago único se puede pagar en cuotas con intereses')
+caso('termina con la intro de las 3 modalidades; los montos y lo incluido ahora van en la imagen (22-sep, 25-sep)',
+    str_ends_with($r[0] ?? '', 'Podés elegir una de estas 3 modalidades de pago:')
+    && strpos($r[0] ?? '', '$190.000') === false && strpos($r[0] ?? '', 'Los 3 planes incluyen todo:') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
-caso('el segundo mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
-    ($r[1] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
-    && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[1] ?? '');
+caso('el segundo mensaje es la imagen de modalidades de la tienda, $30.000/$300.000',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $r[1] ?? '');
+caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
+    ($r[2] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
+    && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[2] ?? '');
 caso('el bot sigue prendido, esperando la respuesta, y el chat ya figura para Pablo',
     empty($c['bot_off']) && !empty($c['oferta_diseno_ts']) && !empty($c['handoff_pendiente'])
     && !empty($c['seguimiento_bloqueado']) && ($c['fase'] ?? '') === 'prediseno');
-caso('la oferta sale dos segundos después del precio', wabot_demora_tipeo($r[1] ?? '', $cfg) === 2.0);
+caso('la oferta sale dos segundos después del precio', wabot_demora_tipeo($r[2] ?? '', $cfg) === 2.0);
 
 echo "— El sí se lleva el formulario y el bot se calla —\n";
 $si = $c;
@@ -116,25 +116,25 @@ clasifica(['saludo']);
 turno('Hola! Quiero mi demo gratis para mi negocio.', $ca, $cfg);
 clasifica(['rubro_landing']);
 $rA = turno('Soy nutricionista', $ca, $cfg);
-caso('precio y oferta, sin el formulario pegado al monto',
-    count($rA) === 2 && !tiene_form($rA) && mb_stripos($rA[1] ?? '', 'primer diseño') !== false, json_encode($rA, JSON_UNESCAPED_UNICODE));
+caso('precio, imagen y oferta, sin el formulario pegado al monto',
+    count($rA) === 3 && !tiene_form($rA) && mb_stripos($rA[2] ?? '', 'primer diseño') !== false, json_encode($rA, JSON_UNESCAPED_UNICODE));
 clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
-    'landing' => ['un sitio profesional completo', '$120.000', '$20.000'],
-    'inmobiliaria' => ['una web inmobiliaria completa', '$170.000', '$30.000'],
-    'elearning' => ['una plataforma de cursos completa', '$190.000', '$30.000'],
+    'landing' => ['un sitio profesional completo', '20000.png'],
+    'inmobiliaria' => ['una web inmobiliaria completa', 'inmobiliaria.png'],
+    'elearning' => ['una plataforma de cursos completa', '30000.png'],
 ];
-foreach ($esperados as $tipo => [$frase, $precio, $mensualidad]) {
+foreach ($esperados as $tipo => [$frase, $archivo]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
     $salida = wabot_pitch($tipo, $ct, $cfg);
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
-    caso("$tipo también usa su texto fijo y espera la respuesta",
+    caso("$tipo también usa su texto fijo, la intro de modalidades y su imagen, y espera la respuesta",
         str_starts_with($primero, 'Para lo que me contás, te armamos ' . $frase)
-        && strpos($primero, "1. Plan anual: $precio incluye mantenimiento") !== false
-        && strpos($primero, "2. Plan mensual: $mensualidad incluye mantenimiento") !== false
-        && count($salida) === 2 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
+        && str_ends_with($primero, 'Podés elegir una de estas 3 modalidades de pago:')
+        && ($salida[1] ?? '') === wabot_precio_imagen_marcador($tipo) && wabot_precio_imagen_archivo($tipo) === $archivo
+        && count($salida) === 3 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
 
 // Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
@@ -155,10 +155,11 @@ $cc = conv_nueva('549110000COSMETICATEST', ['fase' => 'menu']);
 clasifica(['pregunta_info', 'rubro_ecommerce'], ['info_keys' => ['proceso']]);
 $salidaCosmeticos = turno('Consulto por precios y cómo sería el procedimiento. Quiero un catálogo de cosméticos con producto, stock y precio.', $cc, $cfg);
 $textoCosmeticos = implode("\n", $salidaCosmeticos);
-caso('procedimiento + rubro claro manda solamente la cotización y la oferta',
-    count($salidaCosmeticos) === 2
+caso('procedimiento + rubro claro manda solamente la cotización, la imagen y la oferta',
+    count($salidaCosmeticos) === 3
     && mb_stripos($textoCosmeticos, 'Te paso el valor según') === false
-    && mb_stripos($salidaCosmeticos[1] ?? '', 'primer diseño') !== false,
+    && ($salidaCosmeticos[1] ?? '') === wabot_precio_imagen_marcador('ecommerce')
+    && mb_stripos($salidaCosmeticos[2] ?? '', 'primer diseño') !== false,
     implode(' | ', $salidaCosmeticos));
 
 todo_ok();

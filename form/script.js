@@ -73,20 +73,36 @@ const mfGrid = document.getElementById('modelosGroup');
 const mfTipos = document.getElementById('mfTipos');
 const mfRubro = document.getElementById('mfRubro');
 const mfAviso = document.getElementById('modelosAviso');
+const mfContador = document.getElementById('mfContador');
+const btnEnviar = document.getElementById('btnEnviar');
 const mfFiltro = { tipo: 'all', rubro: 'all' };
+const FLECHA = '<svg class="mf-flecha" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 
+/* El botón de la barra dice cuántos faltan ("Elegí 1 más") y pasa a Enviar
+ * con los 2 elegidos (24-sep, como el diseño que mandó Pablo). */
+function pintarBotonEnviar() {
+    const faltan = MODELOS_A_ELEGIR - modelosSeleccionados.length;
+    const texto = faltan <= 0 ? 'Enviar'
+        : faltan === MODELOS_A_ELEGIR ? `Elegí ${MODELOS_A_ELEGIR} modelos` : `Elegí ${faltan} más`;
+    btnEnviar.innerHTML = `<span>${texto}</span>${FLECHA}`;
+}
+
+/* El contador del título lleva la cuenta; mfAviso queda solo para avisos. */
 function pintarElegidos(mensaje) {
-    mfAviso.classList.remove('error');
-    if (mensaje) { mfAviso.textContent = mensaje; return; }
     const n = modelosSeleccionados.length;
-    mfAviso.textContent = n
-        ? `Elegiste ${n} de ${MODELOS_A_ELEGIR}: ` + modelosSeleccionados.map(id => nombreModelo(modeloPorId(id))).join(' + ')
-        : `Elegí ${MODELOS_A_ELEGIR} modelos.`;
+    mfAviso.classList.remove('error');
+    mfAviso.textContent = mensaje || '';
+    // Solo si cambió: reescribir el mismo texto lo vuelve a leer el lector de pantalla.
+    const cuenta = `${n} de ${MODELOS_A_ELEGIR} seleccionados`;
+    if (mfContador.textContent !== cuenta) mfContador.textContent = cuenta;
+    mfContador.classList.toggle('completo', n === MODELOS_A_ELEGIR);
+    // Mientras se envía, el botón dice "Enviando…".
+    if (!btnEnviar.disabled) pintarBotonEnviar();
     mfGrid.querySelectorAll('.mf-card').forEach(card => {
         const on = modelosSeleccionados.includes(card.dataset.id);
         card.classList.toggle('elegido', on);
         card.querySelector('.mf-marcar').setAttribute('aria-pressed', on ? 'true' : 'false');
-        card.querySelector('.mf-marcar-txt').textContent = on ? 'Elegido' : 'Elegir';
+        card.querySelector('.mf-marcar-txt').textContent = on ? 'Seleccionado' : 'Seleccionar';
     });
 }
 
@@ -95,7 +111,7 @@ function alternarModelo(id) {
     if (modelosSeleccionados.includes(id)) {
         modelosSeleccionados = modelosSeleccionados.filter(x => x !== id);
     } else if (modelosSeleccionados.length >= MODELOS_A_ELEGIR) {
-        pintarElegidos(`Ya elegiste ${MODELOS_A_ELEGIR}. Tocá uno de los elegidos para sacarlo y cambiarlo.`);
+        pintarElegidos(`Ya elegiste ${MODELOS_A_ELEGIR}. Tocá uno de los seleccionados para sacarlo y cambiarlo.`);
         mfAviso.classList.add('error');
         return false;
     } else {
@@ -134,6 +150,7 @@ function armarModelos() {
         b.type = 'button';
         b.className = 'mf-chip';
         b.dataset.valor = t.id;
+        b.dataset.label = t.label; // reserva el ancho en negrita: el elegido no mueve a los demás
         b.textContent = t.label;
         mfTipos.append(b);
     });
@@ -146,17 +163,23 @@ function armarModelos() {
         card.dataset.id = m.id;
         card.dataset.tipo = m.tipo;
         card.dataset.rubros = (m.rubros || []).join(' ');
+        // Vista a la izquierda y nombre + botón a la derecha (24-sep). La vista
+        // ya no scrollea: en el celular atrapaba el dedo y no dejaba bajar.
         card.innerHTML = `
-            <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
-            <span class="mf-letra" aria-hidden="true"></span>
+            <div class="mf-foto">
+                <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
+                <span class="mf-letra" aria-hidden="true"></span>
+                <button type="button" class="mf-ver"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M11 8v6M8 11h6"/></svg><span>Ver grande</span></button>
+            </div>
             <div class="mf-info">
-                <div class="mf-acciones">
-                    <button type="button" class="mf-marcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Elegir</span></button>
-                    <button type="button" class="mf-ver">Ver grande</button>
-                </div>
+                <p class="mf-modelo"></p>
+                <p class="mf-nombre"></p>
+                <button type="button" class="mf-marcar" aria-pressed="false"><span class="mf-check" aria-hidden="true"></span><span class="mf-marcar-txt">Seleccionar</span></button>
             </div>`;
         card.querySelector('.mf-letra').textContent = m.letra;
-        card.querySelector('.mf-marcar').setAttribute('aria-label', `Elegir el ${nombreModelo(m)}`);
+        card.querySelector('.mf-modelo').textContent = `Modelo ${m.letra}`;
+        card.querySelector('.mf-nombre').textContent = m.nombre;
+        card.querySelector('.mf-marcar').setAttribute('aria-label', `Seleccionar el ${nombreModelo(m)}`);
         card.querySelector('.mf-ver').setAttribute('aria-label', `Ver grande el ${nombreModelo(m)}`);
         frag.append(card);
         if (mfObservador) mfObservador.observe(card);
@@ -168,7 +191,7 @@ function armarModelos() {
         const card = e.target.closest('.mf-card');
         if (!card) return;
         if (e.target.closest('.mf-ver')) { abrirModelo(card.dataset.id, e.target.closest('.mf-ver')); return; }
-        // Tocar la vista o el botón marca; el scroll de la vista no.
+        // Tocar cualquier parte de la tarjeta marca, igual que el botón.
         alternarModelo(card.dataset.id);
     });
     mfTipos.addEventListener('click', e => {
@@ -219,7 +242,7 @@ function pintarModal() {
     mfEscenario.scrollTop = 0;
     mfOverlay.querySelectorAll('.mf-seg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.vista === mfVer.vista ? 'true' : 'false'));
     const elegido = modelosSeleccionados.includes(m.id);
-    mfElegir.textContent = elegido ? '✓ Elegido · tocá para sacarlo' : 'Elegir este modelo';
+    mfElegir.textContent = elegido ? '✓ Seleccionado · tocá para sacarlo' : 'Seleccionar este modelo';
     mfElegir.classList.toggle('elegido', elegido);
 }
 
@@ -485,7 +508,6 @@ document.getElementById('btnVerModelos').addEventListener('click', () => {
     irAPaso(3);
 });
 
-const btnEnviar = document.getElementById('btnEnviar');
 btnEnviar.addEventListener('click', () => {
     if (btnEnviar.disabled) return;
     clearErrors();
@@ -570,8 +592,9 @@ function validarPaso2() {
 function validarPaso3() {
     if (modelosSeleccionados.length === MODELOS_A_ELEGIR) return true;
     const faltan = MODELOS_A_ELEGIR - modelosSeleccionados.length;
+    // El botón ya dice "Elegí 2 modelos": el aviso explica cómo se eligen.
     pintarElegidos(faltan === MODELOS_A_ELEGIR
-        ? `Elegí ${MODELOS_A_ELEGIR} modelos para poder enviar.`
+        ? `Tocá Seleccionar en los ${MODELOS_A_ELEGIR} modelos que más te gusten.`
         : `Te falta elegir ${faltan} modelo más para poder enviar.`);
     mfAviso.classList.add('error');
     return false;
@@ -685,7 +708,7 @@ function mostrarErrorServidor(json) {
 function restaurarBoton() {
     btnEnviar.disabled = false;
     btnEnviar.classList.remove('loading');
-    btnEnviar.textContent = 'Enviar →';
+    pintarBotonEnviar();
 }
 
 async function enviarFormulario() {

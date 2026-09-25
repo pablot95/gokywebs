@@ -358,7 +358,7 @@ function wabot_procesar_entrante($ev, $cfg) {
                 $falta = $i === 0 ? $tipeo - (microtime(true) - $arranque) : $tipeo;
                 if ($falta > 0) usleep((int)($falta * 1000000));
 
-                if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
+                wabot_respuesta_enviar($conv, $mensaje);
             }
 
             wabot_conv_save($conv);
@@ -433,7 +433,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         foreach ($respuestas as $mensaje) {
             $mensaje = wabot_personalizar($mensaje, $conv);
             wabot_escribiendo($conv, $id);
-            if (wabot_enviar($conv, $mensaje)) wabot_conv_transcript($conv, 'bot', $mensaje);
+            wabot_respuesta_enviar($conv, $mensaje);
         }
         wabot_conv_save($conv);
     } while (wabot_cola_tiene($clave));

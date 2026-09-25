@@ -64,7 +64,7 @@ echo "— En la charla: contesta y sigue, no se apaga —\n";
 $c = conv_nueva('549110000PROPCHAT', ['fase' => 'menu']);
 clasifica(['rubro_landing']);
 $r = turno('Soy contador y necesito una web para mostrar mis servicios', $c, $cfg);
-caso('(se cotiza el sitio profesional)', !empty($c['precio_dado']) && count($r) === 2);
+caso('(se cotiza el sitio profesional)', !empty($c['precio_dado']) && count($r) === 3);
 clasifica(['pregunta_info'], ['info_keys' => ['titularidad']]);
 $rT = turno('La página queda a mi nombre?', $c, $cfg);
 /* Después del precio el bot ya no contesta (regla del 18-sep: espera un sí y

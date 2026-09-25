@@ -1958,7 +1958,7 @@ body {
     .objetivo-pill { font-size: 0.76rem; padding: 10px 11px; border-radius: 12px; }
     .objetivo-pill-hint { font-size: 0.67rem; line-height: 1.3; }
 }
-/* ─── Paso 3: modelos (16-sep) ───
+/* ─── Paso 3: modelos (16-sep; tarjetas horizontales del diseño de Pablo, 24-sep) ───
    Las vistas usan .wf de /modelos/wire.css; .md-alto y .md-lienzo repiten
    lo mínimo de /modelos/style.css para achicar el lienzo de 1200px. */
 .page-wrapper { transition: max-width 0.3s ease; }
@@ -1967,53 +1967,119 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .md-alto { position: relative; overflow: hidden; }
 .md-lienzo { position: absolute; left: 0; top: 0; width: 1200px; transform-origin: 0 0; }
 
-.mf-filtros { display: flex; flex-wrap: wrap; gap: 6px; }
-.mf-chip {
-    border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
-    padding: 8px 14px; border-radius: 999px; cursor: pointer;
-    font: 600 0.84rem var(--font); transition: var(--transition);
+.form-step[data-step="3"] {
+    --mf-tinta: #0F172A;
+    --mf-gris: #64748B;
+    --mf-linea: #E2E8F0;
+    --mf-marino: #0C1832;
 }
-.mf-chip:hover { border-color: var(--blue); color: var(--blue-dark); }
-.mf-chip[aria-pressed="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
-.mf-rubro { display: flex; flex-direction: column; gap: 6px; max-width: 320px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
 
-.mf-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+/* Encabezado: el contador va al lado del título; en el celular sube a la fila
+   de "Paso 3 de 3" para que el título entre en un renglón. */
+.mf-header {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center;
+    gap: 6px 16px; grid-template-areas: "paso paso" "titulo contador" "desc desc";
+    padding-bottom: 0; border-bottom: 0;
+}
+.mf-header .step-header-badge { grid-area: paso; }
+.mf-header .step-header-title {
+    grid-area: titulo; color: var(--mf-tinta);
+    font: 800 clamp(1.6rem, 1.25rem + 1.5vw, 2.15rem)/1.1 var(--font); letter-spacing: -0.03em;
+}
+.mf-header .step-header-desc { grid-area: desc; color: var(--mf-gris); font-size: clamp(0.94rem, 0.88rem + 0.3vw, 1.05rem); }
+.mf-contador {
+    grid-area: contador; justify-self: end; white-space: nowrap;
+    padding: 8px 15px; border-radius: 999px; background: #EEF3FF; color: var(--blue-dark);
+    font: 600 0.84rem var(--font); transition: background-color 0.2s, color 0.2s;
+}
+.mf-contador.completo { background: #DCFCE7; color: #15803D; }
+
+.mf-filtros { display: flex; flex-wrap: wrap; gap: 8px; }
+.mf-chip {
+    display: inline-flex; flex-direction: column; align-items: center;
+    padding: 8px 15px; border: 1.5px solid var(--mf-linea); border-radius: 999px;
+    background: var(--surface); color: #1E293B; cursor: pointer;
+    font: 500 0.82rem var(--font); transition: var(--transition);
+}
+/* Reserva el ancho en negrita: al elegir un tipo, los otros chips no se corren. */
+.mf-chip::after { content: attr(data-label); height: 0; overflow: hidden; visibility: hidden; font-weight: 700; }
+.mf-chip[aria-pressed="true"] {
+    background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 700;
+    box-shadow: 0 6px 16px -6px rgba(37, 99, 235, 0.55);
+}
+.mf-rubro { display: flex; flex-direction: column; gap: 8px; max-width: 360px; font: 500 0.9rem var(--font); color: var(--mf-gris); }
+.mf-rubro .field-input {
+    -webkit-appearance: none; appearance: none; cursor: pointer;
+    padding: 13px 44px 13px 16px; border-radius: 12px; font-size: 1rem;
+    background: #F8FAFC url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23334155' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center / 20px;
+}
+.mf-rubro .field-input:focus { background-color: #fff; }
+
+/* Tarjeta: la vista a la izquierda y el nombre con el botón a la derecha. */
+.mf-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .mf-card {
-    position: relative; display: flex; flex-direction: column; min-width: 0;
-    background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px;
-    overflow: hidden; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;
+    display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: center;
+    gap: 18px; min-width: 0; padding: 12px;
+    background: var(--surface); border: 1px solid var(--mf-linea); border-radius: 16px;
+    cursor: pointer; transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 .mf-card[hidden] { display: none; }
-.mf-card:hover { border-color: #93c5fd; box-shadow: 0 8px 22px rgba(15, 23, 42, 0.1); }
-.mf-card.elegido { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22); }
-.mf-vista {
-    aspect-ratio: 16 / 11; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
-    scrollbar-width: thin; scrollbar-gutter: stable;
-    background: linear-gradient(145deg, #f1f5f9, #fff); border-bottom: 1px solid var(--border);
+/* Elegida: borde de 2px sin mover nada (el segundo px es una sombra interna). */
+.mf-card.elegido { border-color: var(--blue); background: #F4F7FF; box-shadow: inset 0 0 0 1px var(--blue); }
+/* Solo con mouse: en el celular el hover queda pegado después de tocar. */
+@media (hover: hover) {
+    .mf-card:hover { border-color: #BFDBFE; box-shadow: 0 10px 26px -8px rgba(15, 23, 42, 0.14); }
+    .mf-card.elegido:hover { border-color: var(--blue); box-shadow: inset 0 0 0 1px var(--blue), 0 10px 26px -8px rgba(37, 99, 235, 0.25); }
+    .mf-chip:hover { border-color: #93C5FD; color: var(--blue-dark); }
+    .mf-chip[aria-pressed="true"]:hover { border-color: var(--blue); color: #fff; }
+    .mf-marcar:hover { border-color: var(--blue); }
+    .mf-card.elegido .mf-marcar:hover { border-color: #E3EBFE; }
+    .mf-ver:hover { background: var(--blue); }
+    .mf-barra .btn-step-prev:hover { border-color: #94A3B8; color: var(--text); background: var(--bg); }
 }
+
+.mf-foto {
+    position: relative; overflow: hidden; border-radius: 10px; container: mf-foto / inline-size;
+    background: #fff; border: 1px solid rgba(15, 23, 42, 0.08); box-shadow: 0 2px 10px rgba(15, 23, 42, 0.07);
+}
+.mf-vista { aspect-ratio: 4 / 3; overflow: hidden; background: linear-gradient(145deg, #f1f5f9, #fff); }
 .mf-letra {
-    position: absolute; left: 10px; top: 10px; z-index: 2; pointer-events: none;
-    min-width: 34px; height: 34px; padding: 0 7px; border-radius: 9px;
-    display: grid; place-items: center; background: var(--text); color: #fff;
-    font: 800 1rem var(--font-display);
+    position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+    min-width: 32px; height: 32px; padding: 0 8px; border-radius: 8px;
+    display: grid; place-items: center; background: var(--mf-marino); color: #fff;
+    font: 700 0.95rem var(--font);
 }
-.mf-card.elegido .mf-letra { background: var(--blue); }
-.mf-info { display: flex; flex-direction: column; padding: 7px 10px; flex: 1; }
-.mf-acciones { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin-top: auto; }
-.mf-marcar {
-    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-    padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer;
-    border: 1.5px solid var(--blue); background: var(--surface); color: var(--blue-dark);
-    font: 700 0.78rem var(--font-display); transition: var(--transition);
-}
-.mf-check { width: 14px; height: 14px; border-radius: 4px; border: 2px solid currentColor; display: grid; place-items: center; }
-.mf-card.elegido .mf-marcar { background: var(--blue); color: #fff; }
-.mf-card.elegido .mf-check::after { content: ""; width: 8px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
 .mf-ver {
-    padding: 6px 8px; border: 0; background: none; cursor: pointer;
-    color: var(--text-muted); font: 600 0.78rem var(--font); text-decoration: underline; text-underline-offset: 3px;
+    position: absolute; right: 6px; bottom: 6px; z-index: 2;
+    display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px 5px 8px;
+    border: 0; border-radius: 999px; cursor: pointer;
+    background: rgba(12, 24, 50, 0.8); color: #fff; font: 600 0.72rem var(--font);
+    -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+    transition: background-color 0.2s;
 }
-.mf-ver:hover { color: var(--blue-dark); }
+/* Más superficie para el dedo que lo que se ve. */
+.mf-ver::before { content: ""; position: absolute; inset: -8px; }
+.mf-ver svg { width: 14px; height: 14px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+/* En la vista chica del celular queda la lupa sola; el nombre accesible sigue diciendo "Ver grande". */
+@container mf-foto (max-width: 200px) {
+    .mf-ver { padding: 7px; }
+    .mf-ver span { display: none; }
+}
+
+.mf-info { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+.mf-modelo { font: 700 1.1rem/1.2 var(--font); letter-spacing: -0.015em; color: var(--mf-tinta); }
+.mf-nombre { margin-top: 3px; font-size: 0.92rem; line-height: 1.35; color: var(--mf-gris); }
+.mf-marcar {
+    margin-top: 14px; width: 100%; max-width: 200px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 9px 12px; border: 1.5px solid var(--mf-linea); border-radius: 999px; cursor: pointer;
+    background: var(--surface); color: var(--blue-dark); white-space: nowrap;
+    font: 600 0.88rem var(--font); transition: var(--transition);
+}
+.mf-check { display: none; place-items: center; flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--blue); }
+.mf-check::after { content: ""; width: 7px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.mf-card.elegido .mf-marcar { background: #E3EBFE; border-color: #E3EBFE; }
+.mf-card.elegido .mf-check { display: grid; }
 .mf-vacio { padding: 24px; border: 1px dashed var(--border); border-radius: 12px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
 
 /* Intro del paso 3: mientras se ve, los modelos y la barra quedan ocultos. */
@@ -2022,15 +2088,29 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .form-step.con-intro > .form-section, .form-step.con-intro > .mf-barra { display: none; }
 .mf-intro-texto { margin-top: 6px; font-size: 1.02rem; line-height: 1.6; color: var(--text-muted); }
 
-/* La barra con lo elegido y Enviar queda pegada abajo mientras se recorren los modelos. */
+/* La barra con Volver y el botón que dice cuántos faltan queda pegada abajo
+   mientras se recorren los modelos. El aviso aparece arriba solo si hay uno. */
 .mf-barra {
     position: sticky; bottom: 0; z-index: 5;
     display: flex; flex-direction: column; align-items: center; gap: 10px;
-    padding: 14px 32px 18px; background: rgba(255, 255, 255, 0.97);
-    border-top: 1px solid var(--border); box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+    padding: 14px 32px 16px; background: #fff;
+    box-shadow: 0 -12px 28px -10px rgba(15, 23, 42, 0.16);
 }
-.mf-barra .step-nav.step-nav-submit { max-width: 560px; padding: 0; }
+.mf-barra .step-nav.step-nav-submit {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.85fr); gap: 12px;
+    width: 100%; max-width: 560px; padding: 0;
+}
+.mf-barra .btn-step,
+.mf-barra .btn-submit {
+    width: 100%; max-width: none; min-height: 52px; padding: 0 16px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    border-radius: 12px; font: 700 1rem var(--font); letter-spacing: 0;
+}
+.mf-barra .btn-step-prev { background: #fff; border-color: #E5E7EB; color: var(--mf-gris); }
+.mf-barra .btn-submit { box-shadow: 0 12px 24px -10px rgba(37, 99, 235, 0.7); }
+.mf-flecha { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 .mf-elegidos { font-size: 0.88rem; font-weight: 600; color: var(--text); text-align: center; }
+.mf-elegidos:empty { display: none; }
 .mf-elegidos.error { color: var(--error); }
 
 /* Vista grande */
@@ -2057,13 +2137,24 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 .mf-modal-pie { display: flex; justify-content: center; padding: 12px 16px; background: var(--surface); border-top: 1px solid var(--border); }
 .mf-elegir.elegido { background: #16a34a; box-shadow: none; }
 
+/* Tarjeta compacta en celular y tablet: en la tablet siguen entrando dos por fila. */
 @media (max-width: 860px) {
-    .mf-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .mf-grid { gap: 12px; }
+    .mf-card { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 14px; }
+    .mf-letra { min-width: 26px; height: 26px; padding: 0 6px; border-radius: 7px; font-size: 0.82rem; }
+    .mf-modelo { font-size: 1rem; }
+    .mf-nombre { font-size: 0.82rem; }
+    .mf-marcar { margin-top: 10px; padding: 8px; gap: 5px; font-size: 0.8rem; }
+    .mf-check { width: 16px; height: 16px; }
+}
+@media (max-width: 700px) {
+    .mf-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
-    .mf-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
     .mf-rubro { max-width: none; }
     .mf-barra { padding: 12px 18px 14px; }
+    .mf-barra .btn-step,
+    .mf-barra .btn-submit { min-height: 50px; }
     .mf-barra .submit-note { display: none; }
     .mf-overlay { padding: 0; }
     .mf-modal { max-height: 100vh; max-height: 100dvh; height: 100%; border-radius: 0; }
@@ -2071,4 +2162,8 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
     .mf-seg { order: 3; }
     .mf-escenario { padding: 10px; }
     .mf-cel { border: 1px solid var(--border); border-radius: 12px; }
+}
+@media (max-width: 480px) {
+    .mf-header { grid-template-areas: "paso contador" "titulo titulo" "desc desc"; }
+    .mf-contador { padding: 5px 11px; font-size: 0.76rem; }
 }

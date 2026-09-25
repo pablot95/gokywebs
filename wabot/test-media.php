@@ -39,7 +39,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function ($texto) {
 $c = convNueva();
 $r = wabot_engine('Hola, tengo una panadería y quiero vender online', $c, $cfg);
 caso('transcripción de un audio → clasifica y cotiza Ecommerce',
-    strpos(implode("\n", (array)$r), '$30.000') !== false && $c['tipo'] === 'ecommerce');
+    in_array(wabot_precio_imagen_marcador('ecommerce'), (array)$r, true) && $c['tipo'] === 'ecommerce');
 
 echo "— Descripción de una foto en el momento del prediseño —\n";
 

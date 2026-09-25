@@ -83,8 +83,9 @@ foreach ($escenarios as $esc) {
             echo "<<< BOT: (silencio)\n";
         } else {
             foreach ((array)$r as $globo) {
-                wabot_conv_transcript($conv, 'bot', $globo);
-                echo "<<< BOT [" . mb_strlen($globo) . "c]: " . str_replace("\n", "\n           ", $globo) . "\n";
+                $legible = wabot_respuesta_texto_transcript($globo);
+                wabot_conv_transcript($conv, 'bot', $legible);
+                echo "<<< BOT [" . mb_strlen($legible) . "c]: " . str_replace("\n", "\n           ", $legible) . "\n";
             }
         }
         $conv['ultimo_ts'] = time();

@@ -64,13 +64,13 @@ echo "— 2. El precio ofrece el primer diseño (18-sep) —\n";
 
 $c = conv_nueva('5491188880001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
-caso('el segundo mensaje ofrece el primer diseño sin cargo', mb_stripos($r[1] ?? '', 'sin cargo un primer diseño') !== false, $r[1] ?? '');
-caso('y termina preguntando si lo armamos', str_ends_with($r[1] ?? '', 'Querés que lo armemos?'), $r[1] ?? '');
+caso('el tercer mensaje ofrece el primer diseño sin cargo', mb_stripos($r[2] ?? '', 'sin cargo un primer diseño') !== false, $r[2] ?? '');
+caso('y termina preguntando si lo armamos', str_ends_with($r[2] ?? '', 'Querés que lo armemos?'), $r[2] ?? '');
 caso('sin el link: ese sale con el sí', !tiene_form($r));
 $c = conv_nueva('5491188880002TEST'); $c['demo_pedida_entrada'] = true;
 $r = wabot_precio('landing', $c, $cfg);
 caso('un anuncio viejo de demo también ve el precio y espera una aceptación actual',
-    count($r) === 2 && mb_stripos($r[1], 'primer diseño') !== false && !tiene_form($r),
+    count($r) === 3 && mb_stripos($r[2], 'primer diseño') !== false && !tiene_form($r),
     json_encode($r, JSON_UNESCAPED_UNICODE));
 caso('y todavía no marca el formulario como enviado', empty($c['link_form_enviado']));
 
