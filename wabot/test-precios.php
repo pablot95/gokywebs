@@ -74,12 +74,12 @@ caso('termina con la frase que abre las 3 modalidades, sin los montos ni lo incl
     str_ends_with($r0, 'Podés elegir una de estas 3 modalidades de pago:')
     && strpos($r0, '$120.000') === false && strpos($r0, 'Los 3 planes incluyen todo:') === false
     && mb_stripos($r0, 'seña') === false, $r0);
-caso('el segundo mensaje es la imagen de modalidades del sitio profesional, $20.000 (25-sep)',
-    ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && wabot_precio_imagen_archivo('landing') === '20000.png', $r[1] ?? '');
+caso('el segundo mensaje es la imagen de modalidades del sitio profesional (25-sep)',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && wabot_precio_imagen_archivo('landing') === 'sitio-profesional-tres-columnas-4x3.png', $r[1] ?? '');
 $cTiendaPanel = conv_nueva('5491177770006TEST');
 $rTiendaPanel = wabot_pitch('ecommerce', $cTiendaPanel, $cfg);
-caso('la tienda manda la imagen de $30.000, la misma que comparte con cursos (25-sep)',
-    ($rTiendaPanel[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === '30000.png',
+caso('la tienda manda su propia imagen de modalidades (25-sep)',
+    ($rTiendaPanel[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'tienda-online-tres-columnas-4x3.png',
     json_encode($rTiendaPanel, JSON_UNESCAPED_UNICODE));
 caso('sin "son alternativas, no se abonan las dos"', mb_stripos($r0, 'alternativas') === false && mb_stripos($r0, 'no se abonan') === false);
 caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta',
@@ -104,8 +104,8 @@ caso('pasa entero por el punto único de salida: propuesta, imagen y oferta',
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => ['una tienda online completa', '30000.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'inmobiliaria.png'],
-          'elearning' => ['una plataforma de cursos completa', '30000.png']] as $tipo => $par) {
+foreach (['ecommerce' => ['una tienda online completa', 'tienda-online-tres-columnas-4x3.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'web-inmobiliaria-tres-columnas-4x3.png'],
+          'elearning' => ['una plataforma de cursos completa', 'plataforma-de-cursos-tres-columnas-4x3.png']] as $tipo => $par) {
     [$arranque, $archivo] = $par;
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);

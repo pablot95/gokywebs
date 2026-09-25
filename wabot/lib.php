@@ -3651,18 +3651,18 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 
 /**
  * La imagen con las 3 modalidades de pago que sigue al turno del precio
- * (25-sep, Pablo): cursos y tienda online comparten la de $30.000 —el pago
- * único de cursos ($290.000) queda aproximado ahí a $300.000, aceptado para
- * no armar una cuarta imagen solo por esa diferencia—. Los archivos viven en
- * wabot/, junto al resto del código, no en data/: son parte del deploy, no
- * contenido subido por un cliente.
+ * (25-sep, Pablo). Una por tipo, cada una con su propio título y sus montos
+ * exactos (25-sep: reemplazan a las tres genéricas de antes, que hacían
+ * compartir cursos y tienda online y aproximaban el pago único de cursos).
+ * Los archivos viven en wabot/, junto al resto del código, no en data/: son
+ * parte del deploy, no contenido subido por un cliente.
  */
 function wabot_precio_imagen_archivo($tipo) {
     $mapa = [
-        'landing'      => '20000.png',
-        'ecommerce'    => '30000.png',
-        'elearning'    => '30000.png',
-        'inmobiliaria' => 'inmobiliaria.png',
+        'landing'      => 'sitio-profesional-tres-columnas-4x3.png',
+        'ecommerce'    => 'tienda-online-tres-columnas-4x3.png',
+        'elearning'    => 'plataforma-de-cursos-tres-columnas-4x3.png',
+        'inmobiliaria' => 'web-inmobiliaria-tres-columnas-4x3.png',
     ];
     return $mapa[(string)$tipo] ?? '';
 }
