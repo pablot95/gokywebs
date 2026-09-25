@@ -196,6 +196,18 @@ function fechaHoraContacto(ts) {
     });
 }
 
+/* El doc de Firestore no guarda "el día que pasó a Cliente" como campo propio
+   (createdAt es de cuando se cargó, y puede haber sido mucho antes, como
+   prospecto en Seguimientos). La mejor fecha real disponible es la del
+   dinero: la seña (plan anual/web propia), el primer pago o el arranque de
+   la suscripción (plan mensual) — createdAt queda como último recurso. */
+function fechaPasoACliente(c) {
+    return mantToDate(c.senaAt) || mantToDate(c.primerPagoAt) || mantToDate(c.suscripcionDesde) || mantToDate(c.createdAt) || null;
+}
+function fechaCortaJs(d) {
+    return d ? d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+}
+
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
 
@@ -223,14 +235,15 @@ function renderInversion() {
     if (!chips || !cont) return;
     if (!inversionContactos) { cont.innerHTML = '<p class="muted">Cargando…</p>'; return; }
 
-    // Teléfonos de quienes YA son Cliente (no solo prospecto en seguimiento),
-    // normalizados para poder cruzar contra el tel crudo de wabot.
-    const telsCliente = new Set(
-        (clients || [])
-            .filter(c => getEstado(c) === "cliente")
-            .map(c => cleanArgPhone(c.telefono))
-            .filter(t => t.length >= 8)
-    );
+    // Clientes reales (no solo prospecto en seguimiento) por teléfono
+    // normalizado, para poder cruzar contra el tel crudo de wabot y sacar
+    // también la fecha de conversión de cada uno.
+    const clientePorTel = new Map();
+    for (const c of (clients || [])) {
+        if (getEstado(c) !== "cliente") continue;
+        const t = cleanArgPhone(c.telefono);
+        if (t.length >= 8 && !clientePorTel.has(t)) clientePorTel.set(t, c);
+    }
 
     const semanas = new Map();
     for (const c of inversionContactos) {
@@ -238,7 +251,9 @@ function renderInversion() {
         if (!semanas.has(key)) semanas.set(key, { desde: key, hasta: ymdAgregarDias(key, 6), contactos: [], clientesN: 0 });
         const s = semanas.get(key);
         const telC = cleanArgPhone(c.tel);
-        c._esCliente = telC.length >= 8 && telsCliente.has(telC);
+        const clienteMatch = telC.length >= 8 ? clientePorTel.get(telC) : null;
+        c._esCliente = !!clienteMatch;
+        c._clienteDesde = clienteMatch ? fechaPasoACliente(clienteMatch) : null;
         if (c._esCliente) s.clientesN++;
         s.contactos.push(c);
     }
@@ -268,12 +283,14 @@ function renderInversion() {
     cont.innerHTML = "";
     for (const key of aMostrar) {
         const s = semanas.get(key);
-        const convertidos = s.contactos.filter(c => c._esCliente).sort((a, b) => b.inicio_ts - a.inicio_ts);
+        const convertidos = s.contactos.filter(c => c._esCliente)
+            .sort((a, b) => (b._clienteDesde?.getTime() || 0) - (a._clienteDesde?.getTime() || 0));
         const filas = convertidos.map(c => `
             <tr>
                 <td>${escapeHtml(c.nombre || c.tel)}</td>
                 <td>${escapeHtml(c.canal)}</td>
                 <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
+                <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
             </tr>`).join("");
         const div = document.createElement("div");
         div.className = "panel";
@@ -286,7 +303,7 @@ function renderInversion() {
             ${convertidos.length ? `
             <div class="table-wrapper">
                 <table class="clients-table">
-                    <thead><tr><th>Nombre</th><th>Canal</th><th>Contacto</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
             </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
