@@ -268,12 +268,12 @@ function renderInversion() {
     cont.innerHTML = "";
     for (const key of aMostrar) {
         const s = semanas.get(key);
-        const filas = s.contactos.slice().sort((a, b) => b.inicio_ts - a.inicio_ts).map(c => `
+        const convertidos = s.contactos.filter(c => c._esCliente).sort((a, b) => b.inicio_ts - a.inicio_ts);
+        const filas = convertidos.map(c => `
             <tr>
                 <td>${escapeHtml(c.nombre || c.tel)}</td>
                 <td>${escapeHtml(c.canal)}</td>
                 <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
-                <td class="center">${c._esCliente ? "✓" : ""}</td>
             </tr>`).join("");
         const div = document.createElement("div");
         div.className = "panel";
@@ -283,15 +283,13 @@ function renderInversion() {
                 <strong>${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)}</strong>
                 <span class="muted">${s.contactos.length} contactos · <strong style="color:var(--accent-green,#4ade80)">${s.clientesN} pasaron a Cliente</strong></span>
             </div>
-            <details>
-                <summary class="muted" style="cursor:pointer">Ver ${s.contactos.length} contacto(s)</summary>
-                <div class="table-wrapper" style="margin-top:8px">
-                    <table class="clients-table">
-                        <thead><tr><th>Nombre</th><th>Canal</th><th>Contacto</th><th class="center">Cliente</th></tr></thead>
-                        <tbody>${filas}</tbody>
-                    </table>
-                </div>
-            </details>`;
+            ${convertidos.length ? `
+            <div class="table-wrapper">
+                <table class="clients-table">
+                    <thead><tr><th>Nombre</th><th>Canal</th><th>Contacto</th></tr></thead>
+                    <tbody>${filas}</tbody>
+                </table>
+            </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
         cont.appendChild(div);
     }
 }
