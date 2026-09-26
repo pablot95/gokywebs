@@ -526,6 +526,38 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $intro . "\n" . $link]);
         exit;
     }
+    /* Los botones "Imagen sitio profesional" e "Imagen tienda/cursos/inmo"
+     * (Pablo, 26-sep): la misma imagen de las 3 modalidades que manda el bot
+     * con el precio (wabot_precio_imagen_archivo; tienda, cursos e
+     * inmobiliaria comparten la de 'ecommerce'). Una imagen no se puede dejar
+     * en el editor para revisarla, así que sale directo, con confirmación en
+     * el botón. Mismas reglas que "responder": la ventana de 24 h, y mandar a
+     * mano toma el control de la charla. Solo WhatsApp, como el bot. */
+    if ($a === 'enviar_imagen_precio' && !empty($_POST['tel'])) {
+        header('Content-Type: application/json; charset=utf-8');
+        $tipo = (string)($_POST['tipo'] ?? '');
+        $nombres = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda, cursos o inmobiliaria'];
+        if (!isset($nombres[$tipo])) { echo json_encode(['error' => 'No sé qué imagen mandar.']); exit; }
+        $conv = wabot_conv_load($_POST['tel']);
+        if (wabot_canal($conv) !== 'whatsapp') {
+            echo json_encode(['error' => 'La imagen solo sale por WhatsApp. En Instagram mandá el precio en texto (respuestas rápidas → Precios).']);
+            exit;
+        }
+        if (wabot_ventana_restante($conv) <= 0) {
+            echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.']);
+            exit;
+        }
+        if (!wabot_precio_imagen_enviar($conv, $tipo)) {
+            echo json_encode(['error' => 'WhatsApp rechazó la imagen. Revisá el log en wabot/data/log/.']);
+            exit;
+        }
+        wabot_conv_tomar_control($conv);
+        wabot_conv_transcript($conv, 'humano', '[Imagen: modalidades de pago · ' . $nombres[$tipo] . ']');
+        wabot_conv_save($conv);
+        wabot_log('respuesta_panel', ['tel' => $conv['tel'], 'imagen_precio' => $tipo]);
+        echo json_encode(['ok' => true, 'bot_off' => true]);
+        exit;
+    }
     if ($a === 'responder' && !empty($_POST['tel'])) {
         header('Content-Type: application/json; charset=utf-8');
         $texto = trim((string)($_POST['texto'] ?? ''));
@@ -1436,8 +1468,13 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
 .rr-sin-resultados { padding:12px 9px; color:var(--dim); font-size:12.5px; text-align:center; }
 .rr-admin-lista { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
 .rr-admin-cat { padding:13px; border:1px solid var(--line); border-radius:11px; background:var(--card); }
-.rr-admin-cat-cab { display:grid; grid-template-columns:58px minmax(180px,1fr) auto; gap:8px; align-items:center; }
+.rr-admin-cat-cab { display:grid; grid-template-columns:58px minmax(180px,1fr) auto auto; gap:8px; align-items:center; }
 .rr-admin-cat-cab input { margin:0; }
+.rr-admin-visible { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--dim); white-space:nowrap; cursor:pointer; }
+.rr-admin-visible input { width:auto; }
+/* Oculta (26-sep): guardada, pero no sale al costado del chat ni en el buscador. */
+.rr-admin-cat.rr-admin-oculta { opacity:.55; border-style:dashed; }
+.rr-admin-cat.rr-admin-oculta:hover, .rr-admin-cat.rr-admin-oculta:focus-within { opacity:1; }
 .rr-admin-ico { text-align:center; font-size:20px; padding-left:5px !important; padding-right:5px !important; }
 .rr-admin-items { display:flex; flex-direction:column; gap:7px; margin-top:10px; }
 .rr-admin-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; align-items:start; }
@@ -1449,6 +1486,7 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     margin-top:14px; padding:10px; border:1px solid var(--line-fuerte); border-radius:11px; background:rgb(25 28 35 / .96); }
 @media (max-width:700px) {
   .rr-admin-cat-cab { grid-template-columns:52px minmax(0,1fr); }
+  .rr-admin-cat-cab .rr-admin-visible { grid-column:1 / -1; justify-self:start; }
   .rr-admin-cat-cab .rr-admin-borrar { grid-column:1 / -1; justify-self:end; }
 }
 .conv-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:10px; }
@@ -1871,6 +1909,7 @@ function burbujaCita(t, chat) {
         <div class="card">
             <h2 style="margin-top:0">Respuestas rápidas</h2>
             <p class="meta">Esta es la lista que aparece al costado de los chats y en el buscador <strong>/</strong>. Podés editar, borrar o crear categorías y mensajes. Los cambios se aplican al guardar.</p>
+            <p class="meta">Una categoría sin el tilde <strong>Visible en el chat</strong> queda guardada acá pero no aparece en los chats. Los montos entre llaves se completan solos con los precios de cada charla: <code>{precio}</code> (plan anual), <code>{mensualidad}</code>, <code>{sena}</code>, <code>{saldo}</code>, <code>{precio_unico}</code>, <code>{mantenimiento_mes}</code> y <code>{carga_producto}</code>.</p>
             <form method="post" id="rrAdminForm">
                 <input type="hidden" name="accion" value="guardar_respuestas_rapidas">
                 <input type="hidden" name="respuestas_json" id="rrAdminJson">
@@ -1907,7 +1946,7 @@ function burbujaCita(t, chat) {
                 }
                 datos.forEach((cat, ci) => {
                     const caja = document.createElement('section');
-                    caja.className = 'rr-admin-cat';
+                    caja.className = 'rr-admin-cat' + (cat.oculta ? ' rr-admin-oculta' : '');
                     const cab = document.createElement('div');
                     cab.className = 'rr-admin-cat-cab';
 
@@ -1921,11 +1960,23 @@ function burbujaCita(t, chat) {
                     titulo.placeholder = 'Nombre de la categoría'; titulo.setAttribute('aria-label', 'Nombre de la categoría');
                     titulo.addEventListener('input', () => { cat.titulo = titulo.value; });
 
+                    // Ocultar en vez de borrar (26-sep): queda guardada acá y se vuelve a mostrar con el tilde.
+                    const visible = document.createElement('label');
+                    visible.className = 'rr-admin-visible';
+                    visible.title = 'Sin el tilde, la categoría no aparece al costado del chat ni en el buscador /';
+                    const tilde = document.createElement('input');
+                    tilde.type = 'checkbox'; tilde.checked = !cat.oculta;
+                    tilde.addEventListener('change', () => {
+                        if (tilde.checked) delete cat.oculta; else cat.oculta = true;
+                        caja.classList.toggle('rr-admin-oculta', !!cat.oculta);
+                    });
+                    visible.append(tilde, document.createTextNode('Visible en el chat'));
+
                     const borrarCat = boton('Eliminar categoría', 'sec rr-admin-borrar', () => {
                         if (!confirm('Eliminar esta categoría y todos sus mensajes? El cambio se aplica cuando guardes.')) return;
                         datos.splice(ci, 1); render();
                     });
-                    cab.append(ico, titulo, borrarCat);
+                    cab.append(ico, titulo, visible, borrarCat);
                     caja.appendChild(cab);
 
                     const items = document.createElement('div');
@@ -2210,6 +2261,14 @@ function burbujaCita(t, chat) {
                             title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $30.000</button>
                         <button type="button" class="sec" id="btnPlan40"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $40.000</button>
+                        <?php /* La imagen de precios, la misma que manda el bot (26-sep). Sale
+                               directo, con confirmación. Solo WhatsApp, como la del bot. */
+                              if (wabot_canal($conv) === 'whatsapp'): ?>
+                        <button type="button" class="sec img-precio" data-tipo="landing"
+                            title="Manda ahora la imagen con los precios del sitio profesional (la misma que manda el bot)">Imagen sitio profesional</button>
+                        <button type="button" class="sec img-precio" data-tipo="ecommerce"
+                            title="Manda ahora la imagen con los precios de tienda, cursos e inmobiliaria (la misma que manda el bot)">Imagen tienda/cursos/inmo</button>
+                        <?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -2948,11 +3007,12 @@ function burbujaCita(t, chat) {
 
         /* Respuestas rápidas. Un clic solo las copia al editor: siempre se
          * revisan y se mandan con el botón Enviar. Para sumar una, agregá un
-         * string al array de la categoría; el buscador con / la incorpora solo. */
+         * string al array de la categoría; el buscador con / la incorpora solo.
+         * Sin las categorías ocultas y con los montos de ESTA charla ({precio},
+         * {mensualidad}, {sena}…, ver wabot_respuestas_rapidas_montos). */
         const RESPUESTAS_RAPIDAS = <?= json_encode(array_map(function ($cat) {
-            return ['ico' => (string)($cat['ico'] ?? '💬'), 'tit' => (string)($cat['titulo'] ?? ''),
-                    'items' => array_values((array)($cat['items'] ?? []))];
-        }, $respuestasRapidas), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            return ['ico' => $cat['ico'], 'tit' => $cat['titulo'], 'items' => array_values($cat['items'])];
+        }, wabot_respuestas_rapidas_visibles($respuestasRapidas, $conv, $cfg)), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
         const RR_TODAS = RESPUESTAS_RAPIDAS.flatMap((cat, categoria) =>
             cat.items.map((texto, item) => ({ texto, categoria, item, titulo: cat.tit, ico: cat.ico }))
@@ -2997,6 +3057,37 @@ function burbujaCita(t, chat) {
         });
         document.getElementById('btnPlan40')?.addEventListener('click', () => {
             rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40');
+        });
+
+        /* "Imagen sitio profesional" / "Imagen tienda/cursos/inmo" (26-sep): a
+         * diferencia de los de arriba, MANDAN la imagen de precios (no hay cómo
+         * dejar una imagen en el editor), así que piden confirmación. */
+        document.querySelectorAll('.img-precio').forEach(boton => {
+            boton.addEventListener('click', async () => {
+                const cual = boton.dataset.tipo === 'landing' ? 'del sitio profesional' : 'de tienda, cursos e inmobiliaria';
+                if (!confirm('¿Mandar ahora la imagen de precios ' + cual + '?')) return;
+                const previo = boton.textContent;
+                boton.disabled = true;
+                boton.textContent = 'Enviando…';
+                try {
+                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ accion: 'enviar_imagen_precio', tel: TEL, tipo: boton.dataset.tipo }) });
+                    const j = await r.json();
+                    if (!j.ok) throw new Error(j.error || 'No se pudo mandar la imagen.');
+                    document.getElementById('handoffPill')?.remove();
+                    await refrescar(); await refrescarLista();
+                    est.textContent = 'Imagen de precios enviada. El bot queda en silencio en este chat.';
+                    est.style.color = 'var(--dim)';
+                    boton.textContent = 'Enviada ✓';
+                } catch (e) {
+                    est.textContent = e.message || 'No se pudo mandar la imagen.';
+                    est.style.color = 'var(--bad)';
+                    boton.textContent = previo;
+                } finally {
+                    boton.disabled = false;
+                    setTimeout(() => { boton.textContent = previo; }, 2200);
+                }
+            });
         });
 
         function rrElegir(indice) {

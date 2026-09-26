@@ -1,0 +1,76 @@
+[
+  {
+    "id": "D1",
+    "titulo": "Francisco: algo simple y económico para mostrar el catálogo (devolución 26-sep, punto 1)",
+    "nombre": "Francisco",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Necesitamos algo simple y económico para mostrar nuestro catálogo de suplementos",
+      "Sii"
+    ],
+    "esperado": "Cotiza 'un sitio profesional completo, con el catálogo de tus productos' con la imagen del sitio profesional y 'La carga de los productos va aparte', NO la tienda online. La oferta del diseño habla de 'tu catálogo'. El 'Sii' recibe el formulario."
+  },
+  {
+    "id": "D2",
+    "titulo": "La pañalera: vender por la web, pero también como catálogo (punto 2)",
+    "nombre": "Pañalera",
+    "turnos": [
+      "Hola.. Tengo una pañalera y juguetería. Estoy averiguando para hacer una página web para el local. Quería consultar qué tipos de páginas realizan, qué opciones ofrecen y aproximadamente qué valores manejan. Gracias",
+      "Me gustaría que permita vender por la web, pero también que funcione como catálogo para mostrar productos, precios y stock. La idea es que sea autoadministrable y que después yo pueda actualizar todo fácilmente."
+    ],
+    "esperado": "Primer turno: cotiza la tienda online derecho (imagen de ecommerce), sin 'Buscás vender por la web, o solo mostrar'. Segundo turno: con el precio ya dado y la oferta del diseño abierta, silencio (queda para Pablo); nunca el sitio profesional."
+  },
+  {
+    "id": "D3",
+    "titulo": "Ya dijo que quiere vender: no se le pregunta qué parte quiere resolver (punto 3)",
+    "nombre": "Caribeann",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Buen dia es un emprendimiento de ropa deportiva y perfumeria y tecnologia",
+      "Vender mis productos"
+    ],
+    "esperado": "Al segundo turno ya cotiza la tienda (imagen de ecommerce). Nunca aparece 'Buscás vender por la web' ni 'confirmame qué parte querés resolver primero'."
+  },
+  {
+    "id": "D4",
+    "titulo": "SHOWTIME: 'Su nombre?' se contesta primero (punto 4)",
+    "nombre": "SHOWTIME",
+    "turnos": [
+      "Hola! Quiero pedir presupuesto para mi web.",
+      "Su nombre?",
+      "Su nombre?",
+      "Chau"
+    ],
+    "esperado": "A 'Su nombre?' contesta 'Soy el asistente de Gokywebs…' y en el mismo turno pregunta a qué se dedica (la segunda vez, reformulado). 'Chau' recibe una despedida corta ('Perfecto, gracias por escribirnos…'), no 'A partir de acá sigue el desarrollador'."
+  },
+  {
+    "id": "D5",
+    "titulo": "Xavier: un conocido que trae a otra clienta (punto 5)",
+    "nombre": "Xavier",
+    "turnos": [
+      "Pablo amigo, cómo va?",
+      "Xavier aqui, te acordas que le hicimos un sítio web a Gabriela",
+      "Tengo una chica pidiéndome un sitio web también! Hacemos el mismo trabajo? La guió con la logística un poco y le pasó tu contacto así te envía todo el material para hacerlo y pego comisión por la indicación"
+    ],
+    "esperado": "Primer turno: 'Hola! Acá contesta el asistente automático de Gokywebs… Le paso tu mensaje al desarrollador'. Los otros dos turnos: silencio (handoff pendiente para Pablo). Nunca los planes ni el precio."
+  },
+  {
+    "id": "D6",
+    "titulo": "Bolsa de empleo: 'compartimos vacantes laborales' no es alguien pidiendo trabajo (punto 6)",
+    "nombre": "Tato",
+    "turnos": [
+      "Hola. ¿Puedo obtener más información sobre esto?",
+      "Compartimos vacantes laborales de Chaco y corrientes"
+    ],
+    "esperado": "NO recibe 'Las propuestas para sumarse al equipo las ve el desarrollador'. Cotiza el sitio profesional (imagen de landing) con la oferta del diseño que nombra 'tus servicios'."
+  },
+  {
+    "id": "D7",
+    "titulo": "Quien pide trabajo de verdad sigue recibiendo el texto laboral (control del punto 6)",
+    "nombre": "Dev",
+    "turnos": [
+      "Hola, les escribo por una propuesta laboral, tengo experiencia en React y quiero sumarme al equipo"
+    ],
+    "esperado": "'Gracias por escribir. Las propuestas para sumarse al equipo las ve el desarrollador directamente…', sin precio."
+  }
+]

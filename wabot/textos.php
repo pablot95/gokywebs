@@ -213,6 +213,9 @@ function wabot_textos_default() {
         'ampliar_despues' => 'Sí, y muchas veces es lo que recomendamos: arrancar con lo que necesitás hoy y sumar funciones cuando el negocio las pida. La web queda preparada para ampliarse sin tener que rehacerla de cero.',
         'que_necesitan' => 'Poco: el nombre del negocio, una descripción breve de lo que ofrecés, los colores que te gustan y tus datos de contacto. Si tenés logo y fotos los usamos, y si no, arrancamos igual.',
         'soy_bot' => 'No, soy el asistente automático de Gokywebs. Te puedo orientar con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
+        /* "Su nombre?", "con quién hablo?" (26-sep): se contesta primero y
+         * después sigue la pregunta comercial pendiente, en el mismo turno. */
+        'quien_atiende' => 'Soy el asistente de Gokywebs. Te oriento con las opciones, los precios y cómo es el proceso, y cuando hace falta algo más te paso con el desarrollador.',
         'exclusividad' => 'Sí, es exclusivo: cada web se diseña a medida para tu negocio, así que no reciclamos el mismo diseño con otro cliente.',
         'fotos_propiedad' => 'Podés subir decenas de fotos por propiedad, y también video.',
         'impuestos_importacion' => 'No, la web no calcula impuestos de importación de forma automática: eso lo manejás vos aparte. Se puede sumar como funcionalidad extra, pero el precio de eso lo tiene que evaluar el desarrollador.',
@@ -264,6 +267,12 @@ function wabot_textos_default() {
     'media_recibida' => 'Me llegó tu archivo y queda guardado en la conversación. Si querés, contame en un mensaje de qué se trata así lo tengo en cuenta.',
     'mensaje_cliente_existente' => 'Perfecto, eso lo sigue el desarrollador directamente: le paso tu mensaje ahora y te escribe por acá a la brevedad.',
     'mensaje_laboral' => 'Gracias por escribir. Las propuestas para sumarse al equipo las ve el desarrollador directamente: le paso tu mensaje y, si hay algo, te contesta por acá.',
+    /* El conocido, el que trae a otro cliente, el referido (26-sep): Xavier
+     * entró con "Pablo amigo, cómo va?" y "te acordás que le hicimos un sitio
+     * web a Gabriela" y recibió los planes como un cliente nuevo. No se le
+     * vende: se le avisa quién contesta y lo sigue Pablo (sin nombrarlo: ningún
+     * texto del bot lleva nombre propio). */
+    'mensaje_conocido' => 'Hola! Acá contesta el asistente automático de Gokywebs, que atiende las consultas nuevas. Le paso tu mensaje al desarrollador ahora y sigue él por acá.',
     'menu' => "Hola! Gracias por contactarnos.\nHacemos páginas web adaptadas a cada negocio.\nContame un poquito a qué te dedicás y te asesoro según lo que necesitás",
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
@@ -282,6 +291,18 @@ function wabot_textos_default() {
     // El segundo globo del turno del precio: la oferta del primer diseño. Su
     // sí es lo único que el bot contesta después (con el formulario).
     'msg_tres_pasos' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?',
+    /* La oferta atada al tipo cotizado (devolución del 26-sep): menos "acción
+     * automática", más el negocio del cliente. Mismo arranque ("sin cargo un
+     * primer diseño"), mismo "cómo quedaría" y mismo cierre que msg_tres_pasos:
+     * es lo que reconocen los detectores. 'catalogo' es el sitio profesional
+     * con catálogo. Sin la del tipo, sale msg_tres_pasos. */
+    'msg_tres_pasos_por_tipo' => [
+        'landing'      => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web, así ves cómo quedaría y cómo se verían presentados tus servicios antes de decidir. Querés que lo armemos?',
+        'catalogo'     => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web, así ves cómo quedaría y cómo se vería presentado tu catálogo antes de decidir. Querés que lo armemos?',
+        'ecommerce'    => 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?',
+        'elearning'    => 'Si te interesa, te preparamos sin cargo un primer diseño de tu plataforma de cursos, así ves cómo quedaría y cómo se verían presentados tus cursos antes de decidir. Querés que lo armemos?',
+        'inmobiliaria' => 'Si te interesa, te preparamos sin cargo un primer diseño de tu web inmobiliaria, así ves cómo quedaría y cómo se verían publicadas tus propiedades antes de decidir. Querés que lo armemos?',
+    ],
     'muestra_presentar_por_tipo' => [
         'landing' => "¡Ya está lista la primera propuesta para la web de {negocio}!\n\nPodés verla acá:\n{link}\n\nLa armamos para que puedas visualizar cómo presentar tu negocio, organizar tus servicios y facilitar que te contacten.\n\nMirá el estilo general y cómo está distribuida la información. Los textos e imágenes de ejemplo se reemplazan o ajustan con tu contenido real si avanzamos.",
         'ecommerce' => "¡Ya está lista la demo de la tienda de {negocio}! 🛍️\n\nPodés verla acá:\n{link}\n\nLos productos, fotos y precios que usamos para completar la muestra son de ejemplo; no representan tu catálogo real. Sirven para mostrarte cómo se verían los artículos y cómo estaría organizada la tienda.\n\nSi avanzamos, la adaptamos con tus productos, precios, imágenes y categorías.",

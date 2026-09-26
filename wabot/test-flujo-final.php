@@ -33,8 +33,8 @@ caso('termina con la intro de las 3 modalidades; los montos y lo incluido ahora 
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
 caso('el segundo mensaje es la imagen de modalidades de la tienda, $30.000/$300.000',
     ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $r[1] ?? '');
-caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta, sin formulario',
-    ($r[2] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu web para que veas cómo quedaría antes de decidir. Querés que lo armemos?'
+caso('el tercer mensaje ofrece el primer diseño sin cargo, atado a la tienda (26-sep), y pregunta, sin formulario',
+    ($r[2] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?'
     && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[2] ?? '');
 caso('el bot sigue prendido, esperando la respuesta, y el chat ya figura para Pablo',
     empty($c['bot_off']) && !empty($c['oferta_diseno_ts']) && !empty($c['handoff_pendiente'])

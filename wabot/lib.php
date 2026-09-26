@@ -4191,6 +4191,20 @@ function wabot_media_a_texto($bytes, $mime, $tipo, $caption = '') {
  * la propuesta de armarla)? Se compara contra los textos de la config, no
  * contra palabras sueltas: si Pablo los edita desde el panel, sigue andando.
  */
+/**
+ * Todos los textos con que el bot ofrece el primer diseño: el genérico, sus
+ * variantes y el de cada tipo de web (26-sep). Los detectores que reconocen
+ * "el mensaje de la oferta" miran esta lista, no una sola clave.
+ */
+function wabot_ofertas_diseno_textos($cfg) {
+    $todos = array_merge(
+        [(string)($cfg['msg_prediseno_oferta'] ?? ''), (string)($cfg['msg_tres_pasos'] ?? '')],
+        (array)($cfg['msg_prediseno_oferta_variantes'] ?? []),
+        array_values((array)($cfg['msg_tres_pasos_por_tipo'] ?? []))
+    );
+    return array_values(array_filter(array_map(function ($t) { return trim((string)$t); }, $todos), 'strlen'));
+}
+
 function wabot_es_texto_demo($texto, $cfg) {
     $t = trim((string)$texto);
     if ($t === '') return false;
@@ -4198,10 +4212,9 @@ function wabot_es_texto_demo($texto, $cfg) {
         // msg_tres_pasos es el segundo globo del turno del precio desde el
         // 10-sep: sin él acá, ese mensaje no se reconoce como "el de la demo"
         // y sale sin la demora de dos segundos que lo separa del precio.
-        [(string)($cfg['prediseno_link'] ?? ''), (string)($cfg['msg_prediseno_oferta'] ?? ''),
-         (string)($cfg['msg_tres_pasos'] ?? '')],
+        [(string)($cfg['prediseno_link'] ?? '')],
         (array)($cfg['prediseno_link_variantes'] ?? []),
-        (array)($cfg['msg_prediseno_oferta_variantes'] ?? [])
+        wabot_ofertas_diseno_textos($cfg)
     );
     foreach ($oficiales as $of) {
         $of = trim((string)$of);
@@ -4228,8 +4241,10 @@ function wabot_demora_tipeo($texto, $cfg) {
     /* Los tres pasos, detrás del precio: 2 segundos fijos (Pablo, 14-sep:
      * "y 2 segundos después, el otro mensaje"). No sale de
      * demora_entre_mensajes porque en el panel puede estar en otro valor. */
-    $cabezaPasos = trim((string)strstr(trim((string)($cfg['msg_tres_pasos'] ?? '')) . "\n", "\n", true));
-    if ($cabezaPasos !== '' && mb_strpos(trim((string)$texto), $cabezaPasos) === 0) return 2.0;
+    foreach (wabot_ofertas_diseno_textos($cfg) as $oferta) {
+        $cabezaPasos = trim((string)strstr($oferta . "\n", "\n", true));
+        if ($cabezaPasos !== '' && mb_strpos(trim((string)$texto), $cabezaPasos) === 0) return 2.0;
+    }
     if (wabot_es_texto_demo($texto, $cfg)) return (float)($cfg['demora_entre_mensajes'] ?? 2);
     if (empty($cfg['demora_por_longitud'])) return (float)($cfg['demora_entre_mensajes'] ?? 2);
 
@@ -4266,7 +4281,7 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (!wabot_ia_disponible('clasificador') || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_comercio, rubro_hibrido, rubro_sistema, hibrido_trabajos, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
-    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, comisiones, baja_del_plan, cuenta_mercado_pago, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
+    $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, quien_atiende, comisiones, baja_del_plan, cuenta_mercado_pago, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
 
     $ultimoBot = '';
     foreach (array_reverse($conv['transcript']) as $t) {
@@ -4284,7 +4299,7 @@ ACCIONES POSIBLES (elegí las que apliquen, en orden de importancia): $acciones
 GUIA:
 - elige_landing / elige_ecommerce: eligió explícitamente una opción del menú.
 - rubro_landing: un oficio, servicio o profesional que trabaja por pedido o por turno y no vende productos: plomero, gasista, electricista, pintor, fletes, cerrajero, jardinero, constructor, contador, abogado, fotógrafo, diseñador; también peluquería, estética, consultorio, veterinaria, gimnasio, cabañas, restaurante. La web lo presenta y lo contactan por WhatsApp. Una institución (colegio, fundación, ONG, club, cámara, sindicato, cooperativa, municipio, parroquia) también es rubro_landing.
-- rubro_comercio: vende productos físicos, tenga local o venda por redes: mates, ropa, velas, ferretería, kiosco, dietética, bazar, vivero, panadería, pet shop, repuestos. Se cotiza tienda online SIEMPRE, sin preguntarle si prefiere cobrar online o que lo contacten por WhatsApp.
+- rubro_comercio: vende productos físicos, tenga local o venda por redes: mates, ropa, velas, ferretería, kiosco, dietética, bazar, vivero, panadería, pet shop, repuestos. Se cotiza tienda online SIEMPRE, sin preguntarle si prefiere cobrar online o que lo contacten por WhatsApp (si dijo con todas las letras que solo quiere mostrar un catálogo sin vender por la web, el motor lo resuelve solo: vos etiquetá el rubro igual).
 - rubro_hibrido: fabrica o instala productos a medida que pueden mostrarse como trabajos o venderse online: cortinas, toldos, aberturas, cerramientos, muebles a medida, carpintería, herrería, amoblamientos, mamparas. NO alcanza el rubro para cotizar.
 - hibrido_trabajos / hibrido_vender: SOLO al responder la pregunta del rubro híbrido. Mostrar trabajos y que consulten por WhatsApp = trabajos; carrito y cobro online = vender.
 - rubro_ecommerce: dice explícitamente que quiere VENDER ONLINE, tener tienda con carrito, o ya vende por internet (incluye revender marcas como Just, Essen, Avon). Si solo cuenta que TIENE un local o comercio, usá rubro_comercio.
@@ -4296,7 +4311,7 @@ GUIA:
 - pregunta_tipos: pregunta qué es una landing, qué es un ecommerce, la diferencia o cuál le conviene.
 - quiere_prediseno: pide el prediseño/demo gratis, quiere ver cómo quedaría su web, pide ver trabajos ya hechos, o duda de cómo va a quedar.
 - datos_prediseno: está pasando la descripción de su negocio y/o los colores de su marca (completá los campos descripcion y colores con lo que haya pasado, resumido; null si no pasó ese dato).
-- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), de quién es o a nombre de quién queda la web, el dominio o el código, o si se la puede llevar a otro hosting o a otro programador (titularidad), casillas de correo corporativas (emails), si entregan el código, los archivos o un backup (entrega_codigo), si quiere la web en su propio hosting, pagar solo la creación y mantenerla él, o pregunta por el pago único (web_propia), licencias de plugins o SDK (licencias), cancelar, dar de baja o dejar de pagar el plan, o la permanencia (baja_del_plan), si hace falta cuenta de Mercado Pago para pagar (cuenta_mercado_pago), si hay manual de uso (manual), o si la web puede ser bilingüe (bilingue) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
+- pregunta_info: pregunta por cómo trabajan, pago/cuotas/seña, plazos, hosting/dominio, mantenimiento, quién carga los productos, logo, publicidad/marketing, reuniones, tecnología, si hacen páginas web (que_hacemos), si funciona sin internet (internet), desconfianza o pedido de referencias (confianza), pixel/analytics (pixel), el precio de todos los servicios (rangos), de dónde somos o si tenemos oficina (ubicacion), el precio SIN haber dicho todavía qué tipo de web necesita (precio_sin_rubro), accesos al hosting/FTP/cPanel (accesos), de quién es o a nombre de quién queda la web, el dominio o el código, o si se la puede llevar a otro hosting o a otro programador (titularidad), casillas de correo corporativas (emails), si entregan el código, los archivos o un backup (entrega_codigo), si quiere la web en su propio hosting, pagar solo la creación y mantenerla él, o pregunta por el pago único (web_propia), licencias de plugins o SDK (licencias), cancelar, dar de baja o dejar de pagar el plan, o la permanencia (baja_del_plan), si hace falta cuenta de Mercado Pago para pagar (cuenta_mercado_pago), si hay manual de uso (manual), si la web puede ser bilingüe (bilingue), o quién le escribe, su nombre o con quién está hablando (quien_atiende) → completá info_keys con las claves que correspondan de: $infoKeys. Si pregunta algo concreto que no entra en ninguna, usá "otra".
   · **proceso**: cómo trabajan, cómo se maneja el laburo, cómo es el paso a paso, cómo arrancamos, qué hay que hacer para empezar, cómo sigue después. Es la pregunta por el MÉTODO, no por la plata.
   · **pago**: cómo se paga, con qué medios, si hay cuotas, cuánto es la seña. Es la pregunta por la PLATA. Si pregunta las dos cosas ("cómo trabajan y cómo se paga"), poné las dos claves.
 - objecion_caro: dice que es caro, regatea o pide descuento.

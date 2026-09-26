@@ -501,8 +501,7 @@ function wabot_responder($texto, &$conv, $cfg) {
         $conv['seguimiento_bloqueado'] = true;
         wabot_log('contexto_no_venta', ['tel' => $conv['tel'] ?? '', 'contexto' => $contextoNoVenta]);
         wabot_evento_sesion($conv, 'contexto_no_venta', ['contexto' => $contextoNoVenta]);
-        $claveTexto = $contextoNoVenta === 'laboral' ? 'mensaje_laboral' : 'mensaje_cliente_existente';
-        return [(string)($cfg[$claveTexto] ?? $cfg['espera'] ?? '')];
+        return [wabot_texto_contexto_no_venta($contextoNoVenta, $cfg)];
     }
 
     // El saludo de apertura es SIEMPRE el mismo texto fijo, en los tres modos.

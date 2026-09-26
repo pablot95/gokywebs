@@ -99,12 +99,16 @@ caso('restaurante con hospedaje: habitaciones, restaurante y reserva online, con
     mb_stripos($r[0] ?? '', 'un sitio profesional completo, con las habitaciones, el restaurante y las reservas online') !== false
     && ($r[1] ?? '') === wabot_precio_imagen_marcador('landing'), $r[0] ?? '');
 
-echo "— 4. Si vende algo es tienda, aunque diga catálogo (Pablo, 24-sep; el catálogo como sitio profesional del 18-sep se retiró) —\n";
+echo "— 4. Si vende algo es tienda (24-sep), salvo que diga con todas las letras que no quiere vender por la web (26-sep) —\n";
 
 [$c, $r] = charla([['Vendo ropa pero solo quiero mostrar los productos y que me consulten por WhatsApp', ['rubro_comercio'], []]], '549110000CATATEST', $cfg);
-caso('se cotiza la tienda online, no el sitio profesional con catálogo',
-    ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo'])
-    && mb_stripos($r[0] ?? '', 'una tienda online completa') !== false
+caso('"solo mostrar y que me consulten por WhatsApp" cotiza el sitio profesional con catálogo',
+    ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo'])
+    && mb_stripos($r[0] ?? '', 'un sitio profesional completo, con el catálogo de tus productos') !== false
+    && ($r[1] ?? '') === wabot_precio_imagen_marcador('landing'), $r[0] ?? '');
+[$c, $r] = charla([['Me gustaría que permita vender por la web, pero también que funcione como catálogo para mostrar productos, precios y stock', ['rubro_comercio'], ['ficha' => ['necesidad' => 'catalogo']]]], '549110000PANALTEST', $cfg);
+caso('"vender por la web, pero también como catálogo" es la tienda: la venta dicha gana (la pañalera, 24-sep)',
+    ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']) && wabot_ficha($c)['necesidad'] === 'tienda'
     && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $r[0] ?? '');
 [$c, $r] = charla([['Vendo ropa de mujer', ['rubro_comercio'], []]], '549110000TIENDATEST', $cfg);
 caso('sin decirlo, lo que vende productos sigue siendo tienda (29-ago)', ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']));

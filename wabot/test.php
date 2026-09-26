@@ -392,13 +392,21 @@ caso('una peluquería se cotiza como sitio profesional, sin preguntar por turnos
     && stripos(implode(' ', $r), 'turno') === false
     && $cPeluqueria['tipo'] === 'landing');
 
-/* El que solo quiere mostrar productos también va a ecommerce: catálogo se
- * retiró y con él la pregunta por la cantidad. */
+/* El que dice con todas las letras que solo quiere mostrar sus productos y que
+ * le escriban se lleva el sitio profesional con catálogo (26-sep), sin la
+ * pregunta por la cantidad. Sin decirlo, sigue siendo la tienda. */
 $cSoloMostrar = conv_sin_pitch();
+$clasificadorAntes = $GLOBALS['WABOT_TEST_CLASIFICADOR'] ?? null;   // acá arriba simula a Gemini caído
+clasifica(['rubro_comercio']);
 $r = wabot_engine('vendo ropa pero solo quiero mostrarla y que me escriban', $cSoloMostrar, $cfg);
-caso('"solo mostrar" ya no abre el catálogo: es ecommerce, sin preguntar cantidades',
-    $cSoloMostrar['tipo'] === 'ecommerce'
-    && stripos(implode(' ', $r), 'cuántos productos') === false);
+caso('"solo mostrar" dicho por el cliente cotiza el sitio profesional con catálogo, sin preguntar cantidades',
+    $cSoloMostrar['tipo'] === 'landing' && !empty($cSoloMostrar['catalogo'])
+    && stripos(implode(' ', $r), 'cuántos productos') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+$cSoloMostrarSinIa = conv_sin_pitch();
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = $clasificadorAntes;
+$r = wabot_engine('vendo ropa pero solo quiero mostrarla y que me escriban', $cSoloMostrarSinIa, $cfg);
+caso('y sin IA, igual: el respaldo lee "ropa" como tienda y el catálogo dicho la pasa a sitio profesional',
+    $cSoloMostrarSinIa['tipo'] === 'landing' && !empty($cSoloMostrarSinIa['catalogo']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $cPrecioDatos = conv_nueva();
 $cPrecioDatos['fase'] = 'precio';

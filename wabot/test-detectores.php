@@ -602,8 +602,13 @@ caso('los cursos cotizan la plataforma de cursos sin preguntar (24-sep)',
 [$rYa, $cYa] = reconocer('999REC7', [['Quiero una web para vender online y cobrar con Mercado Pago', ['rubro_comercio'], ['descripcion' => 'vender online y cobrar']]], $cfg);
 caso('el que YA dijo que quiere cobrar online no pasa por la pregunta',
     ($cYa['tipo'] ?? '') === 'ecommerce' && !empty($cYa['precio_dado']), json_encode($rYa, JSON_UNESCAPED_UNICODE));
+/* "Solo mostrar los productos y que me escriban" dicho con todas las letras
+ * contradice la regla y se respeta (devolución del 26-sep): sitio profesional
+ * con catálogo, cotizado derecho, sin pregunta. */
 [$rSolo, $cSolo] = reconocer('999REC8', [['Tengo una ferretería, quiero una web solo mostrar los productos y que me escriban', ['rubro_comercio'], ['descripcion' => 'ferretería']]], $cfg);
-caso('el que dijo "solo mostrar" igual vende: tienda (24-sep)', ($cSolo['tipo'] ?? '') === 'ecommerce' && !empty($cSolo['precio_dado']), json_encode($rSolo, JSON_UNESCAPED_UNICODE));
+caso('el que dijo "solo mostrar" se lleva el sitio profesional con catálogo, sin pregunta (26-sep)',
+    ($cSolo['tipo'] ?? '') === 'landing' && !empty($cSolo['catalogo']) && !empty($cSolo['precio_dado'])
+    && mb_strpos(implode(' ', $rSolo), 'Buscás vender') === false, json_encode($rSolo, JSON_UNESCAPED_UNICODE));
 [$rDos, $cDos] = reconocer('999REC12', [
     ['Vendo mates', ['rubro_comercio'], ['descripcion' => 'mates']],
     ['Mostrar', ['otro']],
