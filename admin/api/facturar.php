@@ -3,6 +3,7 @@
 require __DIR__ . '/auth-admin.php';
 require __DIR__ . '/../../config/arca/arca.php';
 require __DIR__ . '/../../config/arca/receptor.php';
+require __DIR__ . '/../../config/arca/registro.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -18,14 +19,6 @@ if (!verifyAdminToken()) {
 }
 
 $config = require __DIR__ . '/../../config/arca/arca-config.php';
-
-function leerRegistro($config)
-{
-    $registro = is_readable($config['registro'])
-        ? json_decode(file_get_contents($config['registro']), true)
-        : [];
-    return is_array($registro) ? $registro : [];
-}
 
 function condicionesIvaCacheadas($config)
 {
@@ -82,8 +75,13 @@ if ($accion === 'proximo') {
     $ultimoReceptor = null;
     $clienteId = trim((string) ($_GET['clienteId'] ?? ''));
     if ($clienteId !== '') {
+        try {
+            $registro = registro_leer($config);
+        } catch (RuntimeException $e) {
+            responder(['ok' => false, 'error' => $e->getMessage()], 500);
+        }
         $masReciente = '';
-        foreach (leerRegistro($config) as $emitida) {
+        foreach ($registro as $emitida) {
             if (($emitida['clienteId'] ?? null) !== $clienteId) continue;
             if (empty($emitida['receptor'])) continue;
             if (($emitida['emitidaEl'] ?? '') < $masReciente) continue;
@@ -118,7 +116,15 @@ if ($requestId === '') responder(['ok' => false, 'error' => 'Falta el identifica
 if ($clienteId === '') responder(['ok' => false, 'error' => 'Falta el identificador del cliente'], 400);
 if ($total <= 0) responder(['ok' => false, 'error' => 'El importe tiene que ser mayor a cero'], 400);
 
-$registro = leerRegistro($config);
+// De acá hasta guardar, nadie más emite ni escribe el registro (tampoco la
+// facturación automática de las suscripciones): ver config/arca/registro.php.
+// El lock se suelta solo cuando termina el pedido.
+try {
+    $lock = registro_lock($config);
+    $registro = registro_leer($config);
+} catch (RuntimeException $e) {
+    responder(['ok' => false, 'error' => $e->getMessage()], 500);
+}
 
 if (isset($registro[$requestId])) {
     responder(['ok' => true, 'yaEmitida' => true, 'factura' => $registro[$requestId]]);
@@ -134,6 +140,7 @@ try {
 try {
     $factura = $arca->emitirFacturaC([
         'puntoVenta' => $config['puntoVenta'],
+        'fecha' => registro_fecha_hoy(),
         'total' => $total,
         'concepto' => $comprobante['concepto'],
         'tipoDocumento' => $receptor['tipoDocumento'],
@@ -158,8 +165,17 @@ $factura['receptor'] = $receptor;
 $factura['descripcion'] = $comprobante['descripcion'];
 $factura['condicionVenta'] = $comprobante['condicionVenta'];
 $factura['emitidaEl'] = date('c');
+// La suscripción de Mercado Pago de la fila, si se conoce: la facturación
+// automática toma de acá a quién facturarle y no vuelve a facturar ese cobro.
+$preapprovalId = trim((string) ($entrada['preapprovalId'] ?? ''));
+if ($preapprovalId !== '') $factura['preapprovalId'] = mb_substr($preapprovalId, 0, 64);
 
 $registro[$requestId] = $factura;
-file_put_contents($config['registro'], json_encode($registro, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+try {
+    registro_guardar($config, $registro);
+} catch (RuntimeException $e) {
+    // Ya tiene CAE: se devuelve igual para que se pueda descargar.
+    responder(['ok' => true, 'factura' => $factura, 'advertencia' => $e->getMessage()]);
+}
 
 responder(['ok' => true, 'factura' => $factura]);

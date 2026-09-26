@@ -164,6 +164,21 @@ Cuando una suscripción se cancela (o se pausa) en Mercado Pago, el webhook `man
 - En **Clientes** la suscripción de ese cliente figura **Dio de baja** y deja de sumar a la mensualidad activa.
 - Si una suscripción pausada se reactiva en MP, el aviso no se borra solo: se quita con **Quitar aviso** (o con el tacho, en la fila de un aviso sin suscriptor).
 
+## Facturación automática de las suscripciones
+
+Desde el 26-sep-2026 cada mensualidad que cobra Mercado Pago se puede facturar sola (**Mantenimiento → Facturación**). Se factura lo cobrado, no la fecha: MP cobra el día de la renovación y, si la tarjeta rebota, no hay factura que anular con nota de crédito; cuando MP reintenta y cobra, se factura ese día.
+
+- **Quién emite:** el cron de Hostinger corre cada hora `mantenimiento/api/facturar-cobros.php` (solo por consola; por HTTP da 404). Busca en la API de MP los cobros aprobados de las suscripciones que cobra la cuenta y emite la Factura C de cada uno que no tenga. No usa el webhook ni Firestore: un aviso de MP que no llega no deja un cobro sin facturar. La lógica está en `config/arca/suscripciones.php` y sus tests en `config/arca/test-suscripciones.php` (`php config/arca/test-suscripciones.php`).
+- **Desde cuándo:** no emite nada hasta que se toca **Activar**, y factura solo los cobros aprobados desde ese momento. Los anteriores aparecen en la lista con **Facturar**, para facturarlos a mano si no se facturaron por otro lado (si hay una factura a mano del mismo importe esos días, la lista la muestra como pista). **Pausar** no mueve la fecha: lo cobrado durante la pausa se factura al reactivar.
+- **Qué factura:** Factura C, concepto servicios, "Suscripción mensual servicio web", condición de venta Mercado Pago, el importe cobrado, período del día del cobro al día anterior del mismo día del mes siguiente, vencimiento el mismo día de la factura.
+- **A quién:** lo que se cargue en "Se factura a" de cada suscripción; si no se cargó nada, los datos de la última factura de esa suscripción; si no hay, consumidor final. El CUIT del que paga en MP no sirve: la primera mensualidad facturada a mano fue a otro CUIT que el de la tarjeta.
+- **No se factura dos veces:** cada cobro queda en el registro de siempre (`config/arca/emitidas-<entorno>.json`) con la clave `mp-cobro-<id del pago>`, `preapprovalId`, `mpPagoId` y `origen` (`automatica` o `cobro` si se facturó desde la lista). El modal 🧾 de una fila de Mantenimiento o de Clientes guarda también el `preapprovalId`: si Pablo factura a mano una mensualidad, el proceso no la vuelve a facturar. El modal y el proceso emiten de a uno (lock sobre el registro, `config/arca/registro.php`) y un registro que no se puede leer frena la emisión en vez de tomarse como vacío.
+- **Si ARCA no contesta:** antes de pedir el CAE se anota el intento con el último número autorizado; la próxima vez se busca en ARCA si ese comprobante salió igual (misma fecha, importe y documento) antes de volver a emitir. Nunca se reintenta a ciegas.
+- **Errores y avisos:** un cobro que no se pudo facturar queda en la lista con el motivo y **Reintentar**, y suma en el número de la pestaña. Cada factura emitida y cada error nuevo llega como notificación al celular (las mismas del bot, `wabot/push.php`). Log de cada corrida en `config/arca/facturacion-automatica.log`.
+- **Excluir:** "No facturar sola" deja una suscripción afuera (sus cobros siguen en la lista para facturarlos a mano).
+- Archivos del server que no van al repo: `config/arca/facturacion-automatica.json` (lo que se decide en el admin) y `facturacion-automatica-estado-<entorno>.json` (intentos, errores y última corrida).
+- Probar sin emitir: `php mantenimiento/api/facturar-cobros.php --simular` (qué facturaría con la activación actual) o `--simular --desde=AAAA-MM-DD`. `--diagnostico` chequea en el server PHP, Mercado Pago, el registro y ARCA (solo el último número). Contra producción, correrlo solo en el server: pedirle un ticket a ARCA desde otra máquina deja al server sin ticket hasta que venza (12 h).
+
 ## Uso
 
 1. Abrí `admin/index.html` (servido vía HTTP, no `file://`).

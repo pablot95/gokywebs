@@ -32,4 +32,9 @@ return array_merge($porEntorno[$entorno], [
     ],
     // Cache de la tabla de condiciones frente al IVA del receptor (FEParamGetCondicionIvaReceptor).
     'condicionesIva' => __DIR__ . '/condiciones-iva-C.json',
+    // Facturación automática de las suscripciones de Mercado Pago (suscripciones.php):
+    // lo que Pablo decide desde el admin y lo que va dejando el proceso (intentos
+    // en curso, errores, última corrida). Ninguno de los dos va al repo.
+    'automatica' => __DIR__ . '/facturacion-automatica.json',
+    'automaticaEstado' => __DIR__ . '/facturacion-automatica-estado-' . $entorno . '.json',
 ]);

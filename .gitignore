@@ -9,6 +9,11 @@ config/arca/*.key
 config/arca/*.crt
 config/arca/*.csr
 config/arca/ticket-*.json
+# Lo que escribe el server al facturar: el registro de facturas, la facturación
+# automática de las suscripciones (ajustes, estado, log) y sus locks.
+config/arca/emitidas-*.json*
+config/arca/facturacion-automatica*
+config/arca/condiciones-iva-*.json
 wabot/bot-config.json
 service-account.json
 demo/*

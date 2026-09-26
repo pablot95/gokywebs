@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <link rel="icon" type="image/png" href="../logonav.png">
     <title>Panel de Clientes | Gokywebs Admin</title>
-    <link rel="stylesheet" href="styles.css?v=20260926-inversion-clientes">
+    <link rel="stylesheet" href="styles.css?v=20260926-facturacion-automatica">
 </head>
 <body class="dashboard-body">
     <main class="admin-main">
@@ -329,6 +329,7 @@
                 <div class="mant-planes" id="mantPlanes" role="group" aria-label="Plan">
                     <button type="button" class="mant-plan-btn" data-mantplan="mensual" aria-pressed="true">Plan mensual <span class="seg-chip-count" id="mantCountMensual">0</span></button>
                     <button type="button" class="mant-plan-btn" data-mantplan="anual" aria-pressed="false">Plan anual <span class="seg-chip-count" id="mantCountAnual">0</span></button>
+                    <button type="button" class="mant-plan-btn" data-mantplan="facturacion" aria-pressed="false" title="Las mensualidades de Mercado Pago se facturan solas">Facturación <span class="seg-chip-count" id="mantCountFacturacion" hidden title="Cobros que no se pudieron facturar">0</span></button>
                 </div>
                 <input type="search" id="searchMant" placeholder="Buscar por nombre, proyecto, email o WhatsApp…" autocomplete="off" style="flex:1 1 240px;max-width:340px;background:#111d35;border:1px solid #1e2c49;border-radius:10px;color:#e6ecf7;font:inherit;font-size:.9rem;padding:9px 12px">
             </div>
@@ -385,6 +386,59 @@
                         </thead>
                         <tbody id="mantAnualTbody">
                             <tr class="empty-row"><td colspan="4">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Facturación (26-sep-2026): cada mensualidad que cobra Mercado Pago se factura sola.
+                 Los datos vienen de Mercado Pago en el momento (admin/api/facturacion-automatica.php),
+                 no de Firestore; lo emite el cron (mantenimiento/api/facturar-cobros.php). -->
+            <div id="mantFacturacion" hidden>
+                <div class="fa-estado">
+                    <div>
+                        <p class="fa-titulo">Facturación automática <span class="fa-badge" id="faBadge">…</span></p>
+                        <p class="fa-texto" id="faDetalle">Cada vez que Mercado Pago aprueba la mensualidad de una suscripción, se emite la Factura C sola (se revisa cada hora). Se factura lo cobrado: si una tarjeta rebota no hay factura, y cuando Mercado Pago reintenta y cobra, se factura ese día.</p>
+                        <p class="muted fa-texto" id="faCorrida"></p>
+                    </div>
+                    <div class="fa-acciones">
+                        <button type="button" class="btn-ghost" id="faRecargarBtn">Actualizar</button>
+                        <button type="button" class="btn-primary" id="faActivarBtn" disabled>Activar</button>
+                    </div>
+                </div>
+                <div id="faAviso" class="factura-aviso" hidden></div>
+                <div id="faError" class="factura-error" hidden></div>
+                <p class="mant-subtitulo">Suscripciones de Mercado Pago</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Suscriptor</th>
+                                <th>Plan</th>
+                                <th>Próximo cobro</th>
+                                <th>Se factura a</th>
+                                <th>Última factura</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faSuscTbody">
+                            <tr class="empty-row"><td colspan="6">Cargando…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="mant-subtitulo" id="faCobrosTitulo">Cobros de los últimos días</p>
+                <div class="table-wrapper">
+                    <table class="clients-table">
+                        <thead>
+                            <tr>
+                                <th>Cobro</th>
+                                <th>Suscriptor</th>
+                                <th>Monto</th>
+                                <th>Factura</th>
+                                <th class="actions-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faCobrosTbody">
+                            <tr class="empty-row"><td colspan="5">Cargando…</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1057,6 +1111,53 @@
         </div>
     </div>
 
-    <script type="module" src="dashboard.js?v=20260926g-inversion-refresco"></script>
+    <!-- Modal: a quién se le facturan las mensualidades de una suscripción (Mantenimiento → Facturación) -->
+    <div id="faReceptorModal" class="modal-backdrop" hidden>
+        <div class="modal">
+            <div class="modal-header">
+                <h2>A quién se le factura</h2>
+                <button class="modal-close" id="closeFaReceptorBtn" aria-label="Cerrar">&times;</button>
+            </div>
+            <div class="factura-resumen">
+                <div><span>Suscripción</span><strong id="faReceptorSuscriptor">—</strong></div>
+                <div><span>Mensualidad</span><strong id="faReceptorMonto">—</strong></div>
+            </div>
+            <div class="factura-form">
+                <div class="factura-modos" role="tablist" aria-label="A quién se le factura">
+                    <button type="button" class="tab-btn active" id="faReceptorModoFinal"
+                            role="tab" aria-selected="true" aria-controls="faReceptorPanelFinal">Consumidor final</button>
+                    <button type="button" class="tab-btn" id="faReceptorModoIdentificado"
+                            role="tab" aria-selected="false" aria-controls="faReceptorPanelIdentificado">Con datos del cliente</button>
+                </div>
+                <div id="faReceptorPanelFinal" role="tabpanel" aria-labelledby="faReceptorModoFinal">
+                    <p class="factura-nota">Las facturas de esta suscripción salen sin identificar al receptor, como la mayoría.</p>
+                </div>
+                <div id="faReceptorPanelIdentificado" role="tabpanel" aria-labelledby="faReceptorModoIdentificado" hidden>
+                    <div class="grid-2">
+                        <div>
+                            <label for="faReceptorTipoDoc">Tipo de documento</label>
+                            <select id="faReceptorTipoDoc"></select>
+                        </div>
+                        <div>
+                            <label for="faReceptorDocumento">Número</label>
+                            <input type="text" id="faReceptorDocumento" maxlength="13" inputmode="numeric" placeholder="Solo números">
+                        </div>
+                    </div>
+                    <label for="faReceptorCondicionIva">Condición frente al IVA</label>
+                    <select id="faReceptorCondicionIva"></select>
+                    <label for="faReceptorNombre">Apellido y nombre / Razón social</label>
+                    <input type="text" id="faReceptorNombre" maxlength="120">
+                </div>
+                <p class="factura-nota">Vale para las próximas facturas de esta suscripción; las ya emitidas no cambian. El CUIT de la tarjeta en Mercado Pago no siempre es el de la factura: por eso se carga acá.</p>
+            </div>
+            <div id="faReceptorError" class="factura-error" hidden></div>
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" id="faReceptorCancelarBtn">Cancelar</button>
+                <button type="button" class="btn-primary" id="faReceptorGuardarBtn">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="dashboard.js?v=20260926h-facturacion-automatica"></script>
 </body>
 </html>

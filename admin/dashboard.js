@@ -1886,7 +1886,9 @@ function _bindTableListeners(tbodyEl) {
     tbodyEl.querySelectorAll("[data-facturar-id]").forEach(b =>
         b.addEventListener("click", () => {
             const c = clients.find(x => x.id === b.dataset.facturarId);
-            if (c) abrirFacturaModal(c, { adhoc: true });
+            // La suscripción de MP del cliente (propia o la del suscriptor que cruza) viaja con la
+            // factura: la facturación automática no vuelve a facturar ese cobro.
+            if (c) abrirFacturaModal({ ...c, preapprovalId: suscripcionDe(c).preapprovalId }, { adhoc: true });
         }));
     tbodyEl.querySelectorAll("[data-status-id]").forEach(sel => {
         sel.addEventListener("change", () => setStatus(sel.dataset.statusId, sel.value));
@@ -4360,7 +4362,7 @@ function cerrarFacturaModal() {
     facturaRequestId = null;
 }
 
-async function llamarFacturacion(accion, cuerpo, extra = {}) {
+async function llamarFacturacion(accion, cuerpo, extra = {}, endpoint = "facturar.php") {
     const token = currentUser ? await currentUser.getIdToken() : "";
     const opciones = { headers: { "Authorization": "Bearer " + token } };
     if (cuerpo) {
@@ -4369,7 +4371,7 @@ async function llamarFacturacion(accion, cuerpo, extra = {}) {
         opciones.body = JSON.stringify(cuerpo);
     }
     const params = new URLSearchParams({ accion, ...extra });
-    const res = await fetch("/admin/api/facturar.php?" + params, opciones);
+    const res = await fetch(`/admin/api/${endpoint}?` + params, opciones);
     const datos = await res.json().catch(() => null);
     if (!datos) throw new Error(`El servidor no respondió JSON (HTTP ${res.status})`);
     if (!datos.ok) throw new Error(datos.error || `HTTP ${res.status}`);
@@ -4542,6 +4544,8 @@ document.getElementById("facturaEmitirBtn")?.addEventListener("click", async () 
             servicioDesde: campoFactura("Desde").value,
             servicioHasta: campoFactura("Hasta").value,
             vencimientoPago: campoFactura("Vencimiento").value,
+            // Solo las facturas sueltas (una mensualidad, por ejemplo): la de la entrega no es de la suscripción.
+            preapprovalId: facturaEsAdhoc ? String(cliente.preapprovalId || "").trim() : "",
             ...(facturaModo === "identificado"
                 ? {
                     tipoDocumento: Number(campoFactura("TipoDoc").value),
@@ -6122,7 +6126,13 @@ document.querySelectorAll("#mantViews .seg-chip").forEach(b => {
 });
 
 // Plan mensual / plan anual (Pablo, 19-sep-2026): Mantenimiento divide las webs entregadas por plan.
+// "facturacion" (26-sep) es la vista de la facturación automática de las suscripciones.
 let mantPlan = "mensual";
+let factAuto = null;             // la última respuesta de facturacion-automatica.php?accion=estado
+let factAutoCargando = false;
+let factAutoError = "";
+let factAutoReceptorDe = null;   // la suscripción abierta en el modal "A quién se le factura"
+let factAutoReceptorModo = "final";
 document.querySelectorAll("#mantPlanes [data-mantplan]").forEach(b => {
     b.addEventListener("click", () => {
         mantPlan = b.dataset.mantplan;
@@ -6420,12 +6430,367 @@ function renderMantenimiento() {
     if (mensualEl) mensualEl.hidden = mantPlan !== "mensual";
     const anualEl = document.getElementById("mantAnual");
     if (anualEl) anualEl.hidden = mantPlan !== "anual";
+    const facturacionEl = document.getElementById("mantFacturacion");
+    if (facturacionEl) facturacionEl.hidden = mantPlan !== "facturacion";
     const altaBtn = document.getElementById("openMantModalBtn");
     if (altaBtn) altaBtn.hidden = mantPlan !== "mensual";
 
     _renderMantAnual(anual, term);
     _renderMantSuscripciones(tbody, filas, sinSusc, term);
+    // Facturación consulta Mercado Pago: se carga al entrar la primera vez (o con "Actualizar"), no con cada cambio de Firestore.
+    if (mantPlan === "facturacion" && !factAuto && !factAutoCargando && !factAutoError) cargarFactAuto();
+    else renderFactAuto();
 }
+
+/* ── Mantenimiento → Facturación (26-sep-2026) ──
+   Las mensualidades que cobra Mercado Pago se facturan solas: el cron
+   (mantenimiento/api/facturar-cobros.php) emite la Factura C de cada cobro
+   aprobado desde que se activa acá. Esta vista muestra las suscripciones, a
+   quién se le factura cada una, y los cobros de los últimos días con su
+   factura. Todo viene de admin/api/facturacion-automatica.php, que consulta
+   Mercado Pago en el momento: no depende de Firestore ni del webhook. El
+   estado (factAuto…) está declarado junto a mantPlan. */
+async function cargarFactAuto() {
+    if (factAutoCargando) return;
+    factAutoCargando = true;
+    factAutoError = "";
+    renderFactAuto();
+    try {
+        factAuto = await llamarFacturacion("estado", null, {}, "facturacion-automatica.php");
+    } catch (err) {
+        console.error(err);
+        factAutoError = "No se pudo consultar la facturación automática: " + err.message;
+    } finally {
+        factAutoCargando = false;
+        renderFactAuto();
+    }
+}
+
+// "AAAAMMDD" (ARCA) o ISO (Mercado Pago) → dd/mm/aaaa.
+function _factAutoFecha(valor) {
+    const texto = String(valor || "");
+    const arca = /^(\d{4})(\d{2})(\d{2})$/.exec(texto);
+    if (arca) return `${arca[3]}/${arca[2]}/${arca[1]}`;
+    const fecha = texto ? new Date(texto) : null;
+    return fecha && !isNaN(fecha) ? mantLongDate(fecha) : "—";
+}
+
+function _factAutoHora(iso) {
+    const fecha = iso ? new Date(iso) : null;
+    if (!fecha || isNaN(fecha)) return "—";
+    return `${mantShortDate(fecha)} ${String(fecha.getHours()).padStart(2, "0")}:${String(fecha.getMinutes()).padStart(2, "0")}`;
+}
+
+function _factAutoReceptorTexto(r) {
+    if (!r || Number(r.tipoDocumento) === SIN_IDENTIFICAR) return "Consumidor final";
+    const numero = String(r.numeroDocumento || "").replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3");
+    return [`${r.etiquetaDocumento || "Doc."} ${numero}`, r.condicionIva, r.nombre].filter(Boolean).join(" · ");
+}
+
+function _factAutoSuscripcion(id) {
+    return factAuto?.suscripciones.find(s => s.id === id) || null;
+}
+
+function _factAutoCoincide(item, term) {
+    if (!term) return true;
+    const receptor = _factAutoSuscripcion(item.suscripcion || item.id)?.receptor;
+    return [item.nombre, item.id, item.suscripcion, receptor?.nombre, receptor?.numeroDocumento]
+        .some(v => String(v || "").toLowerCase().includes(term));
+}
+
+function _factAutoFacturaHTML(f, detalle) {
+    return `<span class="fa-estado-cobro fa-estado-cobro--ok">✓ ${escapeHtml(numeroComprobante(f.puntoVenta, f.numero))}</span>
+        <div class="muted" style="font-size:11px">${escapeHtml(detalle)} · ${_factAutoFecha(f.fecha)} · ${escapeHtml(_factAutoReceptorTexto(f.receptor))}</div>`;
+}
+
+function _factAutoCobroHTML(c) {
+    const f = c.factura;
+    const facturar = texto => `<button type="button" class="btn-ghost" data-fa-facturar="${escapeHtml(c.id)}" style="font-size:12px">${texto}</button>`;
+    const descargar = f ? `<button type="button" class="icon-btn" data-fa-descargar="${escapeHtml(c.id)}" title="Descargar la factura">⬇</button>` : "";
+    let estado = "";
+    let acciones = "";
+    if (c.estado === "facturada") {
+        estado = _factAutoFacturaHTML(f, f.origen === "automatica" ? "automática" : "desde esta lista");
+        acciones = descargar;
+    } else if (c.estado === "a_mano") {
+        estado = _factAutoFacturaHTML(f, "facturada a mano desde su fila");
+        acciones = descargar;
+    } else if (c.estado === "pendiente") {
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--espera">Se factura en la próxima revisión</span>`;
+    } else if (c.estado === "pausada") {
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--atencion">Se factura al reactivar</span>
+            <div class="muted" style="font-size:11px">La facturación automática está pausada</div>`;
+        acciones = facturar("Facturar ya");
+    } else if (c.estado === "error") {
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--error">No se pudo facturar</span>
+            <div class="muted" style="font-size:11px;max-width:360px">${escapeHtml(c.error)}</div>`;
+        acciones = facturar("Reintentar");
+    } else if (c.estado === "verificando") {
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--atencion">Quedó a mitad de camino</span>
+            <div class="muted" style="font-size:11px">Antes de volver a emitir se verifica en ARCA si ya salió</div>`;
+        acciones = facturar("Verificar");
+    } else if (c.estado === "excluida") {
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--atencion">No se factura sola</span>
+            <div class="muted" style="font-size:11px">Suscripción excluida</div>`;
+        acciones = facturar("Facturar");
+    } else {
+        const p = c.pista;
+        estado = `<span class="fa-estado-cobro fa-estado-cobro--atencion">Sin factura automática</span>
+            <div class="muted" style="font-size:11px;max-width:360px">Anterior a la activación${p
+                ? ` · ¿ya la hiciste a mano? Hay una del ${_factAutoFecha(p.fecha)} por ${fmtMoney(p.total)} (${escapeHtml(numeroComprobante(p.puntoVenta, p.numero))})`
+                : ": si no la facturaste por otro lado, facturala desde acá"}</div>`;
+        acciones = facturar("Facturar");
+    }
+    return `<tr>
+        <td>${_factAutoFecha(c.aprobado)}<div class="muted" style="font-size:11px">${c.cuota ? `Cuota ${c.cuota} · ` : ""}pago ${escapeHtml(c.id)}</div></td>
+        <td>${escapeHtml(c.nombre || _factAutoSuscripcion(c.suscripcion)?.nombre || "—")}</td>
+        <td>${fmtMoney(c.monto)}</td>
+        <td>${estado}</td>
+        <td class="actions-col">${acciones}</td>
+    </tr>`;
+}
+
+function _factAutoSuscripcionHTML(s) {
+    const origen = { cargado: "cargado acá", ultima: "como su última factura", final: "por defecto" }[s.receptorOrigen] || "";
+    const estadoMp = { authorized: "activa", paused: "pausada en Mercado Pago", cancelled: "dada de baja" }[s.estado] || s.estado;
+    const f = s.ultimaFactura;
+    return `<tr>
+        <td><div style="font-weight:600">${escapeHtml(s.nombre || "—")}</div>
+            <div class="muted" style="font-size:11px">Alta ${_factAutoFecha(s.alta)} · ${escapeHtml(estadoMp)}</div></td>
+        <td>${fmtMoney(s.monto)}/mes</td>
+        <td>${s.proximoCobro ? _factAutoFecha(s.proximoCobro) : `<span class="muted">—</span>`}</td>
+        <td>${s.excluida ? `<span class="fa-estado-cobro fa-estado-cobro--atencion">No se factura sola</span>` : escapeHtml(_factAutoReceptorTexto(s.receptor))}
+            ${s.excluida ? "" : `<div class="muted" style="font-size:11px">${escapeHtml(origen)}</div>`}
+            <button type="button" class="fa-link" data-fa-receptor="${escapeHtml(s.id)}">Cambiar</button></td>
+        <td>${f ? `${escapeHtml(numeroComprobante(f.puntoVenta, f.numero))}<div class="muted" style="font-size:11px">${_factAutoFecha(f.fecha)} · ${fmtMoney(f.total)}</div>` : `<span class="muted">—</span>`}</td>
+        <td class="actions-col">${f ? `<button type="button" class="icon-btn" data-fa-descargar-susc="${escapeHtml(s.id)}" title="Descargar la última factura">⬇</button>` : ""}
+            <button type="button" class="btn-ghost" data-fa-excluir="${escapeHtml(s.id)}" style="font-size:12px">${s.excluida ? "Que se facture sola" : "No facturar sola"}</button></td>
+    </tr>`;
+}
+
+function renderFactAuto() {
+    const cont = document.getElementById("mantFacturacion");
+    if (!cont) return;
+    const d = factAuto;
+    const term = (searchMantInput?.value || "").trim().toLowerCase();
+
+    const errorEl = document.getElementById("faError");
+    errorEl.textContent = factAutoError;
+    errorEl.hidden = !factAutoError;
+    document.getElementById("faRecargarBtn").disabled = factAutoCargando;
+    document.getElementById("faRecargarBtn").textContent = factAutoCargando ? "Consultando…" : "Actualizar";
+
+    const badge = document.getElementById("faBadge");
+    const activarBtn = document.getElementById("faActivarBtn");
+    const suscTbody = document.getElementById("faSuscTbody");
+    const cobrosTbody = document.getElementById("faCobrosTbody");
+    if (!d) {
+        badge.textContent = "…";
+        badge.className = "fa-badge";
+        activarBtn.disabled = true;
+        const vacio = factAutoCargando ? "Consultando Mercado Pago…" : "Sin datos.";
+        suscTbody.innerHTML = `<tr class="empty-row"><td colspan="6">${vacio}</td></tr>`;
+        cobrosTbody.innerHTML = `<tr class="empty-row"><td colspan="5">${vacio}</td></tr>`;
+        return;
+    }
+
+    badge.textContent = d.activa ? "Activada" : d.desde ? "Pausada" : "Desactivada";
+    badge.className = "fa-badge" + (d.activa ? " fa-badge--activa" : d.desde ? " fa-badge--pausada" : "");
+    activarBtn.disabled = factAutoCargando;
+    activarBtn.textContent = d.activa ? "Pausar" : d.desde ? "Reactivar" : "Activar";
+    activarBtn.className = d.activa ? "btn-ghost" : "btn-primary";
+
+    const corrida = d.ultimaCorrida;
+    document.getElementById("faCorrida").textContent = [
+        d.desde ? `Factura los cobros aprobados desde el ${_factAutoHora(d.desde)}.` : "Todavía no se activó: no se factura nada solo.",
+        corrida ? `Última revisión: ${_factAutoHora(corrida.fin)}${corrida.emitidas ? ` · ${corrida.emitidas} emitida${corrida.emitidas === 1 ? "" : "s"}` : ""}${corrida.errores ? ` · ${corrida.errores} con error` : ""}${corrida.falla ? ` · falló: ${corrida.falla}` : ""}.` : ""
+    ].filter(Boolean).join(" ");
+
+    const aviso = document.getElementById("faAviso");
+    aviso.textContent = d.entorno !== "produccion" ? "Entorno de prueba (homologación): las facturas NO tienen validez fiscal." : "";
+    aviso.hidden = d.entorno === "produccion";
+
+    const suscripciones = d.suscripciones.filter(s => _factAutoCoincide(s, term));
+    suscTbody.innerHTML = suscripciones.length
+        ? suscripciones.map(_factAutoSuscripcionHTML).join("")
+        : `<tr class="empty-row"><td colspan="6">${term ? "No hay suscripciones para esa búsqueda." : "No hay suscripciones activas en Mercado Pago."}</td></tr>`;
+
+    document.getElementById("faCobrosTitulo").textContent = `Cobros de los últimos ${d.diasAtras} días`;
+    const cobros = d.cobros.filter(c => _factAutoCoincide(c, term));
+    cobrosTbody.innerHTML = cobros.length
+        ? cobros.map(_factAutoCobroHTML).join("")
+        : `<tr class="empty-row"><td colspan="5">${term ? "No hay cobros para esa búsqueda." : "No hubo cobros de suscripciones en estos días."}</td></tr>`;
+
+    const atencion = d.cobros.filter(c => c.estado === "error" || c.estado === "verificando").length;
+    const contador = document.getElementById("mantCountFacturacion");
+    if (contador) {
+        contador.textContent = atencion;
+        contador.hidden = !atencion;
+    }
+}
+
+async function _factAutoAccion(boton, accion, cuerpo) {
+    const texto = boton?.textContent;
+    if (boton) { boton.disabled = true; boton.textContent = "…"; }
+    try {
+        return await llamarFacturacion(accion, cuerpo, {}, "facturacion-automatica.php");
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+        return null;
+    } finally {
+        if (boton) { boton.disabled = false; boton.textContent = texto; }
+    }
+}
+
+document.getElementById("faRecargarBtn")?.addEventListener("click", cargarFactAuto);
+
+document.getElementById("faActivarBtn")?.addEventListener("click", async (e) => {
+    if (!factAuto) return;
+    const activar = !factAuto.activa;
+    const enPausa = factAuto.cobros.filter(c => c.estado === "pausada").length;
+    const pregunta = !activar
+        ? "¿Pausar la facturación automática?\n\nLos cobros que entren mientras esté pausada se facturan cuando la vuelvas a activar."
+        : factAuto.desde
+            ? `¿Reactivar la facturación automática?${enPausa ? `\n\nSe van a facturar también los ${enPausa} cobros que entraron durante la pausa.` : ""}`
+            : "¿Activar la facturación automática?\n\nDesde ahora, cada mensualidad que cobre Mercado Pago se factura sola (Factura C, a lo que diga \"Se factura a\" en cada suscripción). Los cobros de antes no se facturan solos: quedan en la lista para facturarlos desde acá si hace falta.";
+    if (!confirm(pregunta)) return;
+    if (await _factAutoAccion(e.currentTarget, "activar", { activa: activar })) await cargarFactAuto();
+});
+
+document.getElementById("faSuscTbody")?.addEventListener("click", async (e) => {
+    const receptorBtn = e.target.closest("[data-fa-receptor]");
+    const excluirBtn = e.target.closest("[data-fa-excluir]");
+    const descargarBtn = e.target.closest("[data-fa-descargar-susc]");
+    if (receptorBtn) abrirFactAutoReceptor(receptorBtn.dataset.faReceptor);
+    if (descargarBtn) {
+        const f = _factAutoSuscripcion(descargarBtn.dataset.faDescargarSusc)?.ultimaFactura;
+        if (f) abrirComprobante(f);
+    }
+    if (excluirBtn) {
+        const s = _factAutoSuscripcion(excluirBtn.dataset.faExcluir);
+        if (!s) return;
+        const excluidos = factAuto.cobros.filter(c => c.suscripcion === s.id && c.estado === "excluida").length;
+        const pregunta = s.excluida
+            ? `¿Que las mensualidades de ${s.nombre || "esta suscripción"} se vuelvan a facturar solas?${excluidos ? `\n\nSe van a facturar también los ${excluidos} cobros que entraron mientras estuvo excluida.` : ""}`
+            : `¿Que las mensualidades de ${s.nombre || "esta suscripción"} NO se facturen solas?\n\nSus cobros van a seguir apareciendo en la lista, para facturarlos a mano si hace falta.`;
+        if (!confirm(pregunta)) return;
+        if (await _factAutoAccion(excluirBtn, "excluir", { suscripcion: s.id, excluida: !s.excluida })) await cargarFactAuto();
+    }
+});
+
+document.getElementById("faCobrosTbody")?.addEventListener("click", async (e) => {
+    const descargarBtn = e.target.closest("[data-fa-descargar]");
+    const facturarBtn = e.target.closest("[data-fa-facturar]");
+    const cobro = factAuto?.cobros.find(c => c.id === (descargarBtn || facturarBtn)?.dataset[descargarBtn ? "faDescargar" : "faFacturar"]);
+    if (!cobro) return;
+    if (descargarBtn && cobro.factura) abrirComprobante(cobro.factura);
+    if (!facturarBtn) return;
+
+    const suscripcion = _factAutoSuscripcion(cobro.suscripcion);
+    const receptor = suscripcion?.receptor;
+    const p = cobro.pista;
+    if (!confirm(`¿Facturar ahora el cobro del ${_factAutoFecha(cobro.aprobado)} de ${cobro.nombre || suscripcion?.nombre || "esta suscripción"} por ${fmtMoney(cobro.monto)}?\n\n`
+        + `Se emite la Factura C a ${receptor ? _factAutoReceptorTexto(receptor) : "lo que diga su suscripción"}.`
+        + (p ? `\n\nOjo: hay una factura hecha a mano del mismo importe (${numeroComprobante(p.puntoVenta, p.numero)}, del ${_factAutoFecha(p.fecha)}). Si es de este cobro, no la emitas de nuevo.` : ""))) return;
+    const datos = await _factAutoAccion(facturarBtn, "facturar", { pago: cobro.id });
+    if (!datos) return;
+    const f = datos.factura;
+    if (datos.resultado === "recuperada") alert(`${numeroComprobante(f.puntoVenta, f.numero)}: ya se había emitido en un intento anterior; quedó registrada.`);
+    else if (f.observaciones) alert(`${numeroComprobante(f.puntoVenta, f.numero)} emitida, pero ARCA devolvió observaciones:\n\n${f.observaciones}`);
+    await cargarFactAuto();
+    await abrirComprobante(f);
+});
+
+/* A quién se le factura una suscripción (mismas pestañas que el modal de factura). */
+const factAutoReceptorModal = document.getElementById("faReceptorModal");
+
+function _factAutoCampoReceptor(id) {
+    return document.getElementById("faReceptor" + id);
+}
+
+function _factAutoReceptorModo(modo) {
+    factAutoReceptorModo = modo;
+    const identificado = modo === "identificado";
+    _factAutoCampoReceptor("ModoFinal").classList.toggle("active", !identificado);
+    _factAutoCampoReceptor("ModoFinal").setAttribute("aria-selected", String(!identificado));
+    _factAutoCampoReceptor("ModoIdentificado").classList.toggle("active", identificado);
+    _factAutoCampoReceptor("ModoIdentificado").setAttribute("aria-selected", String(identificado));
+    _factAutoCampoReceptor("PanelFinal").hidden = identificado;
+    _factAutoCampoReceptor("PanelIdentificado").hidden = !identificado;
+}
+
+function abrirFactAutoReceptor(id) {
+    const s = _factAutoSuscripcion(id);
+    if (!s || !factAutoReceptorModal) return;
+    factAutoReceptorDe = s;
+    const r = s.receptor || {};
+    _factAutoCampoReceptor("Suscriptor").textContent = s.nombre || s.id;
+    _factAutoCampoReceptor("Monto").textContent = `${fmtMoney(s.monto)}/mes`;
+    llenarSelect(
+        _factAutoCampoReceptor("TipoDoc"),
+        Object.entries(factAuto.tiposDocumento || {})
+            .filter(([valor]) => Number(valor) !== SIN_IDENTIFICAR)
+            .map(([valor, texto]) => ({ valor, texto })),
+        Number(r.tipoDocumento) !== SIN_IDENTIFICAR && r.tipoDocumento ? r.tipoDocumento : 80
+    );
+    llenarSelect(
+        _factAutoCampoReceptor("CondicionIva"),
+        (factAuto.condicionesIva || []).map(c => ({ valor: c.id, texto: c.descripcion })),
+        Number(r.tipoDocumento) !== SIN_IDENTIFICAR ? r.condicionIvaId : CONDICION_IVA_SUGERIDA[80]
+    );
+    const identificado = r.tipoDocumento && Number(r.tipoDocumento) !== SIN_IDENTIFICAR;
+    _factAutoCampoReceptor("Documento").value = identificado ? r.numeroDocumento : "";
+    _factAutoCampoReceptor("Nombre").value = identificado ? (r.nombre || "") : (s.nombre || "");
+    _factAutoReceptorModo(identificado ? "identificado" : "final");
+    _factAutoCampoReceptor("Error").hidden = true;
+    factAutoReceptorModal.hidden = false;
+}
+
+function cerrarFactAutoReceptor() {
+    if (factAutoReceptorModal) factAutoReceptorModal.hidden = true;
+    factAutoReceptorDe = null;
+}
+
+_factAutoCampoReceptor("ModoFinal")?.addEventListener("click", () => _factAutoReceptorModo("final"));
+_factAutoCampoReceptor("ModoIdentificado")?.addEventListener("click", () => _factAutoReceptorModo("identificado"));
+_factAutoCampoReceptor("TipoDoc")?.addEventListener("change", () => {
+    const tipo = _factAutoCampoReceptor("TipoDoc").value;
+    _factAutoCampoReceptor("Documento").maxLength = tipo === "96" ? 10 : 13;
+    const sugerida = CONDICION_IVA_SUGERIDA[tipo];
+    const select = _factAutoCampoReceptor("CondicionIva");
+    if (sugerida && [...select.options].some(o => o.value === String(sugerida))) select.value = String(sugerida);
+});
+_factAutoCampoReceptor("CancelarBtn")?.addEventListener("click", cerrarFactAutoReceptor);
+document.getElementById("closeFaReceptorBtn")?.addEventListener("click", cerrarFactAutoReceptor);
+factAutoReceptorModal?.addEventListener("click", (e) => {
+    if (e.target === factAutoReceptorModal && !window.getSelection().toString().length) cerrarFactAutoReceptor();
+});
+_factAutoCampoReceptor("GuardarBtn")?.addEventListener("click", async (e) => {
+    const s = factAutoReceptorDe;
+    if (!s) return;
+    const errorEl = _factAutoCampoReceptor("Error");
+    const boton = e.currentTarget;
+    boton.disabled = true;
+    errorEl.hidden = true;
+    try {
+        await llamarFacturacion("receptor", {
+            suscripcion: s.id,
+            modo: factAutoReceptorModo,
+            tipoDocumento: Number(_factAutoCampoReceptor("TipoDoc").value),
+            documento: _factAutoCampoReceptor("Documento").value,
+            condicionIva: Number(_factAutoCampoReceptor("CondicionIva").value),
+            nombre: _factAutoCampoReceptor("Nombre").value
+        }, {}, "facturacion-automatica.php");
+        cerrarFactAutoReceptor();
+        await cargarFactAuto();
+    } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+    } finally {
+        boton.disabled = false;
+    }
+});
 
 /* Una sola lista mensual: suscripciones de Mercado Pago y clientes cargados a mano. */
 function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
@@ -6525,7 +6890,8 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
                 nombre: cliente?.nombre || m.nombre || m.email || "Suscriptor",
                 proyecto: cliente?.proyecto || "",
                 modalidad: "mensual",
-                montoMensual: Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0)
+                montoMensual: Number(m.monto ?? MANT_PLAN_MONTO[m.plan] ?? 0),
+                preapprovalId: String(m.preapprovalId || cliente?.preapprovalId || "").trim()
             }, { adhoc: true });
         });
     });

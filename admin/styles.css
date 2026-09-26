@@ -2730,3 +2730,23 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 #mantSuscWrap td:nth-child(4) a { color: #60A5FA; overflow-wrap: anywhere; }
 #mantSuscWrap td:nth-child(4) { max-width: 230px; }
 #mantSuscWrap .mant-delete:hover { color: var(--danger); border-color: var(--danger); }
+
+/* Mantenimiento → Facturación (26-sep): la facturación automática de las suscripciones. */
+.fa-estado { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; background: #0d1830; border: 1px solid #1e2c49; border-radius: 14px; padding: 14px 16px; margin: 0 0 16px; }
+.fa-estado > div:first-child { flex: 1 1 360px; min-width: 0; }
+.fa-titulo { margin: 0 0 6px; font-size: 15px; font-weight: 700; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.fa-texto { margin: 0 0 4px; font-size: 13px; line-height: 1.5; max-width: 760px; }
+.fa-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+.fa-badge { font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 100px; border: 1px solid var(--border-strong); color: var(--text-muted); }
+.fa-badge--activa { color: #86efac; border-color: #15803d; background: #14532d55; }
+.fa-badge--pausada { color: var(--warning); border-color: rgba(245, 158, 11, .45); background: rgba(245, 158, 11, .1); }
+.fa-estado-cobro { font-size: 13px; font-weight: 600; }
+.fa-estado-cobro--ok { color: #4ade80; }
+.fa-estado-cobro--espera { color: #93b4e8; }
+.fa-estado-cobro--atencion { color: var(--warning); }
+.fa-estado-cobro--error { color: #FCA5A5; }
+.fa-link { display: block; background: none; border: 0; padding: 0; margin-top: 3px; color: #60A5FA; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.fa-link:hover { text-decoration: underline; }
+#mantFacturacion .table-wrapper { margin-bottom: 22px; }
+#mantFacturacion .clients-table { min-width: 880px; }
+#mantFacturacion .actions-col .btn-ghost { white-space: nowrap; }
