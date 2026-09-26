@@ -32,6 +32,15 @@ service cloud.firestore {
 > Solo usuarios autenticados podrán leer y escribir la colección `clientes`.
 > Si querés restringir a un único admin, podés usar `request.auth.uid == "EL_UID_DEL_ADMIN"`.
 
+La pestaña Inversión (26-sep-2026) agrega la colección `gastoPublicidad`:
+un doc por semana, con el mismo id que domingo usa el resto de la pestaña
+(`"YYYY-MM-DD"`, el domingo de esa semana) y un solo campo `monto` (número,
+lo que Pablo cargó a mano) más `updatedAt`. Si las reglas de Firestore son
+por colección en vez de un `match /{document=**}` genérico, hay que sumarle
+el mismo bloque `allow read, write: if request.auth != null;` que tiene
+`clientes`, si no, guardar el gasto de una semana falla en silencio salvo
+por el alert() del panel.
+
 ## Modelo de datos (`clientes`)
 
 Desde el 15-sep-2026 la misma web se contrata de **dos maneras**, y cada cliente guarda cuál eligió en `modalidad`:

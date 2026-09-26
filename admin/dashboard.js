@@ -210,6 +210,24 @@ function fechaCortaJs(d) {
 
 let inversionContactos = null;   // cache: null = todavía no se pidió
 let inversionSemanaSel = null;   // clave de semana elegida, o "todas"
+let gastoAdsPorSemana = new Map();   // clave de semana (domingo "YYYY-MM-DD") -> monto
+
+/* Gasto en publicidad de una semana, cargado a mano por Pablo. Un doc por
+   semana en `gastoPublicidad`, con el mismo id que usa el resto de Inversión
+   (el domingo). Vive en Firestore, no en wabot: es un número que Pablo tipea,
+   nada que el bot sepa. */
+async function guardarGastoSemana(key, monto) {
+    const valor = Number(monto);
+    try {
+        await setDoc(doc(db, "gastoPublicidad", key), {
+            monto: Number.isFinite(valor) && valor >= 0 ? valor : 0,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+    } catch (e) {
+        console.error(e);
+        alert("No se pudo guardar el gasto de esa semana.");
+    }
+}
 
 async function abrirInversion() {
     if (inversionContactos === null) {
@@ -253,6 +271,7 @@ function renderInversion() {
         const telC = cleanArgPhone(c.tel);
         const clienteMatch = telC.length >= 8 ? clientePorTel.get(telC) : null;
         c._esCliente = !!clienteMatch;
+        c._clienteDoc = clienteMatch || null;
         c._clienteDesde = clienteMatch ? fechaPasoACliente(clienteMatch) : null;
         if (c._esCliente) s.clientesN++;
         s.contactos.push(c);
@@ -285,29 +304,66 @@ function renderInversion() {
         const s = semanas.get(key);
         const convertidos = s.contactos.filter(c => c._esCliente)
             .sort((a, b) => (b._clienteDesde?.getTime() || 0) - (a._clienteDesde?.getTime() || 0));
-        const filas = convertidos.map(c => `
+
+        // El costo por suscriptor solo se reparte entre los de plan mensual: un
+        // pago único o anual ya se pagó solo, así que su plata se resta del
+        // gasto antes de repartir el resto entre los que quedan suscriptos
+        // (Pablo, 26-sep: "si hay clientes que hicieron pago único o anual,
+        // que ese precio se descuente").
+        const suscriptores = convertidos.filter(c => modalidadDe(c._clienteDoc) === "mensual");
+        const pagoUnico = convertidos.filter(c => modalidadDe(c._clienteDoc) !== "mensual");
+        const sumaPagoUnico = pagoUnico.reduce((acc, c) => acc + pagoUnicoDe(c._clienteDoc).cobrado, 0);
+        const gasto = gastoAdsPorSemana.get(key) || 0;
+        const costoNeto = Math.max(0, gasto - sumaPagoUnico);
+        const costoPorSuscriptor = suscriptores.length ? costoNeto / suscriptores.length : null;
+
+        const filas = convertidos.map(c => {
+            const mod = modalidadDe(c._clienteDoc);
+            const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : pagoUnicoDe(c._clienteDoc).cobrado;
+            const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Único (web propia)" : mod === "unico" ? "Anual" : "—";
+            return `
             <tr>
                 <td>${escapeHtml(c.nombre || c.tel)}</td>
                 <td>${escapeHtml(c.canal)}</td>
                 <td>${escapeHtml(fechaHoraContacto(c.inicio_ts))}</td>
                 <td>${escapeHtml(fechaCortaJs(c._clienteDesde))}</td>
-            </tr>`).join("");
+                <td>${escapeHtml(modLabel)}</td>
+                <td>${paga ? fmtMoney(paga) : "—"}</td>
+            </tr>`;
+        }).join("");
+
         const div = document.createElement("div");
         div.className = "panel";
         div.style.marginBottom = "14px";
         div.innerHTML = `
-            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
                 <strong>${fechaCorta(s.desde)} a ${fechaCorta(s.hasta)}</strong>
                 <span class="muted">${s.contactos.length} contactos · <strong style="color:var(--accent-green,#4ade80)">${s.clientesN} pasaron a Cliente</strong></span>
+            </div>
+            <div class="fila" style="gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
+                <label class="muted" style="display:flex;align-items:center;gap:8px;margin:0">
+                    Gasto en publicidad esa semana
+                    <input type="number" min="0" step="1" inputmode="numeric" class="gasto-input"
+                           data-semana="${key}" value="${gasto || ""}" placeholder="0" style="width:120px">
+                </label>
+                ${gasto > 0 ? `<span class="muted">
+                    ${sumaPagoUnico > 0 ? `Se restan ${fmtMoney(sumaPagoUnico)} de pago único/anual → costo neto ${fmtMoney(costoNeto)}. ` : ""}
+                    ${suscriptores.length
+                        ? `<strong style="color:var(--accent-green,#4ade80)">${fmtMoney(costoPorSuscriptor)} por suscriptor</strong> (${suscriptores.length} mensual${suscriptores.length === 1 ? "" : "es"})`
+                        : `Sin suscriptores mensuales esta semana todavía.`}
+                </span>` : ""}
             </div>
             ${convertidos.length ? `
             <div class="table-wrapper">
                 <table class="clients-table">
-                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th></tr></thead>
+                    <thead><tr><th>Nombre</th><th>Canal</th><th>Primer contacto</th><th>Cliente desde</th><th>Modalidad</th><th>Paga</th></tr></thead>
                     <tbody>${filas}</tbody>
                 </table>
             </div>` : `<p class="muted">Todavía ninguno de esta semana pasó a Cliente.</p>`}`;
         cont.appendChild(div);
+
+        const inputGasto = div.querySelector(".gasto-input");
+        inputGasto.addEventListener("change", () => guardarGastoSemana(key, inputGasto.value));
     }
 }
 
@@ -1598,6 +1654,14 @@ function initRealtime() {
     }, (err) => {
         console.error(err);
         tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Error cargando clientes: ${escapeHtml(err.message)}</td></tr>`;
+    });
+
+    // ── Gasto en publicidad por semana (pestaña Inversión) ──
+    onSnapshot(collection(db, "gastoPublicidad"), (snap) => {
+        gastoAdsPorSemana = new Map(snap.docs.map(d => [d.id, Number(d.data().monto) || 0]));
+        if (activeTab === "inversion" && inversionContactos !== null) renderInversion();
+    }, (err) => {
+        console.error("Gasto publicidad error:", err);
     });
 
     // ── Propuestas realtime (Bocetos) ──
