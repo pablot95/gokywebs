@@ -120,7 +120,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
     $contactos = [];
     foreach ($semanas as $s) {
         foreach ($s['detalle'] as $d) {
-            $contactos[] = ['tel' => $d['tel'], 'nombre' => $d['nombre'], 'canal' => $d['canal'], 'inicio_ts' => $d['inicio_ts']];
+            $contactos[] = ['tel' => $d['tel'], 'tel_whatsapp' => $d['tel_whatsapp'], 'nombre' => $d['nombre'], 'canal' => $d['canal'], 'inicio_ts' => $d['inicio_ts']];
         }
     }
     header('Content-Type: application/json; charset=utf-8');

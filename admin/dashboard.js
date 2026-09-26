@@ -274,7 +274,10 @@ function renderInversion() {
         const key = semanaClave(c.inicio_ts);
         if (!semanas.has(key)) semanas.set(key, { desde: key, hasta: ymdAgregarDias(key, 6), contactos: [], clientesN: 0 });
         const s = semanas.get(key);
-        const telC = cleanArgPhone(c.tel);
+        // En Instagram, c.tel es el ID de la cuenta (podía tener 16 dígitos),
+        // no un teléfono: cruzar eso nunca matcheaba. tel_whatsapp es el
+        // WhatsApp real si lo dejó (o el mismo tel, en whatsapp).
+        const telC = cleanArgPhone(c.tel_whatsapp || c.tel);
         const clienteMatch = telC.length >= 8 ? clientePorTel.get(telC) : null;
         c._esCliente = !!clienteMatch;
         c._clienteDoc = clienteMatch || null;

@@ -2248,8 +2248,16 @@ function wabot_cohortes_procesar_conv($tel, $cv, $desde, $hasta, &$semanas) {
         $nombreNeg = trim((string)($cv['nombre_negocio'] ?? ''));
         $nombre    = $nombreNeg !== '' ? $nombreNeg : trim((string)($cv['nombre'] ?? ''));
 
+        // Para Instagram, 'tel' es el ID numérico de la cuenta, no un teléfono
+        // (podía tener 16 dígitos): cruzar eso contra el teléfono de Firestore
+        // nunca iba a matchear. El WhatsApp real, si lo dejó, vive aparte en
+        // telefono_wsp — eso es lo que hay que cruzar (26-sep, caso Ivanna
+        // Varela / Reyna Midas Holística: escribió por Instagram y no aparecía
+        // como convertida aunque ya era Cliente).
+        $telWsp = trim((string)($cv['telefono_wsp'] ?? ''));
         $s['detalle'][] = [
             'tel'                  => $tel,
+            'tel_whatsapp'         => $telWsp !== '' ? $telWsp : $tel,
             'nombre'               => $nombre,
             'canal'                => wabot_canal($cv),
             'inicio_ts'            => $inicio,
