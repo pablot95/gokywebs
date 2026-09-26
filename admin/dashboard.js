@@ -4678,10 +4678,14 @@ document.getElementById("cerrarPresentacionManualBtn").addEventListener("click",
 presentacionManualModal.addEventListener("click", e => { if (e.target === presentacionManualModal) cerrarPresentacionManual(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !presentacionManualModal.hidden) cerrarPresentacionManual(); });
 document.getElementById("copiarPresentacionTelefono").addEventListener("click", async e => {
+    // e.currentTarget queda null apenas termina el evento: si se lee recién
+    // después del await (como pasaba acá), el "Copiado" revienta con
+    // "Cannot set properties of null" aunque el copiado haya salido bien.
+    const btn = e.currentTarget;
     try {
         await writeTextToClipboard(document.getElementById("presentacionManualTelefono").value);
-        e.currentTarget.textContent = "Copiado";
-        setTimeout(() => { e.currentTarget.textContent = "Copiar número"; }, 1500);
+        btn.textContent = "Copiado";
+        setTimeout(() => { btn.textContent = "Copiar número"; }, 1500);
     } catch (err) { alert("No se pudo copiar el número: " + err.message); }
 });
 
