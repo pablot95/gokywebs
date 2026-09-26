@@ -2197,11 +2197,12 @@ function burbujaCita(t, chat) {
                         <?php /* El formulario con el código de ESTA charla, para mandarlo a mano (21-sep). */ ?>
                         <button type="button" class="sec form-copiar" data-tel="<?= $e($convClave) ?>"
                             title="Copia el link del formulario con el código de esta conversación, para mandárselo vos">Copiar form</button>
-                        <?php /* Los dos links de pago del plan mensual, listos para mandar (25-sep). */ ?>
+                        <?php /* Los dos links de pago del plan mensual, listos para mandar (25-sep;
+                               tienda/cursos/inmobiliaria pasó a $40.000 el 26-sep con el test de precios). */ ?>
                         <button type="button" class="sec" id="btnPlan20"
                             title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $20.000</button>
-                        <button type="button" class="sec" id="btnPlan30"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $30.000</button>
+                        <button type="button" class="sec" id="btnPlan40"
+                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $40.000</button>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -2981,14 +2982,14 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $20.000" / "Plan $30.000" del encabezado:
+        /* Los dos botones de "Plan $20.000" / "Plan $40.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. */
         document.getElementById('btnPlan20')?.addEventListener('click', () => {
             rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20');
         });
-        document.getElementById('btnPlan30')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30');
+        document.getElementById('btnPlan40')?.addEventListener('click', () => {
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40');
         });
 
         function rrElegir(indice) {

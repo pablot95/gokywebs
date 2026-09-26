@@ -35,7 +35,7 @@ function wabot_respuestas_rapidas_default() {
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
             'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($20.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual20',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -388,6 +388,27 @@ function wabot_respuestas_rapidas_links_mensuales_25sep($categorias) {
     return $categorias;
 }
 
+/**
+ * Test de precios (26-sep): tienda/cursos/inmobiliaria pasa de $30.000 a
+ * $40.000 por mes, con una página de suscripción nueva. Reemplaza por texto
+ * exacto, igual que wabot_respuestas_rapidas_links_mensuales_25sep; lo que
+ * Pablo haya editado a mano no se toca.
+ */
+function wabot_respuestas_rapidas_plan_otros_40k_26sep($categorias) {
+    $viejo = 'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30';
+    $nuevo = 'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40';
+    foreach ($categorias as &$categoria) {
+        if (mb_strtolower(trim((string)($categoria['titulo'] ?? ''))) !== 'pagos') continue;
+        $items = [];
+        foreach ((array)($categoria['items'] ?? []) as $texto) {
+            $items[] = (string)$texto === $viejo ? $nuevo : $texto;
+        }
+        $categoria['items'] = array_values(array_unique($items));
+    }
+    unset($categoria);
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
@@ -395,11 +416,11 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_default();
-    $migrado = wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
+    $migrado = wabot_respuestas_rapidas_plan_otros_40k_26sep(wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
         wabot_respuestas_rapidas_planes_19sep(
             wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
         )
-    )));
+    ))));
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         if (is_string($json)) wabot_json_guardar_atomico($ruta, $json);

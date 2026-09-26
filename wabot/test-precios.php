@@ -104,8 +104,8 @@ caso('pasa entero por el punto único de salida: propuesta, imagen y oferta',
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => ['una tienda online completa', 'tienda-online-tres-columnas-4x3.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'web-inmobiliaria-tres-columnas-4x3.png'],
-          'elearning' => ['una plataforma de cursos completa', 'plataforma-de-cursos-tres-columnas-4x3.png']] as $tipo => $par) {
+foreach (['ecommerce' => ['una tienda online completa', 'tienda-online-tres-columnas-4x3.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'tienda-online-tres-columnas-4x3.png'],
+          'elearning' => ['una plataforma de cursos completa', 'tienda-online-tres-columnas-4x3.png']] as $tipo => $par) {
     [$arranque, $archivo] = $par;
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);

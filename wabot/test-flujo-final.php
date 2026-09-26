@@ -123,8 +123,8 @@ caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 $esperados = [
     'landing' => ['un sitio profesional completo', 'sitio-profesional-tres-columnas-4x3.png'],
-    'inmobiliaria' => ['una web inmobiliaria completa', 'web-inmobiliaria-tres-columnas-4x3.png'],
-    'elearning' => ['una plataforma de cursos completa', 'plataforma-de-cursos-tres-columnas-4x3.png'],
+    'inmobiliaria' => ['una web inmobiliaria completa', 'tienda-online-tres-columnas-4x3.png'],
+    'elearning' => ['una plataforma de cursos completa', 'tienda-online-tres-columnas-4x3.png'],
 ];
 foreach ($esperados as $tipo => [$frase, $archivo]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);

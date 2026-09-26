@@ -250,13 +250,14 @@ function wabot_textos_default() {
         'web_propia' => "Si la querés en tu propio hosting, está el pago único{precio_web_propia}: es solo la página, y cuando abonás el total el código queda tuyo. No incluye hosting ni dominio, que corren por tu cuenta.\nSi querés, le sumás el mantenimiento por {mantenimiento_mes}: actualizaciones, corrección de errores y soporte.",
     ],
     'leer_imagenes' => true,
+    // Montos del test de precios (26-sep): antes $20.000 / $30.000.
     'mantenimiento_planes' => [
         'landing' => [
-            'precio' => '$20.000',
+            'precio' => '$30.000',
             'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
-            'precio' => '$30.000',
+            'precio' => '$40.000',
             'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
