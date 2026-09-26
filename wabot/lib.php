@@ -3663,18 +3663,20 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 
 /**
  * La imagen con las 3 modalidades de pago que sigue al turno del precio
- * (25-sep, Pablo). Una por tipo, cada una con su propio título y sus montos
- * exactos (25-sep: reemplazan a las tres genéricas de antes, que hacían
- * compartir cursos y tienda online y aproximaban el pago único de cursos).
- * Los archivos viven en wabot/, junto al resto del código, no en data/: son
- * parte del deploy, no contenido subido por un cliente.
+ * (25-sep, Pablo). Los archivos viven en wabot/, junto al resto del código,
+ * no en data/: son parte del deploy, no contenido subido por un cliente.
+ *
+ * Test de precios (26-sep): mientras ecommerce, elearning e inmobiliaria
+ * cobren exactamente lo mismo, comparten la misma imagen
+ * (tienda-online-tres-columnas-4x3.png); si en algún momento vuelven a tener
+ * precios distintos, cada uno necesita la suya de nuevo.
  */
 function wabot_precio_imagen_archivo($tipo) {
     $mapa = [
         'landing'      => 'sitio-profesional-tres-columnas-4x3.png',
         'ecommerce'    => 'tienda-online-tres-columnas-4x3.png',
-        'elearning'    => 'plataforma-de-cursos-tres-columnas-4x3.png',
-        'inmobiliaria' => 'web-inmobiliaria-tres-columnas-4x3.png',
+        'elearning'    => 'tienda-online-tres-columnas-4x3.png',
+        'inmobiliaria' => 'tienda-online-tres-columnas-4x3.png',
     ];
     return $mapa[(string)$tipo] ?? '';
 }

@@ -359,13 +359,10 @@ $GLOBALS['WABOT_TEST_ENVIADOS'] = [];
 $r = wabot_form_lead_procesar(['t' => '5493810002001', 'nombre' => 'Carla', 'nombre_negocio' => 'Carla Deco',
     'resumen' => 'Vendo objetos de decoración hechos a mano', 'colores' => 'Beige y dorado'], $cfg);
 caso('el envío se acepta', $r['ok'] === true);
-caso('avisa a Pablo por WhatsApp con el nombre y el negocio del lead',
-    (function () {
-        foreach ($GLOBALS['WABOT_TEST_ENVIADOS'] ?? [] as $env) {
-            if (($env[0] ?? '') === '5491125068578' && strpos($env[1] ?? '', 'Carla') !== false && strpos($env[1] ?? '', 'Carla Deco') !== false) return true;
-        }
-        return false;
-    })());
+// El aviso a Pablo por WhatsApp de un lead nuevo se sacó (25-sep): fallaba
+// seguido con "ventana de 24h cerrada" (131047) porque ese número no le
+// escribe al bot, y el panel + el push ya avisan sin depender de esa ventana.
+caso('ya no manda ningún WhatsApp al procesar el formulario', ($GLOBALS['WABOT_TEST_ENVIADOS'] ?? []) === []);
 $conv = wabot_conv_load('5493810002001');
 caso('el nombre de la persona queda confirmado', $conv['nombre'] === 'Carla' && !empty($conv['nombre_confirmado']));
 caso('el negocio, la descripción y los colores quedan anotados',
