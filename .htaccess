@@ -1,6 +1,10 @@
 # Evita que el repositorio git (si queda deployado) sea navegable públicamente.
 RedirectMatch 404 /\.git
 
+# Los .md son documentos internos (auditorías del wabot con nombres de clientes,
+# CLOUDFLARE.md, los BRIEFING.md de las demos) y no se sirven por HTTP (26-sep-2026).
+RedirectMatch 404 \.[mM][dD]$
+
 # Hostinger usa un sistema de archivos sensible a mayúsculas. Si una URL llega
 # con otra combinación de mayúsculas/minúsculas, el router busca el archivo o
 # directorio real y redirige a su URL canónica. Las rutas correctas no pasan por

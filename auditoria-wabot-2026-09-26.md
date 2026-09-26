@@ -1,0 +1,33 @@
+# Auditoría del wabot — 26 de septiembre de 2026
+
+Revisión de los chats del 17 al 26 de septiembre (165 conversaciones, `wabot-chats-2026-09-26.txt`) a partir de la devolución recibida el 26-sep. Cada punto se verificó contra el código actual —que ya traía los arreglos del 24 y 25-sep—, se corrigió lo que seguía pasando y quedó una suite de regresión con las charlas reales (`wabot/test-devolucion-26sep.php`, 94 casos). Sin IA real: la key de Gemini no está en el config local, así que la batería en vivo (`php wabot/test-charlas.php wabot/test-charlas-devolucion-26sep.json`) queda para correr en el server.
+
+## Estado de cada punto
+
+| # | Punto de la devolución | Qué pasaba con el código del 25-sep | Qué se hizo |
+|---|---|---|---|
+| 1 | "Algo simple y económico para mostrar nuestro catálogo" (Francisco) recibió la tienda completa | Seguía pasando: el 24-sep se apagó la pregunta "vender o mostrar" y se retiró el catálogo, así que con productos siempre salía la tienda | Catálogo explícito: si el cliente dice con todas las letras que solo quiere mostrar, un catálogo para que le consulten, sin carrito, que no quiere vender por la web, o algo simple/económico para mostrar, se cotiza el sitio profesional con catálogo (con la carga de productos aparte y su propia oferta de diseño). Sin decirlo, sigue siendo la tienda (regla del 24-sep). |
+| 2 | La pañalera pidió "vender por la web, pero también como catálogo" y se llevó el sitio profesional | Ya no podía pasar por ese camino (pregunta apagada), pero la ficha seguía leyendo "catálogo para mostrar" como catálogo | La venta dicha gana siempre: "vender por la web / online, carrito, que me compren, cobrar online" anula cualquier "catálogo" del mismo mensaje. Las negaciones ("no quiero vender online") ya no se leen como que quiere vender. |
+| 3 | Pregunta cosas ya contestadas ("Vender mis productos" → "presentar servicios, recibir consultas o vender y cobrar online?") | En parte arreglado el 25-sep (reintento a Gemini y lectura de la respuesta sin IA); la pregunta del objetivo se podía seguir haciendo a quien ya había dicho qué tiene que hacer la web | Si ya dijo qué tiene que hacer la web (vender, que le compren, solo mostrar) y ya se sabe el negocio, se cotiza directo en vez de preguntar. "La última", "la tercera" y "la primera" contestan por posición. |
+| 4 | No responde preguntas directas y sigue su flujo ("Su nombre?" dos veces, SHOWTIME) | Seguía pasando: no había detector de "quién me escribe" | Nueva respuesta `info.quien_atiende`, que se contesta primero (con o sin IA, etiquete lo que etiquete el clasificador) y en el mismo turno sigue la pregunta comercial pendiente: el rubro si no se sabe, el objetivo si ya se sabe. Un "Chau" pelado se despide en vez de derivar con "a partir de acá sigue el desarrollador". |
+| 5 | No reconoce conversaciones o relaciones previas (Xavier) | Seguía pasando | Detector de conocido/referido en el borde común: "te acordás", "ya trabajamos", "le hicimos un sitio a X", "te paso un cliente", "referido", "de parte de", "le pasé tu contacto", "comisión por la indicación", "Pablo amigo, cómo va?". Contesta una sola vez quién atiende (`mensaje_conocido`) y deja la charla pendiente para Pablo; lo que sigue no se contesta ni se cotiza. Solo al principio de la charla y sin precio dado; si en el mismo mensaje pide una web, gana la venta. |
+| 6 | Deriva a laboral por una palabra ("Compartimos vacantes laborales de Chaco y Corrientes") | Seguía pasando: la etiqueta "empleo" del clasificador se confirmaba con una palabra suelta (vacante, laboral, trabajo, experiencia) | La etiqueta se confirma solo con la frase entera (pide trabajo, manda el CV, pregunta si toman gente o hay vacantes). Quien cuenta que su negocio son las vacantes (bolsa de empleo, consultora de RRHH) es un lead de sitio profesional, también sin IA. |
+| 12 | La oferta del primer diseño suena a acción automática | Un solo texto para los cuatro tipos | Un texto por tipo: "de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos", y lo mismo para servicios, cursos, propiedades y el catálogo. Mismo arranque y cierre que el genérico, así los detectores (demora de 2 s, "muestra ya ofrecida", el sí al diseño) lo siguen reconociendo. |
+
+## Dónde está cada cambio
+
+- `wabot/engine.php`: `wabot_texto_pide_catalogo_sin_cobro()` y `catalogo_explicito` en la ficha; vuelve el catálogo en `wabot_precio()` solo cuando es explícito; negaciones primero en `wabot_intencion_web_dicha()`; `wabot_tipo_por_intencion_dicha()` usada antes de preguntar el objetivo (salida y respaldo sin IA); ordinales en `wabot_objetivo_contestado()`; `wabot_texto_pregunta_quien_atiende()` y `wabot_pregunta_pendiente_texto()`; `wabot_texto_es_conocido()` (contexto `conocido`); `wabot_texto_pide_trabajo()`; la bolsa de empleo en `wabot_fallback_rubro_local()`; el "chau" en `wabot_cierre_sin_presion_tipo()`; `wabot_tres_pasos_texto()` por tipo.
+- `wabot/lib.php`: `wabot_ofertas_diseno_textos()` para reconocer la oferta por tipo (`wabot_es_texto_demo`, `wabot_demora_tipeo`); el clasificador conoce la clave `quien_atiende`.
+- `wabot/textos.php`: `info.quien_atiende`, `mensaje_conocido` (sin nombre propio, como todos los textos del bot) y `msg_tres_pasos_por_tipo`.
+- `wabot/redactor.php`: el texto de quien no viene a comprar sale de `wabot_texto_contexto_no_venta()`.
+
+## Tests
+
+- Nueva: `wabot/test-devolucion-26sep.php`, 94 casos en verde, uno por cada charla real y por cada frase de las listas de escape (positivos y negativos).
+- Actualizadas a la regla nueva: `test.php` ("solo mostrar" cotiza el catálogo, con y sin IA), `test-ficha.php` (§4: catálogo dicho vs. la pañalera), `test-detectores.php` (999REC8) y `test-flujo-final.php` (la oferta de la tienda).
+- El resto queda igual que antes de esta auditoría: `test-detectores`, `test-flujo-final`, `test-ficha`, `test-salida`, `test-media` y `test-concurrencia` en verde; `test.php` (20), `test-precios` (39), `test-formulario` (1), `test-postdemo` (2), `test-propiedad` (4) y `test-prospectos` (1) conservan los fallos que ya tenían, que vienen del test de precios más altos del 26-sep (montos viejos escritos en los tests). `test-respuestas-rapidas` está en obra en otra sesión.
+
+## Pendiente
+
+- Desplegar al server y correr la batería en vivo con las seis charlas (`wabot/test-charlas-devolucion-26sep.json`) para confirmar las etiquetas del clasificador real.
+- Decisión de Pablo: la regla del 24-sep ("si vende algo es tienda") queda con la excepción explícita del punto 1. Si se prefiere sin excepción, alcanza con que `wabot_texto_pide_catalogo_sin_cobro()` devuelva `false`.
