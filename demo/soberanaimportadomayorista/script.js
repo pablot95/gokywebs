@@ -625,58 +625,104 @@ function calcularTalle(escala, cm, calce) {
   return { talle, min, max, nota, n: contarTalle(talle) };
 }
 
+const ESCALA_CINTA = { arriba: [85, 135], pantalon: [70, 110] };
+const escalaDe = t => TALLES.pantalon.includes(t) ? 'pantalon' : TALLES.unico.includes(t) ? 'unico' : 'arriba';
+const prendasTxt = n => `${n} ${n === 1 ? 'prenda' : 'prendas'}`;
+
 function initTallePanel() {
   const panel = document.querySelector('[data-talle-panel]');
   if (!panel) return;
-  panel.querySelectorAll('[data-talle-chips]').forEach(cont => {
-    const escala = cont.dataset.talleChips;
-    cont.innerHTML = TALLES[escala].map(t => {
-      const n = contarTalle(t);
-      return `<button type="button" class="talle-chip" data-talle="${t}" aria-pressed="false" aria-label="Talle ${t}: ${n} ${n === 1 ? 'prenda' : 'prendas'} con stock" ${n ? '' : 'disabled'}>${t}<small>${n}</small></button>`;
-    }).join('');
-  });
+  const opciones = panel.querySelector('[data-talle-opciones]');
   const todos = panel.querySelector('[data-talle-todos]');
-  const sync = () => {
-    panel.querySelectorAll('[data-talle]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.talle === Talle.actual)));
-    todos?.setAttribute('aria-pressed', String(!Talle.actual));
+  const escalas = panel.querySelector('[data-escalas]');
+  const medir = panel.querySelector('[data-guia-medir]');
+  const input = panel.querySelector('[data-guia-medida]');
+  const label = panel.querySelector('[data-guia-label]');
+  const valor = panel.querySelector('[data-guia-valor]');
+  const segs = panel.querySelector('[data-cinta-talles]');
+  const regla = panel.querySelector('[data-cinta-regla]');
+  const res = panel.querySelector('[data-guia-resultado]');
+  const calceBox = panel.querySelector('[data-calce]');
+  if (!opciones || !escalas || !input || !res) return;
+  let escala = Talle.actual ? escalaDe(Talle.actual) : 'arriba';
+  let calce = 'justo';
+  const ultimo = { arriba: 100, pantalon: 86 };
+
+  const pintarOpciones = () => {
+    escalas.querySelectorAll('[data-escala]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.escala === escala)));
+    opciones.innerHTML = TALLES[escala].map(t => {
+      const n = contarTalle(t);
+      return `<button type="button" class="talle-chip" data-talle="${t}" aria-pressed="${t === Talle.actual}" aria-label="Talle ${t}: ${prendasTxt(n)} con stock" ${n ? '' : 'disabled'}>${t}</button>`;
+    }).join('');
+    todos.hidden = !Talle.actual;
   };
+
+  const calcular = () => {
+    const cm = Number(input.value);
+    ultimo[escala] = cm;
+    valor.textContent = `${cm} cm`;
+    const r = calcularTalle(escala, cm, calce);
+    segs.querySelectorAll('[data-cinta-talle]').forEach(s => s.classList.toggle('activo', !r.fuera && s.dataset.cintaTalle === r.talle));
+    if (r.fuera || r.error) {
+      input.setAttribute('aria-valuetext', `${cm} centímetros, fuera de la tabla`);
+      res.innerHTML = `<p class="guia-res">Esa medida queda fuera de la tabla.<small>Escribinos y te asesoramos con el talle.</small></p><a class="btn btn-ghost" href="${wspHref(`Hola! Necesito asesoramiento de talle: ${escala === 'pantalon' ? 'cintura' : 'pecho'} de ${cm} cm.`)}" target="_blank" rel="noopener">Consultar por WhatsApp</a>`;
+      return;
+    }
+    input.setAttribute('aria-valuetext', `${cm} centímetros, talle ${r.talle}`);
+    res.innerHTML = `<p class="guia-res">Te recomendamos<b>${r.talle}</b>${r.nota ? `<small>${r.nota}</small>` : ''}</p><button type="button" class="btn btn-cta" data-usar-talle="${r.talle}" ${r.n ? '' : 'disabled'}>Ver ${prendasTxt(r.n)} en ${r.talle}</button>`;
+  };
+
+  const pintarCinta = () => {
+    if (escala === 'unico') {
+      medir.hidden = true;
+      const n = contarTalle('Único');
+      res.innerHTML = `<p class="guia-res">Gorras y delantales vienen en talle único y se regulan.</p><button type="button" class="btn btn-cta" data-usar-talle="Único" ${n ? '' : 'disabled'}>Ver ${prendasTxt(n)} en talle único</button>`;
+      return;
+    }
+    medir.hidden = false;
+    const [min, max] = ESCALA_CINTA[escala];
+    const rango = max - min;
+    input.min = min; input.max = max; input.value = ultimo[escala];
+    label.textContent = escala === 'pantalon' ? 'Contorno de cintura' : 'Contorno de pecho';
+    regla.style.setProperty('--rango', rango);
+    segs.innerHTML = TABLA_TALLES[escala].map(([t, a, b]) => {
+      const l = Math.max(0, (a - min) / rango * 100);
+      const r = Math.min(100, (b + 1 - min) / rango * 100);
+      return `<span class="cinta-talle" data-cinta-talle="${t}" style="left:${l.toFixed(2)}%;width:${(r - l).toFixed(2)}%">${t}</span>`;
+    }).join('');
+    let nums = '';
+    for (let v = Math.ceil((min + 1) / 10) * 10; v < max; v += 10) nums += `<span class="cinta-num" style="left:${((v - min) / rango * 100).toFixed(2)}%">${v}</span>`;
+    regla.innerHTML = nums;
+    calcular();
+  };
+
+  input.addEventListener('input', calcular);
+  escalas.addEventListener('click', e => {
+    const b = e.target.closest('[data-escala]');
+    if (!b || b.dataset.escala === escala) return;
+    escala = b.dataset.escala;
+    pintarOpciones(); pintarCinta();
+  });
+  calceBox?.addEventListener('click', e => {
+    const b = e.target.closest('[data-calce-valor]');
+    if (!b) return;
+    calce = b.dataset.calceValor;
+    calceBox.querySelectorAll('[data-calce-valor]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    calcular();
+  });
   panel.addEventListener('click', e => {
     const chip = e.target.closest('[data-talle]');
-    if (chip) Talle.set(Talle.actual === chip.dataset.talle ? null : chip.dataset.talle);
+    if (chip) { Talle.set(Talle.actual === chip.dataset.talle ? null : chip.dataset.talle); return; }
     const usar = e.target.closest('[data-usar-talle]');
     if (usar) { Talle.set(usar.dataset.usarTalle); Catalogo.irA?.(); }
   });
-  todos?.addEventListener('click', () => Talle.set(null));
-  document.addEventListener('talle:cambio', sync);
-  sync();
-
-  const form = panel.querySelector('[data-talle-guia]');
-  if (!form) return;
-  const prenda = form.querySelector('[data-guia-prenda]');
-  const medida = form.querySelector('[data-guia-medida]');
-  const label = form.querySelector('[data-guia-label]');
-  const res = form.querySelector('[data-guia-resultado]');
-  prenda.addEventListener('change', () => {
-    const pant = prenda.value === 'pantalon';
-    label.textContent = pant ? 'Cintura (cm)' : 'Pecho (cm)';
-    medida.value = pant ? 86 : 100;
-    res.innerHTML = '';
+  todos.addEventListener('click', () => Talle.set(null));
+  document.addEventListener('talle:cambio', () => {
+    if (Talle.actual && escalaDe(Talle.actual) !== escala) { escala = escalaDe(Talle.actual); pintarCinta(); }
+    pintarOpciones();
   });
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const calce = form.querySelector('input[name="calce"]:checked')?.value || 'justo';
-    const r = calcularTalle(prenda.value, Number(String(medida.value).replace(',', '.')), calce);
-    const parte = prenda.value === 'pantalon' ? 'Cintura' : 'Pecho';
-    if (r.error) { res.innerHTML = '<div class="guia-res"><p>Ingresá la medida en centímetros, por ejemplo <b>100</b>.</p></div>'; medida.focus(); return; }
-    if (r.fuera) {
-      res.innerHTML = `<div class="guia-res"><p>Esa medida queda fuera de nuestra tabla. <b>Escribinos por WhatsApp</b> y te asesoramos con el talle.</p><a class="btn btn-ghost-claro" href="${wspHref(`Hola! Necesito asesoramiento de talle: ${parte.toLowerCase()} de ${medida.value} cm.`)}" target="_blank" rel="noopener">Consultar talle</a></div>`;
-      return;
-    }
-    res.innerHTML = `<div class="guia-res"><span class="guia-res-talle">${r.talle}</span><div>
-      <p>${parte} de <b>${r.min} a ${r.max} cm</b>. ${r.nota}</p>
-      <p><b>${r.n} ${r.n === 1 ? 'prenda' : 'prendas'}</b> con stock en talle ${r.talle}.</p>
-      <button type="button" class="btn btn-cta" data-usar-talle="${r.talle}">Ver prendas en talle ${r.talle}</button></div></div>`;
-  });
+  pintarOpciones();
+  pintarCinta();
 }
 
 /* ---------- Vista rápida ---------- */
