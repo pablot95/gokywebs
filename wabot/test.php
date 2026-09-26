@@ -3625,9 +3625,25 @@ $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
 caso('con el nombre y el idioma correctos', $envio[1] === 'seguimiento_demo_72h' && $envio[2] === 'es_AR');
 caso('confirmacion_demo_48h es texto fijo: sin variables de nombre ni botón',
     $envio[3] === [] && $envio[4] === []);
-/* El texto aprobado en Meta ya no se duplica en la config (15-sep): la
- * plantilla sale sin dejar una línea en el transcript. */
-caso('no inventa una línea de transcript sin texto configurado', $convPlant['transcript'] === []);
+/* El 15-sep el cuerpo aprobado salió de la config y la plantilla dejó de
+ * anotarse: el 26-sep la de interesado le llegó a una clienta y en el chat
+ * del panel no había nada. Se prueba contra los valores de fábrica: un
+ * bot-config.json local viejo trae la plantilla sin texto. */
+$cfgFabrica = wabot_config_load();
+$cfgFabrica['plantillas'] = wabot_textos_default()['plantillas'];
+$convFabrica = ['tel' => '5491100000002', 'channel_user_id' => '5491100000002', 'canal' => 'whatsapp', 'transcript' => []];
+wabot_enviar_plantilla($convFabrica, 'confirmacion_demo_48h', $cfgFabrica);
+caso('queda en el chat el texto aprobado en Meta',
+    count($convFabrica['transcript']) === 1 && $convFabrica['transcript'][0]['q'] === 'bot'
+    && strpos($convFabrica['transcript'][0]['t'], 'pudiste ver la demo') !== false);
+
+$cfgSinTexto = wabot_config_load();
+$cfgSinTexto['plantillas']['confirmacion_demo_48h']['texto'] = '';
+$convSinTexto = ['tel' => '5491100000001', 'channel_user_id' => '5491100000001', 'canal' => 'whatsapp', 'transcript' => []];
+wabot_enviar_plantilla($convSinTexto, 'confirmacion_demo_48h', $cfgSinTexto);
+caso('sin el texto cargado igual queda constancia, con el nombre de la plantilla y sin inventar el cuerpo',
+    count($convSinTexto['transcript']) === 1
+    && $convSinTexto['transcript'][0]['t'] === '[Plantilla de WhatsApp: seguimiento_demo_72h]');
 
 // Las plantillas reales no llevan botón (Meta las aprueba sin parámetros),
 // pero el guard que evita mandar un link roto sigue vivo para cualquier
@@ -3685,6 +3701,14 @@ caso('apagada en Ajustes, avisa el error y no marca nada',
     wabot_template_72h_enviar($apagada72, $cfgApagada72) === 'error'
     && empty($apagada72['confirmacion_demo_enviada']) && empty($apagada72['bot_off']));
 caso('ninguno de los rechazos mandó nada', count($GLOBALS['WABOT_TEST_PLANTILLAS']) === 1);
+
+$convInteresado = ['tel' => '5491100000074', 'channel_user_id' => '5491100000074', 'canal' => 'whatsapp',
+                   'favorito' => true, 'transcript' => []];
+caso('la de interesado sale con la estrella puesta',
+    wabot_template_interesado_enviar($convInteresado, $cfgFabrica) === 'ok'
+    && !empty($convInteresado['seguimiento_interesado_enviado']));
+caso('y queda en el chat tal como la aprobó Meta (Pablo, 26-sep: no aparecía)',
+    count($convInteresado['transcript']) === 1 && $convInteresado['transcript'][0]['t'] === 'Hola, cómo estás?');
 
 echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
 

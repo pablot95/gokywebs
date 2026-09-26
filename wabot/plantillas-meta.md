@@ -42,6 +42,20 @@ Los mensajes enviados por fuera del panel no quedan registrados en ese reloj.
 La opción «Automática a las 18 h» en Ajustes permite apagar cada flujo sin
 desactivar el botón manual de la plantilla.
 
+**Cuerpo aprobado:**
+
+```
+Hola, cómo estás?
+```
+
+## El texto en el chat del panel
+
+Meta no devuelve el cuerpo de la plantilla al mandarla: lo que queda escrito en
+el chat es el campo «Texto aprobado en Meta» de cada plantilla en Ajustes. Si se
+cambia la plantilla por otra, hay que cambiar también ese texto. Si queda vacío,
+el chat muestra `[Plantilla de WhatsApp: nombre]`, para que el envío no quede
+invisible.
+
 ## Qué pasa después
 
 - **Se paga por mensaje.** Las de Marketing tienen costo por envío; el texto

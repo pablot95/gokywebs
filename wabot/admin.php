@@ -415,6 +415,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $cfg['plantillas'][$clavePlant]['idioma'] = trim((string)($_POST["plantilla_{$clavePlant}_idioma"] ?? '')) ?: 'es_AR';
             $cfg['plantillas'][$clavePlant]['activa'] = !empty($_POST["plantilla_{$clavePlant}_activa"]);
             $cfg['plantillas'][$clavePlant]['automatico'] = !empty($_POST["plantilla_{$clavePlant}_automatico"]);
+            if (isset($_POST["plantilla_{$clavePlant}_texto"])) $cfg['plantillas'][$clavePlant]['texto'] = trim((string)$_POST["plantilla_{$clavePlant}_texto"]);
         }
         wabot_config_save($cfg);
         header('Location: admin.php?tab=ajustes&ok=1'); exit;
@@ -2077,6 +2078,10 @@ function burbujaCita(t, chat) {
                         <input type="checkbox" name="plantilla_<?= $e($clavePlant) ?>_automatico" <?= !array_key_exists('automatico', $p) || !empty($p['automatico']) ? 'checked' : '' ?>>
                         Automática a las 18 h
                     </label>
+                </div>
+                <div style="margin-top:8px">
+                    <label>Texto aprobado en Meta (es lo que queda escrito en el chat)</label>
+                    <input type="text" name="plantilla_<?= $e($clavePlant) ?>_texto" value="<?= $e((string)($p['texto'] ?? '')) ?>" style="width:100%">
                 </div>
             <?php endforeach; ?>
         </div>

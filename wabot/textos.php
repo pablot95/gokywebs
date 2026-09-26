@@ -306,12 +306,16 @@ function wabot_textos_default() {
         'Decime qué habías pensado y lo ajustamos.',
         'Contame qué idea tenías y vemos cómo encararlo.',
     ],
+    // `texto` es el cuerpo aprobado en Meta, tal cual: es lo que queda escrito
+    // en el chat del panel. Sin él, la plantilla le llegaba al cliente y en el
+    // chat no se veía nada (Pablo, 26-sep).
     'plantillas' => [
         'confirmacion_demo_48h' => [
             'nombre' => 'seguimiento_demo_72h',
             'idioma' => 'es_AR',
             'activa' => true,
             'automatico' => true,
+            'texto' => 'Hola! Te escribo para saber si pudiste ver la demo que te enviamos. Si hay algo que quieras cambiar, lo podemos ajustar. Cuando puedas, contame qué te pareció',
         ],
         'seguimiento_interesado' => [
             'nombre' => 'seguimiento_interesado',
@@ -319,6 +323,7 @@ function wabot_textos_default() {
             'categoria' => 'MARKETING',
             'activa' => true,
             'automatico' => true,
+            'texto' => 'Hola, cómo estás?',
         ],
     ],
     'plataformas' => "No la armamos sobre Tiendanube, Shopify o Wix: hacemos tu propia web, a medida. El plan, anual o mensual, funciona igual que allá: es lo que mantiene la web online.\nLa diferencia es que allá la armás vos, con una plantilla, y acá te la hacemos nosotros: te queda un panel para editar los textos y las imágenes (y en la tienda, cargar tus productos) cuando quieras, y nos ocupamos del hosting, el dominio, el soporte y el mantenimiento técnico.",

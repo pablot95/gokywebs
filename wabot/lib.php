@@ -828,7 +828,11 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
         $texto = str_replace('{' . $campo . '}', $v, $texto);
     }
     $texto = trim($texto);
-    if ($texto !== '') wabot_conv_transcript($conv, 'bot', $texto);
+    // Sin el cuerpo cargado igual queda constancia: el chat del panel es lo
+    // único que ve Pablo de lo que le llegó al cliente, y un mensaje pago que
+    // no aparece ahí parece que nunca salió (Pablo, 26-sep).
+    if ($texto === '') $texto = '[Plantilla de WhatsApp: ' . $p['nombre'] . ']';
+    wabot_conv_transcript($conv, 'bot', $texto);
     wabot_log('plantilla_enviada', ['tel' => $conv['tel'] ?? '', 'plantilla' => $clave, 'nombre' => $p['nombre']]);
     return true;
 }
