@@ -230,22 +230,28 @@ async function guardarGastoSemana(key, monto) {
 }
 
 async function abrirInversion() {
-    if (inversionContactos === null) {
-        const cont = document.getElementById("inversionContent");
-        if (cont) cont.innerHTML = '<p class="muted">Cargando…</p>';
-        try {
-            try { await wabotAuthHandshake(); } catch (e) { /* sigue igual: el fetch de abajo va a fallar con un 401/403 claro */ }
-            const res = await fetch("../wabot/admin.php?accion=cohortes_json", { credentials: "same-origin" });
-            if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
-            inversionContactos = await res.json();
-        } catch (e) {
-            console.error(e);
-            if (cont) cont.innerHTML = '<p class="muted">No se pudo cargar: ' + escapeHtml(e.message) + '</p>';
-            return;
-        }
+    // Se pide de nuevo CADA VEZ que se entra a la pestaña (no solo la primera):
+    // wabot no avisa en vivo cuando entra un contacto nuevo, así que si el
+    // admin queda abierto todo el día, la lista se quedaba pegada en la foto
+    // del momento en que se abrió por primera vez y un contacto de último
+    // momento no aparecía (Pablo, 26-sep). Si ya había datos, se los deja a
+    // la vista mientras se refresca, y si el refresco falla no se pisan.
+    const cont = document.getElementById("inversionContent");
+    const habiaAlgo = inversionContactos !== null;
+    if (!habiaAlgo && cont) cont.innerHTML = '<p class="muted">Cargando…</p>';
+    try {
+        try { await wabotAuthHandshake(); } catch (e) { /* sigue igual: el fetch de abajo va a fallar con un 401/403 claro */ }
+        const res = await fetch("../wabot/admin.php?accion=cohortes_json", { credentials: "same-origin" });
+        if (!res.ok) throw new Error("El panel del bot devolvió " + res.status);
+        inversionContactos = await res.json();
+    } catch (e) {
+        console.error(e);
+        if (!habiaAlgo && cont) cont.innerHTML = '<p class="muted">No se pudo cargar: ' + escapeHtml(e.message) + '</p>';
+        return;
     }
     renderInversion();
 }
+document.getElementById("inversionRecargarBtn")?.addEventListener("click", abrirInversion);
 
 function renderInversion() {
     const chips = document.getElementById("inversionSemanas");
