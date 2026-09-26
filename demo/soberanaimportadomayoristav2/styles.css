@@ -584,7 +584,8 @@ button.recorte { display: block; margin: 0; padding: 0; border: 0; font: inherit
 .mundo-b { z-index: 2; clip-path: polygon(calc(var(--w) * 1% + 5%) 0%, 220% 0%, 220% 100%, calc(var(--w) * 1% - 5%) 100%); }
 .mundo-copy { position: absolute; z-index: 3; left: 0; right: 0; bottom: clamp(28px, 6vh, 64px); padding-inline: max(var(--gutter), (100% - var(--container)) / 2 + var(--gutter)); color: #fff; }
 .mundo-copy .etiqueta { color: #fff; }
-.mundo-palabra { display: block; margin-top: 14px; font: 400 clamp(4.4rem, 15vw, 12.5rem)/.82 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: #fff; }
+.mundo-palabra { display: block; margin-top: 14px; font: 400 clamp(4.4rem, 13vw, 11rem)/.82 var(--font-display); text-transform: uppercase; letter-spacing: .01em; color: #fff; }
+.mundo-palabra span { display: block; color: #93B4FF; }
 .mundo-texto { margin-top: 14px; max-width: 46ch; color: rgba(255, 255, 255, .86); font-size: 1rem; }
 .mundo-copy .btn { margin-top: 20px; }
 .wipe-linea { position: absolute; top: -10%; bottom: -10%; left: calc(var(--w) * 1%); z-index: 4; width: 3px; background: #fff; box-shadow: 0 0 34px 7px rgba(37, 99, 235, .95); transform: skewX(-5deg); pointer-events: none; }
