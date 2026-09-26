@@ -21,6 +21,7 @@
 
 .wf-s { position: relative; padding: 64px 0; }
 .wf-in { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+.wf-in.wf-ancho { max-width: 1440px; padding: 0 20px; }
 .wf-ic { width: 20px; height: 20px; flex-shrink: 0; }
 
 /* Respaldo visual si una foto de ejemplo no llega a cargar. */
@@ -481,7 +482,7 @@
     .wf-solo-pc { display: none !important; }
 
     .wf-s { padding: 40px 0; }
-    .wf-in { padding: 0 16px; }
+    .wf-in, .wf-in.wf-ancho { padding: 0 16px; }
     .wf-h1 { font-size: 32px; }
     .wf-h1-xl { font-size: 40px; }
     .wf-h1-chico { font-size: 24px; }

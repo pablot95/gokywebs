@@ -313,7 +313,7 @@ var GW_WIRE = (function () {
         var cols = o.cols || 4, filas = o.filas || 2;
         return in_(
             '<div class="wf-cabecera">' + h2(o.titulo || 'Productos') + '<span class="wf-link">Ver todos →</span></div>' +
-            '<div class="wf-grilla" style="--cols:' + cols + '">' + rep(cols * filas, function () { return producto(o.estilo); }) + '</div>');
+            '<div class="wf-grilla" style="--cols:' + cols + '">' + rep(cols * filas, function () { return producto(o.estilo); }) + '</div>', 'wf-ancho');
     };
 
     S['productos-filtros'] = function () {
@@ -338,7 +338,7 @@ var GW_WIRE = (function () {
                     '<div class="wf-grilla" style="--cols:3">' + rep(9, function () { return producto(); }) + '</div>' +
                     '<div class="wf-paginas"><span class="on">1</span><span>2</span><span>3</span><span>' + ic('der') + '</span></div>' +
                 '</div>' +
-            '</div>');
+            '</div>', 'wf-ancho');
     };
 
     S['productos-mosaico'] = function () {
@@ -373,7 +373,7 @@ var GW_WIRE = (function () {
                     btn('Enviar pedido por WhatsApp', 'wsp wf-btn-bloque', 'wsp') +
                 '</aside>' +
             '</div>' +
-            '<div class="wf-barra-pedido wf-solo-cel"><span>Ver pedido (3)</span><b>$ 000.000</b></div>');
+            '<div class="wf-barra-pedido wf-solo-cel"><span>Ver pedido (3)</span><b>$ 000.000</b></div>', 'wf-ancho');
     };
 
     S['menu-comida'] = function () {

@@ -4,7 +4,7 @@
    ver.html?m=c                  modelo C
    ver.html?m=c&vista=celular    arranca en la vista de celular
 
-   Computadora: el lienzo de 1200px, achicado si la pantalla es
+   Computadora: el lienzo de 1440px, achicado si la pantalla es
    más chica. Celular: el mismo HTML en 366px, y el @container
    de style.css lo reacomoda solo.
    ============================================================ */
@@ -61,7 +61,7 @@
                     '<div class="ver-navegador" aria-hidden="true"><i></i><i></i><i></i><span>tumarca.com.ar</span></div>' +
                     '<div class="ver-pc-pantalla"><div class="md-alto"><div class="md-lienzo">' + wire + '</div></div></div>' +
                 '</div>';
-            GW_WIRE.encajar($escenario.querySelector('.ver-pc-pantalla'), $escenario.querySelector('.md-lienzo'), 1200);
+            GW_WIRE.encajar($escenario.querySelector('.ver-pc-pantalla'), $escenario.querySelector('.md-lienzo'), 1440);
         } else {
             $escenario.innerHTML = '<div class="ver-cel"><div class="ver-cel-pantalla">' + wire + '</div></div>';
         }

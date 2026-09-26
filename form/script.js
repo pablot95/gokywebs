@@ -136,7 +136,7 @@ function dibujarVista(card) {
     card.dataset.dibujada = '1';
     const lienzo = card.querySelector('.md-lienzo');
     lienzo.innerHTML = GW_WIRE.render(modeloPorId(card.dataset.id));
-    GW_WIRE.encajar(card.querySelector('.mf-vista'), lienzo, 1200);
+    GW_WIRE.encajar(card.querySelector('.mf-vista'), lienzo, 1440);
 }
 
 function armarModelos() {
@@ -235,7 +235,7 @@ function pintarModal() {
     const wire = GW_WIRE.render(m);
     if (mfVer.vista === 'pc') {
         mfEscenario.innerHTML = `<div class="mf-pc"><div class="md-alto"><div class="md-lienzo">${wire}</div></div></div>`;
-        GW_WIRE.encajar(mfEscenario.querySelector('.mf-pc'), mfEscenario.querySelector('.md-lienzo'), 1200);
+        GW_WIRE.encajar(mfEscenario.querySelector('.mf-pc'), mfEscenario.querySelector('.md-lienzo'), 1440);
     } else {
         mfEscenario.innerHTML = `<div class="mf-cel">${wire}</div>`;
     }

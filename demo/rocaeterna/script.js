@@ -605,83 +605,6 @@ function initFloats() {
   sync();
 }
 
-/* ---------- Componente funcional: Armá tu cama ideal ---------- */
-const TAMANOS = ['1 plaza', '2 plazas', 'Queen', 'King'];
-const PALETAS_ARMADOR = [
-  { key: 'crudo-arena', label: 'Crudo & Arena', colores: ['Crudo', 'Arena'] },
-  { key: 'miel-topo', label: 'Miel & Topo', colores: ['Miel', 'Topo'] },
-];
-
-function armarSet(tamano, paletaKey) {
-  const paleta = PALETAS_ARMADOR.find(p => p.key === paletaKey) || PALETAS_ARMADOR[0];
-  const disp = p => p.stock > 0;
-
-  const sabanaCands = PRODUCTOS.filter(p => p.categoria === 'sabanas' && p.medida === tamano && disp(p));
-  const sabana = sabanaCands.find(p => paleta.colores.includes(p.color)) || sabanaCands[0] || null;
-
-  const abrigoPool = PRODUCTOS.filter(p => (p.categoria === 'acolchados' || p.categoria === 'cubrecamas') && disp(p));
-  let abrigoCands = abrigoPool.filter(p => p.medida === tamano);
-  let aproximado = false;
-  if (!abrigoCands.length) {
-    const dist = p => Math.abs(TAMANOS.indexOf(p.medida) - TAMANOS.indexOf(tamano));
-    const min = Math.min(...abrigoPool.map(dist));
-    abrigoCands = abrigoPool.filter(p => dist(p) === min);
-    aproximado = true;
-  }
-  const abrigo = abrigoCands.find(p => paleta.colores.includes(p.color)) || abrigoCands[0] || null;
-
-  const almPool = PRODUCTOS.filter(p => p.categoria === 'almohadas' && disp(p));
-  const firmezaPref = paletaKey === 'miel-topo' ? 'firme' : 'suave';
-  const almohada = almPool.find(p => normalizar(p.linea).includes(firmezaPref)) || almPool[0] || null;
-
-  return { sabana, abrigo, almohada, aproximado };
-}
-
-function initArmador() {
-  document.querySelectorAll('[data-armador]').forEach(root => {
-    const tamanoSel = root.querySelector('[data-armador-tamano]');
-    const paletaSel = root.querySelector('[data-armador-paleta]');
-    const form = root.querySelector('form');
-    const resultado = root.querySelector('[data-armador-resultado]');
-    if (!tamanoSel || !paletaSel || !resultado) return;
-
-    tamanoSel.innerHTML = TAMANOS.map(t => `<option value="${t}">${t}</option>`).join('');
-    paletaSel.innerHTML = PALETAS_ARMADOR.map(p => `<option value="${p.key}">${p.label}</option>`).join('');
-    tamanoSel.value = '2 plazas';
-
-    const pintar = () => {
-      const { sabana, abrigo, almohada, aproximado } = armarSet(tamanoSel.value, paletaSel.value);
-      const items = [sabana, abrigo, almohada].filter(Boolean);
-      if (!items.length) {
-        resultado.innerHTML = `<p class="armador-empty">No encontramos un set disponible para esa combinación. Probá con otro tamaño.</p>`;
-        resultado.hidden = false;
-        return;
-      }
-      const total = items.reduce((s, p) => s + precioFinal(p), 0);
-      resultado.innerHTML = `
-        <div class="armador-set">
-          ${items.map(p => `
-            <div class="armador-item">
-              <div class="media ar-11"><img src="${imgCategoria(p.categoria)}" alt="${esc(p.nombre)}" width="140" height="140" loading="lazy"></div>
-              <div class="armador-item-info"><strong>${esc(p.nombre)}</strong><span>${formatearPrecio(precioFinal(p))}</span></div>
-            </div>`).join('')}
-        </div>
-        ${aproximado ? '<p class="armador-empty">No tenemos abrigo de cama en ese tamaño exacto: te sugerimos el más cercano.</p>' : ''}
-        <div class="armador-footer">
-          <span class="armador-total">Set completo: <b>${formatearPrecio(total)}</b></span>
-          <button type="button" class="btn btn-cta" data-armador-agregar>Agregar el set al carrito</button>
-        </div>`;
-      resultado.hidden = false;
-      resultado.querySelector('[data-armador-agregar]').addEventListener('click', () => {
-        items.forEach(p => Cart.add(p, p.categoria === 'almohadas' ? 2 : 1));
-        showToast('¡Listo! Agregamos tu set al carrito');
-      });
-    };
-    form ? form.addEventListener('submit', e => { e.preventDefault(); pintar(); }) : root.querySelector('[data-armador-submit]')?.addEventListener('click', pintar);
-    pintar();
-  });
-}
-
 /* ---------- Momento propio: Capítulos (Dormitorio / Baño / Living) ---------- */
 function datoAmbiente(amb) {
   const items = PRODUCTOS.filter(p => amb.categorias.includes(p.categoria) && p.stock > 0);
@@ -792,7 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initFiltros();
   initChips();
   initRailesDestacados();
-  initArmador();
   initCapitulos();
   initAmbientes();
   initQuickview();

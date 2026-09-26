@@ -108,7 +108,7 @@
         var vista = art.querySelector('.md-vista');
         var lienzo = art.querySelector('.md-lienzo');
         lienzo.innerHTML = GW_WIRE.render(art._modelo);
-        GW_WIRE.encajar(vista, lienzo, 1200);
+        GW_WIRE.encajar(vista, lienzo, 1440);
         art._modelo = null;
     }
 
