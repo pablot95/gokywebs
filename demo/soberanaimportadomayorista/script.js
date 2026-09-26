@@ -11,96 +11,108 @@ const WSP = '5493426419000';
 const wspHref = msg => `https://wa.me/${WSP}?text=${encodeURIComponent(msg)}`;
 
 const IMG = {
-  'remeras-lisas-1x1.webp': [1254, 1254],
-  'local-chombas-gorras-1x1.webp': [1254, 1254],
-  'taller-bordado-dtf-1x1.webp': [1254, 1254],
-  'ropa-trabajo-1x1.webp': [1254, 1254],
-  'portada-local-16x9.webp': [1672, 941],
-  'bordados-9x16.webp': [941, 1672],
+  'zapatilla-running-blanca-1x1.webp': [1254, 1254],
+  'zapatilla-azul-marino-1x1.webp': [1254, 1254],
+  'zapatilla-verde-militar-1x1.webp': [1254, 1254],
+  'pared-zapatillas-1x1.webp': [1254, 1254],
+  'remera-deportiva-azul-1x1.webp': [1254, 1254],
+  'campera-rompeviento-1x1.webp': [1254, 1254],
+  'short-deportivo-negro-1x1.webp': [1254, 1254],
+  'ropa-deportiva-mesa-1x1.webp': [1254, 1254],
+  'flatlay-ropa-deportiva-1x1.webp': [1254, 1254],
+  'local-conjuntos-9x16.webp': [941, 1672],
 };
 
+/* Los bicolor llevan dos tonos: el punto se pinta partido en diagonal */
 const COLORES = {
-  'Blanco': '#FFFFFF', 'Negro': '#17191C', 'Gris melange': '#B9BEC6', 'Azul marino': '#1F2B4D',
-  'Verde militar': '#4D5B36', 'Bordó': '#7A1F2C', 'Crudo': '#EFE8D8', 'Gris': '#7D848D',
-  'Beige': '#CDB78F', 'Verde inglés': '#1E4A33', 'Azul jean': '#34506F',
+  'Blanco': '#FFFFFF', 'Negro': '#17191C', 'Gris': '#7D848D', 'Gris claro': '#CDD1D6', 'Gris melange': '#A3A8AF',
+  'Azul': '#2B4A8B', 'Azul marino': '#1F2B4D', 'Verde militar': '#4D5B36',
+  'Negro y gris': ['#17191C', '#6B727B'], 'Blanco y negro': ['#FFFFFF', '#17191C'],
+  'Blanco y verde': ['#FFFFFF', '#3DBE3A'], 'Blanco y gris': ['#FFFFFF', '#9AA0A8'],
 };
 
-const LINEAS = { lisa: 'Ropa lisa', trabajo: 'Ropa de trabajo' };
+const LINEAS = { ropa: 'Ropa deportiva', zapatillas: 'Zapatillas' };
 const CATEGORIAS = [
-  { id: 'remeras', label: 'Remeras', linea: 'lisa' },
-  { id: 'chombas', label: 'Chombas', linea: 'lisa' },
-  { id: 'buzos', label: 'Buzos', linea: 'lisa' },
-  { id: 'camperas', label: 'Camperas', linea: 'trabajo' },
-  { id: 'pantalones', label: 'Pantalones', linea: 'trabajo' },
-  { id: 'camisas', label: 'Camisas', linea: 'trabajo' },
-  { id: 'delantales', label: 'Delantales', linea: 'trabajo' },
-  { id: 'gorras', label: 'Gorras', linea: 'lisa' },
+  { id: 'remeras', label: 'Remeras', linea: 'ropa' },
+  { id: 'camperas', label: 'Camperas y buzos', linea: 'ropa' },
+  { id: 'shorts', label: 'Shorts', linea: 'ropa' },
+  { id: 'pantalones', label: 'Joggers y calzas', linea: 'ropa' },
+  { id: 'running', label: 'Running', linea: 'zapatillas' },
+  { id: 'urbanas', label: 'Urbanas', linea: 'zapatillas' },
 ];
 
 const TALLES = {
-  arriba: ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  pantalon: ['38', '40', '42', '44', '46', '48', '50', '52', '54'],
-  unico: ['Único'],
+  ropa: ['S', 'M', 'L', 'XL', 'XXL'],
+  zapatillas: ['35', '36', '37', '38', '39', '40', '41', '42', '43', '44', '45'],
 };
-const TODOS_TALLES = [...TALLES.arriba, ...TALLES.pantalon, ...TALLES.unico];
+const TODOS_TALLES = [...TALLES.ropa, ...TALLES.zapatillas];
+/* Tablas orientativas: contorno de pecho en ropa y largo del pie en zapatillas (talles argentinos), en cm */
 const TABLA_TALLES = {
-  arriba: [['S', 88, 94], ['M', 95, 101], ['L', 102, 108], ['XL', 109, 116], ['XXL', 117, 124], ['3XL', 125, 133]],
-  pantalon: [['38', 74, 77], ['40', 78, 81], ['42', 82, 85], ['44', 86, 89], ['46', 90, 93], ['48', 94, 97], ['50', 98, 101], ['52', 102, 105], ['54', 106, 109]],
+  ropa: [['S', 88, 94], ['M', 95, 101], ['L', 102, 108], ['XL', 109, 116], ['XXL', 117, 124]],
+  zapatillas: [['35', 22, 22.6], ['36', 22.7, 23.3], ['37', 23.4, 24], ['38', 24.1, 24.6], ['39', 24.7, 25.3], ['40', 25.4, 26], ['41', 26.1, 26.6], ['42', 26.7, 27.3], ['43', 27.4, 28], ['44', 28.1, 28.6], ['45', 28.7, 29.3]],
 };
 
-const T_REMERA = 'Jersey 24/1 · 100% algodón peinado · 180 g/m²';
-const T_CHOMBA = 'Piqué · 50% algodón, 50% poliéster';
-const T_BUZO = 'Frisa invisible · algodón y poliéster';
-const T_CARGO = 'Gabardina 100% algodón · 6 bolsillos';
-const T_CAMISA = 'Sarga 100% algodón · doble bolsillo con tapa';
-const T_GORRA = 'Gabardina · 6 paneles · cierre regulable';
-const D_REMERA = 'La base de cualquier uniforme: cuello reforzado y costura doble en ruedo y mangas. Lista para bordar o estampar.';
-const D_CHOMBA = 'Piqué que mantiene la forma lavado tras lavado, con cuello y puños tejidos. Ideal para atención al público.';
-const D_BUZO = 'Frisa invisible con bolsillo canguro y capucha forrada. Abriga sin hacer volumen.';
-const D_CARGO = 'Seis bolsillos, costuras reforzadas y cintura con presillas anchas. Talles del 38 al 54.';
-const D_GORRA = 'Visera curva y cierre regulable. El frente liso queda justo para un bordado.';
+/* Stock por talle: talles y cantidades en el mismo orden */
+const stock = (talles, cant) => Object.fromEntries(talles.map((t, i) => [t, cant[i] ?? 0]));
+const ROPA = TALLES.ropa;
+const PIES = TALLES.zapatillas;
+
+const M_REMERA = 'Poliéster dry fit · secado rápido';
+const M_CAPUCHA = 'Poliéster con elastano · cierre completo';
+const M_SHORT_RUN = 'Poliéster liviano · vivos reflectivos';
+const M_JOGGER = 'Frisa liviana · puño elástico';
+const M_CALZA = 'Suplex · cintura alta';
+const M_KNIT = 'Capellada de malla tejida · suela de EVA';
+const M_URBANA = 'Cuero sintético · suela de goma';
+const D_REMERA = 'Corte raglan con paneles de red a los costados. Liviana para entrenar y cómoda para el día a día.';
+const D_CAPUCHA = 'Campera de entrenamiento con capucha y cierre completo. La tela con elastano acompaña el movimiento.';
+const D_SHORT_RUN = 'Short liviano con vivos reflectivos y paneles microperforados para correr.';
+const D_JOGGER = 'Jogger de frisa liviana con cintura con cordón, puño elástico y bolsillos laterales.';
+const D_CALZA = 'Calza larga de suplex con cintura alta y costuras planas que no marcan.';
+const D_KNIT = 'Capellada tejida que respira y suela de EVA liviana, para correr o caminar todo el día.';
+const D_URBANA = 'Urbana de cuero sintético con suela de goma. Combina con jogger, short o jean.';
 
 const PRODUCTOS = [
-  { id: 1, modelo: 'remera', nombre: 'Remera lisa · Blanca', categoria: 'remeras', color: 'Blanco', precio: 9900, descuento: 0, stock: { S: 40, M: 60, L: 55, XL: 38, XXL: 20, '3XL': 12 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'remeras-lisas-1x1.webp', foco: [0.19, 0.28, 2.3], descripcion: D_REMERA },
-  { id: 2, modelo: 'remera', nombre: 'Remera lisa · Negra', categoria: 'remeras', color: 'Negro', precio: 9900, descuento: 0, stock: { S: 34, M: 58, L: 61, XL: 40, XXL: 22, '3XL': 10 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'remeras-lisas-1x1.webp', foco: [0.51, 0.31, 2.3], descripcion: D_REMERA },
-  { id: 3, modelo: 'remera', nombre: 'Remera lisa · Gris melange', categoria: 'remeras', color: 'Gris melange', precio: 9900, descuento: 0, stock: { S: 20, M: 32, L: 30, XL: 18, XXL: 8, '3XL': 0 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'remeras-lisas-1x1.webp', foco: [0.84, 0.32, 2.3], descripcion: D_REMERA },
-  { id: 4, modelo: 'remera', nombre: 'Remera lisa · Azul marino', categoria: 'remeras', color: 'Azul marino', precio: 9900, descuento: 0, stock: { S: 26, M: 40, L: 44, XL: 30, XXL: 14, '3XL': 6 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'remeras-lisas-1x1.webp', foco: [0.33, 0.67, 2.3], descripcion: D_REMERA },
-  { id: 5, modelo: 'remera', nombre: 'Remera lisa · Verde militar', categoria: 'remeras', color: 'Verde militar', precio: 9900, descuento: 0, stock: { S: 12, M: 24, L: 26, XL: 16, XXL: 6, '3XL': 0 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: true, img: 'remeras-lisas-1x1.webp', foco: [0.61, 0.71, 2.3], descripcion: D_REMERA },
-  { id: 6, modelo: 'remera', nombre: 'Remera lisa · Bordó', categoria: 'remeras', color: 'Bordó', precio: 9900, descuento: 15, stock: { S: 8, M: 14, L: 12, XL: 6, XXL: 2, '3XL': 0 }, tela: T_REMERA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'remeras-lisas-1x1.webp', foco: [0.88, 0.75, 2.3], descripcion: D_REMERA },
-
-  { id: 7, modelo: 'chomba', nombre: 'Chomba piqué · Azul marino', categoria: 'chombas', color: 'Azul marino', precio: 17900, descuento: 0, stock: { S: 10, M: 24, L: 28, XL: 20, XXL: 10, '3XL': 4 }, tela: T_CHOMBA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.11, 0.32, 3.0], descripcion: D_CHOMBA },
-  { id: 8, modelo: 'chomba', nombre: 'Chomba piqué · Verde militar', categoria: 'chombas', color: 'Verde militar', precio: 17900, descuento: 0, stock: { S: 6, M: 14, L: 16, XL: 10, XXL: 4, '3XL': 0 }, tela: T_CHOMBA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.245, 0.33, 3.2], descripcion: D_CHOMBA },
-  { id: 9, modelo: 'chomba', nombre: 'Chomba piqué · Gris', categoria: 'chombas', color: 'Gris', precio: 17900, descuento: 10, stock: { S: 0, M: 9, L: 12, XL: 7, XXL: 3, '3XL': 0 }, tela: T_CHOMBA, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.345, 0.32, 3.2], descripcion: D_CHOMBA },
-
-  { id: 10, modelo: 'buzo', nombre: 'Buzo canguro con capucha · Crudo', categoria: 'buzos', color: 'Crudo', precio: 26900, descuento: 0, stock: { S: 8, M: 16, L: 18, XL: 12, XXL: 6, '3XL': 0 }, tela: T_BUZO, tecnicas: ['Bordado', 'DTF'], nuevo: true, img: 'taller-bordado-dtf-1x1.webp', foco: [0.45, 0.33, 1.8], descripcion: D_BUZO },
-  { id: 11, modelo: 'buzo', nombre: 'Buzo canguro con capucha · Gris melange', categoria: 'buzos', color: 'Gris melange', precio: 26900, descuento: 10, stock: { S: 10, M: 20, L: 22, XL: 14, XXL: 8, '3XL': 3 }, tela: T_BUZO, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'taller-bordado-dtf-1x1.webp', foco: [0.43, 0.68, 1.8], descripcion: D_BUZO },
-  { id: 12, modelo: 'buzo', nombre: 'Buzo canguro con capucha · Verde militar', categoria: 'buzos', color: 'Verde militar', precio: 26900, descuento: 0, stock: { S: 0, M: 0, L: 2, XL: 1, XXL: 0, '3XL': 0 }, tela: T_BUZO, tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'taller-bordado-dtf-1x1.webp', foco: [0.86, 0.24, 2.8], descripcion: D_BUZO },
-
-  { id: 13, modelo: 'softshell', nombre: 'Campera softshell reflectiva · Azul marino', categoria: 'camperas', color: 'Azul marino', precio: 58900, descuento: 0, stock: { S: 0, M: 6, L: 10, XL: 9, XXL: 6, '3XL': 4 }, tela: 'Softshell tres capas · cinta reflectiva en torso y mangas', tecnicas: ['Bordado'], nuevo: false, img: 'portada-local-16x9.webp', foco: [0.88, 0.40, 2.4], descripcion: 'Corta el viento y la llovizna, con cinta reflectiva para trabajar en la calle o de noche.' },
-  { id: 14, modelo: 'campera-trabajo', nombre: 'Campera de trabajo · Negra', categoria: 'camperas', color: 'Negro', precio: 49900, descuento: 20, stock: { S: 4, M: 8, L: 10, XL: 8, XXL: 4, '3XL': 2 }, tela: 'Gabardina · cierre frontal y bolsillos con cierre', tecnicas: ['Bordado'], nuevo: false, img: 'portada-local-16x9.webp', foco: [0.74, 0.38, 1.8], descripcion: 'Gabardina resistente con cierre frontal y bolsillos con cierre, para el uso diario en el taller.' },
-  { id: 15, modelo: 'campera-gabardina', nombre: 'Campera de gabardina · Azul marino', categoria: 'camperas', color: 'Azul marino', precio: 45900, descuento: 0, stock: { S: 2, M: 10, L: 14, XL: 12, XXL: 6, '3XL': 3 }, tela: 'Gabardina 100% algodón · puños con abrojo', tecnicas: ['Bordado'], nuevo: false, img: 'ropa-trabajo-1x1.webp', foco: [0.19, 0.30, 2.0], descripcion: 'Campera de gabardina de algodón con puños regulables y bolsillo interior.' },
-
-  { id: 16, modelo: 'cargo', nombre: 'Pantalón cargo de trabajo · Azul marino', categoria: 'pantalones', color: 'Azul marino', precio: 32900, descuento: 0, stock: { 38: 4, 40: 10, 42: 14, 44: 16, 46: 12, 48: 8, 50: 6, 52: 3, 54: 2 }, tela: T_CARGO, tecnicas: [], nuevo: false, img: 'ropa-trabajo-1x1.webp', foco: [0.17, 0.76, 2.0], descripcion: D_CARGO },
-  { id: 17, modelo: 'cargo', nombre: 'Pantalón cargo de trabajo · Verde militar', categoria: 'pantalones', color: 'Verde militar', precio: 32900, descuento: 0, stock: { 38: 2, 40: 8, 42: 12, 44: 10, 46: 8, 48: 5, 50: 2, 52: 0, 54: 0 }, tela: T_CARGO, tecnicas: [], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.74, 0.56, 2.2], descripcion: D_CARGO },
-  { id: 18, modelo: 'cargo', nombre: 'Pantalón cargo de trabajo · Beige', categoria: 'pantalones', color: 'Beige', precio: 32900, descuento: 0, stock: { 38: 0, 40: 6, 42: 9, 44: 8, 46: 6, 48: 4, 50: 2, 52: 1, 54: 0 }, tela: T_CARGO, tecnicas: [], nuevo: true, img: 'local-chombas-gorras-1x1.webp', foco: [0.89, 0.81, 3.0], descripcion: D_CARGO },
-
-  { id: 19, modelo: 'camisa-mc', nombre: 'Camisa de trabajo manga corta · Gris', categoria: 'camisas', color: 'Gris', precio: 24900, descuento: 0, stock: { S: 4, M: 12, L: 16, XL: 12, XXL: 6, '3XL': 2 }, tela: T_CAMISA, tecnicas: ['Bordado'], nuevo: false, img: 'ropa-trabajo-1x1.webp', foco: [0.48, 0.30, 2.2], descripcion: 'Sarga de algodón con doble bolsillo con tapa y botones reforzados.' },
-  { id: 20, modelo: 'camisa-ml', nombre: 'Camisa de trabajo manga larga · Gris', categoria: 'camisas', color: 'Gris', precio: 27900, descuento: 0, stock: { S: 0, M: 8, L: 12, XL: 10, XXL: 5, '3XL': 3 }, tela: T_CAMISA, tecnicas: ['Bordado'], nuevo: false, img: 'ropa-trabajo-1x1.webp', foco: [0.65, 0.70, 2.3], descripcion: 'La misma sarga en manga larga, con puños abotonados para regular.' },
-
-  { id: 21, modelo: 'delantal-gabardina', nombre: 'Delantal pechera de gabardina · Verde inglés', categoria: 'delantales', color: 'Verde inglés', precio: 14900, descuento: 0, stock: { 'Único': 30 }, tela: 'Gabardina · bolsillo frontal y tiras regulables', tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'bordados-9x16.webp', foco: [0.14, 0.45, 2.2], descripcion: 'Pechera regulable y bolsillo frontal amplio. En la foto, con un bordado de ejemplo en el bolsillo.' },
-  { id: 22, modelo: 'delantal-jean', nombre: 'Delantal pechera de jean · Azul', categoria: 'delantales', color: 'Azul jean', precio: 19900, descuento: 0, stock: { 'Único': 18 }, tela: 'Denim · tiras símil cuero y bolsillos múltiples', tecnicas: ['Bordado', 'DTF'], nuevo: false, img: 'ropa-trabajo-1x1.webp', foco: [0.69, 0.40, 2.4], descripcion: 'Denim resistente con tiras símil cuero y bolsillos para herramientas.' },
-
-  { id: 23, modelo: 'gorra', nombre: 'Gorra 6 paneles · Negra', categoria: 'gorras', color: 'Negro', precio: 7900, descuento: 0, stock: { 'Único': 40 }, tela: T_GORRA, tecnicas: ['Bordado'], nuevo: false, img: 'taller-bordado-dtf-1x1.webp', foco: [0.08, 0.78, 2.6], descripcion: D_GORRA },
-  { id: 24, modelo: 'gorra', nombre: 'Gorra 6 paneles · Azul marino', categoria: 'gorras', color: 'Azul marino', precio: 7900, descuento: 0, stock: { 'Único': 25 }, tela: T_GORRA, tecnicas: ['Bordado'], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.33, 0.52, 3.0], descripcion: D_GORRA },
-  { id: 25, modelo: 'gorra', nombre: 'Gorra 6 paneles · Verde militar', categoria: 'gorras', color: 'Verde militar', precio: 7900, descuento: 0, stock: { 'Único': 0 }, tela: T_GORRA, tecnicas: ['Bordado'], nuevo: false, img: 'local-chombas-gorras-1x1.webp', foco: [0.50, 0.50, 3.0], descripcion: D_GORRA },
+  { id: 1, modelo: 'running-knit', nombre: 'Zapatilla running knit · Blanca y negra', categoria: 'running', color: 'Blanco y negro', precio: 48900, descuento: 0, stock: stock(PIES, [6, 10, 14, 18, 20, 22, 20, 16, 10, 6, 3]), material: M_KNIT, nuevo: false, img: 'zapatilla-running-blanca-1x1.webp', foco: [0.56, 0.60, 1.05], descripcion: D_KNIT },
+  { id: 2, modelo: 'remera-raglan', nombre: 'Remera deportiva raglan · Azul', categoria: 'remeras', color: 'Azul', precio: 12900, descuento: 0, stock: stock(ROPA, [30, 48, 52, 36, 18]), material: M_REMERA, nuevo: false, img: 'remera-deportiva-azul-1x1.webp', foco: [0.50, 0.50, 1], descripcion: D_REMERA },
+  { id: 3, modelo: 'rompeviento', nombre: 'Campera rompeviento con capucha · Negra y gris', categoria: 'camperas', color: 'Negro y gris', precio: 42900, descuento: 0, stock: stock(ROPA, [8, 16, 18, 12, 6]), material: 'Microfibra rompeviento · capucha fija', nuevo: false, img: 'campera-rompeviento-1x1.webp', foco: [0.50, 0.47, 1], descripcion: 'Corta el viento y la llovizna. Bicolor, con capucha fija y bolsillos laterales con cierre.' },
+  { id: 4, modelo: 'trainer', nombre: 'Zapatilla trainer · Azul marino', categoria: 'urbanas', color: 'Azul marino', precio: 54900, descuento: 0, stock: stock(PIES.slice(3), [8, 12, 16, 16, 12, 8, 5, 2]), material: 'Malla y gamuza sintética · suela de goma', nuevo: false, img: 'zapatilla-azul-marino-1x1.webp', foco: [0.58, 0.56, 1.08], descripcion: 'Malla con apliques de gamuza sintética y suela alta con amortiguación.' },
+  { id: 5, modelo: 'short-training', nombre: 'Short de entrenamiento · Negro', categoria: 'shorts', color: 'Negro', precio: 15900, descuento: 0, stock: stock(ROPA, [24, 40, 44, 30, 14]), material: 'Microfibra liviana · laterales de red', nuevo: false, img: 'short-deportivo-negro-1x1.webp', foco: [0.50, 0.46, 1], descripcion: 'Cintura elástica con cordón, bolsillos laterales y aberturas de red para ventilar.' },
+  { id: 6, modelo: 'air', nombre: 'Zapatilla con cámara de aire · Verde militar', categoria: 'urbanas', color: 'Verde militar', precio: 59900, descuento: 0, stock: stock(PIES.slice(1, 10), [4, 6, 10, 12, 14, 12, 8, 4, 2]), material: 'Malla transpirable · cámara de aire en el talón', nuevo: true, img: 'zapatilla-verde-militar-1x1.webp', foco: [0.52, 0.56, 1.08], descripcion: 'Malla tejida con cámara de aire en el talón. Liviana y cómoda para todos los días.' },
+  { id: 7, modelo: 'campera-capucha', nombre: 'Campera deportiva con capucha · Negra', categoria: 'camperas', color: 'Negro', precio: 38900, descuento: 0, stock: stock(ROPA, [10, 18, 20, 14, 8]), material: M_CAPUCHA, nuevo: false, img: 'local-conjuntos-9x16.webp', foco: [0.40, 0.19, 1.9], descripcion: D_CAPUCHA },
+  { id: 8, modelo: 'urbana', nombre: 'Zapatilla urbana · Negra', categoria: 'urbanas', color: 'Negro', precio: 44900, descuento: 0, stock: stock(PIES, [5, 8, 12, 16, 18, 18, 16, 12, 8, 5, 2]), material: M_URBANA, nuevo: false, img: 'local-conjuntos-9x16.webp', foco: [0.60, 0.875, 2.4], descripcion: D_URBANA },
+  { id: 9, modelo: 'remera-raglan', nombre: 'Remera deportiva raglan · Blanca', categoria: 'remeras', color: 'Blanco', precio: 12900, descuento: 0, stock: stock(ROPA, [36, 56, 60, 40, 20]), material: M_REMERA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.36, 0.46, 2.1], descripcion: D_REMERA },
+  { id: 10, modelo: 'running-contraste', nombre: 'Zapatilla running · Blanca y verde', categoria: 'running', color: 'Blanco y verde', precio: 52900, descuento: 0, stock: stock(PIES.slice(3), [6, 10, 12, 12, 10, 6, 4, 2]), material: 'Malla transpirable · suela con amortiguación', nuevo: false, img: 'pared-zapatillas-1x1.webp', foco: [0.23, 0.47, 3], descripcion: 'Malla transpirable con aplique en contraste y suela con amortiguación para correr.' },
+  { id: 11, modelo: 'rompeviento-liviano', nombre: 'Rompeviento liviano estampado · Gris claro', categoria: 'camperas', color: 'Gris claro', precio: 36900, descuento: 15, stock: stock(ROPA, [6, 12, 14, 8, 4]), material: 'Nylon liviano · capucha con cordón', nuevo: false, img: 'flatlay-ropa-deportiva-1x1.webp', foco: [0.74, 0.32, 1.8], descripcion: 'Liviano y estampado, con capucha regulable y puños elásticos. Se guarda en poco espacio.' },
+  { id: 12, modelo: 'short-running', nombre: 'Short running con vivos · Negro', categoria: 'shorts', color: 'Negro', precio: 14900, descuento: 0, stock: stock(ROPA, [20, 34, 36, 24, 10]), material: M_SHORT_RUN, nuevo: false, img: 'flatlay-ropa-deportiva-1x1.webp', foco: [0.20, 0.71, 2], descripcion: D_SHORT_RUN },
+  { id: 13, modelo: 'calza', nombre: 'Calza deportiva larga · Azul marino', categoria: 'pantalones', color: 'Azul marino', precio: 17900, descuento: 0, stock: stock(ROPA, [18, 26, 22, 12, 6]), material: M_CALZA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.73, 0.90, 2.1], descripcion: D_CALZA },
+  { id: 14, modelo: 'running-camara', nombre: 'Zapatilla running con cámara · Blanca y gris', categoria: 'running', color: 'Blanco y gris', precio: 62900, descuento: 0, stock: stock(PIES.slice(1), [3, 5, 8, 10, 12, 12, 10, 8, 4, 2]), material: 'Malla y sintético · cámara de aire visible', nuevo: true, img: 'pared-zapatillas-1x1.webp', foco: [0.45, 0.62, 3.2], descripcion: 'Suela con cámara de aire visible y capellada de malla con apliques en negro.' },
+  { id: 15, modelo: 'buzo-cierre', nombre: 'Buzo con capucha y cierre · Gris melange', categoria: 'camperas', color: 'Gris melange', precio: 34900, descuento: 0, stock: stock(ROPA, [0, 1, 2, 2, 0]), material: 'Frisa de algodón y poliéster · capucha', nuevo: false, img: 'local-conjuntos-9x16.webp', foco: [0.82, 0.19, 3.2], descripcion: 'Buzo de frisa con capucha, cierre completo y bolsillos. Abriga sin hacer volumen.' },
+  { id: 16, modelo: 'remera-raglan', nombre: 'Remera deportiva raglan · Negra', categoria: 'remeras', color: 'Negro', precio: 12900, descuento: 0, stock: stock(ROPA, [34, 58, 61, 40, 22]), material: M_REMERA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.14, 0.42, 2.5], descripcion: D_REMERA },
+  { id: 17, modelo: 'remera-raglan', nombre: 'Remera deportiva raglan · Gris melange', categoria: 'remeras', color: 'Gris melange', precio: 12900, descuento: 0, stock: stock(ROPA, [20, 32, 30, 18, 8]), material: M_REMERA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.58, 0.52, 2.1], descripcion: D_REMERA },
+  { id: 18, modelo: 'remera-raglan', nombre: 'Remera deportiva raglan · Azul marino', categoria: 'remeras', color: 'Azul marino', precio: 12900, descuento: 0, stock: stock(ROPA, [26, 40, 44, 30, 14]), material: M_REMERA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.81, 0.57, 2], descripcion: D_REMERA },
+  { id: 19, modelo: 'campera-capucha', nombre: 'Campera deportiva con capucha · Verde militar', categoria: 'camperas', color: 'Verde militar', precio: 38900, descuento: 0, stock: stock(ROPA, [6, 12, 14, 10, 4]), material: M_CAPUCHA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.52, 0.27, 2.6], descripcion: D_CAPUCHA },
+  { id: 20, modelo: 'campera-capucha', nombre: 'Campera deportiva con capucha · Gris', categoria: 'camperas', color: 'Gris', precio: 38900, descuento: 0, stock: stock(ROPA, [0, 0, 0, 0, 0]), material: M_CAPUCHA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.90, 0.35, 3], descripcion: D_CAPUCHA },
+  { id: 21, modelo: 'campera-franja', nombre: 'Campera de entrenamiento con franja · Azul marino', categoria: 'camperas', color: 'Azul marino', precio: 39900, descuento: 0, stock: stock(ROPA, [8, 14, 16, 10, 5]), material: 'Poliéster tricot · cuello alto', nuevo: true, img: 'local-conjuntos-9x16.webp', foco: [0.14, 0.18, 2], descripcion: 'Campera de entrenamiento de cuello alto con franja blanca en el pecho y bolsillos con cierre.' },
+  { id: 22, modelo: 'short-running', nombre: 'Short running con vivos · Gris', categoria: 'shorts', color: 'Gris', precio: 14900, descuento: 10, stock: stock(ROPA, [12, 20, 22, 14, 6]), material: M_SHORT_RUN, nuevo: false, img: 'flatlay-ropa-deportiva-1x1.webp', foco: [0.63, 0.78, 2], descripcion: D_SHORT_RUN },
+  { id: 23, modelo: 'jogger', nombre: 'Jogger de frisa · Gris melange', categoria: 'pantalones', color: 'Gris melange', precio: 24900, descuento: 0, stock: stock(ROPA, [14, 22, 24, 16, 8]), material: M_JOGGER, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.30, 0.84, 2], descripcion: D_JOGGER },
+  { id: 24, modelo: 'jogger', nombre: 'Jogger de frisa · Negro', categoria: 'pantalones', color: 'Negro', precio: 24900, descuento: 0, stock: stock(ROPA, [16, 26, 28, 18, 10]), material: M_JOGGER, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.08, 0.66, 3.2], descripcion: D_JOGGER },
+  { id: 25, modelo: 'calza', nombre: 'Calza deportiva larga · Negra', categoria: 'pantalones', color: 'Negro', precio: 17900, descuento: 0, stock: stock(ROPA, [24, 34, 30, 16, 8]), material: M_CALZA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.56, 0.88, 2], descripcion: D_CALZA },
+  { id: 26, modelo: 'calza', nombre: 'Calza deportiva larga · Verde militar', categoria: 'pantalones', color: 'Verde militar', precio: 17900, descuento: 20, stock: stock(ROPA, [8, 12, 10, 6, 2]), material: M_CALZA, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.92, 0.93, 2.8], descripcion: D_CALZA },
+  { id: 27, modelo: 'running-knit', nombre: 'Zapatilla running knit · Gris claro', categoria: 'running', color: 'Gris claro', precio: 48900, descuento: 0, stock: stock(PIES.slice(0, 7), [6, 10, 14, 16, 14, 10, 6]), material: M_KNIT, nuevo: false, img: 'ropa-deportiva-mesa-1x1.webp', foco: [0.19, 0.22, 3.4], descripcion: D_KNIT },
+  { id: 28, modelo: 'urbana', nombre: 'Zapatilla urbana · Blanca', categoria: 'urbanas', color: 'Blanco', precio: 44900, descuento: 10, stock: stock(PIES.slice(0, 10), [4, 8, 12, 14, 16, 16, 12, 10, 6, 3]), material: M_URBANA, nuevo: false, img: 'local-conjuntos-9x16.webp', foco: [0.60, 0.75, 3], descripcion: D_URBANA },
 ];
 
 const getProducto = id => PRODUCTOS.find(p => p.id === Number(id));
 const precioFinal = p => p.descuento > 0 ? Math.round(p.precio * (1 - p.descuento / 100)) : p.precio;
 const stockDe = (p, t) => (p && t && p.stock[t]) || 0;
 const stockTotal = p => Object.values(p.stock).reduce((s, n) => s + n, 0);
-const catDe = id => CATEGORIAS.find(c => c.id === id) || { label: id, linea: 'lisa' };
-const colorHex = c => COLORES[c] || '#999999';
+const catDe = id => CATEGORIAS.find(c => c.id === id) || { label: id, linea: 'ropa' };
+const esZapatilla = p => catDe(p.categoria).linea === 'zapatillas';
+const colorCss = c => {
+  const v = COLORES[c];
+  return Array.isArray(v) ? `linear-gradient(135deg, ${v[0]} 50%, ${v[1]} 50%)` : v || '#999999';
+};
 const tallesDe = p => TODOS_TALLES.filter(t => t in p.stock);
 const contarTalle = t => PRODUCTOS.filter(p => stockDe(p, t) > 0).length;
 
@@ -125,7 +137,7 @@ function recorte(p, ar = 1) {
 
 /* ---------- Carrito (línea = producto + talle) ---------- */
 const Cart = {
-  KEY: 'soberana_cart',
+  KEY: 'soberana_cart_v2',
   get() { try { return JSON.parse(localStorage.getItem(this.KEY)) || []; } catch { return []; } },
   save(items) { localStorage.setItem(this.KEY, JSON.stringify(items)); document.dispatchEvent(new CustomEvent('cart:updated')); },
   add(producto, qty = 1, talle) {
@@ -150,7 +162,7 @@ const Cart = {
 
 /* ---------- Talle elegido (compartido por las dos páginas) ---------- */
 const Talle = {
-  KEY: 'soberana_talle',
+  KEY: 'soberana_talle_v2',
   actual: null,
   init() {
     try { const t = window.sessionStorage.getItem(this.KEY); if (TODOS_TALLES.includes(t)) this.actual = t; } catch { this.actual = null; }
@@ -307,7 +319,7 @@ function filtrar() {
     if (Filtro.colores.size && !Filtro.colores.has(p.color)) return false;
     if (Filtro.precioMax && precioFinal(p) > Filtro.precioMax) return false;
     if (palabras.length) {
-      const hay = normalizar(`${p.nombre} ${p.color} ${catDe(p.categoria).label} ${LINEAS[catDe(p.categoria).linea]} ${p.tela}`);
+      const hay = normalizar(`${p.nombre} ${p.color} ${catDe(p.categoria).label} ${LINEAS[catDe(p.categoria).linea]} ${p.material}`);
       if (!palabras.every(w => hay.includes(w))) return false;
     }
     return true;
@@ -350,7 +362,7 @@ function cardHTML(p) {
       <span class="prod-ver">Vista rápida</span>
     </button>
     <div class="prod-body">
-      <span class="prod-cat"><i style="--c:${colorHex(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}</span>
+      <span class="prod-cat"><i style="--c:${colorCss(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}</span>
       <h3 class="prod-nombre">${esc(p.nombre)}</h3>
       ${precioHTML(p)}
       ${tallesHTML(p)}
@@ -368,7 +380,7 @@ function filaHTML(p) {
   const conTalle = !!t && stockDe(p, t) > 0;
   return `<article class="fila" data-animate data-id="${p.id}">
     <div class="fila-texto">
-      <span class="prod-cat"><i style="--c:${colorHex(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}</span>
+      <span class="prod-cat"><i style="--c:${colorCss(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}</span>
       <h4 class="fila-titulo"><button type="button" class="fila-nombre" data-open-quickview="${p.id}">${esc(p.nombre)}</button></h4>
       ${precioHTML(p)}
       ${tallesHTML(p)}
@@ -435,7 +447,7 @@ function initCatalogoGrilla() {
   lineasBox.innerHTML = Object.entries(LINEAS).map(([id, label]) => `<label class="filtro-opcion"><input type="checkbox" data-f="linea" value="${id}"> ${label}</label>`).join('');
   catsBox.innerHTML = CATEGORIAS.map(c => `<label class="filtro-opcion"><input type="checkbox" data-f="categoria" value="${c.id}"> ${c.label}<em data-cuenta-cat="${c.id}"></em></label>`).join('');
   const colores = [...new Set(PRODUCTOS.map(p => p.color))];
-  coloresBox.innerHTML = colores.map(c => `<label class="swatch"><input type="checkbox" data-f="color" value="${esc(c)}"><span class="swatch-dot" style="--c:${colorHex(c)}"></span>${esc(c)}</label>`).join('');
+  coloresBox.innerHTML = colores.map(c => `<label class="swatch"><input type="checkbox" data-f="color" value="${esc(c)}"><span class="swatch-dot" style="--c:${colorCss(c)}"></span>${esc(c)}</label>`).join('');
   const precios = PRODUCTOS.map(precioFinal);
   const pMin = Math.floor(Math.min(...precios) / 1000) * 1000;
   const pMax = Math.ceil(Math.max(...precios) / 1000) * 1000;
@@ -461,23 +473,23 @@ function initCatalogoGrilla() {
     if (reset) visibles = PAGINA;
     const lista = filtrar();
     const t = Talle.actual;
-    resultados.innerHTML = `<b>${lista.length}</b> ${lista.length === 1 ? 'prenda' : 'prendas'}${t ? ` en talle ${esc(t)}` : ''}`;
+    resultados.innerHTML = `<b>${lista.length}</b> ${lista.length === 1 ? 'producto' : 'productos'}${t ? ` en talle ${esc(t)}` : ''}`;
     if (talleActivo) {
       talleActivo.hidden = !t;
       talleActivo.querySelector('[data-talle-activo-txt]').textContent = t ? `Talle ${t}` : '';
     }
-    if (verResultados) verResultados.textContent = `Ver ${lista.length} ${lista.length === 1 ? 'prenda' : 'prendas'}`;
+    if (verResultados) verResultados.textContent = `Ver ${productosTxt(lista.length)}`;
     root.querySelectorAll('[data-cuenta-cat]').forEach(em => {
       em.textContent = PRODUCTOS.filter(p => p.categoria === em.dataset.cuentaCat && (!t || stockDe(p, t) > 0)).length;
     });
     if (!lista.length) {
-      grid.innerHTML = `<div class="catalogo-vacio"><b>Nada por acá</b><span>No hay prendas con esos filtros${t ? ` en talle ${esc(t)}` : ''}.</span><button type="button" class="btn btn-ghost" data-limpiar-todo>Ver todo el catálogo</button></div>`;
+      grid.innerHTML = `<div class="catalogo-vacio"><b>Nada por acá</b><span>No hay productos con esos filtros${t ? ` en talle ${esc(t)}` : ''}.</span><button type="button" class="btn btn-ghost" data-limpiar-todo>Ver todo el catálogo</button></div>`;
       vermas.hidden = true;
       return;
     }
     grid.innerHTML = lista.slice(0, visibles).map(cardHTML).join('');
     vermas.hidden = visibles >= lista.length;
-    vermas.textContent = `Ver más prendas (${lista.length - Math.min(visibles, lista.length)})`;
+    vermas.textContent = `Ver más productos (${lista.length - Math.min(visibles, lista.length)})`;
     revelarNuevos(grid);
     if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
   };
@@ -542,7 +554,7 @@ function initCatalogoLista() {
   const inicio = root.querySelector('[data-catalogo-inicio]');
   let tab = 'todas';
 
-  const TABS = [{ id: 'todas', label: 'Todas' }, { id: 'linea:lisa', label: LINEAS.lisa }, { id: 'linea:trabajo', label: LINEAS.trabajo }, ...CATEGORIAS.map(c => ({ id: `cat:${c.id}`, label: c.label }))];
+  const TABS = [{ id: 'todas', label: 'Todo' }, ...Object.entries(LINEAS).map(([id, label]) => ({ id: `linea:${id}`, label })), ...CATEGORIAS.map(c => ({ id: `cat:${c.id}`, label: c.label }))];
   const cuenta = id => {
     const t = Talle.actual;
     return PRODUCTOS.filter(p => (!t || stockDe(p, t) > 0) && (id === 'todas' || (id.startsWith('linea:') ? catDe(p.categoria).linea === id.slice(6) : p.categoria === id.slice(4)))).length;
@@ -561,9 +573,9 @@ function initCatalogoLista() {
     pintarTabs();
     const lista = filtrar();
     const t = Talle.actual;
-    if (resultados) resultados.innerHTML = `<b>${lista.length}</b> ${lista.length === 1 ? 'prenda' : 'prendas'}${t ? ` en talle ${esc(t)}` : ''}`;
+    if (resultados) resultados.innerHTML = `<b>${lista.length}</b> ${lista.length === 1 ? 'producto' : 'productos'}${t ? ` en talle ${esc(t)}` : ''}`;
     if (!lista.length) {
-      grupos.innerHTML = `<div class="catalogo-vacio"><b>Nada por acá</b><span>No hay prendas${t ? ` en talle ${esc(t)}` : ''} con esa búsqueda.</span><button type="button" class="btn btn-ghost" data-limpiar-todo>Ver todas las prendas</button></div>`;
+      grupos.innerHTML = `<div class="catalogo-vacio"><b>Nada por acá</b><span>No hay productos${t ? ` en talle ${esc(t)}` : ''} con esa búsqueda.</span><button type="button" class="btn btn-ghost" data-limpiar-todo>Ver todos los productos</button></div>`;
       vermas.hidden = true;
       return;
     }
@@ -572,11 +584,11 @@ function initCatalogoLista() {
     grupos.innerHTML = orden.map(catId => {
       const items = catId ? corte.filter(p => p.categoria === catId) : corte;
       const total = catId ? lista.filter(p => p.categoria === catId).length : lista.length;
-      const cuentaTxt = items.length < total ? `${items.length} de ${total} prendas` : `${total} ${total === 1 ? 'prenda' : 'prendas'}`;
-      return `<div class="pedido-grupo"><h3>${catId ? esc(catDe(catId).label) : 'Prendas'}<em>${cuentaTxt}</em></h3><div class="pedido-filas">${items.map(filaHTML).join('')}</div></div>`;
+      const cuentaTxt = items.length < total ? `${items.length} de ${total} productos` : productosTxt(total);
+      return `<div class="pedido-grupo"><h3>${catId ? esc(catDe(catId).label) : 'Productos'}<em>${cuentaTxt}</em></h3><div class="pedido-filas">${items.map(filaHTML).join('')}</div></div>`;
     }).join('');
     vermas.hidden = visibles >= lista.length;
-    vermas.textContent = `Ver más prendas (${lista.length - Math.min(visibles, lista.length)})`;
+    vermas.textContent = `Ver más productos (${lista.length - Math.min(visibles, lista.length)})`;
     revelarNuevos(grupos);
     if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
   };
@@ -585,7 +597,7 @@ function initCatalogoLista() {
     if (!barra) return;
     const n = Cart.count();
     barra.hidden = n === 0;
-    barra.querySelector('[data-barra-txt]').textContent = `Ver pedido · ${n} ${n === 1 ? 'prenda' : 'prendas'}`;
+    barra.querySelector('[data-barra-txt]').textContent = `Ver pedido · ${unidadesTxt(n)}`;
     barra.querySelector('[data-barra-total]').textContent = formatearPrecio(Cart.total());
   };
 
@@ -610,24 +622,39 @@ function initCatalogoLista() {
 }
 
 /* ---------- Componente: Tu talle + guía por medidas ---------- */
+/* Cada escala arma su cinta: rango en cm, paso del input, marcas de la regla (fina y gruesa) y cada cuánto va un número */
+const ESCALAS = {
+  ropa: {
+    cinta: [85, 130], paso: 1, marcas: [1, 5], numeros: 10, margen: 6, inicial: 100,
+    medida: 'Contorno de pecho', calce: ['Calce justo', 'Holgado'], subir: 'Subimos un talle para que te quede holgado.',
+    nota: 'Medida orientativa: medí el ancho de una remera que te quede bien, apoyada sobre una mesa, y multiplicalo por dos.',
+  },
+  zapatillas: {
+    cinta: [22, 30], paso: 0.1, marcas: [0.5, 1], numeros: 1, margen: 0.5, inicial: 25.5,
+    medida: 'Largo del pie', calce: ['Pie normal', 'Pie ancho'], subir: 'Con pie ancho conviene un número más.',
+    nota: 'Medida orientativa: pisá una hoja con el talón contra la pared, marcá la punta del dedo más largo y medí.',
+  },
+};
+const escalaDe = t => TALLES.zapatillas.includes(t) ? 'zapatillas' : 'ropa';
+const productosTxt = n => `${n} ${n === 1 ? 'producto' : 'productos'}`;
+const unidadesTxt = n => `${n} ${n === 1 ? 'unidad' : 'unidades'}`;
+const cmTxt = (cm, paso) => paso < 1 ? cm.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : String(cm);
+
 function calcularTalle(escala, cm, calce) {
   const tabla = TABLA_TALLES[escala];
-  if (!tabla || !Number.isFinite(cm) || cm <= 0) return { error: true };
-  if (cm < tabla[0][1] - 6) return { fuera: true };
+  const cfg = ESCALAS[escala];
+  if (!tabla || !cfg || !Number.isFinite(cm) || cm <= 0) return { error: true };
+  if (cm < tabla[0][1] - cfg.margen) return { fuera: true };
   let i = tabla.findIndex(fila => cm <= fila[2]);
   if (i === -1) return { fuera: true };
   let nota = '';
   if (calce === 'holgado') {
-    if (i < tabla.length - 1) { i += 1; nota = 'Subimos un talle para que te quede holgado.'; }
+    if (i < tabla.length - 1) { i += 1; nota = cfg.subir; }
     else nota = 'Ya es el talle más grande de la tabla.';
   }
   const [talle, min, max] = tabla[i];
   return { talle, min, max, nota, n: contarTalle(talle) };
 }
-
-const ESCALA_CINTA = { arriba: [85, 135], pantalon: [70, 110] };
-const escalaDe = t => TALLES.pantalon.includes(t) ? 'pantalon' : TALLES.unico.includes(t) ? 'unico' : 'arriba';
-const prendasTxt = n => `${n} ${n === 1 ? 'prenda' : 'prendas'}`;
 
 function initTallePanel() {
   const panel = document.querySelector('[data-talle-panel]');
@@ -635,7 +662,6 @@ function initTallePanel() {
   const opciones = panel.querySelector('[data-talle-opciones]');
   const todos = panel.querySelector('[data-talle-todos]');
   const escalas = panel.querySelector('[data-escalas]');
-  const medir = panel.querySelector('[data-guia-medir]');
   const input = panel.querySelector('[data-guia-medida]');
   const label = panel.querySelector('[data-guia-label]');
   const valor = panel.querySelector('[data-guia-valor]');
@@ -643,55 +669,59 @@ function initTallePanel() {
   const regla = panel.querySelector('[data-cinta-regla]');
   const res = panel.querySelector('[data-guia-resultado]');
   const calceBox = panel.querySelector('[data-calce]');
+  const nota = panel.querySelector('[data-guia-nota]');
   if (!opciones || !escalas || !input || !res) return;
-  let escala = Talle.actual ? escalaDe(Talle.actual) : 'arriba';
+  let escala = Talle.actual ? escalaDe(Talle.actual) : 'ropa';
   let calce = 'justo';
-  const ultimo = { arriba: 100, pantalon: 86 };
+  const ultimo = { ropa: ESCALAS.ropa.inicial, zapatillas: ESCALAS.zapatillas.inicial };
 
   const pintarOpciones = () => {
     escalas.querySelectorAll('[data-escala]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.escala === escala)));
     opciones.innerHTML = TALLES[escala].map(t => {
       const n = contarTalle(t);
-      return `<button type="button" class="talle-chip" data-talle="${t}" aria-pressed="${t === Talle.actual}" aria-label="Talle ${t}: ${prendasTxt(n)} con stock" ${n ? '' : 'disabled'}>${t}</button>`;
+      return `<button type="button" class="talle-chip" data-talle="${t}" aria-pressed="${t === Talle.actual}" aria-label="Talle ${t}: ${productosTxt(n)} con stock" ${n ? '' : 'disabled'}>${t}</button>`;
     }).join('');
     todos.hidden = !Talle.actual;
   };
 
   const calcular = () => {
-    const cm = Number(input.value);
+    const cfg = ESCALAS[escala];
+    const dec = cfg.paso < 1 ? 10 : 1;
+    const cm = Math.round(Number(input.value) * dec) / dec;
     ultimo[escala] = cm;
-    valor.textContent = `${cm} cm`;
+    const txt = cmTxt(cm, cfg.paso);
+    valor.textContent = `${txt} cm`;
     const r = calcularTalle(escala, cm, calce);
     segs.querySelectorAll('[data-cinta-talle]').forEach(s => s.classList.toggle('activo', !r.fuera && s.dataset.cintaTalle === r.talle));
     if (r.fuera || r.error) {
-      input.setAttribute('aria-valuetext', `${cm} centímetros, fuera de la tabla`);
-      res.innerHTML = `<p class="guia-res">Esa medida queda fuera de la tabla.<small>Escribinos y te asesoramos con el talle.</small></p><a class="btn btn-ghost" href="${wspHref(`Hola! Necesito asesoramiento de talle: ${escala === 'pantalon' ? 'cintura' : 'pecho'} de ${cm} cm.`)}" target="_blank" rel="noopener">Consultar por WhatsApp</a>`;
+      input.setAttribute('aria-valuetext', `${txt} centímetros, fuera de la tabla`);
+      res.innerHTML = `<p class="guia-res">Esa medida queda fuera de la tabla.<small>Escribinos y te asesoramos con el talle.</small></p><a class="btn btn-ghost" href="${wspHref(`Hola! Necesito asesoramiento de talle: ${cfg.medida.toLowerCase()} de ${txt} cm.`)}" target="_blank" rel="noopener">Consultar por WhatsApp</a>`;
       return;
     }
-    input.setAttribute('aria-valuetext', `${cm} centímetros, talle ${r.talle}`);
-    res.innerHTML = `<p class="guia-res">Te recomendamos<b>${r.talle}</b>${r.nota ? `<small>${r.nota}</small>` : ''}</p><button type="button" class="btn btn-cta" data-usar-talle="${r.talle}" ${r.n ? '' : 'disabled'}>Ver ${prendasTxt(r.n)} en ${r.talle}</button>`;
+    input.setAttribute('aria-valuetext', `${txt} centímetros, talle ${r.talle}`);
+    res.innerHTML = `<p class="guia-res">Te recomendamos<b>${r.talle}</b>${r.nota ? `<small>${r.nota}</small>` : ''}</p><button type="button" class="btn btn-cta" data-usar-talle="${r.talle}" ${r.n ? '' : 'disabled'}>Ver ${productosTxt(r.n)} en talle ${r.talle}</button>`;
   };
 
   const pintarCinta = () => {
-    if (escala === 'unico') {
-      medir.hidden = true;
-      const n = contarTalle('Único');
-      res.innerHTML = `<p class="guia-res">Gorras y delantales vienen en talle único y se regulan.</p><button type="button" class="btn btn-cta" data-usar-talle="Único" ${n ? '' : 'disabled'}>Ver ${prendasTxt(n)} en talle único</button>`;
-      return;
-    }
-    medir.hidden = false;
-    const [min, max] = ESCALA_CINTA[escala];
+    const cfg = ESCALAS[escala];
+    const [min, max] = cfg.cinta;
     const rango = max - min;
-    input.min = min; input.max = max; input.value = ultimo[escala];
-    label.textContent = escala === 'pantalon' ? 'Contorno de cintura' : 'Contorno de pecho';
+    input.min = min; input.max = max; input.step = cfg.paso; input.value = ultimo[escala];
+    label.textContent = cfg.medida;
+    if (nota) nota.textContent = cfg.nota;
+    calceBox?.querySelectorAll('[data-calce-valor]').forEach((b, i) => { b.textContent = cfg.calce[i]; });
     regla.style.setProperty('--rango', rango);
-    segs.innerHTML = TABLA_TALLES[escala].map(([t, a, b]) => {
+    regla.style.setProperty('--fina', cfg.marcas[0]);
+    regla.style.setProperty('--gruesa', cfg.marcas[1]);
+    const filas = TABLA_TALLES[escala];
+    segs.innerHTML = filas.map(([t, a, b], i) => {
+      const fin = filas[i + 1] ? filas[i + 1][1] : b + cfg.paso;
       const l = Math.max(0, (a - min) / rango * 100);
-      const r = Math.min(100, (b + 1 - min) / rango * 100);
+      const r = Math.min(100, (fin - min) / rango * 100);
       return `<span class="cinta-talle" data-cinta-talle="${t}" style="left:${l.toFixed(2)}%;width:${(r - l).toFixed(2)}%">${t}</span>`;
     }).join('');
     let nums = '';
-    for (let v = Math.ceil((min + 1) / 10) * 10; v < max; v += 10) nums += `<span class="cinta-num" style="left:${((v - min) / rango * 100).toFixed(2)}%">${v}</span>`;
+    for (let v = Math.floor(min / cfg.numeros) * cfg.numeros + cfg.numeros; v < max; v += cfg.numeros) nums += `<span class="cinta-num" style="left:${((v - min) / rango * 100).toFixed(2)}%">${v}</span>`;
     regla.innerHTML = nums;
     calcular();
   };
@@ -735,12 +765,13 @@ function openQuickview(id) {
   const media = modal.querySelector('[data-qv-media]');
   media.setAttribute('style', recorte(p));
   media.innerHTML = `<img src="images/${p.img}" alt="${esc(p.nombre)}" width="700" height="700">`;
-  modal.querySelector('[data-qv-cat]').innerHTML = `<i style="--c:${colorHex(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}`;
+  const par = esZapatilla(p);
+  const cuantas = n => par ? `${n} ${n === 1 ? 'par' : 'pares'}` : unidadesTxt(n);
+  modal.querySelector('[data-qv-cat]').innerHTML = `<i style="--c:${colorCss(p.color)}"></i>${esc(catDe(p.categoria).label)} · ${esc(p.color)}`;
   modal.querySelector('[data-qv-nombre]').textContent = p.nombre;
-  modal.querySelector('[data-qv-precio]').innerHTML = stockTotal(p) <= 0 ? '<span class="prod-sin-stock">Sin stock por ahora</span>' : `${p.descuento > 0 ? `<s>${formatearPrecio(p.precio)}</s>` : ''}<span>${formatearPrecio(precioFinal(p))}</span><small class="qv-tela">por unidad</small>`;
-  modal.querySelector('[data-qv-tela]').textContent = p.tela;
+  modal.querySelector('[data-qv-precio]').innerHTML = stockTotal(p) <= 0 ? '<span class="prod-sin-stock">Sin stock por ahora</span>' : `${p.descuento > 0 ? `<s>${formatearPrecio(p.precio)}</s>` : ''}<span>${formatearPrecio(precioFinal(p))}</span><small class="qv-material">${par ? 'por par' : 'por unidad'}</small>`;
+  modal.querySelector('[data-qv-material]').textContent = p.material;
   modal.querySelector('[data-qv-desc]').textContent = p.descripcion;
-  modal.querySelector('[data-qv-tecnicas]').innerHTML = p.tecnicas.length ? p.tecnicas.map(x => `<span class="etiqueta">Acepta ${esc(x.toLowerCase() === 'dtf' ? 'DTF' : x.toLowerCase())}</span>`).join('') : '';
   const filas = modal.querySelector('[data-qv-talles]');
   filas.innerHTML = tallesDe(p).map(k => {
     const s = stockDe(p, k);
@@ -753,7 +784,7 @@ function openQuickview(id) {
   }).join('');
   const resumen = () => {
     const u = [...filas.querySelectorAll('[data-qv-cant]')].reduce((s, el) => s + (parseInt(el.textContent, 10) || 0), 0);
-    modal.querySelector('[data-qv-unidades]').textContent = `${u} ${u === 1 ? 'prenda' : 'prendas'}`;
+    modal.querySelector('[data-qv-unidades]').textContent = cuantas(u);
     modal.querySelector('[data-qv-subtotal]').textContent = formatearPrecio(u * precioFinal(p));
     modal.querySelector('[data-qv-add]').disabled = u === 0;
   };
@@ -767,21 +798,30 @@ function openQuickview(id) {
     resumen();
   };
   resumen();
+  /* Curva: suma una unidad en cada talle que todavía tiene stock disponible */
+  const curva = modal.querySelector('[data-qv-curva]');
+  curva.disabled = stockTotal(p) <= 0;
+  curva.onclick = () => {
+    filas.querySelectorAll('[data-qv-talle]').forEach(fila => {
+      const cant = fila.querySelector('[data-qv-cant]');
+      const q = parseInt(cant.textContent, 10) || 0;
+      if (q < stockDe(p, fila.dataset.qvTalle)) cant.textContent = q + 1;
+    });
+    resumen();
+  };
   modal.querySelector('[data-qv-add]').onclick = () => {
     let total = 0;
     filas.querySelectorAll('[data-qv-talle]').forEach(fila => {
       const q = parseInt(fila.querySelector('[data-qv-cant]').textContent, 10) || 0;
       if (q > 0) total += Cart.add(p, q, fila.dataset.qvTalle);
     });
-    if (total) { showToast(`Sumaste ${total} ${total === 1 ? 'prenda' : 'prendas'} de ${p.nombre}`); closeQuickview(); }
+    if (total) { showToast(`Sumaste ${cuantas(total)} de ${p.nombre}`); closeQuickview(); }
   };
-  const logo = modal.querySelector('[data-qv-logo]');
-  logo.hidden = !p.tecnicas.length;
-  logo.href = wspHref(`Hola! Quiero consultar ${p.tecnicas.join(' o ').toLowerCase().replace('dtf', 'DTF')} para: ${p.nombre}.`);
+  modal.querySelector('[data-qv-consulta]').href = wspHref(`Hola! Quiero consultar por cantidad de: ${p.nombre}.`);
   const hermanos = PRODUCTOS.filter(x => x.modelo === p.modelo);
   const colores = modal.querySelector('[data-qv-colores]');
   colores.closest('[data-qv-colores-wrap]').hidden = hermanos.length < 2;
-  colores.innerHTML = hermanos.map(x => `<button type="button" class="qv-color" data-qv-color="${x.id}" aria-current="${x.id === p.id}"><i class="color-dot" style="--c:${colorHex(x.color)}"></i>${esc(x.color)}</button>`).join('');
+  colores.innerHTML = hermanos.map(x => `<button type="button" class="qv-color" data-qv-color="${x.id}" aria-current="${x.id === p.id}"><i class="color-dot" style="--c:${colorCss(x.color)}"></i>${esc(x.color)}</button>`).join('');
   colores.onclick = e => { const b = e.target.closest('[data-qv-color]'); if (b && Number(b.dataset.qvColor) !== p.id) openQuickview(b.dataset.qvColor); };
 
   if (modal.hidden) {
@@ -822,7 +862,7 @@ function renderCart() {
   if (!itemsEl) return;
   const items = Cart.get().filter(i => getProducto(i.id));
   if (!items.length) {
-    itemsEl.innerHTML = `<div class="cart-vacio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg><p>Tu carrito está vacío.<br>Elegí tu talle y sumá prendas.</p></div>`;
+    itemsEl.innerHTML = `<div class="cart-vacio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h2.2l1.9 10.6a2 2 0 0 0 2 1.65h8.4a2 2 0 0 0 1.96-1.6L21 8H6.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.5" cy="20" r="1.5" fill="currentColor" stroke="none"/><circle cx="17.5" cy="20" r="1.5" fill="currentColor" stroke="none"/></svg><p>Tu carrito está vacío.<br>Elegí tu talle y sumá productos.</p></div>`;
     footer.hidden = true;
     return;
   }
@@ -903,7 +943,7 @@ function initFloats() {
   sync();
 }
 
-/* ---------- Momento propio: Lisa ↔ Con tu logo ---------- */
+/* ---------- Momento propio: Ropa ↔ Zapatillas ---------- */
 function initWipe() {
   document.querySelectorAll('[data-wipe]').forEach(w => {
     const copyA = w.querySelector('.copy-a');
@@ -911,8 +951,10 @@ function initWipe() {
     const linea = w.querySelector('.wipe-linea');
     const datoN = w.querySelector('[data-wipe-n]');
     if (!copyA || !copyB || !linea || !datoN) return;
-    const TOTAL = PRODUCTOS.filter(p => p.tecnicas.length).length;
-    w.querySelectorAll('[data-wipe-total]').forEach(el => { el.textContent = TOTAL; });
+    const zapas = PRODUCTOS.filter(p => esZapatilla(p) && stockTotal(p) > 0);
+    const TOTAL = zapas.reduce((s, p) => s + stockTotal(p), 0);
+    const DIGITOS = String(TOTAL).length;
+    w.querySelectorAll('[data-wipe-modelos]').forEach(el => { el.textContent = new Set(zapas.map(p => p.modelo)).size; });
     if (reduceMotion) { w.classList.add('is-static'); datoN.textContent = TOTAL; return; }
     const OFF = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--gw-modelos-h')) || 0;
     const pintar = p => {
@@ -922,7 +964,7 @@ function initWipe() {
       const b = clamp01((44 - wv) / 16);
       copyA.style.opacity = a; copyA.style.transform = `translateX(${((1 - a) * -28).toFixed(1)}px)`; copyA.style.pointerEvents = a < 0.15 ? 'none' : '';
       copyB.style.opacity = b; copyB.style.transform = `translateX(${((1 - b) * 28).toFixed(1)}px)`; copyB.style.pointerEvents = b < 0.15 ? 'none' : '';
-      datoN.textContent = String(Math.round(TOTAL * clamp01((100 - wv) / 100))).padStart(2, '0');
+      datoN.textContent = String(Math.round(TOTAL * clamp01((100 - wv) / 100))).padStart(DIGITOS, '0');
       linea.style.opacity = wv > 99.5 || wv < 0.5 ? 0 : 1;
       linea.classList.toggle('dato-derecha', wv < 32);
     };
