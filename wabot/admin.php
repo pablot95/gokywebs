@@ -53,6 +53,7 @@ $NAV_TABS = [
     'live'           => 'Conversaciones live',
     'respuestas'     => 'Respuestas rápidas',
     'ajustes'        => 'Ajustes',
+    'ia'             => 'IA',
     'estado'         => 'Estado',
     'cohortes'       => 'Inversión',
 ];
@@ -397,6 +398,23 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 
         if (isset($_POST['gemini_modelo']) && isset(wabot_gemini_modelos()[$_POST['gemini_modelo']])) {
             $cfg['gemini_modelo'] = (string)$_POST['gemini_modelo'];
+        }
+
+        // OpenAI (27-sep). La key NO se carga desde acá: vive en config/wabot-config.php.
+        if (in_array($_POST['ia_proveedor'] ?? '', ['gemini', 'openai', 'shadow'], true)) $cfg['ia_proveedor'] = (string)$_POST['ia_proveedor'];
+        $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
+        if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
+        if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
+        if (in_array($_POST['openai_esfuerzo'] ?? '', ['none', 'low', 'medium', 'high'], true)) $cfg['openai_esfuerzo'] = (string)$_POST['openai_esfuerzo'];
+        if (isset($_POST['ia_max_mensajes']))   $cfg['ia_max_mensajes']   = max(1, min(3, (int)$_POST['ia_max_mensajes']));
+        if (isset($_POST['ia_historial']))      $cfg['ia_historial']      = max(4, min(60, (int)$_POST['ia_historial']));
+        if (isset($_POST['openai_max_tokens'])) $cfg['openai_max_tokens'] = max(300, min(8000, (int)$_POST['openai_max_tokens']));
+        if (isset($_POST['openai_timeout']))    $cfg['openai_timeout']    = max(5, min(60, (int)$_POST['openai_timeout']));
+        // Precios a mano: vacío = los oficiales que trae el código para ese modelo.
+        foreach (['openai_precio_entrada', 'openai_precio_cache', 'openai_precio_salida'] as $clavePrecio) {
+            if (!isset($_POST[$clavePrecio])) continue;
+            $valor = str_replace(',', '.', trim((string)$_POST[$clavePrecio]));
+            $cfg[$clavePrecio] = is_numeric($valor) && (float)$valor >= 0 ? (float)$valor : null;
         }
 
         if (isset($_POST['capi_dataset_id'])) $cfg['capi_dataset_id'] = preg_replace('/\D+/', '', (string)$_POST['capi_dataset_id']);
@@ -1795,6 +1813,7 @@ function burbujaCita(t, chat) {
                 Token de Meta: <?= WABOT_META_TOKEN === 'COMPLETAR' ? '<span style="color:var(--bad)">falta</span>' : '<span style="color:var(--ac)">cargado</span>' ?> ·
                 Phone Number ID: <?= WABOT_PHONE_NUMBER_ID === 'COMPLETAR' ? '<span style="color:var(--bad)">falta</span>' : '<span style="color:var(--ac)">cargado</span>' ?> ·
                 Gemini: <?= WABOT_GEMINI_KEY === 'COMPLETAR' ? '<span style="color:var(--bad)">falta</span>' : '<span style="color:var(--ac)">cargado</span>' ?> ·
+                OpenAI: <?= wabot_openai_key() === '' ? '<span style="color:var(--dim)">sin key</span>' : '<span style="color:var(--ac)">cargada</span>' ?> ·
                 Instagram: <?= wabot_ig_activo() ? '<span style="color:var(--ac)">cargado</span>' : '<span style="color:var(--dim)">apagado</span>' ?>
             </p>
             <?php if ($secretos === 0): ?>
@@ -2016,6 +2035,136 @@ function burbujaCita(t, chat) {
         })();
         </script>
 
+    <?php elseif ($tab === 'ia'):
+        /* Pestaña IA (27-sep): el modo en uso, cuánto se gastó en OpenAI y la
+         * comparación Gemini vs OpenAI del modo shadow. Todo sale de
+         * data/ia-uso/ y data/ia-sombra/ (ver ia.php). */
+        $iaMes = preg_match('/^\d{4}-\d{2}$/', (string)($_GET['mes'] ?? '')) ? (string)$_GET['mes'] : date('Y-m');
+        $iaDias = in_array((int)($_GET['dias'] ?? 7), [1, 7, 30], true) ? (int)$_GET['dias'] : 7;
+        $iaUso = wabot_ia_uso_resumen($iaMes);
+        $iaSombras = wabot_ia_sombra_leer($iaDias, 150);
+        $iaModo = wabot_ia_proveedor($cfg);
+        $usd = function ($v) { return 'US$ ' . number_format((float)$v, (float)$v < 1 ? 4 : 2, ',', '.'); };
+        $num = function ($v) { return number_format((int)$v, 0, ',', '.'); };
+        $nombresTarea = ['conversacion' => 'Conversación antes del precio', 'clasificador' => 'Clasificar mensajes',
+                         'resumen_negocio' => 'Resumen del negocio para el boceto', 'colores' => 'Colores a código hex'];
+        $nombresModo = ['gemini' => 'Gemini (como siempre)', 'shadow' => 'Prueba: contesta Gemini y OpenAI solo se compara', 'openai' => 'OpenAI conversa hasta el precio'];
+    ?>
+        <style>
+            .ia-num { display:flex; gap:22px; flex-wrap:wrap; margin:10px 0 4px }
+            .ia-num div { min-width:120px } .ia-num strong { display:block; font-size:1.35rem }
+            .ia-tabla { width:100%; border-collapse:collapse; margin-top:10px; font-size:.9rem }
+            .ia-tabla th, .ia-tabla td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line) }
+            .ia-tabla td.n, .ia-tabla th.n { text-align:right; white-space:nowrap }
+            .ia-comp { border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:12px }
+            .ia-cliente { margin:6px 0 10px; white-space:pre-wrap }
+            .ia-cols { display:grid; grid-template-columns:1fr 1fr; gap:12px }
+            @media (max-width:760px) { .ia-cols { grid-template-columns:1fr } }
+            .ia-col { background:var(--bg); border-radius:8px; padding:10px }
+            .ia-msg { white-space:pre-wrap; border-left:3px solid var(--line); padding:4px 8px; margin:6px 0; font-size:.92rem }
+            .ia-tag { display:inline-block; font-size:.75rem; border:1px solid var(--line); border-radius:999px; padding:1px 8px; margin:2px 4px 2px 0 }
+        </style>
+        <div class="card">
+            <h2 style="margin-top:0">Modo: <?= $e($nombresModo[$iaModo] ?? $iaModo) ?></h2>
+            <p class="meta">Modelo de OpenAI: <code><?= $e(wabot_openai_modelo($cfg)) ?></code> ·
+                Key: <?= wabot_openai_key() !== '' ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span>' ?> ·
+                <?= wabot_openai_disponible() ? 'OpenAI respondiendo' : (wabot_openai_key() !== '' ? '<span style="color:var(--warn)">OpenAI en pausa por errores recientes (vuelve solo en unos minutos)</span>' : 'sin OpenAI') ?> ·
+                Se cambia en <a href="admin.php?tab=ajustes">Ajustes</a>.</p>
+        </div>
+
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <h2 style="margin:0">Consumo de OpenAI · <?= $e($iaMes) ?></h2>
+                <form method="get" class="fila" style="gap:8px"><input type="hidden" name="tab" value="ia">
+                    <input type="month" name="mes" value="<?= $e($iaMes) ?>" style="width:auto"><button class="sec">Ver</button></form>
+            </div>
+            <div class="ia-num">
+                <div><span class="meta">Costo estimado</span><strong><?= $usd($iaUso['total']['costo_usd']) ?></strong></div>
+                <div><span class="meta">Llamadas</span><strong><?= $num($iaUso['total']['llamadas']) ?></strong></div>
+                <div><span class="meta">Tokens de entrada</span><strong><?= $num($iaUso['total']['entrada']) ?></strong><span class="meta"><?= $num($iaUso['total']['cache']) ?> en caché</span></div>
+                <div><span class="meta">Tokens de salida</span><strong><?= $num($iaUso['total']['salida']) ?></strong></div>
+            </div>
+            <p class="meta">Es una estimación con los precios por millón de tokens de cada modelo. Lo que te cobra OpenAI de verdad está en <strong>platform.openai.com → Usage</strong>.
+                <?= $iaUso['sin_precio'] ? '<span style="color:var(--warn)">' . (int)$iaUso['sin_precio'] . ' llamada(s) de un modelo sin precio cargado no suman al costo: cargalo en Ajustes.</span>' : '' ?></p>
+            <?php if ($iaUso['total']['llamadas'] > 0): ?>
+                <table class="ia-tabla">
+                    <tr><th>Tarea</th><th class="n">Llamadas</th><th class="n">Entrada</th><th class="n">Salida</th><th class="n">Costo</th></tr>
+                    <?php foreach ($iaUso['por_tarea'] as $t => $v): ?>
+                        <tr><td><?= $e($nombresTarea[$t] ?? $t) ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $num($v['entrada']) ?></td><td class="n"><?= $num($v['salida']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                    <?php endforeach; ?>
+                    <?php foreach ($iaUso['por_modo'] as $m => $v): ?>
+                        <tr class="meta"><td>— <?= $m === 'sombra' ? 'de eso, en modo prueba (no se mandó)' : 'de eso, respuestas reales' ?></td><td class="n"><?= $num($v['llamadas']) ?></td><td></td><td></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                    <?php endforeach; ?>
+                </table>
+                <h3 style="margin:16px 0 4px">Las conversaciones que más gastaron</h3>
+                <table class="ia-tabla">
+                    <tr><th>Conversación</th><th class="n">Llamadas</th><th class="n">Costo</th></tr>
+                    <?php foreach (array_slice($iaUso['por_conv'], 0, 20, true) as $claveConv => $v): ?>
+                        <tr><td><a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$claveConv) ?>"><?= $e((string)$claveConv) ?></a></td><td class="n"><?= $num($v['llamadas']) ?></td><td class="n"><?= $usd($v['costo_usd']) ?></td></tr>
+                    <?php endforeach; ?>
+                </table>
+                <?php $conversacionesMes = count($iaUso['por_conv']); if ($conversacionesMes > 0): ?>
+                    <p class="meta" style="margin-top:8px">Promedio: <?= $usd($iaUso['total']['costo_usd'] / $conversacionesMes) ?> por conversación (<?= $num($conversacionesMes) ?> conversaciones este mes).</p>
+                <?php endif; ?>
+            <?php endif; ?>
+        </div>
+
+        <div class="card">
+            <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+                <h2 style="margin:0">Gemini vs OpenAI</h2>
+                <div class="fila" style="gap:6px">
+                    <?php foreach ([1 => 'Hoy', 7 => '7 días', 30 => '30 días'] as $d => $l): ?>
+                        <a href="admin.php?tab=ia&dias=<?= $d ?>"><button type="button" class="<?= $iaDias === $d ? '' : 'sec' ?>"><?= $l ?></button></a>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <p class="meta">En modo prueba, cada mensaje antes del precio: a la izquierda lo que recibió el cliente (Gemini) y a la derecha lo que habría mandado OpenAI. <strong>Nada de la columna de OpenAI salió por WhatsApp.</strong></p>
+            <?php if (!$iaSombras): ?>
+                <p class="meta">Todavía no hay comparaciones<?= $iaModo !== 'shadow' ? ': poné el modo Prueba en Ajustes y esperá a que entren mensajes.' : ': van a aparecer cuando entren mensajes nuevos.' ?></p>
+            <?php endif; ?>
+            <?php foreach ($iaSombras as $fila):
+                $oa = $fila['openai'] ?? null; ?>
+                <div class="ia-comp">
+                    <div class="meta"><?= $e(date('d/m H:i', strtotime((string)$fila['ts']))) ?> ·
+                        <a href="admin.php?tab=conversaciones&ver=<?= urlencode((string)$fila['conv']) ?>"><?= $e(trim((string)($fila['nombre'] ?? '')) ?: (string)$fila['conv']) ?></a> ·
+                        <?= $e((string)($fila['canal'] ?? '')) ?> · <?= $usd($fila['costo_usd'] ?? 0) ?></div>
+                    <div class="ia-cliente"><strong>Cliente:</strong> <?= $e((string)$fila['cliente']) ?></div>
+                    <div class="ia-cols">
+                        <div class="ia-col"><strong>Gemini — se mandó</strong>
+                            <?php if (!$fila['gemini']): ?><p class="meta">(no contestó nada)</p><?php endif; ?>
+                            <?php foreach ((array)$fila['gemini'] as $m): ?><div class="ia-msg"><?= $e(wabot_respuesta_texto_transcript((string)$m)) ?></div><?php endforeach; ?>
+                        </div>
+                        <div class="ia-col"><strong>OpenAI — no se mandó</strong>
+                            <?php if (!$oa): ?>
+                                <p class="meta" style="color:var(--bad)">Falló: <?= $e((string)($fila['error'] ?? '')) ?> (en modo OpenAI, este mensaje lo habría contestado Gemini).</p>
+                            <?php else: ?>
+                                <div>
+                                    <span class="ia-tag"><?= $e($oa['accion']) ?></span>
+                                    <?php if (($oa['tipo_web'] ?? 'sin_definir') !== 'sin_definir'): ?><span class="ia-tag"><?= $e($oa['tipo_web']) ?></span><?php endif; ?>
+                                    <?php if (!empty($oa['etapa'])): ?><span class="ia-tag"><?= $e($oa['etapa']) ?></span><?php endif; ?>
+                                    <?php if (!empty($oa['requiere_humano'])): ?><span class="ia-tag" style="color:var(--warn)">pide una persona</span><?php endif; ?>
+                                    <?php if (!empty($oa['corregida'])): ?><span class="ia-tag" title="La primera versión traía algo que no se puede mandar y se pidió corregirla">corregida</span><?php endif; ?>
+                                </div>
+                                <?php if ($oa['enviaria'] === null): ?>
+                                    <p class="meta">No resolvió este mensaje: lo habría contestado Gemini.</p>
+                                <?php elseif (!$oa['enviaria']): ?>
+                                    <p class="meta">No habría contestado nada<?= !empty($oa['motivo']) ? ' (' . $e($oa['motivo']) . ')' : '' ?>.</p>
+                                <?php endif; ?>
+                                <?php foreach ((array)$oa['enviaria'] as $m): ?><div class="ia-msg"><?= $e((string)$m) ?></div><?php endforeach; ?>
+                                <?php $fichaOa = array_filter((array)($oa['ficha'] ?? []), function ($v) { return $v !== null && $v !== [] && $v !== ''; }); ?>
+                                <?php if ($fichaOa): ?>
+                                    <details style="margin-top:6px"><summary class="meta" style="cursor:pointer">Lo que entendió del cliente</summary>
+                                        <p class="meta"><?php foreach ($fichaOa as $k => $v) echo '<strong>' . $e($k) . ':</strong> ' . $e(is_array($v) ? implode(', ', $v) : $v) . '<br>'; ?>
+                                        <?= !empty($oa['motivo']) ? '<strong>motivo:</strong> ' . $e($oa['motivo']) : '' ?></p>
+                                    </details>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
     <?php elseif ($tab === 'ajustes'): ?>
         <?php /* Un solo formulario con lo único de bot-config.json que se toca
          * desde el panel. Los textos del bot viven en textos.php. */ ?>
@@ -2061,8 +2210,75 @@ function burbujaCita(t, chat) {
             <p class="meta" style="margin-top:8px">Contestar a mano (desde el panel o desde el celular) calla al bot en ese chat por las horas de silencio. Si el cliente vuelve a escribir después de los días de reset, la charla arranca de cero.</p>
         </div>
         <div class="card">
-            <h2 style="margin-top:0">Modelo de IA</h2>
-            <p class="meta" style="margin-top:0">El que usa el bot para entender, clasificar y redactar. Los de más abajo entienden mejor los mensajes confusos y se equivocan menos al clasificar el rubro, pero cuestan más por mensaje.</p>
+            <?php
+            $iaPedido = wabot_ia_proveedor_pedido($cfg);
+            $hayKeyOpenai = wabot_openai_key() !== '';
+            $modeloOpenaiActual = wabot_openai_modelo($cfg);
+            $sugeridos = wabot_openai_modelos_sugeridos();
+            ?>
+            <h2 style="margin-top:0">Inteligencia artificial</h2>
+            <p class="meta" style="margin-top:0">Quién piensa las respuestas <strong>antes del precio</strong>: entender a qué se dedica, qué necesita, contestar dudas y decidir cuándo cotizar. El precio, la oferta del primer diseño y el silencio de después salen siempre con los textos fijos, en los tres modos.</p>
+            <div style="display:grid;gap:8px;margin-top:12px">
+                <?php foreach ([
+                    'gemini' => ['Gemini', 'Como hasta ahora: Gemini clasifica cada mensaje y el bot contesta con los textos fijos.'],
+                    'shadow' => ['Prueba (shadow)', 'Contesta Gemini, como siempre, y OpenAI piensa en paralelo lo que habría contestado, sin mandarlo. Se compara en la pestaña IA.'],
+                    'openai' => ['OpenAI', 'OpenAI conversa con el cliente hasta el precio. Si OpenAI falla o se equivoca, ese mensaje lo contesta Gemini.'],
+                ] as $valorModo => [$tituloModo, $textoModo]): ?>
+                    <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
+                        <input type="radio" name="ia_proveedor" value="<?= $valorModo ?>" <?= $iaPedido === $valorModo ? 'checked' : '' ?> style="width:auto;margin-top:3px">
+                        <span><strong><?= $tituloModo ?></strong> — <span class="meta"><?= $textoModo ?></span></span>
+                    </label>
+                <?php endforeach; ?>
+            </div>
+            <p class="meta" style="margin-top:10px">Key de OpenAI:
+                <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
+            </p>
+            <?php if ($iaPedido !== 'gemini' && !$hayKeyOpenai): ?>
+                <p class="meta" style="color:var(--warn)">Elegiste <?= $iaPedido === 'shadow' ? 'la prueba' : 'OpenAI' ?>, pero sin key el bot sigue con Gemini.</p>
+            <?php endif; ?>
+
+            <h3 style="margin:18px 0 6px">Modelo de OpenAI</h3>
+            <div class="fila" style="gap:14px;flex-wrap:wrap;align-items:flex-end">
+                <div>
+                    <label>Modelo</label>
+                    <select name="openai_modelo_sugerido" style="max-width:420px">
+                        <?php foreach ($sugeridos as $claveSug => $labelSug): ?>
+                            <option value="<?= $e($claveSug) ?>" <?= $claveSug === $modeloOpenaiActual ? 'selected' : '' ?>><?= $e($labelSug) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div>
+                    <label>U otro (escribí el nombre exacto)</label>
+                    <input type="text" name="openai_modelo_otro" value="<?= isset($sugeridos[$modeloOpenaiActual]) ? '' : $e($modeloOpenaiActual) ?>" placeholder="ej. gpt-6-sol" style="width:200px" autocomplete="off">
+                </div>
+                <div>
+                    <label>Cuánto piensa antes de contestar</label>
+                    <select name="openai_esfuerzo">
+                        <?php foreach (['none' => 'Nada (lo más rápido)', 'low' => 'Poco (recomendado)', 'medium' => 'Medio (más lento)', 'high' => 'Mucho (lento y caro)'] as $v => $l): ?>
+                            <option value="<?= $v ?>" <?= wabot_openai_esfuerzo($cfg) === $v ? 'selected' : '' ?>><?= $l ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+            <div class="fila" style="gap:14px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
+                <div><label>Mensajes por respuesta (máx.)</label><input type="number" name="ia_max_mensajes" min="1" max="3" value="<?= (int)wabot_ia_numero($cfg, 'ia_max_mensajes', 2, 1, 3) ?>" style="width:90px"></div>
+                <div><label>Mensajes de la charla que lee</label><input type="number" name="ia_historial" min="4" max="60" value="<?= (int)wabot_ia_numero($cfg, 'ia_historial', 16, 4, 60) ?>" style="width:90px"></div>
+                <div><label>Tope de tokens por respuesta</label><input type="number" name="openai_max_tokens" min="300" max="8000" value="<?= (int)wabot_ia_numero($cfg, 'openai_max_tokens', 1600, 300, 8000) ?>" style="width:100px"></div>
+                <div><label>Segundos de espera máxima</label><input type="number" name="openai_timeout" min="5" max="60" value="<?= (int)wabot_ia_numero($cfg, 'openai_timeout', 25, 5, 60) ?>" style="width:90px"></div>
+            </div>
+            <p class="meta" style="margin-top:8px">Lo más viejo de la charla no se manda entero: va resumido con lo que dijo el cliente, más la ficha (rubro, qué vende, qué quiere lograr). Así no crece el costo en charlas largas y no se le vuelve a preguntar lo que ya dijo.</p>
+            <details style="margin-top:8px">
+                <summary class="meta" style="cursor:pointer">Precios para estimar el costo (dólares por millón de tokens)</summary>
+                <p class="meta">Vacío = los precios oficiales que trae el bot para ese modelo<?php $pOf = wabot_openai_precios()[$modeloOpenaiActual] ?? null; echo $pOf ? " (para $modeloOpenaiActual: entrada {$pOf[0]}, en caché {$pOf[1]}, salida {$pOf[2]})" : ''; ?>. Cargalos a mano solo si OpenAI los cambia o usás otro modelo.</p>
+                <div class="fila" style="gap:14px;flex-wrap:wrap">
+                    <div><label>Entrada</label><input type="text" name="openai_precio_entrada" value="<?= $e((string)($cfg['openai_precio_entrada'] ?? '')) ?>" style="width:90px"></div>
+                    <div><label>Entrada en caché</label><input type="text" name="openai_precio_cache" value="<?= $e((string)($cfg['openai_precio_cache'] ?? '')) ?>" style="width:90px"></div>
+                    <div><label>Salida</label><input type="text" name="openai_precio_salida" value="<?= $e((string)($cfg['openai_precio_salida'] ?? '')) ?>" style="width:90px"></div>
+                </div>
+            </details>
+
+            <h3 style="margin:18px 0 6px">Modelo de Gemini</h3>
+            <p class="meta" style="margin-top:0">Lee las fotos, los audios y los archivos en los tres modos, clasifica en el modo Gemini y es el respaldo cuando OpenAI falla. Los de más abajo entienden mejor, pero cuestan más por mensaje.</p>
             <select name="gemini_modelo" style="margin-top:10px;max-width:420px">
                 <?php $modeloActual = wabot_gemini_modelo($cfg); ?>
                 <?php foreach (wabot_gemini_modelos() as $claveModelo => $labelModelo): ?>

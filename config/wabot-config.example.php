@@ -24,6 +24,14 @@ define('WABOT_VERIFY_TOKEN', 'COMPLETAR');
 define('WABOT_GRAPH_VERSION', 'v21.0');
 define('WABOT_GEMINI_KEY', 'COMPLETAR');
 /* El modelo se elige desde el panel del bot (Textos -> Modelo de IA), no aca. */
+
+/* OpenAI (27-sep-2026): la key de platform.openai.com -> API keys. Vacío o
+   COMPLETAR = sin OpenAI, el bot sigue con Gemini. Si el servidor tiene la
+   variable de entorno OPENAI_API_KEY, esa manda sobre esta constante. El modo
+   (gemini / openai / shadow) y el modelo se eligen en el panel: Ajustes ->
+   Inteligencia artificial. Gemini sigue haciendo falta: lee fotos y audios, y
+   es el respaldo si OpenAI falla. */
+define('WABOT_OPENAI_KEY', 'COMPLETAR');
 define('WABOT_FIREBASE_API_KEY', 'COMPLETAR');
 define('WABOT_FIREBASE_PROJECT', 'COMPLETAR');
 define('WABOT_ADMIN_PASS', 'COMPLETAR');

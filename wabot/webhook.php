@@ -88,6 +88,8 @@ function wabot_procesar_entrante($ev, $cfg) {
     $id    = $ev['id'];
     $canal = $ev['canal'];
     $texto = $ev['texto'];
+    // Lo que se gaste en OpenAI durante este pedido queda anotado a nombre de esta charla.
+    $GLOBALS['WABOT_IA_CLAVE'] = $clave;
 
     // Dedup atómico: Meta reintenta el webhook si tarda.
     if (!wabot_msg_visto_marcar($id)) return;
@@ -224,6 +226,8 @@ function wabot_procesar_entrante($ev, $cfg) {
         return;
     }
 
+    $recalculos = 0;   // turnos de OpenAI descartados porque el cliente siguió escribiendo
+    $sombras = [];     // modo shadow: lo que OpenAI piensa después de contestar
     try {
         do {
             $objetivoDemora = $primerContacto
@@ -354,10 +358,17 @@ function wabot_procesar_entrante($ev, $cfg) {
             $entrada    = implode("\n", $usables);
             $respuestas = wabot_salida_preparar(wabot_responder($entrada, $conv, $cfg), $conv, $cfg);
             unset($conv['_texto_de_media']);
+            // Solo los turnos de OpenAI se pueden descartar sin mandar: no tocaron nada afuera.
+            $recalculable = !empty($conv['_ia_recalculable']);
+            unset($conv['_ia_recalculable']);
+            $sombra = $GLOBALS['WABOT_IA_SOMBRA_PENDIENTE'] ?? null;
+            unset($GLOBALS['WABOT_IA_SOMBRA_PENDIENTE']);
 
             // Cada texto va como un mensaje aparte y tarda lo que tardaría en
             // escribirse. El primero descuenta lo que ya se fue esperando y
             // pensando, para no sumar espera sobre espera.
+            $descartar = false;
+            $enviados = [];
             foreach ($respuestas as $i => $mensaje) {
                 // Los textos fijos también pueden usar {nombre}. Así el modo de
                 // respaldo conserva la personalización sin obligar al motor a
@@ -370,10 +381,31 @@ function wabot_procesar_entrante($ev, $cfg) {
                 $falta = $i === 0 ? $tipeo - (microtime(true) - $arranque) : $tipeo;
                 if ($falta > 0) usleep((int)($falta * 1000000));
 
-                wabot_respuesta_enviar($conv, $mensaje);
+                /* El cliente escribió mientras OpenAI pensaba o "tipeaba" (27-sep):
+                 * "Quiero vender ropa" + "pero solo mayorista". Si todavía no salió
+                 * nada, la respuesta se descarta y se piensa de nuevo con todo; si
+                 * ya salió una parte, lo que falta no se manda (lo nuevo lo contesta
+                 * el turno siguiente, que ve lo que se mandó). */
+                if ($recalculable && wabot_cola_tiene($clave)) {
+                    if ($i === 0 && $recalculos < 2) { $descartar = true; break; }
+                    wabot_log('ia_resto_descartado', ['tel' => $de, 'canal' => $canal, 'enviados' => $i]);
+                    break;
+                }
+
+                if (wabot_respuesta_enviar($conv, $mensaje)) $enviados[] = $mensaje;
+            }
+
+            if ($descartar) {
+                // La charla no se guarda: se vuelve a cargar de disco con la tanda devuelta adelante.
+                wabot_cola_devolver($clave, $tanda);
+                $recalculos++;
+                wabot_log('ia_recalcula', ['tel' => $de, 'canal' => $canal, 'vez' => $recalculos]);
+                $arranque = microtime(true);
+                continue;
             }
 
             wabot_conv_save($conv);
+            if ($sombra !== null) $sombras[] = [$sombra, $enviados];
             wabot_log('msg', ['tel' => $de, 'canal' => $canal, 'fase' => $conv['fase'], 'juntados' => count($tanda),
                               'in' => mb_substr($entrada, 0, 200),
                               'out' => $respuestas ? mb_substr(implode(' | ', $respuestas), 0, 200) : '']);
@@ -383,6 +415,17 @@ function wabot_procesar_entrante($ev, $cfg) {
         } while (wabot_cola_tiene($clave));
     } finally {
         wabot_lock_soltar($lock);
+    }
+
+    /* Modo shadow (27-sep): con el cliente ya contestado y el candado libre,
+     * OpenAI piensa lo que habría contestado. No manda nada: lo anota para
+     * comparar en el panel. Un error acá no puede tumbar el webhook. */
+    foreach ($sombras as [$pendiente, $enviadoReal]) {
+        try {
+            wabot_ia_sombra_ejecutar($pendiente, $enviadoReal, $cfg);
+        } catch (Throwable $err) {
+            wabot_log('error', ['donde' => 'ia_sombra', 'msg' => mb_substr($err->getMessage(), 0, 200)]);
+        }
     }
 
     if (wabot_cola_tiene($clave)) {

@@ -2,8 +2,9 @@
 /**
  * wabot/engine.php — máquina de estados del bot.
  * Recibe la conversación + el texto del cliente y devuelve las respuestas.
- * Los textos SIEMPRE salen de textos.php: Gemini solo etiqueta intenciones,
- * nunca redacta lo que ve el cliente.
+ * Los textos del motor SIEMPRE salen de textos.php: la IA (Gemini, u OpenAI en
+ * modo openai) solo etiqueta intenciones acá. Lo único que redacta la IA son los
+ * turnos antes del precio en modo openai, y eso vive en ia.php, no acá.
  */
 
 require_once __DIR__ . '/lib.php';
@@ -4021,8 +4022,10 @@ function wabot_engine($texto, &$conv, $cfg) {
 
     // Si el clasificador abrió el circuito (o hay un 429), no hacemos otra
     // llamada para clasificar: vamos directo al respaldo local.
+    // En modo openai clasifica OpenAI: el circuito de Gemini solo corta si OpenAI tampoco está.
     if (!isset($GLOBALS['WABOT_TEST_CLASIFICADOR'])
-        && function_exists('wabot_ia_disponible') && !wabot_ia_disponible('clasificador')) {
+        && function_exists('wabot_ia_disponible') && !wabot_ia_disponible('clasificador')
+        && !(wabot_ia_proveedor($cfg) === 'openai' && wabot_openai_disponible())) {
         wabot_evento_sesion($conv, 'ia_fallback_seguro', ['origen' => 'circuito_abierto']);
         return wabot_fallback_ia($texto, $conv, $cfg);
     }

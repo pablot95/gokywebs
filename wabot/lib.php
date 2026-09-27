@@ -16,6 +16,9 @@ date_default_timezone_set('America/Argentina/Buenos_Aires');
 define('WABOT_DIR', __DIR__);
 define('WABOT_DATA', __DIR__ . '/data');
 
+// OpenAI (27-sep): el modo de IA, la llamada, el costo y la conversación antes del precio.
+require_once __DIR__ . '/ia.php';
+
 /* ─────────────────────────── Infraestructura ─────────────────────────── */
 
 function wabot_ensure_dirs() {
@@ -52,7 +55,7 @@ function wabot_version() {
     static $cache = null;
     if ($cache !== null) return $cache;
 
-    $archivos = ['lib.php', 'engine.php', 'redactor.php', 'webhook.php', 'textos.php'];
+    $archivos = ['lib.php', 'engine.php', 'redactor.php', 'webhook.php', 'textos.php', 'ia.php', 'ia-instrucciones.php'];
 
     $sello = '';
     foreach ($archivos as $a) {
@@ -172,12 +175,14 @@ function wabot_gemini_modelo($cfg = null) {
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
-    return ['activo', 'pausa_horas_humano', 'reset_dias',
+    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias',
             'demora_segundos', 'demora_primer_mensaje', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
             'ultima_llamada_activa', 'ultima_llamada_horas', 'presentadas_sin_respuesta_horas',
-            'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas'];
+            'seguimiento_hora_desde', 'seguimiento_hora_hasta', 'plantillas'],
+        // Modo de IA y OpenAI (27-sep): ver ia.php.
+        wabot_ia_ajustes_claves());
 }
 
 function wabot_config_load() {
@@ -561,6 +566,27 @@ function wabot_cola_drenar($tel) {
         if (is_array($r) && isset($r['t'])) $out[] = $r;
     }
     return $out;
+}
+
+/**
+ * Devuelve una tanda ya drenada a la cola, ADELANTE de lo que llegó después
+ * (27-sep): cuando un turno de OpenAI se descarta porque el cliente siguió
+ * escribiendo, se vuelve a pensar con todo junto y en el orden en que llegó.
+ */
+function wabot_cola_devolver($tel, array $tanda) {
+    if (!$tanda) return;
+    $h = @fopen(wabot_cola_path($tel), 'c+');
+    if (!$h) return;
+    flock($h, LOCK_EX);
+    $nuevo = stream_get_contents($h);
+    $viejo = '';
+    foreach ($tanda as $fila) $viejo .= json_encode($fila, JSON_UNESCAPED_UNICODE) . "\n";
+    ftruncate($h, 0);
+    rewind($h);
+    fwrite($h, $viejo . (string)$nuevo);
+    fflush($h);
+    flock($h, LOCK_UN);
+    fclose($h);
 }
 
 function wabot_cola_tiene($tel) {
@@ -4345,7 +4371,9 @@ function wabot_clasificar($texto, $conv, $cfg) {
     if (isset($GLOBALS['WABOT_TEST_CLASIFICADOR'])) {
         return call_user_func($GLOBALS['WABOT_TEST_CLASIFICADOR'], $texto, $conv, $cfg);
     }
-    if (!wabot_ia_disponible('clasificador') || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+    // En modo openai clasifica OpenAI (y Gemini queda de respaldo): alcanza con que haya uno.
+    $conOpenai = wabot_ia_proveedor($cfg) === 'openai' && wabot_openai_disponible();
+    if (!$conOpenai && (!wabot_ia_disponible('clasificador') || WABOT_GEMINI_KEY === 'COMPLETAR')) return null;
 
     $acciones = "elige_landing, elige_ecommerce, algo_diferente, rubro_landing, rubro_ecommerce, rubro_inmobiliaria, rubro_cursos, rubro_comercio, rubro_hibrido, rubro_sistema, hibrido_trabajos, hibrido_vender, cursos_vender, cursos_mostrar, pregunta_tipos, quiere_prediseno, datos_prediseno, pregunta_info, objecion_caro, objecion_pensarlo, objecion_socio, objecion_ya_tiene_web, menciona_plataforma, no_interesa, quiere_avanzar, pide_humano, productos_y_cursos, cambia_tipo, saludo, otro";
     $infoKeys = "proceso, pago, plazos, hosting, mantenimiento, carga, logo, marketing, reuniones, tecnologia, que_hacemos, internet, confianza, pixel, rangos, ubicacion, precio_sin_rubro, accesos, titularidad, emails, entrega_codigo, licencias, manual, bilingue, ejemplos, migracion, formularios, imagenes_web, envios, como_funciona_tienda, que_incluye, inscripcion, comparando, ya_tiene_plataforma, no_se_nada, sin_logo, sin_fotos, muestra_no_es_final, responsive, seguridad, google, maps, ampliar_despues, que_necesitan, soy_bot, quien_atiende, comisiones, baja_del_plan, cuenta_mercado_pago, plan_es_servicio, un_solo_pago, web_propia, turnos, usuarios, dominio_com, estadisticas, cupones, cobros_tienda, otra";
@@ -4469,6 +4497,18 @@ EOT;
  * fallaron los dos y contestó el respaldo.
  */
 function wabot_clasificar_llamar($body, $cfg) {
+    /* Modo openai (27-sep): el mismo prompt va a OpenAI y la respuesta vuelve con
+     * la forma de Gemini, así wabot_clasificar() la lee igual. Si OpenAI falla,
+     * sigue abajo con Gemini como siempre. */
+    if (wabot_ia_proveedor($cfg) === 'openai') {
+        $cuerpo = json_decode((string)$body, true);
+        $prompt = (string)($cuerpo['contents'][0]['parts'][0]['text'] ?? '');
+        $datos = $prompt !== '' ? wabot_openai_json($prompt, 'clasificador', $cfg, 900) : null;
+        if (is_array($datos)) {
+            return json_encode(['candidates' => [['content' => ['parts' => [['text' => json_encode($datos, JSON_UNESCAPED_UNICODE)]]]]]], JSON_UNESCAPED_UNICODE);
+        }
+        if (!wabot_ia_disponible('clasificador') || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+    }
     $modelo = wabot_gemini_modelo($cfg);
     foreach ([$modelo, wabot_gemini_modelo_alterno($modelo)] as $i => $m) {
         [$code, $res] = wabot_gemini_post($m, $body, $i === 0 ? 25 : 20);
@@ -4530,8 +4570,6 @@ function wabot_colores_a_hex($texto) {
         $out = call_user_func($GLOBALS['WABOT_TEST_COLORES'], $texto);
     } else {
         if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return null;
-        if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
-
         $prompt = "Un cliente describió los colores de su marca así: \"$texto\".\n\n"
             . "Devolvé SOLO este JSON, con códigos hexadecimales de 6 dígitos:\n"
             . "{\"principal\":\"#RRGGBB\",\"secundario\":\"#RRGGBB\",\"fondos\":\"#RRGGBB\"}\n\n"
@@ -4543,31 +4581,36 @@ function wabot_colores_a_hex($texto) {
             . "- Si pidió algo oscuro, en modo noche o sobre fondo negro, el fondo TIENE que ser oscuro (por ejemplo #111318). "
             . "Si no dijo nada sobre el fondo, poné un neutro muy claro. Nunca pongas un fondo claro cuando pidió un diseño oscuro.";
 
-        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
-        $body = json_encode([
-            'contents' => [['parts' => [['text' => $prompt]]]],
-            'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json'],
-        ], JSON_UNESCAPED_UNICODE);
+        // Modo openai (27-sep): el mismo pedido va a OpenAI; si falla, sigue con Gemini.
+        $out = wabot_ia_proveedor() === 'openai' ? wabot_openai_json($prompt, 'colores', null, 300) : null;
+        if (!is_array($out)) {
+            if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+            $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo() . ':generateContent?key=' . WABOT_GEMINI_KEY;
+            $body = json_encode([
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json'],
+            ], JSON_UNESCAPED_UNICODE);
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
-        ]);
-        $res  = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20,
+            ]);
+            $res  = curl_exec($ch);
+            $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-        if ($code < 200 || $code >= 300 || !$res) {
-            wabot_log('error', ['donde' => 'colores_hex', 'http' => $code]);
-            wabot_ia_reportar_error('colores_hex', $code);
-            return null;
+            if ($code < 200 || $code >= 300 || !$res) {
+                wabot_log('error', ['donde' => 'colores_hex', 'http' => $code]);
+                wabot_ia_reportar_error('colores_hex', $code);
+                return null;
+            }
+            wabot_ia_reportar_ok();
+            $j = json_decode($res, true);
+            $txt = $j['candidates'][0]['content']['parts'][0]['text'] ?? '';
+            $out = json_decode($txt, true);
         }
-        wabot_ia_reportar_ok();
-        $j = json_decode($res, true);
-        $txt = $j['candidates'][0]['content']['parts'][0]['text'] ?? '';
-        $out = json_decode($txt, true);
     }
 
     if (!is_array($out)) return null;
@@ -4596,8 +4639,6 @@ function wabot_resumen_negocio($conv, $cfg) {
         $out = call_user_func($GLOBALS['WABOT_TEST_RESUMEN'], $conv, $cfg);
     } else {
         if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) return null;
-        if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
-
         $charla = '';
         foreach ($conv['transcript'] as $t) {
             $quien = $t['q'] === 'cliente' ? 'Cliente' : ($t['q'] === 'humano' ? 'Agencia' : 'Bot');
@@ -4638,28 +4679,33 @@ function wabot_resumen_negocio($conv, $cfg) {
         if ($tipoLabel !== '') $prompt .= "\n\nEl bot ya le cotizó: $tipoLabel.";
         $prompt .= "\n\nCONVERSACIÓN:\n$charla";
 
-        $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
-        $body = json_encode([
-            'contents' => [['parts' => [['text' => $prompt]]]],
-            'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 700],
-        ], JSON_UNESCAPED_UNICODE);
+        // Modo openai (27-sep): el mismo pedido va a OpenAI; si falla, sigue con Gemini.
+        $out = wabot_ia_proveedor($cfg) === 'openai' ? wabot_openai_json($prompt, 'resumen_negocio', $cfg, 900) : null;
+        if (!is_array($out)) {
+            if (!wabot_ia_disponible() || WABOT_GEMINI_KEY === 'COMPLETAR') return null;
+            $url  = 'https://generativelanguage.googleapis.com/v1beta/models/' . wabot_gemini_modelo($cfg) . ':generateContent?key=' . WABOT_GEMINI_KEY;
+            $body = json_encode([
+                'contents' => [['parts' => [['text' => $prompt]]]],
+                'generationConfig' => ['temperature' => 0, 'responseMimeType' => 'application/json', 'maxOutputTokens' => 700],
+            ], JSON_UNESCAPED_UNICODE);
 
-        $ch = curl_init($url);
-        curl_setopt_array($ch, [
-            CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body,
-            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30,
-        ]);
-        $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+            $ch = curl_init($url);
+            curl_setopt_array($ch, [
+                CURLOPT_POST => true, CURLOPT_POSTFIELDS => $body,
+                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+                CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30,
+            ]);
+            $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
 
-        if ($code < 200 || $code >= 300 || !$res) {
-            wabot_log('error', ['donde' => 'resumen_negocio', 'http' => $code]);
-            wabot_ia_reportar_error('resumen_negocio', $code);
-            return null;
+            if ($code < 200 || $code >= 300 || !$res) {
+                wabot_log('error', ['donde' => 'resumen_negocio', 'http' => $code]);
+                wabot_ia_reportar_error('resumen_negocio', $code);
+                return null;
+            }
+            wabot_ia_reportar_ok();
+            $j = json_decode($res, true);
+            $out = json_decode($j['candidates'][0]['content']['parts'][0]['text'] ?? '', true);
         }
-        wabot_ia_reportar_ok();
-        $j = json_decode($res, true);
-        $out = json_decode($j['candidates'][0]['content']['parts'][0]['text'] ?? '', true);
     }
 
     if (!is_array($out)) return null;

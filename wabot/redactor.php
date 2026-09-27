@@ -5,9 +5,10 @@
  * Acá viven los cortes deterministas que valen en cualquier fase (la charla
  * dada de baja, el pedido de una persona, las dudas de pago con respuesta
  * fija, el post-demo, el formulario ya mandado…). Lo que no se resuelve acá
- * sigue al motor de reglas (wabot_engine), que clasifica el mensaje con Gemini
- * y contesta siempre con los textos fijos de textos.php. Todo lo que sale al
- * cliente pasa después por wabot_salida_preparar().
+ * sigue, antes del precio y en modo openai, a OpenAI (wabot_ia_turno en ia.php:
+ * conversa y decide cuándo cotizar); si no le toca o no pudo, al motor de reglas
+ * (wabot_engine), que clasifica el mensaje y contesta con los textos fijos de
+ * textos.php. Todo lo que sale al cliente pasa después por wabot_salida_preparar().
  */
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
@@ -587,6 +588,14 @@ function wabot_responder($texto, &$conv, $cfg) {
         wabot_evento_sesion($conv, 'prediseno_datos_no_extraibles');
         return wabot_derivar($conv, $cfg, 'datos_ya_dados');
     }
+
+    /* Antes del precio, en modo openai, conversa OpenAI (27-sep): entiende el
+     * negocio, contesta y decide cuándo cotizar; el precio sale igual por
+     * wabot_precio(). Todos los cortes fijos de arriba siguen primero. Devuelve
+     * null si el turno no le toca, si está en shadow o si OpenAI no pudo: ahí
+     * contesta el motor de siempre. Ver ia.php. */
+    $conOpenai = wabot_ia_turno($texto, $conv, $cfg);
+    if ($conOpenai !== null) return $conOpenai;
 
     return wabot_engine($texto, $conv, $cfg);
 }
