@@ -1465,7 +1465,7 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
     foreach (['nombre_negocio', 'descripcion', 'colores', 'colores_hex', 'referencia', 'brief',
               'tipo', 'rubro_pitch', 'productos_cantidad', 'lead_doc', 'origen_prediseno',
               // El paso 2 del formulario viaja con el resto de lo que completó.
-              'estilo', 'incluir',
+              'estilo', 'incluir', 'objetivos',
               // La forma de pago que eligió también (15-sep), y la web propia (19-sep).
               'modalidad_elegida', 'quiere_web_propia',
               // El precio congelado viaja con el tipo (10-sep): sin él, la
@@ -1531,9 +1531,10 @@ function wabot_conv_load($clave) {
         'colores'          => null,
         'colores_hex'      => null,
         'referencia'       => null,
-        // Paso 2 del formulario (10-sep).
+        // Paso 2 del formulario (10-sep); qué quiere lograr, desde el 27-sep.
         'estilo'           => null,
         'incluir'          => null,
+        'objetivos'        => null,
         'productos_cantidad' => null,
         'imagenes_recibidas' => 0,
         'prediseno_pedido'   => [],
@@ -1732,7 +1733,7 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
               // Paso 2 del formulario (10-sep): son del proyecto viejo.
-              'estilo','incluir','combo_cursos',
+              'estilo','incluir','objetivos','combo_cursos',
               // La ficha y lo que se decidió con ella (18-sep).
               'ficha','catalogo','fuera_avisado','objetivo_preguntado'] as $k) {
         $conv[$k] = null;
@@ -5157,6 +5158,14 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         $marca  = wabot_nombre_negocio_fallback($fuente);
     }
 
+    /* Lo que marcó en "Qué querés lograr con tu web" (27-sep): antes que el
+     * resto del formulario en el bloque que se lee al diseñar, porque es
+     * justamente eso, y en `objetivos`, que el admin ya muestra como
+     * "Objetivos seleccionados" (y deja editar). */
+    $objetivosForm = trim((string)($conv['objetivos'] ?? ''));
+    if (!$esSistema && $objetivosForm !== '' && mb_stripos($objetivo, $objetivosForm) === false) {
+        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Quiere lograr: ' . $objetivosForm;
+    }
     // La referencia se guarda en su campo Y va dentro de "Sobre el negocio y qué
     // quiere lograr con la web", que es el bloque que se lee al diseñar.
     if (!$esSistema && ($conv['referencia'] ?? '') !== '' && mb_stripos($objetivo, $conv['referencia']) === false) {
@@ -5224,6 +5233,7 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         // Paso 2 del formulario (10-sep). También van dentro de objetivo_web.
         'estilo_pagina'      => ['stringValue' => $estilo],
         'incluir_si_o_si'    => ['stringValue' => $incluir],
+        'objetivos'          => ['stringValue' => $objetivosForm],
         'modelosElegidos'    => ['stringValue' => json_encode((array)($conv['modelos_elegidos'] ?? []), JSON_UNESCAPED_UNICODE)],
         'esProspecto'        => ['booleanValue' => !empty($conv['esProspecto'])],
         // Mismos nombres que usa el formulario, así la ficha del boceto

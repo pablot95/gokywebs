@@ -47,7 +47,7 @@ function wabot_turno_preparar(&$conv, $cfg, $ahora = null) {
         if ($vieja) {
             foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
                       'ultimo_bot','sistema_problema','productos_cantidad',
-                      'estilo','incluir','combo_cursos'] as $k) {
+                      'estilo','incluir','objetivos','combo_cursos'] as $k) {
                 $conv[$k] = null;
             }
             foreach (['referencia_preguntada','cta_muestra','seguimiento_enviado','espera_avisada',

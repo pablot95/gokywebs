@@ -606,4 +606,62 @@ caso('el webhook resuelve la conversación antes de escribir el aviso',
     && strpos($webhookSrc, 'wabot_entrega_fallida_marcar($conv, $motivo);') !== false);
 caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($claveReal === null) continue;') !== false);
 
+echo "— 16. Qué quiere lograr con la web y la miniatura del estilo (27-sep) —\n";
+
+// formlead_extras() y compañía ya están cargadas desde la sección 12.
+preg_match_all('/<input type="checkbox" name="objetivos" value="([^"]+)"/u', $htmlPrincipal, $mObj);
+caso('las casillas del formulario son las que acepta el servidor, en el mismo orden',
+    $mObj[1] === formlead_objetivos(), json_encode($mObj[1], JSON_UNESCAPED_UNICODE));
+caso('el campo de "Otra" va a su derecha, en la misma grilla, y arranca apagado',
+    preg_match('/value="Otra"[^>]*>.*?<\/label>\s*<div class="objetivo-otro"[^>]*>\s*<input [^>]*id="objetivo_otro"[^>]*\bdisabled>/us', $htmlPrincipal) === 1);
+
+$eObj = formlead_extras(['objetivos' => ['Tener una web visualmente atractiva', 'Generar más ventas', 'Generar más ventas', 'Algo inventado', 'Otra'],
+    'objetivo_otro' => "  Que me   escriban\nempresas  "]);
+caso('quedan en el orden del formulario, sin repetir, sin lo inventado y con lo que escribió en "Otra"',
+    ($eObj['objetivos'] ?? null) === 'Generar más ventas, Tener una web visualmente atractiva, Otra: Que me escriban empresas',
+    json_encode($eObj, JSON_UNESCAPED_UNICODE));
+$eSoloOtra = formlead_extras(['objetivos' => ['Otra'], 'objetivo_otro' => '']);
+caso('"Otra" sin escribir nada no se anota', ($eSoloOtra['objetivos'] ?? null) === '', json_encode($eSoloOtra));
+$eNoLista = formlead_extras(['objetivos' => 'Generar más ventas']);
+caso('lo que no es una lista no se anota, pero tampoco frena el envío', $eNoLista !== null && ($eNoLista['objetivos'] ?? null) === '');
+caso('el formulario que no manda objetivos no toca los de la charla',
+    !array_key_exists('objetivos', (array)formlead_extras(['estilo' => 'Minimalista'])));
+$motivoObj = null;
+caso('"Otra" de más de 120 caracteres se rechaza en su campo',
+    formlead_extras(['objetivos' => ['Otra'], 'objetivo_otro' => str_repeat('a', 121)], $motivoObj) === null
+    && ($motivoObj['campo'] ?? '') === 'objetivo_otro' && ($motivoObj['max'] ?? 0) === 120, json_encode($motivoObj));
+
+@unlink(WABOT_DATA . '/conv/5493810009002.json');
+$payloadObj = ['t' => '5493810009002', 'nombre' => 'Marta', 'nombre_negocio' => 'Vivero Marta',
+    'resumen' => 'Vivero con plantas de interior', 'colores' => 'Verde', 'modalidad' => 'mensual',
+    'objetivos' => ['Generar más ventas', 'Recibir reservas o turnos'], 'objetivo_otro' => '', 'estilo' => 'Cálido y cercano',
+    'modelos' => [['id' => 'a', 'nombre' => 'Uno'], ['id' => 'b', 'nombre' => 'Dos']]];
+$baseObj = wabot_form_lead_validar($payloadObj);
+$extrasObj = formlead_extras($payloadObj);
+caso('se guarda con el resto del paso 2', $baseObj !== null && $extrasObj !== null && formlead_extras_guardar($baseObj, $extrasObj) === true);
+$rObj = wabot_form_lead_procesar($payloadObj, $cfg);
+$convObj = wabot_conv_load('5493810009002');
+caso('la charla queda con lo que quiere lograr',
+    ($rObj['ok'] ?? false) === true && ($convObj['objetivos'] ?? '') === 'Generar más ventas, Recibir reservas o turnos',
+    json_encode($rObj) . ' ' . (string)($convObj['objetivos'] ?? ''));
+$lineasObj = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convObj['transcript'] ?? [])));
+caso('el transcript lo anota', strpos($lineasObj, 'Quiere lograr: Generar más ventas, Recibir reservas o turnos') !== false, $lineasObj);
+$camposObj = wabot_lead_campos($convObj, $cfg, false);
+caso('el boceto lo lleva en `objetivos`, que el admin muestra como "Objetivos seleccionados"',
+    ($camposObj['objetivos']['stringValue'] ?? '') === 'Generar más ventas, Recibir reservas o turnos',
+    json_encode($camposObj['objetivos'] ?? null, JSON_UNESCAPED_UNICODE));
+caso('y en el bloque que se lee al diseñar',
+    mb_strpos((string)($camposObj['objetivo_web']['stringValue'] ?? ''), 'Quiere lograr: Generar más ventas, Recibir reservas o turnos') !== false,
+    (string)($camposObj['objetivo_web']['stringValue'] ?? ''));
+$cRObj = array_merge($convObj, ['ultimo_ts' => time() - 30 * 86400, 'presentado_ts' => 0]);
+wabot_conv_reset_si_vieja($cRObj, $cfg, time());
+caso('el reset de sesión lo limpia, igual que al estilo', empty($cRObj['objetivos']));
+@unlink(WABOT_DATA . '/conv/5493810009002.json');
+
+preg_match_all('/<option value="([^"]+)"[^>]*data-mini="([^"]+)"/u', $htmlPrincipal, $mMini);
+caso('cada estilo tiene su miniatura, y los estilos son los que acepta el servidor',
+    $mMini[1] === formlead_estilos(), json_encode($mMini[1], JSON_UNESCAPED_UNICODE));
+$miniFaltan = array_values(array_filter($mMini[2], function ($ruta) { return !is_file(__DIR__ . '/..' . $ruta); }));
+caso('y las miniaturas están en /form/estilos', count($mMini[2]) === count(formlead_estilos()) && !$miniFaltan, json_encode($miniFaltan));
+
 todo_ok();

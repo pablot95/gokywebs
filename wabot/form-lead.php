@@ -12,6 +12,9 @@ require_once __DIR__ . '/redactor.php';
  *                  wabot_lead_campos() ya la manda a Firestore (`referencias`).
  *   - estilo     → $conv['estilo']
  *   - incluir    → $conv['incluir']
+ *   - objetivos  → $conv['objetivos'] (27-sep): las casillas de "Qué querés
+ *                  lograr con tu web" en un texto ("Generar más ventas,
+ *                  Otra: …"), con lo que escribió en objetivo_otro.
  * Además queda una línea "[Formulario web, paso 2] ..." en el transcript, para
  * verlo en el panel. */
 
@@ -20,6 +23,14 @@ require_once __DIR__ . '/redactor.php';
 function formlead_estilos() {
     return ['Minimalista', 'Moderno y audaz', 'Elegante / premium', 'Cálido y cercano',
             'Colorido y divertido', 'Corporativo / sobrio', 'No lo sé'];
+}
+
+/* Las mismas casillas de "Qué querés lograr con tu web" de form/index.html, en
+ * el mismo orden: si se suma una allá, va también acá. Lo que no está en la
+ * lista se descarta. */
+function formlead_objetivos() {
+    return ['Generar más ventas', 'Conseguir más clientes', 'Recibir reservas o turnos',
+            'Tener una web visualmente atractiva', 'Otra'];
 }
 
 /**
@@ -41,6 +52,26 @@ function formlead_extras($payload, &$motivo = null) {
     }
     if (isset($extras['estilo']) && !in_array($extras['estilo'], formlead_estilos(), true)) {
         $extras['estilo'] = '';
+    }
+    if (array_key_exists('objetivos', $payload)) {
+        /* Llegan como la lista de casillas marcadas. Quedan en el orden del
+         * formulario y sin repetir; "Otra" solo cuenta con lo que escribió. No
+         * marcar ninguna no frena el envío: el formulario ya lo pide y el lead
+         * vale más que la respuesta. */
+        $marcados = is_array($payload['objetivos']) ? $payload['objetivos'] : [];
+        $otro = is_scalar($payload['objetivo_otro'] ?? null) ? trim((string)$payload['objetivo_otro']) : '';
+        $otro = trim((string)preg_replace('/[\s\x00-\x1F\x7F]+/u', ' ', $otro));
+        if (mb_strlen($otro) > 120) {
+            $motivo = ['motivo' => 'largo', 'campo' => 'objetivo_otro', 'max' => 120];
+            return null;
+        }
+        $lista = [];
+        foreach (formlead_objetivos() as $opcion) {
+            if (!in_array($opcion, $marcados, true)) continue;
+            if ($opcion !== 'Otra') $lista[] = $opcion;
+            elseif ($otro !== '') $lista[] = 'Otra: ' . $otro;
+        }
+        $extras['objetivos'] = implode(', ', $lista);
     }
     // "No tengo", "ya te la pasé": no es una referencia (mismo criterio que el chat).
     if (isset($extras['referencia']) && function_exists('wabot_referencia_utilizable')
@@ -119,6 +150,7 @@ function formlead_extras_guardar($base, $extras) {
     }
 
     $partes = [];
+    if (($extras['objetivos'] ?? '') !== '')  $partes[] = 'Quiere lograr: ' . $extras['objetivos'];
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];

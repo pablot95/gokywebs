@@ -1840,66 +1840,297 @@ body {
     .que-es-title  { font-size: 1.05rem; }
 }
 
-/* ─── Objetivos pills ─── */
+/* ─── Qué querés lograr con tu web (27-sep) ───
+   Casillas de verdad (se puede marcar más de una): el input queda invisible
+   encima de su tarjeta y la pinta con :checked, como .tipo-pagina-option.
+   Lo elegido repite las tarjetas de modelos: borde azul y la tilde. */
+.objetivos-campo {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    min-width: 0;
+}
+
+.objetivos-campo > legend {
+    padding: 0;
+    margin-bottom: 8px;
+}
+
 .objetivos-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    align-items: stretch;
+}
+
+.objetivo-opcion {
+    position: relative;
+    display: flex;
+    cursor: pointer;
+}
+
+.objetivo-opcion input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .objetivo-pill {
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    text-align: left;
-    padding: 14px 18px;
+    padding: 12px 14px;
     border: 1.5px solid var(--border);
-    border-radius: 14px;
+    border-radius: 10px;
     background: var(--bg);
     color: var(--text);
-    font-family: var(--font);
-    font-size: 0.92rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
+    font-size: 0.9rem;
+    font-weight: 500;
     line-height: 1.3;
+    transition: border-color 0.18s, background-color 0.18s, box-shadow 0.18s;
 }
 
-.objetivo-pill:hover {
+.objetivo-check {
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 5px;
+    background: #fff;
+    transition: background-color 0.18s, border-color 0.18s;
+}
+
+.objetivo-check::after {
+    content: "";
+    width: 8px;
+    height: 4px;
+    border: solid #fff;
+    border-width: 0 0 2px 2px;
+    transform: translateY(-1px) rotate(-45deg);
+    opacity: 0;
+}
+
+.objetivo-opcion input:checked + .objetivo-pill {
     border-color: var(--blue);
-    background: var(--blue-light);
-    color: var(--blue-dark);
+    background: #F4F7FF;
+    box-shadow: inset 0 0 0 1px var(--blue);
 }
 
-.objetivo-pill.selected {
+.objetivo-opcion input:checked + .objetivo-pill .objetivo-check {
+    border-color: var(--blue);
     background: var(--blue);
-    border-color: var(--blue);
+}
+
+.objetivo-opcion input:checked + .objetivo-pill .objetivo-check::after {
+    opacity: 1;
+}
+
+.objetivo-opcion input:focus-visible + .objetivo-pill {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+}
+
+@media (hover: hover) {
+    .objetivo-opcion:hover .objetivo-pill { border-color: var(--blue); }
+}
+
+.objetivos-grid.error .objetivo-pill {
+    border-color: var(--error);
+}
+
+/* El campo de "Otra" ocupa la celda de al lado, apagado hasta marcarla. Apagado
+   no recibe el toque: le llega a la celda, que marca "Otra" (script.js). */
+.objetivo-otro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.objetivo-otro .field-input {
+    flex: 1 1 auto;
+    padding: 10px 14px;
+    border-radius: 10px;
+}
+
+.objetivo-otro .field-input:disabled {
+    pointer-events: none;
+    opacity: 0.55;
+}
+
+.objetivos-campo > .error-msg {
+    margin-top: 8px;
+}
+
+/* ─── Estilo de página con su miniatura (27-sep) ───
+   El desplegable y la descripción a la izquierda y, a la derecha, el sitio
+   de ejemplo del estilo elegido en un marquito de navegador. En el celular
+   el desplegable ocupa todo el ancho y la miniatura queda a la derecha de la
+   descripción: .estilo-campo se disuelve en la grilla (display: contents). */
+.estilo-fila {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 200px;
+    column-gap: 18px;
+    align-items: start;
+}
+
+.estilo-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.estilo-mini {
+    position: relative;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 8px 20px -12px rgba(15, 23, 42, 0.35);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.18s;
+}
+
+.estilo-mini-barra {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 14px;
+    padding: 0 7px;
+    background: #F1F5F9;
+    border-bottom: 1px solid var(--border);
+}
+
+.estilo-mini-barra i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #CBD5E1;
+}
+
+.estilo-mini-vista {
+    position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.estilo-mini-vista img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transition: opacity 0.25s ease, transform 0.35s ease;
+}
+
+.estilo-mini-vista img.cargando {
+    opacity: 0;
+}
+
+.estilo-mini.vacia img {
+    display: none;
+}
+
+/* Sin estilo elegido: el esqueleto de una página (título, bajada y botón). */
+.estilo-mini-vacio {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 14%;
+}
+
+.estilo-mini.vacia .estilo-mini-vacio {
+    display: flex;
+}
+
+.estilo-mini-vacio b {
+    display: block;
+    width: 72%;
+    height: 9px;
+    border-radius: 4px;
+    background: #E2E8F0;
+}
+
+.estilo-mini-vacio b:nth-child(2) {
+    width: 52%;
+    height: 6px;
+}
+
+.estilo-mini-vacio b:nth-child(3) {
+    width: 30%;
+    height: 12px;
+    margin-top: 4px;
+    border-radius: 6px;
+    background: var(--blue-mid);
+}
+
+/* ↗ en la esquina: solo cuando la miniatura lleva al sitio de ejemplo. */
+.estilo-mini-ir {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    display: none;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.72);
     color: #fff;
-    box-shadow: 0 2px 10px rgba(37,99,235,0.3);
+    font-size: 0.72rem;
+    line-height: 1;
 }
 
-.objetivo-pill-hint {
-    font-size: 0.78rem;
-    font-weight: 400;
-    line-height: 1.4;
-    color: var(--text-muted);
+.estilo-mini[href] .estilo-mini-ir {
+    display: grid;
 }
 
-.objetivo-pill.selected .objetivo-pill-hint {
-    color: rgba(255,255,255,0.85);
+.estilo-mini[href]:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
 }
 
-.objetivo-warn {
-    margin-top: 10px;
-    font-size: 0.8rem;
-    color: #92400e;
-    background: rgba(217,119,6,0.09);
-    border: 1px solid rgba(217,119,6,0.25);
-    border-radius: 8px;
-    padding: 8px 12px;
+@media (hover: hover) {
+    .estilo-mini[href]:hover { border-color: #93C5FD; }
+    .estilo-mini[href]:hover img { transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .estilo-mini-vista img { transition: none; }
+}
+
+@media (max-width: 600px) {
+    .objetivos-grid { gap: 8px; }
+    .objetivo-pill { gap: 8px; padding: 10px 11px; font-size: 0.85rem; }
+    .objetivo-check { width: 16px; height: 16px; }
+    .objetivo-otro .field-input { padding: 10px 11px; }
+
+    .estilo-fila {
+        grid-template-columns: minmax(0, 1fr) clamp(108px, 40%, 150px);
+        grid-template-areas: "sel sel" "err err" "hint mini";
+        column-gap: 14px;
+    }
+    .estilo-mini-ir { right: 5px; bottom: 5px; width: 18px; height: 18px; font-size: 0.64rem; }
+    .estilo-campo { display: contents; }
+    .estilo-campo > select { grid-area: sel; }
+    .estilo-campo > .error-msg { grid-area: err; margin-top: 6px; }
+    .estilo-campo > .field-hint { grid-area: hint; align-self: center; margin-top: 10px; }
+    .estilo-mini { grid-area: mini; margin-top: 10px; }
 }
 
 /* ─── Tipo web detectado ─── */
@@ -1953,10 +2184,6 @@ body {
         justify-content: center;
         padding-inline: 16px;
     }
-
-    .objetivos-grid { gap: 8px; }
-    .objetivo-pill { font-size: 0.76rem; padding: 10px 11px; border-radius: 12px; }
-    .objetivo-pill-hint { font-size: 0.67rem; line-height: 1.3; }
 }
 /* ─── Paso 3: modelos (16-sep; tarjetas horizontales del diseño de Pablo, 24-sep) ───
    Las vistas usan .wf de /modelos/wire.css; .md-alto y .md-lienzo repiten

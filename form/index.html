@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20260925a">
+    <link rel="stylesheet" href="styles.css?v=20260927a">
 </head>
 <body>
 
@@ -102,8 +102,29 @@
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Cómo te gustaría pagar, tus colores y el estilo que buscás.</p>
+                            <p class="step-header-desc">Qué buscás lograr, cómo te gustaría pagar, tus colores y el estilo.</p>
                         </div>
+
+                        <!-- Qué quiere lograr con la web (27-sep, las opciones de Pablo): se puede
+                             marcar más de una. "Otra" es la quinta y su campo va a la derecha, en
+                             la celda que queda libre: se habilita al marcarla. Los valores tienen
+                             que coincidir con formlead_objetivos() de wabot/form-lead.php. -->
+                        <fieldset class="field-group objetivos-campo">
+                            <legend class="field-label">
+                                ¿Qué querés lograr con tu web? <span class="req">*</span>
+                                <span class="field-hint">Podés elegir más de una.</span>
+                            </legend>
+                            <div class="objetivos-grid" id="objetivos">
+                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Generar más ventas"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Generar más ventas</span></label>
+                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Conseguir más clientes"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Conseguir más clientes</span></label>
+                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Recibir reservas o turnos"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Recibir reservas o turnos</span></label>
+                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Tener una web visualmente atractiva"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Tener una web visualmente atractiva</span></label>
+                                <label class="objetivo-opcion"><input type="checkbox" name="objetivos" value="Otra" id="objetivoOtra" aria-controls="objetivo_otro"><span class="objetivo-pill"><span class="objetivo-check" aria-hidden="true"></span>Otra</span></label>
+                                <div class="objetivo-otro" id="objetivoOtroCampo">
+                                    <input type="text" id="objetivo_otro" name="objetivo_otro" class="field-input" placeholder="¿Cuál?" aria-label="Otra: ¿cuál?" maxlength="120" disabled>
+                                </div>
+                            </div>
+                        </fieldset>
 
                         <div class="field-group">
                             <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
@@ -145,20 +166,37 @@
                             <label class="field-label" for="estilo">
                                 Estilo de página <span class="req">*</span>
                             </label>
-                            <!-- Cada opción trae su descripción y un ejemplo del portfolio, que
-                                 script.js muestra abajo (un <option> no puede llevar links). La
-                                 lista tiene que coincidir con formlead_estilos() de wabot/form-lead.php. -->
-                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
-                                <option value="" disabled selected>Elegí un estilo</option>
-                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow">Minimalista</option>
-                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE">Moderno y audaz</option>
-                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes">Elegante / premium</option>
-                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo">Cálido y cercano</option>
-                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos">Colorido y divertido</option>
-                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones">Corporativo / sobrio</option>
-                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
-                            </select>
-                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y acá te mostramos un ejemplo.</p>
+                            <!-- Cada opción trae su descripción, un ejemplo del portfolio y la
+                                 miniatura de ese ejemplo (data-mini, recortes de /portfolio/previews),
+                                 que script.js muestra al elegirla: la descripción abajo (un <option>
+                                 no puede llevar links) y la miniatura en el recuadro de al lado
+                                 (27-sep). La lista tiene que coincidir con formlead_estilos() de
+                                 wabot/form-lead.php. -->
+                            <div class="estilo-fila">
+                                <div class="estilo-campo">
+                                    <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
+                                        <option value="" disabled selected>Elegí un estilo</option>
+                                        <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow" data-mini="/form/estilos/minimalista.webp">Minimalista</option>
+                                        <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE" data-mini="/form/estilos/moderno.webp">Moderno y audaz</option>
+                                        <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes" data-mini="/form/estilos/elegante.webp">Elegante / premium</option>
+                                        <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo" data-mini="/form/estilos/calido.webp">Cálido y cercano</option>
+                                        <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos" data-mini="/form/estilos/colorido.webp">Colorido y divertido</option>
+                                        <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones" data-mini="/form/estilos/corporativo.webp">Corporativo / sobrio</option>
+                                        <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro." data-mini="/form/estilos/no-lo-se.webp">No lo sé</option>
+                                    </select>
+                                    <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y te mostramos cómo se ve.</p>
+                                </div>
+                                <!-- Con un estilo elegido lleva a su sitio de ejemplo; vacío o con
+                                     "No lo sé" no es un link (script.js le saca el href). -->
+                                <a class="estilo-mini vacia" id="estiloMini" target="_blank" rel="noopener">
+                                    <span class="estilo-mini-barra" aria-hidden="true"><i></i><i></i><i></i></span>
+                                    <span class="estilo-mini-vista">
+                                        <img alt="" width="480" height="300" decoding="async">
+                                        <span class="estilo-mini-vacio" aria-hidden="true"><b></b><b></b><b></b></span>
+                                        <span class="estilo-mini-ir" aria-hidden="true">↗</span>
+                                    </span>
+                                </a>
+                            </div>
                         </div>
 
                         <div class="field-group">
@@ -303,6 +341,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260926-tresmodalidades"></script>
+    <script type="module" src="script.js?v=20260927-objetivos"></script>
 </body>
 </html>

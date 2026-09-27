@@ -468,7 +468,10 @@ function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     if (enfocar) paso?.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
     // El paso de modelos necesita más ancho que los campos.
     document.body.classList.toggle('paso-modelos', n === 3 && !conIntro);
-    if (n === 2) track('step2');
+    if (n === 2) {
+        track('step2');
+        precargarMiniaturas();
+    }
 }
 
 document.getElementById('btnSiguiente').addEventListener('click', () => {
@@ -568,8 +571,26 @@ function validarPaso1() {
 function validarPaso2() {
     let firstError = null;
 
+    // Qué quiere lograr: al menos una casilla, y si marcó "Otra", cuál.
+    if (objetivosGrid && !objetivosMarcados().length) {
+        markError(objetivosGrid, 'Elegí al menos una opción.');
+        firstError = objetivosGrid;
+    } else if (objetivoOtra?.checked && objetivoOtroInput) {
+        const otro = objetivoOtroInput.value.trim();
+        if (!otro) {
+            markError(objetivoOtroInput, 'Contanos qué querés lograr.');
+            firstError = objetivoOtroInput;
+        } else if (otro.length > LIMITES.objetivo_otro) {
+            markError(objetivoOtroInput, `Demasiado largo: máximo ${LIMITES.objetivo_otro} caracteres.`);
+            firstError = objetivoOtroInput;
+        }
+    }
+
     const modalidad = document.getElementById('modalidad');
-    if (!modalidad.value) { markError(modalidad, 'Elegí el plan mensual, el plan anual o el pago único.'); firstError = modalidad; }
+    if (!modalidad.value) {
+        markError(modalidad, 'Elegí el plan mensual, el plan anual o el pago único.');
+        if (!firstError) firstError = modalidad;
+    }
 
     // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
     const estilo = document.getElementById('estilo');
@@ -633,6 +654,9 @@ function buildPayload() {
         colores,
         // Paso 2 (10-sep). Van siempre, aunque estén vacíos: así el servidor
         // sabe que el formulario ya preguntó la referencia y no la pide por chat.
+        // Qué quiere lograr (27-sep): las casillas marcadas y, con "Otra", cuál.
+        objetivos: objetivosMarcados(),
+        objetivo_otro: objetivoOtra?.checked ? get('objetivo_otro') : '',
         estilo: get('estilo'),
         referencia: get('referencia'),
         incluir: get('incluir'),
@@ -665,9 +689,9 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200, estilo: 40, referencia: 300, incluir: 600 };
+const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200, objetivo_otro: 120, estilo: 40, referencia: 300, incluir: 600 };
 const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
-    estilo: 'el estilo de página', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
+    objetivo_otro: 'qué querés lograr', estilo: 'el estilo de página', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
  * campo, no se tira un "ocurrió un error" genérico. Si el campo está en el otro
@@ -814,6 +838,42 @@ function _contador(idCampo, idContador) {
 }
 const _pintarContadores = [_contador('resumen', 'resumenContador'), _contador('incluir', 'incluirContador')];
 
+/* Qué quiere lograr con la web (27-sep): casillas, se puede marcar más de
+ * una. "Otra" habilita el campo de al lado, obligatorio mientras esté marcada. */
+const objetivosGrid = document.getElementById('objetivos');
+const objetivoOtra = document.getElementById('objetivoOtra');
+const objetivoOtroCampo = document.getElementById('objetivoOtroCampo');
+const objetivoOtroInput = document.getElementById('objetivo_otro');
+
+function objetivosMarcados() {
+    return objetivosGrid ? [...objetivosGrid.querySelectorAll('input[type="checkbox"]:checked')].map(i => i.value) : [];
+}
+
+/* El aviso de error de un campo se va apenas se corrige, sin esperar a Siguiente. */
+function quitarError(el) {
+    el.classList.remove('error');
+    el.parentNode.querySelectorAll(':scope > .error-msg').forEach(m => m.remove());
+}
+
+function pintarObjetivoOtro({ enfocar = false } = {}) {
+    if (!objetivoOtra || !objetivoOtroInput) return;
+    objetivoOtroInput.disabled = !objetivoOtra.checked;
+    // Sin "Otra" el campo no cuenta, y su aviso tampoco.
+    if (!objetivoOtra.checked) quitarError(objetivoOtroInput);
+    if (objetivoOtra.checked && enfocar) objetivoOtroInput.focus();
+}
+
+objetivosGrid?.addEventListener('change', e => {
+    // Con una marcada la pregunta ya está contestada.
+    if (objetivosGrid.classList.contains('error') && objetivosMarcados().length) quitarError(objetivosGrid);
+    if (e.target === objetivoOtra) pintarObjetivoOtro({ enfocar: true });
+});
+// Tocar el campo apagado es elegir "Otra": se marca y queda listo para escribir.
+objetivoOtroCampo?.addEventListener('click', () => {
+    if (objetivoOtra && !objetivoOtra.checked) objetivoOtra.click();
+});
+objetivoOtroInput?.addEventListener('input', () => quitarError(objetivoOtroInput));
+
 /* Estilo de página: un <option> no puede llevar links, así que el ejemplo de
  * cada estilo va en la línea de abajo y cambia con lo que se elige. La
  * descripción, el link y el nombre del ejemplo viven en cada <option>. */
@@ -821,9 +881,50 @@ const estiloSelect = document.getElementById('estilo');
 const estiloAyuda = document.getElementById('estiloEjemplo');
 const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
 
+/* Y en el recuadro de al lado, la miniatura (27-sep): el recorte del sitio de
+ * ejemplo (data-mini), que lleva a ese sitio. Sin estilo queda el esqueleto
+ * de una página; "No lo sé" es un mosaico de varios y no lleva a ningún lado. */
+const estiloMini = document.getElementById('estiloMini');
+const estiloMiniImg = estiloMini?.querySelector('img');
+
+function pintarMiniatura(op) {
+    if (!estiloMini || !estiloMiniImg) return;
+    const src = op?.dataset.mini || '';
+    estiloMini.classList.toggle('vacia', !src);
+    if (src && op.dataset.ejemplo) {
+        const nombre = op.dataset.ejemploNombre || 'el sitio de ejemplo';
+        estiloMini.href = op.dataset.ejemplo;
+        estiloMini.title = `Ver ${nombre}`;
+        estiloMini.setAttribute('aria-label', `Ver ${nombre}, el ejemplo del estilo ${op.value} (se abre en otra pestaña)`);
+    } else {
+        estiloMini.removeAttribute('href');
+        estiloMini.removeAttribute('title');
+        estiloMini.removeAttribute('aria-label');
+    }
+    if (!src || estiloMiniImg.getAttribute('src') === src) return;
+    // Oculta hasta que carga: de un estilo al otro hay un fundido, no un salto.
+    estiloMiniImg.classList.add('cargando');
+    estiloMiniImg.src = src;
+}
+estiloMiniImg?.addEventListener('load', () => estiloMiniImg.classList.remove('cargando'));
+// Si la imagen no está, vuelve el esqueleto en vez de un recuadro en blanco.
+estiloMiniImg?.addEventListener('error', () => {
+    estiloMiniImg.classList.remove('cargando');
+    estiloMini.classList.add('vacia');
+});
+
+// Todas se piden al entrar al paso 2: cambiar de estilo no espera la descarga.
+let miniaturasPedidas = false;
+function precargarMiniaturas() {
+    if (miniaturasPedidas || !estiloSelect) return;
+    miniaturasPedidas = true;
+    [...estiloSelect.options].forEach(o => { if (o.dataset.mini) new Image().src = o.dataset.mini; });
+}
+
 function pintarEstilo() {
     if (!estiloSelect || !estiloAyuda) return;
     const op = estiloSelect.selectedOptions[0];
+    pintarMiniatura(op && op.value ? op : null);
     if (!op || !op.value) {
         estiloAyuda.textContent = ESTILO_AYUDA_INICIAL;
         return;
@@ -862,11 +963,12 @@ const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
     'color_principal', 'color_secundario', 'color_fondos',
-    'estilo', 'referencia', 'incluir', 'modalidad'];
+    'objetivo_otro', 'estilo', 'referencia', 'incluir', 'modalidad'];
 
 function saveDraft() {
     try {
-        const d = { fields: {} };
+        // Las casillas de qué quiere lograr van aparte: no son un valor por id.
+        const d = { fields: {}, objetivos: objetivosMarcados() };
         DRAFT_FIELDS.forEach(id => {
             const el = document.getElementById(id);
             if (el && el.value.trim()) d.fields[id] = el.value;
@@ -888,6 +990,10 @@ function restoreDraft() {
         el.value = v;
         if (el.classList.contains('autosize')) autoGrow(el);
     });
+
+    if (objetivosGrid && Array.isArray(d.objetivos) && !objetivosMarcados().length) {
+        objetivosGrid.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = d.objetivos.includes(i.value); });
+    }
 }
 
 function clearDraft() {
@@ -899,8 +1005,9 @@ _formEl.addEventListener('input', saveDraft);
 _formEl.addEventListener('change', saveDraft);
 
 restoreDraft();
-// Lo restaurado no dispara 'input': se repintan a mano los contadores y el
-// ejemplo del estilo.
+// Lo restaurado no dispara 'input': se repintan a mano los contadores, el
+// campo de "Otra" (habilitado o no) y el ejemplo del estilo.
 _pintarContadores.forEach(pintar => pintar());
+pintarObjetivoOtro();
 pintarEstilo();
 pintarPlan();
