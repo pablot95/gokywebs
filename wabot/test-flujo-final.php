@@ -29,10 +29,10 @@ caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('termina con la intro de las 3 modalidades; los montos y lo incluido ahora van en la imagen (22-sep, 25-sep)',
     str_ends_with($r[0] ?? '', 'Podés elegir una de estas 3 modalidades de pago:')
-    && strpos($r[0] ?? '', '$190.000') === false && strpos($r[0] ?? '', 'Los 3 planes incluyen todo:') === false
+    && strpos($r[0] ?? '', '$') === false && strpos($r[0] ?? '', 'Las 3 incluyen la web completa:') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
-caso('el segundo mensaje es la imagen de modalidades de la tienda, $30.000/$300.000',
-    ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $r[1] ?? '');
+caso('el segundo mensaje es la imagen de modalidades de la tienda (tiendacursosinmo.png, con los montos de la lista)',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'tiendacursosinmo.png', $r[1] ?? '');
 caso('el tercer mensaje ofrece el primer diseño sin cargo, atado a la tienda (26-sep), y pregunta, sin formulario',
     ($r[2] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?'
     && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[2] ?? '');
@@ -58,15 +58,37 @@ caso('después del formulario el bot no contesta nada más', turno('Listo, ya lo
 $m = $c;
 $rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
-/* Las opciones salen numeradas, así que el cliente puede contestar el número solo. */
-foreach (['1' => 'unico', '2' => 'mensual', '3' => 'propia', 'el 1' => 'unico', '2)' => 'mensual', 'La opción 3' => 'propia'] as $numero => $plan) {
+/* Las opciones salen numeradas, así que el cliente puede contestar el número
+ * solo. Desde el 26-sep a la noche el número es el de la imagen que acaba de
+ * ver: "1 plan mensual, 2 plan anual, 3 pago único". */
+$nombrePlan = ['mensual' => 'el plan mensual', 'unico' => 'el plan anual', 'propia' => 'el pago único'];
+foreach (['1' => 'mensual', '2' => 'unico', '3' => 'propia', 'el 1' => 'mensual', '2)' => 'unico', 'La opción 3' => 'propia'] as $numero => $plan) {
     $n = $c;
     clasifica(['otro']);
     $rN = turno((string)$numero, $n, $cfg);
-    caso("\"$numero\" elige el plan y se lleva el formulario",
+    caso("\"$numero\" elige {$nombrePlan[$plan]} y se lleva el formulario",
         tiene_form($rN) && ($n['modalidad_elegida'] ?? '') === $plan && !empty($n['esProspecto'])
         && ($plan !== 'propia' || !empty($n['quiere_web_propia'])), json_encode($rN, JSON_UNESCAPED_UNICODE));
 }
+/* La charla cotizada antes de la imagen vio "1. Plan anual, 2. Plan mensual,
+ * 3. Pago único" en texto: su "1" sigue siendo el anual. */
+$cAntes = conv_nueva('549110000ANTESTEST', ['tipo' => 'landing', 'precio_dado' => true, 'fase' => 'prediseno', 'cta_muestra' => true,
+    'oferta_diseno_ts' => time(), 'precio_cotizado' => '$120.000', 'sena_cotizada' => '$40.000', 'mensualidad_cotizada' => '$20.000',
+    'precio_modelo' => 'anual', 'precio_cotizado_ts' => strtotime('2026-09-24 12:00:00 -03:00')]);
+wabot_conv_transcript($cAntes, 'bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\nPodés elegir entre tres opciones:\n\n"
+    . "1. Plan anual: \$120.000 incluye mantenimiento\n2. Plan mensual: \$20.000 incluye mantenimiento\n3. Pago único: \$200.000 NO incluye mantenimiento*");
+wabot_conv_transcript($cAntes, 'bot', wabot_tres_pasos_texto($cAntes, $cfg));
+foreach (['1' => 'unico', '2' => 'mensual', '3' => 'propia'] as $numero => $plan) {
+    $n = $cAntes;
+    clasifica(['otro']);
+    $rN = turno((string)$numero, $n, $cfg);
+    caso("en la charla que vio el orden de antes, \"$numero\" elige {$nombrePlan[$plan]} y se lleva el formulario",
+        tiene_form($rN) && ($n['modalidad_elegida'] ?? '') === $plan && !empty($n['esProspecto']), json_encode($rN, JSON_UNESCAPED_UNICODE));
+}
+$fichaAntes = $cAntes;
+turno('1', $fichaAntes, $cfg);
+caso('y la ficha dice "Eligió: plan anual"', mb_strpos(wabot_ficha_resumen($fichaAntes, $cfg), 'Eligió: plan anual') !== false,
+    wabot_ficha_resumen($fichaAntes, $cfg));
 // Pablo, 20-sep: contesta solo ante un sí, un dale, un bueno, un ok o algo parecido.
 foreach (['si', 'Sí', 'sii', 'sisi', 'dale', 'Dale!', 'bueno', 'ok', 'OK', 'oka', 'oki', 'okey', 'okay', 'listo', 'perfecto',
           'de una', 'joya', 'genial', 'claro', 'por supuesto', 'vamos', 'ok dale', 'bueno dale', 'sí, armalo', '👍'] as $afirma) {
@@ -121,10 +143,11 @@ caso('precio, imagen y oferta, sin el formulario pegado al monto',
 clasifica(['otro']);
 caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
+// Las imágenes del 26-sep a la noche: tienda, cursos e inmobiliaria cuestan lo mismo y comparten la suya.
 $esperados = [
-    'landing' => ['un sitio profesional completo', 'sitio-profesional-tres-columnas-4x3.png'],
-    'inmobiliaria' => ['una web inmobiliaria completa', 'tienda-online-tres-columnas-4x3.png'],
-    'elearning' => ['una plataforma de cursos completa', 'tienda-online-tres-columnas-4x3.png'],
+    'landing' => ['un sitio profesional completo', 'sitioprofesional.png'],
+    'inmobiliaria' => ['una web inmobiliaria completa', 'tiendacursosinmo.png'],
+    'elearning' => ['una plataforma de cursos completa', 'tiendacursosinmo.png'],
 ];
 foreach ($esperados as $tipo => [$frase, $archivo]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
@@ -136,6 +159,24 @@ foreach ($esperados as $tipo => [$frase, $archivo]) {
         && ($salida[1] ?? '') === wabot_precio_imagen_marcador($tipo) && wabot_precio_imagen_archivo($tipo) === $archivo
         && count($salida) === 3 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);
 }
+
+/* Por Instagram no hay envío de imagen (26-sep a la noche): las 3 modalidades
+ * salen en texto, en el mismo orden que la imagen, y la oferta aparte. */
+$cIg = conv_nueva('ig549110000FINALTEST', ['fase' => 'menu', 'canal' => 'instagram']);
+clasifica(['rubro_comercio']);
+$rIg = turno('Vendo ropa', $cIg, $cfg);
+$tIg = $cfg['tipos']['ecommerce'];
+caso('por Instagram son dos mensajes, la propuesta con las 3 modalidades en texto y la oferta, sin la imagen',
+    count($rIg) === 2 && !in_array(wabot_precio_imagen_marcador('ecommerce'), $rIg, true)
+    && mb_stripos($rIg[1] ?? '', 'primer diseño') !== false && !tiene_form($rIg), json_encode($rIg, JSON_UNESCAPED_UNICODE));
+caso('en el orden de la imagen y con los montos de la lista',
+    mb_strpos($rIg[0] ?? '', "1. Plan mensual: {$tIg['mensualidad']} por mes") !== false
+    && mb_strpos($rIg[0] ?? '', "2. Plan anual: {$tIg['precio']} por año") !== false
+    && mb_strpos($rIg[0] ?? '', "3. Pago único: {$tIg['precio_unico']} una vez") !== false, $rIg[0] ?? '');
+clasifica(['otro']);
+$rIgUno = turno('1', $cIg, $cfg);
+caso('y su "1" también es el plan mensual, con el formulario',
+    tiene_form($rIgUno) && ($cIg['modalidad_elegida'] ?? '') === 'mensual', json_encode($rIgUno, JSON_UNESCAPED_UNICODE));
 
 // Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
 // agregaba cinco trabajos y modelos después de la pregunta mostrar/vender.

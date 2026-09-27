@@ -541,3 +541,13 @@ a { color: inherit; text-decoration: none; }
     .pago-section { break-inside: avoid; page-break-inside: avoid; margin-bottom: 1.75rem; }
     .pres-footer { margin-top: .5rem; padding: 1rem; }
 }
+
+/* Tres modalidades lado a lado (26-sep-2026): plan mensual, plan anual y pago único. */
+.price-duo.price-trio { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.price-trio .price-hero span { flex-grow: 1; }
+.price-trio .price-hero b { font-size: clamp(1.3rem, 6.2vw, 2.6rem); }
+.modalidades.modalidades-tres { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.modalidades-tres .btn-modalidad { padding-left: .8rem; padding-right: .8rem; }
+@media (max-width: 640px) {
+    .modalidades.modalidades-tres { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}

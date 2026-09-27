@@ -1,15 +1,18 @@
 <?php
 /**
- * wabot/test-precios.php — el modelo comercial de las dos formas (solo CLI).
+ * wabot/test-precios.php — el modelo comercial de las 3 modalidades (solo CLI).
  *
- * Cada web se contrata con uno de dos planes: anual (una vez por año) o
- * mensual, sin seña y con lo mismo incluido (Pablo, 19-sep); el pago único
- * queda para el que pide la web propia. Esta suite fija lo que eso tiene
- * que garantizar:
- *  1. La lista de precios de los cuatro tipos.
- *  2. El turno del precio: dos mensajes, el segundo son los tres pasos sin link.
+ * Cada web se contrata con una de 3 modalidades, en el orden de las imágenes
+ * del precio (Pablo, 26-sep a la noche): plan mensual (Mercado Pago, sin pago
+ * inicial), plan anual (seña, el resto al entregar y después una vez por año)
+ * o pago único (seña y el resto al entregar, con el hosting y el dominio del
+ * primer año y el mantenimiento aparte). Esta suite fija lo que eso tiene que
+ * garantizar:
+ *  1. La lista de precios de los cuatro tipos, y que las imágenes muestren esos montos.
+ *  2. El turno del precio: la propuesta, la imagen de las modalidades (o las 3
+ *     en texto, si la imagen no corresponde) y la oferta del primer diseño, sin link.
  *  3. El link del formulario sale recién con el sí del cliente.
- *  4. El precio se congela en la charla y no cambia si cambia la lista.
+ *  4. El precio se congela en la charla: no cambia si la lista sube, y si baja vale la lista.
  *  5. Las respuestas fijas de pago (seña, saldo, cuál conviene, devolución…).
  *  6. Ningún texto sale con {precio} o {mensualidad} crudos.
  *  7. El que no quiere pagar por mes, quiere pagar una sola vez o quiere la web propia.
@@ -46,20 +49,50 @@ function conv_reactivada($tipo, $cfg, $clave = '5491177770000TEST') {
 
 echo "— 1. La lista de precios —\n";
 
-foreach (['landing' => ['$120.000', '$200.000', '$20.000', '$40.000'], 'ecommerce' => ['$190.000', '$300.000', '$30.000', '$60.000'],
-          'elearning' => ['$190.000', '$290.000', '$30.000', '$60.000'], 'inmobiliaria' => ['$170.000', '$260.000', '$30.000', '$60.000']] as $t => $par) {
-    caso("$t: plan anual {$par[0]} con seña de {$par[3]}, plan mensual {$par[2]} y pago único de la web propia {$par[1]} (19-sep)",
-        ($cfg['tipos'][$t]['precio'] ?? '') === $par[0] && ($cfg['tipos'][$t]['sena'] ?? '') === $par[3]
-        && ($cfg['tipos'][$t]['mensualidad'] ?? '') === $par[2] && ($cfg['tipos'][$t]['precio_unico'] ?? '') === $par[1]);
-    caso("$t: sin montos de cuota guardados", empty($cfg['tipos'][$t]['cuotas']) && empty($cfg['tipos'][$t]['pagos3']));
+/* 26-sep a la noche (plan mensual, plan anual con seña, pago único y el
+ * mantenimiento aparte del pago único). El plan con cambios ya no existe. */
+foreach (['landing' => ['$25.000', '$180.000', '$240.000', '$60.000', '$10.000'],
+          'ecommerce' => ['$35.000', '$250.000', '$360.000', '$60.000', '$15.000'],
+          'elearning' => ['$35.000', '$250.000', '$360.000', '$60.000', '$15.000'],
+          'inmobiliaria' => ['$35.000', '$250.000', '$360.000', '$60.000', '$15.000']] as $t => [$mensual, $anual, $unico, $sena, $mant]) {
+    caso("$t: plan mensual $mensual, plan anual $anual con seña de $sena, pago único $unico y mantenimiento aparte $mant (26-sep a la noche)",
+        ($cfg['tipos'][$t]['mensualidad'] ?? '') === $mensual && ($cfg['tipos'][$t]['precio'] ?? '') === $anual
+        && ($cfg['tipos'][$t]['sena'] ?? '') === $sena && ($cfg['tipos'][$t]['precio_unico'] ?? '') === $unico
+        && ($cfg['tipos'][$t]['mantenimiento'] ?? '') === $mant);
+    caso("$t: sin montos de cuota guardados ni el plan con cambios", empty($cfg['tipos'][$t]['cuotas']) && empty($cfg['tipos'][$t]['pagos3'])
+        && !array_key_exists('mensualidad_cambios', $cfg['tipos'][$t]));
 }
 caso('los tipos son exactamente esos cuatro', array_keys($cfg['tipos']) === $TIPOS);
 caso('la config es los textos del código más los ajustes de bot-config.json',
     $cfg['menu'] === wabot_textos_default()['menu'] && isset($cfg['activo']));
 $v = wabot_precio_vigente(null, $cfg, 'ecommerce');
-caso('el precio vigente sin charla es el de lista, modelo anual, con la seña y el resto calculado (19-sep)',
-    $v['modelo'] === 'anual' && $v['precio'] === '$190.000' && $v['sena'] === '$60.000' && $v['saldo'] === '$130.000' && $v['mensualidad'] === '$30.000');
-caso('la tabla de precios agrupa por par', strpos(wabot_tabla_precios_texto($cfg), 'Sitio profesional: plan anual de $120.000 o plan mensual de $20.000.') === 0);
+caso('el precio vigente sin charla es el de lista, modelo anual, con la seña, el resto calculado y el pago único (26-sep)',
+    $v['modelo'] === 'anual' && $v['precio'] === '$250.000' && $v['sena'] === '$60.000' && $v['saldo'] === '$190.000'
+    && $v['mensualidad'] === '$35.000' && $v['precio_unico'] === '$360.000', json_encode($v, JSON_UNESCAPED_UNICODE));
+caso('la tabla de precios agrupa por tipo, con las 3 modalidades en el orden de la imagen',
+    wabot_tabla_precios_texto($cfg) === 'Sitio profesional: plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000. '
+        . 'Tienda online, plataforma de cursos o inmobiliaria: plan mensual de $35.000, plan anual de $250.000 o pago único de $360.000.',
+    wabot_tabla_precios_texto($cfg));
+caso('wabot_precio_frase dice las 3 en ese orden; sin el pago único, las dos de los planes',
+    wabot_precio_frase(wabot_precio_vigente(null, $cfg, 'landing')) === 'plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000'
+    && wabot_precio_frase(['precio' => '$180.000', 'mensualidad' => '$25.000', 'precio_unico' => '', 'modelo' => 'anual']) === 'plan mensual de $25.000 o plan anual de $180.000'
+    && wabot_precio_frase(['precio' => '$290.000', 'mensualidad' => '$25.000', 'modelo' => 'doble']) === '$290.000 en un pago único o $25.000 por mes');
+caso('los planes mensuales para copiar son los de la lista', $cfg['mantenimiento_planes']['landing']['precio'] === $cfg['tipos']['landing']['mensualidad']
+    && $cfg['mantenimiento_planes']['otros']['precio'] === $cfg['tipos']['ecommerce']['mensualidad']);
+/* Las imágenes del precio (26-sep a la noche): cada una muestra los montos de
+ * la lista de su tipo. Si la lista cambia sin cambiar las imágenes, el precio
+ * sale en texto (wabot_precio_imagen_corresponde) y esta prueba avisa. */
+foreach ($TIPOS as $t) {
+    $img = wabot_precio_imagenes()[$t] ?? [];
+    caso("$t: su imagen (" . ($img['archivo'] ?? '?') . ") existe y muestra los montos de la lista",
+        ($img['archivo'] ?? '') !== '' && is_file(__DIR__ . '/' . $img['archivo'])
+        && ($img['mensualidad'] ?? '') === $cfg['tipos'][$t]['mensualidad'] && ($img['precio'] ?? '') === $cfg['tipos'][$t]['precio']
+        && ($img['precio_unico'] ?? '') === $cfg['tipos'][$t]['precio_unico'], json_encode($img, JSON_UNESCAPED_UNICODE));
+}
+caso('el sitio profesional tiene la suya y tienda, cursos e inmobiliaria comparten otra',
+    wabot_precio_imagen_archivo('landing') === 'sitioprofesional.png' && wabot_precio_imagen_archivo('ecommerce') === 'tiendacursosinmo.png'
+    && wabot_precio_imagen_archivo('elearning') === 'tiendacursosinmo.png' && wabot_precio_imagen_archivo('inmobiliaria') === 'tiendacursosinmo.png'
+    && wabot_precio_imagen_archivo('turnos') === '' && wabot_precio_imagen_marcador('turnos') === null);
 
 echo "— 2. El turno del precio: la propuesta y la oferta del primer diseño (18-sep) —\n";
 
@@ -72,14 +105,14 @@ caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link 
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('termina con la frase que abre las 3 modalidades, sin los montos ni lo incluido: eso ahora va en la imagen (25-sep)',
     str_ends_with($r0, 'Podés elegir una de estas 3 modalidades de pago:')
-    && strpos($r0, '$120.000') === false && strpos($r0, 'Los 3 planes incluyen todo:') === false
+    && strpos($r0, '$') === false && strpos($r0, 'Las 3 incluyen la web completa:') === false
     && mb_stripos($r0, 'seña') === false, $r0);
-caso('el segundo mensaje es la imagen de modalidades del sitio profesional (25-sep)',
-    ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && wabot_precio_imagen_archivo('landing') === 'sitio-profesional-tres-columnas-4x3.png', $r[1] ?? '');
+caso('el segundo mensaje es la imagen de modalidades del sitio profesional (25-sep; sitioprofesional.png desde el 26-sep)',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('landing') && wabot_precio_imagen_archivo('landing') === 'sitioprofesional.png', $r[1] ?? '');
 $cTiendaPanel = conv_nueva('5491177770006TEST');
 $rTiendaPanel = wabot_pitch('ecommerce', $cTiendaPanel, $cfg);
-caso('la tienda manda su propia imagen de modalidades (25-sep)',
-    ($rTiendaPanel[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'tienda-online-tres-columnas-4x3.png',
+caso('la tienda manda su propia imagen de modalidades (25-sep; tiendacursosinmo.png desde el 26-sep)',
+    ($rTiendaPanel[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'tiendacursosinmo.png',
     json_encode($rTiendaPanel, JSON_UNESCAPED_UNICODE));
 caso('sin "son alternativas, no se abonan las dos"', mb_stripos($r0, 'alternativas') === false && mb_stripos($r0, 'no se abonan') === false);
 caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta',
@@ -87,12 +120,15 @@ caso('el tercer mensaje ofrece el primer diseño sin cargo y pregunta',
     && str_ends_with($r[2], 'Querés que lo armemos?') && strpos($r[2], '$') === false, $r[2] ?? '');
 caso('la oferta ya no dice "demo gratis"', mb_stripos($r[2] ?? '', 'demo') === false && mb_stripos($r[2] ?? '', 'gratis') === false);
 caso('y sin el link del formulario', strpos(implode("\n", $r), 'gokywebs.com/form/') === false);
-caso('el precio queda congelado en la charla: plan anual con su seña y mensual, modelo anual (19-sep)',
-    ($c['precio_cotizado'] ?? '') === '$120.000' && ($c['sena_cotizada'] ?? '') === '$40.000' && ($c['mensualidad_cotizada'] ?? '') === '$20.000'
-    && ($c['precio_modelo'] ?? '') === 'anual');
+caso('el precio queda congelado en la charla: plan anual con su seña, mensual y pago único, modelo anual (19-sep; el pago único desde el 26-sep)',
+    ($c['precio_cotizado'] ?? '') === '$180.000' && ($c['sena_cotizada'] ?? '') === '$60.000' && ($c['mensualidad_cotizada'] ?? '') === '$25.000'
+    && ($c['precio_unico_cotizado'] ?? '') === '$240.000' && ($c['precio_modelo'] ?? '') === 'anual' && (int)($c['precio_cotizado_ts'] ?? 0) > 0);
 $cSinSena = $c; $cSinSena['sena_cotizada'] = '';
 caso('una charla cotizada el 19-sep a la mañana, sin seña congelada, toma la de lista',
-    wabot_precio_vigente($cSinSena, $cfg)['sena'] === '$40.000' && wabot_precio_vigente($cSinSena, $cfg)['saldo'] === '$80.000');
+    wabot_precio_vigente($cSinSena, $cfg)['sena'] === '$60.000' && wabot_precio_vigente($cSinSena, $cfg)['saldo'] === '$120.000');
+$cSinUnico = $c; unset($cSinUnico['precio_unico_cotizado']);
+caso('una charla cotizada antes del 26-sep a la noche, sin pago único congelado, toma el de lista',
+    wabot_precio_vigente($cSinUnico, $cfg)['precio_unico'] === '$240.000');
 caso('el link todavía no se marcó como enviado', empty($c['link_form_enviado']));
 caso('el bot queda esperando la respuesta a la oferta', $c['fase'] === 'prediseno' && !empty($c['oferta_diseno_ts']) && empty($c['bot_off']));
 caso('el contador para el sí corto empieza en cero', ($c['precio_turnos_desde'] ?? null) === 0);
@@ -104,8 +140,8 @@ caso('pasa entero por el punto único de salida: propuesta, imagen y oferta',
 caso('y en ninguno de los dos aparece la línea vieja de "si te cierra"',
     preg_match('/si te cierra|si va por ah|si te gusta la idea/iu', implode(' ', $r)) === 0);
 
-foreach (['ecommerce' => ['una tienda online completa', 'tienda-online-tres-columnas-4x3.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'tienda-online-tres-columnas-4x3.png'],
-          'elearning' => ['una plataforma de cursos completa', 'tienda-online-tres-columnas-4x3.png']] as $tipo => $par) {
+foreach (['ecommerce' => ['una tienda online completa', 'tiendacursosinmo.png'], 'inmobiliaria' => ['una web inmobiliaria completa', 'tiendacursosinmo.png'],
+          'elearning' => ['una plataforma de cursos completa', 'tiendacursosinmo.png']] as $tipo => $par) {
     [$arranque, $archivo] = $par;
     $c = conv_nueva('5491177770003TEST');
     $r = wabot_pitch($tipo, $c, $cfg);
@@ -158,6 +194,65 @@ foreach (['Cuánto sale una web?', 'Cuánto sale una web para mostrar mis servic
     caso('sin actividad no inventa precio: ' . $m, empty($c['precio_dado']) && strpos($txt, '$') === false && strpos($txt, 'primero contame') !== false, $txt);
 }
 
+echo "— 2b. La imagen, o las 3 modalidades en texto (26-sep a la noche) —\n";
+
+/* La imagen va solo por WhatsApp y si muestra los montos de ESTA charla
+ * (wabot_precio_imagen_corresponde). Si no —Instagram, o una charla con los
+ * montos congelados de antes— el bloque `dos_formas` entero en texto, con los
+ * montos de la charla, en el mismo orden y sin imagen. */
+$lineas3 = static fn($m, $a, $u) => "1. Plan mensual: $m por mes, incluye mantenimiento\n2. Plan anual: $a por año, incluye mantenimiento\n3. Pago único: $u una vez, NO incluye mantenimiento*";
+$intro3 = 'Podés elegir una de estas 3 modalidades de pago:';
+$cWa = conv_cotizada('landing', $cfg, '5491177770200TEST');
+caso('WhatsApp con los montos de la lista: la imagen corresponde y el texto es solo la frase que la abre',
+    wabot_precio_imagen_corresponde('landing', $cWa, $cfg) && wabot_servicio_texto('landing', $cWa, $cfg) === $intro3);
+$cIgPrecio = conv_nueva('ig5491177770201TEST', ['canal' => 'instagram']);
+$rIgPrecio = wabot_pitch('ecommerce', $cIgPrecio, $cfg);
+caso('por Instagram: sin la imagen, la propuesta y la oferta en dos mensajes',
+    count($rIgPrecio) === 2 && !in_array(wabot_precio_imagen_marcador('ecommerce'), $rIgPrecio, true)
+    && !wabot_precio_imagen_corresponde('ecommerce', $cIgPrecio, $cfg) && mb_stripos($rIgPrecio[1] ?? '', 'primer diseño') !== false,
+    json_encode($rIgPrecio, JSON_UNESCAPED_UNICODE));
+$rIg0 = wabot_personalizar($rIgPrecio[0] ?? '', $cIgPrecio);
+caso('y la propuesta trae las 3 en texto, con los montos de la lista y lo que incluyen, sin marcadores',
+    mb_strpos($rIg0, "$intro3\n\n" . $lineas3('$35.000', '$250.000', '$360.000')) !== false
+    && mb_strpos($rIg0, 'Las 3 incluyen la web completa:') !== false
+    && mb_strpos($rIg0, 'El plan mensual y el anual incluyen el mantenimiento:') !== false
+    && strpos($rIg0, '{') === false, $rIg0);
+/* Cotizada con el test de precios del 26-sep (tienda $40.000 por mes y
+ * $240.000 por año; el pago único no se congelaba): hoy vale lo que bajó en
+ * la lista (el mensual, a $35.000) y se respeta lo que subió (el anual queda
+ * en $240.000). La imagen diría $250.000: va el texto, con sus montos. */
+$cTest = array_merge(conv_nueva('5491177770202TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true, 'fase' => 'prediseno',
+    'precio_cotizado' => '$240.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$40.000', 'precio_modelo' => 'anual',
+    'precio_cotizado_ts' => strtotime('2026-09-26 12:00:00 -03:00')]);
+$vTest = wabot_precio_vigente($cTest, $cfg);
+caso('la cotizada con el test de precios vale mensual $35.000 (bajó), anual $240.000 (lo suyo) y el pago único de lista',
+    $vTest['mensualidad'] === '$35.000' && $vTest['precio'] === '$240.000' && $vTest['precio_unico'] === '$360.000'
+    && $vTest['sena'] === '$60.000' && $vTest['saldo'] === '$180.000', json_encode($vTest, JSON_UNESCAPED_UNICODE));
+$servTest = wabot_servicio_texto('ecommerce', $cTest, $cfg);
+caso('a esa charla la imagen no le corresponde: las 3 en texto, con sus montos',
+    !wabot_precio_imagen_corresponde('ecommerce', $cTest, $cfg)
+    && mb_strpos($servTest, "$intro3\n\n" . $lineas3('$35.000', '$240.000', '$360.000')) === 0, $servTest);
+$cCierre = $cTest;
+$cierreTest = wabot_precio_cierre(wabot_pitch_precio_texto('ecommerce', $cfg, $cCierre), 'ecommerce', $cCierre, $cfg);
+caso('y el turno del precio sale sin la imagen: la propuesta con el texto y la oferta',
+    count($cierreTest) === 2 && !in_array(wabot_precio_imagen_marcador('ecommerce'), $cierreTest, true)
+    && mb_strpos($cierreTest[0], $lineas3('$35.000', '$240.000', '$360.000')) !== false && mb_stripos($cierreTest[1], 'primer diseño') !== false,
+    json_encode($cierreTest, JSON_UNESCAPED_UNICODE));
+// El sitio profesional del test de precios ($30.000 / $160.000) y el de la lista del 19 al 25-sep ($20.000 / $120.000).
+foreach ([['$30.000', '$160.000', '$25.000'], ['$20.000', '$120.000', '$20.000']] as [$mesCongelado, $anualCongelado, $mesHoy]) {
+    $cSitio = array_merge(conv_nueva('5491177770203TEST'), ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => $anualCongelado,
+        'sena_cotizada' => '$40.000', 'mensualidad_cotizada' => $mesCongelado, 'precio_modelo' => 'anual']);
+    $servSitio = wabot_servicio_texto('landing', $cSitio, $cfg);
+    caso("sitio cotizado con $mesCongelado / $anualCongelado: en texto, con $mesHoy por mes y su anual",
+        !wabot_precio_imagen_corresponde('landing', $cSitio, $cfg) && mb_strpos($servSitio, $lineas3($mesHoy, $anualCongelado, '$240.000')) !== false, $servSitio);
+}
+// Basta con que difiera uno de los tres montos: un pago único congelado más bajo que el de la imagen.
+$cUnicoBajo = conv_cotizada('ecommerce', $cfg, '5491177770204TEST');
+$cUnicoBajo['precio_unico_cotizado'] = '$330.000';
+caso('con un solo monto distinto (el pago único) tampoco va la imagen',
+    !wabot_precio_imagen_corresponde('ecommerce', $cUnicoBajo, $cfg)
+    && mb_strpos(wabot_servicio_texto('ecommerce', $cUnicoBajo, $cfg), $lineas3('$35.000', '$250.000', '$330.000')) !== false);
+
 echo "— 3. El link del formulario sale con el sí —\n";
 
 foreach (['dale', 'si, quiero la demo', 'ok', 'me interesa'] as $i => $si) {
@@ -180,40 +275,78 @@ $r = wabot_engine('dale, cuánto tarda la demo?', $c, $cfg);
 caso('pero una pregunta no cuenta como sí: se le contesta en lugar de mandarle el formulario',
     !tiene_form($r) && !empty($r), json_encode($r, JSON_UNESCAPED_UNICODE));
 
-echo "— 4. El precio congelado no cambia si cambia la lista —\n";
+echo "— 4. El precio congelado no cambia si sube la lista; si baja, vale la lista (26-sep a la noche) —\n";
 
 $c = conv_nueva('5491177770040TEST');
 wabot_pitch('ecommerce', $c, $cfg);
 $cfgSube = $cfg;
 $cfgSube['tipos']['ecommerce']['precio'] = '$395.000';
-$cfgSube['tipos']['ecommerce']['mensualidad'] = '$33.000';
+$cfgSube['tipos']['ecommerce']['mensualidad'] = '$43.000';
+$cfgSube['tipos']['ecommerce']['precio_unico'] = '$450.000';
 $res = wabot_precio_resumen($c, $cfgSube);
 caso('el resumen repite el precio que se le dio, no el de la lista nueva',
-    strpos($res, '$190.000') !== false && strpos($res, '$30.000') !== false && strpos($res, '$395.000') === false, $res);
+    mb_strpos($res, $lineas3('$35.000', '$250.000', '$360.000')) !== false
+    && strpos($res, '$395.000') === false && strpos($res, '$43.000') === false && strpos($res, '$450.000') === false, $res);
 caso('lo mismo la respuesta de pago',
-    strpos(wabot_texto_pago($c, $cfgSube), '$30.000') !== false && strpos(wabot_texto_pago($c, $cfgSube), '$33.000') === false);
-caso('y la del plan mensual', strpos(wabot_texto_mantenimiento($c, $cfgSube), '$30.000') !== false
-    && strpos(wabot_texto_mantenimiento($c, $cfgSube), '$33.000') === false);
+    strpos(wabot_texto_pago($c, $cfgSube), '$35.000') !== false && strpos(wabot_texto_pago($c, $cfgSube), '$43.000') === false
+    && strpos(wabot_texto_pago($c, $cfgSube), 'el pago único, de $360.000') !== false, wabot_texto_pago($c, $cfgSube));
+caso('y la del plan mensual', strpos(wabot_texto_mantenimiento($c, $cfgSube), '$35.000') !== false
+    && strpos(wabot_texto_mantenimiento($c, $cfgSube), '$43.000') === false);
 caso('un cliente nuevo sí recibe la lista nueva',
-    strpos(wabot_msg_precio_texto('ecommerce', $cfgSube, conv_nueva('5491177770041TEST')), '$33.000') !== false);
-caso('wabot_precio_vigente devuelve lo congelado aunque la lista cambie',
+    strpos(wabot_msg_precio_texto('ecommerce', $cfgSube, conv_nueva('5491177770041TEST')), '$43.000') !== false);
+caso('wabot_precio_vigente devuelve lo congelado aunque la lista suba',
     wabot_precio_vigente($c, $cfgSube) === wabot_precio_vigente($c, $cfg));
+/* Si la lista baja, vale la lista (wabot_monto_menor), monto por monto: a
+ * nadie se le cobra más que a uno que escribe hoy. */
+$cfgBaja = $cfg;
+$cfgBaja['tipos']['ecommerce']['mensualidad'] = '$30.000';
+$cfgBaja['tipos']['ecommerce']['precio_unico'] = '$320.000';
+$cfgBaja['tipos']['ecommerce']['sena'] = '$50.000';
+$cfgBaja['tipos']['ecommerce']['precio'] = '$270.000';   // este sube: queda el congelado
+$vBaja = wabot_precio_vigente($c, $cfgBaja);
+caso('si la lista baja, vale la lista: el mensual, el pago único y la seña bajan, y el anual que subió queda congelado',
+    $vBaja['mensualidad'] === '$30.000' && $vBaja['precio_unico'] === '$320.000' && $vBaja['sena'] === '$50.000'
+    && $vBaja['precio'] === '$250.000' && $vBaja['saldo'] === '$200.000', json_encode($vBaja, JSON_UNESCAPED_UNICODE));
+caso('y el resumen dice los montos que bajaron',
+    mb_strpos(wabot_precio_resumen($c, $cfgBaja), $lineas3('$30.000', '$250.000', '$320.000')) !== false, wabot_precio_resumen($c, $cfgBaja));
+caso('wabot_monto_menor: el congelado, salvo que la lista sea más baja; si falta uno, el otro',
+    wabot_monto_menor('$40.000', '$35.000') === '$35.000' && wabot_monto_menor('$240.000', '$250.000') === '$240.000'
+    && wabot_monto_menor('$35.000', '$35.000') === '$35.000' && wabot_monto_menor('', '$35.000') === '$35.000'
+    && wabot_monto_menor('$40.000', '') === '$40.000' && wabot_monto_menor('$40.000', '$0') === '$40.000');
+/* El caso de esa noche: una tienda congelada con el test de precios (mensual
+ * $40.000, anual $240.000, pago único $390.000) hoy vale mensual $35.000 y
+ * pago único $360.000, que bajaron, y conserva el anual de $240.000. */
+$cCongTest = array_merge(conv_nueva('5491177770042TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true, 'precio_cotizado' => '$240.000',
+    'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$40.000', 'precio_unico_cotizado' => '$390.000', 'precio_modelo' => 'anual']);
+$vCongTest = wabot_precio_vigente($cCongTest, $cfg);
+caso('la tienda congelada con $40.000 / $240.000 / $390.000 hoy vale $35.000 / $240.000 / $360.000',
+    $vCongTest['mensualidad'] === '$35.000' && $vCongTest['precio'] === '$240.000' && $vCongTest['precio_unico'] === '$360.000',
+    json_encode($vCongTest, JSON_UNESCAPED_UNICODE));
+caso('y la frase del precio y el boceto dicen esos montos',
+    wabot_precio_frase($vCongTest) === 'plan mensual de $35.000, plan anual de $240.000 o pago único de $360.000'
+    && wabot_lead_cotizado($cCongTest, $cfg) === 'Plan mensual $35.000, plan anual $240.000 (seña $60.000) o pago único $360.000',
+    wabot_lead_cotizado($cCongTest, $cfg));
 $cR = $c; $cR['ultimo_ts'] = time() - 30 * 86400;
 wabot_conv_reset_si_vieja($cR, $cfg, time());
 caso('el reset de sesión libera el precio congelado', empty($cR['precio_cotizado']) && empty($cR['mensualidad_cotizada']));
+// Sin precio congelado, un pago único guardado de antes ya no vale: la charla nueva cotiza con la lista.
+caso('y sin precio congelado tampoco vale el pago único guardado: vale la lista',
+    wabot_precio_vigente(array_merge($cR, ['tipo' => 'ecommerce']), $cfgSube)['precio_unico'] === '$450.000');
 
 /* Cotizada del 10 al 14-sep, con la mensualidad sola (snapshot 'mensual'):
  * conserva SU mensualidad y se le ofrece también el plan anual de lista. */
 $cM = array_merge(conv_nueva('5491177770050TEST'), ['tipo' => 'landing', 'precio_dado' => true, 'fase' => 'prediseno',
     'cta_muestra' => true, 'precio_cotizado' => '$40.000', 'mensualidad_cotizada' => '$15.000', 'precio_modelo' => 'mensual']);
 $vM = wabot_precio_vigente($cM, $cfg);
-caso('el snapshot mensual conserva su mensualidad y toma el plan anual de lista (19-sep)',
-    $vM['modelo'] === 'anual' && $vM['mensualidad'] === '$15.000' && $vM['precio'] === '$120.000' && $vM['sena'] === '$40.000');
-caso('y la respuesta de pago dice los dos planes con esos montos',
-    strpos(wabot_texto_pago($cM, $cfg), 'el mensual, de $15.000 por mes') !== false && strpos(wabot_texto_pago($cM, $cfg), 'el anual, de $120.000') !== false, wabot_texto_pago($cM, $cfg));
+caso('el snapshot mensual conserva su mensualidad y toma el plan anual y el pago único de lista (19-sep)',
+    $vM['modelo'] === 'anual' && $vM['mensualidad'] === '$15.000' && $vM['precio'] === '$180.000' && $vM['sena'] === '$60.000'
+    && $vM['precio_unico'] === '$240.000', json_encode($vM, JSON_UNESCAPED_UNICODE));
+caso('y la respuesta de pago dice las 3 modalidades con esos montos',
+    strpos(wabot_texto_pago($cM, $cfg), 'el plan mensual, de $15.000 por mes; el plan anual, de $180.000 por año, y el pago único, de $240.000') !== false,
+    wabot_texto_pago($cM, $cfg));
 $cV = array_merge(conv_nueva('5491177770051TEST'), ['tipo' => 'landing', 'precio_dado' => true]);
 caso('sin snapshot (charla anterior al 10-sep) vale la lista de hoy, modelo anual',
-    wabot_precio_vigente($cV, $cfg)['precio'] === '$120.000' && wabot_precio_vigente($cV, $cfg)['modelo'] === 'anual');
+    wabot_precio_vigente($cV, $cfg)['precio'] === '$180.000' && wabot_precio_vigente($cV, $cfg)['modelo'] === 'anual');
 
 echo "— 5. Las respuestas fijas de pago (batería del 15-sep) —\n";
 
@@ -224,8 +357,10 @@ $anualMil = (int)(wabot_monto_a_numero($v21['precio']) / 1000);
 $mensMil = (int)(wabot_monto_a_numero($mens21) / 1000);
 
 $rCostos = wabot_respuesta_pago_fija('Con el plan anual despues tengo que pagar algo mas?', $c21, $cfg);
-caso('lo que queda para después: nada aparte con los planes, salvo los cambios, sin la demo (19-sep)',
-    is_array($rCostos) && mb_stripos($rCostos[0], 'no hay costos aparte') !== false && mb_stripos($rCostos[0], 'plan mensual con cambios') !== false && mb_stripos($rCostos[0], 'demo') === false,
+// 26-sep a la noche: sin el plan con cambios, los dos planes incluyen un cambio por mes.
+caso('lo que queda para después: nada aparte con los planes, que incluyen un cambio por mes, sin la demo (19-sep)',
+    is_array($rCostos) && mb_stripos($rCostos[0], 'no hay costos aparte') !== false && mb_stripos($rCostos[0], 'un cambio por mes') !== false
+    && mb_stripos($rCostos[0], 'con cambios') === false && mb_stripos($rCostos[0], 'demo') === false,
     json_encode($rCostos, JSON_UNESCAPED_UNICODE));
 $rCostosPropia = wabot_respuesta_pago_fija('Con el pago unico despues tengo que pagar algo mas?', $c21, $cfg);
 caso('la misma duda sobre el pago único queda para la respuesta de la web propia (19-sep)', $rCostosPropia === null
@@ -283,6 +418,16 @@ $rSaldo = wabot_respuesta_pago_fija('el saldo cuando se paga?', $cDoble, $cfg);
 // El saldo del pago único congelado: $180.000 menos la seña de $40.000, no el precio nuevo.
 caso('la charla cotizada con seña (15 al 18-sep) sí: al entregar, con el monto', is_array($rSaldo) && mb_strpos($rSaldo[0], '$140.000') !== false,
     json_encode($rSaldo, JSON_UNESCAPED_UNICODE));
+/* Esa charla conserva sus condiciones, pero el plan con cambios dejó de
+ * existir el 26-sep a la noche (ningún texto lo nombra) y su monto ya no está
+ * en la lista. */
+$rDifDoble = wabot_respuesta_pago_fija('Cual es la diferencia entre las dos formas?', $cDoble, $cfg);
+caso('a la charla del 15 al 18-sep, la diferencia entre las formas no le nombra el plan con cambios, que ya no existe',
+    is_array($rDifDoble) && mb_stripos($rDifDoble[0], 'con cambios') === false && mb_stripos($rDifDoble[0], 'un monto mensual aparte') === false,
+    json_encode($rDifDoble, JSON_UNESCAPED_UNICODE));
+$rCostosDoble = wabot_respuesta_pago_fija('Con el mensual despues tengo que pagar algo mas?', $cDoble, $cfg);
+caso('y lo que queda para después, tampoco', is_array($rCostosDoble) && mb_stripos($rCostosDoble[0], 'con cambios') === false,
+    json_encode($rCostosDoble, JSON_UNESCAPED_UNICODE));
 $rAntes = wabot_respuesta_pago_fija('Pasame el link de mercado pago para suscribirme al mensual', $c21, $cfg);
 caso('pedir el link de pago antes del formulario: primero el formulario', is_array($rAntes) && mb_strpos($rAntes[0], 'Antes de pagar') === 0,
     json_encode($rAntes, JSON_UNESCAPED_UNICODE));
@@ -320,11 +465,12 @@ foreach (['Con el pago unico despues tengo que pagar algo mas?', 'Cual es la dif
         $out === [] && !empty($c['bot_off']) && !empty($c['handoff_pendiente']), json_encode($out, JSON_UNESCAPED_UNICODE));
 }
 
-/* "¿Es obligatorio?" después del plan: no, es una de las dos formas. */
+/* "¿Es obligatorio?" después del plan: no, es una de las 3 modalidades (26-sep; antes, de las dos formas). */
 $cObl = ['transcript' => [['q' => 'bot', 't' => wabot_texto_mantenimiento(['tipo' => 'landing'], $cfg), 'ts' => time()]]];
-caso('"es obligatorio?" después del plan: no, es una de las dos formas (15-sep)',
+caso('"es obligatorio?" después del plan: no, es una de las 3 modalidades, con el anual y el pago único (15-sep, 26-sep)',
     ($ro = wabot_respuesta_obligatorio($cObl, $cfg, 'es obligatorio?')) !== null
-    && mb_strpos($ro, 'No: el plan mensual es una de las dos formas') === 0 && mb_stripos($ro, 'una vez por año') !== false);
+    && mb_strpos($ro, 'No: el plan mensual es una de las 3 modalidades') === 0 && mb_stripos($ro, 'una vez por año') !== false
+    && mb_stripos($ro, 'pago único') !== false, (string)$ro);
 $cP = conv_nueva('5491177770060TEST');
 $rPitch = wabot_pitch('landing', $cP, $cfg);
 $cOblig = ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$120.000', 'mensualidad_cotizada' => '$15.000',
@@ -335,7 +481,7 @@ $cOblig = ['tipo' => 'landing', 'precio_dado' => true, 'precio_cotizado' => '$12
 caso('"¿es obligatorio pagar todos los meses?" con el precio en dos mensajes: contesta el texto del servicio',
     wabot_texto_pregunta_si_es_obligatorio('Es obligatorio pagar todos los meses?')
     && ($rOblig = wabot_respuesta_obligatorio($cOblig, $cfg, 'Es obligatorio pagar todos los meses?')) !== null
-    && mb_strpos($rOblig, 'No: el plan mensual es una de las dos formas') === 0);
+    && mb_strpos($rOblig, 'No: el plan mensual es una de las 3 modalidades') === 0);
 $cObl2 = $c21;
 $cObl2['transcript'] = [['q' => 'cliente', 't' => 'Es obligatorio pagar todos los meses?'],
     ['q' => 'bot', 't' => (string)$cfg['respuesta_plan_obligatorio']], ['q' => 'cliente', 't' => 'O sea que no es obligatorio?']];
@@ -375,29 +521,41 @@ foreach ([
     'proceso'                => wabot_texto_info('proceso', $cfg),
     'plan_es_servicio'       => wabot_texto_info('plan_es_servicio', $cfg),
     'un_solo_pago'           => wabot_texto_info('un_solo_pago', $cfg, $cLanding),
+    'web propia'             => wabot_texto_info('web_propia', $cfg, $cLanding),
+    'diferencia de planes'   => wabot_diferencia_pagos_texto($cLanding, $cfg),
+    'costos después'         => wabot_texto_costos_despues('despues tengo que pagar algo mas?', $cLanding, $cfg),
+    'cambios del plan'       => wabot_texto_cambios_plan($cLanding, $cfg),
+    'cambios sin tipo'       => wabot_texto_cambios_plan($sinTipo, $cfg),
 ] as $nombre => $texto) {
+    // Tampoco el plan con cambios, que dejó de existir el 26-sep a la noche.
     caso("$nombre: sin marcadores crudos ni modelo viejo",
-        trim($texto) !== '' && strpos($texto, '{') === false && !preg_match('/primer pago|No es un mantenimiento aparte|No hay un pago inicial aparte|12 cuotas/iu', $texto),
+        trim($texto) !== '' && strpos($texto, '{') === false
+        && !preg_match('/primer pago|No es un mantenimiento aparte|No hay un pago inicial aparte|12 cuotas|con cambios|un monto mensual aparte/iu', $texto),
         $texto);
 }
-caso('el pago genérico explica los dos planes sin montos antes de saber el rubro (19-sep)',
-    stripos(wabot_texto_pago_generico($cfg), 'Hay dos planes') !== false && strpos(wabot_texto_pago_generico($cfg), '$') === false
-    && stripos(wabot_texto_pago_generico($cfg), 'una vez por año') !== false && stripos(wabot_texto_pago_generico($cfg), 'sin permanencia') !== false);
-caso('el resumen del precio dice los dos planes con el bloque único, sin seña (19-sep)',
+caso('el pago genérico explica las 3 modalidades sin montos antes de saber el rubro (19-sep; 3 desde el 26-sep)',
+    stripos(wabot_texto_pago_generico($cfg), 'Hay 3 modalidades') !== false && strpos(wabot_texto_pago_generico($cfg), '$') === false
+    && stripos(wabot_texto_pago_generico($cfg), 'una vez por año') !== false && stripos(wabot_texto_pago_generico($cfg), 'sin permanencia') !== false
+    && mb_stripos(wabot_texto_pago_generico($cfg), 'el pago único') !== false, wabot_texto_pago_generico($cfg));
+caso('el resumen del precio dice las 3 modalidades con el bloque único, sin seña (19-sep; 26-sep)',
     strpos((string)$cfg['precio_resumen'], '{dos_formas}') !== false && strpos((string)$cfg['precio_resumen'], '{sena}') === false
-    && strpos(wabot_precio_resumen($cLanding, $cfg), '1. Plan anual: $120.000 incluye mantenimiento') !== false
+    && mb_strpos(wabot_precio_resumen($cLanding, $cfg), $lineas3('$25.000', '$180.000', '$240.000')) !== false
     && mb_stripos(wabot_precio_resumen($cLanding, $cfg), 'seña') === false, wabot_precio_resumen($cLanding, $cfg));
 caso('el resumen conserva el portfolio filtrado',
     strpos(wabot_precio_resumen(['tipo' => 'ecommerce', 'precio_dado' => true], $cfg), 'gokywebs.com/portfolio/?tipo=ecommerce') !== false);
 $pagoLanding = wabot_texto_pago(conv_cotizada('landing', $cfg), $cfg);
-caso('info.pago explica los dos planes con sus montos, lo que incluyen y la seña del anual sin su monto (19-sep)',
-    strpos($pagoLanding, 'el anual, de $120.000') !== false && strpos($pagoLanding, 'el mensual, de $20.000 por mes') !== false
-    && strpos($cfg['info']['pago'], '{sena}') === false && strpos($pagoLanding, 'Los dos incluyen lo mismo') !== false
-    && mb_stripos($pagoLanding, 'El anual arranca con una seña') !== false && strpos($pagoLanding, '$40.000') === false, $pagoLanding);
-caso('el proceso explica modelos y los dos planes, sin demo gratis',
-    stripos($cfg['info']['proceso'], 'modelos') !== false && mb_stripos($cfg['info']['proceso'], 'el plan anual o el mensual') !== false
+caso('info.pago explica las 3 modalidades con sus montos, lo que incluyen y la seña sin su monto (19-sep; 26-sep)',
+    strpos($pagoLanding, 'el plan mensual, de $25.000 por mes; el plan anual, de $180.000 por año, y el pago único, de $240.000') !== false
+    && strpos($cfg['info']['pago'], '{sena}') === false && strpos($pagoLanding, 'Las 3 incluyen el desarrollo completo de la web') !== false
+    && mb_stripos($pagoLanding, 'El anual arranca con una seña') !== false && mb_stripos($pagoLanding, 'El pago único también arranca con una seña') !== false
+    && strpos($pagoLanding, '$60.000') === false, $pagoLanding);
+caso('el proceso explica modelos y las 3 modalidades, sin demo gratis',
+    stripos($cfg['info']['proceso'], 'modelos') !== false && mb_stripos($cfg['info']['proceso'], 'el plan mensual, el anual o el pago único') !== false
     && stripos($cfg['info']['proceso'], 'demo gratis') === false && strpos(wabot_texto_info('proceso', $cfg), '$') === false);
-caso('la renovación del hosting: no hay, va incluida en los dos planes (19-sep)', mb_stripos((string)$cfg['hosting_renovacion'], 'No hay renovación aparte') === 0);
+caso('la renovación del hosting: no hay con el mensual o el anual; con el pago único, desde el segundo año (26-sep)',
+    mb_stripos((string)$cfg['hosting_renovacion'], 'Con el plan mensual o el anual no hay renovación aparte') === 0
+    && mb_stripos((string)$cfg['hosting_renovacion'], 'Con el pago único, el hosting y el dominio van incluidos el primer año') !== false,
+    (string)$cfg['hosting_renovacion']);
 caso('"es caro" no menciona cuotas sin interés', stripos($cfg['caro'], 'sin interés') === false && stripos($cfg['caro'], 'cuotas') === false);
 
 echo "— 7. El código, la propiedad y la baja no los dice el bot (19-sep) —\n";
@@ -463,26 +621,32 @@ caso('sin plataformas de streaming y sin el detalle de los cambios extra',
 caso('y aclara que incluye lo mismo que el mensual (19-sep)', mb_stripos($serv, 'Incluye lo mismo que el mensual') !== false);
 $cU = conv_cotizada('ecommerce', $cfg, '5491177770090TEST');
 $u = wabot_texto_info('un_solo_pago', $cfg, $cU);
-caso('la tienda con el plan anual sale $190.000 por año, con seña sin su monto (19-sep)',
-    strpos($u, '$190.000') !== false && mb_stripos($u, 'plan anual') !== false && mb_stripos($u, 'arrancás con una seña') !== false
+caso('la tienda con el plan anual sale $250.000 por año, con seña sin su monto (19-sep; 26-sep)',
+    strpos($u, '$250.000') !== false && mb_stripos($u, 'plan anual') !== false && mb_stripos($u, 'arrancás con una seña') !== false
     && strpos($u, '$60.000') === false, $u);
-foreach (['landing' => '$120.000', 'inmobiliaria' => '$170.000', 'elearning' => '$190.000'] as $t => $p) {
+foreach (['landing' => '$180.000', 'inmobiliaria' => '$250.000', 'elearning' => '$250.000'] as $t => $p) {
     $cU = conv_cotizada($t, $cfg, '5491177770090TEST');
     caso("$t con el plan anual sale $p", strpos(wabot_texto_info('un_solo_pago', $cfg, $cU), $p) !== false);
 }
 $uSin = wabot_texto_info('un_solo_pago', $cfg);
 caso('sin tipo cotizado no da montos: pregunta a qué se dedica (15-sep)',
     strpos($uSin, '$') === false && mb_stripos($uSin, 'Contame a qué te dedicás') !== false, $uSin);
-echo "— 8b. La web propia: el pago único, sin hosting ni mantenimiento (Pablo, 19-sep) —\n";
+echo "— 8b. La web propia: el pago único, con el hosting del primer año y el mantenimiento aparte (Pablo, 19-sep; 26-sep) —\n";
 
-foreach (['landing' => '$200.000', 'ecommerce' => '$300.000', 'elearning' => '$290.000', 'inmobiliaria' => '$260.000'] as $t => $p) {
+foreach (['landing' => '$240.000', 'ecommerce' => '$360.000', 'elearning' => '$360.000', 'inmobiliaria' => '$360.000'] as $t => $p) {
     $wp = wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST'));
-    // 20-sep: es solo la página (sin hosting ni dominio) y el mantenimiento se puede sumar aparte.
-    caso("$t: la web propia es el pago único de $p, solo la página",
-        strpos($wp, 'pago único, de ' . $p) !== false && mb_stripos($wp, 'es solo la página') !== false
-        && mb_stripos($wp, 'No incluye hosting ni dominio') !== false
-        && mb_stripos($wp, 'le sumás el mantenimiento') !== false, $wp);
+    // 26-sep a la noche: incluye el hosting y el dominio el primer año; el mantenimiento se suma aparte.
+    caso("$t: la web propia es el pago único de $p, con seña, el hosting y el dominio del primer año y el mantenimiento aparte",
+        strpos($wp, 'pago único, de ' . $p) !== false && mb_stripos($wp, 'arrancás con una seña') !== false
+        && mb_stripos($wp, 'Incluye el hosting y el dominio el primer año') !== false
+        && mb_stripos($wp, 'El mantenimiento no va incluido') !== false && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
 }
+// El pago único de ESTA charla: el congelado, si la lista subió después.
+$cfgSubeUnico = $cfg;
+$cfgSubeUnico['tipos']['ecommerce']['precio_unico'] = '$420.000';
+$wpCongelada = wabot_texto_info('web_propia', $cfgSubeUnico, conv_cotizada('ecommerce', $cfg, '5491177770093TEST'));
+caso('a la tienda ya cotizada le dice su pago único aunque la lista suba', strpos($wpCongelada, 'pago único, de $360.000') !== false
+    && strpos($wpCongelada, '$420.000') === false, $wpCongelada);
 $wpSin = wabot_texto_info('web_propia', $cfg);
 caso('sin tipo, la web propia no da el precio de la página y pregunta a qué se dedica',
     mb_stripos($wpSin, 'pago único, de $') === false && mb_stripos($wpSin, 'Contame a qué te dedicás') !== false
@@ -502,9 +666,8 @@ caso('"¿la web queda a mi nombre?" va a la titularidad, que se contesta con los
     && mb_stripos(wabot_texto_info('titularidad', $cfg, conv_cotizada('landing', $cfg, '5491177770093TEST')), 'a los 18 meses') !== false);
 foreach (['landing' => '$10.000', 'ecommerce' => '$15.000'] as $t => $mant) {
     $wp = wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST'));
-    caso("$t: el pago único es solo la página, con el código al abonar el total y el mantenimiento opcional de $mant",
-        mb_stripos($wp, 'es solo la página') !== false && mb_stripos($wp, 'el código queda tuyo') !== false
-        && mb_stripos($wp, 'No incluye hosting ni dominio') !== false && strpos($wp, $mant . ' por mes') !== false, $wp);
+    caso("$t: con el pago único el código queda suyo al abonar el total, y el mantenimiento opcional es de $mant",
+        mb_stripos($wp, 'el código queda tuyo') !== false && strpos($wp, $mant . ' por mes') !== false, $wp);
 }
 
 // Por el borde: sin rubro, contesta el pago único y pregunta a qué se dedica.
@@ -518,9 +681,9 @@ $rW = turno('Soy electricista', $cW, $cfg);
 caso('el pago único ya no se repite en texto: va una sola vez, en la imagen de modalidades',
     substr_count($rW[0] ?? '', 'Pago único') === 0
     && in_array(wabot_precio_imagen_marcador('landing'), $rW, true), json_encode($rW, JSON_UNESCAPED_UNICODE));
-caso('el boceto lo lleva en el precio cotizado y en la ficha',
-    wabot_lead_cotizado($cW, $cfg) === 'Plan anual $120.000 (seña $40.000) o plan mensual $20.000 o pago único $200.000'
-    && mb_stripos(wabot_ficha_resumen($cW, $cfg), 'Web propia') !== false, wabot_lead_cotizado($cW, $cfg));
+caso('el boceto lo lleva en el precio cotizado, con las 3 en el orden de la imagen, y en la ficha (26-sep)',
+    wabot_lead_cotizado($cW, $cfg) === 'Plan mensual $25.000, plan anual $180.000 (seña $60.000) o pago único $240.000'
+    && mb_stripos(wabot_ficha_resumen($cW, $cfg), 'Web propia: le interesa el pago único') !== false, wabot_lead_cotizado($cW, $cfg));
 $cN = conv_nueva('5491177770095TEST'); $cN['fase'] = 'menu';
 clasifica(['rubro_landing']);
 $rN = turno('Soy electricista', $cN, $cfg);
@@ -529,7 +692,7 @@ caso('sin pedirlo, el precio igualmente manda la imagen con el pago único como 
 $cW2 = conv_nueva('5491177770096TEST'); $cW2['fase'] = 'menu';
 clasifica(['rubro_comercio']);
 $rW2 = turno('Vendo ropa de mujer y la quiero en mi propio hosting', $cW2, $cfg);
-caso('rubro y pedido en el mismo mensaje: la tienda manda la imagen con el pago único de $300.000', !empty($cW2['precio_dado'])
+caso('rubro y pedido en el mismo mensaje: la tienda manda la imagen con el pago único de $360.000', !empty($cW2['precio_dado'])
     && in_array(wabot_precio_imagen_marcador('ecommerce'), $rW2, true), json_encode($rW2, JSON_UNESCAPED_UNICODE));
 $cW3 = conv_nueva('5491177770097TEST'); $cW3['fase'] = 'menu';
 clasifica(['pregunta_info'], ['info_keys' => ['hosting']]);
@@ -576,12 +739,16 @@ foreach ([$realUnaVez, $realRechazo] as $m) {
 $cA = conv_nueva('5491177770092TEST');
 wabot_pitch('ecommerce', $cA, $cfg);
 turno('No me interesa el mensual', $cA, $cfg);
-caso('el que rechaza el mensual después del precio deja anotada la forma que prefiere, para el boceto',
-    ($cA['modalidad_elegida'] ?? '') === 'unico' && !empty($cA['bot_off']));
+/* 26-sep a la noche: quedan dos (el plan anual o el pago único), así que no se
+ * anota ninguna; el chat queda para Pablo como cualquier otra respuesta. */
+caso('el que rechaza el mensual después del precio no queda con una forma anotada: la sigue Pablo',
+    empty($cA['modalidad_elegida']) && !empty($cA['bot_off']) && !empty($cA['handoff_pendiente']), (string)($cA['modalidad_elegida'] ?? ''));
 foreach (['Prefiero pagarla una sola vez' => 'propia', 'Vamos con el pago unico, me pasas el CBU?' => 'propia',
-          'No me interesa el mensual' => 'unico', 'Quiero avanzar con el pago mensual' => 'mensual',
-          'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual'] as $f => $esperada) {
-    caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
+          'No me interesa el mensual' => null, 'Quiero avanzar con el pago mensual' => 'mensual',
+          'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual',
+          'No me interesa el plan anual' => 'mensual'] as $f => $esperada) {
+    caso(($esperada === null ? 'no elige nada (quedan el anual y el pago único)' : "elige $esperada") . ": \"$f\"",
+        wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
 }
 foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Quiero saber del pago unico',
           'Cual me conviene mas, pagar una vez o por mes?', 'dale vamos de una'] as $f) {
@@ -608,8 +775,20 @@ caso('lo que quiere sí o sí también', $val('incluir_si_o_si') === 'mapa con l
 caso('y los dos van en el bloque que se lee al diseñar',
     mb_stripos((string)$val('objetivo_web'), 'Minimalista') !== false
     && mb_stripos((string)$val('objetivo_web'), 'mapa con la ubicación') !== false, (string)$val('objetivo_web'));
-caso('el precio del boceto nombra las tres opciones',
-    (string)$val('presupuesto_cotizado') === 'Plan anual $120.000 (seña $40.000) o plan mensual $20.000 o pago único $200.000', (string)$val('presupuesto_cotizado'));
+caso('el precio del boceto nombra las 3 modalidades, en el orden de la imagen (26-sep)',
+    (string)$val('presupuesto_cotizado') === 'Plan mensual $25.000, plan anual $180.000 (seña $60.000) o pago único $240.000', (string)$val('presupuesto_cotizado'));
+// wabot_lead_cotizado: los montos de ESTA charla, en cualquier tipo y modelo.
+caso('la tienda: plan mensual, plan anual con su seña y pago único',
+    wabot_lead_cotizado(conv_cotizada('ecommerce', $cfg, '5491177770081TEST'), $cfg) === 'Plan mensual $35.000, plan anual $250.000 (seña $60.000) o pago único $360.000',
+    wabot_lead_cotizado(conv_cotizada('ecommerce', $cfg, '5491177770081TEST'), $cfg));
+$cCatalogo = array_merge(conv_cotizada('landing', $cfg, '5491177770082TEST'), ['catalogo' => true]);
+caso('el catálogo sin cobro online suma la carga de productos al final',
+    wabot_lead_cotizado($cCatalogo, $cfg) === 'Plan mensual $25.000, plan anual $180.000 (seña $60.000) o pago único $240.000 + carga de productos $500 c/u',
+    wabot_lead_cotizado($cCatalogo, $cfg));
+$cDobleLead = array_merge(conv_nueva('5491177770083TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true,
+    'precio_cotizado' => '$290.000', 'sena_cotizada' => '$40.000', 'mensualidad_cotizada' => '$25.000', 'precio_modelo' => 'doble']);
+caso('la charla del pago único con seña (15 al 18-sep) conserva su modelo',
+    wabot_lead_cotizado($cDobleLead, $cfg) === 'Pago único $290.000 (seña $40.000) o $25.000 por mes', wabot_lead_cotizado($cDobleLead, $cfg));
 $cL['estilo'] = 'No lo sé';
 $campos2 = wabot_lead_campos($cL, $cfg, false);
 $objetivo2 = (string)reset($campos2['objetivo_web']);
@@ -661,8 +840,9 @@ $convVeg = conv_cotizada('ecommerce', $cfg);
 caso('"y la página común que precio tiene?" pregunta por la landing',
     wabot_texto_pregunta_precio_de_tipo('Y la página común que precio tiene ?', $cfg, 'ecommerce') === 'landing');
 $textoOtro = wabot_precio_de_tipo_texto('landing', $convVeg, $cfg);
-caso('y la respuesta trae el precio de la landing y el ya cotizado',
-    strpos($textoOtro, '$120.000') !== false && strpos($textoOtro, '$190.000') !== false, $textoOtro);
+caso('y la respuesta trae el precio de la landing y el ya cotizado, con las 3 modalidades de cada uno',
+    strpos($textoOtro, 'plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000') !== false
+    && strpos($textoOtro, 'plan mensual de $35.000, plan anual de $250.000 o pago único de $360.000') !== false, $textoOtro);
 caso('preguntar por el tipo que YA tiene cotizado no dispara nada',
     wabot_texto_pregunta_precio_de_tipo('cuanto sale la tienda online?', $cfg, 'ecommerce') === null);
 caso('y contar el rubro sin preguntar precio tampoco',
@@ -684,7 +864,8 @@ caso('con un ecommerce ya cotizado la pregunta no aplica', wabot_texto_pregunta_
 $cUp = conv_cotizada('landing', $cfg);
 $up = wabot_upgrade_texto('ecommerce', $cUp, $cfg);
 caso('la respuesta trae el precio del ecommerce y aclara que no es un adicional',
-    is_string($up) && strpos($up, '$190.000') !== false && strpos($up, 'No es un adicional') !== false, (string)$up);
+    is_string($up) && strpos($up, 'tienda online: plan mensual de $35.000, plan anual de $250.000 o pago único de $360.000') !== false
+    && strpos($up, 'No es un adicional sobre lo que te coticé (plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000)') !== false, (string)$up);
 
 $c = conv_reactivada('landing', $cfg, 'QATESTREG11SEP');
 $p = 'Y si además quiero vender productos de skincare y cobrarlos online, cuánto sale todo junto?';
@@ -692,30 +873,38 @@ wabot_conv_transcript($c, 'cliente', $p); $c['ultimo_cliente_ts'] = time();
 clasifica(['otro']);
 $r = wabot_salida_preparar(wabot_responder($p, $c, $cfg), $c, $cfg);
 caso('cotiza la alternativa sin cambiar aún el tipo', $c['tipo'] === 'landing'
-    && ($c['upgrade_pendiente']['tipo'] ?? '') === 'ecommerce' && strpos(implode(' ', $r ?? []), '$30.000') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
+    && ($c['upgrade_pendiente']['tipo'] ?? '') === 'ecommerce' && strpos(implode(' ', $r ?? []), '$35.000') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', $m);
 $p = 'Entonces serían 90 mil de primer pago y 25 mil por mes en total, no los dos planes juntos?';
 wabot_conv_transcript($c, 'cliente', $p); $c['ultimo_cliente_ts'] = time();
 $r = wabot_salida_preparar(wabot_responder($p, $c, $cfg), $c, $cfg);
 caso('aclara el total sin sumar planes ni volver al anterior',
-    strpos(implode(' ', $r ?? []), 'tienda online: plan anual de $190.000 o plan mensual de $30.000') !== false
+    strpos(implode(' ', $r ?? []), 'tienda online: plan mensual de $35.000, plan anual de $250.000 o pago único de $360.000') !== false
     && strpos(implode(' ', $r ?? []), 'No es un adicional') !== false, json_encode($r, JSON_UNESCAPED_UNICODE));
 foreach ((array)$r as $m) wabot_conv_transcript($c, 'bot', $m);
 $vUp = $c['upgrade_pendiente'];
 $rUpSena = wabot_upgrade_pago_texto($vUp, $c, $cfg);
-// Los montos después del upgrade son los de la tienda ($190.000 y $30.000),
-// no los del sitio ($120.000 y $20.000). La seña, sin su monto.
+// Los montos después del upgrade son los de la tienda ($250.000 y $35.000),
+// no los del sitio ($180.000 y $25.000). La seña, sin su monto.
 caso('el pago después del upgrade es el de la tienda, no el del sitio',
-    mb_strpos($rUpSena, '$190.000') !== false && mb_strpos($rUpSena, '$60.000') === false
-    && mb_strpos($rUpSena, '$30.000') !== false && mb_strpos($rUpSena, '$20.000') === false, $rUpSena);
+    mb_strpos($rUpSena, 'el plan anual, de $250.000') !== false && mb_strpos($rUpSena, '$60.000') === false
+    && mb_strpos($rUpSena, 'el plan mensual, de $35.000') !== false && mb_strpos($rUpSena, '$25.000') === false
+    && mb_strpos($rUpSena, '$180.000') === false, $rUpSena);
+// 26-sep a la noche: también el pago único es el de la tienda ($360.000), no el del sitio ($240.000).
+caso('y el pago único después del upgrade también es el de la tienda, no el del sitio',
+    mb_strpos($rUpSena, 'el pago único, de $360.000') !== false && mb_strpos($rUpSena, '$240.000') === false, $rUpSena);
 caso('la tienda consultada de nuevo se confirma corta, no con el mismo texto',
     wabot_upgrade_confirmacion_texto($vUp, $c, $cfg) !== wabot_upgrade_texto('ecommerce', $c, $cfg));
 $p = 'Sí, quiero la demo con la tienda';
 wabot_conv_transcript($c, 'cliente', $p); $c['ultimo_cliente_ts'] = time();
 $r = wabot_salida_preparar(wabot_responder($p, $c, $cfg), $c, $cfg);
 caso('acepta la tienda con cotización y formulario coherentes', $c['tipo'] === 'ecommerce'
-    && $c['precio_cotizado'] === '$190.000' && $c['mensualidad_cotizada'] === '$30.000'
+    && $c['precio_cotizado'] === '$250.000' && $c['mensualidad_cotizada'] === '$35.000'
     && count($r) === 1 && tiene_form($r) && !empty($c['handoff_pendiente']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('y la tienda aceptada queda con su pago único ($360.000), no el del sitio ($240.000)',
+    wabot_precio_vigente($c, $cfg)['precio_unico'] === '$360.000'
+    && wabot_lead_cotizado($c, $cfg) === 'Plan mensual $35.000, plan anual $250.000 (seña $60.000) o pago único $360.000',
+    'precio_unico_cotizado=' . ($c['precio_unico_cotizado'] ?? '') . ' · ' . wabot_lead_cotizado($c, $cfg));
 $cRes = conv_cotizada('landing', $cfg);
 $cRes['upgrade_pendiente'] = wabot_precio_vigente(null, $cfg, 'ecommerce');
 $cRes['ultimo_ts'] = time() - 30 * 86400;
@@ -731,12 +920,12 @@ foreach (['Quiero vender cursos grabados y que los alumnos accedan con usuario d
     $txt = implode("\n", wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? []);
     wabot_conv_transcript($c, 'bot', $txt);
     caso('cambio a cursos conserva su alternativa y ambos precios: ' . mb_substr($m, 0, 24), ($c['upgrade_pendiente']['tipo'] ?? '') === 'elearning'
-        && strpos($txt, '$190.000') !== false && strpos($txt, '$30.000') !== false && $c['tipo'] === 'landing', $txt);
+        && strpos($txt, '$250.000') !== false && strpos($txt, '$35.000') !== false && $c['tipo'] === 'landing', $txt);
 }
 $m = 'Sí, quiero la demo con los cursos'; wabot_conv_transcript($c, 'cliente', $m); $c['ultimo_cliente_ts'] = time();
 $txt = implode("\n", wabot_salida_preparar(wabot_responder($m, $c, $cfg), $c, $cfg) ?? []);
 caso('acepta los cursos con la cotización correcta', $c['tipo'] === 'elearning'
-    && $c['precio_cotizado'] === '$190.000' && $c['mensualidad_cotizada'] === '$30.000' && tiene_form([$txt]), $txt);
+    && $c['precio_cotizado'] === '$250.000' && $c['mensualidad_cotizada'] === '$35.000' && tiene_form([$txt]), $txt);
 caso('la comparación "sin carrito" contesta que la tienda trae las dos formas',
     (string)wabot_comparacion_tipo_texto('ecommerce', conv_cotizada('ecommerce', $cfg), $cfg) === (string)$cfg['info']['las_dos_formas']);
 
@@ -773,12 +962,16 @@ caso('el .com: .com.ar incluido y $40.000 por año de renovación',
     mb_stripos($cfg['info']['dominio_com'], '.com.ar') !== false && strpos($cfg['info']['dominio_com'], '$40.000') !== false);
 caso('el hosting nombra el .com.ar y no el .com', mb_stripos($cfg['info']['hosting'], '.com.ar') !== false && strpos($cfg['info']['hosting'], '$40.000') === false);
 $incluyeSitio = wabot_texto_info('que_incluye', $cfg, ['tipo' => 'landing']);
-caso('el sitio profesional incluye panel sin hablar de cargar productos, y usa el plan con cambios de su tipo (20-sep)',
-    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'un panel para editar') !== false && mb_stripos($incluyeSitio, '$25.000 por mes') !== false
-    && mb_stripos($incluyeSitio, '{cambios_mes}') === false, $incluyeSitio);
+// 26-sep a la noche: un cambio por mes con el mensual o el anual; con el pago único, el primer año de hosting y el mantenimiento aparte.
+caso('el sitio profesional incluye panel sin hablar de cargar productos, con un cambio por mes y sin el plan con cambios (20-sep; 26-sep)',
+    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'un panel para editar') !== false
+    && mb_stripos($incluyeSitio, 'un cambio por mes') !== false && mb_stripos($incluyeSitio, 'con cambios') === false
+    && mb_stripos($incluyeSitio, 'Con el pago único, el hosting y el dominio van incluidos el primer año') !== false
+    && strpos($incluyeSitio, '{') === false, $incluyeSitio);
 caso('a la tienda sí', mb_stripos(wabot_texto_info('que_incluye', $cfg, ['tipo' => 'ecommerce']), '10 productos') !== false);
-caso('sin tipo, el general, con los planes con cambios de lista',
-    wabot_texto_info('que_incluye', $cfg, ['tipo' => null]) === str_replace('{cambios_mes}', '$25.000 por mes en sitio profesional y $35.000 en tienda online, plataforma de cursos o inmobiliaria', $cfg['info']['que_incluye']),
+caso('sin tipo, el general, sin marcadores ni el plan con cambios',
+    wabot_texto_info('que_incluye', $cfg, ['tipo' => null]) === $cfg['info']['que_incluye'] && strpos($cfg['info']['que_incluye'], '{') === false
+    && mb_stripos($cfg['info']['que_incluye'], 'con cambios') === false,
     wabot_texto_info('que_incluye', $cfg, ['tipo' => null]));
 caso('las estadísticas de la tienda y los cursos son las del panel; sitio e inmobiliaria, Google Analytics',
     mb_stripos(wabot_texto_info('estadisticas', $cfg, ['tipo' => 'ecommerce']), 'panel') !== false
@@ -816,13 +1009,15 @@ foreach (['no se bien', 'es un marketplace', 'prefiero hablarlo con alguien tecn
 caso('el bot trabado repreguntando sigue derivando a la tercera', end($salidas) === [(string)$cfg['derivar']],
     json_encode($salidas, JSON_UNESCAPED_UNICODE));
 
-echo "— 14. Condiciones del 16-sep: mantenimiento, suscripción sin cambios y plan con cambios —\n";
+echo "— 14. Mantenimiento y cambios (16-sep; sin el plan con cambios desde el 26-sep a la noche) —\n";
 
-foreach (['landing' => ['$20.000', '$25.000', '$10.000'], 'ecommerce' => ['$30.000', '$35.000', '$15.000'],
-          'elearning' => ['$30.000', '$35.000', '$15.000'], 'inmobiliaria' => ['$30.000', '$35.000', '$15.000']] as $t => $m) {
+/* El plan con cambios ($25.000 / $35.000) dejó de existir: esos montos son hoy
+ * el plan mensual, que como el anual incluye un cambio por mes. */
+foreach (['landing' => ['$25.000', '$10.000'], 'ecommerce' => ['$35.000', '$15.000'],
+          'elearning' => ['$35.000', '$15.000'], 'inmobiliaria' => ['$35.000', '$15.000']] as $t => [$mes, $mant]) {
     $vT = wabot_precio_vigente(null, $cfg, $t);
-    caso("$t: suscripción {$m[0]}, plan con cambios {$m[1]} y mantenimiento {$m[2]}",
-        $vT['mensualidad'] === $m[0] && $vT['mensualidad_cambios'] === $m[1] && $vT['mantenimiento'] === $m[2]);
+    caso("$t: plan mensual $mes, mantenimiento aparte del pago único $mant y sin plan con cambios",
+        $vT['mensualidad'] === $mes && $vT['mantenimiento'] === $mant && ($vT['mensualidad_cambios'] ?? '') === '');
 }
 $cViejo = array_merge(conv_nueva('5491177770140TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true,
     'precio_cotizado' => '$290.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$30.000', 'precio_modelo' => 'doble']);
@@ -833,20 +1028,21 @@ $cViejoL = array_merge(conv_nueva('5491177770141TEST'), ['tipo' => 'landing', 'p
 caso('y la de $20.000 del sitio profesional también', wabot_precio_vigente($cViejoL, $cfg)['mensualidad'] === '$20.000');
 $cBarata = array_merge(conv_nueva('5491177770143TEST'), ['tipo' => 'ecommerce', 'precio_dado' => true,
     'precio_cotizado' => '$190.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$25.000', 'precio_modelo' => 'anual']);
-caso('la cotizada del 16 al 19-sep con $25.000 los conserva: el plan mensual volvió a $30.000 para los nuevos',
-    wabot_precio_vigente($cBarata, $cfg)['mensualidad'] === '$25.000' && wabot_precio_vigente(null, $cfg, 'ecommerce')['mensualidad'] === '$30.000');
+caso('la cotizada del 16 al 19-sep con $25.000 los conserva: el plan mensual de la tienda es $35.000 para los nuevos',
+    wabot_precio_vigente($cBarata, $cfg)['mensualidad'] === '$25.000' && wabot_precio_vigente(null, $cfg, 'ecommerce')['mensualidad'] === '$35.000');
 
 $cT = conv_cotizada('ecommerce', $cfg, '5491177770142TEST');
 foreach (['El mensual incluye cambios?', 'Y si después quiero hacer cambios en la web?', 'los cambios se pagan aparte?',
           'el mantenimiento incluye modificaciones?'] as $p) {
     $rC = wabot_respuesta_pago_fija($p, $cT, $cfg);
-    caso("\"$p\" → el plan con cambios de su tipo",
-        is_array($rC) && strpos($rC[0], '$35.000 por mes') !== false && mb_stripos($rC[0], 'un cambio por mes') !== false
-        && strpos($rC[0], '{') === false, json_encode($rC, JSON_UNESCAPED_UNICODE));
+    caso("\"$p\" → un cambio por mes con el mensual o el anual; con el pago único se cotiza aparte",
+        is_array($rC) && mb_stripos($rC[0], 'El plan mensual y el anual incluyen un cambio por mes') === 0 && mb_stripos($rC[0], 'se cotiza aparte') !== false
+        && mb_stripos($rC[0], 'con cambios') === false && strpos($rC[0], '$') === false && strpos($rC[0], '{') === false,
+        json_encode($rC, JSON_UNESCAPED_UNICODE));
 }
 foreach (['cuantos cambios puedo pedir?', 'quiero cambiar el color de la demo', 'me puedo pasar al mensual despues?',
           'quiero hacer cambios'] as $p) {
-    caso("\"$p\" no es la pregunta del plan con cambios", !wabot_texto_pregunta_cambios_plan($p, $cT));
+    caso("\"$p\" no es la pregunta de los cambios del plan", !wabot_texto_pregunta_cambios_plan($p, $cT));
 }
 caso('en postdemo los cambios son sobre la demo, no el plan',
     !wabot_texto_pregunta_cambios_plan('los cambios se pagan aparte?', ['fase' => 'postdemo']));
@@ -866,17 +1062,22 @@ foreach (['puedo cambiar yo los textos de la web?', 'la web la manejo yo?', 'los
     caso("\"$pPanel\" → carga", wabot_info_por_palabras($pPanel, 'derivado') === 'carga', (string)wabot_info_por_palabras($pPanel, 'derivado'));
 }
 caso('a la tienda sí', mb_stripos((string)wabot_texto_cambios_plan($cT, $cfg), 'desde tu panel') !== false);
-caso('sin tipo, los dos planes con cambios de lista',
-    strpos($rSin, '$25.000 por mes en sitio profesional y $35.000 en tienda online') !== false, $rSin);
+caso('sin tipo, lo mismo: un cambio por mes, sin montos ni el plan con cambios',
+    mb_stripos($rSin, 'El plan mensual y el anual incluyen un cambio por mes') === 0 && strpos($rSin, '$') === false
+    && mb_stripos($rSin, 'con cambios') === false, $rSin);
 
 $hostT = wabot_texto_hosting($cT, $cfg, 'y despues del primer año cuanto sale el hosting?');
-caso('después del primer año: no hay renovación aparte, va incluida en los planes (19-sep)',
-    mb_stripos($hostT, 'No hay renovación aparte') !== false && strpos($hostT, '$50.000') === false && strpos($hostT, '{') === false, $hostT);
+caso('después del primer año: no hay renovación aparte con los planes; con el pago único se renueva una vez por año (19-sep; 26-sep)',
+    mb_stripos($hostT, 'No hay renovación aparte') !== false
+    && mb_stripos($hostT, 'Con el pago único, el hosting y el dominio van incluidos el primer año y después se renuevan una vez por año') !== false
+    && strpos($hostT, '$50.000') === false && strpos($hostT, '{') === false, $hostT);
 $rT = wabot_pitch('ecommerce', $cT, $cfg);
-caso('el turno del precio termina en la intro de las 3 modalidades y manda la imagen de $30.000/$300.000 (22-sep, 25-sep)',
+caso('el turno del precio termina en la intro de las 3 modalidades y manda la imagen de la tienda (22-sep, 25-sep, 26-sep)',
     str_ends_with(trim((string)$rT[0]), 'Podés elegir una de estas 3 modalidades de pago:')
     && ($rT[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'), $rT[0]);
 $todos = json_encode(wabot_textos_default(), JSON_UNESCAPED_UNICODE);
+caso('ningún texto nombra el plan con cambios, que dejó de existir el 26-sep a la noche',
+    !preg_match('/con cambios|\{cambios_mes\}/iu', $todos));
 /* "En tu caso podemos hacer…" volvió a estar permitido (Pablo, 18-sep: "Para
  * lo que me contás, te armamos…" o "En tu caso podemos hacer…"). */
 caso('ningún texto dice "servicio mensual", "abono mensual", "Lo mejor para" ni "te podemos ofrecer"',
@@ -886,7 +1087,8 @@ caso('ningún texto promete un cambio por mes incluido en la suscripción ni los
 
 foreach (glob(WABOT_DATA . '/conv/54911777700*TEST.json') ?: [] as $f) @unlink($f);
 foreach (glob(WABOT_DATA . '/conv/54911777701*TEST.json') ?: [] as $f) @unlink($f);
-foreach (['997FPTEST', '996FPTEST', '998FPTEST', 'QATESTREG11SEP', 'QATESTREGLOGICA15'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
+foreach (glob(WABOT_DATA . '/conv/54911777702*TEST.json') ?: [] as $f) @unlink($f);
+foreach (['997FPTEST', '996FPTEST', '998FPTEST', 'QATESTREG11SEP', 'QATESTREGLOGICA15', 'ig5491177770201TEST'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 todo_ok();

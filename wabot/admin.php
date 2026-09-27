@@ -4039,7 +4039,7 @@ function burbujaCita(t, chat) {
 })();
 </script>
 <?php endif; ?>
-<script src="respuestas-rapidas.js?v=20260919a"></script>
+<script src="respuestas-rapidas.js?v=20260926-tres-modalidades"></script>
 <?php if ($logueado && $tab === 'estado'): ?>
 <script type="module">
 /* Notificaciones push del panel.

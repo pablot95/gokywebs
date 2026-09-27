@@ -189,6 +189,21 @@ caso('el resumen dice qué ofrece y qué pidió', mb_stripos($res, 'Pidió: un b
 $campos = wabot_lead_campos($c, $cfg);
 caso('y el boceto lo lleva en el bloque que se lee al diseñar',
     mb_stripos((string)reset($campos['objetivo_web']), 'Del chat:') !== false, (string)reset($campos['objetivo_web']));
+/* La forma de pago que eligió (26-sep a la noche): las 3 modalidades se dicen
+ * igual, también el pago único; la línea de la web propia queda para el que
+ * la pidió sin elegirlo. */
+foreach (['mensual' => 'plan mensual', 'unico' => 'plan anual', 'propia' => 'pago único'] as $modalidad => $nombre) {
+    $resM = wabot_ficha_resumen(array_merge($c, ['modalidad_elegida' => $modalidad, 'quiere_web_propia' => $modalidad === 'propia']), $cfg);
+    caso("eligió $modalidad: la ficha dice \"Eligió: $nombre\"", mb_strpos($resM, 'Eligió: ' . $nombre) !== false, $resM);
+}
+$resPropia = wabot_ficha_resumen(array_merge($c, ['modalidad_elegida' => 'propia', 'quiere_web_propia' => true]), $cfg);
+caso('con el pago único elegido no se repite la línea de la web propia', mb_strpos($resPropia, 'Web propia') === false, $resPropia);
+$resPidio = wabot_ficha_resumen(array_merge($c, ['modalidad_elegida' => '', 'quiere_web_propia' => true]), $cfg);
+caso('si pidió la web propia sin elegir, va esa línea y ningún "Eligió"',
+    mb_strpos($resPidio, 'Web propia: le interesa el pago único') !== false && mb_strpos($resPidio, 'Eligió') === false, $resPidio);
+$resPidioAnual = wabot_ficha_resumen(array_merge($c, ['modalidad_elegida' => 'unico', 'quiere_web_propia' => true]), $cfg);
+caso('si la pidió y después eligió el anual, van las dos',
+    mb_strpos($resPidioAnual, 'Web propia: le interesa el pago único') !== false && mb_strpos($resPidioAnual, 'Eligió: plan anual') !== false, $resPidioAnual);
 $cR = $c; $cR['ultimo_ts'] = time() - 30 * 86400;
 wabot_conv_reset_si_vieja($cR, $cfg, time());
 caso('una sesión vieja arranca con la ficha vacía', empty($cR['ficha']) && empty($cR['catalogo']) && empty($cR['fuera_avisado']));

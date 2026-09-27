@@ -464,9 +464,10 @@ function wabot_ficha_resumen($conv, $cfg) {
     $alertas = array_map(function ($s) { return str_replace('_', ' ', $s); }, (array)$f['senales']);
     if ((int)$f['cantidad_productos'] > 0) array_unshift($alertas, $f['cantidad_productos'] . ' productos');
     if ($alertas) $partes[] = '⚠ ' . implode(', ', $alertas);
-    if (!empty($conv['quiere_web_propia'])) $partes[] = 'Web propia: le interesa el pago único';
-    // 'propia' (pago único, formulario /formb) ya lo dice la línea de "Web propia" de arriba.
-    if (!empty($conv['modalidad_elegida']) && $conv['modalidad_elegida'] !== 'propia') $partes[] = 'Eligió: ' . ($conv['modalidad_elegida'] === 'unico' ? 'plan anual' : 'plan mensual');
+    $modalidad = (string)($conv['modalidad_elegida'] ?? '');
+    if (!empty($conv['quiere_web_propia']) && $modalidad !== 'propia') $partes[] = 'Web propia: le interesa el pago único';
+    // El pago único es una de las 3 modalidades (26-sep): si lo eligió con el número o por nombre, también lo dice.
+    if ($modalidad !== '') $partes[] = 'Eligió: ' . (['unico' => 'plan anual', 'propia' => 'pago único'][$modalidad] ?? 'plan mensual');
     if (in_array($f['interlocutor'], ['empleo', 'proveedor', 'cliente_actual'], true)) $partes[] = 'No es un lead: ' . str_replace('_', ' ', $f['interlocutor']);
     return implode(' · ', $partes);
 }
@@ -2205,12 +2206,13 @@ function wabot_texto_costos_despues($texto, $conv, $cfg) {
     // Los dos planes (19-sep) incluyen todo mientras estén activos.
     if (($v ?? wabot_precio_vigente($conv, $cfg))['modelo'] !== 'doble') {
         return 'Con cualquiera de los dos planes no hay costos aparte: el hosting, el dominio, el mantenimiento y el soporte van incluidos mientras el plan esté activo. '
-            . 'El anual se paga una vez por año y el mensual, cada mes. Los cambios en la web van aparte: para eso está el plan mensual con cambios.';
+            . 'El anual se paga una vez por año y el mensual, cada mes, y los dos incluyen un cambio por mes.';
     }
     $unico = 'Con el pago único la web queda paga e incluye mantenimiento el primer año. Desde el segundo año seguís con el plan de mantenimiento, de '
         . wabot_monto_por_mes_texto($v ?? wabot_precio_vigente($conv, $cfg), $cfg, 'mantenimiento') . '.';
     $monto = ($v !== null && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] : '';
-    $mensual = 'Con la suscripción mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte y el mantenimiento. Los cambios en la web van aparte, con el plan con cambios.';
+    // El plan con cambios dejó de existir (26-sep a la noche): el mensual incluye un cambio por mes.
+    $mensual = 'Con la suscripción mensual pagás la mensualidad' . $monto . ', que ya incluye el hosting, el dominio, el soporte, el mantenimiento y un cambio por mes.';
     $nombraUnico = (bool)preg_match('/\b(pago unico|un solo pago|unico pago|una sola vez|de una)\b/u', $t);
     $nombraMensual = (bool)preg_match('/\b(mensual\w*|por mes|suscripcion|abono)\b/u', $t);
     if ($nombraUnico && !$nombraMensual) return $unico;
@@ -2447,16 +2449,19 @@ function wabot_texto_rechaza_una_forma($texto) {
  * "¿y si no quiero pagar todo junto?" preguntan, no eligen. Si en el mismo
  * mensaje cambia de idea, vale la última.
  */
-function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
+function wabot_modalidad_elegida_en($texto, $numerosValen = false, $ordenViejo = false) {
     $crudo = trim((string)$texto);
     if ($crudo === '' || mb_strlen($crudo) > 300) return null;
 
-    /* Desde el 21-sep los planes van numerados ("1) Plan anual… 2) Plan
-     * mensual…"), así que la respuesta natural es el número solo. Vale
-     * únicamente cuando el mensaje es ese número y el precio ya salió: fuera
-     * de ahí un "2" suelto puede ser cualquier otra cosa. */
+    /* Desde el 21-sep las modalidades van numeradas, así que la respuesta
+     * natural es el número solo. Vale únicamente cuando el mensaje es ese
+     * número y el precio ya salió: fuera de ahí un "2" suelto puede ser
+     * cualquier otra cosa. El número es el de lo que vio: la imagen del precio
+     * (desde el 25-sep) y el texto (desde el 26-sep) dicen "1 plan mensual,
+     * 2 plan anual, 3 pago único"; el texto de antes decía "1. Plan anual,
+     * 2. Plan mensual" ($ordenViejo, wabot_modalidades_orden_viejo). */
     if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([123])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
-        return ['1' => 'unico', '2' => 'mensual', '3' => 'propia'][$m[2]];
+        return ($ordenViejo ? ['1' => 'unico', '2' => 'mensual', '3' => 'propia'] : ['1' => 'mensual', '2' => 'unico', '3' => 'propia'])[$m[2]];
     }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
@@ -2481,9 +2486,10 @@ function wabot_modalidad_elegida_en($texto, $numerosValen = false) {
         if (preg_match('/\bsi (elijo|eligiera|eligiese|voy|fuera|hago|hiciera|prefiero)\b/u', $t)) continue;
         // Preguntar por una forma no es elegirla: "quiero saber del pago único".
         if ($t === '' || preg_match('/\b(saber|consultar|preguntar|averiguar|entender|info|informacion|detalles?)\b/u', $t)) continue;
-        // Rechazar una forma es elegir la otra.
+        // Rechazar el anual o el pago único es elegir el mensual; rechazar el
+        // mensual deja dos (26-sep: el anual o el pago único), así que no se anota.
         $rechazo = wabot_texto_rechaza_una_forma($frase);
-        if ($rechazo === 'mensual') { $elegida = 'unico'; continue; }
+        if ($rechazo === 'mensual') continue;
         if ($rechazo === 'unico') { $elegida = 'mensual'; continue; }
         $u = preg_match('/' . $elige . $unico . '/u', $t);
         $m = preg_match('/' . $elige . $mensual . '/u', $t);
@@ -2574,14 +2580,13 @@ function wabot_diferencia_pagos_texto($conv, $cfg) {
         $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : '';
         return "Los dos planes incluyen lo mismo: el desarrollo completo de la web, hosting, dominio, mantenimiento, actualizaciones y soporte. Cambia cada cuánto lo pagás:\n"
             . 'Plan anual' . $anual . ': pagás una vez por año y sale menos que doce meses del mensual.' . "\n"
-            . 'Plan mensual' . $mensual . ': pagás mes a mes, sin permanencia. Si vas a necesitar cambios seguido, está el plan mensual con cambios, de '
-            . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mensualidad_cambios') . '.';
+            . 'Plan mensual' . $mensual . ': pagás mes a mes, sin permanencia. Los dos incluyen un cambio por mes.';
     }
     $unico = ($v && $v['precio'] !== '') ? ' de ' . $v['precio'] . ', con seña de ' . $v['sena'] . ' al empezar y saldo de ' . $v['saldo'] . ' al entregar' : ', con seña al empezar y saldo al entregar';
     $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : ' por mes';
     return "La diferencia es cómo contratás y mantenés la web, no dos cuotas del mismo precio.\n"
         . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Incluye mantenimiento el primer año; después seguís con el plan de mantenimiento, de ' . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mantenimiento') . '. Un cambio pedido después de la entrega se cotiza aparte.'
-        . "\nSuscripción mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras la suscripción esté activa incluye hosting, dominio, soporte y mantenimiento técnico, sin cambios (para eso está el plan con cambios, de ' . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mensualidad_cambios') . '). No hay permanencia; a los 2 años de suscripción podés reclamar el código y la propiedad.';
+        . "\nSuscripción mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras la suscripción esté activa incluye hosting, dominio, soporte, mantenimiento técnico y un cambio por mes. No hay permanencia; a los 2 años de suscripción podés reclamar el código y la propiedad.';
 }
 
 /**
@@ -5453,6 +5458,7 @@ function wabot_upgrade_pago_texto($pendiente, $conv, $cfg) {
     $c['precio_cotizado'] = (string)($pendiente['precio'] ?? '');
     $c['sena_cotizada'] = (string)($pendiente['sena'] ?? '');
     $c['mensualidad_cotizada'] = (string)($pendiente['mensualidad'] ?? '');
+    $c['precio_unico_cotizado'] = (string)($pendiente['precio_unico'] ?? '');
     $c['precio_modelo'] = (string)($pendiente['modelo'] ?? 'doble');
     $v = wabot_precio_vigente($c, $cfg);
     $nombre = wabot_tipo_nombre_precio($destino, $cfg['tipos'][$destino] ?? []);
@@ -5595,7 +5601,8 @@ function wabot_texto_info($clave, $cfg, $conv = null) {
     }
     if (strpos($texto, '{precio_web_propia}') !== false) {
         $tipo = is_array($conv) ? (string)($conv['tipo'] ?? '') : '';
-        $unico = $tipo !== '' ? (string)($cfg['tipos'][$tipo]['precio_unico'] ?? '') : '';
+        // El pago único de ESTA charla: el congelado, o el de lista (26-sep).
+        $unico = ($tipo !== '' && isset($cfg['tipos'][$tipo])) ? wabot_precio_unico_vigente(wabot_precio_vigente($conv, $cfg, $tipo), $cfg) : '';
         $texto = str_replace('{precio_web_propia}', $unico !== '' ? ', de ' . $unico : '', $texto);
         // Sin saber para qué es la web no se dan montos (14-sep): se pregunta.
         if ($clave === 'web_propia' && $unico === '') $texto .= ' Contame a qué te dedicás y te paso el valor.';
@@ -5667,7 +5674,7 @@ function wabot_texto_pago_generico($cfg) {
     // Sin tipo cotizado no se dan montos (14-sep): cómo se paga y la pregunta.
     $texto = trim((string)($cfg['info']['pago_generico'] ?? ''));
     if ($texto === '' || strpos($texto, '{tabla_precios}') !== false) {
-        $texto = 'Hay dos planes: uno anual, que arranca con una seña y después se renueva una vez por año, y uno mensual, por Mercado Pago y sin permanencia. Los dos incluyen el desarrollo completo de la web, hosting, dominio, mantenimiento y soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
+        $texto = 'Hay 3 modalidades: el plan mensual, por Mercado Pago y sin permanencia; el plan anual, que arranca con una seña y después se renueva una vez por año, y el pago único, con una seña para arrancar y el resto al entregar. Las 3 incluyen el desarrollo completo de la web, y el mensual y el anual, además, el hosting, el dominio, el mantenimiento y el soporte. El valor depende del tipo de web: contame a qué te dedicás y te lo paso.';
     }
     return $texto;
 }
@@ -5725,7 +5732,7 @@ function wabot_texto_pago($conv, $cfg) {
     if ($tipo === '' || !isset($cfg['tipos'][$tipo]) || empty($conv['precio_dado'])) {
         $generico = wabot_texto_pago_generico($cfg);
         if ($generico !== '') return $generico;
-        return 'Hay dos planes: uno anual, que arranca con una seña y después se renueva una vez por año, y uno mensual, por Mercado Pago y sin permanencia. Los dos incluyen el desarrollo completo de la web, hosting, dominio, mantenimiento y soporte.';
+        return 'Hay 3 modalidades: el plan mensual, por Mercado Pago y sin permanencia; el plan anual, que arranca con una seña y después se renueva una vez por año, y el pago único, con una seña para arrancar y el resto al entregar. Las 3 incluyen el desarrollo completo de la web, y el mensual y el anual, además, el hosting, el dominio, el mantenimiento y el soporte.';
     }
     $v = wabot_precio_vigente($conv, $cfg);
     /* Los marcadores de cuota se resuelven vacíos: el bot no dice montos de
@@ -5799,49 +5806,59 @@ function wabot_precio_congelar(&$conv, $tipo, $cfg) {
     $conv['precio_cotizado']      = trim((string)($t['precio'] ?? ''));
     $conv['sena_cotizada']        = trim((string)($t['sena'] ?? ''));
     $conv['mensualidad_cotizada'] = trim((string)($t['mensualidad'] ?? ''));
-    // Los dos planes (19-sep): anual (seña, resto al entregar y cobro cada año)
-    // o mensual. 'doble' queda para las charlas cotizadas antes, con el pago
-    // único y su seña.
+    // Desde el 26-sep a la noche también el pago único: antes salía siempre de lista.
+    $conv['precio_unico_cotizado'] = trim((string)($t['precio_unico'] ?? ''));
+    /* Las 3 modalidades (19-sep; en el orden de la imagen desde el 26-sep):
+     * plan mensual, plan anual (seña, resto al entregar y cobro cada año) y
+     * pago único. 'doble' queda para las charlas cotizadas del 15 al 18-sep,
+     * con el pago único y su seña. */
     $conv['precio_modelo']        = 'anual';
     $conv['precio_cotizado_ts']   = time();
 }
 
 /**
  * El precio que vale para esta charla y este tipo: el congelado si lo hay, la
- * lista si no. Devuelve precio (pago único), seña, saldo y mensualidad.
+ * lista si no. Devuelve precio (el plan anual; en 'doble', el pago único),
+ * precio_unico, seña, saldo y mensualidad.
+ *
+ * Lo congelado se respeta, salvo que la lista haya bajado (26-sep a la noche:
+ * el plan mensual pasó de $30.000 / $40.000 a $25.000 / $35.000 y el pago
+ * único de la tienda, de $390.000 a $360.000): ahí vale la lista, así a nadie
+ * se le cobra más que a uno que escribe hoy (wabot_monto_menor).
  */
 function wabot_precio_vigente($conv, $cfg, $tipo = null) {
     $tipo = (string)($tipo ?? (is_array($conv) ? ($conv['tipo'] ?? '') : ''));
     $t = $cfg['tipos'][$tipo] ?? [];
     $v = [
-        'tipo'        => $tipo,
-        'precio'      => trim((string)($t['precio'] ?? '')),
-        'sena'        => trim((string)($t['sena'] ?? '')),
-        'mensualidad' => trim((string)($t['mensualidad'] ?? '')),
-        'modelo'      => 'anual',
+        'tipo'         => $tipo,
+        'precio'       => trim((string)($t['precio'] ?? '')),
+        'precio_unico' => trim((string)($t['precio_unico'] ?? '')),
+        'sena'         => trim((string)($t['sena'] ?? '')),
+        'mensualidad'  => trim((string)($t['mensualidad'] ?? '')),
+        'modelo'       => 'anual',
     ];
     if (is_array($conv) && (string)($conv['tipo'] ?? '') === $tipo && $tipo !== '' && !empty($conv['precio_cotizado'])) {
         $modelo = (string)($conv['precio_modelo'] ?? '');
         if ($modelo === 'anual') {
-            // Plan anual o mensual (19-sep). La seña del anual, la congelada o la
-            // de lista (las charlas cotizadas el 19-sep a la mañana no la tienen).
-            $v['precio']      = trim((string)$conv['precio_cotizado']);
-            $v['sena']        = trim((string)($conv['sena_cotizada'] ?? '')) ?: $v['sena'];
-            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
+            // Las 3 modalidades (19-sep). La seña, la congelada o la de lista (las
+            // charlas cotizadas el 19-sep a la mañana no la tienen); el pago único,
+            // el congelado desde el 26-sep a la noche o el de lista.
+            $v['precio']       = wabot_monto_menor($conv['precio_cotizado'], $v['precio']);
+            $v['sena']         = wabot_monto_menor($conv['sena_cotizada'] ?? '', $v['sena']);
+            $v['mensualidad']  = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
+            $v['precio_unico'] = wabot_monto_menor($conv['precio_unico_cotizado'] ?? '', $v['precio_unico']);
         } elseif ($modelo === 'doble') {
             // Cotizada del 15 al 18-sep: pago único con su seña, o mensual.
-            $v['modelo']      = 'doble';
-            $v['precio']      = trim((string)$conv['precio_cotizado']);
-            $v['sena']        = trim((string)($conv['sena_cotizada'] ?? '')) ?: '$40.000';
-            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
+            $v['modelo']       = 'doble';
+            $v['precio']       = wabot_monto_menor($conv['precio_cotizado'], $v['precio_unico']);
+            $v['precio_unico'] = $v['precio'];
+            $v['sena']         = trim((string)($conv['sena_cotizada'] ?? '')) ?: '$40.000';
+            $v['mensualidad']  = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
         } elseif ($modelo === 'mensual') {
             /* Cotizada del 10 al 14-sep, con la mensualidad sola: conserva SU
              * mensualidad y se le ofrece también el plan anual de lista. */
-            $v['mensualidad'] = trim((string)($conv['mensualidad_cotizada'] ?? '')) ?: $v['mensualidad'];
+            $v['mensualidad'] = wabot_monto_menor($conv['mensualidad_cotizada'] ?? '', $v['mensualidad']);
         }
-        /* La mensualidad congelada se respeta: el plan mensual volvió a $20.000
-         * / $30.000 el 19-sep, y la charla cotizada del 16 al 19-sep conserva
-         * los $15.000 / $25.000 que se le dijeron. */
     }
     // El plan con cambios y el mantenimiento después del primer año salen siempre de lista.
     $v['mensualidad_cambios'] = trim((string)($t['mensualidad_cambios'] ?? ''));
@@ -5851,12 +5868,53 @@ function wabot_precio_vigente($conv, $cfg, $tipo = null) {
     return $v;
 }
 
-/** "$290.000 en un pago único o $30.000 por mes". */
+/**
+ * El menor de dos montos ("$25.000"): el congelado, salvo que la lista sea más
+ * baja. Si falta uno, el otro.
+ */
+function wabot_monto_menor($congelado, $lista) {
+    $congelado = trim((string)$congelado);
+    $lista = trim((string)$lista);
+    if ($congelado === '') return $lista;
+    if ($lista === '' || wabot_monto_a_numero($lista) <= 0) return $congelado;
+    return wabot_monto_a_numero($lista) < wabot_monto_a_numero($congelado) ? $lista : $congelado;
+}
+
+/** El pago único de ESTA charla (wabot_precio_vigente), o el de lista si el arreglo no lo trae. */
+function wabot_precio_unico_vigente($v, $cfg) {
+    $unico = trim((string)($v['precio_unico'] ?? ''));
+    if ($unico !== '') return $unico;
+    return trim((string)($cfg['tipos'][(string)($v['tipo'] ?? '')]['precio_unico'] ?? ''));
+}
+
+/**
+ * ¿La charla vio las modalidades en el orden de antes, "1. Plan anual, 2. Plan
+ * mensual, 3. Pago único"? Vale lo último que se le mostró: la imagen del
+ * precio (desde el 25-sep a las 13:20) y el texto (desde el 26-sep a la noche)
+ * dicen "1 plan mensual, 2 plan anual, 3 pago único". Sin rastro en el
+ * transcript, la fecha en que se cotizó.
+ */
+function wabot_modalidades_orden_viejo($conv) {
+    if (!is_array($conv)) return false;
+    foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
+        if (($fila['q'] ?? '') !== 'bot') continue;
+        $t = (string)($fila['t'] ?? '');
+        if ($t === '[Imagen: modalidades de pago]' || preg_match('/(^|\n)1[.)] Plan mensual\b/u', $t)) return false;
+        if (preg_match('/(^|\n)1[.)] Plan anual\b/u', $t)) return true;
+    }
+    $ts = (int)($conv['precio_cotizado_ts'] ?? 0);
+    return $ts > 0 && $ts < 1790353244; // 25-sep-2026 13:20:44 (-03:00): llega la imagen del precio.
+}
+
+/** "plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if ($v['mensualidad'] === '') return $v['precio'];
     if (($v['modelo'] ?? '') === 'doble') return $v['precio'] . ' en un pago único o ' . $v['mensualidad'] . ' por mes';
-    return 'plan anual de ' . $v['precio'] . ' o plan mensual de ' . $v['mensualidad'];
+    // Las 3 modalidades, en el orden de la imagen del precio (26-sep).
+    $unico = trim((string)($v['precio_unico'] ?? ''));
+    if ($unico === '') return 'plan mensual de ' . $v['mensualidad'] . ' o plan anual de ' . $v['precio'];
+    return 'plan mensual de ' . $v['mensualidad'] . ', plan anual de ' . $v['precio'] . ' o pago único de ' . $unico;
 }
 /** El nombre de cada tipo como se dice en la tabla de precios. */
 function wabot_tipo_nombre_precio($tipo, $d) {
@@ -5872,10 +5930,11 @@ function wabot_precio_grupos($cfg) {
 
         $p = trim((string)($d['precio'] ?? ''));
         $m = trim((string)($d['mensualidad'] ?? ''));
+        $u = trim((string)($d['precio_unico'] ?? ''));
         if ($p === '' || wabot_monto_a_numero($p) <= 0) continue;
-        $k = $p . '|' . $m;
+        $k = $p . '|' . $m . '|' . $u;
         if (!isset($grupos[$k])) {
-            $grupos[$k] = ['precio' => $p, 'mensualidad' => $m, 'monto' => wabot_monto_a_numero($p), 'nombres' => []];
+            $grupos[$k] = ['precio' => $p, 'mensualidad' => $m, 'precio_unico' => $u, 'monto' => wabot_monto_a_numero($p), 'nombres' => []];
         }
         $grupos[$k]['nombres'][] = wabot_tipo_nombre_precio((string)$tipo, $d);
     }
@@ -5911,7 +5970,7 @@ function wabot_tabla_precios_texto($cfg) {
     foreach (wabot_precio_grupos($cfg) as $g) {
         $nombres = wabot_lista_o($g['nombres']);
         $linea = mb_strtoupper(mb_substr($nombres, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($nombres, 1, null, 'UTF-8')
-               . ': ' . ($g['mensualidad'] !== '' ? 'plan anual de ' . $g['precio'] . ' o plan mensual de ' . $g['mensualidad'] : $g['precio']);
+               . ': ' . ($g['mensualidad'] !== '' ? wabot_precio_frase($g) : $g['precio']);
         $lineas[] = $linea . '.';
     }
     return implode(' ', $lineas);
@@ -5965,11 +6024,12 @@ function wabot_precio_placeholders($texto, $conv, $cfg, $tipo = null) {
         $t = str_replace('{dos_formas}', $bloque, $t);
     }
     $d = $cfg['tipos'][$v['tipo']] ?? [];
+    $unicoVigente = wabot_precio_unico_vigente($v, $cfg);
     $mensualidades = wabot_mensualidades_texto($cfg);
     return str_replace(
         ['{precio}', '{precio_unico}', '{sena}', '{saldo}', '{mensualidad}', '{link}', '{portfolio}', '{portfolio_texto}', '{tabla_precios}', '{mensualidades}',
          '{mantenimiento_mes}', '{cambios_mes}', '{carga_producto}'],
-        [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', (string)($d['precio_unico'] ?? 'el valor del pago único'), $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
+        [$v['precio'] !== '' ? $v['precio'] : 'el valor de la web', $unicoVigente !== '' ? $unicoVigente : 'el valor del pago único', $v['sena'] !== '' ? $v['sena'] : 'la seña', $v['saldo'] !== '' ? $v['saldo'] : 'el saldo',
          $v['mensualidad'] !== '' ? $v['mensualidad'] : ($mensualidades !== '' ? $mensualidades : 'la mensualidad'),
          wabot_link_presupuesto_tipo((string)$v['tipo'], $conv, $cfg), (string)($d['portfolio'] ?? ''), (string)($d['portfolio_texto'] ?? ''),
          wabot_tabla_precios_texto($cfg), $mensualidades,
@@ -6064,9 +6124,10 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
 
     $salida = [$propuesta];
     /* La imagen con las 3 modalidades (25-sep), solo cuando wabot_servicio_texto()
-     * de verdad las ofreció: sin eso —charlas viejas del modelo 'doble', sin
-     * mensualidad— la imagen mostraría montos que no aplican a esta charla. */
-    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '') {
+     * de verdad las ofreció y la imagen muestra los montos de ESTA charla
+     * (wabot_precio_imagen_corresponde, 26-sep): si no —Instagram, una charla
+     * con los montos congelados de antes— las modalidades ya fueron en texto. */
+    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '' && wabot_precio_imagen_corresponde($tipo, $conv, $cfg)) {
         $imagen = wabot_precio_imagen_marcador($tipo);
         if ($imagen !== null) $salida[] = $imagen;
     }
@@ -6177,10 +6238,17 @@ function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
     $precio  = trim((string)($v['precio'] ?? ''));
     $mensual = trim((string)($v['mensualidad'] ?? ''));
-    // Sin los dos montos no se ofrecen las dos formas.
+    // Sin los dos montos no se ofrecen las modalidades.
     if ($precio === '' || $mensual === '') return '';
-    $t = trim((string)($cfg['precio_modalidades_intro'] ?? ''));
-    if ($t === '') $t = trim((string)(wabot_textos_default()['precio_modalidades_intro'] ?? ''));
+    /* Con la imagen, solo la frase que la abre. Sin ella (Instagram, o una
+     * charla con otros montos que los de la imagen, 26-sep), las 3
+     * modalidades en texto, en el mismo orden y con los montos de ESTA charla. */
+    if (wabot_precio_imagen_corresponde($tipo, $conv, $cfg)) {
+        $t = trim((string)($cfg['precio_modalidades_intro'] ?? ''));
+        if ($t === '') $t = trim((string)(wabot_textos_default()['precio_modalidades_intro'] ?? ''));
+    } else {
+        $t = trim(wabot_precio_placeholders(wabot_servicio_texto_plantilla((string)$tipo, false, $cfg), $conv, $cfg, $tipo));
+    }
     if ($t === '') return '';
     // Si pidió la web propia (19-sep), debajo va el pago único.
     $propia = wabot_web_propia_precio_texto($conv, $cfg, $v);

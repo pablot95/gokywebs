@@ -120,6 +120,8 @@ function wabot_upgrade_aplicar(&$conv, $pendiente) {
     $conv['precio_cotizado'] = $pendiente['precio'];
     $conv['sena_cotizada'] = $pendiente['sena'] ?? '';
     $conv['mensualidad_cotizada'] = $pendiente['mensualidad'];
+    // El pago único del tipo nuevo (26-sep a la noche): si no, quedaba el del tipo anterior.
+    $conv['precio_unico_cotizado'] = $pendiente['precio_unico'] ?? '';
     $conv['precio_modelo'] = $pendiente['modelo'];
     $conv['precio_cotizado_ts'] = time();
     $conv['pitch_tipo'] = $pendiente['tipo'];
@@ -389,8 +391,8 @@ function wabot_responder($texto, &$conv, $cfg) {
             && !preg_match('/\b(sitio profesional|precio anterior|sin tienda|sin cursos)\b/u', $normal)) {
             $consulta = $conv;
             $consulta['tipo'] = $pendiente['tipo'];
-            foreach (['precio' => 'precio_cotizado', 'sena' => 'sena_cotizada',
-                      'mensualidad' => 'mensualidad_cotizada', 'modelo' => 'precio_modelo'] as $origen => $campo) {
+            foreach (['precio' => 'precio_cotizado', 'sena' => 'sena_cotizada', 'mensualidad' => 'mensualidad_cotizada',
+                      'precio_unico' => 'precio_unico_cotizado', 'modelo' => 'precio_modelo'] as $origen => $campo) {
                 $consulta[$campo] = $pendiente[$origen] ?? '';
             }
             $pagoAlternativa = wabot_respuesta_pago_fija($texto, $consulta, $cfg);

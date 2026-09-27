@@ -20,7 +20,7 @@
     ],
     'Presupuesto': [
       'Te preparo el presupuesto para lo que me contaste y te lo paso por acá.',
-      'Hay dos planes: el anual, que arranca con una seña, el resto se paga al entregar y después se renueva una vez por año, o el mensual, por Mercado Pago. ¿Cuál preferís?',
+      'Hay 3 modalidades: el plan mensual, por Mercado Pago; el plan anual, que arranca con una seña, el resto se paga al entregar y después se renueva una vez por año, o el pago único, con una seña y el resto al entregar. ¿Cuál preferís?',
       '¿Te cierra esta propuesta? Si querés avanzar, seguimos con tus datos y el modelo que elegiste.',
       'El valor depende de las funciones que necesites. Contame eso y te doy un número concreto.',
       'Si querés sumar algo que no habíamos previsto, lo vemos y te digo cuánto cambia el presupuesto.'
@@ -37,8 +37,8 @@
       'Te comparto cómo quedó para que lo mires con calma y me digas qué cambiarías.',
       'Podemos rehacer el diseño hasta dos veces antes de elegir uno.',
       'Una vez elegido el diseño, tenés tres rondas para ajustar el resto de la web.',
-      'Con el plan anual, los cambios después de entregada la web se presupuestan aparte.',
-      'El mantenimiento no incluye cambios. Para eso está el plan mensual con cambios, con un cambio por mes.'
+      'Con el pago único, los cambios después de entregada la web se presupuestan aparte.',
+      'El plan mensual y el anual incluyen un cambio por mes en la web.'
     ],
     'Cobros': [
       'Para empezar con el plan anual, te paso los datos para la seña y después confirmamos el arranque.',

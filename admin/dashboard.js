@@ -329,7 +329,7 @@ function renderInversion() {
         const filas = convertidos.map(c => {
             const mod = modalidadDe(c._clienteDoc);
             const paga = mod === "mensual" ? _num(c._clienteDoc.montoMensual) : pagoUnicoDe(c._clienteDoc).cobrado;
-            const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Único (web propia)" : mod === "unico" ? "Anual" : "—";
+            const modLabel = mod === "mensual" ? "Mensual" : mod === "propia" ? "Pago único" : mod === "unico" ? "Anual" : "—";
             return `
             <tr>
                 <td>${escapeHtml(c.nombre || c.tel)}</td>
@@ -1216,16 +1216,16 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PLANES — plan anual o plan mensual desde el 19-sep-2026
-   La misma web se contrata con uno de dos planes (Pablo, 19-sep-2026):
-   - PLAN ANUAL, sin suscripción: seña para arrancar ($40.000 el sitio
-     profesional, $60.000 el resto), el resto al entregar (saldo = unico − sena)
-     y después se cobra de nuevo cada año, a mano.
+   PLANES — plan mensual, plan anual o pago único (26-sep-2026 a la noche)
+   La misma web se contrata con una de 3 modalidades, en el orden de las
+   imágenes del bot (Pablo, 26-sep-2026):
    - PLAN MENSUAL por suscripción de Mercado Pago, sin pago inicial y sin
      permanencia.
-   El pago único queda solo para el que pide la web propia, en su hosting: seña
-   y saldo como el anual, pero sin renovación (no incluye hosting, dominio ni
-   mantenimiento). Mismos montos que el bot (wabot/textos.php).
+   - PLAN ANUAL, sin suscripción: seña para arrancar, el resto al entregar
+     (saldo = unico − sena) y después se cobra de nuevo cada año, a mano.
+   - PAGO ÚNICO: seña y saldo como el anual, sin renovación del plan: incluye
+     el primer año de hosting y dominio y el mantenimiento va aparte.
+   Mismos montos que el bot (wabot/textos.php).
    En `clientes`, `modalidad` dice cuál eligió. El valor interno del plan anual
    sigue siendo 'unico' (el mismo que el formulario y el bot):
    - 'unico' (plan anual): valorTotal (precio por año), abono (lo cobrado),
@@ -1238,23 +1238,24 @@ function fmtPrecioOACotizar(monto, sinPrecio) {
    primerPagoAt: el panel los muestra, como "modelo anterior", solo en los docs
    que los traen cargados.
    ═══════════════════════════════════════════════════════════ */
-// 19-sep-2026: el plan mensual vuelve a $20.000 / $30.000 (del 16 al 19-sep fue
-// $15.000 / $25.000). Los dos planes incluyen un cambio por mes (Pablo,
-// 20-sep); el plan con cambios, $25.000 / $35.000, es para varios al mes y se
-// carga a mano.
-// `unico` es el precio del plan anual; `propia`, el pago único de la web propia.
+// 26-sep-2026 a la noche (Pablo): plan mensual $25.000 el sitio profesional y
+// $35.000 el resto; plan anual $180.000 / $250.000; pago único $240.000 /
+// $360.000. La seña es de $60.000 para el anual y el pago único. El mensual y
+// el anual incluyen un cambio por mes; el plan con cambios ya no existe.
+// `unico` es el precio del plan anual; `propia`, el del pago único. A los
+// clientes que ya tienen un plan, planDe les toma los montos guardados en el doc.
 const PLANES = {
-    profesional:  { label: "Sitio profesional",    unico: 120000, sena: 40000, mensual: 20000, propia: 180000 },
-    ecommerce:    { label: "Ecommerce",            unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
-    cursos:       { label: "Plataforma de cursos", unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
-    inmobiliaria: { label: "Inmobiliaria",         unico: 170000, sena: 60000, mensual: 30000, propia: 240000 },
+    profesional:  { label: "Sitio profesional",    unico: 180000, sena: 60000, mensual: 25000, propia: 240000 },
+    ecommerce:    { label: "Ecommerce",            unico: 250000, sena: 60000, mensual: 35000, propia: 360000 },
+    cursos:       { label: "Plataforma de cursos", unico: 250000, sena: 60000, mensual: 35000, propia: 360000 },
+    inmobiliaria: { label: "Inmobiliaria",         unico: 250000, sena: 60000, mensual: 35000, propia: 360000 },
     // Desde el 19-sep-2026 el portal de noticias se cotiza como la tienda (Pablo): presupuestos/noticias.
-    noticias:     { label: "Portal de noticias",   unico: 190000, sena: 60000, mensual: 30000, propia: 290000 },
+    noticias:     { label: "Portal de noticias",   unico: 250000, sena: 60000, mensual: 35000, propia: 360000 },
 };
 // Tipo que no se reconoce: se cotiza como el resto (todo lo que no es sitio profesional).
-const PLAN_RESTO = { unico: 190000, sena: 60000, mensual: 30000, propia: 290000 };
+const PLAN_RESTO = { unico: 250000, sena: 60000, mensual: 35000, propia: 360000 };
 const PLAN_POR_LABEL = Object.fromEntries(Object.entries(PLANES).map(([key, p]) => [p.label, key]));
-const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único (web propia)" };
+const MODALIDAD_LABELS = { unico: "Plan anual", mensual: "Plan mensual", propia: "Pago único" };
 // Modalidades que se cobran con seña y saldo al entregar: el plan anual y la web propia.
 function _conSena(modalidad) {
     return modalidad === "unico" || modalidad === "propia";
@@ -1498,25 +1499,25 @@ function suscripcionDe(c) {
 }
 
 /* Filas del plan para los detalles (brief, boceto, presupuesto): la modalidad
-   elegida o, si el doc todavía no eligió, las dos (15-sep-2026). El primer pago
-   solo aparece, como modelo anterior, en los docs que lo traen; nunca se suma a
-   la mensualidad. */
+   elegida o, si el doc todavía no eligió, las 3 (26-sep-2026), en el orden de
+   las imágenes del bot. El primer pago solo aparece, como modelo anterior, en
+   los docs que lo traen; nunca se suma a la mensualidad. */
 function _planRowsHTML(plan) {
     const fila = (label, valor) => `<div class="prop-row"><span class="prop-label">${label}</span><span>${valor}</span></div>`;
     return `<div class="prop-row"><span class="prop-label">Plan</span><span style="font-weight:700;color:#4ade80">${escapeHtml(plan.label || "Sin definir")}</span></div>
         ${plan.modalidad ? fila("Modalidad", MODALIDAD_LABELS[plan.modalidad]) : ""}
-        ${!plan.modalidad || plan.modalidad === "unico" ? fila("Plan anual", `${fmtMoney(plan.unico)} por año: seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año, sin suscripción`) : ""}
         ${plan.primerPago ? fila("Primer pago (modelo anterior)", fmtMoney(plan.primerPago)) : ""}
         ${!plan.modalidad || plan.modalidad === "mensual" ? fila("Plan mensual", `${fmtMoney(plan.mensual)}/mes${plan.primerPago ? `, arrancaba a los ${DIAS_HASTA_EL_PLAN} días del primer pago` : ", sin pago inicial"}`) : ""}
-        ${plan.modalidad === "propia" ? fila("Pago único (web propia)", `${fmtMoney(plan.propia)}: seña de ${fmtMoney(plan.sena)} para arrancar y el resto al entregar, sin hosting, dominio ni mantenimiento`) : ""}`;
+        ${!plan.modalidad || plan.modalidad === "unico" ? fila("Plan anual", `${fmtMoney(plan.unico)} por año: seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año, sin suscripción`) : ""}
+        ${!plan.modalidad || plan.modalidad === "propia" ? fila("Pago único", `${fmtMoney(plan.propia)}: seña de ${fmtMoney(plan.sena)} para arrancar y el resto al entregar; incluye el primer año de hosting y dominio, el mantenimiento va aparte`) : ""}`;
 }
 
-// Montos del plan en una línea, para las tablas: los de la modalidad elegida o los de los dos planes.
+// Montos del plan en una línea, para las tablas: los de la modalidad elegida o los de las 3.
 function _planMontosTexto(plan, modalidad = plan.modalidad) {
     if (modalidad === "unico") return `plan anual ${fmtMoney(plan.unico)}`;
     if (modalidad === "mensual") return `${fmtMoney(plan.mensual)}/mes`;
-    if (modalidad === "propia") return `pago único ${fmtMoney(plan.propia)} (web propia)`;
-    return `plan anual ${fmtMoney(plan.unico)} o ${fmtMoney(plan.mensual)}/mes`;
+    if (modalidad === "propia") return `pago único ${fmtMoney(plan.propia)}`;
+    return `${fmtMoney(plan.mensual)}/mes, plan anual ${fmtMoney(plan.unico)} o pago único ${fmtMoney(plan.propia)}`;
 }
 
 // Los adicionales de /presupuesto/ se guardan como slug (`calendario`, `login`…).
@@ -2102,7 +2103,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
                     : modalidad === "unico"
                     ? `<div class="muted" style="font-size:12px;white-space:nowrap">plan anual${u.precio ? ` ${fmtMoney(u.precio)}/año` : ""}</div>`
                     : modalidad === "propia"
-                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">pago único${u.precio ? ` ${fmtMoney(u.precio)}` : ""} · web propia</div>`
+                    ? `<div class="muted" style="font-size:12px;white-space:nowrap">pago único${u.precio ? ` ${fmtMoney(u.precio)}` : ""}</div>`
                     : `<div class="muted" style="font-size:12px;white-space:nowrap">${fmtMoney(s.mensual)}/mes</div>
                 ${modalidad ? "" : `<div class="muted" style="font-size:11px">modalidad sin definir</div>`}
                 ${modeloAnterior}`}
@@ -2117,7 +2118,7 @@ function _clientRow(c, { sinCambios = false, marcarDesarrollo = false } = {}) {
                 <button class="icon-btn delete" data-id="${c.id}" title="${webEntregada(c)
                     ? "Eliminar el cliente (el registro de la entrega queda en Completados)"
                     : modalidad === 'propia'
-                        ? "Facturar y cerrar la web propia: sale de Clientes y queda en Completados"
+                        ? "Facturar y cerrar el pago único: sale de Clientes y queda en Completados"
                         : "Entregar con factura. Si no hace falta factura, usá el ✓ de Terminada"}">🗑</button>
             </td>
         </tr>`;
@@ -2703,12 +2704,14 @@ async function registrarCobroAnual(id) {
     }
 }
 
-// Respuesta al prompt de la modalidad: 1 o "anual" → 'unico'; 2 o "mensual" → 'mensual'; 3, "propia" o "único" → 'propia'; si no, "".
+/* Respuesta al prompt de la modalidad (26-sep-2026, el orden de las imágenes
+   del bot): 1 o "mensual" → 'mensual'; 2 o "anual" → 'unico' (el plan anual);
+   3, "único", "pago" o "propia" → 'propia' (el pago único); si no, "". */
 function _modalidadDeRespuesta(texto) {
     const t = String(texto || "").trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-    if (t === "1" || t.startsWith("a") || t.includes("anual")) return "unico";
-    if (t === "2" || t.startsWith("m") || t.includes("mensual")) return "mensual";
-    if (t === "3" || t.includes("propia") || t.includes("unico")) return "propia";
+    if (t === "1" || t.startsWith("m") || t.includes("mensual")) return "mensual";
+    if (t === "2" || t.startsWith("a") || t.includes("anual")) return "unico";
+    if (t === "3" || t.includes("unico") || t.includes("propia") || t.startsWith("pago")) return "propia";
     return "";
 }
 
@@ -2740,19 +2743,19 @@ async function setStatus(id, value) {
             let modalidad = "";
             while (!modalidad) {
                 const respuesta = prompt(
-                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente (plan ${plan.label || "sin definir"}). ¿Con qué plan contrató?\n\n` +
-                    `1. Plan anual: ${fmtMoney(plan.unico)} por año, sin suscripción. Seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año.\n` +
-                    `2. Plan mensual: ${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.\n` +
-                    `3. Pago único (web propia, en su hosting): ${fmtMoney(plan.propia)}, con seña de ${fmtMoney(plan.sena)} y el resto al entregar. Sin renovación.\n\n` +
+                    `"${c.nombre || c.proyecto || "Cliente"}" pasa a Cliente (plan ${plan.label || "sin definir"}). ¿Con qué modalidad contrató?\n\n` +
+                    `1. Plan mensual: ${fmtMoney(plan.mensual)} por mes por Mercado Pago, sin pago inicial.\n` +
+                    `2. Plan anual: ${fmtMoney(plan.unico)} por año, sin suscripción. Seña de ${fmtMoney(plan.sena)} para arrancar, el resto (${fmtMoney(plan.saldo)}) al entregar y después se cobra cada año.\n` +
+                    `3. Pago único: ${fmtMoney(plan.propia)}, con seña de ${fmtMoney(plan.sena)} y el resto al entregar. Incluye el primer año de hosting y dominio; el mantenimiento va aparte.\n\n` +
                     `Escribí 1, 2 o 3. Si cancelás, sigue en Seguimiento.`,
-                    sugerida === "unico" ? "1" : sugerida === "mensual" ? "2" : sugerida === "propia" ? "3" : ""
+                    sugerida === "mensual" ? "1" : sugerida === "unico" ? "2" : sugerida === "propia" ? "3" : ""
                 );
                 if (respuesta === null) {
                     renderSeg();   // el select de la fila vuelve al estado guardado
                     return;
                 }
                 modalidad = _modalidadDeRespuesta(respuesta);
-                if (!modalidad) alert("Escribí 1 para el plan anual, 2 para el plan mensual o 3 para el pago único de la web propia.");
+                if (!modalidad) alert("Escribí 1 para el plan mensual, 2 para el plan anual o 3 para el pago único.");
             }
             updateData.modalidad = modalidad;
             if (typeof c.planLabel !== "string") updateData.planLabel = plan.label;
@@ -3033,10 +3036,10 @@ document.getElementById("estadoCliente").addEventListener("change", () => {
     toggleTareasSection();
 });
 
-// ── Plan y modalidad en el modal de cliente (plan anual o mensual desde el 19-sep-2026) ──
+// ── Plan y modalidad en el modal de cliente (plan mensual, plan anual o pago único, 26-sep-2026) ──
 // Las opciones salen de PLANES: una sola fuente para los montos.
 document.getElementById("planCliente").innerHTML = `<option value="">Sin definir</option>` + Object.values(PLANES)
-    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.unico)}/año o ${fmtMoney(p.mensual)}/mes</option>`)
+    .map(p => `<option value="${escapeHtml(p.label)}">${escapeHtml(p.label)} · ${fmtMoney(p.mensual)}/mes, ${fmtMoney(p.unico)}/año o ${fmtMoney(p.propia)} único</option>`)
     .join("");
 
 // El precio que propone cada modalidad: el del plan anual o el pago único de la web propia.

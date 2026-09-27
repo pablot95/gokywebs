@@ -25,8 +25,11 @@ $c = conv_nueva('549110002TEST', ['tipo' => 'ecommerce', 'fase' => 'prediseno', 
 wabot_precio_congelar($c, 'ecommerce', $cfg);
 $r = turno('¿Qué diferencia hay entre un precio y el otro?', $c, $cfg);
 $texto = implode(' ', $r);
+// 26-sep a la noche: sin el plan con cambios, los dos planes incluyen un cambio por mes.
 caso('explica la diferencia entre los planes, con sus montos y sin seña (19-sep)', str_contains($texto, 'Los dos planes incluyen lo mismo')
-    && str_contains($texto, 'Plan anual de $190.000 por año') && str_contains($texto, 'Plan mensual de $30.000 por mes') && !str_contains($texto, 'seña'), $texto);
+    && str_contains($texto, 'Plan anual de ' . $cfg['tipos']['ecommerce']['precio'] . ' por año')
+    && str_contains($texto, 'Plan mensual de ' . $cfg['tipos']['ecommerce']['mensualidad'] . ' por mes') && !str_contains($texto, 'seña')
+    && str_contains($texto, 'Los dos incluyen un cambio por mes') && !str_contains($texto, 'con cambios'), $texto);
 caso('una pregunta de pago no manda el formulario ni crea prospecto', !str_contains($texto, 'gokywebs.com/form') && empty($c['esProspecto']));
 $r = turno('ok', $c, $cfg);
 caso('un ok posterior a una duda no apaga el bot', empty($c['esProspecto']) && empty($c['bot_off']));
@@ -37,6 +40,22 @@ $r = turno('prefiero el abono mensual', $c, $cfg);
 caso('la elección explícita posterior deja el prospecto con su forma, con el enlace una sola vez',
     ($yaTeniaForm ? $r === [] : (count($r) === 1 && tiene_form($r)))
     && !empty($c['esProspecto']) && !empty($c['bot_off']) && ($c['modalidad_elegida'] ?? '') === 'mensual', json_encode($r));
+
+/* El número solo, según el orden que vio (26-sep a la noche): la cotizada hoy
+ * vio "1 plan mensual, 2 plan anual"; la cotizada antes de la imagen del
+ * 25-sep, sin rastro en el transcript, "1. Plan anual, 2. Plan mensual". */
+$c = conv_nueva('549110003TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
+    'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0]);
+wabot_precio_congelar($c, 'landing', $cfg);
+$r = turno('2', $c, $cfg);
+caso('cotizada hoy: "2" es el plan anual y queda como prospecto con esa modalidad',
+    tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r));
+$c = conv_nueva('549110004TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
+    'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0, 'precio_cotizado' => '$120.000', 'sena_cotizada' => '$40.000',
+    'mensualidad_cotizada' => '$20.000', 'precio_modelo' => 'anual', 'precio_cotizado_ts' => strtotime('2026-09-24 12:00:00 -03:00')]);
+$r = turno('1', $c, $cfg);
+caso('cotizada el 24-sep: "1" sigue siendo el plan anual',
+    tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r));
 
 $s = wabot_rubro_sugerencias('Tengo una panadería y hacemos tortas', 'landing');
 caso('el matcher devuelve cinco trabajos y modelos filtrados', $s && substr_count($s['texto'], '• ') === 5 && str_contains($s['texto'], 'modelos/?rubro=gastronomia'), $s['texto'] ?? '');

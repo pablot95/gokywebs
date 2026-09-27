@@ -108,14 +108,16 @@
                         <div class="field-group">
                             <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
                             <!-- Como en el estilo, script.js muestra abajo la descripción elegida.
-                                 Los valores unico/mensual/propia los valida wabot/form-lead.php. -->
+                                 Los valores mensual/unico/propia los valida wabot/form-lead.php
+                                 ('unico' es el plan anual y 'propia' el pago único). Van en el
+                                 orden de siempre: mensual, anual y pago único (26-sep-2026). -->
                             <select id="modalidad" name="modalidad" class="field-input" required aria-describedby="modalidadDetalle">
                                 <option value="" disabled selected>Elegí una opción</option>
-                                <option value="unico" data-desc="Arrancás con una seña, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción.">Plan anual</option>
-                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia.">Plan mensual</option>
-                                <option value="propia" data-desc="La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones.">Pago único</option>
+                                <option value="mensual" data-desc="Lo pagás mes a mes por Mercado Pago, sin pago inicial y sin permanencia. Incluye el mantenimiento y un cambio por mes.">Plan mensual</option>
+                                <option value="unico" data-desc="Arrancás con una seña de $60.000, el resto lo pagás al entregar la web y después se renueva una vez por año, contado desde la seña. Sin suscripción. Incluye el mantenimiento y un cambio por mes.">Plan anual</option>
+                                <option value="propia" data-desc="Arrancás con una seña de $60.000 y el resto lo pagás al entregar la web; se puede pagar en cuotas con intereses. Incluye el primer año de hosting y dominio; el mantenimiento se contrata aparte.">Pago único</option>
                             </select>
-                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan anual, plan mensual o pago único.</p>
+                            <p class="field-hint" id="modalidadDetalle" aria-live="polite">Elegí entre plan mensual, plan anual o pago único.</p>
                         </div>
 
                         <div class="field-group">
@@ -251,8 +253,8 @@
                 <button class="que-es-close" id="queEsClose" aria-label="Cerrar">✕</button>
             </div>
             <div class="que-es-body">
-                <p class="que-es-intro">Contanos sobre tu negocio, elegí un plan y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
-                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si elegís el plan anual, se arranca con una seña que no se devuelve, el resto se paga al entregar y el plan se renueva cada año, contado desde la seña. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con el plan anual, los cambios posteriores a la entrega se cotizan aparte.</p></div>
+                <p class="que-es-intro">Contanos sobre tu negocio, elegí la forma de pago y marcá uno o dos modelos que te gusten. Los modelos son puntos de partida: adaptamos el diseño con tus textos, fotos y colores.</p>
+                <div class="que-es-block"><div class="que-es-block-title">Qué pasa después</div><p>Revisamos tu información y coordinamos por WhatsApp los próximos pasos. Si elegís el plan anual o el pago único, se arranca con una seña de $60.000 que no se devuelve y el resto se paga al entregar la web; el plan anual después se renueva cada año, contado desde la seña. Si el diseño no te convence, lo rehacemos hasta dos veces. Una vez elegido, hay tres rondas para ajustar el resto. Con el plan mensual y con el anual, después de la entrega tenés un cambio por mes incluido; con el pago único, los cambios posteriores a la entrega se cotizan aparte.</p></div>
             </div>
         </div>
     </div>
@@ -301,6 +303,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260925a"></script>
+    <script type="module" src="script.js?v=20260926-tresmodalidades"></script>
 </body>
 </html>

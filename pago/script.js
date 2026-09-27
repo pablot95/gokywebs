@@ -5,10 +5,11 @@
 
    Monto dinámico por link: gokywebs.com/pago?monto=15000 cobra exactamente
    ese valor, por única vez (Pablo arma el link con el importe puntual de cada
-   cliente: la seña o el resto del plan anual, una carga de productos, etc.).
-   Desde el 19-sep-2026 /presupuestos/* ya no traen botones a esta página (el
-   plan anual se pide por WhatsApp); la tabla de acá sigue ofreciendo las señas
-   del plan anual (40000 o 60000) con ?monto=.
+   cliente: la seña o el resto del plan anual o del pago único, una carga de
+   productos, etc.). /presupuestos/* no traen botones a esta página (el plan
+   anual y el pago único se piden por WhatsApp); desde el 26-sep-2026 la tabla
+   de acá ofrece la seña del plan anual o del pago único (60000, la misma para
+   las dos modalidades y para todos los tipos de web) con ?monto=.
    Desde el 14-sep-2026 no hay monto por defecto (el que había era el del
    modelo anterior): sin ?monto= válido no se ofrece el pago con
    Mercado Pago, porque no hay importe que cobrar, y quedan la transferencia y

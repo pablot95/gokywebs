@@ -46,18 +46,29 @@ caso('las licencias son de terceros, y el código va por el plazo del plan',
     mb_stripos((string)$cfg['info']['licencias'], 'de terceros') !== false
     && mb_stripos((string)$cfg['info']['licencias'], 'plazo de tu plan') !== false);
 
-echo "— El pago único es solo la página, con mantenimiento opcional —\n";
+/* 26-sep a la noche: el pago único incluye el hosting y el dominio el primer
+ * año; el mantenimiento no va incluido y se suma aparte. */
+echo "— El pago único: hosting y dominio el primer año, y el mantenimiento aparte —\n";
 foreach (['landing' => '$10.000', 'ecommerce' => '$15.000', 'elearning' => '$15.000', 'inmobiliaria' => '$15.000'] as $tipo => $mant) {
     $c = conv_nueva('549110000PROP' . strtoupper($tipo), ['tipo' => $tipo, 'precio_dado' => true, 'quiere_web_propia' => true]);
     wabot_precio_congelar($c, $tipo, $cfg);
+    $unico = (string)$cfg['tipos'][$tipo]['precio_unico'];
     $wp = wabot_texto_info('web_propia', $cfg, $c);
-    caso("$tipo: solo la página, sin hosting ni dominio",
-        mb_stripos($wp, 'es solo la página') !== false && mb_stripos($wp, 'No incluye hosting ni dominio') !== false, $wp);
+    caso("$tipo: el pago único de $unico incluye el hosting y el dominio el primer año",
+        strpos($wp, 'pago único, de ' . $unico) !== false && mb_stripos($wp, 'Incluye el hosting y el dominio el primer año') !== false
+        && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
     caso("$tipo: el código queda suyo al abonar el total", mb_stripos($wp, 'el código queda tuyo') !== false);
-    caso("$tipo: el mantenimiento opcional sale $mant por mes", strpos($wp, $mant . ' por mes') !== false, $wp);
-    $linea = wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg));
-    caso("$tipo: el renglón debajo de los planes dice lo mismo y sin marcadores",
-        mb_stripos($linea, 'solo la página') !== false && strpos($linea, $mant) !== false && strpos($linea, '{') === false, $linea);
+    caso("$tipo: el mantenimiento no va incluido y se suma por $mant por mes",
+        mb_stripos($wp, 'El mantenimiento no va incluido') !== false && strpos($wp, $mant . ' por mes') !== false, $wp);
+    // El bloque de las 3 modalidades ya trae el pago único: no se repite abajo.
+    caso("$tipo: debajo del bloque no se suma el renglón de la web propia",
+        wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg)) === '');
+    // Con un bloque sin el pago único, el renglón sí va, con sus montos y sin marcadores.
+    $cfgSinUnico = $cfg;
+    $cfgSinUnico['dos_formas'] = "1. Plan mensual: {mensualidad} por mes\n2. Plan anual: {precio} por año";
+    $linea = wabot_web_propia_precio_texto($c, $cfgSinUnico, wabot_precio_vigente($c, $cfgSinUnico));
+    caso("$tipo: con un bloque sin el pago único, el renglón lo suma con su monto y el mantenimiento de $mant",
+        strpos($linea, 'pago único: ' . $unico) !== false && strpos($linea, $mant . ' por mes') !== false && strpos($linea, '{') === false, $linea);
 }
 
 echo "— En la charla: contesta y sigue, no se apaga —\n";

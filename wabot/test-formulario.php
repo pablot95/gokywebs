@@ -451,9 +451,12 @@ caso('una forma inventada se sigue rechazando',
 
 $htmlB = (string)file_get_contents(__DIR__ . '/../formb/index.html');
 $htmlPrincipal = (string)file_get_contents(__DIR__ . '/../form/index.html');
-caso('el formulario principal ofrece el pago único como tercera opción',
-    strpos($htmlPrincipal, '<option value="propia"') !== false
-    && strpos($htmlPrincipal, 'La web queda abonada en su totalidad. No incluye mantenimiento ni renovaciones.') !== false);
+/* 26-sep a la noche: el pago único incluye el hosting y el dominio el primer
+ * año y el mantenimiento se contrata aparte; ya no "No incluye mantenimiento
+ * ni renovaciones". */
+caso('el formulario principal ofrece el pago único, con el primer año de hosting y el mantenimiento aparte',
+    preg_match('/<option value="propia" data-desc="[^"]*primer año de hosting y dominio[^"]*mantenimiento se contrata aparte[^"]*">Pago único<\/option>/u', $htmlPrincipal) === 1
+    && strpos($htmlPrincipal, 'No incluye mantenimiento ni renovaciones') === false);
 caso('el HTML de /formb manda el pago único en un campo oculto',
     strpos($htmlB, '<input type="hidden" id="modalidad" name="modalidad" value="propia">') !== false);
 caso('y no muestra la forma de pago: ni el selector ni los planes',
@@ -476,8 +479,11 @@ caso('el envío se acepta y la charla queda con el pago único, la web propia y 
     && !empty($convB['quiere_web_propia']) && !empty($convB['esProspecto']) && !empty($convB['lead_creado']),
     json_encode($rB) . ' ' . ($convB['modalidad_elegida'] ?? ''));
 $fichaB = wabot_ficha_resumen($convB, $cfg);
-caso('la ficha dice que le interesa el pago único, sin un "Eligió" de plan',
-    strpos($fichaB, 'Web propia: le interesa el pago único') !== false && strpos($fichaB, 'Eligió:') === false, $fichaB);
+/* 26-sep a la noche: el pago único es una de las 3 modalidades y la ficha lo
+ * dice como a las otras dos; la línea de la web propia queda para el que lo
+ * pidió sin elegirlo. */
+caso('la ficha dice "Eligió: pago único", sin repetirlo en la línea de la web propia',
+    strpos($fichaB, 'Eligió: pago único') !== false && strpos($fichaB, 'Web propia: le interesa el pago único') === false, $fichaB);
 $lineasB = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convB['transcript'] ?? [])));
 caso('el transcript anota la forma de pago como Pago único', strpos($lineasB, 'Forma de pago: Pago único') !== false, $lineasB);
 $camposB = wabot_lead_campos($convB, $cfg, false);

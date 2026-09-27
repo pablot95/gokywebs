@@ -477,22 +477,29 @@ caso('una aceptación con la palabra demo recibe solo el formulario de la charla
 foreach (['999FPTEST', 'QATESTREG11SEP', 'QATESTTEXTOS11SEP', 'QATESTSIS1', 'QATESTSIS2', 'igQATESTSIS3'] as $k) @unlink(WABOT_DATA . '/conv/' . $k . '.json');
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
-echo "\n-- La forma de pago que eligió el cliente va al boceto (15-sep) --\n";
+echo "\n-- La forma de pago que eligió el cliente va al boceto (15-sep; 3 modalidades desde el 26-sep) --\n";
+/* 26-sep a la noche: rechazar el mensual ya no elige nada, porque quedan dos
+ * (el plan anual o el pago único). Rechazar el anual o el pago único sigue
+ * eligiendo el mensual. */
+$eligeNombre = fn($esperada) => $esperada === null ? 'no elige nada (quedan el anual y el pago único)' : "elige $esperada";
 foreach (['Prefiero pagarla una sola vez' => 'propia', 'Vamos con el pago unico, me pasas el CBU?' => 'propia',
-          'No me interesa el mensual' => 'unico', 'Quiero avanzar con el pago mensual' => 'mensual',
-          'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual'] as $f => $esperada) {
-    caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
+          'No me interesa el mensual' => null, 'Quiero avanzar con el pago mensual' => 'mensual',
+          'quiero el mensual' => 'mensual', 'No quiero pagar todo junto, prefiero por mes' => 'mensual',
+          'No me interesa el plan anual' => 'mensual', 'No me interesa el pago único' => 'mensual'] as $f => $esperada) {
+    caso($eligeNombre($esperada) . ": \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
 }
 /* 19-sep: los planes se llaman "plan anual" y "plan mensual", que es como los
  * nombra el propio bot dos mensajes antes. "Me quedo con el plan mensual" no
  * elegía nada y el bot se callaba justo al cerrar. */
 foreach (['Me quedo con el plan mensual' => 'mensual', 'Vamos con el plan mensual' => 'mensual',
           'Dale, el mensual' => 'mensual', 'Prefiero el plan anual' => 'unico', 'Dale el plan anual' => 'unico',
-          'No quiero el plan mensual' => 'unico', 'Arranco con el plan mensual' => 'mensual'] as $f => $esperada) {
-    caso("elige $esperada: \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
-    // Rechazar una forma elige la otra, pero no es aceptar el primer diseño.
+          'No quiero el plan mensual' => null, 'Arranco con el plan mensual' => 'mensual'] as $f => $esperada) {
+    caso($eligeNombre($esperada) . ": \"$f\"", wabot_modalidad_elegida_en($f) === $esperada, (string)wabot_modalidad_elegida_en($f));
+    // Rechazar una forma no es aceptar el primer diseño.
     if (stripos($f, 'no quiero') === false) {
         caso("y \"$f\" cuenta como aceptar el primer diseño", wabot_oferta_diseno_aceptada($f));
+    } else {
+        caso("y \"$f\" no cuenta como aceptar el primer diseño", !wabot_oferta_diseno_aceptada($f));
     }
 }
 foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Quiero saber del pago unico',
@@ -500,6 +507,47 @@ foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Qu
           'cuanto sale el plan mensual?', 'el plan mensual incluye cambios?'] as $f) {
     caso('no elige nada: "' . $f . '"', wabot_modalidad_elegida_en($f) === null, (string)wabot_modalidad_elegida_en($f));
 }
+/* El número solo (26-sep a la noche): la imagen del precio y el texto de hoy
+ * dicen "1 plan mensual, 2 plan anual, 3 pago único"; el texto de antes decía
+ * "1. Plan anual, 2. Plan mensual, 3. Pago único". Solo con el precio ya dado. */
+foreach (['1' => ['mensual', 'unico'], '2' => ['unico', 'mensual'], '3' => ['propia', 'propia'],
+          'el 1' => ['mensual', 'unico'], '2)' => ['unico', 'mensual'], 'La opción 3' => ['propia', 'propia'],
+          'plan 2' => ['unico', 'mensual']] as $f => [$hoy, $antes]) {
+    $nombre = ['mensual' => 'el plan mensual', 'unico' => 'el plan anual (unico)', 'propia' => 'el pago único (propia)'];
+    caso("\"$f\" con el orden de hoy elige {$nombre[$hoy]}", wabot_modalidad_elegida_en($f, true) === $hoy, (string)wabot_modalidad_elegida_en($f, true));
+    caso("\"$f\" con el orden de antes elige {$nombre[$antes]}", wabot_modalidad_elegida_en($f, true, true) === $antes,
+        (string)wabot_modalidad_elegida_en($f, true, true));
+}
+caso('sin el precio dado, un número suelto no elige nada en ningún orden',
+    wabot_modalidad_elegida_en('1') === null && wabot_modalidad_elegida_en('2', false, true) === null);
+caso('y un "4" tampoco: no hay cuarta modalidad', wabot_modalidad_elegida_en('4', true) === null && wabot_modalidad_elegida_en('4', true, true) === null);
+
+/* Qué orden vio la charla: lo último que le mostró el bot (la imagen o el
+ * bloque en texto) y, sin rastro en el transcript, la fecha en que se cotizó
+ * (la imagen llega el 25-sep a las 13:20). */
+$bloqueAntes = "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: \$160.000 incluye mantenimiento\n2. Plan mensual: \$30.000 incluye mantenimiento\n3. Pago único: \$240.000 NO incluye mantenimiento*";
+$bloqueHoy = wabot_precio_placeholders(wabot_servicio_texto_plantilla('landing'), ['tipo' => 'landing'], $cfg);
+// La imagen queda en el transcript como la anota el envío real.
+$filaImagen = wabot_respuesta_texto_transcript(wabot_precio_imagen_marcador('landing'));
+$ordenViejo = function (array $filas, $cotizadaTs = 0) {
+    $c = conv_nueva('999ORDENTEST', ['precio_cotizado_ts' => $cotizadaTs]);
+    foreach ($filas as [$quien, $texto]) $c['transcript'][] = ['q' => $quien, 't' => $texto, 'ts' => time()];
+    return wabot_modalidades_orden_viejo($c);
+};
+caso('el bloque de hoy arranca con "1. Plan mensual"', mb_strpos($bloqueHoy, "\n1. Plan mensual: ") !== false, $bloqueHoy);
+caso('vio el bloque de antes ("1. Plan anual…"): orden de antes', $ordenViejo([['bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\n" . $bloqueAntes]]) === true);
+caso('vio la imagen del precio: orden de hoy', $ordenViejo([['bot', $filaImagen]]) === false, $filaImagen);
+caso('vio el bloque de hoy en texto: orden de hoy', $ordenViejo([['bot', $bloqueHoy]]) === false);
+caso('vale lo último que vio: el bloque de antes y después la imagen, orden de hoy',
+    $ordenViejo([['bot', $bloqueAntes], ['bot', $filaImagen], ['bot', 'Querés que lo armemos?'], ['cliente', '1']]) === false);
+caso('y al revés, la imagen y después el bloque de antes: orden de antes',
+    $ordenViejo([['bot', $filaImagen], ['bot', $bloqueAntes]]) === true);
+caso('lo que escribe el cliente no cuenta', $ordenViejo([['cliente', $bloqueAntes]]) === false);
+caso('sin rastro, cotizada antes de la imagen (24-sep): orden de antes', $ordenViejo([], strtotime('2026-09-24 12:00:00 -03:00')) === true);
+caso('sin rastro, cotizada después de la imagen (25-sep 13:21): orden de hoy', $ordenViejo([], strtotime('2026-09-25 13:21:00 -03:00')) === false);
+caso('sin rastro ni fecha de cotización: orden de hoy', $ordenViejo([]) === false);
+caso('el rastro manda sobre la fecha: cotizada el 24-sep pero con la imagen después, orden de hoy',
+    $ordenViejo([['bot', $filaImagen]], strtotime('2026-09-24 12:00:00 -03:00')) === false);
 
 echo "\n-- La inmobiliaria que vende propiedades no es un proyecto mixto (19-sep) --\n";
 foreach (['Tengo una inmobiliaria en Tigre, publico alquileres y ventas',
@@ -534,6 +582,28 @@ $cMod['lead_creado'] = true; $cMod['lead_doc'] = 'projects/demo/databases/(defau
 caso('si después cambia de idea, se completa en el boceto que ya existe',
     wabot_modalidad_anotar('Mejor quiero el mensual', $cMod, $cfg) === true
     && $cMod['modalidad_elegida'] === 'mensual' && $cMod['modalidad_sincronizada'] === 'mensual');
+/* wabot_modalidad_anotar le pasa a la elección el orden que vio la charla
+ * (26-sep a la noche): el "1" es el plan mensual con la imagen o el texto de
+ * hoy, y el plan anual con el bloque de antes. */
+$cNum = conv_nueva('999MODTEST', ['tipo' => 'landing', 'precio_dado' => true, 'fase' => 'prediseno']);
+wabot_precio_congelar($cNum, 'landing', $cfg);
+wabot_conv_transcript($cNum, 'bot', $filaImagen);
+$cUno = $cNum; $cDos = $cNum; $cTres = $cNum;
+wabot_modalidad_anotar('1', $cUno, $cfg); wabot_modalidad_anotar('2', $cDos, $cfg); wabot_modalidad_anotar('3', $cTres, $cfg);
+caso('después de la imagen, "1" anota el plan mensual, "2" el anual y "3" el pago único con la web propia',
+    ($cUno['modalidad_elegida'] ?? '') === 'mensual' && ($cDos['modalidad_elegida'] ?? '') === 'unico'
+    && ($cTres['modalidad_elegida'] ?? '') === 'propia' && !empty($cTres['quiere_web_propia']),
+    ($cUno['modalidad_elegida'] ?? '') . ' / ' . ($cDos['modalidad_elegida'] ?? '') . ' / ' . ($cTres['modalidad_elegida'] ?? ''));
+$cAntes = $cNum; $cAntes['transcript'] = [];
+wabot_conv_transcript($cAntes, 'bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\n" . $bloqueAntes);
+$cAntesUno = $cAntes; $cAntesDos = $cAntes;
+wabot_modalidad_anotar('1', $cAntesUno, $cfg); wabot_modalidad_anotar('2', $cAntesDos, $cfg);
+caso('después del bloque de antes, "1" anota el plan anual y "2" el mensual',
+    ($cAntesUno['modalidad_elegida'] ?? '') === 'unico' && ($cAntesDos['modalidad_elegida'] ?? '') === 'mensual',
+    ($cAntesUno['modalidad_elegida'] ?? '') . ' / ' . ($cAntesDos['modalidad_elegida'] ?? ''));
+$cRechaza = $cNum;
+caso('"no me interesa el mensual" no anota nada: quedan el anual y el pago único',
+    wabot_modalidad_anotar('No me interesa el mensual', $cRechaza, $cfg) === false && empty($cRechaza['modalidad_elegida']));
 @unlink(WABOT_DATA . '/conv/999MODTEST.json');
 
 echo "— La pregunta de reconocimiento: solo con productos (21-sep) —\n";

@@ -34,15 +34,15 @@ function wabot_respuestas_rapidas_default() {
             "Para lo que me contás, te serviría una tienda online para mostrar tus productos, recibir pedidos y cobrar con Mercado Pago. Desde tu panel administrás productos, precios y pedidos.\n\n" . wabot_respuestas_rapidas_planes_texto('ecommerce'),
             "Para lo que me contás, te serviría una web inmobiliaria para publicar propiedades con fotos y filtros. Desde tu panel las cargás, editás y das de baja.\n\n" . wabot_respuestas_rapidas_planes_texto('inmobiliaria'),
             "Para lo que me contás, te serviría una plataforma para vender cursos, organizar videos, dar acceso a alumnos y cobrar online. Desde tu panel administrás cursos y alumnos.\n\n" . wabot_respuestas_rapidas_planes_texto('elearning'),
-            'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.',
-            'Con el pago único, la web queda abonada en su totalidad. Son $200.000 el sitio profesional, $300.000 la tienda, $290.000 los cursos y $260.000 la inmobiliaria. No incluye mantenimiento ni renovaciones.',
+            WABOT_RR_ANUAL_SENA,
+            WABOT_RR_PAGO_UNICO,
             'Los dos planes incluyen hosting, dominio, soporte técnico y mantenimiento de la web. No incluyen administrar tus productos o pedidos: eso lo manejás vos desde tu panel.',
             'Antes de arrancar dejamos definido el valor y qué incluye el desarrollo, así sabés desde el principio cuánto vas a pagar.',
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40',
+            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($35.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual35',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -264,6 +264,14 @@ const WABOT_RR_BLOQUE_PLANES = 'Podés elegir una de estas 3 modalidades de pago
    hasta el 24-sep. */
 const WABOT_RR_BLOQUES_PLANES_ANTERIORES = ['Podés elegir entre tres opciones:', 'Podés elegir entre dos planes:'];
 
+/* Sin montos escritos a mano (26-sep a la noche): {sena} y {precio_unico} los
+   completa wabot_respuestas_rapidas_montos() con los de cada charla. */
+const WABOT_RR_ANUAL_SENA = 'Con el plan anual arrancás con una seña de {sena} y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.';
+const WABOT_RR_PAGO_UNICO = 'Con el pago único, la web queda abonada en su totalidad: son {precio_unico}. Incluye el hosting y el dominio el primer año; el mantenimiento no está incluido y se contrata aparte.';
+/* El plan con cambios dejó de existir el 26-sep a la noche: sus montos,
+   $25.000 y $35.000, pasaron a ser el plan mensual. */
+const WABOT_RR_CAMBIOS_PLAN = 'El plan mensual y el anual incluyen un cambio por mes en la web. Con el pago único, un cambio que pidas después de entregada la web se cotiza aparte.';
+
 /** Las recomendaciones de fábrica anteriores, por tipo de web. */
 function wabot_respuestas_rapidas_intros_viejas() {
     return [
@@ -359,8 +367,7 @@ function wabot_respuestas_rapidas_textos_21sep($categorias) {
     $monto = static fn($tipo, $clave) => (string)($tipos[$tipo][$clave] ?? '');
     $reemplazos = [
         'En el sitio profesional los cambios los hacemos nosotros. Si querés cambiar vos los textos y las imágenes, le sumamos un panel de administración y el plan mensual pasa a $25.000.'
-            => 'Los dos planes incluyen un cambio por mes en la web. Si vas a necesitar cambios más seguido, está el plan mensual con cambios: '
-                . $monto('landing', 'mensualidad_cambios') . ' el sitio profesional y ' . $monto('ecommerce', 'mensualidad_cambios') . ' la tienda, los cursos o la inmobiliaria.',
+            => WABOT_RR_CAMBIOS_PLAN,
         'Luego de los 2 años, si deseas continuar con otra persona, te entregamos el código de la página'
             => 'El código de la web pasa a ser tuyo según el plan: con el pago único, cuando abonás el total; con el plan anual, al pagar el segundo año; con el plan mensual, a los 18 meses. Hasta ese momento el código es nuestro.',
         'La suscripción no tiene una duración fija. Es mensual y se mantiene activa mientras quieras seguir usando el servicio. Abonás $25.000 por mes e incluye la web, hosting, dominio, mantenimiento y soporte'
@@ -451,6 +458,53 @@ function wabot_respuestas_rapidas_plan_landing_30k_26sep($categorias) {
         $items = [];
         foreach ((array)($categoria['items'] ?? []) as $texto) {
             $items[] = (string)$texto === $viejo ? $nuevo : $texto;
+        }
+        $categoria['items'] = array_values(array_unique($items));
+    }
+    unset($categoria);
+    return $categorias;
+}
+
+/**
+ * Los precios del 26-sep a la noche (Pablo): el plan mensual baja a $25.000 el
+ * sitio profesional y $35.000 el resto, con los planes de Mercado Pago que ya
+ * existían (páginas pago/mensual25 y pago/mensual35); el plan con cambios deja
+ * de existir, y los montos escritos a mano pasan a marcadores. Por texto
+ * exacto, como las otras migraciones de esta familia: lo que Pablo haya
+ * reescrito no se toca. Va después de las del test de precios, que dejan los
+ * links en $30.000 y $40.000.
+ */
+function wabot_respuestas_rapidas_precios_26sep_noche($categorias) {
+    require_once __DIR__ . '/textos.php';
+    $tipos = (array)(wabot_textos_default()['tipos'] ?? []);
+    $monto = static fn($tipo, $clave) => (string)($tipos[$tipo][$clave] ?? '');
+    $link = static fn($que, $precio, $pagina) => 'Te mando el link de Mercado Pago para activar el plan mensual ' . $que . ' (' . $precio
+        . ' por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/' . $pagina;
+    $sitio = 'del sitio profesional';
+    $tienda = 'de la tienda, los cursos o la inmobiliaria';
+    // El texto del 21-sep se guardó con los montos del día en que migró.
+    $sinPermanencia = static fn($sitioMes, $tiendaMes) => 'El plan mensual no tiene permanencia: se mantiene activo mientras quieras seguir usando el servicio. Son '
+        . $sitioMes . ' por mes el sitio profesional y ' . $tiendaMes . ' la tienda, los cursos o la inmobiliaria, e incluye la web, hosting, dominio, mantenimiento y soporte.';
+    $hoy = $sinPermanencia($monto('landing', 'mensualidad'), $monto('ecommerce', 'mensualidad'));
+    $reemplazos = [
+        $link($sitio, '$30.000', 'mensual30') => $link($sitio, '$25.000', 'mensual25'),
+        $link($tienda, '$40.000', 'mensual40') => $link($tienda, '$35.000', 'mensual35'),
+        'Los dos planes incluyen un cambio por mes en la web. Si vas a necesitar cambios más seguido, está el plan mensual con cambios: $25.000 el sitio profesional y $35.000 la tienda, los cursos o la inmobiliaria.'
+            => WABOT_RR_CAMBIOS_PLAN,
+        'Con el plan anual arrancás con una seña de $40.000 (sitio profesional) o $60.000 (tienda, cursos o inmobiliaria) y el resto se paga al entregar la web. Después se renueva una vez por año, contado desde la seña, sin suscripción.'
+            => WABOT_RR_ANUAL_SENA,
+        'Con el pago único, la web queda abonada en su totalidad. Son $200.000 el sitio profesional, $300.000 la tienda, $290.000 los cursos y $260.000 la inmobiliaria. No incluye mantenimiento ni renovaciones.'
+            => WABOT_RR_PAGO_UNICO,
+    ];
+    foreach ([['$20.000', '$30.000'], ['$30.000', '$40.000']] as [$sitioMes, $tiendaMes]) {
+        $viejo = $sinPermanencia($sitioMes, $tiendaMes);
+        if ($viejo !== $hoy) $reemplazos[$viejo] = $hoy;
+    }
+    foreach ($categorias as &$categoria) {
+        $items = [];
+        foreach ((array)($categoria['items'] ?? []) as $texto) {
+            $texto = (string)$texto;
+            $items[] = $reemplazos[$texto] ?? $texto;
         }
         $categoria['items'] = array_values(array_unique($items));
     }
@@ -689,7 +743,8 @@ function wabot_respuestas_rapidas_montos($texto, $conv, $cfg) {
         $montos = [
             '{precio}' => (string)$v['precio'], '{mensualidad}' => (string)$v['mensualidad'],
             '{sena}' => (string)$v['sena'], '{saldo}' => (string)$v['saldo'],
-            '{precio_unico}' => trim((string)($tipos[$tipo]['precio_unico'] ?? '')),
+            // El pago único de ESTA charla: el congelado desde el 26-sep a la noche, o el de lista.
+            '{precio_unico}' => wabot_precio_unico_vigente($v, $cfg),
             '{mantenimiento_mes}' => $porMes(trim((string)($v['mantenimiento'] ?? ''))),
         ];
     } else {
@@ -731,11 +786,11 @@ function wabot_respuestas_rapidas_load() {
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
     if ($normalizado === null) return wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default());
-    $migrado = wabot_respuestas_rapidas_plan_landing_30k_26sep(wabot_respuestas_rapidas_plan_otros_40k_26sep(wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
+    $migrado = wabot_respuestas_rapidas_precios_26sep_noche(wabot_respuestas_rapidas_plan_landing_30k_26sep(wabot_respuestas_rapidas_plan_otros_40k_26sep(wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
         wabot_respuestas_rapidas_planes_19sep(
             wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
         )
-    )))));
+    ))))));
     $ordenar = !is_file($marca);
     if ($ordenar) $migrado = wabot_respuestas_rapidas_chats_26sep($migrado);
     $guardado = true;
