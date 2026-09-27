@@ -10,7 +10,8 @@
  *
  * Condiciones vigentes (Pablo, 26-sep a la noche): TRES MODALIDADES, en el
  * orden de las imágenes del precio (wabot/sitioprofesional.png y
- * wabot/tiendacursosinmo.png): 1 plan mensual, 2 plan anual, 3 pago único.
+ * wabot/tiendacursosinmo.png, reemplazadas por Pablo esa misma noche): 1 plan
+ * anual, 2 plan mensual, 3 pago único.
  * - Plan mensual (`tipos[].mensualidad`): $25.000 el sitio profesional y
  *   $35.000 el resto, con los planes de Mercado Pago que ya existían
  *   (mpago.la/28VK7Ev y mpago.la/1hYAiTM). Sin pago inicial aparte, sin
@@ -114,10 +115,10 @@ function wabot_textos_default() {
     // único. El turno queda marcado para el desarrollador.
     'devolucion' => 'La seña no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
     /* Lo mismo que la imagen del precio (26-sep a la noche), en texto y en el
-     * mismo orden: el "1" del cliente es el plan mensual en los dos. Sale
-     * cuando no va la imagen (Instagram, o una charla con otros montos) y
-     * cuando vuelve a pedir el precio. */
-    'dos_formas' => "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: {mensualidad} por mes, incluye mantenimiento\n2. Plan anual: {precio} por año, incluye mantenimiento\n3. Pago único: {precio_unico} una vez, NO incluye mantenimiento*\n\nLas 3 incluyen la web completa:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n\nEl plan mensual y el anual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico\n✓ Copia de seguridad\n✓ Un cambio por mes\n\n*Con el pago único el mantenimiento se puede contratar por separado, y requiere la renovación del hosting y el dominio. Se puede pagar en cuotas con intereses.",
+     * mismo orden: el "1" del cliente es el plan anual en los dos. Sale cuando
+     * no va la imagen (Instagram, o una charla con otros montos) y cuando
+     * vuelve a pedir el precio. */
+    'dos_formas' => "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: {precio} por año, incluye mantenimiento\n2. Plan mensual: {mensualidad} por mes, incluye mantenimiento\n3. Pago único: {precio_unico} una vez, NO incluye mantenimiento*\n\nLas 3 incluyen la web completa:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n\nEl plan anual y el mensual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico\n✓ Copia de seguridad\n✓ Un cambio por mes\n\n*Con el pago único el mantenimiento se puede contratar por separado, y requiere la renovación del hosting y el dominio. Se puede pagar en cuotas con intereses.",
     // Debajo de los planes, solo si el cliente pidió la web propia y el bloque no trae el pago único.
     'dos_formas_web_propia' => 'Y si la querés a tu nombre, está el pago único: {precio_unico}. El código queda tuyo cuando abonás el total, y si querés le sumás el mantenimiento por {mantenimiento_mes}.',
     /* El turno del precio (25-sep, Pablo) no enumera las 3 modalidades en

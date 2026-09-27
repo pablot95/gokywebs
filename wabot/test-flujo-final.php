@@ -60,9 +60,9 @@ $rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
 /* Las opciones salen numeradas, así que el cliente puede contestar el número
  * solo. Desde el 26-sep a la noche el número es el de la imagen que acaba de
- * ver: "1 plan mensual, 2 plan anual, 3 pago único". */
+ * ver: "1 plan anual, 2 plan mensual, 3 pago único". */
 $nombrePlan = ['mensual' => 'el plan mensual', 'unico' => 'el plan anual', 'propia' => 'el pago único'];
-foreach (['1' => 'mensual', '2' => 'unico', '3' => 'propia', 'el 1' => 'mensual', '2)' => 'unico', 'La opción 3' => 'propia'] as $numero => $plan) {
+foreach (['1' => 'unico', '2' => 'mensual', '3' => 'propia', 'el 1' => 'unico', '2)' => 'mensual', 'La opción 3' => 'propia'] as $numero => $plan) {
     $n = $c;
     clasifica(['otro']);
     $rN = turno((string)$numero, $n, $cfg);
@@ -89,6 +89,21 @@ $fichaAntes = $cAntes;
 turno('1', $fichaAntes, $cfg);
 caso('y la ficha dice "Eligió: plan anual"', mb_strpos(wabot_ficha_resumen($fichaAntes, $cfg), 'Eligió: plan anual') !== false,
     wabot_ficha_resumen($fichaAntes, $cfg));
+/* La que vio la imagen del 25 y el 26-sep ("01 plan mensual, 02 plan anual"):
+ * su "1" es el mensual. */
+$cMensualPrimero = conv_nueva('549110000MENSPRIMTEST', ['tipo' => 'landing', 'precio_dado' => true, 'fase' => 'prediseno', 'cta_muestra' => true,
+    'oferta_diseno_ts' => time(), 'precio_cotizado' => '$160.000', 'sena_cotizada' => '$40.000', 'mensualidad_cotizada' => '$30.000',
+    'precio_modelo' => 'anual', 'precio_cotizado_ts' => strtotime('2026-09-26 12:00:00 -03:00')]);
+wabot_conv_transcript($cMensualPrimero, 'bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\nPodés elegir una de estas 3 modalidades de pago:");
+wabot_conv_transcript($cMensualPrimero, 'bot', '[Imagen: modalidades de pago]');
+wabot_conv_transcript($cMensualPrimero, 'bot', wabot_tres_pasos_texto($cMensualPrimero, $cfg));
+foreach (['1' => 'mensual', '2' => 'unico'] as $numero => $plan) {
+    $n = $cMensualPrimero;
+    clasifica(['otro']);
+    $rN = turno((string)$numero, $n, $cfg);
+    caso("en la charla que vio la imagen con el mensual primero, \"$numero\" elige {$nombrePlan[$plan]}",
+        tiene_form($rN) && ($n['modalidad_elegida'] ?? '') === $plan, json_encode($rN, JSON_UNESCAPED_UNICODE));
+}
 // Pablo, 20-sep: contesta solo ante un sí, un dale, un bueno, un ok o algo parecido.
 foreach (['si', 'Sí', 'sii', 'sisi', 'dale', 'Dale!', 'bueno', 'ok', 'OK', 'oka', 'oki', 'okey', 'okay', 'listo', 'perfecto',
           'de una', 'joya', 'genial', 'claro', 'por supuesto', 'vamos', 'ok dale', 'bueno dale', 'sí, armalo', '👍'] as $afirma) {
@@ -170,13 +185,13 @@ caso('por Instagram son dos mensajes, la propuesta con las 3 modalidades en text
     count($rIg) === 2 && !in_array(wabot_precio_imagen_marcador('ecommerce'), $rIg, true)
     && mb_stripos($rIg[1] ?? '', 'primer diseño') !== false && !tiene_form($rIg), json_encode($rIg, JSON_UNESCAPED_UNICODE));
 caso('en el orden de la imagen y con los montos de la lista',
-    mb_strpos($rIg[0] ?? '', "1. Plan mensual: {$tIg['mensualidad']} por mes") !== false
-    && mb_strpos($rIg[0] ?? '', "2. Plan anual: {$tIg['precio']} por año") !== false
+    mb_strpos($rIg[0] ?? '', "1. Plan anual: {$tIg['precio']} por año") !== false
+    && mb_strpos($rIg[0] ?? '', "2. Plan mensual: {$tIg['mensualidad']} por mes") !== false
     && mb_strpos($rIg[0] ?? '', "3. Pago único: {$tIg['precio_unico']} una vez") !== false, $rIg[0] ?? '');
 clasifica(['otro']);
 $rIgUno = turno('1', $cIg, $cfg);
-caso('y su "1" también es el plan mensual, con el formulario',
-    tiene_form($rIgUno) && ($cIg['modalidad_elegida'] ?? '') === 'mensual', json_encode($rIgUno, JSON_UNESCAPED_UNICODE));
+caso('y su "1" también es el plan anual, con el formulario',
+    tiene_form($rIgUno) && ($cIg['modalidad_elegida'] ?? '') === 'unico', json_encode($rIgUno, JSON_UNESCAPED_UNICODE));
 
 // Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
 // agregaba cinco trabajos y modelos después de la pregunta mostrar/vender.

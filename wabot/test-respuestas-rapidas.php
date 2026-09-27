@@ -30,8 +30,8 @@ file_put_contents($marca, 'test');
 require_once __DIR__ . '/textos.php';
 $T = wabot_textos_default()['tipos'];
 /** Las tres líneas del bloque de hoy, en el orden de la imagen del precio (26-sep a la noche). */
-$lineasHoy = static fn($tipo) => '1. Plan mensual: ' . $T[$tipo]['mensualidad'] . " por mes, incluye mantenimiento\n2. Plan anual: "
-    . $T[$tipo]['precio'] . " por año, incluye mantenimiento\n3. Pago único: " . $T[$tipo]['precio_unico'] . ' una vez, NO incluye mantenimiento*';
+$lineasHoy = static fn($tipo) => '1. Plan anual: ' . $T[$tipo]['precio'] . " por año, incluye mantenimiento\n2. Plan mensual: "
+    . $T[$tipo]['mensualidad'] . " por mes, incluye mantenimiento\n3. Pago único: " . $T[$tipo]['precio_unico'] . ' una vez, NO incluye mantenimiento*';
 /** Los links de Pagos para activar el plan mensual, con su monto y su página. */
 $linkSitio = static fn($precio, $pagina) => 'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional (' . $precio
     . ' por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/' . $pagina;
@@ -99,7 +99,7 @@ caso('los cuatro bloques son el que manda el bot para su tipo, con los montos de
 // 20-sep: el panel vuelve a estar incluido en los cuatro tipos, también en el sitio profesional.
 caso('los cuatro tipos incluyen panel y el bloque separado de mantenimiento (20-sep)',
     count(array_filter(array_slice($planes, 0, 4), fn($t) => mb_strpos($t, '✓ Panel para autogestionar contenido') !== false)) === 4
-    && mb_strpos($planes[1], "El plan mensual y el anual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
+    && mb_strpos($planes[1], "El plan anual y el mensual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio") !== false, $planes[0]);
 // Sin montos escritos a mano (26-sep a la noche): {sena} y {precio_unico} los completa cada charla.
 caso('se suman la seña del plan anual y la explicación del pago único, con marcadores',
     count(array_filter($planes, fn($t) => $t === WABOT_RR_ANUAL_SENA)) === 1 && count(array_filter($planes, fn($t) => $t === WABOT_RR_PAGO_UNICO)) === 1

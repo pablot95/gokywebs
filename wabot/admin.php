@@ -552,7 +552,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
         wabot_conv_tomar_control($conv);
-        wabot_conv_transcript($conv, 'humano', '[Imagen: modalidades de pago · ' . $nombres[$tipo] . ']');
+        // Con el orden de la imagen (26-sep a la noche), como la que manda el bot.
+        wabot_conv_transcript($conv, 'humano', '[Imagen: modalidades de pago · ' . $nombres[$tipo] . ' · 1 anual, 2 mensual, 3 pago único]');
         wabot_conv_save($conv);
         wabot_log('respuesta_panel', ['tel' => $conv['tel'], 'imagen_precio' => $tipo]);
         echo json_encode(['ok' => true, 'bot_off' => true]);

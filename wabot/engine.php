@@ -2449,19 +2449,20 @@ function wabot_texto_rechaza_una_forma($texto) {
  * "¿y si no quiero pagar todo junto?" preguntan, no eligen. Si en el mismo
  * mensaje cambia de idea, vale la última.
  */
-function wabot_modalidad_elegida_en($texto, $numerosValen = false, $ordenViejo = false) {
+function wabot_modalidad_elegida_en($texto, $numerosValen = false, $mensualPrimero = false) {
     $crudo = trim((string)$texto);
     if ($crudo === '' || mb_strlen($crudo) > 300) return null;
 
     /* Desde el 21-sep las modalidades van numeradas, así que la respuesta
      * natural es el número solo. Vale únicamente cuando el mensaje es ese
      * número y el precio ya salió: fuera de ahí un "2" suelto puede ser
-     * cualquier otra cosa. El número es el de lo que vio: la imagen del precio
-     * (desde el 25-sep) y el texto (desde el 26-sep) dicen "1 plan mensual,
-     * 2 plan anual, 3 pago único"; el texto de antes decía "1. Plan anual,
-     * 2. Plan mensual" ($ordenViejo, wabot_modalidades_orden_viejo). */
+     * cualquier otra cosa. El número es el de lo que vio: las imágenes de
+     * Pablo del 26-sep a la noche y el texto dicen "1 plan anual, 2 plan
+     * mensual, 3 pago único"; las imágenes del 25 y el 26-sep (hasta esa
+     * noche) decían "1 plan mensual, 2 plan anual" ($mensualPrimero,
+     * wabot_modalidades_mensual_primero). */
     if ($numerosValen && preg_match('/^(el |la |opcion |la opcion |plan |el plan )?([123])\)?$/u', wabot_normalizar_frase($crudo), $m)) {
-        return ($ordenViejo ? ['1' => 'unico', '2' => 'mensual', '3' => 'propia'] : ['1' => 'mensual', '2' => 'unico', '3' => 'propia'])[$m[2]];
+        return ($mensualPrimero ? ['1' => 'mensual', '2' => 'unico', '3' => 'propia'] : ['1' => 'unico', '2' => 'mensual', '3' => 'propia'])[$m[2]];
     }
     $elige = '\b(quiero|queremos|prefiero|preferimos|elijo|elegimos|me quedo con|nos quedamos con|vamos con|voy con|vamos por|voy por|arranco con|arrancamos con|mejor)\b'
            . '(\s+(ir|hacerlo|hacerla|pagarla|pagarlo|contratarla|contratarlo|tomarla|tomarlo|avanzar|seguir|arrancar|empezar))?(\s+(con|por|en))?\s+';
@@ -5888,33 +5889,38 @@ function wabot_precio_unico_vigente($v, $cfg) {
 }
 
 /**
- * ¿La charla vio las modalidades en el orden de antes, "1. Plan anual, 2. Plan
- * mensual, 3. Pago único"? Vale lo último que se le mostró: la imagen del
- * precio (desde el 25-sep a las 13:20) y el texto (desde el 26-sep a la noche)
- * dicen "1 plan mensual, 2 plan anual, 3 pago único". Sin rastro en el
- * transcript, la fecha en que se cotizó.
+ * ¿La charla vio las modalidades con el plan mensual primero ("1 plan
+ * mensual, 2 plan anual, 3 pago único")? Así estaban las imágenes del precio
+ * del 25-sep a las 13:20 hasta el 26-sep a la noche. Antes (el texto del
+ * 21-sep) y después (las imágenes nuevas de Pablo y el texto de hoy) va "1 plan
+ * anual, 2 plan mensual, 3 pago único". Vale lo último que se le mostró: el
+ * texto por su primera línea, y la imagen por lo que quedó anotado en el
+ * transcript (desde las imágenes nuevas dice "1 anual"; la del panel la anota
+ * Pablo como humano). Sin rastro, la fecha en que se cotizó.
  */
-function wabot_modalidades_orden_viejo($conv) {
+function wabot_modalidades_mensual_primero($conv) {
     if (!is_array($conv)) return false;
     foreach (array_reverse((array)($conv['transcript'] ?? [])) as $fila) {
-        if (($fila['q'] ?? '') !== 'bot') continue;
+        if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
         $t = (string)($fila['t'] ?? '');
-        if ($t === '[Imagen: modalidades de pago]' || preg_match('/(^|\n)1[.)] Plan mensual\b/u', $t)) return false;
-        if (preg_match('/(^|\n)1[.)] Plan anual\b/u', $t)) return true;
+        if (strpos($t, '[Imagen: modalidades de pago') === 0) return strpos($t, '1 anual') === false;
+        if (preg_match('/(^|\n)1[.)] Plan mensual\b/u', $t)) return true;
+        if (preg_match('/(^|\n)1[.)] Plan anual\b/u', $t)) return false;
     }
     $ts = (int)($conv['precio_cotizado_ts'] ?? 0);
-    return $ts > 0 && $ts < 1790353244; // 25-sep-2026 13:20:44 (-03:00): llega la imagen del precio.
+    // Del 25-sep 13:20:44 (llega la imagen con el mensual primero) al 27-sep 00:15 (-03:00), las imágenes nuevas.
+    return $ts >= 1790353244 && $ts < 1790478900;
 }
 
-/** "plan mensual de $25.000, plan anual de $180.000 o pago único de $240.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
+/** "plan anual de $180.000, plan mensual de $25.000 o pago único de $240.000"; en 'doble', "$290.000 en un pago único o $30.000 por mes". */
 function wabot_precio_frase($v) {
     if ($v['precio'] === '') return '';
     if ($v['mensualidad'] === '') return $v['precio'];
     if (($v['modelo'] ?? '') === 'doble') return $v['precio'] . ' en un pago único o ' . $v['mensualidad'] . ' por mes';
-    // Las 3 modalidades, en el orden de la imagen del precio (26-sep).
+    // Las 3 modalidades, en el orden de la imagen del precio (26-sep a la noche).
     $unico = trim((string)($v['precio_unico'] ?? ''));
-    if ($unico === '') return 'plan mensual de ' . $v['mensualidad'] . ' o plan anual de ' . $v['precio'];
-    return 'plan mensual de ' . $v['mensualidad'] . ', plan anual de ' . $v['precio'] . ' o pago único de ' . $unico;
+    if ($unico === '') return 'plan anual de ' . $v['precio'] . ' o plan mensual de ' . $v['mensualidad'];
+    return 'plan anual de ' . $v['precio'] . ', plan mensual de ' . $v['mensualidad'] . ' o pago único de ' . $unico;
 }
 /** El nombre de cada tipo como se dice en la tabla de precios. */
 function wabot_tipo_nombre_precio($tipo, $d) {
