@@ -31,8 +31,8 @@ caso('termina con la intro de las 3 modalidades; los montos y lo incluido ahora 
     str_ends_with($r[0] ?? '', 'Podés elegir una de estas 3 modalidades de pago:')
     && strpos($r[0] ?? '', '$') === false && strpos($r[0] ?? '', 'Las 3 incluyen la web completa:') === false
     && mb_stripos($todo, 'Son alternativas') === false, $r[0] ?? '');
-caso('el segundo mensaje es la imagen de modalidades de la tienda (tiendacursosinmo.png, con los montos de la lista)',
-    ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'tiendacursosinmo.png', $r[1] ?? '');
+caso('el segundo mensaje es la imagen de modalidades de la tienda (cursostiendainmo.png, con los montos de la lista)',
+    ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce') && wabot_precio_imagen_archivo('ecommerce') === 'cursostiendainmo.png', $r[1] ?? '');
 caso('el tercer mensaje ofrece el primer diseño sin cargo, atado a la tienda (26-sep), y pregunta, sin formulario',
     ($r[2] ?? '') === 'Si te interesa, te preparamos sin cargo un primer diseño de tu tienda online, así ves cómo quedaría y cómo se verían presentados tus productos antes de decidir. Querés que lo armemos?'
     && !tiene_form($r) && mb_stripos($todo, 'demo gratis') === false, $r[2] ?? '');
@@ -60,9 +60,9 @@ $rM = turno('Prefiero el plan anual', $m, $cfg);
 caso('elegir una forma de pago también es avanzar: formulario', tiene_form($rM) && ($m['modalidad_elegida'] ?? '') === 'unico');
 /* Las opciones salen numeradas, así que el cliente puede contestar el número
  * solo. Desde el 26-sep a la noche el número es el de la imagen que acaba de
- * ver: "1 plan anual, 2 plan mensual, 3 pago único". */
+ * ver: "1 plan mensual, 2 plan anual, 3 pago único" (las imágenes del 27-sep). */
 $nombrePlan = ['mensual' => 'el plan mensual', 'unico' => 'el plan anual', 'propia' => 'el pago único'];
-foreach (['1' => 'unico', '2' => 'mensual', '3' => 'propia', 'el 1' => 'unico', '2)' => 'mensual', 'La opción 3' => 'propia'] as $numero => $plan) {
+foreach (['1' => 'mensual', '2' => 'unico', '3' => 'propia', 'el 1' => 'mensual', '2)' => 'unico', 'La opción 3' => 'propia'] as $numero => $plan) {
     $n = $c;
     clasifica(['otro']);
     $rN = turno((string)$numero, $n, $cfg);
@@ -160,9 +160,9 @@ caso('y con el sí, el formulario', tiene_form(turno('si', $ca, $cfg)));
 
 // Las imágenes del 26-sep a la noche: tienda, cursos e inmobiliaria cuestan lo mismo y comparten la suya.
 $esperados = [
-    'landing' => ['un sitio profesional completo', 'sitioprofesional.png'],
-    'inmobiliaria' => ['una web inmobiliaria completa', 'tiendacursosinmo.png'],
-    'elearning' => ['una plataforma de cursos completa', 'tiendacursosinmo.png'],
+    'landing' => ['un sitio profesional completo', 'sitio-profesional-diseno-06.png'],
+    'inmobiliaria' => ['una web inmobiliaria completa', 'cursostiendainmo.png'],
+    'elearning' => ['una plataforma de cursos completa', 'cursostiendainmo.png'],
 ];
 foreach ($esperados as $tipo => [$frase, $archivo]) {
     $ct = conv_nueva('549110000' . strtoupper($tipo) . 'TEST', ['fase' => 'menu']);
@@ -185,13 +185,13 @@ caso('por Instagram son dos mensajes, la propuesta con las 3 modalidades en text
     count($rIg) === 2 && !in_array(wabot_precio_imagen_marcador('ecommerce'), $rIg, true)
     && mb_stripos($rIg[1] ?? '', 'primer diseño') !== false && !tiene_form($rIg), json_encode($rIg, JSON_UNESCAPED_UNICODE));
 caso('en el orden de la imagen y con los montos de la lista',
-    mb_strpos($rIg[0] ?? '', "1. Plan anual: {$tIg['precio']} por año") !== false
-    && mb_strpos($rIg[0] ?? '', "2. Plan mensual: {$tIg['mensualidad']} por mes") !== false
+    mb_strpos($rIg[0] ?? '', "1. Plan mensual: {$tIg['mensualidad']} por mes") !== false
+    && mb_strpos($rIg[0] ?? '', "2. Plan anual: {$tIg['precio']} por año") !== false
     && mb_strpos($rIg[0] ?? '', "3. Pago único: {$tIg['precio_unico']} una vez") !== false, $rIg[0] ?? '');
 clasifica(['otro']);
 $rIgUno = turno('1', $cIg, $cfg);
-caso('y su "1" también es el plan anual, con el formulario',
-    tiene_form($rIgUno) && ($cIg['modalidad_elegida'] ?? '') === 'unico', json_encode($rIgUno, JSON_UNESCAPED_UNICODE));
+caso('y su "1" también es el plan mensual, con el formulario',
+    tiene_form($rIgUno) && ($cIg['modalidad_elegida'] ?? '') === 'mensual', json_encode($rIgUno, JSON_UNESCAPED_UNICODE));
 
 // Regresión 16-sep: al detectar "fábrica de máquinas", el borde común
 // agregaba cinco trabajos y modelos después de la pregunta mostrar/vender.

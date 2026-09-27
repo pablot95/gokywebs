@@ -507,16 +507,16 @@ foreach (['Puedo pagarla una sola vez?', 'Y si no quiero pagar todo junto?', 'Qu
           'cuanto sale el plan mensual?', 'el plan mensual incluye cambios?'] as $f) {
     caso('no elige nada: "' . $f . '"', wabot_modalidad_elegida_en($f) === null, (string)wabot_modalidad_elegida_en($f));
 }
-/* El número solo (26-sep a la noche): las imágenes nuevas de Pablo y el texto
- * de hoy dicen "1 plan anual, 2 plan mensual, 3 pago único"; las imágenes del
- * 25 y el 26-sep (hasta esa noche) decían "1 plan mensual, 2 plan anual".
- * Solo con el precio ya dado. */
-foreach (['1' => ['unico', 'mensual'], '2' => ['mensual', 'unico'], '3' => ['propia', 'propia'],
-          'el 1' => ['unico', 'mensual'], '2)' => ['mensual', 'unico'], 'La opción 3' => ['propia', 'propia'],
-          'plan 2' => ['mensual', 'unico']] as $f => [$hoy, $mensualPrimero]) {
+/* El número solo: las imágenes de hoy (27-sep) y el texto dicen "1 plan
+ * mensual, 2 plan anual, 3 pago único"; donde vio el anual primero (el texto
+ * hasta el 25-sep, las imágenes del 27-sep a la mañana) es "1 plan anual,
+ * 2 plan mensual". Solo con el precio ya dado. */
+foreach (['1' => ['mensual', 'unico'], '2' => ['unico', 'mensual'], '3' => ['propia', 'propia'],
+          'el 1' => ['mensual', 'unico'], '2)' => ['unico', 'mensual'], 'La opción 3' => ['propia', 'propia'],
+          'plan 2' => ['unico', 'mensual']] as $f => [$hoy, $anualPrimero]) {
     $nombre = ['mensual' => 'el plan mensual', 'unico' => 'el plan anual (unico)', 'propia' => 'el pago único (propia)'];
     caso("\"$f\" con el orden de hoy elige {$nombre[$hoy]}", wabot_modalidad_elegida_en($f, true) === $hoy, (string)wabot_modalidad_elegida_en($f, true));
-    caso("\"$f\" con el mensual primero elige {$nombre[$mensualPrimero]}", wabot_modalidad_elegida_en($f, true, true) === $mensualPrimero,
+    caso("\"$f\" con el anual primero elige {$nombre[$anualPrimero]}", wabot_modalidad_elegida_en($f, true, true) === $anualPrimero,
         (string)wabot_modalidad_elegida_en($f, true, true));
 }
 caso('sin el precio dado, un número suelto no elige nada en ningún orden',
@@ -525,41 +525,46 @@ caso('y un "4" tampoco: no hay cuarta modalidad', wabot_modalidad_elegida_en('4'
 
 /* Qué orden vio la charla: lo último que se le mostró (la imagen o el bloque
  * en texto) y, sin rastro en el transcript, la fecha en que se cotizó. El
- * mensual fue primero solo en las imágenes del 25-sep a las 13:20 hasta el
- * 26-sep a la noche (y en el texto de esa noche): antes y después, el anual. */
+ * anual fue primero en el texto hasta el 25-sep y en las imágenes del 27-sep
+ * de 00:15 a las 15:30; el resto del tiempo, el mensual. */
 $bloqueAntes = "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: \$160.000 incluye mantenimiento\n2. Plan mensual: \$30.000 incluye mantenimiento\n3. Pago único: \$240.000 NO incluye mantenimiento*";
-$bloqueMensualPrimero = "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: \$25.000 por mes, incluye mantenimiento\n2. Plan anual: \$180.000 por año, incluye mantenimiento\n3. Pago único: \$240.000 una vez, NO incluye mantenimiento*";
+$bloqueAnualPrimero = "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan anual: \$180.000 por año, incluye mantenimiento\n2. Plan mensual: \$25.000 por mes, incluye mantenimiento\n3. Pago único: \$240.000 una vez, NO incluye mantenimiento*";
 $bloqueHoy = wabot_precio_placeholders(wabot_servicio_texto_plantilla('landing'), ['tipo' => 'landing'], $cfg);
-// La imagen queda en el transcript como la anota el envío real; la de antes no decía el orden.
+// La imagen queda en el transcript como la anota el envío real: la de hoy dice su orden, la del 25 y el 26-sep no decía nada.
 $filaImagen = wabot_respuesta_texto_transcript(wabot_precio_imagen_marcador('landing'));
 $filaImagenVieja = '[Imagen: modalidades de pago]';
-$mensualPrimero = function (array $filas, $cotizadaTs = 0) {
+$filaImagenAnual = '[Imagen: modalidades de pago · 1 anual, 2 mensual, 3 pago único]';
+$anualPrimero = function (array $filas, $cotizadaTs = 0) {
     $c = conv_nueva('999ORDENTEST', ['precio_cotizado_ts' => $cotizadaTs]);
     foreach ($filas as [$quien, $texto]) $c['transcript'][] = ['q' => $quien, 't' => $texto, 'ts' => time()];
-    return wabot_modalidades_mensual_primero($c);
+    return wabot_modalidades_anual_primero($c);
 };
-caso('el bloque de hoy arranca con "1. Plan anual"', mb_strpos($bloqueHoy, "\n1. Plan anual: ") !== false, $bloqueHoy);
-caso('la imagen de hoy queda anotada con su orden', mb_strpos($filaImagen, '1 anual') !== false, $filaImagen);
-caso('vio el bloque de antes ("1. Plan anual…"): el anual primero', $mensualPrimero([['bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\n" . $bloqueAntes]]) === false);
-caso('vio la imagen de hoy: el anual primero', $mensualPrimero([['bot', $filaImagen]]) === false, $filaImagen);
-caso('vio la imagen del 25 y el 26-sep: el mensual primero', $mensualPrimero([['bot', $filaImagenVieja]]) === true);
-caso('vio el bloque de la noche del 26-sep ("1. Plan mensual…"): el mensual primero', $mensualPrimero([['bot', $bloqueMensualPrimero]]) === true);
-caso('vio el bloque de hoy en texto: el anual primero', $mensualPrimero([['bot', $bloqueHoy]]) === false);
-caso('vale lo último que vio: la imagen vieja y después el bloque de hoy, el anual primero',
-    $mensualPrimero([['bot', $filaImagenVieja], ['bot', $bloqueHoy], ['bot', 'Querés que lo armemos?'], ['cliente', '1']]) === false);
-caso('y al revés, el bloque de hoy y después la imagen vieja: el mensual primero',
-    $mensualPrimero([['bot', $bloqueHoy], ['bot', $filaImagenVieja]]) === true);
-caso('lo que escribe el cliente no cuenta', $mensualPrimero([['cliente', $bloqueMensualPrimero]]) === false);
-caso('la imagen que Pablo mandó desde el panel antes de hoy cuenta como la vieja',
-    $mensualPrimero([['humano', '[Imagen: modalidades de pago · sitio profesional]']]) === true);
-caso('y la que manda desde hoy, con el anual primero',
-    $mensualPrimero([['humano', '[Imagen: modalidades de pago · sitio profesional · 1 anual, 2 mensual, 3 pago único]']]) === false);
-caso('sin rastro, cotizada antes de la imagen (24-sep): el anual primero', $mensualPrimero([], strtotime('2026-09-24 12:00:00 -03:00')) === false);
-caso('sin rastro, cotizada con la imagen vieja (25-sep 13:21): el mensual primero', $mensualPrimero([], strtotime('2026-09-25 13:21:00 -03:00')) === true);
-caso('sin rastro, cotizada con las imágenes nuevas (27-sep 00:20): el anual primero', $mensualPrimero([], strtotime('2026-09-27 00:20:00 -03:00')) === false);
-caso('sin rastro ni fecha de cotización: el anual primero', $mensualPrimero([]) === false);
-caso('el rastro manda sobre la fecha: cotizada el 25-sep pero con la imagen de hoy después, el anual primero',
-    $mensualPrimero([['bot', $filaImagen]], strtotime('2026-09-25 14:00:00 -03:00')) === false);
+caso('el bloque de hoy arranca con "1. Plan mensual"', mb_strpos($bloqueHoy, "\n1. Plan mensual: ") !== false, $bloqueHoy);
+caso('la imagen de hoy queda anotada con su tipo y su orden', $filaImagen === '[Imagen: modalidades de pago · sitio profesional · 1 mensual, 2 anual, 3 pago único]', $filaImagen);
+caso('vio el bloque de antes ("1. Plan anual…"): el anual primero', $anualPrimero([['bot', "Para lo que me contás, te armamos un sitio profesional completo.\n\n" . $bloqueAntes]]) === true);
+caso('vio la imagen de hoy: el mensual primero', $anualPrimero([['bot', $filaImagen]]) === false, $filaImagen);
+caso('vio la imagen del 25 y el 26-sep: el mensual primero', $anualPrimero([['bot', $filaImagenVieja]]) === false);
+caso('vio la imagen del 27-sep a la mañana ("1 anual"): el anual primero', $anualPrimero([['bot', $filaImagenAnual]]) === true);
+caso('vio el bloque con el anual primero: el anual primero', $anualPrimero([['bot', $bloqueAnualPrimero]]) === true);
+caso('vio el bloque de hoy en texto: el mensual primero', $anualPrimero([['bot', $bloqueHoy]]) === false);
+caso('vale lo último que vio: la imagen de la mañana y después el bloque de hoy, el mensual primero',
+    $anualPrimero([['bot', $filaImagenAnual], ['bot', $bloqueHoy], ['bot', 'Querés que lo armemos?'], ['cliente', '1']]) === false);
+caso('y al revés, el bloque de hoy y después la imagen de la mañana: el anual primero',
+    $anualPrimero([['bot', $bloqueHoy], ['bot', $filaImagenAnual]]) === true);
+caso('lo que escribe el cliente no cuenta', $anualPrimero([['cliente', $bloqueAnualPrimero]]) === false);
+caso('la imagen que Pablo mandó desde el panel antes del 27-sep cuenta como la del mensual primero',
+    $anualPrimero([['humano', '[Imagen: modalidades de pago · sitio profesional]']]) === false);
+caso('la que mandó el 27-sep a la mañana, con el anual primero',
+    $anualPrimero([['humano', '[Imagen: modalidades de pago · sitio profesional · 1 anual, 2 mensual, 3 pago único]']]) === true);
+caso('y la que manda desde hoy, con el mensual primero',
+    $anualPrimero([['humano', wabot_precio_imagen_etiqueta('landing', 'sitio profesional')]]) === false);
+caso('sin rastro, cotizada antes de la imagen (24-sep): el anual primero', $anualPrimero([], strtotime('2026-09-24 12:00:00 -03:00')) === true);
+caso('sin rastro, cotizada con la imagen del 25-sep (13:21): el mensual primero', $anualPrimero([], strtotime('2026-09-25 13:21:00 -03:00')) === false);
+caso('sin rastro, cotizada con las imágenes del 27-sep a la mañana (00:20): el anual primero', $anualPrimero([], strtotime('2026-09-27 00:20:00 -03:00')) === true);
+caso('sin rastro, cotizada con las imágenes de hoy (27-sep 16:00): el mensual primero', $anualPrimero([], strtotime('2026-09-27 16:00:00 -03:00')) === false);
+caso('sin rastro ni fecha de cotización: el mensual primero', $anualPrimero([]) === false);
+caso('el rastro manda sobre la fecha: cotizada el 24-sep pero con la imagen de hoy después, el mensual primero',
+    $anualPrimero([['bot', $filaImagen]], strtotime('2026-09-24 14:00:00 -03:00')) === false);
 
 echo "\n-- La inmobiliaria que vende propiedades no es un proyecto mixto (19-sep) --\n";
 foreach (['Tengo una inmobiliaria en Tigre, publico alquileres y ventas',
@@ -595,23 +600,23 @@ caso('si después cambia de idea, se completa en el boceto que ya existe',
     wabot_modalidad_anotar('Mejor quiero el mensual', $cMod, $cfg) === true
     && $cMod['modalidad_elegida'] === 'mensual' && $cMod['modalidad_sincronizada'] === 'mensual');
 /* wabot_modalidad_anotar le pasa a la elección el orden que vio la charla
- * (26-sep a la noche): el "1" es el plan anual con la imagen o el texto de
- * hoy, y el plan mensual con la imagen del 25 y el 26-sep. */
+ * (27-sep): el "1" es el plan mensual con la imagen o el texto de hoy, y el
+ * plan anual con la imagen del 27-sep a la mañana. */
 $cNum = conv_nueva('999MODTEST', ['tipo' => 'landing', 'precio_dado' => true, 'fase' => 'prediseno']);
 wabot_precio_congelar($cNum, 'landing', $cfg);
 wabot_conv_transcript($cNum, 'bot', $filaImagen);
 $cUno = $cNum; $cDos = $cNum; $cTres = $cNum;
 wabot_modalidad_anotar('1', $cUno, $cfg); wabot_modalidad_anotar('2', $cDos, $cfg); wabot_modalidad_anotar('3', $cTres, $cfg);
-caso('después de la imagen de hoy, "1" anota el plan anual, "2" el mensual y "3" el pago único con la web propia',
-    ($cUno['modalidad_elegida'] ?? '') === 'unico' && ($cDos['modalidad_elegida'] ?? '') === 'mensual'
+caso('después de la imagen de hoy, "1" anota el plan mensual, "2" el anual y "3" el pago único con la web propia',
+    ($cUno['modalidad_elegida'] ?? '') === 'mensual' && ($cDos['modalidad_elegida'] ?? '') === 'unico'
     && ($cTres['modalidad_elegida'] ?? '') === 'propia' && !empty($cTres['quiere_web_propia']),
     ($cUno['modalidad_elegida'] ?? '') . ' / ' . ($cDos['modalidad_elegida'] ?? '') . ' / ' . ($cTres['modalidad_elegida'] ?? ''));
 $cAntes = $cNum; $cAntes['transcript'] = [];
-wabot_conv_transcript($cAntes, 'bot', $filaImagenVieja);
+wabot_conv_transcript($cAntes, 'bot', $filaImagenAnual);
 $cAntesUno = $cAntes; $cAntesDos = $cAntes;
 wabot_modalidad_anotar('1', $cAntesUno, $cfg); wabot_modalidad_anotar('2', $cAntesDos, $cfg);
-caso('después de la imagen del 25 y el 26-sep, "1" anota el plan mensual y "2" el anual',
-    ($cAntesUno['modalidad_elegida'] ?? '') === 'mensual' && ($cAntesDos['modalidad_elegida'] ?? '') === 'unico',
+caso('después de la imagen del 27-sep a la mañana, "1" anota el plan anual y "2" el mensual',
+    ($cAntesUno['modalidad_elegida'] ?? '') === 'unico' && ($cAntesDos['modalidad_elegida'] ?? '') === 'mensual',
     ($cAntesUno['modalidad_elegida'] ?? '') . ' / ' . ($cAntesDos['modalidad_elegida'] ?? ''));
 $cRechaza = $cNum;
 caso('"no me interesa el mensual" no anota nada: quedan el anual y el pago único',

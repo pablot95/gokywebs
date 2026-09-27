@@ -283,7 +283,7 @@ const BUSINESS_TYPES = [
    productos se cargan a $500 cada uno. */
 const INCLUDES = {
     landing: [
-        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan anual o el mensual, junto con el mantenimiento, o el primer año con el pago único</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan mensual o el anual, junto con el mantenimiento, o el primer año con el pago único</strong>',
         'Diseño personalizado y responsive',
         'Hasta 5 secciones optimizadas para conversión',
         'SEO básico y meta etiquetas',
@@ -294,7 +294,7 @@ const INCLUDES = {
         'Panel de administración para editar vos mismo textos e imágenes'
     ],
     ecommerce: [
-        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan anual o el mensual, junto con el mantenimiento, o el primer año con el pago único</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan mensual o el anual, junto con el mantenimiento, o el primer año con el pago único</strong>',
         'Tienda online completa y responsive',
         'Catálogo de productos con filtros',
         'Carrito de compras y proceso de pago',
@@ -307,7 +307,7 @@ const INCLUDES = {
         'Panel de administración para editar vos mismo textos e imágenes'
     ],
     inmobiliaria: [
-        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan anual o el mensual, junto con el mantenimiento, o el primer año con el pago único</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan mensual o el anual, junto con el mantenimiento, o el primer año con el pago único</strong>',
         'Sitio inmobiliaria profesional y responsive',
         'Listado de propiedades con filtros avanzados',
         'Ficha de propiedad con galería de fotos',
@@ -320,7 +320,7 @@ const INCLUDES = {
         'Panel de administración para editar vos mismo textos e imágenes'
     ],
     elearning: [
-        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan anual o el mensual, junto con el mantenimiento, o el primer año con el pago único</strong>',
+        '<strong>Desarrollo a medida, con hosting y dominio incluidos: mientras tengas el plan mensual o el anual, junto con el mantenimiento, o el primer año con el pago único</strong>',
         'Plataforma LMS completa y responsive',
         'Login y panel propio para tus alumnos',
         'Cursos organizados en módulos con videos',
@@ -556,7 +556,7 @@ function renderStep3Context() {
     const { precioAnual, precioPagoUnico, sena, mensualidad, mantenimiento, sinPrecio } = getPlanInfo(type);
     const precioTexto = sinPrecio
         ? 'Armamos un precio a medida — lo coordinamos directo con vos.'
-        : `Plan anual de <strong style="color:black">${fmt(precioAnual)} por año</strong>, con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. Plan mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial y también con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. O pago único de <strong style="color:black">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(sena)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y el mantenimiento se contrata aparte, por ${fmt(mantenimiento)} por mes. Con cualquiera la web queda lista en unos 7 días.`;
+        : `Plan mensual de <strong style="color:black">${fmt(mensualidad)} por mes</strong>, sin pago inicial y con el mantenimiento incluido: con la primera mensualidad armamos la web y la dejamos funcionando. Plan anual de <strong style="color:black">${fmt(precioAnual)} por año</strong>, también con el mantenimiento incluido: una seña de ${fmt(sena)} para arrancar, el resto al entregar la web y se renueva una vez por año, contado desde la seña. O pago único de <strong style="color:black">${fmt(precioPagoUnico)}</strong>, con una seña de ${fmt(sena)} y el resto al entregar la web: incluye el primer año de hosting y dominio, y el mantenimiento se contrata aparte, por ${fmt(mantenimiento)} por mes. Con cualquiera la web queda lista en unos 7 días.`;
     if (included) {
         included.innerHTML = `
             <p style="font-size:0.82rem;font-weight:700;color:black;margin-bottom:0.6rem">Tu web ya incluye:</p>
@@ -751,8 +751,8 @@ function mensajeMuestraWsp(nombreNegocio) {
         lineas.push(`💰 Precio: a coordinar`);
     } else {
         const { precioPagoUnico } = getPlanInfo(state.siteType || getSiteType());
-        lineas.push(`💰 Plan anual: ${fmt(state.precioUnico)} por año (seña de ${fmt(state.sena)})`);
         lineas.push(`💰 Plan mensual: ${fmt(state.mensualidad)}/mes`);
+        lineas.push(`💰 Plan anual: ${fmt(state.precioUnico)} por año (seña de ${fmt(state.sena)})`);
         lineas.push(`💰 Pago único: ${fmt(precioPagoUnico)} (seña de ${fmt(state.sena)})`);
     }
     lineas.push('', 'Gracias!');
@@ -888,7 +888,7 @@ function renderResult() {
     badge.className = 'result-type-badge ' + TYPE_BADGE_CLASSES[type];
     badge.textContent = TYPE_NAMES[type];
 
-    // Tres filas del mismo peso: plan anual, plan mensual y pago único (el orden lo da el HTML). Nunca un total.
+    // Tres filas del mismo peso: plan mensual, plan anual y pago único. Nunca un total.
     const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
     setT('priceMensual',          sinPrecio ? 'A coordinar' : `${fmt(mensualidad)}/mes`);
     setT('priceAnual',            sinPrecio ? 'A coordinar' : `${fmt(precioAnual)}/año`);

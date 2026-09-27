@@ -841,7 +841,7 @@ $valor = function ($k) use ($campos) { $v = $campos[$k] ?? null; return $v ? res
 
 caso('la cantidad de productos llega al boceto', $valor('productos_cantidad') === '40');
 caso('la cantidad de imágenes que mandó también', $valor('imagenes_recibidas') === '3');
-caso('y el precio cotizado también, con las 3 modalidades en el orden de la imagen (26-sep)', (string)$valor('presupuesto_cotizado') === 'Plan anual $250.000 (seña $60.000), plan mensual $35.000 o pago único $360.000', (string)$valor('presupuesto_cotizado'));
+caso('y el precio cotizado también, con las 3 modalidades en el orden de la imagen (26-sep)', (string)$valor('presupuesto_cotizado') === 'Plan mensual $35.000, plan anual $250.000 (seña $60.000) o pago único $360.000', (string)$valor('presupuesto_cotizado'));
 caso('el nombre del cliente no viaja vacío', $valor('nombre') === 'Ana Prueba');
 caso('el rubro sale del brief', $valor('rubro') === 'Indumentaria');
 caso('lo que ofrece también', $valor('productos_servicios') === 'remeras');
@@ -3186,12 +3186,12 @@ foreach (['landing' => 'un sitio profesional completo',
     caso("$tipo dice en pocas palabras qué es", (string)$cfg['tipos'][$tipo]['desc'] === $corta,
         (string)$cfg['tipos'][$tipo]['desc']);
 }
-// Antes de cualquier monto: desde el 26-sep a la noche el primero es el del plan anual, como en la imagen.
+// Antes de cualquier monto: el primero es el del plan mensual, como en la imagen (27-sep).
 caso('la propuesta va ANTES del precio en el mensaje', (function () use ($cfg) {
     $t = wabot_msg_precio_texto('ecommerce', $cfg);
     $primerMonto = mb_strpos($t, '$');
     return $primerMonto !== false && mb_strpos($t, 'una tienda online completa') < $primerMonto
-        && mb_strpos($t, $cfg['tipos']['ecommerce']['precio']) === $primerMonto;
+        && mb_strpos($t, $cfg['tipos']['ecommerce']['mensualidad']) === $primerMonto;
 })());
 
 echo "— La oferta es un primer diseño sin cargo (18-sep) —\n";

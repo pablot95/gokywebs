@@ -3677,24 +3677,49 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 
 /**
  * La imagen con las 3 modalidades de pago que sigue al turno del precio
- * (25-sep, Pablo), con los montos que muestra: "01 plan mensual, 02 plan
- * anual, 03 pago único" (las de hoy, 26-sep a la noche). Los archivos viven en
+ * (25-sep, Pablo), con los montos que muestra y su orden: las de hoy (27-sep)
+ * dicen "01 plan mensual, 02 plan anual, 03 pago único". Los archivos viven en
  * wabot/, junto al resto del código, no en data/: son parte del deploy, no
  * contenido subido por un cliente.
  *
  * Tienda, cursos e inmobiliaria cobran lo mismo y comparten imagen; si vuelven
  * a tener precios distintos, cada uno necesita la suya. Si cambian los montos
  * de textos.php, cambian las imágenes y esta lista: mientras no coincidan, el
- * precio sale en texto (wabot_precio_imagen_corresponde).
+ * precio sale en texto (wabot_precio_imagen_corresponde). Una imagen nueva va
+ * con un nombre de archivo nuevo: el panel muestra en cada charla el archivo
+ * que salió, y si se pisa el mismo nombre, las charlas viejas mostrarían la
+ * imagen nueva.
  */
 function wabot_precio_imagenes() {
-    $tienda = ['archivo' => 'tiendacursosinmo.png', 'mensualidad' => '$35.000', 'precio' => '$250.000', 'precio_unico' => '$360.000'];
+    $tienda = ['archivo' => 'cursostiendainmo.png', 'mensualidad' => '$35.000', 'precio' => '$250.000', 'precio_unico' => '$360.000', 'primero' => 'mensual'];
     return [
-        'landing'      => ['archivo' => 'sitioprofesional.png', 'mensualidad' => '$25.000', 'precio' => '$180.000', 'precio_unico' => '$240.000'],
+        'landing'      => ['archivo' => 'sitio-profesional-diseno-06.png', 'mensualidad' => '$25.000', 'precio' => '$180.000', 'precio_unico' => '$240.000', 'primero' => 'mensual'],
         'ecommerce'    => $tienda,
         'elearning'    => $tienda,
         'inmobiliaria' => $tienda,
     ];
+}
+
+/**
+ * Lo que queda escrito en la charla cuando sale la imagen del precio: el tipo y
+ * el orden de las modalidades, así se sabe qué número es cada una
+ * (wabot_modalidades_anual_primero). "[Imagen: modalidades de pago · sitio
+ * profesional · 1 mensual, 2 anual, 3 pago único]".
+ */
+function wabot_precio_imagen_etiqueta($tipo, $nombre = '') {
+    $img = wabot_precio_imagenes()[(string)$tipo] ?? [];
+    if ($nombre === '') $nombre = (string)$tipo === 'landing' ? 'sitio profesional' : 'tienda, cursos o inmobiliaria';
+    $orden = ($img['primero'] ?? 'mensual') === 'anual' ? '1 anual, 2 mensual, 3 pago único' : '1 mensual, 2 anual, 3 pago único';
+    return '[Imagen: modalidades de pago · ' . $nombre . ' · ' . $orden . ']';
+}
+
+/**
+ * El adjunto de esa fila (27-sep, Pablo: "cuando el bot envía la imagen, no veo
+ * qué imagen manda"): el archivo del deploy, que el panel muestra en el chat.
+ */
+function wabot_precio_imagen_media($tipo) {
+    $archivo = wabot_precio_imagen_archivo($tipo);
+    return $archivo !== '' ? ['clase' => 'imagen', 'precio' => $archivo] : null;
 }
 
 function wabot_precio_imagen_archivo($tipo) {
@@ -3796,9 +3821,11 @@ function wabot_precio_imagen_enviar($conv, $tipo) {
  * wabot_respuesta_enviar() y turno() (test-lib.php), para que el transcript
  * de las pruebas quede igual que el de producción. */
 function wabot_respuesta_texto_transcript($mensaje) {
-    /* Con el orden de la imagen (26-sep a la noche): así se sabe qué número es
-     * cada modalidad para esa charla (wabot_modalidades_mensual_primero). */
-    return wabot_es_marcador_imagen_precio($mensaje) ? '[Imagen: modalidades de pago · 1 anual, 2 mensual, 3 pago único]' : (string)$mensaje;
+    /* Con el tipo y el orden de la imagen (27-sep): así se sabe qué número es
+     * cada modalidad para esa charla (wabot_modalidades_anual_primero). */
+    return wabot_es_marcador_imagen_precio($mensaje)
+        ? wabot_precio_imagen_etiqueta(substr($mensaje, strlen(WABOT_PRECIO_IMAGEN_MARCA)))
+        : (string)$mensaje;
 }
 
 /**
@@ -3810,8 +3837,10 @@ function wabot_respuesta_texto_transcript($mensaje) {
  */
 function wabot_respuesta_enviar(&$conv, $mensaje) {
     if (wabot_es_marcador_imagen_precio($mensaje)) {
-        if (!wabot_precio_imagen_enviar($conv, substr($mensaje, strlen(WABOT_PRECIO_IMAGEN_MARCA)))) return false;
-        wabot_conv_transcript($conv, 'bot', wabot_respuesta_texto_transcript($mensaje));
+        $tipoImagen = substr($mensaje, strlen(WABOT_PRECIO_IMAGEN_MARCA));
+        if (!wabot_precio_imagen_enviar($conv, $tipoImagen)) return false;
+        // Con el archivo que salió, para que el panel lo muestre en el chat (27-sep).
+        wabot_conv_transcript($conv, 'bot', wabot_respuesta_texto_transcript($mensaje), wabot_precio_imagen_media($tipoImagen));
         return true;
     }
     if (wabot_enviar($conv, $mensaje)) {
@@ -5057,10 +5086,10 @@ function wabot_lead_cotizado($conv, $cfg) {
             // El catálogo sin cobro online suma la carga de productos (18-sep).
             $carga = ($tipo === 'landing' && !empty($conv['catalogo']))
                 ? ' + carga de productos ' . (string)($cfg['carga_producto'] ?? '$500') . ' c/u' : '';
-            // Las 3 modalidades, en el orden de la imagen (26-sep a la noche); una charla antigua conserva su modelo.
+            // Las 3 modalidades, en el orden de la imagen (27-sep); una charla antigua conserva su modelo.
             if (($v['modelo'] ?? '') !== 'doble') {
                 $unico = trim((string)($v['precio_unico'] ?? ''));
-                return 'Plan anual ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ', plan mensual ' . $v['mensualidad']
+                return 'Plan mensual ' . $v['mensualidad'] . ', plan anual ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '')
                     . ($unico !== '' ? ' o pago único ' . $unico : '') . $carga;
             }
             return 'Pago único ' . $v['precio'] . ($v['sena'] !== '' ? ' (seña ' . $v['sena'] . ')' : '') . ' o ' . $v['mensualidad'] . ' por mes' . $carga;
@@ -5070,7 +5099,7 @@ function wabot_lead_cotizado($conv, $cfg) {
     $precio = (string)($t['precio'] ?? '');
     $sena   = (string)($t['sena'] ?? '');
     $mens   = (string)($t['mensualidad'] ?? '');
-    if ($precio !== '' && $mens !== '') return 'Plan anual ' . $precio . ($sena !== '' ? ' (seña ' . $sena . ')' : '') . ' o plan mensual ' . $mens;
+    if ($precio !== '' && $mens !== '') return 'Plan mensual ' . $mens . ' o plan anual ' . $precio . ($sena !== '' ? ' (seña ' . $sena . ')' : '');
     return $precio;
 }
 
@@ -5556,9 +5585,9 @@ function wabot_modalidad_anotar($texto, &$conv, $cfg) {
     if (!function_exists('wabot_modalidad_elegida_en')) return false;
     if (!empty($conv['tipo']) && !empty($conv['precio_dado']) && function_exists('wabot_precio_vigente')
         && wabot_precio_vigente($conv, $cfg)['modelo'] === 'unico') return false;
-    // "1" es el plan anual en la imagen y en el texto de hoy; en las imágenes del 25 y el 26-sep era el mensual.
+    // "1" es el plan mensual en la imagen y en el texto de hoy; donde vio el anual primero, es el anual.
     $elegida = wabot_modalidad_elegida_en($texto, !empty($conv['precio_dado']),
-        function_exists('wabot_modalidades_mensual_primero') && wabot_modalidades_mensual_primero($conv));
+        function_exists('wabot_modalidades_anual_primero') && wabot_modalidades_anual_primero($conv));
     if ($elegida === null || $elegida === (string)($conv['modalidad_elegida'] ?? '')) return false;
     $conv['modalidad_elegida'] = $elegida;
     if ($elegida === 'propia') $conv['quiere_web_propia'] = true;

@@ -552,8 +552,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             exit;
         }
         wabot_conv_tomar_control($conv);
-        // Con el orden de la imagen (26-sep a la noche), como la que manda el bot.
-        wabot_conv_transcript($conv, 'humano', '[Imagen: modalidades de pago · ' . $nombres[$tipo] . ' · 1 anual, 2 mensual, 3 pago único]');
+        // Con el orden de la imagen y el archivo, como la que manda el bot (27-sep).
+        wabot_conv_transcript($conv, 'humano', wabot_precio_imagen_etiqueta($tipo, $nombres[$tipo]), wabot_precio_imagen_media($tipo));
         wabot_conv_save($conv);
         wabot_log('respuesta_panel', ['tel' => $conv['tel'], 'imagen_precio' => $tipo]);
         echo json_encode(['ok' => true, 'bot_off' => true]);
@@ -1590,10 +1590,14 @@ mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px
     .conv-acciones-wrap.abierto > .conv-acciones {
         display: flex;
         position: absolute; right: 0; top: calc(100% + 6px); z-index: 20;
-        width: max-content; max-width: 78vw; flex-direction: column; align-items: stretch;
+        width: max-content; max-width: min(78vw, calc(100vw - 24px)); flex-direction: column; align-items: stretch;
         background: var(--card); border: 1px solid var(--line); border-radius: 10px;
         padding: 8px; box-shadow: 0 10px 26px rgba(0,0,0,.5);
     }
+    /* Con el "⋯" en la mitad izquierda de la pantalla (así queda en el celular,
+       debajo de la ficha), el menú abre hacia la derecha: alineado a la derecha
+       del botón se salía de la pantalla y se cortaban los textos (Pablo, 27-sep). */
+    .conv-acciones-wrap.hacia-derecha.abierto > .conv-acciones { right: auto; left: 0; }
     .conv-acciones-wrap > .conv-acciones button { width: 100%; }
 
     .conv-head { align-items: center; gap: 8px; padding-bottom: 7px; margin-bottom: 7px; }
@@ -2258,10 +2262,11 @@ function burbujaCita(t, chat) {
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
-                        <button type="button" class="sec" id="btnPlan30"
-                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $30.000</button>
-                        <button type="button" class="sec" id="btnPlan40"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $40.000</button>
+                        <?php /* Desde el 26-sep a la noche: $25.000 y $35.000 (pago/mensual25 y pago/mensual35). */ ?>
+                        <button type="button" class="sec" id="btnPlan25"
+                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $25.000</button>
+                        <button type="button" class="sec" id="btnPlan35"
+                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $35.000</button>
                         <?php /* La imagen de precios, la misma que manda el bot (26-sep). Sale
                                directo, con confirmación. Solo WhatsApp, como la del bot. */
                               if (wabot_canal($conv) === 'whatsapp'): ?>
@@ -3050,14 +3055,14 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $30.000" / "Plan $40.000" del encabezado:
+        /* Los dos botones de "Plan $25.000" / "Plan $35.000" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. */
-        document.getElementById('btnPlan30')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($30.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual30');
+        document.getElementById('btnPlan25')?.addEventListener('click', () => {
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25');
         });
-        document.getElementById('btnPlan40')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($40.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual40');
+        document.getElementById('btnPlan35')?.addEventListener('click', () => {
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($35.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual35');
         });
 
         /* "Imagen sitio profesional" / "Imagen tienda/cursos/inmo" (26-sep): a
@@ -3305,6 +3310,30 @@ function burbujaCita(t, chat) {
                     caja.appendChild(a);
                     d.appendChild(caja);
                 }
+                /* La imagen de modalidades de pago (27-sep: "cuando el bot envía la
+                 * imagen, no veo qué imagen manda"): el archivo del deploy que salió,
+                 * anotado en la fila (wabot_respuesta_enviar). Las filas de antes no
+                 * lo tienen y quedan solo con el texto. */
+                if (t.media && t.media.precio && /^[A-Za-z0-9_-]+\.(png|jpe?g|webp)$/.test(t.media.precio)) {
+                    const caja = document.createElement('div');
+                    caja.className = 'media-box';
+                    const img = document.createElement('img');
+                    img.className = 'media-img';
+                    img.src = t.media.precio;
+                    img.loading = 'lazy';
+                    img.alt = 'Imagen de las modalidades de pago: ' + t.media.precio;
+                    img.title = t.media.precio;
+                    img.addEventListener('click', () => window.open(t.media.precio, '_blank', 'noopener'));
+                    // Si el archivo ya no está en el deploy, queda el nombre.
+                    img.addEventListener('error', () => {
+                        const nom = document.createElement('span');
+                        nom.className = 'media-nombre';
+                        nom.textContent = t.media.precio + ' (ya no está en el servidor)';
+                        img.replaceWith(nom);
+                    });
+                    caja.appendChild(img);
+                    d.appendChild(caja);
+                }
                 const m = document.createElement('div');
                 m.className = 'meta';
                 const f = new Date(t.ts * 1000);
@@ -3443,6 +3472,9 @@ function burbujaCita(t, chat) {
         if (accionesWrap && accionesBtn) {
             accionesBtn.addEventListener('click', ev => {
                 ev.stopPropagation();
+                // Abre hacia el lado donde hay lugar: si el botón está en la mitad izquierda, hacia la derecha.
+                const r = accionesBtn.getBoundingClientRect();
+                accionesWrap.classList.toggle('hacia-derecha', r.left + r.width / 2 < window.innerWidth / 2);
                 const abierto = accionesWrap.classList.toggle('abierto');
                 accionesBtn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
             });
