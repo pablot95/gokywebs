@@ -2587,7 +2587,7 @@ function wabot_diferencia_pagos_texto($conv, $cfg) {
     $mensual = ($v && $v['mensualidad'] !== '') ? ' de ' . $v['mensualidad'] . ' por mes' : ' por mes';
     return "La diferencia es cómo contratás y mantenés la web, no dos cuotas del mismo precio.\n"
         . 'Pago único' . $unico . ': la web queda a tu nombre al terminar de pagarla. Incluye mantenimiento el primer año; después seguís con el plan de mantenimiento, de ' . wabot_monto_por_mes_texto($v ?: wabot_precio_vigente($conv, $cfg), $cfg, 'mantenimiento') . '. Un cambio pedido después de la entrega se cotiza aparte.'
-        . "\nSuscripción mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras la suscripción esté activa incluye hosting, dominio, soporte, mantenimiento técnico y un cambio por mes. No hay permanencia; a los 2 años de suscripción podés reclamar el código y la propiedad.';
+        . "\nSuscripción mensual" . $mensual . ': empezás con la primera mensualidad, sin seña ni saldo final. Mientras la suscripción esté activa incluye hosting, dominio, soporte, mantenimiento técnico y un cambio por mes. No hay permanencia; a los 18 meses de suscripción podés reclamar el código y la propiedad.';
 }
 
 /**
@@ -6675,38 +6675,48 @@ function wabot_pitch_precio_texto($tipo, $cfg, $conv) {
 function wabot_propuesta_texto($tipo, $conv) {
     // Textos cerrados: el modelo elige el tipo, pero no agrega ni reformula.
     /* Dicho como lo que el cliente va a poder HACER con la web (18-sep), no
-     * como una ficha técnica: "una tienda donde muestres tus productos y
-     * cobres con Mercado Pago", no "catálogo, carrito, integración…". */
+     * como una ficha técnica. Desde el 27-sep (Pablo: "una tienda online
+     * completa dice muy poco") nombra además qué puede hacer con ella y qué
+     * maneja desde el panel: con la imagen del precio abajo ya no va la lista
+     * de lo que incluye cada tipo. Sale en "{para_quien} te podemos armar
+     * {propuesta}." (tipos[].precio_ideal), así que termina sin punto. */
+    $panel = [
+        'landing'      => 'Desde tu panel de administración cambiás vos mismo los textos y las imágenes cuando quieras',
+        'ecommerce'    => 'Desde tu panel de administración tenés el control total de tus productos, precios, stock, pedidos y envíos',
+        'inmobiliaria' => 'Desde tu panel de administración cargás, editás y das de baja vos mismo tus propiedades cuando quieras',
+        'elearning'    => 'Desde tu panel de administración tenés el control total de tus cursos, tus alumnos y tus ventas',
+    ];
     if ($tipo === 'ecommerce' && is_array($conv) && !empty($conv['combo_cursos'])) {
-        return 'una tienda online completa, con tus cursos';
+        return 'una tienda online completa, con tus cursos, para vender directo desde la web: tus clientes pagan con Mercado Pago. '
+            . 'Desde tu panel de administración tenés el control total de tus productos, tus cursos, los precios y los pedidos';
     }
     /* La necesidad interna de la ficha afina la frase sin cambiar el precio
      * (18-sep): la cabaña con restaurante no es "un sitio para mostrar tus
      * servicios", es un lugar donde reservar. */
     $necesidad = is_array($conv) ? wabot_ficha($conv)['necesidad'] : '';
     if ($tipo === 'landing' && is_array($conv) && !empty($conv['catalogo'])) {
-        return 'un sitio profesional completo, con el catálogo de tus productos';
+        return 'un sitio profesional completo, con el catálogo de tus productos: tus clientes ven cada producto con sus fotos y te consultan directo por WhatsApp. '
+            . 'Desde tu panel de administración cargás y editás vos mismo el catálogo cuando quieras';
     }
     if ($tipo === 'landing' && $necesidad === 'hospedaje') {
         $conResto = (bool)preg_match('/\b(restaurant\w*|resto|restoran|comidas?|cocina|gastronom\w*)\b/u',
             wabot_normalizar_frase(wabot_contexto_cliente_texto($conv)));
         return 'un sitio profesional completo, con las habitaciones' . ($conResto ? ', el restaurante' : '')
-            . ' y las reservas online';
+            . ' y las reservas online, para que tus huéspedes vean todo y reserven directo desde la web. ' . $panel['landing'];
     }
     if ($tipo === 'landing' && $necesidad === 'gastronomia') {
-        return 'un sitio profesional completo, con tu carta y los pedidos por WhatsApp';
+        return 'un sitio profesional completo, con tu carta y los pedidos por WhatsApp, para que tus clientes vean todo y te pidan directo. '
+            . 'Desde tu panel de administración cambiás vos mismo la carta, los textos y las imágenes cuando quieras';
     }
     if ($tipo === 'ecommerce' && $necesidad === 'productos_digitales') {
-        return 'una tienda online completa, para vender productos digitales';
+        return 'una tienda online completa, para vender tus productos digitales directo desde la web: tus clientes pagan con Mercado Pago. '
+            . 'Desde tu panel de administración tenés el control total de tus productos, precios y ventas';
     }
-    /* Cortas a propósito (Pablo, 20-sep): la propuesta nombra QUÉ le armamos y
-     * listo, porque abajo, en el mismo mensaje, va la lista de todo lo que
-     * incluye. Antes explicaba también para qué le servía y quedaba larguísima. */
     $fijas = [
-        'landing'      => 'un sitio profesional completo',
-        'ecommerce'    => 'una tienda online completa',
-        'inmobiliaria' => 'una web inmobiliaria completa',
-        'elearning'    => 'una plataforma de cursos completa',
+        'landing'      => 'un sitio profesional completo, para presentar tu negocio y tus servicios y que tus clientes te consulten directo por WhatsApp. ' . $panel['landing'],
+        'ecommerce'    => 'una tienda online completa, para vender directo desde la web: tus clientes eligen, arman el carrito y pagan con Mercado Pago. ' . $panel['ecommerce'],
+        'inmobiliaria' => 'una web inmobiliaria completa, para publicar tus propiedades con fotos, ficha completa y buscador por zona, tipo y precio, y que los interesados te consulten directo por WhatsApp. ' . $panel['inmobiliaria'],
+        'elearning'    => 'una plataforma de cursos completa, para vender tus cursos directo desde la web: tus alumnos pagan con Mercado Pago y entran con su usuario a los videos y el material. ' . $panel['elearning'],
     ];
     return $fijas[$tipo] ?? 'una web a tu medida';
 }

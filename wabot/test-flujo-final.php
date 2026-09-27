@@ -24,8 +24,8 @@ caso('vende algo: cotiza la tienda sin preguntar si vende por la web',
     && !empty($c['precio_dado']) && ($c['tipo'] ?? '') === 'ecommerce', implode(' | ', $r));
 $todo = implode("\n", $r);
 caso('al conocer el rubro manda exactamente tres mensajes: propuesta, imagen y oferta (25-sep)', count($r) === 3, json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('la propuesta arranca "Para lo que me contás, te armamos", nunca "Lo mejor para"',
-    str_starts_with($r[0] ?? '', 'Para lo que me contás, te armamos una tienda online completa.')
+caso('la propuesta arranca "Para lo que me contás, te podemos armar", nunca "Lo mejor para"',
+    str_starts_with($r[0] ?? '', 'Para lo que me contás, te podemos armar una tienda online completa, para vender directo desde la web')
     && mb_stripos($todo, 'Lo mejor para') === false, $r[0] ?? '');
 caso('termina con la intro de las 3 modalidades; los montos y lo incluido ahora van en la imagen (22-sep, 25-sep)',
     str_ends_with($r[0] ?? '', 'Podés elegir una de estas 3 modalidades de pago:')
@@ -169,7 +169,7 @@ foreach ($esperados as $tipo => [$frase, $archivo]) {
     $salida = wabot_pitch($tipo, $ct, $cfg);
     $primero = wabot_personalizar($salida[0] ?? '', $ct);
     caso("$tipo también usa su texto fijo, la intro de modalidades y su imagen, y espera la respuesta",
-        str_starts_with($primero, 'Para lo que me contás, te armamos ' . $frase)
+        str_starts_with($primero, 'Para lo que me contás, te podemos armar ' . $frase)
         && str_ends_with($primero, 'Podés elegir una de estas 3 modalidades de pago:')
         && ($salida[1] ?? '') === wabot_precio_imagen_marcador($tipo) && wabot_precio_imagen_archivo($tipo) === $archivo
         && count($salida) === 3 && empty($ct['bot_off']) && !empty($ct['oferta_diseno_ts']), $primero);

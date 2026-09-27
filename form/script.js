@@ -569,7 +569,7 @@ function validarPaso2() {
     let firstError = null;
 
     const modalidad = document.getElementById('modalidad');
-    if (!modalidad.value) { markError(modalidad, 'Elegí el plan mensual, el plan anual o el pago único.'); firstError = modalidad; }
+    if (!modalidad.value) { markError(modalidad, 'Elegí el plan anual, el plan mensual o el pago único.'); firstError = modalidad; }
 
     // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
     const estilo = document.getElementById('estilo');

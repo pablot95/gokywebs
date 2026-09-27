@@ -41,14 +41,25 @@ caso('la elección explícita posterior deja el prospecto con su forma, con el e
     ($yaTeniaForm ? $r === [] : (count($r) === 1 && tiene_form($r)))
     && !empty($c['esProspecto']) && !empty($c['bot_off']) && ($c['modalidad_elegida'] ?? '') === 'mensual', json_encode($r));
 
-/* El número solo, según el orden que vio (26-sep a la noche): la cotizada hoy
- * vio "1 plan mensual, 2 plan anual"; la cotizada antes de la imagen del
- * 25-sep, sin rastro en el transcript, "1. Plan anual, 2. Plan mensual". */
+/* El número solo, según el orden que vio: la cotizada con las imágenes de hoy
+ * (desde el 27-sep a las 00:15) vio "1 plan anual, 2 plan mensual"; la
+ * cotizada con la imagen del 25 y el 26-sep, "1 plan mensual, 2 plan anual";
+ * la cotizada antes de la imagen del 25-sep, "1. Plan anual, 2. Plan
+ * mensual". Sin rastro en el transcript, lo dice la fecha: fija, así la
+ * prueba no depende de la hora en que corre. */
 $c = conv_nueva('549110003TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
     'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0]);
 wabot_precio_congelar($c, 'landing', $cfg);
+$c['precio_cotizado_ts'] = strtotime('2026-09-27 10:00:00 -03:00');
 $r = turno('2', $c, $cfg);
-caso('cotizada hoy: "2" es el plan anual y queda como prospecto con esa modalidad',
+caso('cotizada con las imágenes de hoy: "2" es el plan mensual y queda como prospecto con esa modalidad',
+    tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'mensual', json_encode($r));
+$c = conv_nueva('549110005TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
+    'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0]);
+wabot_precio_congelar($c, 'landing', $cfg);
+$c['precio_cotizado_ts'] = strtotime('2026-09-26 18:00:00 -03:00');
+$r = turno('2', $c, $cfg);
+caso('cotizada con la imagen del 26-sep: "2" es el plan anual',
     tiene_form($r) && !empty($c['esProspecto']) && ($c['modalidad_elegida'] ?? '') === 'unico', json_encode($r));
 $c = conv_nueva('549110004TEST', ['tipo' => 'landing', 'fase' => 'prediseno', 'precio_dado' => true,
     'precio_cta_pendiente' => true, 'precio_turnos_desde' => 0, 'precio_cotizado' => '$120.000', 'sena_cotizada' => '$40.000',

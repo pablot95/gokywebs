@@ -78,8 +78,8 @@ echo "— 3. La propuesta demuestra que escuchó —\n";
 
 [$c, $r] = charla([['Tengo un local de indumentaria femenina', ['rubro_comercio'],
     ['ficha' => ['rubro' => 'tu local de indumentaria femenina', 'necesidad' => 'tienda']]]], '549110000INDUTEST', $cfg);
-caso('indumentaria: "Para tu local de indumentaria femenina, te armamos una tienda online…"',
-    str_starts_with($r[0] ?? '', 'Para tu local de indumentaria femenina, te armamos una tienda online completa'), $r[0] ?? '');
+caso('indumentaria: "Para tu local de indumentaria femenina, te podemos armar una tienda online…"',
+    str_starts_with($r[0] ?? '', 'Para tu local de indumentaria femenina, te podemos armar una tienda online completa'), $r[0] ?? '');
 
 [$c, $r] = charla([['Soy peluquera, quiero una web con turnos a WhatsApp, Instagram y calificaciones', ['rubro_landing'], []]], '549110000TURNOSTEST', $cfg);
 caso('turnos por WhatsApp, Instagram y calificaciones se nombran en la propuesta',
@@ -91,7 +91,7 @@ caso('y siguen la imagen del sitio profesional y la oferta', ($r[1] ?? '') === w
 caso('sahumerios: primero que la publicidad no la hacemos, y cómo ayuda la tienda',
     str_starts_with($r[0] ?? '', 'La publicidad y el manejo de redes no los hacemos: nosotros nos encargamos de la web. Con la tienda, la gente que te sigue en redes te compra directo desde el link'),
     $r[0] ?? '');
-caso('y después la propuesta con la imagen de la tienda', mb_stripos($r[0] ?? '', 'te armamos una tienda online') !== false && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'));
+caso('y después la propuesta con la imagen de la tienda', mb_stripos($r[0] ?? '', 'te podemos armar una tienda online') !== false && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'));
 caso('la aclaración sale una sola vez', ($c['fuera_avisado'] ?? []) === ['publicidad']);
 
 [$c, $r] = charla([['Tenemos un restaurant con hospedaje en las sierras', ['rubro_landing'], []]], '549110000HOSPTEST', $cfg);

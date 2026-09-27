@@ -353,7 +353,7 @@ caso('y la pregunta de reconocimiento también, que es un proyecto nuevo (21-sep
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
 caso('el precio del que vuelve sale con la propuesta, la imagen y, en otro mensaje, la oferta del primer diseño',
-    count($rR) === 3 && stripos($rR[0], 'te armamos un sitio profesional completo') !== false
+    count($rR) === 3 && stripos($rR[0], 'te podemos armar un sitio profesional completo') !== false
     && ($rR[1] ?? '') === wabot_precio_imagen_marcador('landing')
     && mb_stripos($rR[2], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 

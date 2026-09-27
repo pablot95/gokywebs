@@ -100,8 +100,8 @@ $c = conv_nueva('5491177770001TEST');
 $r = wabot_pitch('landing', $c, $cfg);
 $r0 = wabot_personalizar($r[0] ?? '', $c);
 caso('son tres mensajes: la propuesta, la imagen de modalidades y, aparte, la oferta del primer diseño (25-sep)', count($r) === 3);
-caso('arranca "Para lo que me contás, te armamos", sin "Lo mejor para" ni link (18-sep)',
-    str_starts_with($r0, 'Para lo que me contás, te armamos un sitio profesional completo')
+caso('arranca "Para lo que me contás, te podemos armar", sin "Lo mejor para" ni link (18-sep)',
+    str_starts_with($r0, 'Para lo que me contás, te podemos armar un sitio profesional completo')
     && mb_stripos($r0, 'Lo mejor para') === false && strpos($r0, 'presupuestos/') === false, $r0);
 caso('termina con la frase que abre las 3 modalidades, sin los montos ni lo incluido: eso ahora va en la imagen (25-sep)',
     str_ends_with($r0, 'Podés elegir una de estas 3 modalidades de pago:')
@@ -147,15 +147,15 @@ foreach (['ecommerce' => ['una tienda online completa', 'tiendacursosinmo.png'],
     $r = wabot_pitch($tipo, $c, $cfg);
     $t = wabot_personalizar($r[0] ?? '', $c);
     caso("$tipo: la frase fija de su tipo, la intro de modalidades y su imagen",
-        strpos($t, 'Para lo que me contás, te armamos ' . $arranque) === 0
+        strpos($t, 'Para lo que me contás, te podemos armar ' . $arranque) === 0
         && str_ends_with($t, 'Podés elegir una de estas 3 modalidades de pago:')
         && ($r[1] ?? '') === wabot_precio_imagen_marcador($tipo) && wabot_precio_imagen_archivo($tipo) === $archivo, $t);
 }
 $c = conv_nueva('5491177770002TEST');
 $c['rubro_pitch'] = 'tu centro de estética';
 $r = wabot_pitch('landing', $c, $cfg);
-caso('con el rubro sabido, la propuesta lo nombra: "Para tu centro de estética, te armamos…"',
-    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te armamos un sitio profesional completo') === 0,
+caso('con el rubro sabido, la propuesta lo nombra: "Para tu centro de estética, te podemos armar…"',
+    strpos(wabot_personalizar($r[0], $c), 'Para tu centro de estética, te podemos armar un sitio profesional completo') === 0,
     wabot_personalizar($r[0], $c));
 caso('"pago inicial", nunca "primer pago" (14-sep)', mb_stripos(implode(' ', $r), 'primer pago') === false);
 
@@ -164,7 +164,7 @@ $c['pidio_precio'] = true;
 $c['rubro_pitch'] = 'tu pastelería';
 $r = wabot_precio('ecommerce', $c, $cfg);
 caso('el que pidió el precio de entrada recibe el mismo formato',
-    strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería, te armamos una tienda online') === 0
+    strpos(wabot_personalizar($r[0], $c), 'Para tu pastelería, te podemos armar una tienda online') === 0
     && mb_stripos($r[0], 'para lo tuyo va') === false, $r[0]);
 caso('con la oferta del primer diseño en su propio mensaje, detrás del precio y la imagen', count($r) === 3 && mb_stripos($r[2], 'primer diseño') !== false);
 
