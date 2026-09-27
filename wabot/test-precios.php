@@ -779,9 +779,12 @@ $campos = wabot_lead_campos($cL, $cfg, false);
 $val = function ($k) use ($campos) { $v = $campos[$k] ?? null; return $v ? (string)reset($v) : null; };
 caso('el estilo viaja en su campo', $val('estilo_pagina') === 'Minimalista');
 caso('lo que quiere sí o sí también', $val('incluir_si_o_si') === 'mapa con la ubicación');
-caso('y los dos van en el bloque que se lee al diseñar',
-    mb_stripos((string)$val('objetivo_web'), 'Minimalista') !== false
-    && mb_stripos((string)$val('objetivo_web'), 'mapa con la ubicación') !== false, (string)$val('objetivo_web'));
+/* 27-sep: el admin los muestra y los copia en sus filas; repetirlos en el
+ * bloque que se lee al diseñar los duplicaba. La referencia sigue ahí. */
+caso('y ya no se repiten en el bloque que se lee al diseñar, donde sigue la referencia',
+    mb_stripos((string)$val('objetivo_web'), 'Minimalista') === false
+    && mb_stripos((string)$val('objetivo_web'), 'mapa con la ubicación') === false
+    && mb_stripos((string)$val('objetivo_web'), 'sparrow.com.ar') !== false, (string)$val('objetivo_web'));
 caso('el precio del boceto nombra las 3 modalidades, en el orden de la imagen (26-sep)',
     (string)$val('presupuesto_cotizado') === 'Plan mensual $25.000, plan anual $180.000 (seña $60.000) o pago único $240.000', (string)$val('presupuesto_cotizado'));
 // wabot_lead_cotizado: los montos de ESTA charla, en cualquier tipo y modelo.

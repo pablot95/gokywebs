@@ -647,11 +647,11 @@ caso('la charla queda con lo que quiere lograr',
 $lineasObj = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convObj['transcript'] ?? [])));
 caso('el transcript lo anota', strpos($lineasObj, 'Quiere lograr: Generar más ventas, Recibir reservas o turnos') !== false, $lineasObj);
 $camposObj = wabot_lead_campos($convObj, $cfg, false);
-caso('el boceto lo lleva en `objetivos`, que el admin muestra como "Objetivos seleccionados"',
+caso('el boceto lo lleva en `objetivos`, que el admin muestra como "Objetivos de la web"',
     ($camposObj['objetivos']['stringValue'] ?? '') === 'Generar más ventas, Recibir reservas o turnos',
     json_encode($camposObj['objetivos'] ?? null, JSON_UNESCAPED_UNICODE));
-caso('y en el bloque que se lee al diseñar',
-    mb_strpos((string)($camposObj['objetivo_web']['stringValue'] ?? ''), 'Quiere lograr: Generar más ventas, Recibir reservas o turnos') !== false,
+caso('y no se repite en el bloque que se lee al diseñar: el admin le da su fila',
+    mb_strpos((string)($camposObj['objetivo_web']['stringValue'] ?? ''), 'Generar más ventas') === false,
     (string)($camposObj['objetivo_web']['stringValue'] ?? ''));
 $cRObj = array_merge($convObj, ['ultimo_ts' => time() - 30 * 86400, 'presentado_ts' => 0]);
 wabot_conv_reset_si_vieja($cRObj, $cfg, time());
@@ -663,5 +663,15 @@ caso('cada estilo tiene su miniatura, y los estilos son los que acepta el servid
     $mMini[1] === formlead_estilos(), json_encode($mMini[1], JSON_UNESCAPED_UNICODE));
 $miniFaltan = array_values(array_filter($mMini[2], function ($ruta) { return !is_file(__DIR__ . '/..' . $ruta); }));
 caso('y las miniaturas están en /form/estilos', count($mMini[2]) === count(formlead_estilos()) && !$miniFaltan, json_encode($miniFaltan));
+
+// El admin: el "Copiar" del boceto y el boceto mismo tienen una fila para cada cosa.
+$dashObj = (string)file_get_contents(__DIR__ . '/../admin/dashboard.js');
+caso('el "Copiar" del boceto lleva los objetivos, el estilo y lo de sí o sí, cada uno en su fila',
+    strpos($dashObj, '{ title: "Objetivos de la web", value: objetivosTexto }') !== false
+    && strpos($dashObj, '{ title: "Estilo de página", value: cleanFieldValue(p.estilo_pagina) }') !== false
+    && strpos($dashObj, '{ title: "Incluir sí o sí", value: cleanFieldValue(p.incluir_si_o_si) }') !== false);
+caso('y el boceto los muestra para editar y los guarda en sus campos',
+    strpos($dashObj, 'id="propEstiloPagina"') !== false && strpos($dashObj, 'data.estilo_pagina = getInputValue("propEstiloPagina")') !== false
+    && strpos($dashObj, 'id="propIncluirSiOSi"') !== false && strpos($dashObj, 'data.incluir_si_o_si = getInputValue("propIncluirSiOSi")') !== false);
 
 todo_ok();

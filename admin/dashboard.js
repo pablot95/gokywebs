@@ -2841,9 +2841,9 @@ function briefDetailHTML(src) {
         row("Rubro / actividad", rubro, true),
         row("Tipo de web", tipoWeb),
         row("Modelos elegidos", modelosElegidos, true),
+        row("Objetivos de la web", objetivos, true),
         row("Estilo de página", estiloPagina),
         row("Incluir sí o sí", incluir, true),
-        row("Objetivo elegido", objetivos, true),
         row("Tipo de sitio", tipoPagina),
         row("Productos / servicios", prodServ, true),
         row("Qué quiere lograr", objetivoWeb, true),
@@ -3567,6 +3567,10 @@ function renderPropuestas() {
             (p.tipoDetectadoLabel  || "").toLowerCase().includes(term) ||
             modelosElegidosTexto(p).toLowerCase().includes(term) ||
             (p.objetivo_web        || "").toLowerCase().includes(term) ||
+            // Lo del formulario ya no se repite en objetivo_web (27-sep): se busca en su campo.
+            getPropuestaObjetivosTexto(p).toLowerCase().includes(term) ||
+            (p.estilo_pagina       || "").toLowerCase().includes(term) ||
+            (p.incluir_si_o_si     || "").toLowerCase().includes(term) ||
             (p.adicionales_texto   || "").toLowerCase().includes(term) ||
             (p.productos_servicios || "").toLowerCase().includes(term) ||
             (p.secciones_web       || "").toLowerCase().includes(term) ||
@@ -3844,6 +3848,9 @@ function openPropuestaModal(id) {
     const cantCursos   = cleanFieldValue(p.cant_cursos);
     const colorFondos  = cleanFieldValue(p.color_fondos);
     const tipografias  = cleanFieldValue(p.tipografias);
+    // Paso 2 del formulario: solo los trae el que lo completó (incluir es opcional).
+    const estiloPagina = cleanFieldValue(p.estilo_pagina);
+    const incluirSiOSi = cleanFieldValue(p.incluir_si_o_si);
     const modelosElegidos = modelosElegidosDe(p);
     const showCiudad     = !esPresupuestoModal || ciudadZona;
     const showCantCursos = !esPresupuestoModal || cantCursos;
@@ -3878,8 +3885,18 @@ function openPropuestaModal(id) {
             }).join("")}</span>`
             : '<span class="muted">No eligió modelos</span>'}</span></div>
 
-        <label for="propObjetivos">Objetivos seleccionados</label>
+        <label for="propObjetivos">Objetivos de la web</label>
         <textarea id="propObjetivos" rows="2" maxlength="500">${escapeHtml(objetivosTexto)}</textarea>
+
+        ${estiloPagina ? `
+        <label for="propEstiloPagina">Estilo de página</label>
+        <input type="text" id="propEstiloPagina" maxlength="60" value="${escapeHtml(estiloPagina)}">
+        ` : ""}
+
+        ${incluirSiOSi ? `
+        <label for="propIncluirSiOSi">Incluir sí o sí</label>
+        <textarea id="propIncluirSiOSi" rows="2" maxlength="600">${escapeHtml(incluirSiOSi)}</textarea>
+        ` : ""}
 
         ${showCantCursos ? `
         <label for="propCantCursos">Cantidad de cursos (e-learning)</label>
@@ -3968,6 +3985,9 @@ propuestaForm.addEventListener("submit", async (e) => {
     if (document.getElementById("propCiudadZona"))  data.ciudad_zona = getInputValue("propCiudadZona");
     if (document.getElementById("propCantCursos"))  data.cant_cursos = getInputValue("propCantCursos");
     if (document.getElementById("propTipografias")) data.tipografias = getInputValue("propTipografias");
+    // Estilo e "incluir sí o sí" solo se muestran si el formulario los trajo: igual criterio.
+    if (document.getElementById("propEstiloPagina")) data.estilo_pagina = getInputValue("propEstiloPagina");
+    if (document.getElementById("propIncluirSiOSi")) data.incluir_si_o_si = getInputValue("propIncluirSiOSi");
 
     /* El textarea "Sobre el negocio" se llena con getPropuestaSobreNegocio(), que
        FUSIONA rubro + productos_servicios + objetivo_web. Al guardar, ese texto
@@ -4093,13 +4113,16 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
     return prefijo + formatCopyRows([
         { title: "Nombre del negocio / marca", value: nombreNegocio },
         { title: "Sobre el negocio y qué quiere lograr con la web", value: getPropuestaSobreNegocio(p) },
+        // Lo que marcó en el formulario (27-sep), cada cosa en su fila.
+        { title: "Objetivos de la web", value: objetivosTexto },
+        { title: "Estilo de página", value: cleanFieldValue(p.estilo_pagina) },
+        { title: "Incluir sí o sí", value: cleanFieldValue(p.incluir_si_o_si) },
         { title: "Adicionales elegidos", value: cleanFieldValue(p.adicionales_texto) },
         { title: "Teléfono / WhatsApp (número real para los wa.me del demo)", value: p.telefono || p.contacto_cel || "" },
         { title: "Tipo de web", value: getPropuestaTipoWeb(p) },
         { title: "Modelos elegidos", value: modelosElegidosParaCopiar(p) },
         { title: "Carpeta local de los modelos", value: modelosElegidosDe(p).length ? MODELOS_CARPETA_LOCAL : "" },
         { title: "Ciudad / zona", value: p.ciudad_zona || "" },
-        { title: "Objetivos seleccionados", value: objetivosTexto },
         { title: "Cantidad de cursos", value: p.cant_cursos || "" },
         { title: "Imágenes que mandó por WhatsApp/Instagram", value: Number(p.imagenes_recibidas || 0) > 0 ? String(p.imagenes_recibidas) : "" },
         { title: "Color de fondos", value: fondos },

@@ -5158,33 +5158,20 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         $marca  = wabot_nombre_negocio_fallback($fuente);
     }
 
-    /* Lo que marcó en "Qué querés lograr con tu web" (27-sep): antes que el
-     * resto del formulario en el bloque que se lee al diseñar, porque es
-     * justamente eso, y en `objetivos`, que el admin ya muestra como
-     * "Objetivos seleccionados" (y deja editar). */
-    $objetivosForm = trim((string)($conv['objetivos'] ?? ''));
-    if (!$esSistema && $objetivosForm !== '' && mb_stripos($objetivo, $objetivosForm) === false) {
-        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Quiere lograr: ' . $objetivosForm;
-    }
     // La referencia se guarda en su campo Y va dentro de "Sobre el negocio y qué
     // quiere lograr con la web", que es el bloque que se lee al diseñar.
     if (!$esSistema && ($conv['referencia'] ?? '') !== '' && mb_stripos($objetivo, $conv['referencia']) === false) {
         $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ')
                   . 'Como referencia visual pasó: ' . $conv['referencia'];
     }
-    /* El paso 2 del formulario (10-sep): el estilo de página que eligió y lo
-     * que quiere sí o sí. Van en su campo Y en el bloque que se lee al diseñar,
-     * igual que la referencia, así se ven sin tocar el panel. "No lo sé" es
-     * una respuesta válida pero no aporta nada al diseño: no se agrega. */
+    /* Lo que marcó en el formulario —qué quiere lograr (27-sep), el estilo de
+     * página y lo que quiere sí o sí (10-sep)— viaja solo en sus campos. Hasta
+     * el 27-sep también se repetía en este bloque, porque el admin no los
+     * mostraba; ahora el boceto y su "Copiar" tienen una fila para cada uno y
+     * repetirlos acá los duplicaba. */
+    $objetivosForm = trim((string)($conv['objetivos'] ?? ''));
     $estilo  = trim((string)($conv['estilo'] ?? ''));
     $incluir = trim((string)($conv['incluir'] ?? ''));
-    if (!$esSistema && $estilo !== '' && mb_strtolower($estilo, 'UTF-8') !== 'no lo sé'
-        && mb_stripos($objetivo, $estilo) === false) {
-        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Estilo de página elegido: ' . $estilo;
-    }
-    if (!$esSistema && $incluir !== '' && mb_stripos($objetivo, $incluir) === false) {
-        $objetivo = ($objetivo === '' ? '' : rtrim($objetivo, " .") . '. ') . 'Quiere incluir sí o sí: ' . $incluir;
-    }
     /* Lo que pidió por chat (18-sep), en el mismo bloque que se lee al diseñar:
      * las funciones que nombró y lo que dijo que no es de lista. */
     if (!$esSistema && function_exists('wabot_ficha_resumen')) {
@@ -5230,7 +5217,8 @@ function wabot_lead_campos($conv, $cfg, $esSistema = false) {
         'colores'            => ['stringValue' => (string)$conv['colores']],
         // `referencias` es el campo que ya lee briefDetailHTML del admin.
         'referencias'        => ['stringValue' => (string)($conv['referencia'] ?? '')],
-        // Paso 2 del formulario (10-sep). También van dentro de objetivo_web.
+        // Paso 2 del formulario (10-sep; los objetivos, 27-sep). El admin los
+        // muestra y los copia en sus filas; `objetivos` es "Objetivos de la web".
         'estilo_pagina'      => ['stringValue' => $estilo],
         'incluir_si_o_si'    => ['stringValue' => $incluir],
         'objetivos'          => ['stringValue' => $objetivosForm],
