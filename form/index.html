@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20260927a">
+    <link rel="stylesheet" href="styles.css?v=20260927b">
 </head>
 <body>
 
@@ -166,37 +166,21 @@
                             <label class="field-label" for="estilo">
                                 Estilo de página <span class="req">*</span>
                             </label>
-                            <!-- Cada opción trae su descripción, un ejemplo del portfolio y la
-                                 miniatura de ese ejemplo (data-mini, recortes de /portfolio/previews),
-                                 que script.js muestra al elegirla: la descripción abajo (un <option>
-                                 no puede llevar links) y la miniatura en el recuadro de al lado
-                                 (27-sep). La lista tiene que coincidir con formlead_estilos() de
+                            <!-- Cada opción trae su descripción, que script.js muestra abajo al
+                                 elegirla. Sin miniaturas ni sitios de ejemplo (Pablo, 27-sep): solo
+                                 el texto. La lista tiene que coincidir con formlead_estilos() de
                                  wabot/form-lead.php. -->
-                            <div class="estilo-fila">
-                                <div class="estilo-campo">
-                                    <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
-                                        <option value="" disabled selected>Elegí un estilo</option>
-                                        <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow" data-mini="/form/estilos/minimalista.webp">Minimalista</option>
-                                        <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE" data-mini="/form/estilos/moderno.webp">Moderno y audaz</option>
-                                        <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes" data-mini="/form/estilos/elegante.webp">Elegante / premium</option>
-                                        <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo" data-mini="/form/estilos/calido.webp">Cálido y cercano</option>
-                                        <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos" data-mini="/form/estilos/colorido.webp">Colorido y divertido</option>
-                                        <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones" data-mini="/form/estilos/corporativo.webp">Corporativo / sobrio</option>
-                                        <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro." data-mini="/form/estilos/no-lo-se.webp">No lo sé</option>
-                                    </select>
-                                    <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y te mostramos cómo se ve.</p>
-                                </div>
-                                <!-- Con un estilo elegido lleva a su sitio de ejemplo; vacío o con
-                                     "No lo sé" no es un link (script.js le saca el href). -->
-                                <a class="estilo-mini vacia" id="estiloMini" target="_blank" rel="noopener">
-                                    <span class="estilo-mini-barra" aria-hidden="true"><i></i><i></i><i></i></span>
-                                    <span class="estilo-mini-vista">
-                                        <img alt="" width="480" height="300" decoding="async">
-                                        <span class="estilo-mini-vacio" aria-hidden="true"><b></b><b></b><b></b></span>
-                                        <span class="estilo-mini-ir" aria-hidden="true">↗</span>
-                                    </span>
-                                </a>
-                            </div>
+                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
+                                <option value="" disabled selected>Elegí un estilo</option>
+                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples.">Minimalista</option>
+                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia.">Moderno y audaz</option>
+                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas.">Elegante / premium</option>
+                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable.">Cálido y cercano</option>
+                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos.">Colorido y divertido</option>
+                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista.">Corporativo / sobrio</option>
+                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
+                            </select>
+                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y te contamos cómo es.</p>
                         </div>
 
                         <div class="field-group">
@@ -341,6 +325,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260927-objetivos"></script>
+    <script type="module" src="script.js?v=20260927-estilo-texto"></script>
 </body>
 </html>

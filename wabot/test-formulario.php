@@ -606,7 +606,7 @@ caso('el webhook resuelve la conversación antes de escribir el aviso',
     && strpos($webhookSrc, 'wabot_entrega_fallida_marcar($conv, $motivo);') !== false);
 caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($claveReal === null) continue;') !== false);
 
-echo "— 16. Qué quiere lograr con la web y la miniatura del estilo (27-sep) —\n";
+echo "— 16. Qué quiere lograr con la web y el texto del estilo (27-sep) —\n";
 
 // formlead_extras() y compañía ya están cargadas desde la sección 12.
 preg_match_all('/<input type="checkbox" name="objetivos" value="([^"]+)"/u', $htmlPrincipal, $mObj);
@@ -658,11 +658,13 @@ wabot_conv_reset_si_vieja($cRObj, $cfg, time());
 caso('el reset de sesión lo limpia, igual que al estilo', empty($cRObj['objetivos']));
 @unlink(WABOT_DATA . '/conv/5493810009002.json');
 
-preg_match_all('/<option value="([^"]+)"[^>]*data-mini="([^"]+)"/u', $htmlPrincipal, $mMini);
-caso('cada estilo tiene su miniatura, y los estilos son los que acepta el servidor',
-    $mMini[1] === formlead_estilos(), json_encode($mMini[1], JSON_UNESCAPED_UNICODE));
-$miniFaltan = array_values(array_filter($mMini[2], function ($ruta) { return !is_file(__DIR__ . '/..' . $ruta); }));
-caso('y las miniaturas están en /form/estilos', count($mMini[2]) === count(formlead_estilos()) && !$miniFaltan, json_encode($miniFaltan));
+// El estilo quedó solo con su texto explicativo (Pablo, 27-sep): sin miniaturas ni sitios de ejemplo.
+preg_match('/<select id="estilo".*?<\/select>/us', $htmlPrincipal, $selectEstilo);
+preg_match_all('/<option value="([^"]+)" data-desc="[^"]+">/u', $selectEstilo[0] ?? '', $mEstilo);
+caso('cada estilo tiene su texto explicativo, y los estilos son los que acepta el servidor',
+    $mEstilo[1] === formlead_estilos(), json_encode($mEstilo[1], JSON_UNESCAPED_UNICODE));
+caso('y ya no lleva miniaturas ni sitios de ejemplo',
+    strpos($htmlPrincipal, 'data-mini') === false && strpos($htmlPrincipal, 'data-ejemplo') === false && strpos($htmlPrincipal, 'estiloMini') === false);
 
 // El admin: el "Copiar" del boceto y el boceto mismo tienen una fila para cada cosa.
 $dashObj = (string)file_get_contents(__DIR__ . '/../admin/dashboard.js');

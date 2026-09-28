@@ -468,10 +468,7 @@ function irAPaso(n,{ enfocar = true, scroll = true } = {}) {
     if (enfocar) paso?.querySelector(n === 3 && !conIntro ? ':scope > .form-section .step-header-title' : '.step-header-title')?.focus({ preventScroll: true });
     // El paso de modelos necesita más ancho que los campos.
     document.body.classList.toggle('paso-modelos', n === 3 && !conIntro);
-    if (n === 2) {
-        track('step2');
-        precargarMiniaturas();
-    }
+    if (n === 2) track('step2');
 }
 
 document.getElementById('btnSiguiente').addEventListener('click', () => {
@@ -874,74 +871,17 @@ objetivoOtroCampo?.addEventListener('click', () => {
 });
 objetivoOtroInput?.addEventListener('input', () => quitarError(objetivoOtroInput));
 
-/* Estilo de página: un <option> no puede llevar links, así que el ejemplo de
- * cada estilo va en la línea de abajo y cambia con lo que se elige. La
- * descripción, el link y el nombre del ejemplo viven en cada <option>. */
+/* Estilo de página: la descripción de cada estilo (data-desc de su <option>)
+ * va en la línea de abajo y cambia con lo que se elige. Solo el texto: las
+ * miniaturas y los sitios de ejemplo se sacaron (Pablo, 27-sep). */
 const estiloSelect = document.getElementById('estilo');
 const estiloAyuda = document.getElementById('estiloEjemplo');
 const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
 
-/* Y en el recuadro de al lado, la miniatura (27-sep): el recorte del sitio de
- * ejemplo (data-mini), que lleva a ese sitio. Sin estilo queda el esqueleto
- * de una página; "No lo sé" es un mosaico de varios y no lleva a ningún lado. */
-const estiloMini = document.getElementById('estiloMini');
-const estiloMiniImg = estiloMini?.querySelector('img');
-
-function pintarMiniatura(op) {
-    if (!estiloMini || !estiloMiniImg) return;
-    const src = op?.dataset.mini || '';
-    estiloMini.classList.toggle('vacia', !src);
-    if (src && op.dataset.ejemplo) {
-        const nombre = op.dataset.ejemploNombre || 'el sitio de ejemplo';
-        estiloMini.href = op.dataset.ejemplo;
-        estiloMini.title = `Ver ${nombre}`;
-        estiloMini.setAttribute('aria-label', `Ver ${nombre}, el ejemplo del estilo ${op.value} (se abre en otra pestaña)`);
-    } else {
-        estiloMini.removeAttribute('href');
-        estiloMini.removeAttribute('title');
-        estiloMini.removeAttribute('aria-label');
-    }
-    if (!src || estiloMiniImg.getAttribute('src') === src) return;
-    // Oculta hasta que carga: de un estilo al otro hay un fundido, no un salto.
-    estiloMiniImg.classList.add('cargando');
-    estiloMiniImg.src = src;
-}
-estiloMiniImg?.addEventListener('load', () => estiloMiniImg.classList.remove('cargando'));
-// Si la imagen no está, vuelve el esqueleto en vez de un recuadro en blanco.
-estiloMiniImg?.addEventListener('error', () => {
-    estiloMiniImg.classList.remove('cargando');
-    estiloMini.classList.add('vacia');
-});
-
-// Todas se piden al entrar al paso 2: cambiar de estilo no espera la descarga.
-let miniaturasPedidas = false;
-function precargarMiniaturas() {
-    if (miniaturasPedidas || !estiloSelect) return;
-    miniaturasPedidas = true;
-    [...estiloSelect.options].forEach(o => { if (o.dataset.mini) new Image().src = o.dataset.mini; });
-}
-
 function pintarEstilo() {
     if (!estiloSelect || !estiloAyuda) return;
     const op = estiloSelect.selectedOptions[0];
-    pintarMiniatura(op && op.value ? op : null);
-    if (!op || !op.value) {
-        estiloAyuda.textContent = ESTILO_AYUDA_INICIAL;
-        return;
-    }
-    const desc = op.dataset.desc || '';
-    if (!op.dataset.ejemplo) {
-        estiloAyuda.textContent = desc;
-        return;
-    }
-    const a = document.createElement('a');
-    a.href = op.dataset.ejemplo;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.className = 'inline-link';
-    a.textContent = op.dataset.ejemploNombre || 'ver ejemplo';
-    estiloAyuda.textContent = desc.replace(/\.$/, '') + ' (ejemplo: ';
-    estiloAyuda.append(a, ').');
+    estiloAyuda.textContent = op && op.value ? (op.dataset.desc || '') : ESTILO_AYUDA_INICIAL;
 }
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();

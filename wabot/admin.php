@@ -3411,6 +3411,24 @@ function burbujaCita(t, chat) {
                     </div>
                 </div>`).join('');
 
+            /* Las pestañas del panel viven arriba en la misma franja derecha
+             * (position:fixed). Con la pestaña IA (27-sep) la columna creció y
+             * los botones, centrados en la pantalla, le quedaban encima: si se
+             * tocan, los botones bajan a 10 px debajo de la última pestaña. */
+            const separarDeLasPestanas = () => {
+                panel.style.top = '';
+                panel.style.transform = '';
+                const nav = document.querySelector('.tabs-nav');
+                if (!nav || getComputedStyle(nav).position !== 'fixed') return;
+                const finPestanas = nav.getBoundingClientRect().bottom;
+                if (panel.getBoundingClientRect().top < finPestanas + 10) {
+                    panel.style.top = (finPestanas + 10) + 'px';
+                    panel.style.transform = 'none';
+                }
+            };
+            separarDeLasPestanas();
+            window.addEventListener('resize', separarDeLasPestanas);
+
             // El menú nace centrado respecto de su pestaña, pero las primeras y
             // últimas categorías pueden quedar cortadas por el borde de la
             // pantalla. Se desplaza solo lo necesario para conservar 12 px de
