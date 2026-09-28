@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller Electromotriz — Arranques, alternadores y luces en Corrientes</title>
+<meta name="description" content="Electricidad del automotor en Corrientes: arranques, alternadores, luces, carga y baterías, con trabajos garantizados. Y detailing. Escribinos por WhatsApp.">
+<link rel="canonical" href="https://gokywebs.com/demo/tallerelectromotriz/modelo-2.html">
+<meta name="theme-color" content="#F9FAFB">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Taller Electromotriz">
+<meta property="og:title" content="Taller Electromotriz — Arranques, alternadores y luces en Corrientes">
+<meta property="og:description" content="Arranques y alternadores reparados con garantía. Luces, carga, baterías y detailing en zona Cremonte, Corrientes. Consultá por WhatsApp.">
+<meta property="og:url" content="https://gokywebs.com/demo/tallerelectromotriz/modelo-2.html">
+<meta property="og:image" content="https://gokywebs.com/demo/tallerelectromotriz/images/taller-16x9.webp">
+<meta property="og:image:width" content="1672">
+<meta property="og:image:height" content="941">
+<meta property="og:image:alt" content="Técnico revisando la parte eléctrica de un auto con el capó abierto en el taller">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230B0F16'/%3E%3Cpath d='M36 8 18 36h12l-4 20 20-30H34z' fill='%232563EB'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reddit+Sans:wght@400;500;600;700&amp;family=Saira:ital,wdth,wght@0,75,700;0,75,800;1,75,800&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="preload" as="image" href="images/diagnostico-9x16.webp" fetchpriority="high">
+<link rel="stylesheet" href="styles.css?v=2">
+<noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
+<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"AutoRepair","@id":"https://gokywebs.com/demo/tallerelectromotriz/#taller","name":"Taller Electromotriz","description":"Taller de electricidad del automotor en Corrientes: arranques, alternadores, luces, carga, baterías y detailing, con trabajos garantizados.","url":"https://gokywebs.com/demo/tallerelectromotriz/","telephone":"+5493794202005","image":"https://gokywebs.com/demo/tallerelectromotriz/images/taller-16x9.webp","address":{"@type":"PostalAddress","addressLocality":"Corrientes","addressRegion":"Corrientes","addressCountry":"AR"},"geo":{"@type":"GeoCoordinates","latitude":-27.4955,"longitude":-58.7604},"areaServed":"Corrientes","knowsAbout":["Arranques","Alternadores","Sistema de carga","Baterías","Luces del automotor","Detailing"]},{"@type":"WebSite","name":"Taller Electromotriz","url":"https://gokywebs.com/demo/tallerelectromotriz/","inLanguage":"es-AR"}]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"¿Cómo sé si es la batería o el alternador?","acceptedAnswer":{"@type":"Answer","text":"Con el motor apagado, la batería cargada marca 12,6 V. Andando, el alternador tiene que dar entre 13,8 y 14,4 V. Si andando marca lo mismo que parado, el que falla es el alternador. Igual lo confirmamos midiendo en el taller."}},{"@type":"Question","name":"El auto hace clic y no arranca, ¿qué hago?","acceptedAnswer":{"@type":"Answer","text":"No insistas con la llave: si la batería está baja se termina de descargar. Escribinos y vemos si es la batería, los bornes o el arranque."}},{"@type":"Question","name":"¿Por qué se descarga la batería con el auto parado?","acceptedAnswer":{"@type":"Answer","text":"Puede ser la batería vencida o algo que queda consumiendo con todo apagado: una luz, un relé o un accesorio. Se mide el consumo y se busca el circuito."}},{"@type":"Question","name":"¿Los trabajos tienen garantía?","acceptedAnswer":{"@type":"Answer","text":"Sí, todos los trabajos son garantizados. Las condiciones de cada reparación te las pasamos junto con el presupuesto."}},{"@type":"Question","name":"¿También hacen detailing?","acceptedAnswer":{"@type":"Answer","text":"Sí. Además de la parte eléctrica, hacemos detailing de interior y exterior. Consultanos por WhatsApp qué necesita tu auto."}}]}</script>
+</head>
+<body class="m2">
+<nav class="gw-modelos" aria-label="Modelos de la web">
+  <a class="gw-modelos__btn" href="./" data-modelo="1">Modelo 1</a>
+  <a class="gw-modelos__btn" href="modelo-2.html" data-modelo="2" aria-current="page">Modelo 2</a>
+</nav>
+
+<svg class="iconos" aria-hidden="true" focusable="false">
+  <symbol id="i-llave" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".6"/></symbol>
+  <symbol id="i-alternador" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6.8 12c1.3-3 3.1-3 4.4 0s3.1 3 4.4 0"/></symbol>
+  <symbol id="i-rayo" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-bateria" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M7 7V4.5h3V7M14 7V4.5h3V7M6.5 13.5h3M8 12v3M14.5 13.5h3"/></symbol>
+  <symbol id="i-bateria-baja" viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2M6 11v2"/></symbol>
+  <symbol id="i-faro" viewBox="0 0 24 24"><path d="M14 6c3.9 0 7 2.7 7 6s-3.1 6-7 6c-1 0-1.6-2.7-1.6-6S13 6 14 6z"/><path d="M9 8H3M9 12H3M9 16H3"/></symbol>
+  <symbol id="i-faro-tenue" viewBox="0 0 24 24"><path d="M14 6c3.9 0 7 2.7 7 6s-3.1 6-7 6c-1 0-1.6-2.7-1.6-6S13 6 14 6z"/><path d="M9 8H7.5M5 8H3.5M9 12H7.5M5 12H3.5M9 16H7.5M5 16H3.5"/></symbol>
+  <symbol id="i-faro-off" viewBox="0 0 24 24"><path d="M14 6c3.9 0 7 2.7 7 6s-3.1 6-7 6c-1 0-1.6-2.7-1.6-6S13 6 14 6z"/><path d="M9 12H5M3 3l18 18"/></symbol>
+  <symbol id="i-onda" viewBox="0 0 24 24"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></symbol>
+  <symbol id="i-brillo" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></symbol>
+  <symbol id="i-lento" viewBox="0 0 24 24"><path d="m12 14-4-3"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
+  <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-escudo" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-banco" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-tester" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><rect x="8" y="5" width="8" height="5" rx="1"/><circle cx="12" cy="15.5" r="2.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-wsp" viewBox="0 0 32 32"><path fill="currentColor" stroke="none" d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></symbol>
+</svg>
+
+<header class="site-header header-f">
+  <div class="container header-inner">
+    <a class="brand" href="modelo-2.html" aria-label="Taller Electromotriz, inicio">
+      <span class="marca"><span class="marca-top">Taller</span><span class="marca-main"><i>Electro</i>motriz</span></span>
+    </a>
+    <nav class="main-nav" id="mainNav" aria-label="Principal" inert>
+      <button type="button" class="nav-close" id="navClose" aria-label="Cerrar menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <a href="#servicios">Servicios</a>
+      <a href="#taller">El taller</a>
+      <a href="#diagnostico">Diagnóstico</a>
+      <a href="#ubicacion">Cómo llegar</a>
+    </nav>
+    <a class="btn btn-cta btn-wsp" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20parte%20el%C3%A9ctrica%20de%20mi%20auto." target="_blank" rel="noopener"><svg class="ic wsp-glifo" aria-hidden="true"><use href="#i-wsp"/></svg>Contactanos</a>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="mainNav">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="hero hero-f" id="top" aria-labelledby="hero-titulo">
+    <div class="container hero-f__grid">
+      <div class="hero-f__copy">
+        <p class="kicker" data-hero-in data-animate style="opacity:0;transform:translateY(28px)"><span class="cable" aria-hidden="true"></span>Electricidad del automotor · Corrientes</p>
+        <h1 class="h1" id="hero-titulo" data-hero-in data-animate style="opacity:0;transform:translateY(28px)">Arranques y alternadores reparados con garantía</h1>
+        <p class="hero-bajada" data-hero-in data-animate style="opacity:0;transform:translateY(28px)">Arranques, alternadores, luces, carga y baterías en un taller de zona Cremonte. Y detailing para que el auto salga impecable.</p>
+        <div class="hero-ctas" data-hero-in data-animate style="opacity:0;transform:translateY(28px)">
+          <a class="btn btn-cta btn-wsp" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20coordinar%20una%20revisi%C3%B3n%20el%C3%A9ctrica%20para%20mi%20auto." target="_blank" rel="noopener"><svg class="ic wsp-glifo" aria-hidden="true"><use href="#i-wsp"/></svg>Coordiná la revisión</a>
+          <a class="btn btn-ghost" href="#diagnostico">¿Qué le pasa a tu auto?<svg class="ic flecha" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        </div>
+        <div class="hero-f__datos" data-hero-in data-animate style="opacity:0;transform:translateY(28px)">
+          <span><span class="led"></span>Trabajos garantizados</span>
+          <span><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Zona Cremonte · Corrientes</span>
+        </div>
+      </div>
+      <figure class="hero-f__media">
+        <img src="images/diagnostico-9x16.webp" width="941" height="1672" alt="Técnico midiendo la batería con un multímetro bajo el capó" fetchpriority="high">
+        <span class="lectura"><span class="led"></span>Batería · 12,6 V</span>
+      </figure>
+    </div>
+  </section>
+
+  <section class="servicios" id="servicios" aria-labelledby="serv-titulo">
+    <div class="container">
+      <div class="sec-head">
+        <h2 class="h2" id="serv-titulo" data-animate style="opacity:0;transform:translateY(32px)">Del arranque al último foco</h2>
+        <p class="sec-bajada" data-animate style="opacity:0;transform:translateY(24px)">Cada trabajo con la lectura que tiene que dar cuando está bien.</p>
+      </div>
+      <div class="serv-grid" data-animate-stagger>
+        <article class="serv serv--ancha serv--foto" id="s-alternadores" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-media"><img src="images/alternador-1x1.webp" width="1254" height="1254" alt="Alternador en el banco de trabajo mientras un técnico lo desarma"></div>
+          <div class="serv-body">
+            <span class="lectura"><span class="led"></span>13,8 a 14,4 V</span>
+            <h3 class="h3">Alternadores</h3>
+            <p>Testigo prendido o batería que no carga: regulador, diodos, carbones y rulemanes, reparados en el banco.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20el%20alternador%20de%20mi%20auto." target="_blank" rel="noopener">Consultar<span class="sr-only"> por alternadores</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+        <article class="serv serv--lectura" id="s-arranques" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-body">
+            <p class="serv-valor"><span data-contar="100" data-prefijo="+">+100</span><small>A</small></p>
+            <p class="serv-nota"><span class="led led--ambar"></span>lo que pide al girar</p>
+            <h3 class="h3">Arranques</h3>
+            <p>No gira, gira lento o hace clic. Automático, bendix, carbones y bobinados.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20el%20arranque%20de%20mi%20auto." target="_blank" rel="noopener">Consultar<span class="sr-only"> por arranques</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+        <article class="serv serv--lectura" id="s-baterias" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-body">
+            <p class="serv-valor"><span data-contar="12.6" data-dec="1">12,6</span><small>V</small></p>
+            <p class="serv-nota"><span class="led"></span>cargada, en reposo</p>
+            <h3 class="h3">Baterías</h3>
+            <p>Control de carga y prueba de arranque. Te decimos si alcanza con cargarla o hay que cambiarla.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20bater%C3%ADa%20de%20mi%20auto." target="_blank" rel="noopener">Consultar<span class="sr-only"> por baterías</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+        <article class="serv serv--lectura" id="s-carga" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-body">
+            <p class="serv-valor"><span data-contar="14.2" data-dec="1">14,2</span><small>V</small></p>
+            <p class="serv-nota"><span class="led led--azul"></span>con el motor en marcha</p>
+            <h3 class="h3">Carga</h3>
+            <p>Medimos lo que entrega el sistema andando, con luces y consumos prendidos.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20que%20me%20revisen%20la%20carga%20de%20mi%20auto." target="_blank" rel="noopener">Consultar<span class="sr-only"> por la carga</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+        <article class="serv serv--lectura" id="s-diagnostico" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-body">
+            <p class="serv-valor"><span data-contar="50" data-prefijo="&lt;">&lt;50</span><small>mA</small></p>
+            <p class="serv-nota"><span class="led"></span>consumo con todo apagado</p>
+            <h3 class="h3">Diagnóstico eléctrico</h3>
+            <p>Batería que se descarga parada, fusibles que saltan y fallas que van y vienen.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Tengo%20una%20falla%20el%C3%A9ctrica%20en%20mi%20auto%20y%20quiero%20que%20la%20revisen." target="_blank" rel="noopener">Consultar<span class="sr-only"> por una falla eléctrica</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+        <article class="serv serv--ancha serv--foto" id="s-luces" data-animate style="opacity:0;transform:translateY(48px)">
+          <div class="serv-media"><img src="images/luces-1x1.webp" width="1254" height="1254" alt="Técnico midiendo el cableado de un faro encendido con las puntas del tester"></div>
+          <div class="serv-body">
+            <span class="lectura"><span class="led led--azul"></span>Faros · ópticas · cableado</span>
+            <h3 class="h3">Luces</h3>
+            <p>Faros, giros, stop y posición. Luces que no prenden, que titilan o que bajan al frenar.</p>
+            <a class="link-flecha serv-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20las%20luces%20de%20mi%20auto." target="_blank" rel="noopener">Consultar<span class="sr-only"> por luces</span><svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="taller" id="taller" aria-labelledby="taller-titulo">
+    <div class="container taller-grid">
+      <div class="taller-copy">
+        <p class="kicker" data-animate style="opacity:0;transform:translateY(24px)"><span class="cable" aria-hidden="true"></span>El taller</p>
+        <h2 class="h2" id="taller-titulo" data-animate style="opacity:0;transform:translateY(32px)">Un taller, dos trabajos</h2>
+        <p data-animate style="opacity:0;transform:translateY(24px)">Electricidad del automotor en zona Cremonte, Corrientes Capital: arranques y alternadores en el banco, luces, carga y baterías.</p>
+        <p data-animate style="opacity:0;transform:translateY(24px)">Y detailing: interior y exterior a fondo, para que el auto salga del taller como querés verlo.</p>
+        <ul class="taller-datos" data-animate style="opacity:0;transform:translateY(24px)">
+          <li><span class="led"></span>Trabajos garantizados</li>
+          <li><span class="led led--azul"></span>A pocas cuadras del Complejo Laii Dhahab</li>
+        </ul>
+        <a class="link-flecha" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20detailing%20para%20mi%20auto." target="_blank" rel="noopener">Consultar por detailing<svg class="ic" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+      </div>
+      <div class="taller-media" data-animate style="opacity:0;transform:translateY(40px)">
+        <figure class="taller-foto"><img data-parallax src="images/exterior-1x1.webp" width="1254" height="1254" alt="Frente del taller con los portones abiertos y un auto estacionado en la entrada"></figure>
+        <figure class="taller-foto-2"><img src="images/detailing-1x1.webp" width="1254" height="1254" alt="Técnico repasando con un paño la carrocería negra de un auto recién pulido"></figure>
+        <span class="lectura"><span class="led"></span>Detailing</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="pasos" id="pasos" aria-labelledby="pasos-titulo">
+    <div class="container">
+      <div class="pasos-col">
+        <h2 class="h2" id="pasos-titulo" data-animate style="opacity:0;transform:translateY(32px)">Del WhatsApp al taller</h2>
+        <ol class="pasos-lista" data-animate-stagger>
+          <li class="paso" data-animate style="opacity:0;transform:translateX(-32px)">
+            <span class="paso-num">01</span>
+            <div><h3 class="h3">Contanos qué hace el auto</h3><p>Por WhatsApp, con el síntoma o con el resultado del diagnóstico de esta página.</p></div>
+          </li>
+          <li class="paso" data-animate style="opacity:0;transform:translateX(-32px)">
+            <span class="paso-num">02</span>
+            <div><h3 class="h3">Lo medimos en el taller</h3><p>Batería, arranque, carga y consumo. Te pasamos qué encontramos y el presupuesto.</p></div>
+          </li>
+          <li class="paso" data-animate style="opacity:0;transform:translateX(-32px)">
+            <span class="paso-num">03</span>
+            <div><h3 class="h3">Te lo llevás reparado</h3><p>Con la carga medida y la garantía del trabajo.</p></div>
+          </li>
+        </ol>
+        <a class="btn btn-cta btn-wsp" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20parte%20el%C3%A9ctrica%20de%20mi%20auto." target="_blank" rel="noopener"><svg class="ic wsp-glifo" aria-hidden="true"><use href="#i-wsp"/></svg>Contanos qué hace el auto</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="diagnostico" id="diagnostico" aria-labelledby="diag-titulo">
+    <div class="container">
+      <div class="sec-head">
+        <h2 class="h2" id="diag-titulo" data-animate style="opacity:0;transform:translateY(32px)">¿Qué le pasa a tu auto?</h2>
+        <p class="sec-bajada" data-animate style="opacity:0;transform:translateY(24px)">Elegí lo que notás. Si tenés tester, sumá lo que marca la batería.</p>
+      </div>
+      <div class="diag-card" data-diag data-animate style="opacity:0;transform:translateY(40px)">
+        <div class="diag-controles">
+          <fieldset class="diag-fila">
+            <legend>Qué notás</legend>
+            <div class="diag-opciones">
+              <label class="diag-op"><input type="radio" name="sintoma" value="clic" checked><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-llave"/></svg></span><span>No arranca, hace clic</span></label>
+              <label class="diag-op"><input type="radio" name="sintoma" value="lento"><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-lento"/></svg></span><span>Arranca con dificultad</span></label>
+              <label class="diag-op"><input type="radio" name="sintoma" value="testigo"><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-bateria"/></svg></span><span>Testigo de batería prendido andando</span></label>
+              <label class="diag-op"><input type="radio" name="sintoma" value="descarga"><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-bateria-baja"/></svg></span><span>Se descarga estando parado</span></label>
+              <label class="diag-op"><input type="radio" name="sintoma" value="titilan"><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-faro-tenue"/></svg></span><span>Luces que bajan o titilan</span></label>
+              <label class="diag-op"><input type="radio" name="sintoma" value="unaluz"><span class="diag-op-ic"><svg class="ic" aria-hidden="true"><use href="#i-faro-off"/></svg></span><span>Una luz no prende</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="diag-fila">
+            <legend>Lo que marca la batería <span>(opcional)</span></legend>
+            <div class="seg" role="group" aria-label="Cuándo la mediste">
+              <button type="button" aria-pressed="true" data-motor="nada">No la medí</button>
+              <button type="button" aria-pressed="false" data-motor="apagado">Motor apagado</button>
+              <button type="button" aria-pressed="false" data-motor="marcha">Motor en marcha</button>
+            </div>
+            <div class="tester" data-tester hidden>
+              <p class="tester-lectura" aria-hidden="true"><span data-tester-num>12,4</span><small>V</small></p>
+              <div class="tester-rango">
+                <label class="sr-only" for="diag-volt">Tensión de la batería en voltios</label>
+                <input type="range" id="diag-volt" min="10.5" max="13.2" step="0.1" value="12.4" data-tester-input>
+                <div class="tester-ticks" aria-hidden="true"><span data-tick-min>10,5 V</span><span data-tick-max>13,2 V</span></div>
+                <p class="tester-zona" data-tester-zona>Batería cargada</p>
+              </div>
+            </div>
+            <p class="tester-ayuda" data-tester-ayuda>Con un tester en la escala de 20 V, puntas en los bornes de la batería.</p>
+          </fieldset>
+        </div>
+        <div class="diag-resultado" data-resultado aria-live="polite">
+          <p class="diag-res-kicker"><span class="led led--azul"></span>Lo más probable</p>
+          <h3 class="h3" data-res-titulo>Batería baja o arranque que no gira</h3>
+          <p class="diag-res-medida" data-res-medida hidden></p>
+          <p class="diag-res-texto" data-res-texto>El clic es el automático del arranque que intenta, pero no le llega la fuerza o el motor de arranque no gira.</p>
+          <ul class="diag-checks" data-res-checks>
+            <li>Carga de la batería y bornes</li>
+            <li>Automático y carbones del arranque</li>
+            <li>Masa y cable de arranque</li>
+          </ul>
+          <p class="diag-servicio">Servicio: <a href="#s-arranques" data-res-servicio data-destacar="s-arranques">Arranques</a></p>
+          <a class="btn btn-cta btn-wsp" data-res-wsp href="https://wa.me/5493794202005?text=Hola%21%20Les%20escribo%20desde%20la%20web.%20Mi%20auto%20no%20arranca%2C%20hace%20clic.%20%C2%BFMe%20lo%20pueden%20revisar%3F" target="_blank" rel="noopener"><svg class="ic wsp-glifo" aria-hidden="true"><use href="#i-wsp"/></svg>Mandar el diagnóstico</a>
+          <p class="diag-nota">Es una orientación: el diagnóstico real se hace midiendo en el taller.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="llave en-oscuro" id="llave" aria-labelledby="llave-titulo" data-llave data-testigo="on">
+    <div class="llave-escena">
+      <div class="container llave-grid">
+        <div class="llave-head">
+          <p class="kicker"><span class="cable" aria-hidden="true"></span>Lo que marca el tester</p>
+          <h2 class="h2" id="llave-titulo">Girá la llave</h2>
+          <p class="llave-bajada">En cada paso la batería tiene que dar una lectura. Si no da, sabemos dónde buscar.</p>
+        </div>
+        <div class="llave-visual">
+          <figure class="llave-foto llave-foto--0 is-on" data-llave-foto><img src="images/diagnostico-9x16.webp" width="941" height="1672" alt="Técnico midiendo la batería con un multímetro bajo el capó"></figure>
+          <figure class="llave-foto llave-foto--1" data-llave-foto><img src="images/taller-16x9.webp" width="1672" height="941" alt="Técnico revisando el motor de arranque con el capó abierto"></figure>
+          <figure class="llave-foto llave-foto--2" data-llave-foto><img src="images/alternador-1x1.webp" width="1254" height="1254" alt="Alternador desarmado en el banco de trabajo, con las herramientas al lado"></figure>
+          <div class="tablero" aria-hidden="true">
+            <svg class="ic testigo" viewBox="0 0 24 24"><use href="#i-bateria"/></svg>
+            <span>Testigo de batería<b data-testigo-txt>Prendido</b></span>
+          </div>
+        </div>
+        <div class="llave-panel">
+          <ol class="llave-tabs">
+            <li><button type="button" class="llave-tab" aria-current="step" data-llave-tab="0"><b>1</b>Contacto</button></li>
+            <li><button type="button" class="llave-tab" data-llave-tab="1"><b>2</b>Arranque</button></li>
+            <li><button type="button" class="llave-tab" data-llave-tab="2"><b>3</b>En marcha</button></li>
+          </ol>
+          <div class="volt">
+            <p class="volt-lectura"><span class="volt-num" data-volt-num>12,6</span><span class="volt-u">V</span></p>
+            <p class="volt-estado"><span class="led" data-volt-led></span><span data-volt-estado>Batería cargada, en reposo</span></p>
+          </div>
+          <div class="escala" data-escala style="--x:.6">
+            <div class="escala-barra"></div>
+            <span class="escala-marca"></span>
+            <div class="escala-ticks" aria-hidden="true"><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15 V</span></div>
+          </div>
+          <div class="llave-textos">
+            <article class="llave-texto is-on" data-llave-texto data-volt="12.6" data-estado="Batería cargada, en reposo" data-led="" data-testigo="on" data-x=".6">
+              <h3 class="h3">Contacto: prende todo el tablero</h3>
+              <p>Con la llave en contacto se encienden todos los testigos. La batería cargada marca 12,6 V; debajo de 12,2 V ya no tiene fuerza para arrancar tranquila.</p>
+              <a class="btn btn-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20bater%C3%ADa%20de%20mi%20auto." target="_blank" rel="noopener">Consultar por la batería<svg class="ic flecha" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </article>
+            <article class="llave-texto" data-llave-texto data-volt="10.2" data-estado="Cae mientras gira el arranque" data-led="led--ambar" data-testigo="on" data-x=".2">
+              <h3 class="h3">Arranque: la tensión cae</h3>
+              <p>Al girar la llave el arranque pide más de 100 A y la batería baja. Si cae de 9,6 V, hace clic o gira lento: revisamos batería, bornes y arranque.</p>
+              <a class="btn btn-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20el%20arranque%20de%20mi%20auto." target="_blank" rel="noopener">Consultar por el arranque<svg class="ic flecha" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </article>
+            <article class="llave-texto" data-llave-texto data-volt="14.2" data-estado="El alternador está cargando" data-led="led--azul" data-testigo="off" data-x=".867">
+              <h3 class="h3">En marcha: carga el alternador</h3>
+              <p>Con el motor andando tiene que dar entre 13,8 y 14,4 V y el testigo de batería se apaga. Si queda prendido, el alternador no está cargando.</p>
+              <a class="btn btn-cta" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20el%20alternador%20de%20mi%20auto." target="_blank" rel="noopener">Consultar por el alternador<svg class="ic flecha" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+            </article>
+          </div>
+          <p class="llave-nota">Valores de referencia en autos de 12 V.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="preguntas" aria-labelledby="faq-titulo">
+    <div class="container faq-grid">
+      <h2 class="h2" id="faq-titulo" data-animate style="opacity:0;transform:translateY(32px)">Lo que más nos preguntan</h2>
+      <div class="faq-lista" data-animate style="opacity:0;transform:translateY(32px)">
+        <details class="faq-item">
+          <summary>¿Cómo sé si es la batería o el alternador?<span class="faq-mas" aria-hidden="true"></span></summary>
+          <p>Con el motor apagado, la batería cargada marca 12,6 V. Andando, el alternador tiene que dar entre 13,8 y 14,4 V. Si andando marca lo mismo que parado, el que falla es el alternador. Igual lo confirmamos midiendo en el taller.</p>
+        </details>
+        <details class="faq-item">
+          <summary>El auto hace clic y no arranca, ¿qué hago?<span class="faq-mas" aria-hidden="true"></span></summary>
+          <p>No insistas con la llave: si la batería está baja se termina de descargar. Escribinos y vemos si es la batería, los bornes o el arranque.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Por qué se descarga la batería con el auto parado?<span class="faq-mas" aria-hidden="true"></span></summary>
+          <p>Puede ser la batería vencida o algo que queda consumiendo con todo apagado: una luz, un relé o un accesorio. Se mide el consumo y se busca el circuito.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿Los trabajos tienen garantía?<span class="faq-mas" aria-hidden="true"></span></summary>
+          <p>Sí, todos los trabajos son garantizados. Las condiciones de cada reparación te las pasamos junto con el presupuesto.</p>
+        </details>
+        <details class="faq-item">
+          <summary>¿También hacen detailing?<span class="faq-mas" aria-hidden="true"></span></summary>
+          <p>Sí. Además de la parte eléctrica, hacemos detailing de interior y exterior. Consultanos por WhatsApp qué necesita tu auto.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="contacto" id="ubicacion" aria-labelledby="contacto-titulo">
+    <div class="container contacto-grid">
+      <div class="contacto-copy">
+        <h2 class="h2" id="contacto-titulo" data-animate style="opacity:0;transform:translateY(32px)">Traé el auto al taller</h2>
+        <p>Zona Cremonte, Corrientes Capital, a pocas cuadras del Complejo Laii Dhahab. Escribinos antes de venir.</p>
+        <a class="contacto-num" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20parte%20el%C3%A9ctrica%20de%20mi%20auto." target="_blank" rel="noopener"><span class="contacto-num-ic"><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg></span>3794-202005</a>
+        <form class="form" data-form novalidate>
+          <div class="campo">
+            <label for="f-nombre">Nombre</label>
+            <input id="f-nombre" name="nombre" type="text" autocomplete="name" required aria-describedby="f-nombre-error">
+            <p class="campo-error" id="f-nombre-error" hidden></p>
+          </div>
+          <div class="campo">
+            <label for="f-tel">Tu WhatsApp</label>
+            <input id="f-tel" name="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+54 9 (379) 000-0000" required aria-describedby="f-tel-error">
+            <p class="campo-error" id="f-tel-error" hidden></p>
+          </div>
+          <div class="campo">
+            <label for="f-msg">¿Qué le pasa al auto?</label>
+            <textarea id="f-msg" name="mensaje" rows="3" placeholder="Ej.: hace clic y no arranca, o se prende el testigo de batería" required aria-describedby="f-msg-error"></textarea>
+            <p class="campo-error" id="f-msg-error" hidden></p>
+          </div>
+          <button class="btn btn-cta" type="submit">Pedir la revisión</button>
+        </form>
+      </div>
+      <div class="mapa-card" data-animate style="opacity:0;transform:translateY(40px)">
+        <section class="mapa" id="mapa" aria-label="Mapa con la zona del taller, en Cremonte, Corrientes"></section>
+        <div class="mapa-info">
+          <p><b>Zona Cremonte · Corrientes Capital</b><br>A pocas cuadras del Complejo Laii Dhahab.</p>
+          <a class="btn btn-linea" href="https://www.google.com/maps/dir/?api=1&amp;destination=-27.4955,-58.7604" target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Cómo llegar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer en-oscuro">
+  <div class="container footer-grid">
+    <div class="footer-marca">
+      <a class="brand" href="modelo-2.html" aria-label="Taller Electromotriz, inicio">
+        <span class="marca"><span class="marca-top">Taller</span><span class="marca-main"><i>Electro</i>motriz</span></span>
+      </a>
+      <p>Electricidad del automotor en Corrientes: arranques, alternadores, luces, carga, baterías y detailing.</p>
+    </div>
+    <nav class="footer-nav" aria-label="Secciones">
+      <p class="footer-titulo">Secciones</p>
+      <a href="#servicios">Servicios</a>
+      <a href="#llave">Girá la llave</a>
+      <a href="#diagnostico">Diagnóstico</a>
+      <a href="#ubicacion">Cómo llegar</a>
+    </nav>
+    <div class="footer-contacto">
+      <p class="footer-titulo">WhatsApp</p>
+      <a class="footer-num" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20parte%20el%C3%A9ctrica%20de%20mi%20auto." target="_blank" rel="noopener"><svg class="ic" aria-hidden="true"><use href="#i-wsp"/></svg>3794-202005</a>
+      <p>Zona Cremonte · Corrientes Capital</p>
+      <p class="footer-garantia"><span class="led"></span>Trabajos garantizados</p>
+    </div>
+  </div>
+  <div class="container footer-legal">
+    <p>© 2026 Taller Electromotriz</p>
+    <a href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a>
+  </div>
+</footer>
+
+<a class="wsp-float" id="wsp-float" href="https://wa.me/5493794202005?text=Hola%21%20Quiero%20consultar%20por%20la%20parte%20el%C3%A9ctrica%20de%20mi%20auto." target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
+  <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M16.003 0h-.006C7.166 0 0 7.168 0 16c0 3.504 1.129 6.752 3.047 9.392L1.05 31.35l6.156-1.968A15.9 15.9 0 0 0 16.003 32C24.834 32 32 24.83 32 16S24.834 0 16.003 0zm9.318 22.594c-.387 1.09-1.92 1.996-3.144 2.26-.837.178-1.93.32-5.61-1.204-4.706-1.95-7.737-6.73-7.973-7.04-.226-.31-1.902-2.533-1.902-4.832 0-2.299 1.168-3.428 1.638-3.898.387-.387.998-.563 1.585-.563.19 0 .36.01.514.017.47.02.706.048 1.016.79.387.93 1.328 3.23 1.44 3.463.114.234.228.55.07.86-.148.32-.278.46-.512.73-.234.27-.456.478-.69.767-.214.253-.456.524-.184.994.272.46 1.21 1.996 2.6 3.234 1.794 1.598 3.276 2.093 3.79 2.307.383.16.84.122 1.12-.184.356-.386.796-1.028 1.244-1.66.318-.452.72-.508 1.14-.352.428.148 2.72 1.282 3.19 1.516.47.234.782.348.896.542.114.196.114 1.122-.273 2.212z"/></svg>
+</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://unpkg.com/imask@7.6.1/dist/imask.min.js"></script>
+<script src="script.js?v=2"></script>
+<script src="/demo/track.js" defer></script>
+</body>
+</html>
