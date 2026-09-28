@@ -71,13 +71,15 @@
                             <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
                         </div>
 
-                        <!-- Instagram del negocio (28-sep), opcional: wabot/form-lead.php lo
-                             normaliza al usuario (sin @ ni link) y el boceto lo muestra como link. -->
+                        <!-- Instagram del negocio (28-sep), opcional: escriben el usuario y abajo se
+                             ve el link que queda (instagram.com/lo-que-escribieron). Sin "@" a la
+                             vista, que confundía. wabot/form-lead.php igual limpia un @ o un link. -->
                         <div class="field-group">
                             <label class="field-label" for="instagram">
                                 Instagram del negocio <span class="optional">(opcional)</span>
                             </label>
-                            <input type="text" id="instagram" name="instagram" class="field-input" placeholder="@tunegocio" maxlength="100" autocapitalize="off" autocorrect="off" spellcheck="false">
+                            <input type="text" id="instagram" name="instagram" class="field-input" placeholder="tunegocio" maxlength="100" autocapitalize="off" autocorrect="off" spellcheck="false" aria-describedby="instagramLink">
+                            <p class="field-hint" id="instagramLink" aria-live="polite">Queda así: instagram.com/tunegocio</p>
                         </div>
 
                         <div class="field-group">
@@ -334,6 +336,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260928-sinpaleta"></script>
+    <script type="module" src="script.js?v=20260928-igsinarroba"></script>
 </body>
 </html>

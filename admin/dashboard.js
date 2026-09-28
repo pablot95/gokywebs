@@ -1568,7 +1568,7 @@ function instagramUrl(valor) {
 }
 function instagramLinkHTML(valor, extraStyle = "") {
     const u = instagramUsuario(valor);
-    return u ? `<a href="${instagramUrl(u)}" target="_blank" rel="noopener noreferrer" class="prop-instagram" style="${extraStyle}" title="Abrir el Instagram en otra pestaña">@${escapeHtml(u)} ↗</a>` : "";
+    return u ? `<a href="${instagramUrl(u)}" target="_blank" rel="noopener noreferrer" class="prop-instagram" style="${extraStyle}" title="Abrir el Instagram en otra pestaña">instagram.com/${escapeHtml(u)} ↗</a>` : "";
 }
 
 const EMPTY_COPY_VALUES = new Set(["", "(no completó)", "(no seleccionó)", "No aplica", "—"]);

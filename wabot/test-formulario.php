@@ -701,7 +701,7 @@ $rIg = wabot_form_lead_procesar($payloadIg, $cfg);
 $convIg = wabot_conv_load('5493810009003');
 caso('la charla queda con el usuario', ($rIg['ok'] ?? false) === true && ($convIg['instagram'] ?? '') === 'las.hojas', (string)($convIg['instagram'] ?? ''));
 $lineasIg = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convIg['transcript'] ?? [])));
-caso('el transcript lo anota', strpos($lineasIg, 'Instagram: @las.hojas') !== false, $lineasIg);
+caso('el transcript lo anota', strpos($lineasIg, 'Instagram: instagram.com/las.hojas') !== false, $lineasIg);
 caso('sin boceto en Firestore no hay a dónde mandarlo', formlead_instagram_sincronizar('5493810009003') === false);
 // En los tests el boceto no se crea de verdad: se simula el documento.
 $convIg['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/abc';

@@ -895,6 +895,20 @@ function pintarEstilo() {
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();
 
+// Instagram (28-sep): abajo del campo, el link que queda con lo que escriben.
+// Si pegan el link entero o ponen un @, se muestra ya limpio (igual que el servidor).
+const instagramInput = document.getElementById('instagram');
+const instagramAyuda = document.getElementById('instagramLink');
+function pintarInstagram() {
+    if (!instagramInput || !instagramAyuda) return;
+    let t = instagramInput.value.trim();
+    const enLink = t.match(/instagram\.com\/([A-Za-z0-9._]{1,30})/i);
+    if (enLink) t = enLink[1];
+    t = t.replace(/^@+/, '').replace(/\s+/g, '');
+    instagramAyuda.textContent = 'Queda así: instagram.com/' + (t || 'tunegocio');
+}
+instagramInput?.addEventListener('input', pintarInstagram);
+
 // Lo mismo con la forma de pago: qué implica cada una de las tres opciones.
 const planSelect = document.getElementById('modalidad');
 const planAyuda = document.getElementById('modalidadDetalle');
@@ -955,8 +969,9 @@ _formEl.addEventListener('change', saveDraft);
 
 restoreDraft();
 // Lo restaurado no dispara 'input': se repintan a mano los contadores, el
-// campo de "Otra" (habilitado o no) y el ejemplo del estilo.
+// campo de "Otra" (habilitado o no), el ejemplo del estilo y el link de Instagram.
 _pintarContadores.forEach(pintar => pintar());
 pintarObjetivoOtro();
 pintarEstilo();
+pintarInstagram();
 pintarPlan();

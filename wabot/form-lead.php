@@ -191,7 +191,7 @@ function formlead_extras_guardar($base, $extras) {
 
     $partes = [];
     if (($extras['objetivos'] ?? '') !== '')  $partes[] = 'Quiere lograr: ' . $extras['objetivos'];
-    if (($extras['instagram'] ?? '') !== '')  $partes[] = 'Instagram: @' . $extras['instagram'];
+    if (($extras['instagram'] ?? '') !== '')  $partes[] = 'Instagram: instagram.com/' . $extras['instagram'];
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
