@@ -660,9 +660,16 @@ caso('el reset de sesión lo limpia, igual que al estilo', empty($cRObj['objetiv
 
 // El estilo quedó solo con su texto explicativo (Pablo, 27-sep): sin miniaturas ni sitios de ejemplo.
 preg_match('/<select id="estilo".*?<\/select>/us', $htmlPrincipal, $selectEstilo);
-preg_match_all('/<option value="([^"]+)" data-desc="[^"]+">/u', $selectEstilo[0] ?? '', $mEstilo);
+preg_match_all('/<option value="([^"]+)" data-desc="[^"]+"[^>]*>/u', $selectEstilo[0] ?? '', $mEstilo);
 caso('cada estilo tiene su texto explicativo, y los estilos son los que acepta el servidor',
     $mEstilo[1] === formlead_estilos(), json_encode($mEstilo[1], JSON_UNESCAPED_UNICODE));
+// La barrita de colores (28-sep): cada estilo, menos "No lo sé", con su paleta de hex válidos.
+preg_match_all('/<option value="([^"]+)"[^>]*data-paleta="([^"]+)"/u', $selectEstilo[0] ?? '', $mPaleta);
+$paletasMal = array_values(array_filter($mPaleta[2], function ($p) {
+    return !preg_match('/^(#[0-9A-Fa-f]{6},){2,7}#[0-9A-Fa-f]{6}$/', $p);
+}));
+caso('cada estilo tiene su paleta de colores, y "No lo sé" no',
+    $mPaleta[1] === array_values(array_diff(formlead_estilos(), ['No lo sé'])) && !$paletasMal, json_encode($paletasMal));
 caso('y ya no lleva miniaturas ni sitios de ejemplo',
     strpos($htmlPrincipal, 'data-mini') === false && strpos($htmlPrincipal, 'data-ejemplo') === false && strpos($htmlPrincipal, 'estiloMini') === false);
 

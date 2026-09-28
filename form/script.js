@@ -878,10 +878,21 @@ const estiloSelect = document.getElementById('estilo');
 const estiloAyuda = document.getElementById('estiloEjemplo');
 const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
 
+// Y arriba del texto, la barrita con la paleta típica del estilo (28-sep).
+const estiloPaleta = document.getElementById('estiloPaleta');
+
 function pintarEstilo() {
     if (!estiloSelect || !estiloAyuda) return;
     const op = estiloSelect.selectedOptions[0];
     estiloAyuda.textContent = op && op.value ? (op.dataset.desc || '') : ESTILO_AYUDA_INICIAL;
+    if (!estiloPaleta) return;
+    const colores = op && op.value ? (op.dataset.paleta || '').split(',').filter(c => /^#[0-9a-f]{6}$/i.test(c)) : [];
+    estiloPaleta.replaceChildren(...colores.map(c => {
+        const franja = document.createElement('span');
+        franja.style.background = c;
+        return franja;
+    }));
+    estiloPaleta.hidden = !colores.length;
 }
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();

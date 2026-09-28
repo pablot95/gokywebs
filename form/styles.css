@@ -420,30 +420,66 @@ body {
 .tipo-pagina-option:hover .tipo-pagina-card { border-color: var(--blue); }
 @media (max-width: 480px) { .tipo-pagina-options { grid-template-columns: 1fr 1fr; } }
 
+/* Los tres colores en círculos (28-sep, Pablo): el nombre arriba y el círculo
+   abajo, centrados. Entran los tres en una fila también en el celular. */
 .color-fields-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
 
-@media (max-width: 520px) {
-    .color-fields-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 .color-field-group {
-    gap: 5px;
+    align-items: center;
+    /* Abajo: si un nombre ocupa dos renglones en el celular ("Color
+       secundario"), los tres círculos siguen a la misma altura. */
+    justify-content: flex-end;
+    gap: 8px;
+    text-align: center;
 }
 
 .color-swatch-input {
-    width: 100%;
-    height: 44px;
-    padding: 3px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg);
+    -webkit-appearance: none;
+    appearance: none;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    background: none;
     cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.color-swatch-input::-webkit-color-swatch-wrapper { padding: 0; }
+.color-swatch-input::-webkit-color-swatch { border: none; border-radius: 50%; }
+.color-swatch-input::-moz-color-swatch { border: none; border-radius: 50%; }
+
+.color-swatch-input:hover { border-color: var(--blue); transform: scale(1.05); }
+.color-swatch-input:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .color-swatch-input { transition: none; }
+    .color-swatch-input:hover { transform: none; }
+}
+
+/* La paleta del estilo elegido: una barrita con los colores típicos de ese
+   estilo (data-paleta de cada <option>), arriba de su descripción. */
+.estilo-paleta {
+    display: flex;
+    height: 12px;
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.estilo-paleta[hidden] {
+    display: none;
+}
+
+.estilo-paleta span {
+    flex: 1;
 }
 
 .other-section-field {
