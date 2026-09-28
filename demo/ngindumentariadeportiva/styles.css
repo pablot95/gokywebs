@@ -300,12 +300,12 @@ body.no-scroll { overflow: hidden; }
 }
 
 .catalogo-sec { position: relative; padding-block: calc(var(--section-pad-y) + 24px) var(--section-pad-y); }
+.talles-sec { position: relative; padding-block: var(--section-pad-y) calc(var(--section-pad-y) + 40px); background: var(--color-bg-alt); }
 
 .curva {
   display: grid;
   grid-template-columns: minmax(0, 44fr) minmax(0, 56fr);
   gap: clamp(18px, 3vw, 48px);
-  margin-bottom: clamp(28px, 4vw, 48px);
   padding: clamp(20px, 3vw, 36px);
   background: var(--color-surface);
   border-radius: 28px;

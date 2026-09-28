@@ -22,7 +22,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700;1,800&amp;family=Sora:wght@400;600;700&amp;display=swap">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ClothingStore","@id":"https://gokywebs.com/demo/ngindumentariadeportiva/#negocio","name":"NG indumentaria deportiva","description":"Uniformes deportivos: camisetas y shorts de fútbol, conjuntos de básquet, vóley y hockey, camperas y pantalones.","url":"https://gokywebs.com/demo/ngindumentariadeportiva/modelo-2.html","telephone":"+5493764838258","image":"https://gokywebs.com/demo/ngindumentariadeportiva/images/colores-1x1.webp"},{"@type":"WebSite","name":"NG indumentaria deportiva","url":"https://gokywebs.com/demo/ngindumentariadeportiva/modelo-2.html","inLanguage":"es-AR"}]}</script>
 </head>
@@ -83,6 +83,37 @@
 
   <section class="lista-sec" id="lista" aria-labelledby="lista-titulo">
     <div class="container container-catalogo">
+      <div data-lista>
+        <div class="lista-cabeza" data-lista-inicio>
+          <h2 class="h2" id="lista-titulo">Elegí y sumá a tu <em>pedido</em></h2>
+          <div class="tabs" data-tabs role="group" aria-label="Deportes"></div>
+          <form class="lista-busca" role="search" action="#" data-lista-busca>
+            <label class="sr-only" for="lista-busca">Buscar un modelo</label>
+            <input type="search" id="lista-busca" placeholder="Buscá por nombre, color o prenda" autocomplete="off">
+            <button type="submit" aria-label="Buscar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
+            </button>
+          </form>
+          <p class="catalogo-cuenta" data-resultados aria-live="polite"><b>21</b> modelos</p>
+        </div>
+        <div class="lista-grid">
+          <div>
+            <div class="lista" data-lista-items></div>
+            <button type="button" class="btn btn-ghost vermas" data-vermas hidden>Ver más</button>
+          </div>
+          <aside class="panel-pedido" data-panel aria-label="Tu pedido">
+            <p class="panel-titulo">Tu pedido <span data-panel-cuenta>0 modelos</span></p>
+            <div class="panel-lineas" data-panel-lineas></div>
+            <p class="panel-total"><span>Total</span><b data-panel-total>0 prendas</b></p>
+            <a class="btn btn-wsp is-vacio" data-panel-wsp href="https://wa.me/5493764838258?text=Hola%21%20Quiero%20hacer%20un%20pedido." target="_blank" rel="noopener">Enviar pedido por WhatsApp</a>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="talles-sec" id="talles" aria-labelledby="curva-titulo">
+    <div class="container container-catalogo">
       <div class="curva" id="curva" data-curva>
         <div class="curva-controles">
           <div class="curva-intro">
@@ -114,32 +145,6 @@
             <button type="button" class="btn btn-cta" data-curva-usar>Usar esta curva en mi pedido</button>
             <a class="link" data-curva-wsp href="https://wa.me/5493764838258?text=Hola%21%20Quiero%20consultar%20por%20los%20talles%20de%20mi%20equipo." target="_blank" rel="noopener">Consultar talles por WhatsApp</a>
           </div>
-        </div>
-      </div>
-      <div data-lista>
-        <div class="lista-cabeza" data-lista-inicio>
-          <h2 class="h2" id="lista-titulo">Elegí y sumá a tu <em>pedido</em></h2>
-          <div class="tabs" data-tabs role="group" aria-label="Deportes"></div>
-          <form class="lista-busca" role="search" action="#" data-lista-busca>
-            <label class="sr-only" for="lista-busca">Buscar un modelo</label>
-            <input type="search" id="lista-busca" placeholder="Buscá por nombre, color o prenda" autocomplete="off">
-            <button type="submit" aria-label="Buscar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.6-3.6"/></svg>
-            </button>
-          </form>
-          <p class="catalogo-cuenta" data-resultados aria-live="polite"><b>21</b> modelos</p>
-        </div>
-        <div class="lista-grid">
-          <div>
-            <div class="lista" data-lista-items></div>
-            <button type="button" class="btn btn-ghost vermas" data-vermas hidden>Ver más</button>
-          </div>
-          <aside class="panel-pedido" data-panel aria-label="Tu pedido">
-            <p class="panel-titulo">Tu pedido <span data-panel-cuenta>0 modelos</span></p>
-            <div class="panel-lineas" data-panel-lineas></div>
-            <p class="panel-total"><span>Total</span><b data-panel-total>0 prendas</b></p>
-            <a class="btn btn-wsp is-vacio" data-panel-wsp href="https://wa.me/5493764838258?text=Hola%21%20Quiero%20hacer%20un%20pedido." target="_blank" rel="noopener">Enviar pedido por WhatsApp</a>
-          </aside>
         </div>
       </div>
     </div>

@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@1,700;1,800&amp;family=Sora:wght@400;600;700&amp;display=swap">
 <link rel="preload" as="image" href="images/local-16x9.webp" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 <noscript><style>[data-animate]{opacity:1!important;transform:none!important;clip-path:none!important}</style></noscript>
 <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ClothingStore","@id":"https://gokywebs.com/demo/ngindumentariadeportiva/#negocio","name":"NG indumentaria deportiva","description":"Uniformes deportivos: camisetas y shorts de fútbol, conjuntos de básquet, vóley y hockey, camperas y pantalones.","url":"https://gokywebs.com/demo/ngindumentariadeportiva/","telephone":"+5493764838258","image":"https://gokywebs.com/demo/ngindumentariadeportiva/images/colores-1x1.webp"},{"@type":"WebSite","name":"NG indumentaria deportiva","url":"https://gokywebs.com/demo/ngindumentariadeportiva/","inLanguage":"es-AR"}]}</script>
 </head>
@@ -84,42 +84,9 @@
     </div>
   </section>
 
-  <section class="catalogo-sec" id="catalogo" aria-labelledby="curva-titulo">
+  <section class="catalogo-sec" id="catalogo" aria-labelledby="catalogo-titulo">
     <div class="container container-catalogo">
-      <div class="curva" id="curva" data-curva>
-        <div class="curva-controles">
-          <div class="curva-intro">
-            <p class="kicker">Talles para el equipo</p>
-            <h2 class="h2" id="curva-titulo">¿Cuántos son en el <em>equipo</em>?</h2>
-            <p>Decinos cuántos son y te sugerimos cuántas prendas pedir de cada talle. Después la cargás en cada modelo con un toque.</p>
-          </div>
-          <fieldset class="curva-fila">
-            <legend class="curva-pregunta">Categoría</legend>
-            <div class="segmentado">
-              <label><input type="radio" name="curva-cat" value="ninos"> Niños <small>talles 6 a 16</small></label>
-              <label><input type="radio" name="curva-cat" value="adultos" checked> Adultos <small>talles S a XXL</small></label>
-            </div>
-          </fieldset>
-          <div class="curva-fila">
-            <p class="curva-pregunta"><label for="curva-jugadores">Jugadores</label><output for="curva-jugadores" data-curva-n>15</output></p>
-            <input class="rango" type="range" id="curva-jugadores" min="5" max="30" step="1" value="15" data-curva-rango>
-            <div class="rango-extremos" aria-hidden="true"><span>5</span><span>30</span></div>
-          </div>
-        </div>
-        <div class="curva-resultado" aria-live="polite">
-          <div class="curva-cabecera">
-            <p class="kicker">Curva sugerida</p>
-            <p class="curva-total" data-curva-total><b>15</b> prendas por modelo</p>
-          </div>
-          <div class="barras" data-curva-barras></div>
-          <p class="curva-nota">Es una estimación: ajustala con los talles reales de tu equipo antes de enviar el pedido.</p>
-          <div class="curva-acciones">
-            <button type="button" class="btn btn-cta" data-curva-usar>Usar esta curva en mi pedido</button>
-            <a class="link" data-curva-wsp href="https://wa.me/5493764838258?text=Hola%21%20Quiero%20consultar%20por%20los%20talles%20de%20mi%20equipo." target="_blank" rel="noopener">Consultar talles por WhatsApp</a>
-          </div>
-        </div>
-      </div>
-
+      <h2 class="sr-only" id="catalogo-titulo">Catálogo</h2>
       <div class="catalogo" data-catalogo>
         <aside class="filtros" id="filtros" aria-label="Filtros del catálogo">
           <div class="filtros-head">
@@ -155,6 +122,44 @@
           </div>
           <div class="catalogo-grid" data-grid></div>
           <button type="button" class="btn btn-ghost vermas" data-vermas hidden>Ver más</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="talles-sec" id="talles" aria-labelledby="curva-titulo">
+    <div class="container container-catalogo">
+      <div class="curva" id="curva" data-curva>
+        <div class="curva-controles">
+          <div class="curva-intro">
+            <p class="kicker">Talles para el equipo</p>
+            <h2 class="h2" id="curva-titulo">¿Cuántos son en el <em>equipo</em>?</h2>
+            <p>Decinos cuántos son y te sugerimos cuántas prendas pedir de cada talle. Después la cargás en cada modelo con un toque.</p>
+          </div>
+          <fieldset class="curva-fila">
+            <legend class="curva-pregunta">Categoría</legend>
+            <div class="segmentado">
+              <label><input type="radio" name="curva-cat" value="ninos"> Niños <small>talles 6 a 16</small></label>
+              <label><input type="radio" name="curva-cat" value="adultos" checked> Adultos <small>talles S a XXL</small></label>
+            </div>
+          </fieldset>
+          <div class="curva-fila">
+            <p class="curva-pregunta"><label for="curva-jugadores">Jugadores</label><output for="curva-jugadores" data-curva-n>15</output></p>
+            <input class="rango" type="range" id="curva-jugadores" min="5" max="30" step="1" value="15" data-curva-rango>
+            <div class="rango-extremos" aria-hidden="true"><span>5</span><span>30</span></div>
+          </div>
+        </div>
+        <div class="curva-resultado" aria-live="polite">
+          <div class="curva-cabecera">
+            <p class="kicker">Curva sugerida</p>
+            <p class="curva-total" data-curva-total><b>15</b> prendas por modelo</p>
+          </div>
+          <div class="barras" data-curva-barras></div>
+          <p class="curva-nota">Es una estimación: ajustala con los talles reales de tu equipo antes de enviar el pedido.</p>
+          <div class="curva-acciones">
+            <button type="button" class="btn btn-cta" data-curva-usar>Usar esta curva en mi pedido</button>
+            <a class="link" data-curva-wsp href="https://wa.me/5493764838258?text=Hola%21%20Quiero%20consultar%20por%20los%20talles%20de%20mi%20equipo." target="_blank" rel="noopener">Consultar talles por WhatsApp</a>
+          </div>
         </div>
       </div>
     </div>
