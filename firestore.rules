@@ -66,6 +66,35 @@ service cloud.firestore {
       allow create: if true;           // el webhook de MP (sin login) carga suscriptores
       allow read, update, delete: if isAdmin();   // solo Pablo lista/edita/elimina
     }
+    // Errores de las webs de los clientes (pestaña Errores del admin). Los escribe
+    // err/log.php sin login (mismo patrón que el webhook de MP): solo CREAR, con
+    // campos y largos acotados. Leer y borrar es solo del admin.
+    match /errores_web/{doc} {
+      allow create: if request.resource.data.keys().hasOnly(['site', 'tipo', 'nivel', 'msg', 'src', 'line', 'col', 'stack', 'url', 'ua', 'hash', 'at'])
+                    && request.resource.data.site is string && request.resource.data.site.size() <= 80
+                    && request.resource.data.tipo in ['error', 'promesa', 'recurso', 'fetch']
+                    && request.resource.data.nivel in ['alto', 'bajo']
+                    && request.resource.data.msg is string && request.resource.data.msg.size() <= 400
+                    && request.resource.data.src is string && request.resource.data.src.size() <= 300
+                    && request.resource.data.stack is string && request.resource.data.stack.size() <= 1200
+                    && request.resource.data.url is string && request.resource.data.url.size() <= 200
+                    && request.resource.data.ua is string && request.resource.data.ua.size() <= 160
+                    && request.resource.data.hash is string && request.resource.data.hash.size() <= 16
+                    && request.resource.data.line is int && request.resource.data.col is int
+                    && request.resource.data.at is timestamp;
+      allow read, delete: if isAdmin();
+    }
+    // Señal de vida de cada web (un doc por dominio, id = dominio). La escribe err/log.php
+    // una vez por día sin login; sirve para que la web aparezca en el panel aunque no falle.
+    match /errores_pings/{doc} {
+      allow create, update: if request.resource.data.keys().hasOnly(['dominio', 'at'])
+                            && request.resource.data.dominio is string && request.resource.data.dominio == doc
+                            && doc.size() <= 80
+                            && request.resource.data.at is timestamp;
+      allow read, delete: if isAdmin();
+    }
+    // Por web: desde cuándo están "resueltos" sus errores y si está oculta (botones del admin).
+    match /errores_sitios/{doc} { allow read, write: if isAdmin(); }
     match /completados/{doc}   { allow read, write: if isAdmin(); }
     match /tareas/{doc}        { allow read, write: if isAdmin(); }
     match /resenas/{doc} {

@@ -229,11 +229,6 @@ textarea:focus {
     background: var(--bg);
 }
 
-.user-email {
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
 .tabs-salir {
     background: transparent;
     border: 1px solid var(--border);
@@ -2034,8 +2029,6 @@ body.modal-open { overflow: hidden; }
 /* ── RESPONSIVE MOBILE ── */
 @media (max-width: 768px) {
 
-    .user-email { display: none; }
-
     /* Todas las pestañas entran: la barra scrollea horizontal en vez de
        esconder algunas. El spacer no tiene sentido en una fila que scrollea. */
     .tab-nav {
@@ -2753,3 +2746,40 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 #mantFacturacion .table-wrapper { margin-bottom: 22px; }
 #mantFacturacion .clients-table { min-width: 880px; }
 #mantFacturacion .actions-col .btn-ghost { white-space: nowrap; }
+
+/* ── Pestaña Errores: un renglón por web, cerrado; rojo solo si hay algo importante ── */
+.pill-count--alerta { background: var(--danger); color: #fff; }
+.err-controles { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.err-site { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 10px; }
+.err-site--alerta { border-color: rgba(239, 68, 68, .45); }
+.err-head { display: flex; align-items: center; gap: 12px; padding: 4px 12px 4px 4px; }
+.err-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; background: none; border: 0; color: inherit; font: inherit; text-align: left; padding: 12px; cursor: pointer; border-radius: var(--radius-sm); }
+.err-toggle:hover { background: rgba(255, 255, 255, .03); }
+.err-dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.err-site--alerta .err-dot { background: var(--danger); }
+.err-nombre { font-weight: 600; }
+.err-nombre small, .err-estado small { color: var(--text-muted); font-weight: 400; }
+.err-estado { margin-left: auto; color: var(--text-muted); font-size: 13px; text-align: right; }
+.err-site--alerta .err-estado { color: #FCA5A5; font-weight: 600; }
+.err-acciones { display: flex; gap: 8px; flex: none; }
+.err-acciones .btn-ghost { white-space: nowrap; }
+.err-acciones .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
+.err-detalle { padding: 4px 16px 14px 34px; border-top: 1px solid var(--border); }
+.err-lista { list-style: none; display: grid; gap: 10px; margin-top: 12px; }
+.err-item-msg { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; word-break: break-word; }
+.err-item--alto .err-item-msg { color: #FCA5A5; }
+.err-item--resuelto .err-item-msg { color: var(--text-muted); text-decoration: line-through; }
+.err-item-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+@media (max-width: 768px) {
+    .err-head { flex-wrap: wrap; }
+    .err-toggle { flex-basis: 100%; flex-wrap: wrap; }
+    .err-estado { margin-left: 22px; text-align: left; flex-basis: 100%; }
+    .err-acciones { padding: 0 8px 10px 22px; }
+    .err-detalle { padding-left: 16px; }
+}
+.err-site--sinsenal .err-dot { background: var(--text-muted); opacity: .6; }
+.err-senal { color: var(--text-muted); font-size: 12px; margin-top: 12px; }
+.err-detalle code { background: rgba(255, 255, 255, .06); padding: 1px 6px; border-radius: 6px; font-size: 12px; word-break: break-all; }
+.err-otras { margin-top: 22px; }
+.err-otras > summary { cursor: pointer; color: var(--text-muted); font-size: 14px; padding: 8px 2px; }
+.err-otras > summary small { font-size: 12px; }

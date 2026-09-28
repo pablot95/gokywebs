@@ -19,9 +19,9 @@
             <button class="tab-btn" data-tab="metricas">📊 Métricas</button>
             <button class="tab-btn" data-tab="mantenimiento">🔧 Mantenimiento <span class="pill-count" id="countMantenimiento">0</span></button>
             <button class="tab-btn" data-tab="inversion">💰 Inversión</button>
+            <button class="tab-btn" data-tab="errores">🐞 Errores <span class="pill-count pill-count--alerta" id="countErrores" hidden>0</span></button>
             <div class="tab-spacer"></div>
             <button class="tab-btn tab-btn--secondary tab-btn--completados" data-tab="completados">Completados <span class="pill-count" id="countCompletados">0</span></button>
-            <span id="userEmail" class="user-email"></span>
             <button id="logoutBtn" class="tabs-salir" title="Cerrar sesión">Salir</button>
         </nav>
 
@@ -460,6 +460,23 @@
             </div>
             <div class="seg-views" id="inversionSemanas"></div>
             <div id="inversionContent"><p class="muted">Cargando…</p></div>
+        </section>
+
+        <!-- Tab: Errores — un renglón por web, cerrado. Solo llama la atención si hay
+             un error importante sin resolver. Los errores los manda err/err.js (una
+             línea en el <head> de cada web) a err/log.php → Firestore `errores_web`. -->
+        <section class="panel tab-panel" id="tabErrores" hidden>
+            <div class="panel-header">
+                <div>
+                    <h1>Errores</h1>
+                    <p class="muted">Cada web avisa sola cuando algo falla. Acá ves solo lo importante; abrí una web para ver el detalle. "Marcar resueltos" deja el contador en cero y habilita el mensaje para el cliente.</p>
+                </div>
+                <div class="err-controles">
+                    <select id="erroresMes" class="mes-select" aria-label="Mes"></select>
+                    <button type="button" class="btn-ghost" id="erroresRecargarBtn">Actualizar</button>
+                </div>
+            </div>
+            <div id="erroresLista"><p class="muted">Cargando…</p></div>
         </section>
 
         <!-- Tab: Completados -->

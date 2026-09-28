@@ -24,3 +24,7 @@ facturador/data/*
 
 # Config local de Claude Code (rutas absolutas de esta máquina, no del proyecto)
 .claude/
+
+# Topes anti-spam de err/log.php (se regeneran solos)
+err/data/*
+!err/data/.htaccess

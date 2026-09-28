@@ -14,7 +14,10 @@ import {
     query,
     orderBy,
     serverTimestamp,
-    writeBatch
+    writeBatch,
+    getDocs,
+    where,
+    Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const TYPE_LABELS = { landing: 'Landing Page', 'web-completa': 'Web Completa', ecommerce: 'E-commerce', inmobiliaria: 'Inmobiliaria' };
@@ -38,8 +41,8 @@ onAuthStateChanged(auth, (user) => {
         return;
     }
     currentUser = user;
-    document.getElementById("userEmail").textContent = user.email || "";
     initRealtime();
+    cargarErrores({ silencioso: true });
     sincronizarNoLeidosWabot();
 });
 
@@ -91,6 +94,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         document.body.classList.toggle("propuestas-tab", activeTab === "propuestas");
         document.getElementById("tabMantenimiento").hidden = activeTab !== "mantenimiento";
         document.getElementById("tabInversion").hidden     = activeTab !== "inversion";
+        document.getElementById("tabErrores").hidden       = activeTab !== "errores";
         if (activeTab === "calendario") renderCal();
         if (activeTab === "propuestas") sincronizarAvisosBoceto();
         if (activeTab === "seguimientos") { renderSeg(); sincronizarPresentados(); }
@@ -99,6 +103,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
         if (activeTab === "wabot") { abrirWabot(); requestAnimationFrame(ajustarAltoWabot); }
         if (activeTab === "mantenimiento") renderMantenimiento();
         if (activeTab === "inversion") abrirInversion();
+        if (activeTab === "errores") cargarErrores();
         if (tabAnterior === "wabot" && activeTab !== "wabot") sincronizarNoLeidosWabot();
     });
 });
@@ -252,6 +257,264 @@ async function abrirInversion() {
     renderInversion();
 }
 document.getElementById("inversionRecargarBtn")?.addEventListener("click", abrirInversion);
+
+/* ── Errores de las webs (pestaña Errores) ──
+   Cada web manda sus errores con err/err.js → err/log.php → Firestore `errores_web`.
+   La lista de webs sale de err/sitios.php (una línea por web nueva). Acá se
+   agrupan por error, se cuentan solo los IMPORTANTES (nivel "alto") y se arma el
+   mensaje para el cliente. "Resueltos" = `errores_sitios/{web}.resueltoHasta`:
+   lo anterior a esa fecha ya no cuenta como pendiente. */
+let erroresDatos = null;     // { sitios: [...], docs: [...], resueltos: Map(id -> Date) }
+let erroresMes = null;       // "YYYY-MM" elegido
+const erroresAbiertos = new Set();
+
+function erroresMesActual() {
+    const h = new Date();
+    return h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0");
+}
+function erroresMesNombre(clave) {
+    const [y, m] = clave.split("-").map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+}
+function erroresLlenarMeses() {
+    const sel = document.getElementById("erroresMes");
+    if (!sel || sel.options.length) return;
+    const h = new Date();
+    for (let i = 0; i < 6; i++) {
+        const d = new Date(h.getFullYear(), h.getMonth() - i, 1);
+        const clave = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+        sel.add(new Option(erroresMesNombre(clave), clave));
+    }
+    sel.value = erroresMes || erroresMesActual();
+}
+
+async function cargarErrores({ silencioso = false } = {}) {
+    if (!currentUser) return;
+    erroresLlenarMeses();
+    const sel = document.getElementById("erroresMes");
+    // En la carga inicial (solo para el globito del tab) siempre es el mes actual.
+    erroresMes = silencioso ? erroresMesActual() : (sel?.value || erroresMesActual());
+    const cont = document.getElementById("erroresLista");
+    if (!silencioso && cont && !erroresDatos) cont.innerHTML = '<p class="muted">Cargando…</p>';
+    try {
+        const [y, m] = erroresMes.split("-").map(Number);
+        const desde = Timestamp.fromDate(new Date(y, m - 1, 1));
+        const hasta = Timestamp.fromDate(new Date(y, m, 1));
+        const [snapErr, snapRes, snapPings] = await Promise.all([
+            getDocs(query(collection(db, "errores_web"), where("at", ">=", desde), where("at", "<", hasta))),
+            getDocs(collection(db, "errores_sitios")),
+            getDocs(collection(db, "errores_pings")),
+        ]);
+        const resueltos = new Map();
+        const ocultos = new Set();
+        snapRes.forEach(d => {
+            const x = d.data();
+            if (x.resueltoHasta?.toDate) resueltos.set(d.id, x.resueltoHasta.toDate());
+            if (x.oculto) ocultos.add(d.id);
+        });
+        const pings = new Map();
+        snapPings.forEach(d => { const t = d.data().at; if (t?.toDate) pings.set(d.id, t.toDate()); });
+        erroresDatos = { docs: snapErr.docs.map(d => d.data()), resueltos, ocultos, pings };
+    } catch (e) {
+        console.error(e);
+        if (!silencioso && cont && !erroresDatos) cont.innerHTML = '<p class="muted">No se pudo cargar: ' + escapeHtml(e.message) + '</p>';
+        return;
+    }
+    if (!silencioso || activeTab === "errores") renderErrores();
+    else actualizarBadgeErrores();
+}
+
+// "https://www.Foo.com/algo" -> "foo.com"
+function erroresDominio(raw) {
+    const d = String(raw || "").trim().toLowerCase().replace(/^[a-z]+:\/\//, "").replace(/^www\./, "").split(/[\/?#:\s]/)[0];
+    return d.includes(".") ? d : "";
+}
+
+// Resumen por web: errores agrupados, cuántos importantes quedan sin resolver.
+// Las webs esperadas salen solas de los dominios cargados en clientes, completados y
+// mantenimiento; las que avisan y no coinciden con ninguno van aparte ("Otras webs").
+function erroresResumen() {
+    const { docs, resueltos, ocultos, pings } = erroresDatos;
+    const porWeb = new Map();
+    for (const c of [...clients, ...completados, ...mantenimiento]) {
+        const dom = erroresDominio(c.dominio || c.web || c.url);
+        if (!dom || porWeb.has(dom)) continue;
+        porWeb.set(dom, { id: dom, nombre: c.nombre || c.proyecto || dom, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
+    }
+    // A qué web pertenece un host que avisó: el dominio de un cliente (o un subdominio) o él mismo.
+    const claveDe = (host) => {
+        for (const dom of porWeb.keys()) if (host === dom || host.endsWith("." + dom)) return dom;
+        if (!porWeb.has(host)) porWeb.set(host, { id: host, nombre: host, dominio: host, esCliente: false, senal: null, grupos: new Map() });
+        return host;
+    };
+    for (const [host, t] of pings) {
+        const w = porWeb.get(claveDe(host));
+        if (!w.senal || t > w.senal) w.senal = t;
+    }
+    for (const d of docs) {
+        const w = porWeb.get(claveDe(d.site));
+        const at = d.at?.toDate ? d.at.toDate() : new Date(0);
+        if (!w.senal || at > w.senal) w.senal = at;
+        const pendiente = !resueltos.has(w.id) || at > resueltos.get(w.id);
+        let g = w.grupos.get(d.hash);
+        if (!g) { g = { msg: d.msg, tipo: d.tipo, nivel: d.nivel, url: d.url, src: d.src, line: d.line, count: 0, pend: 0, last: at }; w.grupos.set(d.hash, g); }
+        g.count++;
+        if (pendiente) g.pend++;
+        if (at > g.last) g.last = at;
+    }
+    return [...porWeb.values()].map(w => {
+        const grupos = [...w.grupos.values()].sort((a, b) => b.last - a.last);
+        const altos = grupos.filter(g => g.nivel === "alto");
+        return {
+            ...w, grupos,
+            altos: altos.length,
+            altosPend: altos.filter(g => g.pend > 0).length,
+            menores: grupos.length - altos.length,
+        };
+    }).filter(w => !ocultos.has(w.id))
+      .sort((a, b) => b.altosPend - a.altosPend || String(a.nombre).localeCompare(String(b.nombre), "es"));
+}
+
+// Los dominios de los clientes llegan por snapshots aparte: cuando cambian, se reagrupa lo de Errores.
+function refrescarErroresPorClientes() {
+    if (!erroresDatos) return;
+    if (activeTab === "errores") renderErrores(); else actualizarBadgeErrores();
+}
+
+function actualizarBadgeErrores() {
+    const el = document.getElementById("countErrores");
+    if (!el || !erroresDatos || erroresMes !== erroresMesActual()) return;
+    const n = erroresResumen().reduce((t, w) => t + w.altosPend, 0);
+    el.textContent = n;
+    el.hidden = n === 0;
+}
+
+// Mensaje para mandarle al cliente. Solo existe si no queda nada importante sin resolver:
+// no se puede copiar un "ya fue solucionado" mientras haya algo pendiente.
+function erroresMensajeCliente(w) {
+    const mes = erroresMesNombre(erroresMes);
+    const donde = w.dominio ? " (" + w.dominio + ")" : "";
+    if (w.altos === 0) {
+        return "¡Hola! Te cuento que durante " + mes + " no se registraron errores en tu web" + donde + ". Todo funcionó con normalidad y seguimos monitoreándola para que siga así. Cualquier cosa que notes o quieras cambiar, escribime.";
+    }
+    const uno = w.altos === 1;
+    return "¡Hola! Te cuento que durante " + mes + " detectamos " + (uno ? "un inconveniente puntual" : w.altos + " inconvenientes puntuales") + " en tu web" + donde + ", pero " + (uno ? "ya fue solucionado" : "ya fueron solucionados") + " a tiempo. Seguimos monitoreándola para que todo siga en orden. Cualquier duda, escribime.";
+}
+
+function erroresHtmlWeb(w) {
+    const fechaHora = (d) => d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    const sinSenal = !w.senal;   // ni un ping ni un error: el script todavía no llegó a esta web
+    const estado = w.altosPend > 0 ? "alerta" : (sinSenal ? "sinsenal" : "ok");
+    const titulo = w.altosPend > 0
+        ? w.altosPend + (w.altosPend === 1 ? " error importante sin resolver" : " errores importantes sin resolver")
+        : (sinSenal ? "Sin señal todavía" : (w.altos > 0 ? "Todo resuelto" : "Sin errores"));
+    const nota = w.altosPend === 0 && w.altos > 0 ? w.altos + (w.altos === 1 ? " solucionado" : " solucionados") : "";
+    const abierto = erroresAbiertos.has(w.id);
+    const filas = w.grupos.map(g => (
+        '<li class="err-item err-item--' + escapeHtml(g.nivel) + (g.pend === 0 ? " err-item--resuelto" : "") + '">' +
+          '<div class="err-item-msg">' + escapeHtml(g.msg) + '</div>' +
+          '<div class="err-item-meta">' +
+            (g.nivel === "alto" ? "Importante" : "Menor") + " · " + escapeHtml(g.tipo) + " · " +
+            g.count + (g.count === 1 ? " vez" : " veces") + " · última " + fechaHora(g.last) +
+            (g.url ? " · " + escapeHtml(g.url) : "") + (g.pend === 0 ? " · resuelto" : "") +
+          '</div></li>'
+    )).join("");
+    const vacio = sinSenal
+        ? '<p class="muted">Esta web todavía no avisó nunca. Pegá <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code> en su &lt;head&gt; y entrá una vez a la web; los sitios de prueba (vercel.app, localhost) no cuentan, tiene que estar en su dominio.</p>'
+        : '<p class="muted">Ningún error registrado en ' + escapeHtml(erroresMesNombre(erroresMes)) + '.</p>';
+    const copiarOff = w.altosPend > 0 || sinSenal;
+    const copiarMotivo = w.altosPend > 0 ? "Marcá los errores como resueltos antes de avisarle al cliente" : "Todavía no hay señal de esta web";
+    return '<div class="err-site err-site--' + estado + '" data-web="' + escapeHtml(w.id) + '">' +
+      '<div class="err-head">' +
+        '<button type="button" class="err-toggle" data-err-toggle aria-expanded="' + abierto + '">' +
+          '<span class="err-dot" aria-hidden="true"></span>' +
+          '<span class="err-nombre">' + escapeHtml(w.nombre) + (w.dominio && w.dominio !== w.nombre ? ' <small>' + escapeHtml(w.dominio) + '</small>' : "") + '</span>' +
+          '<span class="err-estado">' + escapeHtml(titulo) + (nota ? ' <small>· ' + nota + '</small>' : "") +
+            (w.menores ? ' <small>· ' + w.menores + (w.menores === 1 ? " aviso menor" : " avisos menores") + '</small>' : "") + '</span>' +
+        '</button>' +
+        '<div class="err-acciones">' +
+          (w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
+          (!w.esCliente ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista (no es un cliente tuyo)">Ocultar</button>' : "") +
+          (w.esCliente ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
+        '</div>' +
+      '</div>' +
+      '<div class="err-detalle"' + (abierto ? "" : " hidden") + '>' +
+        (w.senal ? '<p class="err-senal">Última señal: ' + fechaHora(w.senal) + '</p>' : "") +
+        (filas ? '<ul class="err-lista">' + filas + '</ul>' : vacio) +
+      '</div></div>';
+}
+
+function renderErrores() {
+    const cont = document.getElementById("erroresLista");
+    if (!cont || !erroresDatos) return;
+    actualizarBadgeErrores();
+    const webs = erroresResumen();
+    const clientes = webs.filter(w => w.esCliente);
+    const otras = webs.filter(w => !w.esCliente);
+    if (!webs.length) {
+        cont.innerHTML = '<p class="muted">Todavía no hay webs. Cargá el dominio de cada cliente (campo Dominio) y pegá en el &lt;head&gt; de su web: <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code>. Aparecen solas.</p>';
+        return;
+    }
+    const otrasAbiertas = !!cont.querySelector(".err-otras")?.open;
+    const otrasPend = otras.reduce((t, w) => t + w.altosPend, 0);
+    cont.innerHTML =
+        (clientes.length ? clientes.map(erroresHtmlWeb).join("") : '<p class="muted">Ningún cliente tiene dominio cargado todavía.</p>') +
+        (otras.length
+            ? '<details class="err-otras"' + (otrasPend > 0 || otrasAbiertas ? " open" : "") + '>' +
+              '<summary>Otras webs detectadas <span class="pill-count">' + otras.length + '</span><small class="muted"> · avisaron pero su dominio no coincide con ningún cliente</small></summary>' +
+              otras.map(erroresHtmlWeb).join("") + '</details>'
+            : "");
+}
+
+document.getElementById("erroresRecargarBtn")?.addEventListener("click", () => cargarErrores());
+document.getElementById("erroresMes")?.addEventListener("change", () => cargarErrores());
+document.getElementById("erroresLista")?.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button");
+    const box = btn?.closest(".err-site");
+    if (!btn || !box || !erroresDatos) return;
+    const id = box.dataset.web;
+    if (btn.hasAttribute("data-err-toggle")) {
+        if (erroresAbiertos.has(id)) erroresAbiertos.delete(id); else erroresAbiertos.add(id);
+        const abierto = erroresAbiertos.has(id);
+        btn.setAttribute("aria-expanded", String(abierto));
+        box.querySelector(".err-detalle").hidden = !abierto;
+    } else if (btn.hasAttribute("data-err-resolver")) {
+        btn.disabled = true;
+        try {
+            const ahora = Timestamp.now();
+            await setDoc(doc(db, "errores_sitios", id), { resueltoHasta: ahora, updatedAt: serverTimestamp() }, { merge: true });
+            erroresDatos.resueltos.set(id, ahora.toDate());
+            renderErrores();
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            alert("No se pudo marcar como resuelto.");
+        }
+    } else if (btn.hasAttribute("data-err-ocultar")) {
+        btn.disabled = true;
+        try {
+            await setDoc(doc(db, "errores_sitios", id), { oculto: true, updatedAt: serverTimestamp() }, { merge: true });
+            erroresDatos.ocultos.add(id);
+            renderErrores();
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            alert("No se pudo ocultar.");
+        }
+    } else if (btn.hasAttribute("data-err-copiar")) {
+        const w = erroresResumen().find(x => x.id === id);
+        if (!w) return;
+        const original = btn.textContent;
+        try {
+            await writeTextToClipboard(erroresMensajeCliente(w));
+            btn.textContent = "¡Copiado!";
+        } catch (err) {
+            console.error(err);
+            btn.textContent = "No se pudo copiar";
+        }
+        setTimeout(() => { btn.textContent = original; }, 1600);
+    }
+});
 
 function renderInversion() {
     const chips = document.getElementById("inversionSemanas");
@@ -1672,6 +1935,7 @@ function initRealtime() {
     onSnapshot(q, (snap) => {
         clients = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         clientesCargados = true;
+        refrescarErroresPorClientes();
         render();
         // Mantenimiento lista las webs entregadas y cruza las suscripciones con los clientes.
         renderMantenimiento();
@@ -1714,6 +1978,7 @@ function initRealtime() {
     const qComp = query(collection(db, "completados"), orderBy("completadoAt", "desc"));
     onSnapshot(qComp, (snap) => {
         completados = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refrescarErroresPorClientes();
         renderCompletados();
         if (enMetrica("stats")) renderStats();
         const el = document.getElementById("countCompletados");
@@ -1775,6 +2040,7 @@ function initRealtime() {
         // tipoEvento desconocido no se muestra ni como suscriptor ni como aviso.
         mantenimientoAvisos = docsMant.filter(d => d.tipoEvento === "baja" || d.tipoEvento === "pausa");
         mantenimiento = docsMant.filter(d => !d.tipoEvento);
+        refrescarErroresPorClientes();
         // Pinta la tabla y el contador del tab (suscriptores activos, sin las bajas).
         renderMantenimiento();
         // Clientes cruza la suscripción con Mantenimiento (estado, ID de Mercado Pago, bajas).
