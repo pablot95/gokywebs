@@ -551,6 +551,12 @@ function validarPaso1() {
         }
     });
 
+    const instagram = document.getElementById('instagram');
+    if (instagram && instagram.value.trim().length > LIMITES.instagram) {
+        markError(instagram, `Demasiado largo: máximo ${LIMITES.instagram} caracteres.`);
+        if (!firstError) firstError = instagram;
+    }
+
     if (!telefonoInput.hidden) {
         const telefonoDigits = telefonoInput.value.replace(/\D/g, '');
         if (!telefonoInput.value.trim()) {
@@ -648,6 +654,8 @@ function buildPayload() {
         nombre: get('nombre'),
         nombre_negocio: get('nombre_negocio'),
         resumen: get('resumen'),
+        // Opcional (28-sep): el servidor lo deja como usuario, sin @ ni link.
+        instagram: get('instagram'),
         colores,
         // Paso 2 (10-sep). Van siempre, aunque estén vacíos: así el servidor
         // sabe que el formulario ya preguntó la referencia y no la pide por chat.
@@ -686,8 +694,8 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre: 80, nombre_negocio: 80, resumen: 600, colores: 200, objetivo_otro: 120, estilo: 40, referencia: 300, incluir: 600 };
-const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
+const LIMITES = { nombre: 80, nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, objetivo_otro: 120, estilo: 40, referencia: 300, incluir: 600 };
+const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
     objetivo_otro: 'qué querés lograr', estilo: 'el estilo de página', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
@@ -873,26 +881,16 @@ objetivoOtroInput?.addEventListener('input', () => quitarError(objetivoOtroInput
 
 /* Estilo de página: la descripción de cada estilo (data-desc de su <option>)
  * va en la línea de abajo y cambia con lo que se elige. Solo el texto: las
- * miniaturas y los sitios de ejemplo se sacaron (Pablo, 27-sep). */
+ * miniaturas y los sitios de ejemplo se sacaron (Pablo, 27-sep), y la barrita
+ * de colores también (confundía, 28-sep). */
 const estiloSelect = document.getElementById('estilo');
 const estiloAyuda = document.getElementById('estiloEjemplo');
 const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
-
-// Y arriba del texto, la barrita con la paleta típica del estilo (28-sep).
-const estiloPaleta = document.getElementById('estiloPaleta');
 
 function pintarEstilo() {
     if (!estiloSelect || !estiloAyuda) return;
     const op = estiloSelect.selectedOptions[0];
     estiloAyuda.textContent = op && op.value ? (op.dataset.desc || '') : ESTILO_AYUDA_INICIAL;
-    if (!estiloPaleta) return;
-    const colores = op && op.value ? (op.dataset.paleta || '').split(',').filter(c => /^#[0-9a-f]{6}$/i.test(c)) : [];
-    estiloPaleta.replaceChildren(...colores.map(c => {
-        const franja = document.createElement('span');
-        franja.style.background = c;
-        return franja;
-    }));
-    estiloPaleta.hidden = !colores.length;
 }
 estiloSelect?.addEventListener('change', pintarEstilo);
 pintarEstilo();
@@ -912,7 +910,7 @@ pintarPlan();
 
 const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
-const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'resumen', 'telefono',
+const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'instagram', 'resumen', 'telefono',
     'color_principal', 'color_secundario', 'color_fondos',
     'objetivo_otro', 'estilo', 'referencia', 'incluir', 'modalidad'];
 

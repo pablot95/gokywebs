@@ -663,15 +663,9 @@ preg_match('/<select id="estilo".*?<\/select>/us', $htmlPrincipal, $selectEstilo
 preg_match_all('/<option value="([^"]+)" data-desc="[^"]+"[^>]*>/u', $selectEstilo[0] ?? '', $mEstilo);
 caso('cada estilo tiene su texto explicativo, y los estilos son los que acepta el servidor',
     $mEstilo[1] === formlead_estilos(), json_encode($mEstilo[1], JSON_UNESCAPED_UNICODE));
-// La barrita de colores (28-sep): cada estilo, menos "No lo sé", con su paleta de hex válidos.
-preg_match_all('/<option value="([^"]+)"[^>]*data-paleta="([^"]+)"/u', $selectEstilo[0] ?? '', $mPaleta);
-$paletasMal = array_values(array_filter($mPaleta[2], function ($p) {
-    return !preg_match('/^(#[0-9A-Fa-f]{6},){2,7}#[0-9A-Fa-f]{6}$/', $p);
-}));
-caso('cada estilo tiene su paleta de colores, y "No lo sé" no',
-    $mPaleta[1] === array_values(array_diff(formlead_estilos(), ['No lo sé'])) && !$paletasMal, json_encode($paletasMal));
-caso('y ya no lleva miniaturas ni sitios de ejemplo',
-    strpos($htmlPrincipal, 'data-mini') === false && strpos($htmlPrincipal, 'data-ejemplo') === false && strpos($htmlPrincipal, 'estiloMini') === false);
+caso('y ya no lleva miniaturas, sitios de ejemplo ni la barrita de colores (confundía, 28-sep)',
+    strpos($htmlPrincipal, 'data-mini') === false && strpos($htmlPrincipal, 'data-ejemplo') === false && strpos($htmlPrincipal, 'estiloMini') === false
+    && strpos($htmlPrincipal, 'data-paleta') === false && strpos($htmlPrincipal, 'estiloPaleta') === false);
 
 // El admin: el "Copiar" del boceto y el boceto mismo tienen una fila para cada cosa.
 $dashObj = (string)file_get_contents(__DIR__ . '/../admin/dashboard.js');
@@ -682,5 +676,43 @@ caso('el "Copiar" del boceto lleva los objetivos, el estilo y lo de sí o sí, c
 caso('y el boceto los muestra para editar y los guarda en sus campos',
     strpos($dashObj, 'id="propEstiloPagina"') !== false && strpos($dashObj, 'data.estilo_pagina = getInputValue("propEstiloPagina")') !== false
     && strpos($dashObj, 'id="propIncluirSiOSi"') !== false && strpos($dashObj, 'data.incluir_si_o_si = getInputValue("propIncluirSiOSi")') !== false);
+
+echo "— 17. Instagram del negocio, opcional (28-sep) —\n";
+
+caso('el formulario tiene el campo, opcional', preg_match('/<input type="text" id="instagram" name="instagram"[^>]*>/', $htmlPrincipal) === 1
+    && strpos($htmlPrincipal, 'Instagram del negocio <span class="optional">') !== false);
+foreach (['@lashojas' => 'lashojas', 'https://www.instagram.com/las.hojas_vivero/?igsh=abc' => 'las.hojas_vivero',
+          'instagram.com/lashojas' => 'lashojas', 'Las Hojas Vivero' => '', 'www.instagram.com/p/xyz' => ''] as $escrito => $usuario) {
+    $eIg = formlead_extras(['instagram' => $escrito]);
+    caso("\"$escrito\" queda como " . ($usuario === '' ? 'vacío (no frena el envío)' : "\"$usuario\""), ($eIg['instagram'] ?? null) === $usuario, json_encode($eIg));
+}
+$motivoIg = null;
+caso('uno de más de 100 caracteres se rechaza en su campo',
+    formlead_extras(['instagram' => str_repeat('a', 101)], $motivoIg) === null && ($motivoIg['campo'] ?? '') === 'instagram');
+caso('el formulario que no lo manda no toca la charla', !array_key_exists('instagram', (array)formlead_extras(['estilo' => 'Minimalista'])));
+
+@unlink(WABOT_DATA . '/conv/5493810009003.json');
+$payloadIg = ['t' => '5493810009003', 'nombre' => 'Marta', 'nombre_negocio' => 'Vivero Las Hojas', 'resumen' => 'Vivero',
+    'colores' => 'Verde', 'modalidad' => 'mensual', 'instagram' => '@las.hojas', 'estilo' => 'Minimalista',
+    'modelos' => [['id' => 'a', 'nombre' => 'Uno'], ['id' => 'b', 'nombre' => 'Dos']]];
+$baseIg = wabot_form_lead_validar($payloadIg);
+formlead_extras_guardar($baseIg, formlead_extras($payloadIg));
+$rIg = wabot_form_lead_procesar($payloadIg, $cfg);
+$convIg = wabot_conv_load('5493810009003');
+caso('la charla queda con el usuario', ($rIg['ok'] ?? false) === true && ($convIg['instagram'] ?? '') === 'las.hojas', (string)($convIg['instagram'] ?? ''));
+$lineasIg = implode("\n", array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convIg['transcript'] ?? [])));
+caso('el transcript lo anota', strpos($lineasIg, 'Instagram: @las.hojas') !== false, $lineasIg);
+caso('sin boceto en Firestore no hay a dónde mandarlo', formlead_instagram_sincronizar('5493810009003') === false);
+// En los tests el boceto no se crea de verdad: se simula el documento.
+$convIg['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/abc';
+wabot_conv_save($convIg);
+caso('y con el boceto creado, se le manda', formlead_instagram_sincronizar('5493810009003') === true);
+@unlink(WABOT_DATA . '/conv/5493810009003.json');
+
+$dashIg = (string)file_get_contents(__DIR__ . '/../admin/dashboard.js');
+caso('el boceto ya no dice "Prospecto · eligió avanzar": muestra el Instagram como link',
+    strpos($dashIg, 'Prospecto · eligió avanzar') === false && strpos($dashIg, 'instagramLinkHTML(p.instagram)') !== false
+    && strpos($dashIg, 'target="_blank" rel="noopener noreferrer" class="prop-instagram"') !== false);
+caso('y el Copiar lo lleva como link', strpos($dashIg, '{ title: "Instagram", value: instagramUrl(p.instagram) }') !== false);
 
 todo_ok();

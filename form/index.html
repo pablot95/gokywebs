@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modelos/wire.css?v=2">
-    <link rel="stylesheet" href="styles.css?v=20260928a">
+    <link rel="stylesheet" href="styles.css?v=20260928-sinpaleta">
 </head>
 <body>
 
@@ -69,6 +69,15 @@
                                 Nombre de tu negocio o marca <span class="req">*</span>
                             </label>
                             <input type="text" id="nombre_negocio" name="nombre_negocio" class="field-input" placeholder="" required>
+                        </div>
+
+                        <!-- Instagram del negocio (28-sep), opcional: wabot/form-lead.php lo
+                             normaliza al usuario (sin @ ni link) y el boceto lo muestra como link. -->
+                        <div class="field-group">
+                            <label class="field-label" for="instagram">
+                                Instagram del negocio <span class="optional">(opcional)</span>
+                            </label>
+                            <input type="text" id="instagram" name="instagram" class="field-input" placeholder="@tunegocio" maxlength="100" autocapitalize="off" autocorrect="off" spellcheck="false">
                         </div>
 
                         <div class="field-group">
@@ -166,21 +175,20 @@
                             <label class="field-label" for="estilo">
                                 Estilo de página <span class="req">*</span>
                             </label>
-                            <!-- Cada opción trae su descripción y su paleta típica (data-paleta, 28-sep):
-                                 script.js muestra abajo la barrita de colores y el texto al elegirla.
-                                 Sin miniaturas ni sitios de ejemplo (Pablo, 27-sep). La lista tiene que
+                            <!-- Cada opción trae su descripción: script.js la muestra abajo al elegirla.
+                                 Sin miniaturas ni sitios de ejemplo (Pablo, 27-sep) ni barrita de colores
+                                 (confundía, 28-sep). La lista tiene que
                                  coincidir con formlead_estilos() de wabot/form-lead.php. -->
                             <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
                                 <option value="" disabled selected>Elegí un estilo</option>
-                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-paleta="#FFFFFF,#F2F2F0,#D6D6D3,#8C8C88,#1C1C1C">Minimalista</option>
-                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-paleta="#111111,#2B2B2B,#FF4D00,#FFD400,#F2F2F2">Moderno y audaz</option>
-                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-paleta="#F6F1E9,#D8C3A5,#B08D57,#4A3F35,#1E1B18">Elegante / premium</option>
-                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-paleta="#FFF4E6,#F4A261,#E76F51,#C44536,#6B4F3A">Cálido y cercano</option>
-                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-paleta="#FF5DA2,#FFC93C,#3EC1D3,#8E6CEF,#7ED957">Colorido y divertido</option>
-                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-paleta="#0B2545,#13315C,#3D5A80,#8DA9C4,#EEF2F6">Corporativo / sobrio</option>
+                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples.">Minimalista</option>
+                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia.">Moderno y audaz</option>
+                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas.">Elegante / premium</option>
+                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable.">Cálido y cercano</option>
+                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos.">Colorido y divertido</option>
+                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista.">Corporativo / sobrio</option>
                                 <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
                             </select>
-                            <div class="estilo-paleta" id="estiloPaleta" aria-hidden="true" hidden></div>
                             <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y te contamos cómo es.</p>
                         </div>
 
@@ -326,6 +334,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260928-paleta"></script>
+    <script type="module" src="script.js?v=20260928-sinpaleta"></script>
 </body>
 </html>

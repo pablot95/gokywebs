@@ -463,25 +463,6 @@ body {
     .color-swatch-input:hover { transform: none; }
 }
 
-/* La paleta del estilo elegido: una barrita con los colores típicos de ese
-   estilo (data-paleta de cada <option>), arriba de su descripción. */
-.estilo-paleta {
-    display: flex;
-    height: 12px;
-    margin-top: 10px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    overflow: hidden;
-}
-
-.estilo-paleta[hidden] {
-    display: none;
-}
-
-.estilo-paleta span {
-    flex: 1;
-}
-
 .other-section-field {
     margin-top: 10px;
     padding: 12px;

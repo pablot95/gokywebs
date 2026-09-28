@@ -1553,6 +1553,24 @@ const OBJETIVO_LABELS = {
     "reservas-turnos": "Sistema de reserva de turnos, citas o alojamientos",
 };
 
+/* Instagram del cliente (28-sep): el formulario lo guarda como usuario, pero
+   bocetos viejos o cargados a mano pueden traer "@usuario" o el link entero. */
+function instagramUsuario(valor) {
+    let t = String(valor ?? "").trim();
+    const enLink = t.match(/instagram\.com\/([A-Za-z0-9._]{1,30})/i);
+    if (enLink) t = enLink[1];
+    t = t.replace(/^@+/, "");
+    return /^[A-Za-z0-9._]{1,30}$/.test(t) && !["p", "reel", "reels", "stories", "explore"].includes(t.toLowerCase()) ? t : "";
+}
+function instagramUrl(valor) {
+    const u = instagramUsuario(valor);
+    return u ? `https://www.instagram.com/${u}/` : "";
+}
+function instagramLinkHTML(valor, extraStyle = "") {
+    const u = instagramUsuario(valor);
+    return u ? `<a href="${instagramUrl(u)}" target="_blank" rel="noopener noreferrer" class="prop-instagram" style="${extraStyle}" title="Abrir el Instagram en otra pestaña">@${escapeHtml(u)} ↗</a>` : "";
+}
+
 const EMPTY_COPY_VALUES = new Set(["", "(no completó)", "(no seleccionó)", "No aplica", "—"]);
 
 function cleanFieldValue(value) {
@@ -3616,7 +3634,9 @@ function renderPropuestas() {
                     ${nombreNegocio
                         ? `<button type="button" class="business-name-copy line-clamp-2" data-business-copy="${escapeHtml(nombreNegocio)}" title="Copiar en minúsculas y sin espacios">${escapeHtml(nombreNegocio)}</button>`
                         : `<strong>—</strong>`}
-                    <span class="prop-origen-badge ${p.esProspecto ? 'prop-origen-badge--prospecto' : ''}">${p.esProspecto ? 'Prospecto · eligió avanzar' : 'Demo / boceto'}</span>
+                    ${instagramUsuario(p.instagram)
+                        ? `<div style="margin-top:5px">${instagramLinkHTML(p.instagram)}</div>`
+                        : (p.esProspecto ? "" : `<span class="prop-origen-badge">Demo / boceto</span>`)}
                     ${slugNegocio(nombreNegocio)
                         ? `<a href="https://gokywebs.com/demo/${encodeURIComponent(slugNegocio(nombreNegocio))}/" target="_blank" rel="noopener noreferrer" class="btn-ghost" style="font-size:11px;padding:2px 7px;margin-top:4px;display:inline-block;text-decoration:none" title="Abrir gokywebs.com/demo/${escapeHtml(slugNegocio(nombreNegocio))}/ en otra pestaña">Ver demo ↗</a>`
                         : ""}
@@ -3885,6 +3905,8 @@ function openPropuestaModal(id) {
             }).join("")}</span>`
             : '<span class="muted">No eligió modelos</span>'}</span></div>
 
+        ${instagramUsuario(p.instagram) ? `<div class="prop-row"><span class="prop-label">Instagram</span><span>${instagramLinkHTML(p.instagram)}</span></div>` : ""}
+
         <label for="propObjetivos">Objetivos de la web</label>
         <textarea id="propObjetivos" rows="2" maxlength="500">${escapeHtml(objetivosTexto)}</textarea>
 
@@ -4119,6 +4141,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
         { title: "Incluir sí o sí", value: cleanFieldValue(p.incluir_si_o_si) },
         { title: "Adicionales elegidos", value: cleanFieldValue(p.adicionales_texto) },
         { title: "Teléfono / WhatsApp (número real para los wa.me del demo)", value: p.telefono || p.contacto_cel || "" },
+        { title: "Instagram", value: instagramUrl(p.instagram) },
         { title: "Tipo de web", value: getPropuestaTipoWeb(p) },
         { title: "Modelos elegidos", value: modelosElegidosParaCopiar(p) },
         { title: "Carpeta local de los modelos", value: modelosElegidosDe(p).length ? MODELOS_CARPETA_LOCAL : "" },

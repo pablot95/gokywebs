@@ -34,6 +34,44 @@ function formlead_objetivos() {
 }
 
 /**
+ * El usuario de Instagram a partir de lo que escriba el cliente: "@lashojas",
+ * "lashojas", "instagram.com/lashojas" o el link entero con ?igsh=. Devuelve
+ * el usuario sin @, o '' si no tiene forma de usuario (el lead no se frena).
+ */
+function formlead_instagram_usuario($texto) {
+    $t = trim((string)$texto);
+    if (preg_match('~instagram\.com/([A-Za-z0-9._]{1,30})~i', $t, $m)) $t = $m[1];
+    $t = ltrim($t, '@ ');
+    return preg_match('/^[A-Za-z0-9._]{1,30}$/', $t) && !in_array(strtolower($t), ['p', 'reel', 'reels', 'stories', 'explore'], true) ? $t : '';
+}
+
+/**
+ * Lo manda al boceto de Firestore, que se crea sin él (wabot_lead_campos no lo
+ * conoce): un PATCH del campo `instagram`, que es el que ya lee el admin.
+ */
+function formlead_instagram_sincronizar($clave) {
+    $clave = preg_replace('/[^0-9A-Za-z]/', '', (string)$clave);
+    if ($clave === '') return false;
+    $conv = wabot_conv_load($clave);
+    $usuario = trim((string)($conv['instagram'] ?? ''));
+    if ($usuario === '' || empty($conv['lead_creado']) || empty($conv['lead_doc'])) return false;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos($clave, 'TEST') !== false) return true;
+    $url = 'https://firestore.googleapis.com/v1/' . $conv['lead_doc'] . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=instagram&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'instagram' => ['stringValue' => $usuario],
+            'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+        ]], JSON_UNESCAPED_UNICODE),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'], CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 20]);
+    $res = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    if ($code >= 200 && $code < 300) return true;
+    if ($code !== 404) wabot_log('error', ['donde' => 'firestore_instagram', 'http' => $code, 'res' => substr((string)$res, 0, 300)]);
+    return false;
+}
+
+/**
  * Los campos del paso 2 que vinieron, limpios. null (con $motivo) si alguno se
  * pasa del tope. El formulario viejo que quedó en caché no los manda: el campo
  * que no viene no aparece en el resultado y la charla no se toca.
@@ -41,7 +79,7 @@ function formlead_objetivos() {
 function formlead_extras($payload, &$motivo = null) {
     $motivo = null;
     $extras = [];
-    foreach (['estilo' => 40, 'referencia' => 300, 'incluir' => 600] as $campo => $max) {
+    foreach (['estilo' => 40, 'referencia' => 300, 'incluir' => 600, 'instagram' => 100] as $campo => $max) {
         if (!array_key_exists($campo, $payload)) continue;
         $valor = is_scalar($payload[$campo]) ? trim((string)$payload[$campo]) : '';
         if (mb_strlen($valor) > $max) {
@@ -53,6 +91,8 @@ function formlead_extras($payload, &$motivo = null) {
     if (isset($extras['estilo']) && !in_array($extras['estilo'], formlead_estilos(), true)) {
         $extras['estilo'] = '';
     }
+    // Instagram (28-sep), opcional: queda el usuario solo; lo que no lo es, vacío.
+    if (isset($extras['instagram'])) $extras['instagram'] = formlead_instagram_usuario($extras['instagram']);
     if (array_key_exists('objetivos', $payload)) {
         /* Llegan como la lista de casillas marcadas. Quedan en el orden del
          * formulario y sin repetir; "Otra" solo cuenta con lo que escribió. No
@@ -151,6 +191,7 @@ function formlead_extras_guardar($base, $extras) {
 
     $partes = [];
     if (($extras['objetivos'] ?? '') !== '')  $partes[] = 'Quiere lograr: ' . $extras['objetivos'];
+    if (($extras['instagram'] ?? '') !== '')  $partes[] = 'Instagram: @' . $extras['instagram'];
     if (($extras['estilo'] ?? '') !== '')     $partes[] = 'Estilo: ' . $extras['estilo'];
     if (($extras['referencia'] ?? '') !== '') $partes[] = 'Referencia: ' . $extras['referencia'];
     if (($extras['incluir'] ?? '') !== '')    $partes[] = 'Incluir sí o sí: ' . $extras['incluir'];
@@ -246,6 +287,8 @@ if ($base !== null) {
 }
 
 $res = wabot_form_lead_procesar($payload, $cfg);
+// Con el boceto ya creado, el Instagram que dejó en el formulario (28-sep).
+if (!empty($res['ok']) && $base !== null) formlead_instagram_sincronizar($base['clave'] ?? '');
 
 if (empty($res['ok']) && !empty($res['reintentar'])) {
     http_response_code(200);

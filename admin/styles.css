@@ -2696,6 +2696,9 @@ body.wabot-tab .admin-main { max-width: none; padding-left: 14px; padding-right:
 }
 .prop-origen-badge { display:inline-block; margin-top:5px; padding:2px 7px; border:1px solid #475569; border-radius:20px; color:#cbd5e1; font-size:10px; font-weight:700; }
 .prop-origen-badge--prospecto { border-color:#22c55e; color:#86efac; background:#14532d55; }
+/* Instagram del cliente (28-sep): link que abre en otra pestaña, en lugar del cartel de prospecto. */
+.prop-instagram { display:inline-block; padding:2px 8px; border:1px solid #db2777; border-radius:20px; color:#f9a8d4; background:#83184355; font-size:11px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.prop-instagram:hover { background:#be185d; color:#fff; }
 
 /* Mantenimiento: links de suscripción de Mercado Pago para mandar a mano (16-sep). */
 .mant-links { background: #0d1830; border: 1px solid #1e2c49; border-radius: 14px; padding: 14px 16px; margin: 0 0 16px; }
