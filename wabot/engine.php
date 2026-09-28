@@ -1342,6 +1342,11 @@ function wabot_salida_sin_avance($mensajes, &$conv, $cfg) {
     foreach (['precio_dado', 'lead_creado', 'pitch_hecho', 'nombre_confirmado'] as $f) {
         $partes[] = (int)!empty($conv[$f]);
     }
+    /* Lo que se entendió del cliente también es avance (27-sep): "Tengo un
+     * negocio" → "Es una logística" llenó el rubro de la ficha, pero el sello
+     * no la miraba y a la segunda pregunta la charla se derivaba. */
+    $ficha = wabot_ficha($conv);
+    foreach (['rubro', 'que_vende', 'objetivo', 'necesidad'] as $c) $partes[] = trim((string)$ficha[$c]);
     $sello = md5(implode('|', $partes));
 
     /* El que PREGUNTA no está trabado: está averiguando. Después del precio,

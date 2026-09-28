@@ -176,6 +176,23 @@ $c10 = conv_ia('5491100000010TEST');
 $r10 = turno('quiero hablar con una persona', $c10, $cfg);
 caso('pedir una persona sigue siendo un corte fijo: OpenAI ni se entera', count(pedidos()) === 0 && ($c10['fase'] ?? '') === 'derivado', json_encode($r10, JSON_UNESCAPED_UNICODE));
 
+/* La charla de prueba de Pablo (27-sep, 22:15): "Hola info" → apertura fija;
+ * "Tengo un negocio" → OpenAI pregunta a qué se dedica; "Es una logística" →
+ * OpenAI volvió a preguntar y el control de "charla sin avance" lo cambió por la
+ * derivación, porque no contaba la ficha como avance. */
+openai_responde([
+    decision(['mensajes' => ['A qué se dedica tu negocio o qué ofrecés?']]),
+    decision(['mensajes' => ['Qué tipo de servicios de logística ofrecés?'], 'ficha' => ['rubro' => 'tu negocio de logística', 'que_vende' => 'servicios de logística']]),
+]);
+$cLog = conv_ia('5491100000041TEST');
+turno('Hola info', $cLog, $cfg);
+turno('Tengo un negocio', $cLog, $cfg);
+$rLog = turno('Es una logística', $cLog, $cfg);
+caso('entender el rubro cuenta como avance: la segunda pregunta no se deriva',
+    $rLog === ['Qué tipo de servicios de logística ofrecés?'] && ($cLog['fase'] ?? '') !== 'derivado', json_encode($rLog, JSON_UNESCAPED_UNICODE));
+caso('las instrucciones traen el ejemplo de la logística: se cotiza directo',
+    strpos(wabot_ia_instrucciones_comportamiento(), '"Es una logística"') !== false);
+
 echo "— 6. Lo que nunca se manda —\n";
 
 foreach ([
