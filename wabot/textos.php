@@ -82,7 +82,8 @@ function wabot_textos_default() {
     // Catálogo + WhatsApp, sin cobro online (Pablo, 18-sep): se cotiza como
     // sitio profesional y la carga de productos va aparte.
     'carga_producto' => '$500',
-    'catalogo_carga' => 'La carga de los productos va aparte: {carga_producto} por producto.',
+    // Texto de Pablo (28-sep): "va aparte" sonaba a que cargar productos siempre se paga.
+    'catalogo_carga' => 'Los productos los podés cargar vos desde el panel. Si querés que hagamos nosotros la carga, tiene un costo de {carga_producto} por producto.',
     'cierre_comparando' => 'Dale. Antes de que decidas, podemos mostrarte cómo podría quedar tu web, gratis: así comparás con algo concreto y no solo con números. Cuando quieras, avisame.',
     /* Lo que no entra en el precio de lista: se nombra el motivo y lo toma el
      * desarrollador (18-sep). Nunca un precio estándar para un proyecto que no
@@ -285,7 +286,13 @@ function wabot_textos_default() {
      * vende: se le avisa quién contesta y lo sigue Pablo (sin nombrarlo: ningún
      * texto del bot lleva nombre propio). */
     'mensaje_conocido' => 'Hola! Acá contesta el asistente automático de Gokywebs, que atiende las consultas nuevas. Le paso tu mensaje al desarrollador ahora y sigue él por acá.',
-    'menu' => "Hola! Gracias por contactarnos.\nHacemos páginas web adaptadas a cada negocio.\nContame un poquito a qué te dedicás y te asesoro según lo que necesitás",
+    /* La bienvenida va en dos mensajes (Pablo, 28-sep): el saludo y, aparte,
+     * las tres opciones. Ver wabot_apertura_mensajes() y, para leer la
+     * respuesta, wabot_menu_contestado(). */
+    'menu' => "Hola! Gracias por contactarnos.\nEn Gokywebs hacemos páginas web adaptadas a cada negocio.",
+    // Eligió "Algo diferente" sin contar qué: se le pregunta qué tiene en mente.
+    'menu_algo_diferente' => 'Contame qué tenés en mente y a qué te dedicás, así te oriento.',
+    'menu_opciones' => "Para orientarte mejor, contame qué tipo de web estás buscando:\n- Una web informativa para presentar tu negocio, empresa o servicios\n- Una tienda online para vender productos, cursos o servicios\n- Algo diferente",
     'menu_vuelve' => 'Hola de nuevo, {nombre}. Retomamos tu consulta: contame en qué quedaste pensando o si querés que arranquemos con la web que hablamos la vez pasada.',
     'mixto' => 'Por lo que me contás necesitarías una web que integre {lista} en un mismo lugar, con su panel para administrarlo todo. Eso se puede hacer, pero al combinar varias cosas el precio no sale de la lista: lo arma el desarrollador según lo que necesites.',
     'mixto_pregunta' => 'Lo querés todo integrado, o preferís arrancar por una sola de esas partes y sumar el resto más adelante?',

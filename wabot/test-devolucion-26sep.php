@@ -49,7 +49,8 @@ caso('Francisco: "algo simple y económico para mostrar nuestro catálogo" cotiz
 caso('la propuesta nombra el catálogo y la imagen es la del sitio profesional',
     mb_stripos($r[0] ?? '', 'con el catálogo de tus productos') !== false
     && ($r[1] ?? '') === wabot_precio_imagen_marcador('landing'), $r[0] ?? '');
-caso('avisa que la carga de productos va aparte', mb_stripos($r[0] ?? '', 'carga de los productos va aparte') !== false, $r[0] ?? '');
+caso('avisa que la carga la puede hacer él o nosotros por un costo (texto de Pablo, 28-sep)',
+    mb_stripos($r[0] ?? '', 'Los productos los podés cargar vos desde el panel. Si querés que hagamos nosotros la carga, tiene un costo de $') !== false, $r[0] ?? '');
 caso('la oferta del primer diseño habla del catálogo', mb_stripos($r[2] ?? '', 'tu catálogo') !== false, $r[2] ?? '');
 caso('la ficha lo anota como catálogo dicho por el cliente',
     wabot_ficha($c)['necesidad'] === 'catalogo' && !empty(wabot_ficha($c)['catalogo_explicito']));

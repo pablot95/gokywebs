@@ -53,7 +53,7 @@ echo "— Apertura y menú —\n";
 $c = conv_nueva();
 clasifica(['saludo']);
 $r = wabot_engine('hola', $c, $cfg);
-caso('saludo → manda el menú', $r === [$cfg['menu']] && $c['fase'] === 'menu');
+caso('saludo → manda la bienvenida en dos mensajes: el saludo y las opciones (28-sep)', $r === [$cfg['menu'], $cfg['menu_opciones']] && $c['fase'] === 'menu');
 
 $c = conv_nueva();
 clasifica(['rubro_landing']);
@@ -88,6 +88,81 @@ caso('pregunta de info en el primer mensaje → responde con los dos pares y pre
 caso('sin tipo cotizado no da montos: explica la suscripción y pregunta a qué se dedica (Pablo, 14-sep)',
     strpos(implode("\n", (array)$r), '$') === false && mb_stripos(implode("\n", (array)$r), 'contame a qué te dedicás') !== false);
 caso('nombra las 3 modalidades, sin montos (19-sep; 3 desde el 26-sep)', stripos($r[0], 'Hay 3 modalidades') !== false, $r[0]);
+
+echo "— La bienvenida y sus tres opciones (28-sep) —\n";
+
+/** Una charla que ya recibió la bienvenida de dos mensajes. */
+function conv_bienvenida($cfg, $clave = '999MENU999') {
+    $c = conv_nueva($clave, ['fase' => 'menu', 'reconocimiento_hecho' => false]);
+    wabot_conv_transcript($c, 'cliente', 'hola');
+    wabot_conv_transcript($c, 'bot', $cfg['menu']);
+    wabot_conv_transcript($c, 'bot', $cfg['menu_opciones']);
+    return $c;
+}
+
+$cMenu = conv_bienvenida($cfg);
+$elecciones = [
+    'Una web informativa' => 'landing', 'la informativa' => 'landing', '1' => 'landing', 'La 1' => 'landing',
+    'la primera' => 'landing', 'opción 1' => 'landing', 'algo para presentar mi negocio' => 'landing',
+    'no quiero vender, solo presentar mi empresa' => 'landing',
+    'Una tienda online' => 'ecommerce', 'la tienda' => 'ecommerce', '2' => 'ecommerce', 'la segunda' => 'ecommerce',
+    'la de vender' => 'ecommerce', 'quiero vender mis productos' => 'ecommerce',
+    'Algo diferente' => 'algo_diferente', 'algo distinto' => 'algo_diferente', '3' => 'algo_diferente',
+    'la última' => 'algo_diferente', 'otra cosa' => 'algo_diferente', 'ninguna de esas' => 'algo_diferente',
+    'hola, quién sos?' => null, 'tengo 3 locales' => null,
+];
+foreach ($elecciones as $dice => $espera) {
+    $v = wabot_menu_contestado($dice, $cMenu, $cfg);
+    caso('"' . $dice . '" → ' . ($espera ?? 'no elige'), $v === $espera, (string)$v);
+}
+$cOtra = conv_nueva('999MENU998', ['fase' => 'menu']);
+wabot_conv_transcript($cOtra, 'bot', $cfg['contame']);
+caso('"la 1" no elige nada si la última pregunta no fue la de la bienvenida', wabot_menu_contestado('la 1', $cOtra, $cfg) === null);
+
+// Con el clasificador (modo gemini).
+$c = conv_bienvenida($cfg);
+clasifica(['elige_landing']);
+$r = wabot_engine('Una web informativa', $c, $cfg);
+caso('la informativa (clasificador) → cotiza el sitio profesional', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['otro']);
+$r = wabot_engine('la 2', $c, $cfg);
+caso('"la 2" sin etiqueta del clasificador → cotiza la tienda, sin preguntar si vende por la web',
+    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && strpos(implode(' ', $r), 'Buscás vender por la web') === false,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_hibrido']);
+$r = wabot_engine('la tienda, hago muebles a medida', $c, $cfg);
+caso('la tienda ya contesta el desempate de mostrar o vender', ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_cursos']);
+$r = wabot_engine('la tienda, para vender mis cursos de maquillaje', $c, $cfg);
+caso('la tienda para vender cursos → plataforma de cursos (gana el tipo concreto)', ($c['tipo'] ?? '') === 'elearning', json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['algo_diferente']);
+$r = wabot_engine('Algo diferente', $c, $cfg);
+caso('algo diferente → pregunta qué tiene en mente, sin cotizar',
+    $r === [$cfg['menu_algo_diferente']] && $c['fase'] === 'algo_diferente' && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Sin IA (Gemini caído): la respuesta se lee igual.
+foreach (['la primera' => 'landing', 'Una tienda online' => 'ecommerce'] as $dice => $tipo) {
+    $c = conv_bienvenida($cfg);
+    $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
+    $r = wabot_engine($dice, $c, $cfg);
+    caso('sin IA, "' . $dice . '" → cotiza ' . $tipo, ($c['tipo'] ?? '') === $tipo && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+}
+$c = conv_bienvenida($cfg);
+$GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
+$r = wabot_engine('la 3', $c, $cfg);
+caso('sin IA, "la 3" → pregunta qué tiene en mente', $r === [$cfg['menu_algo_diferente']] && $c['fase'] === 'algo_diferente', json_encode($r, JSON_UNESCAPED_UNICODE));
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
+
+caso('la bienvenida repetida se reformula en vez de derivar',
+    wabot_texto_reformulado([$cfg['menu'], $cfg['menu_opciones']], $cfg) === (string)$cfg['contame']);
 
 echo "— pago_generico: las 3 modalidades y cómo se paga cada una (10-sep; 26-sep) —\n";
 
@@ -369,7 +444,7 @@ echo "— Fallback y reset —\n";
 $c = conv_nueva();
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
 $r = wabot_engine('hola', $c, $cfg);
-caso('Gemini caído en el primer mensaje → menú igual', $r === [$cfg['menu']] && $c['fase'] === 'menu');
+caso('Gemini caído en el primer mensaje → menú igual', $r === [$cfg['menu'], $cfg['menu_opciones']] && $c['fase'] === 'menu');
 
 $r = wabot_engine('soy abogado', $c, $cfg);
 caso('Gemini caído después → reconoce un rubro claro y vende sin derivar',
@@ -424,7 +499,7 @@ $c = conv_nueva(); $c['fase'] = 'precio'; $c['tipo'] = 'landing';
 $c['ultimo_ts'] = time() - 10 * 86400; // hace 10 días
 clasifica(['saludo']);
 $r = wabot_engine('hola de nuevo', $c, $cfg);
-caso('charla de hace 10 días → arranca de cero con el menú', $r === [$cfg['menu']] && $c['fase'] === 'menu' && $c['tipo'] === null);
+caso('charla de hace 10 días → arranca de cero con el menú', $r === [$cfg['menu'], $cfg['menu_opciones']] && $c['fase'] === 'menu' && $c['tipo'] === null);
 
 echo "— Brief del negocio armado con toda la charla —\n";
 
@@ -1004,7 +1079,7 @@ caso('lo mismo si el que habló fue Pablo', wabot_apertura($c2, $cfg) === $cfg['
 $c3 = conv_nueva();
 clasifica(['saludo']);
 $r = wabot_engine('hola', $c3, $cfg);
-caso('una charla que arranca de cero sí recibe el saludo', $r === [$cfg['menu']]);
+caso('una charla que arranca de cero sí recibe el saludo', $r === [$cfg['menu'], $cfg['menu_opciones']]);
 
 echo "— Una vez en Muestras, no se sale de Muestras —\n";
 
@@ -1265,10 +1340,10 @@ echo "— Mantenimiento sin tipo cotizado: los dos precios —\n";
 $c = conv_nueva();
 clasifica(['pregunta_info'], ['info_keys' => ['mantenimiento']]);
 $r = wabot_engine('tienen mantenimiento?', $c, $cfg);
-caso('sin cotizar dice las dos mensualidades de la lista, el plan anual como alternativa, y pregunta el rubro (19-sep)',
-    strpos($r[0], '$25.000 por mes en sitio profesional') !== false && strpos($r[0], '$35.000 en tienda online') !== false
-    && stripos($r[0], 'el anual') !== false && strpos($r[0], '{') === false
-    && ($r[1] ?? '') === $cfg['menu'], json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('sin cotizar dice las dos mensualidades de la lista, el plan anual como alternativa, y pregunta qué web busca: el saludo antes, las opciones después (19-sep, 28-sep)',
+    ($r[0] ?? '') === $cfg['menu'] && ($r[2] ?? '') === $cfg['menu_opciones'] && count($r) === 3
+    && strpos($r[1], '$25.000 por mes en sitio profesional') !== false && strpos($r[1], '$35.000 en tienda online') !== false
+    && stripos($r[1], 'el anual') !== false && strpos($r[1], '{') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— Negativas nuevas de referencia —\n";
 
@@ -3230,11 +3305,10 @@ caso('el cierre suave ya no dice "escribinos" en tono corporativo',
 // 27-ago: 14 de 32 charlas del día murieron en el saludo, sin una sola
 // respuesta. "Para qué rubro necesitás la web" obliga a traducir el propio
 // negocio a la palabra "rubro"; preguntar qué vende se contesta solo.
-caso('el saludo dice para qué sirve contestar antes de preguntar (2-sep; texto de Pablo, en tres líneas, desde el 21-sep)',
-    $cfg['menu'] === "Hola! Gracias por contactarnos.\nHacemos páginas web adaptadas a cada negocio.\nContame un poquito a qué te dedicás y te asesoro según lo que necesitás"
-    && count(explode("\n", $cfg['menu'])) === 3
-    && stripos($cfg['menu'], 'a qué te dedicás') !== false
-    && stripos($cfg['menu'], 'rubro') === false);
+caso('la bienvenida son dos mensajes con el texto de Pablo: el saludo y las tres opciones (28-sep)',
+    $cfg['menu'] === "Hola! Gracias por contactarnos.\nEn Gokywebs hacemos páginas web adaptadas a cada negocio."
+    && $cfg['menu_opciones'] === "Para orientarte mejor, contame qué tipo de web estás buscando:\n- Una web informativa para presentar tu negocio, empresa o servicios\n- Una tienda online para vender productos, cursos o servicios\n- Algo diferente"
+    && stripos($cfg['menu'] . $cfg['menu_opciones'], 'rubro') === false);
 
 caso('soy_bot ya no arranca contestando "Sí" a "sos una persona?"',
     mb_stripos($cfg['info']['soy_bot'], 'No, soy el asistente') === 0);
@@ -3500,7 +3574,7 @@ $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return ['acciones' => ['salu
 $cSaludo = conv_nueva();
 $cSaludo['fase'] = 'nuevo';
 $rSaludo = wabot_engine('hola', $cSaludo, $cfg);
-caso('un saludo pelado sí sigue recibiendo la apertura', count($rSaludo) === 1 && $rSaludo[0] === $cfg['menu']);
+caso('un saludo pelado sí sigue recibiendo la apertura', $rSaludo === [$cfg['menu'], $cfg['menu_opciones']]);
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 echo "\n— Mostrar trabajos gana sobre la palabra suelta \"productos\" —\n";

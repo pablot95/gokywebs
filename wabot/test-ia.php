@@ -239,7 +239,7 @@ echo "— 7. Fallas de la API: el cliente nunca ve un error —\n";
 openai_responde([decision(['mensajes' => ['no tendría que llamarse']])]);
 $c13b = conv_ia('5491100000031TEST');
 $r13b = turno('hola, quiero una página', $c13b, $cfg);
-caso('un saludo pelado sale con la apertura fija, sin llamar a OpenAI', count(pedidos()) === 0 && count($r13b) === 1, json_encode($r13b, JSON_UNESCAPED_UNICODE));
+caso('un saludo pelado sale con la apertura fija, sin llamar a OpenAI', count(pedidos()) === 0 && $r13b === [$cfg['menu'], $cfg['menu_opciones']], json_encode($r13b, JSON_UNESCAPED_UNICODE));
 
 clasifica(['saludo']);
 openai_responde([['http' => 500, 'body' => '{"error":{"message":"server error"}}'], ['http' => 503], ['http' => 502]]);
@@ -381,6 +381,86 @@ $a = 'wabot-test-cola-' . getmypid();
 wabot_cola_encolar($a, 'nuevo', 'nuevo');
 wabot_cola_devolver($a, [['t' => 'viejo 1', 'u' => 'viejo 1'], ['t' => 'viejo 2', 'u' => 'viejo 2']]);
 caso('devolver una tanda la deja adelante de lo nuevo', array_column(wabot_cola_drenar($a), 't') === ['viejo 1', 'viejo 2', 'nuevo']);
+
+echo "— 13. La bienvenida y sus tres opciones (28-sep) —\n";
+
+/** Un cliente que saludó y recibió la bienvenida fija (sin llamar a OpenAI). */
+function conv_bienvenida_ia($clave, $cfg) {
+    openai_responde([]);
+    $c = conv_ia($clave);
+    $r = turno('hola', $c, $cfg);
+    caso("la bienvenida sale en dos mensajes, fija ($clave)", $r === [$cfg['menu'], $cfg['menu_opciones']] && count(pedidos()) === 0);
+    return $c;
+}
+
+$c = conv_bienvenida_ia('5491100000131TEST', $cfg);
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'sitio_profesional', 'etapa' => 'COTIZACION'])]);
+$r = turno('Una web informativa', $c, $cfg);
+$p = pedidos()[0] ?? [];
+$ctx = (string)($p['input'][0]['content'] ?? '');
+caso('las instrucciones explican las tres opciones y qué hacer con cada una',
+    strpos((string)$p['instructions'], 'LA BIENVENIDA Y SUS TRES OPCIONES') !== false
+    && strpos((string)$p['instructions'], 'Opción 3, "Algo diferente"') !== false);
+caso('el contexto le avisa que está eligiendo una opción de la bienvenida',
+    strpos($ctx, 'La última pregunta fue la de la bienvenida') !== false && strpos($ctx, 'Gokywebs: ' . $cfg['menu_opciones']) !== false, $ctx);
+caso('opción 1 → el precio fijo del sitio profesional', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida_ia('5491100000132TEST', $cfg);
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
+$r = turno('la 2', $c, $cfg);
+caso('opción 2 → el precio fijo de la tienda, sin preguntar si vende por la web',
+    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && strpos(implode(' ', $r), 'Buscás vender por la web') === false,
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida_ia('5491100000133TEST', $cfg);
+openai_responde([decision(['mensajes' => ['Contame qué tenés en mente y a qué te dedicás, así te oriento.']])]);
+$r = turno('Algo diferente', $c, $cfg);
+caso('opción 3 → OpenAI pregunta qué tiene en mente, sin cotizar',
+    $r === ['Contame qué tenés en mente y a qué te dedicás, así te oriento.'] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// La red: si el modelo repregunta después de la opción 1 o 2, se cotiza igual.
+$c = conv_bienvenida_ia('5491100000134TEST', $cfg);
+openai_responde([decision(['mensajes' => ['A qué te dedicás?']])]);
+$r = turno('la primera', $c, $cfg);
+caso('opción 1 con el modelo repreguntando → se cotiza el sitio profesional igual',
+    ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']) && !in_array('A qué te dedicás?', $r, true)
+    && isset($c['eventos_emitidos_sesion']['ia_menu_corregido']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida_ia('5491100000135TEST', $cfg);
+openai_responde([decision(['mensajes' => ['Qué cursos das?']])]);
+$r = turno('la tienda, para vender mis cursos de maquillaje', $c, $cfg);
+caso('y si nombra cursos, la red cotiza la plataforma de cursos', ($c['tipo'] ?? '') === 'elearning' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida_ia('5491100000136TEST', $cfg);
+openai_responde([decision(['mensajes' => ['Contame qué tenés en mente.']])]);
+$r = turno('la 3', $c, $cfg);
+caso('la red no toca la opción 3', $r === ['Contame qué tenés en mente.'] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Si solo eligió la opción, la propuesta no dice "Para lo que me contás" (28-sep).
+$c = conv_bienvenida_ia('5491100000138TEST', $cfg);
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
+$r = turno('Tienda online', $c, $cfg);
+caso('eligió "Tienda online" sin contar nada → "Perfecto, te podemos armar una tienda online…"',
+    str_starts_with($r[0] ?? '', 'Perfecto, te podemos armar una tienda online completa') && mb_stripos($r[0], 'me contás') === false, $r[0] ?? '');
+
+// "¿Qué me recomendás?" con el negocio contado: se cotiza, no otra pregunta.
+$c = conv_bienvenida_ia('5491100000139TEST', $cfg);
+openai_responde([decision(['mensajes' => ['Buscás vender los muebles, o mostrarlos?']]), decision(['mensajes' => ['Vendés modelos definidos o a medida?']])]);
+turno('Muebleria', $c, $cfg);
+$r = turno('Que me recomendas ?', $c, $cfg);
+caso('mueblería + "qué me recomendás?" con el modelo repreguntando → se cotiza la tienda',
+    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && isset($c['eventos_emitidos_sesion']['ia_recomendacion_corregida']),
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('las instrucciones dicen que ante "qué me recomendás" se decide y se cotiza',
+    strpos(wabot_ia_instrucciones($cfg), 'no le devuelvas la pregunta: decidí vos y cotizá') !== false);
+
+// Con OpenAI caído, el motor lee la opción igual.
+$c = conv_bienvenida_ia('5491100000137TEST', $cfg);
+clasifica(['otro']);
+openai_responde([['http' => 500], ['http' => 503], ['http' => 502]]);
+$r = turno('Una tienda online', $c, $cfg);
+caso('OpenAI caído: el motor cotiza la tienda igual', ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 // Limpieza.
 foreach (glob(WABOT_DATA . '/conv/54911000000*TEST.json') ?: [] as $f) @unlink($f);

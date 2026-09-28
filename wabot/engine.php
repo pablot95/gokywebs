@@ -1089,6 +1089,12 @@ function wabot_anti_repeticion($mensajes, &$conv, $cfg) {
  * respuesta de info no existe reformulación, y ahí conviene derivar directo.
  */
 function wabot_texto_reformulado($mensajes, $cfg) {
+    // La bienvenida en dos mensajes (28-sep) se reformula como el saludo.
+    if (count($mensajes) === 2
+        && wabot_normalizar_frase((string)$mensajes[0]) === wabot_normalizar_frase((string)($cfg['menu'] ?? ''))
+        && wabot_normalizar_frase((string)$mensajes[1]) === wabot_normalizar_frase((string)($cfg['menu_opciones'] ?? ''))) {
+        $mensajes = [$mensajes[0]];
+    }
     if (count($mensajes) !== 1) return null;
     $uno = wabot_normalizar_frase((string)$mensajes[0]);
     $pares = [
@@ -3442,7 +3448,7 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             $t = wabot_normalizar_frase($texto);
             if ($t === '' || preg_match('/^(hola+|buenas|buen dia|buenas tardes|buenas noches|como estas|hola como estas)$/u', $t)) {
                 $conv['fase'] = 'menu';
-                return [wabot_apertura($conv, $cfg)];
+                return wabot_apertura_mensajes($conv, $cfg);
             }
             // El agente puede haber conversado sin mover la fase porque todavía
             // no llamó tools. Si luego cae, el contenido actual manda: no se
@@ -3451,6 +3457,9 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
         case 'menu':
         case 'algo_diferente':
             $t = wabot_normalizar_frase($texto);
+            // La respuesta a las opciones de la bienvenida (28-sep) se lee primero.
+            $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
+            if ($eleccion !== null) return wabot_menu_elegido($eleccion, $texto, $conv, $cfg);
             $contexto = wabot_contexto_cliente_texto($conv);
             if (wabot_contexto_es_hibrido($contexto)) {
                 $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
@@ -4292,19 +4301,27 @@ function wabot_engine($texto, &$conv, $cfg) {
             elseif ($r !== null)            { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif ($has('pregunta_tipos')) { $conv['fase'] = 'menu'; $out[] = $cfg['def_tipos']; }
             elseif ($has('algo_diferente')) { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
-            elseif ($has('quiere_prediseno')) { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out[] = wabot_apertura($conv, $cfg); }
-            else { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out[] = wabot_apertura($conv, $cfg); } // saludo, otro o pregunta ya contestada
+            elseif ($has('quiere_prediseno')) { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out = wabot_apertura_sumar($out, $conv, $cfg); }
+            else { $conv['fase'] = 'menu'; if (!wabot_salida_ya_pregunta($out)) $out = wabot_apertura_sumar($out, $conv, $cfg); } // saludo, otro o pregunta ya contestada
             break;
 
         case 'menu':
             $r = wabot_rubro_de($acc);
+            /* Eligió una de las opciones de la bienvenida (28-sep). Un tipo
+             * concreto del clasificador gana ("la tienda, doy clases de yoga"
+             * son cursos); un desempate no, porque la opción ya lo contesta. */
+            $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
+            if ($eleccion !== null && ($r === null || wabot_desempate_de($r) !== null)) {
+                $out = array_merge($out, wabot_menu_elegido($eleccion, $texto, $conv, $cfg));
+                break;
+            }
             $d = wabot_desempate_de($r);
             if ($d)                         { $conv['fase'] = $d[0]; wabot_handoff_aclaracion_resuelta($conv); $out[] = $cfg[$d[1]]; }
             elseif ($r !== null)            { $out = array_merge($out, wabot_precio($r, $conv, $cfg)); }
             elseif ($has('pregunta_tipos')) { $out[] = $cfg['def_tipos']; }
             elseif ($has('algo_diferente')) { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
             elseif (($objetivo = wabot_objetivo_contestado($texto, $conv, $cfg)) !== null) { $out = array_merge($out, wabot_precio($objetivo, $conv, $cfg)); }
-            elseif (!$out && $has('saludo')) { $out[] = wabot_apertura($conv, $cfg); }
+            elseif (!$out && $has('saludo')) { $out = wabot_apertura_mensajes($conv, $cfg); }
             elseif (!$out)                  { $conv['fase'] = 'algo_diferente'; wabot_handoff_ambiguedad($conv, $texto); $out[] = $cfg['contame']; }
             break;
 
@@ -4632,6 +4649,80 @@ function wabot_apertura($conv, $cfg) {
     // motor al menos reconoce que volvió.
     if ($hubo_antes && trim((string)($cfg['menu_vuelve'] ?? '')) !== '') return $cfg['menu_vuelve'];
     return $cfg['menu'];
+}
+
+/**
+ * La apertura como mensajes (28-sep): la bienvenida son dos, el saludo y
+ * aparte las tres opciones. La vuelta y el "contame" siguen siendo uno.
+ */
+function wabot_apertura_mensajes($conv, $cfg) {
+    $apertura = wabot_apertura($conv, $cfg);
+    $opciones = trim((string)($cfg['menu_opciones'] ?? ''));
+    return ($apertura === $cfg['menu'] && $opciones !== '') ? [$apertura, $opciones] : [$apertura];
+}
+
+/**
+ * Suma la apertura a lo que ya se contestó. Con la bienvenida de dos, el
+ * saludo va primero y las opciones al final: "Hola!" después de la respuesta
+ * se lee como si nadie hubiera leído la pregunta.
+ */
+function wabot_apertura_sumar($out, $conv, $cfg) {
+    $apertura = wabot_apertura_mensajes($conv, $cfg);
+    if ($out && count($apertura) === 2) return array_merge([$apertura[0]], $out, [$apertura[1]]);
+    return array_merge($out, $apertura);
+}
+
+/**
+ * La respuesta a las tres opciones de la bienvenida (28-sep): 'landing' (la
+ * web informativa), 'ecommerce' (la tienda online), 'algo_diferente' o null
+ * si el último mensaje del bot no fue esa pregunta o no se entiende. Vale
+ * con las palabras de la opción, con el número o con la posición.
+ */
+function wabot_menu_contestado($texto, $conv, $cfg) {
+    $pregunta = wabot_normalizar_frase((string)($cfg['menu_opciones'] ?? ''));
+    $ultimo = wabot_normalizar_frase(wabot_ultimo_texto_bot($conv));
+    if ($pregunta === '' || $ultimo === '' || mb_strpos($ultimo, $pregunta) === false) return null;
+    $t = ' ' . wabot_normalizar_frase((string)$texto) . ' ';
+    if (trim($t) === '') return null;
+    $opcion = function ($n, $ordinales) use ($t) {
+        return (bool)preg_match('/^ (' . $n . '|opcion ' . $n . '|la ' . $n . '|el ' . $n . ') $/u', $t)
+            || preg_match('/ (la |el |opcion )(' . $ordinales . ')( opcion)? /u', $t);
+    };
+    if (preg_match('/ (algo diferente|algo distinto|otra cosa|otra opcion|ninguna de (las|esas)|ninguna) /u', $t)
+        || $opcion('3', 'tercera|tercer|tercero|ultima|ultimo|3')) return 'algo_diferente';
+    // "No quiero vender, solo presentar el negocio" no elige la tienda.
+    $sinNegar = preg_replace('/ no (quiero |busco |necesito |pienso |voy a )?(vender|venta|ventas|tienda) /u', ' ', $t);
+    if (preg_match('/ (tienda|ecommerce|e commerce|vender|venta|ventas|carrito) /u', $sinNegar)
+        || $opcion('2', 'segunda|segundo|2')) return 'ecommerce';
+    if (preg_match('/ (informativa|informativo|institucional|presentar|presentacion) /u', $t)
+        || $opcion('1', 'primera|primer|primero|1')) return 'landing';
+    return null;
+}
+
+/**
+ * Lo que sigue a la opción elegida. La informativa y la tienda se cotizan
+ * derecho: ya dijo si vende por la web, así que no se le pregunta de nuevo.
+ * Si en la misma respuesta nombra cursos o propiedades, cotiza ese tipo
+ * ("la tienda, para vender mis cursos" es la plataforma de cursos).
+ */
+function wabot_menu_elegido($eleccion, $texto, &$conv, $cfg) {
+    if ($eleccion === 'algo_diferente') {
+        $conv['fase'] = 'algo_diferente';
+        wabot_handoff_ambiguedad($conv, $texto);
+        $pregunta = trim((string)($cfg['menu_algo_diferente'] ?? ''));
+        return [$pregunta !== '' ? $pregunta : (string)$cfg['contame']];
+    }
+    $conv['reconocimiento_hecho'] = true;
+    $conv['menu_eligio'] = true;
+    if ($eleccion === 'ecommerce') {
+        $ficha = wabot_ficha($conv);
+        $ficha['catalogo_explicito'] = false;
+        $conv['ficha'] = $ficha;
+    }
+    $propio = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
+    if (in_array($propio, ['cursos', 'inmobiliaria'], true)) $eleccion = $propio;
+    wabot_evento_sesion($conv, 'menu_elegido', ['tipo' => $eleccion]);
+    return wabot_precio($eleccion, $conv, $cfg);
 }
 
 /* Devuelve el tipo si alguna acción lo determina, un *_pendiente si hay que desempatar, null si no. */

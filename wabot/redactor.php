@@ -47,11 +47,26 @@ function wabot_oferta_diseno_pregunta($texto) {
  */
 function wabot_oferta_diseno_aceptada($texto) {
     $crudo = trim((string)$texto);
-    if ($crudo === '' || wabot_oferta_diseno_pregunta($crudo)) return false;
+    if ($crudo === '') return false;
+    /* "Así veo cómo queda" no pregunta nada (28-sep, simulación: el corralón
+     * que pidió "armame el diseño así veo cómo queda" se quedó sin el link). */
+    $sinVerComo = preg_replace('/\b(ver|veo|vea|verlo|verla|mirar|miro)\s+(c[oó]mo)\s+(queda|quedaria|quedar[ií]a|quedan|quedarian|quedar[ií]an|sale|saldria|saldr[ií]a)\b/iu', ' ', $crudo);
+    if (wabot_oferta_diseno_pregunta($sinVerComo)) return false;
     $t = wabot_normalizar_frase($crudo);
     // Sin letras: un 👍 o un 👌 solos son un sí; cualquier otro emoji, no.
     if ($t === '') return wabot_acepta_demo($crudo);
     if (mb_strlen($t) > 160) return false;
+    /* Pedir ver el diseño con todas las letras es aceptarlo, aunque deje el
+     * plan para después (28-sep: "me interesa ver el primer diseño, después
+     * elegiría el plan mensual", "quería ver cómo quedaría y el viernes te
+     * confirmo"). Lo que posterga es el pago, no el diseño. Un no, una duda
+     * o un "es caro" siguen yendo a Pablo. */
+    if (wabot_oferta_diseno_pide_verlo($t)
+        && !preg_match('/\b(no|nop|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|caro|aunque)\b/u', $t)) return true;
+    // "Sí me interesa, pero recién cobro el viernes": el diseño es gratis, lo que espera es el pago.
+    if (preg_match('/^(si+|dale|si dale|si me interesa|me interesa)\b/u', $t)
+        && preg_match('/\b(cobro|cobre|cobrar|me pagan|me depositan|sueldo|plata|pagar|pago|pague|abonar|abono)\b/u', $t)
+        && !preg_match('/\b(no|nop|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|caro|aunque)\b/u', $t)) return true;
     if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego'
         . '|te aviso|te confirmo|lo veo|a ver|caro|pero|aunque|primero)\b/u', $t)) return false;
     // Agradecer no es aceptar: "ok gracias", "perfecto, gracias".
@@ -69,11 +84,58 @@ function wabot_oferta_diseno_aceptada($texto) {
         . '|avancemos|arranquemos|empecemos|hagamoslo|vamos con eso|vamos adelante)\b/u', $t);
 }
 
+/**
+ * ¿Pide ver el diseño con todas las letras? "Armame el diseño", "me interesa
+ * verlo", "quiero ver cómo queda", "hacelo así lo veo", "mandame la muestra"
+ * (28-sep). Recibe la frase ya normalizada; tolera "keria" y "kiero".
+ */
+function wabot_oferta_diseno_pide_verlo($t) {
+    $quiere = '(quiero|quisiera|queria|kiero|keria|kisiera|me gustaria|me interesa|me encantaria|necesito|dale|si)';
+    $cosa = '(diseno|disenio|demo|muestra|boceto|modelo|prediseno)';
+    return (bool)(
+        preg_match('/\b' . $quiere . ' (ver|verlo|verla|mirarlo|mirarla)\b/u', $t)
+        || preg_match('/\bver (el |la |un |una )?(primer |primera )?' . $cosa . '\b/u', $t)
+        || preg_match('/\bver como (queda|quedaria|quedan|quedarian)\b/u', $t)
+        || preg_match('/\b(arma|armame|armanos|armen|armenme|arme|hace|haceme|haganme|manda|mandame|mandanos|pasame|pasanos|prepara|preparame|preparen|preparenme)'
+            . ' (el |la |un |una |me |nos )?(primer |primera )?' . $cosa . '\b/u', $t)
+        || preg_match('/\b(armalo|armala|armenlo|armenla|hacelo|hacela|haganlo|haganla|mandalo|mandala|mandamelo|mandamela|preparalo|preparala)\b.{0,12}\basi (lo |la )?veo\b/u', $t)
+        || (preg_match('/\b(asi|para) (lo |la )?(veo|vemos|ver)\b/u', $t) && preg_match('/\b(arm|hac|mand|prepar)\w*/u', $t))
+    );
+}
+
 /** Cierra la espera sin contestar: el chat queda pendiente para Pablo. */
 function wabot_oferta_diseno_cerrar(&$conv, $motivo = 'respuesta') {
     $conv['oferta_diseno_ts'] = 0;
+    $conv['oferta_diseno_cerrada_ts'] = time();
     wabot_evento_sesion($conv, 'post_precio_para_pablo', ['motivo' => $motivo]);
     wabot_cotizacion_finalizar($conv);
+}
+
+/**
+ * El sí que llega un mensaje tarde (28-sep, simulación del pintor): preguntó
+ * "puedo ver el diseño primero?", la espera se cerró para Pablo, y lo
+ * siguiente fue "quería ver cómo quedaría y el viernes te confirmo". Si Pablo
+ * todavía no escribió, ese sí también se lleva el formulario: reabre la
+ * espera y la contesta wabot_oferta_diseno_responder(). Lo llaman el webhook
+ * (antes del corte por bot_off) y wabot_responder().
+ */
+function wabot_oferta_diseno_reabrir(&$conv, $texto) {
+    $cerrada = (int)($conv['oferta_diseno_cerrada_ts'] ?? 0);
+    if ($cerrada <= 0 || time() - $cerrada > 72 * 3600) return false;
+    if (empty($conv['bot_off']) || ($conv['cierre'] ?? '') !== 'cotizacion_final' || !empty($conv['control_manual'])) return false;
+    if (!empty($conv['link_form_enviado']) || !empty($conv['lead_creado'])
+        || (int)($conv['form_completado_ts'] ?? 0) > 0 || !empty($conv['presentado_ts'])) return false;
+    // Si Pablo ya contestó, la charla es suya.
+    foreach ((array)($conv['transcript'] ?? []) as $t) {
+        if (($t['q'] ?? '') === 'humano' && (int)($t['ts'] ?? 0) >= $cerrada) return false;
+    }
+    if (!wabot_oferta_diseno_aceptada($texto)) return false;
+    $conv['bot_off'] = false;
+    $conv['cierre'] = null;
+    $conv['oferta_diseno_ts'] = time();
+    $conv['oferta_diseno_cerrada_ts'] = 0;
+    wabot_evento_sesion($conv, 'primer_diseno_aceptado_tarde');
+    return true;
 }
 
 /** La respuesta a la oferta del primer diseño, o null si no se está esperando. */
@@ -151,7 +213,8 @@ function wabot_responder($texto, &$conv, $cfg) {
 
     // La cotización cerrada es el último mensaje automático. Desde acá sigue
     // una persona; también se respeta en llamadas directas fuera del webhook.
-    if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final') return [];
+    if (!empty($conv['bot_off']) && ($conv['cierre'] ?? '') === 'cotizacion_final'
+        && !wabot_oferta_diseno_reabrir($conv, $texto)) return [];
     // La respuesta a la oferta del primer diseño: el sí se lleva el
     // formulario y cualquier otra cosa queda para Pablo (18-sep). Va antes que
     // todo lo demás: ni una pregunta de pago ni un pedido de llamada tienen
@@ -518,7 +581,7 @@ function wabot_responder($texto, &$conv, $cfg) {
     if ($apertura !== $cfg['contame'] && wabot_apertura_generica($texto)
         && in_array(($conv['fase'] ?? 'nuevo'), ['nuevo', 'menu'], true)) {
         $conv['fase'] = 'menu';
-        return [$apertura];
+        return wabot_apertura_mensajes($conv, $cfg);
     }
 
     // "Lo veo con mi socia y te aviso": el cliente tomó el control de los

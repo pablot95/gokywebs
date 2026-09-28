@@ -342,7 +342,10 @@ function wabot_personalizar($texto, $conv) {
      * sabe tanto como para decir qué es lo mejor. */
     if (strpos($texto, '{para_quien}') !== false) {
         $rubro = trim((string)($conv['rubro_pitch'] ?? ''));
-        $texto = str_replace('{para_quien}', $rubro !== '' ? 'Para ' . $rubro . ',' : 'Para lo que me contás,', $texto);
+        /* Si solo eligió una opción de la bienvenida ("Tienda online"), no
+         * contó nada: "Para lo que me contás" no va (28-sep). */
+        $sinRubro = !empty($conv['menu_eligio']) ? 'Perfecto,' : 'Para lo que me contás,';
+        $texto = str_replace('{para_quien}', $rubro !== '' ? 'Para ' . $rubro . ',' : $sinRubro, $texto);
     }
     /* {negocio} = la marca del cliente, para las presentaciones de la demo.
      * Sin marca detectada cae en "tu negocio", que encaja en las tres formas en
@@ -4392,7 +4395,7 @@ Sos el clasificador de intenciones del bot comercial de Gokywebs (agencia argent
 ACCIONES POSIBLES (elegí las que apliquen, en orden de importancia): $acciones
 
 GUIA:
-- elige_landing / elige_ecommerce: eligió explícitamente una opción del menú.
+- elige_landing / elige_ecommerce: eligió una opción de la bienvenida, que pregunta qué tipo de web busca con tres opciones. "Una web informativa para presentar tu negocio" (o "la 1", "la primera", "la informativa") → elige_landing. "Una tienda online para vender productos, cursos o servicios" (o "la 2", "la segunda", "la tienda") → elige_ecommerce. "Algo diferente" (o "la 3", "la última", "otra cosa") → algo_diferente.
 - rubro_landing: un oficio, servicio o profesional que trabaja por pedido o por turno y no vende productos: plomero, gasista, electricista, pintor, fletes, cerrajero, jardinero, constructor, contador, abogado, fotógrafo, diseñador; también peluquería, estética, consultorio, veterinaria, gimnasio, cabañas, restaurante. La web lo presenta y lo contactan por WhatsApp. Una institución (colegio, fundación, ONG, club, cámara, sindicato, cooperativa, municipio, parroquia) también es rubro_landing.
 - rubro_comercio: vende productos físicos, tenga local o venda por redes: mates, ropa, velas, ferretería, kiosco, dietética, bazar, vivero, panadería, pet shop, repuestos. Se cotiza tienda online SIEMPRE, sin preguntarle si prefiere cobrar online o que lo contacten por WhatsApp (si dijo con todas las letras que solo quiere mostrar un catálogo sin vender por la web, el motor lo resuelve solo: vos etiquetá el rubro igual).
 - rubro_hibrido: fabrica o instala productos a medida que pueden mostrarse como trabajos o venderse online: cortinas, toldos, aberturas, cerramientos, muebles a medida, carpintería, herrería, amoblamientos, mamparas. NO alcanza el rubro para cotizar.

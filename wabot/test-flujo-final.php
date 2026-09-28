@@ -124,6 +124,43 @@ foreach (['Cuánto tarda?', 'y la seña de cuánto es', 'No, gracias', 'Lo voy a
         $rD === [] && !empty($d['bot_off']) && !empty($d['handoff_pendiente']) && empty($d['esProspecto'])
         && empty($d['oferta_diseno_ts']), json_encode($rD, JSON_UNESCAPED_UNICODE));
 }
+echo "— Pedir ver el diseño también es un sí (28-sep, simulación con OpenAI) —\n";
+foreach (['Dale, armame el diseño asi veo como queda', 'Dale, me interesa ver el primer diseño. Después elegiría el plan mensual.',
+          'Keria ver cómo quedaría y el viernes te confirmo', 'Armame el diseño', 'Me interesa verlo', 'Quiero ver cómo queda',
+          'Quiero ver el primer diseño', 'Hacelo así lo veo', 'Mandame la muestra', 'Quiero ver cómo quedaría',
+          'Si me interesa pero resien el viernes cobro', 'Dale, pero te pago a fin de mes'] as $afirma) {
+    $a = $c;
+    clasifica(['otro']);
+    $rA = turno($afirma, $a, $cfg);
+    caso("\"$afirma\" → el formulario", count($rA) === 1 && tiene_form($rA) && !empty($a['bot_off']), json_encode($rA, JSON_UNESCAPED_UNICODE));
+}
+foreach (['Sí, me interesa ver el diseño gratis. Y quería saber cuánto sería por mes', 'Si me interesa pero yo cobro el viernes, puedo ver el diseño primero?',
+          'Me interesa verlo pero es caro', 'Quiero ver el diseño pero lo tengo que consultar', 'No quiero ver el diseño todavía',
+          'Keria aser unas consultas antes de pagar', 'Si, pero no tengo plata ahora'] as $resp) {
+    $d = $c;
+    clasifica(['otro']);
+    $rD = turno($resp, $d, $cfg);
+    caso("\"$resp\" → sigue siendo para Pablo", $rD === [] && !empty($d['handoff_pendiente']), json_encode($rD, JSON_UNESCAPED_UNICODE));
+}
+
+// El sí que llega después de una pregunta (el pintor): si Pablo no escribió, se lleva el formulario.
+$d = $c;
+clasifica(['otro']);
+turno('Si me interesa pero yo cobro el viernes, puedo ver el diseño primero?', $d, $cfg);
+$rTarde = turno('Keria ver cómo quedaría y el viernes te confirmo', $d, $cfg);
+caso('pregunta y después "quería ver cómo quedaría" → el formulario en el segundo mensaje',
+    count($rTarde) === 1 && tiene_form($rTarde) && !empty($d['bot_off']) && !empty($d['link_form_enviado']), json_encode($rTarde, JSON_UNESCAPED_UNICODE));
+$d = $c;
+turno('Si me interesa pero yo cobro el viernes, puedo ver el diseño primero?', $d, $cfg);
+wabot_conv_transcript($d, 'humano', 'Sí, te lo armamos igual');
+$rPablo = turno('Dale, armame el diseño', $d, $cfg);
+caso('pero si Pablo ya contestó, la charla es suya: silencio', $rPablo === [] && empty($d['link_form_enviado']), json_encode($rPablo, JSON_UNESCAPED_UNICODE));
+$d = $c;
+turno('Cuánto tarda?', $d, $cfg);
+$rOtra = turno('y aceptan transferencia?', $d, $cfg);
+caso('y otra pregunta después de la pregunta sigue siendo para Pablo', $rOtra === [] && empty($d['link_form_enviado']));
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
+
 /* El panel (lib.php, lista de conversaciones, y el JavaScript de admin.php):
  * un chat es "del bot" solo si su estado es 'bot' y NO tiene handoff
  * pendiente. Con el handoff, es de Pablo: "Esperando cliente" mientras el

@@ -520,6 +520,10 @@ function wabot_ia_contexto($texto, $conv, $cfg) {
     $c[] = '- ' . ($yaHablo ? 'Ya le escribimos antes en esta charla: no lo vuelvas a saludar.' : 'Todavía no le escribimos nada en esta charla.');
     if (($conv['fase'] ?? '') === 'reconocimiento') $c[] = '- La última pregunta fue si busca vender por la web o solo mostrar: su mensaje probablemente la contesta.';
     if (($conv['fase'] ?? '') === 'desempate_hibrido') $c[] = '- La última pregunta fue si busca mostrar sus trabajos o vender online: su mensaje probablemente la contesta.';
+    $opciones = wabot_normalizar_frase((string)($cfg['menu_opciones'] ?? ''));
+    if ($opciones !== '' && mb_strpos(wabot_normalizar_frase(wabot_ultimo_texto_bot($conv)), $opciones) !== false) {
+        $c[] = '- La última pregunta fue la de la bienvenida (qué tipo de web busca: 1 web informativa, 2 tienda online, 3 algo diferente): su mensaje probablemente elige una.';
+    }
     $c[] = '- Canal: ' . (wabot_canal($conv) === 'instagram' ? 'Instagram' : 'WhatsApp');
     if ($viejos) {
         $antes = [];
@@ -787,6 +791,35 @@ function wabot_ia_turno($texto, &$conv, $cfg) {
         wabot_evento_sesion($conv, 'ia_openai_fallo', ['error' => (string)$r['error']]);
         wabot_log('ia_respaldo', ['tel' => $conv['tel'] ?? '', 'error' => (string)$r['error']]);
         return null;
+    }
+    /* Eligió la web informativa o la tienda en la bienvenida (28-sep): el tipo
+     * ya está dicho. Si el modelo igual repregunta, se cotiza la opción. */
+    $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
+    if (in_array($eleccion, ['landing', 'ecommerce'], true)) $conv['menu_eligio'] = true;
+    if ($r['decision']['accion'] === 'responder' && in_array($eleccion, ['landing', 'ecommerce'], true)) {
+        wabot_evento_sesion($conv, 'ia_menu_corregido', ['tipo' => $eleccion]);
+        wabot_log('ia_menu_corregido', ['tel' => $conv['tel'] ?? '', 'tipo' => $eleccion, 'msg' => mb_substr((string)$texto, 0, 90)]);
+        $r['decision']['accion'] = 'cotizar';
+        // Como en el motor: si en la misma respuesta nombra cursos o propiedades, va ese tipo.
+        $propio = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
+        $r['decision']['tipo_web'] = $propio === 'cursos' ? 'plataforma_cursos'
+            : ($propio === 'inmobiliaria' ? 'inmobiliaria' : ($eleccion === 'landing' ? 'sitio_profesional' : 'tienda_online'));
+        $r['decision']['mensajes'] = [];
+        $r['decision']['info_claves'] = [];
+    }
+    /* "¿Qué me recomendás?" con el negocio ya contado (28-sep, simulación de la
+     * mueblería): si el modelo le devuelve otra pregunta, se cotiza lo que el
+     * motor recomienda para ese negocio, igual que sin IA. */
+    $recomendado = ($r['decision']['accion'] === 'responder' && wabot_pide_que_elijamos($texto) && wabot_contexto_cliente_tiene_negocio($conv))
+        ? wabot_tipo_recomendado($conv) : null;
+    $tipoWeb = ['landing' => 'sitio_profesional', 'ecommerce' => 'tienda_online', 'elearning' => 'plataforma_cursos', 'inmobiliaria' => 'inmobiliaria'];
+    if (isset($tipoWeb[$recomendado])) {
+        wabot_evento_sesion($conv, 'ia_recomendacion_corregida', ['tipo' => $recomendado]);
+        wabot_log('ia_recomendacion_corregida', ['tel' => $conv['tel'] ?? '', 'tipo' => $recomendado, 'msg' => mb_substr((string)$texto, 0, 90)]);
+        $r['decision']['accion'] = 'cotizar';
+        $r['decision']['tipo_web'] = $tipoWeb[$recomendado];
+        $r['decision']['mensajes'] = [];
+        $r['decision']['info_claves'] = [];
     }
     $salida = wabot_ia_aplicar($r['decision'], $texto, $conv, $cfg);
     if ($salida === null) return null;

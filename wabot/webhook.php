@@ -290,6 +290,10 @@ function wabot_procesar_entrante($ev, $cfg) {
                 $conv['bot_off'] = false;   // redactor.php limpia cierre y seguimiento
                 wabot_log('baja_reabierta', ['tel' => $de, 'canal' => $canal]);
             }
+            // El sí al primer diseño que llega después de una pregunta (28-sep).
+            if ($usables && wabot_oferta_diseno_reabrir($conv, $entrada)) {
+                wabot_log('diseno_aceptado_tarde', ['tel' => $de, 'canal' => $canal]);
+            }
 
             $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
             if (!$activo) {
@@ -476,6 +480,7 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         }
         $conv['ultimo_cliente_ts'] = time();
         wabot_logo_sincronizar($conv);
+        if ($usables) wabot_oferta_diseno_reabrir($conv, implode("\n", $usables));
         $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
         if (!$activo || !$usables) {
             wabot_conv_save($conv);
