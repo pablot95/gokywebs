@@ -2533,6 +2533,12 @@ function burbujaCita(t, chat) {
                             title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $25.000</button>
                         <button type="button" class="sec" id="btnPlan35"
                             title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $35.000</button>
+                        <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
+                               datos para la transferencia (pago/anual180 y pago/anual250). */ ?>
+                        <button type="button" class="sec" id="btnAnual180"
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $180.000</button>
+                        <button type="button" class="sec" id="btnAnual250"
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $250.000</button>
                         <?php /* La imagen de precios, la misma que manda el bot (26-sep). Sale
                                directo, con confirmación. Solo WhatsApp, como la del bot. */
                               if (wabot_canal($conv) === 'whatsapp'): ?>
@@ -3329,6 +3335,14 @@ function burbujaCita(t, chat) {
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
             rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($35.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual35');
+        });
+        /* Los del plan anual: la página tiene todas las condiciones y los datos
+         * para la transferencia; el mensaje adelanta la seña y el resto. */
+        document.getElementById('btnAnual180')?.addEventListener('click', () => {
+            rrInsertar('Te paso el plan anual del sitio profesional ($180.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($120.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual180');
+        });
+        document.getElementById('btnAnual250')?.addEventListener('click', () => {
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($250.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($190.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual250');
         });
 
         /* "Imagen sitio profesional" / "Imagen tienda/cursos/inmo" (26-sep): a
