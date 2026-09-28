@@ -14,7 +14,6 @@ const GW_PORTFOLIO = [
   {"url":"https://infinitamente.com/","cat":"ecommerce","name":"InfinitaMente","id":"infinitamente","accent":"#35d4df"},
   {"url":"https://kare.com.ar/","cat":"ecommerce","name":"Kare","id":"kare","accent":"#a9bddc"},
   {"url":"https://locufre.com.ar/","cat":"ecommerce","name":"Locufre","id":"locufre","accent":"#c0d73e"},
-  {"url":"https://lasmagnolias.com.ar/","cat":"ecommerce","name":"Las Magnolias","id":"lasmagnolias","accent":"#d98e9d"},
   {"url":"https://www.masmomentosunicos.com/","cat":"gastronomia","name":"Barra Tragos","id":"barratragos"},
   {"url":"http://ventoinmobiliaria.com.ar/","cat":"inmobiliaria","name":"Vento Inmobiliaria","id":"ventoinmobiliaria"},
   {"url":"https://www.psicorodas.com.ar/","cat":"profesionales","name":"Alder Psicología","id":"alderpsicologia"},

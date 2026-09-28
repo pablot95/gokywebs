@@ -77,8 +77,6 @@ const GW_TRABAJOS = [
       que: 'Librería online', zona: '', tags: 'librería libros papelería regalos', estado: 'online' },
     { id: 'locufre', nombre: 'Locufre', url: 'https://locufre.com.ar/', tipo: 'ecommerce', rubro: 'educacion',
       que: 'Contenidos y productos en lengua de señas', zona: '', tags: 'lengua de señas LSA inclusión accesibilidad', estado: 'online' },
-    { id: 'lasmagnolias', nombre: 'Las Magnolias', url: 'https://lasmagnolias.com.ar/', tipo: 'ecommerce', rubro: 'gastronomia',
-      que: 'Bombones, tabletas y paletas artesanales', zona: 'Córdoba', tags: 'chocolate bombones artesanal regalería', estado: 'online' },
     { id: 'lasmagnoliasfloreria', nombre: 'Las Magnolias Florería', url: 'https://lasmagnoliasfloreria.com/', tipo: 'ecommerce', rubro: 'comercios',
       que: 'Florería y regalos', zona: '', tags: 'flores ramos florería regalos envíos', estado: 'online' },
     { id: 'niftybar', nombre: 'NiftyBar Protein', url: 'https://niftybar.com.ar/', tipo: 'ecommerce', rubro: 'deportes',
