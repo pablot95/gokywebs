@@ -254,18 +254,26 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
 }
 
 /**
- * Descarga en .txt todos los chats que ARRANCARON un día puntual (no los
- * activos ese día: el primer mensaje del cliente cayó ese día). Mismo
- * formato que export_chats, pero agrupado por día de inicio en vez de
- * por actividad reciente.
+ * Descarga en .txt los chats de un día o de un RANGO de fechas (27-sep, Pablo:
+ * "seleccionar un rango y descargar todos esos chats"). Dos criterios:
+ *   - arranque (el de siempre): el chat arrancó dentro del rango;
+ *   - actividad: el chat tuvo algún mensaje dentro del rango, aunque haya
+ *     arrancado antes.
+ * Siempre va la charla ENTERA, mismo formato que export_chats. `fecha` sola
+ * sigue andando (es el rango de un día), así no se rompe ningún link viejo.
  */
 if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '') === 'imprimir_chats') {
-    $fecha = (string)($_GET['fecha'] ?? '');
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) { http_response_code(400); exit('fecha inválida'); }
-    [$anio, $mes, $dia] = array_map('intval', explode('-', $fecha));
+    $desdeTxt = (string)($_GET['desde'] ?? $_GET['fecha'] ?? '');
+    $hastaTxt = (string)($_GET['hasta'] ?? '');
+    if ($hastaTxt === '') $hastaTxt = $desdeTxt;
+    $esFecha = function ($f) { return (bool)preg_match('/^\d{4}-\d{2}-\d{2}$/', $f); };
+    if (!$esFecha($desdeTxt) || !$esFecha($hastaTxt)) { http_response_code(400); exit('fecha inválida'); }
+    if ($hastaTxt < $desdeTxt) [$desdeTxt, $hastaTxt] = [$hastaTxt, $desdeTxt];
+    $criterio = ($_GET['criterio'] ?? '') === 'actividad' ? 'actividad' : 'arranque';
     // Argentina no tiene horario de verano: UTC-3 fijo. 00:00 hora AR = 03:00 UTC.
-    $inicioDia = gmmktime(3, 0, 0, $mes, $dia, $anio);
-    $finDia    = $inicioDia + 86400;
+    $inicioAr = function ($f) { [$a, $m, $d] = array_map('intval', explode('-', $f)); return gmmktime(3, 0, 0, $m, $d, $a); };
+    $inicioDia = $inicioAr($desdeTxt);
+    $finDia    = $inicioAr($hastaTxt) + 86400;
 
     $archivos = glob(WABOT_DATA . '/conv/*.json') ?: [];
     $chats = [];
@@ -273,11 +281,25 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
         $clave = basename($f, '.json');
         if (stripos($clave, 'TEST') !== false) continue;
         $cv = wabot_conv_load($clave);
-        $inicio = (int)($cv['chat_started_ts'] ?? 0);
-        if ($inicio < $inicioDia || $inicio >= $finDia) continue;
+        $t = (array)($cv['transcript'] ?? []);
+        if (!$t) continue;
+        // Las charlas viejas no guardaban chat_started_ts: vale su primer mensaje.
+        $inicio = (int)($cv['chat_started_ts'] ?? 0) ?: (int)($t[0]['ts'] ?? 0);
+        if ($criterio === 'arranque') {
+            if ($inicio < $inicioDia || $inicio >= $finDia) continue;
+        } else {
+            $hubo = false;
+            foreach ($t as $linea) {
+                $ts = (int)($linea['ts'] ?? 0);
+                if ($ts >= $inicioDia && $ts < $finDia) { $hubo = true; break; }
+            }
+            if (!$hubo) continue;
+        }
+        $cv['chat_started_ts'] = $inicio;
         $chats[] = $cv;
     }
     usort($chats, function ($a, $b) { return (int)$a['chat_started_ts'] - (int)$b['chat_started_ts']; });
+    $fecha = $desdeTxt === $hastaTxt ? $desdeTxt : "$desdeTxt al $hastaTxt";
 
     $bloques = [];
     foreach ($chats as $cv) {
@@ -305,12 +327,16 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'GET' && ($_GET['accion'] ?? '')
         $bloques[] = implode("\n", $lineas);
     }
 
+    $unDia = $desdeTxt === $hastaTxt;
+    $rotulo = $criterio === 'arranque'
+        ? ($unDia ? "Chats iniciados el $fecha" : "Chats iniciados del $fecha")
+        : ($unDia ? "Chats con mensajes el $fecha" : "Chats con mensajes del $fecha");
     $salida = $bloques
-        ? "Chats iniciados el $fecha — " . count($bloques) . ' ' . (count($bloques) === 1 ? 'conversación' : 'conversaciones') . "\n\n" . implode("\n\n", $bloques) . "\n"
-        : "No hubo conversaciones que hayan arrancado el $fecha.\n";
+        ? $rotulo . ' — ' . count($bloques) . ' ' . (count($bloques) === 1 ? 'conversación' : 'conversaciones') . "\n\n" . implode("\n\n", $bloques) . "\n"
+        : ($criterio === 'arranque' ? "No hubo conversaciones que hayan arrancado " : "No hubo conversaciones con mensajes ") . ($unDia ? "el $fecha" : "del $fecha") . ".\n";
 
     header('Content-Type: text/plain; charset=utf-8');
-    header('Content-Disposition: attachment; filename="wabot-chats-' . $fecha . '.txt"');
+    header('Content-Disposition: attachment; filename="wabot-chats-' . ($unDia ? $desdeTxt : "$desdeTxt-a-$hastaTxt") . '.txt"');
     header('Cache-Control: private, max-age=0, no-store');
     echo $salida;
     exit;
@@ -1402,6 +1428,11 @@ body.conv-full #respEstado { margin-top:4px; }
 mark.conv-resaltado { background:var(--ac-tenue); color:var(--ac); padding:0 1px; border-radius:3px; font-style:normal; }
 .conv-fecha-chip span { margin-left:3px; opacity:.75; font-size:10px; }
 .conv-fecha-vacio { margin:0; color:var(--dim); font-size:11px; }
+.conv-descarga { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:11px; color:var(--dim); }
+.conv-descarga-tit { width:100%; font-weight:700; }
+.conv-descarga input, .conv-descarga select { width:auto; padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:var(--card-2); color:var(--tx); font:inherit; font-size:11px; }
+.conv-descarga button { padding:4px 10px; border:1px solid var(--ac); border-radius:6px; background:transparent; color:var(--tx); font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
+.conv-descarga button:hover { background:var(--ac-tenue); }
 .conv-cuenta { background:var(--card-2); color:var(--dim); border-radius:20px; padding:1px 8px; font-size:11.5px; font-weight:700; }
 .conv-list[data-grupo="muestra"] .conv-list-head { color:var(--ac); }
 .conv-item .pill.espera { background:#3a2f10; color:var(--warn); }
@@ -1776,12 +1807,18 @@ function burbujaCita(t, chat) {
         <div class="card">
             <div class="fila" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
                 <div>
-                    <strong>Chats de un día en .txt</strong>
-                    <p class="meta">Descarga los chats que ARRANCARON ese día, charla completa.</p>
+                    <strong>Chats de un rango de fechas en .txt</strong>
+                    <p class="meta">Todos los chats de esas fechas en un solo archivo, cada uno con la charla completa. Para un solo día, poné la misma fecha en los dos.</p>
                 </div>
-                <form method="get" action="admin.php" class="fila" style="gap:8px">
+                <?php $estiloFecha = 'width:auto;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit'; ?>
+                <form method="get" action="admin.php" class="fila" style="gap:8px;flex-wrap:wrap;align-items:center">
                     <input type="hidden" name="accion" value="imprimir_chats">
-                    <input type="date" name="fecha" value="<?= date('Y-m-d') ?>" required style="width:auto;background:var(--bg);color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:inherit">
+                    <label class="meta" style="margin:0">Desde <input type="date" name="desde" value="<?= date('Y-m-d', strtotime('-6 days')) ?>" max="<?= date('Y-m-d') ?>" required style="<?= $estiloFecha ?>"></label>
+                    <label class="meta" style="margin:0">Hasta <input type="date" name="hasta" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required style="<?= $estiloFecha ?>"></label>
+                    <select name="criterio" style="<?= $estiloFecha ?>" aria-label="Qué chats">
+                        <option value="arranque">Que arrancaron en esas fechas</option>
+                        <option value="actividad">Con mensajes en esas fechas</option>
+                    </select>
                     <button type="submit" class="sec">Descargar</button>
                 </form>
             </div>
@@ -2398,6 +2435,19 @@ function burbujaCita(t, chat) {
                     </div>
                     <div class="conv-fecha-panel" id="convFechaPanel" hidden>
                         <div class="conv-fecha-chips" id="convFechaChips"></div>
+                        <!-- Descargar todos los chats de un rango en .txt (27-sep): mismo archivo que en Estado. -->
+                        <form method="get" action="admin.php" class="conv-descarga">
+                            <input type="hidden" name="accion" value="imprimir_chats">
+                            <span class="conv-descarga-tit">Descargar chats</span>
+                            <input type="date" name="desde" value="<?= date('Y-m-d', strtotime('-6 days')) ?>" max="<?= date('Y-m-d') ?>" required aria-label="Desde">
+                            <span aria-hidden="true">a</span>
+                            <input type="date" name="hasta" value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>" required aria-label="Hasta">
+                            <select name="criterio" aria-label="Qué chats">
+                                <option value="arranque">que arrancaron</option>
+                                <option value="actividad">con mensajes</option>
+                            </select>
+                            <button type="submit">.txt</button>
+                        </form>
                     </div>
                     <div class="conv-busqueda-fila conv-busqueda-fila--mensajes">
                         <input type="search" class="conv-busqueda" id="convBuscarMensajes" placeholder="Buscar dentro de los mensajes…" autocomplete="off" aria-label="Buscar texto dentro de los mensajes de todas las conversaciones">
