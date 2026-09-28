@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Hanken+Grotesk:wght@400..700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=1">
+<link rel="stylesheet" href="styles.css?v=2">
 </head>
 <body>
 <a class="skip-link" href="#catalogo">Ir al catálogo</a>
@@ -31,7 +31,9 @@
       <span class="brand-sub">Distribuidora</span>
     </a>
     <nav class="main-nav" aria-label="Principal">
+      <a href="#categorias">Categorías</a>
       <a href="#catalogo">Catálogo</a>
+      <a href="#nosotros">Nosotros</a>
       <a href="#como-comprar">Cómo comprar</a>
       <a href="#contacto">Contacto</a>
     </nav>
@@ -54,8 +56,18 @@
       <a class="btn btn-cta" href="#catalogo">Ver el catálogo</a>
     </div>
     <div class="hero-foto">
-      <img src="images/hero-vidriera.webp" width="1800" height="1012" alt="Carteras de cuero en marrón, gris y rojo sobre un estante blanco" fetchpriority="high" decoding="async">
+      <img src="images/hero-vidriera.webp" width="1800" height="1012" alt="Carteras de cuero en marrón, gris y rojo sobre un estante blanco" fetchpriority="high">
     </div>
+  </div>
+</section>
+
+<section class="categorias" id="categorias">
+  <div class="container">
+    <div class="sec-head">
+      <h2 class="h2">Categorías</h2>
+      <p class="lede">Elegí una para ver sus modelos en el catálogo.</p>
+    </div>
+    <div class="cat-grid" id="catGrid"></div>
   </div>
 </section>
 
@@ -67,6 +79,24 @@
     </div>
     <div class="chips" id="chipsCat" role="group" aria-label="Filtrar por tipo de producto"></div>
     <div class="grid-prod" id="gridProd"></div>
+  </div>
+</section>
+
+<section class="nosotros" id="nosotros">
+  <div class="container nosotros-grid">
+    <div class="nosotros-foto">
+      <img src="images/deposito.webp" width="1400" height="1100" alt="Una persona acomoda carteras colgadas en un exhibidor de madera" loading="lazy">
+    </div>
+    <div class="nosotros-copy">
+      <p class="eyebrow">La distribuidora</p>
+      <h2 class="h2">Del depósito a tu local, listo para vender</h2>
+      <p>Trabajamos con locales de ropa, regalerías y marroquinerías que venden al público. Armamos tu pedido por modelo y color, en bultos cerrados, para que llegue listo para colgar.</p>
+      <ul class="nosotros-datos">
+        <li><b>5</b> categorías de producto</li>
+        <li><b>7</b> colores de cuero y eco cuero</li>
+        <li><b>1</b> pedido por WhatsApp, todo junto</li>
+      </ul>
+    </div>
   </div>
 </section>
 
@@ -124,7 +154,7 @@
 {"@context":"https://schema.org","@graph":[{"@type":"WholesaleStore","name":"Distribuidora DG","description":"Distribuidora de marroquinería, moda y accesorios. Venta exclusiva por mayor.","url":"https://gokywebs.com/demo/distribuidoradgv2/","image":"https://gokywebs.com/demo/distribuidoradgv2/images/hero-vidriera.webp","telephone":"+5491166576121","email":"hola@distribuidoradg.com","address":{"@type":"PostalAddress","addressRegion":"Buenos Aires","addressCountry":"AR"}}]}
 </script>
 
-<script src="script.js?v=1" defer></script>
+<script src="script.js?v=2" defer></script>
 <script src="/demo/track.js" defer></script>
 </body>
 </html>

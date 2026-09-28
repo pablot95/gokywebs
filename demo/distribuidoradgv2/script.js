@@ -22,11 +22,11 @@ const COLORES = {
 };
 
 const FAMILIAS = [
-  { id: 'carteras', nombre: 'Carteras' },
-  { id: 'rinoneras', nombre: 'Riñoneras y bandoleras' },
-  { id: 'mochilas', nombre: 'Mochilas' },
-  { id: 'billeteras', nombre: 'Billeteras' },
-  { id: 'cintos', nombre: 'Cintos' }
+  { id: 'carteras', nombre: 'Carteras', foto: 'modelo-tote.webp' },
+  { id: 'rinoneras', nombre: 'Riñoneras y bandoleras', foto: 'modelo-bandolera.webp' },
+  { id: 'mochilas', nombre: 'Mochilas', foto: 'modelo-mochila.webp' },
+  { id: 'billeteras', nombre: 'Billeteras', foto: 'modelo-billetera.webp' },
+  { id: 'cintos', nombre: 'Cintos', foto: 'modelo-cinto.webp' }
 ];
 
 const MODELOS = [
@@ -93,6 +93,27 @@ function updateCartBadge() {
 document.addEventListener('cart:updated', updateCartBadge);
 
 const bultosTxt = (qty, m) => qty + (qty === 1 ? ' bulto' : ' bultos') + ' (' + (qty * m.bulto) + ' u.)';
+
+/* ---------- categorías ---------- */
+function initCategorias() {
+  const cont = document.getElementById('catGrid');
+  if (!cont) return;
+  cont.innerHTML = FAMILIAS.map(f => {
+    const n = MODELOS.filter(m => m.fam === f.id).length;
+    return '<button type="button" class="cat-card" data-fam="' + f.id + '">' +
+      '<span class="cat-foto"><img src="images/' + f.foto + '" width="1200" height="1500" alt="" loading="lazy"></span>' +
+      '<span class="cat-nombre">' + esc(f.nombre) + '</span>' +
+      '<span class="cat-n">' + n + (n === 1 ? ' modelo' : ' modelos') + '</span>' +
+      '</button>';
+  }).join('');
+  cont.addEventListener('click', e => {
+    const b = e.target.closest('.cat-card');
+    if (!b) return;
+    famActiva = b.dataset.fam;
+    pintarChips(); renderGrid();
+    document.getElementById('catalogo')?.scrollIntoView({ block: 'start' });
+  });
+}
 
 /* ---------- catálogo ---------- */
 function pintarChips() {
@@ -285,6 +306,7 @@ function initLd() {
   } catch { /* el negocio estático queda igual */ }
 }
 
+initCategorias();
 initCatalogo();
 initDrawer();
 initWspFloat();
