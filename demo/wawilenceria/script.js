@@ -2,7 +2,7 @@ const WSP = '5491124673069';
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const ES_M2 = document.body.classList.contains('m2');
 const POR_PAGINA = 16;
-const MAPA_COORDS = [-34.6037, -58.3816];
+const MAPA_COORDS = [-34.6617, -58.3661];
 
 const IMG = {
   'lenceria-1x1.webp': [1254, 1254],
@@ -80,7 +80,7 @@ const PRODUCTOS = [
   { id: 'bata-saten-rosa', cod: 'WL-148', nombre: 'Bata Satén Rosa', cat: 'noche', color: 'rosa', colorNombre: 'Rosa', tela: 'Satén', talles: ['S', 'M', 'L', 'XL'], precio: 58900, descuento: 20, stock: 6, rank: 16, img: 'conjuntos-1x1.webp', foco: [0.27, 0.3, 1.75], vistas: [['conjuntos-1x1.webp', [0.3, 0.4, 1.2]]], alt: 'Bata corta de satén rosa con puños de encaje', desc: 'Bata corta de satén rosa con puños de encaje y cinto para atar.' },
 ];
 
-const HORARIOS = { 0: null, 1: [10, 20], 2: [10, 20], 3: [10, 20], 4: [10, 20], 5: [10, 20], 6: [10, 14] };
+const HORARIOS = { 0: null, 1: [600, 1155], 2: [600, 1155], 3: [600, 1155], 4: [600, 1155], 5: [600, 1155], 6: [600, 1155] };
 const DIAS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 const DIAS_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const PREPARACION_H = 2;
@@ -268,16 +268,18 @@ function cuandoTexto(fecha, ahora) {
   return `el ${DIAS_LARGO[fecha.getDay()]} ${fecha.getDate()}/${fecha.getMonth() + 1}`;
 }
 
+const fmtHora = m => (m % 60 ? `${Math.floor(m / 60)}:${pad2(m % 60)}` : `${m / 60}`);
+
 function estadoLocal(ahora = new Date()) {
   const h = HORARIOS[ahora.getDay()];
-  const hora = ahora.getHours() + ahora.getMinutes() / 60;
-  if (h && hora >= h[0] && hora < h[1]) return { abierto: true, texto: `Abierto ahora · hasta las ${h[1]} h` };
-  if (h && hora < h[0]) return { abierto: false, texto: `Cerrado · abrimos hoy a las ${h[0]} h` };
+  const min = ahora.getHours() * 60 + ahora.getMinutes();
+  if (h && min >= h[0] && min < h[1]) return { abierto: true, texto: `Abierto ahora · hasta las ${fmtHora(h[1])} h` };
+  if (h && min < h[0]) return { abierto: false, texto: `Cerrado · abrimos hoy a las ${fmtHora(h[0])} h` };
   for (let i = 1; i <= 7; i += 1) {
     const d = new Date(ahora);
     d.setDate(d.getDate() + i);
     const hh = HORARIOS[d.getDay()];
-    if (hh) return { abierto: false, texto: `Cerrado · abrimos ${i === 1 ? 'mañana' : 'el ' + DIAS_LARGO[d.getDay()]} a las ${hh[0]} h` };
+    if (hh) return { abierto: false, texto: `Cerrado · abrimos ${i === 1 ? 'mañana' : 'el ' + DIAS_LARGO[d.getDay()]} a las ${fmtHora(hh[0])} h` };
   }
   return { abierto: false, texto: 'Cerrado' };
 }
@@ -286,13 +288,13 @@ function listoRetiro(ahora = new Date()) {
   const h = HORARIOS[ahora.getDay()];
   if (h) {
     const apertura = new Date(ahora);
-    apertura.setHours(h[0] + 1, 0, 0, 0);
+    apertura.setHours(0, h[0] + 60, 0, 0);
     let t = new Date(Math.max(ahora.getTime() + PREPARACION_H * 3600000, apertura.getTime()));
     const mins = t.getMinutes();
     if (mins % 30) t = new Date(t.getTime() + (30 - (mins % 30)) * 60000);
     t.setSeconds(0, 0);
     const cierre = new Date(ahora);
-    cierre.setHours(h[1], 0, 0, 0);
+    cierre.setHours(0, h[1], 0, 0);
     if (t.getTime() <= cierre.getTime() - 30 * 60000 && diasEntre(ahora, t) === 0) return t;
   }
   for (let i = 1; i <= 7; i += 1) {
@@ -300,7 +302,7 @@ function listoRetiro(ahora = new Date()) {
     d.setDate(d.getDate() + i);
     const hh = HORARIOS[d.getDay()];
     if (hh) {
-      d.setHours(hh[0] + 1, 0, 0, 0);
+      d.setHours(0, hh[0] + 60, 0, 0);
       return d;
     }
   }
@@ -386,7 +388,7 @@ document.addEventListener('keydown', e => {
 });
 
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
-if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
 if (typeof ScrollTrigger !== 'undefined') window.addEventListener('load', () => ScrollTrigger.refresh());
 
 function showToast(msg) {
@@ -479,18 +481,20 @@ function initReveals() {
   revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -499,10 +503,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -511,6 +516,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
@@ -519,15 +525,14 @@ function initReveals() {
 function revelarNuevos(cont) {
   if (!revealsListos || !cont) return;
   const nuevos = [...cont.querySelectorAll('[data-animate]:not(.in)')];
+  if (!nuevos.length) return;
   if (reduceMotion) { nuevos.forEach(el => el.classList.add('in')); return; }
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    nuevos.forEach((el, i) => {
-      const demora = Math.min(i * 0.05, 0.5);
-      el.style.transitionDelay = `${demora}s`;
-      el.classList.add('in');
-      setTimeout(() => { el.style.transitionDelay = ''; }, (demora + 0.9) * 1000);
-    });
-  }));
+  requestAnimationFrame(() => requestAnimationFrame(() => nuevos.forEach((el, i) => {
+    const d = Math.min(i * 0.06, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  })));
 }
 
 function trapFoco(contenedor, e) {
@@ -553,7 +558,7 @@ function filaHTML(p) {
   const qty = filaQty.get(p.id) || 1;
   const nom = esc(p.nombre);
   const [w, h] = dims(p.img);
-  return `<li class="fila ${tinteClase(p)}" data-id="${p.id}" data-animate="izq" style="opacity:0;transform:translateX(-24px)">
+  return `<li class="fila ${tinteClase(p)}" data-id="${p.id}" data-animate="subir" style="opacity:0;transform:translateY(36px)">
     <button type="button" class="fila-foto recorte" data-qv="${p.id}" aria-label="Ver ${nom}" style="${recorte(p.img, p.foco, 1)}"><img src="images/${p.img}" alt="${esc(p.alt)}" width="${w}" height="${h}"></button>
     <div class="fila-info">
       <p class="fila-nombre"><button type="button" class="fila-link" data-qv="${p.id}">${nom}</button></p>
@@ -573,7 +578,7 @@ function cardHTML(p) {
   const nom = esc(p.nombre);
   const qty = filaQty.get(p.id) || 1;
   const [w, h] = dims(p.img);
-  return `<li class="card ${tinteClase(p)}" data-id="${p.id}" data-animate="subir" style="opacity:0;transform:translateY(46px)">
+  return `<li class="card ${tinteClase(p)}" data-id="${p.id}" data-animate="subir" style="opacity:0;transform:translateY(36px)">
     <div class="card-media">
       <button type="button" class="card-foto recorte" data-qv="${p.id}" aria-label="Ver ${nom}" style="${recorte(p.img, p.foco, 1)}"><img src="images/${p.img}" alt="${esc(p.alt)}" width="${w}" height="${h}"></button>
       <div class="card-etqs">${p.nuevo ? '<span class="etq etq--nuevo">Nuevo</span>' : ''}${p.stock <= 3 ? '<span class="etq etq--ultimas">Últimas</span>' : ''}</div>
@@ -1059,7 +1064,7 @@ const Drawer = {
       else if (!this.el.contains(document.activeElement)) this.el.focus();
     };
     if (!items.length) {
-      this.cuerpo.innerHTML = `<div class="drawer-vacio"><svg class="i" aria-hidden="true"><use href="#i-mono"/></svg><p class="drawer-vacio-tit">Tu pedido está vacío</p><p>Elegí una prenda, tu talle, y aparece acá.</p><button type="button" class="btn btn-cta" data-ir-tienda>Ir a la tienda</button></div>`;
+      this.cuerpo.innerHTML = `<div class="drawer-vacio"><svg class="i" aria-hidden="true"><use href="#i-corazon"/></svg><p class="drawer-vacio-tit">Tu pedido está vacío</p><p>Elegí una prenda, tu talle, y aparece acá.</p><button type="button" class="btn btn-cta" data-ir-tienda>Ir a la tienda</button></div>`;
       this.pie.innerHTML = '';
       devolver();
       return;
@@ -1341,13 +1346,13 @@ function initEntrega() {
         const d = new Date(ahora);
         d.setDate(d.getDate() + i);
         const h = HORARIOS[d.getDay()];
-        const nombre = i === 0 ? 'Hoy' : i === 1 ? 'Mañana' : DIAS[d.getDay()];
+        const nombre = i === 0 ? 'Hoy' : DIAS[d.getDay()];
         const clases = ['dia'];
         if (!h) clases.push('dia--cerrado');
         if (i === 0) clases.push('dia--hoy');
         if (i === dSale) clases.push('dia--sale');
         else if (dDesde >= 0 && i > dDesde && i <= dHasta) clases.push('dia--rango');
-        return `<div class="${clases.join(' ')}"><span class="dia-nombre">${nombre}</span><span class="dia-num">${d.getDate()}</span><span class="dia-hora">${h ? `${h[0]} a ${h[1]} h` : 'Cerrado'}</span></div>`;
+        return `<div class="${clases.join(' ')}"><span class="dia-nombre">${nombre}</span><span class="dia-num">${d.getDate()}</span><span class="dia-hora">${h ? `${fmtHora(h[0])} a ${fmtHora(h[1])} h` : 'Cerrado'}</span></div>`;
       }).join('');
     }
     pintarEstado();
@@ -1381,7 +1386,7 @@ function initMapa() {
     const mapa = L.map(el, { zoomControl: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, boxZoom: false, keyboard: false, dragging: false }).setView(MAPA_COORDS, 15);
     mapa.attributionControl.setPrefix(false);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(mapa);
-    const icono = L.divIcon({ className: '', html: '<div class="pin-wawi"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mono"/></svg></div>', iconSize: [46, 46], iconAnchor: [23, 56] });
+    const icono = L.divIcon({ className: '', html: '<div class="pin-wawi"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-corazon"/></svg></div>', iconSize: [44, 44], iconAnchor: [22, 54] });
     L.marker(MAPA_COORDS, { icon: icono, keyboard: false, interactive: false }).addTo(mapa);
   };
   if (!('IntersectionObserver' in window)) { crear(); return; }
@@ -1547,17 +1552,18 @@ function initCountdown() {
 
 function initHero() {
   if (typeof gsap === 'undefined' || reduceMotion) return;
-  const h1 = document.querySelector('.h1');
-  if (!h1) return;
-  document.body.classList.add('entrando');
-  const tl = gsap.timeline({ defaults: { ease: 'power3.out' }, onComplete: () => document.body.classList.remove('entrando') });
-  tl.fromTo(h1.querySelector('.h1-a'), { yPercent: 18, opacity: 0, clipPath: 'inset(0% 0% 100% 0%)' }, { yPercent: 0, opacity: 1, clipPath: 'inset(0% 0% 0% 0%)', duration: 1.05, clearProps: 'clipPath,transform,opacity' })
-    .from(h1.querySelectorAll('.arcoiris span'), { y: -34, rotation: () => gsap.utils.random(-18, 18), opacity: 0, duration: .75, ease: 'back.out(2.2)', stagger: .06 }, '-=.55')
-    .from(h1.querySelector('.h1-b'), { scale: .8, rotation: -12, opacity: 0, duration: .6, ease: 'back.out(2)' }, '-=.35')
-    .from('.tienda-bajada', { y: 18, opacity: 0, duration: .6 }, '-=.4')
-    .from('.sello', { scale: .6, rotation: -40, opacity: 0, duration: .8, ease: 'back.out(1.8)' }, '-=.6');
+  const cab = document.querySelector('.tienda-cabeza, .hero-corto');
+  if (!cab) return;
+  const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+  const migas = cab.querySelectorAll('.migas');
+  if (migas.length) tl.from(migas, { y: 14, opacity: 0, duration: .9, clearProps: 'transform,opacity' }, 0);
+  tl.from(cab.querySelectorAll('.kicker'), { y: 14, opacity: 0, duration: .9, clearProps: 'transform,opacity' }, .05)
+    .from(cab.querySelectorAll('.h1'), { y: 32, opacity: 0, filter: 'blur(8px)', duration: 1.3, clearProps: 'transform,opacity,filter' }, .15)
+    .from(cab.querySelectorAll('.tienda-bajada'), { y: 20, opacity: 0, duration: 1, clearProps: 'transform,opacity' }, .45);
+  const logo = document.querySelectorAll('.tienda-logo');
+  if (logo.length) tl.from(logo, { scale: .92, opacity: 0, duration: 1.3, clearProps: 'transform,opacity' }, .3);
   const pops = document.querySelectorAll('.tabs .tab, .cat-circulos .cat-circulo');
-  if (pops.length) tl.from(pops, { y: 22, scale: .92, opacity: 0, duration: .55, stagger: .06, ease: 'back.out(1.7)', clearProps: 'transform,opacity' }, '-=.55');
+  if (pops.length) tl.from(pops, { y: 16, opacity: 0, duration: .9, stagger: .05, clearProps: 'transform,opacity' }, .35);
 }
 
 function initParallax() {
