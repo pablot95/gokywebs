@@ -6659,17 +6659,58 @@ function _telefonoMantenimiento(c, m) {
     return m?.whatsapp || c?.telefono || comp?.whatsapp || comp?.telefono || "";
 }
 
+/* El dominio se carga y se cambia desde la lista (Pablo, 29-sep-2026): sin dominio,
+   un botón "+ Agregar dominio"; con dominio, el link y un lápiz. Se guarda en el
+   suscriptor si la fila es de una suscripción y, si no, en el cliente. */
 function _mantContactoHTML(c, m) {
     const telefono = _telefonoMantenimiento(c, m);
     const dominio = _dominioMantenimiento(c, m);
+    const destino = m ? `data-dom-mant="${escapeHtml(m.id)}"` : c ? `data-dom-cliente="${escapeHtml(c.id)}"` : "";
     return {
         telefono: telefono
             ? `<a href="${escapeHtml(mantWaLink(telefono))}" target="_blank" rel="noopener noreferrer">${escapeHtml(telefono)}</a>`
             : `<span class="muted">—</span>`,
         dominio: dominio
-            ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>`
-            : `<span class="muted">—</span>`
+            ? `<a href="${escapeHtml(mantDomainLink(dominio))}" target="_blank" rel="noopener noreferrer">${escapeHtml(dominio)}</a>${destino ? ` <button type="button" class="icon-btn" ${destino} data-dom-valor="${escapeHtml(dominio)}" title="Cambiar el dominio">✎</button>` : ""}`
+            : destino
+                ? `<button type="button" class="btn-ghost" ${destino} data-dom-valor="" style="font-size:12px;padding:2px 8px">+ Agregar dominio</button>`
+                : `<span class="muted">—</span>`
     };
+}
+
+// Convierte la celda en un campo para escribir el dominio; Enter guarda, Esc cancela.
+function _bindDominioMant(tbody) {
+    tbody.querySelectorAll("[data-dom-mant], [data-dom-cliente]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const td = btn.closest("td");
+            const esMant = !!btn.dataset.domMant;
+            const id = btn.dataset.domMant || btn.dataset.domCliente;
+            const previo = btn.dataset.domValor || "";
+            td.innerHTML = `<input type="text" placeholder="ejemplo.com.ar" value="${escapeHtml(previo)}" style="width:100%;min-width:150px;font-size:13px">`;
+            const input = td.querySelector("input");
+            input.focus();
+            input.select();
+            let listo = false;
+            const cerrar = async (guardar) => {
+                if (listo) return;
+                listo = true;
+                const valor = input.value.trim();
+                if (!guardar || valor === previo) { renderMantenimiento(); return; }
+                try {
+                    await updateDoc(doc(db, esMant ? "mantenimiento" : "clientes", id), { dominio: valor, updatedAt: serverTimestamp() });
+                } catch (err) {
+                    console.error(err);
+                    alert("Error al guardar el dominio: " + err.message);
+                    renderMantenimiento();
+                }
+            };
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") { e.preventDefault(); cerrar(true); }
+                else if (e.key === "Escape") cerrar(false);
+            });
+            input.addEventListener("blur", () => cerrar(true));
+        });
+    });
 }
 
 function _mantFilaClienteHTML(c) {
@@ -6684,8 +6725,8 @@ function _mantFilaClienteHTML(c) {
         : s.estado === "activa" ? "Activo" : "Sin suscripción";
     const color = estado === "Activo" ? "#4ade80" : estado === "Sin suscripción" ? "#F59E0B" : "#9CA3AF";
     return `<tr class="client-row" data-row-id="${escapeHtml(c.id)}">
-        <td><div style="font-weight:600">${escapeHtml(c.nombre || proyecto || "—")}</div>
-            ${proyecto && proyecto.toLowerCase() !== String(c.nombre || "").trim().toLowerCase() ? `<div class="muted" style="font-size:12px">${escapeHtml(proyecto)}</div>` : ""}
+        <td><div style="font-weight:700;font-size:15px">${escapeHtml(proyecto || c.nombre || "—")}</div>
+            ${proyecto && c.nombre && proyecto.toLowerCase() !== String(c.nombre).trim().toLowerCase() ? `<div class="muted" style="font-size:11px">${escapeHtml(c.nombre)}</div>` : ""}
             <div class="muted" style="font-size:11px">${webEntregada(c) ? "Web entregada" : "Web en desarrollo"} · cargado en Clientes</div></td>
         <td><div>${escapeHtml(s.plan.label || "Plan mensual")}</div><div class="muted" style="font-size:12px">${fmtMoney(s.mensual)}/mes</div></td>
         <td class="col-telefono">${contacto.telefono}</td><td>${contacto.dominio}</td>
@@ -7184,7 +7225,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
         const cliente = clientePorMant.get(m.id) || null;
         const proyectoCliente = String(cliente?.proyecto || "").trim();
         const clienteLink = cliente
-            ? `<button type="button" class="mant-cliente-link" data-mant-cliente="${escapeHtml(cliente.id)}" title="Abrir el cliente">${escapeHtml(cliente.nombre || "Cliente")}${proyectoCliente && proyectoCliente.toLowerCase() !== String(cliente.nombre || "").trim().toLowerCase() ? ` · ${escapeHtml(proyectoCliente)}` : ""} · ${webEntregada(cliente) ? "web entregada" : "web en desarrollo"}</button>`
+            ? `<button type="button" class="mant-cliente-link" data-mant-cliente="${escapeHtml(cliente.id)}" title="Abrir el cliente">${escapeHtml(cliente.nombre || "Cliente")} · ${webEntregada(cliente) ? "web entregada" : "web en desarrollo"}</button>`
             : "";
         const alta = mantToDate(m.createdAt);
         const planLabel = m.planLabel || MANT_PLAN_LABELS[m.plan] || m.plan || "—";
@@ -7206,8 +7247,9 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
         return `
             <tr class="mant-row">
                 <td>
-                    <div style="font-weight:600">${escapeHtml(m.nombre || "—")}</div>
-                    <div class="muted" style="font-size:12px">${escapeHtml(m.email || "")}</div>
+                    <div style="font-weight:700;font-size:15px">${escapeHtml(proyectoCliente || m.nombre || "—")}</div>
+                    ${proyectoCliente && m.nombre ? `<div class="muted" style="font-size:11px">${escapeHtml(m.nombre)}</div>` : ""}
+                    <div class="muted" style="font-size:11px">${escapeHtml(m.email || "")}</div>
                     ${alta ? `<div class="muted" style="font-size:11px">Alta ${mantLongDate(alta)}</div>` : ""}
                     ${clienteLink}
                 </td>
@@ -7235,6 +7277,7 @@ function _renderMantSuscripciones(tbody, filas, sinSusc, term) {
     }).join("");
 
     _bindTableListeners(tbody);
+    _bindDominioMant(tbody);
     tbody.querySelectorAll("[data-mant-facturar]").forEach(btn => {
         btn.addEventListener("click", () => {
             const m = mantenimiento.find(x => x.id === btn.dataset.mantFacturar);
