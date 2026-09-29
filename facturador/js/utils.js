@@ -103,3 +103,68 @@ export function toast(msg, tipo = 'ok') {
     clearTimeout(el._t);
     el._t = setTimeout(() => { el.style.opacity = '0'; }, 3000);
 }
+
+// --- Carpeta de facturas (Chrome/Edge): se elige una vez y queda recordada. ---
+// En navegadores sin File System Access API se baja a la carpeta de descargas.
+const DB_CARPETA = 'facturador-carpeta';
+
+function abrirDbCarpeta() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_CARPETA, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore('kv');
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function kv(modo, fn) {
+    const db = await abrirDbCarpeta();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction('kv', modo);
+        const req = fn(tx.objectStore('kv'));
+        tx.oncomplete = () => resolve(req.result);
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+// Llamar al principio del click (necesita el gesto del usuario para pedir permiso
+// o abrir el selector). Devuelve el handle o null si hay que usar la descarga común.
+export async function prepararCarpetaFacturas() {
+    if (!window.showDirectoryPicker) return null;
+    try {
+        let handle = await kv('readonly', s => s.get('facturas')).catch(() => null);
+        if (handle) {
+            if (await handle.queryPermission({ mode: 'readwrite' }) === 'granted') return handle;
+            if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted') return handle;
+        }
+        toast('Elegí la carpeta donde se guardan las facturas (una sola vez).');
+        handle = await window.showDirectoryPicker({ id: 'facturas', mode: 'readwrite', startIn: 'desktop' });
+        await kv('readwrite', s => s.put(handle, 'facturas')).catch(() => {});
+        return handle;
+    } catch (err) {
+        return null;
+    }
+}
+
+export async function guardarFactura(blob, nombre, carpeta) {
+    if (carpeta) {
+        try {
+            const archivo = await carpeta.getFileHandle(nombre, { create: true });
+            const w = await archivo.createWritable();
+            await w.write(blob);
+            await w.close();
+            toast(`Guardada en ${carpeta.name}: ${nombre}`);
+            return;
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = nombre;
+    document.body.appendChild(enlace);
+    enlace.click();
+    enlace.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+}

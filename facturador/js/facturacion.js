@@ -6,6 +6,7 @@
 import {
     $, formatPesos, fechaInput, generarRequestId, llenarSelect, snapshotCampos, confirmarDescartarCambios,
     SIN_IDENTIFICAR, TIPO_DOC_CUIT, CONDICION_IVA_RESPONSABLE_INSCRIPTO, ALICUOTAS_IVA,
+    prepararCarpetaFacturas, guardarFactura,
 } from './utils.js';
 import { estado, emisorEsResponsableInscripto } from './state.js';
 
@@ -95,6 +96,7 @@ async function llamarFacturacion(accion, cuerpo, extra = {}) {
 
 async function abrirComprobante(factura) {
     try {
+        const carpeta = await prepararCarpetaFacturas();
         const token = await estado.user.getIdToken();
         const res = await fetch('api/comprobante.php', {
             method: 'POST',
@@ -108,14 +110,7 @@ async function abrirComprobante(factura) {
             throw new Error(detalle);
         }
         const nombre = res.headers.get('X-Nombre-Archivo') || `${numeroComprobante(factura.tipoComprobante, factura.puntoVenta, factura.numero)}.pdf`;
-        const url = URL.createObjectURL(await res.blob());
-        const enlace = document.createElement('a');
-        enlace.href = url;
-        enlace.download = nombre;
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        await guardarFactura(await res.blob(), nombre, carpeta);
     } catch (err) {
         console.error(err);
         alert('No se pudo generar el comprobante: ' + err.message);

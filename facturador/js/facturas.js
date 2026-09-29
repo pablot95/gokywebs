@@ -3,7 +3,7 @@
 // individual e impresión conjunta de todo lo que esté filtrado en pantalla.
 import { auth } from '../firebase-config.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { $, escapeHtml, formatPesos, toast } from './utils.js';
+import { $, escapeHtml, formatPesos, toast, prepararCarpetaFacturas, guardarFactura } from './utils.js';
 import { estado } from './state.js';
 
 const LETRA = { 1: 'A', 6: 'B', 11: 'C' };
@@ -101,6 +101,7 @@ async function descargarFactura(requestId, boton) {
     boton.disabled = true;
     boton.textContent = 'Generando…';
     try {
+        const carpeta = await prepararCarpetaFacturas();
         const token = await estado.user.getIdToken();
         const res = await fetch('api/comprobante.php', {
             method: 'POST',
@@ -114,14 +115,7 @@ async function descargarFactura(requestId, boton) {
             throw new Error(detalle);
         }
         const nombre = res.headers.get('X-Nombre-Archivo') || 'factura.pdf';
-        const url = URL.createObjectURL(await res.blob());
-        const enlace = document.createElement('a');
-        enlace.href = url;
-        enlace.download = nombre;
-        document.body.appendChild(enlace);
-        enlace.click();
-        enlace.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
+        await guardarFactura(await res.blob(), nombre, carpeta);
     } catch (err) {
         console.error(err);
         toast('No se pudo descargar: ' + err.message, 'error');
