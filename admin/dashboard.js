@@ -330,21 +330,43 @@ function erroresDominio(raw) {
     return d.includes(".") ? d : "";
 }
 
+// "Clínica de Mar" -> "clinicademar"
+function erroresNorm(s) {
+    return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 // Resumen por web: errores agrupados, cuántos importantes quedan sin resolver.
-// Las webs esperadas salen solas de los dominios cargados en clientes, completados y
-// mantenimiento; las que avisan y no coinciden con ninguno van aparte ("Otras webs").
+// Las webs esperadas salen de los dominios cargados en clientes, completados y mantenimiento.
+// Si una web que avisa no coincide con ningún dominio, se busca el cliente por nombre
+// (autoserviciohudson.com.ar -> "Autoservicio Hudson"), porque muchas fichas no tienen el dominio cargado.
 function erroresResumen() {
     const { docs, resueltos, ocultos, pings } = erroresDatos;
     const porWeb = new Map();
+    const sinDominio = [];
     for (const c of [...clients, ...completados, ...mantenimiento]) {
+        const nombre = c.nombre || c.proyecto || "";
         const dom = erroresDominio(c.dominio || c.web || c.url);
-        if (!dom || porWeb.has(dom)) continue;
-        porWeb.set(dom, { id: dom, nombre: c.nombre || c.proyecto || dom, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
+        if (!dom) {
+            const claves = [...new Set([erroresNorm(c.nombre), erroresNorm(c.proyecto)])].filter(k => k.length >= 4);
+            if (claves.length) sinDominio.push({ nombre, claves });
+            continue;
+        }
+        if (porWeb.has(dom)) continue;
+        porWeb.set(dom, { id: dom, nombre: nombre || dom, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
     }
-    // A qué web pertenece un host que avisó: el dominio de un cliente (o un subdominio) o él mismo.
+    const clientePorNombre = (host) => {
+        const label = erroresNorm(host.replace(/^www\./, "").split(".")[0]);
+        if (!label) return null;
+        return sinDominio.find(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k)))) || null;
+    };
+    // A qué web pertenece un host que avisó: el dominio de un cliente (o un subdominio), un cliente
+    // que coincide por nombre, o él mismo.
     const claveDe = (host) => {
         for (const dom of porWeb.keys()) if (host === dom || host.endsWith("." + dom)) return dom;
-        if (!porWeb.has(host)) porWeb.set(host, { id: host, nombre: host, dominio: host, esCliente: false, senal: null, grupos: new Map() });
+        if (!porWeb.has(host)) {
+            const c = clientePorNombre(host);
+            porWeb.set(host, { id: host, nombre: c ? c.nombre : host, dominio: host, esCliente: !!c, senal: null, grupos: new Map() });
+        }
         return host;
     };
     for (const [host, t] of pings) {
@@ -396,10 +418,10 @@ function erroresMensajeCliente(w) {
     const mes = erroresMesNombre(erroresMes);
     const donde = w.dominio ? " (" + w.dominio + ")" : "";
     if (w.altos === 0) {
-        return "¡Hola! Te cuento que durante " + mes + " no se registraron errores en tu web" + donde + ". Todo funcionó con normalidad y seguimos monitoreándola para que siga así. Cualquier cosa que notes o quieras cambiar, escribime.";
+        return "Hola! Te cuento que durante " + mes + " no se registraron errores en tu web" + donde + ". Todo funcionó con normalidad y seguimos monitoreándola para que siga así. Cualquier cosa que notes o quieras cambiar, escribime.";
     }
     const uno = w.altos === 1;
-    return "¡Hola! Te cuento que durante " + mes + " detectamos " + (uno ? "un inconveniente puntual" : w.altos + " inconvenientes puntuales") + " en tu web" + donde + ", pero " + (uno ? "ya fue solucionado" : "ya fueron solucionados") + " a tiempo. Seguimos monitoreándola para que todo siga en orden. Cualquier duda, escribime.";
+    return "Hola! Te cuento que durante " + mes + " detectamos " + (uno ? "un inconveniente puntual" : w.altos + " inconvenientes puntuales") + " en tu web" + donde + ", pero " + (uno ? "ya fue solucionado" : "ya fueron solucionados") + " a tiempo. Seguimos monitoreándola para que todo siga en orden. Cualquier duda, escribime.";
 }
 
 function erroresHtmlWeb(w) {
@@ -436,8 +458,8 @@ function erroresHtmlWeb(w) {
         '<div class="err-acciones">' +
           (w.oculto ? '<button type="button" class="btn-ghost" data-err-mostrar>Volver a mostrar</button>' : "") +
           (!w.oculto && w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
-          (!w.oculto && !w.esCliente ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista (no es un cliente tuyo)">Ocultar</button>' : "") +
-          (!w.oculto && w.esCliente ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
+          (!w.oculto ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
+          (!w.oculto ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista">Ocultar</button>' : "") +
         '</div>' +
       '</div>' +
       '<div class="err-detalle"' + (abierto ? "" : " hidden") + '>' +
@@ -453,22 +475,13 @@ function renderErrores() {
     const todas = erroresResumen();
     const webs = todas.filter(w => !w.oculto);
     const ocultas = todas.filter(w => w.oculto);
-    const clientes = webs.filter(w => w.esCliente);
-    const otras = webs.filter(w => !w.esCliente);
     if (!todas.length) {
         cont.innerHTML = '<p class="muted">Todavía no hay webs. Cargá el dominio de cada cliente (campo Dominio) y pegá en el &lt;head&gt; de su web: <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code>. Aparecen solas.</p>';
         return;
     }
-    const otrasAbiertas = !!cont.querySelector(".err-otras:not(.err-ocultas)")?.open;
     const ocultasAbiertas = !!cont.querySelector(".err-ocultas")?.open;
-    const otrasPend = otras.reduce((t, w) => t + w.altosPend, 0);
     cont.innerHTML =
-        (clientes.length ? clientes.map(erroresHtmlWeb).join("") : '<p class="muted">Ningún cliente tiene dominio cargado todavía.</p>') +
-        (otras.length
-            ? '<details class="err-otras"' + (otrasPend > 0 || otrasAbiertas ? " open" : "") + '>' +
-              '<summary>Otras webs detectadas <span class="pill-count">' + otras.length + '</span><small class="muted"> · avisaron pero su dominio no coincide con ningún cliente</small></summary>' +
-              otras.map(erroresHtmlWeb).join("") + '</details>'
-            : "") +
+        (webs.length ? webs.map(erroresHtmlWeb).join("") : '<p class="muted">Todas las webs están ocultas.</p>') +
         (ocultas.length
             ? '<details class="err-otras err-ocultas"' + (ocultasAbiertas ? " open" : "") + '>' +
               '<summary>Webs ocultas <span class="pill-count">' + ocultas.length + '</span><small class="muted"> · no suman al contador; abrí una y tocá «Volver a mostrar»</small></summary>' +
