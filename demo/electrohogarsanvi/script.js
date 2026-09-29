@@ -286,18 +286,20 @@ function initNav() {
 function initReveals() {
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -306,10 +308,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -318,6 +321,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
@@ -452,7 +456,7 @@ function initRail() {
   const vp = document.querySelector('[data-rail]');
   if (!vp) return;
   const track = vp.querySelector('[data-rail-track]');
-  track.innerHTML = RAIL.map(getProducto).filter(Boolean).map(railCardHTML).join('');
+  track.innerHTML = RAIL.map(getProducto).filter(Boolean).map(p => `<div class="rail-item" data-animate="der" style="opacity:0;transform:translateX(64px)">${railCardHTML(p)}</div>`).join('');
   const prev = document.querySelector('[data-rail-prev]');
   const next = document.querySelector('[data-rail-next]');
   let down = false;
@@ -759,7 +763,7 @@ function initCatalogo() {
 
   render(true, false);
 
-  if (!reduceMotion && 'IntersectionObserver' in window && grid.getBoundingClientRect().top > window.innerHeight) {
+  if (!reduceMotion && 'IntersectionObserver' in window) {
     const primeros = [...cards.values()].filter(el => el.style.display !== 'none');
     primeros.forEach(el => el.classList.add('pre'));
     const io = new IntersectionObserver(entries => {
@@ -1285,7 +1289,7 @@ function initDeepLink() {
 
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
 if (typeof gsap !== 'undefined' && typeof Flip !== 'undefined') gsap.registerPlugin(Flip);
-if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; el.style.clipPath = 'none'; });
+if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
 if (typeof ScrollTrigger !== 'undefined') window.addEventListener('load', () => ScrollTrigger.refresh());
 
 function initHeroMotion() {
@@ -1295,9 +1299,11 @@ function initHeroMotion() {
     const tl = gsap.timeline({ defaults: { ease: 'back.out(1.5)' } });
     tl.from(banner, { y: 30, scale: 0.97, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' })
       .from(banner.querySelectorAll('.banner-texto > *'), { y: 30, opacity: 0, duration: 0.8, stagger: 0.09, clearProps: 'transform,opacity' }, 0.2)
-      .from(banner.querySelector('.banner-media img'), { scale: 1.12, duration: 1.4, ease: 'power3.out', clearProps: 'transform' }, 0.1)
+      .from(banner.querySelectorAll('.banner-texto .etiqueta i b'), { scaleY: 0, transformOrigin: '50% 100%', duration: 0.5, stagger: 0.08, clearProps: 'transform,transformOrigin' }, 0.5)
+      .from(banner.querySelector('.banner-media img'), { scale: 1.1, duration: 1.8, ease: 'power3.out', clearProps: 'transform' }, 0.1)
       .from(banner.querySelectorAll('.banner-msg'), { y: 40, opacity: 0, duration: 0.7, stagger: 0.1, clearProps: 'transform,opacity' }, 0.55)
-      .from(document.querySelector('.hero-banner .sticker'), { y: 30, rotate: 8, opacity: 0, duration: 0.8, clearProps: 'transform,opacity' }, 0.8);
+      .from(document.querySelector('.hero-banner .sticker'), { y: 30, rotate: 8, opacity: 0, duration: 0.8, clearProps: 'transform,opacity' }, 0.8)
+      .from(document.querySelectorAll('.hero-banner .sticker .barras i'), { scaleX: 0, transformOrigin: '0% 50%', duration: 0.6, stagger: 0.07, clearProps: 'transform,transformOrigin' }, 1.05);
   }
   const corto = document.querySelector('.hero-corto');
   if (corto) {
@@ -1305,6 +1311,8 @@ function initHeroMotion() {
     tl.from(corto.querySelectorAll('.migas, .hero-h1, .banner-bajada'), { y: 26, opacity: 0, duration: 0.8, stagger: 0.08, clearProps: 'transform,opacity' })
       .from(corto.querySelector('.corto-media'), { y: 40, rotate: 12, opacity: 0, duration: 1, clearProps: 'transform,opacity' }, 0.15)
       .from(corto.querySelector('.sticker'), { y: 26, rotate: 8, opacity: 0, duration: 0.8, clearProps: 'transform,opacity' }, 0.5)
+      .from(corto.querySelectorAll('.sticker .barras i'), { scaleX: 0, transformOrigin: '0% 50%', duration: 0.6, stagger: 0.07, clearProps: 'transform,transformOrigin' }, 0.75)
+      .from(document.querySelector('[data-hero-busqueda]'), { y: 16, opacity: 0, duration: 0.6, clearProps: 'transform,opacity' }, 0.05)
       .from(document.querySelectorAll('.header-cats .chip'), { y: 16, opacity: 0, duration: 0.5, stagger: 0.05, clearProps: 'transform,opacity' }, 0.1);
   }
 }

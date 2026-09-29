@@ -1212,11 +1212,6 @@ body.no-scroll {
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
 }
 
-.card.pre {
-  opacity: 0;
-  transform: translateY(18px);
-}
-
 .card__img {
   position: relative;
   width: 100%;
@@ -2900,12 +2895,50 @@ body.no-scroll .floats {
 
 /* entradas */
 [data-animate] {
-  transition: opacity 0.8s var(--ease), transform 0.8s var(--ease);
+  transition: opacity 0.9s var(--ease), transform 1.1s var(--ease), clip-path 1.2s var(--ease), filter 1s var(--ease);
 }
 
 [data-animate].in {
   opacity: 1 !important;
   transform: none !important;
+}
+
+[data-animate="blur"].in {
+  filter: none !important;
+}
+
+[data-animate="mascara"].in,
+[data-animate="cortina"].in {
+  clip-path: inset(0 0 0 0) !important;
+}
+
+[data-animate="linea"] {
+  transform-origin: 0 50%;
+}
+
+[data-animate="zoom"] {
+  transition: transform 1.8s var(--ease);
+}
+
+[data-animate="mascara"] > img,
+[data-animate="mascara"] > picture > img,
+[data-animate] .cat__img img,
+[data-animate] .tile img {
+  scale: 1.12;
+  transition: scale 1.5s var(--ease), transform 0.8s var(--ease);
+}
+
+[data-animate] .card__img img {
+  scale: 1.12;
+  transition: scale 1.5s var(--ease), transform 0.9s var(--ease);
+}
+
+[data-animate="mascara"].in > img,
+[data-animate="mascara"].in > picture > img,
+[data-animate].in .card__img img,
+[data-animate].in .cat__img img,
+[data-animate].in .tile img {
+  scale: 1;
 }
 
 /* responsive */
@@ -3392,6 +3425,16 @@ body.no-scroll .floats {
   [data-animate] {
     opacity: 1 !important;
     transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+
+  [data-animate="mascara"] > img,
+  [data-animate="mascara"] > picture > img,
+  [data-animate] .card__img img,
+  [data-animate] .cat__img img,
+  [data-animate] .tile img {
+    scale: 1;
   }
 
   .wsp-float::before {

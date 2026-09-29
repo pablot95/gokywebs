@@ -318,7 +318,7 @@ function cardHTML(c) {
   const badge = c.badge
     ? `<span class="curso__badge">${esc(c.badge)}</span>`
     : c.descuento > 0 ? `<span class="curso__badge curso__badge--off">-${c.descuento}%</span>` : '';
-  return `<article class="curso${completo ? ' curso--completo' : ''}" data-animate style="opacity:0;transform:translateY(20px)">
+  return `<article class="curso${completo ? ' curso--completo' : ''}" data-animate="subir" style="opacity:0;transform:translateY(40px)">
     <button type="button" class="curso__media" data-open="${c.id}" aria-label="Ver el curso ${esc(c.titulo)}">
       <img src="${c.img}" width="${c.w}" height="${c.h}" alt="${esc(c.alt)}">
       <span class="curso__n">N.º ${dos(c.n)}</span>${badge}
@@ -347,7 +347,7 @@ function rellenar() {
   const usados = cursosVisibles.reduce((n, c) => n + (c.id === 'desde-cero' ? cols : 1), 0);
   const resto = usados % cols;
   if (!resto) return;
-  grid.insertAdjacentHTML('beforeend', `<a class="curso-filler" href="#calendario" style="grid-column: span ${cols - resto}"><b>¿Primera vez? Un bálsamo se hace en una tarde; un oleato espera cuatro semanas.</b><span>Mirá cuánto tarda cada receta →</span></a>`);
+  grid.insertAdjacentHTML('beforeend', `<a class="curso-filler" href="#calendario" data-animate="subir" style="grid-column: span ${cols - resto};opacity:0;transform:translateY(40px)"><b>¿Primera vez? Un bálsamo se hace en una tarde; un oleato espera cuatro semanas.</b><span>Mirá cuánto tarda cada receta →</span></a>`);
 }
 
 function pintarCursos() {
@@ -403,12 +403,12 @@ function initCursos() {
     pintarCursos();
   });
   let ancho = 0;
-  window.addEventListener('resize', () => { clearTimeout(ancho); ancho = setTimeout(rellenar, 150); }, { passive: true });
+  window.addEventListener('resize', () => { clearTimeout(ancho); ancho = setTimeout(() => { rellenar(); grid.querySelector('.curso-filler')?.classList.add('in'); }, 150); }, { passive: true });
 }
 
 function panelHTML(c, i) {
   return `<div class="ppanel" role="tabpanel" id="panel-${c.id}" aria-labelledby="tab-${c.id}" tabindex="0"${i ? ' hidden' : ''}>
-    <div class="ppanel__media${c.ratio === 'v' ? ' ppanel__media--v' : ''}"><img src="${c.img}" width="${c.w}" height="${c.h}" alt="${esc(c.alt)}"${i ? ' loading="lazy"' : ''}></div>
+    <div class="ppanel__media${c.ratio === 'v' ? ' ppanel__media--v' : ''}"><img src="${c.img}" width="${c.w}" height="${c.h}" alt="${esc(c.alt)}"></div>
     <div class="ppanel__txt">
       <p class="etq__n">N.º ${dos(c.n)} · ${esc(c.categorias.join(' · '))}</p>
       <h3 class="h2 ppanel__t">${esc(c.titulo)}</h3>
@@ -850,18 +850,20 @@ function initReveals() {
   revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.06, 0.36)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -870,10 +872,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -882,6 +885,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
@@ -891,8 +895,12 @@ function revelarNuevos(cont) {
   if (!revealsListos || !cont) return;
   const nuevos = cont.querySelectorAll('[data-animate]:not(.in)');
   if (reduceMotion) { nuevos.forEach(el => el.classList.add('in')); return; }
-  nuevos.forEach((el, i) => { el.style.transitionDelay = `${Math.min(i * 0.05, 0.3)}s`; });
-  setTimeout(() => nuevos.forEach(el => el.classList.add('in')), 40);
+  setTimeout(() => nuevos.forEach((el, i) => {
+    const d = Math.min(i * 0.05, 0.3);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  }), 40);
 }
 
 function abrirDesdeUrl() {

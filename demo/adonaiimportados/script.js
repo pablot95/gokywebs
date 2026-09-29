@@ -167,16 +167,16 @@ function stockHTML(p) {
 }
 
 /* ---------- tarjeta de producto ---------- */
-function cardHTML(p, extra = '') {
+function cardHTML(p, extra = '', animar = true) {
   const s = getSeccion(p.seccion);
   const conTalle = Boolean(p.talles);
   const libre = p.stock - Cart.enCarrito(p.id);
   const accion = conTalle
     ? `<button type="button" class="btn btn--solid btn--sm card__add" data-quick="${p.id}">Elegir talle</button>`
     : `<button type="button" class="btn btn--solid btn--sm card__add" data-add="${p.id}"${libre <= 0 ? ' disabled' : ''}>${ICONO_MAS}<span class="card__add-t">Agregar</span></button>`;
-  return `<article class="card${extra}" data-id="${p.id}">
+  return `<article class="card${extra}" data-id="${p.id}"${animar ? ' data-animate="subir" style="opacity:0;transform:translateY(40px)"' : ''}>
     <div class="card__img">
-      <img src="${p.img}" width="${p.w}" height="${p.h}" alt="${esc(p.alt)}" loading="lazy">
+      <img src="${p.img}" width="${p.w}" height="${p.h}" alt="${esc(p.alt)}">
       ${p.descuento > 0 ? `<span class="card__badge">−${p.descuento}%</span>` : ''}
       <button type="button" class="card__quick" data-quick="${p.id}" tabindex="-1" aria-hidden="true">Vista rápida</button>
     </div>
@@ -253,12 +253,12 @@ function sincronizarControles() {
   if (orden) orden.value = FILTRO.orden;
 }
 
-function pintarCatalogo(reiniciar = true) {
+function pintarCatalogo(reiniciar = true, yaVistos = 0) {
   const grid = document.getElementById('grid');
   if (!grid) return;
   if (reiniciar) visibles = PASO;
   const lista = filtrar();
-  grid.innerHTML = lista.slice(0, visibles).map(p => cardHTML(p)).join('');
+  grid.innerHTML = lista.slice(0, visibles).map((p, k) => cardHTML(p, '', k >= yaVistos)).join('');
   const vacio = document.getElementById('vacio');
   if (vacio) vacio.hidden = lista.length > 0;
   const count = document.getElementById('cat-count');
@@ -272,7 +272,7 @@ function pintarCatalogo(reiniciar = true) {
   if (masN) masN.textContent = quedan > 0 ? `Mostrando ${visibles} de ${lista.length}` : (lista.length > PASO ? `Estás viendo los ${lista.length}` : '');
   pintarPills();
   sincronizarControles();
-  revelarCards(grid);
+  revelarNuevos(grid);
 }
 
 function irATienda() {
@@ -322,7 +322,7 @@ function initCatalogo() {
   document.getElementById('orden')?.addEventListener('change', e => { FILTRO.orden = e.target.value; pintarCatalogo(); });
   document.getElementById('f-clear')?.addEventListener('click', limpiarFiltros);
   document.getElementById('vacio-reset')?.addEventListener('click', limpiarFiltros);
-  document.getElementById('ver-mas')?.addEventListener('click', () => { visibles += PASO; pintarCatalogo(false); });
+  document.getElementById('ver-mas')?.addEventListener('click', () => { const antes = visibles; visibles += PASO; pintarCatalogo(false, antes); });
   document.getElementById('pills')?.addEventListener('click', e => {
     const b = e.target.closest('[data-quitar-filtro]');
     if (!b) return;
@@ -953,14 +953,13 @@ function initAcciones() {
 }
 
 function refrescarVistas() {
-  const grid = document.getElementById('grid');
-  if (grid) {
-    const lista = filtrar();
-    grid.innerHTML = lista.slice(0, visibles).map(p => cardHTML(p)).join('');
-    grid.querySelectorAll('.card').forEach(c => c.classList.add('in'));
-  }
-  const track = document.getElementById('rail-track');
-  if (track) track.innerHTML = RAIL.map(getProducto).filter(Boolean).map(p => cardHTML(p, ' card--rail')).join('');
+  document.querySelectorAll('#grid .card, #rail-track .card').forEach(card => {
+    const p = getProducto(card.dataset.id);
+    if (!p) return;
+    const t = document.createElement('template');
+    t.innerHTML = cardHTML(p, '', false);
+    card.replaceChildren(...t.content.firstElementChild.childNodes);
+  });
 }
 
 function updateCartBadge() {
@@ -976,32 +975,37 @@ document.addEventListener('cart:updated', refrescarVistas);
 /* ---------- entradas ---------- */
 let revealsListos = false;
 
-function revelarCards(cont) {
-  if (!cont) return;
-  const cards = [...cont.querySelectorAll('.card:not(.in)')];
-  if (!revealsListos || reduceMotion) { cards.forEach(c => c.classList.add('in')); return; }
-  const bajo = cont.getBoundingClientRect().top > window.innerHeight;
-  if (bajo) return;
-  cards.forEach((c, i) => { c.classList.add('pre'); c.style.transitionDelay = `${Math.min(i * 0.05, 0.4)}s`; });
-  requestAnimationFrame(() => requestAnimationFrame(() => cards.forEach(c => { c.classList.remove('pre'); c.classList.add('in'); })));
+function revelarNuevos(cont) {
+  if (!revealsListos || !cont) return;
+  const nuevos = [...cont.querySelectorAll('[data-animate]:not(.in)')];
+  if (!nuevos.length) return;
+  if (reduceMotion) { nuevos.forEach(el => el.classList.add('in')); return; }
+  requestAnimationFrame(() => requestAnimationFrame(() => nuevos.forEach((el, i) => {
+    const d = Math.min(i * 0.06, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  })));
 }
 
 function initReveals() {
   revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -1010,10 +1014,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -1022,6 +1027,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });

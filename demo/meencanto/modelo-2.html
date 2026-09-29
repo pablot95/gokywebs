@@ -20,8 +20,8 @@
   <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B0%5D=rowan@600,601&amp;f%5B1%5D=ranade@400,500&amp;display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=1">
-  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}</style></noscript>
+  <link rel="stylesheet" href="styles.css?v=20260929112442">
+  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -150,7 +150,7 @@
 
     <section class="colecciones" id="colecciones" aria-labelledby="colecciones-titulo">
       <div class="container">
-        <h2 id="colecciones-titulo" class="h2 centrado">Elegí por dónde empezar</h2>
+        <h2 id="colecciones-titulo" class="h2 centrado" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Elegí por dónde empezar</h2>
         <ul class="colecciones-grid" data-colecciones data-animate-stagger></ul>
       </div>
     </section>
@@ -160,16 +160,16 @@
       <div class="container-catalogo">
         <div class="tienda-cabecera">
           <div>
-            <h2 id="tienda-titulo" class="h2">Todo el showroom</h2>
-            <p class="tienda-cuenta" data-cuenta aria-live="polite">18 productos</p>
+            <h2 id="tienda-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Todo el showroom</h2>
+            <p class="tienda-cuenta" data-cuenta aria-live="polite" data-animate="subir" style="opacity:0;transform:translateY(24px)">18 productos</p>
           </div>
-          <form class="buscador" role="search" data-buscador>
+          <form class="buscador" role="search" data-buscador data-animate="subir" style="opacity:0;transform:translateY(24px)">
             <label class="visually-hidden" for="buscar-c">Buscar productos</label>
             <input id="buscar-c" type="search" placeholder="Buscá por nombre o nota: vainilla, rosa, cuero…" autocomplete="off" data-q>
             <button type="submit" class="buscador-btn" aria-label="Buscar"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></button>
           </form>
         </div>
-        <div class="tienda-barra">
+        <div class="tienda-barra" data-animate="subir" style="opacity:0;transform:translateY(24px)">
           <div class="chips" data-chips role="group" aria-label="Filtrar por categoría"></div>
           <div class="tienda-controles">
             <button type="button" class="btn btn-ghost btn-chico" data-open-filtros aria-controls="filtros" aria-expanded="false">
@@ -193,7 +193,7 @@
             <a class="btn btn-wsp" href="https://wa.me/5493435097527" data-wsp-msg="Hola Me Encantó! Busco un perfume que no encontré en la web:" target="_blank" rel="noopener noreferrer"><svg class="i" aria-hidden="true"><use href="#i-wsp"/></svg> Preguntar por WhatsApp</a>
           </div>
         </div>
-        <div class="catalogo-pie">
+        <div class="catalogo-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
           <p class="catalogo-mostrando" data-mostrando></p>
           <button type="button" class="btn btn-ghost" data-ver-mas hidden>Ver más productos</button>
         </div>
@@ -206,10 +206,10 @@
         <div class="pagos-grid">
           <div class="pagos-controles">
             <div class="pagos-cabecera">
-              <h2 id="pagos-titulo" class="h2">Cuánto pagás y cuándo te llega</h2>
-              <p class="bajada">Elegí cómo pagás y dónde lo recibís: el total se arma con lo que tenés en el carrito.</p>
+              <h2 id="pagos-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Cuánto pagás y cuándo te llega</h2>
+              <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Elegí cómo pagás y dónde lo recibís: el total se arma con lo que tenés en el carrito.</p>
             </div>
-            <fieldset class="pagos-paso">
+            <fieldset class="pagos-paso" data-animate="izq" style="opacity:0;transform:translateX(-56px)">
               <legend class="pagos-paso-tit"><span class="paso-n">1</span> ¿Cómo lo pagás?</legend>
               <div class="segmento" data-pago-seg>
                 <button type="button" class="segmento-opt" data-pago="transferencia" aria-pressed="true"><svg class="i" aria-hidden="true"><use href="#i-bank"/></svg> Transferencia</button>
@@ -218,7 +218,7 @@
               </div>
               <p class="pagos-ayuda" data-pago-ayuda>Te pasamos el alias cuando confirmás el pedido.</p>
             </fieldset>
-            <fieldset class="pagos-paso">
+            <fieldset class="pagos-paso" data-animate="izq" style="opacity:0;transform:translateX(-56px)">
               <legend class="pagos-paso-tit"><span class="paso-n">2</span> ¿Dónde lo recibís?</legend>
               <div class="entregas" data-entregas></div>
             </fieldset>
@@ -251,9 +251,9 @@
       <svg class="ola ola--top" viewBox="0 0 1440 36" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36V20C160 4 320 4 480 16s320 20 480 6 320-18 480-2v16z"/></svg>
       <div class="container">
         <div class="seccion-cabecera">
-          <h2 id="nuevo-titulo" class="h2">Lo nuevo en el showroom</h2>
-          <a class="link-flecha" href="#tienda" data-vista="todos">Ver todo el showroom <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <div class="rail-flechas">
+          <h2 id="nuevo-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Lo nuevo en el showroom</h2>
+          <a class="link-flecha" href="#tienda" data-vista="todos" data-animate="subir" style="opacity:0;transform:translateY(24px)">Ver todo el showroom <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <div class="rail-flechas" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
             <button type="button" class="rail-flecha" data-rail-prev aria-label="Ver anteriores"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
             <button type="button" class="rail-flecha" data-rail-next aria-label="Ver siguientes"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
           </div>
@@ -298,19 +298,19 @@
       <svg class="ola ola--top" viewBox="0 0 1440 36" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36V18c180-16 360-18 540-4s360 18 540 4 270-14 360-4v22z"/></svg>
       <div class="container">
         <div class="insta-cabecera">
-          <h2 id="insta-titulo" class="h2">Seguinos en Instagram</h2>
-          <a class="insta-arroba" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer"><svg class="i" aria-hidden="true"><use href="#i-ig"/></svg> @meencanto____</a>
-          <p class="bajada">Ahí Malena muestra los perfumes que van llegando y cuenta cómo es cada uno.</p>
+          <h2 id="insta-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Seguinos en Instagram</h2>
+          <a class="insta-arroba" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" data-animate="subir" style="opacity:0;transform:translateY(24px)"><svg class="i" aria-hidden="true"><use href="#i-ig"/></svg> @meencanto____</a>
+          <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Ahí Malena muestra los perfumes que van llegando y cuenta cómo es cada uno.</p>
         </div>
         <ul class="insta-grid" data-animate-stagger>
-          <li data-animate style="opacity:0;transform:translateY(30px)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="mostrador-16x9.webp|0.62|0.5|1.5"><img src="images/mostrador-16x9.webp" alt="Detalle del mostrador con perfumes dorados y rosados" width="1672" height="941"></a></li>
-          <li data-animate style="opacity:0;transform:translateY(30px)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="vitrina-1x1.webp|0.2|0.62|1.8"><img src="images/vitrina-1x1.webp" alt="Frasco rosado entre flores blancas" width="1254" height="1254"></a></li>
-          <li data-animate style="opacity:0;transform:translateY(30px)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="regalo-1x1.webp|0.82|0.42|1.8"><img src="images/regalo-1x1.webp" alt="Moño de satén rosado sobre una caja de regalo" width="1254" height="1254"></a></li>
-          <li data-animate style="opacity:0;transform:translateY(30px)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="cajas-1x1.webp|0.3|0.55|1.6"><img src="images/cajas-1x1.webp" alt="Perfume rosado delante de su caja" width="1254" height="1254"></a></li>
+          <li data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="mostrador-16x9.webp|0.62|0.5|1.5"><img src="images/mostrador-16x9.webp" alt="Detalle del mostrador con perfumes dorados y rosados" width="1672" height="941"></a></li>
+          <li data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="vitrina-1x1.webp|0.2|0.62|1.8"><img src="images/vitrina-1x1.webp" alt="Frasco rosado entre flores blancas" width="1254" height="1254"></a></li>
+          <li data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="regalo-1x1.webp|0.82|0.42|1.8"><img src="images/regalo-1x1.webp" alt="Moño de satén rosado sobre una caja de regalo" width="1254" height="1254"></a></li>
+          <li data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)"><a class="insta-tile recorte" href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Ver el Instagram de Me Encantó" data-recorte="cajas-1x1.webp|0.3|0.55|1.6"><img src="images/cajas-1x1.webp" alt="Perfume rosado delante de su caja" width="1254" height="1254"></a></li>
         </ul>
         <div class="showroom" id="showroom">
-          <div class="showroom-mapa" data-mapa></div>
-          <div class="showroom-info">
+          <div class="showroom-mapa" data-mapa data-animate="mascara" style="clip-path:inset(100% 0 0 0)"></div>
+          <div class="showroom-info" data-animate="der" style="opacity:0;transform:translateX(56px)">
             <h3 class="showroom-tit">El showroom</h3>
             <p class="showroom-dir"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg> Bv. Racedo y Av. Francisco Ramírez, Paraná, Entre Ríos</p>
             <p>Te atiende Malena. Escribinos y coordinamos tu visita para probar los perfumes antes de llevarlos.</p>
@@ -332,15 +332,15 @@
     <div class="container">
       <div class="footer-simple-fila">
         <div>
-          <p class="footer-marca" aria-hidden="true"><span>Me</span> <em>encantó</em></p>
-          <p class="footer-simple-txt">Perfumes originales y alternativas, y aromas para tu casa. Showroom en Paraná y envíos a todo el país.</p>
+          <p class="footer-marca" aria-hidden="true" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)"><span>Me</span> <em>encantó</em></p>
+          <p class="footer-simple-txt" data-animate="subir" style="opacity:0;transform:translateY(24px)">Perfumes originales y alternativas, y aromas para tu casa. Showroom en Paraná y envíos a todo el país.</p>
         </div>
-        <div class="footer-redes">
+        <div class="footer-redes" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
           <a href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer" aria-label="Instagram de Me Encantó"><svg class="i" aria-hidden="true"><use href="#i-ig"/></svg></a>
           <a href="https://wa.me/5493435097527" data-wsp-msg="Hola Me Encantó! Vi la web y quiero hacer una consulta." target="_blank" rel="noopener noreferrer" aria-label="WhatsApp de Me Encantó"><svg class="i" aria-hidden="true"><use href="#i-wsp"/></svg></a>
         </div>
       </div>
-      <div class="footer-pie">
+      <div class="footer-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
         <p>© 2026 Me Encantó · Pagás por transferencia o con tarjeta</p>
         <p><a class="credito" href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
       </div>
@@ -390,7 +390,7 @@
   <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
   <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
-  <script src="script.js?v=1"></script>
+  <script src="script.js?v=20260929112442"></script>
   <script src="/demo/track.js" defer></script>
 </body>
 </html>

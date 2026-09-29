@@ -3522,7 +3522,7 @@ body.no-scroll .floats .float-btn {
 /* ---------- Revelado al scroll ---------- */
 
 [data-animate] {
-  transition: opacity .9s var(--ease), transform .9s var(--ease), clip-path 1.2s var(--ease);
+  transition: opacity .9s var(--ease), transform 1.1s var(--ease), clip-path 1.2s var(--ease), filter 1s var(--ease);
 }
 
 [data-animate].in {
@@ -3530,8 +3530,32 @@ body.no-scroll .floats .float-btn {
   transform: none !important;
 }
 
-[data-animate="mascara"].in {
+[data-animate="blur"].in {
+  filter: none !important;
+}
+
+[data-animate="mascara"].in,
+[data-animate="cortina"].in {
   clip-path: inset(0 0 0 0) !important;
+}
+
+[data-animate="linea"] {
+  transform-origin: 0 50%;
+}
+
+[data-animate="mascara"] > img,
+[data-animate] .circulo-media img,
+[data-animate] .rail-media img,
+[data-animate] .prod-media img {
+  scale: 1.12;
+  transition: scale 1.5s var(--ease), transform .7s var(--ease);
+}
+
+[data-animate="mascara"].in > img,
+[data-animate].in .circulo-media img,
+[data-animate].in .rail-media img,
+[data-animate].in .prod-media img {
+  scale: 1;
 }
 
 body.m2 .tienda-marca {
@@ -3803,6 +3827,17 @@ body.m2 .tienda-marca {
 
   .float-btn {
     transition: none;
+  }
+
+  [data-animate] {
+    transition: none !important;
+  }
+
+  [data-animate="mascara"] > img,
+  [data-animate] .circulo-media img,
+  [data-animate] .rail-media img,
+  [data-animate] .prod-media img {
+    scale: 1;
   }
 }
 

@@ -379,21 +379,23 @@ function initNav() {
 
 let revealsListos = false;
 function initReveals() {
+  revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
-    });
-  });
-  revealsListos = true;
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -402,10 +404,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -414,6 +417,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
@@ -513,7 +517,7 @@ function varianteSugerida(p) {
 function cardHTML(p) {
   const v = varianteSugerida(p);
   const nombre = nombreConVariante(p, v);
-  return `<article class="prod" data-animate style="opacity:0;transform:translateY(32px)">
+  return `<article class="prod" data-animate="subir" style="opacity:0;transform:translateY(48px)">
     <button type="button" class="prod-media recorte" data-open-quickview="${p.id}" data-v="${esc(v)}" style="${recorte(p.img, p.foco, 1)}" aria-label="Ver ${esc(nombre)}">
       ${badgeHTML(p)}
       <img src="images/${p.img}" alt="${esc(p.alt)}" width="600" height="600">
@@ -534,7 +538,7 @@ function cardHTML(p) {
 function railCardHTML(p) {
   const v = varDefault(p);
   const nombre = nombreConVariante(p, v);
-  return `<article class="rail-card">
+  return `<article class="rail-card" data-animate="der" style="opacity:0;transform:translateX(48px)">
     <button type="button" class="rail-media recorte" data-open-quickview="${p.id}" style="${recorte(p.img, p.foco, 0.8)}" aria-label="Ver ${esc(nombre)}">
       ${badgeHTML(p)}
       <img src="images/${p.img}" alt="${esc(p.alt)}" width="480" height="600">
@@ -1242,7 +1246,7 @@ function initDeepLink() {
 }
 
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
-if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; el.style.clipPath = 'none'; });
+if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
 if (typeof ScrollTrigger !== 'undefined') window.addEventListener('load', () => ScrollTrigger.refresh());
 
 function initHeroMotion() {
@@ -1251,16 +1255,21 @@ function initHeroMotion() {
   if (titulo) {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     const foto = document.querySelector('.banner-media img');
-    tl.from(titulo.querySelectorAll('.etiqueta, .hero-h1, .banner-lado > *'), { y: 28, opacity: 0, duration: 1, stagger: 0.1, clearProps: 'transform,opacity' })
-      .from(foto, { scale: 1.08, duration: 1.4, clearProps: 'transform' }, 0.1)
+    tl.from(titulo.querySelectorAll('.etiqueta, .hero-h1, .banner-lado > p'), { y: 28, opacity: 0, duration: 1, stagger: 0.1, clearProps: 'transform,opacity' })
+      .from(foto, { scale: 1.08, duration: 1.8, clearProps: 'transform' }, 0)
+      .from(titulo.querySelectorAll('.banner-ctas .btn'), { y: 22, opacity: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform,opacity' }, 0.3)
       .from(document.querySelector('.banner-tag'), { y: 36, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' }, 0.45)
-      .from(document.querySelector('.banner-foto .sello'), { scale: 0.92, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' }, 0.6);
+      .from(document.querySelector('.banner-foto .sello'), { scale: 0.92, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' }, 0.6)
+      .from(document.querySelectorAll('[data-banner-cuentas] i'), { opacity: 0, duration: 0.6, stagger: 0.12, clearProps: 'opacity' }, 0.85);
   }
   const compacto = document.querySelector('.compacto-grid');
   if (compacto) {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    tl.from(compacto.querySelectorAll('.etiqueta, .hero-h1, .bajada, .banner-ctas'), { y: 28, opacity: 0, duration: 1, stagger: 0.1, clearProps: 'transform,opacity' })
+    tl.from(compacto.querySelectorAll('.etiqueta, .hero-h1, .bajada'), { y: 28, opacity: 0, duration: 1, stagger: 0.1, clearProps: 'transform,opacity' })
       .from(compacto.querySelector('.consulta-rapida'), { y: 40, opacity: 0, duration: 1, clearProps: 'transform,opacity' }, 0.25)
+      .from(compacto.querySelectorAll('.banner-ctas .btn'), { y: 22, opacity: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform,opacity' }, 0.3)
+      .from(compacto.querySelector('.consulta-rapida .buscador'), { y: 16, opacity: 0, duration: 0.8, clearProps: 'transform,opacity' }, 0.55)
+      .from(compacto.querySelectorAll('.consulta-rapida .chip'), { y: 12, opacity: 0, duration: 0.7, stagger: 0.08, clearProps: 'transform,opacity' }, 0.65)
       .from(document.querySelector('.hero-compacto .sello'), { scale: 0.92, opacity: 0, duration: 0.9, clearProps: 'transform,opacity' }, 0.55);
   }
 }

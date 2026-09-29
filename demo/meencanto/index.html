@@ -20,8 +20,8 @@
   <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin>
   <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f%5B0%5D=rowan@600,601&amp;f%5B1%5D=ranade@400,500&amp;display=swap">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=1">
-  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}</style></noscript>
+  <link rel="stylesheet" href="styles.css?v=20260929112442">
+  <noscript><style>[data-animate]{opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important}[data-animate] img{scale:none!important}</style></noscript>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -157,7 +157,7 @@
 
     <section class="categorias" id="categorias" aria-labelledby="categorias-titulo">
       <div class="container">
-        <h2 id="categorias-titulo" class="h2 centrado">Elegí por dónde empezar</h2>
+        <h2 id="categorias-titulo" class="h2 centrado" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Elegí por dónde empezar</h2>
         <ul class="circulos" data-circulos data-animate-stagger></ul>
       </div>
     </section>
@@ -166,9 +166,9 @@
       <svg class="ola ola--top" viewBox="0 0 1440 36" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36V20C160 4 320 4 480 16s320 20 480 6 320-18 480-2v16z"/></svg>
       <div class="container">
         <div class="seccion-cabecera">
-          <h2 id="elegidos-titulo" class="h2">Los más elegidos</h2>
-          <a class="link-flecha" href="#tienda" data-vista="todos">Ver todo el showroom <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <div class="rail-flechas">
+          <h2 id="elegidos-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Los más elegidos</h2>
+          <a class="link-flecha" href="#tienda" data-vista="todos" data-animate="subir" style="opacity:0;transform:translateY(24px)">Ver todo el showroom <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <div class="rail-flechas" data-animate="escala" style="opacity:0;transform:translateY(20px) scale(.92)">
             <button type="button" class="rail-flecha" data-rail-prev aria-label="Ver anteriores"><svg class="i" aria-hidden="true"><use href="#i-left"/></svg></button>
             <button type="button" class="rail-flecha" data-rail-next aria-label="Ver siguientes"><svg class="i" aria-hidden="true"><use href="#i-right"/></svg></button>
           </div>
@@ -213,16 +213,16 @@
       <div class="container-catalogo">
         <div class="tienda-cabecera">
           <div>
-            <h2 id="tienda-titulo" class="h2">Todo el showroom</h2>
-            <p class="tienda-cuenta" data-cuenta aria-live="polite">18 productos</p>
+            <h2 id="tienda-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Todo el showroom</h2>
+            <p class="tienda-cuenta" data-cuenta aria-live="polite" data-animate="subir" style="opacity:0;transform:translateY(24px)">18 productos</p>
           </div>
-          <form class="buscador" role="search" data-buscador>
+          <form class="buscador" role="search" data-buscador data-animate="subir" style="opacity:0;transform:translateY(24px)">
             <label class="visually-hidden" for="buscar-a">Buscar productos</label>
             <input id="buscar-a" type="search" placeholder="Buscá por nombre o nota: vainilla, rosa, cuero…" autocomplete="off" data-q>
             <button type="submit" class="buscador-btn" aria-label="Buscar"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg></button>
           </form>
         </div>
-        <div class="tienda-barra">
+        <div class="tienda-barra" data-animate="subir" style="opacity:0;transform:translateY(24px)">
           <div class="chips" data-chips role="group" aria-label="Filtrar por categoría"></div>
           <div class="tienda-controles">
             <button type="button" class="btn btn-ghost btn-chico" data-open-filtros aria-controls="filtros" aria-expanded="false">
@@ -246,7 +246,7 @@
             <a class="btn btn-wsp" href="https://wa.me/5493435097527" data-wsp-msg="Hola Me Encantó! Busco un perfume que no encontré en la web:" target="_blank" rel="noopener noreferrer"><svg class="i" aria-hidden="true"><use href="#i-wsp"/></svg> Preguntar por WhatsApp</a>
           </div>
         </div>
-        <div class="catalogo-pie">
+        <div class="catalogo-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
           <p class="catalogo-mostrando" data-mostrando></p>
           <button type="button" class="btn btn-ghost" data-ver-mas hidden>Ver más productos</button>
         </div>
@@ -259,10 +259,10 @@
         <div class="pagos-grid">
           <div class="pagos-controles">
             <div class="pagos-cabecera">
-              <h2 id="pagos-titulo" class="h2">Cuánto pagás y cuándo te llega</h2>
-              <p class="bajada">Elegí cómo pagás y dónde lo recibís: el total se arma con lo que tenés en el carrito.</p>
+              <h2 id="pagos-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">Cuánto pagás y cuándo te llega</h2>
+              <p class="bajada" data-animate="subir" style="opacity:0;transform:translateY(24px)">Elegí cómo pagás y dónde lo recibís: el total se arma con lo que tenés en el carrito.</p>
             </div>
-            <fieldset class="pagos-paso">
+            <fieldset class="pagos-paso" data-animate="izq" style="opacity:0;transform:translateX(-56px)">
               <legend class="pagos-paso-tit"><span class="paso-n">1</span> ¿Cómo lo pagás?</legend>
               <div class="segmento" data-pago-seg>
                 <button type="button" class="segmento-opt" data-pago="transferencia" aria-pressed="true"><svg class="i" aria-hidden="true"><use href="#i-bank"/></svg> Transferencia</button>
@@ -271,7 +271,7 @@
               </div>
               <p class="pagos-ayuda" data-pago-ayuda>Te pasamos el alias cuando confirmás el pedido.</p>
             </fieldset>
-            <fieldset class="pagos-paso">
+            <fieldset class="pagos-paso" data-animate="izq" style="opacity:0;transform:translateX(-56px)">
               <legend class="pagos-paso-tit"><span class="paso-n">2</span> ¿Dónde lo recibís?</legend>
               <div class="entregas" data-entregas></div>
             </fieldset>
@@ -303,7 +303,7 @@
     <section class="comprar papel" id="comprar" aria-labelledby="comprar-titulo">
       <svg class="ola ola--top" viewBox="0 0 1440 36" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36V18c180-16 360-18 540-4s360 18 540 4 270-14 360-4v22z"/></svg>
       <div class="container">
-        <h2 id="comprar-titulo" class="h2">De la web a tu casa, en tres pasos</h2>
+        <h2 id="comprar-titulo" class="h2" data-animate="blur" style="opacity:0;filter:blur(12px);transform:translateY(24px)">De la web a tu casa, en tres pasos</h2>
         <ol class="pasos" data-animate-stagger>
           <li class="paso" data-animate style="opacity:0;transform:translateY(40px)">
             <span class="paso-num" aria-hidden="true">01</span>
@@ -322,8 +322,8 @@
           </li>
         </ol>
         <div class="showroom" id="showroom">
-          <div class="showroom-mapa" data-mapa></div>
-          <div class="showroom-info">
+          <div class="showroom-mapa" data-mapa data-animate="mascara" style="clip-path:inset(100% 0 0 0)"></div>
+          <div class="showroom-info" data-animate="der" style="opacity:0;transform:translateX(56px)">
             <h3 class="showroom-tit">El showroom</h3>
             <p class="showroom-dir"><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg> Bv. Racedo y Av. Francisco Ramírez, Paraná, Entre Ríos</p>
             <p>Te atiende Malena. Escribinos y coordinamos tu visita para probar los perfumes antes de llevarlos.</p>
@@ -343,9 +343,9 @@
   <footer class="site-footer footer-completo">
     <svg class="ola ola--top ola--tinta" viewBox="0 0 1440 36" preserveAspectRatio="none" aria-hidden="true"><path d="M0 36V16c240 20 480 20 720 4s480-16 720 0v16z"/></svg>
     <div class="container">
-      <p class="footer-marca" aria-hidden="true"><span>Me</span> <em>encantó</em></p>
+      <p class="footer-marca" aria-hidden="true" data-animate="mascara" style="clip-path:inset(100% 0 0 0);transform:translateY(40px)"><span>Me</span> <em>encantó</em></p>
       <div class="footer-cols">
-        <div class="footer-col footer-col--intro">
+        <div class="footer-col footer-col--intro" data-animate="subir" style="opacity:0;transform:translateY(40px)">
           <p>Perfumes originales y alternativas, y aromas para tu casa. Showroom en Paraná y envíos a todo el país.</p>
           <form class="newsletter" data-form-demo novalidate>
             <label class="newsletter-lbl" for="news-a">Enterate de lo nuevo</label>
@@ -356,20 +356,20 @@
             <p class="newsletter-error" id="news-a-error" data-error hidden>Revisá el email: parece que le falta algo.</p>
           </form>
         </div>
-        <nav class="footer-col" aria-label="Tienda">
+        <nav class="footer-col" aria-label="Tienda" data-animate="subir" style="opacity:0;transform:translateY(40px)">
           <p class="footer-tit">Tienda</p>
           <a href="#tienda" data-vista="perfumes">Perfumes</a>
           <a href="#tienda" data-vista="aromas">Aromatizantes</a>
           <a href="#tienda" data-vista="regalos">Para regalar</a>
         </nav>
-        <div class="footer-col">
+        <div class="footer-col" data-animate="subir" style="opacity:0;transform:translateY(40px)">
           <p class="footer-tit">Contacto</p>
           <a href="https://wa.me/5493435097527" data-wsp-msg="Hola Me Encantó! Vi la web y quiero hacer una consulta." target="_blank" rel="noopener noreferrer">+54 9 343 509-7527</a>
           <a href="https://www.instagram.com/meencanto____/" target="_blank" rel="noopener noreferrer">@meencanto____</a>
           <p>Bv. Racedo y Av. Francisco Ramírez, Paraná</p>
         </div>
       </div>
-      <div class="footer-pie">
+      <div class="footer-pie" data-animate="subir" style="opacity:0;transform:translateY(24px)">
         <p>© 2026 Me Encantó · Pagás por transferencia o con tarjeta</p>
         <p><a class="credito" href="https://gokywebs.com" target="_blank" rel="noopener">Developed and designed by Gokywebs</a></p>
       </div>
@@ -419,7 +419,7 @@
   <script src="https://unpkg.com/gsap@3.13.0/dist/gsap.min.js"></script>
   <script src="https://unpkg.com/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin></script>
-  <script src="script.js?v=1"></script>
+  <script src="script.js?v=20260929112442"></script>
   <script src="/demo/track.js" defer></script>
 </body>
 </html>

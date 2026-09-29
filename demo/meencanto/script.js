@@ -10,7 +10,7 @@ document.addEventListener('keydown', e => {
 });
 
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
-if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => { el.style.opacity = 1; el.style.transform = 'none'; });
+if (typeof gsap === 'undefined') document.querySelectorAll('[data-animate]').forEach(el => el.classList.add('in'));
 if (typeof ScrollTrigger !== 'undefined') window.addEventListener('load', () => ScrollTrigger.refresh());
 
 const WSP = '5493435097527';
@@ -395,7 +395,7 @@ function mediaHTML(p, cls, ar, clave = 'foco') {
 }
 
 function cardHTML(p, animar = true) {
-  return `<article class="prod"${animar ? ' data-animate style="opacity:0;transform:translateY(40px)"' : ''}>
+  return `<article class="prod"${animar ? ' data-animate="subir" style="opacity:0;transform:translateY(48px)"' : ''}>
     ${mediaHTML(p, 'prod-media', 1)}
     <div class="prod-body">
       <p class="prod-meta">${esc(metaCard(p))}</p>
@@ -426,7 +426,7 @@ function teselaHTML(p, ancha, animar = true) {
   const boton = p.stock > 0
     ? `<button type="button" class="tesela-add" data-add="${p.id}" aria-label="Agregar ${esc(p.nombre)} al carrito">${icono('i-plus')}</button>`
     : `<button type="button" class="tesela-add" disabled aria-label="${esc(p.nombre)}: sin stock">${icono('i-x')}</button>`;
-  return `<article class="tesela${ancha ? ' tesela--ancha' : ''}"${animar ? ' data-animate style="opacity:0;transform:translateY(40px)"' : ''}>
+  return `<article class="tesela${ancha ? ' tesela--ancha' : ''}"${animar ? ' data-animate="subir" style="opacity:0;transform:translateY(48px)"' : ''}>
     <button type="button" class="tesela-media recorte" data-qv="${p.id}" style="${recorte(p.img, foco, ancha ? 2.05 : 1)}" aria-label="Ver ${esc(p.nombre)}">${badgeHTML(p)}<img src="images/${p.img}" alt="${esc(p.alt)}" width="${w}" height="${h}"></button>
     <div class="tesela-info">
       <h3 class="tesela-nombre">${esc(p.nombre)}</h3>
@@ -517,8 +517,12 @@ function revelarNuevos(cont) {
   const nuevos = $$('[data-animate]:not(.in)', cont);
   if (!nuevos.length) return;
   if (reduceMotion) { nuevos.forEach(el => el.classList.add('in')); return; }
-  nuevos.forEach((el, i) => { el.style.transitionDelay = `${Math.min(i * 0.06, 0.6)}s`; });
-  requestAnimationFrame(() => requestAnimationFrame(() => nuevos.forEach(el => el.classList.add('in'))));
+  requestAnimationFrame(() => requestAnimationFrame(() => nuevos.forEach((el, i) => {
+    const d = Math.min(i * 0.06, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  })));
 }
 
 function renderCatalogo({ reiniciar = true, yaVistos = 0 } = {}) {
@@ -643,7 +647,7 @@ function initCirculos() {
     const a = ATAJOS[c.atajo];
     const n = cuentaPreset(a.preset);
     const [w, h] = dims(c.img);
-    return `<li data-animate style="opacity:0;transform:translateY(30px)">
+    return `<li data-animate="escala" style="opacity:0;transform:translateY(24px) scale(.92)">
       <button type="button" class="circulo-btn" data-atajo="${c.atajo}">
         <span class="circulo-media recorte" style="${recorte(c.img, c.foco, 1)}"><img src="images/${c.img}" alt="${esc(c.alt)}" width="${w}" height="${h}"></span>
         <span class="circulo-nombre">${esc(a.label)}</span>
@@ -659,7 +663,7 @@ function initColecciones() {
   cont.innerHTML = COLECCIONES.map(c => {
     const n = cuentaPreset(ATAJOS[c.atajo].preset);
     const [w, h] = dims(c.img);
-    return `<li data-animate style="opacity:0;transform:translateY(40px)">
+    return `<li data-animate="subir" style="opacity:0;transform:translateY(56px)">
       <button type="button" class="coleccion" data-atajo="${c.atajo}">
         <img src="images/${c.img}" alt="${esc(c.alt)}" width="${w}" height="${h}" style="object-position:${c.pos}">
         <span class="coleccion-txt">
@@ -685,7 +689,7 @@ function initRail() {
   const track = $('[data-rail-track]', vp);
   const nuevo = vp.dataset.rail === 'nuevo';
   const ids = nuevo ? RAIL_NUEVOS : RAIL_ELEGIDOS;
-  track.innerHTML = ids.map(getProducto).filter(Boolean).slice(0, 8).map(p => `<li class="rail-item" data-animate style="opacity:0;transform:translateY(40px)">${nuevo ? cardFotoHTML(p) : cardHTML(p, false)}</li>`).join('');
+  track.innerHTML = ids.map(getProducto).filter(Boolean).slice(0, 8).map(p => `<li class="rail-item" data-animate="der" style="opacity:0;transform:translateX(64px)">${nuevo ? cardFotoHTML(p) : cardHTML(p, false)}</li>`).join('');
   initRailDrag(vp, track, $('[data-rail-prev]'), $('[data-rail-next]'));
 }
 
@@ -1180,15 +1184,19 @@ function initHeroMotion() {
   if (!hero) return;
   const img = $('[data-hero-img]', hero);
   const h1 = $('[data-hero-h1]', hero);
-  const subs = $$('[data-hero-sub]', hero);
+  const lead = $('.hero-lead', hero);
+  const ctas = $$('.hero-ctas .btn', hero);
+  const dots = $$('.banner-dot', hero);
   const sello = $('.sello', hero);
   const eyebrow = $('[data-hero-msgs]', hero) || $('.hero-eyebrow', hero);
   const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-  if (img) tl.from(img, { scale: 1.08, duration: 1.6 }, 0);
-  if (eyebrow) tl.from(eyebrow, { y: 14, opacity: 0, duration: 0.8 }, 0.1);
-  if (h1) tl.from(h1, { y: 30, opacity: 0, filter: 'blur(8px)', duration: 1.1, clearProps: 'filter' }, 0.15);
-  if (subs.length) tl.from(subs, { y: 22, opacity: 0, duration: 0.9, stagger: 0.12 }, 0.4);
-  if (sello) tl.from(sello, { scale: 0.92, rotate: -25, opacity: 0, duration: 1.1 }, 0.5);
+  if (img) tl.from(img, { scale: 1.1, duration: 1.8 }, 0);
+  if (eyebrow) tl.from(eyebrow, { y: 18, opacity: 0, duration: 0.9 }, 0.1);
+  if (h1) tl.from(h1, { y: 40, opacity: 0, filter: 'blur(10px)', duration: 1.2, clearProps: 'filter' }, 0.2);
+  if (lead) tl.from(lead, { y: 26, opacity: 0, duration: 1 }, 0.45);
+  if (ctas.length) tl.from(ctas, { y: 22, opacity: 0, duration: 0.9, stagger: 0.12, clearProps: 'transform,opacity' }, 0.6);
+  if (sello) tl.from(sello, { scale: 0.92, rotate: -25, opacity: 0, duration: 1.2 }, 0.65);
+  if (dots.length) tl.from(dots, { y: 10, opacity: 0, duration: 0.7, stagger: 0.08, clearProps: 'transform,opacity' }, 0.85);
   if (img && typeof ScrollTrigger !== 'undefined') {
     gsap.to(img, { yPercent: 4, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
   }
@@ -1198,18 +1206,20 @@ function initReveals() {
   revealsListos = true;
   const items = document.querySelectorAll('[data-animate]');
   if (!items.length) return;
-  document.querySelectorAll('[data-animate-stagger]').forEach(parent => {
-    parent.querySelectorAll('[data-animate]').forEach((el, i) => {
-      el.style.transitionDelay = `${Math.min(i * 0.12, 0.72)}s`;
-    });
-  });
   if (!('IntersectionObserver' in window) || reduceMotion) {
     items.forEach(el => el.classList.add('in'));
     return;
   }
+  const entrar = (el, n) => {
+    const d = Math.min(n * 0.1, 0.6);
+    el.style.transitionDelay = `${d}s`;
+    el.classList.add('in');
+    setTimeout(() => { el.style.transitionDelay = ''; }, (d + 1.2) * 1000);
+  };
   const io = new IntersectionObserver(entries => {
+    let n = 0;
     entries.forEach(entry => {
-      if (entry.isIntersecting) { entry.target.classList.add('in'); io.unobserve(entry.target); }
+      if (entry.isIntersecting) { entrar(entry.target, n++); io.unobserve(entry.target); }
     });
   }, { threshold: 0, rootMargin: '0px 0px -7% 0px' });
   items.forEach(el => io.observe(el));
@@ -1218,10 +1228,11 @@ function initReveals() {
   const sweep = () => {
     queued = false;
     let pending = 0;
+    let n = 0;
     items.forEach(el => {
       if (el.classList.contains('in')) return;
       const r = el.getBoundingClientRect();
-      if (r.bottom > 0 && r.top < window.innerHeight) { el.classList.add('in'); io.unobserve(el); }
+      if (r.bottom > 0 && r.top < window.innerHeight) { entrar(el, n++); io.unobserve(el); }
       else pending++;
     });
     if (!pending) {
@@ -1230,6 +1241,7 @@ function initReveals() {
     }
   };
   const queueSweep = () => { if (!queued) { queued = true; requestAnimationFrame(sweep); } };
+  requestAnimationFrame(() => requestAnimationFrame(queueSweep));
   window.addEventListener('load', queueSweep);
   window.addEventListener('scroll', queueSweep, { passive: true });
   window.addEventListener('resize', queueSweep, { passive: true });
