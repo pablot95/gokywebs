@@ -10,7 +10,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../plan-card.css?v=20260928">
+    <link rel="stylesheet" href="../plan-card.css?v=20260929">
+    <script src="../planes.js?v=20260929" defer></script>
 </head>
 <body>
     <header class="header">
@@ -20,128 +21,108 @@
         </a>
         <a class="back-link" href="../../index.html">Volver al inicio</a>
     </header>
+    <p class="sr-only" id="plan-estado" role="status" aria-live="polite"></p>
 
-    <main>
-        <div class="plan-card">
-            <span class="plan-eyebrow">Plan anual</span>
-            <h1 class="plan-title">Tienda online, cursos e inmobiliaria</h1>
+    <div id="plan">
+        <main>
+            <div class="plan-wrap">
+                <nav class="plan-tabs" aria-label="Modalidades de contratación">
+                    <a href="../mensual35/">Mensual</a>
+                    <a href="../anual250/" aria-current="page">Anual</a>
+                    <a href="../unico360/">Pago único</a>
+                </nav>
 
-            <div class="plan-price-row">
-                <strong class="plan-price">$250.000</strong>
-                <span class="plan-period">por año</span>
-            </div>
+                <div class="plan-card">
+                    <span class="plan-eyebrow">Plan anual</span>
+                    <h1 class="plan-title">Tienda online, cursos e inmobiliaria</h1>
 
-            <section class="plan-section">
-                <h2>Cómo se paga</h2>
-                <div class="pay-steps">
-                    <div class="pay-step">
-                        <span>Para arrancar<small>Seña por transferencia</small></span>
-                        <strong>$60.000</strong>
+                    <div class="plan-price-row">
+                        <strong class="plan-price">$250.000</strong>
+                        <span class="plan-period">por año</span>
                     </div>
-                    <div class="pay-step">
-                        <span>Al terminar la web<small>El resto, antes de publicarla</small></span>
-                        <strong>$190.000</strong>
-                    </div>
+
+                    <section class="plan-section">
+                        <h2>Cómo se paga</h2>
+                        <div class="pay-steps">
+                            <div class="pay-step">
+                                <span>Para arrancar<small>Seña por transferencia</small></span>
+                                <strong>$60.000</strong>
+                            </div>
+                            <div class="pay-step">
+                                <span>Al terminar la web<small>El resto, antes de publicarla</small></span>
+                                <strong>$190.000</strong>
+                            </div>
+                        </div>
+                        <p class="pay-plazo">La web se termina en <strong>no más de 7 días</strong> desde que se acredita la seña.</p>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Datos para la transferencia</h2>
+                        <dl class="transfer-box">
+                            <div class="transfer-row">
+                                <div><dt>Alias</dt><dd>pablotravi</dd></div>
+                                <button type="button" class="copy-btn" data-copiar="pablotravi" aria-label="Copiar el alias">Copiar</button>
+                            </div>
+                            <div class="transfer-row">
+                                <div><dt>CVU</dt><dd>0000003100053462800156</dd></div>
+                                <button type="button" class="copy-btn" data-copiar="0000003100053462800156" aria-label="Copiar el CVU">Copiar</button>
+                            </div>
+                            <div class="transfer-row">
+                                <div><dt>Nombre</dt><dd>Pablo Travi</dd></div>
+                            </div>
+                        </dl>
+                        <p class="transfer-note">Cuando hagas la transferencia, <a href="https://wa.me/5491125068578?text=Hola%20GokyWebs%2C%20te%20mando%20el%20comprobante%20de%20la%20se%C3%B1a%20del%20plan%20anual%20de%20la%20tienda%2C%20los%20cursos%20o%20la%20inmobiliaria." target="_blank" rel="noopener noreferrer">mandanos el comprobante por WhatsApp</a> y arrancamos. Si preferís pagar con tarjeta, avisanos y te pasamos el link de Mercado Pago.</p>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Tu web incluye</h2>
+                        <ul class="plan-check-list">
+                            <li>Desarrollo completo de la web, a medida</li>
+                            <li>Panel para editar vos mismo los textos y las imágenes</li>
+                            <li>Carga de hasta 10 productos</li>
+                            <li>Adaptada a celular, tablet y computadora</li>
+                            <li>Preparada para que Google la encuentre</li>
+                            <li>Certificado de seguridad (SSL)</li>
+                            <li>Hosting y dominio .com.ar incluidos</li>
+                            <li>Un cambio por mes en la web</li>
+                        </ul>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Mantenimiento incluido</h2>
+                        <ul class="plan-check-list">
+                            <li>Actualizaciones de plugins, SDKs e integraciones</li>
+                            <li>Corrección de errores</li>
+                            <li>Compatibilidad con servicios de terceros</li>
+                            <li>Copias de seguridad periódicas</li>
+                            <li>Soporte técnico por WhatsApp</li>
+                            <li>Un cambio por mes</li>
+                        </ul>
+                    </section>
+
+                    <section class="plan-section">
+                        <h2>Condiciones del plan anual</h2>
+                        <ul class="plan-check-list">
+                            <li>Se paga una vez por año, sin suscripción ni débito automático</li>
+                            <li>Arrancás con una seña de $60.000 y el resto, $190.000, se abona al terminar la web, que no demora más de 7 días</li>
+                            <li>La seña reserva el trabajo y no se devuelve: por eso antes te mostramos un primer diseño sin cargo</li>
+                            <li>Si el diseño inicial no te convence, lo rehacemos hasta dos veces; después hay tres rondas para ajustar el resto de la web</li>
+                            <li>El plan se renueva una vez por año, contado desde la seña</li>
+                            <li>La web permanece publicada mientras el plan esté activo; si no se renueva, deja de estar publicada</li>
+                            <li>Mientras el plan esté activo, la web, el hosting y el dominio son de GokyWebs</li>
+                            <li>El código de la web lo podés reclamar recién con el segundo pago anual, al renovar el segundo año</li>
+                            <li>El contenido que nos pasás (textos, fotos, logo, catálogo) es tuyo desde el primer día</li>
+                        </ul>
+                    </section>
+
+                    <p class="plan-note"><strong>Adicionales:</strong> un cambio extra al incluido cada mes y un rediseño completo de la web se cotizan aparte. Todas las condiciones están en los <a href="../../terminos/">términos y condiciones</a>.</p>
                 </div>
-                <p class="pay-plazo">La web se termina en <strong>no más de 7 días</strong> desde que se acredita la seña.</p>
-            </section>
+            </div>
+        </main>
 
-            <section class="plan-section">
-                <h2>Datos para la transferencia</h2>
-                <dl class="transfer-box">
-                    <div class="transfer-row">
-                        <div><dt>Alias</dt><dd>pablotravi</dd></div>
-                        <button type="button" class="copy-btn" data-copiar="pablotravi" aria-label="Copiar el alias">Copiar</button>
-                    </div>
-                    <div class="transfer-row">
-                        <div><dt>CVU</dt><dd>0000003100053462800156</dd></div>
-                        <button type="button" class="copy-btn" data-copiar="0000003100053462800156" aria-label="Copiar el CVU">Copiar</button>
-                    </div>
-                    <div class="transfer-row">
-                        <div><dt>Nombre</dt><dd>Pablo Travi</dd></div>
-                    </div>
-                </dl>
-                <p class="transfer-note">Cuando hagas la transferencia, <a href="https://wa.me/5491125068578?text=Hola%20GokyWebs%2C%20te%20mando%20el%20comprobante%20de%20la%20se%C3%B1a%20del%20plan%20anual%20de%20la%20tienda%2C%20los%20cursos%20o%20la%20inmobiliaria." target="_blank" rel="noopener noreferrer">mandanos el comprobante por WhatsApp</a> y arrancamos. Si preferís pagar con tarjeta, avisanos y te pasamos el link de Mercado Pago.</p>
-            </section>
+        <p class="support">Si tenés alguna duda, <a href="https://wa.me/5491125068578?text=Hola%20GokyWebs%2C%20tengo%20una%20consulta%20sobre%20el%20plan%20anual%20de%20la%20tienda%2C%20los%20cursos%20o%20la%20inmobiliaria." target="_blank" rel="noopener noreferrer">escribinos por WhatsApp</a>.</p>
 
-            <section class="plan-section">
-                <h2>Tu web incluye</h2>
-                <ul class="plan-check-list">
-                    <li>Desarrollo completo de la web, a medida</li>
-                    <li>Panel para editar vos mismo los textos y las imágenes</li>
-                    <li>Carga de hasta 10 productos</li>
-                    <li>Adaptada a celular, tablet y computadora</li>
-                    <li>Preparada para que Google la encuentre</li>
-                    <li>Certificado de seguridad (SSL)</li>
-                    <li>Hosting y dominio .com.ar incluidos</li>
-                    <li>Un cambio por mes en la web</li>
-                </ul>
-            </section>
-
-            <section class="plan-section">
-                <h2>Mantenimiento incluido</h2>
-                <ul class="plan-check-list">
-                    <li>Actualizaciones de plugins, SDKs e integraciones</li>
-                    <li>Corrección de errores</li>
-                    <li>Compatibilidad con servicios de terceros</li>
-                    <li>Copias de seguridad periódicas</li>
-                    <li>Soporte técnico por WhatsApp</li>
-                    <li>Un cambio por mes</li>
-                </ul>
-            </section>
-
-            <section class="plan-section">
-                <h2>Condiciones del plan anual</h2>
-                <ul class="plan-check-list">
-                    <li>Se paga una vez por año, sin suscripción ni débito automático</li>
-                    <li>Arrancás con una seña de $60.000 y el resto, $190.000, se abona al terminar la web, que no demora más de 7 días</li>
-                    <li>La seña reserva el trabajo y no se devuelve: por eso antes te mostramos un primer diseño sin cargo</li>
-                    <li>Si el diseño inicial no te convence, lo rehacemos hasta dos veces; después hay tres rondas para ajustar el resto de la web</li>
-                    <li>El plan se renueva una vez por año, contado desde la seña</li>
-                    <li>La web permanece publicada mientras el plan esté activo; si no se renueva, deja de estar publicada</li>
-                    <li>Mientras el plan esté activo, la web, el hosting y el dominio son de GokyWebs</li>
-                    <li>El código de la web lo podés reclamar recién con el segundo pago anual, al renovar el segundo año</li>
-                    <li>El contenido que nos pasás (textos, fotos, logo, catálogo) es tuyo desde el primer día</li>
-                </ul>
-            </section>
-
-            <p class="plan-note"><strong>Adicionales:</strong> un cambio extra al incluido cada mes y un rediseño completo de la web se cotizan aparte. Todas las condiciones están en los <a href="../../terminos/">términos y condiciones</a>.</p>
-        </div>
-    </main>
-
-    <p class="support">Si tenés alguna duda, <a href="https://wa.me/5491125068578?text=Hola%20GokyWebs%2C%20tengo%20una%20consulta%20sobre%20el%20plan%20anual%20del%20sitio%20profesional." target="_blank" rel="noopener noreferrer">escribinos por WhatsApp</a>.</p>
-
-    <footer class="footer">© 2026 GokyWebs · Plan anual de tienda, cursos e inmobiliaria</footer>
-
-    <script>
-    // Copiar alias y CVU: clipboard API y, si no está (http o navegador viejo), el textarea de siempre.
-    function copiarViejo(valor) {
-        var area = document.createElement('textarea');
-        area.value = valor;
-        area.setAttribute('readonly', '');
-        area.style.position = 'fixed';
-        area.style.opacity = '0';
-        document.body.appendChild(area);
-        area.select();
-        try { document.execCommand('copy'); } catch (e) {}
-        document.body.removeChild(area);
-    }
-    document.querySelectorAll('.copy-btn').forEach(function (boton) {
-        boton.addEventListener('click', function () {
-            var valor = boton.dataset.copiar;
-            var listo = function () {
-                boton.textContent = 'Copiado';
-                boton.classList.add('ok');
-                setTimeout(function () { boton.textContent = 'Copiar'; boton.classList.remove('ok'); }, 1800);
-            };
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(valor).then(listo, function () { copiarViejo(valor); listo(); });
-            } else {
-                copiarViejo(valor);
-                listo();
-            }
-        });
-    });
-    </script>
+        <footer class="footer">© 2026 GokyWebs · Plan anual de tienda, cursos e inmobiliaria</footer>
+    </div>
 </body>
 </html>

@@ -352,9 +352,9 @@ caso('el código corto se conserva', $cR['codigo'] === 'ZZ');
 caso('y la pregunta de reconocimiento también, que es un proyecto nuevo (21-sep)', empty($cR['reconocimiento_hecho']));
 $cR['transcript'][] = ['q' => 'cliente', 't' => 'Hola, soy abogado y quiero una web', 'ts' => time()];
 $rR = wabot_precio('landing', $cR, $cfg);
-caso('el precio del que vuelve sale con la propuesta, la imagen y, en otro mensaje, la oferta del primer diseño',
+caso('el precio del que vuelve sale con la propuesta, los links y, en otro mensaje, la oferta del primer diseño',
     count($rR) === 3 && stripos($rR[0], 'te podemos armar un sitio profesional completo') !== false
-    && ($rR[1] ?? '') === wabot_precio_imagen_marcador('landing')
+    && ($rR[1] ?? '') === links_de_precio('landing')
     && mb_stripos($rR[2], 'primer diseño') !== false && !tiene_form($rR), json_encode($rR, JSON_UNESCAPED_UNICODE));
 
 echo "— 15. Las dudas de pago del modelo doble —\n";
@@ -566,6 +566,25 @@ caso('sin rastro ni fecha de cotización: el mensual primero', $anualPrimero([])
 caso('el rastro manda sobre la fecha: cotizada el 24-sep pero con la imagen de hoy después, el mensual primero',
     $anualPrimero([['bot', $filaImagen]], strtotime('2026-09-24 14:00:00 -03:00')) === false);
 
+/* La lista del 29-sep: el turno del precio trae las 3 modalidades en el mismo
+ * mensaje que la propuesta ("1. Mensual…", "2. Anual…"), con el mensual
+ * primero. Sin reconocerla, una charla con el bloque viejo del anual primero
+ * en el historial leería mal el "1" del cliente. */
+$listaHoy = "Para lo que me contás, te podemos armar un sitio profesional completo.\n\n" . modalidades_de_precio('$25.000', '$180.000', '$240.000');
+$listaAnualPrimero = "Podés elegir 1 de estas 3 modalidades:\n\n1. Anual: \$180.000 por año, incluye mantenimiento\n2. Mensual: \$25.000 por mes, incluye mantenimiento\n3. Pago único: \$240.000 una vez, NO incluye mantenimiento";
+caso('vio la lista del 29-sep ("1. Mensual…"): el mensual primero', $anualPrimero([['bot', $listaHoy]]) === false, $listaHoy);
+caso('y la lista con "1. Anual…" también se lee: el anual primero', $anualPrimero([['bot', $listaAnualPrimero]]) === true);
+caso('vale lo último que vio: el bloque de antes con el anual primero y después la lista de hoy, el mensual primero',
+    $anualPrimero([['bot', $bloqueAntes], ['bot', $listaHoy], ['bot', 'Querés que lo armemos?']]) === false);
+caso('y al revés, la lista de hoy y después un bloque con el anual primero: el anual primero',
+    $anualPrimero([['bot', $listaHoy], ['bot', $bloqueAnualPrimero]]) === true);
+$cTurnoHoy = conv_nueva('999ORDENTEST', ['tipo' => 'landing']);
+wabot_conv_transcript($cTurnoHoy, 'bot', $bloqueAntes);
+clasifica(['rubro_landing']);
+foreach (wabot_precio('landing', $cTurnoHoy, $cfg) as $mensajeTurno) wabot_conv_transcript($cTurnoHoy, 'bot', $mensajeTurno);
+caso('el turno del precio de hoy, con un bloque viejo antes en la charla, se lee con el mensual primero',
+    wabot_modalidades_anual_primero($cTurnoHoy) === false, json_encode(array_column($cTurnoHoy['transcript'], 't'), JSON_UNESCAPED_UNICODE));
+
 echo "\n-- La inmobiliaria que vende propiedades no es un proyecto mixto (19-sep) --\n";
 foreach (['Tengo una inmobiliaria en Tigre, publico alquileres y ventas',
           'Soy martillero: alquileres y ventas',
@@ -618,6 +637,15 @@ wabot_modalidad_anotar('1', $cAntesUno, $cfg); wabot_modalidad_anotar('2', $cAnt
 caso('después de la imagen del 27-sep a la mañana, "1" anota el plan anual y "2" el mensual',
     ($cAntesUno['modalidad_elegida'] ?? '') === 'unico' && ($cAntesDos['modalidad_elegida'] ?? '') === 'mensual',
     ($cAntesUno['modalidad_elegida'] ?? '') . ' / ' . ($cAntesDos['modalidad_elegida'] ?? ''));
+// Y con la lista del 29-sep (el mensual primero, en el mismo mensaje que la propuesta).
+$cLista = $cNum; $cLista['transcript'] = [];
+wabot_conv_transcript($cLista, 'bot', $listaHoy);
+$cListaUno = $cLista; $cListaDos = $cLista; $cListaTres = $cLista;
+wabot_modalidad_anotar('1', $cListaUno, $cfg); wabot_modalidad_anotar('2', $cListaDos, $cfg); wabot_modalidad_anotar('3', $cListaTres, $cfg);
+caso('después de la lista del 29-sep, "1" anota el plan mensual, "2" el anual y "3" el pago único con la web propia',
+    ($cListaUno['modalidad_elegida'] ?? '') === 'mensual' && ($cListaDos['modalidad_elegida'] ?? '') === 'unico'
+    && ($cListaTres['modalidad_elegida'] ?? '') === 'propia' && !empty($cListaTres['quiere_web_propia']),
+    ($cListaUno['modalidad_elegida'] ?? '') . ' / ' . ($cListaDos['modalidad_elegida'] ?? '') . ' / ' . ($cListaTres['modalidad_elegida'] ?? ''));
 $cRechaza = $cNum;
 caso('"no me interesa el mensual" no anota nada: quedan el anual y el pago único',
     wabot_modalidad_anotar('No me interesa el mensual', $cRechaza, $cfg) === false && empty($cRechaza['modalidad_elegida']));

@@ -6102,11 +6102,12 @@ function wabot_precio_unico_vigente($v, $cfg) {
  * ¿La charla vio las modalidades con el plan anual primero ("1 plan anual,
  * 2 plan mensual, 3 pago único")? Así estaban el texto hasta el 25-sep y las
  * imágenes del 27-sep de 00:15 a la tarde. Las imágenes del 25-sep (13:20) al
- * 26-sep a la noche y las de hoy (27-sep) van con el mensual primero. Vale lo
- * último que se le mostró: el texto por su primera línea, y la imagen por lo
- * que quedó anotado en el transcript ("1 anual" o "1 mensual"; las del 25 y el
- * 26-sep no decían el orden y eran con el mensual primero; la del panel la
- * anota Pablo como humano). Sin rastro, la fecha en que se cotizó.
+ * 26-sep a la noche, las de hoy (27-sep) y la lista del 29-sep ("1. Mensual,
+ * 2. Anual, 3. Pago único") van con el mensual primero. Vale lo último que se
+ * le mostró: el texto por su primera línea, y la imagen por lo que quedó
+ * anotado en el transcript ("1 anual" o "1 mensual"; las del 25 y el 26-sep no
+ * decían el orden y eran con el mensual primero; la del panel la anota Pablo
+ * como humano). Sin rastro, la fecha en que se cotizó.
  */
 function wabot_modalidades_anual_primero($conv) {
     if (!is_array($conv)) return false;
@@ -6114,8 +6115,8 @@ function wabot_modalidades_anual_primero($conv) {
         if (!in_array((string)($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
         $t = (string)($fila['t'] ?? '');
         if (strpos($t, '[Imagen: modalidades de pago') === 0) return strpos($t, '1 anual') !== false;
-        if (preg_match('/(^|\n)1[.)] Plan anual\b/u', $t)) return true;
-        if (preg_match('/(^|\n)1[.)] Plan mensual\b/u', $t)) return false;
+        if (preg_match('/(^|\n)1[.)] (?:Plan anual|Anual)\b/u', $t)) return true;
+        if (preg_match('/(^|\n)1[.)] (?:Plan mensual|Mensual)\b/u', $t)) return false;
     }
     $ts = (int)($conv['precio_cotizado_ts'] ?? 0);
     // Antes de la imagen del 25-sep (13:20:44, -03:00), el texto con el anual
@@ -6319,9 +6320,10 @@ function wabot_oferta_diseno_form_texto(&$conv, $cfg) {
 }
 
 /**
- * Cómo termina el turno del precio (Pablo, 18-sep): la propuesta con las dos
- * formas y, dos segundos después, la oferta del primer diseño. El bot NO se
- * apaga todavía: espera UNA respuesta, que contesta el borde común
+ * Cómo termina el turno del precio (Pablo, 18-sep): la propuesta con las
+ * modalidades y su monto, aparte los links al detalle de cada una (29-sep, en
+ * lugar de la imagen) y, dos segundos después, la oferta del primer diseño. El
+ * bot NO se apaga todavía: espera UNA respuesta, que contesta el borde común
  * (wabot_oferta_diseno_responder, redactor.php). También al que pidió la demo
  * al escribir (el anuncio viejo): recién ahora vio el precio, y el formulario
  * pegado al monto es justo la tarea de más que se quería sacar.
@@ -6332,8 +6334,8 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     $propuesta = wabot_precio_con_servicio($propuesta, $tipo, $conv, $cfg);
     if ($tipo === 'landing' && !empty($conv['catalogo'])) {
         $carga = trim(wabot_precio_placeholders((string)($cfg['catalogo_carga'] ?? ''), $conv, $cfg, $tipo));
-        /* Antes de "Podés elegir una de estas 3 modalidades de pago:" (28-sep):
-         * pegada al final quedaba entre esa frase y la imagen que la sigue. */
+        /* Antes de "Podés elegir 1 de estas 3 modalidades:" (28-sep): pegada al
+         * final quedaba entre esa frase y lo que la sigue. */
         if ($carga !== '') {
             $pos = mb_strpos($propuesta, "\n\nPodés elegir");
             $propuesta = $pos === false ? $propuesta . "\n\n" . $carga
@@ -6346,13 +6348,14 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     wabot_oferta_diseno_abrir($conv);
 
     $salida = [$propuesta];
-    /* La imagen con las 3 modalidades (25-sep), solo cuando wabot_servicio_texto()
-     * de verdad las ofreció y la imagen muestra los montos de ESTA charla
-     * (wabot_precio_imagen_corresponde, 26-sep): si no —Instagram, una charla
-     * con los montos congelados de antes— las modalidades ya fueron en texto. */
-    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '' && wabot_precio_imagen_corresponde($tipo, $conv, $cfg)) {
-        $imagen = wabot_precio_imagen_marcador($tipo);
-        if ($imagen !== null) $salida[] = $imagen;
+    /* Los links al detalle de cada modalidad (29-sep, en lugar de la imagen del
+     * 25-sep, que "puede ser confusa"): solo cuando wabot_servicio_texto() de
+     * verdad las ofreció y las páginas cobran los montos de ESTA charla
+     * (wabot_planes_paginas_corresponde). Sin eso, las modalidades ya fueron
+     * en el mensaje de arriba. */
+    if (wabot_servicio_texto($tipo, $conv, $cfg) !== '') {
+        $links = wabot_planes_links_texto($tipo, $conv, $cfg);
+        if ($links !== '') $salida[] = $links;
     }
     $salida[] = wabot_tres_pasos_texto($conv, $cfg);
     return $salida;
@@ -6549,11 +6552,14 @@ function wabot_oferta_diseno_abrir(&$conv) {
 }
 
 /**
- * La frase que abre las 3 modalidades de contratarla (25-sep): los montos ya
- * no van enumerados acá, salen en la imagen que manda wabot_precio_cierre()
- * justo después (wabot_precio_imagen_archivo). Esta función solo decide SI
- * corresponde ofrecerlas —los mismos dos montos que exigía la lista de
- * antes— y, si pidió la web propia, le suma el pago único debajo.
+ * Las 3 modalidades de contratarla con su monto, para el MISMO mensaje que la
+ * propuesta (29-sep, Pablo: "en ese mismo mensaje volvemos a sumar lo de los
+ * precios"): "Podés elegir 1 de estas 3 modalidades: 1. Mensual… 2. Anual…
+ * 3. Pago único…", con los montos de ESTA charla y en cualquier canal. Los
+ * links al detalle de cada una salen en el mensaje siguiente
+ * (wabot_planes_links_texto). Solo decide SI corresponde ofrecerlas —los
+ * mismos dos montos que exigía la lista de antes— y, si pidió la web propia,
+ * le suma el pago único debajo.
  */
 function wabot_servicio_texto($tipo, $conv, $cfg) {
     $v = wabot_precio_vigente($conv, $cfg, $tipo);
@@ -6561,19 +6567,33 @@ function wabot_servicio_texto($tipo, $conv, $cfg) {
     $mensual = trim((string)($v['mensualidad'] ?? ''));
     // Sin los dos montos no se ofrecen las modalidades.
     if ($precio === '' || $mensual === '') return '';
-    /* Con la imagen, solo la frase que la abre. Sin ella (Instagram, o una
-     * charla con otros montos que los de la imagen, 26-sep), las 3
-     * modalidades en texto, en el mismo orden y con los montos de ESTA charla. */
-    if (wabot_precio_imagen_corresponde($tipo, $conv, $cfg)) {
-        $t = trim((string)($cfg['precio_modalidades_intro'] ?? ''));
-        if ($t === '') $t = trim((string)(wabot_textos_default()['precio_modalidades_intro'] ?? ''));
-    } else {
-        $t = trim(wabot_precio_placeholders(wabot_servicio_texto_plantilla((string)$tipo, false, $cfg), $conv, $cfg, $tipo));
-    }
+    $plantilla = trim((string)($cfg['precio_modalidades'] ?? ''));
+    if ($plantilla === '') $plantilla = trim((string)(wabot_textos_default()['precio_modalidades'] ?? ''));
+    $t = trim(wabot_precio_placeholders($plantilla, $conv, $cfg, $tipo));
     if ($t === '') return '';
     // Si pidió la web propia (19-sep), debajo va el pago único.
     $propia = wabot_web_propia_precio_texto($conv, $cfg, $v);
     return $propia !== '' ? $t . "\n\n" . $propia : $t;
+}
+
+/**
+ * El segundo mensaje del turno del precio (29-sep, Pablo): los links al detalle
+ * de cada modalidad —qué incluye y cómo se paga—, las páginas de pago/ del tipo
+ * cotizado, que se cruzan con pestañas. '' si alguna no existe en el deploy o
+ * cobra un monto distinto del de la charla (wabot_planes_paginas_corresponde):
+ * ahí las modalidades ya fueron en el mensaje de arriba y no se manda otro
+ * precio que el suyo.
+ */
+function wabot_planes_links_texto($tipo, $conv, $cfg) {
+    if (!wabot_planes_paginas_corresponde($tipo, $conv, $cfg)) return '';
+    $plantilla = trim((string)($cfg['planes_links'] ?? ''));
+    if ($plantilla === '') $plantilla = trim((string)(wabot_textos_default()['planes_links'] ?? ''));
+    if ($plantilla === '') return '';
+    $links = [];
+    foreach (wabot_planes_paginas()[(string)$tipo] as $modalidad => $pagina) {
+        $links['{link_' . $modalidad . '}'] = 'gokywebs.com/pago/' . $pagina['pagina'];
+    }
+    return trim(strtr($plantilla, $links));
 }
 
 function wabot_precio_con_servicio($precioTexto, $tipo, $conv, $cfg) {

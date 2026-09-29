@@ -46,9 +46,9 @@ echo "— 1. El que dice que solo quiere mostrar un catálogo no se lleva la tie
     ['ficha' => ['rubro' => 'tu negocio de suplementos', 'que_vende' => 'suplementos']]]], '999DEV26A', $cfg);
 caso('Francisco: "algo simple y económico para mostrar nuestro catálogo" cotiza el sitio profesional con catálogo',
     ($c['tipo'] ?? '') === 'landing' && !empty($c['catalogo']) && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
-caso('la propuesta nombra el catálogo y la imagen es la del sitio profesional',
+caso('la propuesta nombra el catálogo y los links son los del sitio profesional',
     mb_stripos($r[0] ?? '', 'con el catálogo de tus productos') !== false
-    && ($r[1] ?? '') === wabot_precio_imagen_marcador('landing'), $r[0] ?? '');
+    && ($r[1] ?? '') === links_de_precio('landing'), $r[0] ?? '');
 caso('avisa que la carga la puede hacer él o nosotros por un costo (texto de Pablo, 28-sep)',
     mb_stripos($r[0] ?? '', 'Los productos los podés cargar vos desde el panel. Si querés que hagamos nosotros la carga, tiene un costo de $') !== false, $r[0] ?? '');
 caso('la oferta del primer diseño habla del catálogo', mb_stripos($r[2] ?? '', 'tu catálogo') !== false, $r[2] ?? '');
@@ -97,7 +97,7 @@ caso('"vender por la web, pero también como catálogo" es tienda: la venta dich
     wabot_ficha_necesidad_de($panalera) === 'tienda' && !wabot_texto_pide_catalogo_sin_cobro($panalera));
 [$r, $c] = charla26([[$panalera, ['rubro_comercio'], ['ficha' => ['necesidad' => 'catalogo']]]], '999DEV26B2', $cfg);
 caso('aunque el clasificador diga catálogo, se lleva la tienda online',
-    ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']) && ($r[1] ?? '') === wabot_precio_imagen_marcador('ecommerce'),
+    ($c['tipo'] ?? '') === 'ecommerce' && empty($c['catalogo']) && ($r[1] ?? '') === links_de_precio('ecommerce'),
     json_encode($r, JSON_UNESCAPED_UNICODE));
 
 echo "— 3. No preguntar lo que ya contestó —\n";

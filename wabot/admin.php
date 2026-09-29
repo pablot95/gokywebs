@@ -571,8 +571,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         exit;
     }
     /* Los botones "Imagen sitio profesional" e "Imagen tienda/cursos/inmo"
-     * (Pablo, 26-sep): la misma imagen de las 3 modalidades que manda el bot
-     * con el precio (wabot_precio_imagen_archivo; tienda, cursos e
+     * (Pablo, 26-sep): la imagen de las 3 modalidades que mandaba el bot con
+     * el precio hasta el 29-sep (wabot_precio_imagen_archivo; tienda, cursos e
      * inmobiliaria comparten la de 'ecommerce'). Una imagen no se puede dejar
      * en el editor para revisarla, así que sale directo, con confirmación en
      * el botón. Mismas reglas que "responder": la ventana de 24 h, y mandar a
@@ -2539,13 +2539,21 @@ function burbujaCita(t, chat) {
                             title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $180.000</button>
                         <button type="button" class="sec" id="btnAnual250"
                             title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $250.000</button>
-                        <?php /* La imagen de precios, la misma que manda el bot (26-sep). Sale
-                               directo, con confirmación. Solo WhatsApp, como la del bot. */
+                        <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
+                               datos para la transferencia (pago/unico240 y pago/unico360). */ ?>
+                        <button type="button" class="sec" id="btnUnico240"
+                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $240.000</button>
+                        <button type="button" class="sec" id="btnUnico360"
+                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $360.000</button>
+                        <?php /* La imagen de precios del 25-sep (26-sep). Desde el 29-sep el bot ya
+                               no la manda —pasa los links a las páginas de cada modalidad—, pero
+                               queda acá para mandarla a mano. Sale directo, con confirmación. Solo
+                               WhatsApp. */
                               if (wabot_canal($conv) === 'whatsapp'): ?>
                         <button type="button" class="sec img-precio" data-tipo="landing"
-                            title="Manda ahora la imagen con los precios del sitio profesional (la misma que manda el bot)">Imagen sitio profesional</button>
+                            title="Manda ahora la imagen con los precios del sitio profesional (el bot ya no la manda sola: pasa los links a cada modalidad)">Imagen sitio profesional</button>
                         <button type="button" class="sec img-precio" data-tipo="ecommerce"
-                            title="Manda ahora la imagen con los precios de tienda, cursos e inmobiliaria (la misma que manda el bot)">Imagen tienda/cursos/inmo</button>
+                            title="Manda ahora la imagen con los precios de tienda, cursos e inmobiliaria (el bot ya no la manda sola: pasa los links a cada modalidad)">Imagen tienda/cursos/inmo</button>
                         <?php endif; ?>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
@@ -3343,6 +3351,15 @@ function burbujaCita(t, chat) {
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
             rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($250.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($190.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual250');
+        });
+        /* Los del pago único (29-sep), con el mismo formato: la página tiene las
+         * condiciones y los datos para la transferencia; el mensaje adelanta la
+         * seña y el resto. */
+        document.getElementById('btnUnico240')?.addEventListener('click', () => {
+            rrInsertar('Te paso el pago único del sitio profesional ($240.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($180.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico240');
+        });
+        document.getElementById('btnUnico360')?.addEventListener('click', () => {
+            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($360.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($300.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico360');
         });
 
         /* "Imagen sitio profesional" / "Imagen tienda/cursos/inmo" (26-sep): a

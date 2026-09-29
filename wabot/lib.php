@@ -3738,11 +3738,59 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 }
 
 /**
- * La imagen con las 3 modalidades de pago que sigue al turno del precio
- * (25-sep, Pablo), con los montos que muestra y su orden: las de hoy (27-sep)
- * dicen "01 plan mensual, 02 plan anual, 03 pago único". Los archivos viven en
- * wabot/, junto al resto del código, no en data/: son parte del deploy, no
- * contenido subido por un cliente.
+ * Las páginas de detalle de cada modalidad (29-sep, Pablo): el segundo mensaje
+ * del turno del precio pasa sus links, en lugar de la imagen. Viven en pago/
+ * (mensual25, anual180, unico240 y, para tienda, cursos e inmobiliaria,
+ * mensual35, anual250, unico360); cada una tiene arriba las pestañas para pasar
+ * a las otras dos del mismo tipo de web.
+ *
+ * `monto` es lo que cobra la página, escrito en su HTML: si cambian los montos
+ * de textos.php, cambian las páginas y esta lista. Mientras no coincidan con
+ * los de la charla, los links no salen (wabot_planes_paginas_corresponde): una
+ * charla cotizada con otros montos vería en la página un precio que no es el suyo.
+ */
+function wabot_planes_paginas() {
+    $tienda = [
+        'mensual' => ['pagina' => 'mensual35', 'monto' => '$35.000'],
+        'anual'   => ['pagina' => 'anual250',  'monto' => '$250.000'],
+        'unico'   => ['pagina' => 'unico360',  'monto' => '$360.000'],
+    ];
+    return [
+        'landing'      => [
+            'mensual' => ['pagina' => 'mensual25', 'monto' => '$25.000'],
+            'anual'   => ['pagina' => 'anual180',  'monto' => '$180.000'],
+            'unico'   => ['pagina' => 'unico240',  'monto' => '$240.000'],
+        ],
+        'ecommerce'    => $tienda,
+        'elearning'    => $tienda,
+        'inmobiliaria' => $tienda,
+    ];
+}
+
+/**
+ * ¿Salen los links al detalle de las 3 modalidades en esta charla? Solo si las
+ * tres páginas existen en el deploy y cobran los montos de ESTA charla
+ * (mensualidad, plan anual y pago único, ya congelados o de lista).
+ */
+function wabot_planes_paginas_corresponde($tipo, $conv, $cfg) {
+    $paginas = wabot_planes_paginas()[(string)$tipo] ?? null;
+    if ($paginas === null || !function_exists('wabot_precio_vigente')) return false;
+    $v = wabot_precio_vigente($conv, $cfg, $tipo);
+    foreach (['mensual' => 'mensualidad', 'anual' => 'precio', 'unico' => 'precio_unico'] as $modalidad => $campo) {
+        if (!is_file(__DIR__ . '/../pago/' . $paginas[$modalidad]['pagina'] . '/index.html')) return false;
+        if (wabot_monto_a_numero($v[$campo] ?? '') !== wabot_monto_a_numero($paginas[$modalidad]['monto'])) return false;
+    }
+    return true;
+}
+
+/**
+ * La imagen con las 3 modalidades de pago (25-sep, Pablo), con los montos que
+ * muestra y su orden: las de hoy (27-sep) dicen "01 plan mensual, 02 plan
+ * anual, 03 pago único". Desde el 29-sep el turno del precio ya no la manda
+ * ("puede ser confusa": ver wabot_planes_paginas): la usan los botones
+ * "Imagen…" del panel, y el mecanismo de la tanda (marcador, transcript) queda
+ * por si vuelve. Los archivos viven en wabot/, junto al resto del código, no
+ * en data/: son parte del deploy, no contenido subido por un cliente.
  *
  * Tienda, cursos e inmobiliaria cobran lo mismo y comparten imagen; si vuelven
  * a tener precios distintos, cada uno necesita la suya. Si cambian los montos

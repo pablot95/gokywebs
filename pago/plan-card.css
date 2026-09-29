@@ -215,6 +215,82 @@ main {
 .transfer-note a { color: var(--blue); font-weight: 700; }
 .plan-note a { color: var(--blue); font-weight: 700; }
 
+/* Pago único (29-sep): lo que no incluye, dicho en texto y no en tildes. */
+.plan-text { color: var(--ink); font-size: .9rem; line-height: 1.5; }
+.plan-text + .plan-text { margin-top: .6rem; }
+.plan-aviso + .plan-text { margin-top: .8rem; }
+.plan-aviso {
+    padding: .85rem 1rem;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: #f7f9fe;
+    color: var(--ink);
+    font-size: .88rem;
+    line-height: 1.5;
+}
+.plan-aviso strong { font-weight: 800; }
+
+/* Pestañas de las tres modalidades (29-sep): mensual, anual y pago único del
+   mismo tipo de web. Son links a páginas completas; pago/planes.js cambia el
+   contenido sin recargar y, sin JavaScript, se navega como siempre. */
+.plan-wrap { width: min(440px, 100%); }
+.plan-wrap .plan-card { width: 100%; }
+
+.plan-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: .25rem;
+    margin-bottom: .9rem;
+    padding: .3rem;
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    background: #e6ebf8;
+}
+.plan-tabs a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: .5rem .3rem;
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: .86rem;
+    font-weight: 700;
+    text-align: center;
+    transition: background .15s, color .15s, box-shadow .15s;
+}
+.plan-tabs a:hover { color: var(--blue); }
+.plan-tabs a[aria-current="page"] {
+    background: #fff;
+    color: var(--blue);
+    box-shadow: 0 2px 8px rgba(16, 24, 40, 0.1);
+}
+.plan-tabs a:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.plan-card.is-entering { animation: plan-enter .22s ease-out; }
+@keyframes plan-enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+#plan.is-loading .plan-card { opacity: .55; transition: opacity .15s; }
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .plan-card.is-entering { animation: none; }
+    .plan-tabs a, #plan.is-loading .plan-card { transition: none; }
+}
+
 @media (max-width: 540px) {
     .plan-card { padding: 1.8rem 1.4rem; }
     .plan-price { font-size: 2.1rem; }

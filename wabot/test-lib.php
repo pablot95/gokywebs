@@ -72,3 +72,31 @@ function turno($texto, &$c, $cfg) {
 }
 
 function tiene_form($r) { return strpos(implode(' ', (array)$r), 'gokywebs.com/form/') !== false; }
+
+/*
+ * El turno del precio desde el 29-sep (Pablo: "la imagen puede ser confusa"):
+ *   1. la propuesta y, en el mismo mensaje, las 3 modalidades con su monto;
+ *   2. los links al detalle de cada modalidad (las páginas de pago/);
+ *   3. la oferta del primer diseño.
+ * Los textos se escriben acá a mano, no se sacan del código que prueban.
+ */
+
+/** Las 3 modalidades como cierran la propuesta. */
+function modalidades_de_precio($mensual, $anual, $unico) {
+    return "Podés elegir 1 de estas 3 modalidades:\n\n1. Mensual: $mensual por mes, incluye mantenimiento\n"
+         . "2. Anual: $anual por año, incluye mantenimiento\n3. Pago único: $unico una vez, NO incluye mantenimiento";
+}
+
+/** El segundo mensaje: los links de las páginas del tipo (sitio profesional; tienda, cursos e inmobiliaria comparten). */
+function links_de_precio($tipo) {
+    [$m, $a, $u] = $tipo === 'landing' ? ['mensual25', 'anual180', 'unico240'] : ['mensual35', 'anual250', 'unico360'];
+    return "Acá podés ver el detalle de cada modalidad:\n\nMensual: gokywebs.com/pago/$m\nAnual: gokywebs.com/pago/$a\nPago único: gokywebs.com/pago/$u";
+}
+
+/** ¿Salió el turno del precio de ese tipo? La propuesta que nombra lo que se arma y sus links. */
+function salio_precio($r, $tipo) {
+    $r = array_values((array)$r);
+    $frase = ['landing' => 'un sitio profesional completo', 'ecommerce' => 'una tienda online completa',
+              'elearning' => 'una plataforma de cursos completa', 'inmobiliaria' => 'una web inmobiliaria completa'][$tipo] ?? '';
+    return $frase !== '' && mb_strpos((string)($r[0] ?? ''), $frase) !== false && in_array(links_de_precio($tipo), $r, true);
+}

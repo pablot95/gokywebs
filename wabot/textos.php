@@ -37,9 +37,12 @@
  *   único, al pagar el segundo año del plan anual o a los 18 meses del
  *   mensual. Antes de eso es de Gokywebs. Lo dicen info.titularidad,
  *   info.entrega_codigo, info.licencias y info.baja_del_plan.
- * - El turno del precio manda la imagen de su tipo (wabot_precio_imagen_archivo)
- *   solo si sus montos son los de la charla y el canal es WhatsApp; si no, las
- *   3 modalidades van en texto con `dos_formas`, en el mismo orden.
+ * - El turno del precio son tres mensajes (29-sep, Pablo: "la imagen puede ser
+ *   confusa"): la propuesta con las 3 modalidades y su monto (`precio_modalidades`),
+ *   los links al detalle de cada una (`planes_links`: las páginas gokywebs.com/pago/…,
+ *   solo si cobran los montos de la charla) y la oferta del primer diseño. La
+ *   imagen ya no sale sola; `dos_formas`, la versión larga, queda para cuando
+ *   el cliente vuelve a pedir el precio.
  * - Web propia: el que la quiere a su nombre recibe el pago único; si la
  *   quiere en su propio hosting desde el arranque, lo contrata él
  *   (info.web_propia).
@@ -118,18 +121,22 @@ function wabot_textos_default() {
     // La seña no se devuelve (Pablo, 15-sep): la del plan anual y la del pago
     // único. El turno queda marcado para el desarrollador.
     'devolucion' => 'La seña no se devuelve: por eso primero te armamos un primer diseño sin cargo, así lo ves antes de pagar nada. Y una vez que arrancamos, si el diseño no te convence lo rehacemos hasta dos veces; ya elegido, tenés tres rondas para ajustar el resto.',
-    /* Lo mismo que la imagen del precio (27-sep), en texto y en el mismo
-     * orden: el "1" del cliente es el plan mensual en los dos. Sale cuando no
-     * va la imagen (Instagram, o una charla con otros montos) y cuando vuelve a
-     * pedir el precio. */
+    /* La versión larga de las 3 modalidades, con lo que incluye cada una. Desde
+     * el 29-sep ya no sale en el turno del precio (ahí va `precio_modalidades`
+     * y los links a cada página): sale cuando el cliente vuelve a pedir el
+     * precio (`precio_resumen`) y en las respuestas rápidas del panel. */
     'dos_formas' => "Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: {mensualidad} por mes, incluye mantenimiento\n2. Plan anual: {precio} por año, incluye mantenimiento\n3. Pago único: {precio_unico} una vez, NO incluye mantenimiento*\n\nLas 3 incluyen la web completa:\n✓ Desarrollo completo de la web\n✓ Adaptada a celulares\n✓ Panel para autogestionar contenido\n✓ Certificado de seguridad (SSL)\n✓ Preparada para que Google la encuentre\n\nEl plan mensual y el anual incluyen el mantenimiento:\n✓ Renovación de hosting y dominio\n✓ Actualizaciones de SDK y plugins\n✓ Arreglo de errores\n✓ Soporte técnico\n✓ Copia de seguridad\n✓ Un cambio por mes\n\n*Con el pago único el mantenimiento se puede contratar por separado, y requiere la renovación del hosting y el dominio. Se puede pagar en cuotas con intereses.",
     // Debajo de los planes, solo si el cliente pidió la web propia y el bloque no trae el pago único.
     'dos_formas_web_propia' => 'Y si la querés a tu nombre, está el pago único: {precio_unico}. El código queda tuyo cuando abonás el total, y si querés le sumás el mantenimiento por {mantenimiento_mes}.',
-    /* El turno del precio (25-sep, Pablo) no enumera las 3 modalidades en
-     * texto: las manda como imagen aparte (wabot_precio_imagen_archivo, con
-     * los montos de cada tipo). Este es solo el texto que abre ese globo;
-     * wabot_servicio_texto() en engine.php es el único que lo usa. */
-    'precio_modalidades_intro' => 'Podés elegir una de estas 3 modalidades de pago:',
+    /* El turno del precio (29-sep, Pablo): en el mismo mensaje que la propuesta,
+     * las 3 modalidades con su monto —"Podés elegir 1 de estas 3 modalidades:
+     * mensual, anual, pago único"— y, en el siguiente, los links al detalle de
+     * cada una. La imagen del 25-sep quedó afuera ("puede ser confusa"). El "1",
+     * "2" o "3" que contesta el cliente es el de esta lista. Los usan
+     * wabot_servicio_texto() y wabot_planes_links_texto() en engine.php; las
+     * páginas y sus montos, wabot_planes_paginas() en lib.php. */
+    'precio_modalidades' => "Podés elegir 1 de estas 3 modalidades:\n\n1. Mensual: {mensualidad} por mes, incluye mantenimiento\n2. Anual: {precio} por año, incluye mantenimiento\n3. Pago único: {precio_unico} una vez, NO incluye mantenimiento",
+    'planes_links' => "Acá podés ver el detalle de cada modalidad:\n\nMensual: {link_mensual}\nAnual: {link_anual}\nPago único: {link_unico}",
     'ininteligible_primero' => 'Hola! No llegué a entender el mensaje. Contame a qué te dedicás o para qué sería la web y te ayudo.',
     'repregunta_suave' => 'Perdoná si no fui claro. Contame qué duda te quedó y te la respondo.',
     /* La pregunta de reconocimiento (Pablo, 21-sep): antes de cotizar una
@@ -302,7 +309,8 @@ function wabot_textos_default() {
     'dos_webs_descuento' => 20,
     'dos_webs' => [
         'intro'    => '{para_quien} te podemos armar las dos webs: {webs}.',
-        'descuento' => "Si hacemos las dos, tenés un {descuento}% de descuento en ambas. Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: {mensual} por mes por las dos (en vez de {mensual_lista}), incluye mantenimiento\n2. Plan anual: {anual} por año por las dos (en vez de {anual_lista}), incluye mantenimiento\n3. Pago único: {unico} por las dos (en vez de {unico_lista}), NO incluye mantenimiento",
+        // Las mismas palabras que el precio de una sola web (29-sep): "Podés elegir 1 de estas 3 modalidades" y mensual, anual, pago único. Sin links: las páginas de pago/ cobran una sola web.
+        'descuento' => "Si hacemos las dos, tenés un {descuento}% de descuento en ambas. Podés elegir 1 de estas 3 modalidades:\n\n1. Mensual: {mensual} por mes por las dos (en vez de {mensual_lista}), incluye mantenimiento\n2. Anual: {anual} por año por las dos (en vez de {anual_lista}), incluye mantenimiento\n3. Pago único: {unico} por las dos (en vez de {unico_lista}), NO incluye mantenimiento",
         'una_sola' => 'Si preferís hacer una sola, {precios_una}.',
         'oferta'   => 'Si te interesa, te preparamos sin cargo un primer diseño de las dos webs, así ves cómo quedarían antes de decidir. Querés que lo armemos?',
     ],
