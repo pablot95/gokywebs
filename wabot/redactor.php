@@ -69,6 +69,9 @@ function wabot_oferta_diseno_aceptada($texto) {
         && !preg_match('/\b(no|nop|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|caro|aunque)\b/u', $t)) return true;
     if (preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego'
         . '|te aviso|te confirmo|lo veo|a ver|caro|pero|aunque|primero)\b/u', $t)) return false;
+    // "Dale, te vuelvo a escribir más tarde / mañana" posterga, no acepta (28-sep, Ale).
+    if (preg_match('/\b(mas tarde|manana|pasado manana|otro dia|otro momento|la semana que viene|el finde|vuelvo a escribir|te escribo|les escribo'
+        . '|me vuelvo a comunicar|me comunico|te hablo|les hablo|te contacto|vuelvo a contactar)\b/u', $t)) return false;
     // Agradecer no es aceptar: "ok gracias", "perfecto, gracias".
     if (preg_match('/\bgracias\b/u', $t)
         && !preg_match('/\b(si+|dale|quiero|queremos|arm\w+|avancemos|me interesa|de una|obvio|por favor|porfa)\b/u', $t)) return false;
@@ -149,6 +152,10 @@ function wabot_oferta_diseno_responder($texto, &$conv, $cfg) {
     }
     // Si eligió cómo pagar, queda anotado igual: viaja al boceto.
     wabot_modalidad_anotar($texto, $conv, $cfg);
+    /* "Son 2 tiendas, la mía y la de mi esposo" (28-sep, Ponte Bella): se
+     * cotizan las dos con el descuento y se sigue esperando el sí. */
+    $segunda = empty($conv['dos_webs']) ? wabot_pide_segunda_web($texto, $conv) : null;
+    if ($segunda !== null && !empty($conv['tipo'])) return wabot_precio_dos((string)$conv['tipo'], $segunda, $conv, $cfg);
     if (wabot_oferta_diseno_aceptada($texto)) {
         $form = wabot_oferta_diseno_form_texto($conv, $cfg);
         if ($form !== '') {

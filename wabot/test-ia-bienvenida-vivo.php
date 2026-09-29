@@ -1,14 +1,14 @@
 <?php
 /**
- * wabot/test-ia-bienvenida-vivo.php — las tres opciones de la bienvenida contra
- * la API REAL de OpenAI (28-sep-2026). Solo CLI; no manda nada a nadie ni guarda
- * charlas: solo le pregunta al modelo qué haría y lo compara con lo esperado.
+ * wabot/test-ia-bienvenida-vivo.php — la bienvenida y las primeras decisiones
+ * contra la API REAL de OpenAI (28-sep-2026). Solo CLI; no manda nada a nadie ni
+ * guarda charlas: solo le pregunta al modelo qué haría y lo compara con lo esperado.
  *
  *   OPENAI_API_KEY=sk-... php wabot/test-ia-bienvenida-vivo.php [modelo]
  *
- * (o con WABOT_OPENAI_KEY en config/wabot-config.php). Son ~16 llamadas: unos
+ * (o con WABOT_OPENAI_KEY en config/wabot-config.php). Son ~18 llamadas: unos
  * centavos de dólar. La suite simulada es test-ia.php; esta es la prueba de que
- * el modelo de verdad entiende las opciones sin la red de wabot_ia_turno().
+ * el modelo de verdad decide bien sin las redes de wabot_ia_redes().
  */
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
@@ -23,16 +23,22 @@ if (!empty($argv[1])) $cfg['openai_modelo'] = $argv[1];
 if (wabot_openai_key() === '') { fwrite(STDERR, "Falta la key: OPENAI_API_KEY o WABOT_OPENAI_KEY en config/wabot-config.php\n"); exit(2); }
 echo 'Modelo: ' . wabot_openai_modelo($cfg) . "\n\n";
 
-/** Lo que se espera: [accion, tipo_web] o solo accion. */
+/* [lo que dice, accion esperada, tipos_web posibles (null = cualquiera), 'dos' si son dos webs, info_clave esperada].
+ * Desde el 28-sep la opción sola no se cotiza: primero qué vende o a qué se dedica. */
 $casos = [
-    ['Una web informativa', 'cotizar', ['sitio_profesional', 'catalogo_sin_venta']],
-    ['1', 'cotizar', ['sitio_profesional', 'catalogo_sin_venta']],
-    ['la primera', 'cotizar', ['sitio_profesional', 'catalogo_sin_venta']],
+    ['Una web informativa', 'responder', null],
+    ['1', 'responder', null],
+    ['la primera', 'responder', null],
     ['algo para presentar mi estudio contable', 'cotizar', ['sitio_profesional']],
-    ['Una tienda online', 'cotizar', ['tienda_online']],
-    ['la 2', 'cotizar', ['tienda_online']],
+    ['Una tienda online para vender productos', 'responder', null],
+    ['la 2', 'responder', null],
     ['la de vender, tengo un local de ropa', 'cotizar', ['tienda_online']],
-    ['la tienda, para vender mis cursos de maquillaje', 'cotizar', ['plataforma_cursos', 'tienda_con_cursos']],
+    ['la tienda, para vender mis cursos grabados de maquillaje', 'cotizar', ['plataforma_cursos', 'tienda_con_cursos']],
+    ['Una web informativa y una tienda web para vender, vendo ropa de mujer', 'cotizar', ['sitio_profesional', 'tienda_online'], 'dos'],
+    ['Dicto cursos', 'responder', null],
+    ['Dicto cursos presenciales de maquillaje', 'cotizar', ['sitio_profesional']],
+    ['Vendo partituras descargables', 'cotizar', ['tienda_online']],
+    ['Tengo una web hecha en WordPress, le hacen mantenimiento?', 'responder', null, null, 'ya_tiene_plataforma'],
     ['Algo diferente', 'responder', null],
     ['3', 'responder', null],
     ['otra cosa', 'responder', null],
@@ -41,7 +47,10 @@ $casos = [
 ];
 
 $ok = 0; $costo = 0.0;
-foreach ($casos as $i => [$dice, $accion, $tipos]) {
+foreach ($casos as $i => $caso) {
+    [$dice, $accion, $tipos] = $caso;
+    $dosEsperadas = ($caso[3] ?? null) === 'dos';
+    $infoEsperada = $caso[4] ?? null;
     $conv = [
         'tel' => '549110009' . str_pad((string)$i, 4, '0', STR_PAD_LEFT) . 'TEST', 'canal' => 'whatsapp', 'fase' => 'menu',
         'nombre' => 'Marta', 'transcript' => [],
@@ -58,10 +67,17 @@ foreach ($casos as $i => [$dice, $accion, $tipos]) {
     if (!$r['ok']) { echo "  ✗ \"$dice\" → error: {$r['error']}\n"; continue; }
     $d = $r['decision'];
     $bien = $d['accion'] === $accion && ($tipos === null || in_array($d['tipo_web'], $tipos, true));
-    // La opción 3 tiene que preguntar algo, no quedarse callada.
-    if ($accion === 'responder' && $bien) $bien = (bool)array_filter($d['mensajes'], function ($m) { return mb_strpos($m, '?') !== false || preg_match('/\bcontame\b/iu', $m); });
+    if ($bien && $dosEsperadas) $bien = ($d['segunda_web'] ?? 'sin_definir') !== 'sin_definir';
+    if ($bien && $infoEsperada !== null) {
+        $bien = in_array($infoEsperada, $d['info_claves'], true);
+    } elseif ($bien && $accion === 'responder') {
+        // Responder tiene que preguntar algo, no quedarse callado.
+        $bien = (bool)array_filter($d['mensajes'], function ($m) { return mb_strpos($m, '?') !== false || preg_match('/\bcontame\b/iu', $m); });
+    }
     if ($bien) $ok++;
-    echo ($bien ? '  ✓ ' : '  ✗ ') . "\"$dice\" → {$d['accion']}" . ($d['accion'] === 'cotizar' ? " {$d['tipo_web']}" : '')
+    $segunda = ($d['segunda_web'] ?? 'sin_definir') !== 'sin_definir' ? " + {$d['segunda_web']}" : '';
+    echo ($bien ? '  ✓ ' : '  ✗ ') . "\"$dice\" → {$d['accion']}" . ($d['accion'] === 'cotizar' ? " {$d['tipo_web']}$segunda" : '')
+        . ($d['info_claves'] ? ' [' . implode(',', $d['info_claves']) . ']' : '')
         . ($d['mensajes'] ? ' | ' . implode(' / ', $d['mensajes']) : '') . "\n";
 }
 

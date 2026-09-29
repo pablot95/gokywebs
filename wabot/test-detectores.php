@@ -720,6 +720,9 @@ echo "— La respuesta del desempate gana sobre 'quiere avanzar' (21-sep) —\n"
  * quedó sin precio después de contestar justo lo que el bot le pidió. */
 function desempate_responde($clave, $texto, $acciones, $cfg, $fase = 'desempate_cursos') {
     $c = conv_nueva($clave, ['fase' => $fase, 'chat_started_ts' => time(), 'desempate_preguntado' => true]);
+    // Como en la charla real: el desempate llega después de contar el negocio (sin él, se pregunta primero: 28-sep).
+    wabot_conv_transcript($c, 'cliente', $fase === 'desempate_hibrido' ? 'Hago muebles a medida' : 'Capacitacion en molderia y costura');
+    wabot_conv_transcript($c, 'bot', $fase === 'desempate_hibrido' ? (string)$cfg['desempate_hibrido'] : (string)$cfg['desempate_cursos']);
     clasifica($acciones);
     $r = turno($texto, $c, $cfg);
     @unlink(WABOT_DATA . '/conv/' . $clave . '.json');

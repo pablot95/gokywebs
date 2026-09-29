@@ -360,7 +360,10 @@ function wabot_procesar_entrante($ev, $cfg) {
             if ($vinoDeMedia) $conv['_texto_de_media'] = true;
 
             $entrada    = implode("\n", $usables);
+            $precioAntes = !empty($conv['precio_dado']);
             $respuestas = wabot_salida_preparar(wabot_responder($entrada, $conv, $cfg), $conv, $cfg);
+            // La cotización (precio, imagen y oferta del diseño) sale entera una vez empezada (28-sep).
+            $cotizo = !$precioAntes && !empty($conv['precio_dado']);
             unset($conv['_texto_de_media']);
             // Solo los turnos de OpenAI se pueden descartar sin mandar: no tocaron nada afuera.
             $recalculable = !empty($conv['_ia_recalculable']);
@@ -389,8 +392,9 @@ function wabot_procesar_entrante($ev, $cfg) {
                  * "Quiero vender ropa" + "pero solo mayorista". Si todavía no salió
                  * nada, la respuesta se descarta y se piensa de nuevo con todo; si
                  * ya salió una parte, lo que falta no se manda (lo nuevo lo contesta
-                 * el turno siguiente, que ve lo que se mandó). */
-                if ($recalculable && wabot_cola_tiene($clave)) {
+                 * el turno siguiente, que ve lo que se mandó). Salvo la cotización:
+                 * cortada, el cliente veía el precio sin la oferta del diseño (28-sep). */
+                if ($recalculable && wabot_cola_tiene($clave) && ($i === 0 || !$cotizo)) {
                     if ($i === 0 && $recalculos < 2) { $descartar = true; break; }
                     wabot_log('ia_resto_descartado', ['tel' => $de, 'canal' => $canal, 'enviados' => $i]);
                     break;
