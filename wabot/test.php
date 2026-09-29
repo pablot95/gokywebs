@@ -119,47 +119,166 @@ $cOtra = conv_nueva('999MENU998', ['fase' => 'menu']);
 wabot_conv_transcript($cOtra, 'bot', $cfg['contame']);
 caso('"la 1" no elige nada si la última pregunta no fue la de la bienvenida', wabot_menu_contestado('la 1', $cOtra, $cfg) === null);
 
-// Con el clasificador (modo gemini).
+/** Un turno del motor con el mensaje ya en el transcript, como lo deja el webhook. */
+function menu_dice($texto, &$c, $cfg) {
+    wabot_conv_transcript($c, 'cliente', $texto);
+    return wabot_engine($texto, $c, $cfg);
+}
+$precioDe = function ($c, $tipo) { return ($c['tipo'] ?? '') === $tipo && !empty($c['precio_dado']); };
+
+/* 28-sep (Pablo): "ofrece la muestra gratis sin saber qué quiere el cliente,
+ * eso es gravísimo". Elegir la opción dice el tipo de web, no el negocio: sin
+ * saber qué vende o a qué se dedica no sale el precio (que trae la oferta del
+ * primer diseño). Se pregunta una vez y con la respuesta se cotiza la opción. */
+echo "— Con la opción sola, primero qué vende o a qué se dedica (28-sep) —\n";
 $c = conv_bienvenida($cfg);
 clasifica(['elige_landing']);
-$r = wabot_engine('Una web informativa', $c, $cfg);
-caso('la informativa (clasificador) → cotiza el sitio profesional', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$r = menu_dice('Una web informativa', $c, $cfg);
+caso('la informativa sola → pregunta a qué se dedica, sin precio ni oferta del diseño',
+    $r === [$cfg['pide_negocio']['landing']] && empty($c['precio_dado']) && ($c['tipo_pendiente'] ?? '') === 'landing', json_encode($r, JSON_UNESCAPED_UNICODE));
+clasifica(['otro']);
+$r = menu_dice('Soy contadora', $c, $cfg);
+caso('con la respuesta se cotiza la informativa', $precioDe($c, 'landing'), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida($cfg);
 clasifica(['otro']);
-$r = wabot_engine('la 2', $c, $cfg);
-caso('"la 2" sin etiqueta del clasificador → cotiza la tienda, sin preguntar si vende por la web',
-    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && strpos(implode(' ', $r), 'Buscás vender por la web') === false,
-    json_encode($r, JSON_UNESCAPED_UNICODE));
+$r = menu_dice('la 2', $c, $cfg);
+caso('"la 2" sola → pregunta qué productos vende', $r === [$cfg['pide_negocio']['ecommerce']] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+clasifica(['otro']);
+$r = menu_dice('mates y bombillas', $c, $cfg);
+caso('con la respuesta se cotiza la tienda, sin preguntar si vende por la web',
+    $precioDe($c, 'ecommerce') && strpos(implode(' ', $r), 'Buscás vender por la web') === false, json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['otro']);
+menu_dice('Una tienda online para vender productos', $c, $cfg);
+clasifica(['pregunta_info'], ['info_keys' => ['precio_sin_rubro']]);
+$r = menu_dice('cuánto sale?', $c, $cfg);
+caso('se pregunta una sola vez: si no lo cuenta, se cotiza igual', $precioDe($c, 'ecommerce'), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_ecommerce']);
+$r = menu_dice('Tienda online para vender ropa deportiva', $c, $cfg);
+caso('la opción con el negocio en el mismo mensaje se cotiza derecho', $precioDe($c, 'ecommerce'), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida($cfg);
 clasifica(['rubro_hibrido']);
-$r = wabot_engine('la tienda, hago muebles a medida', $c, $cfg);
-caso('la tienda ya contesta el desempate de mostrar o vender', ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$r = menu_dice('la tienda, hago muebles a medida', $c, $cfg);
+caso('la tienda ya contesta el desempate de mostrar o vender', $precioDe($c, 'ecommerce'), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida($cfg);
 clasifica(['rubro_cursos']);
-$r = wabot_engine('la tienda, para vender mis cursos de maquillaje', $c, $cfg);
-caso('la tienda para vender cursos → plataforma de cursos (gana el tipo concreto)', ($c['tipo'] ?? '') === 'elearning', json_encode($r, JSON_UNESCAPED_UNICODE));
+$r = menu_dice('la tienda, para vender mis cursos de maquillaje', $c, $cfg);
+caso('la tienda para vender cursos → plataforma de cursos (gana el tipo concreto)', $precioDe($c, 'elearning'), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida($cfg);
 clasifica(['algo_diferente']);
-$r = wabot_engine('Algo diferente', $c, $cfg);
+$r = menu_dice('Algo diferente', $c, $cfg);
 caso('algo diferente → pregunta qué tiene en mente, sin cotizar',
     $r === [$cfg['menu_algo_diferente']] && $c['fase'] === 'algo_diferente' && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
-// Sin IA (Gemini caído): la respuesta se lee igual.
-foreach (['la primera' => 'landing', 'Una tienda online' => 'ecommerce'] as $dice => $tipo) {
+// Sin IA (Gemini caído): la respuesta se lee igual, y la pregunta también.
+foreach (['la primera' => ['landing', 'Tengo una peluquería'], 'Una tienda online' => ['ecommerce', 'Vendo ropa de bebé']] as $dice => [$tipo, $negocio]) {
     $c = conv_bienvenida($cfg);
     $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
-    $r = wabot_engine($dice, $c, $cfg);
-    caso('sin IA, "' . $dice . '" → cotiza ' . $tipo, ($c['tipo'] ?? '') === $tipo && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+    $r1 = menu_dice($dice, $c, $cfg);
+    $r2 = menu_dice($negocio, $c, $cfg);
+    caso('sin IA, "' . $dice . '" → pregunta el negocio y con "' . $negocio . '" cotiza ' . $tipo,
+        $r1 === [$cfg['pide_negocio'][$tipo]] && $precioDe($c, $tipo), json_encode([$r1, $r2], JSON_UNESCAPED_UNICODE));
 }
 $c = conv_bienvenida($cfg);
 $GLOBALS['WABOT_TEST_CLASIFICADOR'] = function () { return null; };
-$r = wabot_engine('la 3', $c, $cfg);
+$r = menu_dice('la 3', $c, $cfg);
 caso('sin IA, "la 3" → pregunta qué tiene en mente', $r === [$cfg['menu_algo_diferente']] && $c['fase'] === 'algo_diferente', json_encode($r, JSON_UNESCAPED_UNICODE));
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
+
+echo "— Cursos: online o presenciales (28-sep) —\n";
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_cursos']);
+$r = menu_dice('Dicto cursos', $c, $cfg);
+caso('"Dicto cursos" → pregunta de qué son y si son online o presenciales', $r === [$cfg['pide_negocio']['elearning']] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+clasifica(['rubro_cursos']);
+$r = menu_dice('De maquillaje, presenciales', $c, $cfg);
+caso('presenciales → sitio profesional, no la plataforma', $precioDe($c, 'landing'), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_cursos']);
+menu_dice('Doy cursos de cocina online y presenciales', $c, $cfg);
+caso('online y presenciales → la plataforma', $precioDe($c, 'elearning'));
+caso('el detector de presenciales', wabot_cursos_presenciales('dicto cursos presenciales') && !wabot_cursos_presenciales('cursos online y presenciales')
+    && !wabot_cursos_presenciales('cursos de maquillaje'));
+
+echo "— Dos webs: las dos cotizadas, con 20% de descuento en ambas (28-sep) —\n";
+caso('"una web informativa y una tienda" elige las dos', wabot_menu_contestado('Una web informativa y una tienda web para vender', conv_bienvenida($cfg), $cfg) === 'dos'
+    && wabot_menu_contestado('tienda web y también una que sea solo de información', conv_bienvenida($cfg), $cfg) === 'dos');
+$c = conv_bienvenida($cfg);
+clasifica(['otro']);
+$r = menu_dice('Una web informativa y una tienda web para vender', $c, $cfg);
+caso('las dos sin contar el negocio → pregunta primero', $r === [$cfg['pide_negocio']['dos']] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+clasifica(['otro']);
+$r = menu_dice('Vendo ropa de mujer', $c, $cfg);
+$dos = implode("\n", $r);
+caso('con la respuesta salen las dos: informativa + tienda con el 20%: $48.000 / $344.000 / $480.000',
+    count($r) === 2 && strpos($dos, '$48.000 por mes por las dos (en vez de $60.000)') !== false
+    && strpos($dos, '$344.000 por año por las dos (en vez de $430.000)') !== false && strpos($dos, '$480.000 por las dos (en vez de $600.000)') !== false
+    && ($c['dos_webs'] ?? null) === ['landing', 'ecommerce'] && !empty($c['precio_dado']), $dos);
+caso('y cada una sola, con sus precios de lista',
+    strpos($dos, 'el sitio profesional sale $25.000 por mes, $180.000 por año o $240.000 en un pago único') !== false
+    && strpos($dos, 'la tienda online, $35.000 por mes, $250.000 por año o $360.000 en un pago único') !== false, $dos);
+caso('la oferta del diseño de las dos, con el arranque y el cierre de siempre',
+    str_starts_with($r[1] ?? '', 'Si te interesa, te preparamos sin cargo un primer diseño') && str_ends_with($r[1] ?? '', 'Querés que lo armemos?') && !empty($c['oferta_diseno_ts']));
+caso('sin marcadores crudos', strpos($dos, '{') === false);
+
+// Después del precio: "son 2 tiendas, la mía y la de mi esposo" (Ponte Bella).
+$c = conv_bienvenida($cfg);
+clasifica(['rubro_ecommerce']);
+menu_dice('Tienda online de lencería', $c, $cfg);
+$r = turno('Ahora veo y me comunico, son 2 tiendas distinta la mía y la de mi esposo.', $c, $cfg);
+$dos = implode("\n", $r);
+caso('"son 2 tiendas" después del precio → las dos tiendas con el 20%: $56.000 / $400.000 / $576.000',
+    strpos($dos, 'dos tiendas online completas') !== false && strpos($dos, '$56.000 por mes por las dos (en vez de $70.000)') !== false
+    && strpos($dos, '$400.000 por año por las dos (en vez de $500.000)') !== false && strpos($dos, '$576.000 por las dos (en vez de $720.000)') !== false
+    && strpos($dos, 'cada una sale $35.000 por mes') !== false, $dos);
+caso('y sigue esperando el sí al primer diseño', !empty($c['oferta_diseno_ts']) && empty($c['bot_off']));
+caso('el detector de la segunda web', wabot_pide_segunda_web('son 2 tiendas', ['tipo' => 'ecommerce']) === 'ecommerce'
+    && wabot_pide_segunda_web('y otra web informativa para mi hija', ['tipo' => 'ecommerce']) === 'landing'
+    && wabot_pide_segunda_web('necesito dos paginas', ['tipo' => 'landing']) === 'landing'
+    && wabot_pide_segunda_web('me interesa, cuánto tarda?', ['tipo' => 'landing']) === null
+    && wabot_pide_segunda_web('ya tengo otra web', ['tipo' => 'landing']) === null
+    && wabot_pide_segunda_web('Tengo otra página que me hizo un conocido', ['tipo' => 'landing']) === null);
+unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
+
+echo "— El negocio contado o no: calibrado con los chats reales (28-sep) —\n";
+foreach (['Una tienda online para vender productos', 'Tienda on line para vender productos que precio tiene aproximadamente', 'Hola necesito presentar mi negocio',
+          'Es para vender productos.', 'Una tienda web', 'Una tienda online para vender cursos y servicios', 'Me interesa la tienda con carrito | Más o menos cuanto sale?',
+          'Dicto cursos', 'Queria averiguar presupuesto para una tienda web y también saber cuanto seria una web que sea solo de información', 'Kiero ampliar mí oficio | ASER una pagina'] as $f) {
+    caso('no cuenta el negocio: "' . $f . '"', !wabot_texto_nombra_negocio($f));
+}
+foreach (['Venta de ropa deportiva', 'Tienda online de Lencería', 'Es un taller de electricidad automotriz', 'Soy artista plástico quiero mostrar y vender mis obras',
+          'Muebleria', 'Portal de noticias', 'Tengo un Pet Shop con local a la calle', 'Soy diseñadora y quiero una web', 'vendo ventanas', 'tengo un consultorio',
+          'Productos dijitales | Descargables'] as $f) {
+    caso('sí cuenta el negocio: "' . $f . '"', wabot_texto_nombra_negocio($f));
+}
+$cNombre = conv_nueva('999NOMBRE', ['nombre' => 'Cecilia']);
+wabot_conv_transcript($cNombre, 'cliente', 'Hola, mi nombre es Cecilia, quiero una tienda online');
+caso('el nombre de la persona no cuenta como negocio', wabot_negocio_conocido($cNombre) === false);
+
+echo "— Portal de noticias, carga de productos y el rubro con \"tu\" (28-sep) —\n";
+$c = conv_nueva('999PORTAL');
+wabot_conv_transcript($c, 'cliente', 'Portal de noticias');
+wabot_ficha_actualizar($c, 'Portal de noticias');
+$r = wabot_precio('landing', $c, $cfg);
+caso('un portal de noticias no se cotiza con la lista: lo toma el desarrollador', $r === [$cfg['complejidad']['portal']] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$c = conv_nueva('999CATALOGO', ['catalogo' => true]);
+wabot_conv_transcript($c, 'cliente', 'Tengo un pet shop, solo quiero mostrar los productos');
+$r = wabot_precio('landing', $c, $cfg);
+$posCarga = mb_strpos($r[0], 'Los productos los podés cargar vos');
+$posElegir = mb_strpos($r[0], 'Podés elegir una de estas');
+caso('la carga de productos va antes de "Podés elegir…", no entre esa frase y la imagen',
+    $posCarga !== false && ($posElegir === false || $posCarga < $posElegir), $r[0]);
+$cR2 = conv_nueva();
+wabot_conv_transcript($cR2, 'cliente', 'Soy artista plástico y vendo mis obras');
+caso('el rubro sin "tu" no va detrás de "Para"', wabot_rubro_valido('artista plástico', $cR2) === '' && wabot_rubro_valido('tus obras', $cR2) === 'tus obras'
+    && wabot_rubro_valido('las obras', $cR2) === 'tus obras');
 
 caso('la bienvenida repetida se reformula en vez de derivar',
     wabot_texto_reformulado([$cfg['menu'], $cfg['menu_opciones']], $cfg) === (string)$cfg['contame']);
@@ -5208,13 +5327,13 @@ caso('con el form activo, lo mismo: el link sale recién con el sí del cliente'
 echo "— 1-sep: {rubro}, el pitch nombra al cliente —\n";
 $cR = conv_nueva();
 $cR['transcript'] = [['q' => 'cliente', 't' => 'Quiero una página web para mi negocio', 'ts' => time()], ['q' => 'cliente', 't' => 'Gorras', 'ts' => time()]];
-caso('"Las gorras" es un rubro válido (está en lo que escribió) y sale en minúscula', wabot_rubro_valido('Las gorras', $cR) === 'las gorras');
+caso('"Las gorras" es un rubro válido (está en lo que escribió) y sale en segunda persona (28-sep)', wabot_rubro_valido('Las gorras', $cR) === 'tus gorras');
 caso('un rubro que el cliente nunca nombró no pasa', wabot_rubro_valido('las zapatillas', $cR) === '');
 caso('ni un precio, ni "lo tuyo", ni un tipo de web',
     wabot_rubro_valido('$290.000', $cR) === '' && wabot_rubro_valido('lo tuyo', $cR) === '' && wabot_rubro_valido('el ecommerce de gorras', $cR) === '');
 caso('ni más de siete palabras (con el "tu" de adelante, 11-sep)', wabot_rubro_valido('las gorras que vendo en mi local de siempre', $cR) === '');
 /* El modelo a veces manda "las_gorras" y eso salía crudo al cliente (2-sep). */
-caso('los guiones bajos se limpian antes de salir', wabot_rubro_valido('las_gorras', $cR) === 'las gorras');
+caso('los guiones bajos se limpian antes de salir', wabot_rubro_valido('las_gorras', $cR) === 'tus gorras');
 $cR['rubro_pitch'] = 'las gorras';
 $pitchR = wabot_pitch_precio_texto('ecommerce', $cfg, $cR);
 caso('el texto arranca con {para_quien} y personalizar lo resuelve con las palabras del cliente (18-sep)',

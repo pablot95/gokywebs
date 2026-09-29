@@ -159,6 +159,14 @@ $d = $c;
 turno('Cuánto tarda?', $d, $cfg);
 $rOtra = turno('y aceptan transferencia?', $d, $cfg);
 caso('y otra pregunta después de la pregunta sigue siendo para Pablo', $rOtra === [] && empty($d['link_form_enviado']));
+// Postergar no es aceptar (28-sep, charla real de Ale: recibió el formulario).
+foreach (['Dale, te vuelvo a escribir más tarde / mañana x favor', 'dale mañana te escribo', 'Ok, me comunico la semana que viene',
+          'Me encanta déjame que lo consulto y me vuelvo a comunicar'] as $resp) {
+    $d = $c;
+    clasifica(['otro']);
+    $rD = turno($resp, $d, $cfg);
+    caso("\"$resp\" → posterga: para Pablo, sin formulario", $rD === [] && empty($d['link_form_enviado']), json_encode($rD, JSON_UNESCAPED_UNICODE));
+}
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 /* El panel (lib.php, lista de conversaciones, y el JavaScript de admin.php):
@@ -254,5 +262,22 @@ caso('procedimiento + rubro claro manda solamente la cotización, la imagen y la
     && ($salidaCosmeticos[1] ?? '') === wabot_precio_imagen_marcador('ecommerce')
     && mb_stripos($salidaCosmeticos[2] ?? '', 'primer diseño') !== false,
     implode(' | ', $salidaCosmeticos));
+
+echo "— Instagram: el precio escrito llega en partes de menos de 1000 bytes (28-sep) —\n";
+/* En Instagram la imagen no sale y el precio va escrito: ~1090 bytes. La API
+ * rechaza más de 1000 y el cliente recibía la oferta del diseño sin precio. */
+$ig = conv_nueva('igQATESTPARTES', ['canal' => 'instagram', 'channel_user_id' => 'igQATESTPARTES']);
+$salidaIg = wabot_salida_preparar(wabot_precio('ecommerce', $ig, $cfg), $ig, $cfg);
+caso('el texto del precio de Instagram pasa los 1000 bytes (por eso hace falta cortarlo)', strlen($salidaIg[0] ?? '') > 1000);
+$GLOBALS['WABOT_TEST_ENVIADOS'] = [];
+$okIg = wabot_enviar($ig, $salidaIg[0]);
+$partesIg = array_map(function ($e) { return (string)$e[1]; }, (array)$GLOBALS['WABOT_TEST_ENVIADOS']);
+caso('sale en partes de hasta 1000 bytes, sin perder nada y sin cortar palabras',
+    $okIg && count($partesIg) >= 2 && max(array_map('strlen', $partesIg)) <= 1000
+    && implode("\n\n", $partesIg) === wabot_variar_muletilla(wabot_personalizar($salidaIg[0], $ig), $ig),
+    json_encode(array_map('strlen', $partesIg)));
+caso('un texto corto sigue saliendo en un solo mensaje', wabot_ig_partes('Hola, qué tal?') === ['Hola, qué tal?']);
+caso('un párrafo enorme sin renglones se corta entre palabras', count(wabot_ig_partes(str_repeat('palabra ', 400))) >= 3
+    && max(array_map('strlen', wabot_ig_partes(str_repeat('palabra ', 400)))) <= 950);
 
 todo_ok();

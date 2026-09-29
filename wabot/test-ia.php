@@ -94,7 +94,7 @@ $json = json_encode($p, JSON_UNESCAPED_UNICODE);
 caso('una sola llamada por tanda', count(pedidos()) === 1);
 caso('va con Structured Outputs estricto', ($p['text']['format']['type'] ?? '') === 'json_schema' && ($p['text']['format']['strict'] ?? false) === true);
 caso('el esquema exige todos los campos',
-    ($p['text']['format']['schema']['required'] ?? []) === ['accion', 'mensajes', 'info_claves', 'tipo_web', 'etapa', 'ficha', 'requiere_humano', 'motivo']);
+    ($p['text']['format']['schema']['required'] ?? []) === ['accion', 'mensajes', 'info_claves', 'tipo_web', 'segunda_web', 'etapa', 'ficha', 'requiere_humano', 'motivo']);
 caso('no guarda la charla en OpenAI (store: false)', ($p['store'] ?? null) === false);
 caso('la key no viaja en el cuerpo', strpos($json, 'sk-test') === false);
 caso('el teléfono tampoco: el cliente va como un hash', strpos($json, '5491100000001') === false && strlen((string)($p['safety_identifier'] ?? '')) === 32);
@@ -401,16 +401,30 @@ $ctx = (string)($p['input'][0]['content'] ?? '');
 caso('las instrucciones explican las tres opciones y qué hacer con cada una',
     strpos((string)$p['instructions'], 'LA BIENVENIDA Y SUS TRES OPCIONES') !== false
     && strpos((string)$p['instructions'], 'Opción 3, "Algo diferente"') !== false);
+caso('y que nunca se cotiza sin saber qué vende o a qué se dedica (28-sep)',
+    strpos((string)$p['instructions'], 'NUNCA cotices sin saber QUÉ vende o A QUÉ se dedica') !== false);
 caso('el contexto le avisa que está eligiendo una opción de la bienvenida',
     strpos($ctx, 'La última pregunta fue la de la bienvenida') !== false && strpos($ctx, 'Gokywebs: ' . $cfg['menu_opciones']) !== false, $ctx);
-caso('opción 1 → el precio fijo del sitio profesional', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('y que todavía no contó a qué se dedica', strpos($ctx, 'Todavía no contó qué vende ni a qué se dedica') !== false, $ctx);
+caso('opción 1 sola y el modelo cotiza igual → el sistema pregunta a qué se dedica, sin precio ni muestra (28-sep)',
+    $r === [$cfg['pide_negocio']['landing']] && empty($c['precio_dado']) && empty($c['oferta_diseno_ts']), json_encode($r, JSON_UNESCAPED_UNICODE));
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'sitio_profesional', 'etapa' => 'COTIZACION'])]);
+$r = turno('Soy contadora', $c, $cfg);
+$ctx = (string)(pedidos()[0]['input'][0]['content'] ?? '');
+caso('el contexto del turno siguiente dice qué tipo eligió', strpos($ctx, 'Ya eligió la web informativa') !== false, $ctx);
+caso('con la respuesta, el precio fijo del sitio profesional', ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida_ia('5491100000132TEST', $cfg);
-openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
+openai_responde([decision(['mensajes' => ['Qué productos vendés?']])]);
 $r = turno('la 2', $c, $cfg);
-caso('opción 2 → el precio fijo de la tienda, sin preguntar si vende por la web',
-    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && strpos(implode(' ', $r), 'Buscás vender por la web') === false,
+caso('opción 2 sola: el modelo pregunta qué vende y la red no lo pisa',
+    $r === ['Qué productos vendés?'] && empty($c['precio_dado']) && ($c['tipo_pendiente'] ?? '') === 'ecommerce' && !empty($c['rubro_preguntado']),
     json_encode($r, JSON_UNESCAPED_UNICODE));
+openai_responde([decision(['mensajes' => ['Buscás vender por la web o solo mostrar?']])]);
+$r = turno('mates y bombillas', $c, $cfg);
+caso('con la respuesta, si el modelo repregunta, la red cotiza la tienda que eligió, sin "vender o mostrar"',
+    ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']) && strpos(implode(' ', $r), 'Buscás vender por la web') === false
+    && isset($c['eventos_emitidos_sesion']['ia_pendiente_corregido']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 $c = conv_bienvenida_ia('5491100000133TEST', $cfg);
 openai_responde([decision(['mensajes' => ['Contame qué tenés en mente y a qué te dedicás, así te oriento.']])]);
@@ -418,11 +432,11 @@ $r = turno('Algo diferente', $c, $cfg);
 caso('opción 3 → OpenAI pregunta qué tiene en mente, sin cotizar',
     $r === ['Contame qué tenés en mente y a qué te dedicás, así te oriento.'] && empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
-// La red: si el modelo repregunta después de la opción 1 o 2, se cotiza igual.
+// La red: si ya contó el negocio con la opción y el modelo igual repregunta, se cotiza.
 $c = conv_bienvenida_ia('5491100000134TEST', $cfg);
 openai_responde([decision(['mensajes' => ['A qué te dedicás?']])]);
-$r = turno('la primera', $c, $cfg);
-caso('opción 1 con el modelo repreguntando → se cotiza el sitio profesional igual',
+$r = turno('la primera, soy abogada', $c, $cfg);
+caso('opción 1 con el negocio dicho y el modelo repreguntando → se cotiza el sitio profesional',
     ($c['tipo'] ?? '') === 'landing' && !empty($c['precio_dado']) && !in_array('A qué te dedicás?', $r, true)
     && isset($c['eventos_emitidos_sesion']['ia_menu_corregido']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
@@ -439,9 +453,48 @@ caso('la red no toca la opción 3', $r === ['Contame qué tenés en mente.'] && 
 // Si solo eligió la opción, la propuesta no dice "Para lo que me contás" (28-sep).
 $c = conv_bienvenida_ia('5491100000138TEST', $cfg);
 openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
-$r = turno('Tienda online', $c, $cfg);
-caso('eligió "Tienda online" sin contar nada → "Perfecto, te podemos armar una tienda online…"',
-    str_starts_with($r[0] ?? '', 'Perfecto, te podemos armar una tienda online completa') && mb_stripos($r[0], 'me contás') === false, $r[0] ?? '');
+$r1 = turno('Tienda online', $c, $cfg);
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
+$r = turno('ropa de bebé', $c, $cfg);
+caso('eligió "Tienda online": primero qué vende, y después "Perfecto, te podemos armar una tienda online…"',
+    $r1 === [$cfg['pide_negocio']['ecommerce']] && str_starts_with($r[0] ?? '', 'Perfecto, te podemos armar una tienda online completa')
+    && mb_stripos($r[0], 'me contás') === false, json_encode([$r1, $r[0] ?? ''], JSON_UNESCAPED_UNICODE));
+
+// Dos webs (28-sep): el modelo marca la segunda y sale el precio de las dos con el 20%.
+$c = conv_ia('5491100000141TEST');
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'sitio_profesional', 'segunda_web' => 'tienda_online', 'etapa' => 'COTIZACION'])]);
+$r = turno('Son dos, uno es agencia de viajes y otro pañales y articulos de bebe que quiero vender por la web', $c, $cfg);
+$dos = implode("\n", $r);
+caso('dos negocios → las dos webs con el 20% y cada una sola',
+    strpos($dos, '$48.000 por mes por las dos (en vez de $60.000)') !== false && strpos($dos, 'el sitio profesional sale $25.000 por mes') !== false
+    && ($c['dos_webs'] ?? null) === ['landing', 'ecommerce'] && !empty($c['oferta_diseno_ts']), $dos);
+caso('el esquema tiene la segunda web', in_array('segunda_web', (array)(pedidos()[0]['text']['format']['schema']['required'] ?? []), true));
+caso('las instrucciones explican las dos webs y que el descuento lo pone el sistema',
+    strpos(wabot_ia_instrucciones($cfg), 'DOS WEBS') !== false && strpos(wabot_ia_instrucciones($cfg), 'Nunca escribas vos el descuento') !== false);
+
+// Elegir el tipo es avance: la pregunta por el negocio no cuenta como bot trabado (28-sep).
+$c = conv_bienvenida_ia('5491100000144TEST', $cfg);
+openai_responde([decision(['mensajes' => ['Bien! Qué tipo de web estás buscando?']])]);
+turno('hola, cómo están?', $c, $cfg);
+openai_responde([decision(['mensajes' => ['Qué productos vendés?']])]);
+$r = turno('una tienda', $c, $cfg);
+caso('saludo → pregunta → "una tienda" → "qué productos vendés?", sin derivar por "sin avance"',
+    $r === ['Qué productos vendés?'] && ($c['fase'] ?? '') !== 'derivado' && !isset($c['eventos_emitidos_sesion']['sin_avance_derivado']),
+    json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// La publicidad dicha una sola vez (28-sep, Alex): la propuesta ya la aclara, la respuesta oficial no se suma.
+$c = conv_ia('5491100000143TEST');
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'info_claves' => ['marketing'], 'etapa' => 'COTIZACION'])]);
+$r = turno('Quiero hacer una página web para venta de ropa y impulsar campañas de publicidad para venderlas', $c, $cfg);
+caso('la publicidad se aclara una sola vez, dentro de la propuesta',
+    substr_count(mb_strtolower(implode("\n", $r)), 'publicidad') === 1 && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+
+// Lo que preguntó además del precio se contesta antes (28-sep, Luciana: "tenés algún ejemplo?").
+$c = conv_ia('5491100000142TEST');
+openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'tienda_online', 'info_claves' => ['ejemplos'], 'etapa' => 'COTIZACION'])]);
+$r = turno('Me interesa la tienda con carrito, vendo mates. Tenés algún ejemplo para ver?', $c, $cfg);
+caso('al cotizar, la respuesta de los ejemplos va primero y después el precio',
+    str_contains($r[0] ?? '', 'gokywebs.com/portfolio') && str_contains($r[1] ?? '', 'tienda online completa') && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
 
 // "¿Qué me recomendás?" con el negocio contado: se cotiza, no otra pregunta.
 $c = conv_bienvenida_ia('5491100000139TEST', $cfg);
@@ -454,12 +507,27 @@ caso('mueblería + "qué me recomendás?" con el modelo repreguntando → se cot
 caso('las instrucciones dicen que ante "qué me recomendás" se decide y se cotiza',
     strpos(wabot_ia_instrucciones($cfg), 'no le devuelvas la pregunta: decidí vos y cotizá') !== false);
 
+// La respuesta oficial y el modelo diciendo lo mismo con otras palabras (28-sep, charlas reales).
+$c = conv_ia('5491100000140TEST');
+openai_responde([decision(['info_claves' => ['precio_sin_rubro'],
+    'mensajes' => ['Hola, te paso el valor exacto. Primero contame a qué te dedicás o para qué sería la web, porque depende de lo que necesites.']])]);
+$r = turno('Hola! Quiero pedir presupuesto para mi web, cuanto sale?', $c, $cfg);
+caso('pide la respuesta oficial del precio y repite lo mismo → sale una sola vez', count($r) === 1, json_encode($r, JSON_UNESCAPED_UNICODE));
+caso('lo que el modelo agrega de nuevo se queda y lo repetido se va',
+    wabot_ia_sin_repetir_oficial(['Trabajamos de forma remota y no tenemos oficina para atender presencialmente. Las reuniones se coordinan con el desarrollador cuando avanza el proyecto.'],
+        ['Las reuniones se coordinan con el desarrollador al avanzar el proyecto.'])
+    === ['Trabajamos de forma remota y no tenemos oficina para atender presencialmente.']);
+caso('una pregunta corta propia no se toca', wabot_ia_sin_repetir_oficial(['Qué vendés?'], ['Hacemos envíos a todo el país.']) === ['Qué vendés?']);
+
 // Con OpenAI caído, el motor lee la opción igual.
 $c = conv_bienvenida_ia('5491100000137TEST', $cfg);
 clasifica(['otro']);
 openai_responde([['http' => 500], ['http' => 503], ['http' => 502]]);
-$r = turno('Una tienda online', $c, $cfg);
-caso('OpenAI caído: el motor cotiza la tienda igual', ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode($r, JSON_UNESCAPED_UNICODE));
+$r1 = turno('Una tienda online', $c, $cfg);
+openai_responde([['http' => 500], ['http' => 503], ['http' => 502]]);
+$r = turno('Vendo ropa de bebé', $c, $cfg);
+caso('OpenAI caído: el motor pregunta qué vende y con la respuesta cotiza la tienda',
+    $r1 === [$cfg['pide_negocio']['ecommerce']] && ($c['tipo'] ?? '') === 'ecommerce' && !empty($c['precio_dado']), json_encode([$r1, $r], JSON_UNESCAPED_UNICODE));
 unset($GLOBALS['WABOT_TEST_CLASIFICADOR']);
 
 // Limpieza.

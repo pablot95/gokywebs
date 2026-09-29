@@ -94,6 +94,7 @@ function wabot_textos_default() {
         'integracion' => 'Conectar la web con el sistema que ya usás no entra en el precio de lista: lo cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
         'marketplace' => 'Una web donde vendan varios vendedores no entra en el precio de lista: la cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
         'entrega_digital' => 'La entrega automática de los archivos después del pago no entra en el precio de lista: la cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
+        'portal' => 'Un portal de noticias no entra en el precio de lista: depende de las secciones y de cómo se publican las notas, y lo cotiza el desarrollador. Le paso tu consulta con todo lo que me contaste y te escribe desde nuestro número de proyectos.',
     ],
     'cierre_memoria' => 'Ya queda anotado que lo tuyo sería {tipo}, así que no vas a tener que explicar todo otra vez.',
     'cierre_suave' => 'Dale, ningún problema. Si más adelante querés retomarlo, escribime por acá.',
@@ -285,6 +286,26 @@ function wabot_textos_default() {
      * web a Gabriela" y recibió los planes como un cliente nuevo. No se le
      * vende: se le avisa quién contesta y lo sigue Pablo (sin nombrarlo: ningún
      * texto del bot lleva nombre propio). */
+    /* Nunca el precio ni el primer diseño sin saber QUÉ vende o A QUÉ se
+     * dedica (Pablo, 28-sep: "ofrece la muestra gratis sin saber qué quiere el
+     * cliente, eso es gravísimo"). Se pregunta una vez, según el tipo que ya
+     * eligió; con la respuesta se cotiza. Ver wabot_negocio_conocido(). */
+    'pide_negocio' => [
+        'ecommerce'    => 'Dale. Qué productos vendés?',
+        'landing'      => 'Dale. Contame a qué te dedicás o qué servicios ofrecés.',
+        'elearning'    => 'Dale. De qué son tus cursos, y los das online o presenciales?',
+        'inmobiliaria' => 'Dale. Contame un poco de tu inmobiliaria: qué propiedades publicás?',
+        'dos'          => 'Dale. Contame a qué te dedicás y qué vendés, así te paso el valor de las dos webs.',
+    ],
+    /* Dos webs (Pablo, 28-sep): "cuando un cliente pide 2 webs, ofrecemos 20%
+     * de descuento en ambas". Se cotizan las dos juntas y cada una sola. */
+    'dos_webs_descuento' => 20,
+    'dos_webs' => [
+        'intro'    => '{para_quien} te podemos armar las dos webs: {webs}.',
+        'descuento' => "Si hacemos las dos, tenés un {descuento}% de descuento en ambas. Podés elegir una de estas 3 modalidades de pago:\n\n1. Plan mensual: {mensual} por mes por las dos (en vez de {mensual_lista}), incluye mantenimiento\n2. Plan anual: {anual} por año por las dos (en vez de {anual_lista}), incluye mantenimiento\n3. Pago único: {unico} por las dos (en vez de {unico_lista}), NO incluye mantenimiento",
+        'una_sola' => 'Si preferís hacer una sola, {precios_una}.',
+        'oferta'   => 'Si te interesa, te preparamos sin cargo un primer diseño de las dos webs, así ves cómo quedarían antes de decidir. Querés que lo armemos?',
+    ],
     'mensaje_conocido' => 'Hola! Acá contesta el asistente automático de Gokywebs, que atiende las consultas nuevas. Le paso tu mensaje al desarrollador ahora y sigue él por acá.',
     /* La bienvenida va en dos mensajes (Pablo, 28-sep): el saludo y, aparte,
      * las tres opciones. Ver wabot_apertura_mensajes() y, para leer la

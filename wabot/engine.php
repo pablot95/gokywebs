@@ -128,6 +128,78 @@ function wabot_contexto_cliente_texto($conv, $max = 18) {
 }
 
 /**
+ * ¿Ya contó QUÉ vende o A QUÉ se dedica? (28-sep, Pablo: "ofrece la muestra
+ * gratis sin saber qué quiere el cliente, eso es gravísimo"). "Una tienda
+ * online para vender productos" dice el tipo de web, no el negocio, y sin el
+ * negocio no hay primer diseño que armar. Se sacan el saludo, el pedido de
+ * precio y las palabras que dicen el tipo de web; si queda una palabra
+ * propia ("ropa deportiva", "pet shop", "muebles"), lo contó.
+ * null si no hay nada que mirar (una llamada sin transcript).
+ */
+function wabot_negocio_conocido($conv) {
+    $texto = wabot_contexto_cliente_texto($conv);
+    if (trim($texto) === '') return null;
+    // "Mi nombre es Cecilia" no cuenta el negocio: el nombre se saca.
+    $texto = wabot_normalizar_frase($texto);
+    foreach (explode(' ', wabot_normalizar_frase((string)($conv['nombre'] ?? ''))) as $n) {
+        if (mb_strlen($n) >= 3) $texto = preg_replace('/\b' . preg_quote($n, '/') . '\b/u', ' ', $texto);
+    }
+    return wabot_texto_nombra_negocio($texto);
+}
+
+/**
+ * La pregunta por el negocio, si hace falta: todavía sin precio, sin haberla
+ * hecho y sin que haya contado qué vende o a qué se dedica. Una sola vez: si
+ * igual no lo cuenta, se cotiza con lo que hay. Anota el tipo (o los dos) que
+ * ya eligió, para cotizarlo con la respuesta. null si no hace falta.
+ */
+function wabot_negocio_pregunta_si_falta($tipo, &$conv, $cfg, $tipo2 = null) {
+    if (!empty($conv['precio_dado']) || !empty($conv['rubro_preguntado'])) return null;
+    if (wabot_negocio_conocido($conv) !== false) return null;
+    $textos = (array)($cfg['pide_negocio'] ?? []);
+    $pregunta = trim((string)($textos[$tipo2 !== null ? 'dos' : $tipo] ?? ''));
+    if ($pregunta === '') return null;
+    $conv['rubro_preguntado'] = true;
+    $conv['tipo_pendiente'] = $tipo;
+    if ($tipo2 !== null) $conv['tipo_pendiente_2'] = $tipo2;
+    else unset($conv['tipo_pendiente_2']);
+    $conv['fase'] = 'menu';
+    wabot_handoff_aclaracion_resuelta($conv);
+    wabot_evento_sesion($conv, 'negocio_preguntado', ['tipo' => $tipo . ($tipo2 !== null ? '+' . $tipo2 : '')]);
+    return [$pregunta];
+}
+
+/** "Dicto cursos presenciales": presenciales y no online (si da los dos, es la plataforma). */
+function wabot_cursos_presenciales($texto) {
+    $t = wabot_normalizar_frase((string)$texto);
+    if (!preg_match('/\b(presencial\w*|cara a cara|en (mi|el|nuestro|nuestra) (local|estudio|salon|espacio|instituto|academia|taller))\b/u', $t)) return false;
+    return !preg_match('/\b(online|on line|virtual\w*|a distancia|grabad\w*|videos?|zoom|meet)\b/u', $t);
+}
+
+function wabot_texto_nombra_negocio($texto) {
+    $t = wabot_normalizar_frase(preg_replace('~(https?://|www\.)\S+~iu', ' ', (string)$texto));
+    $genericas = '/^(hola+|buen[oa]s?|dias?|tardes?|noches?|que|tal|como|esta[sn]?|va|todo|bien|gracias|muchas|favor|porfa|xfa|xfavor|saludos'
+        . '|puedo|podria[sn]?|podes|obtener|mas|menos|informacion|info|sobre|esto|esta|eso|ese|esa|quier\w*|quisier\w*|necesit\w*|neces\w*|nesesit\w*|nesecit\w*'
+        . '|busc\w*|estoy|estamos|me|nos|te|interes\w*|gustaria|encantaria|pedir|pido|pedirte|pedido|pedidos|consulta|consultas|consultar|consulto|consultarte|averigu\w*|saber|pregunt\w*|ver|conocer|tener|tenes|tengo|tenemos|tiene|tienen'
+        . '|precios?|cuant\w*|cuesta\w*|costos?|sale|salen|saldria|valor\w*|total|aproximad\w*|aprox|presupuest\w*|cotiz\w*|tarifas?|cobr\w*|pag\w*|mes|mensual\w*|anual'
+        . '|web|webs|pagin\w*|pag|sitios?|tiend\w*|online|on|line|linea|virtual|ecommerce|commerce|carrito|inform\w*|institucional|landing|catalogo|plataforma\w*|apps?|aplicacion'
+        . '|negocio\w*|empresa\w*|emprend\w*|marcas?|proyectos?|local|locales|comercios?|rubro|pymes?'
+        . '|vend\w*|venta|ventas|compr\w*|mostr\w*|present\w*|public\w*|promocion\w*|ofrec\w*|ofrezc\w*|hacer|hago|hacemos|hacen|haces|hacerme|haga|hagan|armar|armo|armamos|armen|arme|armarme|armado|crear|creo|creamos|crearme|creando|realiz\w*|disenar|diseno|disenos|disenen|disene|empez\w*|arranc\w*|poder|pueda\w*'
+        . '|product\w*|articul\w*|cosas?|servic\w*|cursos?|clases?|talleres|dict\w*|doy|damos|ensen\w*|anuncios?|publicidad|redes|requisitos|ubicacion|direccion|donde'
+        . '|mis?|tus?|sus?|nuestr\w*|un|una|unos|unas|uno|el|la|los|las|lo|le|les|de|del|al|en|con|sin|para|pero|porque|por|si|no|ya|solo|solamente|tambien|algo|algun\w*'
+        . '|diferente|distint\w*|otr[oa]s?|tipo|estilo|ejemplos?|dale|ok|bueno|perfecto|opcion|primer\w*|segund\w*|tercer\w*|ultim\w*|es|son|ser|sea|seria|somos|soy|era|fue'
+        . '|y|o|u|e|a|q|x|asi|ahi|aca|hoy|ahora|recien|idea|poco|mucho|muy|bastante|cual|cuales|quien|contame|decime|entonces|igual|nomas|tambien|ambas|dos|ambos'
+        . '|quer\w*|kier\w*|kisier\w*|aser|confecc\w*|ampli\w*|mismo|pasame|pasas|paso|pasar|pasarian|pasarias|forma|manera|presencial\w*|micro|poner|pongo|yo'
+        . '|trabaj\w*|instagram|insta|ig|istg|istagran|facebook|tiktok|perfil\w*|aparte|nombre|llamo|chau|oficio|recib\w*|pequen\w*|chiquit\w*|voy|vamos|momento'
+        . '|audio|adjunto|imagen\w*|fotos?|sticker|videos?|documento|archivo|unsupported|mando|mandame|page|pages|sencill\w*|simple|basic\w*|economic\w*|barat\w*)$/u';
+    foreach (explode(' ', $t) as $p) {
+        if (mb_strlen($p) < 3 || preg_match('/^\d+$/u', $p)) continue;
+        if (!preg_match($genericas, $p)) return true;
+    }
+    return false;
+}
+
+/**
  * ¿El cliente nombró DOS O MÁS cosas distintas que vender/ofrecer?
  *
  * Valeria (27-ago) explicó en un solo mensaje que quería ofrecer terapias y
@@ -306,6 +378,8 @@ function wabot_ficha_senales_de($texto) {
     if (preg_match('/\b(marketplace|multivendedor|varios vendedores|que otros (vendan|publiquen)|cada vendedor)\b/u', $t)) $s[] = 'marketplace';
     if (preg_match('/\b(descarga automatica|se descargue\w* sol[oa]s?|entrega automatica|reciban el (archivo|pdf|ebook|libro) (al pagar|automaticamente)'
         . '|les llegue (el archivo|el pdf|al mail|por mail) (solo|automaticamente))\b/u', $t)) $s[] = 'entrega_digital';
+    // Un portal de noticias no es un sitio profesional de lista (28-sep, Claudio).
+    if (preg_match('/\b(portal(es)? de noticias|diario (digital|online|on line)|revista (digital|online|on line)|periodico (digital|online)|medio de comunicacion|(sitio|pagina|web) de noticias)\b/u', $t)) $s[] = 'portal';
     return $s;
 }
 
@@ -1353,6 +1427,11 @@ function wabot_salida_sin_avance($mensajes, &$conv, $cfg) {
      * no la miraba y a la segunda pregunta la charla se derivaba. */
     $ficha = wabot_ficha($conv);
     foreach (['rubro', 'que_vende', 'objetivo', 'necesidad'] as $c) $partes[] = trim((string)$ficha[$c]);
+    /* Elegir el tipo de web también es avance (28-sep): "una tienda" →
+     * "qué productos vendés?" no es el bot trabado, aunque sea la segunda
+     * pregunta seguida. */
+    foreach (['tipo_pendiente', 'tipo_pendiente_2'] as $c) $partes[] = trim((string)($conv[$c] ?? ''));
+    $partes[] = (int)!empty($conv['menu_eligio']);
     $sello = md5(implode('|', $partes));
 
     /* El que PREGUNTA no está trabado: está averiguando. Después del precio,
@@ -3460,6 +3539,9 @@ function wabot_fallback_ia($texto, &$conv, $cfg) {
             // La respuesta a las opciones de la bienvenida (28-sep) se lee primero.
             $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
             if ($eleccion !== null) return wabot_menu_elegido($eleccion, $texto, $conv, $cfg);
+            // Ya eligió el tipo y se le preguntó qué vende: esta es la respuesta (28-sep).
+            $pendiente = wabot_cotizar_pendiente($texto, $conv, $cfg);
+            if ($pendiente !== null) return $pendiente;
             $contexto = wabot_contexto_cliente_texto($conv);
             if (wabot_contexto_es_hibrido($contexto)) {
                 $objetivo = wabot_desempate_por_palabras('desempate_hibrido', $texto);
@@ -4311,8 +4393,15 @@ function wabot_engine($texto, &$conv, $cfg) {
              * concreto del clasificador gana ("la tienda, doy clases de yoga"
              * son cursos); un desempate no, porque la opción ya lo contesta. */
             $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
-            if ($eleccion !== null && ($r === null || wabot_desempate_de($r) !== null)) {
+            // Las dos opciones juntas ganan siempre: la tienda sola sería cotizar una de dos.
+            if ($eleccion !== null && ($r === null || wabot_desempate_de($r) !== null || $eleccion === 'dos')) {
                 $out = array_merge($out, wabot_menu_elegido($eleccion, $texto, $conv, $cfg));
+                break;
+            }
+            // Ya eligió el tipo y se le preguntó qué vende: esta es la respuesta (28-sep).
+            // Lo que eligió gana sobre el rubro que se infiere, salvo cursos o propiedades.
+            if (!empty($conv['tipo_pendiente']) && !in_array($r, ['elearning', 'inmobiliaria'], true)) {
+                $out = array_merge($out, (array)wabot_cotizar_pendiente($texto, $conv, $cfg));
                 break;
             }
             $d = wabot_desempate_de($r);
@@ -4692,6 +4781,10 @@ function wabot_menu_contestado($texto, $conv, $cfg) {
         || $opcion('3', 'tercera|tercer|tercero|ultima|ultimo|3')) return 'algo_diferente';
     // "No quiero vender, solo presentar el negocio" no elige la tienda.
     $sinNegar = preg_replace('/ no (quiero |busco |necesito |pienso |voy a )?(vender|venta|ventas|tienda) /u', ' ', $t);
+    /* Las dos (28-sep): "una web informativa y una tienda web para vender",
+     * "una tienda web y también una que sea solo de información". */
+    if (preg_match('/ (informativ\w*|institucional|solo de informacion|solo informacion|de informacion) /u', $t)
+        && preg_match('/ (tienda\w*|ecommerce|e commerce|carrito) /u', $sinNegar)) return 'dos';
     if (preg_match('/ (tienda|ecommerce|e commerce|vender|venta|ventas|carrito) /u', $sinNegar)
         || $opcion('2', 'segunda|segundo|2')) return 'ecommerce';
     if (preg_match('/ (informativa|informativo|institucional|presentar|presentacion) /u', $t)
@@ -4701,9 +4794,11 @@ function wabot_menu_contestado($texto, $conv, $cfg) {
 
 /**
  * Lo que sigue a la opción elegida. La informativa y la tienda se cotizan
- * derecho: ya dijo si vende por la web, así que no se le pregunta de nuevo.
- * Si en la misma respuesta nombra cursos o propiedades, cotiza ese tipo
- * ("la tienda, para vender mis cursos" es la plataforma de cursos).
+ * sin volver a preguntar si vende por la web, pero recién cuando se sabe qué
+ * vende o a qué se dedica (28-sep): si no lo contó, wabot_precio() lo
+ * pregunta una vez. Si en la misma respuesta nombra cursos o propiedades,
+ * cotiza ese tipo ("la tienda, para vender mis cursos" es la plataforma de
+ * cursos). Las dos opciones juntas cotizan las dos webs.
  */
 function wabot_menu_elegido($eleccion, $texto, &$conv, $cfg) {
     if ($eleccion === 'algo_diferente') {
@@ -4720,9 +4815,25 @@ function wabot_menu_elegido($eleccion, $texto, &$conv, $cfg) {
         $conv['ficha'] = $ficha;
     }
     $propio = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
-    if (in_array($propio, ['cursos', 'inmobiliaria'], true)) $eleccion = $propio;
+    if (in_array($propio, ['cursos', 'inmobiliaria'], true) && $eleccion !== 'dos') $eleccion = $propio;
     wabot_evento_sesion($conv, 'menu_elegido', ['tipo' => $eleccion]);
+    if ($eleccion === 'dos') return wabot_precio_dos('landing', 'ecommerce', $conv, $cfg);
     return wabot_precio($eleccion, $conv, $cfg);
+}
+
+/**
+ * El tipo que ya eligió, cuando se le preguntó qué vende (28-sep): con la
+ * respuesta se cotiza ese tipo (o los dos). Si en la respuesta nombra cursos
+ * o propiedades, va ese tipo. null si no hay nada pendiente.
+ */
+function wabot_cotizar_pendiente($texto, &$conv, $cfg) {
+    $pendiente = (string)($conv['tipo_pendiente'] ?? '');
+    if ($pendiente === '' || !empty($conv['precio_dado'])) return null;
+    $segundo = (string)($conv['tipo_pendiente_2'] ?? '');
+    if ($segundo !== '') return wabot_precio_dos($pendiente, $segundo, $conv, $cfg);
+    $propio = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
+    if (in_array($propio, ['cursos', 'inmobiliaria'], true)) $pendiente = $propio;
+    return wabot_precio($pendiente, $conv, $cfg);
 }
 
 /* Devuelve el tipo si alguna acción lo determina, un *_pendiente si hay que desempatar, null si no. */
@@ -6221,7 +6332,13 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     $propuesta = wabot_precio_con_servicio($propuesta, $tipo, $conv, $cfg);
     if ($tipo === 'landing' && !empty($conv['catalogo'])) {
         $carga = trim(wabot_precio_placeholders((string)($cfg['catalogo_carga'] ?? ''), $conv, $cfg, $tipo));
-        if ($carga !== '') $propuesta .= "\n\n" . $carga;
+        /* Antes de "Podés elegir una de estas 3 modalidades de pago:" (28-sep):
+         * pegada al final quedaba entre esa frase y la imagen que la sigue. */
+        if ($carga !== '') {
+            $pos = mb_strpos($propuesta, "\n\nPodés elegir");
+            $propuesta = $pos === false ? $propuesta . "\n\n" . $carga
+                : mb_substr($propuesta, 0, $pos) . "\n\n" . $carga . mb_substr($propuesta, $pos);
+        }
     }
     // Lo que pidió y no hacemos va primero: nunca queda una parte sin contestar.
     $fuera = wabot_fuera_de_servicio_texto($tipo, $conv, $cfg);
@@ -6239,6 +6356,104 @@ function wabot_precio_cierre($precioTexto, $tipo, &$conv, $cfg) {
     }
     $salida[] = wabot_tres_pasos_texto($conv, $cfg);
     return $salida;
+}
+
+/**
+ * Dos webs (Pablo, 28-sep): "cuando un cliente pide 2 webs, ofrecemos 20% de
+ * descuento en ambas". Pasaba con dos negocios (la agencia de viajes de la
+ * hija y la pañalera), con dos tipos ("una web informativa y una tienda") y
+ * con "son 2 tiendas, la mía y la de mi esposo": el bot cotizaba una sola.
+ * Sale un mensaje con las dos juntas con el descuento y cada una sola, y
+ * aparte la oferta del primer diseño. Sin imagen: la imagen muestra un tipo.
+ */
+function wabot_precio_dos($tipo1, $tipo2, &$conv, $cfg) {
+    if ($tipo1 === 'cursos') $tipo1 = 'elearning';
+    if ($tipo2 === 'cursos') $tipo2 = 'elearning';
+    if (!isset($cfg['tipos'][$tipo1], $cfg['tipos'][$tipo2])) return wabot_precio(isset($cfg['tipos'][$tipo1]) ? $tipo1 : $tipo2, $conv, $cfg);
+    if (empty($conv['precio_dado'])) {
+        $pregunta = wabot_negocio_pregunta_si_falta($tipo1, $conv, $cfg, $tipo2);
+        if ($pregunta !== null) return $pregunta;
+        unset($conv['tipo_pendiente'], $conv['tipo_pendiente_2']);
+        $presenciales = wabot_cursos_presenciales(wabot_contexto_cliente_texto($conv));
+        if ($presenciales && $tipo1 === 'elearning') $tipo1 = 'landing';
+        if ($presenciales && $tipo2 === 'elearning') $tipo2 = 'landing';
+    }
+    $t = (array)($cfg['dos_webs'] ?? []);
+    $pct = max(0, min(90, (int)($cfg['dos_webs_descuento'] ?? 20)));
+    $v1 = wabot_precio_vigente($conv, $cfg, $tipo1);
+    $v2 = wabot_precio_vigente($conv, $cfg, $tipo2);
+    $n = [
+        'm1' => wabot_monto_a_numero($v1['mensualidad']), 'm2' => wabot_monto_a_numero($v2['mensualidad']),
+        'a1' => wabot_monto_a_numero($v1['precio']), 'a2' => wabot_monto_a_numero($v2['precio']),
+        'u1' => wabot_monto_a_numero(wabot_precio_unico_vigente($v1, $cfg)), 'u2' => wabot_monto_a_numero(wabot_precio_unico_vigente($v2, $cfg)),
+    ];
+    if (in_array(0, $n, true) || trim((string)($t['descuento'] ?? '')) === '') return wabot_precio($tipo1, $conv, $cfg);
+    $conDescuento = function ($x) use ($pct) { return wabot_moneda((int)round($x * (100 - $pct) / 100)); };
+
+    $larga = [
+        'landing'      => !empty($conv['catalogo']) ? 'un sitio profesional con el catálogo de tus productos' : 'un sitio profesional para presentar tu negocio y tus servicios',
+        'ecommerce'    => 'una tienda online para vender directo desde la web',
+        'elearning'    => 'una plataforma para vender tus cursos online',
+        'inmobiliaria' => 'una web inmobiliaria para publicar tus propiedades',
+    ];
+    $iguales = [
+        'landing' => 'dos sitios profesionales completos, cada uno con su panel para administrarlo',
+        'ecommerce' => 'dos tiendas online completas, cada una con su panel para administrarla',
+        'elearning' => 'dos plataformas de cursos completas, cada una con su panel para administrarla',
+        'inmobiliaria' => 'dos webs inmobiliarias completas, cada una con su panel para administrarla',
+    ];
+    $corta = ['landing' => 'el sitio profesional', 'ecommerce' => 'la tienda online', 'elearning' => 'la plataforma de cursos', 'inmobiliaria' => 'la web inmobiliaria'];
+    $precios = function ($m, $a, $u) { return wabot_moneda($m) . ' por mes, ' . wabot_moneda($a) . ' por año o ' . wabot_moneda($u) . ' en un pago único'; };
+    if ($tipo1 === $tipo2) {
+        $webs = $iguales[$tipo1];
+        $unaSola = 'cada una sale ' . $precios($n['m1'], $n['a1'], $n['u1']);
+    } else {
+        $webs = $larga[$tipo1] . ' y ' . $larga[$tipo2];
+        $unaSola = $corta[$tipo1] . ' sale ' . $precios($n['m1'], $n['a1'], $n['u1']) . ', y ' . $corta[$tipo2] . ', ' . $precios($n['m2'], $n['a2'], $n['u2']);
+    }
+    $intro = str_replace(['{para_quien}', '{webs}'], [!empty($conv['menu_eligio']) ? 'Perfecto,' : 'Para lo que me contás,', $webs], (string)($t['intro'] ?? ''));
+    $descuento = str_replace(
+        ['{descuento}', '{mensual}', '{mensual_lista}', '{anual}', '{anual_lista}', '{unico}', '{unico_lista}'],
+        [(string)$pct, $conDescuento($n['m1'] + $n['m2']), wabot_moneda($n['m1'] + $n['m2']), $conDescuento($n['a1'] + $n['a2']),
+         wabot_moneda($n['a1'] + $n['a2']), $conDescuento($n['u1'] + $n['u2']), wabot_moneda($n['u1'] + $n['u2'])],
+        (string)$t['descuento']);
+    $cierre = str_replace('{precios_una}', $unaSola, (string)($t['una_sola'] ?? ''));
+    $propuesta = implode("\n\n", array_filter([trim($intro), trim($descuento), trim($cierre)], 'strlen'));
+
+    $conv['tipo'] = $tipo1;
+    $conv['dos_webs'] = [$tipo1, $tipo2];
+    $conv['fase'] = 'precio';
+    $conv['reconocimiento_hecho'] = true;
+    if (empty($conv['precio_dado'])) wabot_precio_congelar($conv, $tipo1, $cfg);
+    $conv['precio_dado'] = true;
+    $conv['precio_turnos_desde'] = 0;
+    $conv['precio_cta_pendiente'] = false;
+    wabot_handoff_aclaracion_resuelta($conv);
+    wabot_evento_sesion($conv, 'dos_webs_cotizadas', ['tipos' => $tipo1 . '+' . $tipo2]);
+    wabot_evento_sesion($conv, 'precio_dado', ['tipo' => $tipo1]);
+    wabot_oferta_diseno_abrir($conv);
+    $oferta = trim((string)($t['oferta'] ?? ''));
+    return $oferta !== '' ? [$propuesta, $oferta] : [$propuesta];
+}
+
+/**
+ * Pide una segunda web después del precio: "son 2 tiendas, la mía y la de mi
+ * esposo" (28-sep, Ponte Bella). Devuelve el tipo de la segunda o null.
+ */
+function wabot_pide_segunda_web($texto, $conv) {
+    $t = wabot_normalizar_frase((string)$texto);
+    $actual = (string)($conv['tipo'] ?? '');
+    if ($t === '') return null;
+    if (preg_match('/\b(dos|2) (tiendas|tienditas)\b/u', $t)) return 'ecommerce';
+    // "Ya tengo otra web" no pide una segunda: tiene que pedirla ("y otra para mi hija", "necesito otra tienda").
+    $otra = preg_match('/\b(dos|2) (webs|paginas|sitios)\b/u', $t)
+        || (preg_match('/\b(quiero|queria|quisiera|necesito|necesitaria|necesitamos|queremos|tambien|ademas|y|seria|serian|haria|hariamos)\b.{0,20}\b(otra|una segunda) (web|pagina|tienda|sitio)\b/u', $t)
+            && !preg_match('/\b(tengo|tenemos|hizo|hecha|armada|armaron|hicieron)\b.{0,20}\b(otra|una segunda) (web|pagina|tienda|sitio)\b/u', $t))
+        || preg_match('/\b(la mia|una para mi) y (la|otra|una) (de|para) (mi|el|la)\b/u', $t);
+    if (!$otra) return null;
+    if (preg_match('/\b(informativ\w*|institucional|landing)\b/u', $t)) return 'landing';
+    if (preg_match('/\btienda\b/u', $t)) return 'ecommerce';
+    return $actual !== '' ? $actual : null;
 }
 
 /** "a, b y c": la lista con "y" al final. */
@@ -6312,7 +6527,7 @@ function wabot_complejidad($tipo, $conv, $cfg) {
         && trim((string)($textos['muchos_productos'] ?? '')) !== '') {
         return ['muchos_productos', str_replace('{cantidad}', number_format((int)$f['cantidad_productos'], 0, ',', '.'), (string)$textos['muchos_productos'])];
     }
-    foreach (['mercadolibre', 'integracion', 'marketplace', 'entrega_digital'] as $s) {
+    foreach (['mercadolibre', 'integracion', 'marketplace', 'entrega_digital', 'portal'] as $s) {
         if (in_array($s, (array)$f['senales'], true) && trim((string)($textos[$s] ?? '')) !== '') return [$s, (string)$textos[$s]];
     }
     return null;
@@ -6628,6 +6843,13 @@ function wabot_rubro_valido($rubro, $conv) {
      * lo toma como lo escribió el cliente ("mi centro de estética"). */
     $r = preg_replace('/^(mi|nuestro|nuestra)\s+/iu', 'tu ', $r);
     $r = preg_replace('/^(mis|nuestros|nuestras)\s+/iu', 'tus ', $r);
+    /* Detrás de "Para" va "tu…" o "tus…" (28-sep): "Para artista plástico, te
+     * podemos armar…" y "Para uniformes deportivos, …" salieron así. Con
+     * artículo se pasa a la segunda persona; sin nada, no hay rubro y el
+     * precio arranca "Para lo que me contás". */
+    $r = preg_replace('/^(un|una|el|la)\s+/iu', 'tu ', $r);
+    $r = preg_replace('/^(unos|unas|los|las)\s+/iu', 'tus ', $r);
+    if (!preg_match('/^(tu|tus)\s/iu', $r)) return '';
     if (!$hayPropio) $r = mb_strtolower(mb_substr($r, 0, 1)) . mb_substr($r, 1);
     $r = preg_replace('/^tu alquiler de\b/iu', 'tu servicio de alquiler de', $r);
     return $r;
@@ -7134,6 +7356,21 @@ function wabot_pitch($tipo, &$conv, $cfg) {
 function wabot_precio($tipo, &$conv, $cfg) {
     // El rubro 'cursos' ya no se pregunta (24-sep): vende cursos = plataforma de cursos.
     if ($tipo === 'cursos') $tipo = 'elearning';
+    if (empty($conv['precio_dado'])) {
+        /* Sin saber qué vende o a qué se dedica no sale ni el precio ni la
+         * oferta del primer diseño (28-sep): se pregunta una vez y se anota el
+         * tipo que ya eligió, para cotizarlo con la respuesta. */
+        $pregunta = wabot_negocio_pregunta_si_falta($tipo, $conv, $cfg);
+        if ($pregunta !== null) return $pregunta;
+        unset($conv['tipo_pendiente'], $conv['tipo_pendiente_2']);
+        /* Los cursos presenciales no se venden por una plataforma (28-sep, Xime:
+         * "Dicto cursos presenciales" se llevó la plataforma de cursos): se
+         * muestran y se reciben las inscripciones por WhatsApp. */
+        if ($tipo === 'elearning' && wabot_cursos_presenciales(wabot_contexto_cliente_texto($conv))) {
+            $tipo = 'landing';
+            wabot_evento_sesion($conv, 'cursos_presenciales');
+        }
+    }
     /* Nadie cotiza UN tipo a quien pidió DOS cosas distintas sin avisarle.
      *
      * El guard vivía en dar_precio (agente.php) y no alcanzaba: la respuesta a

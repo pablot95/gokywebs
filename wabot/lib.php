@@ -3394,15 +3394,47 @@ function wabot_escribiendo($conv, $msgId) {
 }
 
 function wabot_ig_send_text($igsid, $texto) {
-    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) { $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$igsid, $texto]; return true; }
+    /* Instagram rechaza los textos de más de 1000 bytes (28-sep): el precio,
+     * que en Instagram va escrito porque la imagen sale solo por WhatsApp,
+     * mide ~1090 y no llegaba nunca; el cliente recibía la oferta del diseño
+     * sin haber visto el precio. Se manda en partes, cortando entre párrafos. */
+    $partes = wabot_ig_partes((string)$texto);
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED'])) {
+        foreach ($partes as $p) $GLOBALS['WABOT_TEST_ENVIADOS'][] = [$igsid, $p];
+        return true;
+    }
     if (!wabot_ig_activo()) {
         wabot_log('error', ['donde' => 'ig_send', 'msg' => 'canal instagram sin configurar']);
         return false;
     }
-    return wabot_ig_post([
-        'recipient' => ['id' => (string)$igsid],
-        'message'   => ['text' => $texto],
-    ], 'ig_send');
+    foreach ($partes as $p) {
+        $ok = wabot_ig_post([
+            'recipient' => ['id' => (string)$igsid],
+            'message'   => ['text' => $p],
+        ], 'ig_send');
+        if (!$ok) return false;
+    }
+    return true;
+}
+
+/** Corta un texto en partes de hasta $max bytes: entre párrafos, si no entre renglones, si no entre palabras. */
+function wabot_ig_partes($texto, $max = 950) {
+    if (strlen($texto) <= $max) return [$texto];
+    $partes = [];
+    $actual = '';
+    foreach (explode("\n\n", $texto) as $parrafo) {
+        $candidato = $actual === '' ? $parrafo : $actual . "\n\n" . $parrafo;
+        if (strlen($candidato) <= $max) { $actual = $candidato; continue; }
+        if ($actual !== '') $partes[] = $actual;
+        $actual = '';
+        // Un párrafo que solo ya no entra: por renglones y, si hace falta, por palabras.
+        foreach (preg_split('/(?<=\n)|(?<= )/u', $parrafo) as $pieza) {
+            if ($actual !== '' && strlen($actual . $pieza) > $max) { $partes[] = $actual; $actual = ''; }
+            $actual .= $pieza;
+        }
+    }
+    if (trim($actual) !== '') $partes[] = $actual;
+    return array_values(array_filter(array_map('rtrim', $partes), function ($p) { return trim($p) !== ''; }));
 }
 
 function wabot_ig_escribiendo($igsid) {

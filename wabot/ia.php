@@ -469,7 +469,7 @@ function wabot_ia_info_comercial($cfg) {
     ];
     foreach ($descripciones as $k => $d) $lineas[] = "- $k: " . trim((string)$d);
     $lineas[] = "\nLO QUE NO HACEMOS: publicidad, redes sociales ni marketing; diseño de logos. Tampoco cotizamos con el precio de lista: más de "
-        . (int)($cfg['productos_derivar_desde'] ?? 0) . " productos, conexión con Mercado Libre o con un sistema que ya usa, marketplaces de varios vendedores, entrega automática de archivos (lo detecta el sistema).";
+        . (int)($cfg['productos_derivar_desde'] ?? 0) . " productos, conexión con Mercado Libre o con un sistema que ya usa, marketplaces de varios vendedores, entrega automática de los archivos al pagar (solo si la pide con esas palabras: vender descargables sin eso es una tienda_online), portales de noticias (lo detecta el sistema).";
     $lineas[] = "\nRESPUESTAS OFICIALES (clave → texto que manda el sistema; los {marcadores} los completa el sistema). Pedilas en info_claves; nunca las copies ni las parafrasees:";
     foreach ((array)($cfg['info'] ?? []) as $k => $t) {
         if ($k === 'otra') continue;
@@ -520,6 +520,21 @@ function wabot_ia_contexto($texto, $conv, $cfg) {
     $c[] = '- ' . ($yaHablo ? 'Ya le escribimos antes en esta charla: no lo vuelvas a saludar.' : 'Todavía no le escribimos nada en esta charla.');
     if (($conv['fase'] ?? '') === 'reconocimiento') $c[] = '- La última pregunta fue si busca vender por la web o solo mostrar: su mensaje probablemente la contesta.';
     if (($conv['fase'] ?? '') === 'desempate_hibrido') $c[] = '- La última pregunta fue si busca mostrar sus trabajos o vender online: su mensaje probablemente la contesta.';
+    /* Nunca el precio (que trae la oferta del primer diseño) sin saber qué vende
+     * o a qué se dedica (28-sep). */
+    $nombres = ['landing' => 'la web informativa (sitio_profesional)', 'ecommerce' => 'la tienda online (tienda_online)',
+                'elearning' => 'la plataforma de cursos (plataforma_cursos)', 'inmobiliaria' => 'la web inmobiliaria (inmobiliaria)'];
+    $pend = (string)($conv['tipo_pendiente'] ?? '');
+    $pend2 = (string)($conv['tipo_pendiente_2'] ?? '');
+    if ($pend !== '' && empty($conv['precio_dado'])) {
+        $c[] = '- Ya eligió ' . ($nombres[$pend] ?? $pend) . ($pend2 !== '' ? ' y ' . ($nombres[$pend2] ?? $pend2) . ': son DOS webs' : '')
+            . ', y le preguntamos qué vende o a qué se dedica. Si su mensaje lo cuenta, cotizá ' . ($pend2 !== '' ? 'las dos (tipo_web y segunda_web)' : 'ese tipo')
+            . ', salvo que lo que cuente sea claramente otro tipo.';
+    } elseif (empty($conv['precio_dado']) && wabot_negocio_conocido($conv) === false) {
+        $c[] = !empty($conv['rubro_preguntado'])
+            ? '- Ya le preguntamos qué vende o a qué se dedica y no lo dijo: si pide el precio o elige un tipo, cotizá igual.'
+            : '- Todavía no contó qué vende ni a qué se dedica: no cotices, preguntáselo (una sola pregunta).';
+    }
     $opciones = wabot_normalizar_frase((string)($cfg['menu_opciones'] ?? ''));
     if ($opciones !== '' && mb_strpos(wabot_normalizar_frase(wabot_ultimo_texto_bot($conv)), $opciones) !== false) {
         $c[] = '- La última pregunta fue la de la bienvenida (qué tipo de web busca: 1 web informativa, 2 tienda online, 3 algo diferente): su mensaje probablemente elige una.';
@@ -553,12 +568,14 @@ function wabot_ia_esquema($cfg) {
         'schema' => [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['accion', 'mensajes', 'info_claves', 'tipo_web', 'etapa', 'ficha', 'requiere_humano', 'motivo'],
+            'required' => ['accion', 'mensajes', 'info_claves', 'tipo_web', 'segunda_web', 'etapa', 'ficha', 'requiere_humano', 'motivo'],
             'properties' => [
                 'accion' => ['type' => 'string', 'enum' => ['responder', 'cotizar', 'derivar', 'esperar']],
                 'mensajes' => ['type' => 'array', 'items' => ['type' => 'string']],
                 'info_claves' => ['type' => 'array', 'items' => ['type' => 'string', 'enum' => wabot_ia_info_claves($cfg)]],
                 'tipo_web' => ['type' => 'string', 'enum' => array_keys(wabot_ia_tipos_web())],
+                // Dos webs (28-sep): la segunda, con el mismo criterio que tipo_web; si es una sola, sin_definir.
+                'segunda_web' => ['type' => 'string', 'enum' => array_keys(wabot_ia_tipos_web())],
                 'etapa' => ['type' => 'string', 'enum' => wabot_ia_etapas()],
                 'ficha' => [
                     'type' => 'object',
@@ -619,6 +636,7 @@ function wabot_ia_decision_normalizar($d, $cfg) {
     }
     $info = array_values(array_intersect(array_unique(array_filter((array)($d['info_claves'] ?? []), 'is_string')), wabot_ia_info_claves($cfg)));
     $tipo = (string)($d['tipo_web'] ?? 'sin_definir');
+    $segunda = (string)($d['segunda_web'] ?? 'sin_definir');
     $ficha = is_array($d['ficha'] ?? null) ? $d['ficha'] : [];
     $limpiar = function ($v, $max) {
         if (!is_string($v)) return null;
@@ -630,6 +648,7 @@ function wabot_ia_decision_normalizar($d, $cfg) {
         'mensajes' => $mensajes,
         'info_claves' => array_slice($info, 0, 3),
         'tipo_web' => array_key_exists($tipo, wabot_ia_tipos_web()) ? $tipo : 'sin_definir',
+        'segunda_web' => array_key_exists($segunda, wabot_ia_tipos_web()) ? $segunda : 'sin_definir',
         'etapa' => in_array($d['etapa'] ?? '', wabot_ia_etapas(), true) ? $d['etapa'] : null,
         'ficha' => [
             'nombre' => $limpiar($ficha['nombre'] ?? null, 60), 'negocio' => $limpiar($ficha['negocio'] ?? null, 80),
@@ -744,7 +763,14 @@ function wabot_ia_aplicar($d, $texto, &$conv, $cfg) {
             $conv['ficha'] = $ficha;
             if ($d['tipo_web'] === 'tienda_con_cursos') $conv['combo_cursos'] = true;
             wabot_evento_sesion($conv, 'ia_cotiza', ['tipo' => $d['tipo_web']]);
-            return wabot_precio($tipo, $conv, $cfg);
+            $segunda = wabot_ia_tipos_web()[$d['segunda_web'] ?? 'sin_definir'] ?? null;
+            $salida = ($segunda !== null && $segunda !== 'sistema' && isset($cfg['tipos'][$segunda]))
+                ? wabot_precio_dos($tipo, $segunda, $conv, $cfg)
+                : wabot_precio($tipo, $conv, $cfg);
+            // Lo que preguntó además del precio ("tenés algún ejemplo?") se contesta antes (28-sep),
+            // sin repetir lo que la propuesta ya dice (la publicidad, el logo).
+            $dePaso = wabot_ia_info_de_paso($d, $texto, $conv, $cfg, $salida);
+            return $dePaso !== '' ? array_merge([$dePaso], $salida) : $salida;
         }
         // "Cotizar" sin un tipo que exista: si trajo algo para decir, se usa; si no, el motor.
         if (!$d['mensajes']) return null;
@@ -771,7 +797,80 @@ function wabot_ia_aplicar($d, $texto, &$conv, $cfg) {
         if ($una !== '') $lineas[] = $una;
     }
     $salida = $lineas ? [wabot_info_unir($lineas)] : [];
-    return array_merge($salida, $d['mensajes']);
+    $mensajes = wabot_ia_sin_repetir_oficial($d['mensajes'], $salida);
+    // Si el modelo ya preguntó a qué se dedica, el motor no lo vuelve a preguntar (28-sep).
+    if (empty($conv['precio_dado']) && wabot_negocio_conocido($conv) === false) {
+        foreach ($mensajes as $m) if (wabot_ia_pregunta_negocio($m)) { $conv['rubro_preguntado'] = true; break; }
+    }
+    return array_merge($salida, $mensajes);
+}
+
+/** ¿El mensaje le pregunta qué vende o a qué se dedica? */
+function wabot_ia_pregunta_negocio($m) {
+    $t = wabot_normalizar_frase((string)$m);
+    return (mb_strpos((string)$m, '?') !== false || preg_match('/\b(contame|decime|contanos)\b/u', $t))
+        && (bool)preg_match('/\b(dedic\w*|vend\w*|ofrec\w*|producto\w*|servicio\w*|negocio\w*|rubro|cursos?|emprendimiento)\b/u', $t);
+}
+
+/**
+ * Las respuestas oficiales que pidió el modelo al cotizar, sin las del precio
+ * (el precio fijo ya lo dice todo): "tenés algún ejemplo para ver?" se quedaba
+ * sin contestar porque cotizar descartaba todo lo demás (28-sep, Luciana).
+ */
+function wabot_ia_info_de_paso($d, $texto, &$conv, $cfg, $salida = []) {
+    $delPrecio = ['precio_sin_rubro', 'rangos', 'pago', 'pago_generico', 'mantenimiento', 'que_incluye', 'que_incluye_sin_productos',
+                  'un_solo_pago', 'web_propia', 'las_dos_formas', 'plan_es_servicio', 'pago_sin_precio', 'baja_del_plan', 'proceso', 'otra'];
+    // Lo que no hacemos ya lo aclara la propuesta (wabot_fuera_de_servicio_texto): dicho dos veces sobra (28-sep, Alex).
+    $avisado = (array)($conv['fuera_avisado'] ?? []);
+    if (in_array('publicidad', $avisado, true)) $delPrecio[] = 'marketing';
+    if (in_array('logo', $avisado, true)) { $delPrecio[] = 'logo'; $delPrecio[] = 'sin_logo'; }
+    $textos = array_values(array_filter((array)$salida, function ($m) { return is_string($m) && !wabot_es_marcador_imagen_precio($m); }));
+    $claves = wabot_info_claves_sin_repetidas(wabot_info_claves_sin_baja_falsa((array)($d['info_claves'] ?? []), $texto));
+    $lineas = [];
+    foreach ($claves as $k) {
+        if (in_array($k, $delPrecio, true)) continue;
+        $una = wabot_info_lineas([$k], $conv, $cfg);
+        if ($una === '' || strpos($una, '$') !== false) continue;
+        if ($textos && !wabot_ia_sin_repetir_oficial([$una], $textos)) continue;
+        $lineas[] = $una;
+    }
+    return $lineas ? wabot_info_unir($lineas) : '';
+}
+
+/**
+ * Lo que el modelo escribe no repite la respuesta oficial que ya sale (28-sep):
+ * pedía "precio_sin_rubro" y además escribía "Hola, te paso el valor exacto.
+ * Primero contame a qué te dedicás…", y el cliente recibía dos veces lo mismo.
+ * Se sacan las oraciones que ya dice la oficial; si no queda nada, el mensaje
+ * entero. Lo nuevo (una pregunta distinta, un dato más) se queda.
+ */
+function wabot_ia_sin_repetir_oficial($mensajes, $oficiales) {
+    if (!$mensajes || !$oficiales) return $mensajes;
+    $palabras = function ($t) {
+        $vacias = ['para', 'pero', 'porque', 'como', 'cuando', 'donde', 'esto', 'esta', 'este', 'todo', 'toda', 'solo', 'tambien',
+                   'hola', 'desde', 'sobre', 'entre', 'hasta', 'cada', 'algo', 'tenes', 'tengo', 'tiene', 'podes', 'puedo', 'sea', 'seria'];
+        $w = preg_split('/\s+/u', wabot_normalizar_frase($t), -1, PREG_SPLIT_NO_EMPTY);
+        return array_values(array_unique(array_filter($w, function ($x) use ($vacias) {
+            return mb_strlen($x) >= 4 && !in_array($x, $vacias, true);
+        })));
+    };
+    $dicho = $palabras(implode(' ', $oficiales));
+    $out = [];
+    foreach ($mensajes as $m) {
+        $quedan = [];
+        $saco = false;
+        foreach (preg_split('/(?<=[.;?!])\s+/u', trim((string)$m)) as $oracion) {
+            $w = $palabras($oracion);
+            $repetidas = count(array_intersect($w, $dicho));
+            if (count($w) >= 3 && $repetidas / count($w) >= 0.6) { $saco = true; continue; }
+            $quedan[] = preg_replace('/;$/u', '.', $oracion);
+        }
+        if (!$saco) { $out[] = $m; continue; }
+        $texto = trim(implode(' ', $quedan));
+        // Lo que quedó suelto sin contenido propio ("Hola,") no se manda.
+        if (count($palabras($texto)) >= 2) $out[] = $texto;
+    }
+    return $out;
 }
 
 /**
@@ -792,40 +891,68 @@ function wabot_ia_turno($texto, &$conv, $cfg) {
         wabot_log('ia_respaldo', ['tel' => $conv['tel'] ?? '', 'error' => (string)$r['error']]);
         return null;
     }
-    /* Eligió la web informativa o la tienda en la bienvenida (28-sep): el tipo
-     * ya está dicho. Si el modelo igual repregunta, se cotiza la opción. */
-    $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
-    if (in_array($eleccion, ['landing', 'ecommerce'], true)) $conv['menu_eligio'] = true;
-    if ($r['decision']['accion'] === 'responder' && in_array($eleccion, ['landing', 'ecommerce'], true)) {
-        wabot_evento_sesion($conv, 'ia_menu_corregido', ['tipo' => $eleccion]);
-        wabot_log('ia_menu_corregido', ['tel' => $conv['tel'] ?? '', 'tipo' => $eleccion, 'msg' => mb_substr((string)$texto, 0, 90)]);
-        $r['decision']['accion'] = 'cotizar';
-        // Como en el motor: si en la misma respuesta nombra cursos o propiedades, va ese tipo.
-        $propio = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
-        $r['decision']['tipo_web'] = $propio === 'cursos' ? 'plataforma_cursos'
-            : ($propio === 'inmobiliaria' ? 'inmobiliaria' : ($eleccion === 'landing' ? 'sitio_profesional' : 'tienda_online'));
-        $r['decision']['mensajes'] = [];
-        $r['decision']['info_claves'] = [];
-    }
-    /* "¿Qué me recomendás?" con el negocio ya contado (28-sep, simulación de la
-     * mueblería): si el modelo le devuelve otra pregunta, se cotiza lo que el
-     * motor recomienda para ese negocio, igual que sin IA. */
-    $recomendado = ($r['decision']['accion'] === 'responder' && wabot_pide_que_elijamos($texto) && wabot_contexto_cliente_tiene_negocio($conv))
-        ? wabot_tipo_recomendado($conv) : null;
-    $tipoWeb = ['landing' => 'sitio_profesional', 'ecommerce' => 'tienda_online', 'elearning' => 'plataforma_cursos', 'inmobiliaria' => 'inmobiliaria'];
-    if (isset($tipoWeb[$recomendado])) {
-        wabot_evento_sesion($conv, 'ia_recomendacion_corregida', ['tipo' => $recomendado]);
-        wabot_log('ia_recomendacion_corregida', ['tel' => $conv['tel'] ?? '', 'tipo' => $recomendado, 'msg' => mb_substr((string)$texto, 0, 90)]);
-        $r['decision']['accion'] = 'cotizar';
-        $r['decision']['tipo_web'] = $tipoWeb[$recomendado];
-        $r['decision']['mensajes'] = [];
-        $r['decision']['info_claves'] = [];
-    }
+    $r['decision'] = wabot_ia_redes($r['decision'], $texto, $conv, $cfg);
     $salida = wabot_ia_aplicar($r['decision'], $texto, $conv, $cfg);
     if ($salida === null) return null;
     // Si llega otro mensaje antes de mandar esto, el webhook lo descarta y vuelve a pensar con todo.
     $conv['_ia_recalculable'] = true;
     return $salida;
+}
+
+/**
+ * Las redes deterministas sobre la decisión del modelo (28-sep). Cada una sale
+ * de un error visto en charlas reales o simuladas y solo corrige la acción:
+ * nunca escribe un texto nuevo.
+ *  1. Eligió una opción de la bienvenida. Si no contó qué vende, el modelo le
+ *     pregunta y el tipo queda anotado; si lo contó y el modelo igual
+ *     repregunta, se cotiza la opción.
+ *  2. Ya eligió y se le preguntó qué vende: con la respuesta se cotiza.
+ *  3. "¿Qué me recomendás?" con el negocio contado: se cotiza lo que el motor
+ *     recomienda para ese negocio, en vez de devolverle otra pregunta.
+ */
+function wabot_ia_redes($d, $texto, &$conv, $cfg) {
+    $tipoWeb = ['landing' => 'sitio_profesional', 'ecommerce' => 'tienda_online', 'elearning' => 'plataforma_cursos', 'inmobiliaria' => 'inmobiliaria'];
+    $cotizar = function ($d, $tipo, $segunda, $evento) use (&$conv, $texto, $tipoWeb) {
+        wabot_evento_sesion($conv, $evento, ['tipo' => $tipo . ($segunda ? '+' . $segunda : '')]);
+        wabot_log($evento, ['tel' => $conv['tel'] ?? '', 'tipo' => $tipo, 'msg' => mb_substr((string)$texto, 0, 90)]);
+        $d['accion'] = 'cotizar';
+        $d['tipo_web'] = $tipoWeb[$tipo];
+        $d['segunda_web'] = $segunda ? $tipoWeb[$segunda] : 'sin_definir';
+        $d['mensajes'] = [];   // las info_claves quedan: las que no son del precio salen antes
+        return $d;
+    };
+    $propio = function () use ($texto) {
+        $r = wabot_fallback_rubro_local(wabot_normalizar_frase((string)$texto));
+        return $r === 'cursos' ? 'elearning' : ($r === 'inmobiliaria' ? 'inmobiliaria' : null);
+    };
+    $negocio = wabot_negocio_conocido($conv) !== false;
+
+    $eleccion = wabot_menu_contestado($texto, $conv, $cfg);
+    if (in_array($eleccion, ['landing', 'ecommerce', 'dos'], true)) {
+        $conv['menu_eligio'] = true;
+        if (!$negocio) {
+            $conv['tipo_pendiente'] = $eleccion === 'dos' ? 'landing' : $eleccion;
+            if ($eleccion === 'dos') $conv['tipo_pendiente_2'] = 'ecommerce';
+            else unset($conv['tipo_pendiente_2']);
+        } elseif ($d['accion'] === 'responder') {
+            if ($eleccion === 'dos') return $cotizar($d, 'landing', 'ecommerce', 'ia_menu_corregido');
+            return $cotizar($d, $propio() ?? $eleccion, null, 'ia_menu_corregido');
+        }
+        return $d;
+    }
+
+    $pendiente = (string)($conv['tipo_pendiente'] ?? '');
+    if ($pendiente !== '' && isset($tipoWeb[$pendiente]) && $negocio && $d['accion'] === 'responder'
+        && empty($conv['precio_dado']) && !wabot_mensaje_pregunta_algo($texto)) {
+        $segunda = (string)($conv['tipo_pendiente_2'] ?? '');
+        return $cotizar($d, $propio() ?? $pendiente, isset($tipoWeb[$segunda]) ? $segunda : null, 'ia_pendiente_corregido');
+    }
+
+    if ($d['accion'] === 'responder' && $negocio && wabot_pide_que_elijamos($texto)) {
+        $recomendado = wabot_tipo_recomendado($conv);
+        if (isset($tipoWeb[$recomendado])) return $cotizar($d, $recomendado, null, 'ia_recomendacion_corregida');
+    }
+    return $d;
 }
 
 /* ─────────────────────────────── Modo shadow ─────────────────────────────── */
@@ -855,6 +982,7 @@ function wabot_ia_sombra_ejecutar($pendiente, $enviado, $cfg) {
     } else {
         $d = $r['decision'];
         $copia = $conv;
+        $d = wabot_ia_redes($d, $pendiente['texto'], $copia, $cfg);
         $salida = wabot_ia_aplicar($d, $pendiente['texto'], $copia, $cfg);
         $mensajes = $salida === null ? null : wabot_salida_preparar($salida, $copia, $cfg);
         $fila['openai'] = [
