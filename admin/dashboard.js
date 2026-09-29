@@ -351,6 +351,7 @@ function erroresResumen() {
         const w = porWeb.get(claveDe(host));
         if (!w.senal || t > w.senal) w.senal = t;
     }
+    for (const id of ocultos) if (!porWeb.has(id)) porWeb.set(id, { id, nombre: id, dominio: id, esCliente: false, senal: null, grupos: new Map() });
     for (const d of docs) {
         const w = porWeb.get(claveDe(d.site));
         const at = d.at?.toDate ? d.at.toDate() : new Date(0);
@@ -367,12 +368,12 @@ function erroresResumen() {
         const altos = grupos.filter(g => g.nivel === "alto");
         return {
             ...w, grupos,
+            oculto: ocultos.has(w.id),
             altos: altos.length,
             altosPend: altos.filter(g => g.pend > 0).length,
             menores: grupos.length - altos.length,
         };
-    }).filter(w => !ocultos.has(w.id))
-      .sort((a, b) => b.altosPend - a.altosPend || String(a.nombre).localeCompare(String(b.nombre), "es"));
+    }).sort((a, b) => b.altosPend - a.altosPend || String(a.nombre).localeCompare(String(b.nombre), "es"));
 }
 
 // Los dominios de los clientes llegan por snapshots aparte: cuando cambian, se reagrupa lo de Errores.
@@ -384,7 +385,7 @@ function refrescarErroresPorClientes() {
 function actualizarBadgeErrores() {
     const el = document.getElementById("countErrores");
     if (!el || !erroresDatos || erroresMes !== erroresMesActual()) return;
-    const n = erroresResumen().reduce((t, w) => t + w.altosPend, 0);
+    const n = erroresResumen().filter(w => !w.oculto).reduce((t, w) => t + w.altosPend, 0);
     el.textContent = n;
     el.hidden = n === 0;
 }
@@ -433,9 +434,10 @@ function erroresHtmlWeb(w) {
             (w.menores ? ' <small>· ' + w.menores + (w.menores === 1 ? " aviso menor" : " avisos menores") + '</small>' : "") + '</span>' +
         '</button>' +
         '<div class="err-acciones">' +
-          (w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
-          (!w.esCliente ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista (no es un cliente tuyo)">Ocultar</button>' : "") +
-          (w.esCliente ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
+          (w.oculto ? '<button type="button" class="btn-ghost" data-err-mostrar>Volver a mostrar</button>' : "") +
+          (!w.oculto && w.altosPend > 0 ? '<button type="button" class="btn-ghost" data-err-resolver>Marcar resueltos</button>' : "") +
+          (!w.oculto && !w.esCliente ? '<button type="button" class="btn-ghost" data-err-ocultar title="Sacarla de la lista (no es un cliente tuyo)">Ocultar</button>' : "") +
+          (!w.oculto && w.esCliente ? '<button type="button" class="btn-ghost" data-err-copiar' + (copiarOff ? ' disabled title="' + copiarMotivo + '"' : "") + '>Copiar mensaje</button>' : "") +
         '</div>' +
       '</div>' +
       '<div class="err-detalle"' + (abierto ? "" : " hidden") + '>' +
@@ -448,14 +450,17 @@ function renderErrores() {
     const cont = document.getElementById("erroresLista");
     if (!cont || !erroresDatos) return;
     actualizarBadgeErrores();
-    const webs = erroresResumen();
+    const todas = erroresResumen();
+    const webs = todas.filter(w => !w.oculto);
+    const ocultas = todas.filter(w => w.oculto);
     const clientes = webs.filter(w => w.esCliente);
     const otras = webs.filter(w => !w.esCliente);
-    if (!webs.length) {
+    if (!todas.length) {
         cont.innerHTML = '<p class="muted">Todavía no hay webs. Cargá el dominio de cada cliente (campo Dominio) y pegá en el &lt;head&gt; de su web: <code>&lt;script src="https://gokywebs.com/err/err.js" defer&gt;&lt;/script&gt;</code>. Aparecen solas.</p>';
         return;
     }
-    const otrasAbiertas = !!cont.querySelector(".err-otras")?.open;
+    const otrasAbiertas = !!cont.querySelector(".err-otras:not(.err-ocultas)")?.open;
+    const ocultasAbiertas = !!cont.querySelector(".err-ocultas")?.open;
     const otrasPend = otras.reduce((t, w) => t + w.altosPend, 0);
     cont.innerHTML =
         (clientes.length ? clientes.map(erroresHtmlWeb).join("") : '<p class="muted">Ningún cliente tiene dominio cargado todavía.</p>') +
@@ -463,6 +468,11 @@ function renderErrores() {
             ? '<details class="err-otras"' + (otrasPend > 0 || otrasAbiertas ? " open" : "") + '>' +
               '<summary>Otras webs detectadas <span class="pill-count">' + otras.length + '</span><small class="muted"> · avisaron pero su dominio no coincide con ningún cliente</small></summary>' +
               otras.map(erroresHtmlWeb).join("") + '</details>'
+            : "") +
+        (ocultas.length
+            ? '<details class="err-otras err-ocultas"' + (ocultasAbiertas ? " open" : "") + '>' +
+              '<summary>Webs ocultas <span class="pill-count">' + ocultas.length + '</span><small class="muted"> · no suman al contador; abrí una y tocá «Volver a mostrar»</small></summary>' +
+              ocultas.map(erroresHtmlWeb).join("") + '</details>'
             : "");
 }
 
@@ -491,6 +501,10 @@ document.getElementById("erroresLista")?.addEventListener("click", async (e) => 
             alert("No se pudo marcar como resuelto.");
         }
     } else if (btn.hasAttribute("data-err-ocultar")) {
+        const nombre = erroresResumen().find(x => x.id === id)?.nombre || id;
+        if (!confirm(`¿Ocultar "${nombre}" de Errores?
+
+Deja de aparecer en la lista y no suma al contador. Podés volver a mostrarla desde «Webs ocultas», al final de la lista.`)) return;
         btn.disabled = true;
         try {
             await setDoc(doc(db, "errores_sitios", id), { oculto: true, updatedAt: serverTimestamp() }, { merge: true });
@@ -500,6 +514,17 @@ document.getElementById("erroresLista")?.addEventListener("click", async (e) => 
             console.error(err);
             btn.disabled = false;
             alert("No se pudo ocultar.");
+        }
+    } else if (btn.hasAttribute("data-err-mostrar")) {
+        btn.disabled = true;
+        try {
+            await setDoc(doc(db, "errores_sitios", id), { oculto: false, updatedAt: serverTimestamp() }, { merge: true });
+            erroresDatos.ocultos.delete(id);
+            renderErrores();
+        } catch (err) {
+            console.error(err);
+            btn.disabled = false;
+            alert("No se pudo volver a mostrar.");
         }
     } else if (btn.hasAttribute("data-err-copiar")) {
         const w = erroresResumen().find(x => x.id === id);
