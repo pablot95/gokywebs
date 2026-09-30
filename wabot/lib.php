@@ -5170,10 +5170,10 @@ function wabot_template_72h_enviar(&$conv, $cfg) {
     return 'ok';
 }
 
-/** Envío manual de la plantilla de marketing para chats marcados con estrella. */
-function wabot_template_interesado_enviar(&$conv, $cfg) {
+/** La misma plantilla sirve a mano en Seguimientos; el cron sigue siendo solo para favoritos. */
+function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = false) {
     if (wabot_canal($conv) === 'instagram') return 'canal';
-    if (empty($conv['favorito'])) return 'no_interesado';
+    if (!$permitirSinFavorito && empty($conv['favorito'])) return 'no_interesado';
     if (!empty($conv['seguimiento_interesado_enviado'])) return 'ya';
     if (!wabot_enviar_plantilla($conv, 'seguimiento_interesado', $cfg)) return 'error';
     wabot_conv_tomar_control($conv);

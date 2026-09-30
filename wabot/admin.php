@@ -538,7 +538,8 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         if ($lock) {
             try {
                 $conv = wabot_conv_load($clave);
-                $resultado = wabot_template_interesado_enviar($conv, $cfg);
+                // En esta pestaña el envío es una decisión manual, aun sin estrella.
+                $resultado = wabot_template_interesado_enviar($conv, $cfg, true);
                 if ($resultado === 'ok') wabot_conv_save($conv);
             } finally { wabot_lock_soltar($lock); }
         }
@@ -986,7 +987,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $clave = basename($f, '.json');
             if (stripos($clave, 'TEST') !== false) continue;
             $cv = wabot_conv_load($clave);
-            if (empty($cv['presentado_ts']) && empty($cv['favorito'])) continue;
+            if (empty($cv['presentado_ts']) && empty($cv['favorito']) && empty($cv['seguimiento_interesado_enviado'])) continue;
             $items[] = [
                 'cliente_id'           => (string)($cv['cliente_id'] ?? ''),
                 'tel'                  => $cv['tel'],

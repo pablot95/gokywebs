@@ -3941,6 +3941,22 @@ caso('la de interesado sale con la estrella puesta',
 caso('y queda en el chat tal como la aprobó Meta (Pablo, 26-sep: no aparecía)',
     count($convInteresado['transcript']) === 1 && $convInteresado['transcript'][0]['t'] === 'Hola, cómo estás?');
 
+$convSeguimientoManual = ['tel' => '5491100000075', 'channel_user_id' => '5491100000075', 'canal' => 'whatsapp',
+                          'favorito' => false, 'ultimo_cliente_ts' => time() - 8 * 86400, 'transcript' => []];
+$cfgAutoInteresado = $cfgFabrica;
+$cfgAutoInteresado['activo'] = true;
+caso('sin estrella no entra en el envío automático de interesados',
+    wabot_seguimiento_interesado_corresponde($convSeguimientoManual, $cfgAutoInteresado) === false);
+caso('sin estrella la plantilla de interesado no sale por la acción habitual',
+    wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica) === 'no_interesado');
+caso('desde Seguimientos se puede enviar manualmente sin marcar favorito',
+    wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica, true) === 'ok'
+    && !empty($convSeguimientoManual['seguimiento_interesado_enviado']));
+caso('el envío manual no habilita el cron para ese chat',
+    wabot_seguimiento_interesado_corresponde($convSeguimientoManual, $cfgAutoInteresado) === false);
+caso('el botón no repite la misma plantilla',
+    wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica, true) === 'ya');
+
 echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
 
 /* Pablo encontró 17 envíos con la misma presentación, cambiando solo el enlace:

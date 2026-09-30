@@ -2511,11 +2511,11 @@ function _botonTemplate72h(c) {
 
 function _botonTemplateInteresado(c) {
     const it = presentadoDeCliente(c);
-    if (!it?.favorito) return "";
-    const enviadoTs = templateInteresadoEnviados[c.id] || it.template_interesado_ts || 0;
-    if (enviadoTs) return `<button class="icon-btn btn-template-interesado enviado" disabled title="Plantilla enviada el ${escapeHtml(fechaTemplate72h(enviadoTs))}">✓ Interesado</button>`;
-    if (it.canal === "instagram") return `<button class="icon-btn btn-template-interesado" disabled title="Las plantillas de Meta solo salen por WhatsApp">Interesado</button>`;
-    return `<button class="icon-btn btn-template-interesado" data-template-interesado-id="${c.id}" title="Enviar la plantilla de Marketing seguimiento_interesado">Interesado</button>`;
+    if (!it && cleanArgPhone(c.telefono).length < 8) return "";
+    const enviadoTs = templateInteresadoEnviados[c.id] || it?.template_interesado_ts || 0;
+    if (enviadoTs) return `<button class="icon-btn btn-template-interesado enviado" disabled title="Plantilla enviada el ${escapeHtml(fechaTemplate72h(enviadoTs))}">✓ Seguimiento</button>`;
+    if (it?.canal === "instagram") return `<button class="icon-btn btn-template-interesado" disabled title="Las plantillas de Meta solo salen por WhatsApp">Seguimiento</button>`;
+    return `<button class="icon-btn btn-template-interesado" data-template-interesado-id="${c.id}" title="Enviar manualmente la plantilla seguimiento_interesado">Enviar seguimiento</button>`;
 }
 
 /* "Ver chat" como en Bocetos: el chat del bot en el modal, sin salir de la
@@ -2578,9 +2578,9 @@ async function enviarTemplate72h(id, btn) {
 async function enviarTemplateInteresado(id, btn) {
     const c = clients.find(x => x.id === id);
     const it = c && presentadoDeCliente(c);
-    if (!c || !it?.favorito) return;
+    if (!c) return;
     const nombre = c.nombre || c.proyecto || "este cliente";
-    if (!confirm(`¿Mandarle a ${nombre} la plantilla seguimiento_interesado por WhatsApp?`)) return;
+    if (!confirm(`¿Mandarle a ${nombre} la plantilla seguimiento_interesado por WhatsApp? Es un envío manual y se hace una sola vez por chat.`)) return;
     btn.disabled = true;
     btn.textContent = "…";
     try {
@@ -2588,7 +2588,7 @@ async function enviarTemplateInteresado(id, btn) {
         const res = await fetch("../wabot/admin.php", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: new URLSearchParams({ accion: "seguimiento_template_interesado", tel: it.clave }),
+            body: new URLSearchParams({ accion: "seguimiento_template_interesado", tel: it?.clave || c.telefono }),
             credentials: "same-origin"
         });
         const data = await res.json();
@@ -2596,9 +2596,11 @@ async function enviarTemplateInteresado(id, btn) {
         if (!data.ok) {
             const motivos = {
                 ya: "Esta plantilla ya fue enviada en este chat.",
-                no_interesado: "El chat ya no está marcado como favorito.",
+                no_interesado: "Este chat no permite el envío desde esa acción.",
                 canal: "Esta plantilla solo sale por WhatsApp.",
                 sin_chat: "No se encontró el chat de este cliente.",
+                ambiguo: "Hay más de un chat con ese teléfono. Abrí el chat correcto y revisá el número antes de enviar.",
+                ocupado: "El chat se está procesando. Revisá si la plantilla salió antes de intentarlo de nuevo.",
                 error: "Meta rechazó la plantilla o no está activa en Ajustes del bot."
             };
             alert(motivos[data.resultado] || motivos.error);

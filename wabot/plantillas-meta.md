@@ -36,6 +36,9 @@ panel: el cron toma lo que haya en esa clave.
 `seguimiento_interesado` se manda a las 18:00, una sola vez, cuando el chat
 está marcado como favorito y pasaron siete días completos desde el último
 mensaje registrado del cliente, del bot o escrito a mano desde el panel.
+Desde **Admin → Seguimientos** también se puede enviar la misma plantilla a mano
+a un contacto sin estrella. Ese envío no lo marca como favorito ni programa
+envíos automáticos; la plantilla queda registrada para no repetirla en el chat.
 Los favoritos que ya estaban marcados antes de activar este flujo no entran:
 hay que quitar y volver a poner la estrella para programarlos.
 Los mensajes enviados por fuera del panel no quedan registrados en ese reloj.
