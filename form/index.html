@@ -36,7 +36,7 @@
                 <div class="step-connector"></div>
                 <div class="step-dot" data-s="2">
                     <div class="step-dot-circle">2</div>
-                    <div class="step-dot-label">Colores y estilo</div>
+                    <div class="step-dot-label">Tus preferencias</div>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step-dot" data-s="3">
@@ -106,14 +106,14 @@
                     </div>
                 </div>
 
-                <!-- ─── PASO 2: Colores y estilo ─── -->
+                <!-- ─── PASO 2: Tus preferencias ─── -->
                 <div class="form-step" data-step="2" hidden>
                     <div class="form-section">
 
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Qué buscás lograr, cómo te gustaría pagar, tus colores y el estilo.</p>
+                            <p class="step-header-desc">Qué buscás lograr, cómo te gustaría pagar y tus colores.</p>
                         </div>
 
                         <!-- Qué quiere lograr con la web (27-sep, las opciones de Pablo): se puede
@@ -139,7 +139,7 @@
 
                         <div class="field-group">
                             <label class="field-label" for="modalidad">Forma de pago que preferís <span class="req">*</span></label>
-                            <!-- Como en el estilo, script.js muestra abajo la descripción elegida.
+                            <!-- script.js muestra abajo la descripción elegida.
                                  Los valores mensual/unico/propia los valida wabot/form-lead.php
                                  ('unico' es el plan anual y 'propia' el pago único). Van en el
                                  orden de siempre: mensual, anual y pago único (26-sep-2026). -->
@@ -171,27 +171,6 @@
                                     <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label" for="estilo">
-                                Estilo de página <span class="req">*</span>
-                            </label>
-                            <!-- Cada opción trae su descripción: script.js la muestra abajo al elegirla.
-                                 Sin miniaturas ni sitios de ejemplo (Pablo, 27-sep) ni barrita de colores
-                                 (confundía, 28-sep). La lista tiene que
-                                 coincidir con formlead_estilos() de wabot/form-lead.php. -->
-                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
-                                <option value="" disabled selected>Elegí un estilo</option>
-                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples.">Minimalista</option>
-                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia.">Moderno y audaz</option>
-                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas.">Elegante / premium</option>
-                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable.">Cálido y cercano</option>
-                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos.">Colorido y divertido</option>
-                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista.">Corporativo / sobrio</option>
-                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
-                            </select>
-                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y te contamos cómo es.</p>
                         </div>
 
                         <div class="field-group">
@@ -336,6 +315,6 @@
         });
     </script>
 
-    <script type="module" src="script.js?v=20260928-igsinarroba"></script>
+    <script type="module" src="script.js?v=20260930-sin-estilo"></script>
 </body>
 </html>

@@ -595,13 +595,6 @@ function validarPaso2() {
         if (!firstError) firstError = modalidad;
     }
 
-    // "No lo sé" es una respuesta válida: lo único que no pasa es no elegir.
-    const estilo = document.getElementById('estilo');
-    if (estilo && !estilo.value) {
-        markError(estilo, 'Elegí un estilo. Si todavía no lo tenés claro, elegí "No lo sé".');
-        if (!firstError) firstError = estilo;
-    }
-
     ['referencia', 'incluir'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.value.trim().length > LIMITES[id]) {
@@ -662,7 +655,6 @@ function buildPayload() {
         // Qué quiere lograr (27-sep): las casillas marcadas y, con "Otra", cuál.
         objetivos: objetivosMarcados(),
         objetivo_otro: objetivoOtra?.checked ? get('objetivo_otro') : '',
-        estilo: get('estilo'),
         referencia: get('referencia'),
         incluir: get('incluir'),
         modalidad: get('modalidad'),
@@ -694,9 +686,9 @@ function limpiarErrorEnvio() {
     document.getElementById('formEnvioError')?.remove();
 }
 
-const LIMITES = { nombre: 80, nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, objetivo_otro: 120, estilo: 40, referencia: 300, incluir: 600 };
+const LIMITES = { nombre: 80, nombre_negocio: 80, instagram: 100, resumen: 600, colores: 200, objetivo_otro: 120, referencia: 300, incluir: 600 };
 const NOMBRES_CAMPO = { nombre: 'tu nombre', nombre_negocio: 'el nombre del negocio', instagram: 'el Instagram', resumen: 'el resumen', colores: 'los colores', telefono: 'el teléfono',
-    objetivo_otro: 'qué querés lograr', estilo: 'el estilo de página', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
+    objetivo_otro: 'qué querés lograr', referencia: 'la referencia web', incluir: 'lo que querés incluir' };
 
 /* El servidor dice qué campo falló y por qué (motivo/campo/max): se marca ese
  * campo, no se tira un "ocurrió un error" genérico. Si el campo está en el otro
@@ -879,22 +871,6 @@ objetivoOtroCampo?.addEventListener('click', () => {
 });
 objetivoOtroInput?.addEventListener('input', () => quitarError(objetivoOtroInput));
 
-/* Estilo de página: la descripción de cada estilo (data-desc de su <option>)
- * va en la línea de abajo y cambia con lo que se elige. Solo el texto: las
- * miniaturas y los sitios de ejemplo se sacaron (Pablo, 27-sep), y la barrita
- * de colores también (confundía, 28-sep). */
-const estiloSelect = document.getElementById('estilo');
-const estiloAyuda = document.getElementById('estiloEjemplo');
-const ESTILO_AYUDA_INICIAL = estiloAyuda ? estiloAyuda.textContent : '';
-
-function pintarEstilo() {
-    if (!estiloSelect || !estiloAyuda) return;
-    const op = estiloSelect.selectedOptions[0];
-    estiloAyuda.textContent = op && op.value ? (op.dataset.desc || '') : ESTILO_AYUDA_INICIAL;
-}
-estiloSelect?.addEventListener('change', pintarEstilo);
-pintarEstilo();
-
 // Instagram (28-sep): abajo del campo, el link que queda con lo que escriben.
 // Si pegan el link entero o ponen un @, se muestra ya limpio (igual que el servidor).
 const instagramInput = document.getElementById('instagram');
@@ -926,7 +902,7 @@ const DRAFT_KEY = 'gky_form_draft';
 // Los del paso 2 también: el que recarga la página no pierde lo que eligió.
 const DRAFT_FIELDS = ['nombre', 'nombre_negocio', 'instagram', 'resumen', 'telefono',
     'color_principal', 'color_secundario', 'color_fondos',
-    'objetivo_otro', 'estilo', 'referencia', 'incluir', 'modalidad'];
+    'objetivo_otro', 'referencia', 'incluir', 'modalidad'];
 
 function saveDraft() {
     try {
@@ -948,7 +924,7 @@ function restoreDraft() {
     Object.entries(d.fields || {}).forEach(([id, v]) => {
         const el = document.getElementById(id);
         if (!el || el.value.trim()) return;
-        // Un estilo que ya no está en la lista dejaría el desplegable en blanco.
+        // Una opción que ya no está en la lista dejaría el desplegable en blanco.
         if (el.tagName === 'SELECT' && ![...el.options].some(o => o.value === v)) return;
         el.value = v;
         if (el.classList.contains('autosize')) autoGrow(el);
@@ -969,9 +945,8 @@ _formEl.addEventListener('change', saveDraft);
 
 restoreDraft();
 // Lo restaurado no dispara 'input': se repintan a mano los contadores, el
-// campo de "Otra" (habilitado o no), el ejemplo del estilo y el link de Instagram.
+// campo de "Otra" (habilitado o no) y el link de Instagram.
 _pintarContadores.forEach(pintar => pintar());
 pintarObjetivoOtro();
-pintarEstilo();
 pintarInstagram();
 pintarPlan();

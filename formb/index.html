@@ -39,7 +39,7 @@
                 <div class="step-connector"></div>
                 <div class="step-dot" data-s="2">
                     <div class="step-dot-circle">2</div>
-                    <div class="step-dot-label">Colores y estilo</div>
+                    <div class="step-dot-label">Tus preferencias</div>
                 </div>
                 <div class="step-connector"></div>
                 <div class="step-dot" data-s="3">
@@ -98,14 +98,14 @@
                     </div>
                 </div>
 
-                <!-- ─── PASO 2: Colores y estilo ─── -->
+                <!-- ─── PASO 2: Tus preferencias ─── -->
                 <div class="form-step" data-step="2" hidden>
                     <div class="form-section">
 
                         <div class="step-header">
                             <span class="step-header-badge">Paso 2 de 3</span>
                             <h2 class="step-header-title" tabindex="-1">Cómo te imaginás tu web</h2>
-                            <p class="step-header-desc">Tus colores y el estilo que buscás.</p>
+                            <p class="step-header-desc">Tus colores y cualquier referencia que quieras compartir.</p>
                         </div>
 
                         <!-- La forma de pago no se muestra: en este formulario es siempre el pago
@@ -133,26 +133,6 @@
                                     <input type="color" id="color_fondos" name="color_fondos" class="color-swatch-input" value="#F9FAFB">
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label" for="estilo">
-                                Estilo de página <span class="req">*</span>
-                            </label>
-                            <!-- Cada opción trae su descripción y un ejemplo del portfolio, que
-                                 script.js muestra abajo (un <option> no puede llevar links). La
-                                 lista tiene que coincidir con formlead_estilos() de wabot/form-lead.php. -->
-                            <select id="estilo" name="estilo" class="field-input" required aria-describedby="estiloEjemplo">
-                                <option value="" disabled selected>Elegí un estilo</option>
-                                <option value="Minimalista" data-desc="Mucho espacio en blanco, pocos elementos y letras simples." data-ejemplo="https://www.sparrow.com.ar/" data-ejemplo-nombre="Sparrow">Minimalista</option>
-                                <option value="Moderno y audaz" data-desc="Títulos grandes, contrastes fuertes y mucha presencia." data-ejemplo="https://xbrake.ar/" data-ejemplo-nombre="XBRAKE">Moderno y audaz</option>
-                                <option value="Elegante / premium" data-desc="Tipografías finas, tonos sobrios y fotos muy cuidadas." data-ejemplo="https://mdaromes.com/" data-ejemplo-nombre="Maison des Arômes">Elegante / premium</option>
-                                <option value="Cálido y cercano" data-desc="Colores cálidos, fotos reales y un tono amable." data-ejemplo="https://lanuevasantelmo.com/" data-ejemplo-nombre="La Nueva San Telmo">Cálido y cercano</option>
-                                <option value="Colorido y divertido" data-desc="Colores vivos, formas redondeadas y dibujos." data-ejemplo="https://www.hostelsrosarinos.com.ar/" data-ejemplo-nombre="Hostels Rosarinos">Colorido y divertido</option>
-                                <option value="Corporativo / sobrio" data-desc="Ordenado y serio, con la información bien a la vista." data-ejemplo="https://bfsoluciones.com.ar/" data-ejemplo-nombre="BF Soluciones">Corporativo / sobrio</option>
-                                <option value="No lo sé" data-desc="No pasa nada: elegimos el que mejor le quede a tu rubro.">No lo sé</option>
-                            </select>
-                            <p class="field-hint" id="estiloEjemplo" aria-live="polite">Elegí uno y acá te mostramos un ejemplo.</p>
                         </div>
 
                         <div class="field-group">
@@ -297,6 +277,6 @@
         });
     </script>
 
-    <script type="module" src="/form/script.js?v=20260924a"></script>
+    <script type="module" src="/form/script.js?v=20260930-sin-estilo"></script>
 </body>
 </html>

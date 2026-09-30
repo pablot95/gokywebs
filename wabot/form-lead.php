@@ -2,8 +2,9 @@
 require_once __DIR__ . '/redactor.php';
 
 /* ── Paso 2 del formulario (10-sep) ───────────────────────────────────────────
- * Estilo de página, web de referencia y lo que quiere incluir sí o sí. Son
- * opcionales y wabot_form_lead_procesar() (lib.php) no los conoce: los ignora.
+ * Web de referencia y lo que quiere incluir sí o sí. El estilo de página se
+ * conserva solo para formularios anteriores que todavía estén en caché.
+ * Son opcionales y wabot_form_lead_procesar() (lib.php) no los conoce: los ignora.
  * Acá se validan con el mismo criterio que los campos de siempre (trim y tope
  * de largo; si se pasa, datos_invalidos con el campo y el máximo, así el
  * formulario marca el que corresponde) y se guardan en la charla ANTES de
@@ -18,8 +19,8 @@ require_once __DIR__ . '/redactor.php';
  * Además queda una línea "[Formulario web, paso 2] ..." en el transcript, para
  * verlo en el panel. */
 
-/* La misma lista que el <select id="estilo"> de form/index.html: si se suma un
- * estilo allá, va también acá. Lo que no está en la lista se guarda vacío. */
+/* Compatibilidad con formularios anteriores que todavía envían estilo.
+ * Lo que no está en la lista se guarda vacío. */
 function formlead_estilos() {
     return ['Minimalista', 'Moderno y audaz', 'Elegante / premium', 'Cálido y cercano',
             'Colorido y divertido', 'Corporativo / sobrio', 'No lo sé'];

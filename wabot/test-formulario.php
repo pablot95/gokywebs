@@ -606,7 +606,7 @@ caso('el webhook resuelve la conversación antes de escribir el aviso',
     && strpos($webhookSrc, 'wabot_entrega_fallida_marcar($conv, $motivo);') !== false);
 caso('y si no hay charla, no crea una fantasma', strpos($webhookSrc, 'if ($claveReal === null) continue;') !== false);
 
-echo "— 16. Qué quiere lograr con la web y el texto del estilo (27-sep) —\n";
+echo "— 16. Qué quiere lograr con la web y formulario sin elección de estilo —\n";
 
 // formlead_extras() y compañía ya están cargadas desde la sección 12.
 preg_match_all('/<input type="checkbox" name="objetivos" value="([^"]+)"/u', $htmlPrincipal, $mObj);
@@ -658,18 +658,19 @@ wabot_conv_reset_si_vieja($cRObj, $cfg, time());
 caso('el reset de sesión lo limpia, igual que al estilo', empty($cRObj['objetivos']));
 @unlink(WABOT_DATA . '/conv/5493810009002.json');
 
-// El estilo quedó solo con su texto explicativo (Pablo, 27-sep): sin miniaturas ni sitios de ejemplo.
-preg_match('/<select id="estilo".*?<\/select>/us', $htmlPrincipal, $selectEstilo);
-preg_match_all('/<option value="([^"]+)" data-desc="[^"]+"[^>]*>/u', $selectEstilo[0] ?? '', $mEstilo);
-caso('cada estilo tiene su texto explicativo, y los estilos son los que acepta el servidor',
-    $mEstilo[1] === formlead_estilos(), json_encode($mEstilo[1], JSON_UNESCAPED_UNICODE));
-caso('y ya no lleva miniaturas, sitios de ejemplo ni la barrita de colores (confundía, 28-sep)',
-    strpos($htmlPrincipal, 'data-mini') === false && strpos($htmlPrincipal, 'data-ejemplo') === false && strpos($htmlPrincipal, 'estiloMini') === false
-    && strpos($htmlPrincipal, 'data-paleta') === false && strpos($htmlPrincipal, 'estiloPaleta') === false);
+// La elección de estilo ya no se pide en ninguna variante del formulario.
+$htmlFormb = (string)file_get_contents(__DIR__ . '/../formb/index.html');
+$scriptForm = (string)file_get_contents(__DIR__ . '/../form/script.js');
+caso('ninguna variante muestra ni exige elegir un estilo',
+    strpos($htmlPrincipal, 'id="estilo"') === false && strpos($htmlFormb, 'id="estilo"') === false
+    && strpos($scriptForm, "get('estilo')") === false && strpos($scriptForm, "'estilo', 'referencia'") === false);
+caso('el servidor acepta formularios nuevos sin estilo y conserva compatibilidad con los anteriores',
+    !array_key_exists('estilo', (array)formlead_extras(['referencia' => 'ejemplo.com']))
+    && (formlead_extras(['estilo' => 'Minimalista'])['estilo'] ?? '') === 'Minimalista');
 
-// El admin: el "Copiar" del boceto y el boceto mismo tienen una fila para cada cosa.
+// El admin conserva la lectura y edición del estilo para bocetos anteriores.
 $dashObj = (string)file_get_contents(__DIR__ . '/../admin/dashboard.js');
-caso('el "Copiar" del boceto lleva los objetivos, el estilo y lo de sí o sí, cada uno en su fila',
+caso('el "Copiar" del boceto conserva objetivos, estilo anterior y lo de sí o sí',
     strpos($dashObj, '{ title: "Objetivos de la web", value: objetivosTexto }') !== false
     && strpos($dashObj, '{ title: "Estilo de página", value: cleanFieldValue(p.estilo_pagina) }') !== false
     && strpos($dashObj, '{ title: "Incluir sí o sí", value: cleanFieldValue(p.incluir_si_o_si) }') !== false);

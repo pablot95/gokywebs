@@ -335,6 +335,16 @@ function erroresNorm(s) {
     return String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function erroresNombreCliente(c) {
+    const empresa = String(c.proyecto || "").trim();
+    const persona = String(c.nombre || "").trim();
+    return {
+        nombre: empresa || persona,
+        persona: empresa && persona && erroresNorm(empresa) !== erroresNorm(persona) ? persona : "",
+        tieneEmpresa: !!empresa,
+    };
+}
+
 // Resumen por web: errores agrupados, cuántos importantes quedan sin resolver.
 // Las webs esperadas salen de los dominios cargados en clientes, completados y mantenimiento.
 // Si una web que avisa no coincide con ningún dominio, se busca el cliente por nombre
@@ -344,20 +354,25 @@ function erroresResumen() {
     const porWeb = new Map();
     const sinDominio = [];
     for (const c of [...clients, ...completados, ...mantenimiento]) {
-        const nombre = c.nombre || c.proyecto || "";
+        const { nombre, persona, tieneEmpresa } = erroresNombreCliente(c);
         const dom = erroresDominio(c.dominio || c.web || c.url);
         if (!dom) {
             const claves = [...new Set([erroresNorm(c.nombre), erroresNorm(c.proyecto)])].filter(k => k.length >= 4);
-            if (claves.length) sinDominio.push({ nombre, claves });
+            if (claves.length) sinDominio.push({ nombre, persona, tieneEmpresa, claves });
             continue;
         }
-        if (porWeb.has(dom)) continue;
-        porWeb.set(dom, { id: dom, nombre: nombre || dom, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
+        if (porWeb.has(dom)) {
+            const actual = porWeb.get(dom);
+            if (tieneEmpresa && !actual.tieneEmpresa) Object.assign(actual, { nombre, persona, tieneEmpresa });
+            continue;
+        }
+        porWeb.set(dom, { id: dom, nombre: nombre || dom, persona, tieneEmpresa, dominio: dom, esCliente: true, senal: null, grupos: new Map() });
     }
     const clientePorNombre = (host) => {
         const label = erroresNorm(host.replace(/^www\./, "").split(".")[0]);
         if (!label) return null;
-        return sinDominio.find(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k)))) || null;
+        const coincidencias = sinDominio.filter(x => x.claves.some(k => label === k || (k.length >= 6 && label.includes(k))));
+        return coincidencias.find(x => x.tieneEmpresa) || coincidencias[0] || null;
     };
     // A qué web pertenece un host que avisó: el dominio de un cliente (o un subdominio), un cliente
     // que coincide por nombre, o él mismo.
@@ -365,7 +380,7 @@ function erroresResumen() {
         for (const dom of porWeb.keys()) if (host === dom || host.endsWith("." + dom)) return dom;
         if (!porWeb.has(host)) {
             const c = clientePorNombre(host);
-            porWeb.set(host, { id: host, nombre: c ? c.nombre : host, dominio: host, esCliente: !!c, senal: null, grupos: new Map() });
+            porWeb.set(host, { id: host, nombre: c ? c.nombre : host, persona: c?.persona || "", dominio: host, esCliente: !!c, senal: null, grupos: new Map() });
         }
         return host;
     };
@@ -451,7 +466,7 @@ function erroresHtmlWeb(w) {
       '<div class="err-head">' +
         '<button type="button" class="err-toggle" data-err-toggle aria-expanded="' + abierto + '">' +
           '<span class="err-dot" aria-hidden="true"></span>' +
-          '<span class="err-nombre">' + escapeHtml(w.nombre) + (w.dominio && w.dominio !== w.nombre ? ' <small>' + escapeHtml(w.dominio) + '</small>' : "") + '</span>' +
+          '<span class="err-nombre">' + escapeHtml(w.nombre) + (w.persona ? ' <small>· ' + escapeHtml(w.persona) + '</small>' : "") + (w.dominio && w.dominio !== w.nombre ? ' <small>· ' + escapeHtml(w.dominio) + '</small>' : "") + '</span>' +
           '<span class="err-estado">' + escapeHtml(titulo) + (nota ? ' <small>· ' + nota + '</small>' : "") +
             (w.menores ? ' <small>· ' + w.menores + (w.menores === 1 ? " aviso menor" : " avisos menores") + '</small>' : "") + '</span>' +
         '</button>' +
@@ -2605,9 +2620,9 @@ function _segRow(c) {
             <td>${escapeHtml(c.nombre)}<span class="seg-tipo ${_tipoSeguimiento(c)}">${_tipoSeguimiento(c) === "interesados" ? "Interesado" : "Demo presentada"}</span></td>
             <td class="col-proyecto" title="${escapeHtml(c.proyecto)}">${escapeHtml(c.proyecto)}</td>
             <td class="col-telefono">${phoneDisplay}${_botonVerChat(c)}</td>
-            <td>
-                <div>${escapeHtml(plan.label || "Plan sin definir")}</div>
-                <div class="muted" style="font-size:12px;white-space:nowrap">${_planMontosTexto(plan)}</div>
+            <td class="seg-plan-col" title="${escapeHtml(_planMontosTexto(plan))}">
+                <div>${escapeHtml(plan.label || "Sin definir")}</div>
+                ${plan.modalidad ? `<div class="seg-plan-precio muted">${escapeHtml(_planMontosTexto(plan))}</div>` : ""}
             </td>
             <td class="center">
                 <select class="inline-status-select ${estado}" data-status-id="${c.id}">
