@@ -852,6 +852,10 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
                                  array_values($valores), array_values($valoresBoton));
     if (!$ok) return false;
 
+    // Toda plantilla abre una conversación que continúa Pablo. Hacerlo acá
+    // evita que un envío nuevo olvide apagar el bot en este chat.
+    wabot_conv_tomar_control($conv);
+
     $texto = (string)($p['texto'] ?? '');
     foreach (array_merge($valores, $valoresBoton) as $campo => $v) {
         $texto = str_replace('{' . $campo . '}', $v, $texto);
@@ -5164,7 +5168,6 @@ function wabot_template_72h_enviar(&$conv, $cfg) {
     if (empty($conv['presentado_ts'])) return 'sin_demo';
     if (!empty($conv['confirmacion_demo_enviada'])) return 'ya';
     if (!wabot_enviar_plantilla($conv, 'confirmacion_demo_48h', $cfg)) return 'error';
-    wabot_conv_tomar_control($conv);
     $conv['confirmacion_demo_enviada'] = true;
     $conv['confirmacion_demo_ts'] = time();
     return 'ok';
@@ -5176,7 +5179,6 @@ function wabot_template_interesado_enviar(&$conv, $cfg, $permitirSinFavorito = f
     if (!$permitirSinFavorito && empty($conv['favorito'])) return 'no_interesado';
     if (!empty($conv['seguimiento_interesado_enviado'])) return 'ya';
     if (!wabot_enviar_plantilla($conv, 'seguimiento_interesado', $cfg)) return 'error';
-    wabot_conv_tomar_control($conv);
     $conv['seguimiento_interesado_enviado'] = true;
     $conv['seguimiento_interesado_ts'] = time();
     return 'ok';

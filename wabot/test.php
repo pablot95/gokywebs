@@ -3852,6 +3852,8 @@ $GLOBALS['WABOT_TEST_PLANTILLAS'] = [];
 $convPlant = ['tel' => '5491100000000', 'channel_user_id' => '5491100000000', 'canal' => 'whatsapp',
               'nombre' => 'Yesica', 'presentado_slug' => 'yfprevencion', 'transcript' => []];
 caso('manda la plantilla', wabot_enviar_plantilla($convPlant, 'confirmacion_demo_48h', $cfgPlant) === true);
+caso('cualquier plantilla enviada deja el bot apagado y bajo control manual',
+    !empty($convPlant['bot_off']) && !empty($convPlant['control_manual']));
 $envio = $GLOBALS['WABOT_TEST_PLANTILLAS'][0] ?? null;
 caso('con el nombre y el idioma correctos', $envio[1] === 'seguimiento_demo_72h' && $envio[2] === 'es_AR');
 caso('confirmacion_demo_48h es texto fijo: sin variables de nombre ni botón',
@@ -3937,11 +3939,12 @@ $convInteresado = ['tel' => '5491100000074', 'channel_user_id' => '5491100000074
                    'favorito' => true, 'transcript' => []];
 caso('la de interesado sale con la estrella puesta',
     wabot_template_interesado_enviar($convInteresado, $cfgFabrica) === 'ok'
-    && !empty($convInteresado['seguimiento_interesado_enviado']));
+    && !empty($convInteresado['seguimiento_interesado_enviado'])
+    && !empty($convInteresado['bot_off']) && !empty($convInteresado['control_manual']));
 caso('y queda en el chat tal como la aprobó Meta (Pablo, 26-sep: no aparecía)',
     count($convInteresado['transcript']) === 1 && $convInteresado['transcript'][0]['t'] === 'Hola, cómo estás?');
 
-$convSeguimientoManual = ['tel' => '5491100000075', 'channel_user_id' => '5491100000075', 'canal' => 'whatsapp',
+$convSeguimientoManual = ['tel' => 'QATESTPLANTILLAOFF', 'channel_user_id' => 'QATESTPLANTILLAOFF', 'canal' => 'whatsapp',
                           'favorito' => false, 'ultimo_cliente_ts' => time() - 8 * 86400, 'transcript' => []];
 $cfgAutoInteresado = $cfgFabrica;
 $cfgAutoInteresado['activo'] = true;
@@ -3951,11 +3954,22 @@ caso('sin estrella la plantilla de interesado no sale por la acción habitual',
     wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica) === 'no_interesado');
 caso('desde Seguimientos se puede enviar manualmente sin marcar favorito',
     wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica, true) === 'ok'
-    && !empty($convSeguimientoManual['seguimiento_interesado_enviado']));
+    && !empty($convSeguimientoManual['seguimiento_interesado_enviado'])
+    && !empty($convSeguimientoManual['bot_off']) && !empty($convSeguimientoManual['control_manual']));
 caso('el envío manual no habilita el cron para ese chat',
     wabot_seguimiento_interesado_corresponde($convSeguimientoManual, $cfgAutoInteresado) === false);
 caso('el botón no repite la misma plantilla',
     wabot_template_interesado_enviar($convSeguimientoManual, $cfgFabrica, true) === 'ya');
+caso('apagado y control manual sobreviven al guardado de la conversación',
+    wabot_conv_save($convSeguimientoManual)
+    && !empty(wabot_conv_load('QATESTPLANTILLAOFF')['bot_off'])
+    && !empty(wabot_conv_load('QATESTPLANTILLAOFF')['control_manual']));
+$convSeguimientoViejo = wabot_conv_load('QATESTPLANTILLAOFF');
+$convSeguimientoViejo['ultimo_ts'] = time() - 30 * 86400;
+wabot_conv_reset_si_vieja($convSeguimientoViejo, $cfgFabrica);
+caso('el reinicio por antigüedad tampoco enciende el bot después de la plantilla',
+    !empty($convSeguimientoViejo['bot_off']) && !empty($convSeguimientoViejo['control_manual']));
+@unlink(wabot_conv_path('QATESTPLANTILLAOFF'));
 
 echo "\n— La presentación de la demo cambia según el tipo de web (Pablo, 6-sep) —\n";
 

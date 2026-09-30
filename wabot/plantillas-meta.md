@@ -61,9 +61,12 @@ invisible.
 
 ## Qué pasa después
 
+- Después de enviar cualquier plantilla, el bot queda apagado en esa
+  conversación y Pablo toma el control. Solo el botón «Encender bot acá» puede
+  devolverle el control.
 - **Se paga por mensaje.** Las de Marketing tienen costo por envío; el texto
   libre dentro de las 24 h es gratis.
-- Cuando el cliente contesta, **reabre la ventana de 24 h** y el bot vuelve a
-  poder escribirle normalmente.
+- Cuando el cliente contesta, **reabre la ventana de 24 h** para escribirle
+  texto libre. El bot sigue apagado hasta que Pablo lo encienda en ese chat.
 - No mandar la misma plantilla dos veces al mismo cliente: Meta mide quejas y
   bloqueos y puede limitar el número.
