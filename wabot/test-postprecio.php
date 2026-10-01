@@ -232,6 +232,48 @@ foreach (['unico' => 'anual', 'propia' => 'pago único'] as $interno => $comerci
     $contenido = $GLOBALS['PP_PEDIDOS'][0]['input'][0]['content'] ?? '';
     caso("Sol recibe la modalidad comercial $comercial y no su nombre interno", str_contains(json_encode($contenido, JSON_UNESCAPED_UNICODE), '\"modalidad\":\"' . $comercial . '\"'));
 }
+/* Dos webs (1-oct, Gustavo y Sergio en la batería en vivo): "ok" y "si, armalo"
+ * derivaban en silencio por "cotización especial" antes de mirar el sí, y el que
+ * aceptó la muestra nunca recibía el formulario. */
+foreach (['si, armalo', 'Sí dale', 'si', 'Dale', 'mandame el formulario'] as $si) {
+    $c = pp_conv('landing', ['dos_webs' => ['landing', 'ecommerce']]); pp_api(pp_decision(['precio']));
+    $r = turno($si, $c, $cfg);
+    caso("dos webs: \"$si\" a la oferta manda el formulario", tiene_form($r) && !empty($c['link_form_enviado']) && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
+}
+$c = pp_conv('landing', ['dos_webs' => ['landing', 'ecommerce']]); pp_api(pp_decision(['precio']));
+$r = turno('ok', $c, $cfg);
+caso('dos webs: un acuse es silencio sin apagar el bot', $r === [] && empty($c['control_manual']) && empty($c['bot_off']) && $GLOBALS['PP_PEDIDOS'] === []);
+$r = turno('como se paga?', $c, $cfg);
+caso('dos webs: una pregunta sigue yendo a Pablo sin consultar al modelo (las reglas cotizan un solo tipo)', pp_silencio($c, $r) && $GLOBALS['PP_PEDIDOS'] === []);
+$c = pp_conv('landing'); $c['precio_modelo'] = 'doble'; pp_api(pp_decision(['precio']));
+$r = turno('si', $c, $cfg);
+caso('cotización vieja (modelo doble): el sí también manda el formulario', tiene_form($r) && empty($c['control_manual']));
+$r = turno('y como se paga?', $c, $cfg);
+caso('cotización vieja: lo demás sigue siendo para Pablo', pp_silencio($c, $r));
+$c = pp_conv(); pp_api(pp_decision(['precio']));
+$r = turno('si quiero', $c, $cfg);
+caso('"si quiero" a la oferta es un sí sin pasar por el modelo', tiene_form($r) && $GLOBALS['PP_PEDIDOS'] === []);
+// El sí con palabras extra (21-sep, ~20 charlas sin link): arranca con sí, no pregunta, no posterga.
+foreach (['Si te paso el logo', 'Sisi es sin compromiso si', 'Si si me interesa', 'Dale si me interesa un primer diseño para ver como seria', 'Sisi kiero que lo armen'] as $si) {
+    $c = pp_conv(); pp_api(pp_decision(['precio']));
+    $r = turno($si, $c, $cfg);
+    caso("\"$si\" manda el formulario sin consultar al modelo", tiene_form($r) && !empty($c['link_form_enviado']) && $GLOBALS['PP_PEDIDOS'] === []);
+}
+foreach (['si yo ya tengo pagina', 'si pero cuanto sale el dominio?', 'Si podrian por favor?', 'Si si me interesa y puedo pagar por mes', 'si, lo veo con mi socio y te aviso'] as $dudoso) {
+    $c = pp_conv(); pp_api(pp_decision(['postergar']));
+    $r = turno($dudoso, $c, $cfg);
+    caso("\"$dudoso\" no es un sí automático: lo decide el modelo", empty($c['link_form_enviado']) && $GLOBALS['PP_PEDIDOS'] !== []);
+}
+$c = pp_conv(); pp_api(pp_decision(['postergar']));
+$r = turno('si, pero me gustaría hablar con una persona', $c, $cfg);
+caso('"si, pero quiero hablar con una persona" no manda el formulario: va a Pablo', empty($c['link_form_enviado']) && pp_silencio($c, $r));
+$c = pp_conv(); pp_api(['accion' => 'esperar', 'reglas' => [], 'consultas' => [], 'cobertura_completa' => true, 'no_cubierto' => [], 'modelo' => 'ninguno', 'motivo' => 'Acuse']);
+$r = turno('bueno te paso el logo después', $c, $cfg);
+caso('esperar con la oferta abierta y sin formulario queda pendiente para Pablo', $r === [] && !empty($c['handoff_pendiente']) && empty($c['control_manual']));
+$c = pp_conv('ecommerce', ['link_form_enviado' => true, 'oferta_diseno_ts' => 0]); pp_api(['accion' => 'esperar', 'reglas' => [], 'consultas' => [], 'cobertura_completa' => true, 'no_cubierto' => [], 'modelo' => 'ninguno', 'motivo' => 'Acuse']);
+$r = turno('bueno después lo completo', $c, $cfg);
+caso('esperar con el formulario ya mandado no marca nada', $r === [] && empty($c['handoff_pendiente']));
+
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'shadow';
 $c = pp_conv(); pp_api(pp_decision(['demo_aceptar']));
 $r = turno('Dale', $c, $cfg);

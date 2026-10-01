@@ -263,7 +263,15 @@ $idxPrevio = @file_get_contents($idxPath);
 file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(), ['K7' => $claveIg])));
 $datosIg = wabot_form_lead_validar(['c' => 'K7', 't' => '1123456789', 'nombre' => 'Ana', 'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
 caso('la charla sigue siendo la de Instagram, no el teléfono', is_array($datosIg) && $datosIg['clave'] === $claveIg);
-caso('y el WhatsApp tipeado queda como dato aparte', is_array($datosIg) && $datosIg['telWsp'] === '1123456789');
+caso('y el WhatsApp tipeado queda como dato aparte, normalizado con el 549 (1-oct)', is_array($datosIg) && $datosIg['telWsp'] === '5491123456789');
+/* Las demos de La Rústica, Alma home y Noemi "salieron" a +3541239349 y WhatsApp
+ * no las entregó: el número iba tal cual lo tipeó el cliente (14 al 18-sep). */
+foreach (['3541239349', '+54 9 3541 23-9349', '0354115239349', '5493541239349'] as $tipeado) {
+    $d = wabot_form_lead_validar(['c' => 'K7', 't' => $tipeado, 'nombre' => 'Ana', 'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño', 'colores' => 'verde']);
+    caso("\"$tipeado\" queda como 5493541239349", is_array($d) && $d['telWsp'] === '5493541239349');
+}
+$dExt = wabot_form_lead_validar(['c' => 'K7', 't' => '+57 300 1234567', 'nombre' => 'Ana', 'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño', 'colores' => 'verde']);
+caso('un número de otro país se acepta como vino', is_array($dExt) && $dExt['telWsp'] === '573001234567');
 caso('sin WhatsApp no se acepta: el boceto llegaría sin destinatario',
     wabot_form_lead_validar(['c' => 'K7', 'nombre' => 'Ana', 'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']) === null);
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
@@ -277,12 +285,12 @@ caso('el mismo número escrito sin el 549 no abre otra conversación', is_array(
 caso('y no se guarda como WhatsApp aparte', is_array($datosWsp) && $datosWsp['telWsp'] === '');
 $datosCorr = wabot_form_lead_validar(array_merge($mismoNumero, ['t' => '3814002001']));
 caso('un número de OTRO abonado sigue siendo una corrección, no una clave nueva',
-    is_array($datosCorr) && $datosCorr['clave'] === $claveWsp && $datosCorr['telWsp'] === '3814002001');
+    is_array($datosCorr) && $datosCorr['clave'] === $claveWsp && $datosCorr['telWsp'] === '5493814002001');
 if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
 
 @unlink(WABOT_DATA . '/conv/5493810004001.json');
-caso('sin código y sin charla previa, la clave es lo que tipeó',
-    (wabot_form_lead_validar(['t' => '3810004001', 'nombre' => 'Ana', 'nombre_negocio' => 'B', 'resumen' => 'C', 'colores' => 'D'])['clave'] ?? '') === '3810004001');
+caso('sin código y sin charla previa, la clave es lo que tipeó, con el 549 como la guarda Meta',
+    (wabot_form_lead_validar(['t' => '3810004001', 'nombre' => 'Ana', 'nombre_negocio' => 'B', 'resumen' => 'C', 'colores' => 'D'])['clave'] ?? '') === '5493810004001');
 wabot_conv_save(wabot_conv_load('5493810004001'));
 caso('sin código pero con la charla ya abierta, cae en la charla',
     (wabot_form_lead_validar(['t' => '3810004001', 'nombre' => 'Ana', 'nombre_negocio' => 'B', 'resumen' => 'C', 'colores' => 'D'])['clave'] ?? '') === '5493810004001');
@@ -523,7 +531,7 @@ caso('en Instagram también hay código', $codIg !== '' && wabot_codigo_buscar($
 $datosIgPanel = wabot_form_lead_validar(['c' => $codIg, 't' => '1123456789', 'nombre' => 'Ana',
     'nombre_negocio' => 'Estudio', 'resumen' => 'Diseño de interiores', 'colores' => 'verde']);
 caso('y el envío queda atado a la charla de Instagram, con el WhatsApp aparte',
-    is_array($datosIgPanel) && $datosIgPanel['clave'] === 'ig17841400000000009' && $datosIgPanel['telWsp'] === '1123456789');
+    is_array($datosIgPanel) && $datosIgPanel['clave'] === 'ig17841400000000009' && $datosIgPanel['telWsp'] === '5491123456789');
 /* Lo que pasaba antes: el mismo formulario sin código desde Instagram no tiene
  * con qué encontrar la charla y abre una nueva por el teléfono tipeado. */
 $datosSinCodigo = wabot_form_lead_validar(['t' => '1123456789', 'nombre' => 'Ana',
@@ -717,5 +725,83 @@ caso('el boceto ya no dice "Prospecto · eligió avanzar": muestra el Instagram 
     strpos($dashIg, 'Prospecto · eligió avanzar') === false && strpos($dashIg, 'instagramLinkHTML(p.instagram)') !== false
     && strpos($dashIg, 'target="_blank" rel="noopener noreferrer" class="prop-instagram"') !== false);
 caso('y el Copiar lo lleva como link', strpos($dashIg, '{ title: "Instagram", value: instagramUrl(p.instagram) }') !== false);
+
+echo "— 18. Form nuevo cuando la ficha de antes ya no existe (1-oct, Psicoenlace) —\n";
+
+/* Lía completó el form el 17-sep; Pablo pasó la ficha a Seguimiento (Firestore la
+ * borra) y el 30-sep escribió por WhatsApp desde otro formato de número: su charla
+ * adoptó a la hermana con lead_creado + lead_doc de la ficha borrada, y el form
+ * nuevo no creó ninguna ficha ni dejó la línea "[Formulario web]". */
+function par_con_ficha($corta, $larga) {
+    @unlink(WABOT_DATA . "/conv/$corta.json"); @unlink(WABOT_DATA . "/conv/$larga.json");
+    $vieja = wabot_conv_load($corta);
+    $vieja['nombre'] = 'Lia'; $vieja['nombre_negocio'] = 'Psicoenlace'; $vieja['descripcion'] = 'Ebooks y cursos en PDF';
+    $vieja['colores'] = 'lila'; $vieja['form_completado_ts'] = time() - 86400 * 13;
+    $vieja['lead_creado'] = true;
+    $vieja['lead_doc'] = 'projects/demo/databases/(default)/documents/propuestas/FICHAVIEJA';
+    $vieja['brief'] = ['marca' => 'Psicoenlace', 'negocio' => 'Resumen del primer envío', 'ofrece' => 'Ebooks', 'objetivo' => '', 'referencia' => ''];
+    wabot_conv_save($vieja);
+    $wsp = wabot_conv_load($larga);
+    wabot_conv_transcript($wsp, 'cliente', 'Hola! si quisiera un poquito mas de información y costos');
+    $wsp['ultimo_cliente_ts'] = time();
+    return $wsp;
+}
+$GLOBALS['WABOT_TEST_RESUMEN'] = function () {
+    return ['marca' => 'Psicoenlace', 'negocio' => 'Resumen del form nuevo', 'ofrece' => 'Cursos online', 'objetivo' => '', 'referencia' => ''];
+};
+$idxPath = wabot_codigo_indice_path();
+$idxPrevio = @file_get_contents($idxPath);
+file_put_contents($idxPath, json_encode(array_merge(wabot_codigo_indice_leer(), ['M4' => '5493810007001', 'M5' => '5493810007002'])));
+$payloadLia = ['c' => 'M4', 't' => '3810007001', 'nombre' => 'Lia Gamarra', 'nombre_negocio' => 'Psicoenlace',
+    'resumen' => 'Herramientas digitales para psicologos, psicopedagogos.', 'colores' => 'Color principal: #ff00ff'];
+
+$wspLia = par_con_ficha('3810007001', '5493810007001');
+caso('la charla de WhatsApp adopta a su hermana con la ficha de antes',
+    wabot_conv_adoptar_hermana($wspLia, $cfg) === true && !empty($wspLia['lead_creado'])
+    && ($wspLia['lead_doc'] ?? '') === 'projects/demo/databases/(default)/documents/propuestas/FICHAVIEJA');
+wabot_conv_save($wspLia);
+
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = true;
+caso('la ficha que la charla dice tener ya no está', wabot_lead_doc_existe($wspLia) === false);
+$rLia = wabot_form_lead_procesar($payloadLia, $cfg);
+$convLia = wabot_conv_load('5493810007001');
+$lineasLia = array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convLia['transcript'] ?? []));
+$formLia = array_values(array_filter($lineasLia, function ($t) { return strpos($t, '[Formulario web] Nombre: Lia Gamarra') === 0; }));
+caso('el form nuevo se acepta y aplica los datos nuevos',
+    ($rLia['ok'] ?? false) === true && $convLia['nombre'] === 'Lia Gamarra' && $convLia['colores'] === 'Color principal: #ff00ff');
+caso('como la ficha no estaba, se crea de nuevo', !empty($convLia['lead_creado']) && (int)($convLia['lead_recreado_ts'] ?? 0) > 0);
+caso('y el brief es el del envío nuevo, no el de antes', ($convLia['brief']['negocio'] ?? '') === 'Resumen del form nuevo', json_encode($convLia['brief'] ?? null, JSON_UNESCAPED_UNICODE));
+caso('el transcript anota el form aunque la charla ya traía form_completado_ts', count($formLia) === 1, implode(' | ', $lineasLia));
+
+// Con la ficha ya creada de nuevo (el lead_doc apunta a la nueva), el reintento no la repite.
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = false;
+$recreadoTs = (int)$convLia['lead_recreado_ts'];
+$rLia2 = wabot_form_lead_procesar($payloadLia, $cfg);
+$convLia2 = wabot_conv_load('5493810007001');
+$formLia2 = array_filter(array_map(function ($l) { return (string)($l['t'] ?? ''); }, (array)($convLia2['transcript'] ?? [])),
+    function ($t) { return strpos($t, '[Formulario web] Nombre: Lia Gamarra') === 0; });
+caso('el mismo envío otra vez (reintento) no recrea la ficha ni repite la línea',
+    ($rLia2['ok'] ?? false) === true && (int)($convLia2['lead_recreado_ts'] ?? 0) === $recreadoTs && count($formLia2) === 1);
+
+// Contraste: con la ficha viva, el form nuevo la deja como está.
+$wspViva = par_con_ficha('3810007002', '5493810007002');
+wabot_conv_adoptar_hermana($wspViva, $cfg);
+wabot_conv_save($wspViva);
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = false;
+caso('con la ficha viva, la charla la sigue teniendo', wabot_lead_doc_existe($wspViva) === true);
+$rViva = wabot_form_lead_procesar(array_merge($payloadLia, ['c' => 'M5', 't' => '3810007002']), $cfg);
+$convViva = wabot_conv_load('5493810007002');
+caso('con la ficha viva NO se crea otra (no se duplica el lead)', ($rViva['ok'] ?? false) === true && empty($convViva['lead_recreado_ts']));
+caso('...ni se toca su brief', ($convViva['brief']['negocio'] ?? '') === 'Resumen del primer envío');
+caso('...pero el form igual queda anotado en el transcript',
+    strpos(json_encode($convViva['transcript'], JSON_UNESCAPED_UNICODE), '[Formulario web] Nombre: Lia Gamarra') !== false);
+
+// Charla vieja sin lead_doc (de antes de que se guardara): no hay forma de saber, así que no se recrea.
+$GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'] = true;
+caso('sin lead_doc no se puede saber: se la da por existente', wabot_lead_doc_existe(['conversation_key' => '5493810007003', 'lead_creado' => true]) === true);
+
+foreach (['3810007001', '5493810007001', '3810007002', '5493810007002'] as $k) @unlink(WABOT_DATA . "/conv/$k.json");
+if ($idxPrevio !== false) file_put_contents($idxPath, $idxPrevio); else @unlink($idxPath);
+unset($GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO'], $GLOBALS['WABOT_TEST_RESUMEN']);
 
 todo_ok();

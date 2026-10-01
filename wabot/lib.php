@@ -5478,7 +5478,14 @@ function wabot_form_lead_validar($payload, &$motivo = null) {
     // telefono que el cliente tipea, que el form manda SIEMPRE (el campo se
     // oculta, no se vacia: puede venir de un borrador o de "Corregir").
     $codigo = wabot_codigo_normalizar($payload['c'] ?? '');
-    $telTipeado = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
+    /* El número se guarda como lo entrega Meta (549 + área + abonado). Tipeado
+     * como lo dice el cliente ("1134991360") quedaba así en telefono_wsp y la
+     * demo "salía" a +1134991360: WhatsApp no la entregaba y en el panel
+     * figuraba enviada (7 charlas del 14 al 18-sep; La Rústica, Alma home y
+     * Noemi lo confirmaron el 27 y el 30-sep: "la demo nunca fue entregada").
+     * Lo que no es un celular argentino (otro país) queda como vino. */
+    $telCrudo = preg_replace('/\D+/', '', (string)($payload['t'] ?? ''));
+    $telTipeado = wabot_extraer_celular((string)($payload['t'] ?? '')) ?? $telCrudo;
     $telValido = strlen($telTipeado) >= 10 && strlen($telTipeado) <= 15;
     // La charla que el codigo señala, tal cual: una de Instagram se guarda como
     // ig<IGSID> y tiene letras. Antes se le sacaban los no-dígitos y quedaba un
@@ -5627,16 +5634,33 @@ function wabot_form_lead_procesar($payload, $cfg) {
     if (!$soloCompletar || trim((string)($conv['descripcion'] ?? '')) === '') $conv['descripcion'] = $resumen;
     if (!$soloCompletar || trim((string)($conv['colores'] ?? '')) === '') $conv['colores'] = $colores;
 
-    if (empty($conv['form_completado_ts'])) {
-        /* El número corregido va en la línea del transcript porque en una charla
-         * de WhatsApp el panel muestra el del chat, no el telefono_wsp: sin esto
-         * la corrección quedaba guardada donde nadie la ve. */
-        $lineaWsp = $telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : '';
-        wabot_conv_transcript($conv, 'sistema',
-            "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}{$lineaWsp}");
+    /* El número corregido va en la línea del transcript porque en una charla
+     * de WhatsApp el panel muestra el del chat, no el telefono_wsp: sin esto
+     * la corrección quedaba guardada donde nadie la ve.
+     * Se anota en cada envío que se aplica, no solo en el primero (1-oct): una
+     * charla que adoptó a su hermana ya trae form_completado_ts y el form nuevo
+     * de Psicoenlace llegó sin dejar ni una línea. El reintento por "charla
+     * ocupada" trae lo mismo y no se anota dos veces. */
+    $lineaWsp = $telWsp !== '' ? " · WhatsApp que dejó: {$telWsp}" : '';
+    $lineaForm = "[Formulario web] Nombre: {$nombre} · Negocio: {$nombreNegocio} · Resumen: {$resumen} · Colores: {$colores}{$lineaWsp}";
+    $yaAnotada = false;
+    foreach (array_slice((array)($conv['transcript'] ?? []), -15) as $fila) {
+        if (($fila['q'] ?? '') === 'sistema' && ($fila['t'] ?? '') === $lineaForm) { $yaAnotada = true; break; }
     }
+    if (!$yaAnotada) wabot_conv_transcript($conv, 'sistema', $lineaForm);
     $conv['form_completado_ts'] = time();
     $conv['origen_prediseno'] = $conv['origen_prediseno'] ?: 'form';
+
+    /* La ficha que la charla dice tener puede haber dejado de existir: Pablo la
+     * borra al pasarla a Seguimiento, y la charla de WhatsApp que adopta a su
+     * hermana hereda lead_creado + lead_doc sin importar si el documento sigue
+     * (30-sep, Psicoenlace: completó el form de nuevo y no apareció ficha, porque
+     * "ya tenía una"). Es un form NUEVO con datos nuevos: se crea la ficha de
+     * nuevo, y el brief, que era del envío anterior, se rearma. Solo acá: los
+     * sincronizadores sueltos (logo, forma de pago…) siguen sin resucitar una
+     * ficha que Pablo ya procesó. */
+    $fichaPerdida = !empty($conv['lead_creado']) && !wabot_lead_doc_existe($conv);
+    if ($fichaPerdida) $conv['brief'] = null;
 
     if (!$huboChatReal && empty($conv['brief'])) {
         $conv['brief'] = [
@@ -5645,9 +5669,14 @@ function wabot_form_lead_procesar($payload, $cfg) {
         ];
     }
 
-    if (empty($conv['lead_creado'])) {
+    if (empty($conv['lead_creado']) || $fichaPerdida) {
+        if ($fichaPerdida) {
+            $conv['lead_recreado_ts'] = time();
+            wabot_log('lead_recreado', ['clave' => wabot_conversation_key($conv), 'doc_anterior' => (string)($conv['lead_doc'] ?? '')]);
+        }
         $conv['lead_creado'] = wabot_firestore_lead($conv, $cfg);
-        // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta.
+        // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta
+        // (una sola vez por charla: wabot_capi_evento lo recuerda).
         wabot_capi_evento($conv, 'Lead', $cfg);
     }
     if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])) {
@@ -5660,6 +5689,42 @@ function wabot_form_lead_procesar($payload, $cfg) {
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);
     return ['ok' => true];
+}
+
+/**
+ * ¿Sigue existiendo en Firestore la ficha (propuestas/…) que la charla dice tener?
+ *
+ * Las reglas no dejan leer `propuestas` sin login, así que se pregunta como lo
+ * hacen los sincronizadores: un PATCH de solo `updatedAt` que exige que el
+ * documento exista (lo único que escribe es la fecha de modificación). Existe →
+ * 2xx. Si Pablo ya la pasó a Seguimiento y se borró, la regla se evalúa sobre un
+ * documento que no está y Firestore contesta 403 —no el 404 que suponen los
+ * comentarios de los sincronizadores—; el 404 también cuenta como "no existe".
+ * Cualquier otra cosa (sin red, 5xx, charla sin lead_doc de antes de que se
+ * guardara) cuenta como "existe": ante la duda NO se duplica la ficha.
+ */
+function wabot_lead_doc_existe($conv) {
+    $doc = trim((string)($conv['lead_doc'] ?? ''));
+    if ($doc === '') return true;
+    if (!empty($GLOBALS['WABOT_TEST_SIN_RED']) || stripos(wabot_conversation_key($conv), 'TEST') !== false) {
+        return empty($GLOBALS['WABOT_TEST_LEAD_DOC_BORRADO']);
+    }
+    $url = 'https://firestore.googleapis.com/v1/' . $doc . '?key=' . WABOT_FIREBASE_API_KEY
+         . '&updateMask.fieldPaths=updatedAt&currentDocument.exists=true';
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [
+        CURLOPT_CUSTOMREQUEST => 'PATCH',
+        CURLOPT_POSTFIELDS => json_encode(['fields' => [
+            'updatedAt' => ['timestampValue' => gmdate('Y-m-d\TH:i:s\Z')],
+        ]]),
+        CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return !in_array($code, [403, 404], true);
 }
 
 function wabot_firestore_lead(&$conv, $cfg) {

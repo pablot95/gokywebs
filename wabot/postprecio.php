@@ -87,20 +87,44 @@ function wabot_postprecio_turno($texto, &$conv, $cfg) {
         || preg_match('/\b(me haces|me hacen|me harias|me harian|me das|me dan|me darias|hay algun)\b.{0,25}\bdescuento\b/u', $t)) {
         return wabot_postprecio_derivar($conv, 'Pago, excepción o asistencia personal');
     }
-    if (empty($conv['tipo']) || !isset($cfg['tipos'][$conv['tipo']]) || !empty($conv['dos_webs'])
-        || ($conv['precio_modelo'] ?? 'anual') !== 'anual') {
+    if (empty($conv['tipo']) || !isset($cfg['tipos'][$conv['tipo']])) {
         return wabot_postprecio_derivar($conv, 'Cotización especial o histórica: revisar condiciones');
     }
     // La afirmativa responde a la última pregunta real, no a una intención inventada.
     if (wabot_ia_proveedor_pedido($cfg) !== 'shadow'
-        && preg_match('/^(si+|si dale|dale|si por favor|por favor|armala|armalo|mandame el formulario|pasame el formulario)$/u', $t)
+        && preg_match('/^(si+|dale|si+ dale|dale si+|ok dale|si+ (armala|armalo|quiero|me interesa|por favor|porfa|claro|obvio)|si por favor|por favor|armala|armalo|(mandame|pasame) el (formulario|form|link))$/u', $t)
         && empty($conv['presentado_ts']) && empty($conv['form_completado_ts'])
         && (!empty($conv['oferta_diseno_ts']) || preg_match('/\b(formulario|muestra|demo|diseno)\b/u', $t))) {
         return wabot_postprecio_aplicar(['accion' => 'responder', 'reglas' => ['demo_aceptar'],
             'consultas' => [['texto' => (string)$texto, 'reglas' => ['demo_aceptar']]],
             'cobertura_completa' => true, 'no_cubierto' => [], 'modelo' => 'ninguno', 'motivo' => 'Aceptó la muestra ofrecida'], $texto, $conv, $cfg);
     }
+    /* "Si te paso el logo", "Sisi es sin compromiso si", "Si si me interesa y
+     * puedo pagar por mes": un sí que arranca la frase, no pregunta nada y no
+     * posterga es un sí a la oferta abierta (21-sep, ~20 charlas que se quedaron
+     * sin el link hasta que Pablo lo pegó a mano; sonda del 1-oct). Lo dudoso
+     * sigue yendo al modelo. */
+    if (wabot_ia_proveedor_pedido($cfg) !== 'shadow' && !empty($conv['oferta_diseno_ts'])
+        && empty($conv['presentado_ts']) && empty($conv['form_completado_ts']) && empty($conv['link_form_enviado'])
+        && preg_match('/^(si+|sisi+|dale)\b/u', $t)
+        // "para ver cómo sería" no pregunta nada: es el motivo del sí.
+        && !wabot_oferta_diseno_pregunta(preg_replace('/\b(ver|veo|verlo|verla|mirar)\s+c[oó]mo\s+(queda|quedar[ií]a|quedan|quedar[ií]an|ser[ií]a|sale|saldr[ií]a)\b/iu', ' ', (string)$texto))
+        && count(preg_split('/\s+/u', $t)) <= 14
+        && !preg_match('/\b(no|nop|todavia|aun no|mas adelante|pensar\w*|pienso|consult\w*|hablarlo|charlarlo|despues|luego|te aviso'
+            . '|te confirmo|caro|pero|aunque|primero|manana|mas tarde|otro dia|ya tengo|ya tenemos|hablar|llam\w+|persona|asesor)\b/u', $t)) {
+        return wabot_postprecio_aplicar(['accion' => 'responder', 'reglas' => ['demo_aceptar'],
+            'consultas' => [['texto' => (string)$texto, 'reglas' => ['demo_aceptar']]],
+            'cobertura_completa' => true, 'no_cubierto' => [], 'modelo' => 'ninguno', 'motivo' => 'Aceptó la muestra ofrecida'], $texto, $conv, $cfg);
+    }
     if (wabot_es_acuse($texto) && !wabot_oferta_diseno_pregunta($texto)) return [];
+    /* Dos webs o una cotización vieja (modelo 'doble', 15 al 18-sep): las reglas
+     * del catálogo responden con el precio de UN tipo, así que lo demás lo ve
+     * Pablo. Va DESPUÉS del sí y del acuse (1-oct): antes cualquier mensaje,
+     * incluido "si, armalo" a la oferta del primer diseño, derivaba en silencio
+     * y el cliente que dijo que sí nunca recibía el formulario. */
+    if (!empty($conv['dos_webs']) || ($conv['precio_modelo'] ?? 'anual') !== 'anual') {
+        return wabot_postprecio_derivar($conv, 'Cotización especial o histórica: revisar condiciones');
+    }
     // Falla de IA en esta etapa nunca vuelve al motor que improvisaba respuestas.
     $modo = wabot_ia_proveedor_pedido($cfg);
     if (!in_array($modo, ['openai', 'shadow'], true)) return wabot_postprecio_derivar($conv, 'Habilitar OpenAI para esta etapa');
@@ -177,6 +201,11 @@ function wabot_postprecio_aplicar($d, $texto, &$conv, $cfg) {
     $reglas = array_values(array_unique((array)($d['reglas'] ?? [])));
     if (($d['accion'] ?? '') === 'esperar') {
         if ($reglas || wabot_oferta_diseno_pregunta($texto)) return wabot_postprecio_derivar($conv, 'Pregunta sin respuesta aprobada');
+        /* Con la oferta del diseño abierta y sin formulario, callarse deja al
+         * cliente esperando sin que nadie lo vea (1-oct): queda pendiente para Pablo. */
+        if (!empty($conv['oferta_diseno_ts']) && empty($conv['link_form_enviado']) && empty($conv['form_completado_ts']) && empty($conv['presentado_ts'])) {
+            $conv['handoff_pendiente'] = true;
+        }
         return [];
     }
     if (!$reglas || count($reglas) > 6 || array_diff($reglas, array_keys(wabot_postprecio_catalogo()))) {
