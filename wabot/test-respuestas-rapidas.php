@@ -38,8 +38,8 @@ $linkSitio = static fn($precio, $pagina) => 'Te mando el link de Mercado Pago pa
 $linkTienda = static fn($precio, $pagina) => 'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ('
     . $precio . ' por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/' . $pagina;
 // Los de hoy (26-sep a la noche): los planes de Mercado Pago de $25.000 y $35.000.
-$linkSitioHoy = $linkSitio('$25.000', 'mensual25');
-$linkTiendaHoy = $linkTienda('$35.000', 'mensual35');
+$linkSitioHoy = $linkSitio('$19.900', 'mensual19900');
+$linkTiendaHoy = $linkTienda('$29.900', 'mensual29900');
 
 /** Las cuatro de precio del 15/16-sep, tal cual venían de fábrica. */
 $preciosViejos = require __DIR__ . '/test-respuestas-rapidas-viejas.php';
@@ -320,7 +320,7 @@ caso('sitio profesional: la seña y el saldo del plan anual de lista',
 $congelada = ['tipo' => 'ecommerce', 'precio_cotizado' => '$190.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$30.000', 'precio_modelo' => 'anual'];
 $sinApuro = $visible($congelada, 'Sin apuro')[0];
 caso('tienda cotizada antes del test de precios: le sale su mensualidad y su plan anual',
-    mb_strpos($sinApuro, 'con el plan mensual son $30.000 por mes') !== false
+    mb_strpos($sinApuro, 'con el plan mensual son $29.900 por mes') !== false
     && mb_strpos($visible($congelada, 'Dudas de planes')[6], 'el anual es de $190.000') !== false, $sinApuro);
 $doble = ['tipo' => 'ecommerce', 'precio_cotizado' => '$290.000', 'sena_cotizada' => '$60.000', 'mensualidad_cotizada' => '$25.000', 'precio_modelo' => 'doble'];
 caso('cotizada con el pago único del 15 al 18-sep: el plan anual sale de lista, no de aquel pago único',
@@ -362,7 +362,7 @@ $antesNoche = [
     ]],
 ];
 $noche = wabot_respuestas_rapidas_precios_26sep_noche($antesNoche);
-$pagosNoche = rr_items($noche, 'Pagos');
+$pagosNoche = rr_items(wabot_respuestas_rapidas_precios_1oct($noche), 'Pagos');
 caso('los links del test de precios pasan a mensual25 y mensual35, con sus montos',
     ($pagosNoche[0] ?? '') === $linkSitioHoy && ($pagosNoche[1] ?? '') === $linkTiendaHoy, implode("\n", $pagosNoche));
 caso('un link que Pablo reescribió no se toca', in_array($linkEditado, $pagosNoche, true));
@@ -387,7 +387,7 @@ caso('los de fábrica traen los links de $25.000 y $35.000 y los textos con marc
     && in_array(WABOT_RR_ANUAL_SENA, rr_items($fabricaNoche, 'Presupuesto y planes'), true)
     && in_array(WABOT_RR_PAGO_UNICO, rr_items($fabricaNoche, 'Presupuesto y planes'), true)
     && wabot_respuestas_rapidas_precios_26sep_noche($fabricaNoche) === $fabricaNoche);
-foreach (['mensual25' => $T['landing']['mensualidad'], 'mensual35' => $T['ecommerce']['mensualidad']] as $pagina => $monto) {
+foreach (['mensual19900' => $T['landing']['mensualidad'], 'mensual29900' => $T['ecommerce']['mensualidad']] as $pagina => $monto) {
     $html = (string)@file_get_contents(__DIR__ . '/../pago/' . $pagina . '/index.html');
     caso("la página gokywebs.com/pago/$pagina existe y cobra $monto por mes, lo mismo que la lista",
         $html !== '' && mb_strpos($html, $monto . ' por mes') !== false);

@@ -12,6 +12,7 @@
  */
 
 require_once __DIR__ . '/engine.php';   // engine.php ya trae lib.php
+require_once __DIR__ . '/postprecio.php';
 
 /* ── Después del precio: una sola respuesta (Pablo, 18-sep) ──────────────────
  *
@@ -208,6 +209,14 @@ function wabot_responder($texto, &$conv, $cfg) {
      * ofrecen el formulario que ya completó— que es lo que le pasó a Natalia
      * el 3-sep. Ver wabot_conv_adoptar_hermana(). */
     wabot_conv_adoptar_hermana($conv, $cfg);
+
+    // Una intervención humana nunca vence por reloj ni por un mensaje nuevo.
+    if (!empty($conv['control_manual'])) return [];
+    $postprecio = wabot_postprecio_turno($texto, $conv, $cfg);
+    if ($postprecio !== null) {
+        $conv['ultimo_ts'] = time();
+        return $postprecio;
+    }
 
     // El reset pertenece al borde común, antes de actualizar ultimo_ts.
     wabot_turno_preparar($conv, $cfg, time());

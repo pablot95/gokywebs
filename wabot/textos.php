@@ -8,28 +8,16 @@
  * {cambios_mes}, {tabla_precios} y {mensualidades} los resuelve
  * wabot_precio_placeholders() desde `tipos`.
  *
- * Condiciones vigentes (Pablo, 26-sep a la noche): TRES MODALIDADES, en el
- * orden de las imágenes del precio (wabot/sitioprofesional.png y
- * wabot/tiendacursosinmo.png, esa noche con el anual primero) y desde el
- * 27-sep, con las imágenes de hoy (wabot/sitio-profesional-diseno-06.png y
- * wabot/cursostiendainmo.png): 1 plan mensual, 2 plan anual, 3 pago único.
- * - Plan mensual (`tipos[].mensualidad`): $25.000 el sitio profesional y
- *   $35.000 el resto, con los planes de Mercado Pago que ya existían
- *   (mpago.la/28VK7Ev y mpago.la/1hYAiTM). Sin pago inicial aparte, sin
- *   permanencia.
- * - Plan anual (`tipos[].precio`): $180.000 el sitio profesional y $250.000
- *   el resto. Sin suscripción: arranca con una seña (`tipos[].sena`), el resto
- *   se paga al entregar la web y después se cobra una vez por año, contado
- *   desde la seña. El monto de la seña se dice solo si lo preguntan.
- * - El mensual y el anual incluyen el mantenimiento: renovación de hosting y
- *   dominio, actualizaciones de SDK y plugins, arreglo de errores, soporte
- *   técnico, copia de seguridad y un cambio por mes. El plan con cambios ya no
- *   existe: sus montos, $25.000 y $35.000, son hoy el plan mensual.
- * - Pago único (`tipos[].precio_unico`): $240.000 el sitio profesional y
- *   $360.000 el resto. Arranca con la misma seña y el resto se paga al
- *   entregar; se puede pagar en cuotas con intereses. Incluye el hosting y el
- *   dominio el primer año; el mantenimiento NO va incluido: se contrata aparte
- *   por `tipos[].mantenimiento` ({mantenimiento_mes}).
+ * Condiciones vigentes (Pablo, 1-oct-2026): tres modalidades en texto,
+ * 1 mensual, 2 anual y 3 pago único. Las imágenes anteriores son históricas.
+ * - Mensual: $19.900 sitio profesional; $29.900 resto. Mercado Pago:
+ *   mpago.la/2nEoNGN y mpago.la/2CQLnCv. Sin pago inicial adicional.
+ * - Anual: $149.000 sitio profesional; $199.000 resto. Seña de $60.000,
+ *   saldo al entregar y renovación anual desde la seña.
+ * - Pago único: $199.000 sitio profesional; $299.000 resto. Misma seña,
+ *   saldo al entregar; hosting y dominio incluidos el primer año.
+ * - Mensual/anual incluyen mantenimiento y un cambio al mes. El mantenimiento
+ *   del pago único se contrata aparte por tipos[].mantenimiento.
  * - Las 3 incluyen la web completa: desarrollo, adaptada a celulares, panel
  *   para autogestionar contenido, SSL y preparada para Google.
  * - La propiedad del código SÍ se contesta (Pablo, 20-sep; el 19-sep el bot se
@@ -274,14 +262,17 @@ function wabot_textos_default() {
         'web_propia' => "Con el pago único{precio_web_propia}, pagás la web una sola vez: arrancás con una seña, el resto se paga al entregar y, cuando abonás el total, el código queda tuyo. Incluye el hosting y el dominio el primer año; si la querés en tu propio hosting desde el arranque, lo contratás vos.\nEl mantenimiento no va incluido: si querés, lo sumás por {mantenimiento_mes}, con las actualizaciones, el arreglo de errores y el soporte.",
     ],
     'leer_imagenes' => true,
-    // Los planes mensuales de hoy (26-sep a la noche); antes $30.000 / $40.000 (test de precios) y $20.000 / $30.000.
+    // Precios y atención posterior al precio aprobados el 1-oct-2026.
+    'postprecio_activo' => true,
+    'ia_proveedor' => 'openai',
+    'openai_modelo' => 'gpt-6-sol',
     'mantenimiento_planes' => [
         'landing' => [
-            'precio' => '$25.000',
+            'precio' => '$19.900',
             'link' => 'gokywebs.com/planmensual/sitioprofesional',
         ],
         'otros' => [
-            'precio' => '$35.000',
+            'precio' => '$29.900',
             'link' => 'gokywebs.com/planmensual/tienda',
         ],
     ],
@@ -451,8 +442,8 @@ function wabot_textos_default() {
     'tipos' => [
         'landing' => [
             'label' => 'Sitio profesional',
-            'precio' => '$180.000',
-            'precio_unico' => '$240.000',
+            'precio' => '$149.000',
+            'precio_unico' => '$199.000',
             'link' => 'gokywebs.com/presupuestos/sitioprofesional',
             'desc' => 'un sitio profesional completo',
             'reconocimiento_que' => 'tus servicios',
@@ -460,14 +451,14 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=sitioprofesional',
             'portfolio_texto' => 'otros sitios que ya entregamos',
-            'mensualidad' => '$25.000',
+            'mensualidad' => '$19.900',
             'mantenimiento' => '$10.000',
             'sena' => '$60.000',
         ],
         'ecommerce' => [
             'label' => 'Ecommerce',
-            'precio' => '$250.000',
-            'precio_unico' => '$360.000',
+            'precio' => '$199.000',
+            'precio_unico' => '$299.000',
             'link' => 'gokywebs.com/presupuestos/ecommerce',
             'desc' => 'una tienda online completa',
             'reconocimiento_que' => 'tus productos',
@@ -475,14 +466,14 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=ecommerce',
             'portfolio_texto' => 'otras tiendas online que ya entregamos',
-            'mensualidad' => '$35.000',
+            'mensualidad' => '$29.900',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
         'elearning' => [
             'label' => 'Plataforma de cursos',
-            'precio' => '$250.000',
-            'precio_unico' => '$360.000',
+            'precio' => '$199.000',
+            'precio_unico' => '$299.000',
             'link' => 'gokywebs.com/presupuestos/elearning',
             'desc' => 'una plataforma de cursos completa',
             'reconocimiento_que' => 'tus cursos',
@@ -490,14 +481,14 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=elearning',
             'portfolio_texto' => 'otras plataformas de cursos que ya entregamos',
-            'mensualidad' => '$35.000',
+            'mensualidad' => '$29.900',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],
         'inmobiliaria' => [
             'label' => 'Web inmobiliaria',
-            'precio' => '$250.000',
-            'precio_unico' => '$360.000',
+            'precio' => '$199.000',
+            'precio_unico' => '$299.000',
             'link' => 'gokywebs.com/presupuestos/inmobiliaria',
             'desc' => 'una web inmobiliaria completa',
             'reconocimiento_que' => 'tus propiedades',
@@ -505,7 +496,7 @@ function wabot_textos_default() {
             'precio_ideal' => '{para_quien} te podemos armar {propuesta}.',
             'portfolio' => 'gokywebs.com/portfolio/?tipo=inmobiliaria',
             'portfolio_texto' => 'otras webs de inmobiliarias que ya entregamos',
-            'mensualidad' => '$35.000',
+            'mensualidad' => '$29.900',
             'mantenimiento' => '$15.000',
             'sena' => '$60.000',
         ],

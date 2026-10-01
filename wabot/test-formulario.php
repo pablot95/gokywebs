@@ -13,6 +13,8 @@
 require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
+// Compatibilidad con el flujo anterior desactivado en Ajustes.
+$cfg['postprecio_activo'] = false;
 $cfg['form_activo'] = true;
 
 /** Charla recién cotizada: precio y tres pasos dados, esperando el sí. */
@@ -577,7 +579,7 @@ caso('y se lo avisa al panel, diciendo si el cliente nunca escribió',
 $dashPres = (string)@file_get_contents(__DIR__ . '/../admin/dashboard.js');
 caso('el admin lo explica en vez de decir que no pudo confirmar el envío',
     strpos($dashPres, 'envio.fuera_ventana') !== false
-    && strpos($dashPres, 'nunca escribió por WhatsApp') !== false);
+    && strpos($dashPres, 'todavía no escribió por WhatsApp') !== false);
 
 echo "— 15. Meta avisa que no entregó: el aviso va al chat de verdad (21-sep) —\n";
 

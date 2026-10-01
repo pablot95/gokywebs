@@ -428,6 +428,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
 
         // OpenAI (27-sep). La key NO se carga desde acá: vive en config/wabot-config.php.
         if (in_array($_POST['ia_proveedor'] ?? '', ['gemini', 'openai', 'shadow'], true)) $cfg['ia_proveedor'] = (string)$_POST['ia_proveedor'];
+        if (isset($_POST['postprecio_config_presente'])) $cfg['postprecio_activo'] = !empty($_POST['postprecio_activo']);
         $modeloOpenai = trim((string)($_POST['openai_modelo_otro'] ?? ''));
         if ($modeloOpenai === '') $modeloOpenai = trim((string)($_POST['openai_modelo_sugerido'] ?? ''));
         if (wabot_openai_modelo_valido($modeloOpenai)) $cfg['openai_modelo'] = $modeloOpenai;
@@ -569,39 +570,6 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $intro = trim((string)($cfg['form_link_panel'] ?? ''));
         if ($intro === '') $intro = 'Para armarte la primera muestra gratis, solo tenés que llenar el formulario:';
         echo json_encode(['ok' => true, 'link' => $link, 'codigo' => $codigo, 'mensaje' => $intro . "\n" . $link]);
-        exit;
-    }
-    /* Los botones "Imagen sitio profesional" e "Imagen tienda/cursos/inmo"
-     * (Pablo, 26-sep): la imagen de las 3 modalidades que mandaba el bot con
-     * el precio hasta el 29-sep (wabot_precio_imagen_archivo; tienda, cursos e
-     * inmobiliaria comparten la de 'ecommerce'). Una imagen no se puede dejar
-     * en el editor para revisarla, así que sale directo, con confirmación en
-     * el botón. Mismas reglas que "responder": la ventana de 24 h, y mandar a
-     * mano toma el control de la charla. Solo WhatsApp, como el bot. */
-    if ($a === 'enviar_imagen_precio' && !empty($_POST['tel'])) {
-        header('Content-Type: application/json; charset=utf-8');
-        $tipo = (string)($_POST['tipo'] ?? '');
-        $nombres = ['landing' => 'sitio profesional', 'ecommerce' => 'tienda, cursos o inmobiliaria'];
-        if (!isset($nombres[$tipo])) { echo json_encode(['error' => 'No sé qué imagen mandar.']); exit; }
-        $conv = wabot_conv_load($_POST['tel']);
-        if (wabot_canal($conv) !== 'whatsapp') {
-            echo json_encode(['error' => 'La imagen solo sale por WhatsApp. En Instagram mandá el precio en texto (respuestas rápidas → Precios).']);
-            exit;
-        }
-        if (wabot_ventana_restante($conv) <= 0) {
-            echo json_encode(['error' => 'Pasaron más de 24 horas desde su último mensaje: WhatsApp no deja responder hasta que el cliente vuelva a escribir.']);
-            exit;
-        }
-        if (!wabot_precio_imagen_enviar($conv, $tipo)) {
-            echo json_encode(['error' => 'WhatsApp rechazó la imagen. Revisá el log en wabot/data/log/.']);
-            exit;
-        }
-        wabot_conv_tomar_control($conv);
-        // Con el orden de la imagen y el archivo, como la que manda el bot (27-sep).
-        wabot_conv_transcript($conv, 'humano', wabot_precio_imagen_etiqueta($tipo, $nombres[$tipo]), wabot_precio_imagen_media($tipo));
-        wabot_conv_save($conv);
-        wabot_log('respuesta_panel', ['tel' => $conv['tel'], 'imagen_precio' => $tipo]);
-        echo json_encode(['ok' => true, 'bot_off' => true]);
         exit;
     }
     if ($a === 'responder' && !empty($_POST['tel'])) {
@@ -2260,7 +2228,7 @@ function burbujaCita(t, chat) {
                 <?php foreach ([
                     'gemini' => ['Gemini', 'Como hasta ahora: Gemini clasifica cada mensaje y el bot contesta con los textos fijos.'],
                     'shadow' => ['Prueba (shadow)', 'Contesta Gemini, como siempre, y OpenAI piensa en paralelo lo que habría contestado, sin mandarlo. Se compara en la pestaña IA.'],
-                    'openai' => ['OpenAI', 'OpenAI conversa con el cliente hasta el precio. Si OpenAI falla o se equivoca, ese mensaje lo contesta Gemini.'],
+                    'openai' => ['OpenAI', 'Conversa al inicio y responde consultas aprobadas después del precio. Lo nuevo queda para Pablo en silencio.'],
                 ] as $valorModo => [$tituloModo, $textoModo]): ?>
                     <label style="display:flex;gap:8px;align-items:flex-start;margin:0;cursor:pointer">
                         <input type="radio" name="ia_proveedor" value="<?= $valorModo ?>" <?= $iaPedido === $valorModo ? 'checked' : '' ?> style="width:auto;margin-top:3px">
@@ -2268,6 +2236,9 @@ function burbujaCita(t, chat) {
                     </label>
                 <?php endforeach; ?>
             </div>
+            <input type="hidden" name="postprecio_config_presente" value="1">
+            <label style="margin-top:12px"><input type="checkbox" name="postprecio_activo" value="1" <?= !empty($cfg['postprecio_activo']) ? 'checked' : '' ?> style="width:auto"> Responder consultas aprobadas después del precio y de la demo</label>
+            <p class="meta">Los pagos recibidos, las excepciones y los temas nuevos pasan a Pablo sin enviar un mensaje. El control manual se mantiene hasta que enciendas el bot en ese chat.</p>
             <p class="meta" style="margin-top:10px">Key de OpenAI:
                 <?= $hayKeyOpenai ? '<span style="color:var(--ac)">cargada</span>' : '<span style="color:var(--bad)">falta</span> — va en <code>config/wabot-config.php</code> como <code>WABOT_OPENAI_KEY</code> (o en la variable de entorno <code>OPENAI_API_KEY</code>). Nunca en el panel ni en el código.' ?>
             </p>
@@ -2491,6 +2462,7 @@ function burbujaCita(t, chat) {
                         <strong><?= $e(wabot_nombre_agenda($conv)) ?: 'Sin nombre' ?></strong>
                         <span class="canal-tag canal-tag--<?= wabot_canal($conv) === 'instagram' ? 'instagram' : 'whatsapp' ?>"><?= wabot_canal($conv) === 'instagram' ? 'IG' : 'WA' ?></span>
                         <span class="meta"><?php if (wabot_canal($conv) === 'instagram'): ?><?php if (!empty($conv['telefono_wsp'])): ?>WhatsApp: <button type="button" class="tel-copiar" data-tel="+<?= $e($conv['telefono_wsp']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['telefono_wsp'])) ?></button><?php else: ?>sin WhatsApp todavía<?php endif; ?><?php else: ?><button type="button" class="tel-copiar" data-tel="+<?= $e($conv['tel']) ?>" title="Copiar número"><?= $e(wabot_formatear_tel($conv['tel'])) ?></button><?php endif; ?> · fase: <?= $e($conv['fase']) ?></span>
+                        <?php if (!empty($conv['postprecio_derivacion'])): ?><span class="meta">Pendiente para Pablo: <?= $e($conv['postprecio_derivacion']) ?></span><?php elseif (!empty($conv['postprecio_reglas'])): ?><span class="meta">Respuesta aprobada: <?= $e(implode(', ', (array)$conv['postprecio_reglas'])) ?></span><?php endif; ?>
                         <?php $demoUrl = wabot_demo_url($conv); if ($demoUrl !== ''): ?><a class="conv-demo-link" href="<?= $e($demoUrl) ?>" target="_blank" rel="noopener noreferrer">Ver demo ↗</a><?php endif; ?>
                         <?php if (!empty($conv['esProspecto'])): ?><span class="pill pausa">Prospecto · eligió avanzar</span><?php endif; ?>
                         <?php // La ficha que armó el bot con lo que contó el cliente (18-sep).
@@ -2529,33 +2501,23 @@ function burbujaCita(t, chat) {
                                con el test de precios del 26-sep, sitio profesional pasó a $30.000
                                —reutiliza el link de Mercado Pago que antes era de tienda/cursos/
                                inmobiliaria— y ese grupo pasó a $40.000, con un link nuevo). */ ?>
-                        <?php /* Desde el 26-sep a la noche: $25.000 y $35.000 (pago/mensual25 y pago/mensual35). */ ?>
+                        <?php /* Desde el 26-sep a la noche: $19.900 y $29.900 (pago/mensual19900 y pago/mensual29900). */ ?>
                         <button type="button" class="sec" id="btnPlan25"
-                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $25.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual del sitio profesional">Plan $19.900</button>
                         <button type="button" class="sec" id="btnPlan35"
-                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $35.000</button>
+                            title="Escribe el mensaje con el link de pago del plan mensual de tienda, cursos e inmobiliaria">Plan $29.900</button>
                         <?php /* Los dos planes anuales (28-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/anual180 y pago/anual250). */ ?>
+                               datos para la transferencia (pago/anual149 y pago/anual199). */ ?>
                         <button type="button" class="sec" id="btnAnual180"
-                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $180.000</button>
+                            title="Escribe el mensaje con la página del plan anual del sitio profesional: condiciones y datos para la transferencia">Anual $149.000</button>
                         <button type="button" class="sec" id="btnAnual250"
-                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $250.000</button>
+                            title="Escribe el mensaje con la página del plan anual de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Anual $199.000</button>
                         <?php /* Los dos pagos únicos (29-sep): la página con las condiciones y los
-                               datos para la transferencia (pago/unico240 y pago/unico360). */ ?>
+                               datos para la transferencia (pago/unico199 y pago/unico299). */ ?>
                         <button type="button" class="sec" id="btnUnico240"
-                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $240.000</button>
+                            title="Escribe el mensaje con la página del pago único del sitio profesional: condiciones y datos para la transferencia">Único $199.000</button>
                         <button type="button" class="sec" id="btnUnico360"
-                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $360.000</button>
-                        <?php /* La imagen de precios del 25-sep (26-sep). Desde el 29-sep el bot ya
-                               no la manda —pasa los links a las páginas de cada modalidad—, pero
-                               queda acá para mandarla a mano. Sale directo, con confirmación. Solo
-                               WhatsApp. */
-                              if (wabot_canal($conv) === 'whatsapp'): ?>
-                        <button type="button" class="sec img-precio" data-tipo="landing"
-                            title="Manda ahora la imagen con los precios del sitio profesional (el bot ya no la manda sola: pasa los links a cada modalidad)">Imagen sitio profesional</button>
-                        <button type="button" class="sec img-precio" data-tipo="ecommerce"
-                            title="Manda ahora la imagen con los precios de tienda, cursos e inmobiliaria (el bot ya no la manda sola: pasa los links a cada modalidad)">Imagen tienda/cursos/inmo</button>
-                        <?php endif; ?>
+                            title="Escribe el mensaje con la página del pago único de tienda, cursos e inmobiliaria: condiciones y datos para la transferencia">Único $299.000</button>
                         <?php if ((int)$conv['pausado_hasta'] > time()): ?>
                         <form method="post"><input type="hidden" name="accion" value="conv_reanudar"><input type="hidden" name="tel" value="<?= $e($convClave) ?>">
                             <button class="sec">Reanudar bot</button></form>
@@ -3336,62 +3298,31 @@ function burbujaCita(t, chat) {
             txt.setSelectionRange(cursor, cursor);
         }
 
-        /* Los dos botones de "Plan $25.000" / "Plan $35.000" del encabezado:
+        /* Los dos botones de "Plan $19.900" / "Plan $29.900" del encabezado:
          * escriben directo el mensaje con el link de pago, sin pasar por el
          * buscador de respuestas rápidas. */
         document.getElementById('btnPlan25')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19900');
         });
         document.getElementById('btnPlan35')?.addEventListener('click', () => {
-            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($35.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual35');
+            rrInsertar('Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29900');
         });
         /* Los del plan anual: la página tiene todas las condiciones y los datos
          * para la transferencia; el mensaje adelanta la seña y el resto. */
         document.getElementById('btnAnual180')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual del sitio profesional ($180.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($120.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual180');
+            rrInsertar('Te paso el plan anual del sitio profesional ($149.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($89.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual149');
         });
         document.getElementById('btnAnual250')?.addEventListener('click', () => {
-            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($250.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($190.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual250');
+            rrInsertar('Te paso el plan anual de la tienda, los cursos o la inmobiliaria ($199.000 por año), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($139.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/anual199');
         });
         /* Los del pago único (29-sep), con el mismo formato: la página tiene las
          * condiciones y los datos para la transferencia; el mensaje adelanta la
          * seña y el resto. */
         document.getElementById('btnUnico240')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único del sitio profesional ($240.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($180.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico240');
+            rrInsertar('Te paso el pago único del sitio profesional ($199.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($139.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico199');
         });
         document.getElementById('btnUnico360')?.addEventListener('click', () => {
-            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($360.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($300.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico360');
-        });
-
-        /* "Imagen sitio profesional" / "Imagen tienda/cursos/inmo" (26-sep): a
-         * diferencia de los de arriba, MANDAN la imagen de precios (no hay cómo
-         * dejar una imagen en el editor), así que piden confirmación. */
-        document.querySelectorAll('.img-precio').forEach(boton => {
-            boton.addEventListener('click', async () => {
-                const cual = boton.dataset.tipo === 'landing' ? 'del sitio profesional' : 'de tienda, cursos e inmobiliaria';
-                if (!confirm('¿Mandar ahora la imagen de precios ' + cual + '?')) return;
-                const previo = boton.textContent;
-                boton.disabled = true;
-                boton.textContent = 'Enviando…';
-                try {
-                    const r = await fetch('admin.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams({ accion: 'enviar_imagen_precio', tel: TEL, tipo: boton.dataset.tipo }) });
-                    const j = await r.json();
-                    if (!j.ok) throw new Error(j.error || 'No se pudo mandar la imagen.');
-                    document.getElementById('handoffPill')?.remove();
-                    await refrescar(); await refrescarLista();
-                    est.textContent = 'Imagen de precios enviada. El bot queda en silencio en este chat.';
-                    est.style.color = 'var(--dim)';
-                    boton.textContent = 'Enviada ✓';
-                } catch (e) {
-                    est.textContent = e.message || 'No se pudo mandar la imagen.';
-                    est.style.color = 'var(--bad)';
-                    boton.textContent = previo;
-                } finally {
-                    boton.disabled = false;
-                    setTimeout(() => { boton.textContent = previo; }, 2200);
-                }
-            });
+            rrInsertar('Te paso el pago único de la tienda, los cursos o la inmobiliaria ($299.000, una sola vez), con todas las condiciones y los datos para la transferencia. Para arrancar son $60.000 y el resto ($239.000) se paga al finalizar la web, que no demora más de 7 días: gokywebs.com/pago/unico299');
         });
 
         function rrElegir(indice) {

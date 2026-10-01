@@ -362,8 +362,10 @@ function wabot_ficha_fuera_de($texto) {
     $f = [];
     // "Propaganda" es como se dice acá (25-sep): "quiero meter propaganda en
     // Instagram y TikTok" se llevó "lleva el acceso a tu Instagram".
+    // El tema del curso no es un servicio publicitario solicitado a Gokywebs.
+    $pedido = preg_replace('/\b(cursos?|talleres?|clases?|membresia|capacitaciones?)\b.{0,22}\b(marketing(?: digital)?|publicidad|meta ads|google ads)\b/u', '', $t);
     if (preg_match('/\b(publicidad|propaganda|pauta\w*|anuncios? (pagos?|en)|campanas? (de|en) (instagram|facebook|google|redes)|facebook ads|google ads|meta ads'
-        . '|seguidores|community manager|manej\w* (de )?(las |mis )?redes|administr\w* (las |mis )?redes|marketing)\b/u', $t)) $f[] = 'publicidad';
+        . '|seguidores|community manager|manej\w* (de )?(las |mis )?redes|administr\w* (las |mis )?redes|marketing)\b/u', $pedido)) $f[] = 'publicidad';
     if (preg_match('/\b(disen\w*|hacen|hacer|hacerme|armar|armarme|crear|crearme)\b.{0,10}\b(el |un |mi |los )?(logo|logos|logotipo)\b|\b(necesito|quiero|queria) (un|una) (logo|logotipo)\b/u', $t)) $f[] = 'logo';
     return $f;
 }
@@ -1269,6 +1271,12 @@ function wabot_salida_preparar($mensajes, &$conv, $cfg, $modo = 'turno') {
      * respuesta. Ningún contenido comercial se agrega acá: este punto solo
      * limpia y valida lo que decidió el flujo. */
     if (!$mensajes) return $mensajes;
+
+    // Estas respuestas ya fueron construidas y validadas por reglas cerradas.
+    // El flujo anterior no debe añadir preguntas ni avisos de derivación.
+    if (!empty($conv['postprecio_auto']) && !empty($conv['postprecio_reglas'])) {
+        return array_map(static fn($m) => wabot_personalizar((string)$m, $conv), $mensajes);
+    }
 
     $mensajes = wabot_salida_limpiar($mensajes);
     $mensajes = wabot_salida_sin_promesas($mensajes, $cfg);

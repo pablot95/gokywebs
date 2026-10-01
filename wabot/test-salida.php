@@ -14,6 +14,8 @@
 require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
+// Compatibilidad con el flujo anterior desactivado en Ajustes.
+$cfg['postprecio_activo'] = false;
 clasifica(['otro']);
 
 /** Conversación mínima, con la fase que pida el caso. */

@@ -14,6 +14,8 @@ require_once __DIR__ . '/test-lib.php';
 require_once __DIR__ . '/push.php';
 
 $cfg = wabot_config_load();
+// Compatibilidad con el flujo anterior desactivado en Ajustes.
+$cfg['postprecio_activo'] = false;
 $cfg['activo'] = true;
 foreach (['demora_primer_mensaje', 'demora_segundos', 'demora_entre_mensajes', 'demora_minima'] as $k) $cfg[$k] = 0;
 $cfg['demora_por_longitud'] = false;
@@ -466,7 +468,7 @@ openai_responde([decision(['accion' => 'cotizar', 'tipo_web' => 'sitio_profesion
 $r = turno('Son dos, uno es agencia de viajes y otro pañales y articulos de bebe que quiero vender por la web', $c, $cfg);
 $dos = implode("\n", $r);
 caso('dos negocios → las dos webs con el 20% y cada una sola',
-    strpos($dos, '$48.000 por mes por las dos (en vez de $60.000)') !== false && strpos($dos, 'el sitio profesional sale $25.000 por mes') !== false
+    strpos($dos, '$39.840 por mes por las dos (en vez de $49.800)') !== false && strpos($dos, 'el sitio profesional sale $19.900 por mes') !== false
     && ($c['dos_webs'] ?? null) === ['landing', 'ecommerce'] && !empty($c['oferta_diseno_ts']), $dos);
 caso('el esquema tiene la segunda web', in_array('segunda_web', (array)(pedidos()[0]['text']['format']['schema']['required'] ?? []), true));
 caso('las instrucciones explican las dos webs y que el descuento lo pone el sistema',

@@ -911,6 +911,20 @@ function wabot_ia_turno($texto, &$conv, $cfg) {
  *     recomienda para ese negocio, en vez de devolverle otra pregunta.
  */
 function wabot_ia_redes($d, $texto, &$conv, $cfg) {
+    $normalizado = wabot_normalizar_frase($texto);
+    $contextoCliente = $normalizado . ' ' . implode(' ', wabot_contexto_cliente_sesion($conv, 8));
+    $contextoCliente = wabot_normalizar_frase($contextoCliente);
+    if (($d['accion'] ?? '') === 'cotizar' && empty($conv['precio_dado'])
+        && preg_match('/\b(cursos?|clases?|talleres?)\b/u', $normalizado)
+        && !preg_match('/\b(online|presenciales?|virtuales?|grabados?|videos?)\b/u', $contextoCliente)) {
+        $d['accion'] = 'responder';
+        $d['mensajes'] = ['De qué son tus cursos, y los das online o presenciales?'];
+        $d['tipo_web'] = 'sin_definir';
+        return $d;
+    }
+    if (($d['accion'] ?? '') === 'cotizar' && preg_match('/\bservicios financieros\b/u', $normalizado)) {
+        $d['tipo_web'] = 'sitio_profesional';
+    }
     $tipoWeb = ['landing' => 'sitio_profesional', 'ecommerce' => 'tienda_online', 'elearning' => 'plataforma_cursos', 'inmobiliaria' => 'inmobiliaria'];
     $cotizar = function ($d, $tipo, $segunda, $evento) use (&$conv, $texto, $tipoWeb) {
         wabot_evento_sesion($conv, $evento, ['tipo' => $tipo . ($segunda ? '+' . $segunda : '')]);

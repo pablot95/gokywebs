@@ -163,6 +163,8 @@ $MP_MONTOS = [
     20000 => ['plan' => 'landing', 'label' => 'Plan $20.000'],
     7000  => ['plan' => 'landing', 'label' => 'Plan mensual sitio profesional'],
     25000 => ['plan' => 'mensual', 'label' => 'Plan $25.000'],
+    19900 => ['plan' => 'landing', 'label' => 'Plan $19.900'],
+    29900 => ['plan' => 'mensual', 'label' => 'Plan $29.900'],
     30000 => ['plan' => 'mensual', 'label' => 'Plan $30.000'],
     35000 => ['plan' => 'mensual', 'label' => 'Plan $35.000'],
 ];

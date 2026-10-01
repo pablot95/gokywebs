@@ -41,8 +41,8 @@ function wabot_respuestas_rapidas_default() {
         ]],
         ['ico' => '💳', 'titulo' => 'Pagos', 'items' => [
             "Te paso los datos para la seña. En cuanto se acredite arrancamos con el desarrollo:\n\nEDITAR DATOS DE PAGO",
-            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($25.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual25',
-            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($35.000 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual35',
+            'Te mando el link de Mercado Pago para activar el plan mensual del sitio profesional ($19.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual19900',
+            'Te mando el link de Mercado Pago para activar el plan mensual de la tienda, los cursos o la inmobiliaria ($29.900 por mes). Una vez realizado el pago queda activo el servicio: gokywebs.com/pago/mensual29900',
             'Sí, podés pagar con tarjeta. Te paso el link de Mercado Pago y ahí elegís las cuotas.',
             '¡Recibido! Ya arrancamos con tu web. En unos días te muestro los primeros avances.',
             'La web ya está lista para publicarse. Antes de subirla queda abonar el saldo restante de EDITAR IMPORTE. Una vez acreditado el pago la dejamos online y funcionando.',
@@ -496,7 +496,7 @@ function wabot_respuestas_rapidas_precios_26sep_noche($categorias) {
         'Con el pago único, la web queda abonada en su totalidad. Son $200.000 el sitio profesional, $300.000 la tienda, $290.000 los cursos y $260.000 la inmobiliaria. No incluye mantenimiento ni renovaciones.'
             => WABOT_RR_PAGO_UNICO,
     ];
-    foreach ([['$20.000', '$30.000'], ['$30.000', '$40.000']] as [$sitioMes, $tiendaMes]) {
+    foreach ([['$20.000', '$30.000'], ['$30.000', '$40.000'], ['$25.000', '$35.000']] as [$sitioMes, $tiendaMes]) {
         $viejo = $sinPermanencia($sitioMes, $tiendaMes);
         if ($viejo !== $hoy) $reemplazos[$viejo] = $hoy;
     }
@@ -776,16 +776,32 @@ function wabot_respuestas_rapidas_visibles($categorias, $conv, $cfg) {
     return $salida;
 }
 
+/** Migra solamente textos estándar; conserva las respuestas personalizadas. */
+function wabot_respuestas_rapidas_precios_1oct($categorias) {
+    foreach ($categorias as &$categoria) {
+        foreach ($categoria['items'] as &$texto) {
+            if (str_starts_with($texto, 'Te mando el link de Mercado Pago para activar el plan mensual ')) {
+                $texto = str_replace(['($25.000 por mes)', 'pago/mensual25', '($35.000 por mes)', 'pago/mensual35'],
+                    ['($19.900 por mes)', 'pago/mensual19900', '($29.900 por mes)', 'pago/mensual29900'], $texto);
+            }
+        }
+        unset($texto);
+        $categoria['items'] = array_values(array_unique($categoria['items']));
+    }
+    unset($categoria);
+    return $categorias;
+}
+
 function wabot_respuestas_rapidas_load() {
     wabot_ensure_dirs();
     $ruta = WABOT_DATA . '/respuestas-rapidas.json';
     // El orden del 26-sep corre una sola vez: después, lo que Pablo borre o
     // vuelva a mostrar desde la pestaña Respuestas queda como lo dejó.
     $marca = WABOT_DATA . '/migrated/respuestas-rapidas-chats-26sep';
-    if (!is_file($ruta)) return wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default());
+    if (!is_file($ruta)) return wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default()));
     $leido = json_decode((string)@file_get_contents($ruta), true);
     $normalizado = wabot_respuestas_rapidas_normalizar($leido);
-    if ($normalizado === null) return wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default());
+    if ($normalizado === null) return wabot_respuestas_rapidas_precios_1oct(wabot_respuestas_rapidas_chats_26sep(wabot_respuestas_rapidas_default()));
     $migrado = wabot_respuestas_rapidas_precios_26sep_noche(wabot_respuestas_rapidas_plan_landing_30k_26sep(wabot_respuestas_rapidas_plan_otros_40k_26sep(wabot_respuestas_rapidas_links_mensuales_25sep(wabot_respuestas_rapidas_precios_al_dia(wabot_respuestas_rapidas_textos_21sep(
         wabot_respuestas_rapidas_planes_19sep(
             wabot_respuestas_rapidas_completar_precios(wabot_respuestas_rapidas_migrar_legacy($normalizado))
@@ -793,6 +809,7 @@ function wabot_respuestas_rapidas_load() {
     ))))));
     $ordenar = !is_file($marca);
     if ($ordenar) $migrado = wabot_respuestas_rapidas_chats_26sep($migrado);
+    $migrado = wabot_respuestas_rapidas_precios_1oct($migrado);
     $guardado = true;
     if ($migrado !== $normalizado) {
         $json = json_encode($migrado, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

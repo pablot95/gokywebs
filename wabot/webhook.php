@@ -295,13 +295,18 @@ function wabot_procesar_entrante($ev, $cfg) {
                 wabot_log('diseno_aceptado_tarde', ['tel' => $de, 'canal' => $canal]);
             }
 
-            $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
+            $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && empty($conv['control_manual']) && time() >= (int)$conv['pausado_hasta'];
             if (!$activo) {
                 wabot_conv_save($conv);
                 wabot_log('silencio', ['tel' => $de, 'canal' => $canal, 'motivo' => empty($cfg['activo']) ? 'global_off' : (!empty($conv['bot_off']) ? 'chat_off' : 'pausa_humano')]);
                 break;
             }
 
+            if (!$usables && !empty($cfg['postprecio_activo']) && !empty($conv['precio_dado'])) {
+                wabot_postprecio_derivar($conv, 'Archivo o audio sin contenido interpretable');
+                wabot_conv_save($conv);
+                break;
+            }
             if (!$usables && !empty($conv['oferta_diseno_ts'])) {
                 /* Después del precio el bot solo espera el sí al primer
                  * diseño (18-sep): un archivo que no se pudo leer no es un
@@ -485,7 +490,10 @@ function wabot_procesar_entrante_reintento($clave, $de, $canal, $cfg, $id) {
         $conv['ultimo_cliente_ts'] = time();
         wabot_logo_sincronizar($conv);
         if ($usables) wabot_oferta_diseno_reabrir($conv, implode("\n", $usables));
-        $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && time() >= (int)$conv['pausado_hasta'];
+        $activo = !empty($cfg['activo']) && empty($conv['bot_off']) && empty($conv['control_manual']) && time() >= (int)$conv['pausado_hasta'];
+        if ($activo && !$usables && !empty($cfg['postprecio_activo']) && !empty($conv['precio_dado'])) {
+            wabot_postprecio_derivar($conv, 'Archivo o audio sin contenido interpretable');
+        }
         if (!$activo || !$usables) {
             wabot_conv_save($conv);
             continue;

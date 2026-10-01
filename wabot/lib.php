@@ -175,7 +175,7 @@ function wabot_gemini_modelo($cfg = null) {
  * archivo se ignora, así una config vieja del server no puede pisar un texto.
  */
 function wabot_ajustes_claves() {
-    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias',
+    return array_merge(['activo', 'pausa_horas_humano', 'reset_dias', 'postprecio_activo',
             'demora_segundos', 'demora_primer_mensaje', 'demora_entre_mensajes',
             'demora_por_longitud', 'tipeo_por_segundo', 'demora_minima', 'demora_maxima',
             'leer_imagenes', 'escuchar_audios', 'gemini_modelo', 'capi_token', 'capi_dataset_id',
@@ -1514,6 +1514,18 @@ function wabot_conv_adoptar_hermana(&$conv, $cfg = null) {
         if (!empty($otra[$k])) $conv[$k] = true;
     }
     if (!empty($otra['form_completado_ts'])) $conv['form_completado_ts'] = (int)$otra['form_completado_ts'];
+    // Cambiar de canal no levanta una intervención humana ni una derivación.
+    if (!empty($otra['control_manual']) || !empty($otra['postprecio_derivacion'])) {
+        wabot_conv_tomar_control($conv);
+        $conv['seguimiento_bloqueado'] = true;
+        if (!empty($otra['postprecio_derivacion'])) {
+            $conv['postprecio_derivacion'] = $otra['postprecio_derivacion'];
+            $conv['handoff_pendiente'] = true;
+        }
+    } elseif (!empty($otra['postprecio_auto'])) {
+        $conv['postprecio_auto'] = true;
+        $conv['seguimiento_bloqueado'] = true;
+    }
     if (empty($conv['fase']) || $conv['fase'] === 'nuevo') {
         $conv['fase'] = !empty($otra['lead_creado']) ? 'prediseno' : (string)($otra['fase'] ?? 'nuevo');
     }
@@ -1761,7 +1773,8 @@ function wabot_conv_reset_si_vieja(&$conv, $cfg, $ahora = null) {
     // lleva Pablo, no el bot) se vencía solo a los 7 días y el bot volvía a
     // venderle desde cero a alguien que ya tenía la web armada. Si Pablo
     // quiere reabrirla, está el botón Resetear del panel.
-    if (!empty($conv['presentado_ts'])) return false;
+    if (!empty($conv['presentado_ts']) || !empty($conv['control_manual'])
+        || !empty($conv['postprecio_auto']) || !empty($conv['postprecio_derivacion'])) return false;
 
     foreach (['tipo','descripcion','brief','colores','colores_hex','referencia','cierre',
               'sistema_problema','sistema_actual','sistema_usuarios','ultimo_bot','productos_cantidad',
@@ -3256,6 +3269,7 @@ function wabot_conv_bot_inactivo($cv) {
 /** Pablo tomó la conversación: el bot no vuelve solo por reloj ni por eventos. */
 function wabot_conv_tomar_control(&$cv) {
     $cv['control_manual'] = true;
+    $cv['postprecio_auto'] = false;
     $cv['bot_off'] = true;
     $cv['pausado_hasta'] = 0;
     $cv['handoff_pendiente'] = false;
@@ -3267,14 +3281,17 @@ function wabot_conv_tomar_control(&$cv) {
 /** Única forma de devolverle una conversación al bot: una acción manual. */
 function wabot_conv_encender_manual(&$cv) {
     $cv['control_manual'] = false;
+    unset($cv['postprecio_derivacion']);
+    $cv['postprecio_auto'] = !empty($cv['precio_dado']);
     $cv['bot_off'] = false;
     $cv['pausado_hasta'] = 0;
 }
 
 /** Presentar cambia de etapa, pero no le devuelve el control al bot. */
 function wabot_conv_preparar_postdemo(&$cv) {
-    wabot_conv_tomar_control($cv);
-    $cv['seguimiento_bloqueado'] = false;
+    $automatico = !empty($cv['postprecio_auto']) && empty($cv['control_manual']) && empty($cv['bot_off']);
+    if (!$automatico) wabot_conv_tomar_control($cv);
+    $cv['seguimiento_bloqueado'] = $automatico || !empty($cv['postprecio_derivacion']);
     $cv['contestado_ts'] = 0;
     $cv['fase'] = 'postdemo';
     $cv['cierre'] = null;
@@ -3795,8 +3812,8 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
 /**
  * Las páginas de detalle de cada modalidad (29-sep, Pablo): el segundo mensaje
  * del turno del precio pasa sus links, en lugar de la imagen. Viven en pago/
- * (mensual25, anual180, unico240 y, para tienda, cursos e inmobiliaria,
- * mensual35, anual250, unico360); cada una tiene arriba las pestañas para pasar
+ * (mensual19900, anual149, unico199 y, para tienda, cursos e inmobiliaria,
+ * mensual29900, anual199, unico299); cada una tiene arriba las pestañas para pasar
  * a las otras dos del mismo tipo de web.
  *
  * `monto` es lo que cobra la página, escrito en su HTML: si cambian los montos
@@ -3806,15 +3823,15 @@ function wabot_wa_send_audio($tel, $mediaId, $voz = true) {
  */
 function wabot_planes_paginas() {
     $tienda = [
-        'mensual' => ['pagina' => 'mensual35', 'monto' => '$35.000'],
-        'anual'   => ['pagina' => 'anual250',  'monto' => '$250.000'],
-        'unico'   => ['pagina' => 'unico360',  'monto' => '$360.000'],
+        'mensual' => ['pagina' => 'mensual29900', 'monto' => '$29.900'],
+        'anual'   => ['pagina' => 'anual199',  'monto' => '$199.000'],
+        'unico'   => ['pagina' => 'unico299',  'monto' => '$299.000'],
     ];
     return [
         'landing'      => [
-            'mensual' => ['pagina' => 'mensual25', 'monto' => '$25.000'],
-            'anual'   => ['pagina' => 'anual180',  'monto' => '$180.000'],
-            'unico'   => ['pagina' => 'unico240',  'monto' => '$240.000'],
+            'mensual' => ['pagina' => 'mensual19900', 'monto' => '$19.900'],
+            'anual'   => ['pagina' => 'anual149',  'monto' => '$149.000'],
+            'unico'   => ['pagina' => 'unico199',  'monto' => '$199.000'],
         ],
         'ecommerce'    => $tienda,
         'elearning'    => $tienda,
@@ -5111,6 +5128,7 @@ function wabot_plantilla_auto_activa($clave, $cfg) {
 }
 
 function wabot_plantillas_auto_contacto_ok($cv, $ahora) {
+    if (!empty($cv['postprecio_derivacion']) || !empty($cv['postprecio_auto'])) return false;
     if (wabot_canal($cv) !== 'whatsapp' || !empty($cv['archivado'])) return false;
     if (in_array(($cv['cierre'] ?? ''), ['sin_interes', 'consulta_sin_presion', 'baja', 'rechazo'], true)) return false;
     if (!empty($cv['contexto_consulta']) || !empty($cv['pago_avisado_ts'])) return false;
@@ -5632,7 +5650,12 @@ function wabot_form_lead_procesar($payload, $cfg) {
         // Recien acá el clic del anuncio se convirtió en algo: se lo avisamos a Meta.
         wabot_capi_evento($conv, 'Lead', $cfg);
     }
-    wabot_handoff_marcar($conv, 'prediseno');
+    if (!empty($conv['postprecio_auto']) && empty($conv['control_manual']) && empty($conv['bot_off'])) {
+        $conv['fase'] = 'prediseno';
+        $conv['seguimiento_bloqueado'] = true;
+    } else {
+        wabot_handoff_marcar($conv, 'prediseno');
+    }
 
     wabot_conv_save($conv);
     wabot_lock_soltar($lock);

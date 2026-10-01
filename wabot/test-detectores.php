@@ -13,6 +13,9 @@
 require_once __DIR__ . '/test-lib.php';
 
 $cfg = wabot_config_load();
+// Respaldo Gemini y flujo anterior; test-postprecio cubre las respuestas nuevas.
+$cfg['postprecio_activo'] = false;
+$cfg['ia_proveedor'] = 'gemini';
 
 /** Charla cotizada, esperando el sí a la demo. */
 function conv_audit($tipo = 'ecommerce', $clave = 'QATESTREG11SEP') {
