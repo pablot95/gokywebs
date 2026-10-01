@@ -12,6 +12,29 @@ El riesgo principal no es que diga algo malo sino que **se calle**. El diseño "
 
 - **Falla 1** — `wabot/postprecio.php`: el chequeo de dos webs / cotización vieja pasó detrás del sí y del acuse. Con dos webs, "sí", "si, armalo", "dale", "mandame el formulario" mandan el formulario; "ok" es silencio sin apagar el bot; una pregunta sigue derivando sin consultar al modelo (las reglas cotizan un solo tipo). El regex del sí también toma "si quiero", "si me interesa", "dale si". Verificado en vivo (escenarios 05 y 12) y en `test-postprecio.php` (86 casos, 10 nuevos).
 - **Falla 2** — `wabot/lib.php` (`wabot_form_lead_validar`): el teléfono tipeado pasa por `wabot_extraer_celular()`, así `telefono_wsp` y la clave de una charla nueva quedan como `549…`, igual que las de Meta. Un número de otro país se acepta como vino. `test-formulario.php`: 247 casos, 5 nuevos y 4 asserts actualizados. Queda pendiente revisar en el server las charlas con `telefono_wsp` de 10 dígitos y reenviar esas demos.
+- **Falla 3** — `wabot/postprecio.php`: un sí que arranca la frase, no pregunta ni posterga ("Si te paso el logo", "Sisi es sin compromiso si", "Dale si me interesa… para ver cómo sería") manda el formulario sin pasar por el modelo; lo dudoso ("si pero cuánto sale el dominio?", "si yo ya tengo página") sigue yendo al modelo. `esperar` con la oferta abierta y sin formulario deja la charla pendiente para Pablo. `test-postprecio.php`: 99 casos.
+- Commit `6777541` pusheado a `origin/main` el 1-oct a la noche (incluye el arreglo de la ficha perdida de Psicoenlace de la otra sesión y `test-plantillas-chat.php`).
+
+### Demos que nunca llegaron (revisado en el server, solo lectura)
+
+En `wabot/data/conv/` hay 16 charlas con clave de 10 dígitos (sin 549): las abrió el formulario a mano con el número tal cual lo tipeó el cliente. Las 16 tienen su charla real `549…` al lado. En 11 el bot "presentó" la demo a la clave de 10 dígitos:
+
+| Cliente | Clave corta | Demo | Estado en la charla real (549) |
+|---|---|---|---|
+| Cristian, ServicioIntegralCris | 1156998124 | serviciointegralcris, 17-sep | "WhatsApp no pudo entregar" a la hora de la demo. El 30-sep su autorespondedor contestó el seguimiento y el bot le dijo "la demo te llega mañana". **Nunca la recibió.** |
+| dario ferreri, Soluciones F | 2923645056 | solucionesf, 18-sep | "WhatsApp no pudo entregar"; la charla real está vacía. **Nunca la recibió.** |
+| Judith, Distribuidora DG | 1166576121 | distribuidoradg, 18-sep | No entregada. El 1-oct ella escribió desconcertada, el bot le prometió la demo "hoy" y Pablo ya le pidió disculpas a mano. **Falta mandarle el link.** |
+| Hernán, CHAPEAU | 1127067431 | chapeau, 2-sep | La charla real nunca recibió la demo ("primero hablo con mi grupo"). |
+| Juan Cruz, CASTRO&ASOC | 2236033606 | castroasoc, 2-sep | La charla real quedó en "en el transcurso del día te compartimos la propuesta". Nunca llegó. |
+| Federico, Cabañas La Rústica | 3541239349 | 15-sep | Pablo lo confirmó el 30-sep. |
+| Ana, Alma home | 2915784369 | 18-sep | Pablo lo confirmó el 27-sep. |
+| Noemi, Noemidesingok | 3412429332 | 18-sep | Pablo lo confirmó el 30-sep. |
+| Lia, Psicoenlace | 1171044151 | 18-sep | Resuelto el 1-oct (ficha recreada). |
+| Nicolás, Corcino | 1134991360 | 19-sep | Pablo pegó el link a mano el 23-sep. |
+| Guadalupe, Pescadería Las Grutas | 2944814198 | 21-sep | Pablo siguió la charla a mano. |
+
+Los otros 5 (Ste_indumentaria, Lailatec, Pintatop, Distribuidora Lionel, Cuidar+) no tienen demo marcada o la presentó Pablo. Las 11 carpetas `demo/<slug>` siguen en el repo (y `distribuidoradgv2`), así que se pueden reenviar desde el admin, desde la charla `549…` de cada uno. Con el arreglo de hoy no se abren más charlas de 10 dígitos.
+
 - Resto de las suites: sin cambios respecto de la línea base (`test.php` 21 fallos previos, `test-postdemo` 5, `test-prospectos` 10; los mismos sin mis cambios).
 
 ## Fallas confirmadas en el código actual
