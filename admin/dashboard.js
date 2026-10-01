@@ -4429,6 +4429,8 @@ function limpiarChatBoilerplate(chat) {
 function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
     const objetivosTexto = getPropuestaObjetivosTexto(p);
     const { nombreNegocio } = getPropuestaNegocioFields(p);
+    const tipoWeb = getPropuestaTipoWeb(p);
+    const esEcommerce = /e-?commerce|tienda|cat[aá]logo|shop|carrito/i.test(tipoWeb);
     const fondos = cleanFieldValue(p.color_fondos);
     const principal = cleanFieldValue(p.color_principal);
     const secundario = cleanFieldValue(p.color_secundario);
@@ -4443,6 +4445,11 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
             "Pedido de demo: armá la web completa para este negocio, siguiendo los prompts base de Gokywebs según el tipo de web.",
             `La carpeta del proyecto está en Gokywebsweb/demo/${slug}/, con su subcarpeta images/.`,
             "Ya hay imágenes cargadas en esa carpeta images/: usalas para armar la demo.",
+            ...(esEcommerce ? [
+                "Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.",
+                "Implementá paginación con cursor: el botón «Ver más» debe pedir la siguiente página de hasta 100 productos y la búsqueda debe traer páginas adicionales solo cuando necesita encontrar coincidencias.",
+                "Aplicá el límite en el endpoint/consulta del servidor y evitá leer la colección completa con getDocs(collection(...)) o guardarla completa en el navegador.",
+            ] : []),
         ].join("\n") + "\n\n";
     }
 
