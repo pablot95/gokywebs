@@ -233,7 +233,8 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
                 $conv['postprecio_pregunta'] = 'modalidad';
                 return 'Qué modalidad preferís para avanzar: mensual, anual o pago único?';
             }
-            $clave = ['mensual' => 'mensual', 'anual' => 'anual', 'unico' => 'unico', 'propia' => 'unico'][$modalidad] ?? null;
+            // El formulario y el selector conservan 'unico' para el anual y 'propia' para el pago único.
+            $clave = ['mensual' => 'mensual', 'anual' => 'anual', 'unico' => 'anual', 'propia' => 'unico'][$modalidad] ?? null;
             if ($clave === null || !wabot_planes_paginas_corresponde($tipo, $conv, $cfg)) return null;
             $conv['postprecio_pregunta'] = '';
             $pagina = wabot_planes_paginas()[$tipo][$clave]['pagina'];

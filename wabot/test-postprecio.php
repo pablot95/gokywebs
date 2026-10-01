@@ -204,6 +204,15 @@ foreach (['Gracias', '👍', 'Gracias por comunicarte, nuestro horario de atenci
     $r = turno($texto, $c, $cfg);
     caso('acuse o respuesta automática no inventa avance: ' . $texto, $r === [] && empty($c['control_manual']) && $GLOBALS['PP_PEDIDOS'] === []);
 }
+foreach (['landing' => ['anual149', 'unico199'], 'ecommerce' => ['anual199', 'unico299']] as $tipo => [$anual, $propia]) {
+    foreach (['El plan anual' => [$anual, 'plan anual'], 'El pago único' => [$propia, 'pago único']] as $texto => [$pagina, $nombre]) {
+        $c = pp_conv($tipo, ['presentado_ts' => time()]);
+        pp_api(pp_decision(['pago_link']));
+        $r = turno($texto, $c, $cfg);
+        caso("$tipo: elección real de $nombre usa su página correcta", str_contains(implode(' ', $r), '/pago/' . $pagina . '/')
+            && str_contains(implode(' ', $r), $nombre));
+    }
+}
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'shadow';
 $c = pp_conv(); pp_api(pp_decision(['demo_aceptar']));
 $r = turno('Dale', $c, $cfg);
