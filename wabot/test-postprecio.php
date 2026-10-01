@@ -213,6 +213,18 @@ foreach (['landing' => ['anual149', 'unico199'], 'ecommerce' => ['anual199', 'un
             && str_contains(implode(' ', $r), $nombre));
     }
 }
+$c = pp_conv('ecommerce', ['presentado_ts' => time()]);
+pp_api(pp_decision(['modelo', 'postergar'], ['modelo' => '1']));
+$r = turno('Me gustó el primer diseño, estoy resolviendo en familia si mensual o anual', $c, $cfg);
+caso('primer diseño guarda el modelo 1 sin derivar', ($c['postprecio_modelo'] ?? '') === '1' && empty($c['control_manual']) && $r !== []);
+$c = pp_conv('landing', ['presentado_ts' => time(), 'postprecio_modelo' => '2']);
+pp_api(pp_decision(['modelo', 'que_necesitan'], ['modelo' => '2']));
+$r = turno('Si así es. Te paso los números de contacto y mail?', $c, $cfg);
+caso('confirmación del modelo guardado permite contestar la consulta adicional', $r !== [] && empty($c['control_manual']) && ($c['postprecio_modelo'] ?? '') === '2');
+$c = pp_conv('landing', ['presentado_ts' => time(), 'postprecio_modelo' => '1']);
+pp_api(pp_decision(['modelo', 'que_necesitan'], ['modelo' => '2']));
+$r = turno('Si así es. Te paso los números de contacto y mail?', $c, $cfg);
+caso('confirmación no permite cambiar el modelo sin una elección explícita', pp_silencio($c, $r) && ($c['postprecio_modelo'] ?? '') === '1');
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'shadow';
 $c = pp_conv(); pp_api(pp_decision(['demo_aceptar']));
 $r = turno('Dale', $c, $cfg);

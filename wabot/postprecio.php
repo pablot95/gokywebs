@@ -273,8 +273,11 @@ function wabot_postprecio_respuesta($regla, $d, $texto, &$conv, $cfg) {
             if (empty($conv['presentado_ts'])) return null;
             $modelo = (string)($d['modelo'] ?? 'ninguno');
             if ($modelo === 'ninguno') { $conv['postprecio_pregunta'] = 'modelo'; return 'Cuál de los dos modelos te gustó más?'; }
-            $eleccion = $modelo === '1' ? '(1|uno|una|primero|primera)' : '(2|dos|segundo|segunda)';
-            if (!preg_match('/\b' . $eleccion . '\b/u', wabot_normalizar_frase($texto))) return null;
+            $eleccion = $modelo === '1' ? '(1|uno|una|primer|primero|primera)' : '(2|dos|segundo|segunda)';
+            if (!preg_match('/\b' . $eleccion . '\b/u', wabot_normalizar_frase($texto))) {
+                // Una confirmación del modelo ya guardado no necesita repetir el número ni volver a elegirlo.
+                return ($conv['postprecio_modelo'] ?? '') === $modelo ? '' : null;
+            }
             $conv['postprecio_modelo'] = $modelo;
             $conv['postprecio_pregunta'] = '';
             return 'Dale, tomamos el modelo ' . $modelo . ' como base. Qué cambios te gustaría hacerle?';
