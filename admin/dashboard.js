@@ -4448,7 +4448,7 @@ function getPropuestaCopyText(p, { conInstruccionesDemo = false } = {}) {
             ...(esEcommerce ? [
                 "Regla obligatoria para el panel de administración del ecommerce: no cargues todos los productos al abrir. La primera consulta debe traer como máximo 100 productos.",
                 "Implementá paginación con cursor: el botón «Ver más» debe pedir la siguiente página de hasta 100 productos y la búsqueda debe traer páginas adicionales solo cuando necesita encontrar coincidencias.",
-                "Aplicá el límite en el endpoint/consulta del servidor y evitá leer la colección completa con getDocs(collection(...)) o guardarla completa en el navegador.",
+                "Aplicá el límite en el endpoint/consulta del servidor y evitá leer la colección completa con getDocs(collection(...)) o guardarla completa en el navegador. La portada y el catálogo público también deben devolver sólo sus productos visibles o una página acotada, con una defensa de 100 productos como máximo.",
             ] : []),
         ].join("\n") + "\n\n";
     }
