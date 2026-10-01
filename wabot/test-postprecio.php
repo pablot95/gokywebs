@@ -225,6 +225,13 @@ $c = pp_conv('landing', ['presentado_ts' => time(), 'postprecio_modelo' => '1'])
 pp_api(pp_decision(['modelo', 'que_necesitan'], ['modelo' => '2']));
 $r = turno('Si así es. Te paso los números de contacto y mail?', $c, $cfg);
 caso('confirmación no permite cambiar el modelo sin una elección explícita', pp_silencio($c, $r) && ($c['postprecio_modelo'] ?? '') === '1');
+foreach (['unico' => 'anual', 'propia' => 'pago único'] as $interno => $comercial) {
+    $c = pp_conv('ecommerce', ['presentado_ts' => time(), 'modalidad_elegida' => $interno]);
+    pp_api(pp_decision(['pago_link']));
+    turno('Me pasás el enlace?', $c, $cfg);
+    $contenido = $GLOBALS['PP_PEDIDOS'][0]['input'][0]['content'] ?? '';
+    caso("Sol recibe la modalidad comercial $comercial y no su nombre interno", str_contains(json_encode($contenido, JSON_UNESCAPED_UNICODE), '\"modalidad\":\"' . $comercial . '\"'));
+}
 $GLOBALS['WABOT_TEST_IA_PROVEEDOR'] = 'shadow';
 $c = pp_conv(); pp_api(pp_decision(['demo_aceptar']));
 $r = turno('Dale', $c, $cfg);
