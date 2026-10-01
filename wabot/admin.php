@@ -831,8 +831,7 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
         $ultimaFila = end($conv['transcript']);
         $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
         if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
-            $conv['panel_visto_ts'] = time();
-            wabot_conv_save($conv);
+            wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
         }
         echo json_encode([
             'transcript' => wabot_transcript_citas(wabot_transcript_completo($_POST['tel'], $conv)),
@@ -903,9 +902,10 @@ if ($logueado && $_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['accion'
             $it['transcript'] = array_map(function ($l) {
                 $fila = ['q' => (string)($l['q'] ?? ''), 't' => (string)($l['t'] ?? ''), 'ts' => (int)($l['ts'] ?? 0),
                          'media' => !empty($l['media']['clase']) ? (string)$l['media']['clase'] : ''];
+                if (!empty($l['plantilla'])) $fila['plantilla'] = $l['plantilla'];
                 if (!empty($l['cita'])) { $fila['cita'] = 1; $fila['cita_q'] = $l['cita_q']; $fila['cita_t'] = $l['cita_t']; }
                 return $fila;
-            }, array_slice(wabot_transcript_citas(array_values((array)($cv['transcript'] ?? []))), -40));
+            }, array_slice(wabot_transcript_citas(wabot_transcript_completo($it['tel'], $cv)), -40));
         }
         unset($it);
         echo json_encode(['items' => $items, 'ahora' => time()], JSON_UNESCAPED_UNICODE);
@@ -2414,8 +2414,8 @@ function burbujaCita(t, chat) {
             $ultimaFila = end($conv['transcript']);
             $ultimoTs = (int)($ultimaFila['ts'] ?? 0);
             if ($ultimoTs > (int)($conv['panel_visto_ts'] ?? 0)) {
-                $conv['panel_visto_ts'] = time();
-                wabot_conv_save($conv);
+                wabot_conv_marcar_visto(wabot_conversation_key($conv), $ultimoTs);
+                $conv = wabot_conv_load(wabot_conversation_key($conv));
             }
         }
         // La lista la arma lib.php y se pinta por JS: el render inicial y el
@@ -3654,7 +3654,7 @@ function burbujaCita(t, chat) {
                 m.className = 'meta';
                 const f = new Date(t.ts * 1000);
                 const dd = n => String(n).padStart(2, '0');
-                m.textContent = (t.q === 'humano' ? 'vos · ' : '') +
+                m.textContent = (t.plantilla ? 'Plantilla · ' : '') + (t.q === 'humano' ? 'vos · ' : '') +
                     dd(f.getDate()) + '/' + dd(f.getMonth() + 1) + ' ' + dd(f.getHours()) + ':' + dd(f.getMinutes());
                 if (t.editado) {
                     const ed = document.createElement('span');
@@ -3669,7 +3669,7 @@ function burbujaCita(t, chat) {
                 lapiz.textContent = 'Editar';
                 lapiz.title = 'Corrige el registro del panel (y el contexto que lee el bot). No cambia lo que ya recibió el cliente.';
                 lapiz.addEventListener('click', ev => { ev.stopPropagation(); editarMensaje(t, d); });
-                m.appendChild(lapiz);
+                if (!t.recuperado) m.appendChild(lapiz);
                 d.appendChild(m);
                 chat.appendChild(d);
             }
@@ -4020,7 +4020,7 @@ function burbujaCita(t, chat) {
             btnGrabar.addEventListener('keyup', ev => { if ((ev.key === ' ' || ev.key === 'Enter') && grab) { ev.preventDefault(); pararGrabacion(true); } });
             btnGrabCancel.onclick = () => pararGrabacion(false);
         }
-        pintar(<?= json_encode(array_values(wabot_transcript_citas($conv['transcript'])), JSON_UNESCAPED_UNICODE) ?>);
+        pintar(<?= json_encode(array_values(wabot_transcript_citas(wabot_transcript_completo($convClave, $conv))), JSON_UNESCAPED_UNICODE) ?>);
         chat.scrollTop = chat.scrollHeight;
         estadoVentana();
         setInterval(refrescar, 5000);
@@ -4281,7 +4281,7 @@ function burbujaCita(t, chat) {
                     const m = document.createElement('div');
                     m.className = 'meta';
                     const f = new Date(t.ts * 1000);
-                    m.textContent = (t.q === 'humano' ? 'vos · ' : '') + dd(f.getHours()) + ':' + dd(f.getMinutes());
+                    m.textContent = (t.plantilla ? 'Plantilla · ' : '') + (t.q === 'humano' ? 'vos · ' : '') + dd(f.getHours()) + ':' + dd(f.getMinutes());
                     d.appendChild(m);
                     chat.appendChild(d);
                 }

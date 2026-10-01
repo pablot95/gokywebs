@@ -865,7 +865,7 @@ function wabot_enviar_plantilla(&$conv, $clave, $cfg) {
     // único que ve Pablo de lo que le llegó al cliente, y un mensaje pago que
     // no aparece ahí parece que nunca salió (Pablo, 26-sep).
     if ($texto === '') $texto = '[Plantilla de WhatsApp: ' . $p['nombre'] . ']';
-    wabot_conv_transcript($conv, 'bot', $texto);
+    wabot_conv_transcript($conv, 'bot', $texto, null, ['plantilla' => $clave]);
     wabot_log('plantilla_enviada', ['tel' => $conv['tel'] ?? '', 'plantilla' => $clave, 'nombre' => $p['nombre']]);
     return true;
 }
@@ -1922,14 +1922,14 @@ function wabot_transcript_citas($lineas) {
 function wabot_transcript_completo($clave, $conv = null) {
     $vivo = is_array($conv) ? (array)($conv['transcript'] ?? []) : [];
     $path = wabot_historial_path($clave);
-    if (!file_exists($path)) return $vivo;
+    if (!file_exists($path)) return wabot_transcript_plantillas_recuperar($vivo, $conv);
 
     $viejas = [];
     foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $linea) {
         $fila = json_decode($linea, true);
         if (is_array($fila) && isset($fila['q'])) $viejas[] = $fila;
     }
-    if (!$viejas) return $vivo;
+    if (!$viejas) return wabot_transcript_plantillas_recuperar($vivo, $conv);
 
     // El archivado puede solaparse con el vivo si un guardado se repitió: se
     // deduplica por quién + texto + segundo exacto.
@@ -1942,7 +1942,57 @@ function wabot_transcript_completo($clave, $conv = null) {
         $todas[] = $fila;
     }
     usort($todas, function ($a, $b) { return (int)($a['ts'] ?? 0) <=> (int)($b['ts'] ?? 0); });
-    return $todas;
+    return wabot_transcript_plantillas_recuperar($todas, $conv);
+}
+
+/** Recupera constancias antiguas al leer, sin enviar ni modificar el historial.
+ * No se reconstruye el cuerpo con la configuración actual: pudo cambiar.
+ * Un intento del cron no demuestra envío; hacen falta la marca de éxito y su fecha.
+ */
+function wabot_transcript_plantillas_recuperar($lineas, $conv) {
+    if (!is_array($conv) || wabot_canal($conv) === 'instagram') return $lineas;
+    $agregadas = false;
+    foreach ([
+        'seguimiento_interesado' => ['seguimiento_interesado_enviado', 'seguimiento_interesado_ts'],
+        'confirmacion_demo_48h' => ['confirmacion_demo_enviada', 'confirmacion_demo_ts'],
+    ] as $clave => [$marca, $fecha]) {
+        $ts = (int)($conv[$fecha] ?? 0);
+        if (empty($conv[$marca]) || $ts <= 0) continue;
+        $existe = false;
+        foreach ($lineas as $fila) {
+            if (($fila['plantilla'] ?? '') === $clave) { $existe = true; break; }
+            // Antes no se guardaba la clave, pero el cuerpo salía inmediatamente
+            // antes de poner la marca. Un mensaje entrante nunca cuenta como envío.
+            if (empty($fila['plantilla']) && in_array($fila['q'] ?? '', ['bot', 'humano'], true)
+                && trim((string)($fila['t'] ?? '')) !== '' && abs((int)($fila['ts'] ?? 0) - $ts) <= 2) {
+                $existe = true; break;
+            }
+        }
+        if ($existe) continue;
+        $nombre = $clave === 'confirmacion_demo_48h' ? 'Seguimiento de demo' : 'Seguimiento interesado';
+        $lineas[] = ['q' => 'sistema', 't' => $nombre . ': envío de plantilla registrado. El texto original no quedó guardado en este chat.',
+                    'ts' => $ts, 'plantilla' => $clave, 'recuperado' => true];
+        $agregadas = true;
+    }
+    if ($agregadas) usort($lineas, function ($a, $b) { return (int)($a['ts'] ?? 0) <=> (int)($b['ts'] ?? 0); });
+    return $lineas;
+}
+
+/** Marcar leído nunca debe guardar la copia que el panel cargó antes de un envío.
+ * Relee bajo el mismo lock que usan los envíos; si está ocupado, el próximo
+ * refresco lo intentará otra vez. No marca como vistos mensajes más recientes.
+ */
+function wabot_conv_marcar_visto($clave, $hastaTs) {
+    $hastaTs = min(time(), (int)$hastaTs);
+    if ($hastaTs <= 0 || !wabot_conv_existe($clave)) return false;
+    $lock = wabot_lock_tomar($clave);
+    if (!$lock) return false;
+    try {
+        $actual = wabot_conv_load($clave);
+        if ($hastaTs <= (int)($actual['panel_visto_ts'] ?? 0)) return true;
+        $actual['panel_visto_ts'] = $hastaTs;
+        return wabot_conv_save($actual);
+    } finally { wabot_lock_soltar($lock); }
 }
 
 /**
@@ -1988,6 +2038,7 @@ function wabot_conv_transcript(&$conv, $quien, $texto, $media = null, $extra = [
     if ($id !== '') $fila['id'] = $id;
     $cita = trim((string)($extra['cita'] ?? ''));
     if ($cita !== '') $fila['cita'] = $cita;
+    if (!empty($extra['plantilla'])) $fila['plantilla'] = (string)$extra['plantilla'];
     if ($quien === 'cliente' && empty($conv['chat_started_ts'])) {
         $conv['chat_started_ts'] = $fila['ts'];
     }
