@@ -132,12 +132,27 @@ const mfObservador = window.IntersectionObserver ? new IntersectionObserver(entr
 }, { rootMargin: '400px' }) : null;
 
 function dibujarVista(card) {
-    if (card.dataset.dibujada) return;
-    card.dataset.dibujada = '1';
-    const lienzo = card.querySelector('.md-lienzo');
-    lienzo.innerHTML = GW_WIRE.render(modeloPorId(card.dataset.id));
-    GW_WIRE.encajar(card.querySelector('.mf-vista'), lienzo, 1440);
+    const vista = mfVistaCelular.matches ? 'celular' : 'pc';
+    if (card.dataset.dibujada === vista) return;
+    card.dataset.dibujada = vista;
+    const caja = card.querySelector('.mf-vista');
+    const wire = GW_WIRE.render(modeloPorId(card.dataset.id));
+    // En el celular va la versión celular del modelo a todo el ancho (wire.css
+    // se acomoda solo por container query); en la compu, la de 1440px achicada.
+    if (vista === 'celular') {
+        caja.innerHTML = `<div class="mf-vista-cel">${wire}</div>`;
+    } else {
+        caja.innerHTML = `<div class="md-alto"><div class="md-lienzo">${wire}</div></div>`;
+        GW_WIRE.encajar(caja, caja.querySelector('.md-lienzo'), 1440);
+    }
+    caja.scrollTop = 0;
 }
+
+// Si se gira el teléfono o se achica la ventana, las vistas ya dibujadas cambian de versión.
+const mfVistaCelular = window.matchMedia('(max-width: 700px)');
+mfVistaCelular.addEventListener?.('change', () => {
+    mfGrid.querySelectorAll('.mf-card[data-dibujada]').forEach(dibujarVista);
+});
 
 function armarModelos() {
     if (!MODELOS.length || typeof GW_WIRE === 'undefined') {
@@ -163,11 +178,13 @@ function armarModelos() {
         card.dataset.id = m.id;
         card.dataset.tipo = m.tipo;
         card.dataset.rubros = (m.rubros || []).join(' ');
-        // Vista a la izquierda y nombre + botón a la derecha (24-sep). La vista
-        // ya no scrollea: en el celular atrapaba el dedo y no dejaba bajar.
+        // Vista a todo el ancho y abajo el nombre con el botón (Pablo, 2-oct:
+        // "se ven muy chicos, que ocupen todo el width y se pueda scrollear").
+        // La vista scrollea por dentro y es más baja que la pantalla, así
+        // siempre queda tarjeta alrededor para seguir bajando la página.
         card.innerHTML = `
             <div class="mf-foto">
-                <div class="mf-vista" aria-hidden="true"><div class="md-alto"><div class="md-lienzo"></div></div></div>
+                <div class="mf-vista" aria-hidden="true"></div>
                 <span class="mf-letra" aria-hidden="true"></span>
                 <button type="button" class="mf-ver"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4M11 8v6M8 11h6"/></svg><span>Ver grande</span></button>
             </div>

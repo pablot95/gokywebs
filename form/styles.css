@@ -2102,11 +2102,12 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 }
 .mf-rubro .field-input:focus { background-color: #fff; }
 
-/* Tarjeta: la vista a la izquierda y el nombre con el botón a la derecha. */
-.mf-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+/* Tarjeta (2-oct): una por fila, la vista a todo el ancho y scrolleable,
+   y abajo el nombre con el botón. */
+.mf-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
 .mf-card {
-    display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); align-items: center;
-    gap: 18px; min-width: 0; padding: 12px;
+    display: grid; grid-template-columns: minmax(0, 1fr); align-items: stretch;
+    gap: 14px; min-width: 0; padding: 12px;
     background: var(--surface); border: 1px solid var(--mf-linea); border-radius: 16px;
     cursor: pointer; transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
@@ -2129,7 +2130,15 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
     position: relative; overflow: hidden; border-radius: 10px; container: mf-foto / inline-size;
     background: #fff; border: 1px solid rgba(15, 23, 42, 0.08); box-shadow: 0 2px 10px rgba(15, 23, 42, 0.07);
 }
-.mf-vista { aspect-ratio: 4 / 3; overflow: hidden; background: linear-gradient(145deg, #f1f5f9, #fff); }
+/* Más baja que la pantalla: el dedo siempre encuentra tarjeta para bajar la página,
+   y al llegar al final de la vista el scroll sigue con la página. */
+.mf-vista {
+    height: min(560px, 62vh); height: min(560px, 62svh);
+    overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+    background: linear-gradient(145deg, #f1f5f9, #fff);
+}
+.mf-vista-cel { background: #fff; }
 .mf-letra {
     position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
     min-width: 32px; height: 32px; padding: 0 8px; border-radius: 8px;
@@ -2153,11 +2162,14 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
     .mf-ver span { display: none; }
 }
 
-.mf-info { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.mf-modelo { font: 700 1.1rem/1.2 var(--font); letter-spacing: -0.015em; color: var(--mf-tinta); }
-.mf-nombre { margin-top: 3px; font-size: 0.92rem; line-height: 1.35; color: var(--mf-gris); }
+.mf-info {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "modelo boton" "nombre boton";
+    align-items: center; column-gap: 14px; min-width: 0; padding: 0 4px 2px;
+}
+.mf-modelo { grid-area: modelo; font: 700 1.1rem/1.2 var(--font); letter-spacing: -0.015em; color: var(--mf-tinta); }
+.mf-nombre { grid-area: nombre; margin-top: 3px; font-size: 0.92rem; line-height: 1.35; color: var(--mf-gris); }
 .mf-marcar {
-    margin-top: 14px; width: 100%; max-width: 200px;
+    grid-area: boton; width: 100%; min-width: 150px; max-width: 200px;
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 9px 12px; border: 1.5px solid var(--mf-linea); border-radius: 999px; cursor: pointer;
     background: var(--surface); color: var(--blue-dark); white-space: nowrap;
@@ -2227,18 +2239,18 @@ body.paso-modelos .page-wrapper { max-width: 1040px; }
 /* Tarjeta compacta en celular y tablet: en la tablet siguen entrando dos por fila. */
 @media (max-width: 860px) {
     .mf-grid { gap: 12px; }
-    .mf-card { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 12px; padding: 10px; border-radius: 14px; }
+    .mf-card { gap: 12px; padding: 10px; border-radius: 14px; }
     .mf-letra { min-width: 26px; height: 26px; padding: 0 6px; border-radius: 7px; font-size: 0.82rem; }
     .mf-modelo { font-size: 1rem; }
     .mf-nombre { font-size: 0.82rem; }
-    .mf-marcar { margin-top: 10px; padding: 8px; gap: 5px; font-size: 0.8rem; }
+    .mf-marcar { min-width: 130px; padding: 10px 12px; gap: 5px; font-size: 0.85rem; }
     .mf-check { width: 16px; height: 16px; }
-}
-@media (max-width: 700px) {
-    .mf-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
     .mf-rubro { max-width: none; }
+    /* Las tarjetas aprovechan casi todo el ancho del celular. */
+    .mf-grid { margin-inline: -12px; }
+    .mf-card { padding: 8px; }
     .mf-barra { padding: 12px 18px 14px; }
     .mf-barra .btn-step,
     .mf-barra .btn-submit { min-height: 50px; }
