@@ -32,15 +32,14 @@ foreach (['La página queda a mi nombre?' => 'titularidad',
 
 echo "— Los tres plazos del código (Pablo, 20-sep) —\n";
 $tit = (string)$cfg['info']['titularidad'];
-caso('el pago único: el código es suyo al abonar el total', mb_stripos($tit, 'Pago único: cuando abonás el total') !== false, $tit);
-caso('el plan anual: al pagar el segundo año', mb_stripos($tit, 'Plan anual: al pagar el segundo año') !== false);
-caso('el plan mensual: a los 18 meses', mb_stripos($tit, 'Plan mensual: a los 18 meses') !== false);
-caso('y hasta entonces es de Gokywebs', mb_stripos($tit, 'Hasta ese momento el código es de Gokywebs') !== false);
-caso('con el hosting, el dominio y el mantenimiento incluidos mientras el plan esté activo',
-    mb_stripos($tit, 'mientras el plan esté activo') !== false);
+caso('el pago único: el código es suyo al abonar el total', mb_stripos($tit, 'con el pago único al abonar el total') !== false, $tit);
+caso('el plan anual: al pagar el segundo año', mb_stripos($tit, 'con el anual al pagar el segundo año') !== false);
+caso('el plan mensual: a los 18 meses', mb_stripos($tit, 'con el mensual a los 18 meses') !== false);
+caso('y hasta entonces es de Gokywebs', mb_stripos($tit, 'Hasta ahí es de Gokywebs') !== false);
+// 2-oct: "mientras el plan esté activo" salió de la respuesta (respuestas cortas).
 $cod = (string)$cfg['info']['entrega_codigo'];
 caso('la entrega del código dice los mismos tres plazos',
-    mb_stripos($cod, 'cuando abonás el total') !== false && mb_stripos($cod, 'al pagar el segundo año') !== false
+    mb_stripos($cod, 'al abonar el total') !== false && mb_stripos($cod, 'al pagar el segundo año') !== false
     && mb_stripos($cod, 'a los 18 meses') !== false, $cod);
 caso('las licencias son de terceros, y el código va por el plazo del plan',
     mb_stripos((string)$cfg['info']['licencias'], 'de terceros') !== false
@@ -55,11 +54,11 @@ foreach (['landing' => '$10.000', 'ecommerce' => '$15.000', 'elearning' => '$15.
     $unico = (string)$cfg['tipos'][$tipo]['precio_unico'];
     $wp = wabot_texto_info('web_propia', $cfg, $c);
     caso("$tipo: el pago único de $unico incluye el hosting y el dominio el primer año",
-        strpos($wp, 'pago único, de ' . $unico) !== false && mb_stripos($wp, 'Incluye el hosting y el dominio el primer año') !== false
+        strpos($wp, 'pago único, de ' . $unico) !== false && mb_stripos($wp, 'Incluye hosting y dominio el primer año') !== false
         && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
     caso("$tipo: el código queda suyo al abonar el total", mb_stripos($wp, 'el código queda tuyo') !== false);
     caso("$tipo: el mantenimiento no va incluido y se suma por $mant por mes",
-        mb_stripos($wp, 'El mantenimiento no va incluido') !== false && strpos($wp, $mant . ' por mes') !== false, $wp);
+        mb_stripos($wp, 'el mantenimiento es aparte, por ' . $mant . ' por mes') !== false, $wp);
     // El bloque de las 3 modalidades ya trae el pago único: no se repite abajo.
     caso("$tipo: debajo del bloque no se suma el renglón de la web propia",
         wabot_web_propia_precio_texto($c, $cfg, wabot_precio_vigente($c, $cfg)) === '');

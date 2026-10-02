@@ -646,7 +646,8 @@ function wabot_ia_decision_normalizar($d, $cfg) {
     return [
         'accion' => in_array($d['accion'] ?? '', $acciones, true) ? $d['accion'] : 'responder',
         'mensajes' => $mensajes,
-        'info_claves' => array_slice($info, 0, 3),
+        // Como mucho dos respuestas oficiales por turno (2-oct: "tiene que ser mucho más simple todo").
+        'info_claves' => array_slice($info, 0, 2),
         'tipo_web' => array_key_exists($tipo, wabot_ia_tipos_web()) ? $tipo : 'sin_definir',
         'segunda_web' => array_key_exists($segunda, wabot_ia_tipos_web()) ? $segunda : 'sin_definir',
         'etapa' => in_array($d['etapa'] ?? '', wabot_ia_etapas(), true) ? $d['etapa'] : null,

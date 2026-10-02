@@ -352,9 +352,10 @@ caso('el resumen repite el precio que se le dio, no el de la lista nueva',
     && strpos($res, '$395.000') === false && strpos($res, '$43.000') === false && strpos($res, '$450.000') === false, $res);
 caso('lo mismo la respuesta de pago',
     strpos(wabot_texto_pago($c, $cfgSube), '$29.000') !== false && strpos(wabot_texto_pago($c, $cfgSube), '$43.000') === false
-    && strpos(wabot_texto_pago($c, $cfgSube), 'el pago único, de $290.000') !== false, wabot_texto_pago($c, $cfgSube));
-caso('y la del plan mensual', strpos(wabot_texto_mantenimiento($c, $cfgSube), '$29.000') !== false
-    && strpos(wabot_texto_mantenimiento($c, $cfgSube), '$43.000') === false);
+    && strpos(wabot_texto_pago($c, $cfgSube), 'pago único de $290.000') !== false, wabot_texto_pago($c, $cfgSube));
+// 2-oct: la del mantenimiento ya no repite la mensualidad (respuestas cortas); igual no toma la de la lista nueva.
+caso('y la del mantenimiento no toma la mensualidad nueva', strpos(wabot_texto_mantenimiento($c, $cfgSube), '$43.000') === false,
+    wabot_texto_mantenimiento($c, $cfgSube));
 caso('un cliente nuevo sí recibe la lista nueva',
     strpos(wabot_msg_precio_texto('ecommerce', $cfgSube, conv_nueva('5491177770041TEST')), '$43.000') !== false);
 caso('wabot_precio_vigente devuelve lo congelado aunque la lista suba',
@@ -405,7 +406,7 @@ caso('el snapshot mensual conserva su mensualidad y toma el plan anual y el pago
     $vM['modelo'] === 'anual' && $vM['mensualidad'] === '$15.000' && $vM['precio'] === '$149.000' && $vM['sena'] === '$60.000'
     && $vM['precio_unico'] === '$190.000', json_encode($vM, JSON_UNESCAPED_UNICODE));
 caso('y la respuesta de pago dice las 3 modalidades con esos montos',
-    strpos(wabot_texto_pago($cM, $cfg), 'el plan mensual, de $15.000 por mes; el plan anual, de $149.000 por año, y el pago único, de $190.000') !== false,
+    strpos(wabot_texto_pago($cM, $cfg), 'mensual de $15.000 por mes, por Mercado Pago y sin permanencia; anual de $149.000, o pago único de $190.000') !== false,
     wabot_texto_pago($cM, $cfg));
 $cV = array_merge(conv_nueva('5491177770051TEST'), ['tipo' => 'landing', 'precio_dado' => true]);
 caso('sin snapshot (charla anterior al 10-sep) vale la lista de hoy, modelo anual',
@@ -495,7 +496,7 @@ $rAntes = wabot_respuesta_pago_fija('Pasame el link de mercado pago para suscrib
 caso('pedir el link de pago antes del formulario: primero el formulario', is_array($rAntes) && mb_strpos($rAntes[0], 'Antes de pagar') === 0,
     json_encode($rAntes, JSON_UNESCAPED_UNICODE));
 $rRechMens = wabot_respuesta_pago_fija('No me interesa el mensual', $c21, $cfg);
-caso('rechazar el mensual ofrece el plan anual (19-sep)', is_array($rRechMens) && mb_stripos($rRechMens[0], 'plan anual') !== false,
+caso('rechazar el mensual ofrece el plan anual (19-sep)', is_array($rRechMens) && mb_stripos($rRechMens[0], 'te conviene el anual') !== false,
     json_encode($rRechMens, JSON_UNESCAPED_UNICODE));
 $rRechUnico = wabot_respuesta_pago_fija('no me interesa el plan anual', $c21, $cfg);
 caso('rechazar el plan anual ofrece el mensual con su monto', is_array($rRechUnico) && mb_strpos($rRechUnico[0], $mens21) !== false,
@@ -596,10 +597,10 @@ foreach ([
         && !preg_match('/primer pago|No es un mantenimiento aparte|No hay un pago inicial aparte|12 cuotas|con cambios|un monto mensual aparte/iu', $texto),
         $texto);
 }
-caso('el pago genérico explica las 3 modalidades sin montos antes de saber el rubro (19-sep; 3 desde el 26-sep)',
+caso('el pago genérico nombra las 3 modalidades sin montos y pide el rubro (19-sep; 3 desde el 26-sep; corto desde el 2-oct)',
     stripos(wabot_texto_pago_generico($cfg), 'Hay 3 modalidades') !== false && strpos(wabot_texto_pago_generico($cfg), '$') === false
-    && stripos(wabot_texto_pago_generico($cfg), 'una vez por año') !== false && stripos(wabot_texto_pago_generico($cfg), 'sin permanencia') !== false
-    && mb_stripos(wabot_texto_pago_generico($cfg), 'el pago único') !== false, wabot_texto_pago_generico($cfg));
+    && mb_stripos(wabot_texto_pago_generico($cfg), 'mensual, anual o pago único') !== false
+    && mb_stripos(wabot_texto_pago_generico($cfg), 'a qué te dedicás') !== false, wabot_texto_pago_generico($cfg));
 caso('el resumen del precio dice las 3 modalidades con el bloque único, sin seña (19-sep; 26-sep)',
     strpos((string)$cfg['precio_resumen'], '{dos_formas}') !== false && strpos((string)$cfg['precio_resumen'], '{sena}') === false
     && mb_strpos(wabot_precio_resumen($cLanding, $cfg), $lineas3('$19.000', '$149.000', '$190.000')) !== false
@@ -607,19 +608,23 @@ caso('el resumen del precio dice las 3 modalidades con el bloque único, sin se�
 caso('el resumen conserva el portfolio filtrado',
     strpos(wabot_precio_resumen(['tipo' => 'ecommerce', 'precio_dado' => true], $cfg), 'gokywebs.com/portfolio/?tipo=ecommerce') !== false);
 $pagoLanding = wabot_texto_pago(conv_cotizada('landing', $cfg), $cfg);
-caso('info.pago explica las 3 modalidades con sus montos, lo que incluyen y la seña sin su monto (19-sep; 26-sep)',
-    strpos($pagoLanding, 'el plan mensual, de $19.000 por mes; el plan anual, de $149.000 por año, y el pago único, de $190.000') !== false
-    && strpos($cfg['info']['pago'], '{sena}') === false && strpos($pagoLanding, 'Las 3 incluyen el desarrollo completo de la web') !== false
-    && mb_stripos($pagoLanding, 'El anual arranca con una seña') !== false && mb_stripos($pagoLanding, 'El pago único también arranca con una seña') !== false
+caso('info.pago explica las 3 modalidades con sus montos y la seña sin su monto (19-sep; 26-sep; corto desde el 2-oct)',
+    strpos($pagoLanding, 'mensual de $19.000 por mes, por Mercado Pago y sin permanencia; anual de $149.000, o pago único de $190.000') !== false
+    && strpos($cfg['info']['pago'], '{sena}') === false
+    && mb_stripos($pagoLanding, 'El anual y el pago único arrancan con una seña y el resto va al entregar') !== false
     && strpos($pagoLanding, '$60.000') === false, $pagoLanding);
-caso('el proceso explica modelos y las 3 modalidades, sin demo gratis',
-    stripos($cfg['info']['proceso'], 'modelos') !== false && mb_stripos($cfg['info']['proceso'], 'el plan mensual, el anual o el pago único') !== false
-    && stripos($cfg['info']['proceso'], 'demo gratis') === false && strpos(wabot_texto_info('proceso', $cfg), '$') === false);
+caso('el proceso explica el valor, el primer diseño sin cargo y la entrega, sin demo gratis ni montos (corto desde el 2-oct)',
+    mb_stripos($cfg['info']['proceso'], 'sin cargo un primer diseño') !== false && mb_stripos($cfg['info']['proceso'], '7 días') !== false
+    && stripos($cfg['info']['proceso'], 'demo gratis') === false && strpos(wabot_texto_info('proceso', $cfg), '$') === false,
+    wabot_texto_info('proceso', $cfg));
 caso('la renovación del hosting: no hay con el mensual o el anual; con el pago único, desde el segundo año (26-sep)',
     mb_stripos((string)$cfg['hosting_renovacion'], 'Con el plan mensual o el anual no hay renovación aparte') === 0
     && mb_stripos((string)$cfg['hosting_renovacion'], 'Con el pago único, el hosting y el dominio van incluidos el primer año') !== false,
     (string)$cfg['hosting_renovacion']);
 caso('"es caro" no menciona cuotas sin interés', stripos($cfg['caro'], 'sin interés') === false && stripos($cfg['caro'], 'cuotas') === false);
+$infoLargas = array_filter(array_map(fn($t) => mb_strlen((string)$t), wabot_textos_default()['info']), fn($n) => $n > 260);
+caso("las respuestas de info son cortas, de 260 caracteres como mucho (Pablo, 2-oct: 'tiene que ser mucho más simple todo')",
+    $infoLargas === [], json_encode($infoLargas, JSON_UNESCAPED_UNICODE));
 
 echo "— 7. El código, la propiedad y la baja no los dice el bot (19-sep) —\n";
 
@@ -631,12 +636,15 @@ caso('ningún texto que sale solo nombra cuándo se reclama el código',
 caso('si preguntan, la propiedad del código se contesta con sus plazos (20-sep)',
     mb_stripos($cfg['info']['entrega_codigo'], 'al pagar el segundo año') !== false
     && mb_stripos($cfg['info']['entrega_codigo'], 'a los 18 meses') !== false
-    && mb_stripos($cfg['info']['entrega_codigo'], 'cuando abonás el total') !== false);
+    && mb_stripos($cfg['info']['entrega_codigo'], 'al abonar el total') !== false, $cfg['info']['entrega_codigo']);
 $cuentaMp = wabot_texto_info('cuenta_mercado_pago', $cfg);
 caso('"¿necesito cuenta de Mercado Pago?": no hace falta, con cualquier tarjeta, y nada de la baja',
     mb_stripos($cuentaMp, 'No hace falta') === 0 && mb_stripos($cuentaMp, 'cualquier tarjeta') !== false
     && !preg_match('/baja|permanencia|desactiva|dejás de pagar/iu', $cuentaMp), $cuentaMp);
-caso('cómo se paga aclara que no hace falta cuenta de Mercado Pago', mb_stripos(wabot_texto_pago(conv_cotizada('landing', $cfg), $cfg), 'cualquier tarjeta') !== false);
+// 2-oct: lo de la cuenta de Mercado Pago salió de info.pago (respuestas cortas); lo contesta cuenta_mercado_pago si lo preguntan.
+caso('cómo se paga nombra Mercado Pago; lo de pagar sin cuenta queda para cuando lo preguntan',
+    mb_stripos(wabot_texto_pago(conv_cotizada('landing', $cfg), $cfg), 'Mercado Pago') !== false
+    && mb_stripos($cuentaMp, 'cualquier tarjeta') !== false);
 foreach (['como doy de baja el plan?', 'se puede cancelar la suscripcion?', 'hay permanencia?', 'que pasa si dejo de pagar?'] as $p) {
     caso("\"$p\" → baja_del_plan, con su respuesta", wabot_info_por_palabras($p, 'prediseno') === 'baja_del_plan'
         && trim(wabot_texto_info('baja_del_plan', $cfg)) !== '', (string)wabot_info_por_palabras($p, 'prediseno'));
@@ -677,8 +685,8 @@ foreach (['no puedo pagar todo junto, se puede en cuotas?', 'como doy de baja el
     caso("\"$p\" no es ninguna de las dos", !in_array($k, ['plan_es_servicio', 'un_solo_pago'], true), (string)$k);
 }
 $serv = wabot_texto_info('plan_es_servicio', $cfg);
-caso('al que no quiere pagar por mes le ofrece el plan anual (19-sep)',
-    mb_stripos($serv, 'te conviene el plan anual') !== false && mb_stripos($serv, 'no tenés que pagar todos los meses') !== false, $serv);
+caso('al que no quiere pagar por mes le ofrece el plan anual, una vez por año (19-sep)',
+    mb_stripos($serv, 'te conviene el anual') !== false && mb_stripos($serv, 'una vez por año') !== false, $serv);
 caso('sin plataformas de streaming y sin el detalle de los cambios extra',
     mb_stripos($serv, 'netflix') === false && strpos($serv, '$10.000') === false);
 caso('y aclara que incluye lo mismo que el mensual (19-sep)', mb_stripos($serv, 'Incluye lo mismo que el mensual') !== false);
@@ -699,10 +707,10 @@ echo "— 8b. La web propia: el pago único, con el hosting del primer año y el
 foreach (['landing' => '$190.000', 'ecommerce' => '$290.000', 'elearning' => '$290.000', 'inmobiliaria' => '$290.000'] as $t => $p) {
     $wp = wabot_texto_info('web_propia', $cfg, conv_cotizada($t, $cfg, '5491177770093TEST'));
     // 26-sep a la noche: incluye el hosting y el dominio el primer año; el mantenimiento se suma aparte.
-    caso("$t: la web propia es el pago único de $p, con seña, el hosting y el dominio del primer año y el mantenimiento aparte",
-        strpos($wp, 'pago único, de ' . $p) !== false && mb_stripos($wp, 'arrancás con una seña') !== false
-        && mb_stripos($wp, 'Incluye el hosting y el dominio el primer año') !== false
-        && mb_stripos($wp, 'El mantenimiento no va incluido') !== false && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
+    caso("$t: la web propia es el pago único de $p, con el hosting y el dominio del primer año y el mantenimiento aparte",
+        strpos($wp, 'pago único, de ' . $p . ',') !== false
+        && mb_stripos($wp, 'Incluye hosting y dominio el primer año') !== false
+        && mb_stripos($wp, 'el mantenimiento es aparte') !== false && mb_stripos($wp, 'No incluye hosting ni dominio') === false, $wp);
 }
 // El pago único de ESTA charla: el congelado, si la lista subió después.
 $cfgSubeUnico = $cfg;
@@ -958,12 +966,12 @@ $rUpSena = wabot_upgrade_pago_texto($vUp, $c, $cfg);
 // Los montos después del upgrade son los de la tienda ($190.000 y $29.000),
 // no los del sitio ($149.000 y $19.000). La seña, sin su monto.
 caso('el pago después del upgrade es el de la tienda, no el del sitio',
-    mb_strpos($rUpSena, 'el plan anual, de $190.000') !== false && mb_strpos($rUpSena, '$60.000') === false
-    && mb_strpos($rUpSena, 'el plan mensual, de $29.000') !== false && mb_strpos($rUpSena, '$19.000') === false
+    mb_strpos($rUpSena, 'anual de $190.000') !== false && mb_strpos($rUpSena, '$60.000') === false
+    && mb_strpos($rUpSena, 'mensual de $29.000') !== false && mb_strpos($rUpSena, '$19.000') === false
     && mb_strpos($rUpSena, '$149.000') === false, $rUpSena);
 // 26-sep a la noche: también el pago único es el de la tienda ($290.000), no el del sitio ($190.000).
 caso('y el pago único después del upgrade también es el de la tienda, no el del sitio',
-    mb_strpos($rUpSena, 'el pago único, de $290.000') !== false && mb_strpos($rUpSena, 'el pago único, de $190.000') === false, $rUpSena);
+    mb_strpos($rUpSena, 'pago único de $290.000') !== false && mb_strpos($rUpSena, 'pago único de $190.000') === false, $rUpSena);
 caso('la tienda consultada de nuevo se confirma corta, no con el mismo texto',
     wabot_upgrade_confirmacion_texto($vUp, $c, $cfg) !== wabot_upgrade_texto('ecommerce', $c, $cfg));
 $p = 'Sí, quiero la demo con la tienda';
@@ -1035,11 +1043,12 @@ caso('el hosting nombra el .com.ar y no el .com', mb_stripos($cfg['info']['hosti
 $incluyeSitio = wabot_texto_info('que_incluye', $cfg, ['tipo' => 'landing']);
 // 26-sep a la noche: un cambio por mes con el mensual o el anual; con el pago único, el primer año de hosting y el mantenimiento aparte.
 caso('el sitio profesional incluye panel sin hablar de cargar productos, con un cambio por mes y sin el plan con cambios (20-sep; 26-sep)',
-    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'un panel para editar') !== false
+    mb_stripos($incluyeSitio, 'producto') === false && mb_stripos($incluyeSitio, 'tu panel para editarla') !== false
     && mb_stripos($incluyeSitio, 'un cambio por mes') !== false && mb_stripos($incluyeSitio, 'con cambios') === false
-    && mb_stripos($incluyeSitio, 'Con el pago único, el hosting y el dominio van incluidos el primer año') !== false
+    && mb_stripos($incluyeSitio, 'Con el pago único, el hosting y el dominio van el primer año y el mantenimiento es aparte') !== false
     && strpos($incluyeSitio, '{') === false, $incluyeSitio);
-caso('a la tienda sí', mb_stripos(wabot_texto_info('que_incluye', $cfg, ['tipo' => 'ecommerce']), '10 productos') !== false);
+caso('a la tienda sí: su panel es para cargar los productos', mb_stripos(wabot_texto_info('que_incluye', $cfg, ['tipo' => 'ecommerce']), 'tu panel para cargar los productos') !== false,
+    wabot_texto_info('que_incluye', $cfg, ['tipo' => 'ecommerce']));
 caso('sin tipo, el general, sin marcadores ni el plan con cambios',
     wabot_texto_info('que_incluye', $cfg, ['tipo' => null]) === $cfg['info']['que_incluye'] && strpos($cfg['info']['que_incluye'], '{') === false
     && mb_stripos($cfg['info']['que_incluye'], 'con cambios') === false,
@@ -1051,8 +1060,10 @@ caso('las estadísticas de la tienda y los cursos son las del panel; sitio e inm
     && mb_stripos(wabot_texto_info('estadisticas', $cfg, ['tipo' => 'inmobiliaria']), 'Google Analytics') !== false);
 caso('"qué incluye" no contradice el adicional del .com',
     !preg_match('/solo dos|[úu]nico adicional/iu', $cfg['info']['que_incluye'] . $cfg['info']['que_incluye_sin_productos']));
-caso('los productos extra solo se cobran si los cargamos nosotros',
-    strpos($cfg['info']['que_incluye'], 'que carguemos') !== false && strpos($cfg['info']['que_incluye'], 'podés cargarlos vos') !== false);
+// 2-oct: el costo de los productos extra que carguemos salió de "qué incluye" (respuestas cortas).
+caso('la carga de la tienda la hace él desde el panel, sin costo extra',
+    mb_stripos(wabot_texto_info('carga', $cfg, ['tipo' => 'ecommerce']), 'sin costo extra') !== false,
+    wabot_texto_info('carga', $cfg, ['tipo' => 'ecommerce']));
 
 echo "— 13. El que pregunta después del precio no está trabado —\n";
 
@@ -1128,7 +1139,7 @@ foreach (['carga', 'manual', 'que_incluye'] as $clavePanel) {
         mb_stripos($tPanel, 'panel') !== false && strpos($tPanel, 'pasa a $19.000 por mes') === false
         && strpos($tPanel, '{') === false, $tPanel);
 }
-caso('la tienda sigue con su panel', mb_stripos(wabot_texto_info('carga', $cfg, ['tipo' => 'ecommerce']), 'panel de administración') !== false);
+caso('la tienda sigue con su panel', mb_stripos(wabot_texto_info('carga', $cfg, ['tipo' => 'ecommerce']), 'desde tu panel') !== false);
 foreach (['puedo cambiar yo los textos de la web?', 'la web la manejo yo?', 'los textos los cambio yo?'] as $pPanel) {
     caso("\"$pPanel\" → carga", wabot_info_por_palabras($pPanel, 'derivado') === 'carga', (string)wabot_info_por_palabras($pPanel, 'derivado'));
 }
