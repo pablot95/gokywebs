@@ -7,6 +7,7 @@ de escritorio) y densidad 1.333, o sea 1920 px reales.
 
     python portfolio/capturar-hd.py              # solo las que faltan
     python portfolio/capturar-hd.py sparrow kare # esas, aunque existan
+    python portfolio/capturar-hd.py --lento x    # más espera (animaciones pesadas)
 
 Receta: reveals acelerados, un barrido rápido para disparar lazy y
 observers, y después una foto por pantalla pegadas en orden (el header y
@@ -33,8 +34,12 @@ SALIDA = os.path.join(AQUI, 'previews', 'hd')
 CHROME = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
 PUERTO = 9377
 ANCHO, ALTO_VENTANA, DPR = 1440, 900, 4 / 3
+LENTO = '--lento' in sys.argv     # webs con animaciones pesadas: más espera por pantalla
 TOPE_ALTO = 5200          # px CSS; Chrome falla arriba de ~16k px reales
 CALIDAD = 82
+# Webs que hoy no muestran lo que entregamos (en mantenimiento, etc.): se
+# quedan con la captura de 960 que ya está en previews/. Revisar cada tanto.
+SIN_HD = {'segeym', 'italianosdelmundo', 'espaciocreativo'}   # 2-oct-2026: segeym en mantenimiento; las otras salen con secciones encimadas o en blanco
 
 FORZAR = """
 (() => {
@@ -60,7 +65,7 @@ def puerto_libre(p):
 
 class CDP:
     def __init__(self, ws_url):
-        self.ws = websocket.create_connection(ws_url, timeout=60, suppress_origin=True)
+        self.ws = websocket.create_connection(ws_url, timeout=180, suppress_origin=True)
         self.n = 0
 
     def __call__(self, metodo, **params):
@@ -104,7 +109,7 @@ def capturar(cdp, url):
     dejaba en blanco las escenas animadas y sticky; así sale lo que se ve."""
     cdp('Emulation.setDeviceMetricsOverride', width=ANCHO, height=ALTO_VENTANA, deviceScaleFactor=DPR, mobile=False)
     cdp('Page.navigate', url=url)
-    time.sleep(5)
+    time.sleep(9 if LENTO else 5)
     cdp.js("document.documentElement.style.scrollBehavior='auto'")
     cdp.js(FORZAR)
     alto = cdp.js('Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)') or ALTO_VENTANA
@@ -121,7 +126,7 @@ def capturar(cdp, url):
     y, primera = 0, True
     while True:
         cdp.js(f'window.scrollTo(0,{y})')
-        time.sleep(0.5)
+        time.sleep(1.6 if LENTO else 0.5)
         if not primera:
             # El header y el botón de WhatsApp salen solo en la primera foto.
             # Se revisa en cada una: muchos headers se vuelven fijos al scrollear.
@@ -142,9 +147,9 @@ def capturar(cdp, url):
 
 def main():
     os.makedirs(SALIDA, exist_ok=True)
-    pedidos = set(sys.argv[1:])
+    pedidos = set(a for a in sys.argv[1:] if not a.startswith('--'))
     lista = [(i, u) for i, u in trabajos() if (i in pedidos if pedidos else
-             not os.path.exists(os.path.join(SALIDA, i + '.webp')))]
+             i not in SIN_HD and not os.path.exists(os.path.join(SALIDA, i + '.webp')))]
     print(len(lista), 'para capturar', flush=True)
     if not lista:
         return
