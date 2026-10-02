@@ -59,7 +59,8 @@
     }
 
     function activate(cat) {
-        var portfolioSection = document.getElementById('portafolio');
+        // El visor, no el título de la sección: así queda entero en la pantalla.
+        var portfolioSection = document.querySelector('.gv--seccion') || document.getElementById('portafolio');
         if (window.GWVisor) window.GWVisor.filtrar(SLUG_MAP[cat]);
 
         if (portfolioSection) {
@@ -67,7 +68,7 @@
                camino (Lenis lo pisa en el frame siguiente): se baja con Lenis. */
             setTimeout(function () {
                 if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-                    window.lenis.scrollTo(portfolioSection, { offset: -20, duration: 1.4 });
+                    window.lenis.scrollTo(portfolioSection, { duration: 1.4 });
                 } else {
                     /* Sin Lenis (celular) el scroll suave nativo se cortaba
                        antes de arrancar: se salta directo a la sección. */

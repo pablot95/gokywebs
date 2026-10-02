@@ -54,11 +54,6 @@
 .gv-view:focus-visible { outline: 2px solid var(--gv-gold); outline-offset: -3px; }
 .gv-shot { display: block; width: 100%; height: auto; transition: opacity 0.35s var(--gv-ease); }
 .gv-stage.cargando .gv-shot { opacity: 0; }
-.gv-progreso { position: absolute; left: 0; right: 0; top: 0; z-index: 2; height: 2px; pointer-events: none; }
-.gv-progreso i {
-    display: block; height: 100%; background: var(--gv-gold);
-    transform: scaleX(0); transform-origin: left; transition: transform 0.08s linear;
-}
 
 /* ── Filtros ─────────────────────────────────────────────── */
 .gv-toolbar { display: flex; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; font-family: var(--gv-sans); }

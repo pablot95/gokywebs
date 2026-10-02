@@ -163,10 +163,9 @@
        filtros flotan arriba y las miniaturas abajo, chicas y sin textos. */
     root.innerHTML =
         '<div class="gv-stage">' +
-            '<div class="gv-view" tabindex="0" data-lenis-prevent>' +
+            '<div class="gv-view" tabindex="0">' +
                 '<img class="gv-shot" alt="" decoding="async">' +
             '</div>' +
-            '<span class="gv-progreso" aria-hidden="true"><i></i></span>' +
             '<p class="gv-oculto" aria-live="polite"></p>' +
         '</div>' +
         '<div class="gv-vacio" hidden>' +
@@ -193,7 +192,6 @@
     var $info = root.querySelector('.gv-stage [aria-live]');
     var $view = root.querySelector('.gv-view');
     var $shot = root.querySelector('.gv-shot');
-    var $prog = root.querySelector('.gv-progreso i');
     var $vacio = root.querySelector('.gv-vacio');
     var $strip = root.querySelector('.gv-strip');
     var $rail = root.querySelector('.gv-rail');
@@ -335,7 +333,6 @@
             if (mio !== turno) return;
             $shot.src = pre.src;
             $view.scrollTop = 0;
-            $prog.style.transform = 'scaleX(0)';
             $stage.classList.remove('cargando');
         };
         pre.src = srcPantalla(t);
@@ -500,10 +497,56 @@
     }, true);
     $rail.addEventListener('wheel', frenarInercia, { passive: true });
 
-    $view.addEventListener('scroll', function () {
+    /* ── La rueda del mouse sobre la web ──
+       Recorre la captura y, al llegar al final (o al principio), sigue la
+       página: así nunca queda trabada. En el inicio, además, la captura solo
+       se recorre con el visor alineado a la pantalla; si está a medio entrar,
+       el primer giro lo acomoda (y si está lejos, baja la página). */
+    var enSeccion = root.classList.contains('gv--seccion');
+    function irAlVisor(suave) {
+        if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+            window.lenis.scrollTo(root, { duration: suave ? 0.7 : 0, immediate: !suave });
+        } else {
+            window.scrollTo({ top: root.getBoundingClientRect().top + window.pageYOffset, behavior: suave && !quieto ? 'smooth' : 'auto' });
+        }
+    }
+    $view.addEventListener('wheel', function (e) {
+        if (e.ctrlKey) return;                                   // zoom del navegador
+        var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * $view.clientHeight : e.deltaY;
+        if (!dy) return;
+        if (enSeccion) {
+            var arriba = root.getBoundingClientRect().top;
+            if (Math.abs(arriba) > 4) {
+                if (Math.abs(arriba) < window.innerHeight * 0.5) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    irAlVisor(true);
+                }
+                return;
+            }
+        }
         var max = $view.scrollHeight - $view.clientHeight;
-        $prog.style.transform = 'scaleX(' + (max > 0 ? $view.scrollTop / max : 0) + ')';
-    }, { passive: true });
+        var puede = dy > 0 ? $view.scrollTop < max - 1 : $view.scrollTop > 0;
+        if (!puede) return;
+        e.preventDefault();
+        e.stopPropagation();
+        $view.scrollTop += dy;
+    }, { passive: false });
+
+    /* En el inicio, el link "Portfolio" del menú (y entrar con /#portafolio)
+       deja el visor justo en la pantalla, no el título de la sección. */
+    if (enSeccion) {
+        document.addEventListener('click', function (e) {
+            var a = e.target.closest && e.target.closest('a[href="#portafolio"]');
+            if (!a) return;
+            e.preventDefault();
+            irAlVisor(true);
+            if (window.history && window.history.replaceState) window.history.replaceState(null, '', '#portafolio');
+        });
+        if (window.location.hash === '#portafolio') {
+            window.addEventListener('load', function () { setTimeout(function () { irAlVisor(false); }, 300); });
+        }
+    }
 
     /* ── API para routing.js (deep-links viejos del inicio: /#moda, /?p=…) ── */
     window.GWVisor = {
