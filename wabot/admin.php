@@ -2321,7 +2321,7 @@ function burbujaCita(t, chat) {
                     <input type="number" name="ultima_llamada_horas" min="1" max="23" step="0.5" value="<?= $e((string)($cfg['ultima_llamada_horas'] ?? 23)) ?>" style="width:100px">
                 </div>
             </div>
-            <p class="meta" style="margin-top:8px">Para el que vio el precio, siguió hablando y no pidió la demo: un solo mensaje antes de que Meta cierre la ventana de 24 h, que es la última oportunidad de escribirle sin plantilla. Si la marca cae de noche, se adelanta al horario de contacto.</p>
+            <p class="meta" style="margin-top:8px">Un solo mensaje antes de que Meta cierre la ventana de 24 h, que es la última oportunidad de escribirle sin plantilla: al que vio el precio, siguió hablando y no pidió la demo, la última llamada; al que escribió y no llegó al precio, "queríamos saber si seguías con interés…" con el portfolio (si no se lo pasamos antes). Si la marca cae de noche, se adelanta al horario de contacto.</p>
             <div class="fila" style="margin-top:14px;gap:18px;align-items:flex-end">
                 <div>
                     <label>Horas sin respuesta tras presentar la demo</label>

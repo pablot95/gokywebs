@@ -3093,6 +3093,42 @@ function wabot_conv_interesado($cv) {
 }
 
 /**
+ * El que escribió y no llegó al precio (Pablo, 2-oct: "el bot envía mensaje a
+ * la gente que escribió, que no llegó al precio, antes que se cumplan las 24 hs
+ * sin que haya contestado? Debería"). Fuera: los que ya cerraron algo
+ * (cualquier `cierre`), los que no vienen a comprar (`contexto_consulta`:
+ * laboral, conocido, cliente existente) y los que ya dejaron datos.
+ */
+function wabot_conv_sin_precio_seguible($cv) {
+    if (!empty($cv['precio_dado']) || !empty($cv['lead_creado']) || !empty($cv['sistema_lead_creado'])) return false;
+    if (!empty($cv['presentado_ts']) || !empty($cv['pago_avisado_ts']) || !empty($cv['link_form_enviado'])) return false;
+    if ((string)($cv['cierre'] ?? '') !== '' || !empty($cv['contexto_consulta'])) return false;
+    return (int)($cv['ultimo_cliente_ts'] ?? 0) > 0;
+}
+
+/** ¿Ya le pasamos el portfolio en esta charla (el bot o Pablo)? */
+function wabot_conv_portfolio_enviado($cv) {
+    foreach ((array)($cv['transcript'] ?? []) as $fila) {
+        if (!in_array(($fila['q'] ?? ''), ['bot', 'humano'], true)) continue;
+        if (stripos((string)($fila['t'] ?? ''), 'gokywebs.com/portfolio') !== false) return true;
+    }
+    return false;
+}
+
+/**
+ * El aviso antes de que cierre la ventana para el que no llegó al precio: el
+ * texto de Pablo, con el portfolio solo si todavía no lo vio. El saludo va
+ * según la hora (sale entre las 8 y las 20).
+ */
+function wabot_seguimiento_sin_precio_texto($cv, $cfg, $ahora = null) {
+    $ahora = $ahora ?? time();
+    $clave = wabot_conv_portfolio_enviado($cv) ? 'seguimiento_sin_precio_sin_portfolio' : 'seguimiento_sin_precio';
+    $h = wabot_hora_local($ahora);
+    $saludo = $h < 13 ? 'Hola, buen día' : ($h < 20 ? 'Hola, buenas tardes' : 'Hola, buenas noches');
+    return trim(str_replace('{saludo}', $saludo, (string)($cfg[$clave] ?? '')));
+}
+
+/**
  * ¿El cliente escribió algo DESPUÉS del mensaje del bot que traía el precio?
  *
  * El precio no tiene timestamp propio: se busca en el transcript la última
@@ -5036,8 +5072,9 @@ function wabot_ultima_llamada_corresponde($cv, $cfg, $ahora = null) {
     // aviso también es perseguir: mismas reglas que el seguimiento común.
     if (!empty($cv['handoff_pendiente'])) return false;
     if (wabot_mismo_dia_ar((int)($cv['aviso_prometido_ts'] ?? 0), $ahora)) return false;
-    // Solo los que mostraron interés y no cerraron nada.
-    if (!wabot_conv_interesado($cv)) return false;
+    // Solo los que mostraron interés y no cerraron nada, o los que escribieron
+    // y no llegaron al precio (2-oct).
+    if (!wabot_conv_interesado($cv) && !wabot_conv_sin_precio_seguible($cv)) return false;
     // El último tiene que haber sido el bot: si el cliente escribió después, la
     // charla está viva y no corresponde un aviso de cierre.
     $t = (array)($cv['transcript'] ?? []);
@@ -5111,7 +5148,9 @@ function wabot_ultima_llamada_correr($cfg, $ahora = null) {
         try {
             $cv = wabot_conv_load($clave);
             if (!wabot_ultima_llamada_corresponde($cv, $cfg, $ahora)) continue;
-            $texto = trim(wabot_personalizar((string)($cfg['ultima_llamada'] ?? ''), $cv));
+            $texto = empty($cv['precio_dado'])
+                ? wabot_seguimiento_sin_precio_texto($cv, $cfg, $ahora)
+                : trim(wabot_personalizar((string)($cfg['ultima_llamada'] ?? ''), $cv));
             $texto = wabot_salida_emisor_texto($texto, $cv, $cfg);
             if ($texto === '') continue;
             $cv['ultima_llamada_ts'] = $ahora;

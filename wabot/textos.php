@@ -510,6 +510,12 @@ function wabot_textos_default() {
         ],
     ],
     'ultima_llamada' => 'Hola {nombre}, cómo estás? Te escribo por última vez por lo de la web. Si querés retomar o te quedó alguna duda, escribime por acá y seguimos.',
+    /* Al que escribió y no llegó al precio, el mismo aviso antes de que cierre
+     * la ventana de 24 h, con el texto de Pablo (2-oct). Sin el portfolio si ya
+     * se lo pasamos en la charla. {saludo}: "Hola, buen día" / "Hola, buenas
+     * tardes" según la hora. */
+    'seguimiento_sin_precio' => '{saludo}, queríamos saber si seguías con interés de hacer la página web. Te compartimos el portfolio con páginas que realizamos y están en funcionamiento: gokywebs.com/portfolio, para que puedas ver un poco nuestros trabajos.',
+    'seguimiento_sin_precio_sin_portfolio' => '{saludo}, queríamos saber si seguías con interés de hacer la página web.',
     'ultima_llamada_activa' => true,
     'ultima_llamada_horas' => 23,
     'ya_tengo_web' => 'Perfecto, pasame el link de tu página actual así la reviso y te digo qué conviene mejorar. También podés comparar con los modelos de gokywebs.com/modelos/.',
